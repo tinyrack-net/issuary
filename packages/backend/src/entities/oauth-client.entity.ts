@@ -98,12 +98,23 @@ export class OAuthClientEntity extends BaseEntity {
   })
   public enabled: boolean = true;
 
+  @Property({
+    type: t.boolean,
+    name: 'editable',
+    comment: 'Whether the OAuth client is editable',
+    nullable: false,
+    default: true,
+  })
+  public editable: boolean = true;
+
   public constructor(init: {
+    id: string;
     clientId: string;
     clientSecretHash: string;
     name: string;
   }) {
     super();
+    this.id = init.id;
     this.clientId = init.clientId;
     this.clientSecretHash = init.clientSecretHash;
     this.name = init.name;

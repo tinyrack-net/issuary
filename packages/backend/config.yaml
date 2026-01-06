@@ -42,6 +42,7 @@ clients:
 
 providers:
   my-app:
+    id: sdlkfj3n
     name: My App
     logo_uri: https://myapp.com/auth/callback
     client_id: sdlk3n3dkj2

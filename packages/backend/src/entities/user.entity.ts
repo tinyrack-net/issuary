@@ -61,12 +61,12 @@ export class UserEntity extends BaseEntity {
 
   @Property({
     type: t.boolean,
-    name: 'ediable',
-    comment: 'Whether the user account is ediable',
+    name: 'editable',
+    comment: 'Whether the user account is editable',
     nullable: false,
     default: true,
   })
-  public ediable: boolean = true;
+  public editable: boolean = true;
 
   @Property({
     type: t.string,

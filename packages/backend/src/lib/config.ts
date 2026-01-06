@@ -67,6 +67,7 @@ export const ConfigSchema = z.object({
     .record(
       z.string(),
       z.object({
+        id: z.string().min(1),
         name: z.string().min(1),
         client_id: z.string().min(1),
         client_secret: z.string().min(1),
