@@ -1,0 +1,111 @@
+import {
+  Entity,
+  EntityRepositoryType,
+  Index,
+  PrimaryKey,
+  Property,
+  t,
+} from '@mikro-orm/core';
+import { OAuthClientRepository } from '@/repositories/oauth-client.repository.js';
+import { BaseEntity } from './base.entity.js';
+
+@Entity({
+  tableName: 'oauth_client',
+  comment: 'Registered OAuth clients',
+  repository: () => OAuthClientRepository,
+})
+export class OAuthClientEntity extends BaseEntity {
+  [EntityRepositoryType]?: OAuthClientRepository;
+
+  @PrimaryKey({
+    type: t.uuid,
+    name: 'id',
+    comment: 'Primary key as UUID',
+    nullable: false,
+  })
+  public id: string = crypto.randomUUID();
+
+  @Index({
+    name: 'client_client_id_unique',
+    properties: ['clientId'],
+    options: { unique: true },
+  })
+  @Property({
+    type: t.string,
+    name: 'client_id',
+    comment: 'Public client identifier',
+    nullable: false,
+  })
+  public clientId: string;
+
+  @Property({
+    type: t.string,
+    name: 'client_secret_hash',
+    comment: 'Hash of the client secret',
+    nullable: false,
+  })
+  public clientSecretHash: string;
+
+  @Property({
+    type: t.string,
+    name: 'name',
+    comment: 'Human-readable name of the OAuth client',
+    nullable: false,
+  })
+  public name: string;
+
+  @Property({
+    type: t.json,
+    name: 'grant_types',
+    comment: 'Allowed OAuth grant types for the client',
+    nullable: false,
+    default: [],
+  })
+  public grantTypes: string[] = [];
+
+  @Property({
+    type: t.json,
+    name: 'response_types',
+    comment: 'Allowed OAuth response types for the client',
+    nullable: false,
+    default: [],
+  })
+  public responseTypes: string[] = [];
+
+  @Property({
+    type: t.json,
+    name: 'scopes',
+    comment: 'Allowed OAuth scopes for the client',
+    nullable: false,
+    default: [],
+  })
+  public scopes: string[] = [];
+
+  @Property({
+    type: t.json,
+    name: 'redirect_uris',
+    comment: 'Registered redirect URIs for the client',
+    nullable: false,
+    default: [],
+  })
+  public redirectUris: string[] = [];
+
+  @Property({
+    type: t.boolean,
+    name: 'enabled',
+    comment: 'Whether the OAuth client is enabled',
+    default: true,
+  })
+  public enabled: boolean = true;
+
+  public constructor(init: {
+    clientId: string;
+    clientSecretHash: string;
+    name: string;
+  }) {
+    super();
+    this.clientId = init.clientId;
+    this.clientSecretHash = init.clientSecretHash;
+    this.name = init.name;
+  }
+}

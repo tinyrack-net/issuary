@@ -1,0 +1,61 @@
+{
+  "name": "@tinyrack-auth/backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch --include './src/**/*' --include ./config.yaml src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc --project tsconfig.json",
+    "build:watch": "tsc -w",
+    "mikro-orm:debug": "NODE_OPTIONS='--import tsx' mikro-orm-esm debug",
+    "mikro-orm:schema:create": "NODE_OPTIONS='--import tsx' mikro-orm-esm migration:create --initial"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@mikro-orm/cli": "^6.6.2",
+    "@types/node": "catalog:",
+    "@types/pg": "^8.16.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "catalog:"
+  },
+  "dependencies": {
+    "@fastify/autoload": "^6.3.1",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.2.0",
+    "@fastify/env": "^5.0.3",
+    "@fastify/jwt": "^10.0.0",
+    "@fastify/oauth2": "^8.1.2",
+    "@fastify/secure-session": "^8.3.0",
+    "@fastify/session": "^11.1.1",
+    "@fastify/static": "^9.0.0",
+    "@fastify/swagger": "^9.6.1",
+    "@fastify/swagger-ui": "^5.2.3",
+    "@mikro-orm/core": "^6.6.2",
+    "@mikro-orm/migrations": "^6.6.2",
+    "@mikro-orm/postgresql": "^6.6.2",
+    "@mikro-orm/sqlite": "^6.6.2",
+    "@scalar/fastify-api-reference": "^1.40.9",
+    "@types/nodemailer": "^7.0.4",
+    "dotenv": "^17.2.3",
+    "fastify": "^5.6.2",
+    "fastify-plugin": "^5.1.0",
+    "fastify-type-provider-zod": "^6.1.0",
+    "nodemailer": "^7.0.12",
+    "pg": "^8.16.3",
+    "reflect-metadata": "^0.2.2",
+    "sqlite3": "^5.1.7",
+    "yaml": "^2.8.2",
+    "zod": "catalog:"
+  },
+  "mikro-orm": {
+    "configPaths": [
+      "./src/db/index.ts",
+      "./dist/db/index.js"
+    ]
+  }
+}

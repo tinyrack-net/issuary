@@ -1,0 +1,14 @@
+{
+  "name": "@tinyrack-auth/base",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "pnpm -r dev",
+    "build": "pnpm -r build"
+  },
+  "workspaces": [
+    "./packages/*"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

@@ -1,0 +1,65 @@
+app:
+  host: http://localhost:8080
+  port: 8080
+  cookie_secret: 3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b
+admin:
+  enabled: true
+  port: !env ADMIN_PORT
+
+database:
+  type: sqlite
+  path: test.db
+  # type: postgres
+  # host: !env DATABASE_URL
+  # port: !env DATABASE_PORT
+  # name: !env DATABASE_NAME
+  # user: !env DATABASE_USER
+  # password: !env DATABASE_PASSWORD
+
+smtp:
+  enabled: false
+  host: !env SMTP_HOST
+  port: !env SMTP_PORT
+  user: "user"
+  password: "PW"
+
+clients:
+  email_and_password:
+    type: email_and_password
+    enabled: true
+    password_hash_key: lsdkfj3d3kd3nlk23jlkdn
+    totp:
+      enabled: false
+      required: false
+    passkey:
+      enabled: false
+      required: false
+  # github:
+  #   type: oauth
+  #   client_id: !env GITHUB_CLIENT_ID
+  #   client_secret: !env GITHUB_CLIENT_SECRET
+  #   redirect_uri: !env GITHUB_REDIRECT_URI
+
+providers:
+  my-app:
+    name: My App
+    logo_uri: https://myapp.com/auth/callback
+    client_id: sdlk3n3dkj2
+    client_secret: sdlk3n3dkj2
+    redirect_uris:
+      - http://localhost:8080/callback
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+    scope: openid profile email id_token
+
+users:
+  - id: sdlk3n3dkj2
+    email: admin@example.com
+    email_verified: true
+    password: changemelater
+    role: admin
+    totp_secret: sdlk3n3dkj2laksdjflaksdjf3
+    totp_backup_codes:
+      - sdlk3n3dkj2alksdjflaksdjf3
