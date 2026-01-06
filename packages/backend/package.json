@@ -5,7 +5,9 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tsx watch --include './src/**/*' --include ./config.yaml src/index.ts",
+    "dev": "APP_ENV=development tsx watch --include './src/**/*' --include ./config.yaml src/index.ts",
+    "dev:test": "APP_ENV=test tsx watch --include './src/**/*' --include ./config.yaml src/index.ts",
+    "dev:test:database": "APP_ENV=test-database tsx watch --include './src/**/*' --include ./config.yaml src/index.ts",
     "start": "node dist/index.js",
     "build": "tsc --project tsconfig.json",
     "build:watch": "tsc -w",

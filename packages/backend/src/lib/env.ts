@@ -3,7 +3,7 @@ import 'dotenv/config';
 import z from 'zod';
 
 export const EnvironmentSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production']).default('development'),
+  APP_ENV: z.enum(['development', 'test', 'test-database', 'production']).default('development'),
   CONFIG_PATH: z.string().optional(),
 
   APP_HOST: z.string().optional(),

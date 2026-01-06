@@ -1,16 +1,16 @@
-import { AppConfigs } from "@/lib/config.js"
+import { AppConfigs } from '@/lib/config.js';
 import { mikroormPostgresConfig } from './postgres.js';
-import { mikroormSqliteConfig } from './sqlite.js'
+import { mikroormSqliteConfig } from './sqlite.js';
 
 const configs = (() => {
   switch (AppConfigs.database.type) {
     case 'postgres': {
-      return mikroormPostgresConfig()
+      return mikroormPostgresConfig();
     }
     case 'sqlite': {
-      return mikroormSqliteConfig()
+      return mikroormSqliteConfig();
     }
   }
-})()
+})();
 
 export default configs;

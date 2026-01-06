@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fastifyAutoload from '@fastify/autoload';
@@ -23,7 +24,7 @@ export type FastifyWithZodInstance = Awaited<ReturnType<typeof createServer>>;
 
 export async function createServer() {
   const appInstance = Fastify({
-    logger: env.NODE_ENV === 'development',
+    logger: env.APP_ENV !== 'production',
   }).withTypeProvider<ZodTypeProvider>();
 
   try {
@@ -38,7 +39,7 @@ export async function createServer() {
       cookieSecret: AppConfigs.app.cookie_secret,
     });
     appInstance.register(MikroORMPlugin, {
-      test: false
+      mode: env.APP_ENV,
     });
     if (AppConfigs.smtp?.enabled) {
       appInstance.register(NodeMailerPlugin, {
@@ -64,18 +65,6 @@ export async function createServer() {
     });
 
     console.log('listening on port', AppConfigs.app.port);
-
-    // if (AppConfigs.admin?.enabled) {
-    //   const adminInstance = Fastify({
-    //     logger: env.NODE_ENV === 'development',
-    //   }).withTypeProvider<ZodTypeProvider>();
-
-    //   await adminInstance.listen({
-    //     port: AppConfigs.admin.port,
-    //   });
-
-    //   console.log('listening on port', AppConfigs.admin.port);
-    // }
 
     return appInstance;
   } catch (err) {
