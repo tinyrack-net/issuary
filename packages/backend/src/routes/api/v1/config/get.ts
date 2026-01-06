@@ -21,7 +21,7 @@ export default (fastify: FastifyWithZodInstance) =>
     handler: async (_req, res) => {
       res.status(200).send({
         database: {
-          enabled: !!AppConfigs.database?.enabled,
+          enabled: !!AppConfigs.database?.type,
         },
       });
     },

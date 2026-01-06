@@ -1,3 +1,5 @@
 import { createServer } from './server.js';
 
-createServer();
+const { start } = createServer();
+
+start();

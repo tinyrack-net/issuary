@@ -31,6 +31,7 @@ export default fastifyPlugin<MikroORMPluginOptions>(
     const ormOptions: Options = {
       ...configs,
       debug: options.mode !== 'production',
+      dynamicImportProvider: id => import(id),
     };
 
     if (options.mode === 'test') {
