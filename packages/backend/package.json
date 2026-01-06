@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "description": "",
+  "license": "ISC",
   "main": "dist/index.js",
   "scripts": {
     "dev": "APP_ENV=development tsx watch --include './src/**/*' --include ./config.yaml src/index.ts",
@@ -12,11 +13,10 @@
     "start": "node dist/index.js",
     "build": "tsc --project tsconfig.json",
     "build:watch": "tsc -w",
+    "serve": "APP_ENV=production node dist/index.js",
     "mikro-orm:debug": "NODE_OPTIONS='--import tsx' mikro-orm-esm debug",
     "mikro-orm:schema:create": "NODE_OPTIONS='--import tsx' mikro-orm-esm migration:create --initial"
   },
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "@mikro-orm/cli": "^6.6.2",
