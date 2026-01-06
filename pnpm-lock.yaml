@@ -80,8 +80,8 @@ importers:
         specifier: ^6.6.2
         version: 6.6.2(@mikro-orm/core@6.6.2)(sqlite3@5.1.7)
       '@mikro-orm/seeder':
-        specifier: ^6.6.3
-        version: 6.6.3(@mikro-orm/core@6.6.2)
+        specifier: ^6.6.2
+        version: 6.6.2(@mikro-orm/core@6.6.2)
       '@mikro-orm/sqlite':
         specifier: ^6.6.2
         version: 6.6.2(@mikro-orm/core@6.6.2)(pg@8.16.3)
@@ -1033,8 +1033,8 @@ packages:
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
 
-  '@mikro-orm/seeder@6.6.3':
-    resolution: {integrity: sha512-nVGRMFJbPPUXfIX8f8OKotgG94xf/eIRjb4eS/Uog9gs7O3BIm2I6b/DY+yYD9UNlEAGs5wgBexT3JjNDoO5oQ==}
+  '@mikro-orm/seeder@6.6.2':
+    resolution: {integrity: sha512-kAPk/7twMsNiUnFmx+U0kosZoBx9FLruCMuxUPVLMnihWf+A4cRtLHp4/Yc4K3wGBGWKE6Bj1B9L7j1bXirb0A==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
@@ -4719,10 +4719,10 @@ snapshots:
       - supports-color
       - tedious
 
-  '@mikro-orm/seeder@6.6.3(@mikro-orm/core@6.6.2)':
+  '@mikro-orm/seeder@6.6.2(@mikro-orm/core@6.6.2)':
     dependencies:
       '@mikro-orm/core': 6.6.2
-      fs-extra: 11.3.3
+      fs-extra: 11.3.2
       globby: 11.1.0
 
   '@mikro-orm/sqlite@6.6.2(@mikro-orm/core@6.6.2)(pg@8.16.3)':
@@ -4869,7 +4869,7 @@ snapshots:
       ajv: 8.13.0
       ajv-draft-04: 1.0.0(ajv@8.13.0)
       ajv-formats: 3.0.1(ajv@8.13.0)
-      fs-extra: 11.3.2
+      fs-extra: 11.3.3
       import-lazy: 4.0.0
       jju: 1.4.0
       resolve: 1.22.11
