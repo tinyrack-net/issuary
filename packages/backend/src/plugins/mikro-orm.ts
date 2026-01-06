@@ -8,6 +8,7 @@ import { env } from '@/lib/env.js';
 import type { OAuthClientRepository } from '@/repositories/oauth-client.repository.js';
 import type { OAuthCodeRepository } from '@/repositories/oauth-code.repository.js';
 import type { UserRepository } from '@/repositories/user.repository.js';
+import { TestSeeder } from '@/seeders/test-seeder.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -41,6 +42,7 @@ export default fastifyPlugin(
       await orm.schema.createSchema();
     } else if (env.APP_ENV === 'test-database') {
       await orm.schema.refreshDatabase();
+      await orm.seeder.seed(TestSeeder);
     } else {
       await orm.migrator.up();
     }
