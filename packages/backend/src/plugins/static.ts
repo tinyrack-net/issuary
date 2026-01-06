@@ -22,7 +22,9 @@ export default fastifyPlugin(async (fastify) => {
     if (request.url.startsWith('/api')) {
       return reply.code(404).send({ error: 'Not Found' });
     }
-
+    if (request.url.startsWith('/application')) {
+      return reply.code(404).send({ error: 'Not Found' });
+    }
     // For all other routes, serve index.html (SPA fallback)
     return reply.sendFile('index.html');
   });
