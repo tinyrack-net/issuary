@@ -1,13 +1,17 @@
 import {
+  BeforeCreate,
+  BeforeUpdate,
   Collection,
   Entity,
   EntityRepositoryType,
+  type EventArgs,
   Index,
   OneToMany,
   PrimaryKey,
   Property,
   t,
 } from '@mikro-orm/core';
+import { hash, verify } from 'argon2';
 import { UserRepository } from '@/repositories/user.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { UserOAuthEntity } from './user-oauth.entity.js';
@@ -74,7 +78,7 @@ export class UserEntity extends BaseEntity {
     comment: 'TOTP secret for two-factor authentication',
     nullable: true,
     lazy: true,
-    default: null
+    default: null,
   })
   public totp_secret?: string | null = null;
 
@@ -99,6 +103,21 @@ export class UserEntity extends BaseEntity {
     super();
     this.email = email;
     this.password_hash = password_hash;
+  }
+
+  @BeforeCreate()
+  @BeforeUpdate()
+  async hashPassword(args: EventArgs<UserEntity>) {
+    // hash only if the password was changed
+    const password = args.changeSet?.payload.password_hash;
+
+    if (password) {
+      this.password_hash = await hash(password);
+    }
+  }
+
+  async verifyPassword(password: string) {
+    return verify(this.password_hash, password);
   }
 
   @OneToMany(
