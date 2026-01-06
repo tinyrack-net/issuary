@@ -51,12 +51,12 @@ export const ConfigSchema = z.object({
       }),
       z.object({
         enabled: z.literal(true),
-        host: z.string().default('localhost').optional(),
-        port: zz.PORT.default(587).optional(),
-        secure: z.boolean().default(true).optional(),
+        host: z.string().default('localhost'),
+        port: zz.PORT.default(587),
+        secure: z.boolean().default(true),
         user: z.string().min(1),
         password: z.string().min(1),
-        from: z.email().optional(),
+        from: z.email(),
       }),
     ])
     .default({

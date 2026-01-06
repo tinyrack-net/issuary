@@ -28,27 +28,15 @@ export async function createServer() {
 
   try {
     appInstance.register(ZodPlugin);
-    appInstance.register(CORSPlugin, {
-      host: AppConfigs.app.host,
-    });
+    appInstance.register(CORSPlugin);
     appInstance.register(SwaggerPlugin);
     appInstance.register(ScalarPlugin);
     appInstance.register(CookiePlugin);
-    appInstance.register(SecureSessionPlugin, {
-      cookieSecret: AppConfigs.app.cookie_secret,
-    });
+    appInstance.register(SecureSessionPlugin);
     appInstance.register(MikroORMPlugin, {
-      test: false
+      test: true,
     });
-    if (AppConfigs.smtp?.enabled) {
-      appInstance.register(NodeMailerPlugin, {
-        smtpHost: AppConfigs.smtp.host,
-        smtpPort: AppConfigs.smtp.port,
-        smtpUser: AppConfigs.smtp.user,
-        smtpPassword: AppConfigs.smtp.password,
-        smtpSecure: AppConfigs.smtp.secure,
-      });
-    }
+    appInstance.register(NodeMailerPlugin);
     appInstance.register(StaticPlugin);
     appInstance.register(BootstrapPlugin);
 

@@ -1,3 +1,5 @@
+import { MikroORM, RequestContext } from '@mikro-orm/core';
+import fastifyPlugin from 'fastify-plugin';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
@@ -5,8 +7,6 @@ import { AppConfigs } from '@/lib/config.js';
 import type { OAuthClientRepository } from '@/repositories/oauth-client.repository.js';
 import type { OAuthCodeRepository } from '@/repositories/oauth-code.repository.js';
 import type { UserRepository } from '@/repositories/user.repository.js';
-import { MikroORM, RequestContext } from '@mikro-orm/core';
-import fastifyPlugin from 'fastify-plugin';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -20,7 +20,11 @@ declare module 'fastify' {
   }
 }
 
-export default fastifyPlugin(
+export interface MikroORMPluginOptions {
+  test: boolean;
+}
+
+export default fastifyPlugin<MikroORMPluginOptions>(
   async (fastify) => {
     console.log('Initializing MikroORM with config:');
 

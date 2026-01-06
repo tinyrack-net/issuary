@@ -1,6 +1,5 @@
 import fastifySecureSession from '@fastify/secure-session';
 import fastifyPlugin from 'fastify-plugin';
-import { AppConfigs } from '@/lib/config.js';
 
 declare module '@fastify/secure-session' {
   interface SessionData {
@@ -10,11 +9,15 @@ declare module '@fastify/secure-session' {
   }
 }
 
-export default fastifyPlugin(
-  (fastify) => {
+export interface SecureSessionPluginOptions {
+  cookieSecret: string;
+}
+
+export default fastifyPlugin<SecureSessionPluginOptions>(
+  (fastify, options) => {
     fastify.register(fastifySecureSession, {
       cookieName: 'session',
-      key: Buffer.from(AppConfigs.app.cookie_secret, 'hex'),
+      key: Buffer.from(options.cookieSecret, 'hex'),
       cookie: {
         path: '/',
         httpOnly: true,
