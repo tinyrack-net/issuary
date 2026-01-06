@@ -88,6 +88,11 @@ export const ConfigSchema = z.object({
       }),
     )
     .optional(),
+  debug: z.object({
+    test_mode: z.boolean().default(false).optional(),
+  }).default({
+    test_mode: false,
+  }),
 });
 
 export type UserConfig = NonNullable<
@@ -155,6 +160,13 @@ const loadConfig = (path: string) => {
     parsed.smtp.secure = env.SMTP_SECURE ?? parsed.smtp.secure;
     parsed.smtp.host = env.SMTP_HOST ?? parsed.smtp.host;
     parsed.smtp.port = env.SMTP_PORT ?? parsed.smtp.port;
+  }
+
+  if (parsed.debug.test_mode) {
+    parsed.database = {
+      type: 'sqlite',
+      path: './test.db'
+    }
   }
 
   return ConfigSchema.parse(parsed);

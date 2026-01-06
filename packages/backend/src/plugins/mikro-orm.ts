@@ -6,6 +6,7 @@ import { UserEntity } from '@/entities/user.entity.js';
 import type { OAuthClientRepository } from '@/repositories/oauth-client.repository.js';
 import type { OAuthCodeRepository } from '@/repositories/oauth-code.repository.js';
 import type { UserRepository } from '@/repositories/user.repository.js';
+import { AppConfigs } from '@/lib/config.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -27,8 +28,9 @@ export default fastifyPlugin(
 
     await orm.migrator.up();
 
-    // 데이터베이스 초기화 후 재생성
-    await orm.schema.refreshDatabase();
+    if (AppConfigs.debug.test_mode) {
+      await orm.schema.refreshDatabase();
+    }
 
     console.log('MikroORM initialized successfully');
 

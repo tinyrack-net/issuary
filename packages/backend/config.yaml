@@ -63,3 +63,6 @@ users:
     totp_secret: sdlk3n3dkj2laksdjflaksdjf3
     totp_backup_codes:
       - sdlk3n3dkj2alksdjflaksdjf3
+
+debug:
+  test_mode: true
