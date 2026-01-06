@@ -176,3 +176,4 @@ const DEFAULT_CONFIG_PATH = '/opt/config.yaml';
 const CONFIG_PATH = resolveConfigPath();
 
 export const AppConfigs = loadConfig(CONFIG_PATH);
+

@@ -1,6 +1,7 @@
 import fastifyPlugin from 'fastify-plugin';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
+import { AppConfigs } from '@/lib/config.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -11,23 +12,18 @@ declare module 'fastify' {
   }
 }
 
-export interface NodeMailerPluginOptions {
-  smtpHost: string;
-  smtpPort: number;
-  smtpSecure: boolean;
-  smtpUser: string;
-  smtpPassword: string;
-}
-
-export default fastifyPlugin<NodeMailerPluginOptions>(
-  (fastify, options) => {
+export default fastifyPlugin(
+  (fastify) => {
+    if (!AppConfigs.smtp?.enabled) {
+      return;
+    }
     const transporter = nodemailer.createTransport({
-      host: options.smtpHost,
-      port: options.smtpPort,
-      secure: options.smtpSecure,
+      host: AppConfigs.smtp.host,
+      port: AppConfigs.smtp.port,
+      secure: AppConfigs.smtp.secure,
       auth: {
-        user: options.smtpUser,
-        pass: options.smtpPassword,
+        user: AppConfigs.smtp.user,
+        pass: AppConfigs.smtp.password,
       },
     });
     fastify.decorate('mailTransporter', transporter);

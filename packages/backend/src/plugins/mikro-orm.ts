@@ -4,6 +4,7 @@ import configs from '@/db/index.js';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
+import { env } from '@/lib/env.js';
 import type { OAuthClientRepository } from '@/repositories/oauth-client.repository.js';
 import type { OAuthCodeRepository } from '@/repositories/oauth-code.repository.js';
 import type { UserRepository } from '@/repositories/user.repository.js';
@@ -20,31 +21,25 @@ declare module 'fastify' {
   }
 }
 
-export interface MikroORMPluginOptions {
-  mode: 'test' | 'test-database' | 'development' | 'production';
-}
-
-export default fastifyPlugin<MikroORMPluginOptions>(
-  async (fastify, options) => {
+export default fastifyPlugin(
+  async (fastify) => {
     console.log('Initializing MikroORM with config:');
 
     const ormOptions: Options = {
       ...configs,
-      debug: options.mode !== 'production',
-      dynamicImportProvider: id => import(id),
+      debug: env.APP_ENV !== 'production',
+      dynamicImportProvider: (id) => import(id),
     };
 
-    if (options.mode === 'test') {
+    if (env.APP_ENV === 'test') {
       ormOptions.dbName = ':memory:';
     }
 
     const orm = await MikroORM.init(ormOptions);
 
-    console.log(options.mode);
-
-    if (options.mode === 'test') {
+    if (env.APP_ENV === 'test') {
       await orm.schema.createSchema();
-    } else if (options.mode === 'test-database') {
+    } else if (env.APP_ENV === 'test-database') {
       await orm.schema.refreshDatabase();
     } else {
       await orm.migrator.up();
