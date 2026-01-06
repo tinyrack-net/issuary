@@ -1,6 +1,8 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type Options, ReflectMetadataProvider } from '@mikro-orm/core';
+import { Migrator } from '@mikro-orm/migrations';
+import { SeedManager } from '@mikro-orm/seeder';
 import { defineConfig, SqliteDriver } from '@mikro-orm/sqlite';
 import { AppConfigs } from '../lib/config.js';
 
@@ -22,6 +24,7 @@ export const mikroormSqliteConfig = (): Options => {
       pathTs: path.join(__dirname, '../migrations/sqlite'),
       glob: '!(*.d).{ts,js}',
     },
+    extensions: [SeedManager, Migrator],
     debug: true,
   });
 };

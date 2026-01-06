@@ -1,7 +1,9 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type Options, ReflectMetadataProvider } from '@mikro-orm/core';
+import { Migrator } from '@mikro-orm/migrations';
 import { defineConfig, PostgreSqlDriver } from '@mikro-orm/postgresql';
+import { SeedManager } from '@mikro-orm/seeder';
 import { AppConfigs } from '@/lib/config.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -26,6 +28,7 @@ export const mikroormPostgresConfig = (): Options => {
     dbName: AppConfigs.database.name,
     user: AppConfigs.database.user,
     password: AppConfigs.database.password,
+    extensions: [SeedManager, Migrator],
     driverOptions: {
       connection: {
         ssl: true,
