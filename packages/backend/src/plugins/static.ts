@@ -1,12 +1,12 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fastifyStatic from '@fastify/static';
-import type { FastifyPluginAsync } from 'fastify';
+import fastifyPlugin from 'fastify-plugin';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.resolve(path.dirname(__filename));
 
-const staticPlugin: FastifyPluginAsync = async (fastify) => {
+export default fastifyPlugin(async (fastify) => {
   const publicPath = path.join(__dirname, '../../public');
 
   // Serve static files from public directory
@@ -26,6 +26,6 @@ const staticPlugin: FastifyPluginAsync = async (fastify) => {
     // For all other routes, serve index.html (SPA fallback)
     return reply.sendFile('index.html');
   });
-};
-
-export default staticPlugin;
+}, {
+  name: 'static-plugin',
+});
