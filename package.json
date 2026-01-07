@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "pnpm -r dev",
+    "test": "pnpm -r test",
     "build": "pnpm -r build"
   },
   "workspaces": [

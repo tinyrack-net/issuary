@@ -14,7 +14,15 @@ export type FastifyWithZodInstance = Awaited<ReturnType<ReturnType<typeof create
 
 export function createServer() {
   const appInstance = Fastify({
-    logger: env.APP_ENV !== 'production',
+    logger: {
+      enabled: env.APP_ENV !== 'production',
+      transport: {
+        target: 'pino-pretty',
+        // options: {
+        //   colorize: true,
+        // },
+      },
+    },
   }).withTypeProvider<ZodTypeProvider>();
 
   const start = async () => {
@@ -32,9 +40,11 @@ export function createServer() {
         ignorePattern: /(.+\.test|.spec)\.(ts|js)$/
       });
 
-      await appInstance.listen({
-        port: AppConfigs.app.port,
-      });
+      if (env.APP_ENV !== 'test') {
+        await appInstance.listen({
+          port: AppConfigs.app.port,
+        });
+      }
 
       console.log('listening on port', AppConfigs.app.port);
 

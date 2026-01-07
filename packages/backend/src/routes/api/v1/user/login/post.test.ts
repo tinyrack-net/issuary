@@ -9,14 +9,21 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await app?.close();
+  if (app) {
+    await app.close();
+  }
 });
 
 test('list all articles', async () => {
+  // mimic the http request via `app.inject()`
   const res = await app.inject({
-    method: 'get',
-    url: '/application/oauth/authorize',
+    method: 'post',
+    url: '/api/v1/user/login',
+    payload: {
+      email: 'admin@example.com',
+      password: 'password123',
+    }
   });
 
-  expect(res.statusCode).toBe(500);
+  expect(res.statusCode).toBe(200);
 });
