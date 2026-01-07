@@ -1,7 +1,6 @@
-import { randomBytes } from 'node:crypto';
-import { URL } from 'node:url';
 import z from 'zod/v4';
-import { validateProvider } from '@/handlers/validate-provider.js';
+import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
+import { UserEntity } from '@/entities/user.entity.js';
 import { AppConfigs } from '@/lib/config.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
@@ -19,8 +18,17 @@ export default (fastify: FastifyWithZodInstance) => {
         state: z.string().min(1).max(1000).optional(),
         client_id: z.string().min(1).max(1000),
         code_challenge: z.string().min(1).max(1000).optional(),
-        code_challenge_method: z.string().min(1).max(100).optional(),
+        code_challenge_method: z
+          .enum(['S256', 'plain'])
+          .optional()
+          .default('S256'),
         scope: z.string().min(1).max(1000).optional(),
+        nonce: z.string().min(1).max(1000).optional(),
+        prompt: z
+          .enum(['none', 'login', 'consent', 'select_account'])
+          .optional(),
+        max_age: z.coerce.number().int().min(0).optional(),
+        display: z.enum(['page', 'popup', 'touch', 'wap']).optional(),
       }),
       response: {
         302: z.null(),
@@ -31,88 +39,194 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      const user = req.session.get('user')
-      const provider = await validateProvider(req.query.client_id);
+      const { query } = req;
+      const em = fastify.mikro.orm.em.fork();
 
-      const {
-        response_type,
-        redirect_uri,
-        state,
-        client_id,
-        scope,
-        code_challenge,
-        code_challenge_method = 'S256',
-      } = req.query;
+      // Helper function to redirect with error
+      const redirectWithError = (
+        error: string,
+        errorDescription: string,
+        redirectUri?: string,
+      ) => {
+        if (!redirectUri) {
+          return res.status(400).send({
+            error,
+            error_description: errorDescription,
+          });
+        }
 
-      if (client_id && client_id !== provider.client_id) {
-        return res.status(400).send({
-          error: 'unauthorized_client',
-          error_description: 'client_id does not match configured provider',
+        const url = new URL(redirectUri);
+        url.searchParams.set('error', error);
+        url.searchParams.set('error_description', errorDescription);
+        if (query.state) {
+          url.searchParams.set('state', query.state);
+        }
+
+        return res.redirect(url.toString());
+      };
+
+      try {
+        // 1. Validate and fetch OAuth client
+        const client = await em.findOne(OAuthClientEntity, {
+          clientId: query.client_id,
         });
-      }
 
-      if (!provider.redirect_uris.includes(redirect_uri)) {
-        return res.status(400).send({
-          error: 'invalid_request',
-          error_description: 'redirect_uri is not registered for this provider',
+        if (!client) {
+          return redirectWithError(
+            'unauthorized_client',
+            'Client not found',
+            query.redirect_uri,
+          );
+        }
+
+        if (!client.enabled) {
+          return redirectWithError(
+            'unauthorized_client',
+            'Client is disabled',
+            query.redirect_uri,
+          );
+        }
+
+        // 2. Validate redirect_uri
+        if (!client.redirectUris.includes(query.redirect_uri)) {
+          return redirectWithError(
+            'invalid_request',
+            'Invalid redirect_uri',
+            undefined, // Don't redirect to invalid URI
+          );
+        }
+
+        // 3. Validate response_type
+        if (!client.responseTypes.includes(query.response_type)) {
+          return redirectWithError(
+            'unsupported_response_type',
+            `Response type '${query.response_type}' is not allowed for this client`,
+            query.redirect_uri,
+          );
+        }
+
+        // 4. Validate and parse scope
+        const requestedScopes = query.scope ? query.scope.split(' ') : [];
+        const invalidScopes = requestedScopes.filter(
+          (scope) => !client.scopes.includes(scope),
+        );
+
+        if (invalidScopes.length > 0) {
+          return redirectWithError(
+            'invalid_scope',
+            `Invalid scopes: ${invalidScopes.join(', ')}`,
+            query.redirect_uri,
+          );
+        }
+
+        // OIDC: Check for 'openid' scope if present
+        const _isOIDC = requestedScopes.includes('openid');
+
+        // 5. Validate PKCE
+        if (query.code_challenge) {
+          if (
+            query.code_challenge_method !== 'S256' &&
+            query.code_challenge_method !== 'plain'
+          ) {
+            return redirectWithError(
+              'invalid_request',
+              'Invalid code_challenge_method. Must be S256 or plain',
+              query.redirect_uri,
+            );
+          }
+        }
+
+        // 6. Check user session
+        const userSession = req.session.get('user');
+
+        if (!userSession?.id) {
+          // User not logged in - redirect to login page with current params
+          const loginUrl = new URL('/login', AppConfigs.app.host);
+          loginUrl.searchParams.set('client_id', query.client_id);
+          loginUrl.searchParams.set('redirect_uri', query.redirect_uri);
+          loginUrl.searchParams.set('response_type', query.response_type);
+          if (query.scope) {
+            loginUrl.searchParams.set('scope', query.scope);
+          }
+          if (query.state) {
+            loginUrl.searchParams.set('state', query.state);
+          }
+          if (query.nonce) {
+            loginUrl.searchParams.set('nonce', query.nonce);
+          }
+          if (query.code_challenge) {
+            loginUrl.searchParams.set('code_challenge', query.code_challenge);
+          }
+          if (query.code_challenge_method) {
+            loginUrl.searchParams.set(
+              'code_challenge_method',
+              query.code_challenge_method,
+            );
+          }
+          if (query.prompt) {
+            loginUrl.searchParams.set('prompt', query.prompt);
+          }
+          if (query.max_age !== undefined) {
+            loginUrl.searchParams.set('max_age', query.max_age.toString());
+          }
+          if (query.display) {
+            loginUrl.searchParams.set('display', query.display);
+          }
+
+          return res.redirect(loginUrl.toString());
+        }
+
+        // 7. User is logged in - Issue authorization code
+        // Fetch user entity for code generation
+        const user = await em.findOneOrFail(UserEntity, {
+          id: userSession.id,
         });
-      }
 
-      if (!provider.response_types.includes(response_type)) {
-        return res.status(400).send({
-          error: 'unsupported_response_type',
-          error_description: 'response_type is not allowed for this provider',
-        });
-      }
+        // Generate authorization code
+        const codeParams: {
+          client: OAuthClientEntity;
+          user: UserEntity;
+          redirectUri: string;
+          scope: string[];
+          nonce?: string;
+          codeChallenge?: string;
+          codeChallengeMethod?: 'S256' | 'plain';
+        } = {
+          client,
+          user,
+          redirectUri: query.redirect_uri,
+          scope: requestedScopes,
+        };
 
-      if (response_type !== 'code') {
-        return res.status(400).send({
-          error: 'unsupported_response_type',
-          error_description:
-            'Only authorization_code flow is supported for now',
-        });
-      }
+        if (query.nonce) {
+          codeParams.nonce = query.nonce;
+        }
+        if (query.code_challenge) {
+          codeParams.codeChallenge = query.code_challenge;
+        }
+        if (query.code_challenge_method) {
+          codeParams.codeChallengeMethod = query.code_challenge_method;
+        }
 
-      if (!provider.grant_types.includes('authorization_code')) {
-        return res.status(400).send({
-          error: 'unauthorized_client',
-          error_description: 'authorization_code grant is not enabled',
-        });
-      }
+        const { code } =
+          await fastify.mikro.oauthCode.generateAuthorizationCode(codeParams);
 
-      if (!code_challenge) {
-        return res.status(400).send({
-          error: 'invalid_request',
-          error_description: 'code_challenge is required for PKCE',
-        });
-      }
+        // Redirect back to client with authorization code
+        const callbackUrl = new URL(query.redirect_uri);
+        callbackUrl.searchParams.set('code', code);
+        if (query.state) {
+          callbackUrl.searchParams.set('state', query.state);
+        }
 
-      if (!['S256', 'plain'].includes(code_challenge_method)) {
-        return res.status(400).send({
-          error: 'invalid_request',
-          error_description: 'code_challenge_method must be S256 or plain',
-        });
+        return res.redirect(callbackUrl.toString());
+      } catch (error) {
+        fastify.log.error(error);
+        return redirectWithError(
+          'server_error',
+          'An unexpected error occurred',
+          query.redirect_uri,
+        );
       }
-
-      // Issue a short-lived authorization code. Persisting the code is out of scope for this template.
-      const authorizationCode = randomBytes(32).toString('base64url');
-
-      // 로그인 상태에 따라 리다이렉트 처리
-      if (user) {
-        const url = new URL(redirect_uri);
-        url.searchParams.set('code', authorizationCode);
-        if (state) url.searchParams.set('state', state);
-        if (scope) url.searchParams.set('scope', scope);
-        return res.status(302).redirect(url.toString())
-      } else {
-        const url = new URL(AppConfigs.app.host);
-        return res.status(302).redirect(url.toString())
-      }
-      // const redirect = new URL(redirect_uri);
-      // redirect.searchParams.set('code', authorizationCode);
-      // if (state) redirect.searchParams.set('state', state);
-      // if (scope) redirect.searchParams.set('scope', scope);
-      // res.redirect(redirect.toString(), 302);
     },
   });
 };

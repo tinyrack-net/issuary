@@ -1,5 +1,4 @@
 import z from 'zod';
-import { validateProvider } from '@/handlers/validate-provider.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
@@ -20,11 +19,6 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      const provider = await validateProvider(req.params.provider_id);
-      console.log(req.params.provider_id);
-      res.status(200).send({
-        ok: true,
-      });
     },
   });
 };
