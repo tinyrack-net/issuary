@@ -7,6 +7,7 @@ import {
   type EventArgs,
   Index,
   OneToMany,
+  type Opt,
   PrimaryKey,
   Property,
   t,
@@ -52,7 +53,7 @@ export class UserEntity extends BaseEntity {
     nullable: false,
     default: false,
   })
-  public email_verified = false;
+  public email_verified: Opt<boolean> = false;
 
   @Property({
     type: t.string,
@@ -70,7 +71,7 @@ export class UserEntity extends BaseEntity {
     nullable: false,
     default: true,
   })
-  public editable: boolean = true;
+  public editable: Opt<boolean> = true;
 
   @Property({
     type: t.string,
