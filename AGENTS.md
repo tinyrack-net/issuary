@@ -97,6 +97,11 @@ import type { FastifyWithZodInstance } from '@/server.js';
 
 ### Backend-Specific Patterns
 
+#### Zod Schema Validation
+- **Always use Zod v4 API** for all schema definitions
+- Use the new v4 syntax for all schema methods and types
+- Refer to Zod v4 documentation for updated API usage
+
 #### Route Handlers
 - Export default function accepting `FastifyWithZodInstance`
 - Use Zod schemas for request/response validation
