@@ -57,33 +57,36 @@ export default fastifyPlugin(
     );
 
     await em.getRepository(OAuthClientEntity).upsertMany(
-      staticOAuthClients.map((client) => {
-        const existingClient = oauthClients.find((c) => c.id === client.id);
-        if (existingClient) {
-          existingClient.name = client.name;
-          existingClient.clientId = client.client_id;
-          existingClient.clientSecretHash = client.client_secret;
-          existingClient.redirectUris = client.redirect_uris;
-          existingClient.grantTypes = client.grant_types;
-          existingClient.responseTypes = client.response_types;
-          existingClient.scopes = client.scope.split(' ');
-          existingClient.editable = false;
-          return existingClient;
-        } else {
-          const newClient = new OAuthClientEntity({
-            id: client.id,
-            name: client.name,
-            clientId: client.client_id,
-            clientSecretHash: client.client_secret,
-          });
-          newClient.redirectUris = client.redirect_uris;
-          newClient.grantTypes = client.grant_types;
-          newClient.responseTypes = client.response_types;
-          newClient.scopes = client.scope.split(' ');
-          newClient.editable = false;
-          return newClient;
-        }
-      }),
+      await Promise.all(
+        staticOAuthClients.map(async (client) => {
+          const existingClient = oauthClients.find((c) => c.id === client.id);
+          const hashedSecret = await hash(client.client_secret);
+          if (existingClient) {
+            existingClient.name = client.name;
+            existingClient.clientId = client.client_id;
+            existingClient.clientSecretHash = hashedSecret;
+            existingClient.redirectUris = client.redirect_uris;
+            existingClient.grantTypes = client.grant_types;
+            existingClient.responseTypes = client.response_types;
+            existingClient.scopes = client.scope.split(' ');
+            existingClient.editable = false;
+            return existingClient;
+          } else {
+            const newClient = new OAuthClientEntity({
+              id: client.id,
+              name: client.name,
+              clientId: client.client_id,
+              clientSecretHash: hashedSecret,
+            });
+            newClient.redirectUris = client.redirect_uris;
+            newClient.grantTypes = client.grant_types;
+            newClient.responseTypes = client.response_types;
+            newClient.scopes = client.scope.split(' ');
+            newClient.editable = false;
+            return newClient;
+          }
+        }),
+      ),
     );
 
     await em.flush();

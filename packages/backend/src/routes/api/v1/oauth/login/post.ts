@@ -20,7 +20,7 @@ export default (fastify: FastifyWithZodInstance) =>
         }),
       },
     },
-    handler: async (req, res) => {
+    handler: async (_req, res) => {
       res.status(200).send({
         user: {
           id: 'asdf',

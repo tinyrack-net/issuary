@@ -18,7 +18,6 @@ export default (fastify: FastifyWithZodInstance) => {
         }),
       },
     },
-    handler: async (req, res) => {
-    },
+    handler: async () => {},
   });
 };

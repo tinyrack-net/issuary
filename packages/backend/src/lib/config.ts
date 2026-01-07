@@ -10,6 +10,14 @@ export const ConfigSchema = z.object({
     host: z.string().optional().default('http://localhost:3000'),
     port: zz.PORT.optional().default(8080),
     cookie_secret: z.string().min(16),
+    jwt_secret: z.string().min(32).optional(),
+    jwt_access_token_ttl: z.number().int().min(60).optional().default(3600), // 1 hour
+    jwt_refresh_token_ttl: z
+      .number()
+      .int()
+      .min(3600)
+      .optional()
+      .default(2592000), // 30 days
   }),
   admin: z
     .discriminatedUnion('enabled', [
@@ -89,11 +97,13 @@ export const ConfigSchema = z.object({
       }),
     )
     .optional(),
-  debug: z.object({
-    test_mode: z.boolean().default(false).optional(),
-  }).default({
-    test_mode: false,
-  }),
+  debug: z
+    .object({
+      test_mode: z.boolean().default(false).optional(),
+    })
+    .default({
+      test_mode: false,
+    }),
 });
 
 export type UserConfig = NonNullable<
@@ -166,8 +176,8 @@ const loadConfig = (path: string) => {
   if (parsed.debug.test_mode) {
     parsed.database = {
       type: 'sqlite',
-      path: './test.db'
-    }
+      path: './test.db',
+    };
   }
 
   return ConfigSchema.parse(parsed);
@@ -177,4 +187,3 @@ const DEFAULT_CONFIG_PATH = '/opt/config.yaml';
 const CONFIG_PATH = resolveConfigPath();
 
 export const AppConfigs = loadConfig(CONFIG_PATH);
-
