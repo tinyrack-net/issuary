@@ -1,7 +1,6 @@
-import { UserEntity } from '@/entities/user.entity.js';
+import z from 'zod';
 import { UserSchema } from '@/schemas/user.js';
 import type { FastifyWithZodInstance } from '@/server.js';
-import z from 'zod';
 
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
@@ -24,7 +23,7 @@ export default (fastify: FastifyWithZodInstance) =>
         return res.status(200).send({
           user: {
             id: session.id,
-          }
+          },
         });
       } else {
         return res.status(200).send({

@@ -1,3 +1,4 @@
+import { hash } from 'argon2';
 import fastifyPlugin from 'fastify-plugin';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
@@ -27,29 +28,32 @@ export default fastifyPlugin(
     });
 
     await userRepository.upsertMany(
-      AppConfigs.users?.map((user) => {
-        const existingUser = users.find((u) => u.id === user.id);
-        if (existingUser) {
-          existingUser.email = user.email;
-          existingUser.password_hash = user.password;
-          existingUser.totp_secret = user.totp_secret || null;
-          existingUser.totp_backup_codes = user.totp_backup_codes || null;
-          existingUser.editable = false;
-          existingUser.email_verified = true;
-          return existingUser;
-        } else {
-          const newUser = new UserEntity({
-            email: user.email,
-            password_hash: user.password,
-          });
-          newUser.id = user.id;
-          newUser.totp_secret = user.totp_secret || null;
-          newUser.totp_backup_codes = user.totp_backup_codes || null;
-          newUser.editable = false;
-          newUser.email_verified = true;
-          return newUser;
-        }
-      }) || [],
+      await Promise.all(
+        (AppConfigs.users || []).map(async (user) => {
+          const existingUser = users.find((u) => u.id === user.id);
+          const hashedPassword = await hash(user.password);
+          if (existingUser) {
+            existingUser.email = user.email;
+            existingUser.password_hash = hashedPassword;
+            existingUser.totp_secret = user.totp_secret || null;
+            existingUser.totp_backup_codes = user.totp_backup_codes || null;
+            existingUser.editable = false;
+            existingUser.email_verified = true;
+            return existingUser;
+          } else {
+            const newUser = new UserEntity({
+              email: user.email,
+              password_hash: hashedPassword,
+            });
+            newUser.id = user.id;
+            newUser.totp_secret = user.totp_secret || null;
+            newUser.totp_backup_codes = user.totp_backup_codes || null;
+            newUser.editable = false;
+            newUser.email_verified = true;
+            return newUser;
+          }
+        }),
+      ),
     );
 
     await em.getRepository(OAuthClientEntity).upsertMany(
