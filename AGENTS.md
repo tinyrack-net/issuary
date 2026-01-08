@@ -149,9 +149,10 @@ export default (fastify: FastifyWithZodInstance) =>
 #### React Components
 - Use functional components with hooks
 - TanStack Router for routing with `createFileRoute`
-- Daisy UI components for UI (Tailwind CSS-based)
+- Daisy UI components for UI (Tailwind V4 CSS-based)
 - TanStack Query for data fetching
 - Forms: use React Hook Form with Zod validation via `zodResolver`
+- Icons: use **Phosphor Icons** for all icon components
 
 #### State Management
 - TanStack Query for server state
