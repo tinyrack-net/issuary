@@ -1,16 +1,7 @@
-import {
-  Button,
-  Container,
-  Paper,
-  PasswordInput,
-  Stack,
-  TextInput,
-  Title,
-} from '@mantine/core';
-import { useForm } from '@mantine/form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
-import { zodResolver } from 'mantine-form-zod-resolver';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { tick } from '@/libs/promise';
 import { loginMutationOptions } from '@/queries/login';
@@ -48,70 +39,57 @@ function Login() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: getSessionQueryOptions.queryKey
+        queryKey: getSessionQueryOptions.queryKey,
       });
-    }
+    },
   });
 
-  const form = useForm<LoginFormValues>({
-    mode: 'uncontrolled',
-    initialValues: {
+  const { register, setError, handleSubmit } = useForm<LoginFormValues>({
+    defaultValues: {
       email: 'admin@example.com',
       password: 'changemelater',
     },
-    validate: zodResolver(loginSchema),
+    resolver: zodResolver(loginSchema),
   });
 
-  const handleSubmit = async (values: LoginFormValues) => {
+  const onSubmit = async (values: LoginFormValues) => {
     try {
       console.log('Login attempt:', values);
       await loginMutation.mutateAsync(values);
     } catch (error) {
       console.error('Login failed:', error);
-      form.setFieldError(
-        'email',
-        error instanceof Error ? error.message : '로그인에 실패했습니다.',
-      );
+      setError('email', {
+        type: 'manual',
+        message: '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.',
+      });
     }
   };
 
   return (
-    <Container size={420} my={40}>
-      <Title ta="center" fw={900}>
-        Welcome back!
-      </Title>
+    <div>
+      <h1>Welcome back!</h1>
 
-      <Paper withBorder shadow="md" p={30} mt={30} radius="md">
-        <form onSubmit={form.onSubmit(handleSubmit)}>
-          <Stack>
-            <TextInput
-              label="이메일"
+      <div>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div>
+            <input
+              type="email"
               placeholder="hello@mantine.dev"
               required
-              key={form.key('email')}
-              {...form.getInputProps('email')}
+              {...register('email')}
             />
 
-            <PasswordInput
-              label="비밀번호"
+            <input
+              type="password"
               placeholder="비밀번호를 입력하세요"
               required
-              mt="md"
-              key={form.key('password')}
-              {...form.getInputProps('password')}
+              {...register('password')}
             />
 
-            <Button
-              type="submit"
-              fullWidth
-              mt="xl"
-              loading={loginMutation.isPending}
-            >
-              로그인
-            </Button>
-          </Stack>
+            <button type="submit">로그인</button>
+          </div>
         </form>
-      </Paper>
-    </Container>
+      </div>
+    </div>
   );
 }

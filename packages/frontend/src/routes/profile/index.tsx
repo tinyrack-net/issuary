@@ -1,4 +1,3 @@
-import { Button, Container, Paper, Title } from '@mantine/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { tick } from '@/libs/promise';
@@ -38,18 +37,19 @@ function Profile() {
   });
 
   return (
-    <Container size={540} my={40}>
-      <Title order={2} mb="xl">
+    <div >
+      <h2>
         내 정보
-      </Title>
-      <Paper withBorder shadow="md" p={30} radius="md">
-        <Button
-          loading={logoutMutation.isPending}
+      </h2>
+      <div>
+        <button
+          type='button'
+          disabled={logoutMutation.isPending}
           onClick={() => logoutMutation.mutate()}
         >
           로그아웃
-        </Button>
-      </Paper>
-    </Container>
+        </button>
+      </div>
+    </div>
   );
 }

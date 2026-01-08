@@ -1,4 +1,3 @@
-import { MantineProvider } from '@mantine/core';
 import { RouterProvider } from '@tanstack/react-router';
 import { memo, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -34,11 +33,9 @@ const Loader = memo(() => {
 createRoot(RootElement).render(
   <StrictMode>
     <QueryClientProvider client={GlobalQueryClient}>
-      <MantineProvider>
-        <Suspense>
-          <Loader />
-        </Suspense>
-      </MantineProvider>
+      <Suspense>
+        <Loader />
+      </Suspense>
     </QueryClientProvider>
   </StrictMode>,
 );
