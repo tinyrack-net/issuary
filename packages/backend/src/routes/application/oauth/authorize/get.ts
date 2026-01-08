@@ -13,22 +13,86 @@ export default (fastify: FastifyWithZodInstance) => {
       description: 'OAuth2 Authorization Endpoint',
       tags: ['OpenID'],
       querystring: z.object({
-        response_type: z.string().min(1).max(100),
-        redirect_uri: z.string().min(1).max(1000),
-        state: z.string().min(1).max(1000).optional(),
-        client_id: z.string().min(1).max(1000),
-        code_challenge: z.string().min(1).max(1000).optional(),
+        response_type: z
+          .string()
+          .min(1)
+          .max(100)
+          .describe(
+            'OAuth2 response type (e.g., "code", "token"). Must be registered for this client.',
+          ),
+        redirect_uri: z
+          .string()
+          .min(1)
+          .max(1000)
+          .describe(
+            'URI to redirect the user after authorization. Must exactly match one of the pre-registered redirect URIs for the client.',
+          ),
+        state: z
+          .string()
+          .min(1)
+          .max(1000)
+          .optional()
+          .describe(
+            'Opaque value used to maintain state between the request and callback. Recommended for CSRF protection. Will be returned unchanged in the redirect.',
+          ),
+        client_id: z
+          .string()
+          .min(1)
+          .max(1000)
+          .describe(
+            'Unique identifier of the OAuth client application. Used to validate the client and verify allowed configurations.',
+          ),
+        code_challenge: z
+          .string()
+          .min(1)
+          .max(1000)
+          .optional()
+          .describe(
+            'PKCE code challenge derived from a code verifier. Used to prevent authorization code interception attacks. Recommended for public clients (SPAs, mobile apps).',
+          ),
         code_challenge_method: z
           .enum(['S256', 'plain'])
           .optional()
-          .default('S256'),
-        scope: z.string().min(1).max(1000).optional(),
-        nonce: z.string().min(1).max(1000).optional(),
+          .default('S256')
+          .describe(
+            'Method used to derive the code challenge from the verifier. "S256" (SHA-256 hash, recommended) or "plain" (no transformation). Defaults to "S256".',
+          ),
+        scope: z
+          .string()
+          .min(1)
+          .max(1000)
+          .optional()
+          .describe(
+            'Space-delimited list of requested permission scopes (e.g., "openid profile email"). Each scope must be allowed for this client. Include "openid" for OIDC requests.',
+          ),
+        nonce: z
+          .string()
+          .min(1)
+          .max(1000)
+          .optional()
+          .describe(
+            'Random value used to mitigate replay attacks in OIDC flows. Will be included in the ID token for client verification.',
+          ),
         prompt: z
           .enum(['none', 'login', 'consent', 'select_account'])
-          .optional(),
-        max_age: z.coerce.number().int().min(0).optional(),
-        display: z.enum(['page', 'popup', 'touch', 'wap']).optional(),
+          .optional()
+          .describe(
+            'Controls authorization UI behavior. "none" (no UI, fail if interaction needed), "login" (force re-authentication), "consent" (show consent screen), "select_account" (account chooser).',
+          ),
+        max_age: z.coerce
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe(
+            "Maximum authentication age in seconds. If the user's last authentication is older than this value, re-authentication will be required.",
+          ),
+        display: z
+          .enum(['page', 'popup', 'touch', 'wap'])
+          .optional()
+          .describe(
+            'How the authorization server should display the authentication UI. "page" (full page), "popup" (popup window), "touch" (touch-optimized), "wap" (WAP device).',
+          ),
       }),
       response: {
         302: z.null(),
