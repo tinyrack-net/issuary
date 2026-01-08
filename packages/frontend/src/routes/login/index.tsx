@@ -1,11 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  CheckIcon,
-  GlobeIcon,
-  MoonIcon,
-  PaintBrushIcon,
-  SunIcon,
-} from '@phosphor-icons/react';
+import { GlobeIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
@@ -13,7 +7,6 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { useLanguage } from '@/hooks/use-language';
-import { useTheme } from '@/hooks/use-theme';
 import { tick } from '@/libs/promise';
 import { loginMutationOptions } from '@/queries/login';
 import { getSessionQueryOptions } from '@/queries/session';
@@ -36,7 +29,6 @@ function Login() {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { theme, themes, setTheme, toggleDarkMode } = useTheme();
   const { language, languages, setLanguage } = useLanguage();
 
   const loginSchema = useMemo(
@@ -93,102 +85,26 @@ function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-base-200 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-base-200 to-base-300 p-4">
       <div className="w-full max-w-md">
-        {/* Theme Controls */}
-        <div className="mb-6 flex justify-end gap-2">
-          {/* Dark Mode Toggle */}
-          <button
-            type="button"
-            onClick={toggleDarkMode}
-            className="btn btn-circle btn-ghost"
-            aria-label="Toggle dark mode"
-          >
-            {theme === 'dark' ? (
-              <SunIcon size={24} weight="regular" />
-            ) : (
-              <MoonIcon size={24} weight="regular" />
-            )}
-          </button>
-
-          {/* Language Selector */}
-          <div className="dropdown dropdown-end">
-            <button
-              type="button"
-              tabIndex={0}
-              className="btn btn-circle btn-ghost"
-              aria-label={t('common.language.select')}
-            >
-              <GlobeIcon size={24} weight="regular" />
-            </button>
-            <ul className="menu dropdown-content z-[1] w-52 rounded-box bg-base-100 p-2 shadow-lg">
-              {languages.map((lang) => (
-                <li key={lang}>
-                  <button
-                    type="button"
-                    onClick={() => setLanguage(lang)}
-                    className={language === lang ? 'active' : ''}
-                  >
-                    <span>
-                      {t(
-                        `common.language.${
-                          lang === 'ko'
-                            ? 'korean'
-                            : lang === 'en'
-                              ? 'english'
-                              : 'japanese'
-                        }`,
-                      )}
-                    </span>
-                    {language === lang && <CheckIcon size={20} weight="bold" />}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Theme Selector Dropdown */}
-          <div className="dropdown dropdown-end">
-            <button
-              type="button"
-              tabIndex={0}
-              className="btn btn-circle btn-ghost"
-              aria-label="Select theme"
-            >
-              <PaintBrushIcon size={24} weight="regular" />
-            </button>
-            <ul className="menu dropdown-content z-[1] max-h-96 w-52 overflow-y-auto rounded-box bg-base-100 p-2 shadow-lg">
-              {themes.map((t) => (
-                <li key={t}>
-                  <button
-                    type="button"
-                    onClick={() => setTheme(t)}
-                    className={theme === t ? 'active' : ''}
-                  >
-                    <span className="capitalize">{t}</span>
-                    {theme === t && <CheckIcon size={20} weight="bold" />}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
         {/* Login Card */}
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <h2 className="card-title mb-2 justify-center font-bold text-3xl">
-              {t('login.title')}
-            </h2>
-            <p className="mb-6 text-center text-base-content/60">
-              {t('login.subtitle')}
-            </p>
+        <div className="card bg-base-100 shadow-2xl">
+          <div className="card-body gap-6 p-8">
+            {/* Header */}
+            <div className="text-center">
+              <h1 className="mb-2 font-bold text-4xl tracking-tight">
+                {t('login.title')}
+              </h1>
+              <p className="text-base-content/70 text-sm">
+                {t('login.subtitle')}
+              </p>
+            </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               {/* Email Input */}
               <div className="form-control">
                 <label htmlFor="email" className="label">
-                  <span className="label-text font-medium">
+                  <span className="label-text font-semibold">
                     {t('login.email.label')}
                   </span>
                 </label>
@@ -196,7 +112,7 @@ function Login() {
                   id="email"
                   type="email"
                   placeholder={t('login.email.placeholder')}
-                  className={`input input-bordered w-full ${
+                  className={`input input-bordered focus:input-primary w-full transition-all ${
                     errors.email ? 'input-error' : ''
                   }`}
                   {...register('email')}
@@ -213,7 +129,7 @@ function Login() {
               {/* Password Input */}
               <div className="form-control">
                 <label htmlFor="password" className="label">
-                  <span className="label-text font-medium">
+                  <span className="label-text font-semibold">
                     {t('login.password.label')}
                   </span>
                 </label>
@@ -221,7 +137,7 @@ function Login() {
                   id="password"
                   type="password"
                   placeholder={t('login.password.placeholder')}
-                  className={`input input-bordered w-full ${
+                  className={`input input-bordered focus:input-primary w-full transition-all ${
                     errors.password ? 'input-error' : ''
                   }`}
                   {...register('password')}
@@ -236,31 +152,54 @@ function Login() {
               </div>
 
               {/* Submit Button */}
-              <div className="form-control mt-6">
-                <button
-                  type="submit"
-                  className={`btn btn-primary w-full ${
-                    loginMutation.isPending ? 'btn-disabled' : ''
-                  }`}
-                  disabled={loginMutation.isPending}
-                >
-                  {loginMutation.isPending ? (
-                    <>
-                      <span className="loading loading-spinner loading-sm" />
-                      {t('login.submitting')}
-                    </>
-                  ) : (
-                    t('login.submit')
-                  )}
-                </button>
-              </div>
+              <button
+                type="submit"
+                className="btn btn-primary w-full text-base shadow-lg"
+                disabled={loginMutation.isPending}
+              >
+                {loginMutation.isPending ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm" />
+                    {t('login.submitting')}
+                  </>
+                ) : (
+                  t('login.submit')
+                )}
+              </button>
             </form>
-          </div>
-        </div>
 
-        {/* Footer Info */}
-        <div className="mt-4 text-center text-base-content/60 text-sm">
-          <p>{t('common.theme.current', { theme })}</p>
+            {/* Divider */}
+            <div className="divider my-2" />
+
+            {/* Language Selector */}
+            <div className="flex items-center justify-center gap-3">
+              <GlobeIcon
+                size={18}
+                weight="regular"
+                className="text-base-content/50"
+              />
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as typeof language)}
+                className="select select-bordered select-sm w-auto min-w-35 font-medium"
+                aria-label={t('common.language.select')}
+              >
+                {languages.map((lang) => (
+                  <option key={lang} value={lang}>
+                    {t(
+                      `common.language.${
+                        lang === 'ko'
+                          ? 'korean'
+                          : lang === 'en'
+                            ? 'english'
+                            : 'japanese'
+                      }`,
+                    )}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
       </div>
     </div>
