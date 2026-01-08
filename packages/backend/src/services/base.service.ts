@@ -6,7 +6,6 @@ export default fastifyPlugin(
     // await fastify.mikro.orm.seeder.seed(ConfigSeeder);
   },
   {
-    name: 'bootstrap-plugin',
-    dependencies: ['mikro-orm-plugin'],
+    name: 'base-service-plugin',
   },
 );

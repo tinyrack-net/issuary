@@ -33,6 +33,11 @@ export function createServer() {
       })
 
       await appInstance.register(fastifyAutoload, {
+        dir: path.join(__dirname, 'services'),
+        ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
+      })
+
+      await appInstance.register(fastifyAutoload, {
         dir: path.join(__dirname, 'routes'),
         routeParams: true,
         autoHooks: true,
