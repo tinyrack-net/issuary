@@ -1,5 +1,5 @@
 import fastifyPlugin from 'fastify-plugin';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { MikroService } from '@/plugins/mikro-orm.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -8,11 +8,11 @@ declare module 'fastify' {
 }
 
 class UserService {
-  public constructor(private readonly fastify: FastifyWithZodInstance) { }
+  public constructor(private readonly mikro: MikroService) { }
 
   async login(params: { email: string; password: string }) {
     const err = new Error('Invalid combination of email and password');
-    const user = await this.fastify.mikro.user.findOneOrFail(
+    const user = await this.mikro.user.findOneOrFail(
       {
         email: params.email,
       },
@@ -29,7 +29,7 @@ class UserService {
   }
 
   async exists(email: string) {
-    const count = await this.fastify.mikro.user.count({ email: email });
+    const count = await this.mikro.user.count({ email: email });
     return count > 0;
   }
 
@@ -39,12 +39,12 @@ class UserService {
       throw new Error('Email already exists');
     }
 
-    const user = this.fastify.mikro.user.create({
+    const user = this.mikro.user.create({
       email: params.email,
       password_hash: params.password,
     });
 
-    await this.fastify.mikro.user.getEntityManager().persist(user).flush();
+    await this.mikro.user.getEntityManager().persist(user).flush();
     return user;
   }
 
@@ -52,7 +52,7 @@ class UserService {
 
 export default fastifyPlugin(
   async (fastify) => {
-    const userService = new UserService(fastify);
+    const userService = new UserService(fastify.mikro);
     fastify.decorate('userService', userService);
   },
   {

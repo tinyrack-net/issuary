@@ -10,15 +10,17 @@ import type { OAuthCodeRepository } from '@/repositories/oauth-code.repository.j
 import type { UserRepository } from '@/repositories/user.repository.js';
 import { TestSeeder } from '@/seeders/test-seeder.js';
 
+export interface MikroService {
+  orm: MikroORM;
+  em: MikroORM['em'];
+  user: UserRepository;
+  oauthCode: OAuthCodeRepository;
+  oauthClient: OAuthClientRepository;
+}
+
 declare module 'fastify' {
   interface FastifyInstance {
-    mikro: {
-      orm: MikroORM;
-      em: MikroORM['em'];
-      user: UserRepository;
-      oauthCode: OAuthCodeRepository;
-      oauthClient: OAuthClientRepository;
-    };
+    mikro: MikroService;
   }
 }
 
