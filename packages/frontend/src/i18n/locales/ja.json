@@ -1,0 +1,20 @@
+{
+  "common.language.english": "English",
+  "common.language.japanese": "日本語",
+  "common.language.korean": "한국어",
+  "common.language.select": "言語を選択",
+  "common.theme.current": "現在のテーマ: {{theme}}",
+  "login.email.label": "メールアドレス",
+  "login.email.placeholder": "hello@example.com",
+  "login.error.failed": "ログインに失敗しました。メールアドレスとパスワードを確認してください。",
+  "login.password.label": "パスワード",
+  "login.password.placeholder": "パスワードを入力",
+  "login.submit": "ログイン",
+  "login.submitting": "ログイン中...",
+  "login.subtitle": "ログインして続行してください",
+  "login.title": "Welcome back!",
+  "profile.logout": "ログアウト",
+  "profile.title": "マイプロフィール",
+  "validation.email.invalid": "正しいメールアドレスの形式ではありません",
+  "validation.password.required": "パスワードを入力してください"
+}

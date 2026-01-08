@@ -1,0 +1,20 @@
+{
+  "common.language.english": "English",
+  "common.language.japanese": "日本語",
+  "common.language.korean": "한국어",
+  "common.language.select": "언어 선택",
+  "common.theme.current": "현재 테마: {{theme}}",
+  "login.email.label": "이메일",
+  "login.email.placeholder": "hello@example.com",
+  "login.error.failed": "로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.",
+  "login.password.label": "비밀번호",
+  "login.password.placeholder": "비밀번호를 입력하세요",
+  "login.submit": "로그인",
+  "login.submitting": "로그인 중...",
+  "login.subtitle": "로그인하여 계속 진행하세요",
+  "login.title": "Welcome back!",
+  "profile.logout": "로그아웃",
+  "profile.title": "내 정보",
+  "validation.email.invalid": "올바른 이메일 형식이 아닙니다",
+  "validation.password.required": "비밀번호를 입력해주세요"
+}

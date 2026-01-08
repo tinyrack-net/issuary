@@ -2,6 +2,7 @@ import { RouterProvider } from '@tanstack/react-router';
 import { memo, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
+import '@/i18n';
 import { QueryClientProvider, useSuspenseQueries } from '@tanstack/react-query';
 import { GlobalQueryClient } from './libs/query-client';
 import { AppRouter } from './libs/router';

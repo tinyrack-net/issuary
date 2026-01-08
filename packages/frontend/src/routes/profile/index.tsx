@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { tick } from '@/libs/promise';
 import { logoutMutationOptions } from '@/queries/logout';
 import { getSessionQueryOptions } from '@/queries/session';
@@ -16,6 +17,7 @@ export const Route = createFileRoute('/profile/')({
 });
 
 function Profile() {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const logoutMutation = useMutation({
@@ -31,23 +33,21 @@ function Profile() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: getSessionQueryOptions.queryKey
+        queryKey: getSessionQueryOptions.queryKey,
       });
-    }
+    },
   });
 
   return (
-    <div >
-      <h2>
-        내 정보
-      </h2>
+    <div>
+      <h2>{t('profile.title')}</h2>
       <div>
         <button
-          type='button'
+          type="button"
           disabled={logoutMutation.isPending}
           onClick={() => logoutMutation.mutate()}
         >
-          로그아웃
+          {t('profile.logout')}
         </button>
       </div>
     </div>

@@ -13,9 +13,11 @@
     "@phosphor-icons/react": "^2.1.10",
     "@tanstack/react-query": "^5.90.16",
     "@tanstack/react-router": "^1.144.0",
+    "i18next": "^25.7.4",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "^7.70.0",
+    "react-i18next": "^16.5.1",
     "zod": "catalog:"
   },
   "devDependencies": {

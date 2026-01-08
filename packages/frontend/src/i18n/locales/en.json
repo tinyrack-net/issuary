@@ -1,0 +1,20 @@
+{
+  "common.language.english": "English",
+  "common.language.japanese": "日本語",
+  "common.language.korean": "한국어",
+  "common.language.select": "Select language",
+  "common.theme.current": "Current theme: {{theme}}",
+  "login.email.label": "Email",
+  "login.email.placeholder": "hello@example.com",
+  "login.error.failed": "Login failed. Please check your email and password.",
+  "login.password.label": "Password",
+  "login.password.placeholder": "Enter your password",
+  "login.submit": "Log in",
+  "login.submitting": "Logging in...",
+  "login.subtitle": "Please log in to continue",
+  "login.title": "Welcome back!",
+  "profile.logout": "Log out",
+  "profile.title": "My Profile",
+  "validation.email.invalid": "Invalid email format",
+  "validation.password.required": "Please enter your password"
+}

@@ -1,9 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Check, MoonIcon, PaintBrushIcon, SunIcon } from '@phosphor-icons/react';
+import {
+  CheckIcon,
+  GlobeIcon,
+  MoonIcon,
+  PaintBrushIcon,
+  SunIcon,
+} from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { useLanguage } from '@/hooks/use-language';
 import { useTheme } from '@/hooks/use-theme';
 import { tick } from '@/libs/promise';
 import { loginMutationOptions } from '@/queries/login';
@@ -18,17 +27,26 @@ export const Route = createFileRoute('/login/')({
   validateSearch: SearchSchema,
 });
 
-const loginSchema = z.object({
-  email: z.string().email('올바른 이메일 형식이 아닙니다'),
-  password: z.string().min(1, '비밀번호를 입력해주세요'),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
+type LoginFormValues = {
+  email: string;
+  password: string;
+};
 
 function Login() {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { theme, themes, setTheme, toggleDarkMode } = useTheme();
+  const { language, languages, setLanguage } = useLanguage();
+
+  const loginSchema = useMemo(
+    () =>
+      z.object({
+        email: z.string().email(t('validation.email.invalid')),
+        password: z.string().min(1, t('validation.password.required')),
+      }),
+    [t],
+  );
 
   const loginMutation = useMutation({
     ...loginMutationOptions,
@@ -69,7 +87,7 @@ function Login() {
       console.error('Login failed:', error);
       setError('email', {
         type: 'manual',
-        message: '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.',
+        message: t('login.error.failed'),
       });
     }
   };
@@ -93,6 +111,42 @@ function Login() {
             )}
           </button>
 
+          {/* Language Selector */}
+          <div className="dropdown dropdown-end">
+            <button
+              type="button"
+              tabIndex={0}
+              className="btn btn-circle btn-ghost"
+              aria-label={t('common.language.select')}
+            >
+              <GlobeIcon size={24} weight="regular" />
+            </button>
+            <ul className="menu dropdown-content z-[1] w-52 rounded-box bg-base-100 p-2 shadow-lg">
+              {languages.map((lang) => (
+                <li key={lang}>
+                  <button
+                    type="button"
+                    onClick={() => setLanguage(lang)}
+                    className={language === lang ? 'active' : ''}
+                  >
+                    <span>
+                      {t(
+                        `common.language.${
+                          lang === 'ko'
+                            ? 'korean'
+                            : lang === 'en'
+                              ? 'english'
+                              : 'japanese'
+                        }`,
+                      )}
+                    </span>
+                    {language === lang && <CheckIcon size={20} weight="bold" />}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
           {/* Theme Selector Dropdown */}
           <div className="dropdown dropdown-end">
             <button
@@ -112,7 +166,7 @@ function Login() {
                     className={theme === t ? 'active' : ''}
                   >
                     <span className="capitalize">{t}</span>
-                    {theme === t && <Check size={20} weight="bold" />}
+                    {theme === t && <CheckIcon size={20} weight="bold" />}
                   </button>
                 </li>
               ))}
@@ -124,22 +178,24 @@ function Login() {
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
             <h2 className="card-title mb-2 justify-center font-bold text-3xl">
-              Welcome back!
+              {t('login.title')}
             </h2>
             <p className="mb-6 text-center text-base-content/60">
-              로그인하여 계속 진행하세요
+              {t('login.subtitle')}
             </p>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               {/* Email Input */}
               <div className="form-control">
                 <label htmlFor="email" className="label">
-                  <span className="label-text font-medium">이메일</span>
+                  <span className="label-text font-medium">
+                    {t('login.email.label')}
+                  </span>
                 </label>
                 <input
                   id="email"
                   type="email"
-                  placeholder="hello@example.com"
+                  placeholder={t('login.email.placeholder')}
                   className={`input input-bordered w-full ${
                     errors.email ? 'input-error' : ''
                   }`}
@@ -157,12 +213,14 @@ function Login() {
               {/* Password Input */}
               <div className="form-control">
                 <label htmlFor="password" className="label">
-                  <span className="label-text font-medium">비밀번호</span>
+                  <span className="label-text font-medium">
+                    {t('login.password.label')}
+                  </span>
                 </label>
                 <input
                   id="password"
                   type="password"
-                  placeholder="비밀번호를 입력하세요"
+                  placeholder={t('login.password.placeholder')}
                   className={`input input-bordered w-full ${
                     errors.password ? 'input-error' : ''
                   }`}
@@ -189,10 +247,10 @@ function Login() {
                   {loginMutation.isPending ? (
                     <>
                       <span className="loading loading-spinner loading-sm" />
-                      로그인 중...
+                      {t('login.submitting')}
                     </>
                   ) : (
-                    '로그인'
+                    t('login.submit')
                   )}
                 </button>
               </div>
@@ -202,7 +260,7 @@ function Login() {
 
         {/* Footer Info */}
         <div className="mt-4 text-center text-base-content/60 text-sm">
-          <p>현재 테마: {theme}</p>
+          <p>{t('common.theme.current', { theme })}</p>
         </div>
       </div>
     </div>
