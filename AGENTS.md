@@ -6,7 +6,7 @@ This document provides guidelines for AI coding agents working in the tinyrack/a
 
 This is a monorepo with the following packages:
 - `packages/backend` - Fastify-based OAuth2/OIDC authentication server
-- `packages/frontend` - React frontend using TanStack Router and Mantine UI
+- `packages/frontend` - React frontend using TanStack Router and Daisy UI
 - `packages/client-test` - Next.js test client
 
 ## Build, Lint, and Test Commands
@@ -149,9 +149,9 @@ export default (fastify: FastifyWithZodInstance) =>
 #### React Components
 - Use functional components with hooks
 - TanStack Router for routing with `createFileRoute`
-- Mantine UI components for UI
+- Daisy UI components for UI (Tailwind CSS-based)
 - TanStack Query for data fetching
-- Forms: use `@mantine/form` with Zod validation via `zodResolver`
+- Forms: use React Hook Form with Zod validation via `zodResolver`
 
 #### State Management
 - TanStack Query for server state
