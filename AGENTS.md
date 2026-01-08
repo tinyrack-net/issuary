@@ -154,6 +154,42 @@ export default (fastify: FastifyWithZodInstance) =>
 - Forms: use React Hook Form with Zod validation via `zodResolver`
 - Icons: use **Phosphor Icons** for all icon components
 
+#### Internationalization (i18n)
+- **Always use i18n** for all user-facing text in frontend components
+- Use `react-i18next` with `useTranslation` hook
+- Never hardcode text strings - always use translation keys
+- Translation files: `src/i18n/locales/{ko,en,ja}.json` (flat structure)
+- Supported languages: Korean (ko), English (en), Japanese (ja)
+- Example:
+```typescript
+import { useTranslation } from 'react-i18next';
+
+function MyComponent() {
+  const { t } = useTranslation();
+  
+  return (
+    <div>
+      <h1>{t('login.title')}</h1>
+      <button>{t('login.submit')}</button>
+      <p>{t('common.theme.current', { theme: 'dark' })}</p>
+    </div>
+  );
+}
+```
+- For Zod validation messages, create schema inside component with `useMemo`:
+```typescript
+const { t } = useTranslation();
+
+const schema = useMemo(
+  () => z.object({
+    email: z.string().email(t('validation.email.invalid')),
+  }),
+  [t]
+);
+```
+- Add new translation keys to all three language files (ko.json, en.json, ja.json)
+- Use `useLanguage()` hook for language switching: `const { language, setLanguage } = useLanguage();`
+
 #### State Management
 - TanStack Query for server state
 - Query options pattern: export reusable `queryOptions` and `mutationOptions`
