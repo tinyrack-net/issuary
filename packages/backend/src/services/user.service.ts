@@ -7,7 +7,7 @@ declare module 'fastify' {
   }
 }
 
-class UserService {
+export class UserService {
   public constructor(private readonly mikro: MikroService) { }
 
   async login(params: { email: string; password: string }) {
