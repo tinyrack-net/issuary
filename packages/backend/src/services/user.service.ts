@@ -64,7 +64,7 @@ export class UserService {
       password_hash: params.password,
     });
 
-    await this.mikro.user.getEntityManager().persist(user).flush();
+    await this.mikro.em.persist(user).flush();
     return {
       id: user.id,
     };
