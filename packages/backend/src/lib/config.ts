@@ -14,6 +14,8 @@ export const AppConfigApp = z.object({
   jwt_refresh_token_ttl: z.number().int().min(3600).optional().default(2592000), // 30 days
 });
 
+export type AppConfigApp = z.infer<typeof AppConfigApp>;
+
 export const AppConfigAdmin = z.discriminatedUnion('enabled', [
   z.object({
     enabled: z.literal(false),
@@ -23,6 +25,8 @@ export const AppConfigAdmin = z.discriminatedUnion('enabled', [
     port: zz.PORT.optional().default(8081),
   }),
 ]);
+
+export type AppConfigAdmin = z.infer<typeof AppConfigAdmin>;
 
 export const AppConfigDatabase = z.discriminatedUnion('type', [
   z.object({
@@ -39,6 +43,8 @@ export const AppConfigDatabase = z.discriminatedUnion('type', [
   }),
 ]);
 
+export type AppConfigDatabase = z.infer<typeof AppConfigDatabase>;
+
 export const AppConfigSmtp = z.discriminatedUnion('enabled', [
   z.object({
     enabled: z.literal(false),
@@ -54,6 +60,8 @@ export const AppConfigSmtp = z.discriminatedUnion('enabled', [
   }),
 ]);
 
+export type AppConfigSmtp = z.infer<typeof AppConfigSmtp>;
+
 export const AppConfigProvider = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -65,6 +73,8 @@ export const AppConfigProvider = z.object({
   scope: z.string().min(1),
 });
 
+export type AppConfigProvider = z.infer<typeof AppConfigProvider>;
+
 export const AppConfigUser = z.object({
   id: z.string().min(1),
   email: z.email(),
@@ -73,9 +83,13 @@ export const AppConfigUser = z.object({
   totp_backup_codes: z.array(z.string()).optional(),
 });
 
+export type AppConfigUser = z.infer<typeof AppConfigUser>;
+
 export const AppConfigDebug = z.object({
   test_mode: z.boolean().default(false),
 });
+
+export type AppConfigDebug = z.infer<typeof AppConfigDebug>;
 
 export const ConfigSchema = z.object({
   app: AppConfigApp,
@@ -95,16 +109,6 @@ export const ConfigSchema = z.object({
     test_mode: false,
   }),
 });
-
-export type UserConfig = NonNullable<
-  z.infer<typeof ConfigSchema>['users']
->[number];
-
-export type SMTPConfig = z.infer<typeof ConfigSchema>['smtp'];
-
-export type ProviderConfig = NonNullable<
-  z.infer<typeof ConfigSchema>['providers']
->[string];
 
 const resolveConfigPath = () => {
   const configPath = env.CONFIG_PATH || DEFAULT_CONFIG_PATH;
