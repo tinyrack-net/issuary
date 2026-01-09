@@ -7,9 +7,9 @@ export class ProviderNotFoundError extends Error {
 }
 
 export const validateProvider = async (clientId: string) => {
-  const provider = Object.values(AppConfigs.providers || {}).find((provider) => {
+  const provider = AppConfigs.providers.find((provider) => {
     return provider.client_id === clientId;
-  })
+  });
   if (!provider) {
     throw new ProviderNotFoundError(clientId);
   }

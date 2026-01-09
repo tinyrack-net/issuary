@@ -103,8 +103,8 @@ export const ConfigSchema = z.object({
   smtp: AppConfigSmtp.default({
     enabled: false,
   }).optional(),
-  providers: z.record(z.string(), AppConfigProvider).optional(),
-  users: z.array(AppConfigUser).optional(),
+  providers: z.array(AppConfigProvider).default([]),
+  users: z.array(AppConfigUser).default([]),
   debug: AppConfigDebug.default({
     test_mode: false,
   }),

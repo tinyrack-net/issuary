@@ -44,8 +44,7 @@ clients:
   #   redirect_uri: !env GITHUB_REDIRECT_URI
 
 providers:
-  my-app:
-    id: sdlkfj3n
+  - id: sdlkfj3n
     name: My App
     logo_uri: https://myapp.com/auth/callback
     client_id: sdlk3n3dkj2
