@@ -21,7 +21,7 @@ export default (fastify: FastifyWithZodInstance) =>
       },
     },
     handler: async (req, res) => {
-      const user = await fastify.mikro.user.register({
+      const user = await fastify.userService.register({
         email: req.body.email,
         password: req.body.password,
       });

@@ -1,6 +1,6 @@
+import fastifyPlugin from 'fastify-plugin';
 import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
-import fastifyPlugin from 'fastify-plugin';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -9,18 +9,22 @@ declare module 'fastify' {
 }
 
 export class UserService {
-  public constructor(private readonly mikro: MikroService) { }
+  public constructor(private readonly mikro: MikroService) {}
 
+  /**
+   * @description
+   * Logs in a user with the provided email and password.
+   */
   public async login(params: { email: string; password: string }) {
-    const err = new Error('Invalid combination of email and password');
+    const appConfigUser = AppConfigs.users?.find(
+      (u) => u.email === params.email,
+    );
 
-    const staticUser = AppConfigs.users?.find((u) => u.email === params.email);
-
-    if (staticUser) {
-      if (staticUser.password === params.password) {
-        return staticUser;
+    if (appConfigUser) {
+      if (appConfigUser.password === params.password) {
+        return appConfigUser;
       } else {
-        throw err;
+        throw new Error('Invalid combination of email and password');
       }
     }
 
@@ -30,7 +34,8 @@ export class UserService {
       },
       {
         populate: ['password_hash'],
-        failHandler: () => err,
+        failHandler: () =>
+          new Error('Invalid combination of email and password'),
       },
     );
 
@@ -38,15 +43,17 @@ export class UserService {
       return user;
     }
 
-    throw err;
+    throw new Error('Invalid combination of email and password');
   }
 
-  async exists(email: string) {
-    const count = await this.mikro.user.count({ email: email });
-    return count > 0;
-  }
+  public async register(params: { email: string; password: string }) {
+    const appConfigUser = AppConfigs.users?.find(
+      (u) => u.email === params.email,
+    );
+    if (appConfigUser) {
+      throw new Error('Email already exists');
+    }
 
-  async register(params: { email: string; password: string }) {
     const emailExists = await this.exists(params.email);
     if (emailExists) {
       throw new Error('Email already exists');
@@ -58,9 +65,15 @@ export class UserService {
     });
 
     await this.mikro.user.getEntityManager().persist(user).flush();
-    return user;
+    return {
+      id: user.id,
+    };
   }
 
+  private async exists(email: string) {
+    const count = await this.mikro.user.count({ email: email });
+    return count > 0;
+  }
 }
 
 export default fastifyPlugin(
