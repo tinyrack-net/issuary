@@ -1,6 +1,6 @@
-import z from 'zod';
 import { UserSchema } from '@/schemas/user.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+import z from 'zod/v4';
 
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
@@ -21,10 +21,10 @@ export default (fastify: FastifyWithZodInstance) =>
       },
     },
     handler: async (req, res) => {
-      const user = await fastify.mikro.user.login({
+      const user = await fastify.userService.login({
         email: req.body.email,
         password: req.body.password,
-      })
+      });
 
       req.session.set('user', {
         id: user.id,

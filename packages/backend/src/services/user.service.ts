@@ -1,5 +1,6 @@
-import fastifyPlugin from 'fastify-plugin';
+import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
+import fastifyPlugin from 'fastify-plugin';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -10,8 +11,19 @@ declare module 'fastify' {
 export class UserService {
   public constructor(private readonly mikro: MikroService) { }
 
-  async login(params: { email: string; password: string }) {
+  public async login(params: { email: string; password: string }) {
     const err = new Error('Invalid combination of email and password');
+
+    const staticUser = AppConfigs.users?.find((u) => u.email === params.email);
+
+    if (staticUser) {
+      if (staticUser.password === params.password) {
+        return staticUser;
+      } else {
+        throw err;
+      }
+    }
+
     const user = await this.mikro.user.findOneOrFail(
       {
         email: params.email,
@@ -25,6 +37,7 @@ export class UserService {
     if (await user.verifyPassword(params.password)) {
       return user;
     }
+
     throw err;
   }
 
