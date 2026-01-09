@@ -102,7 +102,10 @@ export const ConfigSchema = z.object({
 });
 
 const resolveConfigPath = () => {
-  const configPath = env.CONFIG_PATH || DEFAULT_CONFIG_PATH;
+  const configPath =
+    env.APP_ENV === 'test'
+      ? './config.test.yaml'
+      : env.CONFIG_PATH || DEFAULT_CONFIG_PATH;
   if (path.isAbsolute(configPath)) {
     return configPath;
   } else {
@@ -163,5 +166,7 @@ const loadConfig = (path: string) => {
 
 const DEFAULT_CONFIG_PATH = '/opt/config.yaml';
 const CONFIG_PATH = resolveConfigPath();
+
+console.info(`Loading config from: ${CONFIG_PATH}`);
 
 export const AppConfigs = loadConfig(CONFIG_PATH);
