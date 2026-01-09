@@ -233,6 +233,14 @@ const user = await this.findOneOrFail(
 - Migrations stored in entities with decorators
 - Seeders in `src/seeders/`
 
+## MCP Tool Usage
+- **Actively use MCP (Model Context Protocol) tools** for documentation and web searches
+- Use `context7_resolve-library-id` and `context7_query-docs` for library documentation
+- Use `zread_search_doc`, `zread_read_file`, `zread_get_repo_structure` for GitHub repositories
+- Use `web-search-prime_webSearchPrime` for general web searches
+- Prefer official documentation via MCP tools over guessing API usage
+- Maximum 3 calls per tool per question - use best available information
+
 ## General Best Practices
 - Write descriptive commit messages
 - Keep functions small and focused
