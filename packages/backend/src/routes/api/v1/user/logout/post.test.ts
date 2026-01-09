@@ -21,7 +21,7 @@ describe('POST /api/v1/user/logout', () => {
       method: 'post',
       url: '/api/v1/user/login',
       payload: {
-        email: 'admin@example.com',
+        email: 'test-config-user@example.com',
         password: 'changemelater',
       },
     });
@@ -88,7 +88,7 @@ describe('POST /api/v1/user/logout', () => {
       method: 'post',
       url: '/api/v1/user/login',
       payload: {
-        email: 'admin@example.com',
+        email: 'test-config-user@example.com',
         password: 'changemelater',
       },
     });
@@ -152,7 +152,7 @@ describe('POST /api/v1/user/logout', () => {
       method: 'post',
       url: '/api/v1/user/login',
       payload: {
-        email: 'admin@example.com',
+        email: 'test-config-user@example.com',
         password: 'changemelater',
       },
     });
