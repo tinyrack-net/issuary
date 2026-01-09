@@ -1,33 +1,54 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import fastifyReplyFrom from '@fastify/reply-from';
 import fastifyStatic from '@fastify/static';
 import fastifyPlugin from 'fastify-plugin';
+import { env } from '@/lib/env.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.resolve(path.dirname(__filename));
 
-export default fastifyPlugin(async (fastify) => {
-  const publicPath = path.join(__dirname, '../../public');
-
-  // Serve static files from public directory
-  await fastify.register(fastifyStatic, {
-    root: publicPath,
-    prefix: '/',
-    wildcard: false,
-  });
-
-  // SPA fallback: serve index.html for all non-API routes
-  fastify.setNotFoundHandler(async (request, reply) => {
-    // Don't handle API routes - let them return 404
-    if (request.url.startsWith('/api')) {
-      return reply.code(404).send({ error: 'Not Found' });
+/**
+ * @description
+ * In development and test environments, proxy static file requests to Vite dev server.
+ * In production, serve static files from the 'public' directory.
+ */
+export default fastifyPlugin(
+  async (fastify) => {
+    if (env.APP_ENV === 'development' || env.APP_ENV === 'test') {
+      await fastify.register(fastifyReplyFrom);
+      fastify.addHook('onRequest', async (request, reply) => {
+        if (
+          request.url.startsWith('/api') ||
+          request.url.startsWith('/application')
+        ) {
+          return;
+        }
+        await reply.from(`http://localhost:5173${request.url}`);
+        return reply.sent;
+      });
+      return;
     }
-    if (request.url.startsWith('/application')) {
-      return reply.code(404).send({ error: 'Not Found' });
-    }
-    // For all other routes, serve index.html (SPA fallback)
-    return reply.sendFile('index.html');
-  });
-}, {
-  name: 'static-plugin',
-});
+
+    const publicPath = path.join(__dirname, '../../public');
+
+    await fastify.register(fastifyStatic, {
+      root: publicPath,
+      prefix: '/',
+      wildcard: false,
+    });
+
+    fastify.setNotFoundHandler(async (request, reply) => {
+      if (request.url.startsWith('/api')) {
+        return reply.code(404).send({ error: 'Not Found' });
+      }
+      if (request.url.startsWith('/application')) {
+        return reply.code(404).send({ error: 'Not Found' });
+      }
+      return reply.sendFile('index.html');
+    });
+  },
+  {
+    name: 'static-plugin',
+  },
+);
