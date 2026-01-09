@@ -23,7 +23,6 @@ describe('GET /api/v1/user/session', () => {
 
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
-    expect(body).toHaveProperty('authenticated', false);
     expect(body).toHaveProperty('user', null);
   });
 
@@ -61,7 +60,6 @@ describe('GET /api/v1/user/session', () => {
 
     expect(sessionRes.statusCode).toBe(200);
     const sessionBody = JSON.parse(sessionRes.body);
-    expect(sessionBody).toHaveProperty('authenticated', true);
     expect(sessionBody).toHaveProperty('user');
     expect(sessionBody.user).not.toBeNull();
     expect(sessionBody.user).toHaveProperty('id');
@@ -129,7 +127,6 @@ describe('GET /api/v1/user/session', () => {
 
     expect(maybeNoSessionRes.statusCode).toBe(200);
     const sessionBody2 = JSON.parse(maybeNoSessionRes.body);
-    expect(sessionBody2).toHaveProperty('authenticated', false);
     expect(sessionBody2.user).toBeNull();
   });
 
@@ -144,7 +141,6 @@ describe('GET /api/v1/user/session', () => {
 
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
-    expect(body).toHaveProperty('authenticated', false);
     expect(body).toHaveProperty('user', null);
   });
 
@@ -179,7 +175,6 @@ describe('GET /api/v1/user/session', () => {
 
       expect(sessionRes.statusCode).toBe(200);
       const sessionBody = JSON.parse(sessionRes.body);
-      expect(sessionBody).toHaveProperty('authenticated', true);
       expect(sessionBody.user).not.toBeNull();
       expect(sessionBody.user).toHaveProperty('id');
     }

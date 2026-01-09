@@ -11,16 +11,9 @@ export default (fastify: FastifyWithZodInstance) =>
       description: 'Get Session',
       tags: ['User'],
       response: {
-        200: z.discriminatedUnion('authenticated', [
-          z.object({
-            authenticated: z.literal(true),
-            user: r.UserSession,
-          }),
-          z.object({
-            authenticated: z.literal(false),
-            user: z.null(),
-          }),
-        ]),
+        200: z.object({
+          user: r.UserSession.nullable(),
+        }),
       },
     },
     handler: async (req, res) => {
@@ -29,16 +22,14 @@ export default (fastify: FastifyWithZodInstance) =>
       if (session) {
         const user = await fastify.userService.verifyUserById(session.id);
         return res.status(200).send({
-          authenticated: true,
           user: {
             id: session.id,
             email: user.email,
-            email_verified: true,
+            email_verified: user.email_verified,
           },
         });
       } else {
         return res.status(200).send({
-          authenticated: false,
           user: null,
         });
       }
