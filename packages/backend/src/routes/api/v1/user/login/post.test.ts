@@ -15,18 +15,48 @@ afterAll(async () => {
 });
 
 describe('POST /api/v1/user/login', () => {
-  test('should login successfully with correct credentials', async () => {
+  test('should login successfully with correct credentials (app config user)', async () => {
     const res = await app.inject({
       method: 'post',
       url: '/api/v1/user/login',
       payload: {
-        email: 'admin@example.com',
+        email: 'test-config-user@example.com',
         password: 'changemelater',
       },
     });
 
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
+    expect(body).toHaveProperty('user');
+    expect(body.user).toHaveProperty('id');
+  });
+
+  test('should login successfully with correct credentials (registered user)', async () => {
+    // First, register a new user
+    const uniqueEmail = `loginuser${Date.now()}@example.com`;
+    const registerRes = await app.inject({
+      method: 'post',
+      url: '/api/v1/user/register',
+      payload: {
+        email: uniqueEmail,
+        password: 'password123',
+      },
+    });
+
+    expect(registerRes.statusCode).toBe(200);
+
+    // Now, attempt to login with the newly registered user
+    const loginRes = await app.inject({
+      method: 'post',
+      url: '/api/v1/user/login',
+      payload: {
+        email: uniqueEmail,
+        password: 'password123',
+      },
+    });
+
+    expect(loginRes.statusCode).toBe(200);
+    const body = JSON.parse(loginRes.body);
     expect(body).toHaveProperty('user');
     expect(body.user).toHaveProperty('id');
   });
