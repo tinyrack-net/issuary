@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { GlobeIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -170,6 +170,15 @@ function Login() {
 
             {/* Divider */}
             <div className="divider my-2" />
+
+            <div className="text-center">
+              <Link
+                to="/register"
+                className="link link-hover link-primary font-medium text-sm"
+              >
+                {t('login.link.register')}
+              </Link>
+            </div>
 
             {/* Language Selector */}
             <div className="flex items-center justify-center gap-3">

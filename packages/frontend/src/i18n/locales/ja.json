@@ -13,6 +13,7 @@
   "login.submitting": "ログイン中...",
   "login.subtitle": "ログインして続行してください",
   "login.title": "Welcome back!",
+  "login.link.register": "アカウントをお持ちでないですか？新規登録",
   "profile.logout": "ログアウト",
   "profile.title": "マイプロフィール",
   "register.email.label": "メールアドレス",

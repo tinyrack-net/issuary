@@ -13,6 +13,7 @@
   "login.submitting": "Logging in...",
   "login.subtitle": "Please log in to continue",
   "login.title": "Welcome back!",
+  "login.link.register": "Don't have an account? Sign up",
   "profile.logout": "Log out",
   "profile.title": "My Profile",
   "register.email.label": "Email",

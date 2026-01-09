@@ -20,7 +20,7 @@ type RegisterFormValues = {
   password: string;
 };
 
-function Register() {
+function Register() { 
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
