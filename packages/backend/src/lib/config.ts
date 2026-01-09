@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { zz } from '@/schemas/provider.js';
 import YAML from 'yaml';
 import z from 'zod/v4';
+import { zz } from '@/schemas/provider.js';
 import { env } from './env.js';
 
 export const AppConfigApp = z.object({
@@ -11,56 +11,48 @@ export const AppConfigApp = z.object({
   cookie_secret: z.string().min(16),
   jwt_secret: z.string().min(32).optional(),
   jwt_access_token_ttl: z.number().int().min(60).optional().default(3600), // 1 hour
-  jwt_refresh_token_ttl: z
-    .number()
-    .int()
-    .min(3600)
-    .optional()
-    .default(2592000), // 30 days
-})
+  jwt_refresh_token_ttl: z.number().int().min(3600).optional().default(2592000), // 30 days
+});
 
-export const AppConfigAdmin = z
-  .discriminatedUnion('enabled', [
-    z.object({
-      enabled: z.literal(false),
-    }),
-    z.object({
-      enabled: z.literal(true),
-      port: zz.PORT.optional().default(8081),
-    }),
-  ]);
+export const AppConfigAdmin = z.discriminatedUnion('enabled', [
+  z.object({
+    enabled: z.literal(false),
+  }),
+  z.object({
+    enabled: z.literal(true),
+    port: zz.PORT.optional().default(8081),
+  }),
+]);
 
-export const AppConfigDatabase = z
-  .discriminatedUnion('type', [
-    z.object({
-      type: z.literal(['sqlite']).default('sqlite'),
-      path: z.string().default('test.db'),
-    }),
-    z.object({
-      type: z.literal(['postgres']).default('postgres'),
-      host: z.string().default('localhost'),
-      port: zz.PORT.default(5432),
-      user: z.string().min(1).default('test'),
-      password: z.string().min(1).default('test'),
-      name: z.string().min(1).default('test'),
-    }),
-  ]);
+export const AppConfigDatabase = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal(['sqlite']).default('sqlite'),
+    path: z.string().default('test.db'),
+  }),
+  z.object({
+    type: z.literal(['postgres']).default('postgres'),
+    host: z.string().default('localhost'),
+    port: zz.PORT.default(5432),
+    user: z.string().min(1).default('test'),
+    password: z.string().min(1).default('test'),
+    name: z.string().min(1).default('test'),
+  }),
+]);
 
-export const AppConfigSmtp = z
-  .discriminatedUnion('enabled', [
-    z.object({
-      enabled: z.literal(false),
-    }),
-    z.object({
-      enabled: z.literal(true),
-      host: z.string().default('localhost'),
-      port: zz.PORT.default(587),
-      secure: z.boolean().default(true),
-      user: z.string().min(1),
-      password: z.string().min(1),
-      from: z.email(),
-    }),
-  ]);
+export const AppConfigSmtp = z.discriminatedUnion('enabled', [
+  z.object({
+    enabled: z.literal(false),
+  }),
+  z.object({
+    enabled: z.literal(true),
+    host: z.string().default('localhost'),
+    port: zz.PORT.default(587),
+    secure: z.boolean().default(true),
+    user: z.string().min(1),
+    password: z.string().min(1),
+    from: z.email(),
+  }),
+]);
 
 export const AppConfigProvider = z.object({
   id: z.string().min(1),
@@ -87,34 +79,21 @@ export const AppConfigDebug = z.object({
 
 export const ConfigSchema = z.object({
   app: AppConfigApp,
-  admin: AppConfigAdmin
-    .default({
-      enabled: false,
-    })
-    .optional(),
-  database: AppConfigDatabase
-    .default({
-      type: 'sqlite',
-      path: 'test.db',
-    }),
-  smtp: AppConfigSmtp
-    .default({
-      enabled: false,
-    })
-    .optional(),
-  providers: z
-    .record(
-      z.string(),
-      AppConfigProvider,
-    )
-    .optional(),
-  users: z
-    .array(AppConfigUser)
-    .optional(),
-  debug: AppConfigDebug
-    .default({
-      test_mode: false,
-    }),
+  admin: AppConfigAdmin.default({
+    enabled: false,
+  }).optional(),
+  database: AppConfigDatabase.default({
+    type: 'sqlite',
+    path: 'test.db',
+  }),
+  smtp: AppConfigSmtp.default({
+    enabled: false,
+  }).optional(),
+  providers: z.record(z.string(), AppConfigProvider).optional(),
+  users: z.array(AppConfigUser).optional(),
+  debug: AppConfigDebug.default({
+    test_mode: false,
+  }),
 });
 
 export type UserConfig = NonNullable<
