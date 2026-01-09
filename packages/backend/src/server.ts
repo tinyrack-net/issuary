@@ -18,12 +18,12 @@ export function createServer() {
   const appInstance = Fastify({
     logger: {
       enabled: env.APP_ENV !== 'production',
-      transport: {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-        },
-      },
+      // transport: {
+      //   target: 'pino-pretty',
+      //   options: {
+      //     colorize: true,
+      //   },
+      // },
     },
   }).withTypeProvider<ZodTypeProvider>();
 
@@ -58,6 +58,7 @@ export function createServer() {
       return appInstance;
     } catch (err) {
       appInstance.log.error(err);
+      console.error(err);
       process.exit(1);
     }
   };
