@@ -21,7 +21,6 @@ pnpm build      # Build all packages
 ```bash
 pnpm dev                    # Development mode with hot reload
 pnpm dev:test               # Dev mode with test environment
-pnpm dev:test:database      # Dev mode with test database
 pnpm build                  # Compile TypeScript
 pnpm build:watch            # Watch mode compilation
 pnpm test                   # Run all tests with Vitest
@@ -226,7 +225,7 @@ const user = await this.findOneOrFail(
 - Backend uses environment-specific configs via `APP_ENV`
 - Config file: `config.yaml`
 - Example file: `.env.example`
-- Environments: `development`, `test`, `test-database`, `production`
+- Environments: `test`, `development`, `production`
 
 ## Database
 - ORM: **MikroORM**
