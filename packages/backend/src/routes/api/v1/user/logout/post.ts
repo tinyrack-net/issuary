@@ -11,7 +11,7 @@ export default (fastify: FastifyWithZodInstance) =>
       tags: ['User'],
       response: {
         200: z.object({
-          ok: z.boolean(),
+          ok: z.literal(true),
         }),
       },
     },
