@@ -85,12 +85,6 @@ export const AppConfigUser = z.object({
 
 export type AppConfigUser = z.infer<typeof AppConfigUser>;
 
-export const AppConfigDebug = z.object({
-  test_mode: z.boolean().default(false),
-});
-
-export type AppConfigDebug = z.infer<typeof AppConfigDebug>;
-
 export const ConfigSchema = z.object({
   app: AppConfigApp,
   admin: AppConfigAdmin.default({
@@ -105,9 +99,6 @@ export const ConfigSchema = z.object({
   }).optional(),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),
-  debug: AppConfigDebug.default({
-    test_mode: false,
-  }),
 });
 
 const resolveConfigPath = () => {
@@ -165,13 +156,6 @@ const loadConfig = (path: string) => {
     parsed.smtp.secure = env.SMTP_SECURE ?? parsed.smtp.secure;
     parsed.smtp.host = env.SMTP_HOST ?? parsed.smtp.host;
     parsed.smtp.port = env.SMTP_PORT ?? parsed.smtp.port;
-  }
-
-  if (parsed.debug.test_mode) {
-    parsed.database = {
-      type: 'sqlite',
-      path: './test.db',
-    };
   }
 
   return ConfigSchema.parse(parsed);

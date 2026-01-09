@@ -44,7 +44,7 @@ clients:
   #   redirect_uri: !env GITHUB_REDIRECT_URI
 
 providers:
-  - id: sdlkfj3n
+  - id: test-config-oauth-client
     name: My App
     logo_uri: https://myapp.com/auth/callback
     client_id: sdlk3n3dkj2
@@ -58,8 +58,8 @@ providers:
     scope: openid profile email id_token
 
 users:
-  - id: sdlk3n3dkj2
-    email: admin@example.com
+  - id: test-config-user
+    email: test-config-user@example.com
     password: changemelater
     role: admin
     totp_secret: sdlk3n3dkj2laksdjflaksdjf3
