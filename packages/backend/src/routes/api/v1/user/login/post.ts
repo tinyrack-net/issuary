@@ -1,4 +1,5 @@
 import z from 'zod/v4';
+import { e } from '@/schemas/error.js';
 import { UserSessionSchema } from '@/schemas/user.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
@@ -18,6 +19,8 @@ export default (fastify: FastifyWithZodInstance) =>
         200: z.object({
           user: UserSessionSchema,
         }),
+        400: e.ValidationError.Schema,
+        401: e.InvalidEmailOrPassword.Schema,
       },
     },
     handler: async (req, res) => {
@@ -30,7 +33,7 @@ export default (fastify: FastifyWithZodInstance) =>
         id: user.id,
       });
 
-      res.status(200).send({
+      return res.status(200).send({
         user: {
           id: user.id,
           email: user.email,

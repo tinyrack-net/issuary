@@ -1,6 +1,7 @@
 import fastifyPlugin from 'fastify-plugin';
 import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
+import { e } from '@/schemas/error.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -11,6 +12,10 @@ declare module 'fastify' {
 export class UserService {
   public constructor(private readonly mikro: MikroService) {}
 
+  /**
+   * @description
+   * Verifies a user by their ID.
+   */
   public async verifyUserById(id: string) {
     const appConfigUser = AppConfigs.users?.find((u) => u.id === id);
     if (appConfigUser) {
@@ -45,7 +50,7 @@ export class UserService {
           email_verified: true,
         };
       } else {
-        throw new Error('Invalid combination of email and password');
+        throw new e.InvalidEmailOrPassword.Error();
       }
     }
 
@@ -55,8 +60,7 @@ export class UserService {
       },
       {
         populate: ['password_hash'],
-        failHandler: () =>
-          new Error('Invalid combination of email and password'),
+        failHandler: () => new e.InvalidEmailOrPassword.Error(),
       },
     );
 
@@ -68,7 +72,7 @@ export class UserService {
       };
     }
 
-    throw new Error('Invalid combination of email and password');
+    throw new e.InvalidEmailOrPassword.Error();
   }
 
   public async register(params: { email: string; password: string }) {
