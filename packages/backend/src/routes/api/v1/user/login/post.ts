@@ -1,5 +1,6 @@
 import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
+import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
@@ -12,8 +13,8 @@ export default (fastify: FastifyWithZodInstance) =>
       description: 'Login',
       tags: ['User'],
       body: z.object({
-        email: z.email(),
-        password: z.string().min(6).max(100),
+        email: f.userEmail,
+        password: f.userPassword,
       }),
       response: {
         200: z.object({
