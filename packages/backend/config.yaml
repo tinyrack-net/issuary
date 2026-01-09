@@ -60,7 +60,6 @@ providers:
 users:
   - id: sdlk3n3dkj2
     email: admin@example.com
-    email_verified: true
     password: changemelater
     role: admin
     totp_secret: sdlk3n3dkj2laksdjflaksdjf3
