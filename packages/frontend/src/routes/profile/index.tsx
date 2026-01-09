@@ -1,4 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  CheckCircleIcon,
+  EnvelopeIcon,
+  UserIcon,
+  XCircleIcon,
+} from '@phosphor-icons/react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { tick } from '@/libs/promise';
@@ -20,6 +26,7 @@ function Profile() {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { data: session } = useQuery(getSessionQueryOptions);
   const logoutMutation = useMutation({
     ...logoutMutationOptions,
     onSuccess: async () => {
@@ -38,17 +45,109 @@ function Profile() {
     },
   });
 
+  const user = session?.user;
+
   return (
-    <div>
-      <h2>{t('profile.title')}</h2>
-      <div>
-        <button
-          type="button"
-          disabled={logoutMutation.isPending}
-          onClick={() => logoutMutation.mutate()}
-        >
-          {t('profile.logout')}
-        </button>
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-base-200 to-base-300 p-4">
+      <div className="w-full max-w-md">
+        <div className="card bg-base-100 shadow-2xl">
+          <div className="card-body gap-6 p-8">
+            <div className="text-center">
+              <h1 className="mb-2 font-bold text-4xl tracking-tight">
+                {t('profile.title')}
+              </h1>
+              <p className="text-base-content/70 text-sm">
+                {t('profile.subtitle')}
+              </p>
+            </div>
+
+            {user && (
+              <div className="space-y-4">
+                <div className="card bg-base-200">
+                  <div className="card-body gap-4 p-4">
+                    <div className="flex items-center gap-3">
+                      <UserIcon
+                        size={24}
+                        weight="regular"
+                        className="text-primary"
+                      />
+                      <div className="flex-1">
+                        <div className="text-base-content/60 text-sm">
+                          {t('profile.id.label')}
+                        </div>
+                        <div className="font-medium">{user.id}</div>
+                      </div>
+                    </div>
+
+                    <div className="divider my-1" />
+
+                    <div className="flex items-center gap-3">
+                      <EnvelopeIcon
+                        size={24}
+                        weight="regular"
+                        className="text-primary"
+                      />
+                      <div className="flex-1">
+                        <div className="text-base-content/60 text-sm">
+                          {t('profile.email.label')}
+                        </div>
+                        <div className="font-medium">{user.email}</div>
+                      </div>
+                    </div>
+
+                    <div className="divider my-1" />
+
+                    <div className="flex items-center gap-3">
+                      {user.email_verified ? (
+                        <CheckCircleIcon
+                          size={24}
+                          weight="regular"
+                          className="text-success"
+                        />
+                      ) : (
+                        <XCircleIcon
+                          size={24}
+                          weight="regular"
+                          className="text-error"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <div className="text-base-content/60 text-sm">
+                          {t('profile.verified.label')}
+                        </div>
+                        <div
+                          className={`font-medium ${
+                            user.email_verified ? 'text-success' : 'text-error'
+                          }`}
+                        >
+                          {user.email_verified
+                            ? t('profile.verified.yes')
+                            : t('profile.verified.no')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="btn btn-outline btn-error w-full"
+              disabled={logoutMutation.isPending}
+              onClick={() => logoutMutation.mutate()}
+            >
+              {logoutMutation.isPending ? (
+                <>
+                  <span className="loading loading-spinner loading-sm" />
+                  {t('profile.logout')}
+                </>
+              ) : (
+                t('profile.logout')
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
