@@ -1,72 +1,103 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { zz } from '@/schemas/provider.js';
 import YAML from 'yaml';
 import z from 'zod/v4';
-import { zz } from '@/schemas/provider.js';
 import { env } from './env.js';
 
+export const AppConfigApp = z.object({
+  host: z.string().optional().default('http://localhost:3000'),
+  port: zz.PORT.optional().default(8080),
+  cookie_secret: z.string().min(16),
+  jwt_secret: z.string().min(32).optional(),
+  jwt_access_token_ttl: z.number().int().min(60).optional().default(3600), // 1 hour
+  jwt_refresh_token_ttl: z
+    .number()
+    .int()
+    .min(3600)
+    .optional()
+    .default(2592000), // 30 days
+})
+
+export const AppConfigAdmin = z
+  .discriminatedUnion('enabled', [
+    z.object({
+      enabled: z.literal(false),
+    }),
+    z.object({
+      enabled: z.literal(true),
+      port: zz.PORT.optional().default(8081),
+    }),
+  ]);
+
+export const AppConfigDatabase = z
+  .discriminatedUnion('type', [
+    z.object({
+      type: z.literal(['sqlite']).default('sqlite'),
+      path: z.string().default('test.db'),
+    }),
+    z.object({
+      type: z.literal(['postgres']).default('postgres'),
+      host: z.string().default('localhost'),
+      port: zz.PORT.default(5432),
+      user: z.string().min(1).default('test'),
+      password: z.string().min(1).default('test'),
+      name: z.string().min(1).default('test'),
+    }),
+  ]);
+
+export const AppConfigSmtp = z
+  .discriminatedUnion('enabled', [
+    z.object({
+      enabled: z.literal(false),
+    }),
+    z.object({
+      enabled: z.literal(true),
+      host: z.string().default('localhost'),
+      port: zz.PORT.default(587),
+      secure: z.boolean().default(true),
+      user: z.string().min(1),
+      password: z.string().min(1),
+      from: z.email(),
+    }),
+  ]);
+
+export const AppConfigProvider = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  client_id: z.string().min(1),
+  client_secret: z.string().min(1),
+  redirect_uris: z.array(z.string()).min(1),
+  response_types: z.array(z.string()).min(1),
+  grant_types: z.array(z.string()).min(1),
+  scope: z.string().min(1),
+});
+
+export const AppConfigUser = z.object({
+  id: z.string().min(1),
+  email: z.email(),
+  password: z.string().min(6).max(100),
+  totp_secret: z.string().min(16).max(128).optional(),
+  totp_backup_codes: z.array(z.string()).optional(),
+});
+
+export const AppConfigDebug = z.object({
+  test_mode: z.boolean().default(false),
+});
+
 export const ConfigSchema = z.object({
-  app: z.object({
-    host: z.string().optional().default('http://localhost:3000'),
-    port: zz.PORT.optional().default(8080),
-    cookie_secret: z.string().min(16),
-    jwt_secret: z.string().min(32).optional(),
-    jwt_access_token_ttl: z.number().int().min(60).optional().default(3600), // 1 hour
-    jwt_refresh_token_ttl: z
-      .number()
-      .int()
-      .min(3600)
-      .optional()
-      .default(2592000), // 30 days
-  }),
-  admin: z
-    .discriminatedUnion('enabled', [
-      z.object({
-        enabled: z.literal(false),
-      }),
-      z.object({
-        enabled: z.literal(true),
-        port: zz.PORT.optional().default(8081),
-      }),
-    ])
+  app: AppConfigApp,
+  admin: AppConfigAdmin
     .default({
       enabled: false,
     })
     .optional(),
-  database: z
-    .discriminatedUnion('type', [
-      z.object({
-        type: z.literal(['sqlite']).default('sqlite'),
-        path: z.string().default('test.db'),
-      }),
-      z.object({
-        type: z.literal(['postgres']).default('postgres'),
-        host: z.string().default('localhost'),
-        port: zz.PORT.default(5432),
-        user: z.string().min(1).default('test'),
-        password: z.string().min(1).default('test'),
-        name: z.string().min(1).default('test'),
-      }),
-    ])
+  database: AppConfigDatabase
     .default({
       type: 'sqlite',
       path: 'test.db',
     }),
-  smtp: z
-    .discriminatedUnion('enabled', [
-      z.object({
-        enabled: z.literal(false),
-      }),
-      z.object({
-        enabled: z.literal(true),
-        host: z.string().default('localhost'),
-        port: zz.PORT.default(587),
-        secure: z.boolean().default(true),
-        user: z.string().min(1),
-        password: z.string().min(1),
-        from: z.email(),
-      }),
-    ])
+  smtp: AppConfigSmtp
     .default({
       enabled: false,
     })
@@ -74,33 +105,13 @@ export const ConfigSchema = z.object({
   providers: z
     .record(
       z.string(),
-      z.object({
-        id: z.string().min(1),
-        name: z.string().min(1),
-        client_id: z.string().min(1),
-        client_secret: z.string().min(1),
-        redirect_uris: z.array(z.string()).min(1),
-        response_types: z.array(z.string()).min(1),
-        grant_types: z.array(z.string()).min(1),
-        scope: z.string().min(1),
-      }),
+      AppConfigProvider,
     )
     .optional(),
   users: z
-    .array(
-      z.object({
-        id: z.string().min(1),
-        email: z.email(),
-        password: z.string().min(6).max(100),
-        totp_secret: z.string().min(16).max(128).optional(),
-        totp_backup_codes: z.array(z.string()).optional(),
-      }),
-    )
+    .array(AppConfigUser)
     .optional(),
-  debug: z
-    .object({
-      test_mode: z.boolean().default(false).optional(),
-    })
+  debug: AppConfigDebug
     .default({
       test_mode: false,
     }),
