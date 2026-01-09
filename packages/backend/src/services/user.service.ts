@@ -1,7 +1,9 @@
 import fastifyPlugin from 'fastify-plugin';
+import type z from 'zod';
 import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import type { r } from '@/schemas/response.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -16,11 +18,14 @@ export class UserService {
    * @description
    * Verifies a user by their ID.
    */
-  public async verifyUserById(id: string) {
+  public async verifyUserById(
+    id: string,
+  ): Promise<z.infer<typeof r.UserSession>> {
     const appConfigUser = AppConfigs.users?.find((u) => u.id === id);
     if (appConfigUser) {
       return {
         id: appConfigUser.id,
+        managed: 'config',
         email: appConfigUser.email,
         email_verified: true,
       };
@@ -28,6 +33,7 @@ export class UserService {
     const dbUser = await this.mikro.user.findOneOrFail({ id: id });
     return {
       id: dbUser.id,
+      managed: 'database',
       email: dbUser.email,
       email_verified: dbUser.email_verified,
     };
@@ -37,7 +43,10 @@ export class UserService {
    * @description
    * Logs in a user with the provided email and password.
    */
-  public async login(params: { email: string; password: string }) {
+  public async login(params: {
+    email: string;
+    password: string;
+  }): Promise<z.infer<typeof r.UserSession>> {
     const appConfigUser = AppConfigs.users?.find(
       (u) => u.email === params.email,
     );
@@ -46,6 +55,7 @@ export class UserService {
       if (appConfigUser.password === params.password) {
         return {
           id: appConfigUser.id,
+          managed: 'config',
           email: appConfigUser.email,
           email_verified: true,
         };
@@ -67,6 +77,7 @@ export class UserService {
     if (await user.verifyPassword(params.password)) {
       return {
         id: user.id,
+        managed: 'database',
         email: user.email,
         email_verified: user.email_verified,
       };
@@ -75,7 +86,10 @@ export class UserService {
     throw new e.InvalidEmailOrPassword.Error();
   }
 
-  public async register(params: { email: string; password: string }) {
+  public async register(params: {
+    email: string;
+    password: string;
+  }): Promise<z.infer<typeof r.UserSession>> {
     const appConfigUser = AppConfigs.users?.find(
       (u) => u.email === params.email,
     );
@@ -97,6 +111,7 @@ export class UserService {
 
     return {
       id: user.id,
+      managed: 'database',
       email: user.email,
       email_verified: user.email_verified,
     };

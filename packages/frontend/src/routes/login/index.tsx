@@ -65,7 +65,7 @@ function Login() {
     formState: { errors },
   } = useForm<LoginFormValues>({
     defaultValues: {
-      email: 'admin@example.com',
+      email: 'test-config-user@example.com',
       password: 'changemelater',
     },
     resolver: zodResolver(loginSchema),

@@ -24,6 +24,7 @@ export default (fastify: FastifyWithZodInstance) =>
         return res.status(200).send({
           user: {
             id: session.id,
+            managed: user.managed,
             email: user.email,
             email_verified: user.email_verified,
           },
