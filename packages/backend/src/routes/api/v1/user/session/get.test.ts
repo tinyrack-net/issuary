@@ -15,16 +15,16 @@ afterAll(async () => {
 });
 
 describe('GET /api/v1/user/session', () => {
-  test('should return null when user is not logged in', async () => {
+  test('should return authenticated: false when user is not logged in', async () => {
     const res = await app.inject({
       method: 'get',
       url: '/api/v1/user/session',
     });
 
-    expect(res.statusCode).toBe(401);
+    expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
-    expect(body).toHaveProperty('user');
-    expect(body.user).toBeNull();
+    expect(body).toHaveProperty('authenticated', false);
+    expect(body).toHaveProperty('user', null);
   });
 
   test('should return user session when user is logged in', async () => {
@@ -61,6 +61,7 @@ describe('GET /api/v1/user/session', () => {
 
     expect(sessionRes.statusCode).toBe(200);
     const sessionBody = JSON.parse(sessionRes.body);
+    expect(sessionBody).toHaveProperty('authenticated', true);
     expect(sessionBody).toHaveProperty('user');
     expect(sessionBody.user).not.toBeNull();
     expect(sessionBody.user).toHaveProperty('id');
@@ -126,12 +127,13 @@ describe('GET /api/v1/user/session', () => {
       },
     });
 
-    expect(maybeNoSessionRes.statusCode).toBe(401);
+    expect(maybeNoSessionRes.statusCode).toBe(200);
     const sessionBody2 = JSON.parse(maybeNoSessionRes.body);
+    expect(sessionBody2).toHaveProperty('authenticated', false);
     expect(sessionBody2.user).toBeNull();
   });
 
-  test('should return null with invalid cookie', async () => {
+  test('should return authenticated: false with invalid cookie', async () => {
     const res = await app.inject({
       method: 'get',
       url: '/api/v1/user/session',
@@ -140,10 +142,10 @@ describe('GET /api/v1/user/session', () => {
       },
     });
 
-    expect(res.statusCode).toBe(401);
+    expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
-    expect(body).toHaveProperty('user');
-    expect(body.user).toBeNull();
+    expect(body).toHaveProperty('authenticated', false);
+    expect(body).toHaveProperty('user', null);
   });
 
   test('should handle multiple session requests with same cookie', async () => {
@@ -177,6 +179,7 @@ describe('GET /api/v1/user/session', () => {
 
       expect(sessionRes.statusCode).toBe(200);
       const sessionBody = JSON.parse(sessionRes.body);
+      expect(sessionBody).toHaveProperty('authenticated', true);
       expect(sessionBody.user).not.toBeNull();
       expect(sessionBody.user).toHaveProperty('id');
     }

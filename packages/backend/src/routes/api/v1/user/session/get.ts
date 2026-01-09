@@ -1,5 +1,5 @@
 import z from 'zod';
-import { UserSchema } from '@/schemas/user.js';
+import { UserSessionSchema } from '@/schemas/user.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) =>
@@ -11,25 +11,34 @@ export default (fastify: FastifyWithZodInstance) =>
       description: 'Get Session',
       tags: ['User'],
       response: {
-        200: z.object({
-          user: UserSchema.nullable(),
-        }),
-        401: z.object({
-          user: z.null(),
-        }),
+        200: z.discriminatedUnion('authenticated', [
+          z.object({
+            authenticated: z.literal(true),
+            user: UserSessionSchema,
+          }),
+          z.object({
+            authenticated: z.literal(false),
+            user: z.null(),
+          }),
+        ]),
       },
     },
     handler: async (req, res) => {
       const session = req.session.get('user');
 
       if (session) {
+        const user = await fastify.userService.verifyUserById(session.id);
         return res.status(200).send({
+          authenticated: true,
           user: {
             id: session.id,
+            email: user.email,
+            email_verified: true,
           },
         });
       } else {
-        return res.status(401).send({
+        return res.status(200).send({
+          authenticated: false,
           user: null,
         });
       }

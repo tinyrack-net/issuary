@@ -11,6 +11,14 @@ declare module 'fastify' {
 export class UserService {
   public constructor(private readonly mikro: MikroService) {}
 
+  public async verifyUserById(id: string) {
+    const appConfigUser = AppConfigs.users?.find((u) => u.id === id);
+    if (appConfigUser) {
+      return appConfigUser;
+    }
+    return this.mikro.user.findOneOrFail({ id: id });
+  }
+
   /**
    * @description
    * Logs in a user with the provided email and password.
