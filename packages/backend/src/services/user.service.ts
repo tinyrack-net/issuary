@@ -80,12 +80,12 @@ export class UserService {
       (u) => u.email === params.email,
     );
     if (appConfigUser) {
-      throw new Error('Email already exists');
+      throw new e.EmailAlreadyExists.Error();
     }
 
     const emailExists = await this.exists(params.email);
     if (emailExists) {
-      throw new Error('Email already exists');
+      throw new e.EmailAlreadyExists.Error();
     }
 
     const user = this.mikro.user.create({

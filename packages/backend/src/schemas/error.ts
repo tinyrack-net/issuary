@@ -89,6 +89,11 @@ export const e = {
     'INVALID_EMAIL_OR_PASSWORD',
     'The provided email or password is incorrect.',
   ),
+  EmailAlreadyExists: createError(
+    409,
+    'EMAIL_ALREADY_EXISTS',
+    'The provided email is already registered.',
+  ),
   ValidationError: createErrorWithData(
     400,
     'VALIDATION_ERROR',

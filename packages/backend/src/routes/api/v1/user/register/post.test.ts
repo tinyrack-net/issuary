@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { e } from '@/schemas/error.js';
 import { createServer } from '@/server.js';
 
 let app: FastifyInstance;
@@ -43,10 +44,12 @@ describe('POST /api/v1/user/register', () => {
       },
     });
 
-    expect(res.statusCode).toBe(500);
+    expect(res.statusCode).toBe(e.EmailAlreadyExists.Status);
+    const expectedError = new e.EmailAlreadyExists.Error();
+
     const body = JSON.parse(res.body);
-    expect(body).toHaveProperty('message');
-    expect(body.message).toBe('Email already exists');
+    expect(body).toHaveProperty('code', expectedError.code);
+    expect(body).toHaveProperty('message', expectedError.message);
   });
 
   test('should fail with duplicate email', async () => {
@@ -72,10 +75,11 @@ describe('POST /api/v1/user/register', () => {
       },
     });
 
-    expect(res.statusCode).toBe(500);
+    expect(res.statusCode).toBe(e.EmailAlreadyExists.Status);
+    const expectedError = new e.EmailAlreadyExists.Error();
     const body = JSON.parse(res.body);
-    expect(body).toHaveProperty('message');
-    expect(body.message).toBe('Email already exists');
+    expect(body).toHaveProperty('code', expectedError.code);
+    expect(body).toHaveProperty('message', expectedError.message);
   });
 
   test('should fail with invalid email format', async () => {
