@@ -42,6 +42,8 @@ export default fastifyPlugin(
 
     if (env.APP_ENV === 'test') {
       await orm.schema.createSchema();
+    } else if (env.APP_ENV === 'development') {
+      await orm.schema.updateSchema();
     } else {
       await orm.migrator.up();
     }
