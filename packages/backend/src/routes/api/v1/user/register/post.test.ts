@@ -17,6 +17,7 @@ afterAll(async () => {
 describe('POST /api/v1/user/register', () => {
   test('should register successfully with valid credentials', async () => {
     const uniqueEmail = `test${Date.now()}@example.com`;
+
     const res = await app.inject({
       method: 'post',
       url: '/api/v1/user/register',
@@ -30,6 +31,22 @@ describe('POST /api/v1/user/register', () => {
     const body = JSON.parse(res.body);
     expect(body).toHaveProperty('user');
     expect(body.user).toHaveProperty('id');
+  });
+
+  test('should fail with app config user email', async () => {
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/user/register',
+      payload: {
+        email: 'test-config-user@example.com',
+        password: 'password123',
+      },
+    });
+
+    expect(res.statusCode).toBe(500);
+    const body = JSON.parse(res.body);
+    expect(body).toHaveProperty('message');
+    expect(body.message).toBe('Email already exists');
   });
 
   test('should fail with duplicate email', async () => {
