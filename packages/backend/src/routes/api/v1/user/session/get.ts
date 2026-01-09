@@ -14,6 +14,9 @@ export default (fastify: FastifyWithZodInstance) =>
         200: z.object({
           user: UserSchema.nullable(),
         }),
+        401: z.object({
+          user: z.null(),
+        }),
       },
     },
     handler: async (req, res) => {
@@ -26,7 +29,7 @@ export default (fastify: FastifyWithZodInstance) =>
           },
         });
       } else {
-        return res.status(200).send({
+        return res.status(401).send({
           user: null,
         });
       }

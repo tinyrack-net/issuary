@@ -21,7 +21,7 @@ describe('GET /api/v1/user/session', () => {
       url: '/api/v1/user/session',
     });
 
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode).toBe(401);
     const body = JSON.parse(res.body);
     expect(body).toHaveProperty('user');
     expect(body.user).toBeNull();
@@ -33,7 +33,7 @@ describe('GET /api/v1/user/session', () => {
       method: 'post',
       url: '/api/v1/user/login',
       payload: {
-        email: 'admin@example.com',
+        email: 'test-config-user@example.com',
         password: 'changemelater',
       },
     });
@@ -71,12 +71,11 @@ describe('GET /api/v1/user/session', () => {
   });
 
   test('should return null after logout', async () => {
-    // First, login
     const loginRes = await app.inject({
       method: 'post',
       url: '/api/v1/user/login',
       payload: {
-        email: 'admin@example.com',
+        email: 'test-config-user@example.com',
         password: 'changemelater',
       },
     });
@@ -90,7 +89,7 @@ describe('GET /api/v1/user/session', () => {
     const sessionCookie = cookieValue?.split(';')[0];
 
     // Verify session exists
-    const sessionRes1 = await app.inject({
+    const maybeHasSessionRes = await app.inject({
       method: 'get',
       url: '/api/v1/user/session',
       headers: {
@@ -98,11 +97,10 @@ describe('GET /api/v1/user/session', () => {
       },
     });
 
-    expect(sessionRes1.statusCode).toBe(200);
-    const sessionBody1 = JSON.parse(sessionRes1.body);
-    expect(sessionBody1.user).not.toBeNull();
+    expect(maybeHasSessionRes.statusCode).toBe(200);
+    const sessionBody = JSON.parse(maybeHasSessionRes.body);
+    expect(sessionBody.user).not.toBeNull();
 
-    // Logout
     const logoutRes = await app.inject({
       method: 'post',
       url: '/api/v1/user/logout',
@@ -110,7 +108,6 @@ describe('GET /api/v1/user/session', () => {
         cookie: sessionCookie,
       },
     });
-
     expect(logoutRes.statusCode).toBe(200);
 
     // Get cookie after logout
@@ -121,7 +118,7 @@ describe('GET /api/v1/user/session', () => {
     const logoutSessionCookie = logoutCookieValue?.split(';')[0];
 
     // Verify session is null after logout
-    const sessionRes2 = await app.inject({
+    const maybeNoSessionRes = await app.inject({
       method: 'get',
       url: '/api/v1/user/session',
       headers: {
@@ -129,8 +126,8 @@ describe('GET /api/v1/user/session', () => {
       },
     });
 
-    expect(sessionRes2.statusCode).toBe(200);
-    const sessionBody2 = JSON.parse(sessionRes2.body);
+    expect(maybeNoSessionRes.statusCode).toBe(401);
+    const sessionBody2 = JSON.parse(maybeNoSessionRes.body);
     expect(sessionBody2.user).toBeNull();
   });
 
@@ -143,7 +140,7 @@ describe('GET /api/v1/user/session', () => {
       },
     });
 
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode).toBe(401);
     const body = JSON.parse(res.body);
     expect(body).toHaveProperty('user');
     expect(body.user).toBeNull();
@@ -155,7 +152,7 @@ describe('GET /api/v1/user/session', () => {
       method: 'post',
       url: '/api/v1/user/login',
       payload: {
-        email: 'admin@example.com',
+        email: 'test-config-user@example.com',
         password: 'changemelater',
       },
     });
