@@ -14,9 +14,18 @@ export class UserService {
   public async verifyUserById(id: string) {
     const appConfigUser = AppConfigs.users?.find((u) => u.id === id);
     if (appConfigUser) {
-      return appConfigUser;
+      return {
+        id: appConfigUser.id,
+        email: appConfigUser.email,
+        email_verified: true,
+      };
     }
-    return this.mikro.user.findOneOrFail({ id: id });
+    const dbUser = await this.mikro.user.findOneOrFail({ id: id });
+    return {
+      id: dbUser.id,
+      email: dbUser.email,
+      email_verified: dbUser.email_verified,
+    };
   }
 
   /**
@@ -30,7 +39,11 @@ export class UserService {
 
     if (appConfigUser) {
       if (appConfigUser.password === params.password) {
-        return appConfigUser;
+        return {
+          id: appConfigUser.id,
+          email: appConfigUser.email,
+          email_verified: true,
+        };
       } else {
         throw new Error('Invalid combination of email and password');
       }
@@ -48,7 +61,11 @@ export class UserService {
     );
 
     if (await user.verifyPassword(params.password)) {
-      return user;
+      return {
+        id: user.id,
+        email: user.email,
+        email_verified: user.email_verified,
+      };
     }
 
     throw new Error('Invalid combination of email and password');
@@ -73,8 +90,11 @@ export class UserService {
     });
 
     await this.mikro.em.persist(user).flush();
+
     return {
       id: user.id,
+      email: user.email,
+      email_verified: user.email_verified,
     };
   }
 

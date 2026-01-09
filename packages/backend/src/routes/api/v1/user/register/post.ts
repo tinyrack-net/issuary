@@ -33,6 +33,8 @@ export default (fastify: FastifyWithZodInstance) =>
       res.status(200).send({
         user: {
           id: user.id,
+          email: user.email,
+          email_verified: user.email_verified,
         },
       });
     },
