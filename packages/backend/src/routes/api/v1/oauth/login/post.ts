@@ -1,5 +1,5 @@
 import z from 'zod';
-import { UserSessionSchema } from '@/schemas/user.js';
+import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) =>
@@ -16,7 +16,7 @@ export default (fastify: FastifyWithZodInstance) =>
       }),
       response: {
         200: z.object({
-          user: UserSessionSchema,
+          user: r.UserSession,
         }),
       },
     },
@@ -24,6 +24,8 @@ export default (fastify: FastifyWithZodInstance) =>
       res.status(200).send({
         user: {
           id: 'asdf',
+          email: '',
+          email_verified: false,
         },
       });
     },

@@ -1,5 +1,5 @@
 import z from 'zod';
-import { UserSessionSchema } from '@/schemas/user.js';
+import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) =>
@@ -14,7 +14,7 @@ export default (fastify: FastifyWithZodInstance) =>
         200: z.discriminatedUnion('authenticated', [
           z.object({
             authenticated: z.literal(true),
-            user: UserSessionSchema,
+            user: r.UserSession,
           }),
           z.object({
             authenticated: z.literal(false),

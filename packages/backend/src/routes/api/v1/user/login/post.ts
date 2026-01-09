@@ -1,6 +1,6 @@
 import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
-import { UserSessionSchema } from '@/schemas/user.js';
+import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) =>
@@ -17,7 +17,7 @@ export default (fastify: FastifyWithZodInstance) =>
       }),
       response: {
         200: z.object({
-          user: UserSessionSchema,
+          user: r.UserSession,
         }),
         400: e.ValidationError.Schema,
         401: e.InvalidEmailOrPassword.Schema,
