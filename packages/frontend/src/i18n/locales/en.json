@@ -15,6 +15,18 @@
   "login.title": "Welcome back!",
   "profile.logout": "Log out",
   "profile.title": "My Profile",
+  "register.email.label": "Email",
+  "register.email.placeholder": "hello@example.com",
+  "register.error.emailExists": "Email already exists",
+  "register.link.login": "Already have an account? Log in",
+  "register.password.label": "Password",
+  "register.password.placeholder": "Enter your password",
+  "register.submit": "Create account",
+  "register.submitting": "Creating account...",
+  "register.subtitle": "Create a new account to get started",
+  "register.title": "Create account",
   "validation.email.invalid": "Invalid email format",
+  "validation.password.max": "Password must be at most 100 characters",
+  "validation.password.min": "Password must be at least 6 characters",
   "validation.password.required": "Please enter your password"
 }

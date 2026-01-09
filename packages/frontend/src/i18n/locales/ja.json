@@ -15,6 +15,18 @@
   "login.title": "Welcome back!",
   "profile.logout": "ログアウト",
   "profile.title": "マイプロフィール",
+  "register.email.label": "メールアドレス",
+  "register.email.placeholder": "hello@example.com",
+  "register.error.emailExists": "メールアドレスはすでに存在します",
+  "register.link.login": "すでにアカウントをお持ちですか？ログイン",
+  "register.password.label": "パスワード",
+  "register.password.placeholder": "パスワードを入力",
+  "register.submit": "アカウント作成",
+  "register.submitting": "アカウント作成中...",
+  "register.subtitle": "新しいアカウントを作成して始めましょう",
+  "register.title": "Create account",
   "validation.email.invalid": "正しいメールアドレスの形式ではありません",
+  "validation.password.max": "パスワードは100文字以下である必要があります",
+  "validation.password.min": "パスワードは6文字以上である必要があります",
   "validation.password.required": "パスワードを入力してください"
 }
