@@ -25,16 +25,10 @@ export default (fastify: FastifyWithZodInstance) => {
           req.body.email,
         );
 
-      // Send verification email
-      try {
-        await fastify.emailService.sendVerificationEmail({
-          email: req.body.email,
-          token: verification.token,
-        });
-      } catch (error) {
-        console.error('Failed to resend verification email:', error);
-        throw error;
-      }
+      await fastify.emailService.sendVerificationEmail({
+        email: req.body.email,
+        token: verification.token,
+      });
 
       res.status(200).send({
         message: 'Verification email has been resent. Please check your inbox.',

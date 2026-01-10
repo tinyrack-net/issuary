@@ -37,7 +37,7 @@ export class EmailVerificationRepository extends EntityRepository<EmailVerificat
     });
 
     // Persist to database
-    await this.getEntityManager().persistAndFlush(entity);
+    await this.getEntityManager().persist(entity);
 
     return entity;
   }
