@@ -1,12 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  CheckCircleIcon,
-  EnvelopeIcon,
-  GlobeIcon,
-} from '@phosphor-icons/react';
+import { GlobeIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -29,7 +25,6 @@ function Register() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { language, languages, setLanguage } = useLanguage();
-  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
 
   const registerSchema = useMemo(
     () =>
@@ -46,10 +41,24 @@ function Register() {
   const registerMutation = useMutation({
     ...registerMutationOptions,
     onSuccess: async (data) => {
-      // Don't set session data since user needs to verify email first
-      // Backend no longer returns session on registration
-      setRegisteredEmail(data.user.email);
-      await tick();
+      // Check if email verification is required
+      if (data.user.email_verified) {
+        // Email already verified (SMTP not configured)
+        // Set session data and navigate to profile
+        queryClient.setQueryData(getSessionQueryOptions.queryKey, {
+          user: data.user,
+        });
+        await tick();
+        navigate({ to: '/profile' });
+      } else {
+        // Email verification required (SMTP configured)
+        // Navigate to verify email page
+        await tick();
+        navigate({
+          to: '/verify-email',
+          search: { email: data.user.email, token: '' },
+        });
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({
@@ -83,105 +92,6 @@ function Register() {
       });
     }
   };
-
-  // Show success message after registration
-  if (registeredEmail) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-base-200 to-base-300 p-4">
-        <div className="w-full max-w-md">
-          <div className="card bg-base-100 shadow-2xl">
-            <div className="card-body gap-6 p-8 text-center">
-              <div className="mx-auto">
-                <div className="relative">
-                  <EnvelopeIcon
-                    size={80}
-                    weight="duotone"
-                    className="text-success"
-                  />
-                  <CheckCircleIcon
-                    size={32}
-                    weight="fill"
-                    className="absolute -top-2 -right-2 rounded-full bg-base-100 text-success"
-                  />
-                </div>
-              </div>
-              <div>
-                <h1 className="mb-2 font-bold text-3xl text-success tracking-tight">
-                  {t('register.success.title')}
-                </h1>
-                <p className="mb-1 font-semibold text-base-content text-lg">
-                  {t('register.success.subtitle')}
-                </p>
-                <p className="mb-3 text-base-content/70 text-sm">
-                  {t('register.success.description', {
-                    email: registeredEmail,
-                  })}
-                </p>
-                <p className="text-base-content/60 text-xs italic">
-                  {t('register.success.checkSpam')}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  navigate({
-                    to: '/verify-email',
-                    search: { email: registeredEmail, token: '' },
-                  })
-                }
-                className="btn btn-primary w-full text-base shadow-lg"
-              >
-                <EnvelopeIcon size={20} weight="regular" />
-                {t('verifyEmail.title')}
-              </button>
-
-              <div className="divider my-2" />
-
-              <div className="text-center">
-                <Link
-                  to="/login"
-                  className="link link-hover link-primary font-medium text-sm"
-                >
-                  {t('register.success.backToLogin')}
-                </Link>
-              </div>
-
-              <div className="flex items-center justify-center gap-3">
-                <GlobeIcon
-                  size={18}
-                  weight="regular"
-                  className="text-base-content/50"
-                />
-                <select
-                  value={language}
-                  onChange={(e) =>
-                    setLanguage(e.target.value as typeof language)
-                  }
-                  className="select select-bordered select-sm w-auto min-w-35 font-medium"
-                  aria-label={t('common.language.select')}
-                >
-                  {languages.map((lang) => (
-                    <option key={lang} value={lang}>
-                      {t(
-                        `common.language.${
-                          lang === 'ko'
-                            ? 'korean'
-                            : lang === 'en'
-                              ? 'english'
-                              : 'japanese'
-                        }`,
-                      )}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-base-200 to-base-300 p-4">
@@ -282,7 +192,7 @@ function Register() {
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as typeof language)}
-                className="select select-bordered select-sm w-auto min-w-35 font-medium"
+                className="select select-sm select-bordered w-auto min-w-35 font-medium"
                 aria-label={t('common.language.select')}
               >
                 {languages.map((lang) => (

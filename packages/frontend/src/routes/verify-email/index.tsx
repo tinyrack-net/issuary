@@ -200,6 +200,19 @@ function VerifyEmail() {
               <p className="text-base-content/70 text-sm">
                 {t('verifyEmail.subtitle')}
               </p>
+              {email && (
+                <div className="alert alert-info mt-4">
+                  <CheckCircleIcon size={20} weight="fill" />
+                  <div className="text-left text-sm">
+                    <p className="font-semibold">
+                      {t('register.success.subtitle')}
+                    </p>
+                    <p className="text-xs">
+                      {t('register.success.description', { email })}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -285,7 +298,7 @@ function VerifyEmail() {
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as typeof language)}
-                className="select select-bordered select-sm w-auto min-w-35 font-medium"
+                className="select select-sm select-bordered w-auto min-w-35 font-medium"
                 aria-label={t('common.language.select')}
               >
                 {languages.map((lang) => (
