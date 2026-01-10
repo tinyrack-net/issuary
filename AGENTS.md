@@ -2,12 +2,70 @@
 
 This document provides guidelines for AI coding agents working in the tinyrack/auth repository.
 
+## Project Overview
+
+This project is an **OpenID Connect (OIDC) Provider** implementation that provides OAuth2 and OIDC authentication services. It acts as an identity provider (IdP) that allows client applications to authenticate users and obtain identity information through standard OIDC flows.
+
+### Key Features
+- Full OAuth2 and OIDC protocol support
+- Authorization Code Flow with PKCE
+- Client credentials management
+- Token issuance and validation (ID tokens, access tokens, refresh tokens)
+- User authentication and consent management
+- Multi-language support (Korean, English, Japanese)
+
 ## Project Structure
 
 This is a monorepo with the following packages:
 - `packages/backend` - Fastify-based OAuth2/OIDC authentication server
 - `packages/frontend` - React frontend using TanStack Router and Daisy UI
 - `packages/client-test` - Next.js test client
+
+### Backend Directory Structure
+```
+packages/backend/src/
+├── db/                    # Database configurations (sqlite, postgres, memory)
+├── entities/              # MikroORM entity definitions (*.entity.ts)
+├── repositories/          # Custom repository classes (*.repository.ts)
+├── services/              # Business logic services (*.service.ts)
+├── routes/                # HTTP route handlers
+│   ├── api/v1/           # API endpoints (/api/v1/*)
+│   └── application/      # OAuth/OIDC endpoints (/application/*)
+├── schemas/               # Zod validation schemas
+│   ├── error.ts          # Centralized error definitions
+│   ├── field.ts          # Reusable field schemas
+│   ├── response.ts       # Response type schemas
+│   └── provider.ts       # Provider schemas
+├── plugins/               # Fastify plugins (auto-loaded)
+├── handlers/              # Reusable request handlers
+├── lib/                   # Utility libraries (config, jwt, pkce, env)
+├── migrations/            # Database migration files
+└── seeders/               # Database seeders
+```
+
+### Frontend Directory Structure
+```
+packages/frontend/src/
+├── routes/                # TanStack Router file-based routes
+│   ├── __root.tsx        # Root layout
+│   ├── index.tsx         # Home page
+│   ├── login/            # Login page
+│   ├── register/         # Registration page
+│   ├── profile/          # Profile page
+│   └── verify-email/     # Email verification
+├── hooks/                 # Custom React hooks
+├── queries/               # TanStack Query options (queryOptions, mutationOptions)
+├── i18n/                  # Internationalization
+│   ├── index.ts          # i18n setup
+│   └── locales/          # Translation files (ko.json, en.json, ja.json)
+├── libs/                  # Utility libraries
+│   ├── etch.ts           # Fetch wrapper
+│   ├── router.ts         # Router setup
+│   ├── query-client.ts   # QueryClient instance
+│   └── promise.ts        # Utility functions (tick)
+├── main.tsx               # Entry point
+└── index.css              # Global styles (Tailwind + DaisyUI)
+```
 
 ## Build, Lint, and Test Commands
 
@@ -31,7 +89,7 @@ pnpm serve                  # Serve production build
 
 ### Frontend (packages/frontend)
 ```bash
-pnpm dev        # Start Vite dev server
+pnpm dev        # Build for development (watch mode)
 pnpm build      # Build for production
 pnpm preview    # Preview production build
 ```
@@ -101,6 +159,31 @@ import type { FastifyWithZodInstance } from '@/server.js';
 - Use the new v4 syntax for all schema methods and types
 - Refer to Zod v4 documentation for updated API usage
 
+#### Zod Schema Organization
+Schemas are organized into specialized files for reusability:
+- **`schemas/field.ts`** - Reusable field definitions with `f` namespace
+  - Example: `f.userEmail`, `f.userId`, `f.password`
+  - Use these for consistent validation across routes
+- **`schemas/response.ts`** - Response type schemas with `r` namespace
+  - Example: `r.UserSession`, `r.OAuthClient`
+  - Define all API response structures here
+- **`schemas/error.ts`** - Centralized error definitions with `e` namespace
+  - Example: `e.InvalidEmailOrPassword`, `e.UserNotFound`
+  - Each error includes status code, error code, and message
+- **`schemas/provider.ts`** - Provider-specific schemas with `zz` namespace
+  - Example: `zz.PORT`, `zz.URL`
+  - Custom Zod types for special validations
+
+#### File-Based Routing
+Routes use `@fastify/autoload` with directory-to-URL mapping:
+- **HTTP method = filename**: `get.ts`, `post.ts`, `put.ts`, `delete.ts`, `patch.ts`
+- **Dynamic parameters**: Use underscore prefix (e.g., `_id/`, `_provider_id/`)
+- **URL mapping**: Directory structure maps directly to URL paths
+  - `routes/api/v1/users/get.ts` → `GET /api/v1/users`
+  - `routes/api/v1/users/_id/get.ts` → `GET /api/v1/users/:id`
+- **Test files**: Colocated with route files (e.g., `post.test.ts` alongside `post.ts`)
+- **Route groups**: Use `application/` for OAuth/OIDC endpoints, `api/v1/` for REST API
+
 #### Route Handlers
 - Export default function accepting `FastifyWithZodInstance`
 - Use Zod schemas for request/response validation
@@ -137,6 +220,57 @@ export default (fastify: FastifyWithZodInstance) =>
 - Use `findOneOrFail` with custom error handlers
 - Type-safe query building
 
+#### Services
+Services are Fastify plugins that encapsulate business logic:
+- Export a class with business logic methods
+- Use `fastify-plugin` wrapper
+- Declare module augmentation for `FastifyInstance`
+- Specify plugin dependencies
+
+Example:
+```typescript
+declare module 'fastify' {
+  interface FastifyInstance {
+    userService: UserService;
+  }
+}
+
+export class UserService {
+  constructor(private readonly mikro: MikroService) {}
+  // Business logic methods here
+}
+
+export default fastifyPlugin(
+  async (fastify) => {
+    fastify.decorate('userService', new UserService(fastify.mikro));
+  },
+  {
+    name: 'user-service-plugin',
+    dependencies: ['base-service-plugin'],
+  }
+);
+```
+
+#### Session Management
+- Uses `@fastify/secure-session` with cookie-based sessions
+- Session data typed via module declaration
+- Access session data:
+  - Read: `const user = req.session.get('user')`
+  - Write: `req.session.set('user', userData)`
+  - Delete: `req.session.delete()`
+
+#### Password Hashing
+- Uses `argon2` for all password/secret hashing
+- Automatic hashing in entity lifecycle hooks (`@BeforeCreate`, `@BeforeUpdate`)
+- Password verification via entity method: `user.verifyPassword(password)`
+- Never store plain-text passwords
+
+#### JWT Token Management
+- Uses `jose` library (NOT `jsonwebtoken`)
+- Token types: access token, refresh token, ID token (OIDC)
+- Algorithm: HS256 with secret from config
+- Token generation: `lib/jwt.ts` provides signing/verification utilities
+
 #### Testing (Vitest)
 - Create `beforeAll`/`afterAll` hooks for server lifecycle
 - Use `app.inject()` for testing HTTP endpoints
@@ -152,6 +286,12 @@ export default (fastify: FastifyWithZodInstance) =>
 - TanStack Query for data fetching
 - Forms: use React Hook Form with Zod validation via `zodResolver`
 - Icons: use **Phosphor Icons** for all icon components
+
+#### Build Configuration
+- Frontend builds to `../backend/public/` directory
+- Backend serves the static frontend files in production
+- Vite dev server proxies API requests to backend (port 8080)
+- Production: Single server serves both frontend and backend
 
 #### Internationalization (i18n)
 - **Always use i18n** for all user-facing text in frontend components
@@ -192,7 +332,30 @@ const schema = useMemo(
 #### State Management
 - TanStack Query for server state
 - Query options pattern: export reusable `queryOptions` and `mutationOptions`
+- Centralize query/mutation logic in `queries/` directory
+- Example:
+```typescript
+// queries/example.ts
+export const exampleQueryOptions = queryOptions({
+  queryKey: ['/api/endpoint'],
+  queryFn: async () => {
+    const res = await etch('/api/endpoint');
+    return res.json() as Promise<ResponseType>;
+  },
+});
+
+export const exampleMutationOptions = mutationOptions({
+  mutationFn: async (params: ParamsType) => {
+    const res = await etch('/api/endpoint', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+    return res.json() as Promise<ResponseType>;
+  },
+});
+```
 - Invalidate queries appropriately in mutation callbacks
+- Use `tick()` utility to wait for state updates before navigation
 - Example:
 ```typescript
 const mutation = useMutation({
@@ -207,10 +370,47 @@ const mutation = useMutation({
 });
 ```
 
+#### HTTP Client (etch)
+- Use `etch()` wrapper from `libs/etch.ts` for all HTTP requests
+- Centralized error handling and JSON headers
+- Throws on non-ok responses
+- Example:
+```typescript
+import { etch } from '@/libs/etch.js';
+
+const res = await etch('/api/endpoint', {
+  method: 'POST',
+  body: JSON.stringify(data),
+});
+const json = await res.json();
+```
+
 ### Error Handling
-- Create specific error instances with clear messages
-- Use try-catch in async functions
-- Provide meaningful error messages for users
+- Centralized error definitions in `schemas/error.ts` using `createError` function
+- Each error includes HTTP status code, error code, and message
+- Use `e` namespace for error access
+- Throw errors: `throw new e.ErrorName.Error()`
+- Schema validation: `response: { 401: e.ErrorName.Schema }`
+- Example:
+```typescript
+// In schemas/error.ts
+export const e = {
+  InvalidEmailOrPassword: createError(
+    401,
+    'INVALID_EMAIL_OR_PASSWORD',
+    'The provided email or password is incorrect.'
+  ),
+};
+
+// In route handler
+throw new e.InvalidEmailOrPassword.Error();
+
+// In route schema
+response: {
+  200: SuccessSchema,
+  401: e.InvalidEmailOrPassword.Schema,
+}
+```
 - Use `failHandler` in repository queries for custom errors
 - Example:
 ```typescript
@@ -221,11 +421,49 @@ const user = await this.findOneOrFail(
 );
 ```
 
-## Environment Variables
-- Backend uses environment-specific configs via `APP_ENV`
-- Config file: `config.yaml`
+## Configuration
+
+### Backend Configuration
+- Backend settings are injected through `packages/backend/config.yaml`
+- Configuration is loaded and validated via `packages/backend/src/lib/config.ts`
+- Config file location:
+  - Default: `/opt/config.yaml` (production)
+  - Can be overridden via `CONFIG_PATH` environment variable
+  - Test environment: `./config.test.yaml` (when `APP_ENV=test`)
+- YAML config supports environment variable interpolation using `!env` tag
+  - Example: `password: !env SMTP_PASSWORD`
+- All config is validated against Zod schemas at startup
+- Config sections:
+  - `app`: Application settings (host, port, JWT secrets, language settings)
+  - `admin`: Admin interface settings
+  - `database`: Database connection (SQLite, PostgreSQL, or in-memory)
+  - `smtp`: Email service configuration
+  - `authentication_methods`: Enabled auth methods (password, OAuth, etc.)
+  - `providers`: Pre-configured OAuth clients
+  - `users`: Pre-seeded users
+
+### Config-based Data Source
+- Users and OAuth clients defined in `config.yaml` act as a **separate data source** (NOT seeded to database)
+- When querying users or OAuth clients, the application searches **both** config and database
+- Config-based data takes priority over database (checked first)
+- Config users/providers are marked with `managed: 'config'`, DB entries with `managed: 'database'`
+- Config-based entities cannot be modified at runtime (immutable)
+- Use cases: infrastructure-as-code for admin users, static OAuth clients for trusted applications
+- Example pattern:
+```typescript
+// Always check config first, then database
+const appConfigUser = AppConfigs.users?.find((u) => u.id === id);
+if (appConfigUser) {
+  return { ...appConfigUser, managed: 'config' };
+}
+const dbUser = await this.mikro.user.findOneOrFail({ id });
+return { ...dbUser, managed: 'database' };
+```
+
+### Environment Variables
+- `APP_ENV`: Environment mode (`test`, `development`, `production`)
+- `CONFIG_PATH`: Override default config file path
 - Example file: `.env.example`
-- Environments: `test`, `development`, `production`
 
 ## Database
 - ORM: **MikroORM**
