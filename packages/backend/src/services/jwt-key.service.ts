@@ -1,3 +1,4 @@
+import fastifyPlugin from 'fastify-plugin';
 import {
   exportJWK,
   exportPKCS8,
@@ -5,29 +6,16 @@ import {
   generateKeyPair,
   importPKCS8,
   importSPKI,
+  type JWK,
 } from 'jose';
-import fastifyPlugin from 'fastify-plugin';
 import { JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
 import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
-import type { JwtKeyRepository } from '@/repositories/jwt-key.repository.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
     jwtKeyService: JwtKeyService;
   }
-}
-
-/**
- * JWK (JSON Web Key) representation for JWKS response
- */
-export interface JWK {
-  kty: string;
-  use: string;
-  kid: string;
-  alg: string;
-  n?: string;
-  e?: string;
 }
 
 /**
@@ -63,10 +51,9 @@ export class JwtKeyService {
   /**
    * Generate a new RSA key pair
    *
-   * @param expiresInDays - Days until key expires (for rotation scheduling)
    * @returns Generated key pair with PEM-encoded keys
    */
-  async generateKeyPair(expiresInDays?: number): Promise<KeyPair> {
+  async generateKeyPair(): Promise<KeyPair> {
     // Generate RSA key pair using jose
     const { privateKey, publicKey } = await generateKeyPair('RS256', {
       modulusLength: 2048,
@@ -326,13 +313,14 @@ export class JwtKeyService {
     // Export to JWK
     const jwk = await exportJWK(publicKey);
 
+    // Return JWK with required fields for RS256
     return {
       kty: jwk.kty!,
       use: 'sig',
       kid: key.kid,
       alg: key.algorithm,
-      n: jwk.n,
-      e: jwk.e,
+      ...(jwk.n && { n: jwk.n }),
+      ...(jwk.e && { e: jwk.e }),
     };
   }
 

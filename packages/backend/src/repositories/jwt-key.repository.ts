@@ -42,7 +42,6 @@ export class JwtKeyRepository extends EntityRepository<JwtKeyEntity> {
         status: { $in: [JwtKeyStatus.ACTIVE, JwtKeyStatus.PREVIOUS] },
       },
       {
-        fields: ['kid', 'public_key', 'algorithm', 'status'],
         orderBy: { created_at: 'DESC' },
       },
     );
