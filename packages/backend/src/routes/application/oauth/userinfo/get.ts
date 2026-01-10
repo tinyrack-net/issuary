@@ -1,6 +1,5 @@
 import z from 'zod/v4';
 import { validateBearerToken } from '@/handlers/validate-bearer-token.js';
-import { e } from '@/schemas/error.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
