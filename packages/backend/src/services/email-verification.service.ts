@@ -67,6 +67,9 @@ export class EmailVerificationService {
     // Generate new token (this invalidates old ones)
     const token = await this.generateToken({ user });
 
+    // Ensure changes are persisted
+    await this.mikro.em.flush();
+
     return token;
   }
 
