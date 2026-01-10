@@ -1,5 +1,4 @@
 import fastifyPlugin from 'fastify-plugin';
-import type z from 'zod';
 import type { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
 import type { UserEntity } from '@/entities/user.entity.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
