@@ -5,50 +5,61 @@ import {
   GlobeIcon,
 } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  useNavigate,
+  useSearch,
+} from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { useLanguage } from '@/hooks/use-language';
 import { tick } from '@/libs/promise';
-import { registerMutationOptions } from '@/queries/register';
 import { getSessionQueryOptions } from '@/queries/session';
+import {
+  resendVerificationMutationOptions,
+  verifyEmailMutationOptions,
+} from '@/queries/verify-email';
 
-export const Route = createFileRoute('/register/')({
-  component: Register,
+export const Route = createFileRoute('/verify-email/')({
+  component: VerifyEmail,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      token: (search.token as string) || '',
+      email: (search.email as string) || '',
+    };
+  },
 });
 
-type RegisterFormValues = {
-  email: string;
-  password: string;
+type VerifyEmailFormValues = {
+  token: string;
 };
 
-function Register() {
+function VerifyEmail() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { language, languages, setLanguage } = useLanguage();
-  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
+  const { token: queryToken, email } = useSearch({ from: '/verify-email/' });
+  const [verified, setVerified] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
-  const registerSchema = useMemo(
+  const verifyEmailSchema = useMemo(
     () =>
       z.object({
-        email: z.string().email(t('validation.email.invalid')),
-        password: z
-          .string()
-          .min(6, t('validation.password.min'))
-          .max(100, t('validation.password.max')),
+        token: z.string().min(1, t('validation.token.required')),
       }),
     [t],
   );
 
-  const registerMutation = useMutation({
-    ...registerMutationOptions,
+  const verifyEmailMutation = useMutation({
+    ...verifyEmailMutationOptions,
     onSuccess: async (data) => {
-      // Don't set session data since user needs to verify email first
-      // Backend no longer returns session on registration
-      setRegisteredEmail(data.user.email);
+      queryClient.setQueryData(getSessionQueryOptions.queryKey, {
+        user: data.user,
+      });
+      setVerified(true);
       await tick();
     },
     onSettled: () => {
@@ -58,94 +69,81 @@ function Register() {
     },
   });
 
+  const resendVerificationMutation = useMutation({
+    ...resendVerificationMutationOptions,
+    onSuccess: () => {
+      setResendSuccess(true);
+      setTimeout(() => setResendSuccess(false), 5000);
+    },
+  });
+
   const {
     register,
     setError,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterFormValues>({
+  } = useForm<VerifyEmailFormValues>({
     defaultValues: {
-      email: '',
-      password: '',
+      token: queryToken || '',
     },
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(verifyEmailSchema),
   });
 
-  const onSubmit = async (values: RegisterFormValues) => {
+  const onSubmit = async (values: VerifyEmailFormValues) => {
     try {
-      console.log('Register attempt:', values);
-      await registerMutation.mutateAsync(values);
+      await verifyEmailMutation.mutateAsync(values);
     } catch (error) {
-      console.error('Register failed:', error);
-      setError('email', {
+      console.error('Verification failed:', error);
+      setError('token', {
         type: 'manual',
-        message: t('register.error.emailExists'),
+        message: t('verifyEmail.error.invalidToken'),
       });
     }
   };
 
-  // Show success message after registration
-  if (registeredEmail) {
+  const handleResend = async () => {
+    if (!email) {
+      return;
+    }
+    try {
+      await resendVerificationMutation.mutateAsync({ email });
+    } catch (error) {
+      console.error('Resend failed:', error);
+    }
+  };
+
+  if (verified) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-base-200 to-base-300 p-4">
         <div className="w-full max-w-md">
           <div className="card bg-base-100 shadow-2xl">
             <div className="card-body gap-6 p-8 text-center">
               <div className="mx-auto">
-                <div className="relative">
-                  <EnvelopeIcon
-                    size={80}
-                    weight="duotone"
-                    className="text-success"
-                  />
-                  <CheckCircleIcon
-                    size={32}
-                    weight="fill"
-                    className="absolute -top-2 -right-2 rounded-full bg-base-100 text-success"
-                  />
-                </div>
+                <CheckCircleIcon
+                  size={80}
+                  weight="duotone"
+                  className="text-success"
+                />
               </div>
               <div>
                 <h1 className="mb-2 font-bold text-3xl text-success tracking-tight">
-                  {t('register.success.title')}
+                  {t('verifyEmail.success.title')}
                 </h1>
                 <p className="mb-1 font-semibold text-base-content text-lg">
-                  {t('register.success.subtitle')}
+                  {t('verifyEmail.success.subtitle')}
                 </p>
-                <p className="mb-3 text-base-content/70 text-sm">
-                  {t('register.success.description', {
-                    email: registeredEmail,
-                  })}
-                </p>
-                <p className="text-base-content/60 text-xs italic">
-                  {t('register.success.checkSpam')}
+                <p className="text-base-content/70 text-sm">
+                  {t('verifyEmail.success.description')}
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={() =>
-                  navigate({
-                    to: '/verify-email',
-                    search: { email: registeredEmail, token: '' },
-                  })
-                }
+                onClick={() => navigate({ to: '/profile' })}
                 className="btn btn-primary w-full text-base shadow-lg"
               >
-                <EnvelopeIcon size={20} weight="regular" />
-                {t('verifyEmail.title')}
+                {t('verifyEmail.success.goToProfile')}
               </button>
-
-              <div className="divider my-2" />
-
-              <div className="text-center">
-                <Link
-                  to="/login"
-                  className="link link-hover link-primary font-medium text-sm"
-                >
-                  {t('register.success.backToLogin')}
-                </Link>
-              </div>
 
               <div className="flex items-center justify-center gap-3">
                 <GlobeIcon
@@ -189,58 +187,41 @@ function Register() {
         <div className="card bg-base-100 shadow-2xl">
           <div className="card-body gap-6 p-8">
             <div className="text-center">
+              <div className="mx-auto mb-4">
+                <EnvelopeIcon
+                  size={64}
+                  weight="duotone"
+                  className="text-primary"
+                />
+              </div>
               <h1 className="mb-2 font-bold text-4xl tracking-tight">
-                {t('register.title')}
+                {t('verifyEmail.title')}
               </h1>
               <p className="text-base-content/70 text-sm">
-                {t('register.subtitle')}
+                {t('verifyEmail.subtitle')}
               </p>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div className="form-control">
-                <label htmlFor="email" className="label">
+                <label htmlFor="token" className="label">
                   <span className="label-text font-semibold">
-                    {t('register.email.label')}
+                    {t('verifyEmail.token.label')}
                   </span>
                 </label>
                 <input
-                  id="email"
-                  type="email"
-                  placeholder={t('register.email.placeholder')}
-                  className={`input input-bordered focus:input-primary w-full transition-all ${
-                    errors.email ? 'input-error' : ''
+                  id="token"
+                  type="text"
+                  placeholder={t('verifyEmail.token.placeholder')}
+                  className={`input input-bordered focus:input-primary w-full font-mono transition-all ${
+                    errors.token ? 'input-error' : ''
                   }`}
-                  {...register('email')}
+                  {...register('token')}
                 />
-                {errors.email && (
+                {errors.token && (
                   <div className="label">
                     <span className="label-text-alt text-error">
-                      {errors.email.message}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="form-control">
-                <label htmlFor="password" className="label">
-                  <span className="label-text font-semibold">
-                    {t('register.password.label')}
-                  </span>
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  placeholder={t('register.password.placeholder')}
-                  className={`input input-bordered focus:input-primary w-full transition-all ${
-                    errors.password ? 'input-error' : ''
-                  }`}
-                  {...register('password')}
-                />
-                {errors.password && (
-                  <div className="label">
-                    <span className="label-text-alt text-error">
-                      {errors.password.message}
+                      {errors.token.message}
                     </span>
                   </div>
                 )}
@@ -249,29 +230,51 @@ function Register() {
               <button
                 type="submit"
                 className="btn btn-primary w-full text-base shadow-lg"
-                disabled={registerMutation.isPending}
+                disabled={verifyEmailMutation.isPending}
               >
-                {registerMutation.isPending ? (
+                {verifyEmailMutation.isPending ? (
                   <>
                     <span className="loading loading-spinner loading-sm" />
-                    {t('register.submitting')}
+                    {t('verifyEmail.submitting')}
                   </>
                 ) : (
-                  t('register.submit')
+                  t('verifyEmail.submit')
                 )}
               </button>
             </form>
 
-            <div className="divider my-2" />
+            {email && (
+              <>
+                <div className="divider my-2" />
 
-            <div className="text-center">
-              <Link
-                to="/login"
-                className="link link-hover link-primary font-medium text-sm"
-              >
-                {t('register.link.login')}
-              </Link>
-            </div>
+                {resendSuccess && (
+                  <div className="alert alert-success mb-2">
+                    <CheckCircleIcon size={20} weight="fill" />
+                    <span className="text-sm">
+                      {t('verifyEmail.resendSuccess')}
+                    </span>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={
+                    resendVerificationMutation.isPending || resendSuccess
+                  }
+                  className="btn btn-ghost btn-sm w-full"
+                >
+                  {resendVerificationMutation.isPending ? (
+                    <>
+                      <span className="loading loading-spinner loading-xs" />
+                      {t('verifyEmail.resending')}
+                    </>
+                  ) : (
+                    t('verifyEmail.resend')
+                  )}
+                </button>
+              </>
+            )}
 
             <div className="flex items-center justify-center gap-3">
               <GlobeIcon

@@ -23,6 +23,7 @@ export default (fastify: FastifyWithZodInstance) =>
     handler: async (_req, res) => {
       res.status(200).send({
         user: {
+          managed: 'database',
           id: 'asdf',
           email: '',
           email_verified: false,
