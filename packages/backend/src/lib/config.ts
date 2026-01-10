@@ -78,6 +78,7 @@ export const AppConfigSmtp = z.object({
   user: z.string().min(1),
   password: z.string().min(1),
   from: z.email(),
+  test: z.boolean().default(false),
 });
 
 export type AppConfigSmtp = z.infer<typeof AppConfigSmtp>;
