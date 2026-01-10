@@ -1,5 +1,4 @@
 import z from 'zod/v4';
-import { validateProvider } from '@/handlers/validate-provider.js';
 import { AppConfigs } from '@/lib/config.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
@@ -98,8 +97,11 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      // Validate provider exists
-      await validateProvider(req.params.provider_id);
+      // Validate provider exists and is enabled
+      const client = await fastify.oauthClientService.findByClientId(
+        req.params.provider_id,
+      );
+      fastify.oauthClientService.validateEnabled(client);
 
       const baseUrl = AppConfigs.app.host;
       const oauthBasePath = `/application/oauth/${req.params.provider_id}`;

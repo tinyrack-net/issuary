@@ -1,5 +1,4 @@
 import z from 'zod/v4';
-import { validateProvider } from '@/handlers/validate-provider.js';
 import { e } from '@/schemas/error.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
@@ -62,9 +61,11 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      // Validate that the provider exists
-      // Throws OAuthClientNotFound if provider doesn't exist
-      await validateProvider(req.params.provider_id);
+      // Validate that the provider exists and is enabled
+      const client = await fastify.oauthClientService.findByClientId(
+        req.params.provider_id,
+      );
+      fastify.oauthClientService.validateEnabled(client);
 
       // Get JWKS from JwtKeyService
       // Returns all active and previous keys for token verification
