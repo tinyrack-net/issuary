@@ -1,18 +1,7 @@
-import type { FastifyInstance } from 'fastify';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createServer } from '@/server.js';
+import { describe, expect, test } from 'vitest';
+import { setupTestServer } from '@/test-utils/index.js';
 
-let app: FastifyInstance;
-
-beforeAll(async () => {
-  app = await createServer().start();
-});
-
-afterAll(async () => {
-  if (app) {
-    await app.close();
-  }
-});
+const app = setupTestServer();
 
 describe('POST /api/v1/user/logout', () => {
   test('should logout successfully with valid session', async () => {

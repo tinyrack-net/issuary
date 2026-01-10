@@ -1,19 +1,8 @@
-import type { FastifyInstance } from 'fastify';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
-import { createServer } from '@/server.js';
+import { generateUniqueEmail, setupTestServer } from '@/test-utils/index.js';
 
-let app: FastifyInstance;
-
-beforeAll(async () => {
-  app = await createServer().start();
-});
-
-afterAll(async () => {
-  if (app) {
-    await app.close();
-  }
-});
+const app = setupTestServer();
 
 describe('POST /api/v1/user/login', () => {
   test('should login successfully with correct credentials (app config user)', async () => {
@@ -34,7 +23,7 @@ describe('POST /api/v1/user/login', () => {
 
   test('should login successfully with correct credentials (registered user)', async () => {
     // First, register a new user
-    const uniqueEmail = `loginuser${Date.now()}@example.com`;
+    const uniqueEmail = generateUniqueEmail('loginuser');
     const registerRes = await app.inject({
       method: 'post',
       url: '/api/v1/user/register',

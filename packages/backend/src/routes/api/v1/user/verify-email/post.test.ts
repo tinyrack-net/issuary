@@ -1,30 +1,17 @@
-import { RequestContext } from '@mikro-orm/core';
-import type { FastifyInstance } from 'fastify';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
-import { createServer } from '@/server.js';
+import {
+  generateUniqueEmail,
+  setupTestServer,
+  withMikroContext,
+} from '@/test-utils/index.js';
 
-let app: FastifyInstance;
-
-beforeAll(async () => {
-  app = await createServer().start();
-});
-
-afterAll(async () => {
-  if (app) {
-    await app.close();
-  }
-});
-
-// Helper function to run code within MikroORM RequestContext
-async function withContext<T>(fn: () => Promise<T>): Promise<T> {
-  return RequestContext.create(app.mikro.em, fn);
-}
+const app = setupTestServer();
 
 describe('POST /api/v1/user/verify-email', () => {
   test('should verify email with valid token', { timeout: 10000 }, async () => {
     // 1. Register a new user
-    const uniqueEmail = `verify${Date.now()}@example.com`;
+    const uniqueEmail = generateUniqueEmail('verify');
     const registerRes = await app.inject({
       method: 'post',
       url: '/api/v1/user/register',
@@ -39,7 +26,7 @@ describe('POST /api/v1/user/verify-email', () => {
     expect(registerBody.user.email_verified).toBe(false);
 
     // 2. Get the verification token from database
-    const token = await withContext(async () => {
+    const token = await withMikroContext(app, async () => {
       const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
       const verification = await app.mikro.emailVerification.findOneOrFail({
         user,
@@ -62,7 +49,7 @@ describe('POST /api/v1/user/verify-email', () => {
     expect(verifyBody.user.email_verified).toBe(true);
 
     // 4. Check that user's email is marked as verified in database
-    const isVerified = await withContext(async () => {
+    const isVerified = await withMikroContext(app, async () => {
       const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
       return user.email_verified;
     });
@@ -89,7 +76,7 @@ describe('POST /api/v1/user/verify-email', () => {
 
   test('should fail with expired token', { timeout: 10000 }, async () => {
     // 1. Register a new user
-    const uniqueEmail = `expired${Date.now()}@example.com`;
+    const uniqueEmail = generateUniqueEmail('expired');
     await app.inject({
       method: 'post',
       url: '/api/v1/user/register',
@@ -100,7 +87,7 @@ describe('POST /api/v1/user/verify-email', () => {
     });
 
     // 2. Get the verification token and expire it
-    await withContext(async () => {
+    await withMikroContext(app, async () => {
       const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
       const verification = await app.mikro.emailVerification.findOneOrFail({
         user,
@@ -113,7 +100,7 @@ describe('POST /api/v1/user/verify-email', () => {
     });
 
     // 3. Get the expired token
-    const token = await withContext(async () => {
+    const token = await withMikroContext(app, async () => {
       const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
       const verification = await app.mikro.emailVerification.findOneOrFail({
         user,
@@ -135,7 +122,7 @@ describe('POST /api/v1/user/verify-email', () => {
 
   test('should fail with already used token', { timeout: 10000 }, async () => {
     // 1. Register a user
-    const uniqueEmail = `used${Date.now()}@example.com`;
+    const uniqueEmail = generateUniqueEmail('used');
     await app.inject({
       method: 'post',
       url: '/api/v1/user/register',
@@ -146,7 +133,7 @@ describe('POST /api/v1/user/verify-email', () => {
     });
 
     // 2. Get the token
-    const token = await withContext(async () => {
+    const token = await withMikroContext(app, async () => {
       const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
       const verification = await app.mikro.emailVerification.findOneOrFail({
         user,
@@ -177,7 +164,7 @@ describe('POST /api/v1/user/verify-email', () => {
 describe('POST /api/v1/user/resend-verification', () => {
   test('should resend verification email', { timeout: 10000 }, async () => {
     // 1. Register a new user
-    const uniqueEmail = `resend${Date.now()}@example.com`;
+    const uniqueEmail = generateUniqueEmail('resend');
     await app.inject({
       method: 'post',
       url: '/api/v1/user/register',
@@ -188,7 +175,7 @@ describe('POST /api/v1/user/resend-verification', () => {
     });
 
     // 2. Get the first token
-    const firstToken = await withContext(async () => {
+    const firstToken = await withMikroContext(app, async () => {
       const user = await app.mikro.user.findOneOrFail({
         email: uniqueEmail,
       });
@@ -215,7 +202,7 @@ describe('POST /api/v1/user/resend-verification', () => {
     expect(body).toHaveProperty('message');
 
     // 4. Check that a new token was generated
-    const newToken = await withContext(async () => {
+    const newToken = await withMikroContext(app, async () => {
       const user = await app.mikro.user.findOneOrFail({
         email: uniqueEmail,
       });
@@ -250,7 +237,7 @@ describe('POST /api/v1/user/resend-verification', () => {
     { timeout: 10000 },
     async () => {
       // 1. Register a user
-      const uniqueEmail = `verified${Date.now()}@example.com`;
+      const uniqueEmail = generateUniqueEmail('verified');
       await app.inject({
         method: 'post',
         url: '/api/v1/user/register',
@@ -261,7 +248,7 @@ describe('POST /api/v1/user/resend-verification', () => {
       });
 
       // 2. Get token and verify the email
-      const token = await withContext(async () => {
+      const token = await withMikroContext(app, async () => {
         const user = await app.mikro.user.findOneOrFail({
           email: uniqueEmail,
         });

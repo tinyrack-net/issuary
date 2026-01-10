@@ -1,137 +1,25 @@
-import type { FastifyInstance } from 'fastify';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createServer } from '@/server.js';
+import { describe, expect, test } from 'vitest';
+import {
+  createAuthenticatedSession,
+  exchangeCodeForTokens,
+  getAccessToken,
+  getAuthorizationCode,
+  getUserInfo,
+  setupTestServer,
+  TEST_OAUTH_CLIENT,
+  TEST_USER,
+} from '@/test-utils/index.js';
 
-let app: FastifyInstance;
-
-beforeAll(async () => {
-  app = await createServer().start();
-});
-
-afterAll(async () => {
-  if (app) {
-    await app.close();
-  }
-});
-
-/**
- * Test configuration constants
- */
-const TEST_CONFIG = {
-  validClient: {
-    clientId: 'sdlk3n3dkj2',
-    clientSecret: 'sdlk3n3dkj2',
-    redirectUri: 'http://localhost:8080/callback',
-    allowedScopes: ['openid', 'profile', 'email'],
-  },
-  testUser: {
-    email: 'test-config-user@example.com',
-    password: 'changemelater',
-  },
-  pkce: {
-    codeChallenge: 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
-    codeChallengeMethod: 'S256' as const,
-    codeVerifier: 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk',
-  },
-} as const;
-
-/**
- * Helper: Create authenticated session and return session cookie
- */
-async function createAuthenticatedSession(
-  email: string = TEST_CONFIG.testUser.email,
-  password: string = TEST_CONFIG.testUser.password,
-): Promise<string> {
-  const loginRes = await app.inject({
-    method: 'POST',
-    url: '/api/v1/user/login',
-    payload: { email, password },
-  });
-
-  expect(loginRes.statusCode).toBe(200);
-
-  const sessionCookie = loginRes.cookies.find((c) => c.name === 'session');
-  expect(sessionCookie).toBeDefined();
-
-  return sessionCookie?.value || '';
-}
-
-/**
- * Helper: Get access token with specific scopes
- */
-async function getAccessToken(params: {
-  scope?: string;
-  sessionCookie?: string;
-}): Promise<string> {
-  const { scope = 'openid profile email', sessionCookie: providedSession } =
-    params;
-
-  // Create session if not provided
-  const sessionCookie = providedSession || (await createAuthenticatedSession());
-
-  // Get authorization code
-  const authorizeRes = await app.inject({
-    method: 'GET',
-    url: '/application/oauth/authorize',
-    query: {
-      response_type: 'code',
-      client_id: TEST_CONFIG.validClient.clientId,
-      redirect_uri: TEST_CONFIG.validClient.redirectUri,
-      scope,
-      state: 'test-state',
-    },
-    cookies: { session: sessionCookie },
-  });
-
-  expect(authorizeRes.statusCode).toBe(302);
-
-  const location = new URL(
-    authorizeRes.headers.location as string,
-    'http://localhost:8080',
-  );
-  const code = location.searchParams.get('code');
-  expect(code).toBeDefined();
-
-  // Exchange code for tokens
-  const tokenRes = await app.inject({
-    method: 'POST',
-    url: '/application/oauth/token',
-    payload: {
-      grant_type: 'authorization_code',
-      code,
-      client_id: TEST_CONFIG.validClient.clientId,
-      redirect_uri: TEST_CONFIG.validClient.redirectUri,
-    },
-  });
-
-  expect(tokenRes.statusCode).toBe(200);
-  const { access_token } = tokenRes.json();
-  expect(access_token).toBeDefined();
-
-  return access_token;
-}
-
-/**
- * Helper: Get userinfo with access token
- */
-async function getUserInfo(accessToken: string) {
-  return app.inject({
-    method: 'GET',
-    url: '/application/oauth/userinfo',
-    headers: {
-      authorization: `Bearer ${accessToken}`,
-    },
-  });
-}
+const app = setupTestServer();
 
 describe('GET /application/oauth/userinfo', () => {
   describe('Success Cases', () => {
     test('should return user info with all scopes', async () => {
-      const accessToken = await getAccessToken({
+      const accessToken = await getAccessToken(app, {
         scope: 'openid profile email',
       });
 
-      const res = await getUserInfo(accessToken);
+      const res = await getUserInfo(app, accessToken);
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -141,7 +29,7 @@ describe('GET /application/oauth/userinfo', () => {
       expect(typeof json.sub).toBe('string');
 
       // Email scope claims
-      expect(json.email).toBe(TEST_CONFIG.testUser.email);
+      expect(json.email).toBe(TEST_USER.email);
       expect(typeof json.email_verified).toBe('boolean');
 
       // Profile scope claims
@@ -150,18 +38,18 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should return only sub and email claims with email scope', async () => {
-      const accessToken = await getAccessToken({
+      const accessToken = await getAccessToken(app, {
         scope: 'openid email', // No profile scope
       });
 
-      const res = await getUserInfo(accessToken);
+      const res = await getUserInfo(app, accessToken);
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
 
       // Should have sub (always) and email claims
       expect(json.sub).toBeDefined();
-      expect(json.email).toBe(TEST_CONFIG.testUser.email);
+      expect(json.email).toBe(TEST_USER.email);
       expect(json.email_verified).toBeDefined();
 
       // Should NOT have profile claims
@@ -171,11 +59,11 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should return only sub and profile claims with profile scope', async () => {
-      const accessToken = await getAccessToken({
+      const accessToken = await getAccessToken(app, {
         scope: 'openid profile', // No email scope
       });
 
-      const res = await getUserInfo(accessToken);
+      const res = await getUserInfo(app, accessToken);
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -191,11 +79,11 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should return only sub with just openid scope', async () => {
-      const accessToken = await getAccessToken({
+      const accessToken = await getAccessToken(app, {
         scope: 'openid', // Only openid, no profile or email
       });
 
-      const res = await getUserInfo(accessToken);
+      const res = await getUserInfo(app, accessToken);
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -212,27 +100,27 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should work with OAuth2 flow (no openid scope)', async () => {
-      const accessToken = await getAccessToken({
+      const accessToken = await getAccessToken(app, {
         scope: 'profile email', // No openid scope
       });
 
-      const res = await getUserInfo(accessToken);
+      const res = await getUserInfo(app, accessToken);
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
 
       // Should have all claims based on scopes
       expect(json.sub).toBeDefined();
-      expect(json.email).toBe(TEST_CONFIG.testUser.email);
+      expect(json.email).toBe(TEST_USER.email);
       expect(json.name).toBeDefined();
     });
 
     test('should return valid user ID in sub claim', async () => {
-      const accessToken = await getAccessToken({
+      const accessToken = await getAccessToken(app, {
         scope: 'openid',
       });
 
-      const res = await getUserInfo(accessToken);
+      const res = await getUserInfo(app, accessToken);
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -285,7 +173,7 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should reject request with invalid access token', async () => {
-      const res = await getUserInfo('invalid-token-that-is-not-a-jwt');
+      const res = await getUserInfo(app, 'invalid-token-that-is-not-a-jwt');
 
       expect(res.statusCode).toBe(401);
       const json = res.json();
@@ -293,7 +181,7 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should reject request with malformed JWT', async () => {
-      const res = await getUserInfo('not.a.valid.jwt.format');
+      const res = await getUserInfo(app, 'not.a.valid.jwt.format');
 
       expect(res.statusCode).toBe(401);
       const json = res.json();
@@ -306,7 +194,7 @@ describe('GET /application/oauth/userinfo', () => {
       const fakeExpiredToken =
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjF9.invalid';
 
-      const res = await getUserInfo(fakeExpiredToken);
+      const res = await getUserInfo(app, fakeExpiredToken);
 
       expect(res.statusCode).toBe(401);
       const json = res.json();
@@ -315,7 +203,7 @@ describe('GET /application/oauth/userinfo', () => {
 
     test('should reject request with refresh token instead of access token', async () => {
       // Get tokens
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       // Get authorization code and exchange for tokens to get refresh token
       const authorizeRes = await app.inject({
@@ -323,8 +211,8 @@ describe('GET /application/oauth/userinfo', () => {
         url: '/application/oauth/authorize',
         query: {
           response_type: 'code',
-          client_id: TEST_CONFIG.validClient.clientId,
-          redirect_uri: TEST_CONFIG.validClient.redirectUri,
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
           scope: 'openid',
           state: 'test',
         },
@@ -343,15 +231,15 @@ describe('GET /application/oauth/userinfo', () => {
         payload: {
           grant_type: 'authorization_code',
           code,
-          client_id: TEST_CONFIG.validClient.clientId,
-          redirect_uri: TEST_CONFIG.validClient.redirectUri,
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
         },
       });
 
       const { refresh_token } = tokenRes.json();
 
       // Try to use refresh token for userinfo (should fail)
-      const res = await getUserInfo(refresh_token);
+      const res = await getUserInfo(app, refresh_token);
 
       expect(res.statusCode).toBe(401);
       const json = res.json();
@@ -361,11 +249,11 @@ describe('GET /application/oauth/userinfo', () => {
 
   describe('Scope-based Claims Filtering', () => {
     test('should respect scope limitations', async () => {
-      const accessToken = await getAccessToken({
+      const accessToken = await getAccessToken(app, {
         scope: 'openid', // Minimal scope
       });
 
-      const res = await getUserInfo(accessToken);
+      const res = await getUserInfo(app, accessToken);
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -377,11 +265,11 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should include email_verified only with email scope', async () => {
-      const accessToken = await getAccessToken({
+      const accessToken = await getAccessToken(app, {
         scope: 'openid email',
       });
 
-      const res = await getUserInfo(accessToken);
+      const res = await getUserInfo(app, accessToken);
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -391,11 +279,11 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should not leak claims from other scopes', async () => {
-      const accessToken = await getAccessToken({
+      const accessToken = await getAccessToken(app, {
         scope: 'openid profile', // Only profile, no email
       });
 
-      const res = await getUserInfo(accessToken);
+      const res = await getUserInfo(app, accessToken);
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -412,22 +300,22 @@ describe('GET /application/oauth/userinfo', () => {
 
   describe('Response Format', () => {
     test('should return JSON content type', async () => {
-      const accessToken = await getAccessToken({
+      const accessToken = await getAccessToken(app, {
         scope: 'openid',
       });
 
-      const res = await getUserInfo(accessToken);
+      const res = await getUserInfo(app, accessToken);
 
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toContain('application/json');
     });
 
     test('should return valid JSON structure', async () => {
-      const accessToken = await getAccessToken({
+      const accessToken = await getAccessToken(app, {
         scope: 'openid profile email',
       });
 
-      const res = await getUserInfo(accessToken);
+      const res = await getUserInfo(app, accessToken);
 
       expect(res.statusCode).toBe(200);
 
@@ -438,11 +326,11 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should follow OIDC standard claim names', async () => {
-      const accessToken = await getAccessToken({
+      const accessToken = await getAccessToken(app, {
         scope: 'openid profile email',
       });
 
-      const res = await getUserInfo(accessToken);
+      const res = await getUserInfo(app, accessToken);
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -454,11 +342,11 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should not include null or undefined values', async () => {
-      const accessToken = await getAccessToken({
+      const accessToken = await getAccessToken(app, {
         scope: 'openid email',
       });
 
-      const res = await getUserInfo(accessToken);
+      const res = await getUserInfo(app, accessToken);
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -517,11 +405,11 @@ describe('GET /application/oauth/userinfo', () => {
 
   describe('OIDC Compliance', () => {
     test('should comply with OIDC Core §5.3 UserInfo endpoint', async () => {
-      const accessToken = await getAccessToken({
+      const accessToken = await getAccessToken(app, {
         scope: 'openid profile email',
       });
 
-      const res = await getUserInfo(accessToken);
+      const res = await getUserInfo(app, accessToken);
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -535,7 +423,7 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should return claims consistent with ID token', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
       const scope = 'openid email';
 
       // Get tokens (including ID token)
@@ -544,8 +432,8 @@ describe('GET /application/oauth/userinfo', () => {
         url: '/application/oauth/authorize',
         query: {
           response_type: 'code',
-          client_id: TEST_CONFIG.validClient.clientId,
-          redirect_uri: TEST_CONFIG.validClient.redirectUri,
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
           scope,
           state: 'test',
         },
@@ -564,15 +452,15 @@ describe('GET /application/oauth/userinfo', () => {
         payload: {
           grant_type: 'authorization_code',
           code,
-          client_id: TEST_CONFIG.validClient.clientId,
-          redirect_uri: TEST_CONFIG.validClient.redirectUri,
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
         },
       });
 
       const { access_token, id_token } = tokenRes.json();
 
       // Get userinfo
-      const userinfoRes = await getUserInfo(access_token);
+      const userinfoRes = await getUserInfo(app, access_token);
       const userinfo = userinfoRes.json();
 
       // Decode ID token (without verification, just for comparison)
@@ -592,17 +480,17 @@ describe('GET /application/oauth/userinfo', () => {
 
   describe('Multiple Requests', () => {
     test('should handle multiple requests with same token', async () => {
-      const accessToken = await getAccessToken({
+      const accessToken = await getAccessToken(app, {
         scope: 'openid email',
       });
 
       // First request
-      const res1 = await getUserInfo(accessToken);
+      const res1 = await getUserInfo(app, accessToken);
       expect(res1.statusCode).toBe(200);
       const json1 = res1.json();
 
       // Second request with same token
-      const res2 = await getUserInfo(accessToken);
+      const res2 = await getUserInfo(app, accessToken);
       expect(res2.statusCode).toBe(200);
       const json2 = res2.json();
 
@@ -611,11 +499,11 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should return different claims for different scopes', async () => {
-      const token1 = await getAccessToken({ scope: 'openid email' });
-      const token2 = await getAccessToken({ scope: 'openid profile' });
+      const token1 = await getAccessToken(app, { scope: 'openid email' });
+      const token2 = await getAccessToken(app, { scope: 'openid profile' });
 
-      const res1 = await getUserInfo(token1);
-      const res2 = await getUserInfo(token2);
+      const res1 = await getUserInfo(app, token1);
+      const res2 = await getUserInfo(app, token2);
 
       const json1 = res1.json();
       const json2 = res2.json();

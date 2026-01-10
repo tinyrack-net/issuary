@@ -1,24 +1,16 @@
-import { RequestContext } from '@mikro-orm/core';
-import type { FastifyInstance } from 'fastify';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
-import { createServer } from '@/server.js';
+import {
+  generateUniqueEmail,
+  setupTestServer,
+  withMikroContext,
+} from '@/test-utils/index.js';
 
-let app: FastifyInstance;
-
-beforeAll(async () => {
-  app = await createServer().start();
-});
-
-afterAll(async () => {
-  if (app) {
-    await app.close();
-  }
-});
+const app = setupTestServer();
 
 describe('POST /api/v1/user/register', () => {
   test('should register successfully with valid credentials', async () => {
-    const uniqueEmail = `test${Date.now()}@example.com`;
+    const uniqueEmail = generateUniqueEmail();
 
     const res = await app.inject({
       method: 'post',
@@ -55,7 +47,7 @@ describe('POST /api/v1/user/register', () => {
   });
 
   test('should fail with duplicate email', async () => {
-    const uniqueEmail = `duplicate${Date.now()}@example.com`;
+    const uniqueEmail = generateUniqueEmail('duplicate');
 
     // First registration
     await app.inject({
@@ -158,7 +150,7 @@ describe('POST /api/v1/user/register', () => {
   });
 
   test('should NOT create session after registration (requires email verification)', async () => {
-    const uniqueEmail = `session${Date.now()}@example.com`;
+    const uniqueEmail = generateUniqueEmail('session');
     const res = await app.inject({
       method: 'post',
       url: '/api/v1/user/register',
@@ -174,7 +166,7 @@ describe('POST /api/v1/user/register', () => {
   });
 
   test('should generate verification token after registration', async () => {
-    const uniqueEmail = `verify${Date.now()}@example.com`;
+    const uniqueEmail = generateUniqueEmail('verify');
     const res = await app.inject({
       method: 'post',
       url: '/api/v1/user/register',
@@ -189,7 +181,7 @@ describe('POST /api/v1/user/register', () => {
     expect(body.user.email_verified).toBe(false);
 
     // Check that verification token was created in database
-    await RequestContext.create(app.mikro.em, async () => {
+    await withMikroContext(app, async () => {
       const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
       expect(user).toBeDefined();
 

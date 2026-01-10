@@ -1,119 +1,18 @@
-import type { FastifyInstance } from 'fastify';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createServer } from '@/server.js';
+import { describe, expect, test } from 'vitest';
+import {
+  createAuthenticatedSession,
+  exchangeCodeForTokens,
+  getAuthorizationCode,
+  refreshAccessToken,
+  setupTestServer,
+  TEST_OAUTH_CLIENT,
+  TEST_PKCE,
+} from '@/test-utils/index.js';
 
-let app: FastifyInstance;
-
-beforeAll(async () => {
-  app = await createServer().start();
-});
-
-afterAll(async () => {
-  if (app) {
-    await app.close();
-  }
-});
+const app = setupTestServer();
 
 /**
- * Test configuration constants
- */
-const TEST_CONFIG = {
-  validClient: {
-    clientId: 'sdlk3n3dkj2',
-    clientSecret: 'sdlk3n3dkj2',
-    redirectUri: 'http://localhost:8080/callback',
-    allowedScopes: ['openid', 'profile', 'email'],
-  },
-  testUser: {
-    email: 'test-config-user@example.com',
-    password: 'changemelater',
-  },
-  pkce: {
-    codeChallenge: 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
-    codeChallengeMethod: 'S256' as const,
-    codeVerifier: 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk',
-  },
-} as const;
-
-/**
- * Helper: Create authenticated session and return session cookie
- */
-async function createAuthenticatedSession(
-  email: string = TEST_CONFIG.testUser.email,
-  password: string = TEST_CONFIG.testUser.password,
-): Promise<string> {
-  const loginRes = await app.inject({
-    method: 'POST',
-    url: '/api/v1/user/login',
-    payload: { email, password },
-  });
-
-  expect(loginRes.statusCode).toBe(200);
-
-  const sessionCookie = loginRes.cookies.find((c) => c.name === 'session');
-  expect(sessionCookie).toBeDefined();
-
-  return sessionCookie?.value || '';
-}
-
-/**
- * Helper: Get authorization code from /authorize endpoint
- */
-async function getAuthorizationCode(params: {
-  clientId?: string;
-  redirectUri?: string;
-  scope?: string;
-  state?: string;
-  codeChallenge?: string;
-  codeChallengeMethod?: 'S256' | 'plain';
-  sessionCookie: string;
-}): Promise<string> {
-  const {
-    clientId = TEST_CONFIG.validClient.clientId,
-    redirectUri = TEST_CONFIG.validClient.redirectUri,
-    scope = 'openid profile email',
-    state = 'test-state',
-    codeChallenge,
-    codeChallengeMethod,
-    sessionCookie,
-  } = params;
-
-  const queryParams: Record<string, string> = {
-    response_type: 'code',
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    scope,
-    state,
-  };
-
-  if (codeChallenge) {
-    queryParams['code_challenge'] = codeChallenge;
-    queryParams['code_challenge_method'] = codeChallengeMethod || 'S256';
-  }
-
-  const res = await app.inject({
-    method: 'GET',
-    url: '/application/oauth/authorize',
-    query: queryParams,
-    cookies: { session: sessionCookie },
-  });
-
-  expect(res.statusCode).toBe(302);
-
-  const location = new URL(
-    res.headers.location as string,
-    'http://localhost:8080',
-  );
-  const code = location.searchParams.get('code');
-
-  expect(code).toBeDefined();
-  expect(code).not.toBe('');
-
-  return code as string;
-}
-
-/**
- * Helper: Exchange authorization code for tokens
+ * Helper: Exchange authorization code for tokens (wrapper)
  */
 async function exchangeCode(params: {
   code: string;
@@ -122,72 +21,25 @@ async function exchangeCode(params: {
   redirectUri?: string;
   codeVerifier?: string;
 }) {
-  const {
-    code,
-    clientId = TEST_CONFIG.validClient.clientId,
-    clientSecret,
-    redirectUri = TEST_CONFIG.validClient.redirectUri,
-    codeVerifier,
-  } = params;
-
-  const payload: Record<string, string> = {
-    grant_type: 'authorization_code',
-    code,
-    client_id: clientId,
-    redirect_uri: redirectUri,
-  };
-
-  if (clientSecret) {
-    payload['client_secret'] = clientSecret;
-  }
-
-  if (codeVerifier) {
-    payload['code_verifier'] = codeVerifier;
-  }
-
-  return app.inject({
-    method: 'POST',
-    url: '/application/oauth/token',
-    payload,
-  });
+  return exchangeCodeForTokens(app, params);
 }
 
 /**
- * Helper: Refresh access token
+ * Helper: Refresh access token (wrapper)
  */
 async function refreshToken(params: {
   refreshToken: string;
   clientId?: string;
   clientSecret?: string;
 }) {
-  const {
-    refreshToken,
-    clientId = TEST_CONFIG.validClient.clientId,
-    clientSecret,
-  } = params;
-
-  const payload: Record<string, string> = {
-    grant_type: 'refresh_token',
-    refresh_token: refreshToken,
-    client_id: clientId,
-  };
-
-  if (clientSecret) {
-    payload['client_secret'] = clientSecret;
-  }
-
-  return app.inject({
-    method: 'POST',
-    url: '/application/oauth/token',
-    payload,
-  });
+  return refreshAccessToken(app, params);
 }
 
 describe('POST /application/oauth/token', () => {
   describe('Authorization Code Grant - Success Cases', () => {
     test('should exchange authorization code for tokens', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({ sessionCookie });
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
 
       const res = await exchangeCode({ code });
 
@@ -203,12 +55,12 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should work with client_secret authentication', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({ sessionCookie });
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
 
       const res = await exchangeCode({
         code,
-        clientSecret: TEST_CONFIG.validClient.clientSecret,
+        clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
 
       expect(res.statusCode).toBe(200);
@@ -217,16 +69,16 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should work with PKCE (S256)', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
         sessionCookie,
-        codeChallenge: TEST_CONFIG.pkce.codeChallenge,
-        codeChallengeMethod: TEST_CONFIG.pkce.codeChallengeMethod,
+        codeChallenge: TEST_PKCE.codeChallenge,
+        codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
       });
 
       const res = await exchangeCode({
         code,
-        codeVerifier: TEST_CONFIG.pkce.codeVerifier,
+        codeVerifier: TEST_PKCE.codeVerifier,
       });
 
       expect(res.statusCode).toBe(200);
@@ -235,9 +87,9 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should work with PKCE (plain)', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
       const plainVerifier = 'plain-verifier-string-for-testing-purposes-123';
-      const code = await getAuthorizationCode({
+      const { code } = await getAuthorizationCode(app, {
         sessionCookie,
         codeChallenge: plainVerifier,
         codeChallengeMethod: 'plain',
@@ -254,8 +106,8 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should issue tokens without id_token when openid scope not requested', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
         sessionCookie,
         scope: 'profile email', // No openid scope
       });
@@ -271,8 +123,8 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should handle subset of scopes', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
         sessionCookie,
         scope: 'openid profile', // Subset of allowed scopes
       });
@@ -287,8 +139,8 @@ describe('POST /application/oauth/token', () => {
 
   describe('Authorization Code Grant - Client Validation', () => {
     test('should reject invalid client_id', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({ sessionCookie });
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
 
       const res = await exchangeCode({
         code,
@@ -303,8 +155,8 @@ describe('POST /application/oauth/token', () => {
     test('should reject disabled client', async () => {
       // Note: This test assumes there's a disabled client in test config
       // If not available, we can skip this test or create one in DB
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({ sessionCookie });
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
 
       const res = await exchangeCode({
         code,
@@ -321,8 +173,8 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should reject invalid client_secret', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({ sessionCookie });
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
 
       const res = await exchangeCode({
         code,
@@ -347,8 +199,8 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should reject expired authorization code', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({ sessionCookie });
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
 
       // Use the code once
       const res1 = await exchangeCode({ code });
@@ -367,8 +219,8 @@ describe('POST /application/oauth/token', () => {
         url: '/application/oauth/token',
         payload: {
           grant_type: 'authorization_code',
-          client_id: TEST_CONFIG.validClient.clientId,
-          redirect_uri: TEST_CONFIG.validClient.redirectUri,
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
           // code missing
         },
       });
@@ -381,8 +233,8 @@ describe('POST /application/oauth/token', () => {
 
   describe('Authorization Code Grant - Redirect URI Validation', () => {
     test('should reject missing redirect_uri', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({ sessionCookie });
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
 
       const res = await app.inject({
         method: 'POST',
@@ -390,7 +242,7 @@ describe('POST /application/oauth/token', () => {
         payload: {
           grant_type: 'authorization_code',
           code,
-          client_id: TEST_CONFIG.validClient.clientId,
+          client_id: TEST_OAUTH_CLIENT.clientId,
           // redirect_uri missing
         },
       });
@@ -401,8 +253,8 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should reject redirect_uri mismatch', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({ sessionCookie });
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
 
       const res = await exchangeCode({
         code,
@@ -417,10 +269,10 @@ describe('POST /application/oauth/token', () => {
 
   describe('Authorization Code Grant - PKCE Validation', () => {
     test('should reject missing code_verifier when PKCE was used', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
         sessionCookie,
-        codeChallenge: TEST_CONFIG.pkce.codeChallenge,
+        codeChallenge: TEST_PKCE.codeChallenge,
       });
 
       const res = await exchangeCode({
@@ -434,10 +286,10 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should reject invalid code_verifier', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
         sessionCookie,
-        codeChallenge: TEST_CONFIG.pkce.codeChallenge,
+        codeChallenge: TEST_PKCE.codeChallenge,
       });
 
       const res = await exchangeCode({
@@ -451,8 +303,8 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should accept request without code_verifier when PKCE was not used', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
         sessionCookie,
         // No code_challenge
       });
@@ -469,8 +321,8 @@ describe('POST /application/oauth/token', () => {
   describe('Refresh Token Grant - Success Cases', () => {
     test('should refresh access token using refresh token', async () => {
       // First, get initial tokens
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({ sessionCookie });
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCode({ code });
       expect(tokenRes.statusCode).toBe(200);
 
@@ -494,25 +346,25 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should work with client_secret authentication', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({ sessionCookie });
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCode({
         code,
-        clientSecret: TEST_CONFIG.validClient.clientSecret,
+        clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
       const { refresh_token } = tokenRes.json();
 
       const res = await refreshToken({
         refreshToken: refresh_token,
-        clientSecret: TEST_CONFIG.validClient.clientSecret,
+        clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
 
       expect(res.statusCode).toBe(200);
     });
 
     test('should preserve scopes from original grant', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
         sessionCookie,
         scope: 'openid profile', // Limited scopes
       });
@@ -534,7 +386,7 @@ describe('POST /application/oauth/token', () => {
         url: '/application/oauth/token',
         payload: {
           grant_type: 'refresh_token',
-          client_id: TEST_CONFIG.validClient.clientId,
+          client_id: TEST_OAUTH_CLIENT.clientId,
           // refresh_token missing
         },
       });
@@ -556,8 +408,8 @@ describe('POST /application/oauth/token', () => {
 
     test('should reject client_id mismatch', async () => {
       // Get tokens with client A
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({ sessionCookie });
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCode({ code });
       const { refresh_token } = tokenRes.json();
 
@@ -576,8 +428,8 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should reject invalid client_secret in refresh flow', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({ sessionCookie });
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCode({ code });
       const { refresh_token } = tokenRes.json();
 
@@ -599,7 +451,7 @@ describe('POST /application/oauth/token', () => {
         url: '/application/oauth/token',
         payload: {
           grant_type: 'password', // Not supported
-          client_id: TEST_CONFIG.validClient.clientId,
+          client_id: TEST_OAUTH_CLIENT.clientId,
         },
       });
 
@@ -612,7 +464,7 @@ describe('POST /application/oauth/token', () => {
         method: 'POST',
         url: '/application/oauth/token',
         payload: {
-          client_id: TEST_CONFIG.validClient.clientId,
+          client_id: TEST_OAUTH_CLIENT.clientId,
           // grant_type missing
         },
       });
@@ -623,8 +475,8 @@ describe('POST /application/oauth/token', () => {
 
   describe('Token Response Format', () => {
     test('should return valid token response format', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({ sessionCookie });
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
       const res = await exchangeCode({ code });
 
       expect(res.statusCode).toBe(200);
@@ -650,8 +502,8 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should return tokens as JWTs', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({ sessionCookie });
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
       const res = await exchangeCode({ code });
 
       const json = res.json();
@@ -678,8 +530,8 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should return 401 for client authentication failures', async () => {
-      const sessionCookie = await createAuthenticatedSession();
-      const code = await getAuthorizationCode({ sessionCookie });
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
 
       const res = await exchangeCode({
         code,

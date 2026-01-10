@@ -1,60 +1,12 @@
-import type { FastifyInstance } from 'fastify';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createServer } from '@/server.js';
+import { describe, expect, test } from 'vitest';
+import {
+  createAuthenticatedSession,
+  setupTestServer,
+  TEST_OAUTH_CLIENT,
+  TEST_PKCE,
+} from '@/test-utils/index.js';
 
-let app: FastifyInstance;
-
-beforeAll(async () => {
-  app = await createServer().start();
-});
-
-afterAll(async () => {
-  if (app) {
-    await app.close();
-  }
-});
-
-/**
- * Test configuration constants
- */
-const TEST_CONFIG = {
-  validClient: {
-    clientId: 'sdlk3n3dkj2',
-    clientSecret: 'sdlk3n3dkj2',
-    redirectUri: 'http://localhost:8080/callback',
-    allowedScopes: ['openid', 'profile', 'email'],
-  },
-  testUser: {
-    email: 'test-config-user@example.com',
-    password: 'changemelater',
-  },
-  pkce: {
-    codeChallenge: 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
-    codeChallengeMethod: 'S256' as const,
-    codeVerifier: 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk',
-  },
-} as const;
-
-/**
- * Helper: Create authenticated session and return session cookie
- */
-async function createAuthenticatedSession(
-  email: string = TEST_CONFIG.testUser.email,
-  password: string = TEST_CONFIG.testUser.password,
-): Promise<string> {
-  const loginRes = await app.inject({
-    method: 'POST',
-    url: '/api/v1/user/login',
-    payload: { email, password },
-  });
-
-  expect(loginRes.statusCode).toBe(200);
-
-  const sessionCookie = loginRes.cookies.find((c) => c.name === 'session');
-  expect(sessionCookie).toBeDefined();
-
-  return sessionCookie?.value || '';
-}
+const app = setupTestServer();
 
 /**
  * Helper: Get authorization code with optional session
@@ -123,8 +75,8 @@ function expectLoginRedirect(
 describe('GET /application/oauth/authorize', () => {
   const validParams = {
     response_type: 'code',
-    client_id: TEST_CONFIG.validClient.clientId,
-    redirect_uri: TEST_CONFIG.validClient.redirectUri,
+    client_id: TEST_OAUTH_CLIENT.clientId,
+    redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
     scope: 'openid profile email',
     state: 'random-state-string',
   };
@@ -149,7 +101,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should issue authorization code for authenticated user', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       const { code, location, statusCode } = await getAuthorizationCode(
         validParams,
@@ -169,8 +121,8 @@ describe('GET /application/oauth/authorize', () => {
       const paramsWithNonce = {
         ...validParams,
         nonce: 'test-nonce',
-        code_challenge: TEST_CONFIG.pkce.codeChallenge,
-        code_challenge_method: TEST_CONFIG.pkce.codeChallengeMethod,
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: TEST_PKCE.codeChallengeMethod,
         prompt: 'login',
       };
 
@@ -189,12 +141,12 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should handle minimal required parameters', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       const minimalParams = {
         response_type: 'code',
-        client_id: TEST_CONFIG.validClient.clientId,
-        redirect_uri: TEST_CONFIG.validClient.redirectUri,
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
       };
 
       const { code, statusCode } = await getAuthorizationCode(
@@ -207,7 +159,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should handle all OIDC scopes correctly', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       const { code, statusCode } = await getAuthorizationCode(
         {
@@ -222,7 +174,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should handle OAuth2 flow without openid scope', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       const { code, statusCode } = await getAuthorizationCode(
         {
@@ -309,12 +261,12 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should accept exact match of registered redirect_uri', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       const { code, statusCode } = await getAuthorizationCode(
         {
           ...validParams,
-          redirect_uri: TEST_CONFIG.validClient.redirectUri,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
         },
         sessionCookie,
       );
@@ -364,7 +316,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should accept "code" response_type', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       const { code, statusCode } = await getAuthorizationCode(
         validParams,
@@ -397,7 +349,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should accept valid scopes', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       const { code, statusCode } = await getAuthorizationCode(
         {
@@ -412,7 +364,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should accept subset of allowed scopes', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       const { code, statusCode } = await getAuthorizationCode(
         {
@@ -429,12 +381,12 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('PKCE Validation', () => {
     test('should accept S256 code_challenge_method', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       const { code, statusCode } = await getAuthorizationCode(
         {
           ...validParams,
-          code_challenge: TEST_CONFIG.pkce.codeChallenge,
+          code_challenge: TEST_PKCE.codeChallenge,
           code_challenge_method: 'S256',
         },
         sessionCookie,
@@ -445,7 +397,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should accept plain code_challenge_method', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       const { code, statusCode } = await getAuthorizationCode(
         {
@@ -461,12 +413,12 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should default to S256 when method not specified', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       const { code, statusCode } = await getAuthorizationCode(
         {
           ...validParams,
-          code_challenge: TEST_CONFIG.pkce.codeChallenge,
+          code_challenge: TEST_PKCE.codeChallenge,
         },
         sessionCookie,
       );
@@ -476,7 +428,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should allow authorization without PKCE', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       const { code, statusCode } = await getAuthorizationCode(
         validParams,
@@ -490,7 +442,7 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('State Parameter Handling', () => {
     test('should preserve state in successful redirect', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       const { location, statusCode } = await getAuthorizationCode(
         {
@@ -542,7 +494,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should handle missing state parameter', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       const paramsWithoutState = { ...validParams };
       delete (paramsWithoutState as Record<string, unknown>)['state'];
@@ -560,7 +512,7 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('OIDC-specific Parameters', () => {
     test('should preserve nonce parameter', async () => {
-      const sessionCookie = await createAuthenticatedSession();
+      const sessionCookie = await createAuthenticatedSession(app);
 
       const { code, statusCode } = await getAuthorizationCode(
         {
