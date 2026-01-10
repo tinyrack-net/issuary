@@ -190,7 +190,7 @@ Routes use `@fastify/autoload` with directory-to-URL mapping:
 - Structure: method, url, schema (with tags/summary), handler
 - Example:
 ```typescript
-export default (fastify: FastifyWithZodInstance) =>
+export default (fastify: FastifyWithZodInstance) => {
   fastify.route({
     method: 'POST',
     url: '',
@@ -202,6 +202,7 @@ export default (fastify: FastifyWithZodInstance) =>
     },
     handler: async (req, res) => { /* ... */ },
   });
+}
 ```
 
 #### Entity Classes (MikroORM)

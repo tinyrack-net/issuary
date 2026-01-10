@@ -1,8 +1,8 @@
-import z from 'zod';
 import { AppConfigs } from '@/lib/config.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+import z from 'zod';
 
-export default (fastify: FastifyWithZodInstance) =>
+export default (fastify: FastifyWithZodInstance) => {
   fastify.route({
     method: 'GET',
     url: '',
@@ -41,3 +41,4 @@ export default (fastify: FastifyWithZodInstance) =>
       });
     },
   });
+};
