@@ -8,9 +8,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 /**
  * JWK (JSON Web Key) schema according to RFC 7517
  *
- * Note: Currently using HS256 symmetric key algorithm,
- * so JWKS returns an empty array. When migrating to RS256/ES256,
- * this schema will contain actual public key parameters.
+ * Supports RSA keys (RS256) with automatic key rotation.
  */
 const JWKSchema = z.object({
   /** Key Type (e.g., "RSA", "EC", "oct") */
@@ -53,7 +51,7 @@ export default (fastify: FastifyWithZodInstance) => {
     schema: {
       summary: 'JWKS',
       description:
-        'JSON Web Key Set (JWKS) endpoint - Returns public keys used for verifying tokens (RFC 7517). Currently using HS256 symmetric key, so keys array is empty.',
+        'JSON Web Key Set (JWKS) endpoint - Returns RSA public keys used for verifying tokens (RFC 7517). Supports automatic key rotation with multiple active keys.',
       tags: ['OpenID'],
       params: z.object({
         provider_id: z
@@ -73,15 +71,15 @@ export default (fastify: FastifyWithZodInstance) => {
         // Validate that the provider exists
         await validateProvider(req.params.provider_id);
 
-        // Return empty JWKS since we use HS256 symmetric key
-        // HS256 uses a shared secret, not public/private key pairs,
-        // so there are no public keys to expose.
-        //
-        // When migrating to RS256/ES256, this endpoint will return
-        // the actual public keys for token verification.
-        return res.status(200).send({
-          keys: [],
-        });
+        // Get JWKS from JwtKeyService
+        // Returns all active and previous keys for token verification
+        const jwks = await fastify.jwtKeyService.getJWKS();
+
+        // Set cache headers for client optimization
+        // Keys rotate infrequently, so caching is beneficial
+        res.header('Cache-Control', 'public, max-age=3600'); // 1 hour
+
+        return res.status(200).send(jwks);
       } catch (error) {
         if (error instanceof ProviderNotFoundError) {
           return res.status(400).send({

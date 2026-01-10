@@ -5,7 +5,7 @@ const app = setupTestServer();
 
 describe('GET /application/oauth/:provider_id/.well-known/jwks', () => {
   describe('Success Cases', () => {
-    test('should return empty JWKS for valid provider', async () => {
+    test('should return JWKS with RSA public keys for valid provider', async () => {
       const res = await app.inject({
         method: 'GET',
         url: `/application/oauth/${TEST_OAUTH_CLIENT.clientId}/.well-known/jwks`,
@@ -16,7 +16,16 @@ describe('GET /application/oauth/:provider_id/.well-known/jwks', () => {
       const json = res.json();
       expect(json).toHaveProperty('keys');
       expect(Array.isArray(json.keys)).toBe(true);
-      expect(json.keys).toHaveLength(0);
+      expect(json.keys.length).toBeGreaterThanOrEqual(1);
+
+      // Verify the first key has required JWK properties
+      const key = json.keys[0];
+      expect(key).toHaveProperty('kty', 'RSA');
+      expect(key).toHaveProperty('use', 'sig');
+      expect(key).toHaveProperty('kid');
+      expect(key).toHaveProperty('alg', 'RS256');
+      expect(key).toHaveProperty('n'); // RSA modulus
+      expect(key).toHaveProperty('e'); // RSA exponent
     });
 
     test('should return correct content-type header', async () => {
@@ -43,12 +52,39 @@ describe('GET /application/oauth/:provider_id/.well-known/jwks', () => {
       expect(json).toHaveProperty('keys');
       expect(Array.isArray(json.keys)).toBe(true);
 
-      // Currently using HS256, so keys array should be empty
-      // When migrating to RS256/ES256, each key should have:
-      // - kty (Key Type): required
-      // - use (Public Key Use): optional, "sig" for signature
-      // - kid (Key ID): optional but recommended
-      // - alg (Algorithm): optional but recommended
+      // Each key should have required/recommended properties
+      for (const key of json.keys) {
+        // kty (Key Type): required
+        expect(key).toHaveProperty('kty');
+        expect(typeof key.kty).toBe('string');
+
+        // use (Public Key Use): recommended for signature keys
+        expect(key).toHaveProperty('use', 'sig');
+
+        // kid (Key ID): recommended for key rotation
+        expect(key).toHaveProperty('kid');
+        expect(typeof key.kid).toBe('string');
+
+        // alg (Algorithm): recommended
+        expect(key).toHaveProperty('alg');
+        expect(typeof key.alg).toBe('string');
+
+        // RSA-specific: n (modulus) and e (exponent)
+        if (key.kty === 'RSA') {
+          expect(key).toHaveProperty('n');
+          expect(key).toHaveProperty('e');
+        }
+      }
+    });
+
+    test('should include Cache-Control header', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: `/application/oauth/${TEST_OAUTH_CLIENT.clientId}/.well-known/jwks`,
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['cache-control']).toBe('public, max-age=3600');
     });
   });
 

@@ -13,6 +13,26 @@ export const AppConfigApp = z.object({
   jwt_secret: z.string().min(32).optional(),
   jwt_access_token_ttl: z.number().int().min(60).optional().default(3600), // 1 hour
   jwt_refresh_token_ttl: z.number().int().min(3600).optional().default(2592000), // 30 days
+  // JWT Key Rotation Settings (RS256)
+  jwt_key_rotation_enabled: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Enable automatic JWT key rotation'),
+  jwt_key_rotation_days: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .default(30)
+    .describe('Days between key rotations'),
+  jwt_key_overlap_days: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .default(7)
+    .describe('Days to keep previous keys valid after rotation'),
   public_registration: z
     .boolean()
     .default(true)

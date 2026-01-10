@@ -1,6 +1,8 @@
-import type { FastifyRequest } from 'fastify';
-import { type AccessTokenPayload, verifyAccessToken } from '@/lib/jwt.js';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { AccessTokenPayload } from '@/services/jwt.service.js';
 import { e } from '@/schemas/error.js';
+
+export type { AccessTokenPayload };
 
 /**
  * Extract Bearer token from Authorization header
@@ -44,6 +46,7 @@ export function extractBearerToken(req: FastifyRequest): string {
  * Extracts Bearer token from Authorization header and verifies it.
  * This is the main authentication handler for protected API endpoints.
  *
+ * @param fastify - Fastify instance for accessing jwtService
  * @param req - Fastify request object
  * @returns Decoded access token payload with user and client info
  * @throws {MissingAuthorizationHeader} When Authorization header is missing
@@ -54,19 +57,19 @@ export function extractBearerToken(req: FastifyRequest): string {
  * @example
  * ```typescript
  * // In a route handler
- * const payload = await validateBearerToken(req);
+ * const payload = await validateBearerToken(fastify, req);
  * console.log(payload.sub);       // User ID
  * console.log(payload.client_id); // OAuth client ID
  * console.log(payload.scope);     // Granted scopes
  * ```
  */
 export async function validateBearerToken(
+  fastify: FastifyInstance,
   req: FastifyRequest,
 ): Promise<AccessTokenPayload> {
   const token = extractBearerToken(req);
 
-  // verifyAccessToken now throws e.InvalidAccessToken.Error
-  // No need to catch and re-throw
-  const payload = await verifyAccessToken(token);
+  // Use jwtService for RS256 token verification
+  const payload = await fastify.jwtService.verifyAccessToken(token);
   return payload;
 }

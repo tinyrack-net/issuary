@@ -63,7 +63,7 @@ export default (fastify: FastifyWithZodInstance) => {
     handler: async (req, res) => {
       // Validate Bearer token
       // Throws ApiError if invalid (handled by error handler)
-      const tokenPayload = await validateBearerToken(req);
+      const tokenPayload = await validateBearerToken(fastify, req);
 
       // Load user (supports both config and DB users)
       const userData = await fastify.userService.verifyUserById(

@@ -1,15 +1,9 @@
 import fastifyPlugin from 'fastify-plugin';
-import {
-  type AccessTokenPayload,
-  type RefreshTokenPayload,
-  decodeToken,
-  verifyAccessToken,
-  verifyRefreshToken,
-} from '@/lib/jwt.js';
-import { buildTokenResponse } from '@/lib/oauth-token-builder.js';
+import { AppConfigs } from '@/lib/config.js';
 import { validatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import type { JwtService } from './jwt.service.js';
 import type { OAuthClientService } from './oauth-client.service.js';
 import type { UserService } from './user.service.js';
 
@@ -77,11 +71,52 @@ export interface TokenIntrospectionResult {
  *
  * Supports both config-based and database-based users/clients.
  */
+/**
+ * Access token payload structure (RFC 6749)
+ */
+export interface AccessTokenPayload {
+  typ: 'access_token';
+  sub: string;
+  client_id: string;
+  scope: string;
+  iat?: number;
+  exp?: number;
+  iss?: string;
+  aud?: string;
+}
+
+/**
+ * Refresh token payload structure (RFC 6749)
+ */
+export interface RefreshTokenPayload {
+  typ: 'refresh_token';
+  sub: string;
+  client_id: string;
+  scope: string;
+  iat?: number;
+  exp?: number;
+  iss?: string;
+  aud?: string;
+}
+
+/**
+ * OAuth 2.0 / OIDC token response
+ */
+export interface TokenResponse {
+  access_token: string;
+  token_type: 'Bearer';
+  expires_in: number;
+  refresh_token: string;
+  id_token?: string;
+  scope: string;
+}
+
 export class OAuthTokenService {
   constructor(
     private readonly mikro: MikroService,
     private readonly userService: UserService,
     private readonly oauthClientService: OAuthClientService,
+    private readonly jwtService: JwtService,
   ) {}
 
   /**
@@ -142,7 +177,7 @@ export class OAuthTokenService {
     const client = await this.oauthClientService.findByClientId(clientId);
 
     // 6. Build token response
-    return buildTokenResponse({
+    return this.buildTokenResponse({
       userId: userData.id,
       userEmail: userData.email,
       userEmailVerified: userData.email_verified,
@@ -167,7 +202,8 @@ export class OAuthTokenService {
     const { refreshToken, clientId } = params;
 
     // 1. Verify refresh token
-    const refreshPayload = await verifyRefreshToken(refreshToken);
+    const refreshPayload =
+      await this.jwtService.verifyRefreshToken(refreshToken);
 
     // 2. Validate client_id matches (RFC 6749 §6)
     // Refresh token is bound to the client that obtained it
@@ -182,7 +218,7 @@ export class OAuthTokenService {
     const client = await this.oauthClientService.findByClientId(clientId);
 
     // 5. Build token response (no nonce in refresh flow)
-    return buildTokenResponse({
+    return this.buildTokenResponse({
       userId: userData.id,
       userEmail: userData.email,
       userEmailVerified: userData.email_verified,
@@ -212,12 +248,12 @@ export class OAuthTokenService {
     // 1. Try to verify as hinted token type first (if hint provided)
     if (tokenTypeHint === 'access_token') {
       try {
-        payload = await verifyAccessToken(token);
+        payload = await this.jwtService.verifyAccessToken(token);
         tokenType = 'access_token';
       } catch {
         // Hint failed, try refresh token
         try {
-          payload = await verifyRefreshToken(token);
+          payload = await this.jwtService.verifyRefreshToken(token);
           tokenType = 'refresh_token';
         } catch {
           // Both failed, fall through to inactive
@@ -225,12 +261,12 @@ export class OAuthTokenService {
       }
     } else if (tokenTypeHint === 'refresh_token') {
       try {
-        payload = await verifyRefreshToken(token);
+        payload = await this.jwtService.verifyRefreshToken(token);
         tokenType = 'refresh_token';
       } catch {
         // Hint failed, try access token
         try {
-          payload = await verifyAccessToken(token);
+          payload = await this.jwtService.verifyAccessToken(token);
           tokenType = 'access_token';
         } catch {
           // Both failed, fall through to inactive
@@ -239,11 +275,11 @@ export class OAuthTokenService {
     } else {
       // 2. No hint provided, try both types
       try {
-        payload = await verifyAccessToken(token);
+        payload = await this.jwtService.verifyAccessToken(token);
         tokenType = 'access_token';
       } catch {
         try {
-          payload = await verifyRefreshToken(token);
+          payload = await this.jwtService.verifyRefreshToken(token);
           tokenType = 'refresh_token';
         } catch {
           // Both failed, fall through to inactive
@@ -274,6 +310,82 @@ export class OAuthTokenService {
       active: false,
     };
   }
+
+  /**
+   * Build complete OAuth/OIDC token response
+   *
+   * @param params - Token generation parameters
+   * @returns Complete token response
+   */
+  private async buildTokenResponse(params: {
+    userId: string;
+    userEmail: string;
+    userEmailVerified: boolean;
+    clientId: string;
+    scope: string[];
+    nonce?: string;
+  }): Promise<TokenResponse> {
+    const { userId, userEmail, userEmailVerified, clientId, scope, nonce } =
+      params;
+
+    const scopeString = scope.join(' ');
+
+    // Generate access token (RFC 6749 §1.4)
+    const accessToken = await this.jwtService.signAccessToken({
+      typ: 'access_token',
+      sub: userId,
+      client_id: clientId,
+      scope: scopeString,
+    });
+
+    // Generate refresh token (RFC 6749 §1.5)
+    const refreshToken = await this.jwtService.signRefreshToken({
+      typ: 'refresh_token',
+      sub: userId,
+      client_id: clientId,
+      scope: scopeString,
+    });
+
+    const response: TokenResponse = {
+      access_token: accessToken,
+      token_type: 'Bearer',
+      expires_in: AppConfigs.app.jwt_access_token_ttl || 3600,
+      refresh_token: refreshToken,
+      scope: scopeString,
+    };
+
+    // Generate ID token if OIDC (openid scope present)
+    if (scope.includes('openid')) {
+      const idTokenPayload: {
+        sub: string;
+        aud: string;
+        nonce?: string;
+        email?: string;
+        email_verified?: boolean;
+        name?: string;
+      } = {
+        sub: userId,
+        aud: clientId,
+      };
+
+      if (nonce) {
+        idTokenPayload.nonce = nonce;
+      }
+
+      if (scope.includes('email')) {
+        idTokenPayload.email = userEmail;
+        idTokenPayload.email_verified = userEmailVerified;
+      }
+
+      if (scope.includes('profile')) {
+        idTokenPayload.name = userEmail;
+      }
+
+      response.id_token = await this.jwtService.signIdToken(idTokenPayload);
+    }
+
+    return response;
+  }
 }
 
 export default fastifyPlugin(
@@ -284,6 +396,7 @@ export default fastifyPlugin(
         fastify.mikro,
         fastify.userService,
         fastify.oauthClientService,
+        fastify.jwtService,
       ),
     );
   },
@@ -293,6 +406,7 @@ export default fastifyPlugin(
       'mikro-orm-plugin',
       'user-service-plugin',
       'oauth-client-service-plugin',
+      'jwt-service-plugin',
     ],
   },
 );
