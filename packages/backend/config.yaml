@@ -27,22 +27,26 @@ smtp:
   password: !env SMTP_PASSWORD
   from: "tester@tinyrack.net"
 
-clients:
-  email_and_password:
-    type: email_and_password
+authentication_methods:
+  password:
+    type: password
     enabled: true
-    password_hash_key: lsdkfj3d3kd3nlk23jlkdn
     totp:
       enabled: false
       required: false
     passkey:
       enabled: false
       required: false
-  # github:
-  #   type: oauth
-  #   client_id: !env GITHUB_CLIENT_ID
-  #   client_secret: !env GITHUB_CLIENT_SECRET
-  #   redirect_uri: !env GITHUB_REDIRECT_URI
+  github:
+    type: github
+    enabled: false
+    client_id: !env GITHUB_CLIENT_ID
+    client_secret: !env GITHUB_CLIENT_SECRET
+  my-oauth:
+    type: oauth
+    enabled: false
+    client_id: !env GITHUB_CLIENT_ID
+    client_secret: !env GITHUB_CLIENT_SECRET
 
 providers:
   - id: test-config-oauth-client

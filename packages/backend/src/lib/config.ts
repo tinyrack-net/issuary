@@ -45,6 +45,21 @@ export const AppConfigDatabase = z.discriminatedUnion('type', [
 
 export type AppConfigDatabase = z.infer<typeof AppConfigDatabase>;
 
+export const AppConfigAuthenticationMethod = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('password'),
+    enabled: z.boolean().default(true),
+  }),
+  z.object({
+    type: z.literal('github'),
+    enabled: z.boolean().default(false),
+  }),
+  z.object({
+    type: z.literal('oauth'),
+    enabled: z.boolean().default(false),
+  }),
+]);
+
 export const AppConfigSmtp = z.object({
   host: z.string().default('localhost'),
   port: zz.PORT.default(465),
@@ -88,6 +103,14 @@ export const ConfigSchema = z.object({
     type: 'sqlite',
     path: 'test.db',
   }),
+  authentication_methods: z
+    .record(z.string(), AppConfigAuthenticationMethod)
+    .default({
+      email: {
+        type: 'password',
+        enabled: true,
+      },
+    }),
   smtp: AppConfigSmtp.optional(),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),
