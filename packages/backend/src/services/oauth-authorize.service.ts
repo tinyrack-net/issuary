@@ -1,6 +1,5 @@
 import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod';
-import type { UserEntity } from '@/entities/user.entity.js';
 import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
@@ -82,45 +81,12 @@ export class OAuthAuthorizeService {
       };
     }
 
-    // 8. User is logged in - Verify user (config + DB)
-    const userSessionData = await this.userService.verifyUserById(
-      userSession.id,
-    );
-
-    // Get UserEntity for code generation (DB users only, config users need special handling)
-    let userEntity: UserEntity;
-    if (userSessionData.managed === 'config') {
-      // For config users, we need to find or create a DB representation
-      // For now, we'll use a minimal entity-like object
-      const configUser = AppConfigs.users?.find((u) => u.id === userSession.id);
-      if (!configUser) {
-        throw new e.OAuthServerError.Error();
-      }
-      // Try to find existing DB user, create minimal representation if not found
-      const existingUser = await this.mikro.user.findOne({
-        id: userSession.id,
-      });
-      if (existingUser) {
-        userEntity = existingUser;
-      } else {
-        // Create a temporary user entity (won't be persisted)
-        userEntity = this.mikro.user.create({
-          id: configUser.id,
-          email: configUser.email,
-          password_hash: '', // Not needed for code generation
-          email_verified: true,
-        });
-      }
-    } else {
-      // DB user - fetch normally
-      userEntity = await this.mikro.user.findOneOrFail({
-        id: userSession.id,
-      });
-    }
+    // 8. User is logged in - Verify user exists (config + DB)
+    await this.userService.verifyUserById(userSession.id);
 
     const codeParams: {
       client: z.infer<typeof r.OAuthClient>;
-      user: typeof userEntity;
+      userId: string;
       redirectUri: string;
       scope: string[];
       nonce?: string;
@@ -128,7 +94,7 @@ export class OAuthAuthorizeService {
       codeChallengeMethod?: 'S256' | 'plain';
     } = {
       client,
-      user: userEntity,
+      userId: userSession.id,
       redirectUri: query.redirect_uri,
       scope: requestedScopes,
     };
@@ -230,29 +196,24 @@ export class OAuthAuthorizeService {
    */
   private async generateAuthorizationCode(params: {
     client: z.infer<typeof r.OAuthClient>;
-    user: UserEntity;
+    userId: string;
     redirectUri: string;
     scope: string[];
     nonce?: string;
     codeChallenge?: string;
     codeChallengeMethod?: 'S256' | 'plain';
   }): Promise<string> {
-    // Get the OAuthClientEntity from DB (config clients are also synced to DB)
-    const clientEntity = await this.mikro.oauthClient.findOneOrFail({
-      clientId: params.client.clientId,
-    });
-
     const codeParams: {
-      client: typeof clientEntity;
-      user: UserEntity;
+      clientId: string;
+      userId: string;
       redirectUri: string;
       scope: string[];
       nonce?: string;
       codeChallenge?: string;
       codeChallengeMethod?: 'S256' | 'plain';
     } = {
-      client: clientEntity,
-      user: params.user,
+      clientId: params.client.clientId,
+      userId: params.userId,
       redirectUri: params.redirectUri,
       scope: params.scope,
     };

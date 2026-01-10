@@ -1,7 +1,5 @@
 import z from 'zod/v4';
 import type { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
-import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
-import { UserEntity } from '@/entities/user.entity.js';
 import { signAccessToken, signIdToken, signRefreshToken } from '@/lib/jwt.js';
 import { validatePKCE } from '@/lib/pkce.js';
 import type { FastifyWithZodInstance } from '@/server.js';
@@ -45,19 +43,11 @@ export default (fastify: FastifyWithZodInstance) => {
     },
     handler: async (req, res) => {
       const { body } = req;
-      const em = fastify.mikro.orm.em.fork();
 
-      // 1. Validate client
-      const client = await em.findOne(OAuthClientEntity, {
-        clientId: body.client_id,
-      });
-
-      if (!client) {
-        return res.status(401).send({
-          error: 'invalid_client',
-          error_description: 'Client not found',
-        });
-      }
+      // 1. Validate client (supports config + DB clients)
+      const client = await fastify.oauthClientService.findByClientId(
+        body.client_id,
+      );
 
       if (!client.enabled) {
         return res.status(401).send({
@@ -68,9 +58,8 @@ export default (fastify: FastifyWithZodInstance) => {
 
       // 2. Validate client secret if provided
       if (body.client_secret) {
-        const { verify } = await import('argon2');
-        const isValid = await verify(
-          client.clientSecretHash,
+        const isValid = await fastify.oauthClientService.verifyClientSecret(
+          body.client_id,
           body.client_secret,
         );
         if (!isValid) {
@@ -153,10 +142,18 @@ export default (fastify: FastifyWithZodInstance) => {
           }
         }
 
-        // Load user entity
-        const user = await em.findOneOrFail(UserEntity, {
-          id: codeEntity.user.id,
-        });
+        // Load user (supports both config and DB users)
+        const userData = await fastify.userService.verifyUserById(
+          codeEntity.userId,
+        );
+
+        // For token generation, we need a user object with email
+        // Config users don't have a DB entity, so we create a simple object
+        const user = {
+          id: userData.id,
+          email: userData.email,
+          email_verified: userData.email_verified,
+        };
 
         // Generate tokens
         const scope = codeEntity.scope.join(' ');
@@ -244,17 +241,16 @@ export default (fastify: FastifyWithZodInstance) => {
           });
         }
 
-        // Load user
-        const user = await em.findOne(UserEntity, {
-          id: refreshPayload.sub,
-        });
+        // Load user (supports both config and DB users)
+        const userData = await fastify.userService.verifyUserById(
+          refreshPayload.sub,
+        );
 
-        if (!user) {
-          return res.status(400).send({
-            error: 'invalid_grant',
-            error_description: 'User not found',
-          });
-        }
+        const user = {
+          id: userData.id,
+          email: userData.email,
+          email_verified: userData.email_verified,
+        };
 
         // Generate new tokens
         const accessToken = await signAccessToken({

@@ -1,9 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { EntityRepository } from '@mikro-orm/core';
 import { hash } from 'argon2';
-import type { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import type { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
-import type { UserEntity } from '@/entities/user.entity.js';
 
 export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
   /**
@@ -11,8 +9,8 @@ export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
    * @returns Object containing the plain code and the created entity
    */
   async generateAuthorizationCode(params: {
-    client: OAuthClientEntity;
-    user: UserEntity;
+    clientId: string;
+    userId: string;
     redirectUri: string;
     scope: string[];
     nonce?: string;
@@ -33,8 +31,8 @@ export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
     // Create the entity
     const entity = this.create({
       codeHash,
-      client: params.client,
-      user: params.user,
+      clientId: params.clientId,
+      userId: params.userId,
       redirectUri: params.redirectUri,
       scope: params.scope,
       nonce: params.nonce || '',
@@ -61,7 +59,7 @@ export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
 
     // Find all unconsumed codes for this client
     const codes = await this.find({
-      client: { clientId },
+      clientId,
       consumedAt: null,
     });
 

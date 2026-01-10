@@ -50,7 +50,9 @@ export default async function Home() {
                 <dt className="font-medium text-black dark:text-zinc-50">
                   Redirect URI:
                 </dt>
-                <dd className="font-mono">http://localhost:3000/callback</dd>
+                <dd className="font-mono">
+                  http://localhost:3000/api/callback
+                </dd>
               </div>
               <div>
                 <dt className="font-medium text-black dark:text-zinc-50">

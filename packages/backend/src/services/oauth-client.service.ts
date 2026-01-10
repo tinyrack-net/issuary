@@ -37,7 +37,7 @@ export class OAuthClientService {
         enabled: true, // Config clients are always enabled
         redirectUris: configClient.redirect_uris,
         responseTypes: configClient.response_types,
-        scopes,
+        scopes: scopes,
         grantTypes: configClient.grant_types,
       };
     }
@@ -46,6 +46,7 @@ export class OAuthClientService {
     const dbClient = await this.mikro.oauthClient.findOneOrFail(
       { clientId },
       {
+        populate: ['clientSecretHash'],
         failHandler: () => new e.OAuthClientNotFound.Error(),
       },
     );
@@ -110,6 +111,38 @@ export class OAuthClientService {
     if (!client.enabled) {
       throw new e.OAuthClientDisabled.Error();
     }
+  }
+
+  /**
+   * Verify client secret
+   * @returns true if valid, false otherwise
+   */
+  public async verifyClientSecret(
+    clientId: string,
+    clientSecret: string,
+  ): Promise<boolean> {
+    // Check config first
+    const configClient = AppConfigs.providers?.find(
+      (p) => p.client_id === clientId,
+    );
+
+    if (configClient) {
+      // Config clients: plain text comparison
+      return configClient.client_secret === clientSecret;
+    }
+
+    // Check database: use argon2 hash verification
+    const dbClient = await this.mikro.oauthClient.findOne(
+      { clientId },
+      { populate: ['clientSecretHash'] },
+    );
+
+    if (!dbClient) {
+      return false;
+    }
+
+    const { verify } = await import('argon2');
+    return verify(dbClient.clientSecretHash, clientSecret);
   }
 }
 
