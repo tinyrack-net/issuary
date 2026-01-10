@@ -28,6 +28,18 @@
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["packages/backend/src/lib/jwt.ts"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "useLiteralKeys": "off"
+          }
+        }
+      }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "single",

@@ -6,43 +6,50 @@ import {
   type KeyObject,
   SignJWT,
 } from 'jose';
-import { AppConfigs } from './config.js';
 import { e } from '@/schemas/error.js';
+import { AppConfigs } from './config.js';
 
 const JWT_SECRET = AppConfigs.app.jwt_secret || AppConfigs.app.cookie_secret;
 const SECRET_KEY = new TextEncoder().encode(JWT_SECRET);
 
-export interface AccessTokenPayload {
-  sub: string; // user id
-  client_id: string;
-  scope: string;
-  iat?: number | undefined;
-  exp?: number | undefined;
-  iss?: string | undefined;
-  aud?: string | undefined;
+/**
+ * Base JWT payload with standard claims
+ */
+interface BaseJWTPayload extends JWTPayload {
+  sub: string;
+  iat?: number;
+  exp?: number;
+  iss?: string;
 }
 
-export interface RefreshTokenPayload {
-  sub: string; // user id
+/**
+ * Access token payload structure (RFC 6749)
+ */
+export interface AccessTokenPayload extends BaseJWTPayload {
   client_id: string;
   scope: string;
-  iat?: number | undefined;
-  exp?: number | undefined;
-  iss?: string | undefined;
-  aud?: string | undefined;
+  aud?: string;
 }
 
-export interface IdTokenPayload {
-  sub: string; // user id
-  aud: string; // client_id
-  iat?: number | undefined;
-  exp?: number | undefined;
-  iss?: string | undefined;
-  nonce?: string | undefined;
-  email?: string | undefined;
-  email_verified?: boolean | undefined;
-  name?: string | undefined;
-  picture?: string | undefined;
+/**
+ * Refresh token payload structure (RFC 6749)
+ */
+export interface RefreshTokenPayload extends BaseJWTPayload {
+  client_id: string;
+  scope: string;
+  aud?: string;
+}
+
+/**
+ * ID token payload structure (OpenID Connect Core 1.0 §2)
+ */
+export interface IdTokenPayload extends BaseJWTPayload {
+  aud: string;
+  nonce?: string;
+  email?: string;
+  email_verified?: boolean;
+  name?: string;
+  picture?: string;
 }
 
 export function createJWT(
@@ -144,6 +151,19 @@ export async function signIdToken(payload: IdTokenPayload): Promise<string> {
 }
 
 /**
+ * Type guard to validate access token payload structure
+ */
+function isAccessTokenPayload(
+  payload: JWTPayload,
+): payload is AccessTokenPayload {
+  return (
+    typeof payload.sub === 'string' &&
+    typeof payload['client_id'] === 'string' &&
+    typeof payload['scope'] === 'string'
+  );
+}
+
+/**
  * Verify and decode an access token
  *
  * @throws {InvalidAccessToken} When token is invalid or expired
@@ -153,18 +173,39 @@ export async function verifyAccessToken(
 ): Promise<AccessTokenPayload> {
   try {
     const { payload } = await jwtVerify(token, SECRET_KEY);
-    return {
-      sub: payload.sub as string,
-      client_id: payload['client_id'] as string,
-      scope: payload['scope'] as string,
-      iat: payload.iat,
-      exp: payload.exp,
-      iss: payload.iss,
-      aud: payload.aud as string | undefined,
+
+    if (!isAccessTokenPayload(payload)) {
+      throw new Error('Invalid access token payload structure');
+    }
+
+    const result: AccessTokenPayload = {
+      sub: payload.sub,
+      client_id: payload['client_id'],
+      scope: payload['scope'],
     };
-  } catch (error) {
+
+    if (payload.iat !== undefined) result.iat = payload.iat;
+    if (payload.exp !== undefined) result.exp = payload.exp;
+    if (payload.iss !== undefined) result.iss = payload.iss;
+    if (typeof payload.aud === 'string') result.aud = payload.aud;
+
+    return result;
+  } catch {
     throw new e.InvalidAccessToken.Error();
   }
+}
+
+/**
+ * Type guard to validate refresh token payload structure
+ */
+function isRefreshTokenPayload(
+  payload: JWTPayload,
+): payload is RefreshTokenPayload {
+  return (
+    typeof payload.sub === 'string' &&
+    typeof payload['client_id'] === 'string' &&
+    typeof payload['scope'] === 'string'
+  );
 }
 
 /**
@@ -177,18 +218,33 @@ export async function verifyRefreshToken(
 ): Promise<RefreshTokenPayload> {
   try {
     const { payload } = await jwtVerify(token, SECRET_KEY);
-    return {
-      sub: payload.sub as string,
-      client_id: payload['client_id'] as string,
-      scope: payload['scope'] as string,
-      iat: payload.iat,
-      exp: payload.exp,
-      iss: payload.iss,
-      aud: payload.aud as string | undefined,
+
+    if (!isRefreshTokenPayload(payload)) {
+      throw new Error('Invalid refresh token payload structure');
+    }
+
+    const result: RefreshTokenPayload = {
+      sub: payload.sub,
+      client_id: payload['client_id'],
+      scope: payload['scope'],
     };
-  } catch (error) {
+
+    if (payload.iat !== undefined) result.iat = payload.iat;
+    if (payload.exp !== undefined) result.exp = payload.exp;
+    if (payload.iss !== undefined) result.iss = payload.iss;
+    if (typeof payload.aud === 'string') result.aud = payload.aud;
+
+    return result;
+  } catch {
     throw new e.InvalidRefreshToken.Error();
   }
+}
+
+/**
+ * Type guard to validate ID token payload structure
+ */
+function isIdTokenPayload(payload: JWTPayload): payload is IdTokenPayload {
+  return typeof payload.sub === 'string' && typeof payload.aud === 'string';
 }
 
 /**
@@ -199,19 +255,29 @@ export async function verifyRefreshToken(
 export async function verifyIdToken(token: string): Promise<IdTokenPayload> {
   try {
     const { payload } = await jwtVerify(token, SECRET_KEY);
-    return {
-      sub: payload.sub as string,
-      aud: payload.aud as string,
-      iat: payload.iat,
-      exp: payload.exp,
-      iss: payload.iss,
-      nonce: payload['nonce'] as string | undefined,
-      email: payload['email'] as string | undefined,
-      email_verified: payload['email_verified'] as boolean | undefined,
-      name: payload['name'] as string | undefined,
-      picture: payload['picture'] as string | undefined,
+
+    if (!isIdTokenPayload(payload)) {
+      throw new Error('Invalid ID token payload structure');
+    }
+
+    const result: IdTokenPayload = {
+      sub: payload.sub,
+      aud: payload.aud,
     };
-  } catch (error) {
+
+    if (payload.iat !== undefined) result.iat = payload.iat;
+    if (payload.exp !== undefined) result.exp = payload.exp;
+    if (payload.iss !== undefined) result.iss = payload.iss;
+    if (typeof payload['nonce'] === 'string') result.nonce = payload['nonce'];
+    if (typeof payload['email'] === 'string') result.email = payload['email'];
+    if (typeof payload['email_verified'] === 'boolean')
+      result.email_verified = payload['email_verified'];
+    if (typeof payload['name'] === 'string') result.name = payload['name'];
+    if (typeof payload['picture'] === 'string')
+      result.picture = payload['picture'];
+
+    return result;
+  } catch {
     throw new e.InvalidIdToken.Error();
   }
 }
