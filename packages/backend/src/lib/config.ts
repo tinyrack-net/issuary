@@ -152,9 +152,7 @@ export const InternalConfigSchema = z.object({
         enabled: true,
       },
     }),
-  smtp: AppConfigSmtp.extend({
-    test: z.boolean(),
-  }),
+  smtp: AppConfigSmtp,
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),
 });
@@ -187,7 +185,7 @@ const loadConfig = async (path: string) => {
   const parsed = ConfigSchema.parse(rawConfig);
 
   const smtpConfig = await (async () => {
-    if (env.APP_ENV === 'test') {
+    if (parsed.smtp.test) {
       const testAccount = await nodemailer.createTestAccount();
       return {
         host: testAccount.smtp.host,
