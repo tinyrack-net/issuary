@@ -141,6 +141,7 @@ export default (fastify: FastifyWithZodInstance) => {
 
         // Optional fields
         introspection_endpoint: `${baseUrl}/application/oauth/introspect`,
+        revocation_endpoint: `${baseUrl}/application/oauth/revoke`,
         ui_locales_supported: AppConfigs.app.supported_languages,
       };
 

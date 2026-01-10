@@ -8,6 +8,7 @@ import {
 } from 'jose';
 import fastifyPlugin from 'fastify-plugin';
 import { AppConfigs } from '@/lib/config.js';
+import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { JwtKeyService } from './jwt-key.service.js';
 
@@ -22,6 +23,7 @@ declare module 'fastify' {
  */
 interface BaseJWTPayload extends JWTPayload {
   sub: string;
+  jti?: string;
   iat?: number;
   exp?: number;
   iss?: string;
@@ -64,9 +66,13 @@ export interface IdTokenPayload extends BaseJWTPayload {
  *
  * Handles JWT signing and verification using RS256 asymmetric keys.
  * Keys are managed by JwtKeyService with automatic rotation support.
+ * Supports token revocation via RevokedToken repository.
  */
 export class JwtService {
-  constructor(private readonly jwtKeyService: JwtKeyService) {}
+  constructor(
+    private readonly jwtKeyService: JwtKeyService,
+    private readonly mikro: MikroService,
+  ) {}
 
   /**
    * Sign an access token using RS256
@@ -75,6 +81,7 @@ export class JwtService {
     const ttl = AppConfigs.app.jwt_access_token_ttl || 3600;
     const key = await this.jwtKeyService.getActiveKey();
     const privateKey = await importPKCS8(key.private_key, key.algorithm);
+    const jti = crypto.randomUUID();
 
     const jwt = await new SignJWT({
       typ: 'access_token',
@@ -83,6 +90,7 @@ export class JwtService {
       scope: payload.scope,
     })
       .setProtectedHeader({ alg: key.algorithm, typ: 'JWT', kid: key.kid })
+      .setJti(jti)
       .setIssuedAt()
       .setExpirationTime(`${ttl}s`)
       .setIssuer(AppConfigs.app.host)
@@ -98,6 +106,7 @@ export class JwtService {
     const ttl = AppConfigs.app.jwt_refresh_token_ttl || 2592000;
     const key = await this.jwtKeyService.getActiveKey();
     const privateKey = await importPKCS8(key.private_key, key.algorithm);
+    const jti = crypto.randomUUID();
 
     const jwt = await new SignJWT({
       typ: 'refresh_token',
@@ -106,6 +115,7 @@ export class JwtService {
       scope: payload.scope,
     })
       .setProtectedHeader({ alg: key.algorithm, typ: 'JWT', kid: key.kid })
+      .setJti(jti)
       .setIssuedAt()
       .setExpirationTime(`${ttl}s`)
       .setIssuer(AppConfigs.app.host)
@@ -145,7 +155,7 @@ export class JwtService {
   /**
    * Verify and decode an access token
    *
-   * @throws {InvalidAccessToken} When token is invalid or expired
+   * @throws {InvalidAccessToken} When token is invalid, expired, or revoked
    */
   async verifyAccessToken(token: string): Promise<AccessTokenPayload> {
     try {
@@ -153,6 +163,14 @@ export class JwtService {
 
       if (!this.isAccessTokenPayload(payload)) {
         throw new Error('Invalid access token payload structure');
+      }
+
+      // Check if token is revoked
+      if (payload.jti) {
+        const isRevoked = await this.mikro.revokedToken.isRevoked(payload.jti);
+        if (isRevoked) {
+          throw new Error('Token has been revoked');
+        }
       }
 
       return payload as AccessTokenPayload;
@@ -164,7 +182,7 @@ export class JwtService {
   /**
    * Verify and decode a refresh token
    *
-   * @throws {InvalidRefreshToken} When token is invalid or expired
+   * @throws {InvalidRefreshToken} When token is invalid, expired, or revoked
    */
   async verifyRefreshToken(token: string): Promise<RefreshTokenPayload> {
     try {
@@ -172,6 +190,14 @@ export class JwtService {
 
       if (!this.isRefreshTokenPayload(payload)) {
         throw new Error('Invalid refresh token payload structure');
+      }
+
+      // Check if token is revoked
+      if (payload.jti) {
+        const isRevoked = await this.mikro.revokedToken.isRevoked(payload.jti);
+        if (isRevoked) {
+          throw new Error('Token has been revoked');
+        }
       }
 
       return payload as RefreshTokenPayload;
@@ -287,10 +313,13 @@ export class JwtService {
 
 export default fastifyPlugin(
   async (fastify) => {
-    fastify.decorate('jwtService', new JwtService(fastify.jwtKeyService));
+    fastify.decorate(
+      'jwtService',
+      new JwtService(fastify.jwtKeyService, fastify.mikro),
+    );
   },
   {
     name: 'jwt-service-plugin',
-    dependencies: ['jwt-key-service-plugin'],
+    dependencies: ['jwt-key-service-plugin', 'mikro-orm-plugin'],
   },
 );
