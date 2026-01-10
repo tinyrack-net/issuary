@@ -60,17 +60,18 @@ authentication_methods:
 
 providers:
   - id: test-config-oauth-client
-    name: My App
-    logo_uri: https://myapp.com/auth/callback
+    name: OIDC Test Client
+    logo_uri: http://localhost:3000
     client_id: sdlk3n3dkj2
     client_secret: sdlk3n3dkj2
     redirect_uris:
-      - http://localhost:8080/callback
+      - http://localhost:3000/callback
     response_types:
       - code
     grant_types:
       - authorization_code
-    scope: openid profile email id_token
+      - refresh_token
+    scope: openid profile email
 
 users:
   - id: test-config-user

@@ -121,4 +121,44 @@ export const e = {
     'The email address is already verified.',
   ),
   UserNotFound: createError(404, 'USER_NOT_FOUND', 'User not found.'),
+
+  // OAuth errors
+  OAuthClientNotFound: createError(
+    400,
+    'OAUTH_CLIENT_NOT_FOUND',
+    'The OAuth client was not found.',
+  ),
+  OAuthClientDisabled: createError(
+    400,
+    'OAUTH_CLIENT_DISABLED',
+    'The OAuth client is disabled.',
+  ),
+  InvalidRedirectUri: createError(
+    400,
+    'INVALID_REDIRECT_URI',
+    'The redirect URI is not registered for this client.',
+  ),
+  UnsupportedResponseType: createError(
+    400,
+    'UNSUPPORTED_RESPONSE_TYPE',
+    'The response type is not supported for this client.',
+  ),
+  InvalidScope: createErrorWithData(
+    400,
+    'INVALID_SCOPE',
+    'One or more requested scopes are invalid.',
+    z.object({
+      invalidScopes: z.array(z.string()),
+    }),
+  ),
+  InvalidCodeChallengeMethod: createError(
+    400,
+    'INVALID_CODE_CHALLENGE_METHOD',
+    'The code challenge method must be S256 or plain.',
+  ),
+  OAuthServerError: createError(
+    500,
+    'OAUTH_SERVER_ERROR',
+    'An unexpected error occurred during OAuth authorization.',
+  ),
 };

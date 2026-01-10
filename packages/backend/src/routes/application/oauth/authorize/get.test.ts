@@ -66,7 +66,7 @@ describe('GET /application/oauth/authorize', () => {
     );
     expect(location.searchParams.get('error')).toBe('unauthorized_client');
     expect(location.searchParams.get('error_description')).toBe(
-      'Client not found',
+      'The OAuth client was not found.',
     );
   });
 
@@ -83,7 +83,9 @@ describe('GET /application/oauth/authorize', () => {
     expect(res.statusCode).toBe(400);
     const body = JSON.parse(res.body);
     expect(body.error).toBe('invalid_request');
-    expect(body.error_description).toBe('Invalid redirect_uri');
+    expect(body.error_description).toBe(
+      'The redirect URI is not registered for this client.',
+    );
   });
 
   test('should return error for unsupported response_type', async () => {
@@ -130,7 +132,7 @@ describe('GET /application/oauth/authorize', () => {
       method: 'POST',
       url: '/api/v1/user/login',
       payload: {
-        email: 'admin@example.com',
+        email: 'test-config-user@example.com',
         password: 'changemelater',
       },
     });

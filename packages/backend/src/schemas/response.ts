@@ -10,4 +10,18 @@ export const r = {
       email_verified: f.emailVerified,
     })
     .describe('UserSession'),
+
+  OAuthClient: z
+    .object({
+      id: z.string(),
+      clientId: z.string(),
+      name: z.string(),
+      managed: z.enum(['config', 'database']),
+      enabled: z.boolean(),
+      redirectUris: z.array(z.string()),
+      responseTypes: z.array(z.string()),
+      scopes: z.array(z.string()),
+      grantTypes: z.array(z.string()),
+    })
+    .describe('OAuth Client Information'),
 };
