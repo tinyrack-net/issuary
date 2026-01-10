@@ -29,6 +29,13 @@ export default async function Home() {
             Sign In with OIDC
           </Link>
 
+          <Link
+            href="/discovery"
+            className="flex h-12 items-center justify-center rounded-lg border border-blue-600 px-6 font-medium text-base text-blue-600 transition-colors hover:bg-blue-50 dark:border-blue-500 dark:text-blue-500 dark:hover:bg-blue-950"
+          >
+            View Discovery Endpoints
+          </Link>
+
           <div className="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
             <h2 className="mb-3 font-semibold text-black text-lg dark:text-zinc-50">
               Test Configuration
