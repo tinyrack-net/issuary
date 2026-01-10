@@ -1,6 +1,11 @@
 import { decodeJwt } from 'jose';
 import { oidcConfig } from './oidc-config';
-import type { TokenResponse, IDTokenPayload, UserInfo } from '@/types/oidc';
+import type {
+  TokenResponse,
+  IDTokenPayload,
+  UserInfo,
+  IntrospectionResponse,
+} from '@/types/oidc';
 
 /**
  * Build authorization URL for OAuth/OIDC flow
@@ -124,4 +129,35 @@ export function isTokenExpired(token: string): boolean {
   } catch {
     return true;
   }
+}
+
+/**
+ * Introspect a token (access token or refresh token)
+ * RFC 7662 - OAuth 2.0 Token Introspection
+ */
+export async function introspectToken(
+  token: string,
+  tokenTypeHint?: 'access_token' | 'refresh_token',
+): Promise<IntrospectionResponse> {
+  const params = new URLSearchParams({
+    token,
+    client_id: oidcConfig.client_id,
+    client_secret: oidcConfig.client_secret,
+    ...(tokenTypeHint && { token_type_hint: tokenTypeHint }),
+  });
+
+  const response = await fetch(oidcConfig.introspection_endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: params.toString(),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Token introspection failed: ${error}`);
+  }
+
+  return (await response.json()) as IntrospectionResponse;
 }

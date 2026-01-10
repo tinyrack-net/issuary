@@ -3,6 +3,7 @@ export interface OIDCConfig {
   authorization_endpoint: string;
   token_endpoint: string;
   userinfo_endpoint: string;
+  introspection_endpoint: string;
   client_id: string;
   client_secret: string;
   redirect_uri: string;
@@ -52,4 +53,15 @@ export interface AuthState {
   state: string;
   code_verifier: string;
   nonce: string;
+}
+
+export interface IntrospectionResponse {
+  active: boolean;
+  scope?: string;
+  client_id?: string;
+  token_type?: string;
+  exp?: number;
+  iat?: number;
+  sub?: string;
+  iss?: string;
 }

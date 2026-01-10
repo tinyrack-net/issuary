@@ -8,6 +8,7 @@ A Next.js-based client application for testing OpenID Connect (OIDC) Providers.
 - ✅ **ID Token Verification & Decoding** - JWT-based user information verification
 - ✅ **Token Storage & Management** - Secure token storage using httpOnly cookies
 - ✅ **User Information Display** - Decode and display ID Token claims
+- ✅ **Token Introspection (RFC 7662)** - Verify token status and metadata
 - ✅ **Logout Functionality** - Token deletion and session termination
 
 ## Project Structure
@@ -16,11 +17,15 @@ A Next.js-based client application for testing OpenID Connect (OIDC) Providers.
 client-test/
 ├── app/
 │   ├── page.tsx                          # Main page (login button)
-│   ├── callback/page.tsx                 # OAuth callback handler
-│   ├── profile/page.tsx                  # Profile page after authentication
-│   └── api/auth/
-│       ├── login/route.ts                # OIDC authentication start
-│       └── logout/route.ts               # Logout handler
+│   ├── profile/
+│   │   ├── page.tsx                      # Profile page after authentication
+│   │   └── introspect-section.tsx        # Token introspection UI component
+│   └── api/
+│       ├── auth/
+│       │   ├── login/route.ts            # OIDC authentication start
+│       │   └── logout/route.ts           # Logout handler
+│       ├── callback/route.ts             # OAuth callback handler
+│       └── introspect/route.ts           # Token introspection endpoint
 ├── lib/
 │   ├── oidc-config.ts                    # OIDC configuration
 │   ├── oidc-client.ts                    # OIDC client utilities
@@ -42,6 +47,7 @@ export const oidcConfig: OIDCConfig = {
   authorization_endpoint: 'http://localhost:8080/application/oauth/authorize',
   token_endpoint: 'http://localhost:8080/application/oauth/token',
   userinfo_endpoint: 'http://localhost:8080/application/oauth/userinfo',
+  introspection_endpoint: 'http://localhost:8080/application/oauth/introspect',
   
   client_id: 'sdlk3n3dkj2',
   client_secret: 'sdlk3n3dkj2',
@@ -112,6 +118,10 @@ pnpm start
    - Check user information from ID Token
    - View Access Token, Refresh Token, and ID Token
    - View ID Token Payload (decoded JWT)
+   - **NEW**: Test Token Introspection
+     - Click "Introspect" button for Access Token to verify token status
+     - Click "Introspect" button for Refresh Token (if available)
+     - View token metadata: active status, scope, client_id, expiration, etc.
 
 5. **Logout**
    - Click "Logout" button to delete tokens
@@ -174,6 +184,13 @@ The profile page displays the following information:
 - Refresh Token (raw)
 - ID Token (raw)
 - ID Token Payload (decoded)
+- **Token Introspection Results** (RFC 7662)
+  - Active status (true/false)
+  - Scope information
+  - Client ID
+  - Subject (user ID)
+  - Expiration time
+  - Issued-at time
 
 ### Browser DevTools
 - Check OAuth requests/responses in the Network tab

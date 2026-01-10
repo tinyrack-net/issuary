@@ -5,6 +5,7 @@ export const oidcConfig: OIDCConfig = {
   authorization_endpoint: 'http://localhost:8080/application/oauth/authorize',
   token_endpoint: 'http://localhost:8080/application/oauth/token',
   userinfo_endpoint: 'http://localhost:8080/application/oauth/userinfo',
+  introspection_endpoint: 'http://localhost:8080/application/oauth/introspect',
 
   client_id: 'sdlk3n3dkj2',
   client_secret: 'sdlk3n3dkj2',
