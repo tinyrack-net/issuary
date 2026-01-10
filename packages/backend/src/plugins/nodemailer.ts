@@ -1,8 +1,8 @@
-import { AppConfigs } from '@/lib/config.js';
-import { env } from '@/lib/env.js';
 import fastifyPlugin from 'fastify-plugin';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
+import { AppConfigs } from '@/lib/config.js';
+import { env } from '@/lib/env.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -19,27 +19,7 @@ declare module 'fastify' {
 export default fastifyPlugin(
   async (fastify) => {
     // Use Ethereal Email for test environment
-    if (env.APP_ENV === 'test') {
-      // Create a test account automatically
-      const testAccount = await nodemailer.createTestAccount();
-      console.log('Created Ethereal test account:', testAccount.user);
-
-      const mockTransport = nodemailer.createTransport({
-        host: testAccount.smtp.host,
-        port: testAccount.smtp.port,
-        secure: testAccount.smtp.secure,
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass,
-        },
-      });
-
-      fastify.decorate('mail', {
-        transporter: mockTransport,
-        test: true,
-      });
-      console.log('✉️  Ethereal Email configured for testing');
-    } else if (AppConfigs.smtp) {
+    if (AppConfigs.smtp) {
       // Use configured SMTP for dev/production
       const transport = nodemailer.createTransport({
         host: AppConfigs.smtp.host,
@@ -53,7 +33,7 @@ export default fastifyPlugin(
 
       fastify.decorate('mail', {
         transporter: transport,
-        test: false,
+        test: env.APP_ENV === 'test',
       });
       console.log('✉️  SMTP configured:', AppConfigs.smtp.host);
     } else {

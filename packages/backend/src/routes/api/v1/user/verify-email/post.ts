@@ -16,7 +16,6 @@ export default (fastify: FastifyWithZodInstance) =>
       response: {
         200: z.object({
           user: r.UserSession,
-          message: z.string(),
         }),
       },
     },
@@ -37,7 +36,6 @@ export default (fastify: FastifyWithZodInstance) =>
           email: user.email,
           email_verified: user.email_verified,
         },
-        message: 'Email verified successfully. You are now logged in.',
       });
     },
   });

@@ -1,7 +1,7 @@
+import z from 'zod/v4';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
-import z from 'zod/v4';
 
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
@@ -18,7 +18,6 @@ export default (fastify: FastifyWithZodInstance) =>
       response: {
         200: z.object({
           user: r.UserSession,
-          message: z.string(),
         }),
       },
     },
@@ -53,8 +52,6 @@ export default (fastify: FastifyWithZodInstance) =>
           email: user.email,
           email_verified: user.email_verified,
         },
-        message:
-          'Registration successful. Please check your email to verify your account.',
       });
     },
   });

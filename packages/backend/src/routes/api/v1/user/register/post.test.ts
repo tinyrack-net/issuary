@@ -34,7 +34,6 @@ describe('POST /api/v1/user/register', () => {
     expect(body).toHaveProperty('user');
     expect(body.user).toHaveProperty('id');
     expect(body.user.email_verified).toBe(false);
-    expect(body).toHaveProperty('message');
   });
 
   test('should fail with app config user email', async () => {
@@ -191,11 +190,11 @@ describe('POST /api/v1/user/register', () => {
 
     // Check that verification token was created in database
     await RequestContext.create(app.mikro.em, async () => {
-      const user = await app.mikro.user.findOne({ email: uniqueEmail });
+      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
       expect(user).toBeDefined();
 
-      const verification = await app.mikro.emailVerification.findOne({
-        user: user!,
+      const verification = await app.mikro.emailVerification.findOneOrFail({
+        user: user,
         verified: false,
       });
       expect(verification).toBeDefined();

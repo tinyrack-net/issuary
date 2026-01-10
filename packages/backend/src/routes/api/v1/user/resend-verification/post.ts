@@ -2,7 +2,7 @@ import z from 'zod/v4';
 import { f } from '@/schemas/field.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
-export default (fastify: FastifyWithZodInstance) =>
+export default (fastify: FastifyWithZodInstance) => {
   fastify.route({
     method: 'POST',
     url: '',
@@ -41,3 +41,4 @@ export default (fastify: FastifyWithZodInstance) =>
       });
     },
   });
+};

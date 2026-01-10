@@ -60,7 +60,6 @@ describe('POST /api/v1/user/verify-email', () => {
     expect(verifyRes.statusCode).toBe(200);
     const verifyBody = JSON.parse(verifyRes.body);
     expect(verifyBody.user.email_verified).toBe(true);
-    expect(verifyBody).toHaveProperty('message');
 
     // 4. Check that user's email is marked as verified in database
     const isVerified = await withContext(async () => {

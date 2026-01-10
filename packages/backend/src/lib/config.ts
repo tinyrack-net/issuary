@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import nodemailer from 'nodemailer';
 import YAML from 'yaml';
 import z from 'zod/v4';
 import { zz } from '@/schemas/provider.js';
@@ -12,9 +13,16 @@ export const AppConfigApp = z.object({
   jwt_secret: z.string().min(32).optional(),
   jwt_access_token_ttl: z.number().int().min(60).optional().default(3600), // 1 hour
   jwt_refresh_token_ttl: z.number().int().min(3600).optional().default(2592000), // 30 days
-  supported_languages: z.array(z.string()).default(['en']),
-  default_language: z.string().default('auto'),
-  fallback_language: z.string().default('en'),
+  public_registration: z
+    .boolean()
+    .default(true)
+    .describe('Allow public user registration'),
+  supported_languages: z
+    .array(z.string())
+    .default(['en'])
+    .describe('Supported languages'),
+  default_language: z.string().default('auto').describe('Default language'),
+  fallback_language: z.string().default('en').describe('Fallback language'),
 });
 
 export type AppConfigApp = z.infer<typeof AppConfigApp>;
@@ -131,7 +139,7 @@ const resolveConfigPath = () => {
   }
 };
 
-const loadConfig = (path: string) => {
+const loadConfig = async (path: string) => {
   if (!existsSync(path)) {
     throw new Error(`Config file not found at "${path}"`);
   }
@@ -179,6 +187,18 @@ const loadConfig = (path: string) => {
     parsed.smtp.port = env.SMTP_PORT ?? parsed.smtp.port;
   }
 
+  if (env.APP_ENV === 'test') {
+    const testAccount = await nodemailer.createTestAccount();
+    parsed.smtp = {
+      host: testAccount.smtp.host,
+      port: testAccount.smtp.port,
+      secure: testAccount.smtp.secure,
+      user: testAccount.user,
+      password: testAccount.pass,
+      from: testAccount.user,
+    };
+  }
+
   return ConfigSchema.parse(parsed);
 };
 
@@ -187,4 +207,4 @@ const CONFIG_PATH = resolveConfigPath();
 
 console.info(`Loading config from: ${CONFIG_PATH}`);
 
-export const AppConfigs = loadConfig(CONFIG_PATH);
+export const AppConfigs = await loadConfig(CONFIG_PATH);

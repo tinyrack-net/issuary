@@ -6,8 +6,8 @@ export default (fastify: FastifyWithZodInstance) =>
     method: 'POST',
     url: '',
     schema: {
-      summary: 'Purge Session',
-      description: 'Purge Session',
+      summary: 'Logout',
+      description: 'Logout the current user and purge the session',
       tags: ['User'],
       response: {
         200: z.object({
