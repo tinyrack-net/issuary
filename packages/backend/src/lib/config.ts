@@ -140,14 +140,16 @@ export const ConfigSchema = z.object({
         enabled: true,
       },
     }),
-  smtp: z.discriminatedUnion('test', [
-    AppConfigSmtp.extend({
-      test: z.literal(false),
-    }),
-    z.object({
-      test: z.literal(true),
-    }),
-  ]),
+  smtp: z
+    .discriminatedUnion('test', [
+      AppConfigSmtp.extend({
+        test: z.literal(false),
+      }),
+      z.object({
+        test: z.literal(true),
+      }),
+    ])
+    .optional(),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),
 });
@@ -169,7 +171,7 @@ export const InternalConfigSchema = z.object({
         enabled: true,
       },
     }),
-  smtp: AppConfigSmtp,
+  smtp: AppConfigSmtp.optional(),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),
 });
@@ -202,6 +204,9 @@ const loadConfig = async (path: string) => {
   const parsed = ConfigSchema.parse(rawConfig);
 
   const smtpConfig = await (async () => {
+    if (!parsed.smtp) {
+      return undefined;
+    }
     if (parsed.smtp.test) {
       const testAccount = await nodemailer.createTestAccount();
       return {

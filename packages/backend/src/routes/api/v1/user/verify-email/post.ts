@@ -2,7 +2,10 @@ import z from 'zod/v4';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
-export default (fastify: FastifyWithZodInstance) =>
+export default (fastify: FastifyWithZodInstance) => {
+  if (!fastify.transporter) {
+    return;
+  }
   fastify.route({
     method: 'POST',
     url: '',
@@ -39,3 +42,4 @@ export default (fastify: FastifyWithZodInstance) =>
       });
     },
   });
+};

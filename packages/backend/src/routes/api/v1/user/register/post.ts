@@ -27,23 +27,33 @@ export default (fastify: FastifyWithZodInstance) =>
         password: req.body.password,
       });
 
-      // Generate email verification token
-      const verification = await fastify.emailVerificationService.generateToken(
-        {
-          user: user,
-        },
-      );
+      // Flush user to database before proceeding
+      await fastify.mikro.em.flush();
 
-      // Send verification email
-      await fastify.emailService.sendVerificationEmail({
-        email: user.email,
-        token: verification.token,
-      });
+      // If SMTP is configured, send email verification
+      if (fastify.transporter) {
+        // Generate email verification token
+        const verification =
+          await fastify.emailVerificationService.generateToken({
+            user: user,
+          });
 
-      // Do NOT create session until email is verified
-      // req.session.set('user', {
-      //   id: user.id,
-      // });
+        // Flush verification token to database
+        await fastify.mikro.em.flush();
+
+        // Send verification email
+        await fastify.emailService.sendVerificationEmail({
+          email: user.email,
+          token: verification.token,
+        });
+      } else {
+        // No SMTP configured - skip email verification and activate immediately
+        user.email_verified = true;
+        await fastify.mikro.em.flush();
+        req.session.set('user', {
+          id: user.id,
+        });
+      }
 
       res.status(200).send({
         user: {
