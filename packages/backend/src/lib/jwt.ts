@@ -1,12 +1,12 @@
+import { e } from '@/schemas/error.js';
 import {
-  decodeJwt,
   type JWK,
   type JWTPayload,
-  jwtVerify,
   type KeyObject,
   SignJWT,
+  decodeJwt,
+  jwtVerify,
 } from 'jose';
-import { e } from '@/schemas/error.js';
 import { AppConfigs } from './config.js';
 
 const JWT_SECRET = AppConfigs.app.jwt_secret || AppConfigs.app.cookie_secret;
@@ -52,23 +52,6 @@ export interface IdTokenPayload extends BaseJWTPayload {
   email_verified?: boolean;
   name?: string;
   picture?: string;
-}
-
-export function createJWT(
-  payload: JWTPayload,
-  algorithm: string,
-  privateKey: CryptoKey | KeyObject | JWK | Uint8Array<ArrayBufferLike>,
-) {
-  return new SignJWT(payload)
-    .setProtectedHeader({ alg: algorithm, typ: 'JWT', kid: 'tinyrack' })
-    .sign(privateKey);
-}
-
-export function verifyJWT<T>(
-  token: string,
-  publicKey: CryptoKey | KeyObject | JWK | Uint8Array<ArrayBufferLike>,
-) {
-  return jwtVerify<T>(token, publicKey);
 }
 
 /**
@@ -123,28 +106,17 @@ export async function signRefreshToken(
 export async function signIdToken(payload: IdTokenPayload): Promise<string> {
   const ttl = AppConfigs.app.jwt_access_token_ttl || 3600;
 
-  const claims: Record<string, unknown> = {
+  const jwt = await new SignJWT({
     sub: payload.sub,
     aud: payload.aud,
-  };
-
-  if (payload.nonce) {
-    claims['nonce'] = payload.nonce;
-  }
-  if (payload.email) {
-    claims['email'] = payload.email;
-  }
-  if (payload.email_verified !== undefined) {
-    claims['email_verified'] = payload.email_verified;
-  }
-  if (payload.name) {
-    claims['name'] = payload.name;
-  }
-  if (payload.picture) {
-    claims['picture'] = payload.picture;
-  }
-
-  const jwt = await new SignJWT(claims)
+    ...(payload.nonce && { nonce: payload.nonce }),
+    ...(payload.email && { email: payload.email }),
+    ...(payload.email_verified !== undefined && {
+      email_verified: payload.email_verified,
+    }),
+    ...(payload.name && { name: payload.name }),
+    ...(payload.picture && { picture: payload.picture }),
+  })
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
     .setIssuedAt()
     .setExpirationTime(`${ttl}s`)
@@ -178,24 +150,10 @@ export async function verifyAccessToken(
 ): Promise<AccessTokenPayload> {
   try {
     const { payload } = await jwtVerify(token, SECRET_KEY);
-
     if (!isAccessTokenPayload(payload)) {
       throw new Error('Invalid access token payload structure');
     }
-
-    const result: AccessTokenPayload = {
-      typ: 'access_token',
-      sub: payload.sub,
-      client_id: payload['client_id'],
-      scope: payload['scope'],
-    };
-
-    if (payload.iat !== undefined) result.iat = payload.iat;
-    if (payload.exp !== undefined) result.exp = payload.exp;
-    if (payload.iss !== undefined) result.iss = payload.iss;
-    if (typeof payload.aud === 'string') result.aud = payload.aud;
-
-    return result;
+    return payload as AccessTokenPayload;
   } catch {
     throw new e.InvalidAccessToken.Error();
   }
@@ -225,24 +183,10 @@ export async function verifyRefreshToken(
 ): Promise<RefreshTokenPayload> {
   try {
     const { payload } = await jwtVerify(token, SECRET_KEY);
-
     if (!isRefreshTokenPayload(payload)) {
       throw new Error('Invalid refresh token payload structure');
     }
-
-    const result: RefreshTokenPayload = {
-      typ: 'refresh_token',
-      sub: payload.sub,
-      client_id: payload['client_id'],
-      scope: payload['scope'],
-    };
-
-    if (payload.iat !== undefined) result.iat = payload.iat;
-    if (payload.exp !== undefined) result.exp = payload.exp;
-    if (payload.iss !== undefined) result.iss = payload.iss;
-    if (typeof payload.aud === 'string') result.aud = payload.aud;
-
-    return result;
+    return payload as RefreshTokenPayload;
   } catch {
     throw new e.InvalidRefreshToken.Error();
   }
@@ -263,28 +207,10 @@ function isIdTokenPayload(payload: JWTPayload): payload is IdTokenPayload {
 export async function verifyIdToken(token: string): Promise<IdTokenPayload> {
   try {
     const { payload } = await jwtVerify(token, SECRET_KEY);
-
     if (!isIdTokenPayload(payload)) {
       throw new Error('Invalid ID token payload structure');
     }
-
-    const result: IdTokenPayload = {
-      sub: payload.sub,
-      aud: payload.aud,
-    };
-
-    if (payload.iat !== undefined) result.iat = payload.iat;
-    if (payload.exp !== undefined) result.exp = payload.exp;
-    if (payload.iss !== undefined) result.iss = payload.iss;
-    if (typeof payload['nonce'] === 'string') result.nonce = payload['nonce'];
-    if (typeof payload['email'] === 'string') result.email = payload['email'];
-    if (typeof payload['email_verified'] === 'boolean')
-      result.email_verified = payload['email_verified'];
-    if (typeof payload['name'] === 'string') result.name = payload['name'];
-    if (typeof payload['picture'] === 'string')
-      result.picture = payload['picture'];
-
-    return result;
+    return payload as IdTokenPayload;
   } catch {
     throw new e.InvalidIdToken.Error();
   }
