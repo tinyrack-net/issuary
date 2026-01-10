@@ -36,15 +36,10 @@ export default (fastify: FastifyWithZodInstance) =>
       );
 
       // Send verification email
-      try {
-        await fastify.emailService.sendVerificationEmail({
-          email: user.email,
-          token: verification.token,
-        });
-      } catch (error) {
-        console.error('Failed to send verification email:', error);
-        // Continue registration even if email fails
-      }
+      await fastify.emailService.sendVerificationEmail({
+        email: user.email,
+        token: verification.token,
+      });
 
       // Do NOT create session until email is verified
       // req.session.set('user', {

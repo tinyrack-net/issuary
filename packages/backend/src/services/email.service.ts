@@ -3,6 +3,7 @@ import { e } from '@/schemas/error.js';
 import type { FastifyInstance } from 'fastify';
 import fastifyPlugin from 'fastify-plugin';
 import nodemailer from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -19,7 +20,7 @@ export class EmailService {
   async sendVerificationEmail(params: {
     email: string;
     token: string;
-  }): Promise<void> {
+  }): Promise<SMTPTransport.SentMessageInfo> {
     if (!this.mail.transporter || !AppConfigs.smtp) {
       throw new e.EmailNotActivated.Error();
     }
@@ -47,6 +48,8 @@ export class EmailService {
         console.log('Preview URL: %s', previewUrl);
       }
     }
+
+    return info;
   }
 
   /**

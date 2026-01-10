@@ -88,9 +88,7 @@ export const ConfigSchema = z.object({
     type: 'sqlite',
     path: 'test.db',
   }),
-  smtp: AppConfigSmtp.default({
-    enabled: false,
-  }).optional(),
+  smtp: AppConfigSmtp.optional(),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),
 });
@@ -146,7 +144,7 @@ const loadConfig = (path: string) => {
     }
   }
 
-  if (parsed.smtp?.enabled) {
+  if (parsed.smtp) {
     parsed.smtp.from = env.SMTP_FROM ?? parsed.smtp.from;
     parsed.smtp.user = env.SMTP_USER ?? parsed.smtp.user;
     parsed.smtp.password = env.SMTP_PASSWORD ?? parsed.smtp.password;
