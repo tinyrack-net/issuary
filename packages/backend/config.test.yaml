@@ -26,6 +26,9 @@ database:
   # user: !env DATABASE_USER
   # password: !env DATABASE_PASSWORD
 
+smtp:
+  test: true
+
 authentication_methods:
   password:
     type: password

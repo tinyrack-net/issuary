@@ -33,6 +33,7 @@ smtp:
   user: "tester@tinyrack.net"
   password: !env SMTP_PASSWORD
   from: "tester@tinyrack.net"
+  test: false
 
 authentication_methods:
   password:

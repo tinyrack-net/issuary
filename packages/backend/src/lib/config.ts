@@ -122,7 +122,38 @@ export const ConfigSchema = z.object({
         enabled: true,
       },
     }),
-  smtp: AppConfigSmtp.optional(),
+  smtp: z.discriminatedUnion('test', [
+    AppConfigSmtp.extend({
+      test: z.literal(false),
+    }),
+    z.object({
+      test: z.literal(true),
+    }),
+  ]),
+  providers: z.array(AppConfigProvider).default([]),
+  users: z.array(AppConfigUser).default([]),
+});
+
+export const InternalConfigSchema = z.object({
+  app: AppConfigApp,
+  admin: AppConfigAdmin.default({
+    enabled: false,
+  }).optional(),
+  database: AppConfigDatabase.default({
+    type: 'sqlite',
+    path: 'test.db',
+  }),
+  authentication_methods: z
+    .record(z.string(), AppConfigAuthenticationMethod)
+    .default({
+      email: {
+        type: 'password',
+        enabled: true,
+      },
+    }),
+  smtp: AppConfigSmtp.extend({
+    test: z.boolean(),
+  }),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),
 });
@@ -144,7 +175,7 @@ const loadConfig = async (path: string) => {
     throw new Error(`Config file not found at "${path}"`);
   }
   const file = readFileSync(path, 'utf8');
-  const config = YAML.parse(file, {
+  const rawConfig = YAML.parse(file, {
     customTags: [
       {
         tag: '!env',
@@ -152,54 +183,29 @@ const loadConfig = async (path: string) => {
       },
     ],
   });
-  const parsed = ConfigSchema.parse(config);
+  const parsed = ConfigSchema.parse(rawConfig);
 
-  parsed.app.host = env.APP_HOST ?? parsed.app.host;
-  parsed.app.port = env.APP_PORT ?? parsed.app.port;
-
-  if (parsed.admin?.enabled) {
-    parsed.admin.port = env.ADMIN_PORT ?? parsed.admin.port;
-  }
-
-  const databaseType = env.DATABASE_TYPE ?? parsed.database.type;
-
-  if (databaseType === 'postgres') {
-    if (parsed.database.type === 'postgres') {
-      parsed.database.host = env.DATABASE_HOST ?? parsed.database.host;
-      parsed.database.name = env.DATABASE_NAME ?? parsed.database.name;
-      parsed.database.password =
-        env.DATABASE_PASSWORD ?? parsed.database.password;
-      parsed.database.user = env.DATABASE_USER ?? parsed.database.user;
-      parsed.database.port = env.DATABASE_PORT ?? parsed.database.port;
+  const smtpConfig = await (async () => {
+    if (env.APP_ENV === 'test') {
+      const testAccount = await nodemailer.createTestAccount();
+      return {
+        host: testAccount.smtp.host,
+        port: testAccount.smtp.port,
+        secure: testAccount.smtp.secure,
+        user: testAccount.user,
+        password: testAccount.pass,
+        from: testAccount.user,
+        test: true,
+      };
+    } else {
+      return parsed.smtp;
     }
-  } else if (databaseType === 'sqlite') {
-    if (parsed.database.type === 'sqlite') {
-      parsed.database.path = env.DATABASE_PATH ?? parsed.database.path;
-    }
-  }
+  })();
 
-  if (parsed.smtp) {
-    parsed.smtp.from = env.SMTP_FROM ?? parsed.smtp.from;
-    parsed.smtp.user = env.SMTP_USER ?? parsed.smtp.user;
-    parsed.smtp.password = env.SMTP_PASSWORD ?? parsed.smtp.password;
-    parsed.smtp.secure = env.SMTP_SECURE ?? parsed.smtp.secure;
-    parsed.smtp.host = env.SMTP_HOST ?? parsed.smtp.host;
-    parsed.smtp.port = env.SMTP_PORT ?? parsed.smtp.port;
-  }
-
-  if (env.APP_ENV === 'test') {
-    const testAccount = await nodemailer.createTestAccount();
-    parsed.smtp = {
-      host: testAccount.smtp.host,
-      port: testAccount.smtp.port,
-      secure: testAccount.smtp.secure,
-      user: testAccount.user,
-      password: testAccount.pass,
-      from: testAccount.user,
-    };
-  }
-
-  return ConfigSchema.parse(parsed);
+  return InternalConfigSchema.parse({
+    ...parsed,
+    smtp: smtpConfig,
+  });
 };
 
 const DEFAULT_CONFIG_PATH = '/opt/config.yaml';

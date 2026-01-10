@@ -1,9 +1,9 @@
-import { AppConfigs } from '@/lib/config.js';
-import { e } from '@/schemas/error.js';
 import type { FastifyInstance } from 'fastify';
 import fastifyPlugin from 'fastify-plugin';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
+import { AppConfigs } from '@/lib/config.js';
+import { e } from '@/schemas/error.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -12,7 +12,9 @@ declare module 'fastify' {
 }
 
 export class EmailService {
-  public constructor(private readonly mail: FastifyInstance['mail']) {}
+  public constructor(
+    private readonly transporter: FastifyInstance['transporter'],
+  ) {}
 
   /**
    * Send email verification email
@@ -21,7 +23,7 @@ export class EmailService {
     email: string;
     token: string;
   }): Promise<SMTPTransport.SentMessageInfo> {
-    if (!this.mail.transporter || !AppConfigs.smtp) {
+    if (!this.transporter || !AppConfigs.smtp) {
       throw new e.EmailNotActivated.Error();
     }
 
@@ -32,7 +34,7 @@ export class EmailService {
       token: params.token,
     });
 
-    const info = await this.mail.transporter.sendMail({
+    const info = await this.transporter.sendMail({
       from: AppConfigs.smtp.from,
       to: params.email,
       subject: 'Verify your email address',
@@ -42,7 +44,7 @@ export class EmailService {
 
     console.log('Email sent: %s', info.messageId);
 
-    if (this.mail.test) {
+    if (AppConfigs.smtp.test) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
         console.log('Preview URL: %s', previewUrl);
@@ -142,7 +144,7 @@ export class EmailService {
 
 export default fastifyPlugin(
   async (fastify) => {
-    const service = new EmailService(fastify.mail);
+    const service = new EmailService(fastify.transporter);
     fastify.decorate('emailService', service);
   },
   {

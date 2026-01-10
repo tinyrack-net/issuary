@@ -2,17 +2,13 @@ import fastifyPlugin from 'fastify-plugin';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 import { AppConfigs } from '@/lib/config.js';
-import { env } from '@/lib/env.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    mail: {
-      transporter: nodemailer.Transporter<
-        SMTPTransport.SentMessageInfo,
-        SMTPTransport.Options
-      > | null;
-      test: boolean;
-    };
+    transporter: nodemailer.Transporter<
+      SMTPTransport.SentMessageInfo,
+      SMTPTransport.Options
+    > | null;
   }
 }
 
@@ -30,18 +26,11 @@ export default fastifyPlugin(
           pass: AppConfigs.smtp.password,
         },
       });
-
-      fastify.decorate('mail', {
-        transporter: transport,
-        test: env.APP_ENV === 'test',
-      });
+      fastify.decorate('transporter', transport);
       console.log('✉️  SMTP configured:', AppConfigs.smtp.host);
     } else {
       // No email configuration - create a dummy transporter
-      fastify.decorate('mail', {
-        transporter: null,
-        test: false,
-      });
+      fastify.decorate('transporter', null);
       console.warn('⚠️  No email configuration found, emails will not be sent');
       return;
     }
