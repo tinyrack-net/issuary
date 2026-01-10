@@ -1,8 +1,6 @@
 import z from 'zod/v4';
-import {
-  ProviderNotFoundError,
-  validateProvider,
-} from '@/handlers/validate-provider.js';
+import { validateProvider } from '@/handlers/validate-provider.js';
+import { e } from '@/schemas/error.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 /**
@@ -60,35 +58,23 @@ export default (fastify: FastifyWithZodInstance) => {
       }),
       response: {
         200: JWKSResponseSchema,
-        400: z.object({
-          code: z.string(),
-          message: z.string(),
-        }),
+        400: e.OAuthClientNotFound.Schema,
       },
     },
     handler: async (req, res) => {
-      try {
-        // Validate that the provider exists
-        await validateProvider(req.params.provider_id);
+      // Validate that the provider exists
+      // Throws OAuthClientNotFound if provider doesn't exist
+      await validateProvider(req.params.provider_id);
 
-        // Get JWKS from JwtKeyService
-        // Returns all active and previous keys for token verification
-        const jwks = await fastify.jwtKeyService.getJWKS();
+      // Get JWKS from JwtKeyService
+      // Returns all active and previous keys for token verification
+      const jwks = await fastify.jwtKeyService.getJWKS();
 
-        // Set cache headers for client optimization
-        // Keys rotate infrequently, so caching is beneficial
-        res.header('Cache-Control', 'public, max-age=3600'); // 1 hour
+      // Set cache headers for client optimization
+      // Keys rotate infrequently, so caching is beneficial
+      res.header('Cache-Control', 'public, max-age=3600'); // 1 hour
 
-        return res.status(200).send(jwks);
-      } catch (error) {
-        if (error instanceof ProviderNotFoundError) {
-          return res.status(400).send({
-            code: 'PROVIDER_NOT_FOUND',
-            message: error.message,
-          });
-        }
-        throw error;
-      }
+      return res.status(200).send(jwks);
     },
   });
 };
