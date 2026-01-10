@@ -26,6 +26,7 @@ interface BaseJWTPayload extends JWTPayload {
  * Access token payload structure (RFC 6749)
  */
 export interface AccessTokenPayload extends BaseJWTPayload {
+  typ: 'access_token';
   client_id: string;
   scope: string;
   aud?: string;
@@ -35,6 +36,7 @@ export interface AccessTokenPayload extends BaseJWTPayload {
  * Refresh token payload structure (RFC 6749)
  */
 export interface RefreshTokenPayload extends BaseJWTPayload {
+  typ: 'refresh_token';
   client_id: string;
   scope: string;
   aud?: string;
@@ -78,6 +80,7 @@ export async function signAccessToken(
   const ttl = AppConfigs.app.jwt_access_token_ttl || 3600;
 
   const jwt = await new SignJWT({
+    typ: 'access_token',
     sub: payload.sub,
     client_id: payload.client_id,
     scope: payload.scope,
@@ -100,6 +103,7 @@ export async function signRefreshToken(
   const ttl = AppConfigs.app.jwt_refresh_token_ttl || 2592000;
 
   const jwt = await new SignJWT({
+    typ: 'refresh_token',
     sub: payload.sub,
     client_id: payload.client_id,
     scope: payload.scope,
@@ -157,6 +161,7 @@ function isAccessTokenPayload(
   payload: JWTPayload,
 ): payload is AccessTokenPayload {
   return (
+    payload['typ'] === 'access_token' &&
     typeof payload.sub === 'string' &&
     typeof payload['client_id'] === 'string' &&
     typeof payload['scope'] === 'string'
@@ -179,6 +184,7 @@ export async function verifyAccessToken(
     }
 
     const result: AccessTokenPayload = {
+      typ: 'access_token',
       sub: payload.sub,
       client_id: payload['client_id'],
       scope: payload['scope'],
@@ -202,6 +208,7 @@ function isRefreshTokenPayload(
   payload: JWTPayload,
 ): payload is RefreshTokenPayload {
   return (
+    payload['typ'] === 'refresh_token' &&
     typeof payload.sub === 'string' &&
     typeof payload['client_id'] === 'string' &&
     typeof payload['scope'] === 'string'
@@ -224,6 +231,7 @@ export async function verifyRefreshToken(
     }
 
     const result: RefreshTokenPayload = {
+      typ: 'refresh_token',
       sub: payload.sub,
       client_id: payload['client_id'],
       scope: payload['scope'],

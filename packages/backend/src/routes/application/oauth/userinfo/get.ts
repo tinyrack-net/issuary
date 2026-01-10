@@ -15,6 +15,7 @@ export default (fastify: FastifyWithZodInstance) => {
         authorization: z
           .string()
           .min(1)
+          .optional()
           .describe(
             'Bearer token in format: "Bearer <access_token>". The access token must have been issued with openid scope.',
           ),

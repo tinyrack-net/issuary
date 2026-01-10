@@ -68,6 +68,7 @@ export async function buildTokenResponse(
 
   // Generate access token (RFC 6749 §1.4)
   const accessToken = await signAccessToken({
+    typ: 'access_token',
     sub: userId,
     client_id: clientId,
     scope: scopeString,
@@ -75,6 +76,7 @@ export async function buildTokenResponse(
 
   // Generate refresh token (RFC 6749 §1.5)
   const refreshToken = await signRefreshToken({
+    typ: 'refresh_token',
     sub: userId,
     client_id: clientId,
     scope: scopeString,
