@@ -205,7 +205,13 @@ function Login() {
             {/* Divider */}
             <div className="divider my-2" />
 
-            <div className="text-center">
+            <div className="flex flex-col items-center gap-2">
+              <Link
+                to="/forgot-password"
+                className="link link-hover link-secondary font-medium text-sm"
+              >
+                {t('login.link.forgotPassword')}
+              </Link>
               <Link
                 to="/register"
                 search={extractOAuthParams(search)}

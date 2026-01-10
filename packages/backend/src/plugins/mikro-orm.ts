@@ -3,6 +3,7 @@ import { EmailVerificationEntity } from '@/entities/email-verification.entity.js
 import { JwtKeyEntity } from '@/entities/jwt-key.entity.js';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
+import { PasswordResetEntity } from '@/entities/password-reset.entity.js';
 import { RevokedTokenEntity } from '@/entities/revoked-token.entity.js';
 import { UserConsentEntity } from '@/entities/user-consent.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
@@ -12,6 +13,7 @@ import type { EmailVerificationRepository } from '@/repositories/email-verificat
 import type { JwtKeyRepository } from '@/repositories/jwt-key.repository.js';
 import type { OAuthClientRepository } from '@/repositories/oauth-client.repository.js';
 import type { OAuthCodeRepository } from '@/repositories/oauth-code.repository.js';
+import type { PasswordResetRepository } from '@/repositories/password-reset.repository.js';
 import type { RevokedTokenRepository } from '@/repositories/revoked-token.repository.js';
 import type { UserConsentRepository } from '@/repositories/user-consent.repository.js';
 import type { UserRepository } from '@/repositories/user.repository.js';
@@ -26,6 +28,7 @@ export interface MikroService {
   oauthCode: OAuthCodeRepository;
   oauthClient: OAuthClientRepository;
   emailVerification: EmailVerificationRepository;
+  passwordReset: PasswordResetRepository;
   jwtKey: JwtKeyRepository;
   revokedToken: RevokedTokenRepository;
   userConsent: UserConsentRepository;
@@ -66,6 +69,7 @@ export default fastifyPlugin(
       oauthCode: orm.em.getRepository(OAuthCodeEntity),
       oauthClient: orm.em.getRepository(OAuthClientEntity),
       emailVerification: orm.em.getRepository(EmailVerificationEntity),
+      passwordReset: orm.em.getRepository(PasswordResetEntity),
       jwtKey: orm.em.getRepository(JwtKeyEntity),
       revokedToken: orm.em.getRepository(RevokedTokenEntity),
       userConsent: orm.em.getRepository(UserConsentEntity),

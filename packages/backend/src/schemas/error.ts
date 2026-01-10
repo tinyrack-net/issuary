@@ -286,4 +286,16 @@ export const e = {
     'interaction_required',
     'The Authorization Server requires End-User interaction.',
   ),
+
+  // Password Reset Errors
+  InvalidPasswordResetToken: createError(
+    400,
+    'INVALID_PASSWORD_RESET_TOKEN',
+    'The password reset token is invalid or has expired.',
+  ),
+  UserNotEditable: createError(
+    403,
+    'USER_NOT_EDITABLE',
+    'This user account cannot be modified.',
+  ),
 };
