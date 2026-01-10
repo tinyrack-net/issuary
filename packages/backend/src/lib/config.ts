@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { zz } from '@/schemas/provider.js';
 import YAML from 'yaml';
 import z from 'zod/v4';
+import { zz } from '@/schemas/provider.js';
 import { env } from './env.js';
 
 export const AppConfigApp = z.object({
@@ -12,6 +12,9 @@ export const AppConfigApp = z.object({
   jwt_secret: z.string().min(32).optional(),
   jwt_access_token_ttl: z.number().int().min(60).optional().default(3600), // 1 hour
   jwt_refresh_token_ttl: z.number().int().min(3600).optional().default(2592000), // 30 days
+  supported_languages: z.array(z.string()).default(['en']),
+  default_language: z.string().default('auto'),
+  fallback_language: z.string().default('en'),
 });
 
 export type AppConfigApp = z.infer<typeof AppConfigApp>;
