@@ -19,13 +19,6 @@ database:
   # user: !env DATABASE_USER
   # password: !env DATABASE_PASSWORD
 
-smtp:
-  enabled: false
-  host: !env SMTP_HOST
-  port: !env SMTP_PORT
-  user: "user"
-  password: "PW"
-
 clients:
   email_and_password:
     type: email_and_password
