@@ -150,11 +150,14 @@ export default (fastify: FastifyWithZodInstance) => {
         return res.redirect(result.url);
       } catch (error) {
         // Handle ApiError with OAuth error codes
+
+        // RFC 6749 §4.1.2.1: If client_id is invalid or redirect_uri validation fails,
+        // do NOT redirect to the provided redirect_uri (security vulnerability)
         if (error instanceof e.OAuthClientNotFound.Error) {
           return redirectWithError(
             'unauthorized_client',
             error.message,
-            query.redirect_uri,
+            undefined, // Don't redirect - client_id is invalid
           );
         }
 
@@ -162,7 +165,7 @@ export default (fastify: FastifyWithZodInstance) => {
           return redirectWithError(
             'unauthorized_client',
             error.message,
-            query.redirect_uri,
+            undefined, // Don't redirect - client is not trusted
           );
         }
 
@@ -171,6 +174,7 @@ export default (fastify: FastifyWithZodInstance) => {
           return redirectWithError('invalid_request', error.message, undefined);
         }
 
+        // Only redirect errors that occur AFTER successful client + redirect_uri validation
         if (error instanceof e.UnsupportedResponseType.Error) {
           return redirectWithError(
             'unsupported_response_type',
