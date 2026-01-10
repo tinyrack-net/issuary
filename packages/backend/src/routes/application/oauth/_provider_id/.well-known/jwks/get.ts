@@ -72,7 +72,6 @@ export default (fastify: FastifyWithZodInstance) => {
       // Keys rotate infrequently, so caching is beneficial
       res.header('Cache-Control', 'public, max-age=3600'); // 1 hour
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return res.status(200).send(jwks);
     },
   });

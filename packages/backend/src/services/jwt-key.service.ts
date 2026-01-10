@@ -6,7 +6,6 @@ import {
   generateKeyPair,
   importPKCS8,
   importSPKI,
-  type JWK,
 } from 'jose';
 import { JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
 import { AppConfigs } from '@/lib/config.js';
@@ -26,6 +25,32 @@ interface KeyPair {
   privateKey: string;
   publicKey: string;
   algorithm: string;
+}
+
+/**
+ * Public JWK for JWKS endpoint (RFC 7517)
+ *
+ * All required fields are guaranteed to be present.
+ */
+export interface PublicJWK {
+  /** Key Type (e.g., "RSA") */
+  kty: string;
+  /** Public Key Use ("sig" for signature) */
+  use: string;
+  /** Key ID */
+  kid: string;
+  /** Algorithm (e.g., "RS256") */
+  alg: string;
+  /** RSA modulus (base64url encoded) */
+  n?: string;
+  /** RSA exponent (base64url encoded) */
+  e?: string;
+  /** EC x coordinate (base64url encoded) */
+  x?: string;
+  /** EC y coordinate (base64url encoded) */
+  y?: string;
+  /** EC curve name */
+  crv?: string;
 }
 
 /**
@@ -306,7 +331,7 @@ export class JwtKeyService {
    * @param key - JWT Key entity
    * @returns JWK object
    */
-  async convertToJWK(key: JwtKeyEntity): Promise<JWK> {
+  async convertToJWK(key: JwtKeyEntity): Promise<PublicJWK> {
     // Import PEM to KeyLike
     const publicKey = await importSPKI(key.public_key, key.algorithm);
 
@@ -331,7 +356,7 @@ export class JwtKeyService {
    *
    * @returns JWKS object with keys array
    */
-  async getJWKS(): Promise<{ keys: JWK[] }> {
+  async getJWKS(): Promise<{ keys: PublicJWK[] }> {
     const keys = await this.mikro.jwtKey.getPublicKeys();
 
     const jwks = await Promise.all(keys.map((key) => this.convertToJWK(key)));
