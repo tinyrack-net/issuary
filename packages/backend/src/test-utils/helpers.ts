@@ -1,6 +1,9 @@
 import { RequestContext } from '@mikro-orm/core';
-import type { FastifyInstance } from 'fastify';
-import type { InjectOptions, LightMyRequestResponse } from 'light-my-request';
+import type {
+  FastifyInstance,
+  InjectOptions,
+  LightMyRequestResponse,
+} from 'fastify';
 import { TEST_USER } from './fixtures.js';
 
 /**
