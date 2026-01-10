@@ -1,5 +1,11 @@
 import fastifyPlugin from 'fastify-plugin';
-import { verifyRefreshToken } from '@/lib/jwt.js';
+import {
+  type AccessTokenPayload,
+  type RefreshTokenPayload,
+  decodeToken,
+  verifyAccessToken,
+  verifyRefreshToken,
+} from '@/lib/jwt.js';
 import { buildTokenResponse } from '@/lib/oauth-token-builder.js';
 import { validatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
@@ -37,6 +43,29 @@ export interface RefreshTokenGrantParams {
   refreshToken: string;
   /** OAuth client identifier (must match original request) */
   clientId: string;
+}
+
+/**
+ * Token introspection result
+ * RFC 7662 §2.2 - Introspection Response
+ */
+export interface TokenIntrospectionResult {
+  /** Whether the token is currently active */
+  active: boolean;
+  /** Space-separated list of scopes (only if active) */
+  scope?: string;
+  /** Client identifier (only if active) */
+  client_id?: string;
+  /** Type of token (only if active) */
+  token_type?: 'Bearer';
+  /** Expiration timestamp in seconds (only if active) */
+  exp?: number;
+  /** Issued-at timestamp in seconds (only if active) */
+  iat?: number;
+  /** Subject identifier - user ID (only if active) */
+  sub?: string;
+  /** Issuer identifier (only if active) */
+  iss?: string;
 }
 
 /**
@@ -160,6 +189,90 @@ export class OAuthTokenService {
       clientId: client.clientId,
       scope: refreshPayload.scope.split(' '),
     });
+  }
+
+  /**
+   * Introspect a token (access token or refresh token)
+   *
+   * Implements OAuth 2.0 Token Introspection (RFC 7662).
+   * Returns metadata about the token including active status.
+   *
+   * @param token - Token to introspect
+   * @param tokenTypeHint - Hint about token type (access_token or refresh_token)
+   * @returns Token introspection result
+   */
+  async introspectToken(
+    token: string,
+    tokenTypeHint?: 'access_token' | 'refresh_token',
+  ): Promise<TokenIntrospectionResult> {
+    // Try to verify the token based on hint or both types
+    let payload: AccessTokenPayload | RefreshTokenPayload | null = null;
+    let tokenType: 'access_token' | 'refresh_token' | null = null;
+
+    // 1. Try to verify as hinted token type first (if hint provided)
+    if (tokenTypeHint === 'access_token') {
+      try {
+        payload = await verifyAccessToken(token);
+        tokenType = 'access_token';
+      } catch {
+        // Hint failed, try refresh token
+        try {
+          payload = await verifyRefreshToken(token);
+          tokenType = 'refresh_token';
+        } catch {
+          // Both failed, fall through to inactive
+        }
+      }
+    } else if (tokenTypeHint === 'refresh_token') {
+      try {
+        payload = await verifyRefreshToken(token);
+        tokenType = 'refresh_token';
+      } catch {
+        // Hint failed, try access token
+        try {
+          payload = await verifyAccessToken(token);
+          tokenType = 'access_token';
+        } catch {
+          // Both failed, fall through to inactive
+        }
+      }
+    } else {
+      // 2. No hint provided, try both types
+      try {
+        payload = await verifyAccessToken(token);
+        tokenType = 'access_token';
+      } catch {
+        try {
+          payload = await verifyRefreshToken(token);
+          tokenType = 'refresh_token';
+        } catch {
+          // Both failed, fall through to inactive
+        }
+      }
+    }
+
+    // 3. If verification succeeded, return active response
+    if (payload && tokenType) {
+      return {
+        active: true,
+        scope: payload.scope,
+        client_id: payload.client_id,
+        token_type: 'Bearer',
+        ...(payload.exp !== undefined && { exp: payload.exp }),
+        ...(payload.iat !== undefined && { iat: payload.iat }),
+        sub: payload.sub,
+        ...(payload.iss !== undefined && { iss: payload.iss }),
+      };
+    }
+
+    // 4. Token is invalid or expired - return inactive
+    // RFC 7662 §2.2: "If the token is not active, does not exist on this server,
+    // or the protected resource is not allowed to introspect this particular token,
+    // then the authorization server MUST return an introspection response with
+    // the active field set to false"
+    return {
+      active: false,
+    };
   }
 }
 

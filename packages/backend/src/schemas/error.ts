@@ -261,4 +261,7 @@ export const e = {
     'INVALID_CODE_VERIFIER_LENGTH',
     'Code verifier length must be between 43 and 128 characters.',
   ),
+
+  // Token Introspection Errors (RFC 7662)
+  MissingToken: createError(400, 'MISSING_TOKEN', 'Missing token parameter.'),
 };
