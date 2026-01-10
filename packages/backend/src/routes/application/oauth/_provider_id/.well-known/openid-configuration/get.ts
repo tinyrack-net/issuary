@@ -2,84 +2,6 @@ import z from 'zod/v4';
 import { AppConfigs } from '@/lib/config.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
-/**
- * OpenID Provider Configuration Response Schema
- * Based on OpenID Connect Discovery 1.0 specification
- * https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata
- */
-const OpenIDConfigurationResponse = z.object({
-  // Required fields
-  issuer: z
-    .string()
-    .describe('URL using the https scheme with no query or fragment component'),
-  authorization_endpoint: z
-    .string()
-    .describe("URL of the OP's OAuth 2.0 Authorization Endpoint"),
-  token_endpoint: z
-    .string()
-    .describe("URL of the OP's OAuth 2.0 Token Endpoint"),
-  jwks_uri: z.string().describe("URL of the OP's JSON Web Key Set document"),
-  response_types_supported: z
-    .array(z.string())
-    .describe(
-      'JSON array containing a list of the OAuth 2.0 response_type values',
-    ),
-  subject_types_supported: z
-    .array(z.string())
-    .describe('JSON array containing a list of the Subject Identifier types'),
-  id_token_signing_alg_values_supported: z
-    .array(z.string())
-    .describe(
-      'JSON array containing a list of the JWS signing algorithms supported',
-    ),
-
-  // Recommended fields
-  userinfo_endpoint: z
-    .string()
-    .optional()
-    .describe("URL of the OP's UserInfo Endpoint"),
-  scopes_supported: z
-    .array(z.string())
-    .optional()
-    .describe('JSON array containing a list of the OAuth 2.0 scope values'),
-  claims_supported: z
-    .array(z.string())
-    .optional()
-    .describe('JSON array containing a list of the Claim Names'),
-  grant_types_supported: z
-    .array(z.string())
-    .optional()
-    .describe(
-      'JSON array containing a list of the OAuth 2.0 Grant Type values',
-    ),
-  token_endpoint_auth_methods_supported: z
-    .array(z.string())
-    .optional()
-    .describe('JSON array containing a list of Client Authentication methods'),
-  code_challenge_methods_supported: z
-    .array(z.string())
-    .optional()
-    .describe('JSON array containing a list of PKCE code challenge methods'),
-
-  // Optional fields
-  introspection_endpoint: z
-    .string()
-    .optional()
-    .describe("URL of the OP's OAuth 2.0 Token Introspection Endpoint"),
-  revocation_endpoint: z
-    .string()
-    .optional()
-    .describe("URL of the OP's OAuth 2.0 Token Revocation Endpoint"),
-  service_documentation: z
-    .string()
-    .optional()
-    .describe('URL of a page containing human-readable information'),
-  ui_locales_supported: z
-    .array(z.string())
-    .optional()
-    .describe('Languages and scripts supported for the user interface'),
-});
-
 export default (fastify: FastifyWithZodInstance) => {
   return fastify.route({
     method: 'GET',
@@ -93,7 +15,95 @@ export default (fastify: FastifyWithZodInstance) => {
         provider_id: z.string(),
       }),
       response: {
-        200: OpenIDConfigurationResponse,
+        /**
+         * OpenID Provider Configuration Response Schema
+         * Based on OpenID Connect Discovery 1.0 specification
+         * https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata
+         */
+        200: z.object({
+          // Required fields
+          issuer: z
+            .string()
+            .describe(
+              'URL using the https scheme with no query or fragment component',
+            ),
+          authorization_endpoint: z
+            .string()
+            .describe("URL of the OP's OAuth 2.0 Authorization Endpoint"),
+          token_endpoint: z
+            .string()
+            .describe("URL of the OP's OAuth 2.0 Token Endpoint"),
+          jwks_uri: z
+            .string()
+            .describe("URL of the OP's JSON Web Key Set document"),
+          response_types_supported: z
+            .array(z.string())
+            .describe(
+              'JSON array containing a list of the OAuth 2.0 response_type values',
+            ),
+          subject_types_supported: z
+            .array(z.string())
+            .describe(
+              'JSON array containing a list of the Subject Identifier types',
+            ),
+          id_token_signing_alg_values_supported: z
+            .array(z.string())
+            .describe(
+              'JSON array containing a list of the JWS signing algorithms supported',
+            ),
+
+          // Recommended fields
+          userinfo_endpoint: z
+            .string()
+            .optional()
+            .describe("URL of the OP's UserInfo Endpoint"),
+          scopes_supported: z
+            .array(z.string())
+            .optional()
+            .describe(
+              'JSON array containing a list of the OAuth 2.0 scope values',
+            ),
+          claims_supported: z
+            .array(z.string())
+            .optional()
+            .describe('JSON array containing a list of the Claim Names'),
+          grant_types_supported: z
+            .array(z.string())
+            .optional()
+            .describe(
+              'JSON array containing a list of the OAuth 2.0 Grant Type values',
+            ),
+          token_endpoint_auth_methods_supported: z
+            .array(z.string())
+            .optional()
+            .describe(
+              'JSON array containing a list of Client Authentication methods',
+            ),
+          code_challenge_methods_supported: z
+            .array(z.string())
+            .optional()
+            .describe(
+              'JSON array containing a list of PKCE code challenge methods',
+            ),
+
+          // Optional fields
+          introspection_endpoint: z
+            .string()
+            .optional()
+            .describe("URL of the OP's OAuth 2.0 Token Introspection Endpoint"),
+          revocation_endpoint: z
+            .string()
+            .optional()
+            .describe("URL of the OP's OAuth 2.0 Token Revocation Endpoint"),
+          service_documentation: z
+            .string()
+            .optional()
+            .describe('URL of a page containing human-readable information'),
+          ui_locales_supported: z
+            .array(z.string())
+            .optional()
+            .describe('Languages and scripts supported for the user interface'),
+        }),
       },
     },
     handler: async (req, res) => {
