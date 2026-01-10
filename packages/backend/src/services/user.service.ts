@@ -1,5 +1,6 @@
 import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod';
+import type { UserEntity } from '@/entities/user.entity.js';
 import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
@@ -86,10 +87,10 @@ export class UserService {
     throw new e.InvalidEmailOrPassword.Error();
   }
 
-  public async register(params: {
-    email: string;
-    password: string;
-  }): Promise<z.infer<typeof r.UserSession>> {
+  public async register(params: { email: string; password: string }): Promise<{
+    user: z.infer<typeof r.UserSession>;
+    entity: UserEntity;
+  }> {
     const appConfigUser = AppConfigs.users?.find(
       (u) => u.email === params.email,
     );
@@ -110,10 +111,13 @@ export class UserService {
     await this.mikro.em.persist(user).flush();
 
     return {
-      id: user.id,
-      managed: 'database',
-      email: user.email,
-      email_verified: user.email_verified,
+      user: {
+        id: user.id,
+        managed: 'database',
+        email: user.email,
+        email_verified: user.email_verified,
+      },
+      entity: user,
     };
   }
 

@@ -1,0 +1,43 @@
+import z from 'zod/v4';
+import { f } from '@/schemas/field.js';
+import type { FastifyWithZodInstance } from '@/server.js';
+
+export default (fastify: FastifyWithZodInstance) =>
+  fastify.route({
+    method: 'POST',
+    url: '',
+    schema: {
+      summary: 'Resend Verification Email',
+      description: 'Resend email verification link to user',
+      tags: ['User'],
+      body: z.object({
+        email: f.userEmail,
+      }),
+      response: {
+        200: z.object({
+          message: z.string(),
+        }),
+      },
+    },
+    handler: async (req, res) => {
+      const verification =
+        await fastify.emailVerificationService.resendVerification(
+          req.body.email,
+        );
+
+      // Send verification email
+      try {
+        await fastify.emailService.sendVerificationEmail({
+          email: req.body.email,
+          token: verification.token,
+        });
+      } catch (error) {
+        console.error('Failed to resend verification email:', error);
+        throw error;
+      }
+
+      res.status(200).send({
+        message: 'Verification email has been resent. Please check your inbox.',
+      });
+    },
+  });

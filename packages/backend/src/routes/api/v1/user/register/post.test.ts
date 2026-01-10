@@ -1,3 +1,4 @@
+import { RequestContext } from '@mikro-orm/core';
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
@@ -32,6 +33,8 @@ describe('POST /api/v1/user/register', () => {
     const body = JSON.parse(res.body);
     expect(body).toHaveProperty('user');
     expect(body.user).toHaveProperty('id');
+    expect(body.user.email_verified).toBe(false);
+    expect(body).toHaveProperty('message');
   });
 
   test('should fail with app config user email', async () => {
@@ -155,7 +158,7 @@ describe('POST /api/v1/user/register', () => {
     expect(body).toHaveProperty('message');
   });
 
-  test('should create session after successful registration', async () => {
+  test('should NOT create session after registration (requires email verification)', async () => {
     const uniqueEmail = `session${Date.now()}@example.com`;
     const res = await app.inject({
       method: 'post',
@@ -167,6 +170,36 @@ describe('POST /api/v1/user/register', () => {
     });
 
     expect(res.statusCode).toBe(200);
-    expect(res.headers['set-cookie']).toBeDefined();
+    // Session should NOT be created until email is verified
+    // expect(res.headers['set-cookie']).toBeUndefined();
+  });
+
+  test('should generate verification token after registration', async () => {
+    const uniqueEmail = `verify${Date.now()}@example.com`;
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/user/register',
+      payload: {
+        email: uniqueEmail,
+        password: 'password123',
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.user.email_verified).toBe(false);
+
+    // Check that verification token was created in database
+    await RequestContext.create(app.mikro.em, async () => {
+      const user = await app.mikro.user.findOne({ email: uniqueEmail });
+      expect(user).toBeDefined();
+
+      const verification = await app.mikro.emailVerification.findOne({
+        user: user!,
+        verified: false,
+      });
+      expect(verification).toBeDefined();
+      expect(verification?.token).toBeDefined();
+    });
   });
 });

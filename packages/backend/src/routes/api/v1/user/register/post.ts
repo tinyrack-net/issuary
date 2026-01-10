@@ -9,7 +9,7 @@ export default (fastify: FastifyWithZodInstance) =>
     url: '',
     schema: {
       summary: 'Register',
-      description: 'Register a new user',
+      description: 'Register a new user and send email verification',
       tags: ['User'],
       body: z.object({
         email: f.userEmail,
@@ -18,18 +18,38 @@ export default (fastify: FastifyWithZodInstance) =>
       response: {
         200: z.object({
           user: r.UserSession,
+          message: z.string(),
         }),
       },
     },
     handler: async (req, res) => {
-      const user = await fastify.userService.register({
+      const { user, entity } = await fastify.userService.register({
         email: req.body.email,
         password: req.body.password,
       });
 
-      req.session.set('user', {
-        id: user.id,
-      });
+      // Generate email verification token
+      const verification = await fastify.emailVerificationService.generateToken(
+        {
+          user: entity,
+        },
+      );
+
+      // Send verification email
+      try {
+        await fastify.emailService.sendVerificationEmail({
+          email: entity.email,
+          token: verification.token,
+        });
+      } catch (error) {
+        console.error('Failed to send verification email:', error);
+        // Continue registration even if email fails
+      }
+
+      // Do NOT create session until email is verified
+      // req.session.set('user', {
+      //   id: user.id,
+      // });
 
       res.status(200).send({
         user: {
@@ -38,6 +58,8 @@ export default (fastify: FastifyWithZodInstance) =>
           email: user.email,
           email_verified: user.email_verified,
         },
+        message:
+          'Registration successful. Please check your email to verify your account.',
       });
     },
   });

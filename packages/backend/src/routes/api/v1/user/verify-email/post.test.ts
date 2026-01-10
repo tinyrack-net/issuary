@@ -1,0 +1,295 @@
+import { RequestContext } from '@mikro-orm/core';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { e } from '@/schemas/error.js';
+import { createServer } from '@/server.js';
+
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = await createServer().start();
+});
+
+afterAll(async () => {
+  if (app) {
+    await app.close();
+  }
+});
+
+// Helper function to run code within MikroORM RequestContext
+async function withContext<T>(fn: () => Promise<T>): Promise<T> {
+  return RequestContext.create(app.mikro.em, fn);
+}
+
+describe('POST /api/v1/user/verify-email', () => {
+  test('should verify email with valid token', { timeout: 10000 }, async () => {
+    // 1. Register a new user
+    const uniqueEmail = `verify${Date.now()}@example.com`;
+    const registerRes = await app.inject({
+      method: 'post',
+      url: '/api/v1/user/register',
+      payload: {
+        email: uniqueEmail,
+        password: 'password123',
+      },
+    });
+
+    expect(registerRes.statusCode).toBe(200);
+    const registerBody = JSON.parse(registerRes.body);
+    expect(registerBody.user.email_verified).toBe(false);
+
+    // 2. Get the verification token from database
+    const token = await withContext(async () => {
+      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
+      const verification = await app.mikro.emailVerification.findOneOrFail({
+        user,
+        verified: false,
+      });
+      return verification.token;
+    });
+
+    // 3. Verify email with token
+    const verifyRes = await app.inject({
+      method: 'post',
+      url: '/api/v1/user/verify-email',
+      payload: {
+        token,
+      },
+    });
+
+    expect(verifyRes.statusCode).toBe(200);
+    const verifyBody = JSON.parse(verifyRes.body);
+    expect(verifyBody.user.email_verified).toBe(true);
+    expect(verifyBody).toHaveProperty('message');
+
+    // 4. Check that user's email is marked as verified in database
+    const isVerified = await withContext(async () => {
+      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
+      return user.email_verified;
+    });
+    expect(isVerified).toBe(true);
+
+    // 5. Check that session was created
+    expect(verifyRes.headers['set-cookie']).toBeDefined();
+  });
+
+  test('should fail with invalid token', async () => {
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/user/verify-email',
+      payload: {
+        token: 'invalid-token-12345',
+      },
+    });
+
+    expect(res.statusCode).toBe(e.InvalidVerificationToken.Status);
+    const body = JSON.parse(res.body);
+    const expectedError = new e.InvalidVerificationToken.Error();
+    expect(body).toHaveProperty('code', expectedError.code);
+  });
+
+  test('should fail with expired token', { timeout: 10000 }, async () => {
+    // 1. Register a new user
+    const uniqueEmail = `expired${Date.now()}@example.com`;
+    await app.inject({
+      method: 'post',
+      url: '/api/v1/user/register',
+      payload: {
+        email: uniqueEmail,
+        password: 'password123',
+      },
+    });
+
+    // 2. Get the verification token and expire it
+    await withContext(async () => {
+      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
+      const verification = await app.mikro.emailVerification.findOneOrFail({
+        user,
+        verified: false,
+      });
+
+      // Manually expire the token
+      verification.expiresAt = new Date(Date.now() - 1000);
+      await app.mikro.em.flush();
+    });
+
+    // 3. Get the expired token
+    const token = await withContext(async () => {
+      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
+      const verification = await app.mikro.emailVerification.findOneOrFail({
+        user,
+      });
+      return verification.token;
+    });
+
+    // 4. Try to verify with expired token
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/user/verify-email',
+      payload: {
+        token,
+      },
+    });
+
+    expect(res.statusCode).toBe(e.InvalidVerificationToken.Status);
+  });
+
+  test('should fail with already used token', { timeout: 10000 }, async () => {
+    // 1. Register a user
+    const uniqueEmail = `used${Date.now()}@example.com`;
+    await app.inject({
+      method: 'post',
+      url: '/api/v1/user/register',
+      payload: {
+        email: uniqueEmail,
+        password: 'password123',
+      },
+    });
+
+    // 2. Get the token
+    const token = await withContext(async () => {
+      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
+      const verification = await app.mikro.emailVerification.findOneOrFail({
+        user,
+        verified: false,
+      });
+      return verification.token;
+    });
+
+    // 3. First verification - should succeed
+    const firstRes = await app.inject({
+      method: 'post',
+      url: '/api/v1/user/verify-email',
+      payload: { token },
+    });
+    expect(firstRes.statusCode).toBe(200);
+
+    // 4. Second verification with same token - should fail
+    const secondRes = await app.inject({
+      method: 'post',
+      url: '/api/v1/user/verify-email',
+      payload: { token },
+    });
+
+    expect(secondRes.statusCode).toBe(e.InvalidVerificationToken.Status);
+  });
+});
+
+describe('POST /api/v1/user/resend-verification', () => {
+  test('should resend verification email', { timeout: 10000 }, async () => {
+    // 1. Register a new user
+    const uniqueEmail = `resend${Date.now()}@example.com`;
+    await app.inject({
+      method: 'post',
+      url: '/api/v1/user/register',
+      payload: {
+        email: uniqueEmail,
+        password: 'password123',
+      },
+    });
+
+    // 2. Get the first token
+    const firstToken = await withContext(async () => {
+      const user = await app.mikro.user.findOneOrFail({
+        email: uniqueEmail,
+      });
+      const firstVerification = await app.mikro.emailVerification.findOneOrFail(
+        {
+          user,
+          verified: false,
+        },
+      );
+      return firstVerification.token;
+    });
+
+    // 3. Request resend
+    const resendRes = await app.inject({
+      method: 'post',
+      url: '/api/v1/user/resend-verification',
+      payload: {
+        email: uniqueEmail,
+      },
+    });
+
+    expect(resendRes.statusCode).toBe(200);
+    const body = JSON.parse(resendRes.body);
+    expect(body).toHaveProperty('message');
+
+    // 4. Check that a new token was generated
+    const newToken = await withContext(async () => {
+      const user = await app.mikro.user.findOneOrFail({
+        email: uniqueEmail,
+      });
+      const newVerification = await app.mikro.emailVerification.findOne({
+        user,
+        verified: false,
+        expiresAt: { $gt: new Date() },
+      });
+
+      expect(newVerification).toBeDefined();
+      return newVerification?.token;
+    });
+
+    expect(newToken).toBeDefined();
+    expect(newToken).not.toBe(firstToken);
+  });
+
+  test('should fail to resend for non-existent email', async () => {
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/user/resend-verification',
+      payload: {
+        email: 'nonexistent@example.com',
+      },
+    });
+
+    expect(res.statusCode).toBe(e.UserNotFound.Status);
+  });
+
+  test(
+    'should fail to resend for already verified email',
+    { timeout: 10000 },
+    async () => {
+      // 1. Register a user
+      const uniqueEmail = `verified${Date.now()}@example.com`;
+      await app.inject({
+        method: 'post',
+        url: '/api/v1/user/register',
+        payload: {
+          email: uniqueEmail,
+          password: 'password123',
+        },
+      });
+
+      // 2. Get token and verify the email
+      const token = await withContext(async () => {
+        const user = await app.mikro.user.findOneOrFail({
+          email: uniqueEmail,
+        });
+        const verification = await app.mikro.emailVerification.findOneOrFail({
+          user,
+        });
+        return verification.token;
+      });
+
+      await app.inject({
+        method: 'post',
+        url: '/api/v1/user/verify-email',
+        payload: {
+          token,
+        },
+      });
+
+      // 3. Try to resend verification email
+      const res = await app.inject({
+        method: 'post',
+        url: '/api/v1/user/resend-verification',
+        payload: {
+          email: uniqueEmail,
+        },
+      });
+
+      expect(res.statusCode).toBe(e.EmailAlreadyVerified.Status);
+    },
+  );
+});
