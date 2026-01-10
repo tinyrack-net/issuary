@@ -1,7 +1,7 @@
-import z from 'zod/v4';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+import z from 'zod/v4';
 
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
@@ -23,7 +23,7 @@ export default (fastify: FastifyWithZodInstance) =>
       },
     },
     handler: async (req, res) => {
-      const { user, entity } = await fastify.userService.register({
+      const { user } = await fastify.userService.register({
         email: req.body.email,
         password: req.body.password,
       });
@@ -31,14 +31,14 @@ export default (fastify: FastifyWithZodInstance) =>
       // Generate email verification token
       const verification = await fastify.emailVerificationService.generateToken(
         {
-          user: entity,
+          user: user,
         },
       );
 
       // Send verification email
       try {
         await fastify.emailService.sendVerificationEmail({
-          email: entity.email,
+          email: user.email,
           token: verification.token,
         });
       } catch (error) {
@@ -54,7 +54,7 @@ export default (fastify: FastifyWithZodInstance) =>
       res.status(200).send({
         user: {
           id: user.id,
-          managed: user.managed,
+          managed: 'database',
           email: user.email,
           email_verified: user.email_verified,
         },

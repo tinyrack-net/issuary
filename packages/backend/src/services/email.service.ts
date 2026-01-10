@@ -1,7 +1,8 @@
+import { AppConfigs } from '@/lib/config.js';
+import { e } from '@/schemas/error.js';
 import fastifyPlugin from 'fastify-plugin';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
-import { AppConfigs } from '@/lib/config.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -11,12 +12,10 @@ declare module 'fastify' {
 
 export class EmailService {
   public constructor(
-    private readonly transporter:
-      | nodemailer.Transporter<
-          SMTPTransport.SentMessageInfo,
-          SMTPTransport.Options
-        >
-      | undefined,
+    private readonly transporter: nodemailer.Transporter<
+      SMTPTransport.SentMessageInfo,
+      SMTPTransport.Options
+    > | null,
   ) {}
 
   /**
@@ -26,9 +25,8 @@ export class EmailService {
     email: string;
     token: string;
   }): Promise<void> {
-    if (!this.transporter) {
-      console.warn('Email transporter not configured, skipping email send');
-      return;
+    if (!this.transporter || !AppConfigs.smtp) {
+      throw new e.EmailNotActivated.Error();
     }
 
     const verificationUrl = `${AppConfigs.app.host}/verify-email?token=${params.token}`;
@@ -39,9 +37,7 @@ export class EmailService {
     });
 
     const info = await this.transporter.sendMail({
-      from: AppConfigs.smtp?.enabled
-        ? AppConfigs.smtp.from
-        : 'noreply@example.com',
+      from: AppConfigs.smtp.from,
       to: params.email,
       subject: 'Verify your email address',
       text: `Please verify your email by clicking this link: ${verificationUrl}\n\nOr use this verification code: ${params.token}`,

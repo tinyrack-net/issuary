@@ -20,11 +20,12 @@ database:
   # password: !env DATABASE_PASSWORD
 
 smtp:
-  enabled: false
-  host: !env SMTP_HOST
-  port: !env SMTP_PORT
-  user: "user"
-  password: "PW"
+  host: mail.winetree94.com
+  secure: true
+  port: 465
+  user: "tester@tinyrack.net"
+  password: !env SMTP_PASSWORD
+  from: "tester@tinyrack.net"
 
 clients:
   email_and_password:

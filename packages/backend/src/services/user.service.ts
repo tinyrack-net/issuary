@@ -1,10 +1,10 @@
-import fastifyPlugin from 'fastify-plugin';
-import type z from 'zod';
 import type { UserEntity } from '@/entities/user.entity.js';
 import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
+import fastifyPlugin from 'fastify-plugin';
+import type z from 'zod';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -88,8 +88,7 @@ export class UserService {
   }
 
   public async register(params: { email: string; password: string }): Promise<{
-    user: z.infer<typeof r.UserSession>;
-    entity: UserEntity;
+    user: UserEntity;
   }> {
     const appConfigUser = AppConfigs.users?.find(
       (u) => u.email === params.email,
@@ -108,16 +107,10 @@ export class UserService {
       password_hash: params.password,
     });
 
-    await this.mikro.em.persist(user).flush();
+    await this.mikro.em.persist(user);
 
     return {
-      user: {
-        id: user.id,
-        managed: 'database',
-        email: user.email,
-        email_verified: user.email_verified,
-      },
-      entity: user,
+      user: user,
     };
   }
 

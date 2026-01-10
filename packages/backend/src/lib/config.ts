@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { zz } from '@/schemas/provider.js';
 import YAML from 'yaml';
 import z from 'zod/v4';
-import { zz } from '@/schemas/provider.js';
 import { env } from './env.js';
 
 export const AppConfigApp = z.object({
@@ -45,20 +45,14 @@ export const AppConfigDatabase = z.discriminatedUnion('type', [
 
 export type AppConfigDatabase = z.infer<typeof AppConfigDatabase>;
 
-export const AppConfigSmtp = z.discriminatedUnion('enabled', [
-  z.object({
-    enabled: z.literal(false),
-  }),
-  z.object({
-    enabled: z.literal(true),
-    host: z.string().default('localhost'),
-    port: zz.PORT.default(587),
-    secure: z.boolean().default(true),
-    user: z.string().min(1),
-    password: z.string().min(1),
-    from: z.email(),
-  }),
-]);
+export const AppConfigSmtp = z.object({
+  host: z.string().default('localhost'),
+  port: zz.PORT.default(465),
+  secure: z.boolean().default(true),
+  user: z.string().min(1),
+  password: z.string().min(1),
+  from: z.email(),
+});
 
 export type AppConfigSmtp = z.infer<typeof AppConfigSmtp>;
 

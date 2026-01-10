@@ -110,6 +110,11 @@ export const e = {
     'INVALID_VERIFICATION_TOKEN',
     'The verification token is invalid or has expired.',
   ),
+  EmailNotActivated: createError(
+    403,
+    'EMAIL_NOT_ACTIVATED',
+    'The email service not activated.',
+  ),
   EmailAlreadyVerified: createError(
     400,
     'EMAIL_ALREADY_VERIFIED',
