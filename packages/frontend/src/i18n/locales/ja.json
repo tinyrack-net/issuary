@@ -56,5 +56,20 @@
   "verifyEmail.success.goToProfile": "プロフィールへ",
   "verifyEmail.error.invalidToken": "無効または期限切れのトークンです",
   "verifyEmail.error.alreadyVerified": "すでに認証済みのメールアドレスです",
-  "verifyEmail.resendSuccess": "認証メールを再送信しました"
+  "verifyEmail.resendSuccess": "認証メールを再送信しました",
+  "consent.title": "認可リクエスト",
+  "consent.subtitle": "{{app}}があなたのアカウントへのアクセスを要求しています",
+  "consent.loggedInAs": "ログイン中のアカウント",
+  "consent.permissions.title": "このアプリケーションは以下を行うことができます：",
+  "consent.allow": "許可",
+  "consent.deny": "拒否",
+  "consent.error.title": "エラー",
+  "consent.error.message": "認可情報を読み込めませんでした。クライアントが無効である可能性があります。",
+  "consent.error.back": "戻る",
+  "consent.scope.openid": "ユーザー識別子へのアクセス",
+  "consent.scope.profile": "プロフィール情報へのアクセス",
+  "consent.scope.email": "メールアドレスへのアクセス",
+  "consent.scope.address": "住所情報へのアクセス",
+  "consent.scope.phone": "電話番号へのアクセス",
+  "consent.scope.offline_access": "オフラインアクセスの維持"
 }

@@ -16,6 +16,7 @@ export {
   createAuthenticatedSession,
   extractCookie,
   extractSessionCookie,
+  grantConsent,
   injectWithCookie,
   injectWithSession,
   withMikroContext,

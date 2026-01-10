@@ -1,7 +1,7 @@
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import { expect } from 'vitest';
 import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT } from './fixtures.js';
-import { createAuthenticatedSession } from './helpers.js';
+import { createAuthenticatedSession, grantConsent } from './helpers.js';
 
 /**
  * Parameters for getting authorization code
@@ -29,6 +29,7 @@ export interface AuthorizationCodeResult {
 /**
  * Get authorization code from /authorize endpoint.
  * This is a common helper for OAuth flow tests.
+ * Automatically grants consent before requesting authorization.
  *
  * @param app - Fastify instance
  * @param params - Authorization request parameters
@@ -48,6 +49,34 @@ export async function getAuthorizationCode(
     nonce,
     sessionCookie,
   } = params;
+
+  // Grant consent before requesting authorization code
+  const consentParams: {
+    client_id: string;
+    redirect_uri: string;
+    scope?: string;
+    state?: string;
+    nonce?: string;
+    code_challenge?: string;
+    code_challenge_method?: 'S256' | 'plain';
+  } = {
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    scope,
+    state,
+  };
+
+  if (nonce) {
+    consentParams.nonce = nonce;
+  }
+  if (codeChallenge) {
+    consentParams.code_challenge = codeChallenge;
+  }
+  if (codeChallengeMethod) {
+    consentParams.code_challenge_method = codeChallengeMethod;
+  }
+
+  await grantConsent(app, sessionCookie, consentParams);
 
   const queryParams: Record<string, string> = {
     response_type: 'code',
@@ -221,7 +250,7 @@ export async function getAccessToken(
   const sessionCookie =
     providedSession || (await createAuthenticatedSession(app));
 
-  // Get authorization code
+  // Get authorization code (this also grants consent)
   const { code } = await getAuthorizationCode(app, {
     sessionCookie,
     scope,

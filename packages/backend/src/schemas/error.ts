@@ -264,4 +264,26 @@ export const e = {
 
   // Token Introspection Errors (RFC 7662)
   MissingToken: createError(400, 'MISSING_TOKEN', 'Missing token parameter.'),
+
+  // Consent Errors (OIDC Core 1.0)
+  ConsentRequired: createError(
+    400,
+    'consent_required',
+    'The Authorization Server requires End-User consent.',
+  ),
+  LoginRequired: createError(
+    400,
+    'login_required',
+    'The Authorization Server requires End-User authentication.',
+  ),
+  AccessDenied: createError(
+    400,
+    'access_denied',
+    'The resource owner or authorization server denied the request.',
+  ),
+  InteractionRequired: createError(
+    400,
+    'interaction_required',
+    'The Authorization Server requires End-User interaction.',
+  ),
 };

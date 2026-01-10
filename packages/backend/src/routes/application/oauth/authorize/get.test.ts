@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   createAuthenticatedSession,
+  grantConsent,
   setupTestServer,
   TEST_OAUTH_CLIENT,
   TEST_PKCE,
@@ -72,6 +73,55 @@ function expectLoginRedirect(
   }
 }
 
+/**
+ * Helper: Get authorization code with consent granted
+ * This should be used in most tests that expect an authorization code
+ */
+async function getAuthorizationCodeWithConsent(
+  params: Record<string, string>,
+  sessionCookie: string,
+): Promise<{ code: string | null; location: URL; statusCode: number }> {
+  // Grant consent first
+  const consentParams: {
+    client_id: string;
+    redirect_uri: string;
+    response_type?: string;
+    scope?: string;
+    state?: string;
+    nonce?: string;
+    code_challenge?: string;
+    code_challenge_method?: 'S256' | 'plain';
+  } = {
+    client_id: params['client_id'] || TEST_OAUTH_CLIENT.clientId,
+    redirect_uri: params['redirect_uri'] || TEST_OAUTH_CLIENT.redirectUri,
+  };
+
+  if (params['response_type']) {
+    consentParams.response_type = params['response_type'];
+  }
+  if (params['scope']) {
+    consentParams.scope = params['scope'];
+  }
+  if (params['state']) {
+    consentParams.state = params['state'];
+  }
+  if (params['nonce']) {
+    consentParams.nonce = params['nonce'];
+  }
+  if (params['code_challenge']) {
+    consentParams.code_challenge = params['code_challenge'];
+  }
+  if (params['code_challenge_method']) {
+    consentParams.code_challenge_method = params['code_challenge_method'] as
+      | 'S256'
+      | 'plain';
+  }
+
+  await grantConsent(app, sessionCookie, consentParams);
+
+  return getAuthorizationCode(params, sessionCookie);
+}
+
 describe('GET /application/oauth/authorize', () => {
   const validParams = {
     response_type: 'code',
@@ -103,10 +153,8 @@ describe('GET /application/oauth/authorize', () => {
     test('should issue authorization code for authenticated user', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const { code, location, statusCode } = await getAuthorizationCode(
-        validParams,
-        sessionCookie,
-      );
+      const { code, location, statusCode } =
+        await getAuthorizationCodeWithConsent(validParams, sessionCookie);
 
       expect(statusCode).toBe(302);
       expect(code).toBeDefined();
@@ -149,7 +197,7 @@ describe('GET /application/oauth/authorize', () => {
         redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
       };
 
-      const { code, statusCode } = await getAuthorizationCode(
+      const { code, statusCode } = await getAuthorizationCodeWithConsent(
         minimalParams,
         sessionCookie,
       );
@@ -161,7 +209,7 @@ describe('GET /application/oauth/authorize', () => {
     test('should handle all OIDC scopes correctly', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const { code, statusCode } = await getAuthorizationCode(
+      const { code, statusCode } = await getAuthorizationCodeWithConsent(
         {
           ...validParams,
           scope: 'openid profile email',
@@ -176,7 +224,7 @@ describe('GET /application/oauth/authorize', () => {
     test('should handle OAuth2 flow without openid scope', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const { code, statusCode } = await getAuthorizationCode(
+      const { code, statusCode } = await getAuthorizationCodeWithConsent(
         {
           ...validParams,
           scope: 'profile email',
@@ -263,7 +311,7 @@ describe('GET /application/oauth/authorize', () => {
     test('should accept exact match of registered redirect_uri', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const { code, statusCode } = await getAuthorizationCode(
+      const { code, statusCode } = await getAuthorizationCodeWithConsent(
         {
           ...validParams,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
@@ -318,7 +366,7 @@ describe('GET /application/oauth/authorize', () => {
     test('should accept "code" response_type', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const { code, statusCode } = await getAuthorizationCode(
+      const { code, statusCode } = await getAuthorizationCodeWithConsent(
         validParams,
         sessionCookie,
       );
@@ -351,7 +399,7 @@ describe('GET /application/oauth/authorize', () => {
     test('should accept valid scopes', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const { code, statusCode } = await getAuthorizationCode(
+      const { code, statusCode } = await getAuthorizationCodeWithConsent(
         {
           ...validParams,
           scope: 'openid profile email',
@@ -366,7 +414,7 @@ describe('GET /application/oauth/authorize', () => {
     test('should accept subset of allowed scopes', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const { code, statusCode } = await getAuthorizationCode(
+      const { code, statusCode } = await getAuthorizationCodeWithConsent(
         {
           ...validParams,
           scope: 'openid profile',
@@ -383,7 +431,7 @@ describe('GET /application/oauth/authorize', () => {
     test('should accept S256 code_challenge_method', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const { code, statusCode } = await getAuthorizationCode(
+      const { code, statusCode } = await getAuthorizationCodeWithConsent(
         {
           ...validParams,
           code_challenge: TEST_PKCE.codeChallenge,
@@ -399,7 +447,7 @@ describe('GET /application/oauth/authorize', () => {
     test('should accept plain code_challenge_method', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const { code, statusCode } = await getAuthorizationCode(
+      const { code, statusCode } = await getAuthorizationCodeWithConsent(
         {
           ...validParams,
           code_challenge: 'plain-challenge',
@@ -415,7 +463,7 @@ describe('GET /application/oauth/authorize', () => {
     test('should default to S256 when method not specified', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const { code, statusCode } = await getAuthorizationCode(
+      const { code, statusCode } = await getAuthorizationCodeWithConsent(
         {
           ...validParams,
           code_challenge: TEST_PKCE.codeChallenge,
@@ -430,7 +478,7 @@ describe('GET /application/oauth/authorize', () => {
     test('should allow authorization without PKCE', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const { code, statusCode } = await getAuthorizationCode(
+      const { code, statusCode } = await getAuthorizationCodeWithConsent(
         validParams,
         sessionCookie,
       );
@@ -444,7 +492,7 @@ describe('GET /application/oauth/authorize', () => {
     test('should preserve state in successful redirect', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const { location, statusCode } = await getAuthorizationCode(
+      const { location, statusCode } = await getAuthorizationCodeWithConsent(
         {
           ...validParams,
           state: 'test-state-123',
@@ -499,10 +547,11 @@ describe('GET /application/oauth/authorize', () => {
       const paramsWithoutState = { ...validParams };
       delete (paramsWithoutState as Record<string, unknown>)['state'];
 
-      const { code, location, statusCode } = await getAuthorizationCode(
-        paramsWithoutState,
-        sessionCookie,
-      );
+      const { code, location, statusCode } =
+        await getAuthorizationCodeWithConsent(
+          paramsWithoutState,
+          sessionCookie,
+        );
 
       expect(statusCode).toBe(302);
       expect(code).toBeDefined();
@@ -514,7 +563,7 @@ describe('GET /application/oauth/authorize', () => {
     test('should preserve nonce parameter', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const { code, statusCode } = await getAuthorizationCode(
+      const { code, statusCode } = await getAuthorizationCodeWithConsent(
         {
           ...validParams,
           nonce: 'test-nonce-value',

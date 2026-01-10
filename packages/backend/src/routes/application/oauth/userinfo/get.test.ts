@@ -4,6 +4,7 @@ import {
   exchangeCodeForTokens,
   getAccessToken,
   getAuthorizationCode,
+  grantConsent,
   getUserInfo,
   setupTestServer,
   TEST_OAUTH_CLIENT,
@@ -204,6 +205,14 @@ describe('GET /application/oauth/userinfo', () => {
     test('should reject request with refresh token instead of access token', async () => {
       // Get tokens
       const sessionCookie = await createAuthenticatedSession(app);
+
+      // Grant consent first
+      await grantConsent(app, sessionCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: 'openid',
+        state: 'test',
+      });
 
       // Get authorization code and exchange for tokens to get refresh token
       const authorizeRes = await app.inject({
@@ -425,6 +434,14 @@ describe('GET /application/oauth/userinfo', () => {
     test('should return claims consistent with ID token', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const scope = 'openid email';
+
+      // Grant consent first
+      await grantConsent(app, sessionCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope,
+        state: 'test',
+      });
 
       // Get tokens (including ID token)
       const authorizeRes = await app.inject({

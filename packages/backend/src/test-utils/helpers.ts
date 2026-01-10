@@ -113,3 +113,55 @@ export function injectWithSession(
 ): Promise<LightMyRequestResponse> {
   return injectWithCookie(app, options, 'session', sessionCookie);
 }
+
+/**
+ * Grant consent for a user to an OAuth client.
+ * This should be called after authentication and before authorization.
+ *
+ * @param app - Fastify instance
+ * @param sessionCookie - Session cookie from authenticated user
+ * @param clientId - OAuth client ID
+ * @param redirectUri - Redirect URI
+ * @param scopes - Scopes to consent to
+ * @returns The redirect URL returned by the consent API
+ */
+export async function grantConsent(
+  app: FastifyInstance,
+  sessionCookie: string,
+  params: {
+    client_id: string;
+    redirect_uri: string;
+    response_type?: string;
+    scope?: string;
+    state?: string;
+    nonce?: string;
+    code_challenge?: string;
+    code_challenge_method?: 'S256' | 'plain';
+  },
+): Promise<string> {
+  const consentRes = await app.inject({
+    method: 'POST',
+    url: '/api/v1/oauth/consent',
+    cookies: { session: sessionCookie },
+    payload: {
+      client_id: params.client_id,
+      redirect_uri: params.redirect_uri,
+      response_type: params.response_type || 'code',
+      scope: params.scope || '',
+      state: params.state,
+      nonce: params.nonce,
+      code_challenge: params.code_challenge,
+      code_challenge_method: params.code_challenge_method,
+      decision: 'allow',
+    },
+  });
+
+  if (consentRes.statusCode !== 200) {
+    throw new Error(
+      `Failed to grant consent: ${consentRes.statusCode} - ${consentRes.body}`,
+    );
+  }
+
+  const json = consentRes.json();
+  return json.redirect_url;
+}

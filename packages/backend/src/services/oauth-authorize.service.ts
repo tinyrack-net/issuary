@@ -5,6 +5,7 @@ import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
 import type { OAuthClientService } from './oauth-client.service.js';
+import type { UserConsentService } from './user-consent.service.js';
 import type { UserService } from './user.service.js';
 
 declare module 'fastify' {
@@ -37,6 +38,7 @@ export class OAuthAuthorizeService {
     private readonly mikro: MikroService,
     private readonly oauthClientService: OAuthClientService,
     private readonly userService: UserService,
+    private readonly userConsentService: UserConsentService,
   ) {}
 
   /**
@@ -73,6 +75,19 @@ export class OAuthAuthorizeService {
 
     // 7. Check user session
     if (!userSession?.id) {
+      // Handle prompt=none - must return error if not logged in
+      if (query.prompt === 'none') {
+        return {
+          type: 'redirect',
+          url: this.buildErrorRedirectUrl(
+            query.redirect_uri,
+            'login_required',
+            'The Authorization Server requires End-User authentication.',
+            query.state,
+          ),
+        };
+      }
+
       // User not logged in - redirect to login page
       const loginUrl = this.buildLoginRedirectUrl(query);
       return {
@@ -83,6 +98,36 @@ export class OAuthAuthorizeService {
 
     // 8. User is logged in - Verify user exists (config + DB)
     await this.userService.verifyUserById(userSession.id);
+
+    // 9. Check if consent is required
+    const requiresConsent = await this.userConsentService.requiresConsent({
+      userId: userSession.id,
+      clientId: query.client_id,
+      requestedScopes,
+      prompt: query.prompt,
+    });
+
+    if (requiresConsent) {
+      // Handle prompt=none - must return error if consent is required
+      if (query.prompt === 'none') {
+        return {
+          type: 'redirect',
+          url: this.buildErrorRedirectUrl(
+            query.redirect_uri,
+            'consent_required',
+            'The Authorization Server requires End-User consent.',
+            query.state,
+          ),
+        };
+      }
+
+      // Redirect to consent page
+      const consentUrl = this.buildConsentRedirectUrl(query);
+      return {
+        type: 'redirect',
+        url: consentUrl,
+      };
+    }
 
     const codeParams: {
       client: z.infer<typeof r.OAuthClient>;
@@ -111,7 +156,7 @@ export class OAuthAuthorizeService {
 
     const code = await this.generateAuthorizationCode(codeParams);
 
-    // 9. Redirect back to client with authorization code
+    // 10. Redirect back to client with authorization code
     const callbackUrl = this.buildCallbackUrl(
       code,
       query.state,
@@ -171,6 +216,66 @@ export class OAuthAuthorizeService {
     }
 
     return loginUrl.toString();
+  }
+
+  /**
+   * Build consent redirect URL
+   */
+  private buildConsentRedirectUrl(query: AuthorizeParams): string {
+    const consentUrl = new URL('/consent', AppConfigs.app.host);
+    consentUrl.searchParams.set('client_id', query.client_id);
+    consentUrl.searchParams.set('redirect_uri', query.redirect_uri);
+    consentUrl.searchParams.set('response_type', query.response_type);
+
+    if (query.scope) {
+      consentUrl.searchParams.set('scope', query.scope);
+    }
+    if (query.state) {
+      consentUrl.searchParams.set('state', query.state);
+    }
+    if (query.nonce) {
+      consentUrl.searchParams.set('nonce', query.nonce);
+    }
+    if (query.code_challenge) {
+      consentUrl.searchParams.set('code_challenge', query.code_challenge);
+    }
+    if (query.code_challenge_method) {
+      consentUrl.searchParams.set(
+        'code_challenge_method',
+        query.code_challenge_method,
+      );
+    }
+    if (query.prompt) {
+      consentUrl.searchParams.set('prompt', query.prompt);
+    }
+    if (query.max_age !== undefined) {
+      consentUrl.searchParams.set('max_age', query.max_age.toString());
+    }
+    if (query.display) {
+      consentUrl.searchParams.set('display', query.display);
+    }
+
+    return consentUrl.toString();
+  }
+
+  /**
+   * Build error redirect URL (for OAuth errors that should redirect back)
+   */
+  private buildErrorRedirectUrl(
+    redirectUri: string,
+    error: string,
+    errorDescription: string,
+    state?: string,
+  ): string {
+    const errorUrl = new URL(redirectUri);
+    errorUrl.searchParams.set('error', error);
+    errorUrl.searchParams.set('error_description', errorDescription);
+
+    if (state) {
+      errorUrl.searchParams.set('state', state);
+    }
+
+    return errorUrl.toString();
   }
 
   /**
@@ -241,6 +346,7 @@ export default fastifyPlugin(
       fastify.mikro,
       fastify.oauthClientService,
       fastify.userService,
+      fastify.userConsentService,
     );
     fastify.decorate('oauthAuthorizeService', oauthAuthorizeService);
   },
@@ -250,6 +356,7 @@ export default fastifyPlugin(
       'base-service-plugin',
       'oauth-client-service-plugin',
       'user-service-plugin',
+      'user-consent-service-plugin',
     ],
   },
 );
