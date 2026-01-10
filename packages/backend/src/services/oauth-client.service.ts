@@ -1,3 +1,4 @@
+import { verify } from 'argon2';
 import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod';
 import { AppConfigs } from '@/lib/config.js';
@@ -141,7 +142,6 @@ export class OAuthClientService {
       return false;
     }
 
-    const { verify } = await import('argon2');
     return verify(dbClient.clientSecretHash, clientSecret);
   }
 }

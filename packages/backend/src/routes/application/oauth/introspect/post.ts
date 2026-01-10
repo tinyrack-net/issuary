@@ -1,3 +1,4 @@
+import { verify } from 'argon2';
 import z from 'zod/v4';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import { decodeToken, verifyAccessToken } from '@/lib/jwt.js';
@@ -53,7 +54,6 @@ export default (fastify: FastifyWithZodInstance) => {
         }
 
         if (body.client_secret) {
-          const { verify } = await import('argon2');
           const isValid = await verify(
             client.clientSecretHash,
             body.client_secret,
