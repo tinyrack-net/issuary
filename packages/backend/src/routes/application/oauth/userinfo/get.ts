@@ -1,9 +1,6 @@
 import z from 'zod/v4';
-import { UserEntity } from '@/entities/user.entity.js';
-import {
-  UnauthorizedError,
-  validateBearerToken,
-} from '@/handlers/validate-bearer-token.js';
+import { validateBearerToken } from '@/handlers/validate-bearer-token.js';
+import { e } from '@/schemas/error.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
@@ -13,81 +10,95 @@ export default (fastify: FastifyWithZodInstance) => {
     schema: {
       summary: 'User Info',
       description:
-        'OIDC UserInfo Endpoint - Get information about the authenticated user',
+        'OIDC UserInfo Endpoint - Returns claims about the authenticated user (RFC OIDC Core §5.3)',
       tags: ['OpenID'],
       headers: z.object({
-        authorization: z.string().min(1),
+        authorization: z
+          .string()
+          .min(1)
+          .describe(
+            'Bearer token in format: "Bearer <access_token>". The access token must have been issued with openid scope.',
+          ),
       }),
       response: {
         200: z.object({
-          sub: z.string(),
-          email: z.string().optional(),
-          email_verified: z.boolean().optional(),
-          name: z.string().optional(),
-          picture: z.string().optional(),
-          preferred_username: z.string().optional(),
+          sub: z
+            .string()
+            .describe('Subject identifier - unique user ID (always returned)'),
+          email: z
+            .string()
+            .optional()
+            .describe('User email address (returned if email scope granted)'),
+          email_verified: z
+            .boolean()
+            .optional()
+            .describe(
+              'Whether email is verified (returned if email scope granted)',
+            ),
+          name: z
+            .string()
+            .optional()
+            .describe('User full name (returned if profile scope granted)'),
+          picture: z
+            .string()
+            .optional()
+            .describe(
+              'User profile picture URL (returned if profile scope granted)',
+            ),
+          preferred_username: z
+            .string()
+            .optional()
+            .describe('Preferred username (returned if profile scope granted)'),
         }),
         401: z.object({
-          error: z.string(),
-          error_description: z.string(),
+          code: z.string(),
+          message: z.string(),
+        }),
+        404: z.object({
+          code: z.string(),
+          message: z.string(),
         }),
       },
     },
     handler: async (req, res) => {
-      const em = fastify.mikro.orm.em.fork();
+      // Validate Bearer token
+      // Throws ApiError if invalid (handled by error handler)
+      const tokenPayload = await validateBearerToken(req);
 
-      try {
-        // Validate Bearer token
-        const tokenPayload = await validateBearerToken(req);
+      // Load user (supports both config and DB users)
+      const userData = await fastify.userService.verifyUserById(
+        tokenPayload.sub,
+      );
 
-        // Load user entity
-        const user = await em.findOneOrFail(UserEntity, {
-          id: tokenPayload.sub,
-        });
+      // Parse scopes from token
+      const scopes = tokenPayload.scope.split(' ');
 
-        // Parse scopes
-        const scopes = tokenPayload.scope.split(' ');
+      // Build response based on granted scopes (OIDC Core §5.3.2)
+      const userInfo: {
+        sub: string;
+        email?: string;
+        email_verified?: boolean;
+        name?: string;
+        picture?: string;
+        preferred_username?: string;
+      } = {
+        sub: userData.id,
+      };
 
-        // Build response based on scopes
-        const userInfo: {
-          sub: string;
-          email?: string;
-          email_verified?: boolean;
-          name?: string;
-          picture?: string;
-          preferred_username?: string;
-        } = {
-          sub: user.id,
-        };
-
-        // Add email claims if 'email' scope is present
-        if (scopes.includes('email')) {
-          userInfo.email = user.email;
-          userInfo.email_verified = user.email_verified;
-        }
-
-        // Add profile claims if 'profile' scope is present
-        if (scopes.includes('profile')) {
-          userInfo.name = user.email; // Use email as name for now
-          userInfo.preferred_username = user.email;
-          // userInfo.picture could be added if user has profile picture
-        }
-
-        return res.status(200).send(userInfo);
-      } catch (error) {
-        if (error instanceof UnauthorizedError) {
-          return res.status(401).send({
-            error: 'invalid_token',
-            error_description: error.message,
-          });
-        }
-
-        fastify.log.error(error);
-        return res.status(401).send({
-          error: 'invalid_token',
-          error_description: 'An error occurred while validating the token',
-        });
+      // Add email claims if 'email' scope is present
+      if (scopes.includes('email')) {
+        userInfo.email = userData.email;
+        userInfo.email_verified = userData.email_verified;
       }
+
+      // Add profile claims if 'profile' scope is present
+      if (scopes.includes('profile')) {
+        userInfo.name = userData.email; // Use email as name for now
+        userInfo.preferred_username = userData.email;
+        // userInfo.picture could be added when user profile pictures are implemented
+      }
+
+      return res.status(200).send(userInfo);
     },
   });
 };

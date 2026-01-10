@@ -161,4 +161,104 @@ export const e = {
     'OAUTH_SERVER_ERROR',
     'An unexpected error occurred during OAuth authorization.',
   ),
+
+  // OAuth Token Endpoint Errors (RFC 6749)
+  // invalid_request errors (400)
+  MissingAuthorizationCode: createError(
+    400,
+    'MISSING_AUTHORIZATION_CODE',
+    'Missing authorization code.',
+  ),
+  MissingRedirectUri: createError(
+    400,
+    'MISSING_REDIRECT_URI',
+    'Missing redirect_uri.',
+  ),
+  MissingCodeVerifier: createError(
+    400,
+    'MISSING_CODE_VERIFIER',
+    'Missing code_verifier for PKCE.',
+  ),
+  MissingRefreshToken: createError(
+    400,
+    'MISSING_REFRESH_TOKEN',
+    'Missing refresh_token.',
+  ),
+
+  // invalid_grant errors (400)
+  InvalidAuthorizationCode: createError(
+    400,
+    'INVALID_AUTHORIZATION_CODE',
+    'Invalid or expired authorization code.',
+  ),
+  RedirectUriMismatch: createError(
+    400,
+    'REDIRECT_URI_MISMATCH',
+    'Redirect URI mismatch.',
+  ),
+  InvalidPKCEVerifier: createError(
+    400,
+    'INVALID_PKCE_VERIFIER',
+    'Invalid PKCE code_verifier.',
+  ),
+  InvalidRefreshToken: createError(
+    400,
+    'INVALID_REFRESH_TOKEN',
+    'Invalid or expired refresh token.',
+  ),
+  ClientIdMismatch: createError(
+    400,
+    'CLIENT_ID_MISMATCH',
+    'Client ID mismatch.',
+  ),
+
+  // invalid_client errors (401)
+  InvalidClientCredentials: createError(
+    401,
+    'INVALID_CLIENT_CREDENTIALS',
+    'Invalid client credentials.',
+  ),
+
+  // unsupported_grant_type errors (400)
+  UnsupportedGrantType: createError(
+    400,
+    'UNSUPPORTED_GRANT_TYPE',
+    'Grant type is not supported.',
+  ),
+
+  // JWT Token Errors
+  InvalidAccessToken: createError(
+    401,
+    'INVALID_ACCESS_TOKEN',
+    'Invalid or expired access token.',
+  ),
+  InvalidIdToken: createError(
+    401,
+    'INVALID_ID_TOKEN',
+    'Invalid or expired ID token.',
+  ),
+
+  // Bearer Token Authorization Errors
+  MissingAuthorizationHeader: createError(
+    401,
+    'MISSING_AUTHORIZATION_HEADER',
+    'Missing Authorization header.',
+  ),
+  InvalidAuthorizationHeaderFormat: createError(
+    401,
+    'INVALID_AUTHORIZATION_HEADER_FORMAT',
+    'Invalid Authorization header format. Expected: Bearer <token>',
+  ),
+  MissingBearerToken: createError(
+    401,
+    'MISSING_BEARER_TOKEN',
+    'Missing token in Authorization header.',
+  ),
+
+  // PKCE Errors (RFC 7636)
+  InvalidCodeVerifierLength: createError(
+    400,
+    'INVALID_CODE_VERIFIER_LENGTH',
+    'Code verifier length must be between 43 and 128 characters.',
+  ),
 };

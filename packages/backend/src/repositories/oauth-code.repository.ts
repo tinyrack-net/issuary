@@ -1,7 +1,8 @@
 import { randomBytes } from 'node:crypto';
 import { EntityRepository } from '@mikro-orm/core';
-import { hash } from 'argon2';
+import { hash, verify } from 'argon2';
 import type { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
+import { e } from '@/schemas/error.js';
 
 export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
   /**
@@ -42,7 +43,7 @@ export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
     });
 
     // Persist to database
-    await this.getEntityManager().persistAndFlush(entity);
+    await this.getEntityManager().persist(entity).flush();
 
     return { code, entity };
   }
@@ -55,8 +56,6 @@ export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
     code: string,
     clientId: string,
   ): Promise<OAuthCodeEntity | null> {
-    const { verify } = await import('argon2');
-
     // Find all unconsumed codes for this client
     const codes = await this.find({
       clientId,
@@ -70,7 +69,7 @@ export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
       if (isValid) {
         // Check if expired
         if (codeEntity.expiredAt < new Date()) {
-          throw new Error('Authorization code has expired');
+          throw new e.InvalidAuthorizationCode.Error();
         }
 
         // Mark as consumed

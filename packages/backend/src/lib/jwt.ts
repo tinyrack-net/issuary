@@ -1,12 +1,13 @@
 import {
+  decodeJwt,
   type JWK,
   type JWTPayload,
   jwtVerify,
   type KeyObject,
   SignJWT,
-  decodeJwt,
 } from 'jose';
 import { AppConfigs } from './config.js';
+import { e } from '@/schemas/error.js';
 
 const JWT_SECRET = AppConfigs.app.jwt_secret || AppConfigs.app.cookie_secret;
 const SECRET_KEY = new TextEncoder().encode(JWT_SECRET);
@@ -144,13 +145,14 @@ export async function signIdToken(payload: IdTokenPayload): Promise<string> {
 
 /**
  * Verify and decode an access token
+ *
+ * @throws {InvalidAccessToken} When token is invalid or expired
  */
 export async function verifyAccessToken(
   token: string,
 ): Promise<AccessTokenPayload> {
   try {
     const { payload } = await jwtVerify(token, SECRET_KEY);
-
     return {
       sub: payload.sub as string,
       client_id: payload['client_id'] as string,
@@ -161,19 +163,20 @@ export async function verifyAccessToken(
       aud: payload.aud as string | undefined,
     };
   } catch (error) {
-    throw new Error('Invalid or expired token');
+    throw new e.InvalidAccessToken.Error();
   }
 }
 
 /**
  * Verify and decode a refresh token
+ *
+ * @throws {InvalidRefreshToken} When token is invalid or expired
  */
 export async function verifyRefreshToken(
   token: string,
 ): Promise<RefreshTokenPayload> {
   try {
     const { payload } = await jwtVerify(token, SECRET_KEY);
-
     return {
       sub: payload.sub as string,
       client_id: payload['client_id'] as string,
@@ -184,17 +187,18 @@ export async function verifyRefreshToken(
       aud: payload.aud as string | undefined,
     };
   } catch (error) {
-    throw new Error('Invalid or expired refresh token');
+    throw new e.InvalidRefreshToken.Error();
   }
 }
 
 /**
  * Verify and decode an ID token
+ *
+ * @throws {InvalidIdToken} When token is invalid or expired
  */
 export async function verifyIdToken(token: string): Promise<IdTokenPayload> {
   try {
     const { payload } = await jwtVerify(token, SECRET_KEY);
-
     return {
       sub: payload.sub as string,
       aud: payload.aud as string,
@@ -208,7 +212,7 @@ export async function verifyIdToken(token: string): Promise<IdTokenPayload> {
       picture: payload['picture'] as string | undefined,
     };
   } catch (error) {
-    throw new Error('Invalid or expired ID token');
+    throw new e.InvalidIdToken.Error();
   }
 }
 
