@@ -1,5 +1,3 @@
-import { MikroORM, type Options, RequestContext } from '@mikro-orm/core';
-import fastifyPlugin from 'fastify-plugin';
 import configs from '@/db/index.js';
 import { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
@@ -11,6 +9,8 @@ import type { EmailVerificationRepository } from '@/repositories/email-verificat
 import type { OAuthClientRepository } from '@/repositories/oauth-client.repository.js';
 import type { OAuthCodeRepository } from '@/repositories/oauth-code.repository.js';
 import type { UserRepository } from '@/repositories/user.repository.js';
+import { MikroORM, type Options, RequestContext } from '@mikro-orm/core';
+import fastifyPlugin from 'fastify-plugin';
 // import { TestSeeder } from '@/seeders/test-seeder.js';
 
 export interface MikroService {
@@ -34,7 +34,7 @@ export default fastifyPlugin(
 
     const ormOptions: Options = {
       ...configs,
-      debug: env.APP_ENV !== 'production',
+      debug: false,
       dynamicImportProvider: (id) => import(id),
     };
 
