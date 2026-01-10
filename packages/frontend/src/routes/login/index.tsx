@@ -12,7 +12,18 @@ import { loginMutationOptions } from '@/queries/login';
 import { getSessionQueryOptions } from '@/queries/session';
 
 export const SearchSchema = z.object({
-  query: z.string().optional(),
+  // OAuth parameters from authorization endpoint
+  client_id: z.string().optional(),
+  redirect_uri: z.string().optional(),
+  response_type: z.string().optional(),
+  scope: z.string().optional(),
+  state: z.string().optional(),
+  nonce: z.string().optional(),
+  code_challenge: z.string().optional(),
+  code_challenge_method: z.enum(['S256', 'plain']).optional(),
+  prompt: z.enum(['none', 'login', 'consent', 'select_account']).optional(),
+  max_age: z.string().optional(),
+  display: z.enum(['page', 'popup', 'touch', 'wap']).optional(),
 });
 
 export const Route = createFileRoute('/login/')({
@@ -30,6 +41,7 @@ function Login() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { language, languages, setLanguage } = useLanguage();
+  const search = Route.useSearch();
 
   const loginSchema = useMemo(
     () =>
@@ -47,9 +59,43 @@ function Login() {
         user: data.user,
       });
       await tick();
-      router.navigate({
-        to: '/profile',
-      });
+
+      // Check if this is an OAuth login flow
+      if (search.client_id && search.redirect_uri) {
+        // Build authorization endpoint URL with OAuth parameters
+        const authUrl = new URL(
+          '/application/oauth/authorize',
+          window.location.origin,
+        );
+        authUrl.searchParams.set('client_id', search.client_id);
+        authUrl.searchParams.set('redirect_uri', search.redirect_uri);
+        authUrl.searchParams.set(
+          'response_type',
+          search.response_type || 'code',
+        );
+
+        if (search.scope) authUrl.searchParams.set('scope', search.scope);
+        if (search.state) authUrl.searchParams.set('state', search.state);
+        if (search.nonce) authUrl.searchParams.set('nonce', search.nonce);
+        if (search.code_challenge)
+          authUrl.searchParams.set('code_challenge', search.code_challenge);
+        if (search.code_challenge_method)
+          authUrl.searchParams.set(
+            'code_challenge_method',
+            search.code_challenge_method,
+          );
+        if (search.prompt) authUrl.searchParams.set('prompt', search.prompt);
+        if (search.max_age) authUrl.searchParams.set('max_age', search.max_age);
+        if (search.display) authUrl.searchParams.set('display', search.display);
+
+        // Redirect to authorization endpoint (full page redirect)
+        window.location.href = authUrl.toString();
+      } else {
+        // Regular login (not OAuth) - navigate to profile
+        router.navigate({
+          to: '/profile',
+        });
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({

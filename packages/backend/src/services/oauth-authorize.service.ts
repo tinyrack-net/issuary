@@ -6,6 +6,7 @@ import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
 import type { OAuthClientService } from './oauth-client.service.js';
+import type { UserService } from './user.service.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -36,6 +37,7 @@ export class OAuthAuthorizeService {
   public constructor(
     private readonly mikro: MikroService,
     private readonly oauthClientService: OAuthClientService,
+    private readonly userService: UserService,
   ) {}
 
   /**
@@ -80,14 +82,45 @@ export class OAuthAuthorizeService {
       };
     }
 
-    // 8. User is logged in - Issue authorization code
-    const user = await this.mikro.user.findOneOrFail({
-      id: userSession.id,
-    });
+    // 8. User is logged in - Verify user (config + DB)
+    const userSessionData = await this.userService.verifyUserById(
+      userSession.id,
+    );
+
+    // Get UserEntity for code generation (DB users only, config users need special handling)
+    let userEntity: UserEntity;
+    if (userSessionData.managed === 'config') {
+      // For config users, we need to find or create a DB representation
+      // For now, we'll use a minimal entity-like object
+      const configUser = AppConfigs.users?.find((u) => u.id === userSession.id);
+      if (!configUser) {
+        throw new e.OAuthServerError.Error();
+      }
+      // Try to find existing DB user, create minimal representation if not found
+      const existingUser = await this.mikro.user.findOne({
+        id: userSession.id,
+      });
+      if (existingUser) {
+        userEntity = existingUser;
+      } else {
+        // Create a temporary user entity (won't be persisted)
+        userEntity = this.mikro.user.create({
+          id: configUser.id,
+          email: configUser.email,
+          password_hash: '', // Not needed for code generation
+          email_verified: true,
+        });
+      }
+    } else {
+      // DB user - fetch normally
+      userEntity = await this.mikro.user.findOneOrFail({
+        id: userSession.id,
+      });
+    }
 
     const codeParams: {
       client: z.infer<typeof r.OAuthClient>;
-      user: typeof user;
+      user: typeof userEntity;
       redirectUri: string;
       scope: string[];
       nonce?: string;
@@ -95,7 +128,7 @@ export class OAuthAuthorizeService {
       codeChallengeMethod?: 'S256' | 'plain';
     } = {
       client,
-      user,
+      user: userEntity,
       redirectUri: query.redirect_uri,
       scope: requestedScopes,
     };
@@ -246,11 +279,16 @@ export default fastifyPlugin(
     const oauthAuthorizeService = new OAuthAuthorizeService(
       fastify.mikro,
       fastify.oauthClientService,
+      fastify.userService,
     );
     fastify.decorate('oauthAuthorizeService', oauthAuthorizeService);
   },
   {
     name: 'oauth-authorize-service-plugin',
-    dependencies: ['base-service-plugin', 'oauth-client-service-plugin'],
+    dependencies: [
+      'base-service-plugin',
+      'oauth-client-service-plugin',
+      'user-service-plugin',
+    ],
   },
 );

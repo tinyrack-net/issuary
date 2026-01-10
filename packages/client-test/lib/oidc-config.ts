@@ -8,7 +8,7 @@ export const oidcConfig: OIDCConfig = {
 
   client_id: 'sdlk3n3dkj2',
   client_secret: 'sdlk3n3dkj2',
-  redirect_uri: 'http://localhost:3000/callback',
+  redirect_uri: 'http://localhost:3000/api/callback',
 
   scope: 'openid profile email',
   response_type: 'code',

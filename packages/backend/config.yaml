@@ -65,7 +65,7 @@ providers:
     client_id: sdlk3n3dkj2
     client_secret: sdlk3n3dkj2
     redirect_uris:
-      - http://localhost:3000/callback
+      - http://localhost:3000/api/callback
     response_types:
       - code
     grant_types:
