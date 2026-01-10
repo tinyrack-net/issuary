@@ -4,6 +4,7 @@ export interface OIDCConfig {
   token_endpoint: string;
   userinfo_endpoint: string;
   introspection_endpoint: string;
+  revocation_endpoint: string;
   jwks_uri?: string;
   openid_configuration_uri?: string;
   client_id: string;

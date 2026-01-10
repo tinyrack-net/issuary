@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { decodeIDToken } from '@/lib/oidc-client';
 import { getTokens } from '@/lib/token-storage';
 import { IntrospectSection } from './introspect-section';
+import { RevokeSection } from './revoke-section';
 
 export default async function ProfilePage() {
   const tokens = await getTokens();
@@ -129,6 +130,11 @@ export default async function ProfilePage() {
         )}
 
         <IntrospectSection
+          accessToken={tokens.access_token}
+          refreshToken={tokens.refresh_token}
+        />
+
+        <RevokeSection
           accessToken={tokens.access_token}
           refreshToken={tokens.refresh_token}
         />

@@ -161,3 +161,38 @@ export async function introspectToken(
 
   return (await response.json()) as IntrospectionResponse;
 }
+
+/**
+ * Revoke a token (access token or refresh token)
+ * RFC 7009 - OAuth 2.0 Token Revocation
+ *
+ * Per RFC 7009 §2.1:
+ * - Returns 200 OK whether the token was successfully revoked or was invalid
+ * - Client authentication is recommended for confidential clients
+ */
+export async function revokeToken(
+  token: string,
+  tokenTypeHint?: 'access_token' | 'refresh_token',
+): Promise<void> {
+  const params = new URLSearchParams({
+    token,
+    client_id: oidcConfig.client_id,
+    client_secret: oidcConfig.client_secret,
+    ...(tokenTypeHint && { token_type_hint: tokenTypeHint }),
+  });
+
+  const response = await fetch(oidcConfig.revocation_endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: params.toString(),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Token revocation failed: ${error}`);
+  }
+
+  // RFC 7009: Returns 200 OK with empty body on success
+}

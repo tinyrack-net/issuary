@@ -6,6 +6,7 @@ export const oidcConfig: OIDCConfig = {
   token_endpoint: 'http://localhost:8080/application/oauth/token',
   userinfo_endpoint: 'http://localhost:8080/application/oauth/userinfo',
   introspection_endpoint: 'http://localhost:8080/application/oauth/introspect',
+  revocation_endpoint: 'http://localhost:8080/application/oauth/revoke',
   jwks_uri:
     'http://localhost:8080/application/oauth/sdlk3n3dkj2/.well-known/jwks',
   openid_configuration_uri:
