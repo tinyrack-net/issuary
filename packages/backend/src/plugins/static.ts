@@ -20,7 +20,8 @@ export default fastifyPlugin(
       fastify.addHook('onRequest', async (request, reply) => {
         if (
           request.url.startsWith('/api') ||
-          request.url.startsWith('/application')
+          request.url.startsWith('/application') ||
+          request.url.startsWith('/docs')
         ) {
           return;
         }
