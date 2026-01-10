@@ -5,16 +5,17 @@ import {
   GlobeIcon,
 } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  createFileRoute,
-  useNavigate,
-  useSearch,
-} from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { useLanguage } from '@/hooks/use-language';
+import {
+  buildAuthorizeUrl,
+  isOAuthFlow,
+  OAuthSearchSchema,
+} from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise';
 import { getSessionQueryOptions } from '@/queries/session';
 import {
@@ -22,14 +23,16 @@ import {
   verifyEmailMutationOptions,
 } from '@/queries/verify-email';
 
+const SearchSchema = z
+  .object({
+    token: z.string().default(''),
+    email: z.string().default(''),
+  })
+  .merge(OAuthSearchSchema);
+
 export const Route = createFileRoute('/verify-email/')({
   component: VerifyEmail,
-  validateSearch: (search: Record<string, unknown>) => {
-    return {
-      token: (search.token as string) || '',
-      email: (search.email as string) || '',
-    };
-  },
+  validateSearch: SearchSchema,
 });
 
 type VerifyEmailFormValues = {
@@ -41,7 +44,8 @@ function VerifyEmail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { language, languages, setLanguage } = useLanguage();
-  const { token: queryToken, email } = useSearch({ from: '/verify-email/' });
+  const search = Route.useSearch();
+  const { token: queryToken, email } = search;
   const [verified, setVerified] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
 
@@ -59,8 +63,16 @@ function VerifyEmail() {
       queryClient.setQueryData(getSessionQueryOptions.queryKey, {
         user: data.user,
       });
-      setVerified(true);
       await tick();
+
+      // Check if this is an OAuth flow
+      if (isOAuthFlow(search)) {
+        // Redirect to authorization endpoint with OAuth parameters
+        window.location.href = buildAuthorizeUrl(search);
+      } else {
+        // Regular verification - show success state
+        setVerified(true);
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({

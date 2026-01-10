@@ -7,12 +7,19 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { useLanguage } from '@/hooks/use-language';
+import {
+  buildAuthorizeUrl,
+  extractOAuthParams,
+  isOAuthFlow,
+  OAuthSearchSchema,
+} from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise';
 import { registerMutationOptions } from '@/queries/register';
 import { getSessionQueryOptions } from '@/queries/session';
 
 export const Route = createFileRoute('/register/')({
   component: Register,
+  validateSearch: OAuthSearchSchema,
 });
 
 type RegisterFormValues = {
@@ -25,6 +32,7 @@ function Register() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { language, languages, setLanguage } = useLanguage();
+  const search = Route.useSearch();
 
   const registerSchema = useMemo(
     () =>
@@ -44,19 +52,31 @@ function Register() {
       // Check if email verification is required
       if (data.user.email_verified) {
         // Email already verified (SMTP not configured)
-        // Set session data and navigate to profile
+        // Set session data
         queryClient.setQueryData(getSessionQueryOptions.queryKey, {
           user: data.user,
         });
         await tick();
-        navigate({ to: '/profile' });
+
+        // Check if this is an OAuth flow
+        if (isOAuthFlow(search)) {
+          // Redirect to authorization endpoint with OAuth parameters
+          window.location.href = buildAuthorizeUrl(search);
+        } else {
+          // Regular registration - navigate to profile
+          navigate({ to: '/profile' });
+        }
       } else {
         // Email verification required (SMTP configured)
-        // Navigate to verify email page
+        // Navigate to verify email page with OAuth parameters preserved
         await tick();
         navigate({
           to: '/verify-email',
-          search: { email: data.user.email, token: '' },
+          search: {
+            email: data.user.email,
+            token: '',
+            ...extractOAuthParams(search),
+          },
         });
       }
     },
@@ -177,6 +197,7 @@ function Register() {
             <div className="text-center">
               <Link
                 to="/login"
+                search={extractOAuthParams(search)}
                 className="link link-hover link-primary font-medium text-sm"
               >
                 {t('register.link.login')}

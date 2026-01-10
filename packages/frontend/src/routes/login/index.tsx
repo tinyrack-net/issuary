@@ -7,24 +7,12 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { useLanguage } from '@/hooks/use-language';
+import { extractOAuthParams, OAuthSearchSchema } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise';
 import { loginMutationOptions } from '@/queries/login';
 import { getSessionQueryOptions } from '@/queries/session';
 
-export const SearchSchema = z.object({
-  // OAuth parameters from authorization endpoint
-  client_id: z.string().optional(),
-  redirect_uri: z.string().optional(),
-  response_type: z.string().optional(),
-  scope: z.string().optional(),
-  state: z.string().optional(),
-  nonce: z.string().optional(),
-  code_challenge: z.string().optional(),
-  code_challenge_method: z.enum(['S256', 'plain']).optional(),
-  prompt: z.enum(['none', 'login', 'consent', 'select_account']).optional(),
-  max_age: z.string().optional(),
-  display: z.enum(['page', 'popup', 'touch', 'wap']).optional(),
-});
+export const SearchSchema = OAuthSearchSchema;
 
 export const Route = createFileRoute('/login/')({
   component: Login,
@@ -220,6 +208,7 @@ function Login() {
             <div className="text-center">
               <Link
                 to="/register"
+                search={extractOAuthParams(search)}
                 className="link link-hover link-primary font-medium text-sm"
               >
                 {t('login.link.register')}
