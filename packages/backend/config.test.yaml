@@ -17,14 +17,7 @@ admin:
   port: !env ADMIN_PORT
 
 database:
-  type: sqlite
-  path: test.db
-  # type: postgres
-  # host: !env DATABASE_URL
-  # port: !env DATABASE_PORT
-  # name: !env DATABASE_NAME
-  # user: !env DATABASE_USER
-  # password: !env DATABASE_PASSWORD
+  type: memory
 
 smtp:
   test: true

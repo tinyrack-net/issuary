@@ -1,4 +1,5 @@
 import { AppConfigs } from '@/lib/config.js';
+import { mikroormMemoryConfig } from './memory.js';
 import { mikroormPostgresConfig } from './postgres.js';
 import { mikroormSqliteConfig } from './sqlite.js';
 
@@ -9,6 +10,9 @@ const configs = (() => {
     }
     case 'sqlite': {
       return mikroormSqliteConfig();
+    }
+    case 'memory': {
+      return mikroormMemoryConfig();
     }
   }
 })();

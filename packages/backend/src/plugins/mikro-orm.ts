@@ -5,6 +5,7 @@ import { EmailVerificationEntity } from '@/entities/email-verification.entity.js
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
+import { AppConfigs } from '@/lib/config.js';
 import { env } from '@/lib/env.js';
 import type { EmailVerificationRepository } from '@/repositories/email-verification.repository.js';
 import type { OAuthClientRepository } from '@/repositories/oauth-client.repository.js';
@@ -37,13 +38,9 @@ export default fastifyPlugin(
       dynamicImportProvider: (id) => import(id),
     };
 
-    if (env.APP_ENV === 'test') {
-      ormOptions.dbName = ':memory:';
-    }
-
     const orm = await MikroORM.init(ormOptions);
 
-    if (env.APP_ENV === 'test') {
+    if (AppConfigs.database.type === 'memory') {
       await orm.schema.createSchema();
     } else if (env.APP_ENV === 'development') {
       await orm.schema.updateSchema();

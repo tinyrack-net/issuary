@@ -12,6 +12,7 @@ app:
     - ja
   default_language: auto
   fallback_language: ko
+
 admin:
   enabled: true
   port: !env ADMIN_PORT

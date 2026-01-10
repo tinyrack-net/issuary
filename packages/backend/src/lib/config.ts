@@ -39,19 +39,36 @@ export const AppConfigAdmin = z.discriminatedUnion('enabled', [
 
 export type AppConfigAdmin = z.infer<typeof AppConfigAdmin>;
 
+export const AppConfigDatabaseMemory = z.object({
+  type: z.literal('memory'),
+});
+
+export type AppConfigDatabaseMemory = z.infer<typeof AppConfigDatabaseMemory>;
+
+export const AppConfigDatabaseSqlite = z.object({
+  type: z.literal('sqlite'),
+  path: z.string().default('test.db'),
+});
+
+export type AppConfigDatabaseSqlite = z.infer<typeof AppConfigDatabaseSqlite>;
+
+export const AppConfigDatabasePostgres = z.object({
+  type: z.literal('postgres'),
+  host: z.string().default('localhost'),
+  port: zz.PORT.default(5432),
+  user: z.string().min(1).default('test'),
+  password: z.string().min(1).default('test'),
+  name: z.string().min(1).default('test'),
+});
+
+export type AppConfigDatabasePostgres = z.infer<
+  typeof AppConfigDatabasePostgres
+>;
+
 export const AppConfigDatabase = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal(['sqlite']).default('sqlite'),
-    path: z.string().default('test.db'),
-  }),
-  z.object({
-    type: z.literal(['postgres']).default('postgres'),
-    host: z.string().default('localhost'),
-    port: zz.PORT.default(5432),
-    user: z.string().min(1).default('test'),
-    password: z.string().min(1).default('test'),
-    name: z.string().min(1).default('test'),
-  }),
+  AppConfigDatabaseMemory,
+  AppConfigDatabaseSqlite,
+  AppConfigDatabasePostgres,
 ]);
 
 export type AppConfigDatabase = z.infer<typeof AppConfigDatabase>;
