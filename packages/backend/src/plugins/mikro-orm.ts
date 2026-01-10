@@ -1,10 +1,12 @@
 import { MikroORM, type Options, RequestContext } from '@mikro-orm/core';
 import fastifyPlugin from 'fastify-plugin';
 import configs from '@/db/index.js';
+import { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
 import { env } from '@/lib/env.js';
+import type { EmailVerificationRepository } from '@/repositories/email-verification.repository.js';
 import type { OAuthClientRepository } from '@/repositories/oauth-client.repository.js';
 import type { OAuthCodeRepository } from '@/repositories/oauth-code.repository.js';
 import type { UserRepository } from '@/repositories/user.repository.js';
@@ -16,6 +18,7 @@ export interface MikroService {
   user: UserRepository;
   oauthCode: OAuthCodeRepository;
   oauthClient: OAuthClientRepository;
+  emailVerification: EmailVerificationRepository;
 }
 
 declare module 'fastify' {
@@ -56,6 +59,7 @@ export default fastifyPlugin(
       user: orm.em.getRepository(UserEntity),
       oauthCode: orm.em.getRepository(OAuthCodeEntity),
       oauthClient: orm.em.getRepository(OAuthClientEntity),
+      emailVerification: orm.em.getRepository(EmailVerificationEntity),
     });
 
     fastify.addHook('onRequest', (_request, _reply, done) => {

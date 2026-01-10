@@ -105,4 +105,15 @@ export const e = {
     'INTERNAL_SERVER_ERROR',
     'An unexpected error occurred.',
   ),
+  InvalidVerificationToken: createError(
+    400,
+    'INVALID_VERIFICATION_TOKEN',
+    'The verification token is invalid or has expired.',
+  ),
+  EmailAlreadyVerified: createError(
+    400,
+    'EMAIL_ALREADY_VERIFIED',
+    'The email address is already verified.',
+  ),
+  UserNotFound: createError(404, 'USER_NOT_FOUND', 'User not found.'),
 };
