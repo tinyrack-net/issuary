@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import { expect } from 'vitest';
 import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT } from './fixtures.js';
 import { createAuthenticatedSession } from './helpers.js';
@@ -7,13 +7,13 @@ import { createAuthenticatedSession } from './helpers.js';
  * Parameters for getting authorization code
  */
 export interface GetAuthorizationCodeParams {
-  clientId?: string;
-  redirectUri?: string;
-  scope?: string;
-  state?: string;
-  codeChallenge?: string;
-  codeChallengeMethod?: 'S256' | 'plain';
-  nonce?: string;
+  clientId?: string | undefined;
+  redirectUri?: string | undefined;
+  scope?: string | undefined;
+  state?: string | undefined;
+  codeChallenge?: string | undefined;
+  codeChallengeMethod?: 'S256' | 'plain' | undefined;
+  nonce?: string | undefined;
   sessionCookie: string;
 }
 
@@ -96,10 +96,10 @@ export async function getAuthorizationCode(
  */
 export interface ExchangeCodeParams {
   code: string;
-  clientId?: string;
-  clientSecret?: string;
-  redirectUri?: string;
-  codeVerifier?: string;
+  clientId?: string | undefined;
+  clientSecret?: string | undefined;
+  redirectUri?: string | undefined;
+  codeVerifier?: string | undefined;
 }
 
 /**
@@ -112,7 +112,7 @@ export interface ExchangeCodeParams {
 export async function exchangeCodeForTokens(
   app: FastifyInstance,
   params: ExchangeCodeParams,
-) {
+): Promise<LightMyRequestResponse> {
   const {
     code,
     clientId = TEST_OAUTH_CLIENT.clientId,
@@ -148,8 +148,8 @@ export async function exchangeCodeForTokens(
  */
 export interface RefreshTokenParams {
   refreshToken: string;
-  clientId?: string;
-  clientSecret?: string;
+  clientId?: string | undefined;
+  clientSecret?: string | undefined;
 }
 
 /**
@@ -162,7 +162,7 @@ export interface RefreshTokenParams {
 export async function refreshAccessToken(
   app: FastifyInstance,
   params: RefreshTokenParams,
-) {
+): Promise<LightMyRequestResponse> {
   const {
     refreshToken,
     clientId = TEST_OAUTH_CLIENT.clientId,
@@ -190,11 +190,11 @@ export async function refreshAccessToken(
  * Parameters for getting access token
  */
 export interface GetAccessTokenParams {
-  scope?: string;
-  sessionCookie?: string;
-  codeChallenge?: string;
-  codeChallengeMethod?: 'S256' | 'plain';
-  codeVerifier?: string;
+  scope?: string | undefined;
+  sessionCookie?: string | undefined;
+  codeChallenge?: string | undefined;
+  codeChallengeMethod?: 'S256' | 'plain' | undefined;
+  codeVerifier?: string | undefined;
 }
 
 /**
@@ -249,7 +249,10 @@ export async function getAccessToken(
  * @param accessToken - Access token
  * @returns UserInfo response
  */
-export async function getUserInfo(app: FastifyInstance, accessToken: string) {
+export async function getUserInfo(
+  app: FastifyInstance,
+  accessToken: string,
+): Promise<LightMyRequestResponse> {
   return app.inject({
     method: 'GET',
     url: '/application/oauth/userinfo',
