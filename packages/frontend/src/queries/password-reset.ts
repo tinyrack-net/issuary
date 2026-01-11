@@ -11,7 +11,7 @@ export type ForgotPasswordResponse = {
 
 export const forgotPasswordMutationOptions = mutationOptions({
   mutationFn: async (values: ForgotPasswordParams) => {
-    const res = await etch(`/api/v1/user/forgot-password`, {
+    const res = await etch(`/api/v1/auth/password/forgot`, {
       method: 'POST',
       body: JSON.stringify(values),
     });
@@ -31,7 +31,7 @@ export type ResetPasswordResponse = {
 
 export const resetPasswordMutationOptions = mutationOptions({
   mutationFn: async (values: ResetPasswordParams) => {
-    const res = await etch(`/api/v1/user/reset-password`, {
+    const res = await etch(`/api/v1/auth/password/reset`, {
       method: 'POST',
       body: JSON.stringify(values),
     });

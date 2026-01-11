@@ -67,7 +67,7 @@ export const oauthAccountsQueryOptions = queryOptions({
  */
 export const unlinkOAuthMutationOptions = mutationOptions({
   mutationFn: async (providerName: string) => {
-    const res = await etch(`/api/v1/oauth/unlink/${providerName}`, {
+    const res = await etch(`/api/v1/oauth/${providerName}/link`, {
       method: 'DELETE',
     });
     return (await res.json()) as { success: boolean };
@@ -83,7 +83,7 @@ export function getOAuthConnectUrl(
   returnUrl?: string,
 ): string {
   const url = new URL(
-    `/api/v1/oauth/connect/${providerName}`,
+    `/api/v1/oauth/${providerName}/connect`,
     window.location.origin,
   );
   url.searchParams.set('mode', mode);

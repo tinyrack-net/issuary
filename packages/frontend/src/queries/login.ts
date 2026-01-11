@@ -13,7 +13,7 @@ export type LoginResponse = {
 
 export const loginMutationOptions = mutationOptions({
   mutationFn: async (values: LoginParams) => {
-    const res = await etch(`/api/v1/user/login`, {
+    const res = await etch(`/api/v1/auth/login`, {
       method: 'POST',
       body: JSON.stringify(values),
     });

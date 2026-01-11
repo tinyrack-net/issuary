@@ -26,9 +26,9 @@ export type ConsentInfoResponse = {
 
 export const getConsentInfoQueryOptions = (params: ConsentInfoParams) =>
   queryOptions({
-    queryKey: ['/api/v1/oauth/consent', params.client_id, params.scope],
+    queryKey: ['/api/v1/consent', params.client_id, params.scope],
     queryFn: async () => {
-      const url = new URL('/api/v1/oauth/consent', window.location.origin);
+      const url = new URL('/api/v1/consent', window.location.origin);
       url.searchParams.set('client_id', params.client_id);
       if (params.scope) {
         url.searchParams.set('scope', params.scope);
@@ -58,7 +58,7 @@ export type ConsentDecisionResponse = {
 
 export const consentDecisionMutationOptions = mutationOptions({
   mutationFn: async (params: ConsentDecisionParams) => {
-    const res = await etch('/api/v1/oauth/consent', {
+    const res = await etch('/api/v1/consent', {
       method: 'POST',
       body: JSON.stringify(params),
     });

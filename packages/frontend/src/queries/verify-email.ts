@@ -13,7 +13,7 @@ export type VerifyEmailResponse = {
 
 export const verifyEmailMutationOptions = mutationOptions({
   mutationFn: async (values: VerifyEmailParams) => {
-    const res = await etch(`/api/v1/user/verify-email`, {
+    const res = await etch(`/api/v1/auth/email/verify`, {
       method: 'POST',
       body: JSON.stringify(values),
     });
@@ -32,7 +32,7 @@ export type ResendVerificationResponse = {
 
 export const resendVerificationMutationOptions = mutationOptions({
   mutationFn: async (values: ResendVerificationParams) => {
-    const res = await etch(`/api/v1/user/resend-verification`, {
+    const res = await etch(`/api/v1/auth/email/resend`, {
       method: 'POST',
       body: JSON.stringify(values),
     });

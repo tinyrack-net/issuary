@@ -13,7 +13,7 @@ export type RegisterResponse = {
 
 export const registerMutationOptions = mutationOptions({
   mutationFn: async (values: RegisterParams) => {
-    const res = await etch(`/api/v1/user/register`, {
+    const res = await etch(`/api/v1/auth/register`, {
       method: 'POST',
       body: JSON.stringify(values),
     });

@@ -7,7 +7,7 @@ export type LogoutResponse = {
 
 export const logoutMutationOptions = mutationOptions({
   mutationFn: async () => {
-    const res = await etch(`/api/v1/user/logout`, {
+    const res = await etch(`/api/v1/auth/logout`, {
       method: 'POST',
       body: JSON.stringify({}),
     });
