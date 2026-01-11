@@ -217,23 +217,11 @@ export class OAuthConnectService {
       throw new e.OAuthUserInfoFailed.Error();
     }
 
-    // Extract email - may need separate API call for some providers (e.g., GitHub)
-    let email = String(data[mapping.email] ?? '');
-    let emailVerified = mapping.email_verified
+    // Extract email
+    const email = String(data[mapping.email] ?? '');
+    const emailVerified = mapping.email_verified
       ? Boolean(data[mapping.email_verified])
-      : false;
-
-    // GitHub requires separate API call for emails
-    if (provider.email_url && !email) {
-      const emailData = await this.fetchGitHubEmails(
-        provider.email_url,
-        accessToken,
-      );
-      if (emailData) {
-        email = emailData.email;
-        emailVerified = emailData.verified;
-      }
-    }
+      : true; // Default to true for OAuth providers
 
     if (!email) {
       throw new e.OAuthUserInfoFailed.Error();
@@ -254,51 +242,6 @@ export class OAuthConnectService {
   }
 
   /**
-   * Fetch emails from GitHub API (required for GitHub OAuth)
-   */
-  private async fetchGitHubEmails(
-    emailUrl: string,
-    accessToken: string,
-  ): Promise<{ email: string; verified: boolean } | null> {
-    const response = await fetch(emailUrl, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const emails = (await response.json()) as Array<{
-      email: string;
-      primary: boolean;
-      verified: boolean;
-    }>;
-
-    // Find primary verified email
-    const primaryEmail = emails.find((e) => e.primary && e.verified);
-    if (primaryEmail) {
-      return { email: primaryEmail.email, verified: true };
-    }
-
-    // Fall back to any verified email
-    const verifiedEmail = emails.find((e) => e.verified);
-    if (verifiedEmail) {
-      return { email: verifiedEmail.email, verified: true };
-    }
-
-    // Fall back to primary email even if not verified
-    const anyPrimary = emails.find((e) => e.primary);
-    if (anyPrimary) {
-      return { email: anyPrimary.email, verified: anyPrimary.verified };
-    }
-
-    return null;
-  }
-
-  /**
    * Authenticate with OAuth - login or register user
    */
   public async authenticateWithOAuth(
@@ -307,11 +250,6 @@ export class OAuthConnectService {
     userInfo: OAuthUserInfo,
   ): Promise<OAuthAuthResult> {
     const provider = this.getProvider(providerName);
-
-    // Require verified email
-    if (!userInfo.email_verified) {
-      throw new e.OAuthEmailNotVerified.Error();
-    }
 
     // Check if OAuth account is already linked
     const existingOAuth = await this.mikro.userOAuth.findByProviderUserId(

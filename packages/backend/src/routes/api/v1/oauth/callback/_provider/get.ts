@@ -32,7 +32,6 @@ export default (fastify: FastifyWithZodInstance) =>
           e.OAuthStateMismatch.Schema,
           e.OAuthSessionExpired.Schema,
         ]),
-        403: e.OAuthEmailNotVerified.Schema,
         404: e.OAuthProviderNotFound.Schema,
         409: z.union([
           e.OAuthEmailConflict.Schema,
