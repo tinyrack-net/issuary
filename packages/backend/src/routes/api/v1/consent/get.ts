@@ -16,7 +16,7 @@ export default (fastify: FastifyWithZodInstance) => {
       summary: 'Get consent information',
       description:
         'Returns OAuth client information and requested scopes for the consent page.',
-      tags: ['OAuth'],
+      tags: ['Consent'],
       querystring: z.object({
         client_id: z
           .string()

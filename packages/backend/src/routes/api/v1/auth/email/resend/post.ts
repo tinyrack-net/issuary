@@ -29,7 +29,8 @@ export default (fastify: FastifyWithZodInstance) => {
           req.body.email,
         );
 
-      await fastify.emailService.sendVerificationEmail({
+      // Send verification email asynchronously (fire-and-forget)
+      fastify.emailService.sendVerificationEmailAsync({
         email: req.body.email,
         token: verification.token,
       });

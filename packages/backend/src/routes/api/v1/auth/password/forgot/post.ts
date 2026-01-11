@@ -35,8 +35,8 @@ export default (fastify: FastifyWithZodInstance) => {
           await fastify.passwordResetService.requestPasswordReset(email);
 
         if (resetEntity) {
-          // Send password reset email
-          await fastify.emailService.sendPasswordResetEmail({
+          // Send password reset email asynchronously (fire-and-forget)
+          fastify.emailService.sendPasswordResetEmailAsync({
             email,
             token: resetEntity.token,
           });

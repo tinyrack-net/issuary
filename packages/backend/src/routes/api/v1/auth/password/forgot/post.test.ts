@@ -9,48 +9,44 @@ import {
 const app = setupTestServer();
 
 describe('POST /api/v1/auth/password/forgot', () => {
-  test(
-    'should send password reset email for valid user',
-    { timeout: 10000 },
-    async () => {
-      // 1. Register a new user
-      const uniqueEmail = generateUniqueEmail('forgot');
-      await app.inject({
-        method: 'post',
-        url: '/api/v1/auth/register',
-        payload: {
-          email: uniqueEmail,
-          password: 'password123',
-        },
+  test('should send password reset email for valid user', async () => {
+    // 1. Register a new user
+    const uniqueEmail = generateUniqueEmail('forgot');
+    await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: uniqueEmail,
+        password: 'password123',
+      },
+    });
+
+    // 2. Request password reset
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/password/forgot',
+      payload: {
+        email: uniqueEmail,
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body).toHaveProperty('message');
+
+    // 3. Check that a reset token was generated
+    const token = await withMikroContext(app, async () => {
+      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
+      const reset = await app.mikro.passwordReset.findOne({
+        user,
+        used: false,
+        expiresAt: { $gt: new Date() },
       });
+      return reset?.token;
+    });
 
-      // 2. Request password reset
-      const res = await app.inject({
-        method: 'post',
-        url: '/api/v1/auth/password/forgot',
-        payload: {
-          email: uniqueEmail,
-        },
-      });
-
-      expect(res.statusCode).toBe(200);
-      const body = JSON.parse(res.body);
-      expect(body).toHaveProperty('message');
-
-      // 3. Check that a reset token was generated
-      const token = await withMikroContext(app, async () => {
-        const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
-        const reset = await app.mikro.passwordReset.findOne({
-          user,
-          used: false,
-          expiresAt: { $gt: new Date() },
-        });
-        return reset?.token;
-      });
-
-      expect(token).toBeDefined();
-    },
-  );
+    expect(token).toBeDefined();
+  });
 
   test('should return success for non-existent email (prevent enumeration)', async () => {
     const res = await app.inject({
@@ -67,168 +63,156 @@ describe('POST /api/v1/auth/password/forgot', () => {
     expect(body).toHaveProperty('message');
   });
 
-  test(
-    'should fail for config user (not editable)',
-    { timeout: 10000 },
-    async () => {
-      // Use the config user email from config.test.yaml
-      const res = await app.inject({
-        method: 'post',
-        url: '/api/v1/auth/password/forgot',
-        payload: {
-          email: 'test-config-user@example.com',
-        },
+  test('should fail for config user (not editable)', async () => {
+    // Use the config user email from config.test.yaml
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/password/forgot',
+      payload: {
+        email: 'test-config-user@example.com',
+      },
+    });
+
+    expect(res.statusCode).toBe(e.UserNotEditable.Status);
+    const body = JSON.parse(res.body);
+    expect(body).toHaveProperty('code', 'USER_NOT_EDITABLE');
+  });
+
+  test('should invalidate previous reset tokens when new one is generated', async () => {
+    // 1. Register a new user
+    const uniqueEmail = generateUniqueEmail('invalidate');
+    await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: uniqueEmail,
+        password: 'password123',
+      },
+    });
+
+    // 2. Request first password reset
+    await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/password/forgot',
+      payload: {
+        email: uniqueEmail,
+      },
+    });
+
+    // 3. Get first token
+    const firstToken = await withMikroContext(app, async () => {
+      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
+      const reset = await app.mikro.passwordReset.findOneOrFail({
+        user,
+        used: false,
       });
+      return reset.token;
+    });
 
-      expect(res.statusCode).toBe(e.UserNotEditable.Status);
-      const body = JSON.parse(res.body);
-      expect(body).toHaveProperty('code', 'USER_NOT_EDITABLE');
-    },
-  );
+    // 4. Request second password reset
+    await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/password/forgot',
+      payload: {
+        email: uniqueEmail,
+      },
+    });
 
-  test(
-    'should invalidate previous reset tokens when new one is generated',
-    { timeout: 20000 },
-    async () => {
-      // 1. Register a new user
-      const uniqueEmail = generateUniqueEmail('invalidate');
-      await app.inject({
-        method: 'post',
-        url: '/api/v1/auth/register',
-        payload: {
-          email: uniqueEmail,
-          password: 'password123',
-        },
+    // 5. Check that first token is now expired
+    const isFirstTokenValid = await withMikroContext(app, async () => {
+      const reset = await app.mikro.passwordReset.findOne({
+        token: firstToken,
+        used: false,
+        expiresAt: { $gt: new Date() },
       });
+      return reset !== null;
+    });
 
-      // 2. Request first password reset
-      await app.inject({
-        method: 'post',
-        url: '/api/v1/auth/password/forgot',
-        payload: {
-          email: uniqueEmail,
-        },
+    expect(isFirstTokenValid).toBe(false);
+
+    // 6. Check that a new valid token exists
+    const hasNewToken = await withMikroContext(app, async () => {
+      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
+      const reset = await app.mikro.passwordReset.findOne({
+        user,
+        used: false,
+        expiresAt: { $gt: new Date() },
       });
+      return reset !== null && reset.token !== firstToken;
+    });
 
-      // 3. Get first token
-      const firstToken = await withMikroContext(app, async () => {
-        const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
-        const reset = await app.mikro.passwordReset.findOneOrFail({
-          user,
-          used: false,
-        });
-        return reset.token;
-      });
-
-      // 4. Request second password reset
-      await app.inject({
-        method: 'post',
-        url: '/api/v1/auth/password/forgot',
-        payload: {
-          email: uniqueEmail,
-        },
-      });
-
-      // 5. Check that first token is now expired
-      const isFirstTokenValid = await withMikroContext(app, async () => {
-        const reset = await app.mikro.passwordReset.findOne({
-          token: firstToken,
-          used: false,
-          expiresAt: { $gt: new Date() },
-        });
-        return reset !== null;
-      });
-
-      expect(isFirstTokenValid).toBe(false);
-
-      // 6. Check that a new valid token exists
-      const hasNewToken = await withMikroContext(app, async () => {
-        const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
-        const reset = await app.mikro.passwordReset.findOne({
-          user,
-          used: false,
-          expiresAt: { $gt: new Date() },
-        });
-        return reset !== null && reset.token !== firstToken;
-      });
-
-      expect(hasNewToken).toBe(true);
-    },
-  );
+    expect(hasNewToken).toBe(true);
+  });
 });
 
 describe('POST /api/v1/auth/password/reset', () => {
-  test(
-    'should reset password with valid token',
-    { timeout: 10000 },
-    async () => {
-      // 1. Register a new user
-      const uniqueEmail = generateUniqueEmail('reset');
-      await app.inject({
-        method: 'post',
-        url: '/api/v1/auth/register',
-        payload: {
-          email: uniqueEmail,
-          password: 'oldpassword123',
-        },
-      });
+  test('should reset password with valid token', async () => {
+    // 1. Register a new user
+    const uniqueEmail = generateUniqueEmail('reset');
+    await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: uniqueEmail,
+        password: 'oldpassword123',
+      },
+    });
 
-      // 2. Request password reset
-      await app.inject({
-        method: 'post',
-        url: '/api/v1/auth/password/forgot',
-        payload: {
-          email: uniqueEmail,
-        },
-      });
+    // 2. Request password reset
+    await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/password/forgot',
+      payload: {
+        email: uniqueEmail,
+      },
+    });
 
-      // 3. Get the reset token
-      const token = await withMikroContext(app, async () => {
-        const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
-        const reset = await app.mikro.passwordReset.findOneOrFail({
-          user,
-          used: false,
-        });
-        return reset.token;
+    // 3. Get the reset token
+    const token = await withMikroContext(app, async () => {
+      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
+      const reset = await app.mikro.passwordReset.findOneOrFail({
+        user,
+        used: false,
       });
+      return reset.token;
+    });
 
-      // 4. Reset password
-      const res = await app.inject({
-        method: 'post',
-        url: '/api/v1/auth/password/reset',
-        payload: {
-          token,
-          password: 'newpassword456',
-        },
-      });
+    // 4. Reset password
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/password/reset',
+      payload: {
+        token,
+        password: 'newpassword456',
+      },
+    });
 
-      expect(res.statusCode).toBe(200);
-      const body = JSON.parse(res.body);
-      expect(body).toHaveProperty('message');
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body).toHaveProperty('message');
 
-      // 5. Verify old password no longer works
-      const oldLoginRes = await app.inject({
-        method: 'post',
-        url: '/api/v1/auth/login',
-        payload: {
-          email: uniqueEmail,
-          password: 'oldpassword123',
-        },
-      });
-      expect(oldLoginRes.statusCode).toBe(401);
+    // 5. Verify old password no longer works
+    const oldLoginRes = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/login',
+      payload: {
+        email: uniqueEmail,
+        password: 'oldpassword123',
+      },
+    });
+    expect(oldLoginRes.statusCode).toBe(401);
 
-      // 6. Verify new password works
-      const newLoginRes = await app.inject({
-        method: 'post',
-        url: '/api/v1/auth/login',
-        payload: {
-          email: uniqueEmail,
-          password: 'newpassword456',
-        },
-      });
-      expect(newLoginRes.statusCode).toBe(200);
-    },
-  );
+    // 6. Verify new password works
+    const newLoginRes = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/login',
+      payload: {
+        email: uniqueEmail,
+        password: 'newpassword456',
+      },
+    });
+    expect(newLoginRes.statusCode).toBe(200);
+  });
 
   test('should fail with invalid token', async () => {
     const res = await app.inject({
@@ -245,7 +229,7 @@ describe('POST /api/v1/auth/password/reset', () => {
     expect(body).toHaveProperty('code', 'INVALID_PASSWORD_RESET_TOKEN');
   });
 
-  test('should fail with expired token', { timeout: 10000 }, async () => {
+  test('should fail with expired token', async () => {
     // 1. Register a new user
     const uniqueEmail = generateUniqueEmail('expired-reset');
     await app.inject({
@@ -297,7 +281,7 @@ describe('POST /api/v1/auth/password/reset', () => {
     expect(res.statusCode).toBe(e.InvalidPasswordResetToken.Status);
   });
 
-  test('should fail with already used token', { timeout: 10000 }, async () => {
+  test('should fail with already used token', async () => {
     // 1. Register a new user
     const uniqueEmail = generateUniqueEmail('used-reset');
     await app.inject({

@@ -55,6 +55,16 @@ export class EmailService {
   }
 
   /**
+   * Send email verification email asynchronously (fire-and-forget)
+   * Logs errors but does not throw
+   */
+  sendVerificationEmailAsync(params: { email: string; token: string }): void {
+    this.sendVerificationEmail(params).catch((err) => {
+      console.error('Failed to send verification email:', err);
+    });
+  }
+
+  /**
    * Send password reset email
    */
   async sendPasswordResetEmail(params: {
@@ -90,6 +100,16 @@ export class EmailService {
     }
 
     return info;
+  }
+
+  /**
+   * Send password reset email asynchronously (fire-and-forget)
+   * Logs errors but does not throw
+   */
+  sendPasswordResetEmailAsync(params: { email: string; token: string }): void {
+    this.sendPasswordResetEmail(params).catch((err) => {
+      console.error('Failed to send password reset email:', err);
+    });
   }
 
   /**

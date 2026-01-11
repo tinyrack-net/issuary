@@ -15,7 +15,7 @@ export default (fastify: FastifyWithZodInstance) => {
     schema: {
       summary: 'Submit consent decision',
       description: 'Handles the user consent decision for OAuth authorization.',
-      tags: ['OAuth'],
+      tags: ['Consent'],
       body: z.object({
         client_id: z
           .string()

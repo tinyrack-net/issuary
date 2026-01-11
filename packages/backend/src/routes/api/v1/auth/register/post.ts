@@ -41,8 +41,8 @@ export default (fastify: FastifyWithZodInstance) =>
         // Flush verification token to database
         await fastify.mikro.em.flush();
 
-        // Send verification email
-        await fastify.emailService.sendVerificationEmail({
+        // Send verification email asynchronously (fire-and-forget)
+        fastify.emailService.sendVerificationEmailAsync({
           email: user.email,
           token: verification.token,
         });
