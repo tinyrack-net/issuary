@@ -6,6 +6,44 @@ import z from 'zod/v4';
 import { zz } from '@/schemas/provider.js';
 import { env } from './env.js';
 
+export const AppTheme = z.enum([
+  'light',
+  'dark',
+  'cupcake',
+  'bumblebee',
+  'emerald',
+  'corporate',
+  'synthwave',
+  'retro',
+  'cyberpunk',
+  'valentine',
+  'halloween',
+  'garden',
+  'forest',
+  'aqua',
+  'lofi',
+  'pastel',
+  'fantasy',
+  'wireframe',
+  'black',
+  'luxury',
+  'dracula',
+  'cmyk',
+  'autumn',
+  'business',
+  'acid',
+  'lemonade',
+  'night',
+  'coffee',
+  'winter',
+  'dim',
+  'nord',
+  'sunset',
+  'caramellatte',
+  'abyss',
+  'silk',
+]);
+
 export const AppConfigApp = z.object({
   host: z.string().optional().default('http://localhost:3000'),
   port: zz.PORT.optional().default(8080),
@@ -43,6 +81,13 @@ export const AppConfigApp = z.object({
     .describe('Supported languages'),
   default_language: z.string().default('auto').describe('Default language'),
   fallback_language: z.string().default('en').describe('Fallback language'),
+
+  light_theme: AppTheme.default('light').describe('Light theme name'),
+  dark_theme: AppTheme.default('dark').describe('Dark theme name'),
+  theme_mode: z
+    .enum(['light', 'dark', 'system'])
+    .default('system')
+    .describe('Default theme mode'),
 });
 
 export type AppConfigApp = z.infer<typeof AppConfigApp>;
