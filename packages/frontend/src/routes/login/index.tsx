@@ -143,11 +143,7 @@ function Login() {
           {...register('password')}
         />
 
-        <div className="flex items-center justify-between">
-          <label className="flex cursor-pointer items-center gap-2">
-            <input type="checkbox" className="checkbox checkbox-sm" />
-            <span className="text-sm">{t('login.rememberMe')}</span>
-          </label>
+        <div className="flex items-center justify-end">
           <Link to="/forgot-password" className="link text-sm">
             {t('login.link.forgotPassword')}
           </Link>
