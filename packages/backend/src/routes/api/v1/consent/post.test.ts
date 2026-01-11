@@ -1,10 +1,10 @@
+import { describe, expect, test } from 'vitest';
 import {
-  TEST_OAUTH_CLIENT,
   createAuthenticatedSession,
   setupTestServer,
+  TEST_OAUTH_CLIENT,
   withMikroContext,
 } from '@/test-utils/index.js';
-import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 

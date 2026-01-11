@@ -52,7 +52,7 @@ export async function createAuthenticatedSession(
 ): Promise<string> {
   const loginRes = await app.inject({
     method: 'POST',
-    url: '/api/v1/user/login',
+    url: '/api/v1/auth/login',
     payload: { email, password },
   });
 
@@ -141,7 +141,7 @@ export async function grantConsent(
 ): Promise<string> {
   const consentRes = await app.inject({
     method: 'POST',
-    url: '/api/v1/oauth/consent',
+    url: '/api/v1/consent',
     cookies: { session: sessionCookie },
     payload: {
       client_id: params.client_id,

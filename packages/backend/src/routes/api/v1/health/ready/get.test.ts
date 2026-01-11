@@ -3,11 +3,11 @@ import { setupTestServer } from '@/test-utils/index.js';
 
 const app = setupTestServer();
 
-describe('GET /health/ready', () => {
+describe('GET /api/v1/health/ready', () => {
   test('should return 200 with database ok when healthy', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: '/health/ready',
+      url: '/api/v1/health/ready',
     });
 
     expect(res.statusCode).toBe(200);
@@ -24,7 +24,7 @@ describe('GET /health/ready', () => {
   test('should have proper response structure', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: '/health/ready',
+      url: '/api/v1/health/ready',
     });
 
     expect(res.statusCode).toBe(200);

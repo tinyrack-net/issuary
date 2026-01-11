@@ -3,11 +3,11 @@ import { setupTestServer } from '@/test-utils/index.js';
 
 const app = setupTestServer();
 
-describe('GET /health/live', () => {
+describe('GET /api/v1/health/live', () => {
   test('should return 200 with status ok', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: '/health/live',
+      url: '/api/v1/health/live',
     });
 
     expect(res.statusCode).toBe(200);
@@ -23,7 +23,7 @@ describe('GET /health/live', () => {
 
     const res = await app.inject({
       method: 'GET',
-      url: '/health/live',
+      url: '/api/v1/health/live',
     });
 
     const duration = Date.now() - start;

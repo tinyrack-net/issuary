@@ -1,20 +1,20 @@
+import { describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import {
   generateUniqueEmail,
   setupTestServer,
   withMikroContext,
 } from '@/test-utils/index.js';
-import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
-describe('POST /api/v1/user/verify-email', () => {
+describe('POST /api/v1/auth/email/verify', () => {
   test('should verify email with valid token', { timeout: 10000 }, async () => {
     // 1. Register a new user
     const uniqueEmail = generateUniqueEmail('verify');
     const registerRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         email: uniqueEmail,
         password: 'password123',
@@ -79,7 +79,7 @@ describe('POST /api/v1/user/verify-email', () => {
     const uniqueEmail = generateUniqueEmail('expired');
     await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         email: uniqueEmail,
         password: 'password123',
@@ -111,7 +111,7 @@ describe('POST /api/v1/user/verify-email', () => {
     // 4. Try to verify with expired token
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/verify-email',
+      url: '/api/v1/auth/email/verify',
       payload: {
         token,
       },
@@ -161,7 +161,7 @@ describe('POST /api/v1/user/verify-email', () => {
   });
 });
 
-describe('POST /api/v1/user/resend-verification', () => {
+describe('POST /api/v1/auth/email/resend', () => {
   test('should resend verification email', { timeout: 10000 }, async () => {
     // 1. Register a new user
     const uniqueEmail = generateUniqueEmail('resend');

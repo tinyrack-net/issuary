@@ -1,10 +1,10 @@
+import { describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import {
   generateUniqueEmail,
   setupTestServer,
   withMikroContext,
 } from '@/test-utils/index.js';
-import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
@@ -17,7 +17,7 @@ describe('POST /api/v1/auth/password/forgot', () => {
       const uniqueEmail = generateUniqueEmail('forgot');
       await app.inject({
         method: 'post',
-        url: '/api/v1/user/register',
+        url: '/api/v1/auth/register',
         payload: {
           email: uniqueEmail,
           password: 'password123',
