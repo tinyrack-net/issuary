@@ -1,13 +1,13 @@
 import type { FastifyRequest } from 'fastify';
+import fastifyPlugin from 'fastify-plugin';
 import {
-  type JWTPayload,
-  SignJWT,
   decodeJwt,
   importPKCS8,
   importSPKI,
+  type JWTPayload,
   jwtVerify,
+  SignJWT,
 } from 'jose';
-import fastifyPlugin from 'fastify-plugin';
 import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
@@ -231,17 +231,19 @@ export class JwtService {
    */
   private async verifyToken(token: string): Promise<JWTPayload> {
     // Decode header to get kid
-    const decoded = decodeJwt(token);
-    const header = JSON.parse(
-      Buffer.from(token.split('.')[0]!, 'base64url').toString(),
-    );
+    const _decoded = decodeJwt(token);
+    const headerPart = token.split('.')[0];
+    if (!headerPart) {
+      throw new Error('Invalid token format');
+    }
+    const header = JSON.parse(Buffer.from(headerPart, 'base64url').toString());
     const kid = header.kid as string | undefined;
 
     // If kid is present, find specific key
     if (kid) {
       const key = await this.jwtKeyService.getKeyByKid(kid);
 
-      if (key && key.isVerificationKey()) {
+      if (key?.isVerificationKey()) {
         const publicKey = await importSPKI(key.public_key, key.algorithm);
         const { payload } = await jwtVerify(token, publicKey);
         return payload;
@@ -256,10 +258,7 @@ export class JwtService {
         const publicKey = await importSPKI(key.public_key, key.algorithm);
         const { payload } = await jwtVerify(token, publicKey);
         return payload;
-      } catch {
-        // Try next key
-        continue;
-      }
+      } catch {}
     }
 
     throw new Error('Token verification failed with all available keys');
@@ -272,10 +271,10 @@ export class JwtService {
     payload: JWTPayload,
   ): payload is AccessTokenPayload {
     return (
-      payload['typ'] === 'access_token' &&
+      payload.typ === 'access_token' &&
       typeof payload.sub === 'string' &&
-      typeof payload['client_id'] === 'string' &&
-      typeof payload['scope'] === 'string'
+      typeof payload.client_id === 'string' &&
+      typeof payload.scope === 'string'
     );
   }
 
@@ -286,10 +285,10 @@ export class JwtService {
     payload: JWTPayload,
   ): payload is RefreshTokenPayload {
     return (
-      payload['typ'] === 'refresh_token' &&
+      payload.typ === 'refresh_token' &&
       typeof payload.sub === 'string' &&
-      typeof payload['client_id'] === 'string' &&
-      typeof payload['scope'] === 'string'
+      typeof payload.client_id === 'string' &&
+      typeof payload.scope === 'string'
     );
   }
 

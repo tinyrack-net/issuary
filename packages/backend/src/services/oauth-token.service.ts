@@ -338,9 +338,9 @@ export class OAuthTokenService {
 
     const jti = decoded.jti as string;
     const userId = decoded.sub as string;
-    const clientId = decoded['client_id'] as string | undefined;
+    const clientId = decoded.client_id as string | undefined;
     const tokenType =
-      (decoded['typ'] as 'access_token' | 'refresh_token') ||
+      (decoded.typ as 'access_token' | 'refresh_token') ||
       tokenTypeHint ||
       'access_token';
     const expiresAt = new Date(decoded.exp * 1000);

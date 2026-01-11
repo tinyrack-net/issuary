@@ -1,11 +1,11 @@
 import { decodeJwt } from 'jose';
-import { oidcConfig } from './oidc-config';
 import type {
-  TokenResponse,
   IDTokenPayload,
-  UserInfo,
   IntrospectionResponse,
+  TokenResponse,
+  UserInfo,
 } from '@/types/oidc';
+import { oidcConfig } from './oidc-config';
 
 /**
  * Build authorization URL for OAuth/OIDC flow

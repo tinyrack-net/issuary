@@ -99,6 +99,7 @@ export function IntrospectSection({
               Access Token:
             </h3>
             <button
+              type="button"
               onClick={introspectAccessToken}
               disabled={loading}
               className="rounded bg-blue-600 px-4 py-1.5 font-medium text-sm text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
@@ -203,6 +204,7 @@ export function IntrospectSection({
                 Refresh Token:
               </h3>
               <button
+                type="button"
                 onClick={introspectRefreshToken}
                 disabled={loading}
                 className="rounded bg-blue-600 px-4 py-1.5 font-medium text-sm text-white transition-colors hover:bg-blue-700 disabled:opacity-50"

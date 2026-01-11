@@ -1,16 +1,12 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  CheckCircleIcon,
-  EnvelopeIcon,
-  GlobeIcon,
-} from '@phosphor-icons/react';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { CheckCircle, EnvelopeSimple, Moon, Sun } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { useLanguage } from '@/hooks/use-language';
+import { useTheme } from '@/hooks/use-theme';
 import { forgotPasswordMutationOptions } from '@/queries/password-reset';
 
 export const Route = createFileRoute('/forgot-password/')({
@@ -23,7 +19,7 @@ type ForgotPasswordFormValues = {
 
 function ForgotPassword() {
   const { t } = useTranslation();
-  const { language, languages, setLanguage } = useLanguage();
+  const { theme, toggleDarkMode } = useTheme();
   const [emailSent, setEmailSent] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState('');
 
@@ -51,7 +47,7 @@ function ForgotPassword() {
     defaultValues: {
       email: '',
     },
-    resolver: zodResolver(forgotPasswordSchema),
+    resolver: standardSchemaResolver(forgotPasswordSchema),
   });
 
   const onSubmit = async (values: ForgotPasswordFormValues) => {
@@ -79,182 +75,131 @@ function ForgotPassword() {
 
   if (emailSent) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-base-200 to-base-300 p-4">
-        <div className="w-full max-w-md">
-          <div className="card bg-base-100 shadow-2xl">
-            <div className="card-body gap-6 p-8 text-center">
-              <div className="mx-auto">
-                <CheckCircleIcon
-                  size={80}
-                  weight="duotone"
-                  className="text-success"
-                />
-              </div>
-              <div>
-                <h1 className="mb-2 font-bold text-3xl text-success tracking-tight">
-                  {t('forgotPassword.success.title')}
-                </h1>
-                <p className="mb-1 font-semibold text-base-content text-lg">
-                  {t('forgotPassword.success.subtitle')}
-                </p>
-                <p className="text-base-content/70 text-sm">
-                  {t('forgotPassword.success.description', {
-                    email: submittedEmail,
-                  })}
-                </p>
-              </div>
+      <div
+        className="flex min-h-screen items-center justify-center bg-cover p-4"
+        style={{
+          backgroundImage:
+            'url(https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2071)',
+        }}
+      >
+        {/* Theme Toggle */}
+        <label className="swap swap-rotate btn btn-sm btn-circle absolute start-4 top-4">
+          <input
+            type="checkbox"
+            checked={theme === 'dark'}
+            onChange={toggleDarkMode}
+          />
+          <Sun className="swap-off size-4" weight="fill" />
+          <Moon className="swap-on size-4" weight="fill" />
+        </label>
 
-              <div className="alert alert-info">
-                <EnvelopeIcon size={20} weight="fill" />
-                <span className="text-left text-sm">
-                  {t('forgotPassword.success.checkSpam')}
-                </span>
-              </div>
-
-              <Link
-                to="/login"
-                className="btn btn-primary w-full text-base shadow-lg"
-              >
-                {t('forgotPassword.backToLogin')}
-              </Link>
-
-              <div className="flex items-center justify-center gap-3">
-                <GlobeIcon
-                  size={18}
-                  weight="regular"
-                  className="text-base-content/50"
-                />
-                <select
-                  value={language}
-                  onChange={(e) =>
-                    setLanguage(e.target.value as typeof language)
-                  }
-                  className="select select-bordered select-sm w-auto min-w-35 font-medium"
-                  aria-label={t('common.language.select')}
-                >
-                  {languages.map((lang) => (
-                    <option key={lang} value={lang}>
-                      {t(
-                        `common.language.${
-                          lang === 'ko'
-                            ? 'korean'
-                            : lang === 'en'
-                              ? 'english'
-                              : 'japanese'
-                        }`,
-                      )}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+        <div className="card w-full max-w-100 border border-base-200 bg-base-100 p-12 shadow-lg">
+          {/* Success Alert */}
+          <div className="alert alert-success mb-4">
+            <CheckCircle className="size-5" weight="fill" />
+            <span>{t('forgotPassword.success.title')}</span>
           </div>
+
+          {/* Header */}
+          <h1 className="mb-2 text-center font-bold text-3xl">
+            {t('forgotPassword.success.subtitle')}
+          </h1>
+          <p className="mb-6 text-center text-base-content/60 text-xs">
+            {t('forgotPassword.success.description', {
+              email: submittedEmail,
+            })}
+          </p>
+
+          <div className="alert alert-info mb-4">
+            <EnvelopeSimple className="size-5" weight="fill" />
+            <span className="text-left text-sm">
+              {t('forgotPassword.success.checkSpam')}
+            </span>
+          </div>
+
+          <Link
+            to="/login"
+            className="btn btn-block h-10 font-semibold text-[14px]"
+          >
+            {t('forgotPassword.backToLogin')}
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-base-200 to-base-300 p-4">
-      <div className="w-full max-w-md">
-        <div className="card bg-base-100 shadow-2xl">
-          <div className="card-body gap-6 p-8">
-            <div className="text-center">
-              <div className="mx-auto mb-4">
-                <EnvelopeIcon
-                  size={64}
-                  weight="duotone"
-                  className="text-primary"
-                />
-              </div>
-              <h1 className="mb-2 font-bold text-4xl tracking-tight">
-                {t('forgotPassword.title')}
-              </h1>
-              <p className="text-base-content/70 text-sm">
-                {t('forgotPassword.subtitle')}
-              </p>
-            </div>
+    <div
+      className="flex min-h-screen items-center justify-center bg-cover p-4"
+      style={{
+        backgroundImage:
+          'url(https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2071)',
+      }}
+    >
+      {/* Theme Toggle */}
+      <label className="swap swap-rotate btn btn-sm btn-circle absolute start-4 top-4">
+        <input
+          type="checkbox"
+          checked={theme === 'dark'}
+          onChange={toggleDarkMode}
+        />
+        <Sun className="swap-off size-4" weight="fill" />
+        <Moon className="swap-on size-4" weight="fill" />
+      </label>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              <div className="form-control">
-                <label htmlFor="email" className="label">
-                  <span className="label-text font-semibold">
-                    {t('forgotPassword.email.label')}
-                  </span>
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder={t('forgotPassword.email.placeholder')}
-                  className={`input input-bordered focus:input-primary w-full transition-all ${
-                    errors.email ? 'input-error' : ''
-                  }`}
-                  {...register('email')}
-                />
-                {errors.email && (
-                  <div className="label">
-                    <span className="label-text-alt text-error">
-                      {errors.email.message}
-                    </span>
-                  </div>
-                )}
-              </div>
+      <div className="card w-full max-w-100 border border-base-200 bg-base-100 p-12 shadow-lg">
+        {/* Header */}
+        <h1 className="mb-2 text-center font-bold text-3xl">
+          {t('forgotPassword.title')}
+        </h1>
+        <p className="mb-6 text-center text-base-content/60 text-xs">
+          {t('forgotPassword.subtitle')}
+        </p>
 
-              <button
-                type="submit"
-                className="btn btn-primary w-full text-base shadow-lg"
-                disabled={forgotPasswordMutation.isPending}
-              >
-                {forgotPasswordMutation.isPending ? (
-                  <>
-                    <span className="loading loading-spinner loading-sm" />
-                    {t('forgotPassword.submitting')}
-                  </>
-                ) : (
-                  t('forgotPassword.submit')
-                )}
-              </button>
-            </form>
-
-            <div className="divider my-2" />
-
-            <div className="text-center">
-              <Link
-                to="/login"
-                className="link link-hover link-primary font-medium text-sm"
-              >
-                {t('forgotPassword.backToLogin')}
-              </Link>
-            </div>
-
-            <div className="flex items-center justify-center gap-3">
-              <GlobeIcon
-                size={18}
-                weight="regular"
-                className="text-base-content/50"
+        {/* Recovery Form */}
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <div>
+            <label
+              className={`input input-bordered flex items-center gap-2 ${
+                errors.email ? 'input-error' : ''
+              }`}
+            >
+              <EnvelopeSimple className="size-5 opacity-70" />
+              <input
+                type="email"
+                className="grow"
+                placeholder={t('forgotPassword.email.placeholder')}
+                autoComplete="email"
+                {...register('email')}
               />
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value as typeof language)}
-                className="select select-bordered select-sm w-auto min-w-35 font-medium"
-                aria-label={t('common.language.select')}
-              >
-                {languages.map((lang) => (
-                  <option key={lang} value={lang}>
-                    {t(
-                      `common.language.${
-                        lang === 'ko'
-                          ? 'korean'
-                          : lang === 'en'
-                            ? 'english'
-                            : 'japanese'
-                      }`,
-                    )}
-                  </option>
-                ))}
-              </select>
-            </div>
+            </label>
+            {errors.email && (
+              <p className="mt-1 text-error text-sm">{errors.email.message}</p>
+            )}
           </div>
+
+          <button
+            type="submit"
+            className="btn btn-block mt-2 h-10 font-semibold text-[14px]"
+            disabled={forgotPasswordMutation.isPending}
+          >
+            {forgotPasswordMutation.isPending ? (
+              <>
+                <span className="loading loading-spinner loading-sm" />
+                {t('forgotPassword.submitting')}
+              </>
+            ) : (
+              t('forgotPassword.submit')
+            )}
+          </button>
+        </form>
+
+        {/* Footer */}
+        <div className="mt-6 text-center text-base-content/70 text-xs">
+          {t('forgotPassword.footer.rememberedPassword')}{' '}
+          <Link to="/login" className="link link-info font-medium">
+            {t('register.link.login')}
+          </Link>
         </div>
       </div>
     </div>

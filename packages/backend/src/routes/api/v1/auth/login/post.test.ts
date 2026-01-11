@@ -1,6 +1,6 @@
+import { describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import { generateUniqueEmail, setupTestServer } from '@/test-utils/index.js';
-import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 

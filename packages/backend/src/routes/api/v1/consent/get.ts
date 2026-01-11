@@ -1,9 +1,9 @@
 import z from 'zod/v4';
+import { parseScopesWithDescriptions } from '@/lib/scopes.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
-import { TAGS } from '@/lib/swagger-tags.js';
-import { parseScopesWithDescriptions } from '@/lib/scopes.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 /**

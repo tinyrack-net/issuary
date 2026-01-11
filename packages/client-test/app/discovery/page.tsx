@@ -137,7 +137,7 @@ export default async function DiscoveryPage() {
                   {config.id_token_signing_alg_values_supported.map((alg) => (
                     <span
                       key={alg}
-                      className="rounded bg-blue-100 px-2 py-1 font-mono text-xs text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                      className="rounded bg-blue-100 px-2 py-1 font-mono text-blue-800 text-xs dark:bg-blue-900 dark:text-blue-200"
                     >
                       {alg}
                     </span>
@@ -169,7 +169,7 @@ export default async function DiscoveryPage() {
                   {config.code_challenge_methods_supported?.map((method) => (
                     <span
                       key={method}
-                      className="rounded bg-purple-100 px-2 py-1 font-mono text-xs text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                      className="rounded bg-purple-100 px-2 py-1 font-mono text-purple-800 text-xs dark:bg-purple-900 dark:text-purple-200"
                     >
                       {method}
                     </span>

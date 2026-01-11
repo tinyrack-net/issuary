@@ -1,5 +1,5 @@
-import { r } from '@/schemas/response.js';
 import { AppConfigs } from '@/lib/config.js';
+import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {

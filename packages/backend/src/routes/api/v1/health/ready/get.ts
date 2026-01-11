@@ -1,5 +1,5 @@
-import { r } from '@/schemas/response.js';
 import { TAGS } from '@/lib/swagger-tags.js';
+import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 /**

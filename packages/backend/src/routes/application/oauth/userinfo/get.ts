@@ -1,8 +1,8 @@
 import z from 'zod/v4';
+import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { h } from '@/schemas/header.js';
 import { r } from '@/schemas/response.js';
-import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {

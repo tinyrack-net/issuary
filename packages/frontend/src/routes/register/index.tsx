@@ -1,12 +1,12 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { GlobeIcon } from '@phosphor-icons/react';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { EnvelopeSimple, Lock, Moon, Sun } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { useLanguage } from '@/hooks/use-language';
+import { useTheme } from '@/hooks/use-theme';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
@@ -35,7 +35,7 @@ function Register() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { language, languages, setLanguage } = useLanguage();
+  const { theme, toggleDarkMode } = useTheme();
   const search = Route.useSearch();
 
   // Fetch available OAuth providers
@@ -105,7 +105,7 @@ function Register() {
       email: '',
       password: '',
     },
-    resolver: zodResolver(registerSchema),
+    resolver: standardSchemaResolver(registerSchema),
   });
 
   const onSubmit = async (values: RegisterFormValues) => {
@@ -122,151 +122,136 @@ function Register() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-base-200 to-base-300 p-4">
-      <div className="w-full max-w-md">
-        <div className="card bg-base-100 shadow-2xl">
-          <div className="card-body gap-6 p-8">
-            <div className="text-center">
-              <h1 className="mb-2 font-bold text-4xl tracking-tight">
-                {t('register.title')}
-              </h1>
-              <p className="text-base-content/70 text-sm">
-                {t('register.subtitle')}
-              </p>
+    <div
+      className="flex min-h-screen items-center justify-center bg-cover p-4"
+      style={{
+        backgroundImage:
+          'url(https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2071)',
+      }}
+    >
+      {/* Theme Toggle */}
+      <label className="swap swap-rotate btn btn-sm btn-circle absolute start-4 top-4">
+        <input
+          type="checkbox"
+          checked={theme === 'dark'}
+          onChange={toggleDarkMode}
+        />
+        <Sun className="swap-off size-4" weight="fill" />
+        <Moon className="swap-on size-4" weight="fill" />
+      </label>
+
+      <div className="card w-full max-w-100 border border-base-200 bg-base-100 p-12 shadow-lg">
+        {/* Header */}
+        <h1 className="mb-2 text-center font-bold text-3xl">
+          {t('register.title')}
+        </h1>
+        <p className="mb-6 text-center text-base-content/60 text-xs">
+          {t('register.subtitle')}
+        </p>
+
+        {/* Social Signup Buttons */}
+        {oauthProviders.length > 0 && (
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              {oauthProviders.map((provider) => (
+                <a
+                  key={provider.name}
+                  href={getOAuthConnectUrl(provider.name, 'register')}
+                  className="btn border-base-300"
+                >
+                  {provider.icon_url && (
+                    <img
+                      src={provider.icon_url}
+                      alt={provider.display_name}
+                      className="h-4 w-4"
+                    />
+                  )}
+                  {provider.display_name}
+                </a>
+              ))}
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              <div className="form-control">
-                <label htmlFor="email" className="label">
-                  <span className="label-text font-semibold">
-                    {t('register.email.label')}
-                  </span>
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder={t('register.email.placeholder')}
-                  className={`input input-bordered focus:input-primary w-full transition-all ${
-                    errors.email ? 'input-error' : ''
-                  }`}
-                  {...register('email')}
-                />
-                {errors.email && (
-                  <div className="label">
-                    <span className="label-text-alt text-error">
-                      {errors.email.message}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="form-control">
-                <label htmlFor="password" className="label">
-                  <span className="label-text font-semibold">
-                    {t('register.password.label')}
-                  </span>
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  placeholder={t('register.password.placeholder')}
-                  className={`input input-bordered focus:input-primary w-full transition-all ${
-                    errors.password ? 'input-error' : ''
-                  }`}
-                  {...register('password')}
-                />
-                {errors.password && (
-                  <div className="label">
-                    <span className="label-text-alt text-error">
-                      {errors.password.message}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-primary w-full text-base shadow-lg"
-                disabled={registerMutation.isPending}
-              >
-                {registerMutation.isPending ? (
-                  <>
-                    <span className="loading loading-spinner loading-sm" />
-                    {t('register.submitting')}
-                  </>
-                ) : (
-                  t('register.submit')
-                )}
-              </button>
-            </form>
-
-            {/* OAuth Providers */}
-            {oauthProviders.length > 0 && (
-              <>
-                <div className="divider my-2">{t('oauth.divider')}</div>
-                <div className="flex flex-col gap-2">
-                  {oauthProviders.map((provider) => (
-                    <a
-                      key={provider.name}
-                      href={getOAuthConnectUrl(provider.name, 'register')}
-                      className="btn btn-outline w-full"
-                    >
-                      {provider.icon_url && (
-                        <img
-                          src={provider.icon_url}
-                          alt={provider.display_name}
-                          className="mr-2 h-5 w-5"
-                        />
-                      )}
-                      {t('oauth.registerWith', {
-                        provider: provider.display_name,
-                      })}
-                    </a>
-                  ))}
-                </div>
-              </>
-            )}
-
-            <div className="divider my-2" />
-
-            <div className="text-center">
-              <Link
-                to="/login"
-                search={extractOAuthParams(search)}
-                className="link link-hover link-primary font-medium text-sm"
-              >
-                {t('register.link.login')}
-              </Link>
+            {/* Divider */}
+            <div className="my-4 flex items-center">
+              <div className="h-px flex-1 bg-base-200" />
+              <span className="px-3 text-base-content/60 text-sm">
+                {t('register.divider.orSignUpWithEmail')}
+              </span>
+              <div className="h-px flex-1 bg-base-200" />
             </div>
+          </>
+        )}
 
-            <div className="flex items-center justify-center gap-3">
-              <GlobeIcon
-                size={18}
-                weight="regular"
-                className="text-base-content/50"
+        {/* Signup Form */}
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <div>
+            <label
+              className={`input input-bordered flex items-center gap-2 ${
+                errors.email ? 'input-error' : ''
+              }`}
+            >
+              <EnvelopeSimple className="size-5 opacity-70" />
+              <input
+                type="email"
+                className="grow"
+                placeholder={t('register.email.placeholder')}
+                autoComplete="email"
+                {...register('email')}
               />
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value as typeof language)}
-                className="select select-sm select-bordered w-auto min-w-35 font-medium"
-                aria-label={t('common.language.select')}
-              >
-                {languages.map((lang) => (
-                  <option key={lang} value={lang}>
-                    {t(
-                      `common.language.${
-                        lang === 'ko'
-                          ? 'korean'
-                          : lang === 'en'
-                            ? 'english'
-                            : 'japanese'
-                      }`,
-                    )}
-                  </option>
-                ))}
-              </select>
-            </div>
+            </label>
+            {errors.email && (
+              <p className="mt-1 text-error text-sm">{errors.email.message}</p>
+            )}
           </div>
+
+          <div>
+            <label
+              className={`input input-bordered flex items-center gap-2 ${
+                errors.password ? 'input-error' : ''
+              }`}
+            >
+              <Lock className="size-5 opacity-70" />
+              <input
+                type="password"
+                className="grow"
+                placeholder={t('register.password.placeholder')}
+                autoComplete="new-password"
+                {...register('password')}
+              />
+            </label>
+            {errors.password && (
+              <p className="mt-1 text-error text-sm">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-block mt-2 h-10 font-semibold text-[14px]"
+            disabled={registerMutation.isPending}
+          >
+            {registerMutation.isPending ? (
+              <>
+                <span className="loading loading-spinner loading-sm" />
+                {t('register.submitting')}
+              </>
+            ) : (
+              t('register.submit')
+            )}
+          </button>
+        </form>
+
+        {/* Footer */}
+        <div className="mt-6 text-center text-base-content/70 text-xs">
+          {t('register.footer.haveAccount')}{' '}
+          <Link
+            to="/login"
+            search={extractOAuthParams(search)}
+            className="link link-info font-medium"
+          >
+            {t('register.link.login')}
+          </Link>
         </div>
       </div>
     </div>

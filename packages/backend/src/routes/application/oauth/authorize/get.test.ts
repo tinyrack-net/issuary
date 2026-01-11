@@ -92,27 +92,27 @@ async function getAuthorizationCodeWithConsent(
     code_challenge?: string;
     code_challenge_method?: 'S256' | 'plain';
   } = {
-    client_id: params['client_id'] || TEST_OAUTH_CLIENT.clientId,
-    redirect_uri: params['redirect_uri'] || TEST_OAUTH_CLIENT.redirectUri,
+    client_id: params.client_id || TEST_OAUTH_CLIENT.clientId,
+    redirect_uri: params.redirect_uri || TEST_OAUTH_CLIENT.redirectUri,
   };
 
-  if (params['response_type']) {
-    consentParams.response_type = params['response_type'];
+  if (params.response_type) {
+    consentParams.response_type = params.response_type;
   }
-  if (params['scope']) {
-    consentParams.scope = params['scope'];
+  if (params.scope) {
+    consentParams.scope = params.scope;
   }
-  if (params['state']) {
-    consentParams.state = params['state'];
+  if (params.state) {
+    consentParams.state = params.state;
   }
-  if (params['nonce']) {
-    consentParams.nonce = params['nonce'];
+  if (params.nonce) {
+    consentParams.nonce = params.nonce;
   }
-  if (params['code_challenge']) {
-    consentParams.code_challenge = params['code_challenge'];
+  if (params.code_challenge) {
+    consentParams.code_challenge = params.code_challenge;
   }
-  if (params['code_challenge_method']) {
-    consentParams.code_challenge_method = params['code_challenge_method'] as
+  if (params.code_challenge_method) {
+    consentParams.code_challenge_method = params.code_challenge_method as
       | 'S256'
       | 'plain';
   }
@@ -545,7 +545,7 @@ describe('GET /application/oauth/authorize', () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
       const paramsWithoutState = { ...validParams };
-      delete (paramsWithoutState as Record<string, unknown>)['state'];
+      delete (paramsWithoutState as Record<string, unknown>).state;
 
       const { code, location, statusCode } =
         await getAuthorizationCodeWithConsent(

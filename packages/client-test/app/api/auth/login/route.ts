@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
-import { generatePKCEPair, generateState, generateNonce } from '@/lib/pkce';
 import { buildAuthorizationUrl } from '@/lib/oidc-client';
+import { generateNonce, generatePKCEPair, generateState } from '@/lib/pkce';
 import { saveAuthState } from '@/lib/token-storage';
 
 export async function GET() {

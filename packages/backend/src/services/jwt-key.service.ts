@@ -340,7 +340,7 @@ export class JwtKeyService {
 
     // Return JWK with required fields for RS256
     return {
-      kty: jwk.kty!,
+      kty: jwk.kty ?? 'RSA',
       use: 'sig',
       kid: key.kid,
       alg: key.algorithm,
@@ -428,7 +428,7 @@ export default fastifyPlugin(
     }
 
     // Clear cache after bootstrap
-    fastify.jwtKeyService['activeKeyCache'] = null;
+    fastify.jwtKeyService.activeKeyCache = null;
 
     // Optional: Set up periodic rotation check
     const rotationEnabled = AppConfigs.app.jwt_key_rotation_enabled ?? true;

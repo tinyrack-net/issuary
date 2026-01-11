@@ -1,12 +1,19 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircleIcon, GlobeIcon, LockIcon } from '@phosphor-icons/react';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import {
+  CheckCircle,
+  Key,
+  Lock,
+  LockKey,
+  Moon,
+  Sun,
+} from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { useLanguage } from '@/hooks/use-language';
+import { useTheme } from '@/hooks/use-theme';
 import { resetPasswordMutationOptions } from '@/queries/password-reset';
 
 const SearchSchema = z.object({
@@ -27,7 +34,7 @@ type ResetPasswordFormValues = {
 function ResetPassword() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { language, languages, setLanguage } = useLanguage();
+  const { theme, toggleDarkMode } = useTheme();
   const search = Route.useSearch();
   const { token: queryToken } = search;
   const [resetSuccess, setResetSuccess] = useState(false);
@@ -70,7 +77,7 @@ function ResetPassword() {
       password: '',
       confirmPassword: '',
     },
-    resolver: zodResolver(resetPasswordSchema),
+    resolver: standardSchemaResolver(resetPasswordSchema),
   });
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
@@ -103,228 +110,177 @@ function ResetPassword() {
 
   if (resetSuccess) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-base-200 to-base-300 p-4">
-        <div className="w-full max-w-md">
-          <div className="card bg-base-100 shadow-2xl">
-            <div className="card-body gap-6 p-8 text-center">
-              <div className="mx-auto">
-                <CheckCircleIcon
-                  size={80}
-                  weight="duotone"
-                  className="text-success"
-                />
-              </div>
-              <div>
-                <h1 className="mb-2 font-bold text-3xl text-success tracking-tight">
-                  {t('resetPassword.success.title')}
-                </h1>
-                <p className="mb-1 font-semibold text-base-content text-lg">
-                  {t('resetPassword.success.subtitle')}
-                </p>
-                <p className="text-base-content/70 text-sm">
-                  {t('resetPassword.success.description')}
-                </p>
-              </div>
+      <div
+        className="flex min-h-screen items-center justify-center bg-cover p-4"
+        style={{
+          backgroundImage:
+            'url(https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2071)',
+        }}
+      >
+        {/* Theme Toggle */}
+        <label className="swap swap-rotate btn btn-sm btn-circle absolute start-4 top-4">
+          <input
+            type="checkbox"
+            checked={theme === 'dark'}
+            onChange={toggleDarkMode}
+          />
+          <Sun className="swap-off size-4" weight="fill" />
+          <Moon className="swap-on size-4" weight="fill" />
+        </label>
 
-              <button
-                type="button"
-                onClick={() => navigate({ to: '/login' })}
-                className="btn btn-primary w-full text-base shadow-lg"
-              >
-                {t('resetPassword.success.goToLogin')}
-              </button>
-
-              <div className="flex items-center justify-center gap-3">
-                <GlobeIcon
-                  size={18}
-                  weight="regular"
-                  className="text-base-content/50"
-                />
-                <select
-                  value={language}
-                  onChange={(e) =>
-                    setLanguage(e.target.value as typeof language)
-                  }
-                  className="select select-bordered select-sm w-auto min-w-35 font-medium"
-                  aria-label={t('common.language.select')}
-                >
-                  {languages.map((lang) => (
-                    <option key={lang} value={lang}>
-                      {t(
-                        `common.language.${
-                          lang === 'ko'
-                            ? 'korean'
-                            : lang === 'en'
-                              ? 'english'
-                              : 'japanese'
-                        }`,
-                      )}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+        <div className="card w-full max-w-100 border border-base-200 bg-base-100 p-12 shadow-lg">
+          {/* Success Alert */}
+          <div className="alert alert-success mb-4">
+            <CheckCircle className="size-5" weight="fill" />
+            <span>{t('resetPassword.success.title')}</span>
           </div>
+
+          {/* Header */}
+          <h1 className="mb-2 text-center font-bold text-3xl">
+            {t('resetPassword.success.subtitle')}
+          </h1>
+          <p className="mb-6 text-center text-base-content/60 text-xs">
+            {t('resetPassword.success.description')}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => navigate({ to: '/login' })}
+            className="btn btn-block h-10 font-semibold text-[14px]"
+          >
+            {t('resetPassword.success.goToLogin')}
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-base-200 to-base-300 p-4">
-      <div className="w-full max-w-md">
-        <div className="card bg-base-100 shadow-2xl">
-          <div className="card-body gap-6 p-8">
-            <div className="text-center">
-              <div className="mx-auto mb-4">
-                <LockIcon size={64} weight="duotone" className="text-primary" />
-              </div>
-              <h1 className="mb-2 font-bold text-4xl tracking-tight">
-                {t('resetPassword.title')}
-              </h1>
-              <p className="text-base-content/70 text-sm">
-                {t('resetPassword.subtitle')}
-              </p>
-            </div>
+    <div
+      className="flex min-h-screen items-center justify-center bg-cover p-4"
+      style={{
+        backgroundImage:
+          'url(https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2071)',
+      }}
+    >
+      {/* Theme Toggle */}
+      <label className="swap swap-rotate btn btn-sm btn-circle absolute start-4 top-4">
+        <input
+          type="checkbox"
+          checked={theme === 'dark'}
+          onChange={toggleDarkMode}
+        />
+        <Sun className="swap-off size-4" weight="fill" />
+        <Moon className="swap-on size-4" weight="fill" />
+      </label>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              {/* Token field - hidden if provided via URL */}
-              {!queryToken && (
-                <div className="form-control">
-                  <label htmlFor="token" className="label">
-                    <span className="label-text font-semibold">
-                      {t('resetPassword.token.label')}
-                    </span>
-                  </label>
-                  <input
-                    id="token"
-                    type="text"
-                    placeholder={t('resetPassword.token.placeholder')}
-                    className={`input input-bordered focus:input-primary w-full font-mono transition-all ${
-                      errors.token ? 'input-error' : ''
-                    }`}
-                    {...register('token')}
-                  />
-                  {errors.token && (
-                    <div className="label">
-                      <span className="label-text-alt text-error">
-                        {errors.token.message}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
+      <div className="card w-full max-w-100 border border-base-200 bg-base-100 p-12 shadow-lg">
+        {/* Header */}
+        <h1 className="mb-2 text-center font-bold text-3xl">
+          {t('resetPassword.title')}
+        </h1>
+        <p className="mb-6 text-center text-base-content/60 text-xs">
+          {t('resetPassword.subtitle')}
+        </p>
 
-              {/* Show error for token even when hidden */}
-              {queryToken && errors.token && (
-                <div className="alert alert-error">
-                  <span className="text-sm">{errors.token.message}</span>
-                </div>
-              )}
-
-              <div className="form-control">
-                <label htmlFor="password" className="label">
-                  <span className="label-text font-semibold">
-                    {t('resetPassword.password.label')}
-                  </span>
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  placeholder={t('resetPassword.password.placeholder')}
-                  className={`input input-bordered focus:input-primary w-full transition-all ${
-                    errors.password ? 'input-error' : ''
-                  }`}
-                  {...register('password')}
-                />
-                {errors.password && (
-                  <div className="label">
-                    <span className="label-text-alt text-error">
-                      {errors.password.message}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="form-control">
-                <label htmlFor="confirmPassword" className="label">
-                  <span className="label-text font-semibold">
-                    {t('resetPassword.confirmPassword.label')}
-                  </span>
-                </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder={t('resetPassword.confirmPassword.placeholder')}
-                  className={`input input-bordered focus:input-primary w-full transition-all ${
-                    errors.confirmPassword ? 'input-error' : ''
-                  }`}
-                  {...register('confirmPassword')}
-                />
-                {errors.confirmPassword && (
-                  <div className="label">
-                    <span className="label-text-alt text-error">
-                      {errors.confirmPassword.message}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-primary w-full text-base shadow-lg"
-                disabled={resetPasswordMutation.isPending}
+        {/* Reset Password Form */}
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          {/* Token field - hidden if provided via URL */}
+          {!queryToken && (
+            <div>
+              <label
+                className={`input input-bordered flex items-center gap-2 ${
+                  errors.token ? 'input-error' : ''
+                }`}
               >
-                {resetPasswordMutation.isPending ? (
-                  <>
-                    <span className="loading loading-spinner loading-sm" />
-                    {t('resetPassword.submitting')}
-                  </>
-                ) : (
-                  t('resetPassword.submit')
-                )}
-              </button>
-            </form>
-
-            <div className="divider my-2" />
-
-            <div className="text-center">
-              <Link
-                to="/login"
-                className="link link-hover link-primary font-medium text-sm"
-              >
-                {t('resetPassword.backToLogin')}
-              </Link>
+                <Key className="size-5 opacity-70" />
+                <input
+                  type="text"
+                  className="grow font-mono"
+                  placeholder={t('resetPassword.token.placeholder')}
+                  {...register('token')}
+                />
+              </label>
+              {errors.token && (
+                <p className="mt-1 text-error text-sm">
+                  {errors.token.message}
+                </p>
+              )}
             </div>
+          )}
 
-            <div className="flex items-center justify-center gap-3">
-              <GlobeIcon
-                size={18}
-                weight="regular"
-                className="text-base-content/50"
+          {/* Show error for token even when hidden */}
+          {queryToken && errors.token && (
+            <div className="alert alert-error">
+              <span className="text-sm">{errors.token.message}</span>
+            </div>
+          )}
+
+          <div>
+            <label
+              className={`input input-bordered flex items-center gap-2 ${
+                errors.password ? 'input-error' : ''
+              }`}
+            >
+              <Lock className="size-5 opacity-70" />
+              <input
+                type="password"
+                className="grow"
+                placeholder={t('resetPassword.password.placeholder')}
+                autoComplete="new-password"
+                {...register('password')}
               />
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value as typeof language)}
-                className="select select-bordered select-sm w-auto min-w-35 font-medium"
-                aria-label={t('common.language.select')}
-              >
-                {languages.map((lang) => (
-                  <option key={lang} value={lang}>
-                    {t(
-                      `common.language.${
-                        lang === 'ko'
-                          ? 'korean'
-                          : lang === 'en'
-                            ? 'english'
-                            : 'japanese'
-                      }`,
-                    )}
-                  </option>
-                ))}
-              </select>
-            </div>
+            </label>
+            {errors.password && (
+              <p className="mt-1 text-error text-sm">
+                {errors.password.message}
+              </p>
+            )}
           </div>
+
+          <div>
+            <label
+              className={`input input-bordered flex items-center gap-2 ${
+                errors.confirmPassword ? 'input-error' : ''
+              }`}
+            >
+              <LockKey className="size-5 opacity-70" />
+              <input
+                type="password"
+                className="grow"
+                placeholder={t('resetPassword.confirmPassword.placeholder')}
+                autoComplete="new-password"
+                {...register('confirmPassword')}
+              />
+            </label>
+            {errors.confirmPassword && (
+              <p className="mt-1 text-error text-sm">
+                {errors.confirmPassword.message}
+              </p>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-block mt-2 h-10 font-semibold text-[14px]"
+            disabled={resetPasswordMutation.isPending}
+          >
+            {resetPasswordMutation.isPending ? (
+              <>
+                <span className="loading loading-spinner loading-sm" />
+                {t('resetPassword.submitting')}
+              </>
+            ) : (
+              t('resetPassword.submit')
+            )}
+          </button>
+        </form>
+
+        {/* Footer */}
+        <div className="mt-6 text-center text-base-content/70 text-xs">
+          <Link to="/login" className="link link-info font-medium">
+            {t('resetPassword.backToLogin')}
+          </Link>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
-import { setupTestServer } from '@/test-utils/index.js';
 import { describe, expect, test } from 'vitest';
+import { setupTestServer } from '@/test-utils/index.js';
 
 const app = setupTestServer();
 

@@ -1,11 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import {
   createAuthenticatedSession,
-  exchangeCodeForTokens,
   getAccessToken,
-  getAuthorizationCode,
-  grantConsent,
   getUserInfo,
+  grantConsent,
   setupTestServer,
   TEST_OAUTH_CLIENT,
   TEST_USER,
@@ -361,7 +359,7 @@ describe('GET /application/oauth/userinfo', () => {
       const json = res.json();
 
       // All values should be defined (not null/undefined)
-      for (const [key, value] of Object.entries(json)) {
+      for (const [_key, value] of Object.entries(json)) {
         expect(value).not.toBeNull();
         expect(value).not.toBeUndefined();
       }
@@ -395,7 +393,7 @@ describe('GET /application/oauth/userinfo', () => {
       for (const testCase of testCases) {
         const headers: Record<string, string> = {};
         if (testCase.authorization) {
-          headers['authorization'] = testCase.authorization;
+          headers.authorization = testCase.authorization;
         }
 
         const res = await app.inject({
