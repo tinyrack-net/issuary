@@ -1,8 +1,8 @@
+import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
-import z from 'zod/v4';
 
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({

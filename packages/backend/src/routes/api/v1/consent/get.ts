@@ -58,13 +58,7 @@ export default (fastify: FastifyWithZodInstance) => {
       const { client_id, scope } = req.query;
 
       // Check if user is logged in
-      const userSession = req.session.get('user');
-      if (!userSession?.id) {
-        return res.status(401).send({
-          code: 'UNAUTHORIZED',
-          message: 'User must be logged in to view consent.',
-        });
-      }
+      const userSession = await req.auth.verify();
 
       // Fetch user information
       const user = await fastify.userService.verifyUserById(userSession.id);

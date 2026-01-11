@@ -28,10 +28,7 @@ export default (fastify: FastifyWithZodInstance) =>
     },
     handler: async (req, res) => {
       // Check if user is logged in
-      const userSession = req.session.get('user');
-      if (!userSession) {
-        throw new e.Unauthorized.Error();
-      }
+      const userSession = await req.auth.verify();
 
       const { provider } = req.params;
 

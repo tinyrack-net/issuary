@@ -1,6 +1,6 @@
+import z from 'zod';
 import { e } from '@/schemas/error.js';
 import type { FastifyWithZodInstance } from '@/server.js';
-import z from 'zod';
 
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
@@ -33,10 +33,7 @@ export default (fastify: FastifyWithZodInstance) =>
     },
     handler: async (req, res) => {
       // Check if user is logged in
-      const userSession = req.session.get('user');
-      if (!userSession) {
-        throw new e.Unauthorized.Error();
-      }
+      const userSession = await req.auth.verify();
 
       // Get linked accounts
       const accounts = await fastify.oauthConnectService.getLinkedAccounts(

@@ -1,14 +1,19 @@
+import fastifyPlugin from 'fastify-plugin';
+import type z from 'zod';
 import type { UserEntity } from '@/entities/user.entity.js';
 import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
-import fastifyPlugin from 'fastify-plugin';
-import type z from 'zod';
 
 declare module 'fastify' {
   interface FastifyInstance {
     userService: UserService;
+  }
+  interface FastifyRequest {
+    auth: {
+      verify: () => Promise<z.infer<typeof r.UserSession>>;
+    };
   }
 }
 
@@ -124,6 +129,19 @@ export default fastifyPlugin(
   async (fastify) => {
     const userService = new UserService(fastify.mikro);
     fastify.decorate('userService', userService);
+
+    fastify.addHook('onRequest', async (req) => {
+      req.auth = {
+        verify: async () => {
+          const userId = req.session.get('user')?.id;
+          if (!userId) {
+            throw new e.Unauthorized.Error();
+          }
+          const user = await userService.verifyUserById(userId);
+          return user;
+        },
+      };
+    });
   },
   {
     name: 'user-service-plugin',

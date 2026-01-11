@@ -84,13 +84,7 @@ export default (fastify: FastifyWithZodInstance) => {
       } = req.body;
 
       // Check if user is logged in
-      const userSession = req.session.get('user');
-      if (!userSession?.id) {
-        return res.status(401).send({
-          code: 'UNAUTHORIZED',
-          message: 'User must be logged in to submit consent.',
-        });
-      }
+      const userSession = await req.auth.verify();
 
       // If user denied consent, redirect back with error
       if (decision === 'deny') {

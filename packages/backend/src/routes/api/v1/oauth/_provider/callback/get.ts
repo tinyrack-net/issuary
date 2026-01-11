@@ -91,10 +91,7 @@ export default (fastify: FastifyWithZodInstance) =>
       // Handle based on mode
       if (oauthSession.mode === 'link') {
         // Link mode: link OAuth account to existing user
-        const userSession = req.session.get('user');
-        if (!userSession) {
-          throw new e.Unauthorized.Error();
-        }
+        const userSession = await req.auth.verify();
 
         await fastify.oauthConnectService.linkOAuthAccount(
           userSession.id,

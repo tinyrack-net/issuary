@@ -17,19 +17,17 @@ export default (fastify: FastifyWithZodInstance) =>
       },
     },
     handler: async (req, res) => {
-      const session = req.session.get('user');
-
-      if (session) {
-        const user = await fastify.userService.verifyUserById(session.id);
+      try {
+        const user = await req.auth.verify();
         return res.status(200).send({
           user: {
-            id: session.id,
+            id: user.id,
             managed: user.managed,
             email: user.email,
             email_verified: user.email_verified,
           },
         });
-      } else {
+      } catch {
         return res.status(200).send({
           user: null,
         });
