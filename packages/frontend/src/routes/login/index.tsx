@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { GlobeIcon } from '@phosphor-icons/react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -10,6 +10,10 @@ import { useLanguage } from '@/hooks/use-language';
 import { extractOAuthParams, OAuthSearchSchema } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise';
 import { loginMutationOptions } from '@/queries/login';
+import {
+  getOAuthConnectUrl,
+  oauthProvidersQueryOptions,
+} from '@/queries/oauth';
 import { getSessionQueryOptions } from '@/queries/session';
 
 export const SearchSchema = OAuthSearchSchema;
@@ -30,6 +34,10 @@ function Login() {
   const queryClient = useQueryClient();
   const { language, languages, setLanguage } = useLanguage();
   const search = Route.useSearch();
+
+  // Fetch available OAuth providers
+  const { data: oauthProvidersData } = useQuery(oauthProvidersQueryOptions);
+  const oauthProviders = oauthProvidersData?.providers || [];
 
   const loginSchema = useMemo(
     () =>
@@ -201,6 +209,33 @@ function Login() {
                 )}
               </button>
             </form>
+
+            {/* OAuth Providers */}
+            {oauthProviders.length > 0 && (
+              <>
+                <div className="divider my-2">{t('oauth.divider')}</div>
+                <div className="flex flex-col gap-2">
+                  {oauthProviders.map((provider) => (
+                    <a
+                      key={provider.name}
+                      href={getOAuthConnectUrl(provider.name, 'login')}
+                      className="btn btn-outline w-full"
+                    >
+                      {provider.icon_url && (
+                        <img
+                          src={provider.icon_url}
+                          alt={provider.display_name}
+                          className="mr-2 h-5 w-5"
+                        />
+                      )}
+                      {t('oauth.loginWith', {
+                        provider: provider.display_name,
+                      })}
+                    </a>
+                  ))}
+                </div>
+              </>
+            )}
 
             {/* Divider */}
             <div className="divider my-2" />

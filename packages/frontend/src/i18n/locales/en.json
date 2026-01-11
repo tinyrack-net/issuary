@@ -103,5 +103,22 @@
   "consent.scope.email": "Access your email address",
   "consent.scope.address": "Access your address information",
   "consent.scope.phone": "Access your phone number",
-  "consent.scope.offline_access": "Maintain access when you are not present"
+  "consent.scope.offline_access": "Maintain access when you are not present",
+  "oauth.divider": "or continue with",
+  "oauth.loginWith": "Continue with {{provider}}",
+  "oauth.registerWith": "Sign up with {{provider}}",
+  "oauth.linkWith": "Link {{provider}}",
+  "oauth.error.failed": "OAuth login failed. Please try again.",
+  "oauth.error.emailNotVerified": "The email from the OAuth provider is not verified.",
+  "oauth.error.emailConflict": "An account with this email already exists. Please log in and link your account.",
+  "oauth.error.accountAlreadyLinked": "This OAuth account is already linked to another user.",
+  "profile.linkedAccounts.title": "Linked Accounts",
+  "profile.linkedAccounts.description": "Connect your account with third-party services",
+  "profile.linkedAccounts.link": "Link",
+  "profile.linkedAccounts.unlink": "Unlink",
+  "profile.linkedAccounts.unlinking": "Unlinking...",
+  "profile.linkedAccounts.linkedAt": "Linked on {{date}}",
+  "profile.linkedAccounts.unlinkConfirm": "Are you sure you want to unlink {{provider}}?",
+  "profile.linkedAccounts.unlinkError": "Cannot unlink. You need at least one way to log in.",
+  "profile.linkedAccounts.empty": "No OAuth providers available"
 }

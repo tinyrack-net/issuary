@@ -7,6 +7,13 @@ declare module '@fastify/secure-session' {
     user?: {
       id: string;
     };
+    oauth?: {
+      state: string;
+      codeVerifier: string;
+      providerName: string;
+      mode: 'login' | 'register' | 'link';
+      returnUrl?: string | undefined;
+    };
   }
 }
 

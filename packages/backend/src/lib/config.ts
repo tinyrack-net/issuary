@@ -93,20 +93,249 @@ export const AppConfigDatabase = z.discriminatedUnion('type', [
 
 export type AppConfigDatabase = z.infer<typeof AppConfigDatabase>;
 
-export const AppConfigAuthenticationMethod = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal('password'),
-    enabled: z.boolean().default(true),
-  }),
-  z.object({
-    type: z.literal('github'),
-    enabled: z.boolean().default(false),
-  }),
-  z.object({
+/**
+ * Well-known OAuth providers with pre-configured endpoints.
+ * Users only need to provide client_id and client_secret for these.
+ */
+export const WELL_KNOWN_OAUTH_PROVIDERS = {
+  google: {
+    authorization_url: 'https://accounts.google.com/o/oauth2/v2/auth',
+    token_url: 'https://oauth2.googleapis.com/token',
+    userinfo_url: 'https://openidconnect.googleapis.com/v1/userinfo',
+    default_scopes: ['openid', 'email', 'profile'],
+    // Google returns: sub, email, email_verified, name, picture, given_name, family_name
+    userinfo_mapping: {
+      id: 'sub',
+      email: 'email',
+      email_verified: 'email_verified',
+      name: 'name',
+      picture: 'picture',
+    },
+  },
+  github: {
+    authorization_url: 'https://github.com/login/oauth/authorize',
+    token_url: 'https://github.com/login/oauth/access_token',
+    userinfo_url: 'https://api.github.com/user',
+    email_url: 'https://api.github.com/user/emails', // GitHub requires separate call for emails
+    default_scopes: ['user:email'],
+    // GitHub returns: id, login, name, email, avatar_url
+    userinfo_mapping: {
+      id: 'id',
+      email: 'email',
+      name: 'name',
+      picture: 'avatar_url',
+    },
+  },
+  apple: {
+    authorization_url: 'https://appleid.apple.com/auth/authorize',
+    token_url: 'https://appleid.apple.com/auth/token',
+    // Apple uses ID token, not userinfo endpoint
+    userinfo_url: null,
+    default_scopes: ['openid', 'email', 'name'],
+    response_mode: 'form_post',
+    userinfo_mapping: {
+      id: 'sub',
+      email: 'email',
+      email_verified: 'email_verified',
+    },
+  },
+} as const;
+
+export type WellKnownOAuthProvider = keyof typeof WELL_KNOWN_OAUTH_PROVIDERS;
+
+/**
+ * Password-based authentication method configuration.
+ */
+export const AppConfigAuthMethodPassword = z.object({
+  type: z.literal('password'),
+  enabled: z.boolean().default(true),
+  email_verification: z.boolean().default(true),
+  totp: z
+    .object({
+      enabled: z.boolean().default(false),
+      required: z.boolean().default(false),
+    })
+    .optional(),
+  passkey: z
+    .object({
+      enabled: z.boolean().default(false),
+      required: z.boolean().default(false),
+    })
+    .optional(),
+});
+
+export type AppConfigAuthMethodPassword = z.infer<
+  typeof AppConfigAuthMethodPassword
+>;
+
+/**
+ * OAuth-based authentication method configuration.
+ * Supports both well-known providers (google, github, apple) and custom OAuth providers.
+ */
+export const AppConfigAuthMethodOAuth = z
+  .object({
     type: z.literal('oauth'),
     enabled: z.boolean().default(false),
-  }),
+    /** Display name for the provider (shown in UI) */
+    display_name: z.string().optional(),
+    /** Icon URL for the provider (shown in UI) */
+    icon_url: z.string().optional(),
+    /** Well-known provider name (google, github, apple) - auto-fills URLs if set */
+    provider: z
+      .enum(['google', 'github', 'apple'] as const)
+      .optional()
+      .describe('Well-known provider for auto-configuration'),
+    /** OAuth client ID */
+    client_id: z.string().min(1),
+    /** OAuth client secret */
+    client_secret: z.string().min(1),
+    /** Authorization endpoint URL (optional if provider is set) */
+    authorization_url: z.url().optional(),
+    /** Token endpoint URL (optional if provider is set) */
+    token_url: z.url().optional(),
+    /** UserInfo endpoint URL (optional if provider is set, null for Apple) */
+    userinfo_url: z.url().nullish(),
+    /** Additional URL for fetching email (e.g., GitHub) */
+    email_url: z.url().optional(),
+    /** OAuth scopes to request */
+    scopes: z.array(z.string()).optional(),
+    /** Response mode (e.g., 'form_post' for Apple) */
+    response_mode: z.enum(['query', 'fragment', 'form_post']).optional(),
+    /**
+     * Email conflict resolution strategy:
+     * - 'auto_link': Automatically link if email matches existing verified user
+     * - 'require_link': Require explicit account linking if email exists
+     */
+    email_conflict_strategy: z
+      .enum(['auto_link', 'require_link'])
+      .default('auto_link'),
+    /** Mapping from provider's userinfo response to standard fields */
+    userinfo_mapping: z
+      .object({
+        id: z.string().default('sub'),
+        email: z.string().default('email'),
+        email_verified: z.string().optional(),
+        name: z.string().optional(),
+        picture: z.string().optional(),
+      })
+      .optional(),
+  })
+  .refine(
+    (data) => {
+      // If no well-known provider, authorization_url and token_url are required
+      if (!data.provider) {
+        return !!data.authorization_url && !!data.token_url;
+      }
+      return true;
+    },
+    {
+      message:
+        'authorization_url and token_url are required for custom OAuth providers',
+    },
+  );
+
+export type AppConfigAuthMethodOAuth = z.infer<typeof AppConfigAuthMethodOAuth>;
+
+/**
+ * Authentication method configuration - supports password and OAuth methods.
+ */
+export const AppConfigAuthenticationMethod = z.discriminatedUnion('type', [
+  AppConfigAuthMethodPassword,
+  AppConfigAuthMethodOAuth,
 ]);
+
+export type AppConfigAuthenticationMethod = z.infer<
+  typeof AppConfigAuthenticationMethod
+>;
+
+/**
+ * Helper function to get resolved OAuth config with well-known provider defaults.
+ */
+export function resolveOAuthConfig(
+  name: string,
+  config: AppConfigAuthMethodOAuth,
+): ResolvedOAuthConfig {
+  const wellKnown = config.provider
+    ? WELL_KNOWN_OAUTH_PROVIDERS[config.provider]
+    : null;
+
+  const scopes =
+    config.scopes ||
+    (wellKnown?.default_scopes
+      ? [...wellKnown.default_scopes]
+      : ['openid', 'email']);
+
+  const iconUrl = config.icon_url;
+  const emailUrl =
+    config.email_url || (wellKnown as { email_url?: string })?.email_url;
+  const responseMode =
+    config.response_mode ||
+    (wellKnown as { response_mode?: string })?.response_mode;
+
+  const emailVerified =
+    config.userinfo_mapping?.email_verified ||
+    (wellKnown?.userinfo_mapping as { email_verified?: string })
+      ?.email_verified;
+  const userName =
+    config.userinfo_mapping?.name ||
+    (wellKnown?.userinfo_mapping as { name?: string })?.name;
+  const userPicture =
+    config.userinfo_mapping?.picture ||
+    (wellKnown?.userinfo_mapping as { picture?: string })?.picture;
+
+  const result: ResolvedOAuthConfig = {
+    name,
+    display_name: config.display_name || name,
+    client_id: config.client_id,
+    client_secret: config.client_secret,
+    authorization_url:
+      config.authorization_url || wellKnown?.authorization_url || '',
+    token_url: config.token_url || wellKnown?.token_url || '',
+    userinfo_url: config.userinfo_url ?? wellKnown?.userinfo_url ?? null,
+    scopes,
+    email_conflict_strategy: config.email_conflict_strategy,
+    userinfo_mapping: {
+      id:
+        config.userinfo_mapping?.id || wellKnown?.userinfo_mapping?.id || 'sub',
+      email:
+        config.userinfo_mapping?.email ||
+        wellKnown?.userinfo_mapping?.email ||
+        'email',
+    },
+  };
+
+  // Add optional fields only if they have values
+  if (iconUrl) result.icon_url = iconUrl;
+  if (emailUrl) result.email_url = emailUrl;
+  if (responseMode) result.response_mode = responseMode;
+  if (emailVerified) result.userinfo_mapping.email_verified = emailVerified;
+  if (userName) result.userinfo_mapping.name = userName;
+  if (userPicture) result.userinfo_mapping.picture = userPicture;
+
+  return result;
+}
+
+export interface ResolvedOAuthConfig {
+  name: string;
+  display_name: string;
+  icon_url?: string;
+  client_id: string;
+  client_secret: string;
+  authorization_url: string;
+  token_url: string;
+  userinfo_url: string | null;
+  email_url?: string;
+  scopes: string[];
+  response_mode?: string;
+  email_conflict_strategy: 'auto_link' | 'require_link';
+  userinfo_mapping: {
+    id: string;
+    email: string;
+    email_verified?: string;
+    name?: string;
+    picture?: string;
+  };
+}
 
 export const AppConfigSmtp = z.object({
   host: z.string().default('localhost'),
@@ -155,9 +384,10 @@ export const ConfigSchema = z.object({
   authentication_methods: z
     .record(z.string(), AppConfigAuthenticationMethod)
     .default({
-      email: {
+      password: {
         type: 'password',
         enabled: true,
+        email_verification: true,
       },
     }),
   smtp: z
@@ -186,9 +416,10 @@ export const InternalConfigSchema = z.object({
   authentication_methods: z
     .record(z.string(), AppConfigAuthenticationMethod)
     .default({
-      email: {
+      password: {
         type: 'password',
         enabled: true,
+        email_verification: true,
       },
     }),
   smtp: AppConfigSmtp.optional(),

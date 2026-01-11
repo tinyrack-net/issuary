@@ -1,14 +1,21 @@
 import {
   CheckCircleIcon,
   EnvelopeIcon,
+  LinkIcon,
   UserIcon,
   XCircleIcon,
 } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { tick } from '@/libs/promise';
 import { logoutMutationOptions } from '@/queries/logout';
+import {
+  getOAuthConnectUrl,
+  oauthAccountsQueryOptions,
+  unlinkOAuthMutationOptions,
+} from '@/queries/oauth';
 import { getSessionQueryOptions } from '@/queries/session';
 
 export const Route = createFileRoute('/profile/')({
@@ -26,7 +33,13 @@ function Profile() {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(
+    null,
+  );
+
   const { data: session } = useQuery(getSessionQueryOptions);
+  const { data: oauthAccountsData } = useQuery(oauthAccountsQueryOptions);
+
   const logoutMutation = useMutation({
     ...logoutMutationOptions,
     onSuccess: async () => {
@@ -45,7 +58,36 @@ function Profile() {
     },
   });
 
+  const unlinkMutation = useMutation({
+    ...unlinkOAuthMutationOptions,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: oauthAccountsQueryOptions.queryKey,
+      });
+    },
+    onSettled: () => {
+      setUnlinkingProvider(null);
+    },
+  });
+
+  const handleUnlink = async (providerName: string) => {
+    if (
+      !window.confirm(
+        t('profile.linkedAccounts.unlinkConfirm', { provider: providerName }),
+      )
+    ) {
+      return;
+    }
+    setUnlinkingProvider(providerName);
+    try {
+      await unlinkMutation.mutateAsync(providerName);
+    } catch {
+      alert(t('profile.linkedAccounts.unlinkError'));
+    }
+  };
+
   const user = session?.user;
+  const availableProviders = oauthAccountsData?.available_providers || [];
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-base-200 to-base-300 p-4">
@@ -126,6 +168,73 @@ function Profile() {
                         </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Linked OAuth Accounts */}
+            {availableProviders.length > 0 && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <h2 className="font-semibold text-lg">
+                    {t('profile.linkedAccounts.title')}
+                  </h2>
+                  <p className="text-base-content/70 text-sm">
+                    {t('profile.linkedAccounts.description')}
+                  </p>
+                </div>
+                <div className="card bg-base-200">
+                  <div className="card-body gap-3 p-4">
+                    {availableProviders.map((provider) => (
+                      <div
+                        key={provider.name}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3">
+                          <LinkIcon
+                            size={20}
+                            weight="regular"
+                            className={
+                              provider.linked
+                                ? 'text-success'
+                                : 'text-base-content/50'
+                            }
+                          />
+                          <span className="font-medium">
+                            {provider.display_name}
+                          </span>
+                        </div>
+                        {provider.linked ? (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm text-error"
+                            disabled={unlinkingProvider === provider.name}
+                            onClick={() => handleUnlink(provider.name)}
+                          >
+                            {unlinkingProvider === provider.name ? (
+                              <>
+                                <span className="loading loading-spinner loading-xs" />
+                                {t('profile.linkedAccounts.unlinking')}
+                              </>
+                            ) : (
+                              t('profile.linkedAccounts.unlink')
+                            )}
+                          </button>
+                        ) : (
+                          <a
+                            href={getOAuthConnectUrl(
+                              provider.name,
+                              'link',
+                              '/profile',
+                            )}
+                            className="btn btn-ghost btn-sm text-primary"
+                          >
+                            {t('profile.linkedAccounts.link')}
+                          </a>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

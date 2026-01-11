@@ -298,4 +298,61 @@ export const e = {
     'USER_NOT_EDITABLE',
     'This user account cannot be modified.',
   ),
+
+  // OAuth Connect Errors (Social Login)
+  OAuthProviderNotFound: createError(
+    404,
+    'OAUTH_PROVIDER_NOT_FOUND',
+    'The OAuth provider is not configured or is disabled.',
+  ),
+  OAuthStateMismatch: createError(
+    400,
+    'OAUTH_STATE_MISMATCH',
+    'The OAuth state parameter does not match. Please try again.',
+  ),
+  OAuthTokenExchangeFailed: createError(
+    502,
+    'OAUTH_TOKEN_EXCHANGE_FAILED',
+    'Failed to exchange authorization code for tokens.',
+  ),
+  OAuthUserInfoFailed: createError(
+    502,
+    'OAUTH_USERINFO_FAILED',
+    'Failed to fetch user information from OAuth provider.',
+  ),
+  OAuthAccountAlreadyLinked: createError(
+    409,
+    'OAUTH_ACCOUNT_ALREADY_LINKED',
+    'This OAuth account is already linked to another user.',
+  ),
+  OAuthAccountNotLinked: createError(
+    404,
+    'OAUTH_ACCOUNT_NOT_LINKED',
+    'No OAuth account is linked for this provider.',
+  ),
+  OAuthEmailNotVerified: createError(
+    403,
+    'OAUTH_EMAIL_NOT_VERIFIED',
+    'The email address from the OAuth provider is not verified.',
+  ),
+  OAuthEmailConflict: createError(
+    409,
+    'OAUTH_EMAIL_CONFLICT',
+    'An account with this email already exists. Please link your account instead.',
+  ),
+  CannotUnlinkLastAuthMethod: createError(
+    400,
+    'CANNOT_UNLINK_LAST_AUTH_METHOD',
+    'Cannot unlink the last authentication method. You need at least one way to log in.',
+  ),
+  OAuthSessionExpired: createError(
+    400,
+    'OAUTH_SESSION_EXPIRED',
+    'The OAuth session has expired. Please start the login process again.',
+  ),
+  Unauthorized: createError(
+    401,
+    'UNAUTHORIZED',
+    'You must be logged in to perform this action.',
+  ),
 };

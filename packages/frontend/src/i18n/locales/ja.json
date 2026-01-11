@@ -103,5 +103,22 @@
   "consent.scope.email": "メールアドレスへのアクセス",
   "consent.scope.address": "住所情報へのアクセス",
   "consent.scope.phone": "電話番号へのアクセス",
-  "consent.scope.offline_access": "オフラインアクセスの維持"
+  "consent.scope.offline_access": "オフラインアクセスの維持",
+  "oauth.divider": "または次で続ける",
+  "oauth.loginWith": "{{provider}}で続ける",
+  "oauth.registerWith": "{{provider}}で登録",
+  "oauth.linkWith": "{{provider}}を連携",
+  "oauth.error.failed": "OAuthログインに失敗しました。もう一度お試しください。",
+  "oauth.error.emailNotVerified": "OAuthプロバイダーのメールアドレスが認証されていません。",
+  "oauth.error.emailConflict": "このメールアドレスのアカウントは既に存在します。ログインしてアカウントを連携してください。",
+  "oauth.error.accountAlreadyLinked": "このOAuthアカウントは既に別のユーザーに連携されています。",
+  "profile.linkedAccounts.title": "連携アカウント",
+  "profile.linkedAccounts.description": "外部サービスとアカウントを連携",
+  "profile.linkedAccounts.link": "連携",
+  "profile.linkedAccounts.unlink": "連携解除",
+  "profile.linkedAccounts.unlinking": "連携解除中...",
+  "profile.linkedAccounts.linkedAt": "{{date}}に連携",
+  "profile.linkedAccounts.unlinkConfirm": "{{provider}}の連携を解除しますか？",
+  "profile.linkedAccounts.unlinkError": "連携を解除できません。少なくとも1つのログイン方法が必要です。",
+  "profile.linkedAccounts.empty": "利用可能なOAuthプロバイダーがありません"
 }

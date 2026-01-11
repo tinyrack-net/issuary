@@ -1,5 +1,4 @@
 import {
-  BaseEntity,
   Entity,
   ManyToOne,
   PrimaryKey,
@@ -7,11 +6,14 @@ import {
   type RequiredNullable,
   t,
 } from '@mikro-orm/core';
+import { UserOAuthRepository } from '@/repositories/user-oauth.repository.js';
+import { BaseEntity } from './base.entity.js';
 import { UserEntity } from './user.entity.js';
 
 @Entity({
   tableName: 'user_oauth',
-  comment: 'OAuth accounts linked to users'
+  comment: 'OAuth accounts linked to users',
+  repository: () => UserOAuthRepository,
 })
 export class UserOAuthEntity extends BaseEntity {
   @PrimaryKey({

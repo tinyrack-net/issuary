@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { GlobeIcon } from '@phosphor-icons/react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -14,6 +14,10 @@ import {
   OAuthSearchSchema,
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise';
+import {
+  getOAuthConnectUrl,
+  oauthProvidersQueryOptions,
+} from '@/queries/oauth';
 import { registerMutationOptions } from '@/queries/register';
 import { getSessionQueryOptions } from '@/queries/session';
 
@@ -33,6 +37,10 @@ function Register() {
   const queryClient = useQueryClient();
   const { language, languages, setLanguage } = useLanguage();
   const search = Route.useSearch();
+
+  // Fetch available OAuth providers
+  const { data: oauthProvidersData } = useQuery(oauthProvidersQueryOptions);
+  const oauthProviders = oauthProvidersData?.providers || [];
 
   const registerSchema = useMemo(
     () =>
@@ -191,6 +199,33 @@ function Register() {
                 )}
               </button>
             </form>
+
+            {/* OAuth Providers */}
+            {oauthProviders.length > 0 && (
+              <>
+                <div className="divider my-2">{t('oauth.divider')}</div>
+                <div className="flex flex-col gap-2">
+                  {oauthProviders.map((provider) => (
+                    <a
+                      key={provider.name}
+                      href={getOAuthConnectUrl(provider.name, 'register')}
+                      className="btn btn-outline w-full"
+                    >
+                      {provider.icon_url && (
+                        <img
+                          src={provider.icon_url}
+                          alt={provider.display_name}
+                          className="mr-2 h-5 w-5"
+                        />
+                      )}
+                      {t('oauth.registerWith', {
+                        provider: provider.display_name,
+                      })}
+                    </a>
+                  ))}
+                </div>
+              </>
+            )}
 
             <div className="divider my-2" />
 
