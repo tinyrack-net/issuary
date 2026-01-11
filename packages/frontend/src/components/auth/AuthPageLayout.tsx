@@ -9,7 +9,8 @@ type AuthPageLayoutProps = {
 };
 
 export function AuthPageLayout({ children }: AuthPageLayoutProps) {
-  const { theme, toggleDarkMode } = useTheme();
+  const { themeMode, currentTheme, darkTheme, toggleDarkMode } = useTheme();
+  const isDark = currentTheme === darkTheme;
 
   return (
     <div
@@ -18,7 +19,11 @@ export function AuthPageLayout({ children }: AuthPageLayoutProps) {
         backgroundImage: `url(${AUTH_BACKGROUND_URL})`,
       }}
     >
-      <ThemeToggle theme={theme} onToggle={toggleDarkMode} />
+      <ThemeToggle
+        themeMode={themeMode}
+        isDark={isDark}
+        onToggle={toggleDarkMode}
+      />
       <div className="card w-full max-w-100 border border-base-200 bg-base-100 p-12 shadow-lg">
         {children}
       </div>
