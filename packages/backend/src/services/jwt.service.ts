@@ -271,10 +271,10 @@ export class JwtService {
     payload: JWTPayload,
   ): payload is AccessTokenPayload {
     return (
-      payload.typ === 'access_token' &&
+      payload['typ'] === 'access_token' &&
       typeof payload.sub === 'string' &&
-      typeof payload.client_id === 'string' &&
-      typeof payload.scope === 'string'
+      typeof payload['client_id'] === 'string' &&
+      typeof payload['scope'] === 'string'
     );
   }
 
@@ -285,10 +285,10 @@ export class JwtService {
     payload: JWTPayload,
   ): payload is RefreshTokenPayload {
     return (
-      payload.typ === 'refresh_token' &&
+      payload['typ'] === 'refresh_token' &&
       typeof payload.sub === 'string' &&
-      typeof payload.client_id === 'string' &&
-      typeof payload.scope === 'string'
+      typeof payload['client_id'] === 'string' &&
+      typeof payload['scope'] === 'string'
     );
   }
 

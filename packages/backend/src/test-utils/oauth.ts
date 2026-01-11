@@ -67,13 +67,13 @@ export async function getAuthorizationCode(
   };
 
   if (nonce) {
-    consentParams.nonce = nonce;
+    consentParams['nonce'] = nonce;
   }
   if (codeChallenge) {
-    consentParams.code_challenge = codeChallenge;
+    consentParams['code_challenge'] = codeChallenge;
   }
   if (codeChallengeMethod) {
-    consentParams.code_challenge_method = codeChallengeMethod;
+    consentParams['code_challenge_method'] = codeChallengeMethod;
   }
 
   await grantConsent(app, sessionCookie, consentParams);
@@ -87,12 +87,12 @@ export async function getAuthorizationCode(
   };
 
   if (codeChallenge) {
-    queryParams.code_challenge = codeChallenge;
-    queryParams.code_challenge_method = codeChallengeMethod || 'S256';
+    queryParams['code_challenge'] = codeChallenge;
+    queryParams['code_challenge_method'] = codeChallengeMethod || 'S256';
   }
 
   if (nonce) {
-    queryParams.nonce = nonce;
+    queryParams['nonce'] = nonce;
   }
 
   const res = await app.inject({
@@ -158,11 +158,11 @@ export async function exchangeCodeForTokens(
   };
 
   if (clientSecret) {
-    payload.client_secret = clientSecret;
+    payload['client_secret'] = clientSecret;
   }
 
   if (codeVerifier) {
-    payload.code_verifier = codeVerifier;
+    payload['code_verifier'] = codeVerifier;
   }
 
   return app.inject({
@@ -205,7 +205,7 @@ export async function refreshAccessToken(
   };
 
   if (clientSecret) {
-    payload.client_secret = clientSecret;
+    payload['client_secret'] = clientSecret;
   }
 
   return app.inject({

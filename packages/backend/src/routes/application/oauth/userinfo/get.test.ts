@@ -392,8 +392,8 @@ describe('GET /application/oauth/userinfo', () => {
 
       for (const testCase of testCases) {
         const headers: Record<string, string> = {};
-        if (testCase.authorization) {
-          headers.authorization = testCase.authorization;
+        if (testCase['authorization']) {
+          headers['authorization'] = testCase['authorization'];
         }
 
         const res = await app.inject({

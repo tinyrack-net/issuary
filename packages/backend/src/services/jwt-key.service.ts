@@ -385,6 +385,15 @@ export class JwtKeyService {
   async importPublicKey(pem: string, algorithm: string) {
     return importSPKI(pem, algorithm);
   }
+
+  /**
+   * Clear the active key cache
+   *
+   * Used after bootstrap or key rotation to ensure fresh key lookup.
+   */
+  clearActiveKeyCache(): void {
+    this.activeKeyCache = null;
+  }
 }
 
 export default fastifyPlugin(
@@ -428,7 +437,7 @@ export default fastifyPlugin(
     }
 
     // Clear cache after bootstrap
-    fastify.jwtKeyService.activeKeyCache = null;
+    fastify.jwtKeyService.clearActiveKeyCache();
 
     // Optional: Set up periodic rotation check
     const rotationEnabled = AppConfigs.app.jwt_key_rotation_enabled ?? true;
