@@ -26,8 +26,22 @@ This is a monorepo with the following packages:
 packages/backend/src/
 ├── db/                    # Database configurations (sqlite, postgres, memory)
 ├── entities/              # MikroORM entity definitions (*.entity.ts)
+│   ├── user.entity.ts             # User accounts
+│   ├── user-oauth.entity.ts       # OAuth linked accounts (social login)
+│   ├── jwt-key.entity.ts          # RS256 key pairs for JWT signing
+│   ├── oauth-client.entity.ts     # OAuth client applications
+│   ├── oauth-code.entity.ts       # Authorization codes
+│   ├── user-consent.entity.ts     # User consent records
+│   ├── email-verification.entity.ts
+│   ├── password-reset.entity.ts
+│   └── revoked-token.entity.ts    # Revoked JWT tokens
 ├── repositories/          # Custom repository classes (*.repository.ts)
 ├── services/              # Business logic services (*.service.ts)
+│   ├── jwt.service.ts             # RS256 JWT signing/verification
+│   ├── jwt-key.service.ts         # Key rotation and JWKS management
+│   ├── oauth-connect.service.ts   # Social login (Google, GitHub, Apple)
+│   ├── user.service.ts            # User management
+│   └── ...
 ├── routes/                # HTTP route handlers
 │   ├── api/v1/           # API endpoints (/api/v1/*)
 │   └── application/      # OAuth/OIDC endpoints (/application/*)
@@ -39,7 +53,12 @@ packages/backend/src/
 ├── plugins/               # Fastify plugins (auto-loaded)
 ├── handlers/              # Reusable request handlers
 ├── lib/                   # Utility libraries (config, jwt, pkce, env)
-├── migrations/            # Database migration files
+├── test-utils/            # Test utilities and helpers
+│   ├── setup.ts          # setupTestServer() function
+│   ├── helpers.ts        # Common test helpers
+│   ├── fixtures.ts       # Test constants (TEST_USER, TEST_OAUTH_CLIENT)
+│   ├── oauth.ts          # OAuth flow helpers
+│   └── index.ts          # Re-exports
 └── seeders/               # Database seeders
 ```
 
@@ -52,17 +71,34 @@ packages/frontend/src/
 │   ├── login/            # Login page
 │   ├── register/         # Registration page
 │   ├── profile/          # Profile page
-│   └── verify-email/     # Email verification
+│   ├── verify-email/     # Email verification
+│   ├── forgot-password/  # Password reset request
+│   ├── reset-password/   # Password reset form
+│   ├── consent/          # OAuth consent page
+│   └── error/            # Error page
 ├── hooks/                 # Custom React hooks
+│   ├── use-language.ts   # Language switching hook
+│   └── use-theme.ts      # Theme switching hook
 ├── queries/               # TanStack Query options (queryOptions, mutationOptions)
+│   ├── session.ts        # Session query options
+│   ├── login.ts          # Login mutation options
+│   ├── register.ts       # Register mutation options
+│   ├── logout.ts         # Logout mutation options
+│   ├── oauth.ts          # OAuth providers query/mutation options
+│   ├── consent.ts        # Consent query/mutation options
+│   ├── password-reset.ts # Password reset mutation options
+│   ├── verify-email.ts   # Email verification mutation options
+│   └── config.ts         # App config query options
 ├── i18n/                  # Internationalization
 │   ├── index.ts          # i18n setup
+│   ├── react-i18next.d.ts # Type declarations
 │   └── locales/          # Translation files (ko.json, en.json, ja.json)
 ├── libs/                  # Utility libraries
 │   ├── etch.ts           # Fetch wrapper
 │   ├── router.ts         # Router setup
 │   ├── query-client.ts   # QueryClient instance
-│   └── promise.ts        # Utility functions (tick)
+│   ├── promise.ts        # Utility functions (tick)
+│   └── oauth-search.ts   # OAuth search params schema
 ├── main.tsx               # Entry point
 └── index.css              # Global styles (Tailwind + DaisyUI)
 ```
@@ -268,15 +304,66 @@ export default fastifyPlugin(
 
 #### JWT Token Management
 - Uses `jose` library (NOT `jsonwebtoken`)
+- **Algorithm: RS256 asymmetric keys** (NOT HS256 symmetric secret)
 - Token types: access token, refresh token, ID token (OIDC)
-- Algorithm: HS256 with secret from config
-- Token generation: `lib/jwt.ts` provides signing/verification utilities
+- Key management via `jwt-key.service.ts`:
+  - Automatic key generation and rotation
+  - Key lifecycle: `next` -> `active` -> `previous` -> `retired`
+  - Keys stored in database (`jwt_key` table)
+  - JWKS endpoint: `/.well-known/jwks.json`
+- Token generation: `jwt.service.ts` provides signing/verification utilities
+- Token structure includes `kid` (Key ID) in JWT header
+- Supports token revocation via `revoked_token` table
+- Key rotation settings in config:
+  - `jwt_key_rotation_enabled`: Enable automatic rotation (default: true)
+  - `jwt_key_rotation_days`: Days between rotations (default: 30)
+  - `jwt_key_overlap_days`: Days to keep previous keys valid (default: 7)
 
 #### Testing (Vitest)
 - Create `beforeAll`/`afterAll` hooks for server lifecycle
 - Use `app.inject()` for testing HTTP endpoints
 - Test files: `*.test.ts` suffix
 - Structure: setup, teardown, test cases with descriptive names
+
+#### Test Utilities (test-utils/)
+The `test-utils/` directory provides reusable helpers for testing:
+
+**Setup (`test-utils/setup.ts`):**
+- `setupTestServer()` - Returns a proxy to Fastify instance with automatic setup/teardown
+- Example:
+```typescript
+import { setupTestServer } from '@/test-utils/index.js';
+
+const app = setupTestServer();
+
+describe('My Tests', () => {
+  test('should work', async () => {
+    const res = await app.inject({ method: 'GET', url: '/' });
+    expect(res.statusCode).toBe(200);
+  });
+});
+```
+
+**Fixtures (`test-utils/fixtures.ts`):**
+- `TEST_USER` - Config user credentials (email, password)
+- `TEST_OAUTH_CLIENT` - OAuth client config (clientId, clientSecret, redirectUri)
+- `TEST_PKCE` - PKCE test vectors (codeChallenge, codeVerifier)
+- `DEFAULT_SCOPES` - Default OAuth scopes ('openid profile email')
+- `generateUniqueEmail(prefix)` - Generate unique email for tests
+
+**Helpers (`test-utils/helpers.ts`):**
+- `createAuthenticatedSession(app, email?, password?)` - Login and return session cookie
+- `injectWithSession(app, options, sessionCookie)` - Make request with session cookie
+- `extractCookie(res, name)` - Extract cookie value from response
+- `grantConsent(app, sessionCookie, params)` - Grant OAuth consent
+- `withMikroContext(app, fn)` - Run function in MikroORM RequestContext
+
+**OAuth Helpers (`test-utils/oauth.ts`):**
+- `getAuthorizationCode(app, params)` - Get OAuth authorization code
+- `exchangeCodeForTokens(app, params)` - Exchange code for tokens
+- `refreshAccessToken(app, params)` - Refresh access token
+- `getAccessToken(app, params?)` - Complete OAuth flow and get access token
+- `getUserInfo(app, accessToken)` - Get user info with bearer token
 
 ### Frontend-Specific Patterns
 
@@ -285,7 +372,7 @@ export default fastifyPlugin(
 - TanStack Router for routing with `createFileRoute`
 - Daisy UI components for UI (Tailwind V4 CSS-based)
 - TanStack Query for data fetching
-- Forms: use React Hook Form with Zod validation via `zodResolver`
+- Forms: use React Hook Form with Zod validation via `standardSchemaResolver` from `@hookform/resolvers/standard-schema`
 - Icons: use **Phosphor Icons** for all icon components
 
 #### Build Configuration
