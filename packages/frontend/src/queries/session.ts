@@ -7,6 +7,7 @@ export type SessionUser = {
   id: string;
   email: string;
   email_verified: boolean;
+  has_password: boolean;
 };
 
 export type SessionResponse = {

@@ -63,6 +63,7 @@ export default (fastify: FastifyWithZodInstance) =>
           managed: 'database',
           email: user.email,
           email_verified: user.email_verified,
+          has_password: true, // Registration always creates password
         },
       });
     },

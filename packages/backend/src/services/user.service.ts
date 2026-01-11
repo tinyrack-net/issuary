@@ -34,14 +34,19 @@ export class UserService {
         managed: 'config',
         email: appConfigUser.email,
         email_verified: true,
+        has_password: true, // Config users always have password
       };
     }
-    const dbUser = await this.mikro.user.findOneOrFail({ id: id });
+    const dbUser = await this.mikro.user.findOneOrFail(
+      { id: id },
+      { populate: ['password_hash'] },
+    );
     return {
       id: dbUser.id,
       managed: 'database',
       email: dbUser.email,
       email_verified: dbUser.email_verified,
+      has_password: dbUser.hasPassword(),
     };
   }
 
@@ -64,6 +69,7 @@ export class UserService {
           managed: 'config',
           email: appConfigUser.email,
           email_verified: true,
+          has_password: true,
         };
       } else {
         throw new e.InvalidEmailOrPassword.Error();
@@ -86,6 +92,7 @@ export class UserService {
         managed: 'database',
         email: user.email,
         email_verified: user.email_verified,
+        has_password: user.hasPassword(),
       };
     }
 

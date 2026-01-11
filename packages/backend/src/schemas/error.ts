@@ -355,4 +355,26 @@ export const e = {
     'UNAUTHORIZED',
     'You must be logged in to perform this action.',
   ),
+
+  // Password Management Errors
+  PasswordAlreadySet: createError(
+    409,
+    'PASSWORD_ALREADY_SET',
+    'A password is already set for this account. Use password change instead.',
+  ),
+  PasswordNotSet: createError(
+    400,
+    'PASSWORD_NOT_SET',
+    'No password is set for this account.',
+  ),
+  InvalidCurrentPassword: createError(
+    401,
+    'INVALID_CURRENT_PASSWORD',
+    'The current password is incorrect.',
+  ),
+  CannotRemoveLastAuthMethod: createError(
+    400,
+    'CANNOT_REMOVE_LAST_AUTH_METHOD',
+    'Cannot remove password. You need at least one way to log in.',
+  ),
 };

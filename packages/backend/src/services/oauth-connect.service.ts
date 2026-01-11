@@ -268,6 +268,7 @@ export class OAuthConnectService {
       });
 
       const user = existingOAuth.user;
+      await this.mikro.em.populate(user, ['password_hash']);
       return {
         isNewUser: false,
         user: {
@@ -275,6 +276,7 @@ export class OAuthConnectService {
           managed: 'database',
           email: user.email,
           email_verified: user.email_verified,
+          has_password: user.hasPassword(),
         },
       };
     }
@@ -316,6 +318,7 @@ export class OAuthConnectService {
 
         await this.mikro.em.flush();
 
+        await this.mikro.em.populate(existingUser, ['password_hash']);
         return {
           isNewUser: false,
           user: {
@@ -323,6 +326,7 @@ export class OAuthConnectService {
             managed: 'database',
             email: existingUser.email,
             email_verified: existingUser.email_verified,
+            has_password: existingUser.hasPassword(),
           },
         };
       }
@@ -336,6 +340,7 @@ export class OAuthConnectService {
             managed: 'config',
             email: configUser.email,
             email_verified: true,
+            has_password: true, // Config users always have password
           },
         };
       }
@@ -344,7 +349,7 @@ export class OAuthConnectService {
     // Create new user with OAuth
     const newUser = this.mikro.user.create({
       email: userInfo.email,
-      password_hash: crypto.randomUUID(), // Random password since user will use OAuth
+      password_hash: null, // No password for OAuth-only users
     });
     newUser.email_verified = true; // OAuth provider verified the email
 
@@ -371,6 +376,7 @@ export class OAuthConnectService {
         managed: 'database',
         email: newUser.email,
         email_verified: newUser.email_verified,
+        has_password: false, // New OAuth user has no password
       },
     };
   }
@@ -459,7 +465,7 @@ export class OAuthConnectService {
 
     // Check if this is the last auth method
     const oauthCount = await this.mikro.userOAuth.countByUser(user);
-    const hasPassword = !!user.password_hash;
+    const hasPassword = user.hasPassword();
 
     // If only one OAuth and no password, can't unlink
     if (oauthCount <= 1 && !hasPassword) {

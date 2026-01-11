@@ -59,10 +59,11 @@ export class UserEntity extends BaseEntity {
     type: t.string,
     name: 'password_hash',
     comment: 'Hashed password for local authentication',
-    nullable: false,
+    nullable: true,
     lazy: true,
+    default: null,
   })
-  public password_hash: string;
+  public password_hash: string | null = null;
 
   @Property({
     type: t.boolean,
@@ -99,11 +100,11 @@ export class UserEntity extends BaseEntity {
   }: {
     id?: string;
     email: string;
-    password_hash: string;
+    password_hash?: string | null;
   }) {
     super();
     this.email = email;
-    this.password_hash = password_hash;
+    this.password_hash = password_hash ?? null;
   }
 
   @BeforeCreate()
@@ -118,7 +119,17 @@ export class UserEntity extends BaseEntity {
   }
 
   async verifyPassword(password: string) {
+    if (!this.password_hash) {
+      return false;
+    }
     return verify(this.password_hash, password);
+  }
+
+  /**
+   * Check if user has a password set
+   */
+  hasPassword(): boolean {
+    return this.password_hash !== null;
   }
 
   @OneToMany(

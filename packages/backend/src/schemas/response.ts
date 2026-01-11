@@ -9,6 +9,7 @@ const UserSession = z
     id: f.userId,
     email: f.userEmail,
     email_verified: f.emailVerified,
+    has_password: z.boolean().describe('Whether the user has a password set'),
   })
   .describe('UserSession');
 

@@ -29,6 +29,9 @@ export default (fastify: FastifyWithZodInstance) => {
         req.body.token,
       );
 
+      // Populate password_hash to check if password is set
+      await fastify.mikro.em.populate(user, ['password_hash']);
+
       // Create session after successful verification
       req.session.set('user', {
         id: user.id,
@@ -40,6 +43,7 @@ export default (fastify: FastifyWithZodInstance) => {
           managed: 'database',
           email: user.email,
           email_verified: user.email_verified,
+          has_password: user.hasPassword(),
         },
       });
     },

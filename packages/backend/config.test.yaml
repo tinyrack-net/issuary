@@ -33,7 +33,7 @@ authentication_methods:
       required: false
   google:
     type: oauth
-    enabled: false
+    enabled: true
     provider: google
     display_name: Google
     client_id: test-google-client-id

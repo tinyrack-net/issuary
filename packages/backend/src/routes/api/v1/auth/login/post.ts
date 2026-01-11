@@ -39,6 +39,7 @@ export default (fastify: FastifyWithZodInstance) =>
           managed: user.managed,
           email: user.email,
           email_verified: true,
+          has_password: user.has_password,
         },
       });
     },
