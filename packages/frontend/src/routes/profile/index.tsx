@@ -11,13 +11,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AuthPageLayout, PageHeader } from '@/components/auth/index.js';
+import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
+import { PageHeader } from '@/components/auth/page-header.js';
 import { tick } from '@/libs/promise';
-import {
-  ChangePasswordModal,
-  RemovePasswordModal,
-  SetPasswordModal,
-} from '@/modals/profile/index.js';
+import { ChangePasswordModal } from '@/modals/profile/change-password-modal.js';
+import { RemovePasswordModal } from '@/modals/profile/remove-password-modal.js';
+import { SetPasswordModal } from '@/modals/profile/set-password-modal.js';
 import { logoutMutationOptions } from '@/queries/logout';
 import {
   getOAuthConnectUrl,

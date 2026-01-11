@@ -3,8 +3,9 @@ import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { AuthPageLayout, PageHeader } from '@/components/auth/index.js';
-import { Alert } from '@/components/ui/index.js';
+import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
+import { PageHeader } from '@/components/auth/page-header.js';
+import { Alert } from '@/components/ui/alert.js';
 import { OAuthSearchSchema } from '@/libs/oauth-search';
 import {
   consentDecisionMutationOptions,

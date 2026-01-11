@@ -2,8 +2,9 @@ import { HouseIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { AuthPageLayout, PageHeader } from '@/components/auth/index.js';
-import { Alert } from '@/components/ui/index.js';
+import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
+import { PageHeader } from '@/components/auth/page-header.js';
+import { Alert } from '@/components/ui/alert.js';
 
 const errorSearchSchema = z.object({
   code: z.string().optional(),

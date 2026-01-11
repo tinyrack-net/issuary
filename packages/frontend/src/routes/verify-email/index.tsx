@@ -6,13 +6,12 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import {
-  AuthPageLayout,
-  IconInput,
-  PageHeader,
-  SubmitButton,
-} from '@/components/auth/index.js';
-import { Alert, Divider } from '@/components/ui/index.js';
+import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
+import { IconInput } from '@/components/auth/icon-input.js';
+import { PageHeader } from '@/components/auth/page-header.js';
+import { SubmitButton } from '@/components/auth/submit-button.js';
+import { Alert } from '@/components/ui/alert.js';
+import { Divider } from '@/components/ui/divider.js';
 import {
   buildAuthorizeUrl,
   isOAuthFlow,

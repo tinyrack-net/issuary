@@ -156,11 +156,21 @@ pnpm test --watch
 - Use path aliases: `@/` maps to `src/` directory
 - Always include `.js` extension for local imports (ESM requirement)
 - Group imports: external libraries first, then local imports
+- **No barrel exports**: Do not use `index.ts` files for re-exporting modules
+  - Import directly from the source file, not from directory index
+  - Exception: `index.ts` files that contain actual logic (e.g., `i18n/index.ts`)
 - Example:
 ```typescript
 import z from 'zod/v4';
 import { UserSchema } from '@/schemas/user.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+
+// Direct imports (correct)
+import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
+import { Alert } from '@/components/ui/alert.js';
+
+// Barrel exports (avoid)
+// import { AuthPageLayout, Alert } from '@/components/index.js';
 ```
 
 ### TypeScript Configuration
