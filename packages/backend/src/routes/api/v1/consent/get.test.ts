@@ -1,19 +1,19 @@
-import { describe, expect, test } from 'vitest';
 import {
+  TEST_OAUTH_CLIENT,
   createAuthenticatedSession,
   setupTestServer,
-  TEST_OAUTH_CLIENT,
 } from '@/test-utils/index.js';
+import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
-describe('GET /api/v1/oauth/consent', () => {
+describe('GET /api/v1/consent', () => {
   test('should return consent information for authenticated user', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
     const res = await app.inject({
       method: 'GET',
-      url: '/api/v1/oauth/consent',
+      url: '/api/v1/consent',
       query: {
         client_id: TEST_OAUTH_CLIENT.clientId,
         scope: 'openid profile email',
@@ -57,7 +57,7 @@ describe('GET /api/v1/oauth/consent', () => {
 
     const res = await app.inject({
       method: 'GET',
-      url: '/api/v1/oauth/consent',
+      url: '/api/v1/consent',
       query: {
         client_id: TEST_OAUTH_CLIENT.clientId,
         scope: 'openid',
@@ -81,7 +81,7 @@ describe('GET /api/v1/oauth/consent', () => {
 
     const res = await app.inject({
       method: 'GET',
-      url: '/api/v1/oauth/consent',
+      url: '/api/v1/consent',
       query: {
         client_id: TEST_OAUTH_CLIENT.clientId,
       },
@@ -97,7 +97,7 @@ describe('GET /api/v1/oauth/consent', () => {
   test('should return 401 when user is not authenticated', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: '/api/v1/oauth/consent',
+      url: '/api/v1/consent',
       query: {
         client_id: TEST_OAUTH_CLIENT.clientId,
         scope: 'openid',
@@ -114,7 +114,7 @@ describe('GET /api/v1/oauth/consent', () => {
   test('should return 401 with invalid session cookie', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: '/api/v1/oauth/consent',
+      url: '/api/v1/consent',
       query: {
         client_id: TEST_OAUTH_CLIENT.clientId,
         scope: 'openid',
@@ -133,7 +133,7 @@ describe('GET /api/v1/oauth/consent', () => {
 
     const res = await app.inject({
       method: 'GET',
-      url: '/api/v1/oauth/consent',
+      url: '/api/v1/consent',
       query: {
         scope: 'openid',
       },
@@ -150,7 +150,7 @@ describe('GET /api/v1/oauth/consent', () => {
 
     const res = await app.inject({
       method: 'GET',
-      url: '/api/v1/oauth/consent',
+      url: '/api/v1/consent',
       query: {
         client_id: 'non-existent-client-id',
         scope: 'openid',
@@ -169,7 +169,7 @@ describe('GET /api/v1/oauth/consent', () => {
 
     const res = await app.inject({
       method: 'GET',
-      url: '/api/v1/oauth/consent',
+      url: '/api/v1/consent',
       query: {
         client_id: TEST_OAUTH_CLIENT.clientId,
         scope: 'openid custom_scope',
@@ -194,7 +194,7 @@ describe('GET /api/v1/oauth/consent', () => {
 
     const res = await app.inject({
       method: 'GET',
-      url: '/api/v1/oauth/consent',
+      url: '/api/v1/consent',
       query: {
         client_id: TEST_OAUTH_CLIENT.clientId,
         scope: 'openid profile email address phone offline_access',

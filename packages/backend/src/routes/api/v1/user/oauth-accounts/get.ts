@@ -1,6 +1,6 @@
-import z from 'zod';
 import { e } from '@/schemas/error.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+import z from 'zod';
 
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
@@ -9,7 +9,7 @@ export default (fastify: FastifyWithZodInstance) =>
     schema: {
       summary: 'List Linked OAuth Accounts',
       description: 'Returns all OAuth accounts linked to the current user',
-      tags: ['OAuth Connect'],
+      tags: ['User'],
       response: {
         200: z.object({
           accounts: z.array(

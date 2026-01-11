@@ -1,14 +1,14 @@
-import { describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import { generateUniqueEmail, setupTestServer } from '@/test-utils/index.js';
+import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
-describe('POST /api/v1/user/login', () => {
+describe('POST /api/v1/auth/login', () => {
   test('should login successfully with correct credentials (app config user)', async () => {
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/login',
+      url: '/api/v1/auth/login',
       payload: {
         email: 'test-config-user@example.com',
         password: 'changemelater',
@@ -26,7 +26,7 @@ describe('POST /api/v1/user/login', () => {
     const uniqueEmail = generateUniqueEmail('loginuser');
     const registerRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         email: uniqueEmail,
         password: 'password123',
@@ -38,7 +38,7 @@ describe('POST /api/v1/user/login', () => {
     // Now, attempt to login with the newly registered user
     const loginRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/login',
+      url: '/api/v1/auth/login',
       payload: {
         email: uniqueEmail,
         password: 'password123',
@@ -54,7 +54,7 @@ describe('POST /api/v1/user/login', () => {
   test('should fail with wrong password', async () => {
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/login',
+      url: '/api/v1/auth/login',
       payload: {
         email: 'admin@example.com',
         password: 'wrongpassword',
@@ -71,7 +71,7 @@ describe('POST /api/v1/user/login', () => {
   test('should fail with non-existent email', async () => {
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/login',
+      url: '/api/v1/auth/login',
       payload: {
         email: 'nonexistent@example.com',
         password: 'anypassword',
@@ -88,7 +88,7 @@ describe('POST /api/v1/user/login', () => {
   test('should fail with invalid email format', async () => {
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/login',
+      url: '/api/v1/auth/login',
       payload: {
         email: 'not-an-email',
         password: 'anypassword',
@@ -103,7 +103,7 @@ describe('POST /api/v1/user/login', () => {
   test('should fail with short password', async () => {
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/login',
+      url: '/api/v1/auth/login',
       payload: {
         email: 'admin@example.com',
         password: '12345',
@@ -118,7 +118,7 @@ describe('POST /api/v1/user/login', () => {
   test('should fail with missing email', async () => {
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/login',
+      url: '/api/v1/auth/login',
       payload: {
         password: 'changemelater',
       },
@@ -132,7 +132,7 @@ describe('POST /api/v1/user/login', () => {
   test('should fail with missing password', async () => {
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/login',
+      url: '/api/v1/auth/login',
       payload: {
         email: 'admin@example.com',
       },

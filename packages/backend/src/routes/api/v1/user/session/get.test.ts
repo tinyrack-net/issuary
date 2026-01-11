@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest';
 import { setupTestServer } from '@/test-utils/index.js';
+import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
@@ -19,7 +19,7 @@ describe('GET /api/v1/user/session', () => {
     // First, login to create a session
     const loginRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/login',
+      url: '/api/v1/auth/login',
       payload: {
         email: 'test-config-user@example.com',
         password: 'changemelater',
@@ -61,7 +61,7 @@ describe('GET /api/v1/user/session', () => {
   test('should return null after logout', async () => {
     const loginRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/login',
+      url: '/api/v1/auth/login',
       payload: {
         email: 'test-config-user@example.com',
         password: 'changemelater',
@@ -91,7 +91,7 @@ describe('GET /api/v1/user/session', () => {
 
     const logoutRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/logout',
+      url: '/api/v1/auth/logout',
       headers: {
         cookie: sessionCookie,
       },
@@ -137,7 +137,7 @@ describe('GET /api/v1/user/session', () => {
     // Login once
     const loginRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/login',
+      url: '/api/v1/auth/login',
       payload: {
         email: 'test-config-user@example.com',
         password: 'changemelater',

@@ -1,21 +1,21 @@
-import { describe, expect, test } from 'vitest';
 import {
+  TEST_OAUTH_CLIENT,
   createAuthenticatedSession,
   setupTestServer,
-  TEST_OAUTH_CLIENT,
   withMikroContext,
 } from '@/test-utils/index.js';
+import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
-describe('POST /api/v1/oauth/consent', () => {
+describe('POST /api/v1/consent', () => {
   describe('Allow decision', () => {
     test('should grant consent and return redirect URL', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         cookies: { session: sessionCookie },
         payload: {
           client_id: TEST_OAUTH_CLIENT.clientId,
@@ -53,7 +53,7 @@ describe('POST /api/v1/oauth/consent', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         cookies: { session: sessionCookie },
         payload: {
           client_id: TEST_OAUTH_CLIENT.clientId,
@@ -83,7 +83,7 @@ describe('POST /api/v1/oauth/consent', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         cookies: { session: sessionCookie },
         payload: {
           client_id: TEST_OAUTH_CLIENT.clientId,
@@ -116,7 +116,7 @@ describe('POST /api/v1/oauth/consent', () => {
       // Grant consent
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         cookies: { session: sessionCookie },
         payload: {
           client_id: TEST_OAUTH_CLIENT.clientId,
@@ -147,7 +147,7 @@ describe('POST /api/v1/oauth/consent', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         cookies: { session: sessionCookie },
         payload: {
           client_id: TEST_OAUTH_CLIENT.clientId,
@@ -174,7 +174,7 @@ describe('POST /api/v1/oauth/consent', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         cookies: { session: sessionCookie },
         payload: {
           client_id: TEST_OAUTH_CLIENT.clientId,
@@ -207,7 +207,7 @@ describe('POST /api/v1/oauth/consent', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         cookies: { session: sessionCookie },
         payload: {
           client_id: TEST_OAUTH_CLIENT.clientId,
@@ -242,7 +242,7 @@ describe('POST /api/v1/oauth/consent', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         cookies: { session: sessionCookie },
         payload: {
           client_id: TEST_OAUTH_CLIENT.clientId,
@@ -276,7 +276,7 @@ describe('POST /api/v1/oauth/consent', () => {
     test('should return 401 when user is not authenticated', async () => {
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         payload: {
           client_id: TEST_OAUTH_CLIENT.clientId,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
@@ -296,7 +296,7 @@ describe('POST /api/v1/oauth/consent', () => {
     test('should return 401 with invalid session cookie', async () => {
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         cookies: { session: 'invalid-session-cookie' },
         payload: {
           client_id: TEST_OAUTH_CLIENT.clientId,
@@ -320,7 +320,7 @@ describe('POST /api/v1/oauth/consent', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         cookies: { session: sessionCookie },
         payload: {
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
@@ -338,7 +338,7 @@ describe('POST /api/v1/oauth/consent', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         cookies: { session: sessionCookie },
         payload: {
           client_id: TEST_OAUTH_CLIENT.clientId,
@@ -356,7 +356,7 @@ describe('POST /api/v1/oauth/consent', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         cookies: { session: sessionCookie },
         payload: {
           client_id: TEST_OAUTH_CLIENT.clientId,
@@ -374,7 +374,7 @@ describe('POST /api/v1/oauth/consent', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         cookies: { session: sessionCookie },
         payload: {
           client_id: TEST_OAUTH_CLIENT.clientId,
@@ -392,7 +392,7 @@ describe('POST /api/v1/oauth/consent', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         cookies: { session: sessionCookie },
         payload: {
           client_id: TEST_OAUTH_CLIENT.clientId,
@@ -411,7 +411,7 @@ describe('POST /api/v1/oauth/consent', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/oauth/consent',
+        url: '/api/v1/consent',
         cookies: { session: sessionCookie },
         payload: {
           client_id: TEST_OAUTH_CLIENT.clientId,

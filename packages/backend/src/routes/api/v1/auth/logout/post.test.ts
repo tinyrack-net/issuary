@@ -1,14 +1,14 @@
-import { describe, expect, test } from 'vitest';
 import { setupTestServer } from '@/test-utils/index.js';
+import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
-describe('POST /api/v1/user/logout', () => {
+describe('POST /api/v1/auth/logout', () => {
   test('should logout successfully with valid session', async () => {
     // First, login to create a session
     const loginRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/login',
+      url: '/api/v1/auth/login',
       payload: {
         email: 'test-config-user@example.com',
         password: 'changemelater',
@@ -30,7 +30,7 @@ describe('POST /api/v1/user/logout', () => {
     // Logout with the session cookie
     const logoutRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/logout',
+      url: '/api/v1/auth/logout',
       headers: {
         cookie: sessionCookie,
       },
@@ -46,7 +46,7 @@ describe('POST /api/v1/user/logout', () => {
     // Logout without any session
     const logoutRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/logout',
+      url: '/api/v1/auth/logout',
     });
 
     expect(logoutRes.statusCode).toBe(200);
@@ -59,7 +59,7 @@ describe('POST /api/v1/user/logout', () => {
     // Logout with invalid cookie
     const logoutRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/logout',
+      url: '/api/v1/auth/logout',
       headers: {
         cookie: 'invalid-cookie=invalid-value',
       },
@@ -75,7 +75,7 @@ describe('POST /api/v1/user/logout', () => {
     // Login to create a session
     const loginRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/login',
+      url: '/api/v1/auth/login',
       payload: {
         email: 'test-config-user@example.com',
         password: 'changemelater',
@@ -106,7 +106,7 @@ describe('POST /api/v1/user/logout', () => {
     // Logout
     const logoutRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/logout',
+      url: '/api/v1/auth/logout',
       headers: {
         cookie: sessionCookie,
       },
@@ -139,7 +139,7 @@ describe('POST /api/v1/user/logout', () => {
     // Login
     const loginRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/login',
+      url: '/api/v1/auth/login',
       payload: {
         email: 'test-config-user@example.com',
         password: 'changemelater',
@@ -157,7 +157,7 @@ describe('POST /api/v1/user/logout', () => {
     // First logout
     const logoutRes1 = await app.inject({
       method: 'post',
-      url: '/api/v1/user/logout',
+      url: '/api/v1/auth/logout',
       headers: {
         cookie: sessionCookie,
       },
@@ -170,7 +170,7 @@ describe('POST /api/v1/user/logout', () => {
     // Second logout with same cookie (should still succeed)
     const logoutRes2 = await app.inject({
       method: 'post',
-      url: '/api/v1/user/logout',
+      url: '/api/v1/auth/logout',
       headers: {
         cookie: sessionCookie,
       },

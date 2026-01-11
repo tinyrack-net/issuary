@@ -1,7 +1,7 @@
-import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+import z from 'zod/v4';
 
 export default (fastify: FastifyWithZodInstance) => {
   // Only enable if email service is available
@@ -16,7 +16,7 @@ export default (fastify: FastifyWithZodInstance) => {
       summary: 'Request password reset',
       description:
         'Sends a password reset email to the user. Always returns success to prevent email enumeration.',
-      tags: ['User'],
+      tags: ['Auth'],
       body: z.object({
         email: f.userEmail,
       }),

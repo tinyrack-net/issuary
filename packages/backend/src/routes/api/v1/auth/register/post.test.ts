@@ -1,20 +1,20 @@
-import { describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import {
   generateUniqueEmail,
   setupTestServer,
   withMikroContext,
 } from '@/test-utils/index.js';
+import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
-describe('POST /api/v1/user/register', () => {
+describe('POST /api/v1/auth/register', () => {
   test('should register successfully with valid credentials', async () => {
     const uniqueEmail = generateUniqueEmail();
 
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         email: uniqueEmail,
         password: 'password123',
@@ -31,7 +31,7 @@ describe('POST /api/v1/user/register', () => {
   test('should fail with app config user email', async () => {
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         email: 'test-config-user@example.com',
         password: 'password123',
@@ -52,7 +52,7 @@ describe('POST /api/v1/user/register', () => {
     // First registration
     await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         email: uniqueEmail,
         password: 'password123',
@@ -62,7 +62,7 @@ describe('POST /api/v1/user/register', () => {
     // Second registration with same email
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         email: uniqueEmail,
         password: 'password123',
@@ -79,7 +79,7 @@ describe('POST /api/v1/user/register', () => {
   test('should fail with invalid email format', async () => {
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         email: 'not-an-email',
         password: 'password123',
@@ -94,7 +94,7 @@ describe('POST /api/v1/user/register', () => {
   test('should fail with short password', async () => {
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         email: 'test@example.com',
         password: '12345',
@@ -109,7 +109,7 @@ describe('POST /api/v1/user/register', () => {
   test('should fail with long password', async () => {
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         email: 'test@example.com',
         password: 'a'.repeat(101),
@@ -124,7 +124,7 @@ describe('POST /api/v1/user/register', () => {
   test('should fail with missing email', async () => {
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         password: 'password123',
       },
@@ -138,7 +138,7 @@ describe('POST /api/v1/user/register', () => {
   test('should fail with missing password', async () => {
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         email: 'test@example.com',
       },
@@ -153,7 +153,7 @@ describe('POST /api/v1/user/register', () => {
     const uniqueEmail = generateUniqueEmail('session');
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         email: uniqueEmail,
         password: 'password123',
@@ -169,7 +169,7 @@ describe('POST /api/v1/user/register', () => {
     const uniqueEmail = generateUniqueEmail('verify');
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         email: uniqueEmail,
         password: 'password123',

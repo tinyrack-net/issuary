@@ -1,7 +1,7 @@
-import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+import z from 'zod/v4';
 
 export default (fastify: FastifyWithZodInstance) => {
   fastify.route({
@@ -10,7 +10,7 @@ export default (fastify: FastifyWithZodInstance) => {
     schema: {
       summary: 'Reset password',
       description: 'Resets the user password using a valid reset token.',
-      tags: ['User'],
+      tags: ['Auth'],
       body: z.object({
         token: z.string().min(1).describe('Password reset token'),
         password: f.userPassword,

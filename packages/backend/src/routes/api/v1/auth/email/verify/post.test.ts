@@ -1,10 +1,10 @@
-import { describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import {
   generateUniqueEmail,
   setupTestServer,
   withMikroContext,
 } from '@/test-utils/index.js';
+import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
@@ -38,7 +38,7 @@ describe('POST /api/v1/user/verify-email', () => {
     // 3. Verify email with token
     const verifyRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/verify-email',
+      url: '/api/v1/auth/email/verify',
       payload: {
         token,
       },
@@ -62,7 +62,7 @@ describe('POST /api/v1/user/verify-email', () => {
   test('should fail with invalid token', async () => {
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/verify-email',
+      url: '/api/v1/auth/email/verify',
       payload: {
         token: 'invalid-token-12345',
       },
@@ -125,7 +125,7 @@ describe('POST /api/v1/user/verify-email', () => {
     const uniqueEmail = generateUniqueEmail('used');
     await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         email: uniqueEmail,
         password: 'password123',
@@ -145,7 +145,7 @@ describe('POST /api/v1/user/verify-email', () => {
     // 3. First verification - should succeed
     const firstRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/verify-email',
+      url: '/api/v1/auth/email/verify',
       payload: { token },
     });
     expect(firstRes.statusCode).toBe(200);
@@ -153,7 +153,7 @@ describe('POST /api/v1/user/verify-email', () => {
     // 4. Second verification with same token - should fail
     const secondRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/verify-email',
+      url: '/api/v1/auth/email/verify',
       payload: { token },
     });
 
@@ -167,7 +167,7 @@ describe('POST /api/v1/user/resend-verification', () => {
     const uniqueEmail = generateUniqueEmail('resend');
     await app.inject({
       method: 'post',
-      url: '/api/v1/user/register',
+      url: '/api/v1/auth/register',
       payload: {
         email: uniqueEmail,
         password: 'password123',
@@ -191,7 +191,7 @@ describe('POST /api/v1/user/resend-verification', () => {
     // 3. Request resend
     const resendRes = await app.inject({
       method: 'post',
-      url: '/api/v1/user/resend-verification',
+      url: '/api/v1/auth/email/resend',
       payload: {
         email: uniqueEmail,
       },
@@ -223,7 +223,7 @@ describe('POST /api/v1/user/resend-verification', () => {
   test('should fail to resend for non-existent email', async () => {
     const res = await app.inject({
       method: 'post',
-      url: '/api/v1/user/resend-verification',
+      url: '/api/v1/auth/email/resend',
       payload: {
         email: 'nonexistent@example.com',
       },
@@ -240,7 +240,7 @@ describe('POST /api/v1/user/resend-verification', () => {
       const uniqueEmail = generateUniqueEmail('verified');
       await app.inject({
         method: 'post',
-        url: '/api/v1/user/register',
+        url: '/api/v1/auth/register',
         payload: {
           email: uniqueEmail,
           password: 'password123',
@@ -260,7 +260,7 @@ describe('POST /api/v1/user/resend-verification', () => {
 
       await app.inject({
         method: 'post',
-        url: '/api/v1/user/verify-email',
+        url: '/api/v1/auth/email/verify',
         payload: {
           token,
         },
@@ -269,7 +269,7 @@ describe('POST /api/v1/user/resend-verification', () => {
       // 3. Try to resend verification email
       const res = await app.inject({
         method: 'post',
-        url: '/api/v1/user/resend-verification',
+        url: '/api/v1/auth/email/resend',
         payload: {
           email: uniqueEmail,
         },

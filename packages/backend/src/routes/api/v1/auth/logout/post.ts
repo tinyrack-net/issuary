@@ -1,5 +1,5 @@
-import z from 'zod';
 import type { FastifyWithZodInstance } from '@/server.js';
+import z from 'zod';
 
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
@@ -8,7 +8,7 @@ export default (fastify: FastifyWithZodInstance) =>
     schema: {
       summary: 'Logout',
       description: 'Logout the current user and purge the session',
-      tags: ['User'],
+      tags: ['Auth'],
       response: {
         200: z.object({
           ok: z.literal(true),
