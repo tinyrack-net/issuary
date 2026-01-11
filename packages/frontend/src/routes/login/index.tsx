@@ -1,5 +1,5 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { EnvelopeSimple, Lock } from '@phosphor-icons/react';
+import { EnvelopeSimpleIcon, LockIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
@@ -126,7 +126,7 @@ function Login() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <IconInput
-          icon={EnvelopeSimple}
+          icon={EnvelopeSimpleIcon}
           type="email"
           placeholder={t('login.email.placeholder')}
           autoComplete="email"
@@ -135,7 +135,7 @@ function Login() {
         />
 
         <IconInput
-          icon={Lock}
+          icon={LockIcon}
           type="password"
           placeholder={t('login.password.placeholder')}
           autoComplete="current-password"

@@ -1,4 +1,4 @@
-import { Moon, Sun } from '@phosphor-icons/react';
+import { MoonIcon, SunIcon } from '@phosphor-icons/react';
 import type { ThemeMode } from '@/queries/config';
 
 type ThemeToggleProps = {
@@ -16,8 +16,8 @@ export function ThemeToggle({
   return (
     <label className={`swap swap-rotate btn btn-circle btn-sm ${className}`}>
       <input type="checkbox" checked={isDark} onChange={onToggle} />
-      <Sun className="swap-off size-4" weight="fill" />
-      <Moon className="swap-on size-4" weight="fill" />
+      <SunIcon className="swap-off size-4" weight="fill" />
+      <MoonIcon className="swap-on size-4" weight="fill" />
     </label>
   );
 }

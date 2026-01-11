@@ -1,5 +1,5 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { CheckCircle, EnvelopeSimple } from '@phosphor-icons/react';
+import { CheckCircleIcon, EnvelopeSimpleIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
@@ -80,7 +80,7 @@ function ForgotPassword() {
   if (emailSent) {
     return (
       <AuthPageLayout>
-        <Alert type="success" icon={CheckCircle} className="mb-4">
+        <Alert type="success" icon={CheckCircleIcon} className="mb-4">
           {t('forgotPassword.success.title')}
         </Alert>
 
@@ -91,7 +91,7 @@ function ForgotPassword() {
           })}
         />
 
-        <Alert type="info" icon={EnvelopeSimple} className="mb-4">
+        <Alert type="info" icon={EnvelopeSimpleIcon} className="mb-4">
           {t('forgotPassword.success.checkSpam')}
         </Alert>
 
@@ -114,7 +114,7 @@ function ForgotPassword() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <IconInput
-          icon={EnvelopeSimple}
+          icon={EnvelopeSimpleIcon}
           type="email"
           placeholder={t('forgotPassword.email.placeholder')}
           autoComplete="email"

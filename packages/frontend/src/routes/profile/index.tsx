@@ -1,11 +1,11 @@
 import {
-  CheckCircle,
-  EnvelopeSimple,
-  Key,
-  Link as LinkIcon,
-  SignOut,
-  User,
-  XCircle,
+  CheckCircleIcon,
+  EnvelopeSimpleIcon,
+  KeyIcon,
+  LinkIcon,
+  SignOutIcon,
+  UserIcon,
+  XCircleIcon,
 } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
@@ -111,7 +111,7 @@ function Profile() {
           <div className="flex flex-col gap-3">
             {/* User ID */}
             <div className="flex items-center gap-3">
-              <User className="size-5 text-primary" weight="regular" />
+              <UserIcon className="size-5 text-primary" weight="regular" />
               <div className="flex-1">
                 <div className="text-base-content/60 text-xs">
                   {t('profile.id.label')}
@@ -124,7 +124,7 @@ function Profile() {
 
             {/* Email */}
             <div className="flex items-center gap-3">
-              <EnvelopeSimple
+              <EnvelopeSimpleIcon
                 className="size-5 text-primary"
                 weight="regular"
               />
@@ -141,9 +141,9 @@ function Profile() {
             {/* Email Verified */}
             <div className="flex items-center gap-3">
               {user.email_verified ? (
-                <CheckCircle className="size-5 text-success" weight="regular" />
+                <CheckCircleIcon className="size-5 text-success" weight="regular" />
               ) : (
-                <XCircle className="size-5 text-error" weight="regular" />
+                <XCircleIcon className="size-5 text-error" weight="regular" />
               )}
               <div className="flex-1">
                 <div className="text-base-content/60 text-xs">
@@ -176,7 +176,7 @@ function Profile() {
           <div className="rounded-lg bg-base-200 p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Key
+                <KeyIcon
                   className={`size-4 ${
                     user.has_password ? 'text-success' : 'text-base-content/50'
                   }`}
@@ -301,7 +301,7 @@ function Profile() {
           </>
         ) : (
           <>
-            <SignOut className="size-4" weight="bold" />
+            <SignOutIcon className="size-4" weight="bold" />
             {t('profile.logout')}
           </>
         )}

@@ -1,5 +1,5 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { CheckCircle, Key, Lock, LockKey } from '@phosphor-icons/react';
+import { CheckCircleIcon, KeyIcon, LockIcon, LockKeyIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
@@ -109,7 +109,7 @@ function ResetPassword() {
   if (resetSuccess) {
     return (
       <AuthPageLayout>
-        <Alert type="success" icon={CheckCircle} className="mb-4">
+        <Alert type="success" icon={CheckCircleIcon} className="mb-4">
           {t('resetPassword.success.title')}
         </Alert>
 
@@ -139,7 +139,7 @@ function ResetPassword() {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         {!queryToken && (
           <IconInput
-            icon={Key}
+            icon={KeyIcon}
             type="text"
             placeholder={t('resetPassword.token.placeholder')}
             error={errors.token}
@@ -154,7 +154,7 @@ function ResetPassword() {
         )}
 
         <IconInput
-          icon={Lock}
+          icon={LockIcon}
           type="password"
           placeholder={t('resetPassword.password.placeholder')}
           autoComplete="new-password"
@@ -163,7 +163,7 @@ function ResetPassword() {
         />
 
         <IconInput
-          icon={LockKey}
+          icon={LockKeyIcon}
           type="password"
           placeholder={t('resetPassword.confirmPassword.placeholder')}
           autoComplete="new-password"

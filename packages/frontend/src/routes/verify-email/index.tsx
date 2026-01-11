@@ -1,5 +1,5 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { CheckCircle, EnvelopeSimple, Key } from '@phosphor-icons/react';
+import { CheckCircleIcon, EnvelopeSimpleIcon, KeyIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
@@ -125,7 +125,7 @@ function VerifyEmail() {
   if (verified) {
     return (
       <AuthPageLayout>
-        <Alert type="success" icon={CheckCircle} className="mb-4">
+        <Alert type="success" icon={CheckCircleIcon} className="mb-4">
           {t('verifyEmail.success.title')}
         </Alert>
 
@@ -153,7 +153,7 @@ function VerifyEmail() {
       />
 
       {email && (
-        <Alert type="info" icon={EnvelopeSimple} className="mb-4">
+        <Alert type="info" icon={EnvelopeSimpleIcon} className="mb-4">
           <div className="text-left">
             <p className="font-semibold">{t('register.success.subtitle')}</p>
             <p className="text-xs">
@@ -165,7 +165,7 @@ function VerifyEmail() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <IconInput
-          icon={Key}
+          icon={KeyIcon}
           type="text"
           placeholder={t('verifyEmail.token.placeholder')}
           error={errors.token}
@@ -186,7 +186,7 @@ function VerifyEmail() {
           <Divider />
 
           {resendSuccess && (
-            <Alert type="success" icon={CheckCircle} className="mb-2">
+            <Alert type="success" icon={CheckCircleIcon} className="mb-2">
               {t('verifyEmail.resendSuccess')}
             </Alert>
           )}

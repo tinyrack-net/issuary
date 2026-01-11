@@ -1,4 +1,4 @@
-import { GlobeSimple } from '@phosphor-icons/react';
+import { GlobeSimpleIcon } from '@phosphor-icons/react';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/hooks/use-language';
 
@@ -31,7 +31,7 @@ export function LanguageSelector({
         className="btn btn-circle btn-sm"
         aria-label={t('common.language.select')}
       >
-        <GlobeSimple className="size-4" weight="fill" />
+        <GlobeSimpleIcon className="size-4" weight="fill" />
       </div>
       <ul
         tabIndex={0}

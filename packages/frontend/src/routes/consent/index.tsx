@@ -1,4 +1,4 @@
-import { ShieldCheck, Warning, X } from '@phosphor-icons/react';
+import { ShieldCheckIcon, WarningIcon, XIcon } from '@phosphor-icons/react';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -72,7 +72,7 @@ function Consent() {
   if (consentInfoQuery.isError) {
     return (
       <AuthPageLayout>
-        <Alert type="error" icon={Warning} className="mb-4">
+        <Alert type="error" icon={WarningIcon} className="mb-4">
           {t('consent.error.title')}
         </Alert>
         <p className="mb-6 text-center text-base-content/70 text-sm">
@@ -118,7 +118,7 @@ function Consent() {
               className="flex items-start gap-3 rounded-lg bg-base-200 p-3"
             >
               <div className="mt-0.5 rounded-full bg-primary/20 p-1">
-                <ShieldCheck className="size-4 text-primary" weight="fill" />
+                <ShieldCheckIcon className="size-4 text-primary" weight="fill" />
               </div>
               <p className="font-medium text-sm">
                 {t(`consent.scope.${scope.name}`, {
@@ -142,7 +142,7 @@ function Consent() {
             <span className="loading loading-spinner loading-sm" />
           ) : (
             <>
-              <X className="size-4" weight="bold" />
+              <XIcon className="size-4" weight="bold" />
               {t('consent.deny')}
             </>
           )}
@@ -157,7 +157,7 @@ function Consent() {
             <span className="loading loading-spinner loading-sm" />
           ) : (
             <>
-              <ShieldCheck className="size-4" weight="fill" />
+              <ShieldCheckIcon className="size-4" weight="fill" />
               {t('consent.allow')}
             </>
           )}

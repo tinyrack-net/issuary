@@ -374,6 +374,17 @@ describe('My Tests', () => {
 - TanStack Query for data fetching
 - Forms: use React Hook Form with Zod validation via `standardSchemaResolver` from `@hookform/resolvers/standard-schema`
 - Icons: use **Phosphor Icons** for all icon components
+  - Import icons with `Icon` suffix: `CheckCircleIcon`, `EnvelopeSimpleIcon`, etc.
+  - Type imports use `Icon` (without suffix): `import type { Icon } from '@phosphor-icons/react'`
+  - Example:
+```typescript
+import { CheckCircleIcon, EnvelopeSimpleIcon } from '@phosphor-icons/react';
+import type { Icon } from '@phosphor-icons/react';
+
+// Usage
+<CheckCircleIcon className="size-5" weight="fill" />
+<EnvelopeSimpleIcon className="size-4" weight="regular" />
+```
 
 #### Build Configuration
 - Frontend builds to `../backend/public/` directory

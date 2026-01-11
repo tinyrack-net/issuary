@@ -1,4 +1,4 @@
-import { House, WarningCircle } from '@phosphor-icons/react';
+import { HouseIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
@@ -24,7 +24,7 @@ function ErrorPage() {
 
   return (
     <AuthPageLayout>
-      <Alert type="error" icon={WarningCircle} className="mb-4">
+      <Alert type="error" icon={WarningCircleIcon} className="mb-4">
         {t('error.title')}
       </Alert>
 
@@ -51,7 +51,7 @@ function ErrorPage() {
           className="btn btn-ghost btn-block h-10 font-semibold text-[14px]"
           onClick={() => window.history.back()}
         >
-          <House className="size-4" weight="fill" />
+          <HouseIcon className="size-4" weight="fill" />
           {t('error.goBack')}
         </button>
       </div>
