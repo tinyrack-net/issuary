@@ -1,4 +1,4 @@
-import z from 'zod';
+import z from 'zod/v4';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) =>

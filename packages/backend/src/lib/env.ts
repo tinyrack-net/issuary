@@ -1,6 +1,6 @@
 import { zz } from '@/schemas/provider.js';
 import 'dotenv/config';
-import z from 'zod';
+import z from 'zod/v4';
 
 export const EnvironmentSchema = z.object({
   /**

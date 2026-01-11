@@ -1,5 +1,5 @@
 import fastifyPlugin from 'fastify-plugin';
-import type z from 'zod';
+import type z from 'zod/v4';
 import {
   type AppConfigAuthMethodOAuth,
   AppConfigs,

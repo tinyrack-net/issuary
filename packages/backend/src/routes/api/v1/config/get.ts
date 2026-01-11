@@ -1,6 +1,6 @@
+import z from 'zod/v4';
 import { AppConfigs } from '@/lib/config.js';
 import type { FastifyWithZodInstance } from '@/server.js';
-import z from 'zod';
 
 export default (fastify: FastifyWithZodInstance) => {
   fastify.route({

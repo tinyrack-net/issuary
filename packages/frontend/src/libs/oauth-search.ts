@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 /**
  * OIDC/OAuth 플로우에서 사용되는 쿼리 파라미터 스키마

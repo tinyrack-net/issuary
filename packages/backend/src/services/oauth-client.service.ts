@@ -1,6 +1,6 @@
 import { verify } from 'argon2';
 import fastifyPlugin from 'fastify-plugin';
-import type z from 'zod';
+import type z from 'zod/v4';
 import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';

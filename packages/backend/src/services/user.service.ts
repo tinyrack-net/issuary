@@ -1,5 +1,5 @@
 import fastifyPlugin from 'fastify-plugin';
-import type z from 'zod';
+import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
 import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';

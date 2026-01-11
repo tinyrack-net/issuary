@@ -158,7 +158,7 @@ pnpm test --watch
 - Group imports: external libraries first, then local imports
 - Example:
 ```typescript
-import z from 'zod';
+import z from 'zod/v4';
 import { UserSchema } from '@/schemas/user.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 ```

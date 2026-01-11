@@ -2,7 +2,7 @@ import { GlobeIcon, ShieldCheckIcon, XIcon } from '@phosphor-icons/react';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { useLanguage } from '@/hooks/use-language';
 import { OAuthSearchSchema } from '@/libs/oauth-search';
 import {

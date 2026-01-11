@@ -1,4 +1,4 @@
-import z from 'zod';
+import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';

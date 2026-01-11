@@ -1,12 +1,12 @@
 import fastifyPlugin from 'fastify-plugin';
-import type z from 'zod';
+import type z from 'zod/v4';
 import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
 import type { OAuthClientService } from './oauth-client.service.js';
-import type { UserConsentService } from './user-consent.service.js';
 import type { UserService } from './user.service.js';
+import type { UserConsentService } from './user-consent.service.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
