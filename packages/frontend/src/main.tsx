@@ -1,9 +1,9 @@
 import { RouterProvider } from '@tanstack/react-router';
-import { memo, StrictMode, Suspense } from 'react';
+import { memo, StrictMode, Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
-import '@/i18n';
 import { QueryClientProvider, useSuspenseQueries } from '@tanstack/react-query';
+import { initI18n } from '@/i18n';
 import { GlobalQueryClient } from './libs/query-client';
 import { AppRouter } from './libs/router';
 import { appConfigQueryOptions } from './queries/config';
@@ -16,10 +16,29 @@ if (!RootElement) {
 }
 
 const Loader = memo(() => {
-  const [{ data: session }] = useSuspenseQueries({
+  const [i18nInitialized, setI18nInitialized] = useState(false);
+
+  const [{ data: session }, { data: config }] = useSuspenseQueries({
     queries: [getSessionQueryOptions, appConfigQueryOptions],
   });
-  console.log('session: ', session);
+
+  // Initialize i18n with server config
+  useEffect(() => {
+    if (config && !i18nInitialized) {
+      initI18n({
+        supportedLanguages: config.app.supported_languages,
+        defaultLanguage: config.app.default_language,
+        fallbackLanguage: config.app.fallback_language,
+      });
+      setI18nInitialized(true);
+    }
+  }, [config, i18nInitialized]);
+
+  // Wait for i18n initialization before rendering router
+  if (!i18nInitialized) {
+    return null;
+  }
+
   return (
     <RouterProvider
       router={AppRouter}

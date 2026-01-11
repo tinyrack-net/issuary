@@ -1,3 +1,4 @@
+import { LanguageSelector } from '@/components/ui/LanguageSelector.js';
 import { ThemeToggle } from '@/components/ui/ThemeToggle.js';
 import { useTheme } from '@/hooks/use-theme.js';
 
@@ -27,6 +28,7 @@ export function AuthPageLayout({ children }: AuthPageLayoutProps) {
           onToggle={toggleDarkMode}
         />
       )}
+      <LanguageSelector />
       <div className="card w-full max-w-100 border border-base-200 bg-base-100 p-12 shadow-lg">
         {children}
       </div>
