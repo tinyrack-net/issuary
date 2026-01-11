@@ -1,5 +1,5 @@
-import { LanguageSelector } from '@/components/ui/LanguageSelector.js';
-import { ThemeToggle } from '@/components/ui/ThemeToggle.js';
+import { LanguageSelector } from '@/components/ui/language-selector.js';
+import { ThemeToggle } from '@/components/ui/theme-toggle.js';
 import { useTheme } from '@/hooks/use-theme.js';
 
 const AUTH_BACKGROUND_URL =

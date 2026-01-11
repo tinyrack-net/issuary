@@ -1,6 +1,6 @@
-export { AuthPageLayout } from './AuthPageLayout.js';
-export { FooterLink } from './FooterLink.js';
-export { IconInput } from './IconInput.js';
-export { OAuthButtons } from './OAuthButtons.js';
-export { PageHeader } from './PageHeader.js';
-export { SubmitButton } from './SubmitButton.js';
+export { AuthPageLayout } from './auth-page-layout.js';
+export { FooterLink } from './footer-link.js';
+export { IconInput } from './icon-input.js';
+export { OAuthButtons } from './oauth-buttons.js';
+export { PageHeader } from './page-header.js';
+export { SubmitButton } from './submit-button.js';
