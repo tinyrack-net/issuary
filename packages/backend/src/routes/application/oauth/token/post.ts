@@ -1,5 +1,8 @@
 import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
+import { f } from '@/schemas/field.js';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
@@ -10,13 +13,11 @@ export default (fastify: FastifyWithZodInstance) => {
       summary: 'Token',
       description:
         'OAuth2 Token Endpoint - Exchange authorization code or refresh token for access tokens (RFC 6749)',
-      tags: ['OpenID'],
+      tags: [TAGS.OPENID],
       body: z.object({
-        grant_type: z
-          .enum(['authorization_code', 'refresh_token'])
-          .describe(
-            'OAuth 2.0 grant type. "authorization_code" for initial token request after user authorization, "refresh_token" to refresh expired access tokens without re-authentication.',
-          ),
+        grant_type: f.grantType.describe(
+          'OAuth 2.0 grant type. "authorization_code" for initial token request after user authorization, "refresh_token" to refresh expired access tokens without re-authentication.',
+        ),
         code: z
           .string()
           .min(1)
@@ -25,33 +26,20 @@ export default (fastify: FastifyWithZodInstance) => {
           .describe(
             'Authorization code received from /authorize endpoint. Single-use, expires after 10 minutes. Required for authorization_code grant.',
           ),
-        redirect_uri: z
-          .string()
-          .min(1)
-          .max(1000)
+        redirect_uri: f.redirectUri
           .optional()
           .describe(
             'Redirect URI used in the authorization request. Must exactly match the original value for security validation. Required for authorization_code grant.',
           ),
-        client_id: z
-          .string()
-          .min(1)
-          .max(1000)
-          .describe(
-            'Unique identifier of the OAuth client application. Must match the client that initiated the authorization flow.',
-          ),
-        client_secret: z
-          .string()
-          .min(1)
-          .max(1000)
+        client_id: f.clientId.describe(
+          'Unique identifier of the OAuth client application. Must match the client that initiated the authorization flow.',
+        ),
+        client_secret: f.clientSecret
           .optional()
           .describe(
             'Client secret for confidential clients (server-side apps). Required for confidential clients, optional for public clients using PKCE. Never expose in browser/mobile apps.',
           ),
-        code_verifier: z
-          .string()
-          .min(43)
-          .max(128)
+        code_verifier: f.codeVerifier
           .optional()
           .describe(
             'PKCE code verifier (random string, 43-128 chars). Required if code_challenge was used in authorization request. Proves the token request comes from the same client that initiated authorization (RFC 7636).',
@@ -64,49 +52,20 @@ export default (fastify: FastifyWithZodInstance) => {
           ),
       }),
       response: {
-        200: z.object({
-          access_token: z
-            .string()
-            .describe(
-              'OAuth 2.0 access token (JWT format). Include in Authorization header as "Bearer <token>" for API requests. Expires after 1 hour.',
-            ),
-          token_type: z
-            .literal('Bearer')
-            .describe(
-              'Token type identifier (always "Bearer" for OAuth 2.0). Indicates how the access token should be used in requests.',
-            ),
-          expires_in: z
-            .number()
-            .int()
-            .describe(
-              'Access token lifetime in seconds (3600 = 1 hour). Use refresh token to get new access token after expiration.',
-            ),
-          refresh_token: z
-            .string()
-            .optional()
-            .describe(
-              'Refresh token (JWT format) for obtaining new access tokens. Store securely. Does not expire but can be revoked.',
-            ),
-          id_token: z
-            .string()
-            .optional()
-            .describe(
-              'OpenID Connect ID Token (JWT format). Contains authenticated user identity claims (sub, email, etc.). Only present if "openid" scope was requested.',
-            ),
-          scope: z
-            .string()
-            .describe(
-              'Space-separated list of granted scopes (e.g., "openid email profile"). May differ from requested scopes if some were denied.',
-            ),
-        }),
-        400: z.object({
-          code: z.string(),
-          message: z.string(),
-        }),
-        401: z.object({
-          code: z.string(),
-          message: z.string(),
-        }),
+        200: r.TokenResponse,
+        400: z.union([
+          e.MissingAuthorizationCode.Schema,
+          e.MissingRedirectUri.Schema,
+          e.MissingRefreshToken.Schema,
+          e.InvalidAuthorizationCode.Schema,
+          e.RedirectUriMismatch.Schema,
+          e.InvalidPKCEVerifier.Schema,
+          e.InvalidRefreshToken.Schema,
+          e.ClientIdMismatch.Schema,
+          e.OAuthClientDisabled.Schema,
+          e.UnsupportedGrantType.Schema,
+        ]),
+        401: e.InvalidClientCredentials.Schema,
       },
     },
     handler: async (req, res) => {

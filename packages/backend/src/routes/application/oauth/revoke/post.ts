@@ -1,5 +1,7 @@
 import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
+import { f } from '@/schemas/field.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 /**
@@ -21,32 +23,22 @@ export default (fastify: FastifyWithZodInstance) => {
       summary: 'Token Revocation',
       description:
         'OAuth 2.0 Token Revocation Endpoint - Revokes access or refresh tokens (RFC 7009)',
-      tags: ['OpenID'],
+      tags: [TAGS.OPENID],
       body: z.object({
-        token: z
-          .string()
-          .min(1)
-          .describe(
-            'The token to revoke. Can be an access token or refresh token.',
-          ),
-        token_type_hint: z
-          .enum(['access_token', 'refresh_token'])
+        token: f.token.describe(
+          'The token to revoke. Can be an access token or refresh token.',
+        ),
+        token_type_hint: f.tokenTypeHint
           .optional()
           .describe(
             'Optional hint about the type of token being revoked. Helps optimize processing.',
           ),
-        client_id: z
-          .string()
-          .min(1)
-          .max(1000)
+        client_id: f.clientId
           .optional()
           .describe(
             'OAuth client identifier. Optional but recommended for client authentication.',
           ),
-        client_secret: z
-          .string()
-          .min(1)
-          .max(1000)
+        client_secret: f.clientSecret
           .optional()
           .describe(
             'Client secret for confidential clients. Required if client_id is provided for confidential clients.',
@@ -58,10 +50,10 @@ export default (fastify: FastifyWithZodInstance) => {
           .describe(
             'Token revoked successfully or token was already invalid. Per RFC 7009, returns 200 in both cases.',
           ),
-        400: z.object({
-          code: z.string(),
-          message: z.string(),
-        }),
+        400: z.union([
+          e.OAuthClientNotFound.Schema,
+          e.OAuthClientDisabled.Schema,
+        ]),
         401: e.InvalidClientCredentials.Schema,
       },
     },

@@ -1,5 +1,6 @@
-import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) =>
@@ -9,24 +10,9 @@ export default (fastify: FastifyWithZodInstance) =>
     schema: {
       summary: 'List Linked OAuth Accounts',
       description: 'Returns all OAuth accounts linked to the current user',
-      tags: ['User'],
+      tags: [TAGS.USER],
       response: {
-        200: z.object({
-          accounts: z.array(
-            z.object({
-              provider_name: z.string(),
-              linked_at: z.date(),
-            }),
-          ),
-          available_providers: z.array(
-            z.object({
-              name: z.string(),
-              display_name: z.string(),
-              icon_url: z.string().optional(),
-              linked: z.boolean(),
-            }),
-          ),
-        }),
+        200: r.LinkedAccountsResponse,
         401: e.Unauthorized.Schema,
         404: e.UserNotFound.Schema,
       },

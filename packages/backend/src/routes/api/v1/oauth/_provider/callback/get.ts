@@ -1,6 +1,8 @@
 import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
+import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) =>
@@ -11,23 +13,19 @@ export default (fastify: FastifyWithZodInstance) =>
       summary: 'OAuth Callback',
       description:
         'Handles the callback from OAuth provider after user authorization',
-      tags: ['OAuth Connect'],
+      tags: [TAGS.OAUTH_CONNECT],
       params: z.object({
-        provider: z.string().min(1),
+        provider: f.providerName,
       }),
       querystring: z.object({
         code: z.string().min(1),
-        state: z.string().min(1),
+        state: f.state,
         error: z.string().optional(),
         error_description: z.string().optional(),
       }),
       response: {
         302: z.void(),
-        200: z.object({
-          user: r.UserSession,
-          is_new_user: z.boolean(),
-          return_url: z.string().optional(),
-        }),
+        200: r.OAuthCallbackResponse,
         400: z.union([
           e.OAuthStateMismatch.Schema,
           e.OAuthSessionExpired.Schema,

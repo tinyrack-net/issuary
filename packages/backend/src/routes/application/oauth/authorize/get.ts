@@ -1,5 +1,8 @@
 import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
+import { f } from '@/schemas/field.js';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 import type { AuthorizeParams } from '@/services/oauth-authorize.service.js';
 
@@ -10,64 +13,39 @@ export default (fastify: FastifyWithZodInstance) => {
     schema: {
       summary: 'Authorize',
       description: 'OAuth2 Authorization Endpoint',
-      tags: ['OpenID'],
+      tags: [TAGS.OPENID],
       querystring: z.object({
-        response_type: z
-          .string()
-          .min(1)
-          .max(100)
-          .describe(
-            'OAuth2 response type (e.g., "code", "token"). Must be registered for this client.',
-          ),
-        redirect_uri: z
-          .string()
-          .min(1)
-          .max(1000)
-          .describe(
-            'URI to redirect the user after authorization. Must exactly match one of the pre-registered redirect URIs for the client.',
-          ),
-        state: z
-          .string()
-          .min(1)
-          .max(1000)
+        response_type: f.responseType.describe(
+          'OAuth2 response type (e.g., "code", "token"). Must be registered for this client.',
+        ),
+        redirect_uri: f.redirectUri.describe(
+          'URI to redirect the user after authorization. Must exactly match one of the pre-registered redirect URIs for the client.',
+        ),
+        state: f.state
           .optional()
           .describe(
             'Opaque value used to maintain state between the request and callback. Recommended for CSRF protection. Will be returned unchanged in the redirect.',
           ),
-        client_id: z
-          .string()
-          .min(1)
-          .max(1000)
-          .describe(
-            'Unique identifier of the OAuth client application. Used to validate the client and verify allowed configurations.',
-          ),
-        code_challenge: z
-          .string()
-          .min(1)
-          .max(1000)
+        client_id: f.clientId.describe(
+          'Unique identifier of the OAuth client application. Used to validate the client and verify allowed configurations.',
+        ),
+        code_challenge: f.codeChallenge
           .optional()
           .describe(
             'PKCE code challenge derived from a code verifier. Used to prevent authorization code interception attacks. Recommended for public clients (SPAs, mobile apps).',
           ),
-        code_challenge_method: z
-          .enum(['S256', 'plain'])
+        code_challenge_method: f.codeChallengeMethod
           .optional()
           .default('S256')
           .describe(
             'Method used to derive the code challenge from the verifier. "S256" (SHA-256 hash, recommended) or "plain" (no transformation). Defaults to "S256".',
           ),
-        scope: z
-          .string()
-          .min(1)
-          .max(1000)
+        scope: f.scope
           .optional()
           .describe(
             'Space-delimited list of requested permission scopes (e.g., "openid profile email"). Each scope must be allowed for this client. Include "openid" for OIDC requests.',
           ),
-        nonce: z
-          .string()
-          .min(1)
-          .max(1000)
+        nonce: f.nonce
           .optional()
           .describe(
             'Random value used to mitigate replay attacks in OIDC flows. Will be included in the ID token for client verification.',
@@ -95,10 +73,7 @@ export default (fastify: FastifyWithZodInstance) => {
       }),
       response: {
         302: z.null(),
-        400: z.object({
-          error: z.string(),
-          error_description: z.string(),
-        }),
+        400: r.OAuthError,
       },
     },
     handler: async (req, res) => {

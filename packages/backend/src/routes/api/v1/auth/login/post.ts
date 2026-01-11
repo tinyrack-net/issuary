@@ -2,6 +2,7 @@ import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) =>
@@ -11,15 +12,13 @@ export default (fastify: FastifyWithZodInstance) =>
     schema: {
       summary: 'Login',
       description: 'Login',
-      tags: ['Auth'],
+      tags: [TAGS.AUTH],
       body: z.object({
         email: f.userEmail,
         password: f.userPassword,
       }),
       response: {
-        200: z.object({
-          user: r.UserSession,
-        }),
+        200: r.UserSessionResponse,
         400: e.ValidationError.Schema,
         401: e.InvalidEmailOrPassword.Schema,
       },

@@ -1,4 +1,5 @@
-import z from 'zod/v4';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 /**
@@ -17,21 +18,10 @@ export default (fastify: FastifyWithZodInstance) => {
       summary: 'Readiness probe',
       description:
         'Returns 200 if the server is ready to accept traffic. Checks database connectivity.',
-      tags: ['Health'],
+      tags: [TAGS.HEALTH],
       response: {
-        200: z.object({
-          status: z.literal('ok'),
-          checks: z.object({
-            database: z.literal('ok'),
-          }),
-        }),
-        503: z.object({
-          status: z.literal('error'),
-          checks: z.object({
-            database: z.enum(['ok', 'error']),
-          }),
-          error: z.string().optional(),
-        }),
+        200: r.ReadinessResponse,
+        503: r.ReadinessErrorResponse,
       },
     },
     handler: async (_req, res) => {

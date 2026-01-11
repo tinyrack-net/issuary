@@ -1,4 +1,7 @@
+import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 import z from 'zod/v4';
 
@@ -13,14 +16,14 @@ export default (fastify: FastifyWithZodInstance) => {
     schema: {
       summary: 'Resend Verification Email',
       description: 'Resend email verification link to user',
-      tags: ['Auth'],
+      tags: [TAGS.AUTH],
       body: z.object({
         email: f.userEmail,
       }),
       response: {
-        200: z.object({
-          message: z.string(),
-        }),
+        200: r.MessageResponse,
+        400: e.EmailAlreadyVerified.Schema,
+        404: e.UserNotFound.Schema,
       },
     },
     handler: async (req, res) => {

@@ -1,5 +1,7 @@
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 import z from 'zod/v4';
 
@@ -10,15 +12,13 @@ export default (fastify: FastifyWithZodInstance) => {
     schema: {
       summary: 'Reset password',
       description: 'Resets the user password using a valid reset token.',
-      tags: ['Auth'],
+      tags: [TAGS.AUTH],
       body: z.object({
-        token: z.string().min(1).describe('Password reset token'),
+        token: f.token,
         password: f.userPassword,
       }),
       response: {
-        200: z.object({
-          message: z.string(),
-        }),
+        200: r.MessageResponse,
         400: e.InvalidPasswordResetToken.Schema,
         403: e.UserNotEditable.Schema,
       },

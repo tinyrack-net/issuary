@@ -1,5 +1,8 @@
 import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
+import { f } from '@/schemas/field.js';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
@@ -10,97 +13,34 @@ export default (fastify: FastifyWithZodInstance) => {
       summary: 'Token Introspection',
       description:
         'OAuth2 Token Introspection Endpoint - Returns metadata about tokens (RFC 7662)',
-      tags: ['OpenID'],
+      tags: [TAGS.OPENID],
       body: z.object({
-        token: z
-          .string()
-          .min(1)
-          .describe(
-            'The token to introspect (access token or refresh token). Required.',
-          ),
-        token_type_hint: z
-          .enum(['access_token', 'refresh_token'])
+        token: f.token.describe(
+          'The token to introspect (access token or refresh token). Required.',
+        ),
+        token_type_hint: f.tokenTypeHint
           .optional()
           .describe(
             'Optional hint about the type of token being introspected. Helps optimize validation.',
           ),
-        client_id: z
-          .string()
-          .min(1)
-          .max(1000)
+        client_id: f.clientId
           .optional()
           .describe(
             'OAuth client identifier. Optional but recommended for client authentication.',
           ),
-        client_secret: z
-          .string()
-          .min(1)
-          .max(1000)
+        client_secret: f.clientSecret
           .optional()
           .describe(
             'Client secret for confidential clients. Required if client_id is provided for confidential clients.',
           ),
       }),
       response: {
-        200: z.object({
-          active: z
-            .boolean()
-            .describe(
-              'Whether the token is currently active. False if expired, invalid, or revoked.',
-            ),
-          scope: z
-            .string()
-            .optional()
-            .describe(
-              'Space-separated list of scopes associated with the token. Only present if active=true.',
-            ),
-          client_id: z
-            .string()
-            .optional()
-            .describe(
-              'Client identifier for which the token was issued. Only present if active=true.',
-            ),
-          token_type: z
-            .literal('Bearer')
-            .optional()
-            .describe(
-              'Type of the token (always "Bearer"). Only present if active=true.',
-            ),
-          exp: z
-            .number()
-            .int()
-            .optional()
-            .describe(
-              'Expiration timestamp (seconds since epoch). Only present if active=true.',
-            ),
-          iat: z
-            .number()
-            .int()
-            .optional()
-            .describe(
-              'Issued-at timestamp (seconds since epoch). Only present if active=true.',
-            ),
-          sub: z
-            .string()
-            .optional()
-            .describe(
-              'Subject identifier (user ID). Only present if active=true.',
-            ),
-          iss: z
-            .string()
-            .optional()
-            .describe(
-              'Issuer identifier (this server). Only present if active=true.',
-            ),
-        }),
-        400: z.object({
-          code: z.string(),
-          message: z.string(),
-        }),
-        401: z.object({
-          code: z.string(),
-          message: z.string(),
-        }),
+        200: r.IntrospectionResponse,
+        400: z.union([
+          e.OAuthClientNotFound.Schema,
+          e.OAuthClientDisabled.Schema,
+        ]),
+        401: e.InvalidClientCredentials.Schema,
       },
     },
     handler: async (req, res) => {

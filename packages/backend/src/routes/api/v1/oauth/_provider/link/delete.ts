@@ -1,5 +1,8 @@
 import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
+import { f } from '@/schemas/field.js';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) =>
@@ -9,14 +12,12 @@ export default (fastify: FastifyWithZodInstance) =>
     schema: {
       summary: 'Unlink OAuth Account',
       description: 'Unlinks an OAuth provider from the current user',
-      tags: ['OAuth Connect'],
+      tags: [TAGS.OAUTH_CONNECT],
       params: z.object({
-        provider: z.string().min(1),
+        provider: f.providerName,
       }),
       response: {
-        200: z.object({
-          success: z.boolean(),
-        }),
+        200: r.SuccessResponse,
         400: e.CannotUnlinkLastAuthMethod.Schema,
         401: e.Unauthorized.Schema,
         404: z.union([

@@ -1,4 +1,5 @@
-import z from 'zod/v4';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 /**
@@ -16,11 +17,9 @@ export default (fastify: FastifyWithZodInstance) => {
       summary: 'Liveness probe',
       description:
         'Returns 200 if the server is alive. Used by Kubernetes liveness probe.',
-      tags: ['Health'],
+      tags: [TAGS.HEALTH],
       response: {
-        200: z.object({
-          status: z.literal('ok'),
-        }),
+        200: r.LivenessResponse,
       },
     },
     handler: async (_req, res) => {

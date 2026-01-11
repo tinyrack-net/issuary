@@ -1,5 +1,5 @@
-import z from 'zod/v4';
 import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) =>
@@ -9,11 +9,9 @@ export default (fastify: FastifyWithZodInstance) =>
     schema: {
       summary: 'Get Session',
       description: 'Get Session',
-      tags: ['User'],
+      tags: [TAGS.USER],
       response: {
-        200: z.object({
-          user: r.UserSession.nullable(),
-        }),
+        200: r.UserSessionNullableResponse,
       },
     },
     handler: async (req, res) => {

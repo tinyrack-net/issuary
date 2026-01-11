@@ -1,4 +1,7 @@
+import { e } from '@/schemas/error.js';
+import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 import z from 'zod/v4';
 
@@ -12,14 +15,13 @@ export default (fastify: FastifyWithZodInstance) => {
     schema: {
       summary: 'Verify Email',
       description: 'Verify user email with verification token',
-      tags: ['Auth'],
+      tags: [TAGS.AUTH],
       body: z.object({
-        token: z.string().min(1, 'Token is required'),
+        token: f.token,
       }),
       response: {
-        200: z.object({
-          user: r.UserSession,
-        }),
+        200: r.UserSessionResponse,
+        400: e.InvalidVerificationToken.Schema,
       },
     },
     handler: async (req, res) => {

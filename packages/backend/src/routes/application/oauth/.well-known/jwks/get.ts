@@ -1,4 +1,5 @@
 import z from 'zod/v4';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
@@ -9,7 +10,7 @@ export default (fastify: FastifyWithZodInstance) => {
       summary: 'JWKS',
       description:
         'JSON Web Key Set (JWKS) endpoint - Returns RSA public keys used for verifying tokens (RFC 7517). Supports automatic key rotation with multiple active keys.',
-      tags: ['OpenID'],
+      tags: [TAGS.OPENID],
       response: {
         /**
          * JWK (JSON Web Key) schema according to RFC 7517

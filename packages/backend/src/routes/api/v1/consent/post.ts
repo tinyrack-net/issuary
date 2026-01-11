@@ -1,4 +1,8 @@
 import z from 'zod/v4';
+import { e } from '@/schemas/error.js';
+import { f } from '@/schemas/field.js';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 /**
@@ -15,41 +19,26 @@ export default (fastify: FastifyWithZodInstance) => {
     schema: {
       summary: 'Submit consent decision',
       description: 'Handles the user consent decision for OAuth authorization.',
-      tags: ['Consent'],
+      tags: [TAGS.CONSENT],
       body: z.object({
-        client_id: z
-          .string()
-          .min(1)
-          .max(1000)
-          .describe('OAuth client ID requesting authorization'),
-        redirect_uri: z
-          .string()
-          .min(1)
-          .max(1000)
-          .describe('URI to redirect after authorization'),
-        response_type: z
-          .string()
-          .min(1)
-          .max(100)
-          .describe('OAuth2 response type'),
-        scope: z
-          .string()
-          .max(1000)
+        client_id: f.clientId.describe(
+          'OAuth client ID requesting authorization',
+        ),
+        redirect_uri: f.redirectUri.describe(
+          'URI to redirect after authorization',
+        ),
+        response_type: f.responseType.describe('OAuth2 response type'),
+        scope: f.scope
           .optional()
           .describe('Space-delimited list of requested scopes'),
-        state: z
-          .string()
-          .max(1000)
+        state: f.state
           .optional()
           .describe('State parameter to return to the client'),
-        nonce: z.string().max(1000).optional().describe('OIDC nonce parameter'),
-        code_challenge: z
-          .string()
-          .max(1000)
+        nonce: f.nonce.optional().describe('OIDC nonce parameter'),
+        code_challenge: f.codeChallenge
           .optional()
           .describe('PKCE code challenge'),
-        code_challenge_method: z
-          .enum(['S256', 'plain'])
+        code_challenge_method: f.codeChallengeMethod
           .optional()
           .describe('PKCE code challenge method'),
         decision: z
@@ -57,17 +46,9 @@ export default (fastify: FastifyWithZodInstance) => {
           .describe('User consent decision: "allow" or "deny"'),
       }),
       response: {
-        200: z.object({
-          redirect_url: z.string(),
-        }),
-        401: z.object({
-          code: z.string(),
-          message: z.string(),
-        }),
-        400: z.object({
-          code: z.string(),
-          message: z.string(),
-        }),
+        200: r.RedirectUrlResponse,
+        400: e.OAuthClientNotFound.Schema,
+        401: e.Unauthorized.Schema,
       },
     },
     handler: async (req, res) => {

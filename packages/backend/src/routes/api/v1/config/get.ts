@@ -1,4 +1,4 @@
-import z from 'zod/v4';
+import { r } from '@/schemas/response.js';
 import { AppConfigs } from '@/lib/config.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
@@ -11,23 +11,7 @@ export default (fastify: FastifyWithZodInstance) => {
       description: 'Get App Config',
       tags: ['Config'],
       response: {
-        200: z.object({
-          app: z.object({
-            supported_languages: z.array(z.string()),
-            default_language: z.string(),
-            fallback_language: z.string(),
-          }),
-          database: z.object({
-            enabled: z.boolean(),
-          }),
-          authentication_methods: z.record(
-            z.string(),
-            z.object({
-              enabled: z.boolean(),
-              type: z.string(),
-            }),
-          ),
-        }),
+        200: r.ConfigResponse,
       },
     },
     handler: async (_req, res) => {

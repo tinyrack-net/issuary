@@ -1,4 +1,8 @@
 import z from 'zod/v4';
+import { e } from '@/schemas/error.js';
+import { h } from '@/schemas/header.js';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
@@ -9,54 +13,17 @@ export default (fastify: FastifyWithZodInstance) => {
       summary: 'User Info',
       description:
         'OIDC UserInfo Endpoint - Returns claims about the authenticated user (RFC OIDC Core §5.3)',
-      tags: ['OpenID'],
-      headers: z.object({
-        authorization: z
-          .string()
-          .min(1)
-          .optional()
-          .describe(
-            'Bearer token in format: "Bearer <access_token>". The access token must have been issued with openid scope.',
-          ),
-      }),
+      tags: [TAGS.OPENID],
+      headers: h.BearerAuth,
       response: {
-        200: z.object({
-          sub: z
-            .string()
-            .describe('Subject identifier - unique user ID (always returned)'),
-          email: z
-            .string()
-            .optional()
-            .describe('User email address (returned if email scope granted)'),
-          email_verified: z
-            .boolean()
-            .optional()
-            .describe(
-              'Whether email is verified (returned if email scope granted)',
-            ),
-          name: z
-            .string()
-            .optional()
-            .describe('User full name (returned if profile scope granted)'),
-          picture: z
-            .string()
-            .optional()
-            .describe(
-              'User profile picture URL (returned if profile scope granted)',
-            ),
-          preferred_username: z
-            .string()
-            .optional()
-            .describe('Preferred username (returned if profile scope granted)'),
-        }),
-        401: z.object({
-          code: z.string(),
-          message: z.string(),
-        }),
-        404: z.object({
-          code: z.string(),
-          message: z.string(),
-        }),
+        200: r.UserInfoResponse,
+        401: z.union([
+          e.MissingAuthorizationHeader.Schema,
+          e.InvalidAuthorizationHeaderFormat.Schema,
+          e.MissingBearerToken.Schema,
+          e.InvalidAccessToken.Schema,
+        ]),
+        404: e.UserNotFound.Schema,
       },
     },
     handler: async (req, res) => {

@@ -1,5 +1,6 @@
 import z from 'zod/v4';
 import { AppConfigs } from '@/lib/config.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
@@ -10,7 +11,7 @@ export default (fastify: FastifyWithZodInstance) => {
       summary: 'OpenID Provider Configuration',
       description:
         'Returns OpenID Provider Configuration Information (OpenID Connect Discovery 1.0)',
-      tags: ['OpenID'],
+      tags: [TAGS.OPENID],
       response: {
         /**
          * OpenID Provider Configuration Response Schema

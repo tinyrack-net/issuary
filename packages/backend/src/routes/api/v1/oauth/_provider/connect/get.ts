@@ -1,5 +1,7 @@
 import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
+import { f } from '@/schemas/field.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) =>
@@ -10,9 +12,9 @@ export default (fastify: FastifyWithZodInstance) =>
       summary: 'Initiate OAuth Connect Flow',
       description:
         'Redirects the user to the OAuth provider for authentication',
-      tags: ['OAuth Connect'],
+      tags: [TAGS.OAUTH_CONNECT],
       params: z.object({
-        provider: z.string().min(1),
+        provider: f.providerName,
       }),
       querystring: z.object({
         mode: z.enum(['login', 'register', 'link']).default('login'),

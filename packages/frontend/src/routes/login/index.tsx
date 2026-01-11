@@ -124,9 +124,8 @@ function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-base-200 to-base-300 p-4">
+    <div className="flex min-h-screen items-center justify-center">
       <div className="w-full max-w-md">
-        {/* Login Card */}
         <div className="card bg-base-100 shadow-2xl">
           <div className="card-body gap-6 p-8">
             {/* Header */}

@@ -1,4 +1,5 @@
-import z from 'zod/v4';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) =>
@@ -8,17 +9,9 @@ export default (fastify: FastifyWithZodInstance) =>
     schema: {
       summary: 'List Available OAuth Providers',
       description: 'Returns all enabled OAuth providers for login/registration',
-      tags: ['OAuth Connect'],
+      tags: [TAGS.OAUTH_CONNECT],
       response: {
-        200: z.object({
-          providers: z.array(
-            z.object({
-              name: z.string(),
-              display_name: z.string(),
-              icon_url: z.string().optional(),
-            }),
-          ),
-        }),
+        200: r.ProvidersResponse,
       },
     },
     handler: async (_req, res) => {

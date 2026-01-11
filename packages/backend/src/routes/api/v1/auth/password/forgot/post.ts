@@ -1,5 +1,7 @@
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 import z from 'zod/v4';
 
@@ -16,14 +18,12 @@ export default (fastify: FastifyWithZodInstance) => {
       summary: 'Request password reset',
       description:
         'Sends a password reset email to the user. Always returns success to prevent email enumeration.',
-      tags: ['Auth'],
+      tags: [TAGS.AUTH],
       body: z.object({
         email: f.userEmail,
       }),
       response: {
-        200: z.object({
-          message: z.string(),
-        }),
+        200: r.MessageResponse,
         403: e.UserNotEditable.Schema,
       },
     },

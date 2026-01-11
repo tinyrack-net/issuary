@@ -1,4 +1,5 @@
-import z from 'zod/v4';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 // Track server start time for uptime calculation
@@ -19,25 +20,10 @@ export default (fastify: FastifyWithZodInstance) => {
       summary: 'Health check',
       description:
         'Returns comprehensive health status including version, uptime, and dependency checks.',
-      tags: ['Health'],
+      tags: [TAGS.HEALTH],
       response: {
-        200: z.object({
-          status: z.literal('ok'),
-          version: z.string(),
-          uptime: z.number().describe('Uptime in seconds'),
-          checks: z.object({
-            database: z.literal('ok'),
-          }),
-        }),
-        503: z.object({
-          status: z.literal('error'),
-          version: z.string(),
-          uptime: z.number().describe('Uptime in seconds'),
-          checks: z.object({
-            database: z.enum(['ok', 'error']),
-          }),
-          error: z.string().optional(),
-        }),
+        200: r.HealthResponse,
+        503: r.HealthErrorResponse,
       },
     },
     handler: async (_req, res) => {

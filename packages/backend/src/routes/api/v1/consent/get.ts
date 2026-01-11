@@ -1,5 +1,9 @@
 import z from 'zod/v4';
 import { e } from '@/schemas/error.js';
+import { f } from '@/schemas/field.js';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
+import { parseScopesWithDescriptions } from '@/lib/scopes.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 /**
@@ -16,42 +20,19 @@ export default (fastify: FastifyWithZodInstance) => {
       summary: 'Get consent information',
       description:
         'Returns OAuth client information and requested scopes for the consent page.',
-      tags: ['Consent'],
+      tags: [TAGS.CONSENT],
       querystring: z.object({
-        client_id: z
-          .string()
-          .min(1)
-          .max(1000)
-          .describe('OAuth client ID requesting authorization'),
-        scope: z
-          .string()
-          .max(1000)
+        client_id: f.clientId.describe(
+          'OAuth client ID requesting authorization',
+        ),
+        scope: f.scope
           .optional()
           .describe('Space-delimited list of requested scopes'),
       }),
       response: {
-        200: z.object({
-          client: z.object({
-            id: z.string(),
-            clientId: z.string(),
-            name: z.string(),
-          }),
-          scopes: z.array(
-            z.object({
-              name: z.string(),
-              description: z.string(),
-            }),
-          ),
-          user: z.object({
-            id: z.string(),
-            email: z.string(),
-          }),
-        }),
+        200: r.ConsentInfoResponse,
         400: e.OAuthClientNotFound.Schema,
-        401: z.object({
-          code: z.string(),
-          message: z.string(),
-        }),
+        401: e.Unauthorized.Schema,
       },
     },
     handler: async (req, res) => {
@@ -66,24 +47,8 @@ export default (fastify: FastifyWithZodInstance) => {
       // Fetch OAuth client information
       const client = await fastify.oauthClientService.findByClientId(client_id);
 
-      // Parse requested scopes
-      const requestedScopes = scope ? scope.split(' ') : [];
-
-      // Map scopes to their descriptions
-      const scopeDescriptions: Record<string, string> = {
-        openid: 'Access your unique user identifier',
-        profile: 'Access your profile information (name, picture, etc.)',
-        email: 'Access your email address',
-        address: 'Access your address information',
-        phone: 'Access your phone number',
-        offline_access: 'Maintain access when you are not present',
-      };
-
-      const scopes = requestedScopes.map((scopeName) => ({
-        name: scopeName,
-        description:
-          scopeDescriptions[scopeName] || `Access to ${scopeName} data`,
-      }));
+      // Parse requested scopes with descriptions
+      const scopes = parseScopesWithDescriptions(scope);
 
       return res.status(200).send({
         client: {

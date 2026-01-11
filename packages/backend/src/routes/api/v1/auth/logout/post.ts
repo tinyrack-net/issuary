@@ -1,4 +1,5 @@
-import z from 'zod/v4';
+import { r } from '@/schemas/response.js';
+import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) =>
@@ -8,11 +9,9 @@ export default (fastify: FastifyWithZodInstance) =>
     schema: {
       summary: 'Logout',
       description: 'Logout the current user and purge the session',
-      tags: ['Auth'],
+      tags: [TAGS.AUTH],
       response: {
-        200: z.object({
-          ok: z.literal(true),
-        }),
+        200: r.OkResponse,
       },
     },
     handler: async (req, res) => {
