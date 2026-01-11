@@ -1,15 +1,15 @@
 import fastifyPlugin from 'fastify-plugin';
+import type z from 'zod';
 import {
-  AppConfigs,
-  resolveOAuthConfig,
   type AppConfigAuthMethodOAuth,
+  AppConfigs,
   type ResolvedOAuthConfig,
+  resolveOAuthConfig,
 } from '@/lib/config.js';
 import { generatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
-import type z from 'zod';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -121,7 +121,7 @@ export class OAuthConnectService {
 
     const params = new URLSearchParams({
       client_id: provider.client_id,
-      redirect_uri: `${AppConfigs.app.host}/api/v1/oauth/callback/${providerName}`,
+      redirect_uri: `${AppConfigs.app.host}/api/v1/oauth/${providerName}/callback`,
       response_type: 'code',
       scope: provider.scopes.join(' '),
       state,
@@ -160,7 +160,7 @@ export class OAuthConnectService {
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: `${AppConfigs.app.host}/api/v1/oauth/callback/${providerName}`,
+      redirect_uri: `${AppConfigs.app.host}/api/v1/oauth/${providerName}/callback`,
       client_id: provider.client_id,
       client_secret: provider.client_secret,
       code_verifier: codeVerifier,

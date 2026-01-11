@@ -1,17 +1,17 @@
-import { useLanguage } from '@/hooks/use-language';
-import { OAuthSearchSchema, extractOAuthParams } from '@/libs/oauth-search.js';
-import { tick } from '@/libs/promise';
-import { loginMutationOptions } from '@/queries/login';
-import { oauthProvidersQueryOptions } from '@/queries/oauth';
-import { getSessionQueryOptions } from '@/queries/session';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { GlobeIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { useLanguage } from '@/hooks/use-language';
+import { extractOAuthParams, OAuthSearchSchema } from '@/libs/oauth-search.js';
+import { tick } from '@/libs/promise';
+import { loginMutationOptions } from '@/queries/login';
+import { oauthProvidersQueryOptions } from '@/queries/oauth';
+import { getSessionQueryOptions } from '@/queries/session';
 
 export const SearchSchema = OAuthSearchSchema;
 
@@ -214,7 +214,7 @@ function Login() {
                 <div className="flex flex-col gap-2">
                   {oauthProviders.map((provider) => {
                     // Build return URL if this is an OIDC flow
-                    let oauthUrl = `/api/v1/oauth/connect/${provider.name}?mode=login`;
+                    let oauthUrl = `/api/v1/oauth/${provider.name}/connect?mode=login`;
 
                     if (search.client_id && search.redirect_uri) {
                       // Build authorization endpoint URL
