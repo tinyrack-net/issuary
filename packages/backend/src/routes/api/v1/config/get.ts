@@ -31,7 +31,6 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (_req, res) => {
-      console.log(AppConfigs.authentication_methods);
       res.status(200).send({
         app: AppConfigs.app,
         database: {
