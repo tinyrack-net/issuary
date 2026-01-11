@@ -1,4 +1,5 @@
 import z from 'zod/v4';
+import { AppTheme } from '@/lib/config.js';
 import { f } from './field.js';
 
 // Base schemas
@@ -244,6 +245,9 @@ export const r = {
       supported_languages: z.array(z.string()),
       default_language: z.string(),
       fallback_language: z.string(),
+      light_theme: AppTheme,
+      dark_theme: AppTheme,
+      theme_mode: z.enum(['light', 'dark', 'system']),
     }),
     database: z.object({
       enabled: z.boolean(),
