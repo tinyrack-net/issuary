@@ -48,7 +48,7 @@ export default (fastify: FastifyWithZodInstance) => {
         }),
       },
     },
-    handler: async (req, res) => {
+    handler: async (_req, res) => {
       // Get JWKS from JwtKeyService
       // Returns all active and previous keys for token verification
       const jwks = await fastify.jwtKeyService.getJWKS();

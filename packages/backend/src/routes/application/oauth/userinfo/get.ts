@@ -1,5 +1,4 @@
 import z from 'zod/v4';
-import { validateBearerToken } from '@/handlers/validate-bearer-token.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
@@ -63,7 +62,7 @@ export default (fastify: FastifyWithZodInstance) => {
     handler: async (req, res) => {
       // Validate Bearer token
       // Throws ApiError if invalid (handled by error handler)
-      const tokenPayload = await validateBearerToken(fastify, req);
+      const tokenPayload = await fastify.jwtService.validateBearerToken(req);
 
       // Load user (supports both config and DB users)
       const userData = await fastify.userService.verifyUserById(

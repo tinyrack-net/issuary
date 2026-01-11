@@ -103,7 +103,7 @@ export default (fastify: FastifyWithZodInstance) => {
         }),
       },
     },
-    handler: async (req, res) => {
+    handler: async (_req, res) => {
       const baseUrl = AppConfigs.app.host;
 
       // Build OpenID Configuration response
