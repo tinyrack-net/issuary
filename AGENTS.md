@@ -174,6 +174,9 @@ import type { FastifyWithZodInstance } from '@/server.js';
 
 ### Naming Conventions
 - **Files**: kebab-case (e.g., `user.entity.ts`, `oauth-client.repository.ts`)
+  - Backend: `user.entity.ts`, `oauth-client.repository.ts`, `jwt.service.ts`
+  - Frontend components: `auth-page-layout.tsx`, `icon-input.tsx`, `set-password-modal.tsx`
+  - Frontend utilities: `use-theme.ts`, `query-client.ts`
 - **Classes**: PascalCase with descriptive suffixes
   - Entities: `UserEntity`, `OAuthClientEntity`
   - Repositories: `UserRepository`, `OAuthCodeRepository`
