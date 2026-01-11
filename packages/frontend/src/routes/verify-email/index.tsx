@@ -1,29 +1,29 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import {
-  CheckCircle,
-  EnvelopeSimple,
-  Key,
-  Moon,
-  Sun,
-} from '@phosphor-icons/react';
+import { CheckCircle, EnvelopeSimple, Key } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { useTheme } from '@/hooks/use-theme';
+import {
+  AuthPageLayout,
+  IconInput,
+  PageHeader,
+  SubmitButton,
+} from '@/components/auth/index.js';
+import { Alert, Divider } from '@/components/ui/index.js';
 import {
   buildAuthorizeUrl,
   isOAuthFlow,
   OAuthSearchSchema,
 } from '@/libs/oauth-search.js';
-import { tick } from '@/libs/promise';
-import { getSessionQueryOptions } from '@/queries/session';
+import { tick } from '@/libs/promise.js';
+import { getSessionQueryOptions } from '@/queries/session.js';
 import {
   resendVerificationMutationOptions,
   verifyEmailMutationOptions,
-} from '@/queries/verify-email';
+} from '@/queries/verify-email.js';
 
 const SearchSchema = z
   .object({
@@ -45,7 +45,6 @@ function VerifyEmail() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { theme, toggleDarkMode } = useTheme();
   const search = Route.useSearch();
   const { token: queryToken, email } = search;
   const [verified, setVerified] = useState(false);
@@ -67,12 +66,9 @@ function VerifyEmail() {
       });
       await tick();
 
-      // Check if this is an OAuth flow
       if (isOAuthFlow(search)) {
-        // Redirect to authorization endpoint with OAuth parameters
         window.location.href = buildAuthorizeUrl(search);
       } else {
-        // Regular verification - show success state
         setVerified(true);
       }
     },
@@ -128,163 +124,90 @@ function VerifyEmail() {
 
   if (verified) {
     return (
-      <div
-        className="flex min-h-screen items-center justify-center bg-cover p-4"
-        style={{
-          backgroundImage:
-            'url(https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2071)',
-        }}
-      >
-        {/* Theme Toggle */}
-        <label className="swap swap-rotate btn btn-sm btn-circle absolute start-4 top-4">
-          <input
-            type="checkbox"
-            checked={theme === 'dark'}
-            onChange={toggleDarkMode}
-          />
-          <Sun className="swap-off size-4" weight="fill" />
-          <Moon className="swap-on size-4" weight="fill" />
-        </label>
+      <AuthPageLayout>
+        <Alert type="success" icon={CheckCircle} className="mb-4">
+          {t('verifyEmail.success.title')}
+        </Alert>
 
-        <div className="card w-full max-w-100 border border-base-200 bg-base-100 p-12 shadow-lg">
-          {/* Success Alert */}
-          <div className="alert alert-success mb-4">
-            <CheckCircle className="size-5" weight="fill" />
-            <span>{t('verifyEmail.success.title')}</span>
-          </div>
+        <PageHeader
+          title={t('verifyEmail.success.subtitle')}
+          subtitle={t('verifyEmail.success.description')}
+        />
 
-          {/* Header */}
-          <h1 className="mb-2 text-center font-bold text-3xl">
-            {t('verifyEmail.success.subtitle')}
-          </h1>
-          <p className="mb-6 text-center text-base-content/60 text-xs">
-            {t('verifyEmail.success.description')}
-          </p>
-
-          <button
-            type="button"
-            onClick={() => navigate({ to: '/profile' })}
-            className="btn btn-block h-10 font-semibold text-[14px]"
-          >
-            {t('verifyEmail.success.goToProfile')}
-          </button>
-        </div>
-      </div>
+        <button
+          type="button"
+          onClick={() => navigate({ to: '/profile' })}
+          className="btn btn-block h-10 font-semibold text-[14px]"
+        >
+          {t('verifyEmail.success.goToProfile')}
+        </button>
+      </AuthPageLayout>
     );
   }
 
   return (
-    <div
-      className="flex min-h-screen items-center justify-center bg-cover p-4"
-      style={{
-        backgroundImage:
-          'url(https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2071)',
-      }}
-    >
-      {/* Theme Toggle */}
-      <label className="swap swap-rotate btn btn-sm btn-circle absolute start-4 top-4">
-        <input
-          type="checkbox"
-          checked={theme === 'dark'}
-          onChange={toggleDarkMode}
+    <AuthPageLayout>
+      <PageHeader
+        title={t('verifyEmail.title')}
+        subtitle={t('verifyEmail.subtitle')}
+      />
+
+      {email && (
+        <Alert type="info" icon={EnvelopeSimple} className="mb-4">
+          <div className="text-left">
+            <p className="font-semibold">{t('register.success.subtitle')}</p>
+            <p className="text-xs">
+              {t('register.success.description', { email })}
+            </p>
+          </div>
+        </Alert>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <IconInput
+          icon={Key}
+          type="text"
+          placeholder={t('verifyEmail.token.placeholder')}
+          error={errors.token}
+          {...register('token')}
         />
-        <Sun className="swap-off size-4" weight="fill" />
-        <Moon className="swap-on size-4" weight="fill" />
-      </label>
 
-      <div className="card w-full max-w-100 border border-base-200 bg-base-100 p-12 shadow-lg">
-        {/* Header */}
-        <h1 className="mb-2 text-center font-bold text-3xl">
-          {t('verifyEmail.title')}
-        </h1>
-        <p className="mb-6 text-center text-base-content/60 text-xs">
-          {t('verifyEmail.subtitle')}
-        </p>
+        <SubmitButton
+          isPending={verifyEmailMutation.isPending}
+          pendingText={t('verifyEmail.submitting')}
+          className="mt-2"
+        >
+          {t('verifyEmail.submit')}
+        </SubmitButton>
+      </form>
 
-        {/* Email sent info */}
-        {email && (
-          <div className="alert alert-info mb-4">
-            <EnvelopeSimple className="size-5" weight="fill" />
-            <div className="text-left text-sm">
-              <p className="font-semibold">{t('register.success.subtitle')}</p>
-              <p className="text-xs">
-                {t('register.success.description', { email })}
-              </p>
-            </div>
-          </div>
-        )}
+      {email && (
+        <>
+          <Divider />
 
-        {/* Verify Email Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <div>
-            <label
-              className={`input input-bordered flex items-center gap-2 ${
-                errors.token ? 'input-error' : ''
-              }`}
-            >
-              <Key className="size-5 opacity-70" />
-              <input
-                type="text"
-                className="grow font-mono"
-                placeholder={t('verifyEmail.token.placeholder')}
-                {...register('token')}
-              />
-            </label>
-            {errors.token && (
-              <p className="mt-1 text-error text-sm">{errors.token.message}</p>
-            )}
-          </div>
+          {resendSuccess && (
+            <Alert type="success" icon={CheckCircle} className="mb-2">
+              {t('verifyEmail.resendSuccess')}
+            </Alert>
+          )}
 
           <button
-            type="submit"
-            className="btn btn-block mt-2 h-10 font-semibold text-[14px]"
-            disabled={verifyEmailMutation.isPending}
+            type="button"
+            onClick={handleResend}
+            disabled={resendVerificationMutation.isPending || resendSuccess}
+            className="btn btn-ghost btn-sm w-full"
           >
-            {verifyEmailMutation.isPending ? (
+            {resendVerificationMutation.isPending ? (
               <>
-                <span className="loading loading-spinner loading-sm" />
-                {t('verifyEmail.submitting')}
+                <span className="loading loading-spinner loading-xs" />
+                {t('verifyEmail.resending')}
               </>
             ) : (
-              t('verifyEmail.submit')
+              t('verifyEmail.resend')
             )}
           </button>
-        </form>
-
-        {/* Resend section */}
-        {email && (
-          <>
-            <div className="my-4 flex items-center">
-              <div className="h-px flex-1 bg-base-200" />
-            </div>
-
-            {resendSuccess && (
-              <div className="alert alert-success mb-2">
-                <CheckCircle className="size-5" weight="fill" />
-                <span className="text-sm">
-                  {t('verifyEmail.resendSuccess')}
-                </span>
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={handleResend}
-              disabled={resendVerificationMutation.isPending || resendSuccess}
-              className="btn btn-ghost btn-sm w-full"
-            >
-              {resendVerificationMutation.isPending ? (
-                <>
-                  <span className="loading loading-spinner loading-xs" />
-                  {t('verifyEmail.resending')}
-                </>
-              ) : (
-                t('verifyEmail.resend')
-              )}
-            </button>
-          </>
-        )}
-      </div>
-    </div>
+        </>
+      )}
+    </AuthPageLayout>
   );
 }

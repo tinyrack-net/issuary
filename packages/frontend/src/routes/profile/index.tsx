@@ -2,9 +2,7 @@ import {
   CheckCircle,
   EnvelopeSimple,
   Link as LinkIcon,
-  Moon,
   SignOut,
-  Sun,
   User,
   XCircle,
 } from '@phosphor-icons/react';
@@ -12,7 +10,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '@/hooks/use-theme';
+import { AuthPageLayout, PageHeader } from '@/components/auth/index.js';
 import { tick } from '@/libs/promise';
 import { logoutMutationOptions } from '@/queries/logout';
 import {
@@ -37,7 +35,6 @@ function Profile() {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { theme, toggleDarkMode } = useTheme();
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(
     null,
   );
@@ -95,179 +92,151 @@ function Profile() {
   const availableProviders = oauthAccountsData?.available_providers || [];
 
   return (
-    <div
-      className="flex min-h-screen items-center justify-center bg-cover p-4"
-      style={{
-        backgroundImage:
-          'url(https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2071)',
-      }}
-    >
-      {/* Theme Toggle */}
-      <label className="swap swap-rotate btn btn-sm btn-circle absolute start-4 top-4">
-        <input
-          type="checkbox"
-          checked={theme === 'dark'}
-          onChange={toggleDarkMode}
-        />
-        <Sun className="swap-off size-4" weight="fill" />
-        <Moon className="swap-on size-4" weight="fill" />
-      </label>
+    <AuthPageLayout>
+      <PageHeader title={t('profile.title')} subtitle={t('profile.subtitle')} />
 
-      <div className="card w-full max-w-100 border border-base-200 bg-base-100 p-12 shadow-lg">
-        {/* Header */}
-        <h1 className="mb-2 text-center font-bold text-3xl">
-          {t('profile.title')}
-        </h1>
-        <p className="mb-6 text-center text-base-content/60 text-xs">
-          {t('profile.subtitle')}
-        </p>
-
-        {/* User Info Card */}
-        {user && (
-          <div className="mb-4 rounded-lg bg-base-200 p-4">
-            <div className="flex flex-col gap-3">
-              {/* User ID */}
-              <div className="flex items-center gap-3">
-                <User className="size-5 text-primary" weight="regular" />
-                <div className="flex-1">
-                  <div className="text-base-content/60 text-xs">
-                    {t('profile.id.label')}
-                  </div>
-                  <div className="truncate font-medium text-sm">{user.id}</div>
+      {/* User Info Card */}
+      {user && (
+        <div className="mb-4 rounded-lg bg-base-200 p-4">
+          <div className="flex flex-col gap-3">
+            {/* User ID */}
+            <div className="flex items-center gap-3">
+              <User className="size-5 text-primary" weight="regular" />
+              <div className="flex-1">
+                <div className="text-base-content/60 text-xs">
+                  {t('profile.id.label')}
                 </div>
+                <div className="truncate font-medium text-sm">{user.id}</div>
               </div>
+            </div>
 
-              <div className="h-px bg-base-300" />
+            <div className="h-px bg-base-300" />
 
-              {/* Email */}
-              <div className="flex items-center gap-3">
-                <EnvelopeSimple
-                  className="size-5 text-primary"
-                  weight="regular"
-                />
-                <div className="flex-1">
-                  <div className="text-base-content/60 text-xs">
-                    {t('profile.email.label')}
-                  </div>
-                  <div className="font-medium text-sm">{user.email}</div>
+            {/* Email */}
+            <div className="flex items-center gap-3">
+              <EnvelopeSimple
+                className="size-5 text-primary"
+                weight="regular"
+              />
+              <div className="flex-1">
+                <div className="text-base-content/60 text-xs">
+                  {t('profile.email.label')}
                 </div>
+                <div className="font-medium text-sm">{user.email}</div>
               </div>
+            </div>
 
-              <div className="h-px bg-base-300" />
+            <div className="h-px bg-base-300" />
 
-              {/* Email Verified */}
-              <div className="flex items-center gap-3">
-                {user.email_verified ? (
-                  <CheckCircle
-                    className="size-5 text-success"
-                    weight="regular"
-                  />
-                ) : (
-                  <XCircle className="size-5 text-error" weight="regular" />
-                )}
-                <div className="flex-1">
-                  <div className="text-base-content/60 text-xs">
-                    {t('profile.verified.label')}
-                  </div>
-                  <div
-                    className={`font-medium text-sm ${
-                      user.email_verified ? 'text-success' : 'text-error'
-                    }`}
-                  >
-                    {user.email_verified
-                      ? t('profile.verified.yes')
-                      : t('profile.verified.no')}
-                  </div>
+            {/* Email Verified */}
+            <div className="flex items-center gap-3">
+              {user.email_verified ? (
+                <CheckCircle className="size-5 text-success" weight="regular" />
+              ) : (
+                <XCircle className="size-5 text-error" weight="regular" />
+              )}
+              <div className="flex-1">
+                <div className="text-base-content/60 text-xs">
+                  {t('profile.verified.label')}
+                </div>
+                <div
+                  className={`font-medium text-sm ${
+                    user.email_verified ? 'text-success' : 'text-error'
+                  }`}
+                >
+                  {user.email_verified
+                    ? t('profile.verified.yes')
+                    : t('profile.verified.no')}
                 </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Linked OAuth Accounts */}
-        {availableProviders.length > 0 && (
-          <div className="mb-4">
-            <h2 className="mb-2 font-semibold text-sm">
-              {t('profile.linkedAccounts.title')}
-            </h2>
-            <p className="mb-3 text-base-content/60 text-xs">
-              {t('profile.linkedAccounts.description')}
-            </p>
-            <div className="rounded-lg bg-base-200 p-3">
-              <div className="flex flex-col gap-2">
-                {availableProviders.map((provider) => (
-                  <div
-                    key={provider.name}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <LinkIcon
-                        className={`size-4 ${
-                          provider.linked
-                            ? 'text-success'
-                            : 'text-base-content/50'
-                        }`}
-                        weight="regular"
-                      />
-                      <span className="font-medium text-sm">
-                        {provider.display_name}
-                      </span>
-                    </div>
-                    {provider.linked ? (
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-xs text-error"
-                        disabled={unlinkingProvider === provider.name}
-                        onClick={() => handleUnlink(provider.name)}
-                      >
-                        {unlinkingProvider === provider.name ? (
-                          <>
-                            <span className="loading loading-spinner loading-xs" />
-                            {t('profile.linkedAccounts.unlinking')}
-                          </>
-                        ) : (
-                          t('profile.linkedAccounts.unlink')
-                        )}
-                      </button>
-                    ) : (
-                      <a
-                        href={getOAuthConnectUrl(
-                          provider.name,
-                          'link',
-                          '/profile',
-                        )}
-                        className="btn btn-ghost btn-xs text-primary"
-                      >
-                        {t('profile.linkedAccounts.link')}
-                      </a>
-                    )}
+      {/* Linked OAuth Accounts */}
+      {availableProviders.length > 0 && (
+        <div className="mb-4">
+          <h2 className="mb-2 font-semibold text-sm">
+            {t('profile.linkedAccounts.title')}
+          </h2>
+          <p className="mb-3 text-base-content/60 text-xs">
+            {t('profile.linkedAccounts.description')}
+          </p>
+          <div className="rounded-lg bg-base-200 p-3">
+            <div className="flex flex-col gap-2">
+              {availableProviders.map((provider) => (
+                <div
+                  key={provider.name}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <LinkIcon
+                      className={`size-4 ${
+                        provider.linked
+                          ? 'text-success'
+                          : 'text-base-content/50'
+                      }`}
+                      weight="regular"
+                    />
+                    <span className="font-medium text-sm">
+                      {provider.display_name}
+                    </span>
                   </div>
-                ))}
-              </div>
+                  {provider.linked ? (
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-xs text-error"
+                      disabled={unlinkingProvider === provider.name}
+                      onClick={() => handleUnlink(provider.name)}
+                    >
+                      {unlinkingProvider === provider.name ? (
+                        <>
+                          <span className="loading loading-spinner loading-xs" />
+                          {t('profile.linkedAccounts.unlinking')}
+                        </>
+                      ) : (
+                        t('profile.linkedAccounts.unlink')
+                      )}
+                    </button>
+                  ) : (
+                    <a
+                      href={getOAuthConnectUrl(
+                        provider.name,
+                        'link',
+                        '/profile',
+                      )}
+                      className="btn btn-ghost btn-xs text-primary"
+                    >
+                      {t('profile.linkedAccounts.link')}
+                    </a>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Logout Button */}
-        <button
-          type="button"
-          className="btn btn-block h-10 font-semibold text-[14px]"
-          disabled={logoutMutation.isPending}
-          onClick={() => logoutMutation.mutate()}
-        >
-          {logoutMutation.isPending ? (
-            <>
-              <span className="loading loading-spinner loading-sm" />
-              {t('profile.logout')}
-            </>
-          ) : (
-            <>
-              <SignOut className="size-4" weight="bold" />
-              {t('profile.logout')}
-            </>
-          )}
-        </button>
-      </div>
-    </div>
+      {/* Logout Button */}
+      <button
+        type="button"
+        className="btn btn-block h-10 font-semibold text-[14px]"
+        disabled={logoutMutation.isPending}
+        onClick={() => logoutMutation.mutate()}
+      >
+        {logoutMutation.isPending ? (
+          <>
+            <span className="loading loading-spinner loading-sm" />
+            {t('profile.logout')}
+          </>
+        ) : (
+          <>
+            <SignOut className="size-4" weight="bold" />
+            {t('profile.logout')}
+          </>
+        )}
+      </button>
+    </AuthPageLayout>
   );
 }
