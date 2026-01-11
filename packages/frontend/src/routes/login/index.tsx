@@ -20,6 +20,7 @@ import {
   OAuthSearchSchema,
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
+import { appConfigQueryOptions } from '@/queries/config.js';
 import { loginMutationOptions } from '@/queries/login.js';
 import { oauthProvidersQueryOptions } from '@/queries/oauth.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
@@ -42,8 +43,12 @@ function Login() {
   const queryClient = useQueryClient();
   const search = Route.useSearch();
 
+  const { data: configData } = useQuery(appConfigQueryOptions);
   const { data: oauthProvidersData } = useQuery(oauthProvidersQueryOptions);
   const oauthProviders = oauthProvidersData?.providers || [];
+
+  const isPasswordAuthEnabled =
+    configData?.authentication_methods?.password?.enabled;
 
   const loginSchema = useMemo(
     () =>
@@ -118,50 +123,56 @@ function Login() {
       {oauthProviders.length > 0 && (
         <>
           <OAuthButtons providers={oauthProviders} buildUrl={buildOAuthUrl} />
-          <Divider text={t('login.divider.orContinueWithEmail')} />
+          {isPasswordAuthEnabled && (
+            <Divider text={t('login.divider.orContinueWithEmail')} />
+          )}
         </>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        <IconInput
-          icon={EnvelopeSimpleIcon}
-          type="email"
-          placeholder={t('login.email.placeholder')}
-          autoComplete="email"
-          error={errors.email}
-          {...register('email')}
+      {isPasswordAuthEnabled && (
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <IconInput
+            icon={EnvelopeSimpleIcon}
+            type="email"
+            placeholder={t('login.email.placeholder')}
+            autoComplete="email"
+            error={errors.email}
+            {...register('email')}
+          />
+
+          <IconInput
+            icon={LockIcon}
+            type="password"
+            placeholder={t('login.password.placeholder')}
+            autoComplete="current-password"
+            error={errors.password}
+            {...register('password')}
+          />
+
+          <div className="flex items-center justify-end">
+            <Link to="/forgot-password" className="link text-sm">
+              {t('login.link.forgotPassword')}
+            </Link>
+          </div>
+
+          <SubmitButton
+            isPending={loginMutation.isPending}
+            pendingText={t('login.submitting')}
+            className="mt-2"
+          >
+            {t('login.submit')}
+          </SubmitButton>
+        </form>
+      )}
+
+      {isPasswordAuthEnabled && (
+        <FooterLink
+          text={t('login.footer.noAccount')}
+          linkText={t('login.link.register')}
+          to="/register"
+          search={extractOAuthParams(search)}
         />
-
-        <IconInput
-          icon={LockIcon}
-          type="password"
-          placeholder={t('login.password.placeholder')}
-          autoComplete="current-password"
-          error={errors.password}
-          {...register('password')}
-        />
-
-        <div className="flex items-center justify-end">
-          <Link to="/forgot-password" className="link text-sm">
-            {t('login.link.forgotPassword')}
-          </Link>
-        </div>
-
-        <SubmitButton
-          isPending={loginMutation.isPending}
-          pendingText={t('login.submitting')}
-          className="mt-2"
-        >
-          {t('login.submit')}
-        </SubmitButton>
-      </form>
-
-      <FooterLink
-        text={t('login.footer.noAccount')}
-        linkText={t('login.link.register')}
-        to="/register"
-        search={extractOAuthParams(search)}
-      />
+      )}
     </AuthPageLayout>
   );
 }

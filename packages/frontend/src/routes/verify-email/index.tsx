@@ -1,7 +1,11 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { CheckCircleIcon, EnvelopeSimpleIcon, KeyIcon } from '@phosphor-icons/react';
+import {
+  CheckCircleIcon,
+  EnvelopeSimpleIcon,
+  KeyIcon,
+} from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +22,7 @@ import {
   OAuthSearchSchema,
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
+import { appConfigQueryOptions } from '@/queries/config.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
 import {
   resendVerificationMutationOptions,
@@ -34,6 +39,16 @@ const SearchSchema = z
 export const Route = createFileRoute('/verify-email/')({
   component: VerifyEmail,
   validateSearch: SearchSchema,
+  beforeLoad: async ({ context }) => {
+    const config = await context.queryClient.ensureQueryData(
+      appConfigQueryOptions,
+    );
+    const isPasswordAuthEnabled =
+      config?.authentication_methods?.password?.enabled;
+    if (!isPasswordAuthEnabled) {
+      throw redirect({ to: '/login' });
+    }
+  },
 });
 
 type VerifyEmailFormValues = {

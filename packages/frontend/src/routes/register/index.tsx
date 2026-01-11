@@ -19,13 +19,14 @@ import {
   isOAuthFlow,
   OAuthSearchSchema,
 } from '@/libs/oauth-search.js';
-import { tick } from '@/libs/promise';
+import { tick } from '@/libs/promise.js';
+import { appConfigQueryOptions } from '@/queries/config.js';
 import {
   getOAuthConnectUrl,
   oauthProvidersQueryOptions,
-} from '@/queries/oauth';
-import { registerMutationOptions } from '@/queries/register';
-import { getSessionQueryOptions } from '@/queries/session';
+} from '@/queries/oauth.js';
+import { registerMutationOptions } from '@/queries/register.js';
+import { getSessionQueryOptions } from '@/queries/session.js';
 
 export const Route = createFileRoute('/register/')({
   component: Register,
@@ -43,8 +44,12 @@ function Register() {
   const queryClient = useQueryClient();
   const search = Route.useSearch();
 
+  const { data: configData } = useQuery(appConfigQueryOptions);
   const { data: oauthProvidersData } = useQuery(oauthProvidersQueryOptions);
   const oauthProviders = oauthProvidersData?.providers || [];
+
+  const isPasswordAuthEnabled =
+    configData?.authentication_methods?.password?.enabled;
 
   const registerSchema = useMemo(
     () =>
@@ -127,37 +132,39 @@ function Register() {
 
       <OAuthButtons providers={oauthProviders} buildUrl={buildOAuthUrl} />
 
-      {oauthProviders.length > 0 && (
+      {oauthProviders.length > 0 && isPasswordAuthEnabled && (
         <Divider text={t('register.divider.orSignUpWithEmail')} />
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        <IconInput
-          icon={EnvelopeSimpleIcon}
-          type="email"
-          placeholder={t('register.email.placeholder')}
-          autoComplete="email"
-          error={errors.email}
-          {...register('email')}
-        />
+      {isPasswordAuthEnabled && (
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <IconInput
+            icon={EnvelopeSimpleIcon}
+            type="email"
+            placeholder={t('register.email.placeholder')}
+            autoComplete="email"
+            error={errors.email}
+            {...register('email')}
+          />
 
-        <IconInput
-          icon={LockIcon}
-          type="password"
-          placeholder={t('register.password.placeholder')}
-          autoComplete="new-password"
-          error={errors.password}
-          {...register('password')}
-        />
+          <IconInput
+            icon={LockIcon}
+            type="password"
+            placeholder={t('register.password.placeholder')}
+            autoComplete="new-password"
+            error={errors.password}
+            {...register('password')}
+          />
 
-        <SubmitButton
-          isPending={registerMutation.isPending}
-          pendingText={t('register.submitting')}
-          className="mt-2"
-        >
-          {t('register.submit')}
-        </SubmitButton>
-      </form>
+          <SubmitButton
+            isPending={registerMutation.isPending}
+            pendingText={t('register.submitting')}
+            className="mt-2"
+          >
+            {t('register.submit')}
+          </SubmitButton>
+        </form>
+      )}
 
       <FooterLink
         text={t('register.footer.haveAccount')}

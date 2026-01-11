@@ -1,7 +1,7 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { CheckCircleIcon, EnvelopeSimpleIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -12,10 +12,21 @@ import { IconInput } from '@/components/auth/icon-input.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { SubmitButton } from '@/components/auth/submit-button.js';
 import { Alert } from '@/components/ui/alert.js';
+import { appConfigQueryOptions } from '@/queries/config.js';
 import { forgotPasswordMutationOptions } from '@/queries/password-reset.js';
 
 export const Route = createFileRoute('/forgot-password/')({
   component: ForgotPassword,
+  beforeLoad: async ({ context }) => {
+    const config = await context.queryClient.ensureQueryData(
+      appConfigQueryOptions,
+    );
+    const isPasswordAuthEnabled =
+      config?.authentication_methods?.password?.enabled;
+    if (!isPasswordAuthEnabled) {
+      throw redirect({ to: '/login' });
+    }
+  },
 });
 
 type ForgotPasswordFormValues = {

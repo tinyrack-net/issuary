@@ -1,7 +1,12 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { CheckCircleIcon, KeyIcon, LockIcon, LockKeyIcon } from '@phosphor-icons/react';
+import {
+  CheckCircleIcon,
+  KeyIcon,
+  LockIcon,
+  LockKeyIcon,
+} from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +16,7 @@ import { IconInput } from '@/components/auth/icon-input.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { SubmitButton } from '@/components/auth/submit-button.js';
 import { Alert } from '@/components/ui/alert.js';
+import { appConfigQueryOptions } from '@/queries/config.js';
 import { resetPasswordMutationOptions } from '@/queries/password-reset.js';
 
 const SearchSchema = z.object({
@@ -20,6 +26,16 @@ const SearchSchema = z.object({
 export const Route = createFileRoute('/reset-password/')({
   component: ResetPassword,
   validateSearch: SearchSchema,
+  beforeLoad: async ({ context }) => {
+    const config = await context.queryClient.ensureQueryData(
+      appConfigQueryOptions,
+    );
+    const isPasswordAuthEnabled =
+      config?.authentication_methods?.password?.enabled;
+    if (!isPasswordAuthEnabled) {
+      throw redirect({ to: '/login' });
+    }
+  },
 });
 
 type ResetPasswordFormValues = {

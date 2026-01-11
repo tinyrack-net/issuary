@@ -41,7 +41,7 @@ smtp:
 authentication_methods:
   password:
     type: password
-    enabled: true
+    enabled: false
     email_verification: true
     totp:
       enabled: false
