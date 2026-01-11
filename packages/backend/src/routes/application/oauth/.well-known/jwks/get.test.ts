@@ -1,14 +1,16 @@
 import { describe, expect, test } from 'vitest';
-import { setupTestServer, TEST_OAUTH_CLIENT } from '@/test-utils/index.js';
+import { setupTestServer } from '@/test-utils/index.js';
 
 const app = setupTestServer();
 
-describe('GET /application/oauth/:provider_id/.well-known/jwks', () => {
+describe('GET /application/oauth/.well-known/jwks', () => {
+  const url = '/application/oauth/.well-known/jwks';
+
   describe('Success Cases', () => {
-    test('should return JWKS with RSA public keys for valid provider', async () => {
+    test('should return JWKS with RSA public keys', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: `/application/oauth/${TEST_OAUTH_CLIENT.clientId}/.well-known/jwks`,
+        url,
       });
 
       expect(res.statusCode).toBe(200);
@@ -31,7 +33,7 @@ describe('GET /application/oauth/:provider_id/.well-known/jwks', () => {
     test('should return correct content-type header', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: `/application/oauth/${TEST_OAUTH_CLIENT.clientId}/.well-known/jwks`,
+        url,
       });
 
       expect(res.statusCode).toBe(200);
@@ -41,7 +43,7 @@ describe('GET /application/oauth/:provider_id/.well-known/jwks', () => {
     test('should return JWKS conforming to RFC 7517 structure', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: `/application/oauth/${TEST_OAUTH_CLIENT.clientId}/.well-known/jwks`,
+        url,
       });
 
       expect(res.statusCode).toBe(200);
@@ -80,7 +82,7 @@ describe('GET /application/oauth/:provider_id/.well-known/jwks', () => {
     test('should include Cache-Control header', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: `/application/oauth/${TEST_OAUTH_CLIENT.clientId}/.well-known/jwks`,
+        url,
       });
 
       expect(res.statusCode).toBe(200);
@@ -88,36 +90,16 @@ describe('GET /application/oauth/:provider_id/.well-known/jwks', () => {
     });
   });
 
-  describe('Error Cases', () => {
-    test('should return 400 for non-existent provider', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/non-existent-provider/.well-known/jwks',
-      });
-
-      expect(res.statusCode).toBe(400);
-    });
-
-    test('should return 400 for invalid provider ID format', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/invalid-provider-id/.well-known/jwks',
-      });
-
-      expect(res.statusCode).toBe(400);
-    });
-  });
-
   describe('Caching Behavior', () => {
     test('should be idempotent - multiple requests return same result', async () => {
       const res1 = await app.inject({
         method: 'GET',
-        url: `/application/oauth/${TEST_OAUTH_CLIENT.clientId}/.well-known/jwks`,
+        url,
       });
 
       const res2 = await app.inject({
         method: 'GET',
-        url: `/application/oauth/${TEST_OAUTH_CLIENT.clientId}/.well-known/jwks`,
+        url,
       });
 
       expect(res1.statusCode).toBe(200);

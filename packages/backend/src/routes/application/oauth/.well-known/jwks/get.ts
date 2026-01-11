@@ -1,5 +1,4 @@
 import z from 'zod/v4';
-import { e } from '@/schemas/error.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
@@ -11,11 +10,6 @@ export default (fastify: FastifyWithZodInstance) => {
       description:
         'JSON Web Key Set (JWKS) endpoint - Returns RSA public keys used for verifying tokens (RFC 7517). Supports automatic key rotation with multiple active keys.',
       tags: ['OpenID'],
-      params: z.object({
-        provider_id: z
-          .string()
-          .describe('OAuth provider/client ID to retrieve JWKS for'),
-      }),
       response: {
         /**
          * JWK (JSON Web Key) schema according to RFC 7517
@@ -52,16 +46,9 @@ export default (fastify: FastifyWithZodInstance) => {
               'Array of JWK objects representing public keys for token verification',
             ),
         }),
-        400: e.OAuthClientNotFound.Schema,
       },
     },
     handler: async (req, res) => {
-      // Validate that the provider exists and is enabled
-      const client = await fastify.oauthClientService.findByClientId(
-        req.params.provider_id,
-      );
-      fastify.oauthClientService.validateEnabled(client);
-
       // Get JWKS from JwtKeyService
       // Returns all active and previous keys for token verification
       const jwks = await fastify.jwtKeyService.getJWKS();

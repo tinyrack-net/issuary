@@ -1,11 +1,10 @@
 import { describe, expect, test } from 'vitest';
-import { setupTestServer, TEST_OAUTH_CLIENT } from '@/test-utils/index.js';
+import { setupTestServer } from '@/test-utils/index.js';
 
 const app = setupTestServer();
 
-describe('GET /.well-known/openid-configuration', () => {
-  const providerId = TEST_OAUTH_CLIENT.clientId;
-  const url = `/application/oauth/${providerId}/.well-known/openid-configuration`;
+describe('GET /application/oauth/.well-known/openid-configuration', () => {
+  const url = '/application/oauth/.well-known/openid-configuration';
 
   describe('Required Fields', () => {
     test('should return valid OpenID Configuration', async () => {
@@ -48,7 +47,7 @@ describe('GET /.well-known/openid-configuration', () => {
       expect(res.statusCode).toBe(200);
       const json = res.json();
 
-      expect(json.jwks_uri).toContain(`/${providerId}/.well-known/jwks`);
+      expect(json.jwks_uri).toContain('/.well-known/jwks');
     });
   });
 
@@ -164,19 +163,6 @@ describe('GET /.well-known/openid-configuration', () => {
       expect(res.statusCode).toBe(200);
       expect(res.headers['cache-control']).toBeDefined();
       expect(res.headers['cache-control']).toContain('max-age');
-    });
-  });
-
-  describe('Error Cases', () => {
-    test('should return 400 for invalid provider_id', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/invalid-provider/.well-known/openid-configuration',
-      });
-
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
-      expect(json.code).toBe('OAUTH_CLIENT_NOT_FOUND');
     });
   });
 

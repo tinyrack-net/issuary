@@ -11,9 +11,6 @@ export default (fastify: FastifyWithZodInstance) => {
       description:
         'Returns OpenID Provider Configuration Information (OpenID Connect Discovery 1.0)',
       tags: ['OpenID'],
-      params: z.object({
-        provider_id: z.string(),
-      }),
       response: {
         /**
          * OpenID Provider Configuration Response Schema
@@ -107,14 +104,7 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      // Validate provider exists and is enabled
-      const client = await fastify.oauthClientService.findByClientId(
-        req.params.provider_id,
-      );
-      fastify.oauthClientService.validateEnabled(client);
-
       const baseUrl = AppConfigs.app.host;
-      const oauthBasePath = `/application/oauth/${req.params.provider_id}`;
 
       // Build OpenID Configuration response
       // https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata
@@ -123,7 +113,7 @@ export default (fastify: FastifyWithZodInstance) => {
         issuer: baseUrl,
         authorization_endpoint: `${baseUrl}/application/oauth/authorize`,
         token_endpoint: `${baseUrl}/application/oauth/token`,
-        jwks_uri: `${baseUrl}${oauthBasePath}/.well-known/jwks`,
+        jwks_uri: `${baseUrl}/application/oauth/.well-known/jwks`,
         response_types_supported: ['code'],
         subject_types_supported: ['public'],
         id_token_signing_alg_values_supported: ['RS256'],
