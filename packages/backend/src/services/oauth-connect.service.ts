@@ -444,6 +444,13 @@ export class OAuthConnectService {
     userId: string,
     providerName: string,
   ): Promise<void> {
+    // Check if user is a config user (config users can't have linked OAuth accounts)
+    const configUser = AppConfigs.users?.find((u) => u.id === userId);
+    if (configUser) {
+      // Config users don't have OAuth linked accounts in the database
+      throw new e.OAuthAccountNotLinked.Error();
+    }
+
     // Get user
     const user = await this.mikro.user.findOneOrFail(
       { id: userId },

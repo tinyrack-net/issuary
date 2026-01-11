@@ -208,8 +208,8 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
     });
   });
 
-  test('should return 404 for config user (not in database)', async () => {
-    // Config user is not in database, so unlinkOAuthAccount will fail with UserNotFound
+  test('should return 404 for config user (config users cannot have linked OAuth)', async () => {
+    // Config user cannot have linked OAuth accounts
     const sessionCookie = await createAuthenticatedSession(
       app,
       TEST_USER.email,
@@ -225,9 +225,9 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
       sessionCookie,
     );
 
-    // Config user is not in database, so unlinkOAuthAccount throws UserNotFound
+    // Config user cannot have OAuth linked accounts, so return OAuthAccountNotLinked
     expect(res.statusCode).toBe(404);
     const json = res.json();
-    expect(json.code).toBe('USER_NOT_FOUND');
+    expect(json.code).toBe('OAUTH_ACCOUNT_NOT_LINKED');
   });
 });

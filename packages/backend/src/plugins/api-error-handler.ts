@@ -15,7 +15,7 @@ const sendError = (reply: FastifyReply, status: number, body: object) => {
 
 export default fastifyPlugin(
   (fastify) => {
-    fastify.setErrorHandler(async (error, _request, reply) => {
+    fastify.setErrorHandler(async (error, request, reply) => {
       // Handle custom ApiError instances
       if (error instanceof ApiError) {
         return sendError(reply, error.status, error.toJson());
@@ -30,8 +30,23 @@ export default fastifyPlugin(
               e.ValidationError.Status,
               new e.ValidationError.Error(error.message).toJson(),
             );
+          case 'FST_ERR_CTP_EMPTY_JSON_BODY':
+            // Empty JSON body - treat as validation error
+            return sendError(
+              reply,
+              e.ValidationError.Status,
+              new e.ValidationError.Error(
+                'Request body cannot be empty when Content-Type is application/json',
+              ).toJson(),
+            );
         }
       }
+
+      // Log unexpected errors for debugging
+      request.log.error(
+        { err: error, stack: error.stack },
+        'Unexpected error occurred',
+      );
 
       // Default to internal server error
       return sendError(
