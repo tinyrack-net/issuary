@@ -1,20 +1,17 @@
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useLanguage } from '@/hooks/use-language';
+import { OAuthSearchSchema, extractOAuthParams } from '@/libs/oauth-search.js';
+import { tick } from '@/libs/promise';
+import { loginMutationOptions } from '@/queries/login';
+import { oauthProvidersQueryOptions } from '@/queries/oauth';
+import { getSessionQueryOptions } from '@/queries/session';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { GlobeIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { useLanguage } from '@/hooks/use-language';
-import { extractOAuthParams, OAuthSearchSchema } from '@/libs/oauth-search.js';
-import { tick } from '@/libs/promise';
-import { loginMutationOptions } from '@/queries/login';
-import {
-  getOAuthConnectUrl,
-  oauthProvidersQueryOptions,
-} from '@/queries/oauth';
-import { getSessionQueryOptions } from '@/queries/session';
 
 export const SearchSchema = OAuthSearchSchema;
 
@@ -42,7 +39,7 @@ function Login() {
   const loginSchema = useMemo(
     () =>
       z.object({
-        email: z.string().email(t('validation.email.invalid')),
+        email: z.email(t('validation.email.invalid')),
         password: z.string().min(1, t('validation.password.required')),
       }),
     [t],
@@ -110,7 +107,7 @@ function Login() {
       email: 'test-config-user@example.com',
       password: 'changemelater',
     },
-    resolver: zodResolver(loginSchema),
+    resolver: standardSchemaResolver(loginSchema),
   });
 
   const onSubmit = async (values: LoginFormValues) => {
@@ -215,24 +212,73 @@ function Login() {
               <>
                 <div className="divider my-2">{t('oauth.divider')}</div>
                 <div className="flex flex-col gap-2">
-                  {oauthProviders.map((provider) => (
-                    <a
-                      key={provider.name}
-                      href={getOAuthConnectUrl(provider.name, 'login')}
-                      className="btn btn-outline w-full"
-                    >
-                      {provider.icon_url && (
-                        <img
-                          src={provider.icon_url}
-                          alt={provider.display_name}
-                          className="mr-2 h-5 w-5"
-                        />
-                      )}
-                      {t('oauth.loginWith', {
-                        provider: provider.display_name,
-                      })}
-                    </a>
-                  ))}
+                  {oauthProviders.map((provider) => {
+                    // Build return URL if this is an OIDC flow
+                    let oauthUrl = `/api/v1/oauth/connect/${provider.name}?mode=login`;
+
+                    if (search.client_id && search.redirect_uri) {
+                      // Build authorization endpoint URL
+                      const authUrl = new URL(
+                        '/application/oauth/authorize',
+                        window.location.origin,
+                      );
+                      authUrl.searchParams.set('client_id', search.client_id);
+                      authUrl.searchParams.set(
+                        'redirect_uri',
+                        search.redirect_uri,
+                      );
+                      authUrl.searchParams.set(
+                        'response_type',
+                        search.response_type || 'code',
+                      );
+
+                      if (search.scope)
+                        authUrl.searchParams.set('scope', search.scope);
+                      if (search.state)
+                        authUrl.searchParams.set('state', search.state);
+                      if (search.nonce)
+                        authUrl.searchParams.set('nonce', search.nonce);
+                      if (search.code_challenge)
+                        authUrl.searchParams.set(
+                          'code_challenge',
+                          search.code_challenge,
+                        );
+                      if (search.code_challenge_method)
+                        authUrl.searchParams.set(
+                          'code_challenge_method',
+                          search.code_challenge_method,
+                        );
+                      if (search.prompt)
+                        authUrl.searchParams.set('prompt', search.prompt);
+                      if (search.max_age)
+                        authUrl.searchParams.set('max_age', search.max_age);
+                      if (search.display)
+                        authUrl.searchParams.set('display', search.display);
+
+                      oauthUrl += `&return_url=${encodeURIComponent(
+                        authUrl.toString(),
+                      )}`;
+                    }
+
+                    return (
+                      <a
+                        key={provider.name}
+                        href={oauthUrl}
+                        className="btn btn-outline w-full"
+                      >
+                        {provider.icon_url && (
+                          <img
+                            src={provider.icon_url}
+                            alt={provider.display_name}
+                            className="mr-2 h-5 w-5"
+                          />
+                        )}
+                        {t('oauth.loginWith', {
+                          provider: provider.display_name,
+                        })}
+                      </a>
+                    );
+                  })}
                 </div>
               </>
             )}

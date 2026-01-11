@@ -129,11 +129,7 @@ export default (fastify: FastifyWithZodInstance) =>
         return res.redirect(oauthSession.returnUrl);
       }
 
-      // Return JSON response for API clients
-      return res.status(200).send({
-        user: result.user,
-        is_new_user: result.isNewUser,
-        return_url: oauthSession.returnUrl,
-      });
+      // Default: redirect to profile page
+      return res.redirect('/profile');
     },
   });
