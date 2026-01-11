@@ -84,8 +84,8 @@ function Login() {
     formState: { errors },
   } = useForm<LoginFormValues>({
     defaultValues: {
-      email: 'test-config-user@example.com',
-      password: 'changemelater',
+      email: '',
+      password: '',
     },
     resolver: standardSchemaResolver(loginSchema),
   });

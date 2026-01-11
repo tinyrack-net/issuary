@@ -80,6 +80,9 @@ export function useTheme() {
   const serverDarkTheme = config?.app.dark_theme ?? 'dark';
   const serverThemeMode = config?.app.theme_mode ?? 'system';
 
+  // Theme toggle is only allowed when server theme_mode is 'system'
+  const canToggleTheme = serverThemeMode === 'system';
+
   // Subscribe to theme mode changes from localStorage
   const storedThemeMode = useSyncExternalStore(
     subscribeToThemeModeChanges,
@@ -87,10 +90,15 @@ export function useTheme() {
     getServerThemeModeSnapshot,
   );
 
-  // Determine current theme mode (user preference > server default)
+  // Determine current theme mode
+  // If server mode is not 'system', always use server mode (user cannot override)
+  // If server mode is 'system', user preference takes priority
   const themeMode = useMemo<ThemeMode>(() => {
+    if (!canToggleTheme) {
+      return serverThemeMode;
+    }
     return storedThemeMode ?? serverThemeMode;
-  }, [storedThemeMode, serverThemeMode]);
+  }, [canToggleTheme, storedThemeMode, serverThemeMode]);
 
   // Resolve actual theme from mode
   const currentTheme = useMemo<Theme>(() => {
@@ -120,12 +128,20 @@ export function useTheme() {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [themeMode, serverLightTheme, serverDarkTheme]);
 
-  const setThemeMode = useCallback((mode: ThemeMode) => {
-    localStorage.setItem(THEME_MODE_STORAGE_KEY, mode);
-    window.dispatchEvent(new CustomEvent(THEME_MODE_CHANGE_EVENT));
-  }, []);
+  const setThemeMode = useCallback(
+    (mode: ThemeMode) => {
+      // Only allow setting theme mode if server allows it
+      if (!canToggleTheme) return;
+      localStorage.setItem(THEME_MODE_STORAGE_KEY, mode);
+      window.dispatchEvent(new CustomEvent(THEME_MODE_CHANGE_EVENT));
+    },
+    [canToggleTheme],
+  );
 
   const toggleDarkMode = useCallback(() => {
+    // Only allow toggling if server allows it
+    if (!canToggleTheme) return;
+
     const currentMode = getStoredThemeMode() ?? serverThemeMode;
     // If system mode, check current actual theme to determine toggle direction
     if (currentMode === 'system') {
@@ -136,13 +152,14 @@ export function useTheme() {
       const newMode = currentMode === 'dark' ? 'light' : 'dark';
       setThemeMode(newMode);
     }
-  }, [serverThemeMode, setThemeMode]);
+  }, [canToggleTheme, serverThemeMode, setThemeMode]);
 
   return {
     themeMode,
     currentTheme,
     lightTheme: serverLightTheme,
     darkTheme: serverDarkTheme,
+    canToggleTheme,
     setThemeMode,
     toggleDarkMode,
   };

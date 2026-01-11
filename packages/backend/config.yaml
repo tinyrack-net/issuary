@@ -12,8 +12,8 @@ app:
     - ja
   default_language: auto
   fallback_language: ko
-  light_theme: valentine
-  dark_theme: black
+  light_theme: light
+  dark_theme: dark
   theme_mode: system
 
 admin:
