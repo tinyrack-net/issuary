@@ -31,12 +31,14 @@ export class UserService {
       { id },
       { populate: ['password_hash'] },
     );
+    const totpEnabled = await this.mikro.userTotp.isEnabled(id);
     return {
       id: user.id,
       managed: user.managed_by,
       email: user.email,
       email_verified: user.email_verified,
       has_password: user.hasPassword(),
+      totp_enabled: totpEnabled,
     };
   }
 
@@ -61,12 +63,14 @@ export class UserService {
       throw new e.InvalidEmailOrPassword.Error();
     }
 
+    const totpEnabled = await this.mikro.userTotp.isEnabled(user.id);
     return {
       id: user.id,
       managed: user.managed_by,
       email: user.email,
       email_verified: user.email_verified,
       has_password: user.hasPassword(),
+      totp_enabled: totpEnabled,
     };
   }
 

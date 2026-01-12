@@ -37,6 +37,9 @@ export default (fastify: FastifyWithZodInstance) => {
         id: user.id,
       });
 
+      // Check if TOTP is enabled for the user
+      const totpEnabled = await fastify.mikro.userTotp.isEnabled(user.id);
+
       res.status(200).send({
         user: {
           id: user.id,
@@ -44,6 +47,7 @@ export default (fastify: FastifyWithZodInstance) => {
           email: user.email,
           email_verified: user.email_verified,
           has_password: user.hasPassword(),
+          totp_enabled: totpEnabled,
         },
       });
     },

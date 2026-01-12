@@ -377,4 +377,26 @@ export const e = {
     'CANNOT_REMOVE_LAST_AUTH_METHOD',
     'Cannot remove password. You need at least one way to log in.',
   ),
+
+  // TOTP Errors
+  TotpAlreadyEnabled: createError(
+    409,
+    'TOTP_ALREADY_ENABLED',
+    'TOTP is already enabled for this account.',
+  ),
+  TotpNotEnabled: createError(
+    400,
+    'TOTP_NOT_ENABLED',
+    'TOTP is not enabled for this account.',
+  ),
+  TotpNotSetup: createError(
+    400,
+    'TOTP_NOT_SETUP',
+    'TOTP setup has not been initiated. Please start setup first.',
+  ),
+  InvalidTotpCode: createError(
+    400,
+    'INVALID_TOTP_CODE',
+    'The provided TOTP code is invalid.',
+  ),
 };

@@ -9,6 +9,7 @@ export type SessionUser = {
   email: string;
   email_verified: boolean;
   has_password: boolean;
+  totp_enabled: boolean;
 };
 
 export type SessionResponse = {

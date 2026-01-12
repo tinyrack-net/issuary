@@ -52,4 +52,11 @@ export const f = {
     .string()
     .min(1)
     .describe('OAuth provider name (e.g., "google", "github")'),
+
+  // TOTP fields
+  totpCode: z
+    .string()
+    .length(6)
+    .regex(/^\d{6}$/, 'TOTP code must be 6 digits')
+    .describe('6-digit TOTP code from authenticator app'),
 };

@@ -10,6 +10,7 @@ const UserSession = z
     email: f.userEmail,
     email_verified: f.emailVerified,
     has_password: z.boolean().describe('Whether the user has a password set'),
+    totp_enabled: z.boolean().describe('Whether TOTP is enabled for the user'),
   })
   .describe('UserSession');
 
@@ -238,6 +239,17 @@ export const r = {
       database: z.enum(['ok', 'error']),
     }),
     error: z.string().optional(),
+  }),
+
+  // TOTP responses
+  TotpStatusResponse: z.object({
+    enabled: z.boolean().describe('Whether TOTP is enabled for the user'),
+  }),
+
+  TotpSetupResponse: z.object({
+    secret: z.string().describe('TOTP secret key (base32 encoded)'),
+    otpauth_url: z.string().describe('OTPAuth URL for authenticator apps'),
+    qr_code: z.string().describe('QR code as data URL'),
   }),
 
   // App config response

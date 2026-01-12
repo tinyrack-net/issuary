@@ -3,6 +3,7 @@ import {
   EnvelopeSimpleIcon,
   KeyIcon,
   LinkIcon,
+  ShieldCheckIcon,
   SignOutIcon,
   UserIcon,
   XCircleIcon,
@@ -15,8 +16,10 @@ import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { tick } from '@/libs/promise';
 import { ChangePasswordModal } from '@/modals/profile/change-password-modal.js';
+import { DisableTotpModal } from '@/modals/profile/disable-totp-modal.js';
 import { RemovePasswordModal } from '@/modals/profile/remove-password-modal.js';
 import { SetPasswordModal } from '@/modals/profile/set-password-modal.js';
+import { SetupTotpModal } from '@/modals/profile/setup-totp-modal.js';
 import { logoutMutationOptions } from '@/queries/logout';
 import {
   getOAuthConnectUrl,
@@ -26,6 +29,7 @@ import {
 import { getSessionQueryOptions } from '@/queries/session';
 
 type PasswordModalType = 'set' | 'change' | 'remove' | null;
+type TotpModalType = 'setup' | 'disable' | null;
 
 export const Route = createFileRoute('/profile/')({
   component: Profile,
@@ -46,6 +50,7 @@ function Profile() {
     null,
   );
   const [passwordModal, setPasswordModal] = useState<PasswordModalType>(null);
+  const [totpModal, setTotpModal] = useState<TotpModalType>(null);
 
   const { data: session } = useQuery(getSessionQueryOptions);
   const { data: oauthAccountsData } = useQuery(oauthAccountsQueryOptions);
@@ -230,6 +235,54 @@ function Profile() {
         </div>
       )}
 
+      {/* Two-Factor Authentication */}
+      {user && !isConfigManaged && (
+        <div className="mb-4">
+          <h2 className="mb-2 font-semibold text-sm">
+            {t('profile.totp.title')}
+          </h2>
+          <p className="mb-3 text-base-content/60 text-xs">
+            {t('profile.totp.description')}
+          </p>
+          <div className="rounded-lg bg-base-200 p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheckIcon
+                  className={`size-4 ${
+                    user.totp_enabled ? 'text-success' : 'text-base-content/50'
+                  }`}
+                  weight="regular"
+                />
+                <span className="text-sm">
+                  {user.totp_enabled
+                    ? t('profile.totp.status.enabled')
+                    : t('profile.totp.status.disabled')}
+                </span>
+              </div>
+              <div className="flex gap-1">
+                {user.totp_enabled ? (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs text-error"
+                    onClick={() => setTotpModal('disable')}
+                  >
+                    {t('profile.totp.disable')}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs text-primary"
+                    onClick={() => setTotpModal('setup')}
+                  >
+                    {t('profile.totp.enable')}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Linked OAuth Accounts */}
       {availableProviders.length > 0 && (
         <div className="mb-4">
@@ -326,6 +379,16 @@ function Profile() {
       <RemovePasswordModal
         isOpen={passwordModal === 'remove'}
         onClose={() => setPasswordModal(null)}
+      />
+
+      {/* TOTP Modals */}
+      <SetupTotpModal
+        isOpen={totpModal === 'setup'}
+        onClose={() => setTotpModal(null)}
+      />
+      <DisableTotpModal
+        isOpen={totpModal === 'disable'}
+        onClose={() => setTotpModal(null)}
       />
     </AuthPageLayout>
   );
