@@ -3,12 +3,15 @@ import {
   EntityRepositoryType,
   Enum,
   Index,
+  ManyToOne,
   PrimaryKey,
   Property,
   t,
 } from '@mikro-orm/core';
 import { OAuthCodeRepository } from '@/repositories/oauth-code.repository.js';
 import { BaseEntity } from './base.entity.js';
+import { OAuthClientEntity } from './oauth-client.entity.js';
+import { UserEntity } from './user.entity.js';
 
 export const OAUTH_CODE_CHALLENGE_METHOD = {
   S256: 'S256',
@@ -47,21 +50,21 @@ export class OAuthCodeEntity extends BaseEntity {
   })
   public codeHash!: string;
 
-  @Property({
-    type: t.string,
+  @ManyToOne({
+    entity: () => OAuthClientEntity,
     name: 'oauth_client_id',
-    comment: 'ID of the OAuth client that requested the code',
+    comment: 'Reference to the OAuth client that requested the code',
     nullable: false,
   })
-  public clientId!: string;
+  public client!: OAuthClientEntity;
 
-  @Property({
-    type: t.string,
+  @ManyToOne({
+    entity: () => UserEntity,
     name: 'user_id',
-    comment: 'ID of the resource owner (user)',
+    comment: 'Reference to the resource owner (user)',
     nullable: false,
   })
-  public userId!: string;
+  public user!: UserEntity;
 
   @Property({
     type: t.string,

@@ -131,9 +131,13 @@ describe('POST /api/v1/consent', () => {
 
       // Verify consent was stored
       await withMikroContext(app, async () => {
+        const userEntity = await app.mikro.user.findOneOrFail({ id: user.id });
+        const clientEntity = await app.mikro.oauthClient.findOneOrFail({
+          clientId: TEST_OAUTH_CLIENT.clientId,
+        });
         const consent = await app.mikro.userConsent.findOne({
-          user_id: user.id,
-          client_id: TEST_OAUTH_CLIENT.clientId,
+          user: userEntity,
+          client: clientEntity,
         });
 
         expect(consent).not.toBeNull();
@@ -257,10 +261,14 @@ describe('POST /api/v1/consent', () => {
 
       // Verify no consent with this scope was stored
       await withMikroContext(app, async () => {
+        const userEntity = await app.mikro.user.findOneOrFail({ id: user.id });
+        const clientEntity = await app.mikro.oauthClient.findOneOrFail({
+          clientId: TEST_OAUTH_CLIENT.clientId,
+        });
         const consents = await app.mikro.userConsent.findAll({
           where: {
-            user_id: user.id,
-            client_id: TEST_OAUTH_CLIENT.clientId,
+            user: userEntity,
+            client: clientEntity,
           },
         });
 

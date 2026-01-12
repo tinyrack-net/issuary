@@ -1,8 +1,10 @@
-import { EntityRepository } from '@mikro-orm/core';
+import { EntityRepository, rel } from '@mikro-orm/core';
+import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import type {
   RevokedTokenEntity,
   TokenType,
 } from '@/entities/revoked-token.entity.js';
+import { UserEntity } from '@/entities/user.entity.js';
 
 /**
  * Repository for managing revoked tokens
@@ -21,8 +23,8 @@ export class RevokedTokenRepository extends EntityRepository<RevokedTokenEntity>
   async revokeToken(params: {
     jti: string;
     token_type: TokenType;
-    client_id: string;
-    user_id: string;
+    clientId: string;
+    userId: string;
     expires_at: Date;
   }): Promise<RevokedTokenEntity> {
     // Check if already revoked
@@ -34,8 +36,8 @@ export class RevokedTokenRepository extends EntityRepository<RevokedTokenEntity>
     const entity = this.create({
       jti: params.jti,
       token_type: params.token_type,
-      client_id: params.client_id,
-      user_id: params.user_id,
+      client: rel(OAuthClientEntity, params.clientId),
+      user: rel(UserEntity, params.userId),
       expires_at: params.expires_at,
       revoked_at: new Date(),
     });
@@ -50,13 +52,13 @@ export class RevokedTokenRepository extends EntityRepository<RevokedTokenEntity>
    * Used when revoking a refresh token to also invalidate
    * all associated access tokens (RFC 7009 recommendation).
    *
-   * @param client_id - OAuth client ID
-   * @param user_id - User ID
+   * @param clientId - OAuth client ID
+   * @param userId - User ID
    * @param tokens - Array of tokens to revoke with their metadata
    */
   async revokeAllForUserClient(
-    client_id: string,
-    user_id: string,
+    clientId: string,
+    userId: string,
     tokens: Array<{
       jti: string;
       token_type: TokenType;
@@ -69,8 +71,8 @@ export class RevokedTokenRepository extends EntityRepository<RevokedTokenEntity>
         const entity = this.create({
           jti: token.jti,
           token_type: token.token_type,
-          client_id,
-          user_id,
+          client: rel(OAuthClientEntity, clientId),
+          user: rel(UserEntity, userId),
           expires_at: token.expires_at,
           revoked_at: new Date(),
         });

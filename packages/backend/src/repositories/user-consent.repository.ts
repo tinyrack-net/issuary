@@ -1,5 +1,7 @@
-import { EntityRepository } from '@mikro-orm/core';
+import { EntityRepository, rel } from '@mikro-orm/core';
+import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import type { UserConsentEntity } from '@/entities/user-consent.entity.js';
+import { UserEntity } from '@/entities/user.entity.js';
 
 export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
   /**
@@ -10,8 +12,8 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
     clientId: string,
   ): Promise<UserConsentEntity | null> {
     return this.findOne({
-      user_id: userId,
-      client_id: clientId,
+      user: rel(UserEntity, userId),
+      client: rel(OAuthClientEntity, clientId),
       revoked_at: null,
     });
   }
@@ -57,10 +59,10 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
       return existingConsent;
     }
 
-    // Create new consent
+    // Create new consent using rel() for FK references
     const consent = this.create({
-      user_id: params.userId,
-      client_id: params.clientId,
+      user: rel(UserEntity, params.userId),
+      client: rel(OAuthClientEntity, params.clientId),
       scopes: params.scopes,
     });
 
@@ -87,7 +89,7 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
    */
   async revokeAllConsents(userId: string): Promise<number> {
     const consents = await this.find({
-      user_id: userId,
+      user: rel(UserEntity, userId),
       revoked_at: null,
     });
 
@@ -105,7 +107,7 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
    */
   async findAllConsents(userId: string): Promise<UserConsentEntity[]> {
     return this.find({
-      user_id: userId,
+      user: rel(UserEntity, userId),
       revoked_at: null,
     });
   }

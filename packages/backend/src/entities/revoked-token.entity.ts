@@ -3,12 +3,15 @@ import {
   EntityRepositoryType,
   Enum,
   Index,
+  ManyToOne,
   PrimaryKey,
   Property,
   t,
 } from '@mikro-orm/core';
 import { RevokedTokenRepository } from '@/repositories/revoked-token.repository.js';
 import { BaseEntity } from './base.entity.js';
+import { OAuthClientEntity } from './oauth-client.entity.js';
+import { UserEntity } from './user.entity.js';
 
 /**
  * Token types that can be revoked
@@ -70,23 +73,23 @@ export class RevokedTokenEntity extends BaseEntity {
 
   @Index({
     name: 'revoked_token_client_user_idx',
-    properties: ['client_id', 'user_id'],
+    properties: ['client', 'user'],
   })
-  @Property({
-    type: t.string,
+  @ManyToOne({
+    entity: () => OAuthClientEntity,
     name: 'client_id',
-    comment: 'OAuth client ID that the token was issued to',
+    comment: 'Reference to the OAuth client that the token was issued to',
     nullable: false,
   })
-  public client_id!: string;
+  public client!: OAuthClientEntity;
 
-  @Property({
-    type: t.string,
+  @ManyToOne({
+    entity: () => UserEntity,
     name: 'user_id',
-    comment: 'User ID (subject) that the token was issued for',
+    comment: 'Reference to the user (subject) that the token was issued for',
     nullable: false,
   })
-  public user_id!: string;
+  public user!: UserEntity;
 
   @Index({
     name: 'revoked_token_expires_at_idx',

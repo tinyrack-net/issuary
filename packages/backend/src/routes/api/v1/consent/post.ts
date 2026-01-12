@@ -87,9 +87,12 @@ export default (fastify: FastifyWithZodInstance) => {
       // User allowed consent - store it
       const requestedScopes = scope ? scope.split(' ') : [];
 
+      // Look up client to get primary key (client_id in request is the business key)
+      const client = await fastify.oauthClientService.findByClientId(client_id);
+
       await fastify.userConsentService.grantConsent({
         userId: userSession.id,
-        clientId: client_id,
+        clientId: client.id, // Use primary key, not business key
         scopes: requestedScopes,
       });
 

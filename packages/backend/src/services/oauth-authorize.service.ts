@@ -1,11 +1,8 @@
 import fastifyPlugin from 'fastify-plugin';
-import type z from 'zod/v4';
 import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
-import type { r } from '@/schemas/response.js';
 import type { OAuthClientService } from './oauth-client.service.js';
-import type { UserService } from './user.service.js';
 import type { UserConsentService } from './user-consent.service.js';
 
 declare module 'fastify' {
@@ -37,7 +34,6 @@ export class OAuthAuthorizeService {
   public constructor(
     private readonly mikro: MikroService,
     private readonly oauthClientService: OAuthClientService,
-    private readonly userService: UserService,
     private readonly userConsentService: UserConsentService,
   ) {}
 
@@ -50,7 +46,7 @@ export class OAuthAuthorizeService {
   }): Promise<AuthorizeResult> {
     const { query, userSession } = params;
 
-    // 1. Validate and fetch OAuth client
+    // 1. Validate and fetch OAuth client DTO for validation methods
     const client = await this.oauthClientService.findByClientId(
       query.client_id,
     );
@@ -96,13 +92,16 @@ export class OAuthAuthorizeService {
       };
     }
 
-    // 8. User is logged in - Verify user exists (config + DB)
-    await this.userService.verifyUserById(userSession.id);
+    // 8. User is logged in - Verify user exists
+    const userCount = await this.mikro.user.count({ id: userSession.id });
+    if (userCount === 0) {
+      throw new e.UserNotFound.Error();
+    }
 
-    // 9. Check if consent is required
+    // 9. Check if consent is required (using IDs, not entities)
     const requiresConsent = await this.userConsentService.requiresConsent({
       userId: userSession.id,
-      clientId: query.client_id,
+      clientId: client.id,
       requestedScopes,
       prompt: query.prompt,
     });
@@ -130,7 +129,7 @@ export class OAuthAuthorizeService {
     }
 
     const codeParams: {
-      client: z.infer<typeof r.OAuthClient>;
+      clientId: string;
       userId: string;
       redirectUri: string;
       scope: string[];
@@ -138,7 +137,7 @@ export class OAuthAuthorizeService {
       codeChallenge?: string;
       codeChallengeMethod?: 'S256' | 'plain';
     } = {
-      client,
+      clientId: client.id,
       userId: userSession.id,
       redirectUri: query.redirect_uri,
       scope: requestedScopes,
@@ -300,7 +299,7 @@ export class OAuthAuthorizeService {
    * Generate authorization code
    */
   private async generateAuthorizationCode(params: {
-    client: z.infer<typeof r.OAuthClient>;
+    clientId: string;
     userId: string;
     redirectUri: string;
     scope: string[];
@@ -317,7 +316,7 @@ export class OAuthAuthorizeService {
       codeChallenge?: string;
       codeChallengeMethod?: 'S256' | 'plain';
     } = {
-      clientId: params.client.clientId,
+      clientId: params.clientId,
       userId: params.userId,
       redirectUri: params.redirectUri,
       scope: params.scope,
@@ -345,7 +344,6 @@ export default fastifyPlugin(
     const oauthAuthorizeService = new OAuthAuthorizeService(
       fastify.mikro,
       fastify.oauthClientService,
-      fastify.userService,
       fastify.userConsentService,
     );
     fastify.decorate('oauthAuthorizeService', oauthAuthorizeService);
@@ -355,7 +353,6 @@ export default fastifyPlugin(
     dependencies: [
       'base-service-plugin',
       'oauth-client-service-plugin',
-      'user-service-plugin',
       'user-consent-service-plugin',
     ],
   },

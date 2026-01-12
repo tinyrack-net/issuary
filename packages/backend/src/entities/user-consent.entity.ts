@@ -1,15 +1,18 @@
 import {
   Entity,
   EntityRepositoryType,
-  Index,
+  ManyToOne,
   type Opt,
   PrimaryKey,
   Property,
+  rel,
   t,
   Unique,
 } from '@mikro-orm/core';
 import { UserConsentRepository } from '@/repositories/user-consent.repository.js';
 import { BaseEntity } from './base.entity.js';
+import { OAuthClientEntity } from './oauth-client.entity.js';
+import { UserEntity } from './user.entity.js';
 
 /**
  * UserConsentEntity stores user consent decisions for OAuth clients.
@@ -18,16 +21,13 @@ import { BaseEntity } from './base.entity.js';
  * this entity records that decision. Future authorization requests
  * from the same client with the same or subset of scopes can skip
  * the consent screen (unless prompt=consent is specified).
- *
- * Note: user_id is stored as a string to support both database users
- * and config-based users (which don't exist in the database).
  */
 @Entity({
   tableName: 'user_consent',
   comment: 'User consent decisions for OAuth clients',
   repository: () => UserConsentRepository,
 })
-@Unique({ properties: ['user_id', 'client_id'], name: 'user_consent_unique' })
+@Unique({ properties: ['user', 'client'], name: 'user_consent_unique' })
 export class UserConsentEntity extends BaseEntity {
   [EntityRepositoryType]?: UserConsentRepository;
 
@@ -39,23 +39,23 @@ export class UserConsentEntity extends BaseEntity {
   })
   public id: string = crypto.randomUUID();
 
-  @Index({ name: 'user_consent_user_id_index' })
-  @Property({
-    type: t.string,
+  @ManyToOne({
+    entity: () => UserEntity,
     name: 'user_id',
-    comment: 'User ID who granted consent (can be config-based or DB user)',
+    comment: 'Reference to the user who granted consent',
     nullable: false,
+    index: 'user_consent_user_id_index',
   })
-  public user_id!: string;
+  public user!: UserEntity;
 
-  @Index({ name: 'user_consent_client_id_index' })
-  @Property({
-    type: t.string,
+  @ManyToOne({
+    entity: () => OAuthClientEntity,
     name: 'client_id',
-    comment: 'OAuth client ID that received consent',
+    comment: 'Reference to the OAuth client that received consent',
     nullable: false,
+    index: 'user_consent_client_id_index',
   })
-  public client_id!: string;
+  public client!: OAuthClientEntity;
 
   @Property({
     type: t.json,
@@ -83,14 +83,14 @@ export class UserConsentEntity extends BaseEntity {
   public revoked_at?: Date | null = null;
 
   public constructor(init?: {
-    user_id: string;
-    client_id: string;
+    userId: string;
+    clientId: string;
     scopes: string[];
   }) {
     super();
     if (init) {
-      this.user_id = init.user_id;
-      this.client_id = init.client_id;
+      this.user = rel(UserEntity, init.userId);
+      this.client = rel(OAuthClientEntity, init.clientId);
       this.scopes = init.scopes;
     }
   }

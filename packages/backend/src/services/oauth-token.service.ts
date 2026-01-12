@@ -135,24 +135,30 @@ export class OAuthTokenService {
   async exchangeAuthorizationCode(params: AuthorizationCodeGrantParams) {
     const { code, redirectUri, clientId, codeVerifier } = params;
 
-    // 1. Verify and consume the authorization code
+    // 1. Look up client to get primary key (clientId in request is the business key)
+    const client = await this.oauthClientService.findByClientId(clientId);
+
+    // 2. Verify and consume the authorization code
     // Authorization codes are single-use (RFC 6749 §4.1.2)
     const codeEntity = await this.mikro.oauthCode.verifyAndConsumeCode(
       code,
-      clientId,
+      client.id, // Use primary key for FK reference
     );
 
     if (!codeEntity) {
       throw new e.InvalidAuthorizationCode.Error();
     }
 
-    // 2. Validate redirect_uri matches (RFC 6749 §4.1.3)
+    // 3. Populate user relation
+    await this.mikro.em.populate(codeEntity, ['user']);
+
+    // 4. Validate redirect_uri matches (RFC 6749 §4.1.3)
     // This prevents authorization code interception attacks
     if (codeEntity.redirectUri !== redirectUri) {
       throw new e.RedirectUriMismatch.Error();
     }
 
-    // 3. Validate PKCE if code_challenge was used (RFC 7636 §4.6)
+    // 5. Validate PKCE if code_challenge was used (RFC 7636 §4.6)
     // PKCE protects against authorization code interception for public clients
     if (codeEntity.codeChallenge) {
       if (!codeVerifier) {
@@ -170,17 +176,14 @@ export class OAuthTokenService {
       }
     }
 
-    // 4. Load user (supports both config and DB users)
-    const userData = await this.userService.verifyUserById(codeEntity.userId);
+    // 6. Get user data from relation
+    const user = codeEntity.user;
 
-    // 5. Get client info (for audience claim)
-    const client = await this.oauthClientService.findByClientId(clientId);
-
-    // 6. Build token response
+    // 7. Build token response
     return this.buildTokenResponse({
-      userId: userData.id,
-      userEmail: userData.email,
-      userEmailVerified: userData.email_verified,
+      userId: user.id,
+      userEmail: user.email,
+      userEmailVerified: user.email_verified,
       clientId: client.clientId,
       scope: codeEntity.scope,
       nonce: codeEntity.nonce,
@@ -355,12 +358,22 @@ export class OAuthTokenService {
       return;
     }
 
-    // Revoke the token
+    // Look up user and client entities to get primary keys
+    // Note: clientId from token is the business key, we need the entity's primary key
+    const userEntity = await this.mikro.user.findOne({ id: userId });
+    const clientEntity = await this.mikro.oauthClient.findOne({ clientId });
+
+    if (!userEntity || !clientEntity) {
+      // User or client no longer exists, but we still return success per RFC 7009
+      return;
+    }
+
+    // Revoke the token (using primary keys for FK references)
     await this.mikro.revokedToken.revokeToken({
       jti,
       token_type: tokenType,
-      client_id: clientId,
-      user_id: userId,
+      clientId: clientEntity.id, // Use entity's primary key
+      userId: userEntity.id,
       expires_at: expiresAt,
     });
 

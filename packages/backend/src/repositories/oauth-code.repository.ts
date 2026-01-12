@@ -1,7 +1,9 @@
 import { randomBytes } from 'node:crypto';
-import { EntityRepository } from '@mikro-orm/core';
+import { EntityRepository, rel } from '@mikro-orm/core';
 import { hash, verify } from 'argon2';
+import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import type { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
+import { UserEntity } from '@/entities/user.entity.js';
 import { e } from '@/schemas/error.js';
 
 export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
@@ -29,11 +31,11 @@ export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
     const expiresInSeconds = params.expiresInSeconds || 600;
     const expiredAt = new Date(Date.now() + expiresInSeconds * 1000);
 
-    // Create the entity
+    // Create the entity using rel() for FK references
     const entity = this.create({
       codeHash,
-      clientId: params.clientId,
-      userId: params.userId,
+      client: rel(OAuthClientEntity, params.clientId),
+      user: rel(UserEntity, params.userId),
       redirectUri: params.redirectUri,
       scope: params.scope,
       nonce: params.nonce || '',
@@ -58,7 +60,7 @@ export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
   ): Promise<OAuthCodeEntity | null> {
     // Find all unconsumed codes for this client
     const codes = await this.find({
-      clientId,
+      client: rel(OAuthClientEntity, clientId),
       consumedAt: null,
     });
 
