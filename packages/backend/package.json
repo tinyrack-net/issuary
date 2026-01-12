@@ -67,8 +67,8 @@
   },
   "mikro-orm": {
     "configPaths": [
-      "./src/db/index.ts",
-      "./dist/db/index.js"
+      "./src/db/cli.ts",
+      "./dist/db/cli.js"
     ]
   }
 }

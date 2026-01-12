@@ -8,7 +8,7 @@ import {
   jwtVerify,
   SignJWT,
 } from 'jose';
-import { AppConfigs } from '@/lib/config.js';
+import type { AppConfig } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { JwtKeyService } from './jwt-key.service.js';
@@ -71,6 +71,7 @@ export interface IdTokenPayload extends BaseJWTPayload {
  */
 export class JwtService {
   constructor(
+    private readonly config: AppConfig,
     private readonly jwtKeyService: JwtKeyService,
     private readonly mikro: MikroService,
   ) {}
@@ -79,7 +80,7 @@ export class JwtService {
    * Sign an access token using RS256
    */
   async signAccessToken(payload: AccessTokenPayload): Promise<string> {
-    const ttl = AppConfigs.app.jwt_access_token_ttl || 3600;
+    const ttl = this.config.app.jwt_access_token_ttl || 3600;
     const key = await this.jwtKeyService.getActiveKey();
     const privateKey = await importPKCS8(key.private_key, key.algorithm);
     const jti = crypto.randomUUID();
@@ -94,7 +95,7 @@ export class JwtService {
       .setJti(jti)
       .setIssuedAt()
       .setExpirationTime(`${ttl}s`)
-      .setIssuer(AppConfigs.app.host)
+      .setIssuer(this.config.app.host)
       .sign(privateKey);
 
     return jwt;
@@ -104,7 +105,7 @@ export class JwtService {
    * Sign a refresh token using RS256
    */
   async signRefreshToken(payload: RefreshTokenPayload): Promise<string> {
-    const ttl = AppConfigs.app.jwt_refresh_token_ttl || 2592000;
+    const ttl = this.config.app.jwt_refresh_token_ttl || 2592000;
     const key = await this.jwtKeyService.getActiveKey();
     const privateKey = await importPKCS8(key.private_key, key.algorithm);
     const jti = crypto.randomUUID();
@@ -119,7 +120,7 @@ export class JwtService {
       .setJti(jti)
       .setIssuedAt()
       .setExpirationTime(`${ttl}s`)
-      .setIssuer(AppConfigs.app.host)
+      .setIssuer(this.config.app.host)
       .sign(privateKey);
 
     return jwt;
@@ -129,7 +130,7 @@ export class JwtService {
    * Sign an ID token using RS256 (for OIDC)
    */
   async signIdToken(payload: IdTokenPayload): Promise<string> {
-    const ttl = AppConfigs.app.jwt_access_token_ttl || 3600;
+    const ttl = this.config.app.jwt_access_token_ttl || 3600;
     const key = await this.jwtKeyService.getActiveKey();
     const privateKey = await importPKCS8(key.private_key, key.algorithm);
 
@@ -147,7 +148,7 @@ export class JwtService {
       .setProtectedHeader({ alg: key.algorithm, typ: 'JWT', kid: key.kid })
       .setIssuedAt()
       .setExpirationTime(`${ttl}s`)
-      .setIssuer(AppConfigs.app.host)
+      .setIssuer(this.config.app.host)
       .sign(privateKey);
 
     return jwt;
@@ -381,7 +382,7 @@ export default fastifyPlugin(
   async (fastify) => {
     fastify.decorate(
       'jwtService',
-      new JwtService(fastify.jwtKeyService, fastify.mikro),
+      new JwtService(fastify.config, fastify.jwtKeyService, fastify.mikro),
     );
   },
   {

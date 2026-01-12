@@ -4,13 +4,13 @@ import { type Options, ReflectMetadataProvider } from '@mikro-orm/core';
 import { Migrator } from '@mikro-orm/migrations';
 import { defineConfig, PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { SeedManager } from '@mikro-orm/seeder';
-import { AppConfigs } from '@/lib/config.js';
+import type { AppConfig } from '@/lib/config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const mikroormPostgresConfig = (): Options => {
-  if (AppConfigs.database.type !== 'postgres') {
+export const mikroormPostgresConfig = (config: AppConfig): Options => {
+  if (config.database.type !== 'postgres') {
     throw new Error('Database type is not postgres');
   }
   return defineConfig({
@@ -23,11 +23,11 @@ export const mikroormPostgresConfig = (): Options => {
       pathTs: path.join(__dirname, '../migrations/postgres'),
       glob: '!(*.d).{ts,js}',
     },
-    host: AppConfigs.database.host,
-    port: AppConfigs.database.port,
-    dbName: AppConfigs.database.name,
-    user: AppConfigs.database.user,
-    password: AppConfigs.database.password,
+    host: config.database.host,
+    port: config.database.port,
+    dbName: config.database.name,
+    user: config.database.user,
+    password: config.database.password,
     extensions: [SeedManager, Migrator],
     driverOptions: {
       connection: {

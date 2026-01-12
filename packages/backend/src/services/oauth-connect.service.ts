@@ -1,8 +1,8 @@
 import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import {
+  type AppConfig,
   type AppConfigAuthMethodOAuth,
-  AppConfigs,
   type ResolvedOAuthConfig,
   resolveOAuthConfig,
 } from '@/lib/config.js';
@@ -11,7 +11,7 @@ import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
 
-// Note: This service still uses AppConfigs for authentication_methods (OAuth providers config)
+// Note: This service uses fastify.config for authentication_methods (OAuth providers config)
 // but user-related config lookups have been removed since users are now synced to DB.
 
 declare module 'fastify' {
@@ -62,7 +62,10 @@ export interface OAuthAuthResult {
 }
 
 export class OAuthConnectService {
-  public constructor(private readonly mikro: MikroService) {}
+  public constructor(
+    private readonly config: AppConfig,
+    private readonly mikro: MikroService,
+  ) {}
 
   /**
    * Get all enabled OAuth providers
@@ -79,7 +82,7 @@ export class OAuthConnectService {
     }> = [];
 
     for (const [name, config] of Object.entries(
-      AppConfigs.authentication_methods,
+      this.config.authentication_methods,
     )) {
       if (config.type === 'oauth' && config.enabled) {
         const resolved = resolveOAuthConfig(
@@ -101,7 +104,7 @@ export class OAuthConnectService {
    * Get OAuth provider config by name
    */
   public getProvider(name: string): ResolvedOAuthConfig {
-    const config = AppConfigs.authentication_methods[name];
+    const config = this.config.authentication_methods[name];
 
     if (!config || config.type !== 'oauth' || !config.enabled) {
       throw new e.OAuthProviderNotFound.Error();
@@ -124,7 +127,7 @@ export class OAuthConnectService {
 
     const params = new URLSearchParams({
       client_id: provider.client_id,
-      redirect_uri: `${AppConfigs.app.host}/api/v1/oauth/${providerName}/callback`,
+      redirect_uri: `${this.config.app.host}/api/v1/oauth/${providerName}/callback`,
       response_type: 'code',
       scope: provider.scopes.join(' '),
       state,
@@ -163,7 +166,7 @@ export class OAuthConnectService {
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: `${AppConfigs.app.host}/api/v1/oauth/${providerName}/callback`,
+      redirect_uri: `${this.config.app.host}/api/v1/oauth/${providerName}/callback`,
       client_id: provider.client_id,
       client_secret: provider.client_secret,
       code_verifier: codeVerifier,
@@ -487,7 +490,10 @@ export class OAuthConnectService {
 
 export default fastifyPlugin(
   async (fastify) => {
-    const oauthConnectService = new OAuthConnectService(fastify.mikro);
+    const oauthConnectService = new OAuthConnectService(
+      fastify.config,
+      fastify.mikro,
+    );
     fastify.decorate('oauthConnectService', oauthConnectService);
   },
   {

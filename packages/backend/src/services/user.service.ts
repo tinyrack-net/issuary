@@ -121,6 +121,6 @@ export default fastifyPlugin(
   },
   {
     name: 'user-service-plugin',
-    dependencies: ['base-service-plugin'],
+    dependencies: ['base-service-plugin', 'secure-session-plugin'],
   },
 );

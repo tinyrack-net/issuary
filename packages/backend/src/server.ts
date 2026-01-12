@@ -4,31 +4,56 @@ import { fileURLToPath } from 'node:url';
 import fastifyAutoload from '@fastify/autoload';
 import Fastify from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { AppConfigs } from '@/lib/config.js';
+import { type AppConfig, type DeepPartial, loadConfig } from '@/lib/config.js';
 import { env } from '@/lib/env.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.resolve(path.dirname(__filename));
 
+declare module 'fastify' {
+  interface FastifyInstance {
+    config: AppConfig;
+  }
+}
+
 export type FastifyWithZodInstance = Awaited<
   ReturnType<ReturnType<typeof createServer>['start']>
 >;
 
-export function createServer() {
+export interface CreateServerOptions {
+  /**
+   * Custom config file path.
+   */
+  configPath?: string;
+  /**
+   * Base config object to use instead of loading from file (useful for testing).
+   */
+  baseConfig?: AppConfig;
+  /**
+   * Partial config to override loaded values (useful for testing).
+   */
+  configOverrides?: DeepPartial<AppConfig>;
+}
+
+export function createServer(options?: CreateServerOptions) {
   const appInstance = Fastify({
     logger: {
       enabled: env.APP_ENV !== 'production',
-      // transport: {
-      //   target: 'pino-pretty',
-      //   options: {
-      //     colorize: true,
-      //   },
-      // },
     },
   }).withTypeProvider<ZodTypeProvider>();
 
   const start = async () => {
     try {
+      // Load config with optional overrides
+      const config = await loadConfig({
+        ...(options?.configPath && { configPath: options.configPath }),
+        ...(options?.baseConfig && { baseConfig: options.baseConfig }),
+        ...(options?.configOverrides && { overrides: options.configOverrides }),
+      });
+
+      // Register config as a decorator for DI
+      appInstance.decorate('config', config);
+
       await appInstance.register(fastifyAutoload, {
         dir: path.join(__dirname, 'plugins'),
         ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
@@ -49,11 +74,11 @@ export function createServer() {
 
       if (env.APP_ENV !== 'test') {
         await appInstance.listen({
-          port: AppConfigs.app.port,
+          port: config.app.port,
         });
       }
 
-      console.log('listening on port', AppConfigs.app.port);
+      console.log('listening on port', config.app.port);
 
       return appInstance;
     } catch (err) {

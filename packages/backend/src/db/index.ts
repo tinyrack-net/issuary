@@ -1,20 +1,23 @@
-import { AppConfigs } from '@/lib/config.js';
+import type { Options } from '@mikro-orm/core';
+import type { AppConfig } from '@/lib/config.js';
 import { mikroormMemoryConfig } from './memory.js';
 import { mikroormPostgresConfig } from './postgres.js';
 import { mikroormSqliteConfig } from './sqlite.js';
 
-const configs = (() => {
-  switch (AppConfigs.database.type) {
+/**
+ * Get MikroORM config from AppConfig.
+ * Used by the application at runtime.
+ */
+export function getDbConfigs(config: AppConfig): Options {
+  switch (config.database.type) {
     case 'postgres': {
-      return mikroormPostgresConfig();
+      return mikroormPostgresConfig(config);
     }
     case 'sqlite': {
-      return mikroormSqliteConfig();
+      return mikroormSqliteConfig(config);
     }
     case 'memory': {
-      return mikroormMemoryConfig();
+      return mikroormMemoryConfig(config);
     }
   }
-})();
-
-export default configs;
+}

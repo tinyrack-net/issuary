@@ -1,7 +1,6 @@
 import fastifyPlugin from 'fastify-plugin';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
-import { AppConfigs } from '@/lib/config.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -15,19 +14,19 @@ declare module 'fastify' {
 export default fastifyPlugin(
   async (fastify) => {
     // Use Ethereal Email for test environment
-    if (AppConfigs.smtp) {
+    if (fastify.config.smtp) {
       // Use configured SMTP for dev/production
       const transport = nodemailer.createTransport({
-        host: AppConfigs.smtp.host,
-        port: AppConfigs.smtp.port,
-        secure: AppConfigs.smtp.secure,
+        host: fastify.config.smtp.host,
+        port: fastify.config.smtp.port,
+        secure: fastify.config.smtp.secure,
         auth: {
-          user: AppConfigs.smtp.user,
-          pass: AppConfigs.smtp.password,
+          user: fastify.config.smtp.user,
+          pass: fastify.config.smtp.password,
         },
       });
       fastify.decorate('transporter', transport);
-      console.log('✉️  SMTP configured:', AppConfigs.smtp.host);
+      console.log('✉️  SMTP configured:', fastify.config.smtp.host);
     } else {
       // No email configuration - create a dummy transporter
       fastify.decorate('transporter', null);

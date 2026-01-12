@@ -1,5 +1,5 @@
 import fastifyPlugin from 'fastify-plugin';
-import { AppConfigs } from '@/lib/config.js';
+import type { AppConfig } from '@/lib/config.js';
 import { validatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
@@ -113,6 +113,7 @@ export interface TokenResponse {
 
 export class OAuthTokenService {
   constructor(
+    private readonly config: AppConfig,
     private readonly mikro: MikroService,
     private readonly userService: UserService,
     private readonly oauthClientService: OAuthClientService,
@@ -428,7 +429,7 @@ export class OAuthTokenService {
     const response: TokenResponse = {
       access_token: accessToken,
       token_type: 'Bearer',
-      expires_in: AppConfigs.app.jwt_access_token_ttl || 3600,
+      expires_in: this.config.app.jwt_access_token_ttl || 3600,
       refresh_token: refreshToken,
       scope: scopeString,
     };
@@ -472,6 +473,7 @@ export default fastifyPlugin(
     fastify.decorate(
       'oauthTokenService',
       new OAuthTokenService(
+        fastify.config,
         fastify.mikro,
         fastify.userService,
         fastify.oauthClientService,

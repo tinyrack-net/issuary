@@ -1,4 +1,3 @@
-import { AppConfigs } from '@/lib/config.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
@@ -16,11 +15,11 @@ export default (fastify: FastifyWithZodInstance) => {
     },
     handler: async (_req, res) => {
       res.status(200).send({
-        app: AppConfigs.app,
+        app: fastify.config.app,
         database: {
-          enabled: !!AppConfigs.database?.type,
+          enabled: !!fastify.config.database?.type,
         },
-        authentication_methods: AppConfigs.authentication_methods,
+        authentication_methods: fastify.config.authentication_methods,
       });
     },
   });

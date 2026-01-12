@@ -1,5 +1,5 @@
 import fastifyPlugin from 'fastify-plugin';
-import { AppConfigs } from '@/lib/config.js';
+import type { AppConfig } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { OAuthClientService } from './oauth-client.service.js';
@@ -32,6 +32,7 @@ export interface AuthorizeResult {
 
 export class OAuthAuthorizeService {
   public constructor(
+    private readonly config: AppConfig,
     private readonly mikro: MikroService,
     private readonly oauthClientService: OAuthClientService,
     private readonly userConsentService: UserConsentService,
@@ -181,7 +182,7 @@ export class OAuthAuthorizeService {
    * Build login redirect URL
    */
   private buildLoginRedirectUrl(query: AuthorizeParams): string {
-    const loginUrl = new URL('/login', AppConfigs.app.host);
+    const loginUrl = new URL('/login', this.config.app.host);
     loginUrl.searchParams.set('client_id', query.client_id);
     loginUrl.searchParams.set('redirect_uri', query.redirect_uri);
     loginUrl.searchParams.set('response_type', query.response_type);
@@ -221,7 +222,7 @@ export class OAuthAuthorizeService {
    * Build consent redirect URL
    */
   private buildConsentRedirectUrl(query: AuthorizeParams): string {
-    const consentUrl = new URL('/consent', AppConfigs.app.host);
+    const consentUrl = new URL('/consent', this.config.app.host);
     consentUrl.searchParams.set('client_id', query.client_id);
     consentUrl.searchParams.set('redirect_uri', query.redirect_uri);
     consentUrl.searchParams.set('response_type', query.response_type);
@@ -342,6 +343,7 @@ export class OAuthAuthorizeService {
 export default fastifyPlugin(
   async (fastify) => {
     const oauthAuthorizeService = new OAuthAuthorizeService(
+      fastify.config,
       fastify.mikro,
       fastify.oauthClientService,
       fastify.userConsentService,

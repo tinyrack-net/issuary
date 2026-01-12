@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import fastifyPlugin from 'fastify-plugin';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
-import { AppConfigs } from '@/lib/config.js';
+import type { AppConfig } from '@/lib/config.js';
 import { e } from '@/schemas/error.js';
 
 declare module 'fastify' {
@@ -13,6 +13,7 @@ declare module 'fastify' {
 
 export class EmailService {
   public constructor(
+    private readonly config: AppConfig,
     private readonly transporter: FastifyInstance['transporter'],
   ) {}
 
@@ -23,11 +24,11 @@ export class EmailService {
     email: string;
     token: string;
   }): Promise<SMTPTransport.SentMessageInfo> {
-    if (!this.transporter || !AppConfigs.smtp) {
+    if (!this.transporter || !this.config.smtp) {
       throw new e.EmailNotActivated.Error();
     }
 
-    const verificationUrl = `${AppConfigs.app.host}/verify-email?token=${params.token}`;
+    const verificationUrl = `${this.config.app.host}/verify-email?token=${params.token}`;
 
     const html = this.getVerificationEmailTemplate({
       verificationUrl,
@@ -35,7 +36,7 @@ export class EmailService {
     });
 
     const info = await this.transporter.sendMail({
-      from: AppConfigs.smtp.from,
+      from: this.config.smtp.from,
       to: params.email,
       subject: 'Verify your email address',
       text: `Please verify your email by clicking this link: ${verificationUrl}\n\nOr use this verification code: ${params.token}`,
@@ -44,7 +45,7 @@ export class EmailService {
 
     console.log('Email sent: %s', info.messageId);
 
-    if (AppConfigs.smtp.test) {
+    if (this.config.smtp.test) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
         console.log('Preview URL: %s', previewUrl);
@@ -71,11 +72,11 @@ export class EmailService {
     email: string;
     token: string;
   }): Promise<SMTPTransport.SentMessageInfo> {
-    if (!this.transporter || !AppConfigs.smtp) {
+    if (!this.transporter || !this.config.smtp) {
       throw new e.EmailNotActivated.Error();
     }
 
-    const resetUrl = `${AppConfigs.app.host}/reset-password?token=${params.token}`;
+    const resetUrl = `${this.config.app.host}/reset-password?token=${params.token}`;
 
     const html = this.getPasswordResetEmailTemplate({
       resetUrl,
@@ -83,7 +84,7 @@ export class EmailService {
     });
 
     const info = await this.transporter.sendMail({
-      from: AppConfigs.smtp.from,
+      from: this.config.smtp.from,
       to: params.email,
       subject: 'Reset your password',
       text: `Reset your password by clicking this link: ${resetUrl}\n\nOr use this reset code: ${params.token}\n\nThis link will expire in 1 hour.`,
@@ -92,7 +93,7 @@ export class EmailService {
 
     console.log('Password reset email sent: %s', info.messageId);
 
-    if (AppConfigs.smtp.test) {
+    if (this.config.smtp.test) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
         console.log('Preview URL: %s', previewUrl);
@@ -288,7 +289,7 @@ export class EmailService {
 
 export default fastifyPlugin(
   async (fastify) => {
-    const service = new EmailService(fastify.transporter);
+    const service = new EmailService(fastify.config, fastify.transporter);
     fastify.decorate('emailService', service);
   },
   {

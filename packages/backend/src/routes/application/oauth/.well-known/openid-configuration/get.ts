@@ -1,5 +1,4 @@
 import z from 'zod/v4';
-import { AppConfigs } from '@/lib/config.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
@@ -105,7 +104,7 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (_req, res) => {
-      const baseUrl = AppConfigs.app.host;
+      const baseUrl = fastify.config.app.host;
 
       // Build OpenID Configuration response
       // https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata
@@ -143,7 +142,7 @@ export default (fastify: FastifyWithZodInstance) => {
         // Optional fields
         introspection_endpoint: `${baseUrl}/application/oauth/introspect`,
         revocation_endpoint: `${baseUrl}/application/oauth/revoke`,
-        ui_locales_supported: AppConfigs.app.supported_languages,
+        ui_locales_supported: fastify.config.app.supported_languages,
       };
 
       // Set Cache-Control header for caching (1 hour)

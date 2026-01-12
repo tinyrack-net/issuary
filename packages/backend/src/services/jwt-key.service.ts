@@ -8,7 +8,7 @@ import {
   importSPKI,
 } from 'jose';
 import { JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
-import { AppConfigs } from '@/lib/config.js';
+import type { AppConfig } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 
 declare module 'fastify' {
@@ -71,7 +71,10 @@ export class JwtKeyService {
   private activeKeyCacheTime: number = 0;
   private readonly CACHE_TTL_MS = 60 * 1000; // 1 minute
 
-  constructor(private readonly mikro: MikroService) {}
+  constructor(
+    private readonly config: AppConfig,
+    private readonly mikro: MikroService,
+  ) {}
 
   /**
    * Generate a new RSA key pair
@@ -140,7 +143,7 @@ export class JwtKeyService {
    */
   async createAndActivateKey(): Promise<JwtKeyEntity> {
     const keyPair = await this.generateKeyPair();
-    const rotationDays = AppConfigs.app.jwt_key_rotation_days ?? 30;
+    const rotationDays = this.config.app.jwt_key_rotation_days ?? 30;
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + rotationDays);
@@ -168,7 +171,7 @@ export class JwtKeyService {
    */
   async createNextKey(): Promise<JwtKeyEntity> {
     const keyPair = await this.generateKeyPair();
-    const rotationDays = AppConfigs.app.jwt_key_rotation_days ?? 30;
+    const rotationDays = this.config.app.jwt_key_rotation_days ?? 30;
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + rotationDays);
@@ -243,7 +246,7 @@ export class JwtKeyService {
    * @param overlapDays - Days to keep previous keys valid
    */
   async retireOldKeys(overlapDays?: number): Promise<number> {
-    const days = overlapDays ?? AppConfigs.app.jwt_key_overlap_days ?? 7;
+    const days = overlapDays ?? this.config.app.jwt_key_overlap_days ?? 7;
     const keysToRetire = await this.mikro.jwtKey.getKeysToRetire(days);
 
     for (const key of keysToRetire) {
@@ -398,7 +401,10 @@ export class JwtKeyService {
 
 export default fastifyPlugin(
   async (fastify) => {
-    fastify.decorate('jwtKeyService', new JwtKeyService(fastify.mikro));
+    fastify.decorate(
+      'jwtKeyService',
+      new JwtKeyService(fastify.config, fastify.mikro),
+    );
 
     // Ensure active key exists on startup (use forked EM for bootstrap)
     const em = fastify.mikro.orm.em.fork();
@@ -419,7 +425,7 @@ export default fastifyPlugin(
       } else {
         // Generate and activate a new key
         const keyPair = await fastify.jwtKeyService.generateKeyPair();
-        const rotationDays = AppConfigs.app.jwt_key_rotation_days ?? 30;
+        const rotationDays = fastify.config.app.jwt_key_rotation_days ?? 30;
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + rotationDays);
 
@@ -440,7 +446,7 @@ export default fastifyPlugin(
     fastify.jwtKeyService.clearActiveKeyCache();
 
     // Optional: Set up periodic rotation check
-    const rotationEnabled = AppConfigs.app.jwt_key_rotation_enabled ?? true;
+    const rotationEnabled = fastify.config.app.jwt_key_rotation_enabled ?? true;
 
     if (rotationEnabled) {
       const checkInterval = setInterval(

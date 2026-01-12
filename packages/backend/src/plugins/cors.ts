@@ -1,11 +1,10 @@
 import fastifyCors from '@fastify/cors';
 import fastifyPlugin from 'fastify-plugin';
-import { AppConfigs } from '@/lib/config.js';
 
 export default fastifyPlugin(
   (fastify) => {
     fastify.register(fastifyCors, {
-      origin: [AppConfigs.app.host],
+      origin: [fastify.config.app.host],
       credentials: true,
     });
   },
