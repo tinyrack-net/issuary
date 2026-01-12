@@ -1,4 +1,3 @@
-import { describe, expect, test } from 'vitest';
 import {
   createAuthenticatedSession,
   generateUniqueEmail,
@@ -6,6 +5,7 @@ import {
   setupTestServer,
   withMikroContext,
 } from '@/test-utils/index.js';
+import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
@@ -114,9 +114,8 @@ describe('DELETE /api/v1/user/password', () => {
       await app.mikro.em.flush();
     });
 
-    const sessionCookie = loginRes.cookies.find(
-      (c) => c.name === 'session',
-    )?.value;
+    const sessionCookie = loginRes.cookies.find((c) => c.name === 'session')
+      ?.value as string;
     expect(sessionCookie).toBeDefined();
 
     const res = await injectWithSession(
@@ -128,7 +127,7 @@ describe('DELETE /api/v1/user/password', () => {
           current_password: 'somePassword123!',
         },
       },
-      sessionCookie!,
+      sessionCookie,
     );
 
     expect(res.statusCode).toBe(400);
@@ -201,9 +200,8 @@ describe('DELETE /api/v1/user/password', () => {
 
     // Link an OAuth account to the user
     await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ id: userId });
       await app.mikro.userOAuth.linkAccount({
-        user,
+        userId,
         providerName: 'google',
         providerUserId: `google-${Date.now()}`,
         accessToken: 'fake-access-token',
@@ -267,10 +265,8 @@ describe('DELETE /api/v1/user/password', () => {
 
     // Link multiple OAuth accounts
     await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ id: userId });
-
       await app.mikro.userOAuth.linkAccount({
-        user,
+        userId,
         providerName: 'google',
         providerUserId: `google-multi-${Date.now()}`,
         accessToken: 'fake-access-token-1',
@@ -279,7 +275,7 @@ describe('DELETE /api/v1/user/password', () => {
       });
 
       await app.mikro.userOAuth.linkAccount({
-        user,
+        userId,
         providerName: 'github',
         providerUserId: `github-multi-${Date.now()}`,
         accessToken: 'fake-access-token-2',

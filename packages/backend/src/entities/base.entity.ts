@@ -1,11 +1,13 @@
-import { Entity, type Opt, Property, t } from '@mikro-orm/core';
+import { Entity, type Opt, PrimaryKeyProp, Property, t } from '@mikro-orm/core';
 
 @Entity({ abstract: true })
-export abstract class BaseEntity {
+export abstract class BaseEntity<PK extends string = 'id'> {
+  [PrimaryKeyProp]?: PK;
+
   @Property({
     type: t.datetime,
     name: 'created_at',
-    comment: 'Timestamp when the user was created',
+    comment: 'Timestamp when the entity was created',
     nullable: false,
   })
   public created_at: Opt<Date> = new Date();
@@ -13,7 +15,7 @@ export abstract class BaseEntity {
   @Property({
     type: t.datetime,
     name: 'updated_at',
-    comment: 'Timestamp when the user was last updated',
+    comment: 'Timestamp when the entity was last updated',
     nullable: false,
     onUpdate: () => new Date(),
   })

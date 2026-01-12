@@ -1,10 +1,10 @@
-import { describe, expect, test } from 'vitest';
 import {
+  TEST_USER,
   generateUniqueEmail,
   setupTestServer,
-  TEST_USER,
   withMikroContext,
 } from '@/test-utils/index.js';
+import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
@@ -88,7 +88,7 @@ describe('POST /api/v1/auth/email/resend', () => {
       await app.mikro.em.persistAndFlush(user);
 
       // Generate initial token
-      await app.emailVerificationService.generateToken({ user });
+      await app.emailVerificationService.generateToken({ userId: user.id });
     });
 
     // Resend verification email
@@ -102,12 +102,12 @@ describe('POST /api/v1/auth/email/resend', () => {
 
     // Verify new token was created
     await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOne({ email });
+      const user = await app.mikro.user.findOneOrFail({ email });
       expect(user).toBeDefined();
 
       // Check that there is a valid pending verification
       const hasPending =
-        await app.emailVerificationService.hasPendingVerification(user!.id);
+        await app.emailVerificationService.hasPendingVerification(user.id);
       expect(hasPending).toBe(true);
     });
   });

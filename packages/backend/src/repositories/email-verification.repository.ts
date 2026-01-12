@@ -1,6 +1,6 @@
-import { EntityRepository } from '@mikro-orm/core';
-import type { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
-import type { UserEntity } from '@/entities/user.entity.js';
+import { EntityRepository, ref } from '@mikro-orm/core';
+import { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
+import { UserEntity } from '@/entities/user.entity.js';
 
 export class EmailVerificationRepository extends EntityRepository<EmailVerificationEntity> {
   /**
@@ -8,7 +8,7 @@ export class EmailVerificationRepository extends EntityRepository<EmailVerificat
    * @returns The created verification entity with token
    */
   async generateToken(params: {
-    user: UserEntity;
+    userId: string;
     expiresInHours?: number;
   }): Promise<EmailVerificationEntity> {
     // Generate a UUID token for security
@@ -20,7 +20,7 @@ export class EmailVerificationRepository extends EntityRepository<EmailVerificat
 
     // Invalidate all previous unverified tokens for this user
     const previousTokens = await this.find({
-      user: params.user,
+      user: ref(UserEntity, params.userId),
       verified: false,
     });
 
@@ -28,12 +28,11 @@ export class EmailVerificationRepository extends EntityRepository<EmailVerificat
       prevToken.expiresAt = new Date(); // Expire immediately
     }
 
-    // Create the entity
-    const entity = this.create({
-      user: params.user,
+    // Create the entity using constructor
+    const entity = new EmailVerificationEntity({
+      userId: params.userId,
       token,
       expiresAt,
-      verified: false,
     });
 
     // Persist to database

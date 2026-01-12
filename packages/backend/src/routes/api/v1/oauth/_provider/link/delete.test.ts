@@ -1,12 +1,12 @@
-import { describe, expect, test } from 'vitest';
 import {
+  TEST_USER,
   createAuthenticatedSession,
   generateUniqueEmail,
   injectWithSession,
   setupTestServer,
-  TEST_USER,
   withMikroContext,
 } from '@/test-utils/index.js';
+import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
@@ -79,8 +79,9 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
       });
       expect(loginRes.statusCode).toBe(200);
 
-      return loginRes.cookies.find((c) => c.name === 'session')
-        ?.value as string;
+      return loginRes.cookies.find(
+        (c) => c.name === 'session',
+      )?.value as string;
     });
 
     const res = await injectWithSession(
@@ -112,7 +113,7 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
 
       // Link OAuth account
       await app.mikro.userOAuth.linkAccount({
-        user,
+        userId: user.id,
         providerName: 'google',
         providerUserId: `test-${Date.now()}`,
         accessToken: 'test-access-token',
@@ -125,22 +126,22 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
 
     // Verify the service logic works correctly
     const res = await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOne(
+      const user = await app.mikro.user.findOneOrFail(
         { email },
         { populate: ['password_hash'] },
       );
       expect(user).toBeDefined();
 
-      const oauthCount = await app.mikro.userOAuth.countByUser(user!);
+      const oauthCount = await app.mikro.userOAuth.countByUser(user.id);
       expect(oauthCount).toBe(1);
 
-      const hasPassword = user!.hasPassword();
+      const hasPassword = user.hasPassword();
       expect(hasPassword).toBe(false);
 
       // Test the service method directly
       // This should throw CannotUnlinkLastAuthMethod error
       try {
-        await app.oauthConnectService.unlinkOAuthAccount(user!.id, 'google');
+        await app.oauthConnectService.unlinkOAuthAccount(user.id, 'google');
         return { error: null };
       } catch (err) {
         return { error: (err as Error).message };
@@ -167,7 +168,7 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
 
       // Link OAuth account
       await app.mikro.userOAuth.linkAccount({
-        user,
+        userId: user.id,
         providerName: 'google',
         providerUserId: `test-${Date.now()}`,
         accessToken: 'test-access-token',
@@ -183,8 +184,9 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
       });
       expect(loginRes.statusCode).toBe(200);
 
-      return loginRes.cookies.find((c) => c.name === 'session')
-        ?.value as string;
+      return loginRes.cookies.find(
+        (c) => c.name === 'session',
+      )?.value as string;
     });
 
     const res = await injectWithSession(
@@ -202,8 +204,8 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
 
     // Verify OAuth account is unlinked
     await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOne({ email });
-      const oauthCount = await app.mikro.userOAuth.countByUser(user!);
+      const user = await app.mikro.user.findOneOrFail({ email });
+      const oauthCount = await app.mikro.userOAuth.countByUser(user.id);
       expect(oauthCount).toBe(0);
     });
   });

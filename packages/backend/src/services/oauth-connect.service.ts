@@ -270,8 +270,13 @@ export class OAuthConnectService {
           : null,
       });
 
-      const user = existingOAuth.user;
-      await this.mikro.em.populate(user, ['password_hash']);
+      // Load user entity from Ref
+      const user = await existingOAuth.user.load({
+        populate: ['password_hash'],
+      });
+      if (!user) {
+        throw new e.UserNotFound.Error();
+      }
       return {
         isNewUser: false,
         user: {
@@ -305,7 +310,7 @@ export class OAuthConnectService {
       // Link OAuth account (only for database-managed users)
       // Config-managed users can still be linked since they're in DB now
       await this.mikro.userOAuth.linkAccount({
-        user: existingUser,
+        userId: existingUser.id,
         providerName,
         providerUserId: userInfo.id,
         accessToken: tokens.access_token,
@@ -341,7 +346,7 @@ export class OAuthConnectService {
 
     // Link OAuth account
     await this.mikro.userOAuth.linkAccount({
-      user: newUser,
+      userId: newUser.id,
       providerName,
       providerUserId: userInfo.id,
       accessToken: tokens.access_token,
@@ -392,7 +397,7 @@ export class OAuthConnectService {
 
     // Check if already linked
     const existingLink = await this.mikro.userOAuth.findByUserAndProvider(
-      user,
+      userId,
       providerName,
     );
 
@@ -410,7 +415,7 @@ export class OAuthConnectService {
 
     // Link OAuth account
     await this.mikro.userOAuth.linkAccount({
-      user,
+      userId: user.id,
       providerName,
       providerUserId: userInfo.id,
       accessToken: tokens.access_token,
@@ -439,7 +444,7 @@ export class OAuthConnectService {
 
     // Check if OAuth account is linked
     const oauthAccount = await this.mikro.userOAuth.findByUserAndProvider(
-      user,
+      userId,
       providerName,
     );
 
@@ -448,7 +453,7 @@ export class OAuthConnectService {
     }
 
     // Check if this is the last auth method
-    const oauthCount = await this.mikro.userOAuth.countByUser(user);
+    const oauthCount = await this.mikro.userOAuth.countByUser(userId);
     const hasPassword = user.hasPassword();
 
     // If only one OAuth and no password, can't unlink
@@ -456,7 +461,7 @@ export class OAuthConnectService {
       throw new e.CannotUnlinkLastAuthMethod.Error();
     }
 
-    await this.mikro.userOAuth.unlinkAccount(user, providerName);
+    await this.mikro.userOAuth.unlinkAccount(userId, providerName);
   }
 
   /**
@@ -466,12 +471,12 @@ export class OAuthConnectService {
     userId: string,
   ): Promise<Array<{ provider_name: string; linked_at: Date }>> {
     // Get user from database (config users are now synced to DB)
-    const user = await this.mikro.user.findOneOrFail(
+    await this.mikro.user.findOneOrFail(
       { id: userId },
       { failHandler: () => new e.UserNotFound.Error() },
     );
 
-    const oauthAccounts = await this.mikro.userOAuth.findByUser(user);
+    const oauthAccounts = await this.mikro.userOAuth.findByUser(userId);
 
     return oauthAccounts.map((account) => ({
       provider_name: account.provider_name,

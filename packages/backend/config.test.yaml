@@ -67,6 +67,3 @@ users:
     email: test-config-user@example.com
     password: changemelater
     role: admin
-    totp_secret: sdlk3n3dkj2laksdjflaksdjf3
-    totp_backup_codes:
-      - sdlk3n3dkj2alksdjflaksdjf3

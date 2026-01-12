@@ -1,6 +1,6 @@
-import { EntityRepository, rel } from '@mikro-orm/core';
+import { EntityRepository, ref } from '@mikro-orm/core';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
-import type { UserConsentEntity } from '@/entities/user-consent.entity.js';
+import { UserConsentEntity } from '@/entities/user-consent.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
 
 export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
@@ -12,8 +12,8 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
     clientId: string,
   ): Promise<UserConsentEntity | null> {
     return this.findOne({
-      user: rel(UserEntity, userId),
-      client: rel(OAuthClientEntity, clientId),
+      user: ref(UserEntity, userId),
+      client: ref(OAuthClientEntity, clientId),
       revoked_at: null,
     });
   }
@@ -59,10 +59,10 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
       return existingConsent;
     }
 
-    // Create new consent using rel() for FK references
-    const consent = this.create({
-      user: rel(UserEntity, params.userId),
-      client: rel(OAuthClientEntity, params.clientId),
+    // Create new consent using constructor
+    const consent = new UserConsentEntity({
+      userId: params.userId,
+      clientId: params.clientId,
       scopes: params.scopes,
     });
 
@@ -89,7 +89,7 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
    */
   async revokeAllConsents(userId: string): Promise<number> {
     const consents = await this.find({
-      user: rel(UserEntity, userId),
+      user: ref(UserEntity, userId),
       revoked_at: null,
     });
 
@@ -107,7 +107,7 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
    */
   async findAllConsents(userId: string): Promise<UserConsentEntity[]> {
     return this.find({
-      user: rel(UserEntity, userId),
+      user: ref(UserEntity, userId),
       revoked_at: null,
     });
   }

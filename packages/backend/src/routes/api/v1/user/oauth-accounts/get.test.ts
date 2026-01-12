@@ -94,7 +94,7 @@ describe('GET /api/v1/user/oauth-accounts', () => {
 
       // Link OAuth account
       await app.mikro.userOAuth.linkAccount({
-        user,
+        userId: user.id,
         providerName: 'google',
         providerUserId: `test-${Date.now()}`,
         accessToken: 'test-access-token',

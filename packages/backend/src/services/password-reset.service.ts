@@ -1,8 +1,8 @@
-import fastifyPlugin from 'fastify-plugin';
 import type { PasswordResetEntity } from '@/entities/password-reset.entity.js';
 import type { UserEntity } from '@/entities/user.entity.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import fastifyPlugin from 'fastify-plugin';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -18,11 +18,11 @@ export class PasswordResetService {
    * Invalidates all previous unused tokens
    */
   async generateToken(params: {
-    user: UserEntity;
+    userId: string;
     expiresInHours?: number;
   }): Promise<PasswordResetEntity> {
     const token = await this.mikro.passwordReset.generateToken({
-      user: params.user,
+      userId: params.userId,
       expiresInHours: params.expiresInHours || 1,
     });
 
@@ -53,7 +53,7 @@ export class PasswordResetService {
     }
 
     // Generate token (this invalidates old ones)
-    const token = await this.generateToken({ user });
+    const token = await this.generateToken({ userId: user.id });
 
     // Ensure changes are persisted
     await this.mikro.em.flush();
@@ -77,16 +77,22 @@ export class PasswordResetService {
       throw new e.InvalidPasswordResetToken.Error();
     }
 
+    // Load user from Ref
+    const user = await resetEntity.user.load();
+    if (!user) {
+      throw new e.UserNotFound.Error();
+    }
+
     // Check if user is config-managed (cannot reset password)
-    if (resetEntity.user.managed_by === 'config') {
+    if (user.managed_by === 'config') {
       throw new e.UserNotEditable.Error();
     }
 
     // Update user password
-    resetEntity.user.password_hash = params.password;
+    user.password_hash = params.password;
     await this.mikro.em.flush();
 
-    return resetEntity.user;
+    return user;
   }
 
   /**

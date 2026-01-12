@@ -1,4 +1,3 @@
-import { describe, expect, test } from 'vitest';
 import {
   createAuthenticatedSession,
   generateUniqueEmail,
@@ -6,6 +5,7 @@ import {
   setupTestServer,
   withMikroContext,
 } from '@/test-utils/index.js';
+import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
@@ -33,12 +33,11 @@ async function createUserWithPasswordAndSession(
 
   expect(loginRes.statusCode).toBe(200);
 
-  const sessionCookie = loginRes.cookies.find(
-    (c) => c.name === 'session',
-  )?.value;
+  const sessionCookie = loginRes.cookies.find((c) => c.name === 'session')
+    ?.value as string;
   expect(sessionCookie).toBeDefined();
 
-  return sessionCookie!;
+  return sessionCookie;
 }
 
 describe('POST /api/v1/user/password', () => {
@@ -143,9 +142,8 @@ describe('POST /api/v1/user/password', () => {
       await app.mikro.em.flush();
     });
 
-    const sessionCookie = loginRes.cookies.find(
-      (c) => c.name === 'session',
-    )?.value;
+    const sessionCookie = loginRes.cookies.find((c) => c.name === 'session')
+      ?.value as string;
     expect(sessionCookie).toBeDefined();
 
     // Now set password for OAuth-only user
@@ -158,7 +156,7 @@ describe('POST /api/v1/user/password', () => {
           password: newPassword,
         },
       },
-      sessionCookie!,
+      sessionCookie,
     );
 
     expect(res.statusCode).toBe(200);
@@ -213,9 +211,8 @@ describe('POST /api/v1/user/password', () => {
       await app.mikro.em.flush();
     });
 
-    const sessionCookie = loginRes.cookies.find(
-      (c) => c.name === 'session',
-    )?.value;
+    const sessionCookie = loginRes.cookies.find((c) => c.name === 'session')
+      ?.value as string;
     expect(sessionCookie).toBeDefined();
 
     // Try to set a password that's too short
@@ -228,7 +225,7 @@ describe('POST /api/v1/user/password', () => {
           password: 'short',
         },
       },
-      sessionCookie!,
+      sessionCookie,
     );
 
     expect(res.statusCode).toBe(400);

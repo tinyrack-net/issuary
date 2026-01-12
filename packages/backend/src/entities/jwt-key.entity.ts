@@ -1,13 +1,14 @@
+import { JwtKeyRepository } from '@/repositories/jwt-key.repository.js';
 import {
   Entity,
   EntityRepositoryType,
   Enum,
+  type Hidden,
   type Opt,
   PrimaryKey,
   Property,
   t,
 } from '@mikro-orm/core';
-import { JwtKeyRepository } from '@/repositories/jwt-key.repository.js';
 import { BaseEntity } from './base.entity.js';
 
 /**
@@ -47,7 +48,7 @@ export enum JwtKeyStatus {
   comment: 'RSA key pairs for JWT signing (RS256)',
   repository: () => JwtKeyRepository,
 })
-export class JwtKeyEntity extends BaseEntity {
+export class JwtKeyEntity extends BaseEntity<'kid'> {
   [EntityRepositoryType]?: JwtKeyRepository;
 
   /**
@@ -72,6 +73,7 @@ export class JwtKeyEntity extends BaseEntity {
     comment: 'RSA private key in PEM format',
     nullable: false,
     lazy: true,
+    hidden: true,
   })
   public private_key: string;
 

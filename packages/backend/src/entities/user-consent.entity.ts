@@ -5,7 +5,8 @@ import {
   type Opt,
   PrimaryKey,
   Property,
-  rel,
+  type Ref,
+  ref,
   t,
   Unique,
 } from '@mikro-orm/core';
@@ -44,18 +45,20 @@ export class UserConsentEntity extends BaseEntity {
     name: 'user_id',
     comment: 'Reference to the user who granted consent',
     nullable: false,
+    ref: true,
     index: 'user_consent_user_id_index',
   })
-  public user!: UserEntity;
+  public user: Ref<UserEntity>;
 
   @ManyToOne({
     entity: () => OAuthClientEntity,
     name: 'client_id',
     comment: 'Reference to the OAuth client that received consent',
     nullable: false,
+    ref: true,
     index: 'user_consent_client_id_index',
   })
-  public client!: OAuthClientEntity;
+  public client: Ref<OAuthClientEntity>;
 
   @Property({
     type: t.json,
@@ -82,17 +85,15 @@ export class UserConsentEntity extends BaseEntity {
   })
   public revoked_at?: Date | null = null;
 
-  public constructor(init?: {
+  public constructor(params: {
     userId: string;
     clientId: string;
     scopes: string[];
   }) {
     super();
-    if (init) {
-      this.user = rel(UserEntity, init.userId);
-      this.client = rel(OAuthClientEntity, init.clientId);
-      this.scopes = init.scopes;
-    }
+    this.user = ref(UserEntity, params.userId);
+    this.client = ref(OAuthClientEntity, params.clientId);
+    this.scopes = params.scopes;
   }
 
   /**

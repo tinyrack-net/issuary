@@ -6,6 +6,8 @@ import {
   type Opt,
   PrimaryKey,
   Property,
+  type Ref,
+  ref,
   t,
 } from '@mikro-orm/core';
 import { PasswordResetRepository } from '@/repositories/password-reset.repository.js';
@@ -33,8 +35,9 @@ export class PasswordResetEntity extends BaseEntity {
     name: 'user_id',
     comment: 'Reference to the user',
     nullable: false,
+    ref: true,
   })
-  public user!: UserEntity;
+  public user: Ref<UserEntity>;
 
   @Index({
     name: 'password_reset_token_idx',
@@ -47,7 +50,7 @@ export class PasswordResetEntity extends BaseEntity {
     comment: 'Unique password reset token',
     nullable: false,
   })
-  public token!: string;
+  public token: string;
 
   @Property({
     type: t.datetime,
@@ -55,7 +58,7 @@ export class PasswordResetEntity extends BaseEntity {
     comment: 'Token expiration timestamp',
     nullable: false,
   })
-  public expiresAt!: Date;
+  public expiresAt: Date;
 
   @Property({
     type: t.boolean,
@@ -74,4 +77,15 @@ export class PasswordResetEntity extends BaseEntity {
     default: null,
   })
   public usedAt?: Date | null = null;
+
+  public constructor(params: {
+    userId: string;
+    token: string;
+    expiresAt: Date;
+  }) {
+    super();
+    this.user = ref(UserEntity, params.userId);
+    this.token = params.token;
+    this.expiresAt = params.expiresAt;
+  }
 }

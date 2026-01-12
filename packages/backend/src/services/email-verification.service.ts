@@ -18,11 +18,11 @@ export class EmailVerificationService {
    * Invalidates all previous unverified tokens
    */
   async generateToken(params: {
-    user: UserEntity;
+    userId: string;
     expiresInHours?: number;
   }): Promise<EmailVerificationEntity> {
     const token = await this.mikro.emailVerification.generateToken({
-      user: params.user,
+      userId: params.userId,
       expiresInHours: params.expiresInHours || 24,
     });
 
@@ -40,11 +40,15 @@ export class EmailVerificationService {
       throw new e.InvalidVerificationToken.Error();
     }
 
-    // Mark user's email as verified
-    verification.user.email_verified = true;
+    // Mark user's email as verified (user is populated via verifyToken)
+    const user = await verification.user.load();
+    if (!user) {
+      throw new e.UserNotFound.Error();
+    }
+    user.email_verified = true;
     await this.mikro.em.flush();
 
-    return verification.user;
+    return user;
   }
 
   /**
@@ -64,7 +68,7 @@ export class EmailVerificationService {
     }
 
     // Generate new token (this invalidates old ones)
-    const token = await this.generateToken({ user });
+    const token = await this.generateToken({ userId: user.id });
 
     // Ensure changes are persisted
     await this.mikro.em.flush();

@@ -3,6 +3,8 @@ import {
   ManyToOne,
   PrimaryKey,
   Property,
+  type Ref,
+  ref,
   type RequiredNullable,
   t,
 } from '@mikro-orm/core';
@@ -30,8 +32,9 @@ export class UserOAuthEntity extends BaseEntity {
     nullable: false,
     name: 'user_id',
     comment: 'Reference to the user',
+    ref: true,
   })
-  public user!: UserEntity;
+  public user: Ref<UserEntity>;
 
   @Property({
     type: t.string,
@@ -39,7 +42,7 @@ export class UserOAuthEntity extends BaseEntity {
     comment: 'Name of the OAuth provider (e.g., google, facebook)',
     nullable: false,
   })
-  public provider_name!: string;
+  public provider_name: string;
 
   @Property({
     type: t.string,
@@ -47,7 +50,7 @@ export class UserOAuthEntity extends BaseEntity {
     comment: 'Unique user ID from the OAuth provider',
     nullable: false,
   })
-  public provider_user_id!: string;
+  public provider_user_id: string;
 
   @Property({
     type: t.string,
@@ -55,7 +58,7 @@ export class UserOAuthEntity extends BaseEntity {
     comment: 'OAuth access token',
     nullable: false,
   })
-  public access_token!: string;
+  public access_token: string;
 
   @Property({
     type: t.string,
@@ -63,7 +66,7 @@ export class UserOAuthEntity extends BaseEntity {
     comment: 'OAuth refresh token',
     nullable: false,
   })
-  public refresh_token!: string;
+  public refresh_token: string;
 
   @Property({
     type: t.datetime,
@@ -72,4 +75,21 @@ export class UserOAuthEntity extends BaseEntity {
     nullable: true,
   })
   public expires_at: RequiredNullable<Date> = null;
+
+  public constructor(params: {
+    userId: string;
+    provider_name: string;
+    provider_user_id: string;
+    access_token: string;
+    refresh_token: string;
+    expires_at?: Date | null;
+  }) {
+    super();
+    this.user = ref(UserEntity, params.userId);
+    this.provider_name = params.provider_name;
+    this.provider_user_id = params.provider_user_id;
+    this.access_token = params.access_token;
+    this.refresh_token = params.refresh_token;
+    this.expires_at = params.expires_at ?? null;
+  }
 }

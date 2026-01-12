@@ -41,7 +41,7 @@ describe('POST /api/v1/auth/password/reset', () => {
 
       // Generate token first
       const resetEntity = await app.passwordResetService.generateToken({
-        user,
+        userId: user.id,
         expiresInHours: 1,
       });
 
@@ -84,7 +84,7 @@ describe('POST /api/v1/auth/password/reset', () => {
       const user = await app.mikro.user.findOneOrFail({ email });
 
       const resetEntity = await app.passwordResetService.generateToken({
-        user,
+        userId: user.id,
         expiresInHours: 1,
       });
       await app.mikro.em.flush();
@@ -148,7 +148,7 @@ describe('POST /api/v1/auth/password/reset', () => {
       const user = await app.mikro.user.findOneOrFail({ email });
 
       const resetEntity = await app.passwordResetService.generateToken({
-        user,
+        userId: user.id,
         expiresInHours: 1,
       });
       await app.mikro.em.flush();
@@ -201,7 +201,7 @@ describe('POST /api/v1/auth/password/reset', () => {
       await app.mikro.em.flush();
 
       const resetEntity = await app.passwordResetService.generateToken({
-        user,
+        userId: user.id,
         expiresInHours: 1,
       });
       await app.mikro.em.flush();

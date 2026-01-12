@@ -1,6 +1,6 @@
-import { EntityRepository } from '@mikro-orm/core';
-import type { UserEntity } from '@/entities/user.entity.js';
-import type { UserOAuthEntity } from '@/entities/user-oauth.entity.js';
+import { EntityRepository, ref } from '@mikro-orm/core';
+import { UserEntity } from '@/entities/user.entity.js';
+import { UserOAuthEntity } from '@/entities/user-oauth.entity.js';
 
 export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
   /**
@@ -21,18 +21,18 @@ export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
   }
 
   /**
-   * Find OAuth account by provider name and user
+   * Find OAuth account by provider name and user ID
    *
-   * @param user - User entity
+   * @param userId - User ID
    * @param providerName - Name of the OAuth provider
    * @returns OAuth account entity or null if not found
    */
   async findByUserAndProvider(
-    user: UserEntity,
+    userId: string,
     providerName: string,
   ): Promise<UserOAuthEntity | null> {
     return this.findOne({
-      user,
+      user: ref(UserEntity, userId),
       provider_name: providerName,
     });
   }
@@ -40,11 +40,11 @@ export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
   /**
    * Find all OAuth accounts linked to a user
    *
-   * @param user - User entity
+   * @param userId - User ID
    * @returns Array of OAuth account entities
    */
-  async findByUser(user: UserEntity): Promise<UserOAuthEntity[]> {
-    return this.find({ user });
+  async findByUser(userId: string): Promise<UserOAuthEntity[]> {
+    return this.find({ user: ref(UserEntity, userId) });
   }
 
   /**
@@ -72,15 +72,15 @@ export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
    * @returns Newly created OAuth account entity
    */
   async linkAccount(params: {
-    user: UserEntity;
+    userId: string;
     providerName: string;
     providerUserId: string;
     accessToken: string;
     refreshToken: string;
     expiresAt: Date | null;
   }): Promise<UserOAuthEntity> {
-    const oauthAccount = this.create({
-      user: params.user,
+    const oauthAccount = new UserOAuthEntity({
+      userId: params.userId,
       provider_name: params.providerName,
       provider_user_id: params.providerUserId,
       access_token: params.accessToken,
@@ -116,15 +116,12 @@ export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
   /**
    * Unlink an OAuth account from a user
    *
-   * @param user - User entity
+   * @param userId - User ID
    * @param providerName - Name of the OAuth provider to unlink
    * @returns True if account was unlinked, false if not found
    */
-  async unlinkAccount(
-    user: UserEntity,
-    providerName: string,
-  ): Promise<boolean> {
-    const oauthAccount = await this.findByUserAndProvider(user, providerName);
+  async unlinkAccount(userId: string, providerName: string): Promise<boolean> {
+    const oauthAccount = await this.findByUserAndProvider(userId, providerName);
     if (!oauthAccount) {
       return false;
     }
@@ -136,10 +133,10 @@ export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
   /**
    * Count the number of OAuth accounts linked to a user
    *
-   * @param user - User entity
+   * @param userId - User ID
    * @returns Number of linked OAuth accounts
    */
-  async countByUser(user: UserEntity): Promise<number> {
-    return this.count({ user });
+  async countByUser(userId: string): Promise<number> {
+    return this.count({ user: ref(UserEntity, userId) });
   }
 }

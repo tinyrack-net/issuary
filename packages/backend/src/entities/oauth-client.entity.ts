@@ -1,3 +1,4 @@
+import { OAuthClientRepository } from '@/repositories/oauth-client.repository.js';
 import {
   Entity,
   EntityRepositoryType,
@@ -7,7 +8,6 @@ import {
   Property,
   t,
 } from '@mikro-orm/core';
-import { OAuthClientRepository } from '@/repositories/oauth-client.repository.js';
 import { BaseEntity } from './base.entity.js';
 
 @Entity({
@@ -24,7 +24,7 @@ export class OAuthClientEntity extends BaseEntity {
     comment: 'Primary key as UUID',
     nullable: false,
   })
-  public id: string = crypto.randomUUID();
+  public id: string;
 
   @Index({
     name: 'client_client_id_unique',
@@ -97,7 +97,7 @@ export class OAuthClientEntity extends BaseEntity {
     comment: 'Whether the OAuth client is enabled',
     default: true,
   })
-  public enabled: boolean = true;
+  public enabled = true;
 
   @Property({
     type: t.string,
@@ -117,16 +117,16 @@ export class OAuthClientEntity extends BaseEntity {
   })
   public logoUri: string | null = null;
 
-  public constructor(init: {
-    id: string;
+  public constructor(params: {
+    id?: string;
     clientId: string;
     clientSecretHash: string;
     name: string;
   }) {
     super();
-    this.id = init.id;
-    this.clientId = init.clientId;
-    this.clientSecretHash = init.clientSecretHash;
-    this.name = init.name;
+    this.id = params.id ?? crypto.randomUUID();
+    this.clientId = params.clientId;
+    this.clientSecretHash = params.clientSecretHash;
+    this.name = params.name;
   }
 }

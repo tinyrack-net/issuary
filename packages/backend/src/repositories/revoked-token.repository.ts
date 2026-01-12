@@ -1,8 +1,8 @@
-import { EntityRepository, rel } from '@mikro-orm/core';
+import { EntityRepository, ref } from '@mikro-orm/core';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
-import type {
+import {
   RevokedTokenEntity,
-  TokenType,
+  type TokenType,
 } from '@/entities/revoked-token.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
 
@@ -33,13 +33,12 @@ export class RevokedTokenRepository extends EntityRepository<RevokedTokenEntity>
       return existing;
     }
 
-    const entity = this.create({
+    const entity = new RevokedTokenEntity({
       jti: params.jti,
       token_type: params.token_type,
-      client: rel(OAuthClientEntity, params.clientId),
-      user: rel(UserEntity, params.userId),
+      clientId: params.clientId,
+      userId: params.userId,
       expires_at: params.expires_at,
-      revoked_at: new Date(),
     });
 
     await this.getEntityManager().persist(entity).flush();
@@ -68,13 +67,12 @@ export class RevokedTokenRepository extends EntityRepository<RevokedTokenEntity>
     for (const token of tokens) {
       const existing = await this.findOne({ jti: token.jti });
       if (!existing) {
-        const entity = this.create({
+        const entity = new RevokedTokenEntity({
           jti: token.jti,
           token_type: token.token_type,
-          client: rel(OAuthClientEntity, clientId),
-          user: rel(UserEntity, userId),
+          clientId,
+          userId,
           expires_at: token.expires_at,
-          revoked_at: new Date(),
         });
         this.getEntityManager().persist(entity);
       }

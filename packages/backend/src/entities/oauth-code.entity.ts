@@ -6,6 +6,8 @@ import {
   ManyToOne,
   PrimaryKey,
   Property,
+  type Ref,
+  ref,
   t,
 } from '@mikro-orm/core';
 import { OAuthCodeRepository } from '@/repositories/oauth-code.repository.js';
@@ -48,23 +50,25 @@ export class OAuthCodeEntity extends BaseEntity {
     nullable: false,
     unique: true,
   })
-  public codeHash!: string;
+  public codeHash: string;
 
   @ManyToOne({
     entity: () => OAuthClientEntity,
     name: 'oauth_client_id',
     comment: 'Reference to the OAuth client that requested the code',
     nullable: false,
+    ref: true,
   })
-  public client!: OAuthClientEntity;
+  public client: Ref<OAuthClientEntity>;
 
   @ManyToOne({
     entity: () => UserEntity,
     name: 'user_id',
     comment: 'Reference to the resource owner (user)',
     nullable: false,
+    ref: true,
   })
-  public user!: UserEntity;
+  public user: Ref<UserEntity>;
 
   @Property({
     type: t.string,
@@ -72,7 +76,7 @@ export class OAuthCodeEntity extends BaseEntity {
     comment: 'Redirect URI used during the authorization request',
     nullable: true,
   })
-  public redirectUri!: string;
+  public redirectUri: string;
 
   @Property({
     type: t.json,
@@ -89,7 +93,7 @@ export class OAuthCodeEntity extends BaseEntity {
     comment: 'Nonce value associated with the authorization request',
     nullable: false,
   })
-  public nonce!: string;
+  public nonce: string;
 
   @Property({
     type: t.string,
@@ -97,7 +101,7 @@ export class OAuthCodeEntity extends BaseEntity {
     comment: 'PKCE code challenge value',
     nullable: false,
   })
-  public codeChallenge!: string;
+  public codeChallenge: string;
 
   @Enum({
     type: t.enum,
@@ -115,7 +119,7 @@ export class OAuthCodeEntity extends BaseEntity {
     comment: 'Absolute expiry timestamp for the code',
     nullable: false,
   })
-  public expiredAt!: Date;
+  public expiredAt: Date;
 
   @Property({
     type: t.datetime,
@@ -124,4 +128,27 @@ export class OAuthCodeEntity extends BaseEntity {
     nullable: true,
   })
   public consumedAt?: Date;
+
+  public constructor(params: {
+    clientId: string;
+    userId: string;
+    codeHash: string;
+    redirectUri: string;
+    scope: string[];
+    nonce: string;
+    codeChallenge: string;
+    codeChallengeMethod: OAuthCodeChallengeMethods;
+    expiredAt: Date;
+  }) {
+    super();
+    this.client = ref(OAuthClientEntity, params.clientId);
+    this.user = ref(UserEntity, params.userId);
+    this.codeHash = params.codeHash;
+    this.redirectUri = params.redirectUri;
+    this.scope = params.scope;
+    this.nonce = params.nonce;
+    this.codeChallenge = params.codeChallenge;
+    this.codeChallengeMethod = params.codeChallengeMethod;
+    this.expiredAt = params.expiredAt;
+  }
 }

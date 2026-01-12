@@ -176,8 +176,11 @@ export class OAuthTokenService {
       }
     }
 
-    // 6. Get user data from relation
-    const user = codeEntity.user;
+    // 6. Get user data from relation (load via Ref)
+    const user = await codeEntity.user.load();
+    if (!user) {
+      throw new e.UserNotFound.Error();
+    }
 
     // 7. Build token response
     return this.buildTokenResponse({

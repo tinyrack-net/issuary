@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { zz } from '@/schemas/provider.js';
 import nodemailer from 'nodemailer';
 import YAML from 'yaml';
 import z from 'zod/v4';
-import { zz } from '@/schemas/provider.js';
 import { env } from './env.js';
 
 export const AppTheme = z.enum([
@@ -412,8 +412,6 @@ export const AppConfigUser = z.object({
   email: z.email(),
   password: z.string().min(6).max(100),
   role: z.enum(['user', 'admin']).default('user'),
-  totp_secret: z.string().min(16).max(128).optional(),
-  totp_backup_codes: z.array(z.string()).optional(),
 });
 
 export type AppConfigUser = z.infer<typeof AppConfigUser>;

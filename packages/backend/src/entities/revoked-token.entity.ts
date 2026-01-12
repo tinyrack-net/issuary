@@ -6,6 +6,8 @@ import {
   ManyToOne,
   PrimaryKey,
   Property,
+  type Ref,
+  ref,
   t,
 } from '@mikro-orm/core';
 import { RevokedTokenRepository } from '@/repositories/revoked-token.repository.js';
@@ -60,7 +62,7 @@ export class RevokedTokenEntity extends BaseEntity {
     nullable: false,
     unique: true,
   })
-  public jti!: string;
+  public jti: string;
 
   @Enum({
     type: t.enum,
@@ -69,7 +71,7 @@ export class RevokedTokenEntity extends BaseEntity {
     comment: 'Type of the revoked token (access_token or refresh_token)',
     nullable: false,
   })
-  public token_type!: TokenType;
+  public token_type: TokenType;
 
   @Index({
     name: 'revoked_token_client_user_idx',
@@ -80,16 +82,18 @@ export class RevokedTokenEntity extends BaseEntity {
     name: 'client_id',
     comment: 'Reference to the OAuth client that the token was issued to',
     nullable: false,
+    ref: true,
   })
-  public client!: OAuthClientEntity;
+  public client: Ref<OAuthClientEntity>;
 
   @ManyToOne({
     entity: () => UserEntity,
     name: 'user_id',
     comment: 'Reference to the user (subject) that the token was issued for',
     nullable: false,
+    ref: true,
   })
-  public user!: UserEntity;
+  public user: Ref<UserEntity>;
 
   @Index({
     name: 'revoked_token_expires_at_idx',
@@ -102,7 +106,7 @@ export class RevokedTokenEntity extends BaseEntity {
       'Original expiration time of the token. Used for cleanup of expired entries.',
     nullable: false,
   })
-  public expires_at!: Date;
+  public expires_at: Date;
 
   @Property({
     type: t.datetime,
@@ -111,4 +115,19 @@ export class RevokedTokenEntity extends BaseEntity {
     nullable: false,
   })
   public revoked_at: Date = new Date();
+
+  public constructor(params: {
+    jti: string;
+    token_type: TokenType;
+    clientId: string;
+    userId: string;
+    expires_at: Date;
+  }) {
+    super();
+    this.jti = params.jti;
+    this.token_type = params.token_type;
+    this.client = ref(OAuthClientEntity, params.clientId);
+    this.user = ref(UserEntity, params.userId);
+    this.expires_at = params.expires_at;
+  }
 }

@@ -1,4 +1,3 @@
-import { describe, expect, test } from 'vitest';
 import {
   createAuthenticatedSession,
   generateUniqueEmail,
@@ -6,6 +5,7 @@ import {
   setupTestServer,
   withMikroContext,
 } from '@/test-utils/index.js';
+import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
@@ -33,12 +33,11 @@ async function createUserWithPasswordAndSession(
 
   expect(loginRes.statusCode).toBe(200);
 
-  const sessionCookie = loginRes.cookies.find(
-    (c) => c.name === 'session',
-  )?.value;
+  const sessionCookie = loginRes.cookies.find((c) => c.name === 'session')
+    ?.value as string;
   expect(sessionCookie).toBeDefined();
 
-  return sessionCookie!;
+  return sessionCookie;
 }
 
 describe('PUT /api/v1/user/password', () => {
@@ -113,9 +112,8 @@ describe('PUT /api/v1/user/password', () => {
       await app.mikro.em.flush();
     });
 
-    const sessionCookie = loginRes.cookies.find(
-      (c) => c.name === 'session',
-    )?.value;
+    const sessionCookie = loginRes.cookies.find((c) => c.name === 'session')
+      ?.value as string;
     expect(sessionCookie).toBeDefined();
 
     const res = await injectWithSession(
@@ -128,7 +126,7 @@ describe('PUT /api/v1/user/password', () => {
           new_password: 'newPassword123!',
         },
       },
-      sessionCookie!,
+      sessionCookie,
     );
 
     expect(res.statusCode).toBe(400);

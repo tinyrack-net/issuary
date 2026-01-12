@@ -1,6 +1,6 @@
-import { EntityRepository } from '@mikro-orm/core';
-import type { PasswordResetEntity } from '@/entities/password-reset.entity.js';
-import type { UserEntity } from '@/entities/user.entity.js';
+import { EntityRepository, ref } from '@mikro-orm/core';
+import { PasswordResetEntity } from '@/entities/password-reset.entity.js';
+import { UserEntity } from '@/entities/user.entity.js';
 
 export class PasswordResetRepository extends EntityRepository<PasswordResetEntity> {
   /**
@@ -9,7 +9,7 @@ export class PasswordResetRepository extends EntityRepository<PasswordResetEntit
    * @returns The created password reset entity with token
    */
   async generateToken(params: {
-    user: UserEntity;
+    userId: string;
     expiresInHours?: number;
   }): Promise<PasswordResetEntity> {
     // Generate a UUID token for security
@@ -21,7 +21,7 @@ export class PasswordResetRepository extends EntityRepository<PasswordResetEntit
 
     // Invalidate all previous unused tokens for this user
     const previousTokens = await this.find({
-      user: params.user,
+      user: ref(UserEntity, params.userId),
       used: false,
     });
 
@@ -29,12 +29,11 @@ export class PasswordResetRepository extends EntityRepository<PasswordResetEntit
       prevToken.expiresAt = new Date(); // Expire immediately
     }
 
-    // Create the entity
-    const entity = this.create({
-      user: params.user,
+    // Create the entity using constructor
+    const entity = new PasswordResetEntity({
+      userId: params.userId,
       token,
       expiresAt,
-      used: false,
     });
 
     // Persist to database

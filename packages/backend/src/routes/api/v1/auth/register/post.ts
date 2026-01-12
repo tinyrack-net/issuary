@@ -37,7 +37,7 @@ export default (fastify: FastifyWithZodInstance) =>
         // Generate email verification token
         const verification =
           await fastify.emailVerificationService.generateToken({
-            user: user,
+            userId: user.id,
           });
 
         // Flush verification token to database

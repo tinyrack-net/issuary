@@ -6,6 +6,8 @@ import {
   type Opt,
   PrimaryKey,
   Property,
+  type Ref,
+  ref,
   t,
 } from '@mikro-orm/core';
 import { EmailVerificationRepository } from '@/repositories/email-verification.repository.js';
@@ -33,8 +35,9 @@ export class EmailVerificationEntity extends BaseEntity {
     name: 'user_id',
     comment: 'Reference to the user',
     nullable: false,
+    ref: true,
   })
-  public user!: UserEntity;
+  public user: Ref<UserEntity>;
 
   @Index({
     name: 'email_verification_token_idx',
@@ -47,7 +50,7 @@ export class EmailVerificationEntity extends BaseEntity {
     comment: 'Unique verification token',
     nullable: false,
   })
-  public token!: string;
+  public token: string;
 
   @Property({
     type: t.datetime,
@@ -55,7 +58,7 @@ export class EmailVerificationEntity extends BaseEntity {
     comment: 'Token expiration timestamp',
     nullable: false,
   })
-  public expiresAt!: Date;
+  public expiresAt: Date;
 
   @Property({
     type: t.boolean,
@@ -74,4 +77,15 @@ export class EmailVerificationEntity extends BaseEntity {
     default: null,
   })
   public verifiedAt?: Date | null = null;
+
+  public constructor(params: {
+    userId: string;
+    token: string;
+    expiresAt: Date;
+  }) {
+    super();
+    this.user = ref(UserEntity, params.userId);
+    this.token = params.token;
+    this.expiresAt = params.expiresAt;
+  }
 }

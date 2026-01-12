@@ -1,3 +1,4 @@
+import { UserRepository } from '@/repositories/user.repository.js';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -13,7 +14,6 @@ import {
   t,
 } from '@mikro-orm/core';
 import { hash, verify } from 'argon2';
-import { UserRepository } from '@/repositories/user.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { UserOAuthEntity } from './user-oauth.entity.js';
 
@@ -61,6 +61,7 @@ export class UserEntity extends BaseEntity {
     comment: 'Hashed password for local authentication',
     nullable: true,
     lazy: true,
+    hidden: true,
     default: null,
   })
   public password_hash: string | null = null;
@@ -83,37 +84,19 @@ export class UserEntity extends BaseEntity {
   })
   public role: Opt<'user' | 'admin'> = 'user';
 
-  @Property({
-    type: t.string,
-    name: 'totp_secret',
-    comment: 'TOTP secret for two-factor authentication',
-    nullable: true,
-    lazy: true,
-    default: null,
-  })
-  public totp_secret?: string | null = null;
-
-  @Property({
-    type: t.json,
-    name: 'totp_backup_codes',
-    comment: 'Backup codes for two-factor authentication',
-    nullable: true,
-    lazy: true,
-    default: null,
-  })
-  public totp_backup_codes?: string[] | null = null;
-
-  public constructor({
-    email,
-    password_hash,
-  }: {
+  public constructor(params: {
     id?: string;
     email: string;
     password_hash?: string | null;
   }) {
     super();
-    this.email = email;
-    this.password_hash = password_hash ?? null;
+    if (params.id) {
+      this.id = params.id;
+    }
+    this.email = params.email;
+    if (params.password_hash !== undefined) {
+      this.password_hash = params.password_hash;
+    }
   }
 
   @BeforeCreate()

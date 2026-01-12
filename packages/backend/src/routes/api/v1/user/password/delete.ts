@@ -1,9 +1,9 @@
-import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+import z from 'zod/v4';
 
 /**
  * DELETE /api/v1/user/password
@@ -70,7 +70,7 @@ export default (fastify: FastifyWithZodInstance) =>
       }
 
       // Check if user has at least one OAuth account
-      const oauthCount = await fastify.mikro.userOAuth.countByUser(user);
+      const oauthCount = await fastify.mikro.userOAuth.countByUser(user.id);
       if (oauthCount === 0) {
         throw new e.CannotRemoveLastAuthMethod.Error();
       }

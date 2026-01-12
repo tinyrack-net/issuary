@@ -1,9 +1,9 @@
-import type { EntityManager } from '@mikro-orm/core';
-import { Seeder } from '@mikro-orm/seeder';
-import { hash } from 'argon2';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
 import { AppConfigs } from '@/lib/config.js';
+import type { EntityManager } from '@mikro-orm/core';
+import { Seeder } from '@mikro-orm/seeder';
+import { hash } from 'argon2';
 
 /**
  * ConfigSeeder
@@ -45,8 +45,6 @@ export class ConfigSeeder extends Seeder {
           email_verified: true,
           managed_by: 'config',
           role: configUser.role ?? 'user',
-          totp_secret: configUser.totp_secret ?? null,
-          totp_backup_codes: configUser.totp_backup_codes ?? null,
           created_at: now,
           updated_at: now,
         },
