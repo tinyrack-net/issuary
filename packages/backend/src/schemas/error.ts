@@ -399,4 +399,41 @@ export const e = {
     'INVALID_TOTP_CODE',
     'The provided TOTP code is invalid.',
   ),
+
+  // Passkey Errors
+  PasskeyNotEnabled: createError(
+    400,
+    'PASSKEY_NOT_ENABLED',
+    'Passkey authentication is not enabled.',
+  ),
+  PasskeyNotFound: createError(
+    404,
+    'PASSKEY_NOT_FOUND',
+    'The passkey was not found.',
+  ),
+  PasskeyAlreadyExists: createError(
+    409,
+    'PASSKEY_ALREADY_EXISTS',
+    'This passkey is already registered.',
+  ),
+  PasskeyVerificationFailed: createError(
+    400,
+    'PASSKEY_VERIFICATION_FAILED',
+    'Passkey verification failed.',
+  ),
+  PasskeyChallengeExpired: createError(
+    400,
+    'PASSKEY_CHALLENGE_EXPIRED',
+    'The passkey challenge has expired. Please try again.',
+  ),
+  PasskeyChallengeNotFound: createError(
+    400,
+    'PASSKEY_CHALLENGE_NOT_FOUND',
+    'No passkey challenge found. Please start the registration process again.',
+  ),
+  CannotRemoveLastPasskey: createError(
+    400,
+    'CANNOT_REMOVE_LAST_PASSKEY',
+    'Cannot remove the last passkey. You need at least one way to log in.',
+  ),
 };

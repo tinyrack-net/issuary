@@ -280,6 +280,10 @@ export class OAuthConnectService {
       if (!user) {
         throw new e.UserNotFound.Error();
       }
+
+      // Compute totp_enabled from userTotp repository
+      const totpEnabled = await this.mikro.userTotp.isEnabled(user.id);
+
       return {
         isNewUser: false,
         user: {
@@ -288,6 +292,8 @@ export class OAuthConnectService {
           email: user.email,
           email_verified: user.email_verified,
           has_password: user.hasPassword(),
+          totp_enabled: totpEnabled,
+          passkey_count: await this.mikro.userPasskey.countByUserId(user.id),
         },
       };
     }
@@ -325,6 +331,9 @@ export class OAuthConnectService {
 
       await this.mikro.em.flush();
 
+      // Compute totp_enabled from userTotp repository
+      const totpEnabled = await this.mikro.userTotp.isEnabled(existingUser.id);
+
       await this.mikro.em.populate(existingUser, ['password_hash']);
       return {
         isNewUser: false,
@@ -334,6 +343,10 @@ export class OAuthConnectService {
           email: existingUser.email,
           email_verified: existingUser.email_verified,
           has_password: existingUser.hasPassword(),
+          totp_enabled: totpEnabled,
+          passkey_count: await this.mikro.userPasskey.countByUserId(
+            existingUser.id,
+          ),
         },
       };
     }
@@ -369,6 +382,8 @@ export class OAuthConnectService {
         email: newUser.email,
         email_verified: newUser.email_verified,
         has_password: false, // New OAuth user has no password
+        totp_enabled: false, // New user has no TOTP
+        passkey_count: 0, // New user has no passkeys
       },
     };
   }

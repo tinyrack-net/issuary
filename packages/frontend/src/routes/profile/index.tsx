@@ -1,6 +1,7 @@
 import {
   CheckCircleIcon,
   EnvelopeSimpleIcon,
+  FingerprintIcon,
   KeyIcon,
   LinkIcon,
   ShieldCheckIcon,
@@ -17,8 +18,10 @@ import { PageHeader } from '@/components/auth/page-header.js';
 import { tick } from '@/libs/promise';
 import { ChangePasswordModal } from '@/modals/profile/change-password-modal.js';
 import { DisableTotpModal } from '@/modals/profile/disable-totp-modal.js';
+import { ManagePasskeysModal } from '@/modals/profile/manage-passkeys-modal.js';
 import { RemovePasswordModal } from '@/modals/profile/remove-password-modal.js';
 import { SetPasswordModal } from '@/modals/profile/set-password-modal.js';
+import { SetupPasskeyModal } from '@/modals/profile/setup-passkey-modal.js';
 import { SetupTotpModal } from '@/modals/profile/setup-totp-modal.js';
 import { logoutMutationOptions } from '@/queries/logout';
 import {
@@ -30,6 +33,7 @@ import { getSessionQueryOptions } from '@/queries/session';
 
 type PasswordModalType = 'set' | 'change' | 'remove' | null;
 type TotpModalType = 'setup' | 'disable' | null;
+type PasskeyModalType = 'setup' | 'manage' | null;
 
 export const Route = createFileRoute('/profile/')({
   component: Profile,
@@ -51,6 +55,7 @@ function Profile() {
   );
   const [passwordModal, setPasswordModal] = useState<PasswordModalType>(null);
   const [totpModal, setTotpModal] = useState<TotpModalType>(null);
+  const [passkeyModal, setPasskeyModal] = useState<PasskeyModalType>(null);
 
   const { data: session } = useQuery(getSessionQueryOptions);
   const { data: oauthAccountsData } = useQuery(oauthAccountsQueryOptions);
@@ -283,6 +288,58 @@ function Profile() {
         </div>
       )}
 
+      {/* Passkey Authentication */}
+      {user && !isConfigManaged && (
+        <div className="mb-4">
+          <h2 className="mb-2 font-semibold text-sm">
+            {t('profile.passkey.title')}
+          </h2>
+          <p className="mb-3 text-base-content/60 text-xs">
+            {t('profile.passkey.description')}
+          </p>
+          <div className="rounded-lg bg-base-200 p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FingerprintIcon
+                  className={`size-4 ${
+                    user.passkey_count > 0
+                      ? 'text-success'
+                      : 'text-base-content/50'
+                  }`}
+                  weight="regular"
+                />
+                <span className="text-sm">
+                  {user.passkey_count > 0
+                    ? t('profile.passkey.status.enabled', {
+                        count: user.passkey_count,
+                      })
+                    : t('profile.passkey.status.disabled')}
+                </span>
+              </div>
+              <div className="flex gap-1">
+                {user.passkey_count > 0 ? (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs text-primary"
+                    onClick={() => setPasskeyModal('manage')}
+                  >
+                    {t('profile.passkey.manage')}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs text-primary"
+                    onClick={() => setPasskeyModal('setup')}
+                  >
+                    {t('profile.passkey.add')}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Linked OAuth Accounts */}
       {availableProviders.length > 0 && (
         <div className="mb-4">
@@ -389,6 +446,17 @@ function Profile() {
       <DisableTotpModal
         isOpen={totpModal === 'disable'}
         onClose={() => setTotpModal(null)}
+      />
+
+      {/* Passkey Modals */}
+      <SetupPasskeyModal
+        isOpen={passkeyModal === 'setup'}
+        onClose={() => setPasskeyModal(null)}
+      />
+      <ManagePasskeysModal
+        isOpen={passkeyModal === 'manage'}
+        onClose={() => setPasskeyModal(null)}
+        onAddNew={() => setPasskeyModal('setup')}
       />
     </AuthPageLayout>
   );

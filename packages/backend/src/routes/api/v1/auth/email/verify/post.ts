@@ -40,6 +40,11 @@ export default (fastify: FastifyWithZodInstance) => {
       // Check if TOTP is enabled for the user
       const totpEnabled = await fastify.mikro.userTotp.isEnabled(user.id);
 
+      // Get passkey count for the user
+      const passkeyCount = await fastify.mikro.userPasskey.countByUserId(
+        user.id,
+      );
+
       res.status(200).send({
         user: {
           id: user.id,
@@ -48,6 +53,7 @@ export default (fastify: FastifyWithZodInstance) => {
           email_verified: user.email_verified,
           has_password: user.hasPassword(),
           totp_enabled: totpEnabled,
+          passkey_count: passkeyCount,
         },
       });
     },

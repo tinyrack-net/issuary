@@ -57,6 +57,15 @@ export type AppConfigs = {
     {
       enabled: boolean;
       type: string;
+      // Password auth method specific fields
+      passkey?: {
+        enabled: boolean;
+        required: boolean;
+      };
+      totp?: {
+        enabled: boolean;
+        required: boolean;
+      };
     }
   >;
 };

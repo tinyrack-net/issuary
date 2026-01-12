@@ -49,6 +49,7 @@
     "@mikro-orm/seeder": "^6.6.2",
     "@mikro-orm/sqlite": "^6.6.2",
     "@scalar/fastify-api-reference": "^1.40.9",
+    "@simplewebauthn/server": "^13.2.2",
     "@types/nodemailer": "^7.0.4",
     "argon2": "^0.44.0",
     "dotenv": "^17.2.3",

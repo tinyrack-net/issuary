@@ -32,6 +32,7 @@ export class UserService {
       { populate: ['password_hash'] },
     );
     const totpEnabled = await this.mikro.userTotp.isEnabled(id);
+    const passkeyCount = await this.mikro.userPasskey.countByUserId(id);
     return {
       id: user.id,
       managed: user.managed_by,
@@ -39,6 +40,7 @@ export class UserService {
       email_verified: user.email_verified,
       has_password: user.hasPassword(),
       totp_enabled: totpEnabled,
+      passkey_count: passkeyCount,
     };
   }
 
@@ -64,6 +66,7 @@ export class UserService {
     }
 
     const totpEnabled = await this.mikro.userTotp.isEnabled(user.id);
+    const passkeyCount = await this.mikro.userPasskey.countByUserId(user.id);
     return {
       id: user.id,
       managed: user.managed_by,
@@ -71,6 +74,7 @@ export class UserService {
       email_verified: user.email_verified,
       has_password: user.hasPassword(),
       totp_enabled: totpEnabled,
+      passkey_count: passkeyCount,
     };
   }
 

@@ -1,5 +1,9 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { EnvelopeSimpleIcon, LockIcon } from '@phosphor-icons/react';
+import {
+  EnvelopeSimpleIcon,
+  FingerprintIcon,
+  LockIcon,
+} from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
@@ -23,6 +27,7 @@ import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
 import { loginMutationOptions } from '@/queries/login.js';
 import { oauthProvidersQueryOptions } from '@/queries/oauth.js';
+import { loginWithPasskeyMutationOptions } from '@/queries/passkey.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
 
 export const SearchSchema = OAuthSearchSchema;
@@ -49,6 +54,8 @@ function Login() {
 
   const isPasswordAuthEnabled =
     configData?.authentication_methods?.password?.enabled;
+  const isPasskeyEnabled =
+    configData?.authentication_methods?.password?.passkey?.enabled;
 
   const loginSchema = useMemo(
     () =>
@@ -61,6 +68,27 @@ function Login() {
 
   const loginMutation = useMutation({
     ...loginMutationOptions,
+    onSuccess: async (data) => {
+      queryClient.setQueryData(getSessionQueryOptions.queryKey, {
+        user: data.user,
+      });
+      await tick();
+
+      if (isOAuthFlow(search)) {
+        window.location.href = buildAuthorizeUrl(search);
+      } else {
+        router.navigate({ to: '/profile' });
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: getSessionQueryOptions.queryKey,
+      });
+    },
+  });
+
+  const passkeyLoginMutation = useMutation({
+    ...loginWithPasskeyMutationOptions,
     onSuccess: async (data) => {
       queryClient.setQueryData(getSessionQueryOptions.queryKey, {
         user: data.user,
@@ -162,6 +190,30 @@ function Login() {
           >
             {t('login.submit')}
           </SubmitButton>
+
+          {isPasskeyEnabled && (
+            <>
+              <Divider text={t('login.divider.orUsePasskey')} />
+              <button
+                type="button"
+                className="btn btn-outline btn-block"
+                disabled={passkeyLoginMutation.isPending}
+                onClick={() => passkeyLoginMutation.mutate()}
+              >
+                {passkeyLoginMutation.isPending ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm" />
+                    {t('login.passkey.authenticating')}
+                  </>
+                ) : (
+                  <>
+                    <FingerprintIcon className="size-5" weight="regular" />
+                    {t('login.passkey.loginWithPasskey')}
+                  </>
+                )}
+              </button>
+            </>
+          )}
         </form>
       )}
 

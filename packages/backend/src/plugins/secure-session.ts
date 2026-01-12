@@ -13,6 +13,7 @@ declare module '@fastify/secure-session' {
       mode: 'login' | 'register' | 'link';
       returnUrl?: string | undefined;
     };
+    passkey_challenge?: string;
   }
 }
 

@@ -121,8 +121,9 @@ export default fastifyPlugin(
           return reply.code(404).send({ error: 'Not Found' });
         }
 
-        // Hijack the response to handle it manually
+        // Hijack the response to handle it manually (no return value needed)
         reply.hijack();
+        return;
 
         // Proxy HTTP request to Vite dev server
         const proxyReq = http.request(

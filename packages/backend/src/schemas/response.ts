@@ -1,4 +1,5 @@
 import z from 'zod/v4';
+import type { PublicKeyCredentialRequestOptionsJSON as SimpleWebAuthnOptionsJSON } from '@simplewebauthn/server';
 import { AppTheme } from '@/lib/config.js';
 import { f } from './field.js';
 
@@ -11,6 +12,10 @@ const UserSession = z
     email_verified: f.emailVerified,
     has_password: z.boolean().describe('Whether the user has a password set'),
     totp_enabled: z.boolean().describe('Whether TOTP is enabled for the user'),
+    passkey_count: z
+      .number()
+      .int()
+      .describe('Number of passkeys registered for the user'),
   })
   .describe('UserSession');
 
@@ -113,6 +118,70 @@ const RedirectUrlResponse = z
   })
   .describe('Redirect URL Response');
 
+// WebAuthn/Passkey schemas (based on @simplewebauthn/server types)
+
+/**
+ * PublicKeyCredentialDescriptorJSON schema
+ * @see https://w3c.github.io/webauthn/#dictdef-publickeycredentialdescriptorjson
+ */
+const PublicKeyCredentialDescriptorJSON = z
+  .object({
+    id: f.base64UrlString,
+    type: f.publicKeyCredentialType,
+    transports: z.array(f.authenticatorTransport).optional(),
+  })
+  .describe('Public key credential descriptor');
+
+/**
+ * PublicKeyCredentialRequestOptionsJSON schema
+ * Used for authentication options sent to the browser
+ * @see https://w3c.github.io/webauthn/#dictdef-publickeycredentialrequestoptionsjson
+ */
+const PublicKeyCredentialRequestOptionsJSON = z
+  .object({
+    challenge: f.passkeyChallenge,
+    timeout: z.number().int().optional().describe('Timeout in milliseconds'),
+    rpId: z.string().optional().describe('Relying Party identifier'),
+    allowCredentials: z
+      .array(PublicKeyCredentialDescriptorJSON)
+      .optional()
+      .describe('Allowed credentials'),
+    userVerification: f.userVerificationRequirement.optional(),
+    hints: z.array(f.publicKeyCredentialHint).optional(),
+    extensions: z.object({}).passthrough().optional(),
+  })
+  .passthrough()
+  .describe('WebAuthn authentication options');
+
+/**
+ * AuthenticatorAssertionResponseJSON schema
+ * @see https://w3c.github.io/webauthn/#dictdef-authenticatorassertionresponsejson
+ */
+const AuthenticatorAssertionResponseJSON = z
+  .object({
+    clientDataJSON: f.base64UrlString,
+    authenticatorData: f.base64UrlString,
+    signature: f.base64UrlString,
+    userHandle: f.base64UrlString.optional(),
+  })
+  .describe('Authenticator assertion response');
+
+/**
+ * AuthenticationResponseJSON schema
+ * Sent from browser after navigator.credentials.get()
+ * @see https://w3c.github.io/webauthn/#dictdef-authenticationresponsejson
+ */
+const AuthenticationResponseJSON = z
+  .object({
+    id: f.passkeyCredentialId,
+    rawId: f.base64UrlString,
+    response: AuthenticatorAssertionResponseJSON,
+    authenticatorAttachment: f.authenticatorAttachment.optional(),
+    clientExtensionResults: z.record(z.string(), z.unknown()),
+    type: f.publicKeyCredentialType,
+  })
+  .describe('WebAuthn authentication response');
+
 export const r = {
   // Base schemas
   UserSession,
@@ -123,6 +192,12 @@ export const r = {
   ConsentUser,
   LinkedOAuthAccount,
   AvailableOAuthProvider,
+
+  // WebAuthn/Passkey schemas
+  PublicKeyCredentialDescriptorJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+  AuthenticatorAssertionResponseJSON,
+  AuthenticationResponseJSON,
 
   // Generic responses
   GenericError,
@@ -252,6 +327,15 @@ export const r = {
     qr_code: z.string().describe('QR code as data URL'),
   }),
 
+  // Passkey responses
+  // Use z.custom to maintain type compatibility with @simplewebauthn types
+  // while still validating the structure through PublicKeyCredentialRequestOptionsJSON
+  PasskeyAuthenticationOptionsResponse: z.object({
+    options: z.custom<SimpleWebAuthnOptionsJSON>(
+      (val) => PublicKeyCredentialRequestOptionsJSON.safeParse(val).success,
+    ),
+  }),
+
   // App config response
   ConfigResponse: z.object({
     app: z.object({
@@ -267,10 +351,25 @@ export const r = {
     }),
     authentication_methods: z.record(
       z.string(),
-      z.object({
-        enabled: z.boolean(),
-        type: z.string(),
-      }),
+      z
+        .object({
+          enabled: z.boolean(),
+          type: z.string(),
+          // Password auth method specific fields
+          passkey: z
+            .object({
+              enabled: z.boolean(),
+              required: z.boolean(),
+            })
+            .optional(),
+          totp: z
+            .object({
+              enabled: z.boolean(),
+              required: z.boolean(),
+            })
+            .optional(),
+        })
+        .passthrough(),
     ),
   }),
 };

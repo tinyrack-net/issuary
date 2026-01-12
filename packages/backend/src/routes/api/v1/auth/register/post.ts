@@ -65,6 +65,7 @@ export default (fastify: FastifyWithZodInstance) =>
           email_verified: user.email_verified,
           has_password: true, // Registration always creates password
           totp_enabled: false, // New users don't have TOTP enabled
+          passkey_count: 0, // New users don't have passkeys
         },
       });
     },

@@ -59,4 +59,24 @@ export const f = {
     .length(6)
     .regex(/^\d{6}$/, 'TOTP code must be 6 digits')
     .describe('6-digit TOTP code from authenticator app'),
+
+  // WebAuthn/Passkey fields
+  base64UrlString: z.string().describe('Base64URL-encoded string'),
+  passkeyCredentialId: z.string().describe('Passkey credential ID'),
+  passkeyChallenge: z.string().describe('WebAuthn challenge'),
+  authenticatorTransport: z
+    .enum(['ble', 'cable', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb'])
+    .describe('Authenticator transport method'),
+  userVerificationRequirement: z
+    .enum(['required', 'preferred', 'discouraged'])
+    .describe('User verification requirement'),
+  publicKeyCredentialType: z
+    .literal('public-key')
+    .describe('Public key credential type'),
+  authenticatorAttachment: z
+    .enum(['platform', 'cross-platform'])
+    .describe('Authenticator attachment type'),
+  publicKeyCredentialHint: z
+    .enum(['hybrid', 'security-key', 'client-device'])
+    .describe('Public key credential hint'),
 };
