@@ -5,6 +5,7 @@ export const GET_SESSION_QUERY_KEY = ['/api/v1/user/session'];
 
 export type SessionUser = {
   id: string;
+  managed: 'config' | 'database';
   email: string;
   email_verified: boolean;
   has_password: boolean;

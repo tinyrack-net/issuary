@@ -177,5 +177,6 @@
   "profile.password.removeModal.success": "パスワードが削除されました",
   "profile.password.removeModal.error": "パスワードの削除に失敗しました",
   "profile.password.removeModal.invalidCurrent": "現在のパスワードが正しくありません",
-  "profile.password.removeModal.noOAuth": "少なくとも1つのOAuthアカウントが連携されている必要があります"
+  "profile.password.removeModal.noOAuth": "少なくとも1つのOAuthアカウントが連携されている必要があります",
+  "profile.password.configManaged": "このアカウントは設定ファイルで管理されているため、パスワードを変更できません"
 }

@@ -177,5 +177,6 @@
   "profile.password.removeModal.success": "Password has been removed",
   "profile.password.removeModal.error": "Failed to remove password",
   "profile.password.removeModal.invalidCurrent": "Current password is incorrect",
-  "profile.password.removeModal.noOAuth": "You must have at least one OAuth account linked"
+  "profile.password.removeModal.noOAuth": "You must have at least one OAuth account linked",
+  "profile.password.configManaged": "This account is managed by configuration and the password cannot be changed"
 }

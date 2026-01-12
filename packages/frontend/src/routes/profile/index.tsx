@@ -99,6 +99,7 @@ function Profile() {
   const user = session?.user;
   const availableProviders = oauthAccountsData?.available_providers || [];
   const hasLinkedOAuth = availableProviders.some((p) => p.linked);
+  const isConfigManaged = user?.managed === 'config';
 
   return (
     <AuthPageLayout>
@@ -140,7 +141,10 @@ function Profile() {
             {/* Email Verified */}
             <div className="flex items-center gap-3">
               {user.email_verified ? (
-                <CheckCircleIcon className="size-5 text-success" weight="regular" />
+                <CheckCircleIcon
+                  className="size-5 text-success"
+                  weight="regular"
+                />
               ) : (
                 <XCircleIcon className="size-5 text-error" weight="regular" />
               )}
@@ -188,7 +192,11 @@ function Profile() {
                 </span>
               </div>
               <div className="flex gap-1">
-                {user.has_password ? (
+                {isConfigManaged ? (
+                  <span className="text-base-content/50 text-xs">
+                    {t('profile.password.configManaged')}
+                  </span>
+                ) : user.has_password ? (
                   <>
                     <button
                       type="button"
