@@ -66,13 +66,22 @@ export class UserEntity extends BaseEntity {
   public password_hash: string | null = null;
 
   @Property({
-    type: t.boolean,
-    name: 'editable',
-    comment: 'Whether the user account is editable',
+    type: t.string,
+    name: 'managed_by',
+    comment: 'Data source: config (from YAML) or database (runtime created)',
     nullable: false,
-    default: true,
+    default: 'database',
   })
-  public editable: Opt<boolean> = true;
+  public managed_by: Opt<'config' | 'database'> = 'database';
+
+  @Property({
+    type: t.string,
+    name: 'role',
+    comment: 'User role: user or admin',
+    nullable: false,
+    default: 'user',
+  })
+  public role: Opt<'user' | 'admin'> = 'user';
 
   @Property({
     type: t.string,

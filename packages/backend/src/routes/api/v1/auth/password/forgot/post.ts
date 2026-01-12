@@ -48,7 +48,7 @@ export default (fastify: FastifyWithZodInstance) => {
             'If an account with that email exists, a password reset link has been sent.',
         });
       } catch (error) {
-        // If user is not editable (config user), throw the error
+        // If user is config-managed, throw the error
         if (error instanceof e.UserNotEditable.Error) {
           throw error;
         }

@@ -11,6 +11,9 @@ import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
 
+// Note: This service still uses AppConfigs for authentication_methods (OAuth providers config)
+// but user-related config lookups have been removed since users are now synced to DB.
+
 declare module 'fastify' {
   interface FastifyInstance {
     oauthConnectService: OAuthConnectService;
@@ -281,69 +284,50 @@ export class OAuthConnectService {
       };
     }
 
-    // Check if user with same email exists
+    // Check if user with same email exists in database
+    // Config users are now synced to DB, so we only need to check the database
     const existingUser = await this.mikro.user.findOne({
       email: userInfo.email,
     });
 
-    // Also check config users
-    const configUser = AppConfigs.users?.find(
-      (u) => u.email === userInfo.email,
-    );
-
-    if (existingUser || configUser) {
+    if (existingUser) {
       // Handle email conflict based on strategy
       if (provider.email_conflict_strategy === 'require_link') {
         throw new e.OAuthEmailConflict.Error();
       }
 
       // auto_link strategy - link to existing user if email is verified
-      if (existingUser) {
-        if (!existingUser.email_verified) {
-          // Mark email as verified since OAuth provider verified it
-          existingUser.email_verified = true;
-        }
-
-        // Link OAuth account
-        await this.mikro.userOAuth.linkAccount({
-          user: existingUser,
-          providerName,
-          providerUserId: userInfo.id,
-          accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token || '',
-          expiresAt: tokens.expires_in
-            ? new Date(Date.now() + tokens.expires_in * 1000)
-            : null,
-        });
-
-        await this.mikro.em.flush();
-
-        await this.mikro.em.populate(existingUser, ['password_hash']);
-        return {
-          isNewUser: false,
-          user: {
-            id: existingUser.id,
-            managed: 'database',
-            email: existingUser.email,
-            email_verified: existingUser.email_verified,
-            has_password: existingUser.hasPassword(),
-          },
-        };
+      if (!existingUser.email_verified) {
+        // Mark email as verified since OAuth provider verified it
+        existingUser.email_verified = true;
       }
 
-      // Config user - can't link, just return session
-      if (configUser) {
-        return {
-          isNewUser: false,
-          user: {
-            id: configUser.id,
-            managed: 'config',
-            email: configUser.email,
-            email_verified: true,
-            has_password: true, // Config users always have password
-          },
-        };
-      }
+      // Link OAuth account (only for database-managed users)
+      // Config-managed users can still be linked since they're in DB now
+      await this.mikro.userOAuth.linkAccount({
+        user: existingUser,
+        providerName,
+        providerUserId: userInfo.id,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token || '',
+        expiresAt: tokens.expires_in
+          ? new Date(Date.now() + tokens.expires_in * 1000)
+          : null,
+      });
+
+      await this.mikro.em.flush();
+
+      await this.mikro.em.populate(existingUser, ['password_hash']);
+      return {
+        isNewUser: false,
+        user: {
+          id: existingUser.id,
+          managed: existingUser.managed_by,
+          email: existingUser.email,
+          email_verified: existingUser.email_verified,
+          has_password: existingUser.hasPassword(),
+        },
+      };
     }
 
     // Create new user with OAuth
@@ -444,14 +428,7 @@ export class OAuthConnectService {
     userId: string,
     providerName: string,
   ): Promise<void> {
-    // Check if user is a config user (config users can't have linked OAuth accounts)
-    const configUser = AppConfigs.users?.find((u) => u.id === userId);
-    if (configUser) {
-      // Config users don't have OAuth linked accounts in the database
-      throw new e.OAuthAccountNotLinked.Error();
-    }
-
-    // Get user
+    // Get user from database (config users are now synced to DB)
     const user = await this.mikro.user.findOneOrFail(
       { id: userId },
       {
@@ -488,13 +465,7 @@ export class OAuthConnectService {
   public async getLinkedAccounts(
     userId: string,
   ): Promise<Array<{ provider_name: string; linked_at: Date }>> {
-    // Check if user exists in config (config users can't have linked accounts)
-    const configUser = AppConfigs.users?.find((u) => u.id === userId);
-    if (configUser) {
-      // Config users don't have OAuth linked accounts
-      return [];
-    }
-
+    // Get user from database (config users are now synced to DB)
     const user = await this.mikro.user.findOneOrFail(
       { id: userId },
       { failHandler: () => new e.UserNotFound.Error() },

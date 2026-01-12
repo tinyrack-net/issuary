@@ -44,7 +44,10 @@ export default fastifyPlugin(
 
       // Log unexpected errors for debugging
       request.log.error(
-        { err: error, stack: error.stack },
+        {
+          err: error,
+          stack: error instanceof Error ? error.stack : undefined,
+        },
         'Unexpected error occurred',
       );
 

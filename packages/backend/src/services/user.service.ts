@@ -1,7 +1,6 @@
 import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
-import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
@@ -23,92 +22,62 @@ export class UserService {
   /**
    * @description
    * Verifies a user by their ID.
+   * Config users are now synced to DB, so we only need to query DB.
    */
   public async verifyUserById(
     id: string,
   ): Promise<z.infer<typeof r.UserSession>> {
-    const appConfigUser = AppConfigs.users?.find((u) => u.id === id);
-    if (appConfigUser) {
-      return {
-        id: appConfigUser.id,
-        managed: 'config',
-        email: appConfigUser.email,
-        email_verified: true,
-        has_password: true, // Config users always have password
-      };
-    }
-    const dbUser = await this.mikro.user.findOneOrFail(
-      { id: id },
+    const user = await this.mikro.user.findOneOrFail(
+      { id },
       { populate: ['password_hash'] },
     );
     return {
-      id: dbUser.id,
-      managed: 'database',
-      email: dbUser.email,
-      email_verified: dbUser.email_verified,
-      has_password: dbUser.hasPassword(),
+      id: user.id,
+      managed: user.managed_by,
+      email: user.email,
+      email_verified: user.email_verified,
+      has_password: user.hasPassword(),
     };
   }
 
   /**
    * @description
    * Logs in a user with the provided email and password.
+   * All users (including config users) are now in DB with hashed passwords.
    */
   public async login(params: {
     email: string;
     password: string;
   }): Promise<z.infer<typeof r.UserSession>> {
-    const appConfigUser = AppConfigs.users?.find(
-      (u) => u.email === params.email,
-    );
-
-    if (appConfigUser) {
-      if (appConfigUser.password === params.password) {
-        return {
-          id: appConfigUser.id,
-          managed: 'config',
-          email: appConfigUser.email,
-          email_verified: true,
-          has_password: true,
-        };
-      } else {
-        throw new e.InvalidEmailOrPassword.Error();
-      }
-    }
-
     const user = await this.mikro.user.findOneOrFail(
-      {
-        email: params.email,
-      },
+      { email: params.email },
       {
         populate: ['password_hash'],
         failHandler: () => new e.InvalidEmailOrPassword.Error(),
       },
     );
 
-    if (await user.verifyPassword(params.password)) {
-      return {
-        id: user.id,
-        managed: 'database',
-        email: user.email,
-        email_verified: user.email_verified,
-        has_password: user.hasPassword(),
-      };
+    if (!(await user.verifyPassword(params.password))) {
+      throw new e.InvalidEmailOrPassword.Error();
     }
 
-    throw new e.InvalidEmailOrPassword.Error();
+    return {
+      id: user.id,
+      managed: user.managed_by,
+      email: user.email,
+      email_verified: user.email_verified,
+      has_password: user.hasPassword(),
+    };
   }
 
+  /**
+   * @description
+   * Registers a new user with email and password.
+   * Config users are already in DB, so email uniqueness is enforced by DB.
+   */
   public async register(params: { email: string; password: string }): Promise<{
     user: UserEntity;
   }> {
-    const appConfigUser = AppConfigs.users?.find(
-      (u) => u.email === params.email,
-    );
-    if (appConfigUser) {
-      throw new e.EmailAlreadyExists.Error();
-    }
-
     const emailExists = await this.exists(params.email);
     if (emailExists) {
       throw new e.EmailAlreadyExists.Error();

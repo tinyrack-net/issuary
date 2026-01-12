@@ -183,8 +183,8 @@ describe('POST /api/v1/auth/password/reset', () => {
     expect(json.code).toBe('INVALID_PASSWORD_RESET_TOKEN');
   });
 
-  test('should return 403 for non-editable user', async () => {
-    const email = generateUniqueEmail('password-reset-noneditable');
+  test('should return 403 for config-managed user', async () => {
+    const email = generateUniqueEmail('password-reset-config-managed');
 
     // Register user via HTTP
     const registerRes = await app.inject({
@@ -194,10 +194,10 @@ describe('POST /api/v1/auth/password/reset', () => {
     });
     expect(registerRes.statusCode).toBe(200);
 
-    // Make user non-editable and generate token
+    // Make user config-managed and generate token
     const token = await withMikroContext(app, async () => {
       const user = await app.mikro.user.findOneOrFail({ email });
-      user.editable = false;
+      user.managed_by = 'config';
       await app.mikro.em.flush();
 
       const resetEntity = await app.passwordResetService.generateToken({

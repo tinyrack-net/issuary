@@ -63,7 +63,7 @@ describe('POST /api/v1/auth/password/forgot', () => {
     expect(body).toHaveProperty('message');
   });
 
-  test('should fail for config user (not editable)', async () => {
+  test('should fail for config user (config-managed)', async () => {
     // Use the config user email from config.test.yaml
     const res = await app.inject({
       method: 'post',

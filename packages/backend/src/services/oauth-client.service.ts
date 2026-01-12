@@ -1,7 +1,6 @@
 import { verify } from 'argon2';
 import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
-import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
@@ -16,52 +15,29 @@ export class OAuthClientService {
   public constructor(private readonly mikro: MikroService) {}
 
   /**
-   * Find OAuth client by client_id from both config and database
+   * Find OAuth client by client_id from database.
+   * Config clients are now synced to DB via ConfigSeeder.
    */
   public async findByClientId(
     clientId: string,
   ): Promise<z.infer<typeof r.OAuthClient>> {
-    // Check config first
-    const configClient = AppConfigs.providers?.find(
-      (p) => p.client_id === clientId,
-    );
-
-    if (configClient) {
-      // Parse scope string to array
-      const scopes = configClient.scope ? configClient.scope.split(' ') : [];
-
-      return {
-        id: configClient.id,
-        clientId: configClient.client_id,
-        name: configClient.name,
-        managed: 'config',
-        enabled: true, // Config clients are always enabled
-        redirectUris: configClient.redirect_uris,
-        responseTypes: configClient.response_types,
-        scopes: scopes,
-        grantTypes: configClient.grant_types,
-      };
-    }
-
-    // Check database
-    const dbClient = await this.mikro.oauthClient.findOneOrFail(
+    const client = await this.mikro.oauthClient.findOneOrFail(
       { clientId },
       {
-        populate: ['clientSecretHash'],
         failHandler: () => new e.OAuthClientNotFound.Error(),
       },
     );
 
     return {
-      id: dbClient.id,
-      clientId: dbClient.clientId,
-      name: dbClient.name,
-      managed: 'database',
-      enabled: dbClient.enabled,
-      redirectUris: dbClient.redirectUris,
-      responseTypes: dbClient.responseTypes,
-      scopes: dbClient.scopes,
-      grantTypes: dbClient.grantTypes,
+      id: client.id,
+      clientId: client.clientId,
+      name: client.name,
+      managed: client.managed_by,
+      enabled: client.enabled,
+      redirectUris: client.redirectUris,
+      responseTypes: client.responseTypes,
+      scopes: client.scopes,
+      grantTypes: client.grantTypes,
     };
   }
 
@@ -115,34 +91,24 @@ export class OAuthClientService {
   }
 
   /**
-   * Verify client secret
+   * Verify client secret using argon2 hash verification.
+   * All clients (including config clients) now have hashed secrets in DB.
    * @returns true if valid, false otherwise
    */
   public async verifyClientSecret(
     clientId: string,
     clientSecret: string,
   ): Promise<boolean> {
-    // Check config first
-    const configClient = AppConfigs.providers?.find(
-      (p) => p.client_id === clientId,
-    );
-
-    if (configClient) {
-      // Config clients: plain text comparison
-      return configClient.client_secret === clientSecret;
-    }
-
-    // Check database: use argon2 hash verification
-    const dbClient = await this.mikro.oauthClient.findOne(
+    const client = await this.mikro.oauthClient.findOne(
       { clientId },
       { populate: ['clientSecretHash'] },
     );
 
-    if (!dbClient) {
+    if (!client) {
       return false;
     }
 
-    return verify(dbClient.clientSecretHash, clientSecret);
+    return verify(client.clientSecretHash, clientSecret);
   }
 }
 

@@ -50,8 +50,8 @@ export default (fastify: FastifyWithZodInstance) =>
         },
       );
 
-      // Check if user is editable
-      if (!user.editable) {
+      // Check if user is config-managed
+      if (user.managed_by === 'config') {
         throw new e.UserNotEditable.Error();
       }
 

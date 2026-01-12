@@ -9,7 +9,7 @@ export class TestSeeder extends Seeder {
       email: 'sample@example.com',
       password_hash: 'hashedpassword123',
       email_verified: true,
-      editable: false,
+      managed_by: 'config',
     });
   }
 }

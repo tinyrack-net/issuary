@@ -1,7 +1,6 @@
 import fastifyPlugin from 'fastify-plugin';
 import type { PasswordResetEntity } from '@/entities/password-reset.entity.js';
 import type { UserEntity } from '@/entities/user.entity.js';
-import { AppConfigs } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 
@@ -13,13 +12,6 @@ declare module 'fastify' {
 
 export class PasswordResetService {
   public constructor(private readonly mikro: MikroService) {}
-
-  /**
-   * Check if user is from config (not editable)
-   */
-  private isConfigUser(email: string): boolean {
-    return AppConfigs.users.some((u) => u.email === email);
-  }
 
   /**
    * Generate password reset token for a user
@@ -39,18 +31,13 @@ export class PasswordResetService {
 
   /**
    * Request password reset for an email
-   * Returns token entity if user exists and is editable
+   * Returns token entity if user exists and is database-managed
    * Returns null if user doesn't exist (to prevent email enumeration)
-   * Throws error if user is not editable (config user)
+   * Throws error if user is config-managed
    */
   async requestPasswordReset(
     email: string,
   ): Promise<PasswordResetEntity | null> {
-    // Check if this is a config user (not editable)
-    if (this.isConfigUser(email)) {
-      throw new e.UserNotEditable.Error();
-    }
-
     // Try to find user in database
     const user = await this.mikro.user.findOne({ email });
 
@@ -60,8 +47,8 @@ export class PasswordResetService {
       return null;
     }
 
-    // Check if user is editable
-    if (!user.editable) {
+    // Check if user is config-managed (cannot reset password)
+    if (user.managed_by === 'config') {
       throw new e.UserNotEditable.Error();
     }
 
@@ -90,13 +77,8 @@ export class PasswordResetService {
       throw new e.InvalidPasswordResetToken.Error();
     }
 
-    // Check if this is a config user (not editable)
-    if (this.isConfigUser(resetEntity.user.email)) {
-      throw new e.UserNotEditable.Error();
-    }
-
-    // Check if user is editable
-    if (!resetEntity.user.editable) {
+    // Check if user is config-managed (cannot reset password)
+    if (resetEntity.user.managed_by === 'config') {
       throw new e.UserNotEditable.Error();
     }
 

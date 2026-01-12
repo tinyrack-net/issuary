@@ -396,6 +396,7 @@ export type AppConfigSmtp = z.infer<typeof AppConfigSmtp>;
 export const AppConfigProvider = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
+  logo_uri: z.string().optional(),
   client_id: z.string().min(1),
   client_secret: z.string().min(1),
   redirect_uris: z.array(z.string()).min(1),
@@ -410,6 +411,7 @@ export const AppConfigUser = z.object({
   id: z.string().min(1),
   email: z.email(),
   password: z.string().min(6).max(100),
+  role: z.enum(['user', 'admin']).default('user'),
   totp_secret: z.string().min(16).max(128).optional(),
   totp_backup_codes: z.array(z.string()).optional(),
 });

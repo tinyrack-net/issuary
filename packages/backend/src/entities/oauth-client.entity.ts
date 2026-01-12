@@ -2,6 +2,7 @@ import {
   Entity,
   EntityRepositoryType,
   Index,
+  type Opt,
   PrimaryKey,
   Property,
   t,
@@ -99,13 +100,22 @@ export class OAuthClientEntity extends BaseEntity {
   public enabled: boolean = true;
 
   @Property({
-    type: t.boolean,
-    name: 'editable',
-    comment: 'Whether the OAuth client is editable',
+    type: t.string,
+    name: 'managed_by',
+    comment: 'Data source: config (from YAML) or database (runtime created)',
     nullable: false,
-    default: true,
+    default: 'database',
   })
-  public editable: boolean = true;
+  public managed_by: Opt<'config' | 'database'> = 'database';
+
+  @Property({
+    type: t.string,
+    name: 'logo_uri',
+    comment: 'Logo URI for the OAuth client',
+    nullable: true,
+    default: null,
+  })
+  public logoUri: string | null = null;
 
   public constructor(init: {
     id: string;
