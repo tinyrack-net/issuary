@@ -22,7 +22,7 @@ async function createUserWithPasswordAndSession(
       password_hash: password, // Will be hashed by entity lifecycle hook
     });
     user.email_verified = true;
-    await app.mikro.em.persistAndFlush(user);
+    await app.mikro.em.persist(user).flush();
   });
 
   const loginRes = await app.inject({
@@ -114,7 +114,7 @@ describe('POST /api/v1/user/password', () => {
         password_hash: null,
       });
       user.email_verified = true;
-      await app.mikro.em.persistAndFlush(user);
+      await app.mikro.em.persist(user).flush();
 
       // Create a temporary password for login
       user.password_hash = 'tempPassword123!';
@@ -186,7 +186,7 @@ describe('POST /api/v1/user/password', () => {
         password_hash: null,
       });
       user.email_verified = true;
-      await app.mikro.em.persistAndFlush(user);
+      await app.mikro.em.persist(user).flush();
 
       user.password_hash = 'tempPassword123!';
       await app.mikro.em.flush();

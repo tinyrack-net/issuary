@@ -57,7 +57,7 @@ export class UserRepository extends EntityRepository<UserEntity> {
       password_hash: params.password,
     });
 
-    await this.getEntityManager().persistAndFlush(user);
+    await this.getEntityManager().persist(user).flush();
     return user;
   }
 }

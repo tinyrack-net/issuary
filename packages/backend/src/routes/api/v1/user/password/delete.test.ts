@@ -24,7 +24,7 @@ async function createUserWithPasswordAndSession(
       password_hash: password, // Will be hashed by entity lifecycle hook
     });
     user.email_verified = true;
-    await app.mikro.em.persistAndFlush(user);
+    await app.mikro.em.persist(user).flush();
     userId = user.id;
   });
 
@@ -89,7 +89,7 @@ describe('DELETE /api/v1/user/password', () => {
         password_hash: null,
       });
       user.email_verified = true;
-      await app.mikro.em.persistAndFlush(user);
+      await app.mikro.em.persist(user).flush();
 
       user.password_hash = 'tempPassword123!';
       await app.mikro.em.flush();

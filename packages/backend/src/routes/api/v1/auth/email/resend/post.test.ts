@@ -34,7 +34,7 @@ describe('POST /api/v1/auth/email/resend', () => {
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persistAndFlush(user);
+      await app.mikro.em.persist(user).flush();
     });
 
     const res = await app.inject({
@@ -59,7 +59,7 @@ describe('POST /api/v1/auth/email/resend', () => {
         password_hash: password,
       });
       user.email_verified = false;
-      await app.mikro.em.persistAndFlush(user);
+      await app.mikro.em.persist(user).flush();
     });
 
     const res = await app.inject({
@@ -85,7 +85,7 @@ describe('POST /api/v1/auth/email/resend', () => {
         password_hash: password,
       });
       user.email_verified = false;
-      await app.mikro.em.persistAndFlush(user);
+      await app.mikro.em.persist(user).flush();
 
       // Generate initial token
       await app.emailVerificationService.generateToken({ userId: user.id });

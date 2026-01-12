@@ -90,7 +90,7 @@ describe('GET /api/v1/user/oauth-accounts', () => {
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persistAndFlush(user);
+      await app.mikro.em.persist(user).flush();
 
       // Link OAuth account
       await app.mikro.userOAuth.linkAccount({

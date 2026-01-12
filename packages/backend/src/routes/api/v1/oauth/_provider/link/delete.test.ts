@@ -31,7 +31,7 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
         email,
         password_hash: password,
       });
-      await app.mikro.em.persistAndFlush(user);
+      await app.mikro.em.persist(user).flush();
 
       // Login to get session
       const loginRes = await app.inject({
@@ -70,7 +70,7 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
         email,
         password_hash: password,
       });
-      await app.mikro.em.persistAndFlush(user);
+      await app.mikro.em.persist(user).flush();
 
       const loginRes = await app.inject({
         method: 'POST',
@@ -79,9 +79,8 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
       });
       expect(loginRes.statusCode).toBe(200);
 
-      return loginRes.cookies.find(
-        (c) => c.name === 'session',
-      )?.value as string;
+      return loginRes.cookies.find((c) => c.name === 'session')
+        ?.value as string;
     });
 
     const res = await injectWithSession(
@@ -109,7 +108,7 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
         password_hash: null,
       });
       user.email_verified = true;
-      await app.mikro.em.persistAndFlush(user);
+      await app.mikro.em.persist(user).flush();
 
       // Link OAuth account
       await app.mikro.userOAuth.linkAccount({
@@ -164,7 +163,7 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persistAndFlush(user);
+      await app.mikro.em.persist(user).flush();
 
       // Link OAuth account
       await app.mikro.userOAuth.linkAccount({
@@ -184,9 +183,8 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
       });
       expect(loginRes.statusCode).toBe(200);
 
-      return loginRes.cookies.find(
-        (c) => c.name === 'session',
-      )?.value as string;
+      return loginRes.cookies.find((c) => c.name === 'session')
+        ?.value as string;
     });
 
     const res = await injectWithSession(

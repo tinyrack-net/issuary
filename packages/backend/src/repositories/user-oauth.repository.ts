@@ -88,7 +88,7 @@ export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
       expires_at: params.expiresAt,
     });
 
-    await this.getEntityManager().persistAndFlush(oauthAccount);
+    await this.getEntityManager().persist(oauthAccount).flush();
     return oauthAccount;
   }
 
@@ -110,7 +110,7 @@ export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
     oauthAccount.refresh_token = tokens.refreshToken;
     oauthAccount.expires_at = tokens.expiresAt;
 
-    await this.getEntityManager().persistAndFlush(oauthAccount);
+    await this.getEntityManager().persist(oauthAccount).flush();
   }
 
   /**

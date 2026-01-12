@@ -155,7 +155,7 @@ export class JwtKeyService {
       expires_at: expiresAt,
     });
 
-    await this.mikro.em.persistAndFlush(entity);
+    await this.mikro.em.persist(entity).flush();
 
     // Clear cache
     this.activeKeyCache = null;
@@ -182,7 +182,7 @@ export class JwtKeyService {
       expires_at: expiresAt,
     });
 
-    await this.mikro.em.persistAndFlush(entity);
+    await this.mikro.em.persist(entity).flush();
 
     return entity;
   }
@@ -194,7 +194,7 @@ export class JwtKeyService {
     key.status = JwtKeyStatus.ACTIVE;
     key.activated_at = new Date();
 
-    await this.mikro.em.persistAndFlush(key);
+    await this.mikro.em.persist(key).flush();
 
     // Clear cache
     this.activeKeyCache = null;
@@ -432,7 +432,7 @@ export default fastifyPlugin(
           activated_at: new Date(),
           expires_at: expiresAt,
         });
-        await em.persistAndFlush(entity);
+        await em.persist(entity).flush();
       }
     }
 
