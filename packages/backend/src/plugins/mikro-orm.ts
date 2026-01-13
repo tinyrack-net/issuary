@@ -10,8 +10,8 @@ import { RevokedTokenEntity } from '@/entities/revoked-token.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
 import { UserConsentEntity } from '@/entities/user-consent.entity.js';
 import { UserOAuthEntity } from '@/entities/user-oauth.entity.js';
-import { UserTotpEntity } from '@/entities/user-totp.entity.js';
 import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
+import { UserTotpEntity } from '@/entities/user-totp.entity.js';
 import { env } from '@/lib/env.js';
 import type { EmailVerificationRepository } from '@/repositories/email-verification.repository.js';
 import type { JwtKeyRepository } from '@/repositories/jwt-key.repository.js';
@@ -22,8 +22,8 @@ import type { RevokedTokenRepository } from '@/repositories/revoked-token.reposi
 import type { UserRepository } from '@/repositories/user.repository.js';
 import type { UserConsentRepository } from '@/repositories/user-consent.repository.js';
 import type { UserOAuthRepository } from '@/repositories/user-oauth.repository.js';
-import type { UserTotpRepository } from '@/repositories/user-totp.repository.js';
 import type { UserPasskeyRepository } from '@/repositories/user-passkey.repository.js';
+import type { UserTotpRepository } from '@/repositories/user-totp.repository.js';
 
 export interface MikroService {
   orm: MikroORM;

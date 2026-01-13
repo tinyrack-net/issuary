@@ -1,5 +1,4 @@
 import z from 'zod/v4';
-import { f } from './field.js';
 
 /**
  * OAuth authorization request parameters (RFC 6749 §4.1.1)

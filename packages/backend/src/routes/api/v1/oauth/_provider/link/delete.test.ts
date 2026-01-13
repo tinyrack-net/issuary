@@ -1,13 +1,13 @@
+import { describe, expect, test } from 'vitest';
 import {
-  TEST_USER,
   createAuthenticatedSession,
   extractCookie,
   generateUniqueEmail,
   injectWithSession,
   setupTestServer,
+  TEST_USER,
   withMikroContext,
 } from '@/test-utils/index.js';
-import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
@@ -100,7 +100,7 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
     // Create OAuth-only user (no password)
     const email = generateUniqueEmail('oauth-only');
 
-    const sessionCookie = await withMikroContext(app, async () => {
+    const _sessionCookie = await withMikroContext(app, async () => {
       // Create user without password
       const user = app.mikro.user.create({
         email,

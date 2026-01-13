@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest';
 import {
   createAuthenticatedSession,
   createDbUserWithSession,
@@ -7,7 +8,6 @@ import {
   setupTestServer,
   withMikroContext,
 } from '@/test-utils/index.js';
-import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 

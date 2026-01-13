@@ -1,4 +1,3 @@
-import { UserTotpRepository } from '@/repositories/user-totp.repository.js';
 import {
   Entity,
   EntityRepositoryType,
@@ -10,6 +9,7 @@ import {
   t,
   Unique,
 } from '@mikro-orm/core';
+import { UserTotpRepository } from '@/repositories/user-totp.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { UserEntity } from './user.entity.js';
 

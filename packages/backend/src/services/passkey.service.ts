@@ -1,14 +1,3 @@
-import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
-import type { UserEntity } from '@/entities/user.entity.js';
-import type { AppConfig } from '@/lib/config.js';
-import type { MikroService } from '@/plugins/mikro-orm.js';
-import { e } from '@/schemas/error.js';
-import {
-  generateAuthenticationOptions,
-  generateRegistrationOptions,
-  verifyAuthenticationResponse,
-  verifyRegistrationResponse,
-} from '@simplewebauthn/server';
 import type {
   AuthenticationResponseJSON,
   AuthenticatorTransportFuture,
@@ -16,8 +5,19 @@ import type {
   PublicKeyCredentialRequestOptionsJSON,
   RegistrationResponseJSON,
 } from '@simplewebauthn/server';
+import {
+  generateAuthenticationOptions,
+  generateRegistrationOptions,
+  verifyAuthenticationResponse,
+  verifyRegistrationResponse,
+} from '@simplewebauthn/server';
 import { isoBase64URL } from '@simplewebauthn/server/helpers';
 import fastifyPlugin from 'fastify-plugin';
+import type { UserEntity } from '@/entities/user.entity.js';
+import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
+import type { AppConfig } from '@/lib/config.js';
+import type { MikroService } from '@/plugins/mikro-orm.js';
+import { e } from '@/schemas/error.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -39,7 +39,10 @@ export class PasskeyService {
   private readonly rpId: string;
   private readonly origin: string;
 
-  public constructor(private readonly mikro: MikroService, config: AppConfig) {
+  public constructor(
+    private readonly mikro: MikroService,
+    config: AppConfig,
+  ) {
     const hostUrl = new URL(config.app.host);
     this.rpName = 'TinyRack Auth';
     this.rpId = hostUrl.hostname;

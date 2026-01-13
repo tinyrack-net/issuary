@@ -1,10 +1,10 @@
 import fastifyPlugin from 'fastify-plugin';
 import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
 import qrcode from 'qrcode';
+import type { UserEntity } from '@/entities/user.entity.js';
+import { UserTotpEntity } from '@/entities/user-totp.entity.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
-import { UserTotpEntity } from '@/entities/user-totp.entity.js';
-import type { UserEntity } from '@/entities/user.entity.js';
 
 declare module 'fastify' {
   interface FastifyInstance {

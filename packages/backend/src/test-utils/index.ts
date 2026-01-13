@@ -11,6 +11,8 @@ export {
   TEST_PKCE,
   TEST_USER,
 } from './fixtures.js';
+// Types
+export type { ErrorDefinition } from './helpers.js';
 // Common helper functions
 export {
   createAuthenticatedSession,
@@ -25,8 +27,6 @@ export {
   injectWithSession,
   withMikroContext,
 } from './helpers.js';
-// Types
-export type { ErrorDefinition } from './helpers.js';
 export type {
   AuthorizationCodeResult,
   ExchangeCodeParams,

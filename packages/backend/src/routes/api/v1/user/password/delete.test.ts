@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest';
 import {
   createAuthenticatedSession,
   extractCookie,
@@ -6,7 +7,6 @@ import {
   setupTestServer,
   withMikroContext,
 } from '@/test-utils/index.js';
-import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
@@ -17,7 +17,7 @@ async function createUserWithPasswordAndSession(
   email: string,
   password: string,
 ): Promise<{ sessionCookie: string; userId: string }> {
-  let userId: string;
+  let userId!: string;
 
   await withMikroContext(app, async () => {
     const user = app.mikro.user.create({
@@ -39,7 +39,7 @@ async function createUserWithPasswordAndSession(
 
   const sessionCookie = extractCookie(loginRes, 'session');
 
-  return { sessionCookie, userId: userId! };
+  return { sessionCookie, userId };
 }
 
 describe('DELETE /api/v1/user/password', () => {

@@ -1,4 +1,3 @@
-import { OAuthClientRepository } from '@/repositories/oauth-client.repository.js';
 import {
   Entity,
   EntityRepositoryType,
@@ -8,6 +7,7 @@ import {
   Property,
   t,
 } from '@mikro-orm/core';
+import { OAuthClientRepository } from '@/repositories/oauth-client.repository.js';
 import { BaseEntity } from './base.entity.js';
 
 @Entity({

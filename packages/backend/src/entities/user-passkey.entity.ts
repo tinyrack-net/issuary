@@ -1,4 +1,3 @@
-import { UserPasskeyRepository } from '@/repositories/user-passkey.repository.js';
 import {
   Entity,
   EntityRepositoryType,
@@ -11,6 +10,7 @@ import {
   t,
 } from '@mikro-orm/core';
 import type { AuthenticatorTransportFuture } from '@simplewebauthn/server';
+import { UserPasskeyRepository } from '@/repositories/user-passkey.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { UserEntity } from './user.entity.js';
 

@@ -9,8 +9,7 @@ export default (fastify: FastifyWithZodInstance) =>
     url: '',
     schema: {
       summary: 'Get Passkey Authentication Options',
-      description:
-        'Generate WebAuthn authentication options for passkey login',
+      description: 'Generate WebAuthn authentication options for passkey login',
       tags: [TAGS.AUTH],
       response: {
         200: r.PasskeyAuthenticationOptionsResponse,

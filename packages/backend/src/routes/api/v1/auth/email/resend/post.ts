@@ -9,7 +9,6 @@ export default (fastify: FastifyWithZodInstance) => {
   if (!fastify.transporter) {
     return;
   }
-
   fastify.route({
     method: 'POST',
     url: '',

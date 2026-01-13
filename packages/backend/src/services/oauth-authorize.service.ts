@@ -3,7 +3,7 @@ import type z from 'zod/v4';
 import type { AppConfig } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
-import { oauthSchema } from '@/schemas/oauth.js';
+import type { oauthSchema } from '@/schemas/oauth.js';
 import type { OAuthClientService } from './oauth-client.service.js';
 import type { UserConsentService } from './user-consent.service.js';
 

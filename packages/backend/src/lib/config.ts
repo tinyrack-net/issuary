@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { zz } from '@/schemas/provider.js';
 import nodemailer from 'nodemailer';
 import YAML from 'yaml';
 import z from 'zod/v4';
+import { zz } from '@/schemas/provider.js';
 import { env } from './env.js';
 
 export const AppTheme = z.enum([

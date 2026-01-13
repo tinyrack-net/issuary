@@ -3,10 +3,9 @@ import { EntityRepository, ref } from '@mikro-orm/core';
 import { hash, verify } from 'argon2';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import {
-  OAuthCodeEntity,
   type OAuthCodeChallengeMethods,
+  OAuthCodeEntity,
 } from '@/entities/oauth-code.entity.js';
-import { UserEntity } from '@/entities/user.entity.js';
 import { e } from '@/schemas/error.js';
 
 export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {

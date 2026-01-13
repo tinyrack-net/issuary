@@ -12,7 +12,7 @@ import type z from 'zod/v4';
 import type { AppConfig } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
-import { jwtPayload } from '@/schemas/jwt.js';
+import type { jwtPayload } from '@/schemas/jwt.js';
 import type { JwtKeyService } from './jwt-key.service.js';
 
 declare module 'fastify' {

@@ -4,8 +4,8 @@ import {
   PrimaryKey,
   Property,
   type Ref,
-  ref,
   type RequiredNullable,
+  ref,
   t,
 } from '@mikro-orm/core';
 import { UserOAuthRepository } from '@/repositories/user-oauth.repository.js';

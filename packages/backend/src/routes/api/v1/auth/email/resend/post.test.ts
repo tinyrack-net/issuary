@@ -1,10 +1,10 @@
+import { describe, expect, test } from 'vitest';
 import {
-  TEST_USER,
   generateUniqueEmail,
   setupTestServer,
+  TEST_USER,
   withMikroContext,
 } from '@/test-utils/index.js';
-import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
 
