@@ -9,7 +9,7 @@ declare module '@fastify/secure-session' {
     oauth?: {
       state: string;
       codeVerifier: string;
-      providerName: string;
+      providerId: string;
       mode: 'login' | 'register' | 'link';
       returnUrl?: string | undefined;
     };

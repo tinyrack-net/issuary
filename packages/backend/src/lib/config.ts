@@ -238,80 +238,148 @@ export type AppConfigBasicAuthenticationMethods = z.infer<
 >;
 
 /**
- * OAuth-based authentication method configuration.
- * Supports both well-known providers (google, github, apple) and custom OAuth providers.
+ * GitHub OAuth provider schema.
+ * Uses pre-configured endpoints from WELL_KNOWN_OAUTH_PROVIDERS.
  */
-export const AppConfigAuthMethodOAuth = z
-  .object({
-    type: z.literal('oauth'),
-    enabled: z.boolean().default(false),
-    /** Display name for the provider (shown in UI) */
-    display_name: z.string().optional(),
-    /** Icon URL for the provider (shown in UI) */
-    icon_url: z.string().optional(),
-    /** Well-known provider name (google, github, apple) - auto-fills URLs if set */
-    provider: z
-      .enum(['google', 'github', 'apple'] as const)
-      .optional()
-      .describe('Well-known provider for auto-configuration'),
-    /** OAuth client ID */
-    client_id: z.string().min(1),
-    /** OAuth client secret */
-    client_secret: z.string().min(1),
-    /** Authorization endpoint URL (optional if provider is set) */
-    authorization_url: z.url().optional(),
-    /** Token endpoint URL (optional if provider is set) */
-    token_url: z.url().optional(),
-    /** UserInfo endpoint URL (optional if provider is set, null for Apple) */
-    userinfo_url: z.url().nullish(),
-    /** Additional URL for fetching email (e.g., GitHub) */
-    email_url: z.url().optional(),
-    /** OAuth scopes to request */
-    scopes: z.array(z.string()).optional(),
-    /** Response mode (e.g., 'form_post' for Apple) */
-    response_mode: z.enum(['query', 'fragment', 'form_post']).optional(),
-    /**
-     * Email conflict resolution strategy:
-     * - 'auto_link': Automatically link if email matches existing verified user
-     * - 'require_link': Require explicit account linking if email exists
-     */
-    email_conflict_strategy: z
-      .enum(['auto_link', 'require_link'])
-      .default('auto_link'),
-    /** Mapping from provider's userinfo response to standard fields */
-    userinfo_mapping: z
-      .object({
-        id: z.string().default('sub'),
-        email: z.string().default('email'),
-        email_verified: z.string().optional(),
-        name: z.string().optional(),
-        picture: z.string().optional(),
-      })
-      .optional(),
-  })
-  .refine(
-    (data) => {
-      // If no well-known provider, authorization_url and token_url are required
-      if (!data.provider) {
-        return !!data.authorization_url && !!data.token_url;
-      }
-      return true;
-    },
-    {
-      message:
-        'authorization_url and token_url are required for custom OAuth providers',
-    },
-  );
+export const GithubOAuthSchema = z.object({
+  id: z.string().min(1).describe('Unique identifier for this OAuth provider'),
+  type: z.literal('github'),
+  enabled: z.boolean().default(false),
+  display_name: z.string().optional().describe('Display name shown in UI'),
+  icon_url: z.string().optional().describe('Icon URL shown in UI'),
+  client_id: z.string().min(1).describe('OAuth client ID'),
+  client_secret: z.string().min(1).describe('OAuth client secret'),
+  scopes: z
+    .array(z.string())
+    .optional()
+    .describe('OAuth scopes (defaults to provider defaults)'),
+  email_conflict_strategy: z
+    .enum(['auto_link', 'require_link'])
+    .default('auto_link')
+    .describe('Email conflict resolution strategy'),
+});
+
+export type GithubOAuthSchema = z.infer<typeof GithubOAuthSchema>;
+
+/**
+ * Google OAuth provider schema.
+ * Uses pre-configured endpoints from WELL_KNOWN_OAUTH_PROVIDERS.
+ */
+export const GoogleOAuthSchema = z.object({
+  id: z.string().min(1).describe('Unique identifier for this OAuth provider'),
+  type: z.literal('google'),
+  enabled: z.boolean().default(false),
+  display_name: z.string().optional().describe('Display name shown in UI'),
+  icon_url: z.string().optional().describe('Icon URL shown in UI'),
+  client_id: z.string().min(1).describe('OAuth client ID'),
+  client_secret: z.string().min(1).describe('OAuth client secret'),
+  scopes: z
+    .array(z.string())
+    .optional()
+    .describe('OAuth scopes (defaults to provider defaults)'),
+  email_conflict_strategy: z
+    .enum(['auto_link', 'require_link'])
+    .default('auto_link')
+    .describe('Email conflict resolution strategy'),
+});
+
+export type GoogleOAuthSchema = z.infer<typeof GoogleOAuthSchema>;
+
+/**
+ * Apple OAuth provider schema.
+ * Uses pre-configured endpoints from WELL_KNOWN_OAUTH_PROVIDERS.
+ * Apple uses form_post response mode by default.
+ */
+export const AppleOAuthSchema = z.object({
+  id: z.string().min(1).describe('Unique identifier for this OAuth provider'),
+  type: z.literal('apple'),
+  enabled: z.boolean().default(false),
+  display_name: z.string().optional().describe('Display name shown in UI'),
+  icon_url: z.string().optional().describe('Icon URL shown in UI'),
+  client_id: z.string().min(1).describe('OAuth client ID'),
+  client_secret: z.string().min(1).describe('OAuth client secret'),
+  scopes: z
+    .array(z.string())
+    .optional()
+    .describe('OAuth scopes (defaults to provider defaults)'),
+  response_mode: z
+    .enum(['query', 'fragment', 'form_post'])
+    .optional()
+    .describe('Response mode (defaults to form_post for Apple)'),
+  email_conflict_strategy: z
+    .enum(['auto_link', 'require_link'])
+    .default('auto_link')
+    .describe('Email conflict resolution strategy'),
+});
+
+export type AppleOAuthSchema = z.infer<typeof AppleOAuthSchema>;
+
+/**
+ * Generic OAuth provider schema for custom OAuth providers.
+ * Requires all endpoint URLs and userinfo mapping to be specified.
+ */
+export const GenericOAuthSchema = z.object({
+  id: z.string().min(1).describe('Unique identifier for this OAuth provider'),
+  type: z.literal('generic_oauth'),
+  enabled: z.boolean().default(false),
+  display_name: z.string().min(1).describe('Display name shown in UI'),
+  icon_url: z.string().optional().describe('Icon URL shown in UI'),
+  client_id: z.string().min(1).describe('OAuth client ID'),
+  client_secret: z.string().min(1).describe('OAuth client secret'),
+  authorization_url: z.url().describe('Authorization endpoint URL'),
+  token_url: z.url().describe('Token endpoint URL'),
+  userinfo_url: z.url().nullish().describe('UserInfo endpoint URL'),
+  email_url: z
+    .url()
+    .optional()
+    .describe('Additional URL for fetching email (e.g., GitHub)'),
+  scopes: z.array(z.string()).min(1).describe('OAuth scopes to request'),
+  response_mode: z
+    .enum(['query', 'fragment', 'form_post'])
+    .optional()
+    .describe('Response mode'),
+  email_conflict_strategy: z
+    .enum(['auto_link', 'require_link'])
+    .default('auto_link')
+    .describe('Email conflict resolution strategy'),
+  userinfo_mapping: z
+    .object({
+      id: z.string().describe('Field name for user ID'),
+      email: z.string().describe('Field name for email'),
+      email_verified: z
+        .string()
+        .optional()
+        .describe('Field name for email_verified'),
+      name: z.string().optional().describe('Field name for name'),
+      picture: z.string().optional().describe('Field name for picture'),
+    })
+    .describe('Mapping from provider userinfo response to standard fields'),
+});
+
+export type GenericOAuthSchema = z.infer<typeof GenericOAuthSchema>;
+
+/**
+ * OAuth authentication method configuration.
+ * Discriminated union based on 'type' field.
+ * Well-known providers (github, google, apple) use pre-configured endpoints.
+ * Generic OAuth requires all endpoints to be specified.
+ */
+export const AppConfigAuthMethodOAuth = z.discriminatedUnion('type', [
+  GithubOAuthSchema,
+  GoogleOAuthSchema,
+  AppleOAuthSchema,
+  GenericOAuthSchema,
+]);
 
 export type AppConfigAuthMethodOAuth = z.infer<typeof AppConfigAuthMethodOAuth>;
 
 /**
- * OAuth-only authentication method configuration.
- * Used for external OAuth providers (Google, GitHub, Apple, etc.)
+ * OAuth authentication methods configuration.
+ * Array of OAuth provider configurations.
  */
 export const AppConfigOAuthAuthenticationMethods = z
-  .record(z.string(), AppConfigAuthMethodOAuth)
-  .default({});
+  .array(AppConfigAuthMethodOAuth)
+  .default([]);
 
 export type AppConfigOAuthAuthenticationMethods = z.infer<
   typeof AppConfigOAuthAuthenticationMethods
@@ -319,64 +387,93 @@ export type AppConfigOAuthAuthenticationMethods = z.infer<
 
 /**
  * Helper function to get resolved OAuth config with well-known provider defaults.
+ * Resolves well-known provider endpoints and merges with user config.
  */
 export function resolveOAuthConfig(
-  name: string,
   config: AppConfigAuthMethodOAuth,
 ): ResolvedOAuthConfig {
-  const wellKnown = config.provider
-    ? WELL_KNOWN_OAUTH_PROVIDERS[config.provider]
-    : null;
+  // Get well-known provider config if applicable
+  const wellKnown =
+    config.type !== 'generic_oauth'
+      ? WELL_KNOWN_OAUTH_PROVIDERS[config.type]
+      : null;
 
-  const scopes =
-    config.scopes ||
-    (wellKnown?.default_scopes
-      ? [...wellKnown.default_scopes]
-      : ['openid', 'email']);
+  // For generic_oauth, use provided values; for well-known providers, merge with defaults
+  if (config.type === 'generic_oauth') {
+    const result: ResolvedOAuthConfig = {
+      id: config.id,
+      type: config.type,
+      display_name: config.display_name,
+      client_id: config.client_id,
+      client_secret: config.client_secret,
+      authorization_url: config.authorization_url,
+      token_url: config.token_url,
+      userinfo_url: config.userinfo_url ?? null,
+      scopes: config.scopes,
+      email_conflict_strategy: config.email_conflict_strategy,
+      userinfo_mapping: {
+        id: config.userinfo_mapping.id,
+        email: config.userinfo_mapping.email,
+      },
+    };
 
-  const iconUrl = config.icon_url;
-  const emailUrl =
-    config.email_url || (wellKnown as { email_url?: string })?.email_url;
+    if (config.icon_url) result.icon_url = config.icon_url;
+    if (config.email_url) result.email_url = config.email_url;
+    if (config.response_mode) result.response_mode = config.response_mode;
+    if (config.userinfo_mapping.email_verified) {
+      result.userinfo_mapping.email_verified =
+        config.userinfo_mapping.email_verified;
+    }
+    if (config.userinfo_mapping.name) {
+      result.userinfo_mapping.name = config.userinfo_mapping.name;
+    }
+    if (config.userinfo_mapping.picture) {
+      result.userinfo_mapping.picture = config.userinfo_mapping.picture;
+    }
+
+    return result;
+  }
+
+  // Well-known provider (github, google, apple)
+  const scopes = config.scopes || [...(wellKnown?.default_scopes ?? [])];
+  const emailUrl = (wellKnown as { email_url?: string })?.email_url;
   const responseMode =
-    config.response_mode ||
-    (wellKnown as { response_mode?: string })?.response_mode;
-
-  const emailVerified =
-    config.userinfo_mapping?.email_verified ||
-    (wellKnown?.userinfo_mapping as { email_verified?: string })
-      ?.email_verified;
-  const userName =
-    config.userinfo_mapping?.name ||
-    (wellKnown?.userinfo_mapping as { name?: string })?.name;
-  const userPicture =
-    config.userinfo_mapping?.picture ||
-    (wellKnown?.userinfo_mapping as { picture?: string })?.picture;
+    config.type === 'apple'
+      ? config.response_mode ||
+        (wellKnown as { response_mode?: string })?.response_mode
+      : undefined;
 
   const result: ResolvedOAuthConfig = {
-    name,
-    display_name: config.display_name || name,
+    id: config.id,
+    type: config.type,
+    display_name: config.display_name || config.id,
     client_id: config.client_id,
     client_secret: config.client_secret,
-    authorization_url:
-      config.authorization_url || wellKnown?.authorization_url || '',
-    token_url: config.token_url || wellKnown?.token_url || '',
-    userinfo_url: config.userinfo_url ?? wellKnown?.userinfo_url ?? null,
+    authorization_url: wellKnown?.authorization_url || '',
+    token_url: wellKnown?.token_url || '',
+    userinfo_url: wellKnown?.userinfo_url ?? null,
     scopes,
     email_conflict_strategy: config.email_conflict_strategy,
     userinfo_mapping: {
-      id:
-        config.userinfo_mapping?.id || wellKnown?.userinfo_mapping?.id || 'sub',
-      email:
-        config.userinfo_mapping?.email ||
-        wellKnown?.userinfo_mapping?.email ||
-        'email',
+      id: wellKnown?.userinfo_mapping?.id || 'sub',
+      email: wellKnown?.userinfo_mapping?.email || 'email',
     },
   };
 
-  // Add optional fields only if they have values
-  if (iconUrl) result.icon_url = iconUrl;
+  if (config.icon_url) result.icon_url = config.icon_url;
   if (emailUrl) result.email_url = emailUrl;
   if (responseMode) result.response_mode = responseMode;
+
+  const emailVerified = (
+    wellKnown?.userinfo_mapping as { email_verified?: string } | undefined
+  )?.email_verified;
+  const userName = (
+    wellKnown?.userinfo_mapping as { name?: string } | undefined
+  )?.name;
+  const userPicture = (
+    wellKnown?.userinfo_mapping as { picture?: string } | undefined
+  )?.picture;
+
   if (emailVerified) result.userinfo_mapping.email_verified = emailVerified;
   if (userName) result.userinfo_mapping.name = userName;
   if (userPicture) result.userinfo_mapping.picture = userPicture;
@@ -385,7 +482,8 @@ export function resolveOAuthConfig(
 }
 
 export interface ResolvedOAuthConfig {
-  name: string;
+  id: string;
+  type: 'github' | 'google' | 'apple' | 'generic_oauth';
   display_name: string;
   icon_url?: string;
   client_id: string;
@@ -460,7 +558,7 @@ export const ConfigSchema = z.object({
       email_verification: true,
     },
   }),
-  oauth_authentication_methods: AppConfigOAuthAuthenticationMethods.default({}),
+  oauth_authentication_methods: AppConfigOAuthAuthenticationMethods.default([]),
   smtp: z
     .discriminatedUnion('test', [
       AppConfigSmtp.extend({
@@ -494,7 +592,7 @@ export const InternalConfigSchema = z.object({
       email_verification: true,
     },
   }),
-  oauth_authentication_methods: AppConfigOAuthAuthenticationMethods.default({}),
+  oauth_authentication_methods: AppConfigOAuthAuthenticationMethods.default([]),
   smtp: AppConfigSmtp.optional(),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),

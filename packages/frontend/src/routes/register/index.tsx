@@ -121,8 +121,8 @@ function Register() {
     }
   };
 
-  const buildOAuthUrl = (providerName: string) =>
-    getOAuthConnectUrl(providerName, 'register');
+  const buildOAuthUrl = (providerId: string) =>
+    getOAuthConnectUrl(providerId, 'register');
 
   // If registration is disabled, show disabled message
   if (isPublicRegistrationEnabled === false) {

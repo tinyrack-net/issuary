@@ -32,10 +32,10 @@ export default (fastify: FastifyWithZodInstance) =>
       const linkedProviderNames = new Set(accounts.map((a) => a.provider_name));
 
       const availableProviders = enabledProviders.map((provider) => ({
-        name: provider.name,
+        id: provider.id,
         display_name: provider.display_name,
         icon_url: provider.icon_url,
-        linked: linkedProviderNames.has(provider.name),
+        linked: linkedProviderNames.has(provider.id),
       }));
 
       return res.status(200).send({

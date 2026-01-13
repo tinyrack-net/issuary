@@ -133,8 +133,8 @@ function Login() {
     }
   };
 
-  const buildOAuthUrl = (providerName: string) => {
-    let oauthUrl = `/api/v1/oauth/${providerName}/connect?mode=login`;
+  const buildOAuthUrl = (providerId: string) => {
+    let oauthUrl = `/api/v1/oauth/${providerId}/connect?mode=login`;
 
     if (isOAuthFlow(search)) {
       const authUrl = buildAuthorizeUrl(search);

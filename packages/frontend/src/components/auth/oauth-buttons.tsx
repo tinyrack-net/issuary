@@ -1,12 +1,12 @@
 type OAuthProvider = {
-  name: string;
+  id: string;
   display_name: string;
   icon_url?: string;
 };
 
 type OAuthButtonsProps = {
   providers: OAuthProvider[];
-  buildUrl: (providerName: string) => string;
+  buildUrl: (providerId: string) => string;
   className?: string;
 };
 
@@ -23,8 +23,8 @@ export function OAuthButtons({
     <div className={`grid grid-cols-2 gap-2 ${className}`}>
       {providers.map((provider) => (
         <a
-          key={provider.name}
-          href={buildUrl(provider.name)}
+          key={provider.id}
+          href={buildUrl(provider.id)}
           className="btn border-base-300"
         >
           {provider.icon_url && (

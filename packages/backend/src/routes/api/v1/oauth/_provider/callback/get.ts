@@ -69,7 +69,7 @@ export default (fastify: FastifyWithZodInstance) =>
       }
 
       // Validate provider matches
-      if (oauthSession.providerName !== provider) {
+      if (oauthSession.providerId !== provider) {
         throw new e.OAuthProviderNotFound.Error();
       }
 

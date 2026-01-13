@@ -29,9 +29,9 @@ describe('GET /api/v1/config', () => {
     expect(json.basic_authentication_methods).toBeDefined();
     expect(typeof json.basic_authentication_methods).toBe('object');
 
-    // Verify oauth_authentication_methods structure
+    // Verify oauth_authentication_methods structure (now an array)
     expect(json.oauth_authentication_methods).toBeDefined();
-    expect(typeof json.oauth_authentication_methods).toBe('object');
+    expect(Array.isArray(json.oauth_authentication_methods)).toBe(true);
   });
 
   test('should include password authentication method in basic_authentication_methods', async () => {
@@ -91,12 +91,16 @@ describe('GET /api/v1/config', () => {
 
     const json = res.json();
 
-    // Check oauth methods - Google should be enabled in test config
-    if (json.oauth_authentication_methods.google) {
-      expect(json.oauth_authentication_methods.google.type).toBe('oauth');
-      expect(json.oauth_authentication_methods.google.enabled).toBeTypeOf(
-        'boolean',
-      );
+    // Check oauth methods - should be an array
+    expect(Array.isArray(json.oauth_authentication_methods)).toBe(true);
+
+    // Find Google provider in the array (should be enabled in test config)
+    const googleProvider = json.oauth_authentication_methods.find(
+      (m: { id: string }) => m.id === 'google',
+    );
+    if (googleProvider) {
+      expect(googleProvider.type).toBe('google');
+      expect(googleProvider.enabled).toBeTypeOf('boolean');
     }
   });
 

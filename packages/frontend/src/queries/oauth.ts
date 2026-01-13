@@ -6,7 +6,7 @@ import { queryKeys } from './keys';
  * OAuth provider info for login/register pages
  */
 export type OAuthProvider = {
-  name: string;
+  id: string;
   display_name: string;
   icon_url?: string;
 };
@@ -67,8 +67,8 @@ export const oauthAccountsQueryOptions = queryOptions({
  * Mutation options for unlinking an OAuth account
  */
 export const unlinkOAuthMutationOptions = mutationOptions({
-  mutationFn: async (providerName: string) => {
-    const res = await etch(`/api/v1/oauth/${providerName}/link`, {
+  mutationFn: async (providerId: string) => {
+    const res = await etch(`/api/v1/oauth/${providerId}/link`, {
       method: 'DELETE',
     });
     return (await res.json()) as { success: boolean };
@@ -79,12 +79,12 @@ export const unlinkOAuthMutationOptions = mutationOptions({
  * Helper to get OAuth connect URL
  */
 export function getOAuthConnectUrl(
-  providerName: string,
+  providerId: string,
   mode: 'login' | 'register' | 'link' = 'login',
   returnUrl?: string,
 ): string {
   const url = new URL(
-    `/api/v1/oauth/${providerName}/connect`,
+    `/api/v1/oauth/${providerId}/connect`,
     window.location.origin,
   );
   url.searchParams.set('mode', mode);

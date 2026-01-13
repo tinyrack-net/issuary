@@ -47,7 +47,7 @@ export interface OAuthTokens {
 export interface OAuthSessionData {
   state: string;
   codeVerifier: string;
-  providerName: string;
+  providerId: string;
   mode: 'login' | 'register' | 'link';
   returnUrl?: string | undefined;
 }
@@ -70,23 +70,21 @@ export class OAuthConnectService {
    * Get all enabled OAuth providers
    */
   public getEnabledProviders(): Array<{
-    name: string;
+    id: string;
     display_name: string;
     icon_url?: string | undefined;
   }> {
     const providers: Array<{
-      name: string;
+      id: string;
       display_name: string;
       icon_url?: string | undefined;
     }> = [];
 
-    for (const [name, config] of Object.entries(
-      this.config.oauth_authentication_methods,
-    )) {
+    for (const config of this.config.oauth_authentication_methods) {
       if (config.enabled) {
-        const resolved = resolveOAuthConfig(name, config);
+        const resolved = resolveOAuthConfig(config);
         providers.push({
-          name: resolved.name,
+          id: resolved.id,
           display_name: resolved.display_name,
           icon_url: resolved.icon_url,
         });
@@ -97,33 +95,35 @@ export class OAuthConnectService {
   }
 
   /**
-   * Get OAuth provider config by name
+   * Get OAuth provider config by id
    */
-  public getProvider(name: string): ResolvedOAuthConfig {
-    const config = this.config.oauth_authentication_methods[name];
+  public getProvider(id: string): ResolvedOAuthConfig {
+    const config = this.config.oauth_authentication_methods.find(
+      (c) => c.id === id,
+    );
 
     if (!config || !config.enabled) {
       throw new e.OAuthProviderNotFound.Error();
     }
 
-    return resolveOAuthConfig(name, config);
+    return resolveOAuthConfig(config);
   }
 
   /**
    * Generate authorization URL with state and PKCE
    */
   public async generateAuthorizationUrl(
-    providerName: string,
+    providerId: string,
     mode: 'login' | 'register' | 'link',
     returnUrl?: string,
   ): Promise<{ url: string; sessionData: OAuthSessionData }> {
-    const provider = this.getProvider(providerName);
+    const provider = this.getProvider(providerId);
     const pkce = await generatePKCE();
     const state = crypto.randomUUID();
 
     const params = new URLSearchParams({
       client_id: provider.client_id,
-      redirect_uri: `${this.config.app.host}/api/v1/oauth/${providerName}/callback`,
+      redirect_uri: `${this.config.app.host}/api/v1/oauth/${providerId}/callback`,
       response_type: 'code',
       scope: provider.scopes.join(' '),
       state,
@@ -141,7 +141,7 @@ export class OAuthConnectService {
     const sessionData: OAuthSessionData = {
       state,
       codeVerifier: pkce.verifier,
-      providerName,
+      providerId,
       mode,
       returnUrl,
     };
@@ -153,16 +153,16 @@ export class OAuthConnectService {
    * Exchange authorization code for tokens
    */
   public async exchangeCodeForTokens(
-    providerName: string,
+    providerId: string,
     code: string,
     codeVerifier: string,
   ): Promise<OAuthTokens> {
-    const provider = this.getProvider(providerName);
+    const provider = this.getProvider(providerId);
 
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: `${this.config.app.host}/api/v1/oauth/${providerName}/callback`,
+      redirect_uri: `${this.config.app.host}/api/v1/oauth/${providerId}/callback`,
       client_id: provider.client_id,
       client_secret: provider.client_secret,
       code_verifier: codeVerifier,
@@ -189,10 +189,10 @@ export class OAuthConnectService {
    * Fetch user info from OAuth provider
    */
   public async fetchUserInfo(
-    providerName: string,
+    providerId: string,
     accessToken: string,
   ): Promise<OAuthUserInfo> {
-    const provider = this.getProvider(providerName);
+    const provider = this.getProvider(providerId);
 
     // Apple doesn't have a userinfo endpoint - info is in the ID token
     if (!provider.userinfo_url) {
@@ -247,15 +247,15 @@ export class OAuthConnectService {
    * Authenticate with OAuth - login or register user
    */
   public async authenticateWithOAuth(
-    providerName: string,
+    providerId: string,
     tokens: OAuthTokens,
     userInfo: OAuthUserInfo,
   ): Promise<OAuthAuthResult> {
-    const provider = this.getProvider(providerName);
+    const provider = this.getProvider(providerId);
 
     // Check if OAuth account is already linked
     const existingOAuth = await this.mikro.userOAuth.findByProviderUserId(
-      providerName,
+      providerId,
       userInfo.id,
     );
 
@@ -318,7 +318,7 @@ export class OAuthConnectService {
       // Config-managed users can still be linked since they're in DB now
       await this.mikro.userOAuth.linkAccount({
         userId: existingUser.id,
-        providerName,
+        providerName: providerId,
         providerUserId: userInfo.id,
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token || '',
@@ -363,7 +363,7 @@ export class OAuthConnectService {
     // Link OAuth account
     await this.mikro.userOAuth.linkAccount({
       userId: newUser.id,
-      providerName,
+      providerName: providerId,
       providerUserId: userInfo.id,
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token || '',
@@ -395,13 +395,13 @@ export class OAuthConnectService {
    */
   public async linkOAuthAccount(
     userId: string,
-    providerName: string,
+    providerId: string,
     tokens: OAuthTokens,
     userInfo: OAuthUserInfo,
   ): Promise<void> {
     // Check if OAuth account is already linked to another user
     const existingOAuth = await this.mikro.userOAuth.findByProviderUserId(
-      providerName,
+      providerId,
       userInfo.id,
     );
 
@@ -418,7 +418,7 @@ export class OAuthConnectService {
     // Check if already linked
     const existingLink = await this.mikro.userOAuth.findByUserAndProvider(
       userId,
-      providerName,
+      providerId,
     );
 
     if (existingLink) {
@@ -436,7 +436,7 @@ export class OAuthConnectService {
     // Link OAuth account
     await this.mikro.userOAuth.linkAccount({
       userId: user.id,
-      providerName,
+      providerName: providerId,
       providerUserId: userInfo.id,
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token || '',
@@ -451,7 +451,7 @@ export class OAuthConnectService {
    */
   public async unlinkOAuthAccount(
     userId: string,
-    providerName: string,
+    providerId: string,
   ): Promise<void> {
     // Get user from database (config users are now synced to DB)
     const user = await this.mikro.user.findOneOrFail(
@@ -465,7 +465,7 @@ export class OAuthConnectService {
     // Check if OAuth account is linked
     const oauthAccount = await this.mikro.userOAuth.findByUserAndProvider(
       userId,
-      providerName,
+      providerId,
     );
 
     if (!oauthAccount) {
@@ -481,7 +481,7 @@ export class OAuthConnectService {
       throw new e.CannotUnlinkLastAuthMethod.Error();
     }
 
-    await this.mikro.userOAuth.unlinkAccount(userId, providerName);
+    await this.mikro.userOAuth.unlinkAccount(userId, providerId);
   }
 
   /**

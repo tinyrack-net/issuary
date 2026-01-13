@@ -2,7 +2,7 @@ import { LinkIcon } from '@phosphor-icons/react';
 import { useTranslation } from 'react-i18next';
 
 interface OAuthProvider {
-  name: string;
+  id: string;
   display_name: string;
   linked: boolean;
 }
@@ -11,11 +11,11 @@ interface LinkedAccountsSectionProps {
   providers: OAuthProvider[];
   unlinkingProvider: string | null;
   getConnectUrl: (
-    providerName: string,
+    providerId: string,
     mode?: 'login' | 'register' | 'link',
     returnUrl?: string,
   ) => string;
-  onUnlink: (providerName: string) => void;
+  onUnlink: (providerId: string) => void;
 }
 
 export function LinkedAccountsSection({
@@ -42,7 +42,7 @@ export function LinkedAccountsSection({
         <div className="flex flex-col gap-2">
           {providers.map((provider) => (
             <div
-              key={provider.name}
+              key={provider.id}
               className="flex items-center justify-between"
             >
               <div className="flex items-center gap-2">
@@ -60,10 +60,10 @@ export function LinkedAccountsSection({
                 <button
                   type="button"
                   className="btn btn-ghost btn-xs text-error"
-                  disabled={unlinkingProvider === provider.name}
-                  onClick={() => onUnlink(provider.name)}
+                  disabled={unlinkingProvider === provider.id}
+                  onClick={() => onUnlink(provider.id)}
                 >
-                  {unlinkingProvider === provider.name ? (
+                  {unlinkingProvider === provider.id ? (
                     <>
                       <span className="loading loading-spinner loading-xs" />
                       {t('profile.linkedAccounts.unlinking')}
@@ -74,7 +74,7 @@ export function LinkedAccountsSection({
                 </button>
               ) : (
                 <a
-                  href={getConnectUrl(provider.name, 'link', '/profile')}
+                  href={getConnectUrl(provider.id, 'link', '/profile')}
                   className="btn btn-ghost btn-xs text-primary"
                 >
                   {t('profile.linkedAccounts.link')}

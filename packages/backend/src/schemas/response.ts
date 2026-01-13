@@ -50,7 +50,7 @@ const OAuthClient = z
 
 const OAuthProvider = z
   .object({
-    name: z.string(),
+    id: z.string(),
     display_name: z.string(),
     icon_url: z.string().optional(),
   })
@@ -87,7 +87,7 @@ const LinkedOAuthAccount = z
 
 const AvailableOAuthProvider = z
   .object({
-    name: z.string(),
+    id: z.string(),
     display_name: z.string(),
     icon_url: z.string().optional(),
     linked: z.boolean(),
@@ -316,7 +316,8 @@ const BasicAuthenticationMethods = z
 // OAuth authentication method response schema
 const OAuthAuthenticationMethod = z
   .object({
-    type: z.literal('oauth'),
+    id: z.string(),
+    type: z.enum(['github', 'google', 'apple', 'generic_oauth']),
     enabled: z.boolean(),
     display_name: z.string().optional(),
     icon_url: z.string().optional(),
@@ -501,9 +502,6 @@ export const r = {
       enabled: z.boolean(),
     }),
     basic_authentication_methods: BasicAuthenticationMethods,
-    oauth_authentication_methods: z.record(
-      z.string(),
-      OAuthAuthenticationMethod,
-    ),
+    oauth_authentication_methods: z.array(OAuthAuthenticationMethod),
   }),
 };

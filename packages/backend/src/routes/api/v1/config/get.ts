@@ -14,26 +14,25 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (_req, res) => {
-      // Transform oauth_authentication_methods to response format
-      const oauthMethods: Record<
-        string,
-        {
-          type: 'oauth';
-          enabled: boolean;
-          display_name?: string;
-          icon_url?: string;
-        }
-      > = {};
-      for (const [name, config] of Object.entries(
-        fastify.config.oauth_authentication_methods,
-      )) {
+      // Transform oauth_authentication_methods array to response format
+      const oauthMethods: Array<{
+        id: string;
+        type: 'github' | 'google' | 'apple' | 'generic_oauth';
+        enabled: boolean;
+        display_name?: string;
+        icon_url?: string;
+      }> = [];
+
+      for (const config of fastify.config.oauth_authentication_methods) {
         const method: {
-          type: 'oauth';
+          id: string;
+          type: 'github' | 'google' | 'apple' | 'generic_oauth';
           enabled: boolean;
           display_name?: string;
           icon_url?: string;
         } = {
-          type: 'oauth',
+          id: config.id,
+          type: config.type,
           enabled: config.enabled,
         };
         if (config.display_name !== undefined) {
@@ -42,7 +41,7 @@ export default (fastify: FastifyWithZodInstance) => {
         if (config.icon_url !== undefined) {
           method.icon_url = config.icon_url;
         }
-        oauthMethods[name] = method;
+        oauthMethods.push(method);
       }
 
       res.status(200).send({

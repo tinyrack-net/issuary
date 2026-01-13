@@ -72,7 +72,7 @@ describe('GET /api/v1/user/oauth-accounts', () => {
     // Check available_providers structure
     if (json.available_providers.length > 0) {
       const provider = json.available_providers[0];
-      expect(provider.name).toBeTypeOf('string');
+      expect(provider.id).toBeTypeOf('string');
       expect(provider.display_name).toBeTypeOf('string');
       expect(provider.linked).toBeTypeOf('boolean');
       // For user with no linked accounts, all should be false
@@ -134,7 +134,7 @@ describe('GET /api/v1/user/oauth-accounts', () => {
 
     // Google should be marked as linked in available_providers
     const googleProvider = json.available_providers.find(
-      (p: { name: string }) => p.name === 'google',
+      (p: { id: string }) => p.id === 'google',
     );
     expect(googleProvider).toBeDefined();
     expect(googleProvider.linked).toBe(true);

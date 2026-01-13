@@ -56,26 +56,26 @@ export const DEFAULT_TEST_CONFIG: AppConfig = {
       email_verification: true,
     },
   },
-  oauth_authentication_methods: {
-    google: {
-      type: 'oauth',
+  oauth_authentication_methods: [
+    {
+      id: 'google',
+      type: 'google',
       enabled: true,
-      provider: 'google',
       display_name: 'Google',
       client_id: 'test-google-client-id',
       client_secret: 'test-google-client-secret',
       email_conflict_strategy: 'auto_link',
     },
-    github: {
-      type: 'oauth',
+    {
+      id: 'github',
+      type: 'github',
       enabled: false,
-      provider: 'github',
       display_name: 'GitHub',
       client_id: 'test-github-client-id',
       client_secret: 'test-github-client-secret',
       email_conflict_strategy: 'auto_link',
     },
-  },
+  ],
   providers: [
     {
       id: 'test-config-oauth-client',

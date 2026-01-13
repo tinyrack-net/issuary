@@ -51,22 +51,41 @@ basic_authentication_methods:
     email_verification: true
 
 oauth_authentication_methods:
-  github:
-    type: oauth
+  - id: github
+    type: github
     enabled: true
-    provider: github
     display_name: GitHub
     client_id: !env GITHUB_CLIENT_ID
     client_secret: !env GITHUB_CLIENT_SECRET
     email_conflict_strategy: auto_link
-  # google:
-  #   type: oauth
+  # - id: google
+  #   type: google
   #   enabled: false
-  #   provider: google
   #   display_name: Google
   #   client_id: !env GOOGLE_CLIENT_ID
   #   client_secret: !env GOOGLE_CLIENT_SECRET
   #   email_conflict_strategy: auto_link
+  # 
+  # Example: Generic OAuth provider (custom IDP)
+  # - id: custom-idp
+  #   type: generic_oauth
+  #   enabled: false
+  #   display_name: My Custom IDP
+  #   client_id: !env CUSTOM_CLIENT_ID
+  #   client_secret: !env CUSTOM_CLIENT_SECRET
+  #   authorization_url: https://idp.example.com/authorize
+  #   token_url: https://idp.example.com/token
+  #   userinfo_url: https://idp.example.com/userinfo
+  #   scopes:
+  #     - openid
+  #     - email
+  #     - profile
+  #   userinfo_mapping:
+  #     id: sub
+  #     email: email
+  #     email_verified: email_verified
+  #     name: name
+  #     picture: picture
 
 providers:
   - id: test-config-oauth-client

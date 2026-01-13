@@ -41,6 +41,16 @@ export type Theme =
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
+export type OAuthProviderType = 'github' | 'google' | 'apple' | 'generic_oauth';
+
+export type OAuthAuthenticationMethod = {
+  id: string;
+  type: OAuthProviderType;
+  enabled: boolean;
+  display_name?: string;
+  icon_url?: string;
+};
+
 export type AppConfigs = {
   app: {
     supported_languages: string[];
@@ -68,12 +78,7 @@ export type AppConfigs = {
       email_verification: boolean;
     };
   };
-  oauth_authentication_methods: Record<
-    string,
-    {
-      enabled: boolean;
-    }
-  >;
+  oauth_authentication_methods: OAuthAuthenticationMethod[];
 };
 
 export const appConfigQueryOptions = queryOptions({

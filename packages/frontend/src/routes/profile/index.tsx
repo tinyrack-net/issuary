@@ -87,17 +87,17 @@ function Profile() {
     },
   });
 
-  const handleUnlink = async (providerName: string) => {
+  const handleUnlink = async (providerId: string) => {
     if (
       !window.confirm(
-        t('profile.linkedAccounts.unlinkConfirm', { provider: providerName }),
+        t('profile.linkedAccounts.unlinkConfirm', { provider: providerId }),
       )
     ) {
       return;
     }
-    setUnlinkingProvider(providerName);
+    setUnlinkingProvider(providerId);
     try {
-      await unlinkMutation.mutateAsync(providerName);
+      await unlinkMutation.mutateAsync(providerId);
     } catch {
       alert(t('profile.linkedAccounts.unlinkError'));
     }

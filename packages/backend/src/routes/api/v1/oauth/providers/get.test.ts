@@ -31,7 +31,7 @@ describe('GET /api/v1/oauth/providers', () => {
     // If there are providers, check their structure
     if (json.providers.length > 0) {
       const provider = json.providers[0];
-      expect(provider.name).toBeTypeOf('string');
+      expect(provider.id).toBeTypeOf('string');
       expect(provider.display_name).toBeTypeOf('string');
       // icon_url is optional
       if (provider.icon_url !== undefined) {
@@ -63,7 +63,7 @@ describe('GET /api/v1/oauth/providers', () => {
 
     // In test config, google should be enabled
     const googleProvider = json.providers.find(
-      (p: { name: string }) => p.name === 'google',
+      (p: { id: string }) => p.id === 'google',
     );
     expect(googleProvider).toBeDefined();
     expect(googleProvider.display_name).toBe('Google');
