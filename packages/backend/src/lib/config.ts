@@ -87,6 +87,11 @@ export const AppConfigApp = z.object({
     .enum(['light', 'dark', 'system'])
     .default('system')
     .describe('Default theme mode'),
+  background_url: z
+    .string()
+    .url()
+    .optional()
+    .describe('Background image URL for authentication pages'),
 });
 
 export type AppConfigApp = z.infer<typeof AppConfigApp>;

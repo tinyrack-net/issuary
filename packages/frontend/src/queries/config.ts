@@ -48,6 +48,7 @@ export type AppConfigs = {
     light_theme: Theme;
     dark_theme: Theme;
     theme_mode: ThemeMode;
+    background_url?: string;
   };
   database: {
     enabled: boolean;

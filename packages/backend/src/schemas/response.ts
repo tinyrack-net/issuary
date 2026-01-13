@@ -487,6 +487,7 @@ export const r = {
       light_theme: AppTheme,
       dark_theme: AppTheme,
       theme_mode: z.enum(['light', 'dark', 'system']),
+      background_url: z.string().url().optional(),
     }),
     database: z.object({
       enabled: z.boolean(),

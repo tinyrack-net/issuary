@@ -1,9 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { LanguageSelector } from '@/components/ui/language-selector.js';
 import { ThemeToggle } from '@/components/ui/theme-toggle.js';
 import { useTheme } from '@/hooks/use-theme.js';
-
-const AUTH_BACKGROUND_URL =
-  'https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2071';
+import { appConfigQueryOptions } from '@/queries/config.js';
 
 type AuthPageLayoutProps = {
   children: React.ReactNode;
@@ -13,13 +12,20 @@ export function AuthPageLayout({ children }: AuthPageLayoutProps) {
   const { themeMode, currentTheme, darkTheme, canToggleTheme, toggleDarkMode } =
     useTheme();
   const isDark = currentTheme === darkTheme;
+  const { data: configData } = useQuery(appConfigQueryOptions);
+
+  const backgroundUrl = configData?.app.background_url;
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center bg-cover p-4"
-      style={{
-        backgroundImage: `url(${AUTH_BACKGROUND_URL})`,
-      }}
+      className="flex min-h-screen items-center justify-center bg-base-200 bg-cover p-4"
+      style={
+        backgroundUrl
+          ? {
+              backgroundImage: `url(${backgroundUrl})`,
+            }
+          : undefined
+      }
     >
       {canToggleTheme && (
         <ThemeToggle
