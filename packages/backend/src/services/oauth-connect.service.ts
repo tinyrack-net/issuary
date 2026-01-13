@@ -2,7 +2,6 @@ import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import {
   type AppConfig,
-  type AppConfigAuthMethodOAuth,
   type ResolvedOAuthConfig,
   resolveOAuthConfig,
 } from '@/lib/config.js';
@@ -11,7 +10,7 @@ import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
 
-// Note: This service uses fastify.config for authentication_methods (OAuth providers config)
+// Note: This service uses fastify.config for oauth_authentication_methods (OAuth providers config)
 // but user-related config lookups have been removed since users are now synced to DB.
 
 declare module 'fastify' {
@@ -82,13 +81,10 @@ export class OAuthConnectService {
     }> = [];
 
     for (const [name, config] of Object.entries(
-      this.config.authentication_methods,
+      this.config.oauth_authentication_methods,
     )) {
-      if (config.type === 'oauth' && config.enabled) {
-        const resolved = resolveOAuthConfig(
-          name,
-          config as AppConfigAuthMethodOAuth,
-        );
+      if (config.enabled) {
+        const resolved = resolveOAuthConfig(name, config);
         providers.push({
           name: resolved.name,
           display_name: resolved.display_name,
@@ -104,9 +100,9 @@ export class OAuthConnectService {
    * Get OAuth provider config by name
    */
   public getProvider(name: string): ResolvedOAuthConfig {
-    const config = this.config.authentication_methods[name];
+    const config = this.config.oauth_authentication_methods[name];
 
-    if (!config || config.type !== 'oauth' || !config.enabled) {
+    if (!config || !config.enabled) {
       throw new e.OAuthProviderNotFound.Error();
     }
 

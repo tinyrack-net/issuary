@@ -22,7 +22,7 @@ export const Route = createFileRoute('/forgot-password/')({
       appConfigQueryOptions,
     );
     const isPasswordAuthEnabled =
-      config?.authentication_methods?.password?.enabled;
+      config?.basic_authentication_methods.password.enabled;
     if (!isPasswordAuthEnabled) {
       throw redirect({ to: '/login' });
     }

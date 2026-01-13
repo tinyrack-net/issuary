@@ -39,26 +39,26 @@ smtp:
   from: "tester@tinyrack.net"
   test: false
 
-authentication_methods:
+basic_authentication_methods:
   password:
-    type: password
     enabled: true
     email_verification: true
     totp:
       enabled: false
       required: false
   passkey:
-    type: passkey
     enabled: false
     email_verification: true
-  # github:
-  #   type: oauth
-  #   enabled: true
-  #   provider: github
-  #   display_name: GitHub
-  #   client_id: !env GITHUB_CLIENT_ID
-  #   client_secret: !env GITHUB_CLIENT_SECRET
-  #   email_conflict_strategy: auto_link
+
+oauth_authentication_methods:
+  github:
+    type: oauth
+    enabled: true
+    provider: github
+    display_name: GitHub
+    client_id: !env GITHUB_CLIENT_ID
+    client_secret: !env GITHUB_CLIENT_SECRET
+    email_conflict_strategy: auto_link
   # google:
   #   type: oauth
   #   enabled: false

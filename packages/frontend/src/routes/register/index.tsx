@@ -49,7 +49,7 @@ function Register() {
   const oauthProviders = oauthProvidersData?.providers || [];
 
   const isPasswordAuthEnabled =
-    configData?.authentication_methods?.password?.enabled;
+    configData?.basic_authentication_methods.password.enabled;
   const isPublicRegistrationEnabled = configData?.app.public_registration;
 
   const registerSchema = useMemo(

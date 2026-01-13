@@ -53,8 +53,9 @@ function Login() {
   const oauthProviders = oauthProvidersData?.providers || [];
 
   const isPasswordAuthEnabled =
-    configData?.authentication_methods?.password?.enabled;
-  const isPasskeyEnabled = configData?.authentication_methods?.passkey?.enabled;
+    configData?.basic_authentication_methods.password.enabled;
+  const isPasskeyEnabled =
+    configData?.basic_authentication_methods.passkey.enabled;
 
   const loginSchema = useMemo(
     () =>

@@ -41,7 +41,7 @@ export class PasskeyService {
 
   public constructor(
     private readonly mikro: MikroService,
-    config: AppConfig,
+    private readonly config: AppConfig,
   ) {
     const hostUrl = new URL(config.app.host);
     this.rpName = 'TinyRack Auth';
@@ -52,12 +52,8 @@ export class PasskeyService {
   /**
    * Check if passkey authentication is enabled in config
    */
-  public isEnabled(config: AppConfig): boolean {
-    const passkeyMethod = config.authentication_methods?.['passkey'];
-    if (passkeyMethod?.type !== 'passkey') {
-      return false;
-    }
-    return passkeyMethod.enabled ?? false;
+  public isEnabled(): boolean {
+    return this.config.basic_authentication_methods.passkey.enabled;
   }
 
   /**

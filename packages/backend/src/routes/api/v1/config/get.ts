@@ -14,6 +14,37 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (_req, res) => {
+      // Transform oauth_authentication_methods to response format
+      const oauthMethods: Record<
+        string,
+        {
+          type: 'oauth';
+          enabled: boolean;
+          display_name?: string;
+          icon_url?: string;
+        }
+      > = {};
+      for (const [name, config] of Object.entries(
+        fastify.config.oauth_authentication_methods,
+      )) {
+        const method: {
+          type: 'oauth';
+          enabled: boolean;
+          display_name?: string;
+          icon_url?: string;
+        } = {
+          type: 'oauth',
+          enabled: config.enabled,
+        };
+        if (config.display_name !== undefined) {
+          method.display_name = config.display_name;
+        }
+        if (config.icon_url !== undefined) {
+          method.icon_url = config.icon_url;
+        }
+        oauthMethods[name] = method;
+      }
+
       res.status(200).send({
         app: {
           public_registration: fastify.config.app.public_registration,
@@ -28,7 +59,9 @@ export default (fastify: FastifyWithZodInstance) => {
         database: {
           enabled: !!fastify.config.database?.type,
         },
-        authentication_methods: fastify.config.authentication_methods,
+        basic_authentication_methods:
+          fastify.config.basic_authentication_methods,
+        oauth_authentication_methods: oauthMethods,
       });
     },
   });

@@ -550,7 +550,10 @@ const user = await this.findOneOrFail(
   - `admin`: Admin interface settings
   - `database`: Database connection (SQLite, PostgreSQL, or in-memory)
   - `smtp`: Email service configuration
-  - `authentication_methods`: Enabled auth methods (password, OAuth, etc.)
+  - `basic_authentication_methods`: Password and passkey authentication settings (fixed structure)
+    - `password`: Password-based auth settings (enabled, email_verification, totp)
+    - `passkey`: Passkey/WebAuthn settings (enabled, email_verification)
+  - `oauth_authentication_methods`: External OAuth providers (Google, GitHub, Apple, custom)
   - `providers`: Pre-configured OAuth clients
   - `users`: Pre-seeded users
 

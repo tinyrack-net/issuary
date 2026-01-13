@@ -25,18 +25,15 @@ export function LanguageSelector({
 
   return (
     <div className={`dropdown dropdown-top dropdown-end ${className}`}>
-      <div
+      <button
+        type="button"
         tabIndex={0}
-        role="button"
         className="btn btn-circle btn-sm"
         aria-label={t('common.language.select')}
       >
         <GlobeSimpleIcon className="size-4" weight="fill" />
-      </div>
-      <ul
-        tabIndex={0}
-        className="menu dropdown-content z-[1] mb-2 w-40 rounded-box bg-base-100 p-2 shadow"
-      >
+      </button>
+      <ul className="menu dropdown-content z-[1] mb-2 w-40 rounded-box bg-base-100 p-2 shadow">
         {languages.map((lang) => (
           <li key={lang}>
             <button

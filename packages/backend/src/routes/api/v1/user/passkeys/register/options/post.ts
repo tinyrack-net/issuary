@@ -20,7 +20,7 @@ export default (fastify: FastifyWithZodInstance) =>
     },
     handler: async (req, res) => {
       // Check if passkey is enabled
-      if (!fastify.passkeyService.isEnabled(fastify.config)) {
+      if (!fastify.passkeyService.isEnabled()) {
         throw new e.PasskeyNotEnabled.Error();
       }
 

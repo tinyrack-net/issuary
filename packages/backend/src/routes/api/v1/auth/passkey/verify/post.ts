@@ -28,7 +28,7 @@ export default (fastify: FastifyWithZodInstance) =>
     },
     handler: async (req, res) => {
       // Check if passkey is enabled
-      if (!fastify.passkeyService.isEnabled(fastify.config)) {
+      if (!fastify.passkeyService.isEnabled()) {
         throw new e.PasskeyNotEnabled.Error();
       }
 
@@ -62,12 +62,11 @@ export default (fastify: FastifyWithZodInstance) =>
 
       // Check if TOTP is required (only for database-managed users)
       const passwordAuthMethod =
-        fastify.config.authentication_methods?.['password'];
+        fastify.config.basic_authentication_methods.password;
       const isConfigManaged = sessionUser.managed === 'config';
 
       const totpRequired =
         !isConfigManaged &&
-        passwordAuthMethod?.type === 'password' &&
         (passwordAuthMethod.totp?.required ?? false) &&
         !sessionUser.totp_enabled;
 

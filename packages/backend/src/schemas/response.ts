@@ -4,7 +4,11 @@ import type {
   PublicKeyCredentialRequestOptionsJSON as SimpleWebAuthnRequestOptionsJSON,
 } from '@simplewebauthn/server';
 import z from 'zod/v4';
-import { AppTheme } from '@/lib/config.js';
+import {
+  AppConfigPasskeyAuth,
+  AppConfigPasswordAuth,
+  AppTheme,
+} from '@/lib/config.js';
 import { f } from './field.js';
 import { oauthSchema } from './oauth.js';
 
@@ -301,6 +305,24 @@ const AuthenticationResponseJSON = z
   })
   .describe('WebAuthn authentication response');
 
+// Basic authentication methods response schema (fixed structure)
+const BasicAuthenticationMethods = z
+  .object({
+    password: AppConfigPasswordAuth,
+    passkey: AppConfigPasskeyAuth,
+  })
+  .describe('Basic Authentication Methods');
+
+// OAuth authentication method response schema
+const OAuthAuthenticationMethod = z
+  .object({
+    type: z.literal('oauth'),
+    enabled: z.boolean(),
+    display_name: z.string().optional(),
+    icon_url: z.string().optional(),
+  })
+  .describe('OAuth Authentication Method');
+
 export const r = {
   // Base schemas
   UserSession,
@@ -478,23 +500,10 @@ export const r = {
     database: z.object({
       enabled: z.boolean(),
     }),
-    authentication_methods: z.record(
+    basic_authentication_methods: BasicAuthenticationMethods,
+    oauth_authentication_methods: z.record(
       z.string(),
-      z
-        .object({
-          enabled: z.boolean(),
-          type: z.string(),
-          // Password auth method specific fields
-          totp: z
-            .object({
-              enabled: z.boolean(),
-              required: z.boolean(),
-            })
-            .optional(),
-          // Passkey auth method specific field
-          email_verification: z.boolean().optional(),
-        })
-        .passthrough(),
+      OAuthAuthenticationMethod,
     ),
   }),
 };

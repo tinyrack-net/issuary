@@ -10,9 +10,8 @@ import {
 
 const app = setupTestServer({
   configOverrides: {
-    authentication_methods: {
+    basic_authentication_methods: {
       passkey: {
-        type: 'passkey',
         enabled: true,
         email_verification: true,
       },

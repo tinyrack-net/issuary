@@ -193,10 +193,9 @@ export const WELL_KNOWN_OAUTH_PROVIDERS = {
 export type WellKnownOAuthProvider = keyof typeof WELL_KNOWN_OAUTH_PROVIDERS;
 
 /**
- * Password-based authentication method configuration.
+ * Password authentication configuration (fixed type).
  */
-export const AppConfigAuthMethodPassword = z.object({
-  type: z.literal('password'),
+export const AppConfigPasswordAuth = z.object({
   enabled: z.boolean().default(true),
   email_verification: z.boolean().default(true),
   totp: z
@@ -207,21 +206,35 @@ export const AppConfigAuthMethodPassword = z.object({
     .optional(),
 });
 
-export type AppConfigAuthMethodPassword = z.infer<
-  typeof AppConfigAuthMethodPassword
->;
+export type AppConfigPasswordAuth = z.infer<typeof AppConfigPasswordAuth>;
 
 /**
- * Passkey (WebAuthn) authentication method configuration.
+ * Passkey (WebAuthn) authentication configuration (fixed type).
  */
-export const AppConfigAuthMethodPasskey = z.object({
-  type: z.literal('passkey'),
+export const AppConfigPasskeyAuth = z.object({
   enabled: z.boolean().default(false),
   email_verification: z.boolean().default(true),
 });
 
-export type AppConfigAuthMethodPasskey = z.infer<
-  typeof AppConfigAuthMethodPasskey
+export type AppConfigPasskeyAuth = z.infer<typeof AppConfigPasskeyAuth>;
+
+/**
+ * Basic authentication methods configuration (fixed structure).
+ * Contains password and passkey authentication settings.
+ */
+export const AppConfigBasicAuthenticationMethods = z.object({
+  password: AppConfigPasswordAuth.default({
+    enabled: true,
+    email_verification: true,
+  }),
+  passkey: AppConfigPasskeyAuth.default({
+    enabled: false,
+    email_verification: true,
+  }),
+});
+
+export type AppConfigBasicAuthenticationMethods = z.infer<
+  typeof AppConfigBasicAuthenticationMethods
 >;
 
 /**
@@ -293,16 +306,15 @@ export const AppConfigAuthMethodOAuth = z
 export type AppConfigAuthMethodOAuth = z.infer<typeof AppConfigAuthMethodOAuth>;
 
 /**
- * Authentication method configuration - supports password, passkey, and OAuth methods.
+ * OAuth-only authentication method configuration.
+ * Used for external OAuth providers (Google, GitHub, Apple, etc.)
  */
-export const AppConfigAuthenticationMethod = z.discriminatedUnion('type', [
-  AppConfigAuthMethodPassword,
-  AppConfigAuthMethodPasskey,
-  AppConfigAuthMethodOAuth,
-]);
+export const AppConfigOAuthAuthenticationMethods = z
+  .record(z.string(), AppConfigAuthMethodOAuth)
+  .default({});
 
-export type AppConfigAuthenticationMethod = z.infer<
-  typeof AppConfigAuthenticationMethod
+export type AppConfigOAuthAuthenticationMethods = z.infer<
+  typeof AppConfigOAuthAuthenticationMethods
 >;
 
 /**
@@ -438,15 +450,17 @@ export const ConfigSchema = z.object({
     type: 'sqlite',
     path: 'test.db',
   }),
-  authentication_methods: z
-    .record(z.string(), AppConfigAuthenticationMethod)
-    .default({
-      password: {
-        type: 'password',
-        enabled: true,
-        email_verification: true,
-      },
-    }),
+  basic_authentication_methods: AppConfigBasicAuthenticationMethods.default({
+    password: {
+      enabled: true,
+      email_verification: true,
+    },
+    passkey: {
+      enabled: false,
+      email_verification: true,
+    },
+  }),
+  oauth_authentication_methods: AppConfigOAuthAuthenticationMethods.default({}),
   smtp: z
     .discriminatedUnion('test', [
       AppConfigSmtp.extend({
@@ -470,15 +484,17 @@ export const InternalConfigSchema = z.object({
     type: 'sqlite',
     path: 'test.db',
   }),
-  authentication_methods: z
-    .record(z.string(), AppConfigAuthenticationMethod)
-    .default({
-      password: {
-        type: 'password',
-        enabled: true,
-        email_verification: true,
-      },
-    }),
+  basic_authentication_methods: AppConfigBasicAuthenticationMethods.default({
+    password: {
+      enabled: true,
+      email_verification: true,
+    },
+    passkey: {
+      enabled: false,
+      email_verification: true,
+    },
+  }),
+  oauth_authentication_methods: AppConfigOAuthAuthenticationMethods.default({}),
   smtp: AppConfigSmtp.optional(),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),

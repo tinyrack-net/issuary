@@ -55,18 +55,23 @@ export type AppConfigs = {
   database: {
     enabled: boolean;
   };
-  authentication_methods: Record<
-    string,
-    {
+  basic_authentication_methods: {
+    password: {
       enabled: boolean;
-      type: string;
-      // Password auth method specific field
-      totp?: {
+      totp: {
         enabled: boolean;
         required: boolean;
       };
-      // Passkey auth method specific field
-      email_verification?: boolean;
+    };
+    passkey: {
+      enabled: boolean;
+      email_verification: boolean;
+    };
+  };
+  oauth_authentication_methods: Record<
+    string,
+    {
+      enabled: boolean;
     }
   >;
 };

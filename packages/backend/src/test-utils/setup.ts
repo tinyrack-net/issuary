@@ -42,9 +42,8 @@ export const DEFAULT_TEST_CONFIG: AppConfig = {
     from: 'test@ethereal.email',
     test: true,
   },
-  authentication_methods: {
+  basic_authentication_methods: {
     password: {
-      type: 'password',
       enabled: true,
       email_verification: true,
       totp: {
@@ -53,10 +52,11 @@ export const DEFAULT_TEST_CONFIG: AppConfig = {
       },
     },
     passkey: {
-      type: 'passkey',
       enabled: false,
       email_verification: true,
     },
+  },
+  oauth_authentication_methods: {
     google: {
       type: 'oauth',
       enabled: true,

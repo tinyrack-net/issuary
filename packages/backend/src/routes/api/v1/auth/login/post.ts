@@ -35,12 +35,11 @@ export default (fastify: FastifyWithZodInstance) =>
 
       // Check if TOTP or Passkey is required (only for database-managed users)
       const passwordAuthMethod =
-        fastify.config.authentication_methods?.['password'];
+        fastify.config.basic_authentication_methods.password;
       const isConfigManaged = user.managed === 'config';
 
       const totpRequired =
         !isConfigManaged &&
-        passwordAuthMethod?.type === 'password' &&
         (passwordAuthMethod.totp?.required ?? false) &&
         !user.totp_enabled;
 

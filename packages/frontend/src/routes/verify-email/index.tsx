@@ -44,7 +44,7 @@ export const Route = createFileRoute('/verify-email/')({
       appConfigQueryOptions,
     );
     const isPasswordAuthEnabled =
-      config?.authentication_methods?.password?.enabled;
+      config.basic_authentication_methods.password.enabled;
     if (!isPasswordAuthEnabled) {
       throw redirect({ to: '/login' });
     }
