@@ -30,11 +30,6 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      // Check if passkey is enabled
-      if (!fastify.passkeyService.isEnabled()) {
-        throw new e.PasskeyNotEnabled.Error();
-      }
-
       // Get challenge from session
       const challenge = req.session.get('passkey_challenge');
       if (!challenge) {

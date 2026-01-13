@@ -29,11 +29,6 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      // Check if passkey is enabled
-      if (!fastify.passkeyService.isEnabled()) {
-        throw new e.PasskeyNotEnabled.Error();
-      }
-
       const userSession = await req.auth.verify();
 
       // Rename passkey

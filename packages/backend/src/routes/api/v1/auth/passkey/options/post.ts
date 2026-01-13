@@ -20,11 +20,6 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      // Check if passkey is enabled
-      if (!fastify.passkeyService.isEnabled()) {
-        throw new e.PasskeyNotEnabled.Error();
-      }
-
       // Generate authentication options (usernameless - allow any discoverable credential)
       const options =
         await fastify.passkeyService.generateAuthenticationOptions();
