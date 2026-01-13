@@ -1,27 +1,8 @@
-import z from 'zod/v4';
 import type { RegistrationResponseJSON } from '@simplewebauthn/server';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
-
-/**
- * Zod schema for WebAuthn RegistrationResponseJSON
- * Uses passthrough() to accept the full WebAuthn response structure
- */
-const RegistrationResponseSchema = z
-  .object({
-    id: z.string(),
-    rawId: z.string(),
-    response: z
-      .object({
-        clientDataJSON: z.string(),
-        attestationObject: z.string(),
-      })
-      .passthrough(),
-    type: z.literal('public-key'),
-  })
-  .passthrough();
 
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
@@ -31,17 +12,12 @@ export default (fastify: FastifyWithZodInstance) =>
       summary: 'Verify Passkey Registration',
       description: 'Verify and complete passkey registration',
       tags: [TAGS.USER],
-      body: z.object({
-        response: RegistrationResponseSchema,
-        name: z.string().max(100).optional(),
-      }),
+      body: r.PasskeyRegistrationBody,
       response: {
         200: r.SuccessResponse,
-        400: z.union([
-          e.PasskeyNotEnabled.Schema,
+        400: e.PasskeyNotEnabled.Schema.or(
           e.PasskeyChallengeNotFound.Schema,
-          e.PasskeyVerificationFailed.Schema,
-        ]),
+        ).or(e.PasskeyVerificationFailed.Schema),
         401: e.Unauthorized.Schema,
         409: e.PasskeyAlreadyExists.Schema,
       },
@@ -67,8 +43,8 @@ export default (fastify: FastifyWithZodInstance) =>
 
       // The validated body already conforms to RegistrationResponseJSON structure
       // Use type assertion since Zod validation guarantees the structure
-      const registrationResponse =
-        req.body.response as unknown as RegistrationResponseJSON;
+      const registrationResponse = req.body
+        .response as unknown as RegistrationResponseJSON;
 
       // Verify registration
       await fastify.passkeyService.verifyRegistration(

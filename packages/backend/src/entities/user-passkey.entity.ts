@@ -90,7 +90,8 @@ export class UserPasskeyEntity extends BaseEntity {
   @Property({
     type: t.json,
     name: 'transports',
-    comment: 'Supported authenticator transports (usb, ble, nfc, internal, etc)',
+    comment:
+      'Supported authenticator transports (usb, ble, nfc, internal, etc)',
     nullable: true,
     default: null,
   })

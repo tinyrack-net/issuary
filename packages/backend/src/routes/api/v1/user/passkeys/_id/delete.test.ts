@@ -35,7 +35,7 @@ async function createDbUserWithSession(
   await withMikroContext(app, async () => {
     const user = app.mikro.user.create({
       email,
-      password_hash: options?.hasPassword === false ? undefined : password,
+      password_hash: options?.hasPassword === false ? null : password,
     });
     user.email_verified = true;
     await app.mikro.em.persist(user).flush();
@@ -96,6 +96,7 @@ async function linkOAuthAccount(userId: string): Promise<void> {
       provider_user_id: `google-${crypto.randomUUID()}`,
       access_token: 'test-access-token',
       refresh_token: 'test-refresh-token',
+      expires_at: null,
     });
     await app.mikro.em.persist(oauthAccount).flush();
   });
@@ -479,7 +480,7 @@ describe('DELETE /api/v1/user/passkeys/:id - Last auth method protection', () =>
         { id: userId },
         { populate: ['password_hash'] },
       );
-      user.password_hash = undefined;
+      user.password_hash = null;
       await app.mikro.em.flush();
     });
 
@@ -524,7 +525,7 @@ describe('DELETE /api/v1/user/passkeys/:id - Last auth method protection', () =>
         { id: userId },
         { populate: ['password_hash'] },
       );
-      user.password_hash = undefined;
+      user.password_hash = null;
       await app.mikro.em.flush();
     });
 

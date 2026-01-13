@@ -1,6 +1,6 @@
-import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
+import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) =>
@@ -13,10 +13,7 @@ export default (fastify: FastifyWithZodInstance) =>
         'Generate WebAuthn registration options for registering a new passkey',
       tags: [TAGS.USER],
       response: {
-        200: z.object({
-          // PublicKeyCredentialCreationOptionsJSON from @simplewebauthn/server
-          options: z.any(),
-        }),
+        200: r.PasskeyRegistrationOptionsResponse,
         400: e.PasskeyNotEnabled.Schema,
         401: e.Unauthorized.Schema,
       },

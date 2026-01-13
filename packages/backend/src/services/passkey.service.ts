@@ -1,4 +1,8 @@
-import fastifyPlugin from 'fastify-plugin';
+import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
+import type { UserEntity } from '@/entities/user.entity.js';
+import type { AppConfig } from '@/lib/config.js';
+import type { MikroService } from '@/plugins/mikro-orm.js';
+import { e } from '@/schemas/error.js';
 import {
   generateAuthenticationOptions,
   generateRegistrationOptions,
@@ -13,11 +17,7 @@ import type {
   RegistrationResponseJSON,
 } from '@simplewebauthn/server';
 import { isoBase64URL } from '@simplewebauthn/server/helpers';
-import type { MikroService } from '@/plugins/mikro-orm.js';
-import { e } from '@/schemas/error.js';
-import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
-import type { UserEntity } from '@/entities/user.entity.js';
-import type { AppConfig } from '@/lib/config.js';
+import fastifyPlugin from 'fastify-plugin';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -39,10 +39,7 @@ export class PasskeyService {
   private readonly rpId: string;
   private readonly origin: string;
 
-  public constructor(
-    private readonly mikro: MikroService,
-    config: AppConfig,
-  ) {
+  public constructor(private readonly mikro: MikroService, config: AppConfig) {
     const hostUrl = new URL(config.app.host);
     this.rpName = 'TinyRack Auth';
     this.rpId = hostUrl.hostname;
@@ -130,9 +127,10 @@ export class PasskeyService {
       counter: Number(credential.counter),
       device_type: credentialDeviceType,
       backed_up: credentialBackedUp,
-      transports: (response.response.transports as
-        | AuthenticatorTransportFuture[]
-        | undefined) ?? null,
+      transports:
+        (response.response.transports as
+          | AuthenticatorTransportFuture[]
+          | undefined) ?? null,
       name: passkeyName ?? null,
       aaguid: verification.registrationInfo.aaguid ?? null,
     });

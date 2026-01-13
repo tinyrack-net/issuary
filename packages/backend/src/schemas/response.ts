@@ -1,5 +1,9 @@
 import z from 'zod/v4';
-import type { PublicKeyCredentialRequestOptionsJSON as SimpleWebAuthnOptionsJSON } from '@simplewebauthn/server';
+import type {
+  PublicKeyCredentialCreationOptionsJSON as SimpleWebAuthnCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON as SimpleWebAuthnRequestOptionsJSON,
+  RegistrationResponseJSON as SimpleWebAuthnRegistrationResponseJSON,
+} from '@simplewebauthn/server';
 import { AppTheme } from '@/lib/config.js';
 import { f } from './field.js';
 
@@ -133,12 +137,90 @@ const PublicKeyCredentialDescriptorJSON = z
   .describe('Public key credential descriptor');
 
 /**
+ * PublicKeyCredentialRpEntityJSON schema
+ * @see https://w3c.github.io/webauthn/#dictdef-publickeycredentialrpentity
+ */
+const PublicKeyCredentialRpEntityJSON = z
+  .object({
+    name: z.string().describe('Relying Party name'),
+    id: z.string().optional().describe('Relying Party identifier'),
+  })
+  .describe('Relying Party entity');
+
+/**
+ * PublicKeyCredentialUserEntityJSON schema
+ * @see https://w3c.github.io/webauthn/#dictdef-publickeycredentialuserentityjson
+ */
+const PublicKeyCredentialUserEntityJSON = z
+  .object({
+    id: f.base64UrlString.describe('User handle'),
+    name: z.string().describe('User account identifier'),
+    displayName: z.string().describe('User display name'),
+  })
+  .describe('User entity');
+
+/**
+ * PublicKeyCredentialParametersJSON schema
+ * @see https://w3c.github.io/webauthn/#dictdef-publickeycredentialparameters
+ */
+const PublicKeyCredentialParametersJSON = z
+  .object({
+    type: f.publicKeyCredentialType,
+    alg: z.number().int().describe('COSE Algorithm Identifier'),
+  })
+  .describe('Public key credential parameters');
+
+/**
+ * AuthenticatorSelectionCriteria schema
+ * @see https://w3c.github.io/webauthn/#dictdef-authenticatorselectioncriteria
+ */
+const AuthenticatorSelectionCriteria = z
+  .object({
+    authenticatorAttachment: f.authenticatorAttachment.optional(),
+    residentKey: z
+      .enum(['required', 'preferred', 'discouraged'])
+      .optional()
+      .describe('Resident key requirement'),
+    requireResidentKey: z
+      .boolean()
+      .optional()
+      .describe('Deprecated: use residentKey instead'),
+    userVerification: f.userVerificationRequirement.optional(),
+  })
+  .describe('Authenticator selection criteria');
+
+/**
+ * PublicKeyCredentialCreationOptionsJSON schema
+ * Used for registration options sent to the browser
+ * @see https://w3c.github.io/webauthn/#dictdef-publickeycredentialcreationoptionsjson
+ */
+const PublicKeyCredentialCreationOptionsJSON = z
+  .looseObject({
+    rp: PublicKeyCredentialRpEntityJSON,
+    user: PublicKeyCredentialUserEntityJSON,
+    challenge: f.passkeyChallenge,
+    pubKeyCredParams: z.array(PublicKeyCredentialParametersJSON),
+    timeout: z.number().int().optional().describe('Timeout in milliseconds'),
+    excludeCredentials: z
+      .array(PublicKeyCredentialDescriptorJSON)
+      .optional()
+      .describe('Credentials to exclude'),
+    authenticatorSelection: AuthenticatorSelectionCriteria.optional(),
+    attestation: z
+      .enum(['none', 'indirect', 'direct', 'enterprise'])
+      .optional()
+      .describe('Attestation conveyance preference'),
+    extensions: z.looseObject({}).optional(),
+  })
+  .describe('WebAuthn registration options');
+
+/**
  * PublicKeyCredentialRequestOptionsJSON schema
  * Used for authentication options sent to the browser
  * @see https://w3c.github.io/webauthn/#dictdef-publickeycredentialrequestoptionsjson
  */
 const PublicKeyCredentialRequestOptionsJSON = z
-  .object({
+  .looseObject({
     challenge: f.passkeyChallenge,
     timeout: z.number().int().optional().describe('Timeout in milliseconds'),
     rpId: z.string().optional().describe('Relying Party identifier'),
@@ -148,10 +230,40 @@ const PublicKeyCredentialRequestOptionsJSON = z
       .describe('Allowed credentials'),
     userVerification: f.userVerificationRequirement.optional(),
     hints: z.array(f.publicKeyCredentialHint).optional(),
-    extensions: z.object({}).passthrough().optional(),
+    extensions: z.looseObject({}).optional(),
   })
-  .passthrough()
   .describe('WebAuthn authentication options');
+
+/**
+ * AuthenticatorAttestationResponseJSON schema
+ * @see https://w3c.github.io/webauthn/#dictdef-authenticatorattestationresponsejson
+ */
+const AuthenticatorAttestationResponseJSON = z
+  .looseObject({
+    clientDataJSON: f.base64UrlString,
+    attestationObject: f.base64UrlString,
+    transports: z.array(f.authenticatorTransport).optional(),
+    publicKeyAlgorithm: z.number().int().optional(),
+    publicKey: f.base64UrlString.optional(),
+    authenticatorData: f.base64UrlString.optional(),
+  })
+  .describe('Authenticator attestation response');
+
+/**
+ * RegistrationResponseJSON schema
+ * Sent from browser after navigator.credentials.create()
+ * @see https://w3c.github.io/webauthn/#dictdef-registrationresponsejson
+ */
+const RegistrationResponseJSON = z
+  .looseObject({
+    id: f.passkeyCredentialId,
+    rawId: f.base64UrlString,
+    response: AuthenticatorAttestationResponseJSON,
+    authenticatorAttachment: f.authenticatorAttachment.optional(),
+    clientExtensionResults: z.record(z.string(), z.unknown()),
+    type: f.publicKeyCredentialType,
+  })
+  .describe('WebAuthn registration response');
 
 /**
  * AuthenticatorAssertionResponseJSON schema
@@ -195,7 +307,14 @@ export const r = {
 
   // WebAuthn/Passkey schemas
   PublicKeyCredentialDescriptorJSON,
+  PublicKeyCredentialRpEntityJSON,
+  PublicKeyCredentialUserEntityJSON,
+  PublicKeyCredentialParametersJSON,
+  AuthenticatorSelectionCriteria,
+  PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
+  AuthenticatorAttestationResponseJSON,
+  RegistrationResponseJSON,
   AuthenticatorAssertionResponseJSON,
   AuthenticationResponseJSON,
 
@@ -329,11 +448,34 @@ export const r = {
 
   // Passkey responses
   // Use z.custom to maintain type compatibility with @simplewebauthn types
-  // while still validating the structure through PublicKeyCredentialRequestOptionsJSON
+  // Actual validation is done by @simplewebauthn library, not Zod
+  PasskeyRegistrationOptionsResponse: z.object({
+    options: z.custom<SimpleWebAuthnCreationOptionsJSON>(() => true),
+  }),
+
   PasskeyAuthenticationOptionsResponse: z.object({
-    options: z.custom<SimpleWebAuthnOptionsJSON>(
-      (val) => PublicKeyCredentialRequestOptionsJSON.safeParse(val).success,
-    ),
+    options: z.custom<SimpleWebAuthnRequestOptionsJSON>(() => true),
+  }),
+
+  // For request body validation, check basic structure
+  // Actual WebAuthn validation is done by @simplewebauthn library
+  PasskeyRegistrationBody: z.object({
+    response: z.custom<SimpleWebAuthnRegistrationResponseJSON>((val) => {
+      if (typeof val !== 'object' || val === null) return false;
+      if (!('id' in val) || !('rawId' in val) || !('type' in val)) return false;
+      if (val.type !== 'public-key') return false;
+      if (!('response' in val)) return false;
+      const response = val.response;
+      if (typeof response !== 'object' || response === null) return false;
+      if (!('clientDataJSON' in response) || !('attestationObject' in response))
+        return false;
+      return true;
+    }),
+    name: z
+      .string()
+      .max(100)
+      .optional()
+      .describe('Optional name for the passkey'),
   }),
 
   // App config response
