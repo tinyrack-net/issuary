@@ -591,6 +591,43 @@ return { ...dbUser, managed: 'database' };
 - Prefer official documentation via MCP tools over guessing API usage
 - Maximum 3 calls per tool per question - use best available information
 
+## Post-Task Verification
+
+**After completing any code changes, you MUST run the following three checks:**
+
+### 1. Build Check
+Ensure the project compiles without errors:
+```bash
+# From root directory
+pnpm build
+```
+
+### 2. Test Check
+Ensure all tests pass:
+```bash
+# From root directory (runs all package tests)
+pnpm test
+
+# Or run specific package tests
+cd packages/backend && pnpm test
+cd packages/frontend && pnpm test
+```
+
+### 3. Biome Check
+Ensure code formatting and linting passes:
+```bash
+# From root directory
+pnpm biome check .
+
+# To auto-fix issues
+pnpm biome check --write .
+```
+
+**Important:**
+- All three checks must pass before considering the task complete
+- Fix any errors or warnings before committing
+- If a check fails, resolve the issues and re-run all checks
+
 ## General Best Practices
 - Write descriptive commit messages
 - Keep functions small and focused
