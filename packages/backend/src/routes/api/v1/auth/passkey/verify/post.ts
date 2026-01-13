@@ -1,5 +1,5 @@
-import z from 'zod/v4';
 import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
+import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
@@ -11,8 +11,7 @@ export default (fastify: FastifyWithZodInstance) =>
     url: '',
     schema: {
       summary: 'Verify Passkey Authentication',
-      description:
-        'Verify WebAuthn authentication response and create session',
+      description: 'Verify WebAuthn authentication response and create session',
       tags: [TAGS.AUTH],
       body: z.object({
         response: r.AuthenticationResponseJSON,
@@ -61,6 +60,23 @@ export default (fastify: FastifyWithZodInstance) =>
         id: user.id,
       });
 
+      // Check if TOTP or Passkey is required (only for database-managed users)
+      const passwordAuthMethod =
+        fastify.config.authentication_methods?.['password'];
+      const isConfigManaged = sessionUser.managed === 'config';
+
+      const totpRequired =
+        !isConfigManaged &&
+        passwordAuthMethod?.type === 'password' &&
+        (passwordAuthMethod.totp?.required ?? false) &&
+        !sessionUser.totp_enabled;
+
+      const passkeyRequired =
+        !isConfigManaged &&
+        passwordAuthMethod?.type === 'password' &&
+        (passwordAuthMethod.passkey?.required ?? false) &&
+        sessionUser.passkey_count === 0;
+
       return res.status(200).send({
         user: {
           id: sessionUser.id,
@@ -69,7 +85,9 @@ export default (fastify: FastifyWithZodInstance) =>
           email_verified: sessionUser.email_verified,
           has_password: sessionUser.has_password,
           totp_enabled: sessionUser.totp_enabled,
+          totp_required: totpRequired,
           passkey_count: sessionUser.passkey_count,
+          passkey_required: passkeyRequired,
         },
       });
     },

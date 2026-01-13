@@ -22,7 +22,9 @@ function parseUpstream(url: string): { hostname: string; port: number } {
   const parsed = new URL(url);
   return {
     hostname: parsed.hostname,
-    port: Number.parseInt(parsed.port, 10) || (parsed.protocol === 'https:' ? 443 : 80),
+    port:
+      Number.parseInt(parsed.port, 10) ||
+      (parsed.protocol === 'https:' ? 443 : 80),
   };
 }
 
@@ -112,18 +114,20 @@ export default fastifyPlugin(
       fastify.setNotFoundHandler((request, reply) => {
         // API routes should return 404 errors
         if (request.url.startsWith('/api')) {
-          return reply.code(404).send({ error: 'Not Found' });
+          reply.code(404).send({ error: 'Not Found' });
+          return;
         }
         if (request.url.startsWith('/application')) {
-          return reply.code(404).send({ error: 'Not Found' });
+          reply.code(404).send({ error: 'Not Found' });
+          return;
         }
         if (request.url.startsWith('/docs')) {
-          return reply.code(404).send({ error: 'Not Found' });
+          reply.code(404).send({ error: 'Not Found' });
+          return;
         }
 
         // Hijack the response to handle it manually (no return value needed)
         reply.hijack();
-        return;
 
         // Proxy HTTP request to Vite dev server
         const proxyReq = http.request(

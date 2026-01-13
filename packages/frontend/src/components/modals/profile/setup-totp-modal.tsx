@@ -16,11 +16,20 @@ import {
 interface SetupTotpModalProps {
   isOpen: boolean;
   onClose: () => void;
+  isRequired?: boolean;
+  canSwitchToPasskey?: boolean;
+  onSwitchToPasskey?: () => void;
 }
 
 type SetupStep = 'qr' | 'verify';
 
-export function SetupTotpModal({ isOpen, onClose }: SetupTotpModalProps) {
+export function SetupTotpModal({
+  isOpen,
+  onClose,
+  isRequired = false,
+  canSwitchToPasskey = false,
+  onSwitchToPasskey,
+}: SetupTotpModalProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [step, setStep] = useState<SetupStep>('qr');
@@ -110,7 +119,13 @@ export function SetupTotpModal({ isOpen, onClose }: SetupTotpModalProps) {
       isOpen={isOpen}
       onClose={handleClose}
       title={t('profile.totp.setupModal.title')}
+      description={
+        isRequired
+          ? t('profile.totp.setupModal.requiredDescription')
+          : undefined
+      }
       size="sm"
+      preventClose={isRequired}
     >
       {setupMutation.isPending && (
         <div className="flex justify-center py-8">
@@ -175,6 +190,15 @@ export function SetupTotpModal({ isOpen, onClose }: SetupTotpModalProps) {
             >
               {t('profile.totp.setupModal.next')}
             </button>
+            {canSwitchToPasskey && onSwitchToPasskey && (
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={onSwitchToPasskey}
+              >
+                {t('profile.totp.setupModal.switchToPasskey')}
+              </button>
+            )}
           </ModalActions>
         </div>
       )}

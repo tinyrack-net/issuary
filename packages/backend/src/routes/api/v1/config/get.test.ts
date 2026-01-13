@@ -44,6 +44,25 @@ describe('GET /api/v1/config', () => {
     expect(json.authentication_methods.password).toBeDefined();
     expect(json.authentication_methods.password.enabled).toBeTypeOf('boolean');
     expect(json.authentication_methods.password.type).toBe('password');
+
+    // Check TOTP and Passkey configuration
+    if (json.authentication_methods.password.totp) {
+      expect(json.authentication_methods.password.totp.enabled).toBeTypeOf(
+        'boolean',
+      );
+      expect(json.authentication_methods.password.totp.required).toBeTypeOf(
+        'boolean',
+      );
+    }
+
+    if (json.authentication_methods.password.passkey) {
+      expect(json.authentication_methods.password.passkey.enabled).toBeTypeOf(
+        'boolean',
+      );
+      expect(json.authentication_methods.password.passkey.required).toBeTypeOf(
+        'boolean',
+      );
+    }
   });
 
   test('should not require authentication', async () => {

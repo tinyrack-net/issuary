@@ -1,9 +1,9 @@
-import z from 'zod/v4';
 import type {
   PublicKeyCredentialCreationOptionsJSON as SimpleWebAuthnCreationOptionsJSON,
-  PublicKeyCredentialRequestOptionsJSON as SimpleWebAuthnRequestOptionsJSON,
   RegistrationResponseJSON as SimpleWebAuthnRegistrationResponseJSON,
+  PublicKeyCredentialRequestOptionsJSON as SimpleWebAuthnRequestOptionsJSON,
 } from '@simplewebauthn/server';
+import z from 'zod/v4';
 import { AppTheme } from '@/lib/config.js';
 import { f } from './field.js';
 import { oauthSchema } from './oauth.js';
@@ -17,10 +17,16 @@ const UserSession = z
     email_verified: f.emailVerified,
     has_password: z.boolean().describe('Whether the user has a password set'),
     totp_enabled: z.boolean().describe('Whether TOTP is enabled for the user'),
+    totp_required: z
+      .boolean()
+      .describe('Whether user must set up TOTP before continuing'),
     passkey_count: z
       .number()
       .int()
       .describe('Number of passkeys registered for the user'),
+    passkey_required: z
+      .boolean()
+      .describe('Whether user must set up Passkey before continuing'),
   })
   .describe('UserSession');
 

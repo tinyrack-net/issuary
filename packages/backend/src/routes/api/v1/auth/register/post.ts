@@ -57,6 +57,17 @@ export default (fastify: FastifyWithZodInstance) =>
         });
       }
 
+      // Check if TOTP or Passkey is required (new users are always database-managed)
+      const passwordAuthMethod =
+        fastify.config.authentication_methods?.['password'];
+
+      const totpRequired =
+        passwordAuthMethod?.type === 'password' &&
+        (passwordAuthMethod.totp?.required ?? false);
+      const passkeyRequired =
+        passwordAuthMethod?.type === 'password' &&
+        (passwordAuthMethod.passkey?.required ?? false);
+
       res.status(200).send({
         user: {
           id: user.id,
@@ -65,7 +76,9 @@ export default (fastify: FastifyWithZodInstance) =>
           email_verified: user.email_verified,
           has_password: true, // Registration always creates password
           totp_enabled: false, // New users don't have TOTP enabled
+          totp_required: totpRequired,
           passkey_count: 0, // New users don't have passkeys
+          passkey_required: passkeyRequired,
         },
       });
     },

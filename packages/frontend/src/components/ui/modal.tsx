@@ -13,6 +13,8 @@ interface ModalProps {
   children: ReactNode;
   /** 모달 크기 */
   size?: 'sm' | 'md' | 'lg';
+  /** 모달 닫기 방지 (배경 클릭 비활성화) */
+  preventClose?: boolean;
 }
 
 const sizeClasses = {
@@ -51,10 +53,17 @@ export function Modal({
   description,
   children,
   size = 'md',
+  preventClose = false,
 }: ModalProps) {
   if (!isOpen) {
     return null;
   }
+
+  const handleBackdropClick = () => {
+    if (!preventClose) {
+      onClose();
+    }
+  };
 
   return (
     <dialog className="modal modal-open">
@@ -66,7 +75,7 @@ export function Modal({
         {children}
       </div>
       <form method="dialog" className="modal-backdrop">
-        <button type="button" onClick={onClose}>
+        <button type="button" onClick={handleBackdropClick}>
           close
         </button>
       </form>

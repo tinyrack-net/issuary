@@ -50,14 +50,14 @@ authentication_methods:
     passkey:
       enabled: false
       required: false
-  github:
-    type: oauth
-    enabled: true
-    provider: github
-    display_name: GitHub
-    client_id: !env GITHUB_CLIENT_ID
-    client_secret: !env GITHUB_CLIENT_SECRET
-    email_conflict_strategy: auto_link
+  # github:
+  #   type: oauth
+  #   enabled: true
+  #   provider: github
+  #   display_name: GitHub
+  #   client_id: !env GITHUB_CLIENT_ID
+  #   client_secret: !env GITHUB_CLIENT_SECRET
+  #   email_conflict_strategy: auto_link
   # google:
   #   type: oauth
   #   enabled: false

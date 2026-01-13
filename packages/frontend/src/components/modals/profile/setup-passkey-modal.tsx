@@ -12,11 +12,20 @@ import { getSessionQueryOptions } from '@/queries/session.js';
 interface SetupPasskeyModalProps {
   isOpen: boolean;
   onClose: () => void;
+  isRequired?: boolean;
+  canSwitchToTotp?: boolean;
+  onSwitchToTotp?: () => void;
 }
 
 type SetupStep = 'name' | 'register';
 
-export function SetupPasskeyModal({ isOpen, onClose }: SetupPasskeyModalProps) {
+export function SetupPasskeyModal({
+  isOpen,
+  onClose,
+  isRequired = false,
+  canSwitchToTotp = false,
+  onSwitchToTotp,
+}: SetupPasskeyModalProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [step, setStep] = useState<SetupStep>('name');
@@ -82,7 +91,13 @@ export function SetupPasskeyModal({ isOpen, onClose }: SetupPasskeyModalProps) {
       isOpen={isOpen}
       onClose={handleClose}
       title={t('profile.passkey.setupModal.title')}
+      description={
+        isRequired
+          ? t('profile.passkey.setupModal.requiredDescription')
+          : undefined
+      }
       size="sm"
+      preventClose={isRequired}
     >
       {step === 'name' && (
         <form onSubmit={handleRegister} className="py-4">
@@ -128,6 +143,15 @@ export function SetupPasskeyModal({ isOpen, onClose }: SetupPasskeyModalProps) {
             <button type="submit" className="btn btn-primary">
               {t('profile.passkey.setupModal.continue')}
             </button>
+            {canSwitchToTotp && onSwitchToTotp && (
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={onSwitchToTotp}
+              >
+                {t('profile.passkey.setupModal.switchToTotp')}
+              </button>
+            )}
           </ModalActions>
         </form>
       )}
