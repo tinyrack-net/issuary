@@ -20,10 +20,16 @@ export default (fastify: FastifyWithZodInstance) =>
       response: {
         200: r.UserSessionResponse,
         400: e.ValidationError.Schema,
+        403: e.RegistrationDisabled.Schema,
         409: e.EmailAlreadyExists.Schema,
       },
     },
     handler: async (req, res) => {
+      // Check if public registration is enabled
+      if (!fastify.config.app.public_registration) {
+        throw new e.RegistrationDisabled.Error();
+      }
+
       const { user } = await fastify.userService.register({
         email: req.body.email,
         password: req.body.password,

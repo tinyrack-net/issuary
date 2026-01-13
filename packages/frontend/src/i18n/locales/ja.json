@@ -29,6 +29,8 @@
   "register.email.label": "メールアドレス",
   "register.email.placeholder": "hello@example.com",
   "register.error.emailExists": "メールアドレスはすでに存在します",
+  "register.disabled.title": "登録が無効になっています",
+  "register.disabled.description": "現在、公開登録は無効になっています。管理者にお問い合わせください。",
   "register.link.login": "ログイン",
   "register.divider.orSignUpWithEmail": "またはメールで登録",
   "register.footer.haveAccount": "すでにアカウントをお持ちですか？",

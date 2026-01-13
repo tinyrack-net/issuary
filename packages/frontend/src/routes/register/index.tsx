@@ -50,6 +50,7 @@ function Register() {
 
   const isPasswordAuthEnabled =
     configData?.authentication_methods?.password?.enabled;
+  const isPublicRegistrationEnabled = configData?.app.public_registration;
 
   const registerSchema = useMemo(
     () =>
@@ -122,6 +123,25 @@ function Register() {
 
   const buildOAuthUrl = (providerName: string) =>
     getOAuthConnectUrl(providerName, 'register');
+
+  // If registration is disabled, show disabled message
+  if (isPublicRegistrationEnabled === false) {
+    return (
+      <AuthPageLayout>
+        <PageHeader
+          title={t('register.disabled.title')}
+          subtitle={t('register.disabled.description')}
+        />
+
+        <FooterLink
+          text={t('register.footer.haveAccount')}
+          linkText={t('register.link.login')}
+          to="/login"
+          search={extractOAuthParams(search)}
+        />
+      </AuthPageLayout>
+    );
+  }
 
   return (
     <AuthPageLayout>

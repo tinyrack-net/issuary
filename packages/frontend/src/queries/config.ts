@@ -50,6 +50,7 @@ export type AppConfigs = {
     dark_theme: Theme;
     theme_mode: ThemeMode;
     background_url?: string;
+    public_registration: boolean;
   };
   database: {
     enabled: boolean;

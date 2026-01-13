@@ -466,6 +466,7 @@ export const r = {
   // App config response
   ConfigResponse: z.object({
     app: z.object({
+      public_registration: z.boolean(),
       supported_languages: z.array(z.string()),
       default_language: z.string(),
       fallback_language: z.string(),

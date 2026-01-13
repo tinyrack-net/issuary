@@ -29,6 +29,8 @@
   "register.email.label": "이메일",
   "register.email.placeholder": "hello@example.com",
   "register.error.emailExists": "이미 존재하는 이메일입니다",
+  "register.disabled.title": "회원가입이 비활성화되었습니다",
+  "register.disabled.description": "현재 공개 회원가입이 비활성화되어 있습니다. 관리자에게 문의하세요.",
   "register.link.login": "로그인",
   "register.divider.orSignUpWithEmail": "또는 이메일로 가입",
   "register.footer.haveAccount": "이미 계정이 있으신가요?",

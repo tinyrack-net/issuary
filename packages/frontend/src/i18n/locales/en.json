@@ -29,6 +29,8 @@
   "register.email.label": "Email",
   "register.email.placeholder": "hello@example.com",
   "register.error.emailExists": "Email already exists",
+  "register.disabled.title": "Registration Disabled",
+  "register.disabled.description": "Public registration is currently disabled. Please contact the administrator.",
   "register.link.login": "Sign in",
   "register.divider.orSignUpWithEmail": "Or sign up with email",
   "register.footer.haveAccount": "Already have an account?",

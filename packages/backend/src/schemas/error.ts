@@ -94,6 +94,11 @@ export const e = {
     'EMAIL_ALREADY_EXISTS',
     'The provided email is already registered.',
   ),
+  RegistrationDisabled: createError(
+    403,
+    'REGISTRATION_DISABLED',
+    'Public registration is disabled.',
+  ),
   ValidationError: createErrorWithData(
     400,
     'VALIDATION_ERROR',

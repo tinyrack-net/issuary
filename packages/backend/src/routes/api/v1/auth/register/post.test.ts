@@ -1,15 +1,43 @@
 import { describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
+import { createServer } from '@/server.js';
 import {
   expectError,
   generateUniqueEmail,
   setupTestServer,
   withMikroContext,
 } from '@/test-utils/index.js';
+import { DEFAULT_TEST_CONFIG } from '@/test-utils/setup.js';
 
 const app = setupTestServer();
 
 describe('POST /api/v1/auth/register', () => {
+  test('should fail when public_registration is disabled', async () => {
+    // Create a separate server instance with disabled registration
+    const disabledApp = await createServer({
+      baseConfig: DEFAULT_TEST_CONFIG,
+      configOverrides: {
+        app: {
+          public_registration: false,
+        },
+      },
+    }).start();
+
+    const res = await disabledApp.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: 'test@example.com',
+        password: 'password123',
+      },
+    });
+
+    expectError(res, e.RegistrationDisabled);
+
+    // Cleanup
+    await disabledApp.close();
+  });
+
   test('should register successfully with valid credentials', async () => {
     const uniqueEmail = generateUniqueEmail();
 
