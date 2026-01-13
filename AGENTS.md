@@ -24,10 +24,20 @@ This is a monorepo with the following packages:
 ### Backend Directory Structure
 ```
 packages/backend/src/
+├── index.ts               # Entry point
+├── server.ts              # Fastify server setup
 ├── db/                    # Database configurations (sqlite, postgres, memory)
+│   ├── index.ts           # Database config factory
+│   ├── cli.ts             # MikroORM CLI configuration
+│   ├── memory.ts          # In-memory database config (for testing)
+│   ├── postgres.ts        # PostgreSQL config
+│   └── sqlite.ts          # SQLite config
 ├── entities/              # MikroORM entity definitions (*.entity.ts)
+│   ├── base.entity.ts             # Base entity class with common fields
 │   ├── user.entity.ts             # User accounts
 │   ├── user-oauth.entity.ts       # OAuth linked accounts (social login)
+│   ├── user-passkey.entity.ts     # WebAuthn/Passkey credentials
+│   ├── user-totp.entity.ts        # TOTP 2FA credentials
 │   ├── jwt-key.entity.ts          # RS256 key pairs for JWT signing
 │   ├── oauth-client.entity.ts     # OAuth client applications
 │   ├── oauth-code.entity.ts       # Authorization codes
@@ -36,71 +46,179 @@ packages/backend/src/
 │   ├── password-reset.entity.ts
 │   └── revoked-token.entity.ts    # Revoked JWT tokens
 ├── repositories/          # Custom repository classes (*.repository.ts)
+│   ├── user.repository.ts
+│   ├── user-oauth.repository.ts
+│   ├── user-passkey.repository.ts
+│   ├── user-totp.repository.ts
+│   ├── user-consent.repository.ts
+│   ├── oauth-client.repository.ts
+│   ├── oauth-code.repository.ts
+│   ├── jwt-key.repository.ts
+│   ├── email-verification.repository.ts
+│   ├── password-reset.repository.ts
+│   └── revoked-token.repository.ts
 ├── services/              # Business logic services (*.service.ts)
+│   ├── base.service.ts            # Base service with MikroORM access
+│   ├── user.service.ts            # User management
 │   ├── jwt.service.ts             # RS256 JWT signing/verification
 │   ├── jwt-key.service.ts         # Key rotation and JWKS management
+│   ├── oauth-authorize.service.ts # Authorization endpoint logic
+│   ├── oauth-client.service.ts    # OAuth client management
 │   ├── oauth-connect.service.ts   # Social login (Google, GitHub, Apple)
-│   ├── user.service.ts            # User management
-│   └── ...
+│   ├── oauth-token.service.ts     # Token issuance service
+│   ├── passkey.service.ts         # WebAuthn/Passkey service
+│   ├── totp.service.ts            # TOTP 2FA service
+│   ├── email.service.ts           # Email sending service
+│   ├── email-verification.service.ts
+│   ├── password-reset.service.ts
+│   └── user-consent.service.ts
 ├── routes/                # HTTP route handlers
-│   ├── api/v1/           # API endpoints (/api/v1/*)
+│   ├── api/v1/           # REST API endpoints (/api/v1/*)
+│   │   ├── auth/         # Authentication routes (login, register, etc.)
+│   │   ├── user/         # User management routes (session, password, passkeys, totp)
+│   │   ├── oauth/        # External OAuth providers routes
+│   │   ├── consent/      # OAuth consent routes
+│   │   ├── config/       # App config routes
+│   │   └── health/       # Health check routes
 │   └── application/      # OAuth/OIDC endpoints (/application/*)
+│       └── oauth/        # authorize, token, userinfo, introspect, revoke, .well-known
 ├── schemas/               # Zod validation schemas
-│   ├── error.ts          # Centralized error definitions
-│   ├── field.ts          # Reusable field schemas
-│   ├── response.ts       # Response type schemas
-│   └── provider.ts       # Provider schemas
+│   ├── error.ts          # Centralized error definitions (e.*)
+│   ├── field.ts          # Reusable field schemas (f.*)
+│   ├── response.ts       # Response type schemas (r.*)
+│   ├── provider.ts       # Provider schemas (zz.*)
+│   ├── header.ts         # Header schemas
+│   ├── jwt.ts            # JWT-related schemas
+│   ├── jwt-key.ts        # JWT key schemas
+│   ├── oauth.ts          # OAuth request/response schemas
+│   ├── oauth-connect.ts  # OAuth connect schemas
+│   ├── passkey.ts        # Passkey/WebAuthn schemas
+│   └── totp.ts           # TOTP schemas
 ├── plugins/               # Fastify plugins (auto-loaded)
-├── handlers/              # Reusable request handlers
-├── lib/                   # Utility libraries (config, jwt, pkce, env)
+│   ├── api-error-handler.ts  # Error handling plugin
+│   ├── bootstrap.ts          # App bootstrap plugin
+│   ├── cookie.ts             # Cookie plugin
+│   ├── cors.ts               # CORS configuration
+│   ├── formbody.ts           # Form body parser
+│   ├── mikro-orm.ts          # MikroORM integration
+│   ├── nodemailer.ts         # Email transport plugin
+│   ├── scalar.ts             # Scalar API reference
+│   ├── secure-session.ts     # Session management
+│   ├── static.ts             # Static file serving
+│   ├── swagger.ts            # Swagger/OpenAPI
+│   └── zod.ts                # Zod type provider
+├── lib/                   # Utility libraries
+│   ├── env.ts            # Environment utilities
+│   ├── pkce.ts           # PKCE utilities
+│   ├── scopes.ts         # OAuth scope utilities
+│   ├── swagger-tags.ts   # Swagger tag definitions
+│   └── config/           # Configuration system
+│       ├── index.ts      # Config exports
+│       ├── loader.ts     # Config file loader
+│       ├── oauth-resolver.ts  # OAuth provider resolver
+│       └── schemas/      # Config validation schemas
+│           ├── root.ts       # Root config schema
+│           ├── app.ts        # App config schema
+│           ├── database.ts   # Database config schema
+│           ├── smtp.ts       # SMTP config schema
+│           ├── auth-basic.ts # Basic auth config schema
+│           ├── auth-oauth.ts # OAuth auth config schema
+│           ├── provider.ts   # Provider config schema
+│           └── user.ts       # User config schema
 ├── test-utils/            # Test utilities and helpers
+│   ├── index.ts          # Re-exports
 │   ├── setup.ts          # setupTestServer() function
 │   ├── helpers.ts        # Common test helpers
 │   ├── fixtures.ts       # Test constants (TEST_USER, TEST_OAUTH_CLIENT)
-│   ├── oauth.ts          # OAuth flow helpers
-│   └── index.ts          # Re-exports
+│   └── oauth.ts          # OAuth flow helpers
 └── seeders/               # Database seeders
+    ├── config.seeder.ts  # Config-based seeder
+    └── test-seeder.ts    # Test data seeder
 ```
 
 ### Frontend Directory Structure
 ```
 packages/frontend/src/
-├── routes/                # TanStack Router file-based routes
-│   ├── __root.tsx        # Root layout
-│   ├── index.tsx         # Home page
-│   ├── login/            # Login page
-│   ├── register/         # Registration page
-│   ├── profile/          # Profile page
-│   ├── verify-email/     # Email verification
-│   ├── forgot-password/  # Password reset request
-│   ├── reset-password/   # Password reset form
-│   ├── consent/          # OAuth consent page
-│   └── error/            # Error page
+├── main.tsx               # Entry point
+├── index.css              # Global styles (Tailwind + DaisyUI)
+├── routeTree.gen.ts       # Generated route tree (auto-generated)
+├── components/            # React components
+│   ├── error-boundary.tsx         # Error boundary wrapper
+│   ├── auth/                      # Authentication components
+│   │   ├── auth-page-layout.tsx   # Auth page layout wrapper
+│   │   ├── footer-link.tsx        # Footer link component
+│   │   ├── icon-input.tsx         # Input with icon
+│   │   ├── oauth-buttons.tsx      # OAuth provider buttons
+│   │   ├── page-header.tsx        # Page header component
+│   │   └── submit-button.tsx      # Form submit button
+│   ├── modals/                    # Modal components
+│   │   └── profile/               # Profile-related modals
+│   │       ├── change-password-modal.tsx
+│   │       ├── disable-totp-modal.tsx
+│   │       ├── manage-passkeys-modal.tsx
+│   │       ├── remove-password-modal.tsx
+│   │       ├── set-password-modal.tsx
+│   │       ├── setup-passkey-modal.tsx
+│   │       └── setup-totp-modal.tsx
+│   ├── profile/                   # Profile section components
+│   │   ├── linked-accounts-section.tsx
+│   │   ├── passkey-section.tsx
+│   │   ├── password-section.tsx
+│   │   ├── totp-section.tsx
+│   │   └── user-info-section.tsx
+│   ├── skeletons/                 # Loading skeleton components
+│   │   ├── auth-page-skeleton.tsx
+│   │   ├── consent-skeleton.tsx
+│   │   ├── profile-skeleton.tsx
+│   │   └── skeleton.tsx
+│   └── ui/                        # Generic UI components
+│       ├── alert.tsx
+│       ├── divider.tsx
+│       ├── language-selector.tsx
+│       ├── modal.tsx
+│       └── theme-toggle.tsx
 ├── hooks/                 # Custom React hooks
 │   ├── use-language.ts   # Language switching hook
 │   └── use-theme.ts      # Theme switching hook
 ├── queries/               # TanStack Query options (queryOptions, mutationOptions)
+│   ├── keys.ts           # Query key definitions
 │   ├── session.ts        # Session query options
+│   ├── config.ts         # App config query options
 │   ├── login.ts          # Login mutation options
 │   ├── register.ts       # Register mutation options
 │   ├── logout.ts         # Logout mutation options
 │   ├── oauth.ts          # OAuth providers query/mutation options
 │   ├── consent.ts        # Consent query/mutation options
+│   ├── password.ts       # Password management mutations
 │   ├── password-reset.ts # Password reset mutation options
 │   ├── verify-email.ts   # Email verification mutation options
-│   └── config.ts         # App config query options
+│   ├── passkey.ts        # Passkey mutation options
+│   └── totp.ts           # TOTP mutation options
+├── routes/                # TanStack Router file-based routes
+│   ├── __root.tsx        # Root layout
+│   ├── index.tsx         # Home page
+│   ├── login/index.tsx   # Login page
+│   ├── register/index.tsx # Registration page
+│   ├── profile/index.tsx # User profile page
+│   ├── verify-email/index.tsx # Email verification
+│   ├── forgot-password/index.tsx # Password reset request
+│   ├── reset-password/index.tsx # Password reset form
+│   ├── consent/index.tsx # OAuth consent page
+│   └── error/index.tsx   # Error page
 ├── i18n/                  # Internationalization
 │   ├── index.ts          # i18n setup
 │   ├── react-i18next.d.ts # Type declarations
-│   └── locales/          # Translation files (ko.json, en.json, ja.json)
-├── libs/                  # Utility libraries
-│   ├── etch.ts           # Fetch wrapper
-│   ├── router.ts         # Router setup
-│   ├── query-client.ts   # QueryClient instance
-│   ├── promise.ts        # Utility functions (tick)
-│   └── oauth-search.ts   # OAuth search params schema
-├── main.tsx               # Entry point
-└── index.css              # Global styles (Tailwind + DaisyUI)
+│   └── locales/          # Translation files
+│       ├── ko.json       # Korean
+│       ├── en.json       # English
+│       └── ja.json       # Japanese
+└── libs/                  # Utility libraries
+    ├── error.ts          # Error utilities (ApiError class)
+    ├── etch.ts           # Fetch wrapper
+    ├── router.ts         # Router setup
+    ├── query-client.ts   # QueryClient instance
+    ├── promise.ts        # Utility functions (tick)
+    └── oauth-search.ts   # OAuth search params schema
 ```
 
 ## Build, Lint, and Test Commands
@@ -255,14 +373,46 @@ export default (fastify: FastifyWithZodInstance) => {
 ```
 
 #### Entity Classes (MikroORM)
-- Extend `BaseEntity`
-- Use decorators: `@Entity`, `@Property`, `@PrimaryKey`, etc.
+- Extend `BaseEntity` which provides `created_at` and `updated_at` fields
+- Use decorators: `@Entity`, `@Property`, `@PrimaryKey`, `@ManyToOne`, `@Enum`, `@Index`, etc.
 - UUID primary keys generated via `crypto.randomUUID()`
 - Snake_case for database column names
-- Use `t.*` type helpers for precision
-- Lazy load sensitive fields (e.g., `password_hash`)
-- Include JSDoc-style comments in decorators
+- Use `t.*` type helpers for column types (`t.uuid`, `t.string`, `t.datetime`, `t.json`, `t.text`, `t.boolean`, `t.bigint`)
+- Lazy load sensitive fields with `lazy: true` (e.g., `password_hash`)
+- Hide fields from JSON serialization with `hidden: true`
+- Include JSDoc-style comments in property decorators
 - Use lifecycle hooks: `@BeforeCreate`, `@BeforeUpdate`
+- Use `Ref<T>` wrapper for lazy-loaded relations with `ref: true` option
+- Example:
+```typescript
+@Entity({
+  tableName: 'user',
+  comment: 'Registered users',
+  repository: () => UserRepository,
+})
+export class UserEntity extends BaseEntity {
+  [EntityRepositoryType]?: UserRepository;
+
+  @PrimaryKey({ type: t.uuid, name: 'id' })
+  public id: string = crypto.randomUUID();
+
+  @Index({ name: 'user_email_unique', properties: ['email'], options: { unique: true } })
+  @Property({ type: t.string, name: 'email', comment: 'User email address' })
+  public email: string;
+
+  @Property({ type: t.string, name: 'password_hash', nullable: true, lazy: true, hidden: true })
+  public password_hash: string | null = null;
+
+  @BeforeCreate()
+  @BeforeUpdate()
+  async hashPassword(args: EventArgs<UserEntity>) {
+    const password = args.changeSet?.payload.password_hash;
+    if (password) {
+      this.password_hash = await hash(password);  // Uses argon2
+    }
+  }
+}
+```
 
 #### Repositories
 - Extend `EntityRepository<T>`
@@ -370,6 +520,7 @@ describe('My Tests', () => {
 - `extractCookie(res, name)` - Extract cookie value from response
 - `grantConsent(app, sessionCookie, params)` - Grant OAuth consent
 - `withMikroContext(app, fn)` - Run function in MikroORM RequestContext
+- `expectError(res, errorDef)` - Assert error response matches error definition
 
 **OAuth Helpers (`test-utils/oauth.ts`):**
 - `getAuthorizationCode(app, params)` - Get OAuth authorization code
@@ -377,6 +528,35 @@ describe('My Tests', () => {
 - `refreshAccessToken(app, params)` - Refresh access token
 - `getAccessToken(app, params?)` - Complete OAuth flow and get access token
 - `getUserInfo(app, accessToken)` - Get user info with bearer token
+
+**Test File Pattern:**
+```typescript
+import { describe, expect, test } from 'vitest';
+import { e } from '@/schemas/error.js';
+import { expectError, generateUniqueEmail, setupTestServer } from '@/test-utils/index.js';
+
+const app = setupTestServer();
+
+describe('POST /api/v1/auth/login', () => {
+  test('should login successfully with correct credentials', async () => {
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/login',
+      payload: { email: 'test@example.com', password: 'password' },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  test('should fail with wrong password', async () => {
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/login',
+      payload: { email: 'admin@example.com', password: 'wrong' },
+    });
+    expectError(res, e.InvalidEmailOrPassword);
+  });
+});
+```
 
 ### Frontend-Specific Patterns
 
@@ -497,6 +677,54 @@ const res = await etch('/api/endpoint', {
 const json = await res.json();
 ```
 
+#### Frontend Testing with Playwright
+When implementing or modifying frontend features, **actively use Playwright tools** to verify the implementation:
+
+1. **Start the dev server** before testing:
+```bash
+pnpm dev  # Starts both backend and frontend
+```
+
+2. **Use Playwright MCP tools** for interactive testing:
+   - `playwright_browser_navigate` - Navigate to pages
+   - `playwright_browser_snapshot` - Capture accessibility snapshot (preferred over screenshot)
+   - `playwright_browser_click` - Click on elements
+   - `playwright_browser_type` - Type text into inputs
+   - `playwright_browser_fill_form` - Fill multiple form fields at once
+   - `playwright_browser_take_screenshot` - Take visual screenshots when needed
+
+3. **Testing workflow**:
+   - Navigate to the page you're implementing (e.g., `http://localhost:5173/login`)
+   - Use `playwright_browser_snapshot` to see the current page structure
+   - Interact with elements using click, type, or fill_form tools
+   - Verify the expected behavior after interactions
+   - Take screenshots if visual verification is needed
+
+4. **Example testing session**:
+```
+# Navigate to login page
+playwright_browser_navigate: http://localhost:5173/login
+
+# Take snapshot to see page structure
+playwright_browser_snapshot
+
+# Fill login form
+playwright_browser_fill_form: email field, password field
+
+# Click submit button
+playwright_browser_click: submit button
+
+# Verify navigation or state change
+playwright_browser_snapshot
+```
+
+5. **When to use Playwright testing**:
+   - After implementing new UI components
+   - When modifying form behavior or validation
+   - To verify navigation flows work correctly
+   - When debugging visual or interaction issues
+   - To confirm i18n translations display correctly
+
 ### Error Handling
 - Centralized error definitions in `schemas/error.ts` using `createError` function
 - Each error includes HTTP status code, error code, and message
@@ -541,7 +769,7 @@ const user = await this.findOneOrFail(
 - Config file location:
   - Default: `/opt/config.yaml` (production)
   - Can be overridden via `CONFIG_PATH` environment variable
-  - Test environment: `./config.test.yaml` (when `APP_ENV=test`)
+  - Test environment: Uses `DEFAULT_TEST_CONFIG` from `test-utils/setup.ts` (runtime injection)
 - YAML config supports environment variable interpolation using `!env` tag
   - Example: `password: !env SMTP_PASSWORD`
 - All config is validated against Zod schemas at startup
@@ -582,7 +810,8 @@ return { ...dbUser, managed: 'database' };
 
 ## Database
 - ORM: **MikroORM**
-- Supported: PostgreSQL, SQLite
+- Supported: PostgreSQL, SQLite, In-memory (for testing)
+- In-memory SQLite: Used in test environment via `type: 'memory'` config
 - Migrations stored in entities with decorators
 - Seeders in `src/seeders/`
 
