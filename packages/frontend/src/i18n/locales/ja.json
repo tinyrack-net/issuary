@@ -265,5 +265,20 @@
   "verifyTotp.submitting": "確認中...",
   "verifyTotp.error.invalid": "無効なコードです。もう一度お試しください。",
   "verifyTotp.error.expired": "セッションが期限切れです。再度ログインしてください。",
-  "verifyTotp.backToLogin": "ログインに戻る"
+  "verifyTotp.backToLogin": "ログインに戻る",
+  "setupTotp.title": "二要素認証の設定",
+  "setupTotp.subtitle": "アカウントにセキュリティ層を追加",
+  "setupTotp.required": "続行するには二要素認証が必要です",
+  "setupTotp.qrDescription": "認証アプリ（Google Authenticator、Authyなど）でQRコードをスキャンしてください",
+  "setupTotp.manualEntry": "スキャンできない場合は手動でコードを入力",
+  "setupTotp.next": "次へ",
+  "setupTotp.back": "戻る",
+  "setupTotp.verify": "確認",
+  "setupTotp.verifying": "確認中...",
+  "setupTotp.verifyTitle": "認証コードの確認",
+  "setupTotp.verifySubtitle": "認証アプリの6桁のコードを入力してください",
+  "setupTotp.error.invalid": "無効なコードです。もう一度お試しください。",
+  "setupTotp.error.setupFailed": "設定を開始できませんでした。もう一度お試しください。",
+  "setupTotp.retry": "再試行",
+  "setupTotp.backToLogin": "ログインに戻る"
 }

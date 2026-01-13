@@ -265,5 +265,20 @@
   "verifyTotp.submitting": "Verifying...",
   "verifyTotp.error.invalid": "Invalid code. Please try again.",
   "verifyTotp.error.expired": "Session expired. Please log in again.",
-  "verifyTotp.backToLogin": "Back to login"
+  "verifyTotp.backToLogin": "Back to login",
+  "setupTotp.title": "Set Up Two-Factor Authentication",
+  "setupTotp.subtitle": "Add an extra layer of security to your account",
+  "setupTotp.required": "Two-factor authentication is required to continue",
+  "setupTotp.qrDescription": "Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)",
+  "setupTotp.manualEntry": "Can't scan? Enter this code manually",
+  "setupTotp.next": "Next",
+  "setupTotp.back": "Back",
+  "setupTotp.verify": "Verify",
+  "setupTotp.verifying": "Verifying...",
+  "setupTotp.verifyTitle": "Verify Authentication Code",
+  "setupTotp.verifySubtitle": "Enter the 6-digit code from your authenticator app",
+  "setupTotp.error.invalid": "Invalid code. Please try again.",
+  "setupTotp.error.setupFailed": "Failed to start setup. Please try again.",
+  "setupTotp.retry": "Retry",
+  "setupTotp.backToLogin": "Back to login"
 }

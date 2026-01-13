@@ -17,6 +17,12 @@ export type SuccessResponse = {
   success: boolean;
 };
 
+export type TotpSetupVerifyResponse = {
+  success: boolean;
+  user?: SessionUser;
+  totp_setup_completed: boolean;
+};
+
 export type TotpLoginVerifyResponse = {
   user: SessionUser;
 };
@@ -57,7 +63,7 @@ export const verifyTotpMutationOptions = mutationOptions({
       method: 'POST',
       body: JSON.stringify(values),
     });
-    return res.json() as Promise<SuccessResponse>;
+    return res.json() as Promise<TotpSetupVerifyResponse>;
   },
 });
 

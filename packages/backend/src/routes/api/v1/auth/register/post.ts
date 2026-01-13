@@ -38,6 +38,11 @@ export default (fastify: FastifyWithZodInstance) =>
       // Flush user to database before proceeding
       await fastify.mikro.em.flush();
 
+      // Check if TOTP is required (new users are always database-managed)
+      const passwordAuthMethod =
+        fastify.config.basic_authentication_methods.password;
+      const totpRequired = passwordAuthMethod.totp?.required ?? false;
+
       // If SMTP is configured, send email verification
       if (fastify.transporter) {
         // Generate email verification token
@@ -58,16 +63,18 @@ export default (fastify: FastifyWithZodInstance) =>
         // No SMTP configured - skip email verification and activate immediately
         user.email_verified = true;
         await fastify.mikro.em.flush();
-        req.session.set('user', {
-          id: user.id,
-        });
+
+        // If TOTP is required, set pending setup session instead of full session
+        if (totpRequired) {
+          req.session.set('pendingTotpSetup', {
+            id: user.id,
+          });
+        } else {
+          req.session.set('user', {
+            id: user.id,
+          });
+        }
       }
-
-      // Check if TOTP is required (new users are always database-managed)
-      const passwordAuthMethod =
-        fastify.config.basic_authentication_methods.password;
-
-      const totpRequired = passwordAuthMethod.totp?.required ?? false;
 
       res.status(200).send({
         user: {

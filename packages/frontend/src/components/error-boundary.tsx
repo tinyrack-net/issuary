@@ -44,10 +44,7 @@ export class ErrorBoundary extends Component<
       }
 
       return (
-        <ErrorFallback
-          error={this.state.error}
-          onRetry={this.handleRetry}
-        />
+        <ErrorFallback error={this.state.error} onRetry={this.handleRetry} />
       );
     }
 

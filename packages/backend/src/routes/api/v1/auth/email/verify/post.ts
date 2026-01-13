@@ -32,11 +32,6 @@ export default (fastify: FastifyWithZodInstance) => {
       // Populate password_hash to check if password is set
       await fastify.mikro.em.populate(user, ['password_hash']);
 
-      // Create session after successful verification
-      req.session.set('user', {
-        id: user.id,
-      });
-
       // Check if TOTP is enabled for the user
       const totpEnabled = await fastify.mikro.userTotp.isEnabled(user.id);
 
@@ -44,6 +39,25 @@ export default (fastify: FastifyWithZodInstance) => {
       const passkeyCount = await fastify.mikro.userPasskey.countByUserId(
         user.id,
       );
+
+      // Check if TOTP is required (only for database-managed users without TOTP)
+      const passwordAuthMethod =
+        fastify.config.basic_authentication_methods.password;
+      const totpRequired =
+        (passwordAuthMethod.totp?.required ?? false) && !totpEnabled;
+
+      // Create session based on TOTP requirement
+      if (totpRequired) {
+        // Set pending TOTP setup session instead of full session
+        req.session.set('pendingTotpSetup', {
+          id: user.id,
+        });
+      } else {
+        // Create full session after successful verification
+        req.session.set('user', {
+          id: user.id,
+        });
+      }
 
       res.status(200).send({
         user: {
@@ -53,7 +67,7 @@ export default (fastify: FastifyWithZodInstance) => {
           email_verified: user.email_verified,
           has_password: user.hasPassword(),
           totp_enabled: totpEnabled,
-          totp_required: false,
+          totp_required: totpRequired,
           passkey_count: passkeyCount,
         },
       });

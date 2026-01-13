@@ -360,14 +360,20 @@ export const r = {
     user: UserSession,
   }),
 
-  // Login response - either full session or TOTP verification required
+  // Login response - either full session, TOTP verification required, or TOTP setup required
   LoginResponse: z.union([
     z.object({
       user: UserSession,
       totp_verification_required: z.literal(false),
+      totp_setup_required: z.literal(false),
     }),
     z.object({
       totp_verification_required: z.literal(true),
+      totp_setup_required: z.literal(false),
+    }),
+    z.object({
+      totp_verification_required: z.literal(false),
+      totp_setup_required: z.literal(true),
     }),
   ]),
 
@@ -462,6 +468,16 @@ export const r = {
     secret: z.string().describe('TOTP secret key (base32 encoded)'),
     otpauth_url: z.string().describe('OTPAuth URL for authenticator apps'),
     qr_code: z.string().describe('QR code as data URL'),
+  }),
+
+  TotpSetupVerifyResponse: z.object({
+    success: z.boolean(),
+    user: UserSession.optional().describe(
+      'User session if TOTP setup was completed from pending setup state',
+    ),
+    totp_setup_completed: z
+      .boolean()
+      .describe('Whether this request completed the mandatory TOTP setup flow'),
   }),
 
   // Passkey responses

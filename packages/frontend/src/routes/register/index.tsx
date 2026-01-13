@@ -74,6 +74,18 @@ function Register() {
     ...registerMutationOptions,
     onSuccess: async (data) => {
       if (data.user.email_verified) {
+        // Check if TOTP setup is required before completing registration
+        if (data.user.totp_required) {
+          // Redirect to TOTP setup page (session is pendingTotpSetup, not user)
+          await tick();
+          navigate({
+            to: '/setup-totp',
+            search: extractOAuthParams(search),
+          });
+          return;
+        }
+
+        // Normal flow - user session is set
         queryClient.setQueryData(getSessionQueryOptions.queryKey, {
           user: data.user,
         });

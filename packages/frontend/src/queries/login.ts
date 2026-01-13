@@ -10,10 +10,16 @@ export type LoginParams = {
 export type LoginResponse =
   | {
       totp_verification_required: false;
+      totp_setup_required: false;
       user: SessionUser;
     }
   | {
       totp_verification_required: true;
+      totp_setup_required: false;
+    }
+  | {
+      totp_verification_required: false;
+      totp_setup_required: true;
     };
 
 export const loginMutationOptions = mutationOptions({

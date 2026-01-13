@@ -71,3 +71,33 @@ export function extractOAuthParams(
     Object.entries(search).filter(([_, v]) => v !== undefined),
   );
 }
+
+/**
+ * TOTP 설정 페이지 URL을 빌드하는 헬퍼 함수
+ * TOTP 설정이 필요한 경우 OAuth 파라미터를 유지하며 리다이렉트
+ */
+export function buildSetupTotpUrl(search: OAuthSearch): string {
+  const setupUrl = new URL('/setup-totp', window.location.origin);
+
+  if (search.client_id)
+    setupUrl.searchParams.set('client_id', search.client_id);
+  if (search.redirect_uri)
+    setupUrl.searchParams.set('redirect_uri', search.redirect_uri);
+  if (search.response_type)
+    setupUrl.searchParams.set('response_type', search.response_type);
+  if (search.scope) setupUrl.searchParams.set('scope', search.scope);
+  if (search.state) setupUrl.searchParams.set('state', search.state);
+  if (search.nonce) setupUrl.searchParams.set('nonce', search.nonce);
+  if (search.code_challenge)
+    setupUrl.searchParams.set('code_challenge', search.code_challenge);
+  if (search.code_challenge_method)
+    setupUrl.searchParams.set(
+      'code_challenge_method',
+      search.code_challenge_method,
+    );
+  if (search.prompt) setupUrl.searchParams.set('prompt', search.prompt);
+  if (search.max_age) setupUrl.searchParams.set('max_age', search.max_age);
+  if (search.display) setupUrl.searchParams.set('display', search.display);
+
+  return setupUrl.toString();
+}

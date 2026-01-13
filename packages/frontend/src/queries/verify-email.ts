@@ -7,8 +7,9 @@ export type VerifyEmailParams = {
 };
 
 export type VerifyEmailResponse = {
-  user: SessionUser;
-  message: string;
+  user: SessionUser & {
+    totp_required?: boolean;
+  };
 };
 
 export const verifyEmailMutationOptions = mutationOptions({

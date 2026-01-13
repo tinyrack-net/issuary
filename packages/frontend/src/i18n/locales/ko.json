@@ -265,5 +265,20 @@
   "verifyTotp.submitting": "확인 중...",
   "verifyTotp.error.invalid": "잘못된 코드입니다. 다시 시도해주세요.",
   "verifyTotp.error.expired": "세션이 만료되었습니다. 다시 로그인해주세요.",
-  "verifyTotp.backToLogin": "로그인으로 돌아가기"
+  "verifyTotp.backToLogin": "로그인으로 돌아가기",
+  "setupTotp.title": "2단계 인증 설정",
+  "setupTotp.subtitle": "계정에 추가 보안 계층을 추가하세요",
+  "setupTotp.required": "계속하려면 2단계 인증이 필요합니다",
+  "setupTotp.qrDescription": "인증 앱(Google Authenticator, Authy 등)으로 QR 코드를 스캔하세요",
+  "setupTotp.manualEntry": "스캔할 수 없나요? 수동으로 코드를 입력하세요",
+  "setupTotp.next": "다음",
+  "setupTotp.back": "뒤로",
+  "setupTotp.verify": "확인",
+  "setupTotp.verifying": "확인 중...",
+  "setupTotp.verifyTitle": "인증 코드 확인",
+  "setupTotp.verifySubtitle": "인증 앱의 6자리 코드를 입력하세요",
+  "setupTotp.error.invalid": "잘못된 코드입니다. 다시 시도해주세요.",
+  "setupTotp.error.setupFailed": "설정을 시작하지 못했습니다. 다시 시도해주세요.",
+  "setupTotp.retry": "다시 시도",
+  "setupTotp.backToLogin": "로그인으로 돌아가기"
 }

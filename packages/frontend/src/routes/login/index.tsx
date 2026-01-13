@@ -75,11 +75,21 @@ function Login() {
   const loginMutation = useMutation({
     ...loginMutationOptions,
     onSuccess: async (data: LoginResponse) => {
-      // Check if TOTP verification is required
+      // Check if TOTP verification is required (user has TOTP enabled)
       if (data.totp_verification_required) {
         // Redirect to TOTP verification page with OAuth params preserved
         router.navigate({
           to: '/verify-totp',
+          search: extractOAuthParams(search),
+        });
+        return;
+      }
+
+      // Check if TOTP setup is required (TOTP mandatory but not set up)
+      if (data.totp_setup_required) {
+        // Redirect to TOTP setup page with OAuth params preserved
+        router.navigate({
+          to: '/setup-totp',
           search: extractOAuthParams(search),
         });
         return;

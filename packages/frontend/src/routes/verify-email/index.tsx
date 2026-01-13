@@ -18,6 +18,7 @@ import { Alert } from '@/components/ui/alert.js';
 import { Divider } from '@/components/ui/divider.js';
 import {
   buildAuthorizeUrl,
+  buildSetupTotpUrl,
   isOAuthFlow,
   OAuthSearchSchema,
 } from '@/libs/oauth-search.js';
@@ -75,6 +76,12 @@ function VerifyEmail() {
   const verifyEmailMutation = useMutation({
     ...verifyEmailMutationOptions,
     onSuccess: async (data) => {
+      // If TOTP setup is required, redirect to setup-totp page
+      if (data.user.totp_required) {
+        window.location.href = buildSetupTotpUrl(search);
+        return;
+      }
+
       queryClient.setQueryData(getSessionQueryOptions.queryKey, {
         user: data.user,
       });

@@ -9,6 +9,9 @@ declare module '@fastify/secure-session' {
     pendingTotpUser?: {
       id: string;
     };
+    pendingTotpSetup?: {
+      id: string;
+    };
     oauth?: {
       state: string;
       codeVerifier: string;

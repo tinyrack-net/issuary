@@ -11,6 +11,8 @@ import type { FastifyWithZodInstance } from '@/server.js';
  * Verify TOTP code and complete setup.
  * This endpoint verifies the code from user's authenticator app
  * and activates TOTP for the account.
+ * Accepts both full user session and pending TOTP setup session.
+ * If from pending setup session, converts to full user session.
  */
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
@@ -26,17 +28,45 @@ export default (fastify: FastifyWithZodInstance) =>
         code: f.totpCode,
       }),
       response: {
-        200: r.SuccessResponse,
+        200: r.TotpSetupVerifyResponse,
         400: z.union([e.TotpNotSetup.Schema, e.InvalidTotpCode.Schema]),
         401: e.Unauthorized.Schema,
         409: e.TotpAlreadyEnabled.Schema,
       },
     },
     handler: async (req, res) => {
-      const userSession = await req.auth.verify();
+      // Allow both full user session and pending TOTP setup session
+      const userSession = req.session.get('user');
+      const pendingTotpSetup = req.session.get('pendingTotpSetup');
+      const userId = userSession?.id ?? pendingTotpSetup?.id;
 
-      await fastify.totpService.verifySetup(userSession.id, req.body.code);
+      if (!userId) {
+        throw new e.Unauthorized.Error();
+      }
 
-      return res.status(200).send({ success: true });
+      await fastify.totpService.verifySetup(userId, req.body.code);
+
+      // Check if this was from pending TOTP setup session
+      const wasPendingSetup = !!pendingTotpSetup;
+
+      if (wasPendingSetup) {
+        // Convert pending TOTP setup session to full user session
+        req.session.set('pendingTotpSetup', undefined);
+        req.session.set('user', { id: userId });
+
+        // Get user data for response
+        const user = await fastify.userService.verifyUserById(userId);
+
+        return res.status(200).send({
+          success: true,
+          user,
+          totp_setup_completed: true,
+        });
+      }
+
+      return res.status(200).send({
+        success: true,
+        totp_setup_completed: false,
+      });
     },
   });
