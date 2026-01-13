@@ -86,15 +86,16 @@ export class TotpService {
     const otpauthUrl = this.generateOtpAuthUrl(user.email, secret);
     const qrCodeDataUrl = await this.generateQrCode(otpauthUrl);
 
-    // Create or update TOTP record
+    // If there's an existing unverified TOTP, delete it first to avoid
+    // unique constraint violation (handles race conditions and retries)
     if (existingTotp) {
-      existingTotp.secret = secret;
-      existingTotp.verified = false;
-    } else {
-      const totp = new UserTotpEntity({ user, secret });
-      this.mikro.em.persist(totp);
+      await this.mikro.userTotp.nativeDelete({ user: { id: user.id } });
+      this.mikro.em.clear();
     }
 
+    // Create new TOTP record
+    const totp = new UserTotpEntity({ user, secret });
+    this.mikro.em.persist(totp);
     await this.mikro.em.flush();
 
     return {
