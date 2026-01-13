@@ -4,7 +4,10 @@ import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
-export default (fastify: FastifyWithZodInstance) =>
+export default (fastify: FastifyWithZodInstance) => {
+  if (!fastify.config.basic_authentication_methods.passkey.enabled) {
+    return;
+  }
   fastify.route({
     method: 'PATCH',
     url: '',
@@ -45,3 +48,4 @@ export default (fastify: FastifyWithZodInstance) =>
       });
     },
   });
+};

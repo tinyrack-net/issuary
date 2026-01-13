@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import fastifyPlugin from 'fastify-plugin';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
-import type { AppConfig } from '@/lib/config.js';
+import type { AppConfig } from '@/lib/config/index.js';
 import { e } from '@/schemas/error.js';
 
 declare module 'fastify' {

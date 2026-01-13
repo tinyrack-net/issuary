@@ -15,7 +15,7 @@ import { isoBase64URL } from '@simplewebauthn/server/helpers';
 import fastifyPlugin from 'fastify-plugin';
 import type { UserEntity } from '@/entities/user.entity.js';
 import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
-import type { AppConfig } from '@/lib/config.js';
+import type { AppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 

@@ -4,7 +4,7 @@ import { type Options, ReflectMetadataProvider } from '@mikro-orm/core';
 import { Migrator } from '@mikro-orm/migrations';
 import { SeedManager } from '@mikro-orm/seeder';
 import { defineConfig, SqliteDriver } from '@mikro-orm/sqlite';
-import type { AppConfig } from '../lib/config.js';
+import type { AppConfig } from '../lib/config/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

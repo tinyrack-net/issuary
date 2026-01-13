@@ -8,7 +8,7 @@ import {
   importSPKI,
 } from 'jose';
 import { JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
-import type { AppConfig } from '@/lib/config.js';
+import type { AppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 
 declare module 'fastify' {

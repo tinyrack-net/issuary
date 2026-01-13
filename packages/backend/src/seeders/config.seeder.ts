@@ -2,7 +2,7 @@ import type { EntityManager } from '@mikro-orm/core';
 import { hash } from 'argon2';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
-import type { AppConfig } from '@/lib/config.js';
+import type { AppConfig } from '@/lib/config/index.js';
 
 /**
  * ConfigSeeder

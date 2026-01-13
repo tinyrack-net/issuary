@@ -12,7 +12,10 @@ const PasskeyInfo = z.object({
   created_at: z.date(),
 });
 
-export default (fastify: FastifyWithZodInstance) =>
+export default (fastify: FastifyWithZodInstance) => {
+  if (!fastify.config.basic_authentication_methods.passkey.enabled) {
+    return;
+  }
   fastify.route({
     method: 'GET',
     url: '',
@@ -38,3 +41,4 @@ export default (fastify: FastifyWithZodInstance) =>
       });
     },
   });
+};

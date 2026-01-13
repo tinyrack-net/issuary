@@ -4,7 +4,11 @@ import { fileURLToPath } from 'node:url';
 import fastifyAutoload from '@fastify/autoload';
 import Fastify from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { type AppConfig, type DeepPartial, loadConfig } from '@/lib/config.js';
+import {
+  type AppConfig,
+  type DeepPartial,
+  loadConfig,
+} from '@/lib/config/index.js';
 import { env } from '@/lib/env.js';
 
 const __filename = fileURLToPath(import.meta.url);

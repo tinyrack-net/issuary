@@ -1,5 +1,5 @@
 import type { Options } from '@mikro-orm/core';
-import type { AppConfig } from '@/lib/config.js';
+import type { AppConfig } from '@/lib/config/index.js';
 import { mikroormMemoryConfig } from './memory.js';
 import { mikroormPostgresConfig } from './postgres.js';
 import { mikroormSqliteConfig } from './sqlite.js';

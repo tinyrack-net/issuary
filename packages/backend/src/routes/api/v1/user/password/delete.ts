@@ -12,7 +12,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
  * This allows users to switch to OAuth-only authentication.
  * Requires current password verification for security.
  */
-export default (fastify: FastifyWithZodInstance) =>
+export default (fastify: FastifyWithZodInstance) => {
   fastify.route({
     method: 'DELETE',
     url: '',
@@ -82,3 +82,4 @@ export default (fastify: FastifyWithZodInstance) =>
       return res.status(200).send({ success: true });
     },
   });
+};

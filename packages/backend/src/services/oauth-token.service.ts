@@ -1,6 +1,6 @@
 import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
-import type { AppConfig } from '@/lib/config.js';
+import type { AppConfig } from '@/lib/config/index.js';
 import { validatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';

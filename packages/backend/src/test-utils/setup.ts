@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll } from 'vitest';
-import type { AppConfig, DeepPartial } from '@/lib/config.js';
+import type { AppConfig, DeepPartial } from '@/lib/config/index.js';
 import { createServer } from '@/server.js';
 
 /**

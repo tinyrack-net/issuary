@@ -667,7 +667,7 @@ describe('POST /api/v1/user/passkeys/register/verify - Passkey disabled', () => 
     },
   });
 
-  test('should return 400 when passkey is disabled in config', async () => {
+  test('should return 404 when passkey is disabled in config (route not registered)', async () => {
     const sessionCookie = await createAuthenticatedSession(appDisabled);
 
     const res = await injectWithSession(
@@ -682,8 +682,7 @@ describe('POST /api/v1/user/passkeys/register/verify - Passkey disabled', () => 
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(400);
-    const body = res.json();
-    expect(body.code).toBe('PASSKEY_NOT_ENABLED');
+    // When passkey is disabled, the route is not registered at all
+    expect(res.statusCode).toBe(404);
   });
 });

@@ -12,7 +12,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
  * This endpoint allows users who signed up via OAuth to add a password
  * for email/password login.
  */
-export default (fastify: FastifyWithZodInstance) =>
+export default (fastify: FastifyWithZodInstance) => {
   fastify.route({
     method: 'POST',
     url: '',
@@ -67,3 +67,4 @@ export default (fastify: FastifyWithZodInstance) =>
       return res.status(200).send({ success: true });
     },
   });
+};

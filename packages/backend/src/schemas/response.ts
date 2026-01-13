@@ -8,7 +8,7 @@ import {
   AppConfigPasskeyAuth,
   AppConfigPasswordAuth,
   AppTheme,
-} from '@/lib/config.js';
+} from '@/lib/config/index.js';
 import { f } from './field.js';
 import { oauthSchema } from './oauth.js';
 

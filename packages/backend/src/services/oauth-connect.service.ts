@@ -4,7 +4,7 @@ import {
   type AppConfig,
   type ResolvedOAuthConfig,
   resolveOAuthConfig,
-} from '@/lib/config.js';
+} from '@/lib/config/index.js';
 import { generatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
