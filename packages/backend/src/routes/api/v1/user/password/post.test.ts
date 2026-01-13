@@ -1,5 +1,6 @@
 import {
   createAuthenticatedSession,
+  extractCookie,
   generateUniqueEmail,
   injectWithSession,
   setupTestServer,
@@ -33,9 +34,7 @@ async function createUserWithPasswordAndSession(
 
   expect(loginRes.statusCode).toBe(200);
 
-  const sessionCookie = loginRes.cookies.find((c) => c.name === 'session')
-    ?.value as string;
-  expect(sessionCookie).toBeDefined();
+  const sessionCookie = extractCookie(loginRes, 'session');
 
   return sessionCookie;
 }
@@ -142,9 +141,7 @@ describe('POST /api/v1/user/password', () => {
       await app.mikro.em.flush();
     });
 
-    const sessionCookie = loginRes.cookies.find((c) => c.name === 'session')
-      ?.value as string;
-    expect(sessionCookie).toBeDefined();
+    const sessionCookie = extractCookie(loginRes, 'session');
 
     // Now set password for OAuth-only user
     const res = await injectWithSession(
@@ -211,9 +208,7 @@ describe('POST /api/v1/user/password', () => {
       await app.mikro.em.flush();
     });
 
-    const sessionCookie = loginRes.cookies.find((c) => c.name === 'session')
-      ?.value as string;
-    expect(sessionCookie).toBeDefined();
+    const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to set a password that's too short
     const res = await injectWithSession(

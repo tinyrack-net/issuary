@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   createAuthenticatedSession,
+  extractCookie,
   generateUniqueEmail,
   injectWithSession,
   setupTestServer,
@@ -110,8 +111,7 @@ describe('GET /api/v1/user/oauth-accounts', () => {
       });
       expect(loginRes.statusCode).toBe(200);
 
-      return loginRes.cookies.find((c) => c.name === 'session')
-        ?.value as string;
+      return extractCookie(loginRes, 'session');
     });
 
     const res = await injectWithSession(

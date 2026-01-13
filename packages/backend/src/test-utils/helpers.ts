@@ -26,14 +26,23 @@ export function extractSessionCookie(
 }
 
 /**
- * Extract cookie value by name from response
+ * Extract cookie value by name from response.
+ * Throws an error if the cookie is not found.
+ *
+ * @param res - Response from app.inject()
+ * @param name - Cookie name to extract
+ * @returns Cookie value
+ * @throws Error if cookie is not found
  */
 export function extractCookie(
   res: LightMyRequestResponse,
   name: string,
-): string | undefined {
+): string {
   const cookie = res.cookies.find((c) => c.name === name);
-  return cookie?.value;
+  if (!cookie?.value) {
+    throw new Error(`Cookie '${name}' not found in response`);
+  }
+  return cookie.value;
 }
 
 /**

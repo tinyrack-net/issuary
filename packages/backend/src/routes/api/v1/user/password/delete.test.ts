@@ -1,5 +1,6 @@
 import {
   createAuthenticatedSession,
+  extractCookie,
   generateUniqueEmail,
   injectWithSession,
   setupTestServer,
@@ -36,12 +37,9 @@ async function createUserWithPasswordAndSession(
 
   expect(loginRes.statusCode).toBe(200);
 
-  const sessionCookie = loginRes.cookies.find(
-    (c) => c.name === 'session',
-  )?.value;
-  expect(sessionCookie).toBeDefined();
+  const sessionCookie = extractCookie(loginRes, 'session');
 
-  return { sessionCookie: sessionCookie!, userId: userId! };
+  return { sessionCookie, userId: userId! };
 }
 
 describe('DELETE /api/v1/user/password', () => {
@@ -114,9 +112,7 @@ describe('DELETE /api/v1/user/password', () => {
       await app.mikro.em.flush();
     });
 
-    const sessionCookie = loginRes.cookies.find((c) => c.name === 'session')
-      ?.value as string;
-    expect(sessionCookie).toBeDefined();
+    const sessionCookie = extractCookie(loginRes, 'session');
 
     const res = await injectWithSession(
       app,

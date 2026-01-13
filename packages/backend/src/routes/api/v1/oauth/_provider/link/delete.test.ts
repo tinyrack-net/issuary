@@ -1,6 +1,7 @@
 import {
   TEST_USER,
   createAuthenticatedSession,
+  extractCookie,
   generateUniqueEmail,
   injectWithSession,
   setupTestServer,
@@ -41,9 +42,8 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
       });
       expect(loginRes.statusCode).toBe(200);
 
-      const cookie = loginRes.cookies.find((c) => c.name === 'session')?.value;
-      expect(cookie).toBeDefined();
-      return cookie as string;
+      const cookie = extractCookie(loginRes, 'session');
+      return cookie;
     });
 
     const res = await injectWithSession(
@@ -79,8 +79,7 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
       });
       expect(loginRes.statusCode).toBe(200);
 
-      return loginRes.cookies.find((c) => c.name === 'session')
-        ?.value as string;
+      return extractCookie(loginRes, 'session');
     });
 
     const res = await injectWithSession(
@@ -183,8 +182,7 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
       });
       expect(loginRes.statusCode).toBe(200);
 
-      return loginRes.cookies.find((c) => c.name === 'session')
-        ?.value as string;
+      return extractCookie(loginRes, 'session');
     });
 
     const res = await injectWithSession(

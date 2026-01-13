@@ -2,6 +2,7 @@ import { generateSecret, generateSync, verifySync } from 'otplib';
 import { describe, expect, test } from 'vitest';
 import {
   createAuthenticatedSession,
+  extractCookie,
   generateUniqueEmail,
   injectWithSession,
   setupTestServer,
@@ -34,11 +35,8 @@ async function createDbUserWithSession(
 
   expect(loginRes.statusCode).toBe(200);
 
-  const sessionCookie = loginRes.cookies.find((c) => c.name === 'session')
-    ?.value as string;
-  expect(sessionCookie).toBeDefined();
-
-  const userId = loginRes.json().user.id as string;
+  const sessionCookie = extractCookie(loginRes, 'session');
+  const userId = loginRes.json().user.id;
 
   return { sessionCookie, userId };
 }

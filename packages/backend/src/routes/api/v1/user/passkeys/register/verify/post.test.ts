@@ -48,11 +48,8 @@ async function createDbUserWithSession(
 
   expect(loginRes.statusCode).toBe(200);
 
-  const sessionCookie = loginRes.cookies.find((c) => c.name === 'session')
-    ?.value as string;
-  expect(sessionCookie).toBeDefined();
-
-  const userId = loginRes.json().user.id as string;
+  const sessionCookie = extractCookie(loginRes, 'session');
+  const userId = loginRes.json().user.id;
 
   return { sessionCookie, userId };
 }
@@ -700,5 +697,3 @@ describe('POST /api/v1/user/passkeys/register/verify - Passkey disabled', () => 
     expect(body.code).toBe('PASSKEY_NOT_ENABLED');
   });
 });
-
-
