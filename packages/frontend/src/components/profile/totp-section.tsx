@@ -12,46 +12,47 @@ export function TotpSection({ totpEnabled, onOpenModal }: TotpSectionProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="mb-4">
-      <h2 className="mb-2 font-semibold text-sm">{t('profile.totp.title')}</h2>
-      <p className="mb-3 text-base-content/60 text-xs">
-        {t('profile.totp.description')}
-      </p>
-      <div className="rounded-lg bg-base-200 p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShieldCheckIcon
-              className={`size-4 ${
-                totpEnabled ? 'text-success' : 'text-base-content/50'
-              }`}
-              weight="regular"
-            />
-            <span className="text-sm">
-              {totpEnabled
-                ? t('profile.totp.status.enabled')
-                : t('profile.totp.status.disabled')}
-            </span>
-          </div>
-          <div className="flex gap-1">
-            {totpEnabled ? (
-              <button
-                type="button"
-                className="btn btn-ghost btn-xs text-error"
-                onClick={() => onOpenModal('disable')}
-              >
-                {t('profile.totp.disable')}
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="btn btn-ghost btn-xs text-primary"
-                onClick={() => onOpenModal('setup')}
-              >
-                {t('profile.totp.enable')}
-              </button>
-            )}
+    <div className="flex items-center justify-between p-4">
+      <div className="flex items-center gap-3">
+        <div
+          className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${
+            totpEnabled ? 'bg-success/10' : 'bg-base-200'
+          }`}
+        >
+          <ShieldCheckIcon
+            className={`size-4 ${
+              totpEnabled ? 'text-success' : 'text-base-content/50'
+            }`}
+            weight="regular"
+          />
+        </div>
+        <div>
+          <div className="font-medium text-sm">{t('profile.totp.title')}</div>
+          <div className="text-base-content/60 text-xs">
+            {totpEnabled
+              ? t('profile.totp.status.enabled')
+              : t('profile.totp.status.disabled')}
           </div>
         </div>
+      </div>
+      <div className="flex gap-1">
+        {totpEnabled ? (
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs text-error"
+            onClick={() => onOpenModal('disable')}
+          >
+            {t('profile.totp.disable')}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs text-primary"
+            onClick={() => onOpenModal('setup')}
+          >
+            {t('profile.totp.enable')}
+          </button>
+        )}
       </div>
     </div>
   );

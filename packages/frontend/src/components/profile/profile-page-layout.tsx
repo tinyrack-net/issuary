@@ -1,0 +1,43 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { LanguageSelector } from '@/components/ui/language-selector.js';
+import { ThemeToggle } from '@/components/ui/theme-toggle.js';
+import { useTheme } from '@/hooks/use-theme.js';
+import { appConfigQueryOptions } from '@/queries/config.js';
+
+type ProfilePageLayoutProps = {
+  children: React.ReactNode;
+};
+
+export function ProfilePageLayout({ children }: ProfilePageLayoutProps) {
+  const { themeMode, currentTheme, darkTheme, canToggleTheme, toggleDarkMode } =
+    useTheme();
+  const isDark = currentTheme === darkTheme;
+  const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
+
+  const backgroundUrl = configData.app.background_url;
+
+  return (
+    <div
+      className="flex min-h-screen items-center justify-center bg-base-200 bg-cover p-4 md:p-8"
+      style={
+        backgroundUrl
+          ? {
+              backgroundImage: `url(${backgroundUrl})`,
+            }
+          : undefined
+      }
+    >
+      {canToggleTheme && (
+        <ThemeToggle
+          themeMode={themeMode}
+          isDark={isDark}
+          onToggle={toggleDarkMode}
+        />
+      )}
+      <LanguageSelector />
+      <div className="card w-full max-w-2xl border border-base-200 bg-base-100 shadow-lg">
+        {children}
+      </div>
+    </div>
+  );
+}

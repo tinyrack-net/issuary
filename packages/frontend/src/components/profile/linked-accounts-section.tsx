@@ -31,58 +31,69 @@ export function LinkedAccountsSection({
   }
 
   return (
-    <div className="mb-4">
-      <h2 className="mb-2 font-semibold text-sm">
-        {t('profile.linkedAccounts.title')}
-      </h2>
-      <p className="mb-3 text-base-content/60 text-xs">
-        {t('profile.linkedAccounts.description')}
-      </p>
-      <div className="rounded-lg bg-base-200 p-3">
-        <div className="flex flex-col gap-2">
-          {providers.map((provider) => (
-            <div
-              key={provider.id}
-              className="flex items-center justify-between"
-            >
-              <div className="flex items-center gap-2">
+    <div className="rounded-xl border border-base-200 bg-base-100">
+      <div className="border-base-200 border-b p-4">
+        <h2 className="font-semibold">{t('profile.linkedAccounts.title')}</h2>
+        <p className="text-base-content/60 text-sm">
+          {t('profile.linkedAccounts.description')}
+        </p>
+      </div>
+      <div className="divide-y divide-base-200">
+        {providers.map((provider) => (
+          <div
+            key={provider.id}
+            className="flex items-center justify-between p-4"
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${
+                  provider.linked ? 'bg-success/10' : 'bg-base-200'
+                }`}
+              >
                 <LinkIcon
                   className={`size-4 ${
                     provider.linked ? 'text-success' : 'text-base-content/50'
                   }`}
                   weight="regular"
                 />
-                <span className="font-medium text-sm">
-                  {provider.display_name}
-                </span>
               </div>
-              {provider.linked ? (
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-xs text-error"
-                  disabled={unlinkingProvider === provider.id}
-                  onClick={() => onUnlink(provider.id)}
-                >
-                  {unlinkingProvider === provider.id ? (
-                    <>
-                      <span className="loading loading-spinner loading-xs" />
-                      {t('profile.linkedAccounts.unlinking')}
-                    </>
-                  ) : (
-                    t('profile.linkedAccounts.unlink')
-                  )}
-                </button>
-              ) : (
-                <a
-                  href={getConnectUrl(provider.id, 'link', '/profile')}
-                  className="btn btn-ghost btn-xs text-primary"
-                >
-                  {t('profile.linkedAccounts.link')}
-                </a>
-              )}
+              <div>
+                <div className="font-medium text-sm">
+                  {provider.display_name}
+                </div>
+                <div className="text-base-content/60 text-xs">
+                  {provider.linked
+                    ? t('profile.linkedAccounts.connected')
+                    : t('profile.linkedAccounts.notConnected')}
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
+            {provider.linked ? (
+              <button
+                type="button"
+                className="btn btn-ghost btn-xs text-error"
+                disabled={unlinkingProvider === provider.id}
+                onClick={() => onUnlink(provider.id)}
+              >
+                {unlinkingProvider === provider.id ? (
+                  <>
+                    <span className="loading loading-spinner loading-xs" />
+                    {t('profile.linkedAccounts.unlinking')}
+                  </>
+                ) : (
+                  t('profile.linkedAccounts.unlink')
+                )}
+              </button>
+            ) : (
+              <a
+                href={getConnectUrl(provider.id, 'link', '/profile')}
+                className="btn btn-ghost btn-xs text-primary"
+              >
+                {t('profile.linkedAccounts.link')}
+              </a>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

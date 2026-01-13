@@ -1,4 +1,4 @@
-import { SignOutIcon } from '@phosphor-icons/react';
+import { SignOutIcon, UserCircleIcon } from '@phosphor-icons/react';
 import {
   useMutation,
   useQueryClient,
@@ -7,8 +7,6 @@ import {
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
-import { PageHeader } from '@/components/auth/page-header.js';
 import { ChangePasswordModal } from '@/components/modals/profile/change-password-modal.js';
 import { DisableTotpModal } from '@/components/modals/profile/disable-totp-modal.js';
 import { ManagePasskeysModal } from '@/components/modals/profile/manage-passkeys-modal.js';
@@ -19,6 +17,7 @@ import { SetupTotpModal } from '@/components/modals/profile/setup-totp-modal.js'
 import { LinkedAccountsSection } from '@/components/profile/linked-accounts-section.js';
 import { PasskeySection } from '@/components/profile/passkey-section.js';
 import { PasswordSection } from '@/components/profile/password-section.js';
+import { ProfilePageLayout } from '@/components/profile/profile-page-layout.js';
 import { TotpSection } from '@/components/profile/totp-section.js';
 import { UserInfoSection } from '@/components/profile/user-info-section.js';
 import { tick } from '@/libs/promise';
@@ -146,66 +145,113 @@ function Profile() {
     setPasskeyModal(null);
   };
 
+  // Determine which security sections to show
+  const showPasswordSection = user !== null;
+  const showTotpSection = user && !isConfigManaged && totpEnabled;
+  const showPasskeySection = user && !isConfigManaged && passkeyEnabled;
+  const showLinkedAccounts = availableProviders.length > 0;
+  const hasSecurityOptions =
+    showPasswordSection || showTotpSection || showPasskeySection;
+
   return (
-    <AuthPageLayout>
-      <PageHeader title={t('profile.title')} subtitle={t('profile.subtitle')} />
+    <ProfilePageLayout>
+      {/* Header */}
+      <div className="border-base-200 border-b bg-base-100 p-6 md:p-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex size-14 items-center justify-center rounded-full bg-primary/10">
+              <UserCircleIcon
+                className="size-8 text-primary"
+                weight="regular"
+              />
+            </div>
+            <div>
+              <h1 className="font-bold text-xl">{t('profile.title')}</h1>
+              <p className="text-base-content/60 text-sm">
+                {t('profile.subtitle')}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm gap-2"
+            disabled={logoutMutation.isPending}
+            onClick={() => logoutMutation.mutate()}
+          >
+            {logoutMutation.isPending ? (
+              <span className="loading loading-spinner loading-sm" />
+            ) : (
+              <SignOutIcon className="size-4" weight="bold" />
+            )}
+            <span className="hidden sm:inline">{t('profile.logout')}</span>
+          </button>
+        </div>
+      </div>
 
-      {/* User Info Card */}
-      {user && <UserInfoSection user={user} />}
+      {/* Content */}
+      <div className="p-6 md:p-8">
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Left Column - Account Info */}
+          <div className="space-y-6">
+            {/* User Info Card */}
+            {user && <UserInfoSection user={user} />}
+          </div>
 
-      {/* Password Management */}
-      {user && (
-        <PasswordSection
-          hasPassword={user.has_password}
-          hasLinkedOAuth={hasLinkedOAuth}
-          isConfigManaged={isConfigManaged}
-          onOpenModal={setPasswordModal}
-        />
-      )}
+          {/* Right Column - Security & Connections */}
+          <div className="space-y-6">
+            {/* Security Options */}
+            {hasSecurityOptions && (
+              <div className="rounded-xl border border-base-200 bg-base-100">
+                <div className="border-base-200 border-b p-4">
+                  <h2 className="font-semibold">
+                    {t('profile.security.title')}
+                  </h2>
+                  <p className="text-base-content/60 text-sm">
+                    {t('profile.security.description')}
+                  </p>
+                </div>
+                <div className="divide-y divide-base-200">
+                  {/* Password */}
+                  {showPasswordSection && (
+                    <PasswordSection
+                      hasPassword={user.has_password}
+                      hasLinkedOAuth={hasLinkedOAuth}
+                      isConfigManaged={isConfigManaged}
+                      onOpenModal={setPasswordModal}
+                    />
+                  )}
 
-      {/* Two-Factor Authentication */}
-      {user && !isConfigManaged && totpEnabled && (
-        <TotpSection
-          totpEnabled={user.totp_enabled}
-          onOpenModal={setTotpModal}
-        />
-      )}
+                  {/* TOTP */}
+                  {showTotpSection && (
+                    <TotpSection
+                      totpEnabled={user.totp_enabled}
+                      onOpenModal={setTotpModal}
+                    />
+                  )}
 
-      {/* Passkey Authentication */}
-      {user && !isConfigManaged && passkeyEnabled && (
-        <PasskeySection
-          passkeyCount={user.passkey_count}
-          onOpenModal={setPasskeyModal}
-        />
-      )}
+                  {/* Passkey */}
+                  {showPasskeySection && (
+                    <PasskeySection
+                      passkeyCount={user.passkey_count}
+                      onOpenModal={setPasskeyModal}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
 
-      {/* Linked OAuth Accounts */}
-      <LinkedAccountsSection
-        providers={availableProviders}
-        unlinkingProvider={unlinkingProvider}
-        getConnectUrl={getOAuthConnectUrl}
-        onUnlink={handleUnlink}
-      />
-
-      {/* Logout Button */}
-      <button
-        type="button"
-        className="btn btn-block h-10 font-semibold text-[14px]"
-        disabled={logoutMutation.isPending}
-        onClick={() => logoutMutation.mutate()}
-      >
-        {logoutMutation.isPending ? (
-          <>
-            <span className="loading loading-spinner loading-sm" />
-            {t('profile.logout')}
-          </>
-        ) : (
-          <>
-            <SignOutIcon className="size-4" weight="bold" />
-            {t('profile.logout')}
-          </>
-        )}
-      </button>
+            {/* Linked OAuth Accounts */}
+            {showLinkedAccounts && (
+              <LinkedAccountsSection
+                providers={availableProviders}
+                unlinkingProvider={unlinkingProvider}
+                getConnectUrl={getOAuthConnectUrl}
+                onUnlink={handleUnlink}
+              />
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Password Modals */}
       <SetPasswordModal
@@ -242,6 +288,6 @@ function Profile() {
         onClose={() => setPasskeyModal(null)}
         onAddNew={() => setPasskeyModal('setup')}
       />
-    </AuthPageLayout>
+    </ProfilePageLayout>
   );
 }
