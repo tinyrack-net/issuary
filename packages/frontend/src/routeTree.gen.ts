@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VerifyTotpIndexRouteImport } from './routes/verify-totp/index'
 import { Route as VerifyEmailIndexRouteImport } from './routes/verify-email/index'
 import { Route as ResetPasswordIndexRouteImport } from './routes/reset-password/index'
 import { Route as RegisterIndexRouteImport } from './routes/register/index'
@@ -22,6 +23,11 @@ import { Route as ConsentIndexRouteImport } from './routes/consent/index'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyTotpIndexRoute = VerifyTotpIndexRouteImport.update({
+  id: '/verify-totp/',
+  path: '/verify-totp/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VerifyEmailIndexRoute = VerifyEmailIndexRouteImport.update({
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterIndexRoute
   '/reset-password': typeof ResetPasswordIndexRoute
   '/verify-email': typeof VerifyEmailIndexRoute
+  '/verify-totp': typeof VerifyTotpIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterIndexRoute
   '/reset-password': typeof ResetPasswordIndexRoute
   '/verify-email': typeof VerifyEmailIndexRoute
+  '/verify-totp': typeof VerifyTotpIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/register/': typeof RegisterIndexRoute
   '/reset-password/': typeof ResetPasswordIndexRoute
   '/verify-email/': typeof VerifyEmailIndexRoute
+  '/verify-totp/': typeof VerifyTotpIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/verify-email'
+    | '/verify-totp'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/verify-email'
+    | '/verify-totp'
   id:
     | '__root__'
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/register/'
     | '/reset-password/'
     | '/verify-email/'
+    | '/verify-totp/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -145,6 +157,7 @@ export interface RootRouteChildren {
   RegisterIndexRoute: typeof RegisterIndexRoute
   ResetPasswordIndexRoute: typeof ResetPasswordIndexRoute
   VerifyEmailIndexRoute: typeof VerifyEmailIndexRoute
+  VerifyTotpIndexRoute: typeof VerifyTotpIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -154,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-totp/': {
+      id: '/verify-totp/'
+      path: '/verify-totp'
+      fullPath: '/verify-totp'
+      preLoaderRoute: typeof VerifyTotpIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/verify-email/': {
@@ -225,6 +245,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterIndexRoute: RegisterIndexRoute,
   ResetPasswordIndexRoute: ResetPasswordIndexRoute,
   VerifyEmailIndexRoute: VerifyEmailIndexRoute,
+  VerifyTotpIndexRoute: VerifyTotpIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

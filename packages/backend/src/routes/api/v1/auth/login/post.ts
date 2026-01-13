@@ -18,7 +18,7 @@ export default (fastify: FastifyWithZodInstance) =>
         password: f.userPassword,
       }),
       response: {
-        200: r.UserSessionResponse,
+        200: r.LoginResponse,
         400: e.ValidationError.Schema,
         401: e.InvalidEmailOrPassword.Schema,
       },
@@ -29,6 +29,19 @@ export default (fastify: FastifyWithZodInstance) =>
         password: req.body.password,
       });
 
+      // Check if TOTP is enabled for this user
+      if (user.totp_enabled) {
+        // Set pending TOTP user session instead of full login
+        req.session.set('pendingTotpUser', {
+          id: user.id,
+        });
+
+        return res.status(200).send({
+          totp_verification_required: true as const,
+        });
+      }
+
+      // No TOTP enabled, complete login immediately
       req.session.set('user', {
         id: user.id,
       });
@@ -44,6 +57,7 @@ export default (fastify: FastifyWithZodInstance) =>
         !user.totp_enabled;
 
       return res.status(200).send({
+        totp_verification_required: false as const,
         user: {
           id: user.id,
           managed: user.managed,

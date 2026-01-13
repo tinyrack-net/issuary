@@ -360,6 +360,17 @@ export const r = {
     user: UserSession,
   }),
 
+  // Login response - either full session or TOTP verification required
+  LoginResponse: z.union([
+    z.object({
+      user: UserSession,
+      totp_verification_required: z.literal(false),
+    }),
+    z.object({
+      totp_verification_required: z.literal(true),
+    }),
+  ]),
+
   UserSessionNullableResponse: z.object({
     user: UserSession.nullable(),
   }),

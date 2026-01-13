@@ -1,6 +1,7 @@
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch.js';
 import { queryKeys } from './keys';
+import type { SessionUser } from './session.js';
 
 export type TotpStatusResponse = {
   enabled: boolean;
@@ -14,6 +15,10 @@ export type TotpSetupResponse = {
 
 export type SuccessResponse = {
   success: boolean;
+};
+
+export type TotpLoginVerifyResponse = {
+  user: SessionUser;
 };
 
 /**
@@ -70,5 +75,22 @@ export const disableTotpMutationOptions = mutationOptions({
       body: JSON.stringify(values),
     });
     return res.json() as Promise<SuccessResponse>;
+  },
+});
+
+/**
+ * Verify TOTP code during login (complete 2FA login)
+ */
+export type VerifyTotpLoginParams = {
+  code: string;
+};
+
+export const verifyTotpLoginMutationOptions = mutationOptions({
+  mutationFn: async (values: VerifyTotpLoginParams) => {
+    const res = await etch('/api/v1/auth/totp/verify', {
+      method: 'POST',
+      body: JSON.stringify(values),
+    });
+    return res.json() as Promise<TotpLoginVerifyResponse>;
   },
 });

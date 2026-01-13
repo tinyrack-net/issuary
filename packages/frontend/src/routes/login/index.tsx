@@ -29,7 +29,7 @@ import {
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
-import { loginMutationOptions } from '@/queries/login.js';
+import { type LoginResponse, loginMutationOptions } from '@/queries/login.js';
 import { oauthProvidersQueryOptions } from '@/queries/oauth.js';
 import { loginWithPasskeyMutationOptions } from '@/queries/passkey.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
@@ -74,7 +74,17 @@ function Login() {
 
   const loginMutation = useMutation({
     ...loginMutationOptions,
-    onSuccess: async (data) => {
+    onSuccess: async (data: LoginResponse) => {
+      // Check if TOTP verification is required
+      if (data.totp_verification_required) {
+        // Redirect to TOTP verification page with OAuth params preserved
+        router.navigate({
+          to: '/verify-totp',
+          search: extractOAuthParams(search),
+        });
+        return;
+      }
+
       queryClient.setQueryData(getSessionQueryOptions.queryKey, {
         user: data.user,
       });

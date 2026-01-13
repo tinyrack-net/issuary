@@ -404,6 +404,16 @@ export const e = {
     'INVALID_TOTP_CODE',
     'The provided TOTP code is invalid.',
   ),
+  TotpVerificationRequired: createError(
+    401,
+    'TOTP_VERIFICATION_REQUIRED',
+    'TOTP verification is required to complete login.',
+  ),
+  TotpVerificationSessionExpired: createError(
+    401,
+    'TOTP_VERIFICATION_SESSION_EXPIRED',
+    'TOTP verification session has expired. Please login again.',
+  ),
 
   // Passkey Errors
   PasskeyNotEnabled: createError(

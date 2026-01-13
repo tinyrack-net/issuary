@@ -18,6 +18,7 @@ export {
   createAuthenticatedSession,
   createDbUserWithSession,
   createPasskeyForUser,
+  enableTotpForUser,
   expectError,
   expectErrorCode,
   extractCookie,

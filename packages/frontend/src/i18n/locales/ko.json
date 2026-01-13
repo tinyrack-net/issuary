@@ -256,5 +256,14 @@
   "profile.passkey.manageModal.cancelEdit": "취소",
   "profile.passkey.manageModal.save": "저장",
   "profile.passkey.manageModal.saving": "저장 중...",
-  "profile.passkey.manageModal.renameError": "패스키 이름 변경에 실패했습니다. 다시 시도해주세요."
+  "profile.passkey.manageModal.renameError": "패스키 이름 변경에 실패했습니다. 다시 시도해주세요.",
+  "verifyTotp.title": "2단계 인증",
+  "verifyTotp.subtitle": "인증 앱의 코드를 입력하세요",
+  "verifyTotp.code.label": "인증 코드",
+  "verifyTotp.code.placeholder": "6자리 코드 입력",
+  "verifyTotp.submit": "확인",
+  "verifyTotp.submitting": "확인 중...",
+  "verifyTotp.error.invalid": "잘못된 코드입니다. 다시 시도해주세요.",
+  "verifyTotp.error.expired": "세션이 만료되었습니다. 다시 로그인해주세요.",
+  "verifyTotp.backToLogin": "로그인으로 돌아가기"
 }

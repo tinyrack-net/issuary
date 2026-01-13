@@ -7,9 +7,14 @@ export type LoginParams = {
   password: string;
 };
 
-export type LoginResponse = {
-  user: SessionUser;
-};
+export type LoginResponse =
+  | {
+      totp_verification_required: false;
+      user: SessionUser;
+    }
+  | {
+      totp_verification_required: true;
+    };
 
 export const loginMutationOptions = mutationOptions({
   mutationFn: async (values: LoginParams) => {

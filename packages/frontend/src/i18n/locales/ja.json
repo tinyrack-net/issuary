@@ -256,5 +256,14 @@
   "profile.passkey.manageModal.cancelEdit": "キャンセル",
   "profile.passkey.manageModal.save": "保存",
   "profile.passkey.manageModal.saving": "保存中...",
-  "profile.passkey.manageModal.renameError": "パスキー名の変更に失敗しました。もう一度お試しください。"
+  "profile.passkey.manageModal.renameError": "パスキー名の変更に失敗しました。もう一度お試しください。",
+  "verifyTotp.title": "二要素認証",
+  "verifyTotp.subtitle": "認証アプリのコードを入力してください",
+  "verifyTotp.code.label": "認証コード",
+  "verifyTotp.code.placeholder": "6桁のコードを入力",
+  "verifyTotp.submit": "確認",
+  "verifyTotp.submitting": "確認中...",
+  "verifyTotp.error.invalid": "無効なコードです。もう一度お試しください。",
+  "verifyTotp.error.expired": "セッションが期限切れです。再度ログインしてください。",
+  "verifyTotp.backToLogin": "ログインに戻る"
 }

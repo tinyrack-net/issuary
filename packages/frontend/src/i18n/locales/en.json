@@ -256,5 +256,14 @@
   "profile.passkey.manageModal.cancelEdit": "Cancel",
   "profile.passkey.manageModal.save": "Save",
   "profile.passkey.manageModal.saving": "Saving...",
-  "profile.passkey.manageModal.renameError": "Failed to rename passkey. Please try again."
+  "profile.passkey.manageModal.renameError": "Failed to rename passkey. Please try again.",
+  "verifyTotp.title": "Two-Factor Authentication",
+  "verifyTotp.subtitle": "Enter the code from your authenticator app",
+  "verifyTotp.code.label": "Authentication Code",
+  "verifyTotp.code.placeholder": "Enter 6-digit code",
+  "verifyTotp.submit": "Verify",
+  "verifyTotp.submitting": "Verifying...",
+  "verifyTotp.error.invalid": "Invalid code. Please try again.",
+  "verifyTotp.error.expired": "Session expired. Please log in again.",
+  "verifyTotp.backToLogin": "Back to login"
 }

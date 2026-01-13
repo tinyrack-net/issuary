@@ -328,3 +328,47 @@ export async function createPasskeyForUser(
 
   return passkeyId;
 }
+
+/**
+ * Enable TOTP for a user in the database.
+ * Useful for testing TOTP-related functionality.
+ *
+ * @param app - Fastify instance
+ * @param userId - User ID to enable TOTP for
+ * @returns TOTP secret for generating codes
+ *
+ * @example
+ * ```typescript
+ * const secret = await enableTotpForUser(app, userId);
+ * const code = app.totpService.generateToken(secret);
+ * ```
+ */
+export async function enableTotpForUser(
+  app: FastifyInstance,
+  userId: string,
+): Promise<string> {
+  let secret = '';
+
+  await withMikroContext(app, async () => {
+    const user = await app.mikro.user.findOneOrFail({ id: userId });
+
+    // Check if TOTP already exists
+    const existingTotp = await app.mikro.userTotp.findByUserId(userId);
+    if (existingTotp) {
+      existingTotp.verified = true;
+      secret = existingTotp.secret;
+    } else {
+      secret = app.totpService.generateSecret();
+      const totp = app.mikro.userTotp.create({
+        user,
+        secret,
+        verified: true,
+      });
+      app.mikro.em.persist(totp);
+    }
+
+    await app.mikro.em.flush();
+  });
+
+  return secret;
+}
