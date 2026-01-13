@@ -4,6 +4,80 @@ import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT } from './fixtures.js';
 import { createAuthenticatedSession, grantConsent } from './helpers.js';
 
 /**
+ * Parse redirect location from response headers.
+ * Handles the common pattern of extracting and parsing the Location header.
+ *
+ * @param res - Response from app.inject()
+ * @param baseUrl - Base URL for relative redirects (default: 'http://localhost:8080')
+ * @returns Parsed URL object
+ *
+ * @example
+ * ```typescript
+ * const location = parseRedirectLocation(res);
+ * expect(location.searchParams.get('code')).toBeDefined();
+ * ```
+ */
+export function parseRedirectLocation(
+  res: LightMyRequestResponse,
+  baseUrl = 'http://localhost:8080',
+): URL {
+  const locationHeader = res.headers.location;
+  if (!locationHeader) {
+    throw new Error('No Location header in response');
+  }
+  return new URL(locationHeader as string, baseUrl);
+}
+
+/**
+ * Assert that a redirect response contains an OAuth error.
+ *
+ * @param location - Parsed redirect URL
+ * @param expectedError - Expected OAuth error code
+ * @param expectedDescriptionContains - Optional substring that error_description should contain
+ *
+ * @example
+ * ```typescript
+ * const location = parseRedirectLocation(res);
+ * expectRedirectError(location, 'invalid_scope');
+ * ```
+ */
+export function expectRedirectError(
+  location: URL,
+  expectedError: string,
+  expectedDescriptionContains?: string,
+): void {
+  expect(location.searchParams.get('error')).toBe(expectedError);
+  if (expectedDescriptionContains) {
+    expect(location.searchParams.get('error_description')).toContain(
+      expectedDescriptionContains,
+    );
+  }
+  expect(location.searchParams.has('code')).toBe(false);
+}
+
+/**
+ * Assert that a response redirects to the login page with preserved parameters.
+ *
+ * @param location - Parsed redirect URL
+ * @param originalParams - Original OAuth parameters that should be preserved
+ *
+ * @example
+ * ```typescript
+ * const location = parseRedirectLocation(res);
+ * expectLoginRedirect(location, validParams);
+ * ```
+ */
+export function expectLoginRedirect(
+  location: URL,
+  originalParams: Record<string, string>,
+): void {
+  expect(location.pathname).toBe('/login');
+  for (const [key, value] of Object.entries(originalParams)) {
+    expect(location.searchParams.get(key)).toBe(value);
+  }
+}
+
+/**
  * Parameters for getting authorization code
  */
 export interface GetAuthorizationCodeParams {
@@ -288,5 +362,113 @@ export async function getUserInfo(
     headers: {
       authorization: `Bearer ${accessToken}`,
     },
+  });
+}
+
+/**
+ * Parameters for token introspection
+ */
+export interface IntrospectTokenParams {
+  token: string;
+  tokenTypeHint?: 'access_token' | 'refresh_token';
+  clientId?: string;
+  clientSecret?: string;
+}
+
+/**
+ * Introspect a token using the /introspect endpoint.
+ *
+ * @param app - Fastify instance
+ * @param params - Introspection parameters
+ * @returns Introspection response
+ *
+ * @example
+ * ```typescript
+ * const res = await introspectToken(app, { token: accessToken });
+ * expect(res.json().active).toBe(true);
+ * ```
+ */
+export async function introspectToken(
+  app: FastifyInstance,
+  params: IntrospectTokenParams,
+): Promise<LightMyRequestResponse> {
+  const {
+    token,
+    tokenTypeHint,
+    clientId = TEST_OAUTH_CLIENT.clientId,
+    clientSecret,
+  } = params;
+
+  const payload: Record<string, string> = {
+    token,
+    client_id: clientId,
+  };
+
+  if (tokenTypeHint) {
+    payload['token_type_hint'] = tokenTypeHint;
+  }
+
+  if (clientSecret) {
+    payload['client_secret'] = clientSecret;
+  }
+
+  return app.inject({
+    method: 'POST',
+    url: '/application/oauth/introspect',
+    payload,
+  });
+}
+
+/**
+ * Parameters for token revocation
+ */
+export interface RevokeTokenParams {
+  token: string;
+  tokenTypeHint?: 'access_token' | 'refresh_token';
+  clientId?: string;
+  clientSecret?: string;
+}
+
+/**
+ * Revoke a token using the /revoke endpoint.
+ *
+ * @param app - Fastify instance
+ * @param params - Revocation parameters
+ * @returns Revocation response
+ *
+ * @example
+ * ```typescript
+ * const res = await revokeToken(app, { token: refreshToken });
+ * expect(res.statusCode).toBe(200);
+ * ```
+ */
+export async function revokeToken(
+  app: FastifyInstance,
+  params: RevokeTokenParams,
+): Promise<LightMyRequestResponse> {
+  const {
+    token,
+    tokenTypeHint,
+    clientId = TEST_OAUTH_CLIENT.clientId,
+    clientSecret,
+  } = params;
+
+  const payload: Record<string, string> = {
+    token,
+    client_id: clientId,
+  };
+
+  if (tokenTypeHint) {
+    payload['token_type_hint'] = tokenTypeHint;
+  }
+
+  if (clientSecret) {
+    payload['client_secret'] = clientSecret;
+  }
+
+  return app.inject({
+    method: 'POST',
+    url: '/application/oauth/revoke',
+    payload,
   });
 }

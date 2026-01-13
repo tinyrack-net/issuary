@@ -1,5 +1,6 @@
 import {
   createAuthenticatedSession,
+  createDbUserWithSession,
   extractCookie,
   generateUniqueEmail,
   injectWithSession,
@@ -9,35 +10,6 @@ import {
 import { describe, expect, test } from 'vitest';
 
 const app = setupTestServer();
-
-/**
- * Helper to create a user with password and return authenticated session
- */
-async function createUserWithPasswordAndSession(
-  email: string,
-  password: string,
-): Promise<string> {
-  await withMikroContext(app, async () => {
-    const user = app.mikro.user.create({
-      email,
-      password_hash: password, // Will be hashed by entity lifecycle hook
-    });
-    user.email_verified = true;
-    await app.mikro.em.persist(user).flush();
-  });
-
-  const loginRes = await app.inject({
-    method: 'POST',
-    url: '/api/v1/auth/login',
-    payload: { email, password },
-  });
-
-  expect(loginRes.statusCode).toBe(200);
-
-  const sessionCookie = extractCookie(loginRes, 'session');
-
-  return sessionCookie;
-}
 
 describe('POST /api/v1/user/password', () => {
   test('should return 401 when not authenticated', async () => {
@@ -79,7 +51,8 @@ describe('POST /api/v1/user/password', () => {
     const email = generateUniqueEmail('password-post-already-set');
     const password = 'testPassword123!';
 
-    const sessionCookie = await createUserWithPasswordAndSession(
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
       email,
       password,
     );

@@ -14,6 +14,10 @@ export {
 // Common helper functions
 export {
   createAuthenticatedSession,
+  createDbUserWithSession,
+  createPasskeyForUser,
+  expectError,
+  expectErrorCode,
   extractCookie,
   extractSessionCookie,
   grantConsent,
@@ -22,21 +26,29 @@ export {
   withMikroContext,
 } from './helpers.js';
 // Types
+export type { ErrorDefinition } from './helpers.js';
 export type {
   AuthorizationCodeResult,
   ExchangeCodeParams,
   GetAccessTokenParams,
   GetAuthorizationCodeParams,
+  IntrospectTokenParams,
   RefreshTokenParams,
+  RevokeTokenParams,
 } from './oauth.js';
 
 // OAuth-specific helpers
 export {
   exchangeCodeForTokens,
+  expectLoginRedirect,
+  expectRedirectError,
   getAccessToken,
   getAuthorizationCode,
   getUserInfo,
+  introspectToken,
+  parseRedirectLocation,
   refreshAccessToken,
+  revokeToken,
 } from './oauth.js';
 // Setup utilities
 export { setupTestServer } from './setup.js';

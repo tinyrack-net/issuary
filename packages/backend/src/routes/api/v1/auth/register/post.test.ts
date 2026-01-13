@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import {
+  expectError,
   generateUniqueEmail,
   setupTestServer,
   withMikroContext,
@@ -22,7 +23,7 @@ describe('POST /api/v1/auth/register', () => {
     });
 
     expect(res.statusCode).toBe(200);
-    const body = JSON.parse(res.body);
+    const body = res.json();
     expect(body).toHaveProperty('user');
     expect(body.user).toHaveProperty('id');
     expect(body.user.email_verified).toBe(false);
@@ -38,12 +39,7 @@ describe('POST /api/v1/auth/register', () => {
       },
     });
 
-    expect(res.statusCode).toBe(e.EmailAlreadyExists.Status);
-    const expectedError = new e.EmailAlreadyExists.Error();
-
-    const body = JSON.parse(res.body);
-    expect(body).toHaveProperty('code', expectedError.code);
-    expect(body).toHaveProperty('message', expectedError.message);
+    expectError(res, e.EmailAlreadyExists);
   });
 
   test('should fail with duplicate email', async () => {
@@ -69,11 +65,7 @@ describe('POST /api/v1/auth/register', () => {
       },
     });
 
-    expect(res.statusCode).toBe(e.EmailAlreadyExists.Status);
-    const expectedError = new e.EmailAlreadyExists.Error();
-    const body = JSON.parse(res.body);
-    expect(body).toHaveProperty('code', expectedError.code);
-    expect(body).toHaveProperty('message', expectedError.message);
+    expectError(res, e.EmailAlreadyExists);
   });
 
   test('should fail with invalid email format', async () => {
@@ -87,7 +79,7 @@ describe('POST /api/v1/auth/register', () => {
     });
 
     expect(res.statusCode).toBe(400);
-    const body = JSON.parse(res.body);
+    const body = res.json();
     expect(body).toHaveProperty('message');
   });
 
@@ -102,7 +94,7 @@ describe('POST /api/v1/auth/register', () => {
     });
 
     expect(res.statusCode).toBe(400);
-    const body = JSON.parse(res.body);
+    const body = res.json();
     expect(body).toHaveProperty('message');
   });
 
@@ -117,7 +109,7 @@ describe('POST /api/v1/auth/register', () => {
     });
 
     expect(res.statusCode).toBe(400);
-    const body = JSON.parse(res.body);
+    const body = res.json();
     expect(body).toHaveProperty('message');
   });
 
@@ -131,7 +123,7 @@ describe('POST /api/v1/auth/register', () => {
     });
 
     expect(res.statusCode).toBe(400);
-    const body = JSON.parse(res.body);
+    const body = res.json();
     expect(body).toHaveProperty('message');
   });
 
@@ -145,7 +137,7 @@ describe('POST /api/v1/auth/register', () => {
     });
 
     expect(res.statusCode).toBe(400);
-    const body = JSON.parse(res.body);
+    const body = res.json();
     expect(body).toHaveProperty('message');
   });
 
@@ -177,7 +169,7 @@ describe('POST /api/v1/auth/register', () => {
     });
 
     expect(res.statusCode).toBe(200);
-    const body = JSON.parse(res.body);
+    const body = res.json();
     expect(body.user.email_verified).toBe(false);
 
     // Check that verification token was created in database

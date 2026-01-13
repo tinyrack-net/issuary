@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest';
 import {
   createAuthenticatedSession,
-  extractCookie,
+  createDbUserWithSession,
+  createPasskeyForUser,
   generateUniqueEmail,
   injectWithSession,
   setupTestServer,
-  withMikroContext,
 } from '@/test-utils/index.js';
 
 const app = setupTestServer({
@@ -24,65 +24,6 @@ const app = setupTestServer({
   },
 });
 
-/**
- * Helper to create a DB user with session
- */
-async function createDbUserWithSession(
-  email: string,
-  password: string,
-): Promise<{ sessionCookie: string; userId: string }> {
-  await withMikroContext(app, async () => {
-    const user = app.mikro.user.create({
-      email,
-      password_hash: password,
-    });
-    user.email_verified = true;
-    await app.mikro.em.persist(user).flush();
-  });
-
-  const loginRes = await app.inject({
-    method: 'POST',
-    url: '/api/v1/auth/login',
-    payload: { email, password },
-  });
-
-  expect(loginRes.statusCode).toBe(200);
-
-  const sessionCookie = extractCookie(loginRes, 'session');
-  const userId = loginRes.json().user.id;
-
-  return { sessionCookie, userId };
-}
-
-/**
- * Helper to create a passkey for a user
- */
-async function createPasskeyForUser(
-  userId: string,
-  name: string | null = null,
-): Promise<string> {
-  let passkeyId = '';
-
-  await withMikroContext(app, async () => {
-    const user = await app.mikro.user.findOneOrFail({ id: userId });
-    const passkey = app.mikro.userPasskey.create({
-      user,
-      credential_id: `test-credential-${crypto.randomUUID()}`,
-      public_key: 'test-public-key-base64url',
-      counter: 0,
-      device_type: 'multiDevice',
-      backed_up: true,
-      transports: ['internal'],
-      name,
-      aaguid: 'test-aaguid',
-    });
-    await app.mikro.em.persist(passkey).flush();
-    passkeyId = passkey.id;
-  });
-
-  return passkeyId;
-}
-
 describe('POST /api/v1/user/passkeys/register/options', () => {
   test('should return 401 when not authenticated', async () => {
     const res = await app.inject({
@@ -99,7 +40,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     const email = generateUniqueEmail('passkey-options-success');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     const res = await injectWithSession(
       app,
@@ -152,7 +97,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     const email = generateUniqueEmail('passkey-options-unique-challenge');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     const res1 = await injectWithSession(
       app,
@@ -186,13 +135,14 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     const password = 'testPassword123!';
 
     const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
       email,
       password,
     );
 
     // Create existing passkeys
-    await createPasskeyForUser(userId, 'Existing Passkey 1');
-    await createPasskeyForUser(userId, 'Existing Passkey 2');
+    await createPasskeyForUser(app, userId, 'Existing Passkey 1');
+    await createPasskeyForUser(app, userId, 'Existing Passkey 2');
 
     const res = await injectWithSession(
       app,
@@ -222,7 +172,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     const email = generateUniqueEmail('passkey-options-no-existing');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     const res = await injectWithSession(
       app,
@@ -244,7 +198,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     const email = generateUniqueEmail('passkey-options-auth-selection');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     const res = await injectWithSession(
       app,
@@ -267,7 +225,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     const email = generateUniqueEmail('passkey-options-session-challenge');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     const res = await injectWithSession(
       app,
@@ -309,7 +271,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     const email = generateUniqueEmail('passkey-options-timeout');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     const res = await injectWithSession(
       app,
@@ -332,7 +298,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     const email = generateUniqueEmail('passkey-options-algorithms');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     const res = await injectWithSession(
       app,
@@ -359,7 +329,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     const email = generateUniqueEmail('passkey-options-rp-id');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     const res = await injectWithSession(
       app,
@@ -381,7 +355,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     const email = generateUniqueEmail('passkey-options-concurrent');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // Send multiple concurrent requests
     const results = await Promise.all([

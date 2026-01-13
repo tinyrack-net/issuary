@@ -4,6 +4,7 @@ import type {
   InjectOptions,
   LightMyRequestResponse,
 } from 'fastify';
+import { expect } from 'vitest';
 import { TEST_USER } from './fixtures.js';
 
 /**
@@ -173,4 +174,157 @@ export async function grantConsent(
 
   const json = consentRes.json();
   return json.redirect_url;
+}
+
+/**
+ * Error definition type for expectError helper.
+ */
+export interface ErrorDefinition {
+  Status: number;
+  Error: new () => { code: string; message: string };
+}
+
+/**
+ * Assert that a response matches an expected error definition.
+ * This standardizes error assertions across all test files.
+ *
+ * @param res - Response from app.inject()
+ * @param errorDef - Error definition from schemas/error.ts (e.g., e.InvalidEmailOrPassword)
+ *
+ * @example
+ * ```typescript
+ * import { e } from '@/schemas/error.js';
+ * import { expectError } from '@/test-utils/index.js';
+ *
+ * const res = await app.inject({ method: 'POST', url: '/api/v1/auth/login', payload: {...} });
+ * expectError(res, e.InvalidEmailOrPassword);
+ * ```
+ */
+export function expectError(
+  res: LightMyRequestResponse,
+  errorDef: ErrorDefinition,
+): void {
+  expect(res.statusCode).toBe(errorDef.Status);
+  const expectedError = new errorDef.Error();
+  const body = res.json();
+  expect(body).toHaveProperty('code', expectedError.code);
+  expect(body).toHaveProperty('message', expectedError.message);
+}
+
+/**
+ * Assert that a response has a specific status code and error code.
+ * Use this for simpler error assertions when you don't need the full error definition.
+ *
+ * @param res - Response from app.inject()
+ * @param statusCode - Expected HTTP status code
+ * @param errorCode - Expected error code in response body
+ *
+ * @example
+ * ```typescript
+ * expectErrorCode(res, 401, 'UNAUTHORIZED');
+ * ```
+ */
+export function expectErrorCode(
+  res: LightMyRequestResponse,
+  statusCode: number,
+  errorCode: string,
+): void {
+  expect(res.statusCode).toBe(statusCode);
+  const body = res.json();
+  expect(body).toHaveProperty('code', errorCode);
+}
+
+/**
+ * Create a database user with password and return authenticated session.
+ * This is useful for tests that need a "real" database user instead of a config user.
+ *
+ * @param app - Fastify instance
+ * @param email - User email
+ * @param password - User password
+ * @param options - Additional options
+ * @returns Session cookie value and user ID
+ *
+ * @example
+ * ```typescript
+ * const { sessionCookie, userId } = await createDbUserWithSession(
+ *   app,
+ *   generateUniqueEmail('test'),
+ *   'password123!'
+ * );
+ * ```
+ */
+export async function createDbUserWithSession(
+  app: FastifyInstance,
+  email: string,
+  password: string,
+  options: { emailVerified?: boolean } = {},
+): Promise<{ sessionCookie: string; userId: string }> {
+  const { emailVerified = true } = options;
+
+  await withMikroContext(app, async () => {
+    const user = app.mikro.user.create({
+      email,
+      password_hash: password, // Will be hashed by entity lifecycle hook
+    });
+    user.email_verified = emailVerified;
+    await app.mikro.em.persist(user).flush();
+  });
+
+  const loginRes = await app.inject({
+    method: 'POST',
+    url: '/api/v1/auth/login',
+    payload: { email, password },
+  });
+
+  if (loginRes.statusCode !== 200) {
+    throw new Error(
+      `Failed to login after creating user: ${loginRes.statusCode} - ${loginRes.body}`,
+    );
+  }
+
+  const sessionCookie = extractCookie(loginRes, 'session');
+  const userId = loginRes.json().user.id;
+
+  return { sessionCookie, userId };
+}
+
+/**
+ * Create a passkey for a user in the database.
+ * Useful for testing passkey-related functionality.
+ *
+ * @param app - Fastify instance
+ * @param userId - User ID to create passkey for
+ * @param name - Optional passkey name
+ * @returns Passkey ID
+ *
+ * @example
+ * ```typescript
+ * const passkeyId = await createPasskeyForUser(app, userId, 'My Passkey');
+ * ```
+ */
+export async function createPasskeyForUser(
+  app: FastifyInstance,
+  userId: string,
+  name: string | null = null,
+): Promise<string> {
+  let passkeyId = '';
+
+  await withMikroContext(app, async () => {
+    const user = await app.mikro.user.findOneOrFail({ id: userId });
+    const passkey = app.mikro.userPasskey.create({
+      user,
+      credential_id: `test-credential-${crypto.randomUUID()}`,
+      public_key: 'test-public-key-base64url',
+      counter: 0,
+      device_type: 'multiDevice',
+      backed_up: true,
+      transports: ['internal'],
+      name,
+      aaguid: 'test-aaguid',
+    });
+    await app.mikro.em.persist(passkey).flush();
+    passkeyId = passkey.id;
+  });
+
+  return passkeyId;
 }

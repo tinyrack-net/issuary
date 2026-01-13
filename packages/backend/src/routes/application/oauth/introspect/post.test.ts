@@ -3,32 +3,12 @@ import {
   createAuthenticatedSession,
   exchangeCodeForTokens,
   getAuthorizationCode,
+  introspectToken,
   setupTestServer,
   TEST_OAUTH_CLIENT,
 } from '@/test-utils/index.js';
 
 const app = setupTestServer();
-
-/**
- * Helper: Introspect a token
- */
-async function introspectToken(params: {
-  token: string;
-  tokenTypeHint?: 'access_token' | 'refresh_token';
-  clientId?: string;
-  clientSecret?: string;
-}) {
-  return app.inject({
-    method: 'POST',
-    url: '/application/oauth/introspect',
-    payload: {
-      token: params.token,
-      ...(params.tokenTypeHint && { token_type_hint: params.tokenTypeHint }),
-      client_id: params.clientId ?? TEST_OAUTH_CLIENT.clientId,
-      ...(params.clientSecret && { client_secret: params.clientSecret }),
-    },
-  });
-}
 
 describe('POST /application/oauth/introspect', () => {
   describe('Valid Token Introspection - Access Token', () => {
@@ -38,7 +18,7 @@ describe('POST /application/oauth/introspect', () => {
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = tokenRes.json();
 
-      const res = await introspectToken({ token: access_token });
+      const res = await introspectToken(app, { token: access_token });
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -59,7 +39,7 @@ describe('POST /application/oauth/introspect', () => {
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = tokenRes.json();
 
-      const res = await introspectToken({
+      const res = await introspectToken(app, {
         token: access_token,
         tokenTypeHint: 'access_token',
       });
@@ -94,7 +74,7 @@ describe('POST /application/oauth/introspect', () => {
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = tokenRes.json();
 
-      const res = await introspectToken({
+      const res = await introspectToken(app, {
         token: access_token,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
@@ -112,7 +92,7 @@ describe('POST /application/oauth/introspect', () => {
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { refresh_token } = tokenRes.json();
 
-      const res = await introspectToken({ token: refresh_token });
+      const res = await introspectToken(app, { token: refresh_token });
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -133,7 +113,7 @@ describe('POST /application/oauth/introspect', () => {
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { refresh_token } = tokenRes.json();
 
-      const res = await introspectToken({
+      const res = await introspectToken(app, {
         token: refresh_token,
         tokenTypeHint: 'refresh_token',
       });
@@ -146,7 +126,7 @@ describe('POST /application/oauth/introspect', () => {
 
   describe('Invalid Token Introspection', () => {
     test('should return active=false for invalid token', async () => {
-      const res = await introspectToken({
+      const res = await introspectToken(app, {
         token: 'invalid-token-that-is-not-a-jwt',
       });
 
@@ -164,7 +144,7 @@ describe('POST /application/oauth/introspect', () => {
     });
 
     test('should return active=false for malformed JWT', async () => {
-      const res = await introspectToken({
+      const res = await introspectToken(app, {
         token: 'header.payload', // Only 2 parts instead of 3
       });
 
@@ -178,7 +158,7 @@ describe('POST /application/oauth/introspect', () => {
       const fakeToken =
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
 
-      const res = await introspectToken({ token: fakeToken });
+      const res = await introspectToken(app, { token: fakeToken });
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -207,7 +187,7 @@ describe('POST /application/oauth/introspect', () => {
       const { access_token } = tokenRes.json();
 
       // Hint says refresh_token but it's actually access_token
-      const res = await introspectToken({
+      const res = await introspectToken(app, {
         token: access_token,
         tokenTypeHint: 'refresh_token',
       });
@@ -226,7 +206,7 @@ describe('POST /application/oauth/introspect', () => {
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = tokenRes.json();
 
-      const res = await introspectToken({
+      const res = await introspectToken(app, {
         token: access_token,
         clientId: 'invalid-client-id',
       });
@@ -242,7 +222,7 @@ describe('POST /application/oauth/introspect', () => {
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = tokenRes.json();
 
-      const res = await introspectToken({
+      const res = await introspectToken(app, {
         token: access_token,
         clientSecret: 'wrong-secret',
       });
@@ -258,7 +238,7 @@ describe('POST /application/oauth/introspect', () => {
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = tokenRes.json();
 
-      const res = await introspectToken({
+      const res = await introspectToken(app, {
         token: access_token,
         clientId: 'disabled-client',
       });
@@ -279,7 +259,7 @@ describe('POST /application/oauth/introspect', () => {
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = tokenRes.json();
 
-      const res = await introspectToken({ token: access_token });
+      const res = await introspectToken(app, { token: access_token });
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -301,7 +281,7 @@ describe('POST /application/oauth/introspect', () => {
     });
 
     test('should return proper inactive response format', async () => {
-      const res = await introspectToken({ token: 'invalid' });
+      const res = await introspectToken(app, { token: 'invalid' });
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -325,7 +305,7 @@ describe('POST /application/oauth/introspect', () => {
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = tokenRes.json();
 
-      const res = await introspectToken({ token: access_token });
+      const res = await introspectToken(app, { token: access_token });
 
       expect(res.statusCode).toBe(200);
       const json = res.json();
@@ -342,7 +322,7 @@ describe('POST /application/oauth/introspect', () => {
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = tokenRes.json();
 
-      const res = await introspectToken({ token: access_token });
+      const res = await introspectToken(app, { token: access_token });
 
       expect(res.statusCode).toBe(200);
       const json = res.json();

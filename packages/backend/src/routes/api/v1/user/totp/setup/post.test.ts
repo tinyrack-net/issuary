@@ -2,7 +2,7 @@ import { generateSecret, generateSync, verifySync } from 'otplib';
 import { describe, expect, test } from 'vitest';
 import {
   createAuthenticatedSession,
-  extractCookie,
+  createDbUserWithSession,
   generateUniqueEmail,
   injectWithSession,
   setupTestServer,
@@ -10,36 +10,6 @@ import {
 } from '@/test-utils/index.js';
 
 const app = setupTestServer();
-
-/**
- * Helper to create a DB user with session
- */
-async function createDbUserWithSession(
-  email: string,
-  password: string,
-): Promise<{ sessionCookie: string; userId: string }> {
-  await withMikroContext(app, async () => {
-    const user = app.mikro.user.create({
-      email,
-      password_hash: password,
-    });
-    user.email_verified = true;
-    await app.mikro.em.persist(user).flush();
-  });
-
-  const loginRes = await app.inject({
-    method: 'POST',
-    url: '/api/v1/auth/login',
-    payload: { email, password },
-  });
-
-  expect(loginRes.statusCode).toBe(200);
-
-  const sessionCookie = extractCookie(loginRes, 'session');
-  const userId = loginRes.json().user.id;
-
-  return { sessionCookie, userId };
-}
 
 describe('POST /api/v1/user/totp/setup', () => {
   test('should return 401 when not authenticated', async () => {
@@ -57,7 +27,11 @@ describe('POST /api/v1/user/totp/setup', () => {
     const email = generateUniqueEmail('totp-setup-success');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     const res = await injectWithSession(
       app,
@@ -90,6 +64,7 @@ describe('POST /api/v1/user/totp/setup', () => {
     const password = 'testPassword123!';
 
     const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
       email,
       password,
     );
@@ -119,7 +94,11 @@ describe('POST /api/v1/user/totp/setup', () => {
     const email = generateUniqueEmail('totp-setup-regenerate');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // First setup call
     const res1 = await injectWithSession(
@@ -156,6 +135,7 @@ describe('POST /api/v1/user/totp/setup', () => {
     const password = 'testPassword123!';
 
     const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
       email,
       password,
     );
@@ -210,7 +190,11 @@ describe('POST /api/v1/user/totp/setup', () => {
     const email = generateUniqueEmail('totp-setup-valid-otp');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     const res = await injectWithSession(
       app,

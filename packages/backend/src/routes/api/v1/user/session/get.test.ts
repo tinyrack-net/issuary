@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest';
-import { setupTestServer } from '@/test-utils/index.js';
+import {
+  createAuthenticatedSession,
+  extractCookie,
+  injectWithSession,
+  setupTestServer,
+  TEST_USER,
+} from '@/test-utils/index.js';
 
 const app = setupTestServer();
 
@@ -11,7 +17,7 @@ describe('GET /api/v1/user/session', () => {
     });
 
     expect(res.statusCode).toBe(200);
-    const body = JSON.parse(res.body);
+    const body = res.json();
     expect(body).toHaveProperty('user', null);
   });
 
@@ -21,84 +27,64 @@ describe('GET /api/v1/user/session', () => {
       method: 'post',
       url: '/api/v1/auth/login',
       payload: {
-        email: 'test-config-user@example.com',
-        password: 'changemelater',
+        email: TEST_USER.email,
+        password: TEST_USER.password,
       },
     });
 
     expect(loginRes.statusCode).toBe(200);
 
-    // Extract Set-Cookie header from login response
-    const setCookieHeader = loginRes.headers['set-cookie'];
-    expect(setCookieHeader).toBeDefined();
-
-    // Parse cookie value (handle both string and array)
-    const cookieValue = Array.isArray(setCookieHeader)
-      ? setCookieHeader[0]
-      : setCookieHeader;
-    const sessionCookie = cookieValue?.split(';')[0];
+    const sessionCookie = extractCookie(loginRes, 'session');
 
     // Now, get session with the cookie
-    const sessionRes = await app.inject({
-      method: 'get',
-      url: '/api/v1/user/session',
-      headers: {
-        cookie: sessionCookie,
+    const sessionRes = await injectWithSession(
+      app,
+      {
+        method: 'get',
+        url: '/api/v1/user/session',
       },
-    });
+      sessionCookie,
+    );
 
     expect(sessionRes.statusCode).toBe(200);
-    const sessionBody = JSON.parse(sessionRes.body);
+    const sessionBody = sessionRes.json();
     expect(sessionBody).toHaveProperty('user');
     expect(sessionBody.user).not.toBeNull();
     expect(sessionBody.user).toHaveProperty('id');
 
     // Verify user id matches the logged-in user
-    const loginBody = JSON.parse(loginRes.body);
+    const loginBody = loginRes.json();
     expect(sessionBody.user.id).toBe(loginBody.user.id);
   });
 
   test('should return null after logout', async () => {
-    const loginRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/login',
-      payload: {
-        email: 'test-config-user@example.com',
-        password: 'changemelater',
-      },
-    });
-
-    expect(loginRes.statusCode).toBe(200);
-
-    const setCookieHeader = loginRes.headers['set-cookie'];
-    const cookieValue = Array.isArray(setCookieHeader)
-      ? setCookieHeader[0]
-      : setCookieHeader;
-    const sessionCookie = cookieValue?.split(';')[0];
+    const sessionCookie = await createAuthenticatedSession(app);
 
     // Verify session exists
-    const maybeHasSessionRes = await app.inject({
-      method: 'get',
-      url: '/api/v1/user/session',
-      headers: {
-        cookie: sessionCookie,
+    const maybeHasSessionRes = await injectWithSession(
+      app,
+      {
+        method: 'get',
+        url: '/api/v1/user/session',
       },
-    });
+      sessionCookie,
+    );
 
     expect(maybeHasSessionRes.statusCode).toBe(200);
-    const sessionBody = JSON.parse(maybeHasSessionRes.body);
+    const sessionBody = maybeHasSessionRes.json();
     expect(sessionBody.user).not.toBeNull();
 
-    const logoutRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/logout',
-      headers: {
-        cookie: sessionCookie,
+    const logoutRes = await injectWithSession(
+      app,
+      {
+        method: 'post',
+        url: '/api/v1/auth/logout',
       },
-    });
+      sessionCookie,
+    );
     expect(logoutRes.statusCode).toBe(200);
 
-    // Get cookie after logout
+    // Get cookie after logout - parse from Set-Cookie header since session is cleared
     const logoutSetCookieHeader = logoutRes.headers['set-cookie'];
     const logoutCookieValue = Array.isArray(logoutSetCookieHeader)
       ? logoutSetCookieHeader[0]
@@ -115,7 +101,7 @@ describe('GET /api/v1/user/session', () => {
     });
 
     expect(maybeNoSessionRes.statusCode).toBe(200);
-    const sessionBody2 = JSON.parse(maybeNoSessionRes.body);
+    const sessionBody2 = maybeNoSessionRes.json();
     expect(sessionBody2.user).toBeNull();
   });
 
@@ -129,41 +115,26 @@ describe('GET /api/v1/user/session', () => {
     });
 
     expect(res.statusCode).toBe(200);
-    const body = JSON.parse(res.body);
+    const body = res.json();
     expect(body).toHaveProperty('user', null);
   });
 
   test('should handle multiple session requests with same cookie', async () => {
-    // Login once
-    const loginRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/login',
-      payload: {
-        email: 'test-config-user@example.com',
-        password: 'changemelater',
-      },
-    });
-
-    expect(loginRes.statusCode).toBe(200);
-
-    const setCookieHeader = loginRes.headers['set-cookie'];
-    const cookieValue = Array.isArray(setCookieHeader)
-      ? setCookieHeader[0]
-      : setCookieHeader;
-    const sessionCookie = cookieValue?.split(';')[0];
+    const sessionCookie = await createAuthenticatedSession(app);
 
     // Make multiple session requests
     for (let i = 0; i < 3; i++) {
-      const sessionRes = await app.inject({
-        method: 'get',
-        url: '/api/v1/user/session',
-        headers: {
-          cookie: sessionCookie,
+      const sessionRes = await injectWithSession(
+        app,
+        {
+          method: 'get',
+          url: '/api/v1/user/session',
         },
-      });
+        sessionCookie,
+      );
 
       expect(sessionRes.statusCode).toBe(200);
-      const sessionBody = JSON.parse(sessionRes.body);
+      const sessionBody = sessionRes.json();
       expect(sessionBody.user).not.toBeNull();
       expect(sessionBody.user).toHaveProperty('id');
     }
