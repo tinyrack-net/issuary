@@ -119,7 +119,10 @@ function Consent() {
               className="flex items-start gap-3 rounded-lg bg-base-200 p-3"
             >
               <div className="mt-0.5 rounded-full bg-primary/20 p-1">
-                <ShieldCheckIcon className="size-4 text-primary" weight="fill" />
+                <ShieldCheckIcon
+                  className="size-4 text-primary"
+                  weight="fill"
+                />
               </div>
               <p className="font-medium text-sm">
                 {t(`consent.scope.${scope.name}`, {

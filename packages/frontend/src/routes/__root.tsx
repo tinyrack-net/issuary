@@ -1,6 +1,6 @@
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
-import type { AppRouterContext } from '@/libs/router';
 import { useTheme } from '@/hooks/use-theme';
+import type { AppRouterContext } from '@/libs/router';
 
 function RootComponent() {
   // Initialize theme from server config

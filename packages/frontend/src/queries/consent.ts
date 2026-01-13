@@ -1,5 +1,6 @@
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch';
+import { queryKeys } from './keys';
 
 export type ConsentInfoParams = {
   client_id: string;
@@ -26,7 +27,7 @@ export type ConsentInfoResponse = {
 
 export const getConsentInfoQueryOptions = (params: ConsentInfoParams) =>
   queryOptions({
-    queryKey: ['/api/v1/consent', params.client_id, params.scope],
+    queryKey: queryKeys.consent(params.client_id, params.scope),
     queryFn: async () => {
       const url = new URL('/api/v1/consent', window.location.origin);
       url.searchParams.set('client_id', params.client_id);

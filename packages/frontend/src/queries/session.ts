@@ -1,7 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch';
-
-export const GET_SESSION_QUERY_KEY = ['/api/v1/user/session'];
+import { queryKeys } from './keys';
 
 export type SessionUser = {
   id: string;
@@ -18,7 +17,7 @@ export type SessionResponse = {
 };
 
 export const getSessionQueryOptions = queryOptions({
-  queryKey: GET_SESSION_QUERY_KEY,
+  queryKey: queryKeys.session(),
   queryFn: async () => {
     const response = await etch('/api/v1/user/session');
     return response.json() as Promise<SessionResponse>;

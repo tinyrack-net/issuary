@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { LANGUAGE_STORAGE_KEY, isAvailableLanguage } from '@/i18n';
+import { isAvailableLanguage, LANGUAGE_STORAGE_KEY } from '@/i18n';
 import { appConfigQueryOptions } from '@/queries/config';
 
 export function useLanguage() {

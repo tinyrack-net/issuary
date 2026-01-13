@@ -1,16 +1,15 @@
-import { mutationOptions, queryOptions } from '@tanstack/react-query';
-import {
-  startAuthentication,
-  startRegistration,
-} from '@simplewebauthn/browser';
 import type {
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
 } from '@simplewebauthn/browser';
+import {
+  startAuthentication,
+  startRegistration,
+} from '@simplewebauthn/browser';
+import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch.js';
+import { queryKeys } from './keys';
 import type { SessionResponse } from './session.js';
-
-export const PASSKEYS_QUERY_KEY = ['/api/v1/user/passkeys'];
 
 export type PasskeyInfo = {
   id: string;
@@ -33,7 +32,7 @@ export type SuccessResponse = {
  * Get all passkeys for current user
  */
 export const getPasskeysQueryOptions = queryOptions({
-  queryKey: PASSKEYS_QUERY_KEY,
+  queryKey: queryKeys.passkeys(),
   queryFn: async () => {
     const res = await etch('/api/v1/user/passkeys');
     return res.json() as Promise<PasskeysResponse>;
@@ -58,7 +57,9 @@ export const registerPasskeyMutationOptions = mutationOptions({
     };
 
     // Step 2: Start WebAuthn registration in browser
-    const registrationResponse = await startRegistration({ optionsJSON: options });
+    const registrationResponse = await startRegistration({
+      optionsJSON: options,
+    });
 
     // Step 3: Send registration response to server for verification
     const verifyRes = await etch('/api/v1/user/passkeys/register/verify', {
@@ -120,7 +121,9 @@ export const loginWithPasskeyMutationOptions = mutationOptions({
     };
 
     // Step 2: Start WebAuthn authentication in browser
-    const authenticationResponse = await startAuthentication({ optionsJSON: options });
+    const authenticationResponse = await startAuthentication({
+      optionsJSON: options,
+    });
 
     // Step 3: Send authentication response to server for verification
     const verifyRes = await etch('/api/v1/auth/passkey/verify', {

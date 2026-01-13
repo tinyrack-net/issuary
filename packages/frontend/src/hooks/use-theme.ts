@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import {
   appConfigQueryOptions,
   type Theme,

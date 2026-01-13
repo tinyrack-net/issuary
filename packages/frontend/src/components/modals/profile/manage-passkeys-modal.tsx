@@ -10,10 +10,11 @@ import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod/v4';
+import { Modal, ModalActions } from '@/components/ui/modal';
+import { queryKeys } from '@/queries/keys';
 import {
   deletePasskeyMutationOptions,
   getPasskeysQueryOptions,
-  PASSKEYS_QUERY_KEY,
   type PasskeyInfo,
   renamePasskeyMutationOptions,
 } from '@/queries/passkey.js';
@@ -45,7 +46,7 @@ export function ManagePasskeysModal({
   const deleteMutation = useMutation({
     ...deletePasskeyMutationOptions,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PASSKEYS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: queryKeys.passkeys() });
       queryClient.invalidateQueries({
         queryKey: getSessionQueryOptions.queryKey,
       });
@@ -87,72 +88,62 @@ export function ManagePasskeysModal({
     });
   };
 
-  if (!isOpen) {
-    return null;
-  }
-
   const passkeys = passkeysData?.passkeys || [];
 
   return (
-    <dialog className="modal modal-open">
-      <div className="modal-box max-w-lg">
-        <h3 className="font-bold text-lg">
-          {t('profile.passkey.manageModal.title')}
-        </h3>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={t('profile.passkey.manageModal.title')}
+      size="lg"
+    >
+      <div className="py-4">
+        {isLoading && (
+          <div className="flex justify-center py-8">
+            <span className="loading loading-spinner loading-lg" />
+          </div>
+        )}
 
-        <div className="py-4">
-          {isLoading && (
-            <div className="flex justify-center py-8">
-              <span className="loading loading-spinner loading-lg" />
-            </div>
-          )}
+        {!isLoading && passkeys.length === 0 && (
+          <div className="py-8 text-center text-base-content/60">
+            <p>{t('profile.passkey.manageModal.noPasskeys')}</p>
+          </div>
+        )}
 
-          {!isLoading && passkeys.length === 0 && (
-            <div className="py-8 text-center text-base-content/60">
-              <p>{t('profile.passkey.manageModal.noPasskeys')}</p>
-            </div>
-          )}
-
-          {!isLoading && passkeys.length > 0 && (
-            <div className="flex flex-col gap-2">
-              {passkeys.map((passkey) => (
-                <PasskeyItem
-                  key={passkey.id}
-                  passkey={passkey}
-                  isDeleting={deletingId === passkey.id}
-                  isEditing={editingPasskey?.id === passkey.id}
-                  onEdit={() => setEditingPasskey(passkey)}
-                  onCancelEdit={() => setEditingPasskey(null)}
-                  onDelete={() => handleDelete(passkey)}
-                  formatDate={formatDate}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="modal-action">
-          <button type="button" className="btn" onClick={handleClose}>
-            {t('profile.passkey.manageModal.close')}
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => {
-              handleClose();
-              onAddNew();
-            }}
-          >
-            {t('profile.passkey.manageModal.addNew')}
-          </button>
-        </div>
+        {!isLoading && passkeys.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {passkeys.map((passkey) => (
+              <PasskeyItem
+                key={passkey.id}
+                passkey={passkey}
+                isDeleting={deletingId === passkey.id}
+                isEditing={editingPasskey?.id === passkey.id}
+                onEdit={() => setEditingPasskey(passkey)}
+                onCancelEdit={() => setEditingPasskey(null)}
+                onDelete={() => handleDelete(passkey)}
+                formatDate={formatDate}
+              />
+            ))}
+          </div>
+        )}
       </div>
-      <form method="dialog" className="modal-backdrop">
-        <button type="button" onClick={handleClose}>
-          close
+
+      <ModalActions>
+        <button type="button" className="btn" onClick={handleClose}>
+          {t('profile.passkey.manageModal.close')}
         </button>
-      </form>
-    </dialog>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => {
+            handleClose();
+            onAddNew();
+          }}
+        >
+          {t('profile.passkey.manageModal.addNew')}
+        </button>
+      </ModalActions>
+    </Modal>
   );
 }
 
@@ -197,7 +188,7 @@ function PasskeyItem({
   const renameMutation = useMutation({
     ...renamePasskeyMutationOptions,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PASSKEYS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: queryKeys.passkeys() });
       onCancelEdit();
     },
   });

@@ -1,5 +1,6 @@
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch';
+import { queryKeys } from './keys';
 
 /**
  * OAuth provider info for login/register pages
@@ -44,7 +45,7 @@ export type OAuthAccountsResponse = {
  * Query options for fetching available OAuth providers
  */
 export const oauthProvidersQueryOptions = queryOptions({
-  queryKey: ['/api/v1/oauth/providers'],
+  queryKey: queryKeys.oauth.providers(),
   queryFn: async () => {
     const res = await etch('/api/v1/oauth/providers');
     return (await res.json()) as OAuthProvidersResponse;
@@ -55,7 +56,7 @@ export const oauthProvidersQueryOptions = queryOptions({
  * Query options for fetching user's linked OAuth accounts
  */
 export const oauthAccountsQueryOptions = queryOptions({
-  queryKey: ['/api/v1/user/oauth-accounts'],
+  queryKey: queryKeys.oauth.accounts(),
   queryFn: async () => {
     const res = await etch('/api/v1/user/oauth-accounts');
     return (await res.json()) as OAuthAccountsResponse;

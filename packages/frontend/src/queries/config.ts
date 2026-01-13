@@ -1,5 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch';
+import { queryKeys } from './keys';
 
 export type Theme =
   | 'light'
@@ -72,7 +73,7 @@ export type AppConfigs = {
 };
 
 export const appConfigQueryOptions = queryOptions({
-  queryKey: ['appConfig'],
+  queryKey: queryKeys.config(),
   queryFn: async () => {
     const response = await etch('/api/v1/config');
     const data = await response.json();

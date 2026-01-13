@@ -1,3 +1,5 @@
+import { ApiError } from './error';
+
 /**
  * Convert HeadersInit to a plain object
  */
@@ -21,6 +23,14 @@ const headersToRecord = (headers?: HeadersInit): Record<string, string> => {
   return { ...headers };
 };
 
+/**
+ * Enhanced fetch wrapper
+ *
+ * - 자동으로 JSON Content-Type 헤더 설정
+ * - 에러 응답을 ApiError로 변환
+ *
+ * @throws {ApiError} HTTP 에러 응답 시
+ */
 export const etch = async (url: string, options?: RequestInit) => {
   const headers = headersToRecord(options?.headers);
 
@@ -35,7 +45,7 @@ export const etch = async (url: string, options?: RequestInit) => {
   });
 
   if (!res.ok) {
-    throw res;
+    throw await ApiError.fromResponse(res);
   }
 
   return res;

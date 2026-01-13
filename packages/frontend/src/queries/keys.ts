@@ -1,0 +1,36 @@
+/**
+ * Query Key 팩토리
+ *
+ * 모든 Query Key를 중앙에서 관리하여 일관성과 타입 안전성을 보장합니다.
+ * 각 키는 API 경로를 기반으로 정의됩니다.
+ */
+export const queryKeys = {
+  // 세션
+  session: () => ['/api/v1/user/session'] as const,
+
+  // 앱 설정
+  config: () => ['/api/v1/config'] as const,
+
+  // OAuth
+  oauth: {
+    providers: () => ['/api/v1/oauth/providers'] as const,
+    accounts: () => ['/api/v1/user/oauth-accounts'] as const,
+  },
+
+  // 동의 (Consent)
+  consent: (clientId: string, scope?: string) =>
+    ['/api/v1/consent', clientId, scope] as const,
+
+  // TOTP
+  totp: () => ['/api/v1/user/totp'] as const,
+
+  // Passkeys
+  passkeys: () => ['/api/v1/user/passkeys'] as const,
+} as const;
+
+/**
+ * Query Key 타입 유틸리티
+ *
+ * 개별 Query Key의 타입을 추출할 때 사용합니다.
+ */
+export type QueryKeys = typeof queryKeys;

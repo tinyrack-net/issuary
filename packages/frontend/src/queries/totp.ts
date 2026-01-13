@@ -1,7 +1,6 @@
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch.js';
-
-export const TOTP_STATUS_QUERY_KEY = ['/api/v1/user/totp'];
+import { queryKeys } from './keys';
 
 export type TotpStatusResponse = {
   enabled: boolean;
@@ -21,7 +20,7 @@ export type SuccessResponse = {
  * Get TOTP status for current user
  */
 export const getTotpStatusQueryOptions = queryOptions({
-  queryKey: TOTP_STATUS_QUERY_KEY,
+  queryKey: queryKeys.totp(),
   queryFn: async () => {
     const res = await etch('/api/v1/user/totp');
     return res.json() as Promise<TotpStatusResponse>;
