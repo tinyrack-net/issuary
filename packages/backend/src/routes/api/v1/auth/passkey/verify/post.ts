@@ -60,7 +60,7 @@ export default (fastify: FastifyWithZodInstance) =>
         id: user.id,
       });
 
-      // Check if TOTP or Passkey is required (only for database-managed users)
+      // Check if TOTP is required (only for database-managed users)
       const passwordAuthMethod =
         fastify.config.authentication_methods?.['password'];
       const isConfigManaged = sessionUser.managed === 'config';
@@ -71,11 +71,8 @@ export default (fastify: FastifyWithZodInstance) =>
         (passwordAuthMethod.totp?.required ?? false) &&
         !sessionUser.totp_enabled;
 
-      const passkeyRequired =
-        !isConfigManaged &&
-        passwordAuthMethod?.type === 'password' &&
-        (passwordAuthMethod.passkey?.required ?? false) &&
-        sessionUser.passkey_count === 0;
+      // Passkey authentication already completed, so passkey_required is always false
+      const passkeyRequired = false;
 
       return res.status(200).send({
         user: {

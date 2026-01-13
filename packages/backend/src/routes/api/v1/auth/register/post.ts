@@ -63,16 +63,16 @@ export default (fastify: FastifyWithZodInstance) =>
         });
       }
 
-      // Check if TOTP or Passkey is required (new users are always database-managed)
+      // Check if TOTP is required (new users are always database-managed)
       const passwordAuthMethod =
         fastify.config.authentication_methods?.['password'];
 
       const totpRequired =
         passwordAuthMethod?.type === 'password' &&
         (passwordAuthMethod.totp?.required ?? false);
-      const passkeyRequired =
-        passwordAuthMethod?.type === 'password' &&
-        (passwordAuthMethod.passkey?.required ?? false);
+
+      // Passkey is now an independent auth method, not a requirement for password auth
+      const passkeyRequired = false;
 
       res.status(200).send({
         user: {

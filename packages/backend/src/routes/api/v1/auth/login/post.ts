@@ -44,11 +44,8 @@ export default (fastify: FastifyWithZodInstance) =>
         (passwordAuthMethod.totp?.required ?? false) &&
         !user.totp_enabled;
 
-      const passkeyRequired =
-        !isConfigManaged &&
-        passwordAuthMethod?.type === 'password' &&
-        (passwordAuthMethod.passkey?.required ?? false) &&
-        user.passkey_count === 0;
+      // Passkey is now an independent auth method, not a requirement for password auth
+      const passkeyRequired = false;
 
       return res.status(200).send({
         user: {

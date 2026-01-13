@@ -51,10 +51,11 @@ export const DEFAULT_TEST_CONFIG: AppConfig = {
         enabled: false,
         required: false,
       },
-      passkey: {
-        enabled: false,
-        required: false,
-      },
+    },
+    passkey: {
+      type: 'passkey',
+      enabled: false,
+      email_verification: true,
     },
     google: {
       type: 'oauth',

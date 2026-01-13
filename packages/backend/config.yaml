@@ -47,9 +47,10 @@ authentication_methods:
     totp:
       enabled: false
       required: false
-    passkey:
-      enabled: false
-      required: false
+  passkey:
+    type: passkey
+    enabled: false
+    email_verification: true
   # github:
   #   type: oauth
   #   enabled: true

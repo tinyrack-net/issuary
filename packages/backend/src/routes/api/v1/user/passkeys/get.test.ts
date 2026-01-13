@@ -11,14 +11,10 @@ import {
 const app = setupTestServer({
   configOverrides: {
     authentication_methods: {
-      password: {
-        type: 'password',
+      passkey: {
+        type: 'passkey',
         enabled: true,
         email_verification: true,
-        passkey: {
-          enabled: true,
-          required: false,
-        },
       },
     },
   },

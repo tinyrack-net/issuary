@@ -110,8 +110,9 @@ function Profile() {
 
   // Check if TOTP and Passkey are enabled in config
   const passwordAuthMethod = appConfig?.authentication_methods?.password;
+  const passkeyAuthMethod = appConfig?.authentication_methods?.passkey;
   const totpEnabled = passwordAuthMethod?.totp?.enabled ?? false;
-  const passkeyEnabled = passwordAuthMethod?.passkey?.enabled ?? false;
+  const passkeyEnabled = passkeyAuthMethod?.enabled ?? false;
 
   // Check if user needs to set up TOTP or Passkey (required settings)
   const needsTotpSetup = user?.totp_required ?? false;

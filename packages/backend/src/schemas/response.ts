@@ -485,18 +485,14 @@ export const r = {
           enabled: z.boolean(),
           type: z.string(),
           // Password auth method specific fields
-          passkey: z
-            .object({
-              enabled: z.boolean(),
-              required: z.boolean(),
-            })
-            .optional(),
           totp: z
             .object({
               enabled: z.boolean(),
               required: z.boolean(),
             })
             .optional(),
+          // Passkey auth method specific field
+          email_verification: z.boolean().optional(),
         })
         .passthrough(),
     ),

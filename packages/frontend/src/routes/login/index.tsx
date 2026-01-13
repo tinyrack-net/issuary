@@ -54,8 +54,7 @@ function Login() {
 
   const isPasswordAuthEnabled =
     configData?.authentication_methods?.password?.enabled;
-  const isPasskeyEnabled =
-    configData?.authentication_methods?.password?.passkey?.enabled;
+  const isPasskeyEnabled = configData?.authentication_methods?.passkey?.enabled;
 
   const loginSchema = useMemo(
     () =>

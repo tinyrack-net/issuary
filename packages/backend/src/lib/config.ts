@@ -205,16 +205,23 @@ export const AppConfigAuthMethodPassword = z.object({
       required: z.boolean().default(false),
     })
     .optional(),
-  passkey: z
-    .object({
-      enabled: z.boolean().default(false),
-      required: z.boolean().default(false),
-    })
-    .optional(),
 });
 
 export type AppConfigAuthMethodPassword = z.infer<
   typeof AppConfigAuthMethodPassword
+>;
+
+/**
+ * Passkey (WebAuthn) authentication method configuration.
+ */
+export const AppConfigAuthMethodPasskey = z.object({
+  type: z.literal('passkey'),
+  enabled: z.boolean().default(false),
+  email_verification: z.boolean().default(true),
+});
+
+export type AppConfigAuthMethodPasskey = z.infer<
+  typeof AppConfigAuthMethodPasskey
 >;
 
 /**
@@ -286,10 +293,11 @@ export const AppConfigAuthMethodOAuth = z
 export type AppConfigAuthMethodOAuth = z.infer<typeof AppConfigAuthMethodOAuth>;
 
 /**
- * Authentication method configuration - supports password and OAuth methods.
+ * Authentication method configuration - supports password, passkey, and OAuth methods.
  */
 export const AppConfigAuthenticationMethod = z.discriminatedUnion('type', [
   AppConfigAuthMethodPassword,
+  AppConfigAuthMethodPasskey,
   AppConfigAuthMethodOAuth,
 ]);
 

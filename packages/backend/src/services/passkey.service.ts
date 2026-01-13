@@ -53,11 +53,11 @@ export class PasskeyService {
    * Check if passkey authentication is enabled in config
    */
   public isEnabled(config: AppConfig): boolean {
-    const passwordMethod = config.authentication_methods?.['password'];
-    if (passwordMethod?.type !== 'password') {
+    const passkeyMethod = config.authentication_methods?.['passkey'];
+    if (passkeyMethod?.type !== 'passkey') {
       return false;
     }
-    return passwordMethod.passkey?.enabled ?? false;
+    return passkeyMethod.enabled ?? false;
   }
 
   /**

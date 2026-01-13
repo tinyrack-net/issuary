@@ -11,14 +11,10 @@ import {
 const app = setupTestServer({
   configOverrides: {
     authentication_methods: {
-      password: {
-        type: 'password',
+      passkey: {
+        type: 'passkey',
         enabled: true,
         email_verification: true,
-        passkey: {
-          enabled: true,
-          required: false,
-        },
       },
     },
   },
@@ -443,14 +439,10 @@ describe('PATCH /api/v1/user/passkeys/:id - Passkey disabled', () => {
   const appDisabled = setupTestServer({
     configOverrides: {
       authentication_methods: {
-        password: {
-          type: 'password',
-          enabled: true,
+        passkey: {
+          type: 'passkey',
+          enabled: false,
           email_verification: true,
-          passkey: {
-            enabled: false,
-            required: false,
-          },
         },
       },
     },
