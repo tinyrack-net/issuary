@@ -73,9 +73,6 @@ export default (fastify: FastifyWithZodInstance) => {
         (passwordAuthMethod.totp?.required ?? false) &&
         !sessionUser.totp_enabled;
 
-      // Passkey authentication already completed, so passkey_required is always false
-      const passkeyRequired = false;
-
       return res.status(200).send({
         user: {
           id: sessionUser.id,
@@ -86,7 +83,6 @@ export default (fastify: FastifyWithZodInstance) => {
           totp_enabled: sessionUser.totp_enabled,
           totp_required: totpRequired,
           passkey_count: sessionUser.passkey_count,
-          passkey_required: passkeyRequired,
         },
       });
     },

@@ -11,7 +11,6 @@ export type SessionUser = {
   totp_enabled: boolean;
   totp_required: boolean;
   passkey_count: number;
-  passkey_required: boolean;
 };
 
 export type SessionResponse = {

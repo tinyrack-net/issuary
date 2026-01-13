@@ -116,55 +116,31 @@ function Profile() {
 
   // Check if user needs to set up TOTP or Passkey (required settings)
   const needsTotpSetup = user?.totp_required ?? false;
-  const needsPasskeySetup = user?.passkey_required ?? false;
 
   // Auto-open required setup modals
   useEffect(() => {
     // Only check required setup if config is loaded
     if (!appConfig) return;
 
-    // TOTP and Passkey both required: user can choose either (OR logic)
-    if (needsTotpSetup && needsPasskeySetup) {
-      // Open TOTP modal as the default, user can switch to Passkey if they prefer
-      if (!totpModal && !passkeyModal) {
-        setTotpModal('setup');
-      }
-    } else if (needsTotpSetup) {
-      // Only TOTP required
+    if (needsTotpSetup) {
+      // TOTP required
       if (!totpModal) {
         setTotpModal('setup');
       }
-    } else if (needsPasskeySetup) {
-      // Only Passkey required
-      if (!passkeyModal) {
-        setPasskeyModal('setup');
-      }
     }
-  }, [appConfig, needsTotpSetup, needsPasskeySetup, totpModal, passkeyModal]);
+  }, [appConfig, needsTotpSetup, totpModal]);
 
   // Handle modal close with required check
   const handleCloseTotpModal = () => {
-    // If both are required (OR logic), allow switching to Passkey
-    if (needsTotpSetup && needsPasskeySetup && passkeyEnabled) {
-      setTotpModal(null);
-      setPasskeyModal('setup');
-    } else if (!needsTotpSetup) {
+    if (!needsTotpSetup) {
       // Only close if not required
       setTotpModal(null);
     }
-    // If only TOTP is required, prevent closing
+    // If TOTP is required, prevent closing
   };
 
   const handleClosePasskeyModal = () => {
-    // If both are required (OR logic), allow switching to TOTP
-    if (needsTotpSetup && needsPasskeySetup && totpEnabled) {
-      setPasskeyModal(null);
-      setTotpModal('setup');
-    } else if (!needsPasskeySetup) {
-      // Only close if not required
-      setPasskeyModal(null);
-    }
-    // If only Passkey is required, prevent closing
+    setPasskeyModal(null);
   };
 
   return (
@@ -247,11 +223,6 @@ function Profile() {
         isOpen={totpModal === 'setup'}
         onClose={handleCloseTotpModal}
         isRequired={needsTotpSetup}
-        canSwitchToPasskey={needsPasskeySetup && passkeyEnabled}
-        onSwitchToPasskey={() => {
-          setTotpModal(null);
-          setPasskeyModal('setup');
-        }}
       />
       <DisableTotpModal
         isOpen={totpModal === 'disable'}
@@ -262,12 +233,6 @@ function Profile() {
       <SetupPasskeyModal
         isOpen={passkeyModal === 'setup'}
         onClose={handleClosePasskeyModal}
-        isRequired={needsPasskeySetup}
-        canSwitchToTotp={needsTotpSetup && totpEnabled}
-        onSwitchToTotp={() => {
-          setPasskeyModal(null);
-          setTotpModal('setup');
-        }}
       />
       <ManagePasskeysModal
         isOpen={passkeyModal === 'manage'}

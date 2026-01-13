@@ -255,7 +255,6 @@ export class OAuthConnectService {
           totp_enabled: totpEnabled,
           totp_required: false,
           passkey_count: await this.mikro.userPasskey.countByUserId(user.id),
-          passkey_required: false,
         },
       };
     }
@@ -310,7 +309,6 @@ export class OAuthConnectService {
           passkey_count: await this.mikro.userPasskey.countByUserId(
             existingUser.id,
           ),
-          passkey_required: false,
         },
       };
     }
@@ -349,7 +347,6 @@ export class OAuthConnectService {
         totp_enabled: false, // New user has no TOTP
         totp_required: false,
         passkey_count: 0, // New user has no passkeys
-        passkey_required: false,
       },
     };
   }

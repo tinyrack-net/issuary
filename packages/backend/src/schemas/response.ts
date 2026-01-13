@@ -28,9 +28,6 @@ const UserSession = z
       .number()
       .int()
       .describe('Number of passkeys registered for the user'),
-    passkey_required: z
-      .boolean()
-      .describe('Whether user must set up Passkey before continuing'),
   })
   .describe('UserSession');
 

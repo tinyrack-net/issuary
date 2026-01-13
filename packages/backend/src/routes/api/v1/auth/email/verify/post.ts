@@ -55,7 +55,6 @@ export default (fastify: FastifyWithZodInstance) => {
           totp_enabled: totpEnabled,
           totp_required: false,
           passkey_count: passkeyCount,
-          passkey_required: false,
         },
       });
     },

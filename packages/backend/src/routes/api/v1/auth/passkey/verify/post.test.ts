@@ -370,8 +370,6 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
     expect(body.user.email).toBe(email);
     expect(body.user.managed).toBe('database');
     expect(body.user.email_verified).toBe(true);
-    // Passkey authentication already completed, so passkey_required is always false
-    expect(body.user.passkey_required).toBe(false);
     // Check other required fields exist
     expect(typeof body.user.has_password).toBe('boolean');
     expect(typeof body.user.totp_enabled).toBe('boolean');
