@@ -8,7 +8,7 @@ import {
 import { generatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
-import type { r } from '@/schemas/response.js';
+import type { oauthConnectSchema } from '@/schemas/oauth-connect.js';
 
 // Note: This service uses fastify.config for oauth_authentication_methods (OAuth providers config)
 // but user-related config lookups have been removed since users are now synced to DB.
@@ -17,47 +17,6 @@ declare module 'fastify' {
   interface FastifyInstance {
     oauthConnectService: OAuthConnectService;
   }
-}
-
-/**
- * OAuth user info returned from provider
- */
-export interface OAuthUserInfo {
-  id: string;
-  email: string;
-  email_verified: boolean;
-  name?: string | undefined;
-  picture?: string | undefined;
-}
-
-/**
- * Token response from OAuth provider
- */
-export interface OAuthTokens {
-  access_token: string;
-  refresh_token?: string;
-  expires_in?: number;
-  token_type: string;
-  id_token?: string;
-}
-
-/**
- * OAuth session data stored in secure session
- */
-export interface OAuthSessionData {
-  state: string;
-  codeVerifier: string;
-  providerId: string;
-  mode: 'login' | 'register' | 'link';
-  returnUrl?: string | undefined;
-}
-
-/**
- * Result of OAuth authentication
- */
-export interface OAuthAuthResult {
-  isNewUser: boolean;
-  user: z.infer<typeof r.UserSession>;
 }
 
 export class OAuthConnectService {
@@ -116,7 +75,10 @@ export class OAuthConnectService {
     providerId: string,
     mode: 'login' | 'register' | 'link',
     returnUrl?: string,
-  ): Promise<{ url: string; sessionData: OAuthSessionData }> {
+  ): Promise<{
+    url: string;
+    sessionData: z.infer<typeof oauthConnectSchema.OAuthSessionData>;
+  }> {
     const provider = this.getProvider(providerId);
     const pkce = await generatePKCE();
     const state = crypto.randomUUID();
@@ -138,7 +100,7 @@ export class OAuthConnectService {
 
     const url = `${provider.authorization_url}?${params.toString()}`;
 
-    const sessionData: OAuthSessionData = {
+    const sessionData: z.infer<typeof oauthConnectSchema.OAuthSessionData> = {
       state,
       codeVerifier: pkce.verifier,
       providerId,
@@ -156,7 +118,7 @@ export class OAuthConnectService {
     providerId: string,
     code: string,
     codeVerifier: string,
-  ): Promise<OAuthTokens> {
+  ): Promise<z.infer<typeof oauthConnectSchema.OAuthTokens>> {
     const provider = this.getProvider(providerId);
 
     const params = new URLSearchParams({
@@ -181,7 +143,9 @@ export class OAuthConnectService {
       throw new e.OAuthTokenExchangeFailed.Error();
     }
 
-    const tokens = (await response.json()) as OAuthTokens;
+    const tokens = (await response.json()) as z.infer<
+      typeof oauthConnectSchema.OAuthTokens
+    >;
     return tokens;
   }
 
@@ -191,7 +155,7 @@ export class OAuthConnectService {
   public async fetchUserInfo(
     providerId: string,
     accessToken: string,
-  ): Promise<OAuthUserInfo> {
+  ): Promise<z.infer<typeof oauthConnectSchema.OAuthUserInfo>> {
     const provider = this.getProvider(providerId);
 
     // Apple doesn't have a userinfo endpoint - info is in the ID token
@@ -248,9 +212,9 @@ export class OAuthConnectService {
    */
   public async authenticateWithOAuth(
     providerId: string,
-    tokens: OAuthTokens,
-    userInfo: OAuthUserInfo,
-  ): Promise<OAuthAuthResult> {
+    tokens: z.infer<typeof oauthConnectSchema.OAuthTokens>,
+    userInfo: z.infer<typeof oauthConnectSchema.OAuthUserInfo>,
+  ): Promise<z.infer<typeof oauthConnectSchema.OAuthAuthResult>> {
     const provider = this.getProvider(providerId);
 
     // Check if OAuth account is already linked
@@ -396,8 +360,8 @@ export class OAuthConnectService {
   public async linkOAuthAccount(
     userId: string,
     providerId: string,
-    tokens: OAuthTokens,
-    userInfo: OAuthUserInfo,
+    tokens: z.infer<typeof oauthConnectSchema.OAuthTokens>,
+    userInfo: z.infer<typeof oauthConnectSchema.OAuthUserInfo>,
   ): Promise<void> {
     // Check if OAuth account is already linked to another user
     const existingOAuth = await this.mikro.userOAuth.findByProviderUserId(

@@ -13,25 +13,18 @@ import {
 } from '@simplewebauthn/server';
 import { isoBase64URL } from '@simplewebauthn/server/helpers';
 import fastifyPlugin from 'fastify-plugin';
+import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
 import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
 import type { AppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import type { passkeySchema } from '@/schemas/passkey.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
     passkeyService: PasskeyService;
   }
-}
-
-export interface PasskeyInfo {
-  id: string;
-  credential_id: string;
-  name: string | null;
-  device_type: 'singleDevice' | 'multiDevice';
-  backed_up: boolean;
-  created_at: Date;
 }
 
 export class PasskeyService {
@@ -218,7 +211,9 @@ export class PasskeyService {
   /**
    * Get all passkeys for a user
    */
-  public async getUserPasskeys(userId: string): Promise<PasskeyInfo[]> {
+  public async getUserPasskeys(
+    userId: string,
+  ): Promise<z.infer<typeof passkeySchema.PasskeyInfo>[]> {
     const passkeys = await this.mikro.userPasskey.findByUserId(userId);
     return passkeys.map((p) => ({
       id: p.id,

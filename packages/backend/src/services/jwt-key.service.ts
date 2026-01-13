@@ -7,50 +7,16 @@ import {
   importPKCS8,
   importSPKI,
 } from 'jose';
+import type z from 'zod/v4';
 import { JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
 import type { AppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
+import type { jwtKeySchema } from '@/schemas/jwt-key.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
     jwtKeyService: JwtKeyService;
   }
-}
-
-/**
- * Key pair with PEM-encoded keys
- */
-interface KeyPair {
-  kid: string;
-  privateKey: string;
-  publicKey: string;
-  algorithm: string;
-}
-
-/**
- * Public JWK for JWKS endpoint (RFC 7517)
- *
- * All required fields are guaranteed to be present.
- */
-export interface PublicJWK {
-  /** Key Type (e.g., "RSA") */
-  kty: string;
-  /** Public Key Use ("sig" for signature) */
-  use: string;
-  /** Key ID */
-  kid: string;
-  /** Algorithm (e.g., "RS256") */
-  alg: string;
-  /** RSA modulus (base64url encoded) */
-  n?: string;
-  /** RSA exponent (base64url encoded) */
-  e?: string;
-  /** EC x coordinate (base64url encoded) */
-  x?: string;
-  /** EC y coordinate (base64url encoded) */
-  y?: string;
-  /** EC curve name */
-  crv?: string;
 }
 
 /**
@@ -81,7 +47,7 @@ export class JwtKeyService {
    *
    * @returns Generated key pair with PEM-encoded keys
    */
-  async generateKeyPair(): Promise<KeyPair> {
+  async generateKeyPair(): Promise<z.infer<typeof jwtKeySchema.KeyPair>> {
     // Generate RSA key pair using jose
     const { privateKey, publicKey } = await generateKeyPair('RS256', {
       modulusLength: 2048,
@@ -334,7 +300,9 @@ export class JwtKeyService {
    * @param key - JWT Key entity
    * @returns JWK object
    */
-  async convertToJWK(key: JwtKeyEntity): Promise<PublicJWK> {
+  async convertToJWK(
+    key: JwtKeyEntity,
+  ): Promise<z.infer<typeof jwtKeySchema.PublicJWK>> {
     // Import PEM to KeyLike
     const publicKey = await importSPKI(key.public_key, key.algorithm);
 
@@ -359,7 +327,9 @@ export class JwtKeyService {
    *
    * @returns JWKS object with keys array
    */
-  async getJWKS(): Promise<{ keys: PublicJWK[] }> {
+  async getJWKS(): Promise<{
+    keys: z.infer<typeof jwtKeySchema.PublicJWK>[];
+  }> {
     const keys = await this.mikro.jwtKey.getPublicKeys();
 
     const jwks = await Promise.all(keys.map((key) => this.convertToJWK(key)));

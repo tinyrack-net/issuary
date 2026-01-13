@@ -1,5 +1,8 @@
+import type z from 'zod/v4';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+
+type OAuthAuthenticationMethod = z.infer<typeof r.OAuthAuthenticationMethod>;
 
 export default (fastify: FastifyWithZodInstance) => {
   fastify.route({
@@ -15,22 +18,10 @@ export default (fastify: FastifyWithZodInstance) => {
     },
     handler: async (_req, res) => {
       // Transform oauth_authentication_methods array to response format
-      const oauthMethods: Array<{
-        id: string;
-        type: 'github' | 'google' | 'apple' | 'generic_oauth';
-        enabled: boolean;
-        display_name?: string;
-        icon_url?: string;
-      }> = [];
+      const oauthMethods: OAuthAuthenticationMethod[] = [];
 
       for (const config of fastify.config.oauth_authentication_methods) {
-        const method: {
-          id: string;
-          type: 'github' | 'google' | 'apple' | 'generic_oauth';
-          enabled: boolean;
-          display_name?: string;
-          icon_url?: string;
-        } = {
+        const method: OAuthAuthenticationMethod = {
           id: config.id,
           type: config.type,
           enabled: config.enabled,

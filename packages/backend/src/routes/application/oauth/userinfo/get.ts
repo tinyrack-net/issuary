@@ -5,6 +5,8 @@ import { h } from '@/schemas/header.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
+type UserInfoResponse = z.infer<typeof r.UserInfoResponse>;
+
 export default (fastify: FastifyWithZodInstance) => {
   return fastify.route({
     method: 'GET',
@@ -40,14 +42,7 @@ export default (fastify: FastifyWithZodInstance) => {
       const scopes = tokenPayload.scope.split(' ');
 
       // Build response based on granted scopes (OIDC Core §5.3.2)
-      const userInfo: {
-        sub: string;
-        email?: string;
-        email_verified?: boolean;
-        name?: string;
-        picture?: string;
-        preferred_username?: string;
-      } = {
+      const userInfo: UserInfoResponse = {
         sub: userData.id,
       };
 

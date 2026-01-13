@@ -334,6 +334,8 @@ export const r = {
   ConsentUser,
   LinkedOAuthAccount,
   AvailableOAuthProvider,
+  OAuthAuthenticationMethod,
+  BasicAuthenticationMethods,
 
   // WebAuthn/Passkey schemas
   PublicKeyCredentialDescriptorJSON,

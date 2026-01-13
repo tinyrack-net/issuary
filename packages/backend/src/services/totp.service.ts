@@ -1,21 +1,17 @@
 import fastifyPlugin from 'fastify-plugin';
 import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
 import qrcode from 'qrcode';
+import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
 import { UserTotpEntity } from '@/entities/user-totp.entity.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import type { totpSchema } from '@/schemas/totp.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
     totpService: TotpService;
   }
-}
-
-export interface TotpSetupData {
-  secret: string;
-  otpauthUrl: string;
-  qrCodeDataUrl: string;
 }
 
 export class TotpService {
@@ -76,7 +72,9 @@ export class TotpService {
    * Start TOTP setup for a user
    * Creates or updates unverified TOTP record
    */
-  public async startSetup(user: UserEntity): Promise<TotpSetupData> {
+  public async startSetup(
+    user: UserEntity,
+  ): Promise<z.infer<typeof totpSchema.TotpSetupData>> {
     // Check if user already has verified TOTP
     const existingTotp = await this.mikro.userTotp.findByUserId(user.id);
     if (existingTotp?.verified) {
