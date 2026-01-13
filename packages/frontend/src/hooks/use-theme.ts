@@ -1,10 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import {
   appConfigQueryOptions,
   type Theme,
   type ThemeMode,
-} from '@/queries/config';
+} from '@/queries/config.js';
 
 const THEME_MODE_STORAGE_KEY = 'tinyrack-auth-theme-mode';
 
@@ -73,12 +73,12 @@ function getServerThemeModeSnapshot(): ThemeMode | null {
 }
 
 export function useTheme() {
-  const { data: config } = useQuery(appConfigQueryOptions);
+  const { data: config } = useSuspenseQuery(appConfigQueryOptions);
 
-  // Get server defaults or fallback values
-  const serverLightTheme = config?.app.light_theme ?? 'light';
-  const serverDarkTheme = config?.app.dark_theme ?? 'dark';
-  const serverThemeMode = config?.app.theme_mode ?? 'system';
+  // Get server defaults
+  const serverLightTheme = config.app.light_theme;
+  const serverDarkTheme = config.app.dark_theme;
+  const serverThemeMode = config.app.theme_mode;
 
   // Theme toggle is only allowed when server theme_mode is 'system'
   const canToggleTheme = serverThemeMode === 'system';

@@ -1,14 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { isAvailableLanguage, LANGUAGE_STORAGE_KEY } from '@/i18n';
-import { appConfigQueryOptions } from '@/queries/config';
+import { isAvailableLanguage, LANGUAGE_STORAGE_KEY } from '@/i18n/index.js';
+import { appConfigQueryOptions } from '@/queries/config.js';
 
 export function useLanguage() {
   const { i18n } = useTranslation();
-  const { data: config } = useQuery(appConfigQueryOptions);
+  const { data: config } = useSuspenseQuery(appConfigQueryOptions);
 
-  // Get supported languages from server config, fallback to current i18n language
-  const supportedLanguages = config?.app.supported_languages ?? [i18n.language];
+  // Get supported languages from server config
+  const supportedLanguages = config.app.supported_languages;
 
   // Filter to only languages we have translations for
   const availableLanguages = supportedLanguages.filter(isAvailableLanguage);

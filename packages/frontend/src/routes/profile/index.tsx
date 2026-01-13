@@ -1,5 +1,9 @@
 import { SignOutIcon } from '@phosphor-icons/react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -53,9 +57,11 @@ function Profile() {
   const [totpModal, setTotpModal] = useState<TotpModalType>(null);
   const [passkeyModal, setPasskeyModal] = useState<PasskeyModalType>(null);
 
-  const { data: session } = useQuery(getSessionQueryOptions);
-  const { data: oauthAccountsData } = useQuery(oauthAccountsQueryOptions);
-  const { data: appConfig } = useQuery(appConfigQueryOptions);
+  const { data: session } = useSuspenseQuery(getSessionQueryOptions);
+  const { data: oauthAccountsData } = useSuspenseQuery(
+    oauthAccountsQueryOptions,
+  );
+  const { data: appConfig } = useSuspenseQuery(appConfigQueryOptions);
 
   const logoutMutation = useMutation({
     ...logoutMutationOptions,
@@ -103,32 +109,29 @@ function Profile() {
     }
   };
 
-  const user = session?.user;
-  const availableProviders = oauthAccountsData?.available_providers || [];
+  const user = session.user;
+  const availableProviders = oauthAccountsData.available_providers;
   const hasLinkedOAuth = availableProviders.some((p) => p.linked);
   const isConfigManaged = user?.managed === 'config';
 
   // Check if TOTP and Passkey are enabled in config
-  const passwordAuthMethod = appConfig?.basic_authentication_methods.password;
-  const passkeyAuthMethod = appConfig?.basic_authentication_methods.passkey;
-  const totpEnabled = passwordAuthMethod?.totp.enabled ?? false;
-  const passkeyEnabled = passkeyAuthMethod?.enabled ?? false;
+  const passwordAuthMethod = appConfig.basic_authentication_methods.password;
+  const passkeyAuthMethod = appConfig.basic_authentication_methods.passkey;
+  const totpEnabled = passwordAuthMethod.totp.enabled;
+  const passkeyEnabled = passkeyAuthMethod.enabled;
 
   // Check if user needs to set up TOTP or Passkey (required settings)
   const needsTotpSetup = user?.totp_required ?? false;
 
   // Auto-open required setup modals
   useEffect(() => {
-    // Only check required setup if config is loaded
-    if (!appConfig) return;
-
     if (needsTotpSetup) {
       // TOTP required
       if (!totpModal) {
         setTotpModal('setup');
       }
     }
-  }, [appConfig, needsTotpSetup, totpModal]);
+  }, [needsTotpSetup, totpModal]);
 
   // Handle modal close with required check
   const handleCloseTotpModal = () => {

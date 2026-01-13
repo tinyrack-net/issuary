@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { LanguageSelector } from '@/components/ui/language-selector.js';
 import { ThemeToggle } from '@/components/ui/theme-toggle.js';
 import { useTheme } from '@/hooks/use-theme.js';
@@ -12,9 +12,9 @@ export function AuthPageLayout({ children }: AuthPageLayoutProps) {
   const { themeMode, currentTheme, darkTheme, canToggleTheme, toggleDarkMode } =
     useTheme();
   const isDark = currentTheme === darkTheme;
-  const { data: configData } = useQuery(appConfigQueryOptions);
+  const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
 
-  const backgroundUrl = configData?.app.background_url;
+  const backgroundUrl = configData.app.background_url;
 
   return (
     <div

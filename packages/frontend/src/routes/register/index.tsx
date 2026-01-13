@@ -1,6 +1,10 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { EnvelopeSimpleIcon, LockIcon } from '@phosphor-icons/react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -44,13 +48,15 @@ function Register() {
   const queryClient = useQueryClient();
   const search = Route.useSearch();
 
-  const { data: configData } = useQuery(appConfigQueryOptions);
-  const { data: oauthProvidersData } = useQuery(oauthProvidersQueryOptions);
-  const oauthProviders = oauthProvidersData?.providers || [];
+  const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
+  const { data: oauthProvidersData } = useSuspenseQuery(
+    oauthProvidersQueryOptions,
+  );
+  const oauthProviders = oauthProvidersData.providers;
 
   const isPasswordAuthEnabled =
-    configData?.basic_authentication_methods.password.enabled;
-  const isPublicRegistrationEnabled = configData?.app.public_registration;
+    configData.basic_authentication_methods.password.enabled;
+  const isPublicRegistrationEnabled = configData.app.public_registration;
 
   const registerSchema = useMemo(
     () =>

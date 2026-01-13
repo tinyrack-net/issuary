@@ -4,7 +4,11 @@ import {
   FingerprintIcon,
   LockIcon,
 } from '@phosphor-icons/react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -48,14 +52,16 @@ function Login() {
   const queryClient = useQueryClient();
   const search = Route.useSearch();
 
-  const { data: configData } = useQuery(appConfigQueryOptions);
-  const { data: oauthProvidersData } = useQuery(oauthProvidersQueryOptions);
-  const oauthProviders = oauthProvidersData?.providers || [];
+  const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
+  const { data: oauthProvidersData } = useSuspenseQuery(
+    oauthProvidersQueryOptions,
+  );
+  const oauthProviders = oauthProvidersData.providers;
 
   const isPasswordAuthEnabled =
-    configData?.basic_authentication_methods.password.enabled;
+    configData.basic_authentication_methods.password.enabled;
   const isPasskeyEnabled =
-    configData?.basic_authentication_methods.passkey.enabled;
+    configData.basic_authentication_methods.passkey.enabled;
 
   const loginSchema = useMemo(
     () =>
