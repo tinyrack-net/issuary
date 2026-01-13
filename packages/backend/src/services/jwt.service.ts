@@ -8,58 +8,17 @@ import {
   jwtVerify,
   SignJWT,
 } from 'jose';
+import type z from 'zod/v4';
 import type { AppConfig } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import { jwtPayload } from '@/schemas/jwt.js';
 import type { JwtKeyService } from './jwt-key.service.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
     jwtService: JwtService;
   }
-}
-
-/**
- * Base JWT payload with standard claims
- */
-interface BaseJWTPayload extends JWTPayload {
-  sub: string;
-  jti?: string;
-  iat?: number;
-  exp?: number;
-  iss?: string;
-}
-
-/**
- * Access token payload structure (RFC 6749)
- */
-export interface AccessTokenPayload extends BaseJWTPayload {
-  typ: 'access_token';
-  client_id: string;
-  scope: string;
-  aud?: string;
-}
-
-/**
- * Refresh token payload structure (RFC 6749)
- */
-export interface RefreshTokenPayload extends BaseJWTPayload {
-  typ: 'refresh_token';
-  client_id: string;
-  scope: string;
-  aud?: string;
-}
-
-/**
- * ID token payload structure (OpenID Connect Core 1.0 §2)
- */
-export interface IdTokenPayload extends BaseJWTPayload {
-  aud: string;
-  nonce?: string;
-  email?: string;
-  email_verified?: boolean;
-  name?: string;
-  picture?: string;
 }
 
 /**
@@ -79,7 +38,9 @@ export class JwtService {
   /**
    * Sign an access token using RS256
    */
-  async signAccessToken(payload: AccessTokenPayload): Promise<string> {
+  async signAccessToken(
+    payload: z.infer<typeof jwtPayload.AccessTokenPayload>,
+  ): Promise<string> {
     const ttl = this.config.app.jwt_access_token_ttl || 3600;
     const key = await this.jwtKeyService.getActiveKey();
     const privateKey = await importPKCS8(key.private_key, key.algorithm);
@@ -104,7 +65,9 @@ export class JwtService {
   /**
    * Sign a refresh token using RS256
    */
-  async signRefreshToken(payload: RefreshTokenPayload): Promise<string> {
+  async signRefreshToken(
+    payload: z.infer<typeof jwtPayload.RefreshTokenPayload>,
+  ): Promise<string> {
     const ttl = this.config.app.jwt_refresh_token_ttl || 2592000;
     const key = await this.jwtKeyService.getActiveKey();
     const privateKey = await importPKCS8(key.private_key, key.algorithm);
@@ -129,7 +92,9 @@ export class JwtService {
   /**
    * Sign an ID token using RS256 (for OIDC)
    */
-  async signIdToken(payload: IdTokenPayload): Promise<string> {
+  async signIdToken(
+    payload: z.infer<typeof jwtPayload.IdTokenPayload>,
+  ): Promise<string> {
     const ttl = this.config.app.jwt_access_token_ttl || 3600;
     const key = await this.jwtKeyService.getActiveKey();
     const privateKey = await importPKCS8(key.private_key, key.algorithm);
@@ -159,7 +124,9 @@ export class JwtService {
    *
    * @throws {InvalidAccessToken} When token is invalid, expired, or revoked
    */
-  async verifyAccessToken(token: string): Promise<AccessTokenPayload> {
+  async verifyAccessToken(
+    token: string,
+  ): Promise<z.infer<typeof jwtPayload.AccessTokenPayload>> {
     try {
       const payload = await this.verifyToken(token);
 
@@ -175,7 +142,7 @@ export class JwtService {
         }
       }
 
-      return payload as AccessTokenPayload;
+      return payload as z.infer<typeof jwtPayload.AccessTokenPayload>;
     } catch {
       throw new e.InvalidAccessToken.Error();
     }
@@ -186,7 +153,9 @@ export class JwtService {
    *
    * @throws {InvalidRefreshToken} When token is invalid, expired, or revoked
    */
-  async verifyRefreshToken(token: string): Promise<RefreshTokenPayload> {
+  async verifyRefreshToken(
+    token: string,
+  ): Promise<z.infer<typeof jwtPayload.RefreshTokenPayload>> {
     try {
       const payload = await this.verifyToken(token);
 
@@ -202,7 +171,7 @@ export class JwtService {
         }
       }
 
-      return payload as RefreshTokenPayload;
+      return payload as z.infer<typeof jwtPayload.RefreshTokenPayload>;
     } catch {
       throw new e.InvalidRefreshToken.Error();
     }
@@ -213,7 +182,9 @@ export class JwtService {
    *
    * @throws {InvalidIdToken} When token is invalid or expired
    */
-  async verifyIdToken(token: string): Promise<IdTokenPayload> {
+  async verifyIdToken(
+    token: string,
+  ): Promise<z.infer<typeof jwtPayload.IdTokenPayload>> {
     try {
       const payload = await this.verifyToken(token);
 
@@ -221,7 +192,7 @@ export class JwtService {
         throw new Error('Invalid ID token payload structure');
       }
 
-      return payload as IdTokenPayload;
+      return payload as z.infer<typeof jwtPayload.IdTokenPayload>;
     } catch {
       throw new e.InvalidIdToken.Error();
     }
@@ -268,9 +239,7 @@ export class JwtService {
   /**
    * Type guard to validate access token payload structure
    */
-  private isAccessTokenPayload(
-    payload: JWTPayload,
-  ): payload is AccessTokenPayload {
+  private isAccessTokenPayload(payload: JWTPayload): boolean {
     return (
       payload['typ'] === 'access_token' &&
       typeof payload.sub === 'string' &&
@@ -282,9 +251,7 @@ export class JwtService {
   /**
    * Type guard to validate refresh token payload structure
    */
-  private isRefreshTokenPayload(
-    payload: JWTPayload,
-  ): payload is RefreshTokenPayload {
+  private isRefreshTokenPayload(payload: JWTPayload): boolean {
     return (
       payload['typ'] === 'refresh_token' &&
       typeof payload.sub === 'string' &&
@@ -296,7 +263,7 @@ export class JwtService {
   /**
    * Type guard to validate ID token payload structure
    */
-  private isIdTokenPayload(payload: JWTPayload): payload is IdTokenPayload {
+  private isIdTokenPayload(payload: JWTPayload): boolean {
     return typeof payload.sub === 'string' && typeof payload.aud === 'string';
   }
 
@@ -369,7 +336,9 @@ export class JwtService {
    * console.log(payload.scope);     // Granted scopes
    * ```
    */
-  async validateBearerToken(req: FastifyRequest): Promise<AccessTokenPayload> {
+  async validateBearerToken(
+    req: FastifyRequest,
+  ): Promise<z.infer<typeof jwtPayload.AccessTokenPayload>> {
     const token = this.extractBearerToken(req);
 
     // Use jwtService for RS256 token verification

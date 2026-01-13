@@ -6,6 +6,7 @@ import type {
 } from '@simplewebauthn/server';
 import { AppTheme } from '@/lib/config.js';
 import { f } from './field.js';
+import { oauthSchema } from './oauth.js';
 
 // Base schemas
 const UserSession = z
@@ -356,33 +357,11 @@ export const r = {
     available_providers: z.array(AvailableOAuthProvider),
   }),
 
-  // Token response (RFC 6749)
-  TokenResponse: z.object({
-    access_token: z.string().describe('OAuth 2.0 access token (JWT format)'),
-    token_type: z.literal('Bearer').describe('Token type identifier'),
-    expires_in: z.number().int().describe('Access token lifetime in seconds'),
-    refresh_token: z
-      .string()
-      .optional()
-      .describe('Refresh token for obtaining new access tokens'),
-    id_token: z
-      .string()
-      .optional()
-      .describe('OpenID Connect ID Token (JWT format)'),
-    scope: z.string().describe('Space-separated list of granted scopes'),
-  }),
+  // Token response (RFC 6749) - re-export from oauth schema
+  TokenResponse: oauthSchema.TokenResponse,
 
-  // Introspection response (RFC 7662)
-  IntrospectionResponse: z.object({
-    active: z.boolean().describe('Whether the token is currently active'),
-    scope: z.string().optional(),
-    client_id: z.string().optional(),
-    token_type: z.literal('Bearer').optional(),
-    exp: z.number().int().optional(),
-    iat: z.number().int().optional(),
-    sub: z.string().optional(),
-    iss: z.string().optional(),
-  }),
+  // Introspection response (RFC 7662) - re-export from oauth schema
+  IntrospectionResponse: oauthSchema.TokenIntrospectionResult,
 
   // UserInfo response (OIDC Core)
   UserInfoResponse: z.object({

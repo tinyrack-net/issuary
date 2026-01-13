@@ -1,7 +1,9 @@
 import fastifyPlugin from 'fastify-plugin';
+import type z from 'zod/v4';
 import type { AppConfig } from '@/lib/config.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import { oauthSchema } from '@/schemas/oauth.js';
 import type { OAuthClientService } from './oauth-client.service.js';
 import type { UserConsentService } from './user-consent.service.js';
 
@@ -9,25 +11,6 @@ declare module 'fastify' {
   interface FastifyInstance {
     oauthAuthorizeService: OAuthAuthorizeService;
   }
-}
-
-export interface AuthorizeParams {
-  response_type: string;
-  redirect_uri: string;
-  state?: string | undefined;
-  client_id: string;
-  code_challenge?: string | undefined;
-  code_challenge_method?: 'S256' | 'plain' | undefined;
-  scope?: string | undefined;
-  nonce?: string | undefined;
-  prompt?: 'none' | 'login' | 'consent' | 'select_account' | undefined;
-  max_age?: number | undefined;
-  display?: 'page' | 'popup' | 'touch' | 'wap' | undefined;
-}
-
-export interface AuthorizeResult {
-  type: 'redirect';
-  url: string;
 }
 
 export class OAuthAuthorizeService {
@@ -42,9 +25,9 @@ export class OAuthAuthorizeService {
    * Handle OAuth authorization request
    */
   public async authorize(params: {
-    query: AuthorizeParams;
+    query: z.infer<typeof oauthSchema.AuthorizeParams>;
     userSession?: { id: string };
-  }): Promise<AuthorizeResult> {
+  }): Promise<z.infer<typeof oauthSchema.AuthorizeResult>> {
     const { query, userSession } = params;
 
     // 1. Validate and fetch OAuth client DTO for validation methods
@@ -181,7 +164,9 @@ export class OAuthAuthorizeService {
   /**
    * Build login redirect URL
    */
-  private buildLoginRedirectUrl(query: AuthorizeParams): string {
+  private buildLoginRedirectUrl(
+    query: z.infer<typeof oauthSchema.AuthorizeParams>,
+  ): string {
     const loginUrl = new URL('/login', this.config.app.host);
     loginUrl.searchParams.set('client_id', query.client_id);
     loginUrl.searchParams.set('redirect_uri', query.redirect_uri);
@@ -221,7 +206,9 @@ export class OAuthAuthorizeService {
   /**
    * Build consent redirect URL
    */
-  private buildConsentRedirectUrl(query: AuthorizeParams): string {
+  private buildConsentRedirectUrl(
+    query: z.infer<typeof oauthSchema.AuthorizeParams>,
+  ): string {
     const consentUrl = new URL('/consent', this.config.app.host);
     consentUrl.searchParams.set('client_id', query.client_id);
     consentUrl.searchParams.set('redirect_uri', query.redirect_uri);

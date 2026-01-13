@@ -1,8 +1,11 @@
 import fastifyPlugin from 'fastify-plugin';
+import type z from 'zod/v4';
 import type { AppConfig } from '@/lib/config.js';
 import { validatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import { jwtPayload } from '@/schemas/jwt.js';
+import { oauthSchema } from '@/schemas/oauth.js';
 import type { JwtService } from './jwt.service.js';
 import type { OAuthClientService } from './oauth-client.service.js';
 import type { UserService } from './user.service.js';
@@ -14,55 +17,6 @@ declare module 'fastify' {
 }
 
 /**
- * Parameters for authorization code grant
- * RFC 6749 §4.1.3 - Access Token Request
- */
-export interface AuthorizationCodeGrantParams {
-  /** Authorization code received from /authorize endpoint */
-  code: string;
-  /** Redirect URI used in authorization request (must match) */
-  redirectUri: string;
-  /** OAuth client identifier */
-  clientId: string;
-  /** PKCE code verifier (required if code_challenge was used) */
-  codeVerifier?: string | undefined;
-}
-
-/**
- * Parameters for refresh token grant
- * RFC 6749 §6 - Refreshing an Access Token
- */
-export interface RefreshTokenGrantParams {
-  /** Refresh token from previous token response */
-  refreshToken: string;
-  /** OAuth client identifier (must match original request) */
-  clientId: string;
-}
-
-/**
- * Token introspection result
- * RFC 7662 §2.2 - Introspection Response
- */
-export interface TokenIntrospectionResult {
-  /** Whether the token is currently active */
-  active: boolean;
-  /** Space-separated list of scopes (only if active) */
-  scope?: string;
-  /** Client identifier (only if active) */
-  client_id?: string;
-  /** Type of token (only if active) */
-  token_type?: 'Bearer';
-  /** Expiration timestamp in seconds (only if active) */
-  exp?: number;
-  /** Issued-at timestamp in seconds (only if active) */
-  iat?: number;
-  /** Subject identifier - user ID (only if active) */
-  sub?: string;
-  /** Issuer identifier (only if active) */
-  iss?: string;
-}
-
-/**
  * OAuth Token Service
  *
  * Handles OAuth 2.0 token issuance for different grant types:
@@ -71,46 +25,6 @@ export interface TokenIntrospectionResult {
  *
  * Supports both config-based and database-based users/clients.
  */
-/**
- * Access token payload structure (RFC 6749)
- */
-export interface AccessTokenPayload {
-  typ: 'access_token';
-  sub: string;
-  client_id: string;
-  scope: string;
-  iat?: number;
-  exp?: number;
-  iss?: string;
-  aud?: string;
-}
-
-/**
- * Refresh token payload structure (RFC 6749)
- */
-export interface RefreshTokenPayload {
-  typ: 'refresh_token';
-  sub: string;
-  client_id: string;
-  scope: string;
-  iat?: number;
-  exp?: number;
-  iss?: string;
-  aud?: string;
-}
-
-/**
- * OAuth 2.0 / OIDC token response
- */
-export interface TokenResponse {
-  access_token: string;
-  token_type: 'Bearer';
-  expires_in: number;
-  refresh_token: string;
-  id_token?: string;
-  scope: string;
-}
-
 export class OAuthTokenService {
   constructor(
     private readonly config: AppConfig,
@@ -133,7 +47,9 @@ export class OAuthTokenService {
    * @throws {MissingCodeVerifier} - PKCE verifier required but not provided
    * @throws {InvalidPKCEVerifier} - PKCE verification failed
    */
-  async exchangeAuthorizationCode(params: AuthorizationCodeGrantParams) {
+  async exchangeAuthorizationCode(
+    params: z.infer<typeof oauthSchema.AuthorizationCodeGrantParams>,
+  ) {
     const { code, redirectUri, clientId, codeVerifier } = params;
 
     // 1. Look up client to get primary key (clientId in request is the business key)
@@ -205,7 +121,9 @@ export class OAuthTokenService {
    * @throws {InvalidRefreshToken} - Refresh token is invalid or expired
    * @throws {ClientIdMismatch} - Client ID doesn't match original token request
    */
-  async refreshAccessToken(params: RefreshTokenGrantParams) {
+  async refreshAccessToken(
+    params: z.infer<typeof oauthSchema.RefreshTokenGrantParams>,
+  ) {
     const { refreshToken, clientId } = params;
 
     // 1. Verify refresh token
@@ -247,9 +165,12 @@ export class OAuthTokenService {
   async introspectToken(
     token: string,
     tokenTypeHint?: 'access_token' | 'refresh_token',
-  ): Promise<TokenIntrospectionResult> {
+  ): Promise<z.infer<typeof oauthSchema.TokenIntrospectionResult>> {
     // Try to verify the token based on hint or both types
-    let payload: AccessTokenPayload | RefreshTokenPayload | null = null;
+    let payload:
+      | z.infer<typeof jwtPayload.AccessTokenPayload>
+      | z.infer<typeof jwtPayload.RefreshTokenPayload>
+      | null = null;
     let tokenType: 'access_token' | 'refresh_token' | null = null;
 
     // 1. Try to verify as hinted token type first (if hint provided)
@@ -404,7 +325,7 @@ export class OAuthTokenService {
     clientId: string;
     scope: string[];
     nonce?: string;
-  }): Promise<TokenResponse> {
+  }): Promise<z.infer<typeof oauthSchema.TokenResponse>> {
     const { userId, userEmail, userEmailVerified, clientId, scope, nonce } =
       params;
 
@@ -426,7 +347,7 @@ export class OAuthTokenService {
       scope: scopeString,
     });
 
-    const response: TokenResponse = {
+    const response: z.infer<typeof oauthSchema.TokenResponse> = {
       access_token: accessToken,
       token_type: 'Bearer',
       expires_in: this.config.app.jwt_access_token_ttl || 3600,
