@@ -1,3 +1,4 @@
+import * as jose from 'jose';
 import { describe, expect, test } from 'vitest';
 import {
   createAuthenticatedSession,
@@ -547,6 +548,292 @@ describe('POST /application/oauth/token', () => {
       const res = await exchangeCode({ code: 'invalid' });
 
       expect(res.statusCode).toBe(400);
+    });
+  });
+
+  describe('ID Token Claims Validation', () => {
+    test('should include nonce in id_token when provided in authorization request', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const testNonce = 'test-nonce-abc123';
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        nonce: testNonce,
+      });
+
+      const res = await exchangeCode({ code });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+      expect(json.id_token).toBeDefined();
+
+      // Decode and verify nonce claim
+      const decoded = jose.decodeJwt(json.id_token);
+      expect(decoded['nonce']).toBe(testNonce);
+    });
+
+    test('should NOT include nonce in id_token when not provided', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        // No nonce provided
+      });
+
+      const res = await exchangeCode({ code });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+
+      const decoded = jose.decodeJwt(json.id_token);
+      expect(decoded['nonce']).toBeUndefined();
+    });
+
+    test('should include aud claim matching client_id', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const res = await exchangeCode({ code });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+
+      const decoded = jose.decodeJwt(json.id_token);
+      expect(decoded.aud).toBe(TEST_OAUTH_CLIENT.clientId);
+    });
+
+    test('should include sub claim with user ID', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const res = await exchangeCode({ code });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+
+      const decoded = jose.decodeJwt(json.id_token);
+      expect(decoded.sub).toBeDefined();
+      expect(typeof decoded.sub).toBe('string');
+      // sub should be a non-empty string (can be UUID or config-based ID)
+      expect((decoded.sub as string).length).toBeGreaterThan(0);
+    });
+
+    test('should include iss claim with issuer URL', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const res = await exchangeCode({ code });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+
+      const decoded = jose.decodeJwt(json.id_token);
+      expect(decoded.iss).toBeDefined();
+      expect(typeof decoded.iss).toBe('string');
+    });
+
+    test('should include iat and exp claims', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const res = await exchangeCode({ code });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+
+      const decoded = jose.decodeJwt(json.id_token);
+      expect(decoded.iat).toBeDefined();
+      expect(decoded.exp).toBeDefined();
+      expect(typeof decoded.iat).toBe('number');
+      expect(typeof decoded.exp).toBe('number');
+
+      // exp should be after iat
+      expect(decoded.exp).toBeGreaterThan(decoded.iat as number);
+    });
+
+    test('should include email claims when email scope requested', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid email',
+      });
+
+      const res = await exchangeCode({ code });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+
+      const decoded = jose.decodeJwt(json.id_token);
+      expect(decoded['email']).toBeDefined();
+      expect(typeof decoded['email']).toBe('string');
+      expect(decoded['email_verified']).toBeDefined();
+      expect(typeof decoded['email_verified']).toBe('boolean');
+    });
+
+    test('should NOT include email claims when email scope not requested', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile', // No email scope
+      });
+
+      const res = await exchangeCode({ code });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+
+      const decoded = jose.decodeJwt(json.id_token);
+      expect(decoded['email']).toBeUndefined();
+      expect(decoded['email_verified']).toBeUndefined();
+    });
+
+    test('should include name claim when profile scope requested', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile',
+      });
+
+      const res = await exchangeCode({ code });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+
+      const decoded = jose.decodeJwt(json.id_token);
+      expect(decoded['name']).toBeDefined();
+      expect(typeof decoded['name']).toBe('string');
+    });
+
+    test('should NOT include name claim when profile scope not requested', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid email', // No profile scope
+      });
+
+      const res = await exchangeCode({ code });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+
+      const decoded = jose.decodeJwt(json.id_token);
+      expect(decoded['name']).toBeUndefined();
+    });
+
+    test('should include all claims when full scopes requested', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const testNonce = 'full-scope-nonce';
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email',
+        nonce: testNonce,
+      });
+
+      const res = await exchangeCode({ code });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+
+      const decoded = jose.decodeJwt(json.id_token);
+
+      // Required OIDC claims
+      expect(decoded.iss).toBeDefined();
+      expect(decoded.sub).toBeDefined();
+      expect(decoded.aud).toBe(TEST_OAUTH_CLIENT.clientId);
+      expect(decoded.exp).toBeDefined();
+      expect(decoded.iat).toBeDefined();
+
+      // Nonce (when provided)
+      expect(decoded['nonce']).toBe(testNonce);
+
+      // Profile scope claims
+      expect(decoded['name']).toBeDefined();
+
+      // Email scope claims
+      expect(decoded['email']).toBeDefined();
+      expect(decoded['email_verified']).toBeDefined();
+    });
+  });
+
+  describe('Access Token Claims Validation', () => {
+    test('should include required claims in access token', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const res = await exchangeCode({ code });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+
+      const decoded = jose.decodeJwt(json.access_token);
+
+      // Required claims
+      expect(decoded['typ']).toBe('access_token');
+      expect(decoded.sub).toBeDefined();
+      expect(decoded['client_id']).toBe(TEST_OAUTH_CLIENT.clientId);
+      expect(decoded['scope']).toBe('openid profile email');
+      expect(decoded.iss).toBeDefined();
+      expect(decoded.iat).toBeDefined();
+      expect(decoded.exp).toBeDefined();
+      expect(decoded.jti).toBeDefined(); // JWT ID for revocation
+    });
+
+    test('should include kid in JWT header', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const res = await exchangeCode({ code });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+
+      // Decode header to check kid
+      const [headerPart] = json.access_token.split('.');
+      const header = JSON.parse(
+        Buffer.from(headerPart, 'base64url').toString(),
+      );
+
+      expect(header.alg).toBe('RS256');
+      expect(header.typ).toBe('JWT');
+      expect(header.kid).toBeDefined();
+    });
+  });
+
+  describe('Refresh Token Claims Validation', () => {
+    test('should include required claims in refresh token', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const res = await exchangeCode({ code });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+
+      const decoded = jose.decodeJwt(json.refresh_token);
+
+      // Required claims
+      expect(decoded['typ']).toBe('refresh_token');
+      expect(decoded.sub).toBeDefined();
+      expect(decoded['client_id']).toBe(TEST_OAUTH_CLIENT.clientId);
+      expect(decoded['scope']).toBe('openid profile email');
+      expect(decoded.iss).toBeDefined();
+      expect(decoded.iat).toBeDefined();
+      expect(decoded.exp).toBeDefined();
+      expect(decoded.jti).toBeDefined();
+    });
+
+    test('should have longer expiration than access token', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const res = await exchangeCode({ code });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+
+      const accessDecoded = jose.decodeJwt(json.access_token);
+      const refreshDecoded = jose.decodeJwt(json.refresh_token);
+
+      // Refresh token should expire after access token
+      expect(refreshDecoded.exp).toBeGreaterThan(accessDecoded.exp as number);
     });
   });
 });
