@@ -9,6 +9,7 @@ export default fastifyPlugin(
         layout: 'modern',
         darkMode: true,
         persistAuth: true,
+        defaultOpenAllTags: true,
         sources: [{ url: '/docs/json', title: 'Main API' }],
         authentication: {
           preferredSecurityScheme: 'bearerAuth',
