@@ -14,13 +14,10 @@ declare module 'fastify' {
 export class EmailService {
   public constructor(
     private readonly config: AppConfig,
-    private readonly transporter: FastifyInstance['transporter'],
+    private readonly transporter: FastifyInstance['mail'],
   ) {}
 
-  /**
-   * Send email verification email
-   */
-  async sendVerificationEmail(params: {
+  public async sendVerificationEmail(params: {
     email: string;
     token: string;
   }): Promise<SMTPTransport.SentMessageInfo> {
@@ -55,20 +52,13 @@ export class EmailService {
     return info;
   }
 
-  /**
-   * Send email verification email asynchronously (fire-and-forget)
-   * Logs errors but does not throw
-   */
-  sendVerificationEmailAsync(params: { email: string; token: string }): void {
+  public sendVerificationEmailAsync(params: { email: string; token: string }): void {
     this.sendVerificationEmail(params).catch((err) => {
       console.error('Failed to send verification email:', err);
     });
   }
 
-  /**
-   * Send password reset email
-   */
-  async sendPasswordResetEmail(params: {
+  public async sendPasswordResetEmail(params: {
     email: string;
     token: string;
   }): Promise<SMTPTransport.SentMessageInfo> {
@@ -107,15 +97,12 @@ export class EmailService {
    * Send password reset email asynchronously (fire-and-forget)
    * Logs errors but does not throw
    */
-  sendPasswordResetEmailAsync(params: { email: string; token: string }): void {
+  public sendPasswordResetEmailAsync(params: { email: string; token: string }): void {
     this.sendPasswordResetEmail(params).catch((err) => {
       console.error('Failed to send password reset email:', err);
     });
   }
 
-  /**
-   * Get HTML template for verification email
-   */
   private getVerificationEmailTemplate(params: {
     verificationUrl: string;
     token: string;
@@ -200,9 +187,6 @@ export class EmailService {
 `;
   }
 
-  /**
-   * Get HTML template for password reset email
-   */
   private getPasswordResetEmailTemplate(params: {
     resetUrl: string;
     token: string;
@@ -289,7 +273,7 @@ export class EmailService {
 
 export default fastifyPlugin(
   async (fastify) => {
-    const service = new EmailService(fastify.config, fastify.transporter);
+    const service = new EmailService(fastify.config, fastify.mail);
     fastify.decorate('emailService', service);
   },
   {

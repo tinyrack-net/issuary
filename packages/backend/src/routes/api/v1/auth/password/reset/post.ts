@@ -6,7 +6,7 @@ import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
-  if (!fastify.transporter) {
+  if (!fastify.mail) {
     return;
   }
   fastify.route({

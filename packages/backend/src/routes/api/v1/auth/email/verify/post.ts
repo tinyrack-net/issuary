@@ -6,7 +6,7 @@ import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
-  if (!fastify.transporter) {
+  if (!fastify.mail) {
     return;
   }
   fastify.route({
@@ -25,9 +25,11 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      const user = await fastify.emailVerificationService.verifyEmail(
-        req.body.token,
-      );
+      if (!fastify.emailVerificationService) {
+        throw new e.EmailNotActivated.Error();
+      }
+
+      const user = await fastify.emailVerificationService.verifyEmail(req.body.token);
 
       // Populate password_hash to check if password is set
       await fastify.mikro.em.populate(user, ['password_hash']);

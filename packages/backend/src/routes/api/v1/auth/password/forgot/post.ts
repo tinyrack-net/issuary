@@ -7,7 +7,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
   // Only enable if email service is available
-  if (!fastify.transporter) {
+  if (!fastify.mail) {
     return;
   }
 
