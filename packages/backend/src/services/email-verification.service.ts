@@ -6,7 +6,7 @@ import { e } from '@/schemas/error.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    emailVerificationService: EmailVerificationService;
+    emailVerificationService?: EmailVerificationService;
   }
 }
 
@@ -17,7 +17,7 @@ export class EmailVerificationService {
    * Generate email verification token for a user
    * Invalidates all previous unverified tokens
    */
-  async generateToken(params: {
+  public async generateToken(params: {
     userId: string;
     expiresInHours?: number;
   }): Promise<EmailVerificationEntity> {
@@ -33,7 +33,7 @@ export class EmailVerificationService {
    * Verify email with token
    * Marks user's email as verified
    */
-  async verifyEmail(token: string): Promise<UserEntity> {
+  public async verifyEmail(token: string): Promise<UserEntity> {
     const verification = await this.mikro.emailVerification.verifyToken(token);
 
     if (!verification) {
@@ -55,7 +55,7 @@ export class EmailVerificationService {
    * Resend verification email
    * Generates new token and sends email
    */
-  async resendVerification(email: string): Promise<EmailVerificationEntity> {
+  public async resendVerification(email: string): Promise<EmailVerificationEntity> {
     const user = await this.mikro.user.findOneOrFail(
       { email },
       {
@@ -79,7 +79,7 @@ export class EmailVerificationService {
   /**
    * Check if user has pending verification
    */
-  async hasPendingVerification(userId: string): Promise<boolean> {
+  public async hasPendingVerification(userId: string): Promise<boolean> {
     const count = await this.mikro.emailVerification.count({
       user: { id: userId },
       verified: false,

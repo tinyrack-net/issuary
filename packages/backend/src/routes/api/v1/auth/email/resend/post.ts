@@ -6,7 +6,7 @@ import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
-  if (!fastify.transporter) {
+  if (!fastify.mail) {
     return;
   }
   fastify.route({
@@ -26,10 +26,12 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      const verification =
-        await fastify.emailVerificationService.resendVerification(
-          req.body.email,
-        );
+      if (!fastify.emailVerificationService) {
+        throw new e.EmailNotActivated.Error();
+      }
+      const verification = await fastify.emailVerificationService.resendVerification(
+        req.body.email,
+      );
 
       // Send verification email asynchronously (fire-and-forget)
       fastify.emailService.sendVerificationEmailAsync({
