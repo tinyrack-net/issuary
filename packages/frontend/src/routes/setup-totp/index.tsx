@@ -2,7 +2,7 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { ShieldCheckIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
@@ -45,6 +45,7 @@ function SetupTotp() {
 
   const [step, setStep] = useState<SetupStep>('loading');
   const [setupData, setSetupData] = useState<TotpSetupResponse | null>(null);
+  const setupInitiatedRef = useRef(false);
 
   const verifySchema = useMemo(
     () =>
@@ -108,16 +109,18 @@ function SetupTotp() {
   });
 
   const startSetup = useCallback(() => {
+    setupInitiatedRef.current = true;
     setStep('loading');
     setupMutation.mutate();
   }, [setupMutation]);
 
   // Start setup on mount
   useEffect(() => {
-    if (!setupData && !setupMutation.isPending && step === 'loading') {
-      startSetup();
+    if (!setupInitiatedRef.current && step === 'loading') {
+      setupInitiatedRef.current = true;
+      setupMutation.mutate();
     }
-  }, [setupData, setupMutation.isPending, startSetup, step]);
+  }, [step, setupMutation]);
 
   const onSubmit = async (values: VerifyFormValues) => {
     try {

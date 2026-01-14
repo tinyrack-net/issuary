@@ -59,6 +59,10 @@ export const InternalConfigSchema = z.object({
     password: {
       enabled: true,
       email_verification: true,
+      totp: {
+        enabled: false,
+        required: false,
+      },
     },
     passkey: {
       enabled: false,

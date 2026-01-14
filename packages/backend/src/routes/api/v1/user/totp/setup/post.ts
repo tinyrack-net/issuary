@@ -10,7 +10,10 @@ import type { FastifyWithZodInstance } from '@/server.js';
  * Generates a new secret and returns QR code for authenticator app.
  * Accepts both full user session and pending TOTP setup session.
  */
-export default (fastify: FastifyWithZodInstance) =>
+export default (fastify: FastifyWithZodInstance) => {
+  if (!fastify.config.basic_authentication_methods.password.totp?.enabled) {
+    return;
+  }
   fastify.route({
     method: 'POST',
     url: '',
@@ -36,6 +39,7 @@ export default (fastify: FastifyWithZodInstance) =>
         throw new e.Unauthorized.Error();
       }
 
+      console.log(userId);
       // Get user entity
       const user = await fastify.mikro.user.findOneOrFail(
         { id: userId },
@@ -51,3 +55,4 @@ export default (fastify: FastifyWithZodInstance) =>
       });
     },
   });
+};

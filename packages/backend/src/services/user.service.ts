@@ -33,6 +33,7 @@ export class UserService {
     );
     const totpEnabled = await this.mikro.userTotp.isEnabled(id);
     const passkeyCount = await this.mikro.userPasskey.countByUserId(id);
+
     return {
       id: user.id,
       managed: user.managed_by,

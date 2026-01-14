@@ -20,6 +20,9 @@ admin:
   enabled: true
   port: !env ADMIN_PORT
 
+account_deletion:
+  enabled: true
+
 database:
   type: sqlite
   path: test.db

@@ -11,7 +11,10 @@ export const AppConfigPasswordAuth = z.object({
       enabled: z.boolean().default(false),
       required: z.boolean().default(false),
     })
-    .optional(),
+    .default({
+      enabled: false,
+      required: false,
+    }),
 });
 
 export type AppConfigPasswordAuth = z.infer<typeof AppConfigPasswordAuth>;
@@ -34,6 +37,10 @@ export const AppConfigBasicAuthenticationMethods = z.object({
   password: AppConfigPasswordAuth.default({
     enabled: true,
     email_verification: true,
+    totp: {
+      enabled: false,
+      required: false,
+    },
   }),
   passkey: AppConfigPasskeyAuth.default({
     enabled: false,
