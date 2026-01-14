@@ -18,8 +18,8 @@ export default (fastify: FastifyWithZodInstance) =>
         provider: f.providerName,
       }),
       querystring: z.object({
-        code: z.string().min(1),
-        state: f.state,
+        code: z.string().min(1).optional(),
+        state: f.state.optional(),
         error: z.string().optional(),
         error_description: z.string().optional(),
       }),
@@ -29,6 +29,7 @@ export default (fastify: FastifyWithZodInstance) =>
         400: z.union([
           e.OAuthStateMismatch.Schema,
           e.OAuthSessionExpired.Schema,
+          e.OAuthInvalidRequest.Schema,
         ]),
         404: e.OAuthProviderNotFound.Schema,
         409: z.union([
@@ -48,12 +49,21 @@ export default (fastify: FastifyWithZodInstance) =>
       // Handle OAuth error response
       if (error) {
         // OAuth provider returned an error
-        const errorUrl = new URL('/login', req.headers.referer || '/');
+        // Build redirect URL - use referer or construct from host header
+        const baseUrl =
+          req.headers.referer ||
+          `${req.protocol}://${req.headers.host || 'localhost'}`;
+        const errorUrl = new URL('/login', baseUrl);
         errorUrl.searchParams.set('error', error);
         if (error_description) {
           errorUrl.searchParams.set('error_description', error_description);
         }
         return res.redirect(errorUrl.toString());
+      }
+
+      // Validate required parameters for success flow
+      if (!code || !state) {
+        throw new e.OAuthInvalidRequest.Error();
       }
 
       // Retrieve OAuth session data

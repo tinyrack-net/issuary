@@ -355,6 +355,11 @@ export const e = {
     'OAUTH_SESSION_EXPIRED',
     'The OAuth session has expired. Please start the login process again.',
   ),
+  OAuthInvalidRequest: createError(
+    400,
+    'OAUTH_INVALID_REQUEST',
+    'Missing required parameters: code and state.',
+  ),
   Unauthorized: createError(
     401,
     'UNAUTHORIZED',
