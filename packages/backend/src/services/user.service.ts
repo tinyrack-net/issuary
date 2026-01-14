@@ -39,7 +39,7 @@ export class UserService {
 
     return {
       id: user.id,
-      managed: user.managed_by,
+      managed_by: user.managed_by,
       email: user.email,
       email_verified: user.email_verified,
       has_password: user.hasPassword(),
@@ -69,7 +69,7 @@ export class UserService {
     const passkeyCount = await this.mikro.userPasskey.countByUserId(user.id);
     return {
       id: user.id,
-      managed: user.managed_by,
+      managed_by: user.managed_by,
       email: user.email,
       email_verified: user.email_verified,
       has_password: user.hasPassword(),
@@ -118,7 +118,7 @@ export class UserService {
       emailVerificationRequired: !!this.emailVerificationService,
       userSession: {
         id: user.id,
-        managed: 'database',
+        managed_by: 'database',
         email: user.email,
         email_verified: user.email_verified,
         has_password: user.hasPassword(),
@@ -161,9 +161,20 @@ export class UserService {
     };
   }
 
-  public userTotpRequired(user: UserEntity): boolean {
+  public userEmailVerificationRequired(userLike: {
+    managed_by: UserEntity['managed_by'];
+  }): boolean {
     return (
-      user.managed_by !== 'config' &&
+      userLike.managed_by !== 'config' &&
+      !!this.config.smtp
+    );
+  }
+
+  public userTotpRequired(userLike: {
+    managed_by: UserEntity['managed_by'];
+  }): boolean {
+    return (
+      userLike.managed_by !== 'config' &&
       this.config.basic_authentication_methods.password.totp.enabled &&
       this.config.basic_authentication_methods.password.totp.required
     );

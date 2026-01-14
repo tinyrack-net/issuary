@@ -248,7 +248,7 @@ export class OAuthConnectService {
         isNewUser: false,
         user: {
           id: user.id,
-          managed: 'database',
+          managed_by: 'database',
           email: user.email,
           email_verified: user.email_verified,
           has_password: user.hasPassword(),
@@ -300,7 +300,7 @@ export class OAuthConnectService {
         isNewUser: false,
         user: {
           id: existingUser.id,
-          managed: existingUser.managed_by,
+          managed_by: existingUser.managed_by,
           email: existingUser.email,
           email_verified: existingUser.email_verified,
           has_password: existingUser.hasPassword(),
@@ -340,7 +340,7 @@ export class OAuthConnectService {
       isNewUser: true,
       user: {
         id: newUser.id,
-        managed: 'database',
+        managed_by: 'database',
         email: newUser.email,
         email_verified: newUser.email_verified,
         has_password: false, // New OAuth user has no password
