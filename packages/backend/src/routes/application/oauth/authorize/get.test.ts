@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import {
   createAuthenticatedSession,
+  createDbUserWithSession,
+  generateUniqueEmail,
   grantConsent,
   setupTestServer,
   TEST_OAUTH_CLIENT,
@@ -628,6 +630,188 @@ describe('GET /application/oauth/authorize', () => {
         'http://localhost:8080',
       );
       expect(location.searchParams.get('prompt')).toBe('consent');
+    });
+  });
+
+  describe('OIDC Prompt Parameter (prompt=none)', () => {
+    test('should return login_required when prompt=none and user not authenticated', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/application/oauth/authorize',
+        query: {
+          ...validParams,
+          prompt: 'none',
+        },
+        // No session cookie - user not authenticated
+      });
+
+      expect(res.statusCode).toBe(302);
+      const location = new URL(
+        res.headers.location as string,
+        'http://localhost:8080',
+      );
+
+      expectRedirectError(
+        location,
+        'login_required',
+        'End-User authentication',
+      );
+      expect(location.searchParams.get('state')).toBe(validParams.state);
+    });
+
+    test('should return consent_required when prompt=none and consent not granted', async () => {
+      // Create a new user directly in the database to ensure no prior consent
+      const uniqueEmail = generateUniqueEmail('prompt-none-consent');
+      const { sessionCookie } = await createDbUserWithSession(
+        app,
+        uniqueEmail,
+        'TestPassword123!',
+        { emailVerified: true },
+      );
+
+      // Request authorization with prompt=none but without prior consent
+      const res = await app.inject({
+        method: 'GET',
+        url: '/application/oauth/authorize',
+        query: {
+          ...validParams,
+          prompt: 'none',
+        },
+        cookies: { session: sessionCookie },
+      });
+
+      expect(res.statusCode).toBe(302);
+      const location = new URL(
+        res.headers.location as string,
+        'http://localhost:8080',
+      );
+
+      expectRedirectError(location, 'consent_required', 'End-User consent');
+      expect(location.searchParams.get('state')).toBe(validParams.state);
+    });
+
+    test('should issue code when prompt=none with valid session and prior consent', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+
+      // First, grant consent
+      await grantConsent(app, sessionCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        response_type: 'code',
+        scope: validParams.scope,
+      });
+
+      // Then request with prompt=none
+      const { code, location, statusCode } = await getAuthorizationCode(
+        {
+          ...validParams,
+          prompt: 'none',
+        },
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      expect(code).toBeDefined();
+      expect(location.searchParams.has('error')).toBe(false);
+    });
+  });
+
+  describe('OIDC Prompt Parameter (prompt=login)', () => {
+    test('should redirect to login page when prompt=login and user not authenticated', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/application/oauth/authorize',
+        query: {
+          ...validParams,
+          prompt: 'login',
+        },
+        // No session cookie
+      });
+
+      expect(res.statusCode).toBe(302);
+      const location = new URL(
+        res.headers.location as string,
+        'http://localhost:8080',
+      );
+
+      expect(location.pathname).toBe('/login');
+      expect(location.searchParams.get('prompt')).toBe('login');
+    });
+
+    test('should preserve prompt=login in login redirect params', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/application/oauth/authorize',
+        query: {
+          ...validParams,
+          prompt: 'login',
+        },
+      });
+
+      const location = new URL(
+        res.headers.location as string,
+        'http://localhost:8080',
+      );
+
+      expect(location.searchParams.get('prompt')).toBe('login');
+      expect(location.searchParams.get('client_id')).toBe(
+        TEST_OAUTH_CLIENT.clientId,
+      );
+    });
+  });
+
+  describe('OIDC Prompt Parameter (prompt=consent)', () => {
+    test('should redirect to consent page when prompt=consent even with prior consent', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+
+      // Grant consent first
+      await grantConsent(app, sessionCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        response_type: 'code',
+        scope: validParams.scope,
+      });
+
+      // Request with prompt=consent should still show consent page
+      const res = await app.inject({
+        method: 'GET',
+        url: '/application/oauth/authorize',
+        query: {
+          ...validParams,
+          prompt: 'consent',
+        },
+        cookies: { session: sessionCookie },
+      });
+
+      expect(res.statusCode).toBe(302);
+      const location = new URL(
+        res.headers.location as string,
+        'http://localhost:8080',
+      );
+
+      // Should redirect to consent page
+      expect(location.pathname).toBe('/consent');
+    });
+
+    test('should redirect to login when prompt=consent and user not authenticated', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/application/oauth/authorize',
+        query: {
+          ...validParams,
+          prompt: 'consent',
+        },
+        // No session cookie
+      });
+
+      expect(res.statusCode).toBe(302);
+      const location = new URL(
+        res.headers.location as string,
+        'http://localhost:8080',
+      );
+
+      // Should redirect to login first
+      expect(location.pathname).toBe('/login');
     });
   });
 
