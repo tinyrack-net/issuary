@@ -55,7 +55,9 @@ export class EmailVerificationService {
    * Resend verification email
    * Generates new token and sends email
    */
-  public async resendVerification(email: string): Promise<EmailVerificationEntity> {
+  public async resendVerification(
+    email: string,
+  ): Promise<EmailVerificationEntity> {
     const user = await this.mikro.user.findOneOrFail(
       { email },
       {

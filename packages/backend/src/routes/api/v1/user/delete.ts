@@ -43,7 +43,7 @@ export default (fastify: FastifyWithZodInstance) => {
       const userSession = await req.auth.verify();
 
       // Config-managed users cannot be deleted
-      if (userSession.managed === 'config') {
+      if (userSession.managed_by === 'config') {
         throw new e.ConfigManagedAccountCannotBeDeleted.Error();
       }
 

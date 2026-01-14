@@ -28,10 +28,11 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      const { emailVerificationRequired, userSession } = await fastify.userService.register({
-        email: req.body.email,
-        password: req.body.password,
-      });
+      const { emailVerificationRequired, userSession } =
+        await fastify.userService.register({
+          email: req.body.email,
+          password: req.body.password,
+        });
 
       if (emailVerificationRequired) {
         if (userSession.totp_required) {
@@ -50,4 +51,4 @@ export default (fastify: FastifyWithZodInstance) => {
       });
     },
   });
-}
+};

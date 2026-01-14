@@ -29,9 +29,10 @@ export default (fastify: FastifyWithZodInstance) => {
       if (!fastify.emailVerificationService) {
         throw new e.EmailNotActivated.Error();
       }
-      const verification = await fastify.emailVerificationService.resendVerification(
-        req.body.email,
-      );
+      const verification =
+        await fastify.emailVerificationService.resendVerification(
+          req.body.email,
+        );
 
       // Send verification email asynchronously (fire-and-forget)
       fastify.emailService.sendVerificationEmailAsync({

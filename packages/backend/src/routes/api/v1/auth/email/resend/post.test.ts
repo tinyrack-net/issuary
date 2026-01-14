@@ -110,7 +110,7 @@ describe('POST /api/v1/auth/email/resend', () => {
 
       // Check that there is a valid pending verification
       const hasPending =
-        await app.emailVerificationService!.hasPendingVerification(user.id);
+        await app.emailVerificationService?.hasPendingVerification(user.id);
       expect(hasPending).toBe(true);
     });
   });

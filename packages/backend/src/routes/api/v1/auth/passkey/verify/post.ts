@@ -61,7 +61,7 @@ export default (fastify: FastifyWithZodInstance) => {
       // Check if TOTP is required (only for database-managed users)
       const passwordAuthMethod =
         fastify.config.basic_authentication_methods.password;
-      const isConfigManaged = sessionUser.managed === 'config';
+      const isConfigManaged = sessionUser.managed_by === 'config';
 
       const totpRequired =
         !isConfigManaged &&
@@ -71,7 +71,7 @@ export default (fastify: FastifyWithZodInstance) => {
       return res.status(200).send({
         user: {
           id: sessionUser.id,
-          managed_by: sessionUser.managed,
+          managed_by: sessionUser.managed_by,
           email: sessionUser.email,
           email_verified: sessionUser.email_verified,
           has_password: sessionUser.has_password,

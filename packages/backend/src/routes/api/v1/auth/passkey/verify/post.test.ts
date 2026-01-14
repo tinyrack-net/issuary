@@ -368,7 +368,7 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
     expect(body.user).toBeDefined();
     expect(body.user.id).toBe(userId);
     expect(body.user.email).toBe(email);
-    expect(body.user.managed).toBe('database');
+    expect(body.user.managed_by).toBe('database');
     expect(body.user.email_verified).toBe(true);
     // Check other required fields exist
     expect(typeof body.user.has_password).toBe('boolean');

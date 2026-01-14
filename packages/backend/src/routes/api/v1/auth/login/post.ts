@@ -21,6 +21,7 @@ export default (fastify: FastifyWithZodInstance) => {
         200: r.LoginResponse,
         400: e.ValidationError.Schema,
         401: e.InvalidEmailOrPassword.Schema,
+        403: e.EmailVerificationRequired.Schema,
       },
     },
     handler: async (req, res) => {
@@ -29,6 +30,18 @@ export default (fastify: FastifyWithZodInstance) => {
         password: req.body.password,
       });
 
+      // Check if email verification is required
+      const emailVerificationRequired =
+        fastify.userService.userEmailVerificationRequired(user);
+      if (emailVerificationRequired && !user.email_verified) {
+        return res.status(200).send({
+          totp_verification_required: false,
+          totp_setup_required: false,
+          email_verification_required: true,
+          email: user.email,
+        });
+      }
+
       if (user.totp_enabled) {
         req.session.set('pendingTotpUser', {
           id: user.id,
@@ -36,12 +49,10 @@ export default (fastify: FastifyWithZodInstance) => {
         return res.status(200).send({
           totp_verification_required: true,
           totp_setup_required: false,
+          email_verification_required: false,
         });
       }
 
-      // const emailVerifyRequired = fastify.userService.userEmailVerificationRequired(
-      //   user,
-      // );
       const totpRequired = fastify.userService.userTotpRequired(user);
 
       if (totpRequired) {
@@ -51,6 +62,7 @@ export default (fastify: FastifyWithZodInstance) => {
         return res.status(200).send({
           totp_verification_required: false,
           totp_setup_required: true,
+          email_verification_required: false,
         });
       }
 
@@ -61,6 +73,7 @@ export default (fastify: FastifyWithZodInstance) => {
       return res.status(200).send({
         totp_verification_required: false,
         totp_setup_required: false,
+        email_verification_required: false,
         user: {
           id: user.id,
           managed_by: user.managed_by,

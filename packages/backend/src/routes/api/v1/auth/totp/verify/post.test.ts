@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import {
+  createDbUserWithSession,
   enableTotpForUser,
   expectError,
   extractCookie,
@@ -23,18 +24,12 @@ const app = setupTestServer({
 
 describe('POST /api/v1/auth/totp/verify', () => {
   test('should complete login with valid TOTP code', async () => {
-    // Create a user with TOTP enabled
+    // Create a user with TOTP enabled (email verified)
     const email = generateUniqueEmail('totp-verify');
     const password = 'password123';
 
-    // Register user
-    const registerRes = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/register',
-      payload: { email, password },
-    });
-    expect(registerRes.statusCode).toBe(200);
-    const userId = registerRes.json().user.id;
+    // Create user with verified email
+    const { userId } = await createDbUserWithSession(app, email, password);
 
     // Enable TOTP for user
     const secret = await enableTotpForUser(app, userId);
@@ -73,18 +68,12 @@ describe('POST /api/v1/auth/totp/verify', () => {
   });
 
   test('should fail with invalid TOTP code', async () => {
-    // Create a user with TOTP enabled
+    // Create a user with TOTP enabled (email verified)
     const email = generateUniqueEmail('totp-verify-invalid');
     const password = 'password123';
 
-    // Register user
-    const registerRes = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/register',
-      payload: { email, password },
-    });
-    expect(registerRes.statusCode).toBe(200);
-    const userId = registerRes.json().user.id;
+    // Create user with verified email
+    const { userId } = await createDbUserWithSession(app, email, password);
 
     // Enable TOTP for user
     await enableTotpForUser(app, userId);
@@ -121,18 +110,12 @@ describe('POST /api/v1/auth/totp/verify', () => {
   });
 
   test('should fail with malformed TOTP code', async () => {
-    // Create a user with TOTP enabled
+    // Create a user with TOTP enabled (email verified)
     const email = generateUniqueEmail('totp-verify-malformed');
     const password = 'password123';
 
-    // Register user
-    const registerRes = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/register',
-      payload: { email, password },
-    });
-    expect(registerRes.statusCode).toBe(200);
-    const userId = registerRes.json().user.id;
+    // Create user with verified email
+    const { userId } = await createDbUserWithSession(app, email, password);
 
     // Enable TOTP for user
     await enableTotpForUser(app, userId);
@@ -158,18 +141,12 @@ describe('POST /api/v1/auth/totp/verify', () => {
   });
 
   test('should not allow access to protected routes with pending TOTP session', async () => {
-    // Create a user with TOTP enabled
+    // Create a user with TOTP enabled (email verified)
     const email = generateUniqueEmail('totp-pending-protected');
     const password = 'password123';
 
-    // Register user
-    const registerRes = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/register',
-      payload: { email, password },
-    });
-    expect(registerRes.statusCode).toBe(200);
-    const userId = registerRes.json().user.id;
+    // Create user with verified email
+    const { userId } = await createDbUserWithSession(app, email, password);
 
     // Enable TOTP for user
     await enableTotpForUser(app, userId);
@@ -199,18 +176,12 @@ describe('POST /api/v1/auth/totp/verify', () => {
 
 describe('POST /api/v1/auth/login - TOTP flow', () => {
   test('should return totp_verification_required for TOTP-enabled user', async () => {
-    // Create a user with TOTP enabled
+    // Create a user with TOTP enabled (email verified)
     const email = generateUniqueEmail('totp-login-required');
     const password = 'password123';
 
-    // Register user
-    const registerRes = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/register',
-      payload: { email, password },
-    });
-    expect(registerRes.statusCode).toBe(200);
-    const userId = registerRes.json().user.id;
+    // Create user with verified email
+    const { userId } = await createDbUserWithSession(app, email, password);
 
     // Enable TOTP for user
     await enableTotpForUser(app, userId);
@@ -229,17 +200,12 @@ describe('POST /api/v1/auth/login - TOTP flow', () => {
   });
 
   test('should complete login immediately for non-TOTP user', async () => {
-    // Create a user without TOTP
+    // Create a user without TOTP (email verified)
     const email = generateUniqueEmail('totp-login-not-required');
     const password = 'password123';
 
-    // Register user
-    const registerRes = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/register',
-      payload: { email, password },
-    });
-    expect(registerRes.statusCode).toBe(200);
+    // Create user with verified email
+    await createDbUserWithSession(app, email, password);
 
     // Login with password
     const loginRes = await app.inject({

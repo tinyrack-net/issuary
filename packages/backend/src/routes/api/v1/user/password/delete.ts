@@ -40,7 +40,7 @@ export default (fastify: FastifyWithZodInstance) => {
       const userSession = await req.auth.verify();
 
       // Config users cannot remove password
-      if (userSession.managed === 'config') {
+      if (userSession.managed_by === 'config') {
         throw new e.UserNotEditable.Error();
       }
 

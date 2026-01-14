@@ -11,15 +11,24 @@ export type LoginResponse =
   | {
       totp_verification_required: false;
       totp_setup_required: false;
+      email_verification_required: false;
       user: SessionUser;
     }
   | {
       totp_verification_required: true;
       totp_setup_required: false;
+      email_verification_required: false;
     }
   | {
       totp_verification_required: false;
       totp_setup_required: true;
+      email_verification_required: false;
+    }
+  | {
+      totp_verification_required: false;
+      totp_setup_required: false;
+      email_verification_required: true;
+      email: string;
     };
 
 export const loginMutationOptions = mutationOptions({

@@ -29,7 +29,9 @@ export default (fastify: FastifyWithZodInstance) => {
         throw new e.EmailNotActivated.Error();
       }
 
-      const user = await fastify.emailVerificationService.verifyEmail(req.body.token);
+      const user = await fastify.emailVerificationService.verifyEmail(
+        req.body.token,
+      );
 
       await fastify.mikro.em.populate(user, ['password_hash']);
 

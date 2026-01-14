@@ -452,6 +452,13 @@ export const e = {
     'Cannot remove the last passkey. You need at least one way to log in.',
   ),
 
+  // Email Verification Errors
+  EmailVerificationRequired: createError(
+    403,
+    'EMAIL_VERIFICATION_REQUIRED',
+    'Email verification is required before logging in.',
+  ),
+
   // Account Deletion Errors
   AccountDeletionDisabled: createError(
     403,

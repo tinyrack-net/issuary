@@ -25,7 +25,7 @@ export class UserService {
     private readonly config: AppConfig,
     private readonly emailService: EmailService,
     private readonly emailVerificationService?: EmailVerificationService,
-  ) { }
+  ) {}
 
   public async verifyUserById(
     id: string,
@@ -79,10 +79,7 @@ export class UserService {
     };
   }
 
-  public async register(params: {
-    email: string;
-    password: string;
-  }): Promise<{
+  public async register(params: { email: string; password: string }): Promise<{
     emailVerificationRequired: boolean;
     userSession: z.infer<typeof r.UserSession>;
   }> {
@@ -125,7 +122,7 @@ export class UserService {
         totp_enabled: false,
         totp_required: totpRequired,
         passkey_count: 0,
-      }
+      },
     };
   }
 
@@ -164,10 +161,7 @@ export class UserService {
   public userEmailVerificationRequired(userLike: {
     managed_by: UserEntity['managed_by'];
   }): boolean {
-    return (
-      userLike.managed_by !== 'config' &&
-      !!this.config.smtp
-    );
+    return userLike.managed_by !== 'config' && !!this.config.smtp;
   }
 
   public userTotpRequired(userLike: {

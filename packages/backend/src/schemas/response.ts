@@ -360,20 +360,29 @@ export const r = {
     user: UserSession,
   }),
 
-  // Login response - either full session, TOTP verification required, or TOTP setup required
+  // Login response - either full session, TOTP verification required, TOTP setup required, or email verification required
   LoginResponse: z.union([
     z.object({
       user: UserSession,
       totp_verification_required: z.literal(false),
       totp_setup_required: z.literal(false),
+      email_verification_required: z.literal(false),
     }),
     z.object({
       totp_verification_required: z.literal(true),
       totp_setup_required: z.literal(false),
+      email_verification_required: z.literal(false),
     }),
     z.object({
       totp_verification_required: z.literal(false),
       totp_setup_required: z.literal(true),
+      email_verification_required: z.literal(false),
+    }),
+    z.object({
+      totp_verification_required: z.literal(false),
+      totp_setup_required: z.literal(false),
+      email_verification_required: z.literal(true),
+      email: f.userEmail.describe('Email address for verification'),
     }),
   ]),
 

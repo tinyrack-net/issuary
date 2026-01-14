@@ -114,7 +114,7 @@ function Profile() {
   const user = session.user;
   const availableProviders = oauthAccountsData.available_providers;
   const hasLinkedOAuth = availableProviders.some((p) => p.linked);
-  const isConfigManaged = user?.managed === 'config';
+  const isConfigManaged = user?.managed_by === 'config';
 
   // Check if TOTP and Passkey are enabled in config
   const passwordAuthMethod = appConfig.basic_authentication_methods.password;

@@ -26,12 +26,13 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
     const email = generateUniqueEmail('oauth-unlink');
     const password = 'TestPassword123!';
 
-    // Create user with password
+    // Create user with password and verified email
     const sessionCookie = await withMikroContext(app, async () => {
       const user = app.mikro.user.create({
         email,
         password_hash: password,
       });
+      user.email_verified = true;
       await app.mikro.em.persist(user).flush();
 
       // Login to get session
@@ -70,6 +71,7 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
         email,
         password_hash: password,
       });
+      user.email_verified = true;
       await app.mikro.em.persist(user).flush();
 
       const loginRes = await app.inject({

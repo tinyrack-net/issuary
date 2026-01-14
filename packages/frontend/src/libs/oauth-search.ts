@@ -101,3 +101,38 @@ export function buildSetupTotpUrl(search: OAuthSearch): string {
 
   return setupUrl.toString();
 }
+
+/**
+ * 이메일 인증 페이지 URL을 빌드하는 헬퍼 함수
+ * 이메일 인증이 필요한 경우 OAuth 파라미터를 유지하며 리다이렉트
+ */
+export function buildVerifyEmailUrl(
+  search: OAuthSearch,
+  email: string,
+): string {
+  const verifyUrl = new URL('/verify-email', window.location.origin);
+
+  verifyUrl.searchParams.set('email', email);
+
+  if (search.client_id)
+    verifyUrl.searchParams.set('client_id', search.client_id);
+  if (search.redirect_uri)
+    verifyUrl.searchParams.set('redirect_uri', search.redirect_uri);
+  if (search.response_type)
+    verifyUrl.searchParams.set('response_type', search.response_type);
+  if (search.scope) verifyUrl.searchParams.set('scope', search.scope);
+  if (search.state) verifyUrl.searchParams.set('state', search.state);
+  if (search.nonce) verifyUrl.searchParams.set('nonce', search.nonce);
+  if (search.code_challenge)
+    verifyUrl.searchParams.set('code_challenge', search.code_challenge);
+  if (search.code_challenge_method)
+    verifyUrl.searchParams.set(
+      'code_challenge_method',
+      search.code_challenge_method,
+    );
+  if (search.prompt) verifyUrl.searchParams.set('prompt', search.prompt);
+  if (search.max_age) verifyUrl.searchParams.set('max_age', search.max_age);
+  if (search.display) verifyUrl.searchParams.set('display', search.display);
+
+  return verifyUrl.toString();
+}

@@ -23,6 +23,7 @@ import { SubmitButton } from '@/components/auth/submit-button.js';
 import { Divider } from '@/components/ui/divider.js';
 import {
   buildAuthorizeUrl,
+  buildVerifyEmailUrl,
   extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
@@ -75,6 +76,13 @@ function Login() {
   const loginMutation = useMutation({
     ...loginMutationOptions,
     onSuccess: async (data: LoginResponse) => {
+      // Check if email verification is required
+      if (data.email_verification_required) {
+        // Redirect to email verification page with OAuth params preserved
+        window.location.href = buildVerifyEmailUrl(search, data.email);
+        return;
+      }
+
       // Check if TOTP verification is required (user has TOTP enabled)
       if (data.totp_verification_required) {
         // Redirect to TOTP verification page with OAuth params preserved
