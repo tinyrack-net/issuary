@@ -24,7 +24,7 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      const user = await fastify.userService.login({
+      const user = await fastify.userService.verifyUserByEmailAndPassword({
         email: req.body.email,
         password: req.body.password,
       });

@@ -38,12 +38,6 @@ export class UserService {
     const totpEnabled = await this.mikro.userTotp.isEnabled(id);
     const passkeyCount = await this.mikro.userPasskey.countByUserId(id);
 
-    const totpRequired =
-      user.managed_by !== 'config' &&
-      this.config.basic_authentication_methods.password.totp.enabled &&
-      this.config.basic_authentication_methods.password.totp.required &&
-      !totpEnabled;
-
     return {
       id: user.id,
       managed: user.managed_by,
@@ -51,7 +45,7 @@ export class UserService {
       email_verified: user.email_verified,
       has_password: user.hasPassword(),
       totp_enabled: totpEnabled,
-      totp_required: totpRequired,
+      totp_required: this.userTotpRequired(user),
       passkey_count: passkeyCount,
     };
   }
@@ -61,7 +55,7 @@ export class UserService {
    * Logs in a user with the provided email and password.
    * All users (including config users) are now in DB with hashed passwords.
    */
-  public async login(params: {
+  public async verifyUserByEmailAndPassword(params: {
     email: string;
     password: string;
   }): Promise<z.infer<typeof r.UserSession>> {
@@ -86,7 +80,7 @@ export class UserService {
       email_verified: user.email_verified,
       has_password: user.hasPassword(),
       totp_enabled: totpEnabled,
-      totp_required: false,
+      totp_required: this.userTotpRequired(user),
       passkey_count: passkeyCount,
     };
   }
@@ -146,6 +140,14 @@ export class UserService {
     return {
       deleted_at: user.deleted_at,
     };
+  }
+
+  private userTotpRequired(user: UserEntity): boolean {
+    return (
+      user.managed_by !== 'config' &&
+      this.config.basic_authentication_methods.password.totp.enabled &&
+      this.config.basic_authentication_methods.password.totp.required
+    );
   }
 }
 
