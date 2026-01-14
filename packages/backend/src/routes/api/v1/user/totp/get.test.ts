@@ -9,7 +9,18 @@ import {
   withMikroContext,
 } from '@/test-utils/index.js';
 
-const app = setupTestServer();
+const app = setupTestServer({
+  configOverrides: {
+    basic_authentication_methods: {
+      password: {
+        totp: {
+          enabled: true,
+          required: false,
+        },
+      },
+    },
+  },
+});
 
 /**
  * Helper to create a DB user with session

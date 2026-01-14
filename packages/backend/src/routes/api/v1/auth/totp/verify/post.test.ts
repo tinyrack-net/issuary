@@ -8,7 +8,18 @@ import {
   setupTestServer,
 } from '@/test-utils/index.js';
 
-const app = setupTestServer();
+const app = setupTestServer({
+  configOverrides: {
+    basic_authentication_methods: {
+      password: {
+        totp: {
+          enabled: true,
+          required: false,
+        },
+      },
+    },
+  },
+});
 
 describe('POST /api/v1/auth/totp/verify', () => {
   test('should complete login with valid TOTP code', async () => {

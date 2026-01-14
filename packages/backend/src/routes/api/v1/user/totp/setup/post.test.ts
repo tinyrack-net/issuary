@@ -9,7 +9,18 @@ import {
   withMikroContext,
 } from '@/test-utils/index.js';
 
-const app = setupTestServer();
+const app = setupTestServer({
+  configOverrides: {
+    basic_authentication_methods: {
+      password: {
+        totp: {
+          enabled: true,
+          required: false,
+        },
+      },
+    },
+  },
+});
 
 describe('POST /api/v1/user/totp/setup', () => {
   test('should return 401 when not authenticated', async () => {

@@ -138,4 +138,51 @@ describe('POST /api/v1/auth/login', () => {
     const body = res.json();
     expect(body).toHaveProperty('message');
   });
+
+  test('should fail to login with deleted user', async () => {
+    const uniqueEmail = generateUniqueEmail('deleteduser');
+    const password = 'password123';
+
+    // First, register a new user
+    const registerRes = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: uniqueEmail,
+        password: password,
+      },
+    });
+    expect(registerRes.statusCode).toBe(200);
+
+    // Verify user can login before deletion
+    const loginBeforeRes = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/login',
+      payload: {
+        email: uniqueEmail,
+        password: password,
+      },
+    });
+    expect(loginBeforeRes.statusCode).toBe(200);
+
+    // Soft delete the user by setting deleted_at
+    await app.mikro.em.fork().transactional(async (em) => {
+      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
+      user.deleted_at = new Date();
+      await em.flush();
+    });
+
+    // Attempt to login with deleted user
+    const loginAfterRes = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/login',
+      payload: {
+        email: uniqueEmail,
+        password: password,
+      },
+    });
+
+    // Should fail with InvalidEmailOrPassword error
+    expectError(loginAfterRes, e.InvalidEmailOrPassword);
+  });
 });

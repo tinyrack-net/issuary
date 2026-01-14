@@ -56,7 +56,7 @@ export class UserService {
     password: string;
   }): Promise<z.infer<typeof r.UserSession>> {
     const user = await this.mikro.user.findOneOrFail(
-      { email: params.email },
+      { email: params.email, deleted_at: null },
       {
         populate: ['password_hash'],
         failHandler: () => new e.InvalidEmailOrPassword.Error(),
