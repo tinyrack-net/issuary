@@ -1,6 +1,7 @@
 import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
+import type { AppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
@@ -17,7 +18,10 @@ declare module 'fastify' {
 }
 
 export class UserService {
-  public constructor(private readonly mikro: MikroService) {}
+  public constructor(
+    private readonly mikro: MikroService,
+    private readonly config: AppConfig,
+  ) {}
 
   /**
    * @description
@@ -34,6 +38,12 @@ export class UserService {
     const totpEnabled = await this.mikro.userTotp.isEnabled(id);
     const passkeyCount = await this.mikro.userPasskey.countByUserId(id);
 
+    const totpRequired =
+      user.managed_by !== 'config' &&
+      this.config.basic_authentication_methods.password.totp.enabled &&
+      this.config.basic_authentication_methods.password.totp.required &&
+      !totpEnabled;
+
     return {
       id: user.id,
       managed: user.managed_by,
@@ -41,7 +51,7 @@ export class UserService {
       email_verified: user.email_verified,
       has_password: user.hasPassword(),
       totp_enabled: totpEnabled,
-      totp_required: false,
+      totp_required: totpRequired,
       passkey_count: passkeyCount,
     };
   }
@@ -141,7 +151,7 @@ export class UserService {
 
 export default fastifyPlugin(
   async (fastify) => {
-    const userService = new UserService(fastify.mikro);
+    const userService = new UserService(fastify.mikro, fastify.config);
     fastify.decorate('userService', userService);
 
     fastify.addHook('onRequest', async (req) => {

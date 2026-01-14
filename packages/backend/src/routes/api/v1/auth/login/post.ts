@@ -5,7 +5,7 @@ import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
-export default (fastify: FastifyWithZodInstance) =>
+export default (fastify: FastifyWithZodInstance) => {
   fastify.route({
     method: 'POST',
     url: '',
@@ -37,19 +37,19 @@ export default (fastify: FastifyWithZodInstance) =>
         });
 
         return res.status(200).send({
-          totp_verification_required: true as const,
-          totp_setup_required: false as const,
+          totp_verification_required: true,
+          totp_setup_required: false,
         });
       }
 
-      // Check if TOTP or Passkey is required (only for database-managed users)
       const passwordAuthMethod =
         fastify.config.basic_authentication_methods.password;
       const isConfigManaged = user.managed === 'config';
 
       const totpRequired =
         !isConfigManaged &&
-        (passwordAuthMethod.totp?.required ?? false) &&
+        passwordAuthMethod.totp.enabled &&
+        passwordAuthMethod.totp.required &&
         !user.totp_enabled;
 
       // If TOTP setup is required, set pending setup session
@@ -59,8 +59,8 @@ export default (fastify: FastifyWithZodInstance) =>
         });
 
         return res.status(200).send({
-          totp_verification_required: false as const,
-          totp_setup_required: true as const,
+          totp_verification_required: false,
+          totp_setup_required: true,
         });
       }
 
@@ -70,8 +70,8 @@ export default (fastify: FastifyWithZodInstance) =>
       });
 
       return res.status(200).send({
-        totp_verification_required: false as const,
-        totp_setup_required: false as const,
+        totp_verification_required: false,
+        totp_setup_required: false,
         user: {
           id: user.id,
           managed: user.managed,
@@ -85,3 +85,4 @@ export default (fastify: FastifyWithZodInstance) =>
       });
     },
   });
+};
