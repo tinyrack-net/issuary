@@ -5,7 +5,10 @@ import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
-export default (fastify: FastifyWithZodInstance) =>
+export default (fastify: FastifyWithZodInstance) => {
+  if (!fastify.config.app.public_registration) {
+    return;
+  }
   fastify.route({
     method: 'POST',
     url: '',
@@ -25,68 +28,26 @@ export default (fastify: FastifyWithZodInstance) =>
       },
     },
     handler: async (req, res) => {
-      // Check if public registration is enabled
-      if (!fastify.config.app.public_registration) {
-        throw new e.RegistrationDisabled.Error();
-      }
-
-      const { user } = await fastify.userService.register({
+      const { emailVerificationRequired, userSession } = await fastify.userService.register({
         email: req.body.email,
         password: req.body.password,
       });
 
-      // Flush user to database before proceeding
-      await fastify.mikro.em.flush();
-
-      // Check if TOTP is required (new users are always database-managed)
-      const passwordAuthMethod =
-        fastify.config.basic_authentication_methods.password;
-      const totpRequired = passwordAuthMethod.totp?.required ?? false;
-
-      // If SMTP is configured, send email verification
-      if (fastify.transporter) {
-        // Generate email verification token
-        const verification =
-          await fastify.emailVerificationService.generateToken({
-            userId: user.id,
-          });
-
-        // Flush verification token to database
-        await fastify.mikro.em.flush();
-
-        // Send verification email asynchronously (fire-and-forget)
-        fastify.emailService.sendVerificationEmailAsync({
-          email: user.email,
-          token: verification.token,
-        });
-      } else {
-        // No SMTP configured - skip email verification and activate immediately
-        user.email_verified = true;
-        await fastify.mikro.em.flush();
-
-        // If TOTP is required, set pending setup session instead of full session
-        if (totpRequired) {
+      if (emailVerificationRequired) {
+        if (userSession.totp_required) {
           req.session.set('pendingTotpSetup', {
-            id: user.id,
+            id: userSession.id,
           });
         } else {
           req.session.set('user', {
-            id: user.id,
+            id: userSession.id,
           });
         }
       }
 
       res.status(200).send({
-        user: {
-          id: user.id,
-          managed: 'database',
-          email: user.email,
-          email_verified: user.email_verified,
-          has_password: true, // Registration always creates password
-          totp_enabled: false, // New users don't have TOTP enabled
-          totp_required: totpRequired,
-          passkey_count: 0, // New users don't have passkeys
-        },
+        user: userSession,
       });
     },
   });
+}

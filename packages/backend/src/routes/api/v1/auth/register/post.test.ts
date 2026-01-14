@@ -32,7 +32,8 @@ describe('POST /api/v1/auth/register', () => {
       },
     });
 
-    expectError(res, e.RegistrationDisabled);
+    // Route is not registered when public_registration is disabled
+    expect(res.statusCode).toBe(404);
 
     // Cleanup
     await disabledApp.close();

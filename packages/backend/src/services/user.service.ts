@@ -5,6 +5,8 @@ import type { AppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
+import type { EmailService } from './email.service.js';
+import type { EmailVerificationService } from './email-verification.service.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -21,13 +23,10 @@ export class UserService {
   public constructor(
     private readonly mikro: MikroService,
     private readonly config: AppConfig,
-  ) {}
+    private readonly emailService: EmailService,
+    private readonly emailVerificationService?: EmailVerificationService,
+  ) { }
 
-  /**
-   * @description
-   * Verifies a user by their ID.
-   * Config users are now synced to DB, so we only need to query DB.
-   */
   public async verifyUserById(
     id: string,
   ): Promise<z.infer<typeof r.UserSession>> {
@@ -50,11 +49,6 @@ export class UserService {
     };
   }
 
-  /**
-   * @description
-   * Logs in a user with the provided email and password.
-   * All users (including config users) are now in DB with hashed passwords.
-   */
   public async verifyUserByEmailAndPassword(params: {
     email: string;
     password: string;
@@ -85,13 +79,12 @@ export class UserService {
     };
   }
 
-  /**
-   * @description
-   * Registers a new user with email and password.
-   * Config users are already in DB, so email uniqueness is enforced by DB.
-   */
-  public async register(params: { email: string; password: string }): Promise<{
-    user: UserEntity;
+  public async register(params: {
+    email: string;
+    password: string;
+  }): Promise<{
+    emailVerificationRequired: boolean;
+    userSession: z.infer<typeof r.UserSession>;
   }> {
     const emailExists = await this.exists(params.email);
     if (emailExists) {
@@ -104,9 +97,35 @@ export class UserService {
     });
 
     await this.mikro.em.persist(user);
+    await this.mikro.em.flush();
+
+    const totpRequired = this.userTotpRequired(user);
+
+    if (this.emailVerificationService) {
+      const verification = await this.emailVerificationService.generateToken({
+        userId: user.id,
+      });
+
+      await this.mikro.em.flush();
+
+      this.emailService.sendVerificationEmailAsync({
+        email: user.email,
+        token: verification.token,
+      });
+    }
 
     return {
-      user: user,
+      emailVerificationRequired: !!this.emailVerificationService,
+      userSession: {
+        id: user.id,
+        managed: 'database',
+        email: user.email,
+        email_verified: user.email_verified,
+        has_password: user.hasPassword(),
+        totp_enabled: false,
+        totp_required: totpRequired,
+        passkey_count: 0,
+      }
     };
   }
 
@@ -142,7 +161,7 @@ export class UserService {
     };
   }
 
-  private userTotpRequired(user: UserEntity): boolean {
+  public userTotpRequired(user: UserEntity): boolean {
     return (
       user.managed_by !== 'config' &&
       this.config.basic_authentication_methods.password.totp.enabled &&
@@ -153,7 +172,12 @@ export class UserService {
 
 export default fastifyPlugin(
   async (fastify) => {
-    const userService = new UserService(fastify.mikro, fastify.config);
+    const userService = new UserService(
+      fastify.mikro,
+      fastify.config,
+      fastify.emailService,
+      fastify.emailVerificationService,
+    );
     fastify.decorate('userService', userService);
 
     fastify.addHook('onRequest', async (req) => {
@@ -171,6 +195,10 @@ export default fastifyPlugin(
   },
   {
     name: 'user-service-plugin',
-    dependencies: ['base-service-plugin', 'secure-session-plugin'],
+    dependencies: [
+      'base-service-plugin',
+      'secure-session-plugin',
+      'email-service-plugin',
+    ],
   },
 );
