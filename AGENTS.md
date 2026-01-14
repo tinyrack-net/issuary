@@ -299,6 +299,28 @@ import { Alert } from '@/components/ui/alert.js';
 - `noUnusedParameters: true` - remove unused parameters
 - `strictNullChecks: true` - strict null/undefined handling
 - Use `type` imports when importing types only
+- **No type assertions or non-null assertions**:
+  - Do NOT use `as` type assertions (e.g., `value as string`, `data as UserType`)
+  - Do NOT use non-null assertion operator `!` (e.g., `user!.name`, `array[0]!`)
+  - Instead, use proper type guards, conditional checks, or refactor code to ensure type safety
+  - Exception: `as const` is allowed for literal type inference
+  - Example:
+```typescript
+// Bad - using type assertion
+const user = data as UserType;
+const name = user!.name;
+
+// Good - using type guards and conditional checks
+if (isUserType(data)) {
+  const user = data;
+  if (user.name) {
+    const name = user.name;
+  }
+}
+
+// Allowed - as const for literal types
+const STATUS = { ACTIVE: 'active', INACTIVE: 'inactive' } as const;
+```
 
 ### Naming Conventions
 - **Files**: kebab-case (e.g., `user.entity.ts`, `oauth-client.repository.ts`)
