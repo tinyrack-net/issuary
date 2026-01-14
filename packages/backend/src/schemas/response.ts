@@ -529,5 +529,24 @@ export const r = {
     }),
     basic_authentication_methods: BasicAuthenticationMethods,
     oauth_authentication_methods: z.array(OAuthAuthenticationMethod),
+    account_deletion: z.object({
+      enabled: z.boolean().describe('Whether account deletion is enabled'),
+      retention_period: z
+        .string()
+        .describe('Data retention period after deletion request'),
+    }),
+  }),
+
+  // Account deletion response
+  AccountDeletionResponse: z.object({
+    success: z.literal(true),
+    deleted_at: z
+      .string()
+      .datetime()
+      .describe('Timestamp when deletion was requested'),
+    permanent_deletion_at: z
+      .string()
+      .datetime()
+      .describe('Timestamp when permanent deletion will occur'),
   }),
 };

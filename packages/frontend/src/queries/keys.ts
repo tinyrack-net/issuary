@@ -26,6 +26,9 @@ export const queryKeys = {
 
   // Passkeys
   passkeys: () => ['/api/v1/user/passkeys'] as const,
+
+  // Account
+  account: () => ['/api/v1/user'] as const,
 } as const;
 
 /**

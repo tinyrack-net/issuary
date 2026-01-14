@@ -52,6 +52,10 @@ export default (fastify: FastifyWithZodInstance) => {
         basic_authentication_methods:
           fastify.config.basic_authentication_methods,
         oauth_authentication_methods: oauthMethods,
+        account_deletion: {
+          enabled: fastify.config.account_deletion.enabled,
+          retention_period: fastify.config.account_deletion.retention_period,
+        },
       });
     },
   });

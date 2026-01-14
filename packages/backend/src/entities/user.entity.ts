@@ -84,6 +84,19 @@ export class UserEntity extends BaseEntity {
   })
   public role: Opt<'user' | 'admin'> = 'user';
 
+  @Index({
+    name: 'user_deleted_at_idx',
+    properties: ['deleted_at'],
+  })
+  @Property({
+    type: t.datetime,
+    name: 'deleted_at',
+    comment: 'Timestamp when the user requested account deletion (soft delete)',
+    nullable: true,
+    default: null,
+  })
+  public deleted_at: Date | null = null;
+
   public constructor(params: {
     id?: string;
     email: string;

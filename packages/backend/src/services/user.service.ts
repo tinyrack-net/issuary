@@ -109,6 +109,33 @@ export class UserService {
     const count = await this.mikro.user.count({ email: email });
     return count > 0;
   }
+
+  /**
+   * @description
+   * Request account deletion (soft delete).
+   * Config-managed users cannot be deleted.
+   */
+  public async requestDeletion(userId: string): Promise<{
+    deleted_at: Date;
+  }> {
+    // Check if user exists and is not config-managed
+    const user = await this.mikro.user.findOneOrFail(
+      { id: userId, deleted_at: null },
+      { failHandler: () => new e.UserNotFound.Error() },
+    );
+
+    if (user.managed_by === 'config') {
+      throw new e.ConfigManagedAccountCannotBeDeleted.Error();
+    }
+
+    // Soft delete the user
+    user.deleted_at = new Date();
+    await this.mikro.em.flush();
+
+    return {
+      deleted_at: user.deleted_at,
+    };
+  }
 }
 
 export default fastifyPlugin(

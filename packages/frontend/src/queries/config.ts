@@ -79,6 +79,10 @@ export type AppConfigs = {
     };
   };
   oauth_authentication_methods: OAuthAuthenticationMethod[];
+  account_deletion: {
+    enabled: boolean;
+    retention_period: string;
+  };
 };
 
 export const appConfigQueryOptions = queryOptions({

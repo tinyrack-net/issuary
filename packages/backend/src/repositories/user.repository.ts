@@ -5,16 +5,19 @@ import { e } from '@/schemas/error.js';
 export class UserRepository extends EntityRepository<UserEntity> {
   /**
    * Authenticate user with email and password
+   * Blocks deleted users from logging in.
    *
    * @param params - Login credentials
    * @returns Authenticated user entity
    * @throws {InvalidEmailOrPassword} When email or password is incorrect
+   * @throws {AccountDeleted} When account has been deleted
    */
   async login(params: { email: string; password: string }) {
     const err = new e.InvalidEmailOrPassword.Error();
     const user = await this.findOneOrFail(
       {
         email: params.email,
+        deleted_at: null, // Only allow non-deleted users
       },
       {
         populate: ['password_hash'],
@@ -29,13 +32,13 @@ export class UserRepository extends EntityRepository<UserEntity> {
   }
 
   /**
-   * Check if email is already registered
+   * Check if email is already registered (excluding deleted users)
    *
    * @param email - Email address to check
-   * @returns True if email exists, false otherwise
+   * @returns True if email exists and is not deleted, false otherwise
    */
   async exists(email: string) {
-    const count = await this.count({ email: email });
+    const count = await this.count({ email: email, deleted_at: null });
     return count > 0;
   }
 
@@ -58,6 +61,34 @@ export class UserRepository extends EntityRepository<UserEntity> {
     });
 
     await this.getEntityManager().persist(user).flush();
+    return user;
+  }
+
+  /**
+   * Check if user is deleted
+   *
+   * @param userId - User ID to check
+   * @returns True if user is deleted
+   */
+  async isDeleted(userId: string): Promise<boolean> {
+    const user = await this.findOne({ id: userId });
+    return user?.deleted_at !== null;
+  }
+
+  /**
+   * Soft delete a user by setting deleted_at
+   *
+   * @param userId - User ID to delete
+   * @returns The updated user entity
+   * @throws {UserNotFound} When user is not found
+   */
+  async softDelete(userId: string): Promise<UserEntity> {
+    const user = await this.findOneOrFail(
+      { id: userId, deleted_at: null },
+      { failHandler: () => new e.UserNotFound.Error() },
+    );
+    user.deleted_at = new Date();
+    await this.getEntityManager().flush();
     return user;
   }
 }

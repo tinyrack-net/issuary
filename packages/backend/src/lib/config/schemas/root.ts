@@ -1,4 +1,5 @@
 import z from 'zod/v4';
+import { AppConfigAccountDeletion } from './account-deletion.js';
 import { AppConfigAdmin, AppConfigApp } from './app.js';
 import { AppConfigBasicAuthenticationMethods } from './auth-basic.js';
 import { AppConfigOAuthAuthenticationMethods } from './auth-oauth.js';
@@ -37,6 +38,10 @@ export const ConfigSchema = z.object({
       }),
     ])
     .optional(),
+  account_deletion: AppConfigAccountDeletion.default({
+    enabled: false,
+    retention_period: '30d',
+  }),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),
 });
@@ -62,12 +67,21 @@ export const InternalConfigSchema = z.object({
   }),
   oauth_authentication_methods: AppConfigOAuthAuthenticationMethods.default([]),
   smtp: AppConfigSmtp.optional(),
+  account_deletion: AppConfigAccountDeletion.default({
+    enabled: false,
+    retention_period: '30d',
+  }),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),
 });
 
 export type AppConfig = z.infer<typeof InternalConfigSchema>;
 
+export {
+  AppConfigAccountDeletion,
+  calculatePermanentDeletionDate,
+  parseDurationToMs,
+} from './account-deletion.js';
 // Re-export individual schemas for external use
 export { AppConfigAdmin, AppConfigApp } from './app.js';
 export {

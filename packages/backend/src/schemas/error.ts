@@ -451,4 +451,21 @@ export const e = {
     'CANNOT_REMOVE_LAST_PASSKEY',
     'Cannot remove the last passkey. You need at least one way to log in.',
   ),
+
+  // Account Deletion Errors
+  AccountDeletionDisabled: createError(
+    403,
+    'ACCOUNT_DELETION_DISABLED',
+    'Account deletion is not enabled.',
+  ),
+  AccountAlreadyDeleted: createError(
+    400,
+    'ACCOUNT_ALREADY_DELETED',
+    'This account has already been deleted.',
+  ),
+  ConfigManagedAccountCannotBeDeleted: createError(
+    403,
+    'CONFIG_MANAGED_ACCOUNT_CANNOT_BE_DELETED',
+    'Config-managed accounts cannot be deleted.',
+  ),
 };

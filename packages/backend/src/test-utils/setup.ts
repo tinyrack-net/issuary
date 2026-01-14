@@ -76,6 +76,10 @@ export const DEFAULT_TEST_CONFIG: AppConfig = {
       email_conflict_strategy: 'auto_link',
     },
   ],
+  account_deletion: {
+    enabled: false,
+    retention_period: '30d',
+  },
   providers: [
     {
       id: 'test-config-oauth-client',

@@ -8,12 +8,14 @@ import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChangePasswordModal } from '@/components/modals/profile/change-password-modal.js';
+import { DeleteAccountModal } from '@/components/modals/profile/delete-account-modal.js';
 import { DisableTotpModal } from '@/components/modals/profile/disable-totp-modal.js';
 import { ManagePasskeysModal } from '@/components/modals/profile/manage-passkeys-modal.js';
 import { RemovePasswordModal } from '@/components/modals/profile/remove-password-modal.js';
 import { SetPasswordModal } from '@/components/modals/profile/set-password-modal.js';
 import { SetupPasskeyModal } from '@/components/modals/profile/setup-passkey-modal.js';
 import { SetupTotpModal } from '@/components/modals/profile/setup-totp-modal.js';
+import { DangerZoneSection } from '@/components/profile/danger-zone-section.js';
 import { LinkedAccountsSection } from '@/components/profile/linked-accounts-section.js';
 import { PasskeySection } from '@/components/profile/passkey-section.js';
 import { PasswordSection } from '@/components/profile/password-section.js';
@@ -55,6 +57,7 @@ function Profile() {
   const [passwordModal, setPasswordModal] = useState<PasswordModalType>(null);
   const [totpModal, setTotpModal] = useState<TotpModalType>(null);
   const [passkeyModal, setPasskeyModal] = useState<PasskeyModalType>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { data: session } = useSuspenseQuery(getSessionQueryOptions);
   const { data: oauthAccountsData } = useSuspenseQuery(
@@ -118,6 +121,28 @@ function Profile() {
   const passkeyAuthMethod = appConfig.basic_authentication_methods.passkey;
   const totpEnabled = passwordAuthMethod.totp.enabled;
   const passkeyEnabled = passkeyAuthMethod.enabled;
+
+  // Account deletion settings
+  const accountDeletionEnabled = appConfig.account_deletion.enabled;
+  const retentionPeriod = appConfig.account_deletion.retention_period;
+
+  // Parse retention period to get days for display
+  const retentionDays = (() => {
+    const match = retentionPeriod.match(/^(\d+)([dmy])$/);
+    if (!match) return 30;
+    const value = parseInt(match[1], 10);
+    const unit = match[2];
+    switch (unit) {
+      case 'd':
+        return value;
+      case 'm':
+        return value * 30;
+      case 'y':
+        return value * 365;
+      default:
+        return 30;
+    }
+  })();
 
   // Check if user needs to set up TOTP or Passkey (required settings)
   const needsTotpSetup = user?.totp_required ?? false;
@@ -249,6 +274,13 @@ function Profile() {
                 onUnlink={handleUnlink}
               />
             )}
+
+            {/* Danger Zone - Account Deletion */}
+            <DangerZoneSection
+              isConfigManaged={isConfigManaged}
+              isDeletionEnabled={accountDeletionEnabled}
+              onDeleteClick={() => setShowDeleteModal(true)}
+            />
           </div>
         </div>
       </div>
@@ -287,6 +319,13 @@ function Profile() {
         isOpen={passkeyModal === 'manage'}
         onClose={() => setPasskeyModal(null)}
         onAddNew={() => setPasskeyModal('setup')}
+      />
+
+      {/* Delete Account Modal */}
+      <DeleteAccountModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        retentionDays={retentionDays}
       />
     </ProfilePageLayout>
   );

@@ -7,7 +7,12 @@ export {
   WELL_KNOWN_OAUTH_PROVIDERS,
   type WellKnownOAuthProvider,
 } from './oauth-resolver.js';
-
+// Account deletion config schema
+export {
+  AppConfigAccountDeletion,
+  calculatePermanentDeletionDate,
+  parseDurationToMs,
+} from './schemas/account-deletion.js';
 // App config schemas
 export {
   AppConfigAdmin,
