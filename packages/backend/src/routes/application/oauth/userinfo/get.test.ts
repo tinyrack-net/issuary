@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import {
   createAuthenticatedSession,
+  exchangeCodeForTokens,
   getAccessToken,
+  getAuthorizationCode,
   getUserInfo,
   grantConsent,
   setupTestServer,
@@ -535,6 +537,115 @@ describe('GET /application/oauth/userinfo', () => {
       expect(json1.sub).toBeDefined();
       expect(json2.sub).toBeDefined();
       expect(json1.sub).toBe(json2.sub); // Same user
+    });
+  });
+
+  describe('Token Revocation', () => {
+    test('should reject revoked access token', async () => {
+      // Get access token
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email',
+      });
+      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const { access_token } = tokenRes.json();
+
+      // Verify token works before revocation
+      const validRes = await getUserInfo(app, access_token);
+      expect(validRes.statusCode).toBe(200);
+
+      // Revoke the token
+      const revokeRes = await app.inject({
+        method: 'POST',
+        url: '/application/oauth/revoke',
+        payload: {
+          token: access_token,
+          client_id: TEST_OAUTH_CLIENT.clientId,
+        },
+      });
+      expect(revokeRes.statusCode).toBe(200);
+
+      // Token should now be rejected
+      const revokedRes = await getUserInfo(app, access_token);
+      expect(revokedRes.statusCode).toBe(401);
+      const json = revokedRes.json();
+      expect(json.code).toBe('INVALID_ACCESS_TOKEN');
+    });
+  });
+
+  describe('HTTP Method Handling', () => {
+    test('should respond to HEAD request', async () => {
+      const accessToken = await getAccessToken(app, {
+        scope: 'openid',
+      });
+
+      const res = await app.inject({
+        method: 'HEAD',
+        url: '/application/oauth/userinfo',
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      // HEAD requests typically return 200 with no body or 405 if not supported
+      expect([200, 204, 405]).toContain(res.statusCode);
+    });
+
+    test('should reject POST request (GET only endpoint)', async () => {
+      const accessToken = await getAccessToken(app, {
+        scope: 'openid',
+      });
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/application/oauth/userinfo',
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      // POST is not implemented, should return 404
+      expect(res.statusCode).toBe(404);
+    });
+  });
+
+  describe('Content Negotiation', () => {
+    test('should handle Accept: application/json header', async () => {
+      const accessToken = await getAccessToken(app, {
+        scope: 'openid profile email',
+      });
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/application/oauth/userinfo',
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+          accept: 'application/json',
+        },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-type']).toContain('application/json');
+    });
+
+    test('should handle Accept: */* header', async () => {
+      const accessToken = await getAccessToken(app, {
+        scope: 'openid profile email',
+      });
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/application/oauth/userinfo',
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+          accept: '*/*',
+        },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+      expect(json.sub).toBeDefined();
     });
   });
 });

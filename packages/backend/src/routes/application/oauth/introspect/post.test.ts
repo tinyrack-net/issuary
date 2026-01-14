@@ -330,4 +330,103 @@ describe('POST /application/oauth/introspect', () => {
       expect(json.scope).toBe('profile email');
     });
   });
+
+  describe('Revoked Token Handling', () => {
+    test('should return active=false for revoked access token', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email',
+      });
+      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const { access_token } = tokenRes.json();
+
+      // Verify token is active before revocation
+      const beforeRes = await introspectToken(app, { token: access_token });
+      expect(beforeRes.json().active).toBe(true);
+
+      // Revoke the token
+      const revokeRes = await app.inject({
+        method: 'POST',
+        url: '/application/oauth/revoke',
+        payload: {
+          token: access_token,
+          client_id: TEST_OAUTH_CLIENT.clientId,
+        },
+      });
+      expect(revokeRes.statusCode).toBe(200);
+
+      // Token should now be inactive
+      const afterRes = await introspectToken(app, { token: access_token });
+      expect(afterRes.statusCode).toBe(200);
+      const json = afterRes.json();
+      expect(json.active).toBe(false);
+    });
+
+    test('should return active=false for revoked refresh token', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email',
+      });
+      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const { refresh_token } = tokenRes.json();
+
+      // Verify token is active before revocation
+      const beforeRes = await introspectToken(app, { token: refresh_token });
+      expect(beforeRes.json().active).toBe(true);
+
+      // Revoke the token
+      const revokeRes = await app.inject({
+        method: 'POST',
+        url: '/application/oauth/revoke',
+        payload: {
+          token: refresh_token,
+          client_id: TEST_OAUTH_CLIENT.clientId,
+        },
+      });
+      expect(revokeRes.statusCode).toBe(200);
+
+      // Token should now be inactive
+      const afterRes = await introspectToken(app, { token: refresh_token });
+      expect(afterRes.statusCode).toBe(200);
+      const json = afterRes.json();
+      expect(json.active).toBe(false);
+    });
+  });
+
+  describe('Request Validation', () => {
+    test('should reject request without token', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/application/oauth/introspect',
+        payload: {
+          // No token
+          client_id: TEST_OAUTH_CLIENT.clientId,
+        },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    test('should handle very long token gracefully', async () => {
+      const longToken = 'a'.repeat(10000);
+
+      const res = await introspectToken(app, { token: longToken });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+      expect(json.active).toBe(false);
+    });
+
+    test('should handle special characters in token', async () => {
+      const specialToken = 'token<script>alert(1)</script>token';
+
+      const res = await introspectToken(app, { token: specialToken });
+
+      expect(res.statusCode).toBe(200);
+      const json = res.json();
+      expect(json.active).toBe(false);
+    });
+  });
 });

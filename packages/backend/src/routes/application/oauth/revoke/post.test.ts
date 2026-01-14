@@ -401,4 +401,58 @@ describe('POST /application/oauth/revoke', () => {
       expect(refreshIntrospect.json().active).toBe(false);
     });
   });
+
+  describe('Request Validation', () => {
+    test('should reject request without token field', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/application/oauth/revoke',
+        payload: {
+          // No token field
+          client_id: TEST_OAUTH_CLIENT.clientId,
+        },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    test('should handle very long token gracefully', async () => {
+      const longToken = 'a'.repeat(10000);
+
+      const res = await revokeToken({ token: longToken });
+
+      // RFC 7009 says to return 200 even for invalid tokens
+      expect(res.statusCode).toBe(200);
+    });
+
+    test('should handle special characters in token gracefully', async () => {
+      const specialToken = 'token<script>alert(1)</script>token';
+
+      const res = await revokeToken({ token: specialToken });
+
+      expect(res.statusCode).toBe(200);
+    });
+  });
+
+  describe('Idempotency', () => {
+    test('should be idempotent for same token', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const { access_token } = tokenRes.json();
+
+      // Revoke multiple times
+      const res1 = await revokeToken({ token: access_token });
+      const res2 = await revokeToken({ token: access_token });
+      const res3 = await revokeToken({ token: access_token });
+
+      expect(res1.statusCode).toBe(200);
+      expect(res2.statusCode).toBe(200);
+      expect(res3.statusCode).toBe(200);
+
+      // Token should still be inactive
+      const introspectRes = await introspectToken(access_token);
+      expect(introspectRes.json().active).toBe(false);
+    });
+  });
 });
