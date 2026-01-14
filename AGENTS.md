@@ -789,7 +789,7 @@ const user = await this.findOneOrFail(
 - Users and OAuth clients defined in `config.yaml` act as a **separate data source** (NOT seeded to database)
 - When querying users or OAuth clients, the application searches **both** config and database
 - Config-based data takes priority over database (checked first)
-- Config users/providers are marked with `managed: 'config'`, DB entries with `managed: 'database'`
+- Config users/providers are marked with `managed_by: 'config'`, DB entries with `managed_by: 'database'`
 - Config-based entities cannot be modified at runtime (immutable)
 - Use cases: infrastructure-as-code for admin users, static OAuth clients for trusted applications
 - Example pattern:
@@ -797,10 +797,10 @@ const user = await this.findOneOrFail(
 // Always check config first, then database
 const appConfigUser = AppConfigs.users?.find((u) => u.id === id);
 if (appConfigUser) {
-  return { ...appConfigUser, managed: 'config' };
+  return { ...appConfigUser, managed_by: 'config' };
 }
 const dbUser = await this.mikro.user.findOneOrFail({ id });
-return { ...dbUser, managed: 'database' };
+return { ...dbUser, managed_by: 'database' };
 ```
 
 ### Environment Variables
