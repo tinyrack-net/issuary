@@ -52,7 +52,7 @@ export default (fastify: FastifyWithZodInstance) => {
       res.status(200).send({
         user: {
           id: user.id,
-          managed: 'database',
+          managed_by: 'database',
           email: user.email,
           email_verified: user.email_verified,
           has_password: user.hasPassword(),

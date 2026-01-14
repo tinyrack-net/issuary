@@ -29,42 +29,31 @@ export default (fastify: FastifyWithZodInstance) => {
         password: req.body.password,
       });
 
-      // Check if TOTP is enabled for this user
       if (user.totp_enabled) {
-        // Set pending TOTP user session instead of full login
         req.session.set('pendingTotpUser', {
           id: user.id,
         });
-
         return res.status(200).send({
           totp_verification_required: true,
           totp_setup_required: false,
         });
       }
 
-      const passwordAuthMethod =
-        fastify.config.basic_authentication_methods.password;
-      const isConfigManaged = user.managed === 'config';
+      // const emailVerifyRequired = fastify.userService.userEmailVerificationRequired(
+      //   user,
+      // );
+      const totpRequired = fastify.userService.userTotpRequired(user);
 
-      const totpRequired =
-        !isConfigManaged &&
-        passwordAuthMethod.totp.enabled &&
-        passwordAuthMethod.totp.required &&
-        !user.totp_enabled;
-
-      // If TOTP setup is required, set pending setup session
       if (totpRequired) {
         req.session.set('pendingTotpSetup', {
           id: user.id,
         });
-
         return res.status(200).send({
           totp_verification_required: false,
           totp_setup_required: true,
         });
       }
 
-      // No TOTP required, complete login immediately
       req.session.set('user', {
         id: user.id,
       });
@@ -74,7 +63,7 @@ export default (fastify: FastifyWithZodInstance) => {
         totp_setup_required: false,
         user: {
           id: user.id,
-          managed: user.managed,
+          managed_by: user.managed_by,
           email: user.email,
           email_verified: user.email_verified,
           has_password: user.has_password,

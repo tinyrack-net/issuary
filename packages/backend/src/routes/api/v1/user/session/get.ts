@@ -20,7 +20,7 @@ export default (fastify: FastifyWithZodInstance) =>
         return res.status(200).send({
           user: {
             id: user.id,
-            managed: user.managed,
+            managed_by: user.managed,
             email: user.email,
             email_verified: user.email_verified,
             has_password: user.has_password,
