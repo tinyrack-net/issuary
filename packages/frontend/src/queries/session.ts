@@ -4,7 +4,7 @@ import { queryKeys } from './keys';
 
 export type SessionUser = {
   id: string;
-  managed: 'config' | 'database';
+  managed_by: 'config' | 'database';
   email: string;
   email_verified: boolean;
   has_password: boolean;
