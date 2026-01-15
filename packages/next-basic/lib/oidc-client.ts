@@ -10,12 +10,12 @@ import { getOIDCConfig } from './oidc-config';
 /**
  * Build authorization URL for OAuth/OIDC flow
  */
-export function buildAuthorizationUrl(
+export async function buildAuthorizationUrl(
   state: string,
   codeChallenge: string,
   nonce: string,
-): string {
-  const config = getOIDCConfig();
+): Promise<string> {
+  const config = await getOIDCConfig();
   const params = new URLSearchParams({
     client_id: config.client_id,
     redirect_uri: config.redirect_uri,
@@ -37,7 +37,7 @@ export async function exchangeCodeForTokens(
   code: string,
   codeVerifier: string,
 ): Promise<TokenResponse> {
-  const config = getOIDCConfig();
+  const config = await getOIDCConfig();
   const params = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
@@ -69,7 +69,7 @@ export async function exchangeCodeForTokens(
 export async function refreshAccessToken(
   refreshToken: string,
 ): Promise<TokenResponse> {
-  const config = getOIDCConfig();
+  const config = await getOIDCConfig();
   const params = new URLSearchParams({
     grant_type: 'refresh_token',
     refresh_token: refreshToken,
@@ -97,7 +97,7 @@ export async function refreshAccessToken(
  * Fetch user info from userinfo endpoint
  */
 export async function fetchUserInfo(accessToken: string): Promise<UserInfo> {
-  const config = getOIDCConfig();
+  const config = await getOIDCConfig();
   const response = await fetch(config.userinfo_endpoint, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -143,7 +143,7 @@ export async function introspectToken(
   token: string,
   tokenTypeHint?: 'access_token' | 'refresh_token',
 ): Promise<IntrospectionResponse> {
-  const config = getOIDCConfig();
+  const config = await getOIDCConfig();
   const params = new URLSearchParams({
     token,
     client_id: config.client_id,
@@ -179,7 +179,7 @@ export async function revokeToken(
   token: string,
   tokenTypeHint?: 'access_token' | 'refresh_token',
 ): Promise<void> {
-  const config = getOIDCConfig();
+  const config = await getOIDCConfig();
   const params = new URLSearchParams({
     token,
     client_id: config.client_id,

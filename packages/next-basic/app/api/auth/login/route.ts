@@ -13,7 +13,7 @@ export async function GET() {
   await saveAuthState({ state, code_verifier, nonce });
 
   // Build authorization URL
-  const authUrl = buildAuthorizationUrl(state, code_challenge, nonce);
+  const authUrl = await buildAuthorizationUrl(state, code_challenge, nonce);
 
   // Redirect to authorization endpoint
   redirect(authUrl);

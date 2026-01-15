@@ -98,9 +98,12 @@ export async function initializeOIDCConfig(options?: {
 
 /**
  * Get current OIDC configuration
- * Throws error if not initialized
+ * Initializes if not yet initialized
  */
-export function getOIDCConfig(): OIDCConfig {
+export async function getOIDCConfig(): Promise<OIDCConfig> {
+  if (!oidcConfig) {
+    await initializeOIDCConfig();
+  }
   if (!oidcConfig) {
     throw new Error(
       'OIDC config not initialized. Call initializeOIDCConfig() first.',
