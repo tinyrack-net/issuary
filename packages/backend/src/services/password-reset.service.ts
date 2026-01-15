@@ -32,30 +32,22 @@ export class PasswordResetService {
   /**
    * Request password reset for an email
    * Returns token entity if user exists and is database-managed
-   * Returns null if user doesn't exist (to prevent email enumeration)
-   * Throws error if user is config-managed
    */
   async requestPasswordReset(
     email: string,
   ): Promise<PasswordResetEntity | null> {
-    // Try to find user in database
-    const user = await this.mikro.user.findOne({ email });
+    const user = await this.mikro.user.findOneOrFail(
+      { email },
+      {
+        failHandler: () => new e.UserNotFound.Error(),
+      },
+    );
 
-    if (!user) {
-      // Return null to prevent email enumeration
-      // The route handler should still return success
-      return null;
-    }
-
-    // Check if user is config-managed (cannot reset password)
-    if (user.managed_by === 'config') {
+    if (user.managed_by !== 'database') {
       throw new e.UserNotEditable.Error();
     }
 
-    // Generate token (this invalidates old ones)
     const token = await this.generateToken({ userId: user.id });
-
-    // Ensure changes are persisted
     await this.mikro.em.flush();
 
     return token;

@@ -23,41 +23,38 @@ export default (fastify: FastifyWithZodInstance) => {
         email: f.userEmail,
       }),
       response: {
-        200: r.MessageResponse,
+        200: r.OkResponse,
         403: e.UserNotEditable.Schema,
       },
     },
     handler: async (req, res) => {
       const { email } = req.body;
-
       try {
         const resetEntity =
           await fastify.passwordResetService.requestPasswordReset(email);
 
         if (resetEntity) {
-          // Send password reset email asynchronously (fire-and-forget)
           fastify.emailService.sendPasswordResetEmailAsync({
             email,
             token: resetEntity.token,
           });
         }
 
-        // Always return success to prevent email enumeration
         res.status(200).send({
-          message:
-            'If an account with that email exists, a password reset link has been sent.',
+          ok: true,
         });
       } catch (error) {
-        // If user is config-managed, throw the error
-        if (error instanceof e.UserNotEditable.Error) {
+        // Always return success to prevent email enumeration
+        if (
+          error instanceof e.UserNotEditable.Error ||
+          error instanceof e.UserNotFound.Error
+        ) {
+          res.status(200).send({
+            ok: true,
+          });
+        } else {
           throw error;
         }
-
-        // For any other error, still return success to prevent enumeration
-        res.status(200).send({
-          message:
-            'If an account with that email exists, a password reset link has been sent.',
-        });
       }
     },
   });

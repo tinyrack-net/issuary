@@ -32,7 +32,7 @@ describe('POST /api/v1/auth/password/forgot', () => {
 
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
-    expect(body).toHaveProperty('message');
+    expect(body).toHaveProperty('ok');
 
     // 3. Check that a reset token was generated
     const token = await withMikroContext(app, async () => {
@@ -60,7 +60,7 @@ describe('POST /api/v1/auth/password/forgot', () => {
     // Should still return 200 to prevent email enumeration
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
-    expect(body).toHaveProperty('message');
+    expect(body).toHaveProperty('ok');
   });
 
   test('should fail for config user (config-managed)', async () => {
@@ -73,9 +73,9 @@ describe('POST /api/v1/auth/password/forgot', () => {
       },
     });
 
-    expect(res.statusCode).toBe(e.UserNotEditable.Status);
+    expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
-    expect(body).toHaveProperty('code', 'USER_NOT_EDITABLE');
+    expect(body).toHaveProperty('ok');
   });
 
   test('should invalidate previous reset tokens when new one is generated', async () => {
