@@ -27,3 +27,13 @@ packages/backend/public
 
 .env
 tsconfig.tsbuildinfo
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/

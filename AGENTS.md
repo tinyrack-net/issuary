@@ -747,6 +747,106 @@ playwright_browser_snapshot
    - When debugging visual or interaction issues
    - To confirm i18n translations display correctly
 
+#### E2E Testing with Playwright
+The frontend has a comprehensive E2E test suite using Playwright. Tests are located in `packages/frontend/e2e/`.
+
+**Test Structure:**
+```
+packages/frontend/e2e/
+├── fixtures/
+│   └── test-data.ts          # Test constants matching backend config.yaml
+├── utils/
+│   ├── auth-helpers.ts       # login, logout, register helpers
+│   ├── totp-helpers.ts       # TOTP code generation
+│   └── oauth-helpers.ts      # OAuth flow helpers
+└── tests/
+    ├── auth/                 # Authentication tests
+    │   ├── login.spec.ts
+    │   ├── register.spec.ts
+    │   ├── logout.spec.ts
+    │   ├── password-reset.spec.ts
+    │   ├── totp.spec.ts
+    │   └── email-verification.spec.ts
+    ├── profile/              # Profile management tests
+    │   ├── view-profile.spec.ts
+    │   └── manage-password.spec.ts
+    └── oauth/                # OAuth/OIDC flow tests
+        ├── consent.spec.ts
+        └── authorization-flow.spec.ts
+```
+
+**Running E2E Tests:**
+```bash
+cd packages/frontend
+
+# Run all tests (headless)
+pnpm test:e2e
+
+# Run with Playwright UI (interactive)
+pnpm test:e2e:ui
+
+# Run with visible browser
+pnpm test:e2e:headed
+
+# Run in debug mode
+pnpm test:e2e:debug
+
+# Run specific test file
+pnpm test:e2e e2e/tests/auth/login.spec.ts
+```
+
+**Prerequisites:**
+- Both dev servers must be running before executing E2E tests:
+  ```bash
+  # From root directory
+  pnpm dev  # Starts both backend (port 8080) and frontend (port 5173)
+  ```
+- Tests use the config-managed user from `packages/backend/config.yaml`
+
+**Test Data Dependencies:**
+Test constants in `e2e/fixtures/test-data.ts` must match `packages/backend/config.yaml`:
+```typescript
+// Must match config.yaml users section
+export const TEST_USER = {
+  email: 'test-config-user@example.com',
+  password: 'changemelater',
+};
+
+// Must match config.yaml providers section
+export const TEST_OAUTH_CLIENT = {
+  clientId: 'sdlk3n3dkj2',
+  redirectUri: 'http://localhost:3000/api/callback',
+};
+```
+
+**Writing New E2E Tests:**
+- Use `test-data.ts` for test constants
+- Use helper functions from `utils/` for common operations
+- Follow the existing test patterns for consistency
+- Tests should be independent and not rely on state from other tests
+- Use `prompt=consent` parameter when testing OAuth consent (consent is persisted in DB)
+
+**Test Helpers:**
+```typescript
+import { login, logout, ensureLoggedOut } from '../utils/auth-helpers';
+import { buildAuthorizationUrl } from '../utils/oauth-helpers';
+import { generateTotpCode } from '../utils/totp-helpers';
+
+// Login helper
+await login(page, TEST_USER.email, TEST_USER.password);
+
+// Logout helper
+await logout(page);
+
+// Build OAuth authorization URL
+const authUrl = buildAuthorizationUrl({
+  clientId: TEST_OAUTH_CLIENT.clientId,
+  redirectUri: TEST_OAUTH_CLIENT.redirectUri,
+  scope: 'openid profile email',
+  prompt: 'consent',  // Force consent page
+});
+```
+
 ### Error Handling
 - Centralized error definitions in `schemas/error.ts` using `createError` function
 - Each error includes HTTP status code, error code, and message
