@@ -105,6 +105,20 @@ providers:
       - refresh_token
     scope: openid profile email
 
+  - id: react-spa-client
+    name: React SPA Test Client (Public)
+    logo_uri: http://localhost:3001
+    client_id: react-spa-client
+    # No client_secret - this is a Public Client using PKCE
+    redirect_uris:
+      - http://localhost:3001/callback
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+      - refresh_token
+    scope: openid profile email
+
 users:
   - id: test-config-user
     email: test-config-user@example.com
