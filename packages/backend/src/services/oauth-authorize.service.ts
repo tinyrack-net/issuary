@@ -1,6 +1,6 @@
 import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
-import type { AppConfig } from '@/lib/config/index.js';
+import type { InternalAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import type {
   AuthenticationContextClass,
@@ -19,7 +19,7 @@ declare module 'fastify' {
 
 export class OAuthAuthorizeService {
   public constructor(
-    private readonly config: AppConfig,
+    private readonly config: InternalAppConfig,
     private readonly mikro: MikroService,
     private readonly oauthClientService: OAuthClientService,
     private readonly userConsentService: UserConsentService,

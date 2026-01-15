@@ -9,7 +9,7 @@ import {
 } from 'jose';
 import type z from 'zod/v4';
 import { JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
-import type { AppConfig } from '@/lib/config/index.js';
+import type { InternalAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import type { jwtKeySchema } from '@/schemas/jwt-key.js';
 
@@ -38,7 +38,7 @@ export class JwtKeyService {
   private readonly CACHE_TTL_MS = 60 * 1000; // 1 minute
 
   constructor(
-    private readonly config: AppConfig,
+    private readonly config: InternalAppConfig,
     private readonly mikro: MikroService,
   ) {}
 

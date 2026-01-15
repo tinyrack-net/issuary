@@ -2,7 +2,7 @@ import type { EntityManager } from '@mikro-orm/core';
 import { hash } from 'argon2';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
-import type { AppConfig } from '@/lib/config/index.js';
+import type { InternalAppConfig } from '@/lib/config/index.js';
 
 /**
  * ConfigSeeder
@@ -23,7 +23,7 @@ import type { AppConfig } from '@/lib/config/index.js';
  */
 export async function seedConfig(
   em: EntityManager,
-  config: AppConfig,
+  config: InternalAppConfig,
 ): Promise<void> {
   await syncUsers(em, config);
   await syncOAuthClients(em, config);
@@ -33,7 +33,10 @@ export async function seedConfig(
  * Sync users from config.yaml to database
  * Uses em.upsert() for atomic upsert operations that are cluster-safe
  */
-async function syncUsers(em: EntityManager, config: AppConfig): Promise<void> {
+async function syncUsers(
+  em: EntityManager,
+  config: InternalAppConfig,
+): Promise<void> {
   const now = new Date();
 
   for (const configUser of config.users) {
@@ -81,7 +84,7 @@ async function syncUsers(em: EntityManager, config: AppConfig): Promise<void> {
  */
 async function syncOAuthClients(
   em: EntityManager,
-  config: AppConfig,
+  config: InternalAppConfig,
 ): Promise<void> {
   const now = new Date();
 

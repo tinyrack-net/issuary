@@ -11,10 +11,6 @@ export type AuthenticationMethod =
   | 'hwk' // Hardware key (Passkey/WebAuthn)
   | 'mfa'; // Multi-factor authentication
 
-/**
- * Authentication Context Class Reference values
- * Higher numbers indicate stronger authentication
- */
 export type AuthenticationContextClass =
   | 'urn:tinyrack:acr:0' // Session only (no re-authentication)
   | 'urn:tinyrack:acr:1' // Single factor (password OR passkey)

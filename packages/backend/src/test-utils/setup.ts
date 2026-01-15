@@ -1,14 +1,15 @@
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll } from 'vitest';
-import type { AppConfig, DeepPartial } from '@/lib/config/index.js';
+import type { DeepPartial, InternalAppConfig } from '@/lib/config/index.js';
 import { createServer } from '@/server.js';
 
 /**
  * Default test configuration.
  * This replaces config.test.yaml and is used as the base config for all tests.
  */
-export const DEFAULT_TEST_CONFIG: AppConfig = {
+export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
   app: {
+    name: 'Tinyrack Auth',
     host: 'http://localhost:8080',
     port: 8080,
     cookie_secret:
@@ -121,7 +122,7 @@ export interface SetupTestServerOptions {
    * Base config to use instead of DEFAULT_TEST_CONFIG.
    * Useful for completely replacing the test config.
    */
-  baseConfig?: AppConfig;
+  baseConfig?: InternalAppConfig;
   /**
    * Partial config to override loaded values.
    * Useful for testing different configuration scenarios.
@@ -137,7 +138,7 @@ export interface SetupTestServerOptions {
    * });
    * ```
    */
-  configOverrides?: DeepPartial<AppConfig>;
+  configOverrides?: DeepPartial<InternalAppConfig>;
 }
 
 /**

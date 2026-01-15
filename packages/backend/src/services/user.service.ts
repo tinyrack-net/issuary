@@ -1,7 +1,7 @@
 import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
-import type { AppConfig } from '@/lib/config/index.js';
+import type { InternalAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
@@ -15,6 +15,8 @@ declare module 'fastify' {
   interface FastifyRequest {
     auth: {
       verify: () => Promise<z.infer<typeof r.UserSession>>;
+      verifyPendingTotpUser: () => Promise<z.infer<typeof r.UserSession>>;
+      verifyPendingTotpSetupUser: () => Promise<z.infer<typeof r.UserSession>>;
     };
   }
 }
@@ -22,7 +24,7 @@ declare module 'fastify' {
 export class UserService {
   public constructor(
     private readonly mikro: MikroService,
-    private readonly config: AppConfig,
+    private readonly config: InternalAppConfig,
     private readonly emailService: EmailService,
     private readonly emailVerificationService?: EmailVerificationService,
   ) {}
@@ -32,7 +34,10 @@ export class UserService {
   ): Promise<z.infer<typeof r.UserSession>> {
     const user = await this.mikro.user.findOneOrFail(
       { id },
-      { populate: ['password_hash'] },
+      {
+        populate: ['password_hash'],
+        failHandler: () => new e.UserNotFound.Error(),
+      },
     );
     const totpEnabled = await this.mikro.userTotp.isEnabled(id);
     const passkeyCount = await this.mikro.userPasskey.countByUserId(id);
@@ -189,6 +194,22 @@ export default fastifyPlugin(
       req.auth = {
         verify: async () => {
           const userId = req.session.get('user')?.id;
+          if (!userId) {
+            throw new e.Unauthorized.Error();
+          }
+          const user = await userService.verifyUserById(userId);
+          return user;
+        },
+        verifyPendingTotpUser: async () => {
+          const userId = req.session.get('pendingTotpUser')?.id;
+          if (!userId) {
+            throw new e.Unauthorized.Error();
+          }
+          const user = await userService.verifyUserById(userId);
+          return user;
+        },
+        verifyPendingTotpSetupUser: async () => {
+          const userId = req.session.get('pendingTotpSetup')?.id;
           if (!userId) {
             throw new e.Unauthorized.Error();
           }

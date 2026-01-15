@@ -6,6 +6,9 @@ import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
+  if (!fastify.config.basic_authentication_methods.password.enabled) {
+    return;
+  }
   fastify.route({
     method: 'POST',
     url: '',
@@ -43,7 +46,6 @@ export default (fastify: FastifyWithZodInstance) => {
       }
 
       if (user.totp_enabled) {
-        // Store auth metadata for TOTP flow (will be completed in TOTP verify)
         req.session.set('pendingTotpUser', {
           id: user.id,
           auth_methods: ['pwd'],
@@ -56,9 +58,7 @@ export default (fastify: FastifyWithZodInstance) => {
         });
       }
 
-      const totpRequired = fastify.userService.userTotpRequired(user);
-
-      if (totpRequired) {
+      if (user.totp_required && !user.totp_enabled) {
         req.session.set('pendingTotpSetup', {
           id: user.id,
         });
@@ -73,7 +73,7 @@ export default (fastify: FastifyWithZodInstance) => {
         id: user.id,
         authenticated_at: Math.floor(Date.now() / 1000),
         auth_methods: ['pwd'],
-        acr: 'urn:tinyrack:acr:1', // Single factor (password)
+        acr: 'urn:tinyrack:acr:1',
       });
 
       return res.status(200).send({

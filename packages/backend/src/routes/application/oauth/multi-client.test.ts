@@ -1,6 +1,6 @@
 import * as jose from 'jose';
 import { describe, expect, test } from 'vitest';
-import type { AppConfig } from '@/lib/config/index.js';
+import type { InternalAppConfig } from '@/lib/config/index.js';
 import {
   createAuthenticatedSession,
   exchangeCodeForTokens,
@@ -28,7 +28,7 @@ const SECOND_OAUTH_CLIENT = {
 /**
  * Config with multiple OAuth clients for testing client isolation
  */
-const multiClientConfig: AppConfig = {
+const multiClientConfig: InternalAppConfig = {
   ...DEFAULT_TEST_CONFIG,
   providers: [
     // First client - existing test client

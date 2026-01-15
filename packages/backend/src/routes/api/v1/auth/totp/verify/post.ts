@@ -25,39 +25,25 @@ export default (fastify: FastifyWithZodInstance) =>
       },
     },
     handler: async (req, res) => {
-      // Check if there's a pending TOTP user in session
       const pendingTotpUser = req.session.get('pendingTotpUser');
+
       if (!pendingTotpUser) {
         throw new e.TotpVerificationSessionExpired.Error();
       }
 
-      // Verify TOTP code
-      const isValid = await fastify.totpService.verifyForAuth(
+      await fastify.totpService.verifyForAuth(
         pendingTotpUser.id,
         req.body.code,
       );
 
-      if (!isValid) {
-        throw new e.InvalidTotpCode.Error();
-      }
-
-      // Get user data for response
       const user = await fastify.userService.verifyUserById(pendingTotpUser.id);
-
-      // Clear pending TOTP session and set full user session
       req.session.set('pendingTotpUser', undefined);
 
-      // Set authentication metadata for OIDC claims (auth_time, amr, acr)
-      // Use authenticated_at from pending session (when password was verified)
-      // or current time if not available
       const authTime =
         pendingTotpUser.authenticated_at ?? Math.floor(Date.now() / 1000);
 
-      // Combine previous auth methods with TOTP, add 'mfa' indicator
-      const previousMethods: AuthenticationMethod[] =
-        pendingTotpUser.auth_methods ?? ['pwd'];
       const authMethods: AuthenticationMethod[] = [
-        ...previousMethods,
+        ...pendingTotpUser.auth_methods,
         'otp',
         'mfa',
       ];
@@ -66,7 +52,7 @@ export default (fastify: FastifyWithZodInstance) =>
         id: user.id,
         authenticated_at: authTime,
         auth_methods: authMethods,
-        acr: 'urn:tinyrack:acr:2', // Multi-factor authentication achieved
+        acr: 'urn:tinyrack:acr:2',
       });
 
       return res.status(200).send({

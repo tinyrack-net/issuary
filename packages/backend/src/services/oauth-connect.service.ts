@@ -1,7 +1,7 @@
 import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import {
-  type AppConfig,
+  type InternalAppConfig,
   type ResolvedOAuthConfig,
   resolveOAuthConfig,
 } from '@/lib/config/index.js';
@@ -21,7 +21,7 @@ declare module 'fastify' {
 
 export class OAuthConnectService {
   public constructor(
-    private readonly config: AppConfig,
+    private readonly config: InternalAppConfig,
     private readonly mikro: MikroService,
   ) {}
 

@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import fastifyPlugin from 'fastify-plugin';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
-import type { AppConfig } from '@/lib/config/index.js';
+import type { InternalAppConfig } from '@/lib/config/index.js';
 import { e } from '@/schemas/error.js';
 
 declare module 'fastify' {
@@ -13,7 +13,7 @@ declare module 'fastify' {
 
 export class EmailService {
   public constructor(
-    private readonly config: AppConfig,
+    private readonly config: InternalAppConfig,
     private readonly transporter: FastifyInstance['mail'],
   ) {}
 

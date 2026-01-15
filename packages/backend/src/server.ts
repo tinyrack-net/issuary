@@ -5,8 +5,8 @@ import fastifyAutoload from '@fastify/autoload';
 import Fastify from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
-  type AppConfig,
   type DeepPartial,
+  type InternalAppConfig,
   loadConfig,
 } from '@/lib/config/index.js';
 import { env } from '@/lib/env.js';
@@ -16,7 +16,7 @@ const __dirname = path.resolve(path.dirname(__filename));
 
 declare module 'fastify' {
   interface FastifyInstance {
-    config: AppConfig;
+    config: InternalAppConfig;
   }
 }
 
@@ -32,11 +32,11 @@ export interface CreateServerOptions {
   /**
    * Base config object to use instead of loading from file (useful for testing).
    */
-  baseConfig?: AppConfig;
+  baseConfig?: InternalAppConfig;
   /**
    * Partial config to override loaded values (useful for testing).
    */
-  configOverrides?: DeepPartial<AppConfig>;
+  configOverrides?: DeepPartial<InternalAppConfig>;
 }
 
 export function createServer(options?: CreateServerOptions) {

@@ -30,7 +30,6 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      // Allow both full user session and pending TOTP setup session
       const userSession = req.session.get('user');
       const pendingTotpSetup = req.session.get('pendingTotpSetup');
       const userId = userSession?.id ?? pendingTotpSetup?.id;
@@ -39,8 +38,6 @@ export default (fastify: FastifyWithZodInstance) => {
         throw new e.Unauthorized.Error();
       }
 
-      console.log(userId);
-      // Get user entity
       const user = await fastify.mikro.user.findOneOrFail(
         { id: userId },
         { failHandler: () => new e.UserNotFound.Error() },

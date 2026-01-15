@@ -2,7 +2,7 @@ import { TAGS } from '@/lib/swagger-tags.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
-export default (fastify: FastifyWithZodInstance) =>
+export default (fastify: FastifyWithZodInstance) => {
   fastify.route({
     method: 'POST',
     url: '',
@@ -21,3 +21,4 @@ export default (fastify: FastifyWithZodInstance) =>
       });
     },
   });
+};
