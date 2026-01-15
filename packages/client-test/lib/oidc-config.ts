@@ -12,29 +12,6 @@ import {
 let oidcConfig: OIDCConfig | null = null;
 
 /**
- * Fallback configuration for development
- * Used if discovery fails or config is not initialized
- */
-const FALLBACK_CONFIG: OIDCConfig = {
-  issuer: 'http://localhost:8080',
-  authorization_endpoint: 'http://localhost:8080/application/oauth/authorize',
-  token_endpoint: 'http://localhost:8080/application/oauth/token',
-  userinfo_endpoint: 'http://localhost:8080/application/oauth/userinfo',
-  introspection_endpoint: 'http://localhost:8080/application/oauth/introspect',
-  revocation_endpoint: 'http://localhost:8080/application/oauth/revoke',
-  jwks_uri: 'http://localhost:8080/application/oauth/.well-known/jwks',
-  openid_configuration_uri:
-    'http://localhost:8080/application/oauth/.well-known/openid-configuration',
-
-  client_id: 'sdlk3n3dkj2',
-  client_secret: 'sdlk3n3dkj2',
-  redirect_uri: 'http://localhost:3000/api/callback',
-
-  scope: 'openid profile email',
-  response_type: 'code',
-};
-
-/**
  * Merge OpenID Configuration with client credentials
  */
 function mergeConfig(
@@ -115,18 +92,7 @@ export async function initializeOIDCConfig(options?: {
     return oidcConfig;
   } catch (error) {
     console.error('Failed to fetch OpenID Configuration:', error);
-    console.warn('Using fallback configuration');
-
-    // Use fallback with updated client credentials
-    oidcConfig = {
-      ...FALLBACK_CONFIG,
-      client_id: clientId,
-      client_secret: clientSecret,
-      redirect_uri: redirectUri,
-      scope,
-    };
-
-    return oidcConfig;
+    throw error;
   }
 }
 
@@ -136,8 +102,9 @@ export async function initializeOIDCConfig(options?: {
  */
 export function getOIDCConfig(): OIDCConfig {
   if (!oidcConfig) {
-    console.warn('OIDC config not initialized, using fallback');
-    return FALLBACK_CONFIG;
+    throw new Error(
+      'OIDC config not initialized. Call initializeOIDCConfig() first.',
+    );
   }
   return oidcConfig;
 }
