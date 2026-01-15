@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "pnpm -r --stream dev",
-    "test": "pnpm -r --stream test",
-    "build": "pnpm -r --stream build"
+    "test": "pnpm -r test",
+    "build": "pnpm -r build"
   },
   "workspaces": [
     "./packages/*"
