@@ -445,6 +445,103 @@ describe('POST /application/oauth/token', () => {
     });
   });
 
+  describe('Refresh Token Rotation', () => {
+    test('should reject previously used refresh token (token rotation)', async () => {
+      // Get initial tokens
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const tokenRes = await exchangeCode({ code });
+      expect(tokenRes.statusCode).toBe(200);
+
+      const { refresh_token: firstRefreshToken } = tokenRes.json();
+      expect(firstRefreshToken).toBeDefined();
+
+      // First refresh - should succeed and return new tokens
+      const refreshRes1 = await refreshToken({
+        refreshToken: firstRefreshToken,
+      });
+      expect(refreshRes1.statusCode).toBe(200);
+
+      const { refresh_token: secondRefreshToken } = refreshRes1.json();
+      expect(secondRefreshToken).toBeDefined();
+      // New refresh token should be different from the old one
+      expect(secondRefreshToken).not.toBe(firstRefreshToken);
+
+      // Try to use the first refresh token again - should fail (token rotation)
+      const refreshRes2 = await refreshToken({
+        refreshToken: firstRefreshToken,
+      });
+      expect(refreshRes2.statusCode).toBe(400);
+      const json = refreshRes2.json();
+      expect(json.code).toBe('INVALID_REFRESH_TOKEN');
+    });
+
+    test('should allow using new refresh token after rotation', async () => {
+      // Get initial tokens
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const tokenRes = await exchangeCode({ code });
+      const { refresh_token: firstRefreshToken } = tokenRes.json();
+
+      // First refresh
+      const refreshRes1 = await refreshToken({
+        refreshToken: firstRefreshToken,
+      });
+      expect(refreshRes1.statusCode).toBe(200);
+      const { refresh_token: secondRefreshToken } = refreshRes1.json();
+
+      // Use the new refresh token - should succeed
+      const refreshRes2 = await refreshToken({
+        refreshToken: secondRefreshToken,
+      });
+      expect(refreshRes2.statusCode).toBe(200);
+
+      const { refresh_token: thirdRefreshToken } = refreshRes2.json();
+      expect(thirdRefreshToken).toBeDefined();
+      expect(thirdRefreshToken).not.toBe(secondRefreshToken);
+    });
+
+    test('should issue tokens with same scopes after rotation', async () => {
+      // Get tokens with specific scopes
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile', // Limited scopes
+      });
+      const tokenRes = await exchangeCode({ code });
+      const { refresh_token, scope: originalScope } = tokenRes.json();
+
+      // Refresh
+      const refreshRes = await refreshToken({ refreshToken: refresh_token });
+      expect(refreshRes.statusCode).toBe(200);
+
+      const json = refreshRes.json();
+      // Scopes should be preserved after rotation
+      expect(json.scope).toBe(originalScope);
+    });
+
+    test('should preserve user identity after token rotation', async () => {
+      // Get initial tokens
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const tokenRes = await exchangeCode({ code });
+      const { refresh_token, access_token: firstAccessToken } = tokenRes.json();
+
+      const firstPayload = jose.decodeJwt(firstAccessToken);
+
+      // Refresh to get new tokens
+      const refreshRes = await refreshToken({ refreshToken: refresh_token });
+      const { access_token: secondAccessToken } = refreshRes.json();
+
+      const secondPayload = jose.decodeJwt(secondAccessToken);
+
+      // User identity (sub) should remain the same
+      expect(secondPayload.sub).toBe(firstPayload.sub);
+      // Client binding should remain the same
+      expect(secondPayload['client_id']).toBe(firstPayload['client_id']);
+    });
+  });
+
   describe('Grant Type Validation', () => {
     test('should reject unsupported grant_type', async () => {
       const res = await app.inject({
