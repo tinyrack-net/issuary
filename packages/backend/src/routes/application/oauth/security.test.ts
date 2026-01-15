@@ -5,7 +5,6 @@ import {
   getAuthorizationCode,
   setupTestServer,
   TEST_OAUTH_CLIENT,
-  TEST_USER,
 } from '@/test-utils/index.js';
 
 const app = setupTestServer();
@@ -315,7 +314,7 @@ describe('OAuth Security Tests', () => {
   describe('PKCE Security', () => {
     test('should require code_verifier when code_challenge was used', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const codeVerifier = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
+      const _codeVerifier = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
       // SHA256 of code_verifier in base64url
       const codeChallenge = 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM';
 

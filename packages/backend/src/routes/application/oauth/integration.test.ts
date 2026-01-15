@@ -134,7 +134,7 @@ describe('OAuth Integration Flows', () => {
     test('should refresh access token successfully', async () => {
       // Get initial tokens
       const tokens = await getAllTokens(app);
-      const { access_token, refresh_token } = tokens;
+      const { refresh_token } = tokens;
 
       // Wait a moment to ensure different token
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -250,7 +250,7 @@ describe('OAuth Integration Flows', () => {
 
   describe('OIDC ID Token Flow', () => {
     test('should include correct claims in ID token', async () => {
-      const nonce = 'test-nonce-' + Date.now();
+      const nonce = `test-nonce-${Date.now()}`;
       const tokens = await getAllTokens(app, {
         scope: 'openid profile email',
         nonce,
