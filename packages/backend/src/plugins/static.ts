@@ -13,7 +13,7 @@ const __dirname = path.resolve(path.dirname(__filename));
  * Default Vite dev server URL.
  * Can be overridden via VITE_DEV_SERVER_URL environment variable.
  */
-const VITE_DEV_SERVER_URL = 'http://localhost:5173';
+const VITE_DEV_SERVER_URL = 'http://localhost:8081';
 
 /**
  * Parse URL string to hostname and port.
