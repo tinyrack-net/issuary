@@ -24,29 +24,18 @@ declare module '@fastify/secure-session' {
   interface SessionData {
     user?: {
       id: string;
+      authenticated_at: number;
+      auth_methods: AuthenticationMethod[];
+      /**
+       * Authentication context class reference
+       * Used for acr claim in ID Token
+       */
+      acr: AuthenticationContextClass;
     };
-    /**
-     * Time when the user was authenticated (Unix timestamp in seconds)
-     * Used for auth_time claim in ID Token (OIDC Core 1.0 §2)
-     */
-    authenticated_at?: number;
-    /**
-     * Authentication methods used in the current session (RFC 8176)
-     * Used for amr claim in ID Token
-     */
-    auth_methods?: AuthenticationMethod[];
-    /**
-     * Authentication context class reference
-     * Used for acr claim in ID Token
-     */
-    acr?: AuthenticationContextClass;
     pendingTotpUser?: {
       id: string;
-      /**
-       * Auth methods used before TOTP step (for amr tracking)
-       */
-      auth_methods?: AuthenticationMethod[];
-      authenticated_at?: number;
+      auth_methods: AuthenticationMethod[];
+      authenticated_at: number;
     };
     pendingTotpSetup?: {
       id: string;
