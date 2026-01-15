@@ -42,10 +42,12 @@ export class OAuthClientEntity extends BaseEntity {
   @Property({
     type: t.string,
     name: 'client_secret_hash',
-    comment: 'Hash of the client secret',
-    nullable: false,
+    comment: 'Hash of the client secret (null for public clients using PKCE)',
+    nullable: true,
+    lazy: true,
+    hidden: true,
   })
-  public clientSecretHash: string;
+  public clientSecretHash: string | null = null;
 
   @Property({
     type: t.string,
@@ -120,13 +122,13 @@ export class OAuthClientEntity extends BaseEntity {
   public constructor(params: {
     id?: string;
     clientId: string;
-    clientSecretHash: string;
+    clientSecretHash?: string | null;
     name: string;
   }) {
     super();
     this.id = params.id ?? crypto.randomUUID();
     this.clientId = params.clientId;
-    this.clientSecretHash = params.clientSecretHash;
+    this.clientSecretHash = params.clientSecretHash ?? null;
     this.name = params.name;
   }
 }

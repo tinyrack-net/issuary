@@ -93,6 +93,7 @@ export class OAuthClientService {
   /**
    * Verify client secret using argon2 hash verification.
    * All clients (including config clients) now have hashed secrets in DB.
+   * Public clients (PKCE-only) have null clientSecretHash.
    * @returns true if valid, false otherwise
    */
   public async verifyClientSecret(
@@ -108,7 +109,29 @@ export class OAuthClientService {
       return false;
     }
 
+    // Public clients don't have a secret - cannot verify
+    if (!client.clientSecretHash) {
+      return false;
+    }
+
     return verify(client.clientSecretHash, clientSecret);
+  }
+
+  /**
+   * Check if client is a public client (no client_secret).
+   * Public clients use PKCE for security instead of client secret.
+   */
+  public async isPublicClient(clientId: string): Promise<boolean> {
+    const client = await this.mikro.oauthClient.findOne(
+      { clientId },
+      { populate: ['clientSecretHash'] },
+    );
+
+    if (!client) {
+      return false;
+    }
+
+    return client.clientSecretHash === null;
   }
 }
 

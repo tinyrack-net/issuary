@@ -86,7 +86,10 @@ async function syncOAuthClients(
   const now = new Date();
 
   for (const provider of config.providers) {
-    const hashedSecret = await hash(provider.client_secret);
+    // Public clients (PKCE-only) don't have client_secret
+    const hashedSecret = provider.client_secret
+      ? await hash(provider.client_secret)
+      : null;
 
     // Use upsert for atomic INSERT ON CONFLICT DO UPDATE
     // This is cluster-safe: concurrent instances won't cause race conditions
