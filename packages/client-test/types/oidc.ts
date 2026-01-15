@@ -1,4 +1,9 @@
+/**
+ * Complete OIDC Client Configuration
+ * Combines OpenID Provider discovery information with client credentials
+ */
 export interface OIDCConfig {
+  // Provider endpoints (from OpenID Discovery)
   issuer: string;
   authorization_endpoint: string;
   token_endpoint: string;
@@ -7,9 +12,13 @@ export interface OIDCConfig {
   revocation_endpoint: string;
   jwks_uri?: string;
   openid_configuration_uri?: string;
+
+  // Client credentials (configured by application)
   client_id: string;
   client_secret: string;
   redirect_uri: string;
+
+  // OAuth parameters
   scope: string;
   response_type: string;
 }
