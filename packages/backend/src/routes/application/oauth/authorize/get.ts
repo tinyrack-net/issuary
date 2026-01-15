@@ -107,35 +107,24 @@ export default (fastify: FastifyWithZodInstance) => {
       };
 
       try {
-        // Get user session and authentication metadata
+        // Get user session (includes all authentication metadata)
         const userSession = req.session.get('user');
-        const authTime = req.session.get('authenticated_at');
-        const authMethods = req.session.get('auth_methods');
-        const acr = req.session.get('acr');
 
         // Call authorize service
         const authorizeParams: {
           query: z.infer<typeof oauthSchema.AuthorizeParams>;
-          userSession?: { id: string };
-          authTime?: number;
-          authMethods?: AuthenticationMethod[];
-          acr?: AuthenticationContextClass;
+          userSession?: {
+            id: string;
+            authenticated_at: number;
+            auth_methods: AuthenticationMethod[];
+            acr: AuthenticationContextClass;
+          };
         } = {
           query: query,
         };
 
         if (userSession) {
           authorizeParams.userSession = userSession;
-        }
-        // Include OIDC authentication metadata from session
-        if (authTime !== undefined) {
-          authorizeParams.authTime = authTime;
-        }
-        if (authMethods && authMethods.length > 0) {
-          authorizeParams.authMethods = authMethods;
-        }
-        if (acr) {
-          authorizeParams.acr = acr;
         }
 
         const result =

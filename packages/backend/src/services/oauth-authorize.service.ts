@@ -30,15 +30,17 @@ export class OAuthAuthorizeService {
    */
   public async authorize(params: {
     query: z.infer<typeof oauthSchema.AuthorizeParams>;
-    userSession?: { id: string };
-    /** OIDC: Time when End-User authentication occurred (Unix timestamp) */
-    authTime?: number;
-    /** OIDC: Authentication Methods References (RFC 8176) */
-    authMethods?: AuthenticationMethod[];
-    /** OIDC: Authentication Context Class Reference */
-    acr?: AuthenticationContextClass;
+    userSession?: {
+      id: string;
+      /** OIDC: Time when End-User authentication occurred (Unix timestamp) */
+      authenticated_at: number;
+      /** OIDC: Authentication Methods References (RFC 8176) */
+      auth_methods: AuthenticationMethod[];
+      /** OIDC: Authentication Context Class Reference */
+      acr: AuthenticationContextClass;
+    };
   }): Promise<z.infer<typeof oauthSchema.AuthorizeResult>> {
-    const { query, userSession, authTime, authMethods, acr } = params;
+    const { query, userSession } = params;
 
     // 1. Validate and fetch OAuth client DTO for validation methods
     const client = await this.oauthClientService.findByClientId(
@@ -150,14 +152,12 @@ export class OAuthAuthorizeService {
       codeParams.codeChallengeMethod = query.code_challenge_method;
     }
     // Include OIDC authentication metadata from session
-    if (authTime !== undefined) {
-      codeParams.authTime = authTime;
-    }
-    if (authMethods && authMethods.length > 0) {
-      codeParams.amr = authMethods;
-    }
-    if (acr) {
-      codeParams.acr = acr;
+    if (userSession) {
+      codeParams.authTime = userSession.authenticated_at;
+      if (userSession.auth_methods.length > 0) {
+        codeParams.amr = userSession.auth_methods;
+      }
+      codeParams.acr = userSession.acr;
     }
 
     const code = await this.generateAuthorizationCode(codeParams);
