@@ -30,9 +30,9 @@ export default (fastify: FastifyWithZodInstance) => {
         password: req.body.password,
       });
 
-      // Check if email verification is required
       const emailVerificationRequired =
         fastify.userService.userEmailVerificationRequired(user);
+
       if (emailVerificationRequired && !user.email_verified) {
         return res.status(200).send({
           totp_verification_required: false,
@@ -71,11 +71,10 @@ export default (fastify: FastifyWithZodInstance) => {
 
       req.session.set('user', {
         id: user.id,
+        authenticated_at: Math.floor(Date.now() / 1000),
+        auth_methods: ['pwd'],
+        acr: 'urn:tinyrack:acr:1', // Single factor (password)
       });
-      // Set authentication metadata for OIDC claims (auth_time, amr, acr)
-      req.session.set('authenticated_at', Math.floor(Date.now() / 1000));
-      req.session.set('auth_methods', ['pwd']);
-      req.session.set('acr', 'urn:tinyrack:acr:1'); // Single factor (password)
 
       return res.status(200).send({
         totp_verification_required: false,

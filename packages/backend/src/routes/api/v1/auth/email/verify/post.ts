@@ -48,6 +48,9 @@ export default (fastify: FastifyWithZodInstance) => {
       } else {
         req.session.set('user', {
           id: user.id,
+          authenticated_at: Math.floor(Date.now() / 1000),
+          auth_methods: ['pwd'],
+          acr: 'urn:tinyrack:acr:1',
         });
       }
 

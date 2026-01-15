@@ -46,16 +46,12 @@ export default (fastify: FastifyWithZodInstance) =>
 
       // Clear pending TOTP session and set full user session
       req.session.set('pendingTotpUser', undefined);
-      req.session.set('user', {
-        id: user.id,
-      });
 
       // Set authentication metadata for OIDC claims (auth_time, amr, acr)
       // Use authenticated_at from pending session (when password was verified)
       // or current time if not available
       const authTime =
         pendingTotpUser.authenticated_at ?? Math.floor(Date.now() / 1000);
-      req.session.set('authenticated_at', authTime);
 
       // Combine previous auth methods with TOTP, add 'mfa' indicator
       const previousMethods: AuthenticationMethod[] =
@@ -65,10 +61,13 @@ export default (fastify: FastifyWithZodInstance) =>
         'otp',
         'mfa',
       ];
-      req.session.set('auth_methods', authMethods);
 
-      // Multi-factor authentication achieved
-      req.session.set('acr', 'urn:tinyrack:acr:2');
+      req.session.set('user', {
+        id: user.id,
+        authenticated_at: authTime,
+        auth_methods: authMethods,
+        acr: 'urn:tinyrack:acr:2', // Multi-factor authentication achieved
+      });
 
       return res.status(200).send({
         user,

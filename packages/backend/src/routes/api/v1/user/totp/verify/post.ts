@@ -52,7 +52,12 @@ export default (fastify: FastifyWithZodInstance) =>
       if (wasPendingSetup) {
         // Convert pending TOTP setup session to full user session
         req.session.set('pendingTotpSetup', undefined);
-        req.session.set('user', { id: userId });
+        req.session.set('user', {
+          id: userId,
+          authenticated_at: Math.floor(Date.now() / 1000),
+          auth_methods: ['pwd', 'otp', 'mfa'],
+          acr: 'urn:tinyrack:acr:2',
+        });
 
         // Get user data for response
         const user = await fastify.userService.verifyUserById(userId);

@@ -124,7 +124,12 @@ export default (fastify: FastifyWithZodInstance) =>
       );
 
       // Set user session
-      req.session.set('user', { id: result.user.id });
+      req.session.set('user', {
+        id: result.user.id,
+        authenticated_at: Math.floor(Date.now() / 1000),
+        auth_methods: ['pwd'], // OAuth is treated as password-equivalent
+        acr: 'urn:tinyrack:acr:1', // Single factor (OAuth)
+      });
 
       // Clear OAuth session
       req.session.set('oauth', undefined);
