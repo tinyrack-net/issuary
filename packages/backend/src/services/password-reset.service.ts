@@ -69,18 +69,14 @@ export class PasswordResetService {
       throw new e.InvalidPasswordResetToken.Error();
     }
 
-    // Load user from Ref
-    const user = await resetEntity.user.load();
-    if (!user) {
-      throw new e.UserNotFound.Error();
-    }
+    const user = await resetEntity.user.loadOrFail({
+      failHandler: () => new e.UserNotFound.Error(),
+    });
 
-    // Check if user is config-managed (cannot reset password)
     if (user.managed_by === 'config') {
       throw new e.UserNotEditable.Error();
     }
 
-    // Update user password
     user.password_hash = params.password;
     await this.mikro.em.flush();
 
