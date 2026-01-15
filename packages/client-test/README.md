@@ -5,6 +5,8 @@ A Next.js-based client application for testing OpenID Connect (OIDC) Providers.
 ## Features
 
 - ✅ **Authorization Code Flow with PKCE** - Secure OAuth 2.0 authentication flow
+- ✅ **Automatic OIDC Discovery** - Fetches provider configuration from `.well-known/openid-configuration`
+- ✅ **Environment-based Configuration** - Configure via environment variables
 - ✅ **ID Token Verification & Decoding** - JWT-based user information verification
 - ✅ **Token Storage & Management** - Secure token storage using httpOnly cookies
 - ✅ **User Information Display** - Decode and display ID Token claims
@@ -37,9 +39,41 @@ client-test/
 
 ## Configuration
 
-### OIDC Provider Configuration
+### Environment Variables Setup (Recommended)
 
-Configure your OIDC Provider information in `lib/oidc-config.ts`:
+Create a `.env.local` file from the example:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your configuration:
+
+```env
+# OpenID Connect Configuration
+OIDC_ISSUER=http://localhost:8080
+
+# OAuth Client Credentials
+OIDC_CLIENT_ID=sdlk3n3dkj2
+OIDC_CLIENT_SECRET=sdlk3n3dkj2
+
+# Redirect URI (must match client registration)
+OIDC_REDIRECT_URI=http://localhost:3000/api/callback
+
+# OAuth Scopes (space-separated)
+OIDC_SCOPE=openid profile email
+
+# Discovery Options (optional)
+OIDC_DISCOVERY_RETRY_ENABLED=true
+OIDC_DISCOVERY_MAX_RETRIES=3
+OIDC_DISCOVERY_RETRY_DELAY_MS=1000
+```
+
+The application will automatically fetch all endpoint URLs from the OIDC Provider's `.well-known/openid-configuration` endpoint on startup.
+
+### Manual OIDC Provider Configuration (Legacy)
+
+Alternatively, you can manually configure endpoints in `lib/oidc-config.ts` (not recommended):
 
 ```typescript
 export const oidcConfig: OIDCConfig = {
@@ -51,7 +85,7 @@ export const oidcConfig: OIDCConfig = {
   
   client_id: 'sdlk3n3dkj2',
   client_secret: 'sdlk3n3dkj2',
-  redirect_uri: 'http://localhost:3000/callback',
+  redirect_uri: 'http://localhost:3000/api/callback',
   
   scope: 'openid profile email',
   response_type: 'code',
@@ -107,14 +141,24 @@ pnpm start
    cd packages/client-test
    pnpm dev
    ```
+   
+   The client will automatically:
+   - Fetch OpenID Configuration from `http://localhost:8080/.well-known/openid-configuration`
+   - Configure all OAuth endpoints
+   - Start on http://localhost:3000
 
-3. **Login Test**
+3. **View Discovery Information (Optional)**
+   - Navigate to http://localhost:3000/discovery
+   - View OpenID Provider Configuration
+   - View JSON Web Key Set (JWKS)
+
+4. **Login Test**
    - Navigate to http://localhost:3000
    - Click "Sign In with OIDC" button
    - Authenticate on the backend login page (test-config-user@example.com / changemelater)
    - Automatically redirect to `/profile` page
 
-4. **View Profile Page**
+5. **View Profile Page**
    - Check user information from ID Token
    - View Access Token, Refresh Token, and ID Token
    - View ID Token Payload (decoded JWT)
@@ -123,29 +167,33 @@ pnpm start
      - Click "Introspect" button for Refresh Token (if available)
      - View token metadata: active status, scope, client_id, expiration, etc.
 
-5. **Logout**
+6. **Logout**
    - Click "Logout" button to delete tokens
 
 ## Authentication Flow
 
 ```
-1. User clicks "Sign In with OIDC"
+1. Application Startup
    ↓
-2. Generate PKCE code_verifier, code_challenge, state, nonce
+2. Fetch OpenID Configuration (.well-known/openid-configuration)
    ↓
-3. Redirect to authorization endpoint
+3. User clicks "Sign In with OIDC"
+   ↓
+4. Generate PKCE code_verifier, code_challenge, state, nonce
+   ↓
+5. Redirect to authorization endpoint
    (/application/oauth/authorize?client_id=...&redirect_uri=...&code_challenge=...)
    ↓
-4. User authenticates on OIDC Provider
+6. User authenticates on OIDC Provider
    ↓
-5. Redirect to /callback with authorization code
+7. Redirect to /api/callback with authorization code
    ↓
-6. Exchange authorization code for tokens using code verifier
+8. Exchange authorization code for tokens using code verifier
    (POST /application/oauth/token)
    ↓
-7. Store tokens in httpOnly cookies
+9. Store tokens in httpOnly cookies
    ↓
-8. Redirect to /profile page to display user information
+10. Redirect to /profile page to display user information
 ```
 
 ## Test Scenarios
@@ -195,3 +243,38 @@ The profile page displays the following information:
 ### Browser DevTools
 - Check OAuth requests/responses in the Network tab
 - View stored token cookies in Application > Cookies
+
+## Troubleshooting
+
+### "OIDC config not initialized, using fallback"
+
+This warning during `pnpm build` is **normal**. The OIDC Discovery runs at runtime (when the server starts), not at build time. The application will use the fallback configuration during the build process.
+
+### Discovery fails with network error
+
+1. Ensure the OIDC provider is running at the URL specified in `OIDC_ISSUER`
+2. Check that `/.well-known/openid-configuration` endpoint is accessible
+3. Verify CORS settings if running on different domains
+4. Check the retry settings in `.env.local`:
+   - `OIDC_DISCOVERY_RETRY_ENABLED=true`
+   - `OIDC_DISCOVERY_MAX_RETRIES=3`
+
+### Endpoints are not updated
+
+If you change the `OIDC_ISSUER`, restart the development server:
+```bash
+pnpm dev
+```
+
+The configuration is fetched on server startup and cached in memory.
+
+## Standards Compliance
+
+This implementation follows:
+
+- [OpenID Connect Discovery 1.0](https://openid.net/specs/openid-connect-discovery-1_0.html)
+- [RFC 6749 - OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc6749)
+- [RFC 7636 - PKCE](https://datatracker.ietf.org/doc/html/rfc7636)
+- [RFC 7662 - Token Introspection](https://datatracker.ietf.org/doc/html/rfc7662)
+- [RFC 7009 - Token Revocation](https://datatracker.ietf.org/doc/html/rfc7009)
+
