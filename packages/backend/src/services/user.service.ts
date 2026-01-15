@@ -1,12 +1,12 @@
-import fastifyPlugin from 'fastify-plugin';
-import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
 import type { AppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
-import type { EmailService } from './email.service.js';
+import fastifyPlugin from 'fastify-plugin';
+import type z from 'zod/v4';
 import type { EmailVerificationService } from './email-verification.service.js';
+import type { EmailService } from './email.service.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -83,7 +83,7 @@ export class UserService {
     emailVerificationRequired: boolean;
     userSession: z.infer<typeof r.UserSession>;
   }> {
-    const emailExists = await this.exists(params.email);
+    const emailExists = await this.emailExists(params.email);
     if (emailExists) {
       throw new e.EmailAlreadyExists.Error();
     }
@@ -126,7 +126,7 @@ export class UserService {
     };
   }
 
-  private async exists(email: string) {
+  private async emailExists(email: string) {
     const count = await this.mikro.user.count({ email: email });
     return count > 0;
   }
