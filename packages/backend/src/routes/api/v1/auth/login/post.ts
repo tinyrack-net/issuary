@@ -43,8 +43,11 @@ export default (fastify: FastifyWithZodInstance) => {
       }
 
       if (user.totp_enabled) {
+        // Store auth metadata for TOTP flow (will be completed in TOTP verify)
         req.session.set('pendingTotpUser', {
           id: user.id,
+          auth_methods: ['pwd'],
+          authenticated_at: Math.floor(Date.now() / 1000),
         });
         return res.status(200).send({
           totp_verification_required: true,
@@ -69,6 +72,10 @@ export default (fastify: FastifyWithZodInstance) => {
       req.session.set('user', {
         id: user.id,
       });
+      // Set authentication metadata for OIDC claims (auth_time, amr, acr)
+      req.session.set('authenticated_at', Math.floor(Date.now() / 1000));
+      req.session.set('auth_methods', ['pwd']);
+      req.session.set('acr', 'urn:tinyrack:acr:1'); // Single factor (password)
 
       return res.status(200).send({
         totp_verification_required: false,

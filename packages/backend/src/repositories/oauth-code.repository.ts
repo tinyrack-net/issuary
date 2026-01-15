@@ -6,6 +6,10 @@ import {
   type OAuthCodeChallengeMethods,
   OAuthCodeEntity,
 } from '@/entities/oauth-code.entity.js';
+import type {
+  AuthenticationContextClass,
+  AuthenticationMethod,
+} from '@/plugins/secure-session.js';
 import { e } from '@/schemas/error.js';
 
 export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
@@ -22,6 +26,12 @@ export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
     codeChallenge?: string;
     codeChallengeMethod?: OAuthCodeChallengeMethods;
     expiresInSeconds?: number;
+    /** OIDC: Time when End-User authentication occurred (Unix timestamp) */
+    authTime?: number;
+    /** OIDC: Authentication Methods References (RFC 8176) */
+    amr?: AuthenticationMethod[];
+    /** OIDC: Authentication Context Class Reference */
+    acr?: AuthenticationContextClass;
   }): Promise<{ code: string; entity: OAuthCodeEntity }> {
     // Generate a cryptographically secure random code
     const code = randomBytes(32).toString('base64url');
@@ -44,6 +54,10 @@ export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
       codeChallenge: params.codeChallenge || '',
       codeChallengeMethod: params.codeChallengeMethod || 'S256',
       expiredAt,
+      // Only include OIDC auth metadata when defined (exactOptionalPropertyTypes)
+      ...(params.authTime !== undefined && { authTime: params.authTime }),
+      ...(params.amr !== undefined && { amr: params.amr }),
+      ...(params.acr !== undefined && { acr: params.acr }),
     });
 
     // Persist to database

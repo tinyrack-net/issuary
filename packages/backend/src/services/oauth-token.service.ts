@@ -1,8 +1,13 @@
+import { createHash } from 'node:crypto';
 import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import type { AppConfig } from '@/lib/config/index.js';
 import { validatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
+import type {
+  AuthenticationContextClass,
+  AuthenticationMethod,
+} from '@/plugins/secure-session.js';
 import { e } from '@/schemas/error.js';
 import type { jwtPayload } from '@/schemas/jwt.js';
 import type { oauthSchema } from '@/schemas/oauth.js';
@@ -107,18 +112,30 @@ export class OAuthTokenService {
       clientId: client.clientId,
       scope: codeEntity.scope,
       nonce: codeEntity.nonce,
+      // Pass OIDC authentication metadata from the authorization code
+      // Only include when defined (exactOptionalPropertyTypes)
+      ...(codeEntity.authTime !== undefined && {
+        authTime: codeEntity.authTime,
+      }),
+      ...(codeEntity.amr !== undefined && { amr: codeEntity.amr }),
+      ...(codeEntity.acr !== undefined && { acr: codeEntity.acr }),
     });
   }
 
   /**
    * Refresh access token using refresh token
    *
-   * Implements OAuth 2.0 Refresh Token Grant (RFC 6749 §6).
-   * Issues new access token and refresh token without user interaction.
+   * Implements OAuth 2.0 Refresh Token Grant (RFC 6749 §6) with
+   * Refresh Token Rotation (OAuth 2.0 Security Best Current Practice).
+   *
+   * When a refresh token is used:
+   * 1. The old refresh token is revoked (token rotation)
+   * 2. A new refresh token is issued along with the new access token
+   * 3. This prevents token replay attacks
    *
    * @param params - Refresh token grant parameters
    * @returns Token response with new access_token and refresh_token
-   * @throws {InvalidRefreshToken} - Refresh token is invalid or expired
+   * @throws {InvalidRefreshToken} - Refresh token is invalid, expired, or revoked
    * @throws {ClientIdMismatch} - Client ID doesn't match original token request
    */
   async refreshAccessToken(
@@ -126,7 +143,7 @@ export class OAuthTokenService {
   ) {
     const { refreshToken, clientId } = params;
 
-    // 1. Verify refresh token
+    // 1. Verify refresh token (also checks revocation)
     const refreshPayload =
       await this.jwtService.verifyRefreshToken(refreshToken);
 
@@ -142,7 +159,22 @@ export class OAuthTokenService {
     // 4. Get client info
     const client = await this.oauthClientService.findByClientId(clientId);
 
-    // 5. Build token response (no nonce in refresh flow)
+    // 5. Refresh Token Rotation: Revoke the old refresh token
+    // This is a security best practice per OAuth 2.0 Security BCP §4.14.2
+    // If an attacker tries to use a stolen refresh token after the legitimate
+    // user has already used it, the token will be rejected as revoked.
+    if (refreshPayload.jti && refreshPayload.exp) {
+      await this.mikro.revokedToken.revokeToken({
+        jti: refreshPayload.jti,
+        token_type: 'refresh_token',
+        clientId: client.id, // Use entity primary key
+        userId: userData.id,
+        expires_at: new Date(refreshPayload.exp * 1000),
+      });
+    }
+
+    // 6. Build token response with new access and refresh tokens
+    // (no nonce in refresh flow)
     return this.buildTokenResponse({
       userId: userData.id,
       userEmail: userData.email,
@@ -313,6 +345,25 @@ export class OAuthTokenService {
   }
 
   /**
+   * Compute the at_hash claim value (OIDC Core 1.0 §3.1.3.6)
+   *
+   * The at_hash is the left-most half of the hash of the access token,
+   * using the hash algorithm from the ID Token's JOSE Header.
+   * For RS256, this is SHA-256.
+   *
+   * @param accessToken - The access token to hash
+   * @returns Base64URL-encoded left half of the SHA-256 hash
+   */
+  private computeAtHash(accessToken: string): string {
+    // SHA-256 hash of the access token
+    const hash = createHash('sha256').update(accessToken).digest();
+    // Take the left-most half (128 bits = 16 bytes for SHA-256)
+    const leftHalf = hash.subarray(0, hash.length / 2);
+    // Base64URL encode
+    return leftHalf.toString('base64url');
+  }
+
+  /**
    * Build complete OAuth/OIDC token response
    *
    * @param params - Token generation parameters
@@ -325,9 +376,24 @@ export class OAuthTokenService {
     clientId: string;
     scope: string[];
     nonce?: string;
+    /** OIDC: Time when End-User authentication occurred (Unix timestamp) */
+    authTime?: number;
+    /** OIDC: Authentication Methods References (RFC 8176) */
+    amr?: AuthenticationMethod[];
+    /** OIDC: Authentication Context Class Reference */
+    acr?: AuthenticationContextClass;
   }): Promise<z.infer<typeof oauthSchema.TokenResponse>> {
-    const { userId, userEmail, userEmailVerified, clientId, scope, nonce } =
-      params;
+    const {
+      userId,
+      userEmail,
+      userEmailVerified,
+      clientId,
+      scope,
+      nonce,
+      authTime,
+      amr,
+      acr,
+    } = params;
 
     const scopeString = scope.join(' ');
 
@@ -361,6 +427,10 @@ export class OAuthTokenService {
         sub: string;
         aud: string;
         nonce?: string;
+        auth_time?: number;
+        amr?: string[];
+        acr?: string;
+        at_hash?: string;
         email?: string;
         email_verified?: boolean;
         name?: string;
@@ -372,6 +442,24 @@ export class OAuthTokenService {
       if (nonce) {
         idTokenPayload.nonce = nonce;
       }
+
+      // Include OIDC authentication metadata claims
+      if (authTime !== undefined) {
+        idTokenPayload.auth_time = authTime;
+      }
+
+      if (amr && amr.length > 0) {
+        idTokenPayload.amr = amr;
+      }
+
+      if (acr) {
+        idTokenPayload.acr = acr;
+      }
+
+      // Compute at_hash (OIDC Core 1.0 §3.1.3.6)
+      // Required when ID Token is issued from Authorization Endpoint with
+      // access token in the same response, optional otherwise but recommended
+      idTokenPayload.at_hash = this.computeAtHash(accessToken);
 
       if (scope.includes('email')) {
         idTokenPayload.email = userEmail;

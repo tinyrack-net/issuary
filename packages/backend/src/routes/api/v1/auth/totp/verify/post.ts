@@ -1,5 +1,6 @@
 import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
+import type { AuthenticationMethod } from '@/plugins/secure-session.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
@@ -48,6 +49,26 @@ export default (fastify: FastifyWithZodInstance) =>
       req.session.set('user', {
         id: user.id,
       });
+
+      // Set authentication metadata for OIDC claims (auth_time, amr, acr)
+      // Use authenticated_at from pending session (when password was verified)
+      // or current time if not available
+      const authTime =
+        pendingTotpUser.authenticated_at ?? Math.floor(Date.now() / 1000);
+      req.session.set('authenticated_at', authTime);
+
+      // Combine previous auth methods with TOTP, add 'mfa' indicator
+      const previousMethods: AuthenticationMethod[] =
+        pendingTotpUser.auth_methods ?? ['pwd'];
+      const authMethods: AuthenticationMethod[] = [
+        ...previousMethods,
+        'otp',
+        'mfa',
+      ];
+      req.session.set('auth_methods', authMethods);
+
+      // Multi-factor authentication achieved
+      req.session.set('acr', 'urn:tinyrack:acr:2');
 
       return res.status(200).send({
         user,

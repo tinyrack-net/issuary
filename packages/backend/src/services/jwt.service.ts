@@ -91,6 +91,12 @@ export class JwtService {
 
   /**
    * Sign an ID token using RS256 (for OIDC)
+   *
+   * Includes standard OIDC claims:
+   * - auth_time: Time when End-User authentication occurred
+   * - amr: Authentication Methods References (RFC 8176)
+   * - acr: Authentication Context Class Reference
+   * - at_hash: Access Token hash (when provided)
    */
   async signIdToken(
     payload: z.infer<typeof jwtPayload.IdTokenPayload>,
@@ -103,6 +109,10 @@ export class JwtService {
       sub: payload.sub,
       aud: payload.aud,
       ...(payload.nonce && { nonce: payload.nonce }),
+      ...(payload.auth_time !== undefined && { auth_time: payload.auth_time }),
+      ...(payload.amr && payload.amr.length > 0 && { amr: payload.amr }),
+      ...(payload.acr && { acr: payload.acr }),
+      ...(payload.at_hash && { at_hash: payload.at_hash }),
       ...(payload.email && { email: payload.email }),
       ...(payload.email_verified !== undefined && {
         email_verified: payload.email_verified,

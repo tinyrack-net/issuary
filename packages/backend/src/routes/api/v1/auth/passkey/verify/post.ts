@@ -57,6 +57,10 @@ export default (fastify: FastifyWithZodInstance) => {
       req.session.set('user', {
         id: user.id,
       });
+      // Set authentication metadata for OIDC claims (auth_time, amr, acr)
+      req.session.set('authenticated_at', Math.floor(Date.now() / 1000));
+      req.session.set('auth_methods', ['hwk']); // Hardware key (passkey)
+      req.session.set('acr', 'urn:tinyrack:acr:1'); // Single factor (passkey)
 
       // Check if TOTP is required (only for database-managed users)
       const passwordAuthMethod =

@@ -2,6 +2,10 @@ import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import type { AppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
+import type {
+  AuthenticationContextClass,
+  AuthenticationMethod,
+} from '@/plugins/secure-session.js';
 import { e } from '@/schemas/error.js';
 import type { oauthSchema } from '@/schemas/oauth.js';
 import type { OAuthClientService } from './oauth-client.service.js';
@@ -27,8 +31,14 @@ export class OAuthAuthorizeService {
   public async authorize(params: {
     query: z.infer<typeof oauthSchema.AuthorizeParams>;
     userSession?: { id: string };
+    /** OIDC: Time when End-User authentication occurred (Unix timestamp) */
+    authTime?: number;
+    /** OIDC: Authentication Methods References (RFC 8176) */
+    authMethods?: AuthenticationMethod[];
+    /** OIDC: Authentication Context Class Reference */
+    acr?: AuthenticationContextClass;
   }): Promise<z.infer<typeof oauthSchema.AuthorizeResult>> {
-    const { query, userSession } = params;
+    const { query, userSession, authTime, authMethods, acr } = params;
 
     // 1. Validate and fetch OAuth client DTO for validation methods
     const client = await this.oauthClientService.findByClientId(
@@ -120,6 +130,9 @@ export class OAuthAuthorizeService {
       nonce?: string;
       codeChallenge?: string;
       codeChallengeMethod?: 'S256' | 'plain';
+      authTime?: number;
+      amr?: AuthenticationMethod[];
+      acr?: AuthenticationContextClass;
     } = {
       clientId: client.id,
       userId: userSession.id,
@@ -135,6 +148,16 @@ export class OAuthAuthorizeService {
     }
     if (query.code_challenge_method) {
       codeParams.codeChallengeMethod = query.code_challenge_method;
+    }
+    // Include OIDC authentication metadata from session
+    if (authTime !== undefined) {
+      codeParams.authTime = authTime;
+    }
+    if (authMethods && authMethods.length > 0) {
+      codeParams.amr = authMethods;
+    }
+    if (acr) {
+      codeParams.acr = acr;
     }
 
     const code = await this.generateAuthorizationCode(codeParams);
@@ -294,6 +317,9 @@ export class OAuthAuthorizeService {
     nonce?: string;
     codeChallenge?: string;
     codeChallengeMethod?: 'S256' | 'plain';
+    authTime?: number;
+    amr?: AuthenticationMethod[];
+    acr?: AuthenticationContextClass;
   }): Promise<string> {
     const codeParams: {
       clientId: string;
@@ -303,6 +329,9 @@ export class OAuthAuthorizeService {
       nonce?: string;
       codeChallenge?: string;
       codeChallengeMethod?: 'S256' | 'plain';
+      authTime?: number;
+      amr?: AuthenticationMethod[];
+      acr?: AuthenticationContextClass;
     } = {
       clientId: params.clientId,
       userId: params.userId,
@@ -318,6 +347,16 @@ export class OAuthAuthorizeService {
     }
     if (params.codeChallengeMethod) {
       codeParams.codeChallengeMethod = params.codeChallengeMethod;
+    }
+    // Include OIDC authentication metadata
+    if (params.authTime !== undefined) {
+      codeParams.authTime = params.authTime;
+    }
+    if (params.amr && params.amr.length > 0) {
+      codeParams.amr = params.amr;
+    }
+    if (params.acr) {
+      codeParams.acr = params.acr;
     }
 
     const { code } =

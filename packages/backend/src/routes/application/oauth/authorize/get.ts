@@ -1,5 +1,9 @@
 import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
+import type {
+  AuthenticationContextClass,
+  AuthenticationMethod,
+} from '@/plugins/secure-session.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import type { oauthSchema } from '@/schemas/oauth.js';
@@ -103,19 +107,35 @@ export default (fastify: FastifyWithZodInstance) => {
       };
 
       try {
-        // Get user session
+        // Get user session and authentication metadata
         const userSession = req.session.get('user');
+        const authTime = req.session.get('authenticated_at');
+        const authMethods = req.session.get('auth_methods');
+        const acr = req.session.get('acr');
 
         // Call authorize service
         const authorizeParams: {
           query: z.infer<typeof oauthSchema.AuthorizeParams>;
           userSession?: { id: string };
+          authTime?: number;
+          authMethods?: AuthenticationMethod[];
+          acr?: AuthenticationContextClass;
         } = {
           query: query,
         };
 
         if (userSession) {
           authorizeParams.userSession = userSession;
+        }
+        // Include OIDC authentication metadata from session
+        if (authTime !== undefined) {
+          authorizeParams.authTime = authTime;
+        }
+        if (authMethods && authMethods.length > 0) {
+          authorizeParams.authMethods = authMethods;
+        }
+        if (acr) {
+          authorizeParams.acr = acr;
         }
 
         const result =
