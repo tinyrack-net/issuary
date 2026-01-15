@@ -4,12 +4,12 @@ import { type Options, ReflectMetadataProvider } from '@mikro-orm/core';
 import { Migrator } from '@mikro-orm/migrations';
 import { defineConfig, PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { SeedManager } from '@mikro-orm/seeder';
-import type { AppConfig } from '@/lib/config/index.js';
+import type { InternalAppConfig } from '@/lib/config/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const mikroormPostgresConfig = (config: AppConfig): Options => {
+export const mikroormPostgresConfig = (config: InternalAppConfig): Options => {
   if (config.database.type !== 'postgres') {
     throw new Error('Database type is not postgres');
   }

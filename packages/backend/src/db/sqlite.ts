@@ -4,12 +4,12 @@ import { type Options, ReflectMetadataProvider } from '@mikro-orm/core';
 import { Migrator } from '@mikro-orm/migrations';
 import { SeedManager } from '@mikro-orm/seeder';
 import { defineConfig, SqliteDriver } from '@mikro-orm/sqlite';
-import type { AppConfig } from '../lib/config/index.js';
+import type { InternalAppConfig } from '../lib/config/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const mikroormSqliteConfig = (config: AppConfig): Options => {
+export const mikroormSqliteConfig = (config: InternalAppConfig): Options => {
   if (config.database.type !== 'sqlite') {
     throw new Error('Database type is not sqlite');
   }
