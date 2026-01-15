@@ -716,7 +716,7 @@ pnpm dev  # Starts both backend and frontend
    - `playwright_browser_take_screenshot` - Take visual screenshots when needed
 
 3. **Testing workflow**:
-   - Navigate to the page you're implementing (e.g., `http://localhost:5173/login`)
+   - Navigate to the page you're implementing (e.g., `http://localhost:8081/login`)
    - Use `playwright_browser_snapshot` to see the current page structure
    - Interact with elements using click, type, or fill_form tools
    - Verify the expected behavior after interactions
@@ -725,7 +725,7 @@ pnpm dev  # Starts both backend and frontend
 4. **Example testing session**:
 ```
 # Navigate to login page
-playwright_browser_navigate: http://localhost:5173/login
+playwright_browser_navigate: http://localhost:8081/login
 
 # Take snapshot to see page structure
 playwright_browser_snapshot
@@ -799,7 +799,7 @@ pnpm test:e2e e2e/tests/auth/login.spec.ts
 - Both dev servers must be running before executing E2E tests:
   ```bash
   # From root directory
-  pnpm dev  # Starts both backend (port 8080) and frontend (port 5173)
+  pnpm dev  # Starts both backend (port 8080) and frontend (port 8081)
   ```
 - Tests use the config-managed user from `packages/backend/config.yaml`
 
