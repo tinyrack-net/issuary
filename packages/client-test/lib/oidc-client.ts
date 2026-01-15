@@ -5,7 +5,7 @@ import type {
   TokenResponse,
   UserInfo,
 } from '@/types/oidc';
-import { oidcConfig } from './oidc-config';
+import { getOIDCConfig } from './oidc-config';
 
 /**
  * Build authorization URL for OAuth/OIDC flow
@@ -15,18 +15,19 @@ export function buildAuthorizationUrl(
   codeChallenge: string,
   nonce: string,
 ): string {
+  const config = getOIDCConfig();
   const params = new URLSearchParams({
-    client_id: oidcConfig.client_id,
-    redirect_uri: oidcConfig.redirect_uri,
-    response_type: oidcConfig.response_type,
-    scope: oidcConfig.scope,
+    client_id: config.client_id,
+    redirect_uri: config.redirect_uri,
+    response_type: config.response_type,
+    scope: config.scope,
     state,
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
     nonce,
   });
 
-  return `${oidcConfig.authorization_endpoint}?${params.toString()}`;
+  return `${config.authorization_endpoint}?${params.toString()}`;
 }
 
 /**
@@ -36,16 +37,17 @@ export async function exchangeCodeForTokens(
   code: string,
   codeVerifier: string,
 ): Promise<TokenResponse> {
+  const config = getOIDCConfig();
   const params = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
-    redirect_uri: oidcConfig.redirect_uri,
-    client_id: oidcConfig.client_id,
-    client_secret: oidcConfig.client_secret,
+    redirect_uri: config.redirect_uri,
+    client_id: config.client_id,
+    client_secret: config.client_secret,
     code_verifier: codeVerifier,
   });
 
-  const response = await fetch(oidcConfig.token_endpoint, {
+  const response = await fetch(config.token_endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -67,14 +69,15 @@ export async function exchangeCodeForTokens(
 export async function refreshAccessToken(
   refreshToken: string,
 ): Promise<TokenResponse> {
+  const config = getOIDCConfig();
   const params = new URLSearchParams({
     grant_type: 'refresh_token',
     refresh_token: refreshToken,
-    client_id: oidcConfig.client_id,
-    client_secret: oidcConfig.client_secret,
+    client_id: config.client_id,
+    client_secret: config.client_secret,
   });
 
-  const response = await fetch(oidcConfig.token_endpoint, {
+  const response = await fetch(config.token_endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -94,7 +97,8 @@ export async function refreshAccessToken(
  * Fetch user info from userinfo endpoint
  */
 export async function fetchUserInfo(accessToken: string): Promise<UserInfo> {
-  const response = await fetch(oidcConfig.userinfo_endpoint, {
+  const config = getOIDCConfig();
+  const response = await fetch(config.userinfo_endpoint, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -139,14 +143,15 @@ export async function introspectToken(
   token: string,
   tokenTypeHint?: 'access_token' | 'refresh_token',
 ): Promise<IntrospectionResponse> {
+  const config = getOIDCConfig();
   const params = new URLSearchParams({
     token,
-    client_id: oidcConfig.client_id,
-    client_secret: oidcConfig.client_secret,
+    client_id: config.client_id,
+    client_secret: config.client_secret,
     ...(tokenTypeHint && { token_type_hint: tokenTypeHint }),
   });
 
-  const response = await fetch(oidcConfig.introspection_endpoint, {
+  const response = await fetch(config.introspection_endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -174,14 +179,15 @@ export async function revokeToken(
   token: string,
   tokenTypeHint?: 'access_token' | 'refresh_token',
 ): Promise<void> {
+  const config = getOIDCConfig();
   const params = new URLSearchParams({
     token,
-    client_id: oidcConfig.client_id,
-    client_secret: oidcConfig.client_secret,
+    client_id: config.client_id,
+    client_secret: config.client_secret,
     ...(tokenTypeHint && { token_type_hint: tokenTypeHint }),
   });
 
-  const response = await fetch(oidcConfig.revocation_endpoint, {
+  const response = await fetch(config.revocation_endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',

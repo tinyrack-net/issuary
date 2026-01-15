@@ -1,10 +1,11 @@
 import Link from 'next/link';
-import { oidcConfig } from '@/lib/oidc-config';
+import { getOIDCConfig } from '@/lib/oidc-config';
 import type { JWKS, OpenIDConfiguration } from '@/types/oidc';
 
 async function fetchOpenIDConfiguration(): Promise<OpenIDConfiguration | null> {
   try {
-    const res = await fetch(oidcConfig.openid_configuration_uri || '', {
+    const config = getOIDCConfig();
+    const res = await fetch(config.openid_configuration_uri || '', {
       cache: 'no-store',
     });
     if (!res.ok) {
@@ -18,7 +19,8 @@ async function fetchOpenIDConfiguration(): Promise<OpenIDConfiguration | null> {
 
 async function fetchJWKS(): Promise<JWKS | null> {
   try {
-    const res = await fetch(oidcConfig.jwks_uri || '', {
+    const config = getOIDCConfig();
+    const res = await fetch(config.jwks_uri || '', {
       cache: 'no-store',
     });
     if (!res.ok) {
@@ -31,7 +33,8 @@ async function fetchJWKS(): Promise<JWKS | null> {
 }
 
 export default async function DiscoveryPage() {
-  const [config, jwks] = await Promise.all([
+  const config = getOIDCConfig();
+  const [discoveryConfig, jwks] = await Promise.all([
     fetchOpenIDConfiguration(),
     fetchJWKS(),
   ]);
@@ -56,12 +59,12 @@ export default async function DiscoveryPage() {
             </h2>
             <span
               className={`rounded-full px-3 py-1 font-medium text-xs ${
-                config
+                discoveryConfig
                   ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                   : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
               }`}
             >
-              {config ? 'SUCCESS' : 'FAILED'}
+              {discoveryConfig ? 'SUCCESS' : 'FAILED'}
             </span>
           </div>
 
@@ -71,12 +74,12 @@ export default async function DiscoveryPage() {
                 Endpoint URL:
               </dt>
               <dd className="font-mono text-xs text-zinc-600 dark:text-zinc-400">
-                {oidcConfig.openid_configuration_uri}
+                {config.openid_configuration_uri}
               </dd>
             </div>
           </div>
 
-          {config ? (
+          {discoveryConfig ? (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -84,7 +87,7 @@ export default async function DiscoveryPage() {
                     Issuer:
                   </h3>
                   <p className="font-mono text-xs text-zinc-600 dark:text-zinc-400">
-                    {config.issuer}
+                    {discoveryConfig.issuer}
                   </p>
                 </div>
                 <div>
@@ -92,7 +95,7 @@ export default async function DiscoveryPage() {
                     Authorization Endpoint:
                   </h3>
                   <p className="break-all font-mono text-xs text-zinc-600 dark:text-zinc-400">
-                    {config.authorization_endpoint}
+                    {discoveryConfig.authorization_endpoint}
                   </p>
                 </div>
                 <div>
@@ -100,7 +103,7 @@ export default async function DiscoveryPage() {
                     Token Endpoint:
                   </h3>
                   <p className="break-all font-mono text-xs text-zinc-600 dark:text-zinc-400">
-                    {config.token_endpoint}
+                    {discoveryConfig.token_endpoint}
                   </p>
                 </div>
                 <div>
@@ -108,7 +111,7 @@ export default async function DiscoveryPage() {
                     JWKS URI:
                   </h3>
                   <p className="break-all font-mono text-xs text-zinc-600 dark:text-zinc-400">
-                    {config.jwks_uri}
+                    {discoveryConfig.jwks_uri}
                   </p>
                 </div>
                 <div>
@@ -116,7 +119,7 @@ export default async function DiscoveryPage() {
                     UserInfo Endpoint:
                   </h3>
                   <p className="break-all font-mono text-xs text-zinc-600 dark:text-zinc-400">
-                    {config.userinfo_endpoint || 'N/A'}
+                    {discoveryConfig.userinfo_endpoint || 'N/A'}
                   </p>
                 </div>
                 <div>
@@ -124,7 +127,7 @@ export default async function DiscoveryPage() {
                     Introspection Endpoint:
                   </h3>
                   <p className="break-all font-mono text-xs text-zinc-600 dark:text-zinc-400">
-                    {config.introspection_endpoint || 'N/A'}
+                    {discoveryConfig.introspection_endpoint || 'N/A'}
                   </p>
                 </div>
               </div>
@@ -134,14 +137,16 @@ export default async function DiscoveryPage() {
                   Signing Algorithms (RS256):
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {config.id_token_signing_alg_values_supported.map((alg) => (
-                    <span
-                      key={alg}
-                      className="rounded bg-blue-100 px-2 py-1 font-mono text-blue-800 text-xs dark:bg-blue-900 dark:text-blue-200"
-                    >
-                      {alg}
-                    </span>
-                  ))}
+                  {discoveryConfig.id_token_signing_alg_values_supported.map(
+                    (alg) => (
+                      <span
+                        key={alg}
+                        className="rounded bg-blue-100 px-2 py-1 font-mono text-blue-800 text-xs dark:bg-blue-900 dark:text-blue-200"
+                      >
+                        {alg}
+                      </span>
+                    ),
+                  )}
                 </div>
               </div>
 
@@ -150,7 +155,7 @@ export default async function DiscoveryPage() {
                   Supported Scopes:
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {config.scopes_supported?.map((scope) => (
+                  {discoveryConfig.scopes_supported?.map((scope) => (
                     <span
                       key={scope}
                       className="rounded bg-zinc-100 px-2 py-1 font-mono text-xs text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
@@ -166,14 +171,16 @@ export default async function DiscoveryPage() {
                   PKCE Code Challenge Methods:
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {config.code_challenge_methods_supported?.map((method) => (
-                    <span
-                      key={method}
-                      className="rounded bg-purple-100 px-2 py-1 font-mono text-purple-800 text-xs dark:bg-purple-900 dark:text-purple-200"
-                    >
-                      {method}
-                    </span>
-                  ))}
+                  {discoveryConfig.code_challenge_methods_supported?.map(
+                    (method) => (
+                      <span
+                        key={method}
+                        className="rounded bg-purple-100 px-2 py-1 font-mono text-purple-800 text-xs dark:bg-purple-900 dark:text-purple-200"
+                      >
+                        {method}
+                      </span>
+                    ),
+                  )}
                 </div>
               </div>
 
@@ -182,7 +189,7 @@ export default async function DiscoveryPage() {
                   Full Response (JSON)
                 </summary>
                 <pre className="mt-2 overflow-x-auto rounded bg-zinc-100 p-4 font-mono text-xs text-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
-                  {JSON.stringify(config, null, 2)}
+                  {JSON.stringify(discoveryConfig, null, 2)}
                 </pre>
               </details>
             </div>
@@ -222,7 +229,7 @@ export default async function DiscoveryPage() {
                 Endpoint URL:
               </dt>
               <dd className="font-mono text-xs text-zinc-600 dark:text-zinc-400">
-                {oidcConfig.jwks_uri}
+                {config.jwks_uri}
               </dd>
             </div>
           </div>
