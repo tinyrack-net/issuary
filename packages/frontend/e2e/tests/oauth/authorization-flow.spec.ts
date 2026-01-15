@@ -122,7 +122,7 @@ test.describe('OAuth Error Handling', () => {
     page,
   }) => {
     const authUrl = buildAuthorizationUrl();
-    const url = new URL(authUrl, 'http://localhost:5173');
+    const url = new URL(authUrl, 'http://localhost:8081');
     url.searchParams.set('response_type', 'token'); // Implicit flow not supported
     await page.goto(url.pathname + url.search);
 

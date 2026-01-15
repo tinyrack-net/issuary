@@ -28,6 +28,7 @@ export default defineConfig({
     sourcemap: true,
   },
   server: {
+    port: 8081,
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
