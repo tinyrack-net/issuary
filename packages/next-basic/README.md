@@ -16,7 +16,7 @@ A Next.js-based client application for testing OpenID Connect (OIDC) Providers.
 ## Project Structure
 
 ```
-client-test/
+next-basic/
 ├── app/
 │   ├── page.tsx                          # Main page (login button)
 │   ├── profile/
@@ -138,7 +138,7 @@ pnpm start
 
 2. **Start Test Client**
    ```bash
-   cd packages/client-test
+   cd packages/next-basic
    pnpm dev
    ```
    
