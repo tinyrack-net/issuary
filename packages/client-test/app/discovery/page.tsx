@@ -1,26 +1,20 @@
 import Link from 'next/link';
-import { getOIDCConfig } from '@/lib/oidc-config';
+import { loadEnvConfig } from '@/lib/env';
+import { fetchOpenIDConfiguration } from '@/lib/oidc-discovery';
 import type { JWKS, OpenIDConfiguration } from '@/types/oidc';
 
-async function fetchOpenIDConfiguration(): Promise<OpenIDConfiguration | null> {
+async function fetchDiscoveryConfig(): Promise<OpenIDConfiguration | null> {
   try {
-    const config = getOIDCConfig();
-    const res = await fetch(config.openid_configuration_uri || '', {
-      cache: 'no-store',
-    });
-    if (!res.ok) {
-      return null;
-    }
-    return res.json();
+    const envConfig = loadEnvConfig();
+    return await fetchOpenIDConfiguration(envConfig.issuer);
   } catch {
     return null;
   }
 }
 
-async function fetchJWKS(): Promise<JWKS | null> {
+async function fetchJWKS(jwksUri: string): Promise<JWKS | null> {
   try {
-    const config = getOIDCConfig();
-    const res = await fetch(config.jwks_uri || '', {
+    const res = await fetch(jwksUri, {
       cache: 'no-store',
     });
     if (!res.ok) {
@@ -33,11 +27,12 @@ async function fetchJWKS(): Promise<JWKS | null> {
 }
 
 export default async function DiscoveryPage() {
-  const config = getOIDCConfig();
-  const [discoveryConfig, jwks] = await Promise.all([
-    fetchOpenIDConfiguration(),
-    fetchJWKS(),
-  ]);
+  const envConfig = loadEnvConfig();
+  const discoveryConfig = await fetchDiscoveryConfig();
+  const jwks = discoveryConfig
+    ? await fetchJWKS(discoveryConfig.jwks_uri)
+    : null;
+  const discoveryUri = `${envConfig.issuer}/.well-known/openid-configuration`;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
@@ -74,7 +69,7 @@ export default async function DiscoveryPage() {
                 Endpoint URL:
               </dt>
               <dd className="font-mono text-xs text-zinc-600 dark:text-zinc-400">
-                {config.openid_configuration_uri}
+                {discoveryUri}
               </dd>
             </div>
           </div>
@@ -229,7 +224,7 @@ export default async function DiscoveryPage() {
                 Endpoint URL:
               </dt>
               <dd className="font-mono text-xs text-zinc-600 dark:text-zinc-400">
-                {config.jwks_uri}
+                {discoveryConfig?.jwks_uri || 'N/A'}
               </dd>
             </div>
           </div>
