@@ -32,44 +32,33 @@ export default (fastify: FastifyWithZodInstance) => {
     handler: async (req, res) => {
       // Get challenge from session
       const challenge = req.session.get('passkey_challenge');
+
       if (!challenge) {
         throw new e.PasskeyChallengeNotFound.Error();
       }
 
-      // Clear the challenge immediately to prevent replay
       req.session.set('passkey_challenge', undefined);
 
       // Extract and cast the validated response
       // The Zod schema validates the structure, but we need to cast for
       // @simplewebauthn compatibility since it expects its own interface type
-      const authResponse = req.body
-        .response as unknown as AuthenticationResponseJSON;
+      const authResponse = req.body.response as AuthenticationResponseJSON;
 
       const user = await fastify.passkeyService.verifyAuthentication(
         authResponse,
         challenge,
       );
 
-      // Get user session info
       const sessionUser = await fastify.userService.verifyUserById(user.id);
 
-      // Set user session
       req.session.set('user', {
         id: user.id,
         authenticated_at: Math.floor(Date.now() / 1000),
-        auth_methods: ['hwk'], // Hardware key (passkey)
-        acr: 'urn:tinyrack:acr:1', // Single factor (passkey)
+        auth_methods: ['hwk'],
+        acr: 'urn:tinyrack:acr:1',
       });
 
-      // Check if TOTP is required (only for database-managed users)
-      const passwordAuthMethod =
-        fastify.config.basic_authentication_methods.password;
-      const isConfigManaged = sessionUser.managed_by === 'config';
-
-      const totpRequired =
-        !isConfigManaged &&
-        (passwordAuthMethod.totp?.required ?? false) &&
-        !sessionUser.totp_enabled;
+      const totpRequired = fastify.userService.userTotpRequired(sessionUser);
 
       return res.status(200).send({
         user: {

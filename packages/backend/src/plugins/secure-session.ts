@@ -22,10 +22,6 @@ declare module '@fastify/secure-session' {
       id: string;
       authenticated_at: number;
       auth_methods: AuthenticationMethod[];
-      /**
-       * Authentication context class reference
-       * Used for acr claim in ID Token
-       */
       acr: AuthenticationContextClass;
     };
     pendingTotpUser?: {
@@ -49,9 +45,7 @@ declare module '@fastify/secure-session' {
 
 export default fastifyPlugin(
   async (fastify) => {
-    // Determine if we're in a secure context (HTTPS)
     const isSecure = fastify.config.app.host.startsWith('https://');
-
     await fastify.register(fastifySecureSession, {
       cookieName: 'session',
       key: Buffer.from(fastify.config.app.cookie_secret, 'hex'),

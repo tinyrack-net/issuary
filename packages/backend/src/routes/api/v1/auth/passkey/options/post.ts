@@ -20,11 +20,9 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      // Generate authentication options (usernameless - allow any discoverable credential)
       const options =
         await fastify.passkeyService.generateAuthenticationOptions();
 
-      // Store challenge in session
       req.session.set('passkey_challenge', options.challenge);
 
       return res.status(200).send({
