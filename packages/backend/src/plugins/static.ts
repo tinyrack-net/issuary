@@ -125,6 +125,10 @@ export default fastifyPlugin(
           reply.code(404).send({ error: 'Not Found' });
           return;
         }
+        if (request.url.startsWith('/.well-known')) {
+          reply.code(404).send({ error: 'Not Found' });
+          return;
+        }
 
         // Hijack the response to handle it manually (no return value needed)
         reply.hijack();
@@ -194,6 +198,9 @@ export default fastifyPlugin(
         return reply.code(404).send({ error: 'Not Found' });
       }
       if (request.url.startsWith('/docs')) {
+        return reply.code(404).send({ error: 'Not Found' });
+      }
+      if (request.url.startsWith('/.well-known')) {
         return reply.code(404).send({ error: 'Not Found' });
       }
 
