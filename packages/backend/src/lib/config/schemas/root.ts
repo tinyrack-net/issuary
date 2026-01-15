@@ -66,6 +66,7 @@ export const InternalConfigSchema = z.object({
       totp: {
         enabled: false,
         required: false,
+        issuer: 'Tinyrack',
       },
     },
     passkey: {
@@ -83,7 +84,7 @@ export const InternalConfigSchema = z.object({
   users: z.array(AppConfigUser).default([]),
 });
 
-export type AppConfig = z.infer<typeof InternalConfigSchema>;
+export type InternalAppConfig = z.infer<typeof InternalConfigSchema>;
 
 export {
   AppConfigAccountDeletion,

@@ -42,6 +42,7 @@ export const AppTheme = z.enum([
 export type AppTheme = z.infer<typeof AppTheme>;
 
 export const AppConfigApp = z.object({
+  name: z.string().default('Tinyrack Auth').describe('Application name'),
   host: z.string().optional().default('http://localhost:3000'),
   port: zz.PORT.optional().default(8080),
   cookie_secret: z.string().min(16),

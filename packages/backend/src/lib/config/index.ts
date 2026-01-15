@@ -45,8 +45,8 @@ export {
 export { AppConfigProvider } from './schemas/provider.js';
 // Root config schemas and types
 export {
-  type AppConfig,
   ConfigSchema,
+  type InternalAppConfig,
   InternalConfigSchema,
 } from './schemas/root.js';
 // SMTP config schema

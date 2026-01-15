@@ -10,6 +10,7 @@ export const AppConfigPasswordAuth = z.object({
     .object({
       enabled: z.boolean().default(false),
       required: z.boolean().default(false),
+      issuer: z.string().optional(),
     })
     .default({
       enabled: false,

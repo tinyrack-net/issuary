@@ -4,8 +4,8 @@ import nodemailer from 'nodemailer';
 import YAML from 'yaml';
 import { env } from '../env.js';
 import {
-  type AppConfig,
   ConfigSchema,
+  type InternalAppConfig,
   InternalConfigSchema,
 } from './schemas/root.js';
 
@@ -23,7 +23,9 @@ const resolveConfigPath = () => {
   }
 };
 
-const loadConfigFromPath = async (configPath: string) => {
+const loadConfigFromPath = async (
+  configPath: string,
+): Promise<InternalAppConfig> => {
   if (!existsSync(configPath)) {
     throw new Error(`Config file not found at "${configPath}"`);
   }
@@ -112,10 +114,10 @@ export type DeepPartial<T> = {
  */
 export async function loadConfig(options?: {
   configPath?: string;
-  baseConfig?: AppConfig;
-  overrides?: DeepPartial<AppConfig>;
-}): Promise<AppConfig> {
-  let config: AppConfig;
+  baseConfig?: InternalAppConfig;
+  overrides?: DeepPartial<InternalAppConfig>;
+}): Promise<InternalAppConfig> {
+  let config: InternalAppConfig;
 
   if (options?.baseConfig) {
     // Use provided base config instead of loading from file
@@ -128,7 +130,7 @@ export async function loadConfig(options?: {
   }
 
   if (options?.overrides) {
-    return deepMerge(config, options.overrides as Partial<AppConfig>);
+    return deepMerge(config, options.overrides as Partial<InternalAppConfig>);
   }
 
   return config;

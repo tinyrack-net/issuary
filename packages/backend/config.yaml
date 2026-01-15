@@ -49,6 +49,7 @@ basic_authentication_methods:
     totp:
       enabled: true
       required: true
+      issuer: tinyrack
   passkey:
     enabled: false
     email_verification: true
