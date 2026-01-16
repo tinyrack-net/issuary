@@ -1,0 +1,50 @@
+---
+title: Introduction
+description: Learn what Tinyrack Auth is and how it can help you implement authentication
+---
+
+Tinyrack Auth is a lightweight **OpenID Connect (OIDC) Provider** implementation that provides OAuth2 and OIDC authentication services. It acts as an identity provider (IdP) that allows client applications to authenticate users and obtain identity information through standard OIDC flows.
+
+## What is an OIDC Provider?
+
+An OpenID Connect Provider (also known as an Identity Provider or IdP) is a service that authenticates users and provides identity information to client applications. When you see "Sign in with Google" or "Login with GitHub" buttons, those services are acting as OIDC providers.
+
+Tinyrack Auth allows you to run your own OIDC provider, giving you full control over user authentication while maintaining compatibility with standard protocols.
+
+## Key Features
+
+### Authentication Methods
+
+- **Password-based authentication** - Traditional email/password login with optional email verification
+- **WebAuthn/Passkeys** - Modern passwordless authentication using biometrics or security keys
+- **TOTP 2FA** - Time-based one-time password for additional security
+- **Social login** - OAuth integration with Google, GitHub, and Apple
+
+### OAuth2/OIDC Support
+
+- Authorization Code Flow with PKCE
+- Token issuance (ID tokens, access tokens, refresh tokens)
+- Token introspection and revocation
+- JWKS endpoint for key discovery
+- UserInfo endpoint
+
+### Developer Experience
+
+- Configuration via YAML files
+- Environment variable interpolation
+- In-memory database for testing
+- Comprehensive API documentation with Swagger/Scalar
+
+## Architecture
+
+Tinyrack Auth is built as a monorepo with the following packages:
+
+| Package | Description |
+|---------|-------------|
+| `@tinyrack-auth/backend` | Fastify-based OAuth2/OIDC authentication server |
+| `@tinyrack-auth/frontend` | React frontend using TanStack Router and DaisyUI |
+| `@tinyrack-auth/homepage` | Documentation site (you are here!) |
+
+## Next Steps
+
+Ready to get started? Head over to the [Installation Guide](/getting-started/installation/) to set up Tinyrack Auth in your project.
