@@ -20,6 +20,24 @@ export const OAuthSearchSchema = z.object({
 
 export type OAuthSearch = z.infer<typeof OAuthSearchSchema>;
 
+/** Second factor method type */
+export type SecondFactorMethod = 'totp' | 'passkey';
+
+/**
+ * Extended search schema for 2FA pages
+ * Includes methods parameter to show only available 2FA methods
+ */
+export const TwoFactorSearchSchema = OAuthSearchSchema.extend({
+  methods: z
+    .string()
+    .optional()
+    .transform((val) =>
+      val ? (val.split(',') as SecondFactorMethod[]) : undefined,
+    ),
+});
+
+export type TwoFactorSearch = z.infer<typeof TwoFactorSearchSchema>;
+
 /**
  * OAuth 플로우인지 확인하는 헬퍼 함수
  * client_id와 redirect_uri가 모두 존재해야 OAuth 플로우로 판단

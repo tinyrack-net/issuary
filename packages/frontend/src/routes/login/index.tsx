@@ -101,10 +101,13 @@ function Login() {
             });
           }
         } else {
-          // Multiple methods available, go to 2FA selection page
+          // Multiple methods available, go to 2FA selection page with methods
           router.navigate({
             to: '/verify-2fa',
-            search: extractOAuthParams(search),
+            search: {
+              ...extractOAuthParams(search),
+              methods: methods.join(','),
+            },
           });
         }
         return;
@@ -128,10 +131,13 @@ function Login() {
             });
           }
         } else {
-          // Multiple methods available, go to 2FA setup selection page
+          // Multiple methods available, go to 2FA setup selection page with methods
           router.navigate({
             to: '/setup-2fa',
-            search: extractOAuthParams(search),
+            search: {
+              ...extractOAuthParams(search),
+              methods: methods.join(','),
+            },
           });
         }
         return;
