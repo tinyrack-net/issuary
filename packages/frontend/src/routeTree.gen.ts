@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VerifyTotpIndexRouteImport } from './routes/verify-totp/index'
+import { Route as VerifyPasskeyIndexRouteImport } from './routes/verify-passkey/index'
 import { Route as VerifyEmailIndexRouteImport } from './routes/verify-email/index'
+import { Route as Verify2faIndexRouteImport } from './routes/verify-2fa/index'
 import { Route as SetupTotpIndexRouteImport } from './routes/setup-totp/index'
 import { Route as ResetPasswordIndexRouteImport } from './routes/reset-password/index'
 import { Route as RegisterIndexRouteImport } from './routes/register/index'
@@ -31,9 +33,19 @@ const VerifyTotpIndexRoute = VerifyTotpIndexRouteImport.update({
   path: '/verify-totp/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VerifyPasskeyIndexRoute = VerifyPasskeyIndexRouteImport.update({
+  id: '/verify-passkey/',
+  path: '/verify-passkey/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VerifyEmailIndexRoute = VerifyEmailIndexRouteImport.update({
   id: '/verify-email/',
   path: '/verify-email/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Verify2faIndexRoute = Verify2faIndexRouteImport.update({
+  id: '/verify-2fa/',
+  path: '/verify-2fa/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SetupTotpIndexRoute = SetupTotpIndexRouteImport.update({
@@ -87,7 +99,9 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterIndexRoute
   '/reset-password': typeof ResetPasswordIndexRoute
   '/setup-totp': typeof SetupTotpIndexRoute
+  '/verify-2fa': typeof Verify2faIndexRoute
   '/verify-email': typeof VerifyEmailIndexRoute
+  '/verify-passkey': typeof VerifyPasskeyIndexRoute
   '/verify-totp': typeof VerifyTotpIndexRoute
 }
 export interface FileRoutesByTo {
@@ -100,7 +114,9 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterIndexRoute
   '/reset-password': typeof ResetPasswordIndexRoute
   '/setup-totp': typeof SetupTotpIndexRoute
+  '/verify-2fa': typeof Verify2faIndexRoute
   '/verify-email': typeof VerifyEmailIndexRoute
+  '/verify-passkey': typeof VerifyPasskeyIndexRoute
   '/verify-totp': typeof VerifyTotpIndexRoute
 }
 export interface FileRoutesById {
@@ -114,7 +130,9 @@ export interface FileRoutesById {
   '/register/': typeof RegisterIndexRoute
   '/reset-password/': typeof ResetPasswordIndexRoute
   '/setup-totp/': typeof SetupTotpIndexRoute
+  '/verify-2fa/': typeof Verify2faIndexRoute
   '/verify-email/': typeof VerifyEmailIndexRoute
+  '/verify-passkey/': typeof VerifyPasskeyIndexRoute
   '/verify-totp/': typeof VerifyTotpIndexRoute
 }
 export interface FileRouteTypes {
@@ -129,7 +147,9 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/setup-totp'
+    | '/verify-2fa'
     | '/verify-email'
+    | '/verify-passkey'
     | '/verify-totp'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -142,7 +162,9 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/setup-totp'
+    | '/verify-2fa'
     | '/verify-email'
+    | '/verify-passkey'
     | '/verify-totp'
   id:
     | '__root__'
@@ -155,7 +177,9 @@ export interface FileRouteTypes {
     | '/register/'
     | '/reset-password/'
     | '/setup-totp/'
+    | '/verify-2fa/'
     | '/verify-email/'
+    | '/verify-passkey/'
     | '/verify-totp/'
   fileRoutesById: FileRoutesById
 }
@@ -169,7 +193,9 @@ export interface RootRouteChildren {
   RegisterIndexRoute: typeof RegisterIndexRoute
   ResetPasswordIndexRoute: typeof ResetPasswordIndexRoute
   SetupTotpIndexRoute: typeof SetupTotpIndexRoute
+  Verify2faIndexRoute: typeof Verify2faIndexRoute
   VerifyEmailIndexRoute: typeof VerifyEmailIndexRoute
+  VerifyPasskeyIndexRoute: typeof VerifyPasskeyIndexRoute
   VerifyTotpIndexRoute: typeof VerifyTotpIndexRoute
 }
 
@@ -189,11 +215,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VerifyTotpIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/verify-passkey/': {
+      id: '/verify-passkey/'
+      path: '/verify-passkey'
+      fullPath: '/verify-passkey'
+      preLoaderRoute: typeof VerifyPasskeyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/verify-email/': {
       id: '/verify-email/'
       path: '/verify-email'
       fullPath: '/verify-email'
       preLoaderRoute: typeof VerifyEmailIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-2fa/': {
+      id: '/verify-2fa/'
+      path: '/verify-2fa'
+      fullPath: '/verify-2fa'
+      preLoaderRoute: typeof Verify2faIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/setup-totp/': {
@@ -265,7 +305,9 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterIndexRoute: RegisterIndexRoute,
   ResetPasswordIndexRoute: ResetPasswordIndexRoute,
   SetupTotpIndexRoute: SetupTotpIndexRoute,
+  Verify2faIndexRoute: Verify2faIndexRoute,
   VerifyEmailIndexRoute: VerifyEmailIndexRoute,
+  VerifyPasskeyIndexRoute: VerifyPasskeyIndexRoute,
   VerifyTotpIndexRoute: VerifyTotpIndexRoute,
 }
 export const routeTree = rootRouteImport
