@@ -39,13 +39,13 @@ export default (fastify: FastifyWithZodInstance) => {
       if (emailVerificationRequired && !user.email_verified) {
         return res.status(200).send({
           second_factor_required: false,
-          totp_setup_required: false,
+          second_factor_setup_required: false,
           email_verification_required: true,
           email: user.email,
         });
       }
 
-      // Check available 2FA methods
+      // Check available 2FA methods (already configured by user)
       const available2FAMethods: ('totp' | 'passkey')[] = [];
       if (user.totp_enabled) {
         available2FAMethods.push('totp');
@@ -54,7 +54,7 @@ export default (fastify: FastifyWithZodInstance) => {
         available2FAMethods.push('passkey');
       }
 
-      // If 2FA is available, require second factor verification
+      // If 2FA is already configured, require second factor verification
       if (available2FAMethods.length > 0) {
         req.session.set('pending2FAUser', {
           id: user.id,
@@ -64,19 +64,25 @@ export default (fastify: FastifyWithZodInstance) => {
         return res.status(200).send({
           second_factor_required: true,
           available_methods: available2FAMethods,
-          totp_setup_required: false,
+          second_factor_setup_required: false,
           email_verification_required: false,
         });
       }
 
-      // TOTP setup required (user must set up TOTP before continuing)
-      if (user.totp_required && !user.totp_enabled) {
-        req.session.set('pendingTotpSetup', {
+      // Check if 2FA setup is required (user has no 2FA but it's mandatory)
+      const secondFactorRequired =
+        fastify.userService.userSecondFactorRequired(user);
+      const availableSetupMethods =
+        fastify.userService.getAvailable2FASetupMethods();
+
+      if (secondFactorRequired && availableSetupMethods.length > 0) {
+        req.session.set('pending2FASetup', {
           id: user.id,
         });
         return res.status(200).send({
           second_factor_required: false,
-          totp_setup_required: true,
+          second_factor_setup_required: true,
+          available_setup_methods: availableSetupMethods,
           email_verification_required: false,
         });
       }
@@ -91,7 +97,7 @@ export default (fastify: FastifyWithZodInstance) => {
 
       return res.status(200).send({
         second_factor_required: false,
-        totp_setup_required: false,
+        second_factor_setup_required: false,
         email_verification_required: false,
         user: {
           id: user.id,
@@ -100,7 +106,6 @@ export default (fastify: FastifyWithZodInstance) => {
           email_verified: user.email_verified,
           has_password: user.has_password,
           totp_enabled: user.totp_enabled,
-          totp_required: false,
           passkey_count: user.passkey_count,
         },
       });

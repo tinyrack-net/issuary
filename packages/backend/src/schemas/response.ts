@@ -21,9 +21,6 @@ const UserSession = z
     email_verified: f.emailVerified,
     has_password: z.boolean().describe('Whether the user has a password set'),
     totp_enabled: z.boolean().describe('Whether TOTP is enabled for the user'),
-    totp_required: z
-      .boolean()
-      .describe('Whether user must set up TOTP before continuing'),
     passkey_count: z
       .number()
       .int()
@@ -360,12 +357,12 @@ export const r = {
     user: UserSession,
   }),
 
-  // Login response - either full session, 2FA required, TOTP setup required, or email verification required
+  // Login response - either full session, 2FA required, 2FA setup required, or email verification required
   LoginResponse: z.union([
     z.object({
       user: UserSession,
       second_factor_required: z.literal(false),
-      totp_setup_required: z.literal(false),
+      second_factor_setup_required: z.literal(false),
       email_verification_required: z.literal(false),
     }),
     z.object({
@@ -373,17 +370,20 @@ export const r = {
       available_methods: z
         .array(z.enum(['totp', 'passkey']))
         .describe('Available 2FA methods for the user'),
-      totp_setup_required: z.literal(false),
+      second_factor_setup_required: z.literal(false),
       email_verification_required: z.literal(false),
     }),
     z.object({
       second_factor_required: z.literal(false),
-      totp_setup_required: z.literal(true),
+      second_factor_setup_required: z.literal(true),
+      available_setup_methods: z
+        .array(z.enum(['totp', 'passkey']))
+        .describe('Available 2FA setup methods for the user'),
       email_verification_required: z.literal(false),
     }),
     z.object({
       second_factor_required: z.literal(false),
-      totp_setup_required: z.literal(false),
+      second_factor_setup_required: z.literal(false),
       email_verification_required: z.literal(true),
       email: f.userEmail.describe('Email address for verification'),
     }),
@@ -487,9 +487,19 @@ export const r = {
     user: UserSession.optional().describe(
       'User session if TOTP setup was completed from pending setup state',
     ),
-    totp_setup_completed: z
+    second_factor_setup_completed: z
       .boolean()
-      .describe('Whether this request completed the mandatory TOTP setup flow'),
+      .describe('Whether this request completed the mandatory 2FA setup flow'),
+  }),
+
+  PasskeySetupVerifyResponse: z.object({
+    success: z.boolean(),
+    user: UserSession.optional().describe(
+      'User session if passkey setup was completed from pending setup state',
+    ),
+    second_factor_setup_completed: z
+      .boolean()
+      .describe('Whether this request completed the mandatory 2FA setup flow'),
   }),
 
   // Passkey responses
