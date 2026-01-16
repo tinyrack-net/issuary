@@ -12,24 +12,25 @@ export type SecondFactorMethod = 'totp' | 'passkey';
 export type LoginResponse =
   | {
       second_factor_required: false;
-      totp_setup_required: false;
+      second_factor_setup_required: false;
       email_verification_required: false;
       user: SessionUser;
     }
   | {
       second_factor_required: true;
       available_methods: SecondFactorMethod[];
-      totp_setup_required: false;
+      second_factor_setup_required: false;
       email_verification_required: false;
     }
   | {
       second_factor_required: false;
-      totp_setup_required: true;
+      second_factor_setup_required: true;
+      available_setup_methods: SecondFactorMethod[];
       email_verification_required: false;
     }
   | {
       second_factor_required: false;
-      totp_setup_required: false;
+      second_factor_setup_required: false;
       email_verification_required: true;
       email: string;
     };

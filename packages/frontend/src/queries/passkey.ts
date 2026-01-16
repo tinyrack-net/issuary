@@ -9,7 +9,7 @@ import {
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch.js';
 import { queryKeys } from './keys';
-import type { SessionResponse } from './session.js';
+import type { SessionResponse, SessionUser } from './session.js';
 
 export type PasskeyInfo = {
   id: string;
@@ -26,6 +26,12 @@ export type PasskeysResponse = {
 
 export type SuccessResponse = {
   success: boolean;
+};
+
+export type PasskeySetupVerifyResponse = {
+  success: boolean;
+  user?: SessionUser;
+  second_factor_setup_completed: boolean;
 };
 
 /**
@@ -69,7 +75,7 @@ export const registerPasskeyMutationOptions = mutationOptions({
         name: params.name,
       }),
     });
-    return verifyRes.json() as Promise<SuccessResponse>;
+    return verifyRes.json() as Promise<PasskeySetupVerifyResponse>;
   },
 });
 

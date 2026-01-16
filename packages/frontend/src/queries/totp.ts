@@ -20,7 +20,7 @@ export type SuccessResponse = {
 export type TotpSetupVerifyResponse = {
   success: boolean;
   user?: SessionUser;
-  totp_setup_completed: boolean;
+  second_factor_setup_completed: boolean;
 };
 
 export type TotpLoginVerifyResponse = {
