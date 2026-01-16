@@ -55,6 +55,8 @@ export const ROUTES = {
   resetPassword: '/reset-password',
   verifyEmail: '/verify-email',
   verifyTotp: '/verify-totp',
+  verifyPasskey: '/verify-passkey',
+  verify2fa: '/verify-2fa',
   setupTotp: '/setup-totp',
   consent: '/consent',
   error: '/error',
