@@ -14,7 +14,6 @@ const app = setupTestServer({
       password: {
         totp: {
           enabled: true,
-          required: false,
         },
       },
     },
