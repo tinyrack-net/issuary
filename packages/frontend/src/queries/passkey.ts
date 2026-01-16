@@ -135,3 +135,32 @@ export const loginWithPasskeyMutationOptions = mutationOptions({
     return verifyRes.json() as Promise<SessionResponse>;
   },
 });
+
+/**
+ * Verify passkey as 2FA (after password login)
+ */
+export const verifyPasskey2FAMutationOptions = mutationOptions({
+  mutationFn: async () => {
+    // Step 1: Get 2FA authentication options from server
+    const optionsRes = await etch('/api/v1/auth/passkey/2fa/options', {
+      method: 'POST',
+    });
+    const { options } = (await optionsRes.json()) as {
+      options: PublicKeyCredentialRequestOptionsJSON;
+    };
+
+    // Step 2: Start WebAuthn authentication in browser
+    const authenticationResponse = await startAuthentication({
+      optionsJSON: options,
+    });
+
+    // Step 3: Send authentication response to server for verification
+    const verifyRes = await etch('/api/v1/auth/passkey/2fa/verify', {
+      method: 'POST',
+      body: JSON.stringify({
+        response: authenticationResponse,
+      }),
+    });
+    return verifyRes.json() as Promise<SessionResponse>;
+  },
+});

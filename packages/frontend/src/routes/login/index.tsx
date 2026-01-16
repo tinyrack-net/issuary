@@ -83,13 +83,30 @@ function Login() {
         return;
       }
 
-      // Check if TOTP verification is required (user has TOTP enabled)
-      if (data.totp_verification_required) {
-        // Redirect to TOTP verification page with OAuth params preserved
-        router.navigate({
-          to: '/verify-totp',
-          search: extractOAuthParams(search),
-        });
+      // Check if 2FA verification is required (user has TOTP or passkey enabled)
+      if (data.second_factor_required) {
+        const methods = data.available_methods;
+        // If only one method available, go directly to that verification page
+        if (methods.length === 1) {
+          const method = methods[0];
+          if (method === 'totp') {
+            router.navigate({
+              to: '/verify-totp',
+              search: extractOAuthParams(search),
+            });
+          } else if (method === 'passkey') {
+            router.navigate({
+              to: '/verify-passkey',
+              search: extractOAuthParams(search),
+            });
+          }
+        } else {
+          // Multiple methods available, go to 2FA selection page
+          router.navigate({
+            to: '/verify-2fa',
+            search: extractOAuthParams(search),
+          });
+        }
         return;
       }
 
