@@ -11,7 +11,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
  * Verify TOTP code and complete setup.
  * This endpoint verifies the code from user's authenticator app
  * and activates TOTP for the account.
- * Accepts both full user session and pending TOTP setup session.
+ * Accepts both full user session and pending 2FA setup session.
  * If from pending setup session, converts to full user session.
  */
 export default (fastify: FastifyWithZodInstance) =>
@@ -35,10 +35,10 @@ export default (fastify: FastifyWithZodInstance) =>
       },
     },
     handler: async (req, res) => {
-      // Allow both full user session and pending TOTP setup session
+      // Allow both full user session and pending 2FA setup session
       const userSession = req.session.get('user');
-      const pendingTotpSetup = req.session.get('pendingTotpSetup');
-      const userId = userSession?.id ?? pendingTotpSetup?.id;
+      const pending2FASetup = req.session.get('pending2FASetup');
+      const userId = userSession?.id ?? pending2FASetup?.id;
 
       if (!userId) {
         throw new e.Unauthorized.Error();
@@ -46,12 +46,12 @@ export default (fastify: FastifyWithZodInstance) =>
 
       await fastify.totpService.verifySetup(userId, req.body.code);
 
-      // Check if this was from pending TOTP setup session
-      const wasPendingSetup = !!pendingTotpSetup;
+      // Check if this was from pending setup session
+      const wasPendingSetup = !!pending2FASetup;
 
       if (wasPendingSetup) {
-        // Convert pending TOTP setup session to full user session
-        req.session.set('pendingTotpSetup', undefined);
+        // Clear pending setup session and create full user session
+        req.session.set('pending2FASetup', undefined);
         req.session.set('user', {
           id: userId,
           authenticated_at: Math.floor(Date.now() / 1000),
@@ -65,13 +65,13 @@ export default (fastify: FastifyWithZodInstance) =>
         return res.status(200).send({
           success: true,
           user,
-          totp_setup_completed: true,
+          second_factor_setup_completed: true,
         });
       }
 
       return res.status(200).send({
         success: true,
-        totp_setup_completed: false,
+        second_factor_setup_completed: false,
       });
     },
   });

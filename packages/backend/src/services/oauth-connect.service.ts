@@ -253,7 +253,6 @@ export class OAuthConnectService {
           email_verified: user.email_verified,
           has_password: user.hasPassword(),
           totp_enabled: totpEnabled,
-          totp_required: false,
           passkey_count: await this.mikro.userPasskey.countByUserId(user.id),
         },
       };
@@ -305,7 +304,6 @@ export class OAuthConnectService {
           email_verified: existingUser.email_verified,
           has_password: existingUser.hasPassword(),
           totp_enabled: totpEnabled,
-          totp_required: false,
           passkey_count: await this.mikro.userPasskey.countByUserId(
             existingUser.id,
           ),
@@ -345,7 +343,6 @@ export class OAuthConnectService {
         email_verified: newUser.email_verified,
         has_password: false, // New OAuth user has no password
         totp_enabled: false, // New user has no TOTP
-        totp_required: false,
         passkey_count: 0, // New user has no passkeys
       },
     };

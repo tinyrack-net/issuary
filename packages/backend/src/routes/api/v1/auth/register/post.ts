@@ -34,9 +34,12 @@ export default (fastify: FastifyWithZodInstance) => {
           password: req.body.password,
         });
 
+      const secondFactorRequired =
+        fastify.userService.userSecondFactorRequired(userSession);
+
       if (emailVerificationRequired) {
-        if (userSession.totp_required) {
-          req.session.set('pendingTotpSetup', {
+        if (secondFactorRequired) {
+          req.session.set('pending2FASetup', {
             id: userSession.id,
           });
         } else {

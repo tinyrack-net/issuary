@@ -50,13 +50,17 @@ describe('GET /api/v1/config', () => {
       'boolean',
     );
 
+    // Check second_factor configuration
+    if (json.basic_authentication_methods.password.second_factor) {
+      expect(
+        json.basic_authentication_methods.password.second_factor.required,
+      ).toBeTypeOf('boolean');
+    }
+
     // Check TOTP configuration
     if (json.basic_authentication_methods.password.totp) {
       expect(
         json.basic_authentication_methods.password.totp.enabled,
-      ).toBeTypeOf('boolean');
-      expect(
-        json.basic_authentication_methods.password.totp.required,
       ).toBeTypeOf('boolean');
     }
   });

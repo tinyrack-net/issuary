@@ -39,10 +39,20 @@ export default (fastify: FastifyWithZodInstance) => {
       const passkeyCount = await fastify.mikro.userPasskey.countByUserId(
         user.id,
       );
-      const totpRequired = fastify.userService.userTotpRequired(user);
 
-      if (totpRequired && !totpEnabled) {
-        req.session.set('pendingTotpSetup', {
+      // Check if 2FA setup is required
+      const secondFactorRequired =
+        fastify.userService.userSecondFactorRequired(user);
+      const available2FAMethods: ('totp' | 'passkey')[] = [];
+      if (totpEnabled) {
+        available2FAMethods.push('totp');
+      }
+      if (passkeyCount > 0) {
+        available2FAMethods.push('passkey');
+      }
+
+      if (secondFactorRequired && available2FAMethods.length === 0) {
+        req.session.set('pending2FASetup', {
           id: user.id,
         });
       } else {
@@ -62,7 +72,6 @@ export default (fastify: FastifyWithZodInstance) => {
           email_verified: user.email_verified,
           has_password: user.hasPassword(),
           totp_enabled: totpEnabled,
-          totp_required: totpRequired,
           passkey_count: passkeyCount,
         },
       });

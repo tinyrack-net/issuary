@@ -34,7 +34,12 @@ declare module '@fastify/secure-session' {
       auth_methods: AuthenticationMethod[];
       authenticated_at: number;
     };
-    pendingTotpSetup?: {
+    /**
+     * Pending 2FA setup session.
+     * Set after successful password authentication when 2FA setup is required.
+     * User must set up at least one 2FA method to get full session.
+     */
+    pending2FASetup?: {
       id: string;
     };
     oauth?: {

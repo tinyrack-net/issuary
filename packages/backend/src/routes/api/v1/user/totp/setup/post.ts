@@ -8,7 +8,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
  *
  * Start TOTP setup for the current user.
  * Generates a new secret and returns QR code for authenticator app.
- * Accepts both full user session and pending TOTP setup session.
+ * Accepts both full user session and pending 2FA setup session.
  */
 export default (fastify: FastifyWithZodInstance) => {
   if (!fastify.config.basic_authentication_methods.password.totp?.enabled) {
@@ -31,8 +31,8 @@ export default (fastify: FastifyWithZodInstance) => {
     },
     handler: async (req, res) => {
       const userSession = req.session.get('user');
-      const pendingTotpSetup = req.session.get('pendingTotpSetup');
-      const userId = userSession?.id ?? pendingTotpSetup?.id;
+      const pending2FASetup = req.session.get('pending2FASetup');
+      const userId = userSession?.id ?? pending2FASetup?.id;
 
       if (!userId) {
         throw new e.Unauthorized.Error();

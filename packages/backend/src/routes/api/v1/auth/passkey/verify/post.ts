@@ -58,8 +58,6 @@ export default (fastify: FastifyWithZodInstance) => {
         acr: 'urn:tinyrack:acr:1',
       });
 
-      const totpRequired = fastify.userService.userTotpRequired(sessionUser);
-
       return res.status(200).send({
         user: {
           id: sessionUser.id,
@@ -68,7 +66,6 @@ export default (fastify: FastifyWithZodInstance) => {
           email_verified: sessionUser.email_verified,
           has_password: sessionUser.has_password,
           totp_enabled: sessionUser.totp_enabled,
-          totp_required: totpRequired,
           passkey_count: sessionUser.passkey_count,
         },
       });
