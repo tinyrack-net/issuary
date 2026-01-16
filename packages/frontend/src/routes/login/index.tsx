@@ -110,13 +110,30 @@ function Login() {
         return;
       }
 
-      // Check if TOTP setup is required (TOTP mandatory but not set up)
-      if (data.totp_setup_required) {
-        // Redirect to TOTP setup page with OAuth params preserved
-        router.navigate({
-          to: '/setup-totp',
-          search: extractOAuthParams(search),
-        });
+      // Check if 2FA setup is required (2FA mandatory but not set up)
+      if (data.second_factor_setup_required) {
+        const methods = data.available_setup_methods;
+        // If only one method available, go directly to that setup page
+        if (methods.length === 1) {
+          const method = methods[0];
+          if (method === 'totp') {
+            router.navigate({
+              to: '/setup-totp',
+              search: extractOAuthParams(search),
+            });
+          } else if (method === 'passkey') {
+            router.navigate({
+              to: '/setup-passkey',
+              search: extractOAuthParams(search),
+            });
+          }
+        } else {
+          // Multiple methods available, go to 2FA setup selection page
+          router.navigate({
+            to: '/setup-2fa',
+            search: extractOAuthParams(search),
+          });
+        }
         return;
       }
 

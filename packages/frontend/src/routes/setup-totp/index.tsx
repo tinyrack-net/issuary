@@ -82,7 +82,7 @@ function SetupTotp() {
   const verifyMutation = useMutation({
     ...verifyTotpMutationOptions,
     onSuccess: async (data) => {
-      if (data.totp_setup_completed && data.user) {
+      if (data.second_factor_setup_completed && data.user) {
         queryClient.setQueryData(getSessionQueryOptions.queryKey, {
           user: data.user,
         });
