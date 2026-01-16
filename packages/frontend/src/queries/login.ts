@@ -1,13 +1,12 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch';
+import type { SecondFactorMethod } from '@/libs/oauth-search.js';
 import type { SessionUser } from './session';
 
 export type LoginParams = {
   email: string;
   password: string;
 };
-
-export type SecondFactorMethod = 'totp' | 'passkey';
 
 export type LoginResponse =
   | {
