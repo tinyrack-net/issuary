@@ -86,7 +86,7 @@ describe('POST /api/v1/auth/login', () => {
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
     expect(body.email_verification_required).toBe(true);
-    expect(body.totp_verification_required).toBe(false);
+    expect(body.second_factor_required).toBe(false);
     expect(body.totp_setup_required).toBe(false);
     expect(body.email).toBe(uniqueEmail);
     expect(body).not.toHaveProperty('user');
