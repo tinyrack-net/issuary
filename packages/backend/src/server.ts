@@ -78,6 +78,7 @@ export function createServer(options?: CreateServerOptions) {
 
       if (env.APP_ENV !== 'test') {
         await appInstance.listen({
+          host: '0.0.0.0',
           port: config.app.port,
         });
       }
