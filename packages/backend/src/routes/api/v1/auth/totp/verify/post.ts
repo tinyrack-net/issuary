@@ -19,7 +19,7 @@ export default (fastify: FastifyWithZodInstance) => {
     schema: {
       summary: 'Verify TOTP for login',
       description:
-        'Complete login by verifying TOTP code. Requires pending TOTP session from password login.',
+        'Complete login by verifying TOTP code. Requires pending 2FA session from password login.',
       tags: [TAGS.AUTH],
       body: z.object({
         code: f.totpCode,
@@ -27,29 +27,26 @@ export default (fastify: FastifyWithZodInstance) => {
       response: {
         200: r.UserSessionResponse,
         400: z.union([e.ValidationError.Schema, e.InvalidTotpCode.Schema]),
-        401: e.TotpVerificationSessionExpired.Schema,
+        401: e.SecondFactorSessionExpired.Schema,
       },
     },
     handler: async (req, res) => {
-      const pendingTotpUser = req.session.get('pendingTotpUser');
+      const pending2FAUser = req.session.get('pending2FAUser');
 
-      if (!pendingTotpUser) {
-        throw new e.TotpVerificationSessionExpired.Error();
+      if (!pending2FAUser) {
+        throw new e.SecondFactorSessionExpired.Error();
       }
 
-      await fastify.totpService.verifyForAuth(
-        pendingTotpUser.id,
-        req.body.code,
-      );
+      await fastify.totpService.verifyForAuth(pending2FAUser.id, req.body.code);
 
-      const user = await fastify.userService.verifyUserById(pendingTotpUser.id);
-      req.session.set('pendingTotpUser', undefined);
+      const user = await fastify.userService.verifyUserById(pending2FAUser.id);
+      req.session.set('pending2FAUser', undefined);
 
       const authTime =
-        pendingTotpUser.authenticated_at ?? Math.floor(Date.now() / 1000);
+        pending2FAUser.authenticated_at ?? Math.floor(Date.now() / 1000);
 
       const authMethods: AuthenticationMethod[] = [
-        ...pendingTotpUser.auth_methods,
+        ...pending2FAUser.auth_methods,
         'otp',
         'mfa',
       ];

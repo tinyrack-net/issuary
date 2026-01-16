@@ -419,6 +419,11 @@ export const e = {
     'TOTP_VERIFICATION_SESSION_EXPIRED',
     'TOTP verification session has expired. Please login again.',
   ),
+  SecondFactorSessionExpired: createError(
+    401,
+    'SECOND_FACTOR_SESSION_EXPIRED',
+    'Second factor authentication session has expired. Please login again.',
+  ),
 
   // Passkey Errors
   PasskeyNotEnabled: createError(
@@ -455,6 +460,11 @@ export const e = {
     400,
     'CANNOT_REMOVE_LAST_PASSKEY',
     'Cannot remove the last passkey. You need at least one way to log in.',
+  ),
+  PasskeyUserMismatch: createError(
+    403,
+    'PASSKEY_USER_MISMATCH',
+    'The passkey does not belong to the pending user.',
   ),
 
   // Email Verification Errors

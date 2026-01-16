@@ -88,7 +88,7 @@ function VerifyTotp() {
     } catch (error) {
       console.error('TOTP verification failed:', error);
       if (error instanceof ApiError) {
-        if (error.code === 'TOTP_VERIFICATION_SESSION_EXPIRED') {
+        if (error.code === 'SECOND_FACTOR_SESSION_EXPIRED') {
           setError('code', {
             type: 'manual',
             message: t('verifyTotp.error.expired'),

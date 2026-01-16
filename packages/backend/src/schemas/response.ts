@@ -360,26 +360,29 @@ export const r = {
     user: UserSession,
   }),
 
-  // Login response - either full session, TOTP verification required, TOTP setup required, or email verification required
+  // Login response - either full session, 2FA required, TOTP setup required, or email verification required
   LoginResponse: z.union([
     z.object({
       user: UserSession,
-      totp_verification_required: z.literal(false),
+      second_factor_required: z.literal(false),
       totp_setup_required: z.literal(false),
       email_verification_required: z.literal(false),
     }),
     z.object({
-      totp_verification_required: z.literal(true),
+      second_factor_required: z.literal(true),
+      available_methods: z
+        .array(z.enum(['totp', 'passkey']))
+        .describe('Available 2FA methods for the user'),
       totp_setup_required: z.literal(false),
       email_verification_required: z.literal(false),
     }),
     z.object({
-      totp_verification_required: z.literal(false),
+      second_factor_required: z.literal(false),
       totp_setup_required: z.literal(true),
       email_verification_required: z.literal(false),
     }),
     z.object({
-      totp_verification_required: z.literal(false),
+      second_factor_required: z.literal(false),
       totp_setup_required: z.literal(false),
       email_verification_required: z.literal(true),
       email: f.userEmail.describe('Email address for verification'),

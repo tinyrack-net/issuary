@@ -15,7 +15,7 @@ declare module 'fastify' {
   interface FastifyRequest {
     auth: {
       verify: () => Promise<z.infer<typeof r.UserSession>>;
-      verifyPendingTotpUser: () => Promise<z.infer<typeof r.UserSession>>;
+      verifyPending2FAUser: () => Promise<z.infer<typeof r.UserSession>>;
       verifyPendingTotpSetupUser: () => Promise<z.infer<typeof r.UserSession>>;
     };
   }
@@ -200,8 +200,8 @@ export default fastifyPlugin(
           const user = await userService.verifyUserById(userId);
           return user;
         },
-        verifyPendingTotpUser: async () => {
-          const userId = req.session.get('pendingTotpUser')?.id;
+        verifyPending2FAUser: async () => {
+          const userId = req.session.get('pending2FAUser')?.id;
           if (!userId) {
             throw new e.Unauthorized.Error();
           }

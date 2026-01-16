@@ -38,37 +38,50 @@ export default (fastify: FastifyWithZodInstance) => {
 
       if (emailVerificationRequired && !user.email_verified) {
         return res.status(200).send({
-          totp_verification_required: false,
+          second_factor_required: false,
           totp_setup_required: false,
           email_verification_required: true,
           email: user.email,
         });
       }
 
+      // Check available 2FA methods
+      const available2FAMethods: ('totp' | 'passkey')[] = [];
       if (user.totp_enabled) {
-        req.session.set('pendingTotpUser', {
+        available2FAMethods.push('totp');
+      }
+      if (user.passkey_count > 0) {
+        available2FAMethods.push('passkey');
+      }
+
+      // If 2FA is available, require second factor verification
+      if (available2FAMethods.length > 0) {
+        req.session.set('pending2FAUser', {
           id: user.id,
           auth_methods: ['pwd'],
           authenticated_at: Math.floor(Date.now() / 1000),
         });
         return res.status(200).send({
-          totp_verification_required: true,
+          second_factor_required: true,
+          available_methods: available2FAMethods,
           totp_setup_required: false,
           email_verification_required: false,
         });
       }
 
+      // TOTP setup required (user must set up TOTP before continuing)
       if (user.totp_required && !user.totp_enabled) {
         req.session.set('pendingTotpSetup', {
           id: user.id,
         });
         return res.status(200).send({
-          totp_verification_required: false,
+          second_factor_required: false,
           totp_setup_required: true,
           email_verification_required: false,
         });
       }
 
+      // No 2FA required, create full session
       req.session.set('user', {
         id: user.id,
         authenticated_at: Math.floor(Date.now() / 1000),
@@ -77,7 +90,7 @@ export default (fastify: FastifyWithZodInstance) => {
       });
 
       return res.status(200).send({
-        totp_verification_required: false,
+        second_factor_required: false,
         totp_setup_required: false,
         email_verification_required: false,
         user: {

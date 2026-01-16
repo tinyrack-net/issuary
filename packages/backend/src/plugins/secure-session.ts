@@ -24,7 +24,12 @@ declare module '@fastify/secure-session' {
       auth_methods: AuthenticationMethod[];
       acr: AuthenticationContextClass;
     };
-    pendingTotpUser?: {
+    /**
+     * Pending 2FA user session.
+     * Set after successful password authentication when 2FA is required.
+     * User must complete 2FA (TOTP or Passkey) to get full session.
+     */
+    pending2FAUser?: {
       id: string;
       auth_methods: AuthenticationMethod[];
       authenticated_at: number;
