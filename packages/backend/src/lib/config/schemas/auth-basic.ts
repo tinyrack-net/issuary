@@ -1,20 +1,39 @@
 import z from 'zod/v4';
 
 /**
+ * Second factor configuration for password authentication.
+ * Determines if users must set up 2FA after registration.
+ */
+export const AppConfigSecondFactor = z.object({
+  /**
+   * Whether a second factor is required for password authentication.
+   * If true, users must set up at least one 2FA method (TOTP or passkey).
+   */
+  required: z.boolean().default(false),
+});
+
+export type AppConfigSecondFactor = z.infer<typeof AppConfigSecondFactor>;
+
+/**
  * Password authentication configuration (fixed type).
  */
 export const AppConfigPasswordAuth = z.object({
   enabled: z.boolean().default(true),
   email_verification: z.boolean().default(true),
+  /**
+   * Second factor requirement configuration.
+   * Controls whether users must set up 2FA after registration.
+   */
+  second_factor: AppConfigSecondFactor.default({
+    required: false,
+  }),
   totp: z
     .object({
       enabled: z.boolean().default(false),
-      required: z.boolean().default(false),
       issuer: z.string().optional(),
     })
     .default({
       enabled: false,
-      required: false,
     }),
 });
 
@@ -38,9 +57,11 @@ export const AppConfigBasicAuthenticationMethods = z.object({
   password: AppConfigPasswordAuth.default({
     enabled: true,
     email_verification: true,
+    second_factor: {
+      required: false,
+    },
     totp: {
       enabled: false,
-      required: false,
     },
   }),
   passkey: AppConfigPasskeyAuth.default({

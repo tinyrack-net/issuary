@@ -21,9 +21,11 @@ export const ConfigSchema = z.object({
     password: {
       enabled: true,
       email_verification: true,
+      second_factor: {
+        required: false,
+      },
       totp: {
         enabled: false,
-        required: false,
       },
     },
     passkey: {
@@ -63,9 +65,11 @@ export const InternalConfigSchema = z.object({
     password: {
       enabled: true,
       email_verification: true,
+      second_factor: {
+        required: false,
+      },
       totp: {
         enabled: false,
-        required: false,
         issuer: 'Tinyrack',
       },
     },

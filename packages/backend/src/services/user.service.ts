@@ -16,7 +16,7 @@ declare module 'fastify' {
     auth: {
       verify: () => Promise<z.infer<typeof r.UserSession>>;
       verifyPending2FAUser: () => Promise<z.infer<typeof r.UserSession>>;
-      verifyPendingTotpSetupUser: () => Promise<z.infer<typeof r.UserSession>>;
+      verifyPending2FASetupUser: () => Promise<z.infer<typeof r.UserSession>>;
     };
   }
 }
@@ -49,7 +49,6 @@ export class UserService {
       email_verified: user.email_verified,
       has_password: user.hasPassword(),
       totp_enabled: totpEnabled,
-      totp_required: this.userTotpRequired(user),
       passkey_count: passkeyCount,
     };
   }
@@ -79,7 +78,6 @@ export class UserService {
       email_verified: user.email_verified,
       has_password: user.hasPassword(),
       totp_enabled: totpEnabled,
-      totp_required: this.userTotpRequired(user),
       passkey_count: passkeyCount,
     };
   }
@@ -100,8 +98,6 @@ export class UserService {
 
     await this.mikro.em.persist(user);
     await this.mikro.em.flush();
-
-    const totpRequired = this.userTotpRequired(user);
 
     if (this.emailVerificationService) {
       const verification = await this.emailVerificationService.generateToken({
@@ -125,7 +121,6 @@ export class UserService {
         email_verified: user.email_verified,
         has_password: user.hasPassword(),
         totp_enabled: false,
-        totp_required: totpRequired,
         passkey_count: 0,
       },
     };
@@ -169,14 +164,32 @@ export class UserService {
     return userLike.managed_by !== 'config' && !!this.config.smtp;
   }
 
-  public userTotpRequired(userLike: {
+  /**
+   * Determines if second factor setup is required for a user.
+   */
+  public userSecondFactorRequired(userLike: {
     managed_by: UserEntity['managed_by'];
   }): boolean {
-    return (
-      userLike.managed_by !== 'config' &&
-      this.config.basic_authentication_methods.password.totp.enabled &&
-      this.config.basic_authentication_methods.password.totp.required
-    );
+    if (userLike.managed_by === 'config') {
+      return false;
+    }
+    const passwordConfig = this.config.basic_authentication_methods.password;
+    return passwordConfig.second_factor.required;
+  }
+
+  /**
+   * Returns the available 2FA setup methods based on config.
+   * Only returns methods that are enabled in config.
+   */
+  public getAvailable2FASetupMethods(): ('totp' | 'passkey')[] {
+    const methods: ('totp' | 'passkey')[] = [];
+    if (this.config.basic_authentication_methods.password.totp.enabled) {
+      methods.push('totp');
+    }
+    if (this.config.basic_authentication_methods.passkey.enabled) {
+      methods.push('passkey');
+    }
+    return methods;
   }
 }
 
@@ -208,8 +221,8 @@ export default fastifyPlugin(
           const user = await userService.verifyUserById(userId);
           return user;
         },
-        verifyPendingTotpSetupUser: async () => {
-          const userId = req.session.get('pendingTotpSetup')?.id;
+        verifyPending2FASetupUser: async () => {
+          const userId = req.session.get('pending2FASetup')?.id;
           if (!userId) {
             throw new e.Unauthorized.Error();
           }

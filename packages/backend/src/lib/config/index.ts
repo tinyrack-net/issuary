@@ -24,6 +24,7 @@ export {
   AppConfigBasicAuthenticationMethods,
   AppConfigPasskeyAuth,
   AppConfigPasswordAuth,
+  AppConfigSecondFactor,
 } from './schemas/auth-basic.js';
 // OAuth authentication schemas
 export {

@@ -46,9 +46,10 @@ basic_authentication_methods:
   password:
     enabled: true
     email_verification: true
+    second_factor:
+      required: true
     totp:
       enabled: true
-      required: true
       issuer: tinyrack
   passkey:
     enabled: false

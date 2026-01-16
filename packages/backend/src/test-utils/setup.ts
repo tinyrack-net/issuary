@@ -47,9 +47,11 @@ export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
     password: {
       enabled: true,
       email_verification: true,
+      second_factor: {
+        required: false,
+      },
       totp: {
         enabled: false,
-        required: false,
       },
     },
     passkey: {
