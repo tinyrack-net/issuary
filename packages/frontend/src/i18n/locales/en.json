@@ -298,5 +298,20 @@
   "setupTotp.error.invalid": "Invalid code. Please try again.",
   "setupTotp.error.setupFailed": "Failed to start setup. Please try again.",
   "setupTotp.retry": "Retry",
-  "setupTotp.backToLogin": "Back to login"
+  "setupTotp.backToLogin": "Back to login",
+  "verifyPasskey.title": "Passkey Verification",
+  "verifyPasskey.subtitle": "Use your passkey to complete sign in",
+  "verifyPasskey.waiting": "Follow the prompts from your browser or device...",
+  "verifyPasskey.retry": "Try again",
+  "verifyPasskey.error.expired": "Session expired. Please log in again.",
+  "verifyPasskey.error.userMismatch": "This passkey belongs to a different account.",
+  "verifyPasskey.error.failed": "Passkey verification failed. Please try again.",
+  "verifyPasskey.backToLogin": "Back to login",
+  "verify2fa.title": "Two-Factor Authentication",
+  "verify2fa.subtitle": "Choose a verification method",
+  "verify2fa.totp.title": "Authenticator App",
+  "verify2fa.totp.description": "Use a 6-digit code from your app",
+  "verify2fa.passkey.title": "Passkey",
+  "verify2fa.passkey.description": "Use fingerprint, face, or security key",
+  "verify2fa.backToLogin": "Back to login"
 }

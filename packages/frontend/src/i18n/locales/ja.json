@@ -298,5 +298,20 @@
   "setupTotp.error.invalid": "無効なコードです。もう一度お試しください。",
   "setupTotp.error.setupFailed": "設定を開始できませんでした。もう一度お試しください。",
   "setupTotp.retry": "再試行",
-  "setupTotp.backToLogin": "ログインに戻る"
+  "setupTotp.backToLogin": "ログインに戻る",
+  "verifyPasskey.title": "パスキー認証",
+  "verifyPasskey.subtitle": "パスキーを使用してログインを完了してください",
+  "verifyPasskey.waiting": "ブラウザまたはデバイスの指示に従ってください...",
+  "verifyPasskey.retry": "再試行",
+  "verifyPasskey.error.expired": "セッションが期限切れです。再度ログインしてください。",
+  "verifyPasskey.error.userMismatch": "このパスキーは別のアカウントに登録されています。",
+  "verifyPasskey.error.failed": "パスキー認証に失敗しました。もう一度お試しください。",
+  "verifyPasskey.backToLogin": "ログインに戻る",
+  "verify2fa.title": "二要素認証",
+  "verify2fa.subtitle": "認証方法を選択してください",
+  "verify2fa.totp.title": "認証アプリ",
+  "verify2fa.totp.description": "アプリの6桁のコードを使用",
+  "verify2fa.passkey.title": "パスキー",
+  "verify2fa.passkey.description": "指紋、顔認証、またはセキュリティキーを使用",
+  "verify2fa.backToLogin": "ログインに戻る"
 }

@@ -298,5 +298,20 @@
   "setupTotp.error.invalid": "잘못된 코드입니다. 다시 시도해주세요.",
   "setupTotp.error.setupFailed": "설정을 시작하지 못했습니다. 다시 시도해주세요.",
   "setupTotp.retry": "다시 시도",
-  "setupTotp.backToLogin": "로그인으로 돌아가기"
+  "setupTotp.backToLogin": "로그인으로 돌아가기",
+  "verifyPasskey.title": "패스키 인증",
+  "verifyPasskey.subtitle": "패스키를 사용하여 로그인을 완료하세요",
+  "verifyPasskey.waiting": "브라우저 또는 기기의 안내를 따르세요...",
+  "verifyPasskey.retry": "다시 시도",
+  "verifyPasskey.error.expired": "세션이 만료되었습니다. 다시 로그인해주세요.",
+  "verifyPasskey.error.userMismatch": "이 패스키는 다른 계정에 등록되어 있습니다.",
+  "verifyPasskey.error.failed": "패스키 인증에 실패했습니다. 다시 시도해주세요.",
+  "verifyPasskey.backToLogin": "로그인으로 돌아가기",
+  "verify2fa.title": "2단계 인증",
+  "verify2fa.subtitle": "인증 방법을 선택하세요",
+  "verify2fa.totp.title": "인증 앱",
+  "verify2fa.totp.description": "앱의 6자리 코드 사용",
+  "verify2fa.passkey.title": "패스키",
+  "verify2fa.passkey.description": "지문, 얼굴 인식 또는 보안 키 사용",
+  "verify2fa.backToLogin": "로그인으로 돌아가기"
 }
