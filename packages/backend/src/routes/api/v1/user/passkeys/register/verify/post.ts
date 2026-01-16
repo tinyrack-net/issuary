@@ -4,6 +4,13 @@ import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
+/**
+ * POST /api/v1/user/passkeys/register/verify
+ *
+ * Verify and complete passkey registration.
+ * Accepts both full user session and pending 2FA setup session.
+ * If from pending setup session, converts to full user session.
+ */
 export default (fastify: FastifyWithZodInstance) => {
   if (!fastify.config.basic_authentication_methods.passkey.enabled) {
     return;
@@ -13,11 +20,13 @@ export default (fastify: FastifyWithZodInstance) => {
     url: '',
     schema: {
       summary: 'Verify Passkey Registration',
-      description: 'Verify and complete passkey registration',
+      description:
+        'Verify and complete passkey registration. ' +
+        'Accepts both full user session and pending 2FA setup session.',
       tags: [TAGS.USER],
       body: r.PasskeyRegistrationBody,
       response: {
-        200: r.SuccessResponse,
+        200: r.PasskeySetupVerifyResponse,
         400: e.PasskeyNotEnabled.Schema.or(
           e.PasskeyChallengeNotFound.Schema,
         ).or(e.PasskeyVerificationFailed.Schema),
@@ -26,7 +35,14 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      const userSession = await req.auth.verify();
+      // Allow both full user session and pending 2FA setup session
+      const userSession = req.session.get('user');
+      const pending2FASetup = req.session.get('pending2FASetup');
+      const userId = userSession?.id ?? pending2FASetup?.id;
+
+      if (!userId) {
+        throw new e.Unauthorized.Error();
+      }
 
       // Get challenge from session
       const challenge = req.session.get('passkey_challenge');
@@ -36,7 +52,7 @@ export default (fastify: FastifyWithZodInstance) => {
 
       // Get user entity
       const user = await fastify.mikro.user.findOneOrFail({
-        id: userSession.id,
+        id: userId,
       });
 
       // The validated body already conforms to RegistrationResponseJSON structure
@@ -55,8 +71,33 @@ export default (fastify: FastifyWithZodInstance) => {
       // Clear challenge from session
       req.session.set('passkey_challenge', undefined);
 
+      // Check if this was from pending 2FA setup session
+      const wasPendingSetup = !!pending2FASetup;
+
+      if (wasPendingSetup) {
+        // Clear pending setup sessions and create full user session
+        req.session.set('pending2FASetup', undefined);
+        req.session.set('user', {
+          id: userId,
+          authenticated_at: Math.floor(Date.now() / 1000),
+          auth_methods: ['pwd', 'hwk', 'mfa'],
+          acr: 'urn:tinyrack:acr:2',
+        });
+
+        // Get user data for response
+        const userSessionData =
+          await fastify.userService.verifyUserById(userId);
+
+        return res.status(200).send({
+          success: true,
+          user: userSessionData,
+          second_factor_setup_completed: true,
+        });
+      }
+
       return res.status(200).send({
         success: true,
+        second_factor_setup_completed: false,
       });
     },
   });
