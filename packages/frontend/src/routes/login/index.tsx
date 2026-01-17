@@ -76,17 +76,13 @@ function Login() {
   const loginMutation = useMutation({
     ...loginMutationOptions,
     onSuccess: async (data: LoginResponse) => {
-      // Check if email verification is required
       if (data.email_verification_required) {
-        // Redirect to email verification page with OAuth params preserved
         window.location.href = buildVerifyEmailUrl(search, data.email);
         return;
       }
 
-      // Check if 2FA verification is required (user has TOTP or passkey enabled)
       if (data.second_factor_required) {
         const methods = data.available_methods;
-        // If only one method available, go directly to that verification page
         if (methods.length === 1) {
           const method = methods[0];
           if (method === 'totp') {
@@ -101,7 +97,6 @@ function Login() {
             });
           }
         } else {
-          // Multiple methods available, go to 2FA selection page with methods
           router.navigate({
             to: '/verify-2fa',
             search: {
