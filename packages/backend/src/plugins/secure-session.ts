@@ -3,11 +3,17 @@ import fastifyPlugin from 'fastify-plugin';
 
 declare module '@fastify/secure-session' {
   interface SessionData {
+    /**
+     * @description
+     * Full user session.
+     */
     user?: {
       id: string;
       authenticated_at: number;
     };
+
     /**
+     * @description
      * Pending 2FA user session.
      * Set after successful password authentication when 2FA is required.
      * User must complete 2FA (TOTP or Passkey) to get full session.
@@ -16,7 +22,9 @@ declare module '@fastify/secure-session' {
       id: string;
       authenticated_at: number;
     };
+
     /**
+     * @description
      * Pending 2FA setup session.
      * Set after successful password authentication when 2FA setup is required.
      * User must set up at least one 2FA method to get full session.
@@ -24,6 +32,7 @@ declare module '@fastify/secure-session' {
     pending2FASetup?: {
       id: string;
     };
+
     oauth?: {
       state: string;
       codeVerifier: string;
@@ -31,6 +40,7 @@ declare module '@fastify/secure-session' {
       mode: 'login' | 'register' | 'link';
       returnUrl?: string | undefined;
     };
+
     passkey_challenge?: string;
   }
 }
