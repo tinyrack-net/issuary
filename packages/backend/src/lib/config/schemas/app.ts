@@ -90,6 +90,20 @@ export const AppConfigApp = z.object({
     .url()
     .optional()
     .describe('Background image URL for authentication pages'),
+  trust_proxy: z
+    .union([
+      z.boolean(),
+      z.string(),
+      z.array(z.string()),
+      z.number().int().min(0),
+    ])
+    .optional()
+    .default(false)
+    .describe(
+      'Trust proxy configuration for X-Forwarded-* headers. ' +
+        'Can be true (trust all), false (trust none), ' +
+        'IP/CIDR string, array of IPs, or number (nth hop)',
+    ),
 });
 
 export type AppConfigApp = z.infer<typeof AppConfigApp>;
