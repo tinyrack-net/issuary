@@ -74,6 +74,8 @@ export default (fastify: FastifyWithZodInstance) => {
           totp_enabled: totpEnabled,
           passkey_count: passkeyCount,
         },
+        second_factor_setup_required:
+          secondFactorRequired && available2FAMethods.length === 0,
       });
     },
   });

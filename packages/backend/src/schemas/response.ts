@@ -355,6 +355,7 @@ export const r = {
   // Wrapped response schemas
   UserSessionResponse: z.object({
     user: UserSession,
+    second_factor_setup_required: z.boolean().optional(),
   }),
 
   // Login response - either full session, 2FA required, 2FA setup required, or email verification required
@@ -391,6 +392,7 @@ export const r = {
 
   UserSessionNullableResponse: z.object({
     user: UserSession.nullable(),
+    second_factor_setup_required: z.boolean().optional(),
   }),
 
   OAuthCallbackResponse: z.object({

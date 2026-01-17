@@ -54,6 +54,7 @@ export default (fastify: FastifyWithZodInstance) => {
 
       res.status(200).send({
         user: userSession,
+        second_factor_setup_required: secondFactorRequired,
       });
     },
   });

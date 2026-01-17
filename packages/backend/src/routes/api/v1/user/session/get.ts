@@ -17,6 +17,16 @@ export default (fastify: FastifyWithZodInstance) =>
     handler: async (req, res) => {
       try {
         const user = await req.auth.verify();
+        const secondFactorRequired =
+          fastify.userService.userSecondFactorRequired(user);
+        const available2FAMethods =
+          fastify.userService.getAvailable2FASetupMethods();
+        const needsSecondFactorSetup =
+          secondFactorRequired &&
+          available2FAMethods.length > 0 &&
+          !user.totp_enabled &&
+          user.passkey_count === 0;
+
         return res.status(200).send({
           user: {
             id: user.id,
@@ -27,6 +37,7 @@ export default (fastify: FastifyWithZodInstance) =>
             totp_enabled: user.totp_enabled,
             passkey_count: user.passkey_count,
           },
+          second_factor_setup_required: needsSecondFactorSetup,
         });
       } catch {
         return res.status(200).send({
