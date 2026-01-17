@@ -74,9 +74,9 @@ function Register() {
     ...registerMutationOptions,
     onSuccess: async (data) => {
       if (data.user.email_verified) {
-        // Check if TOTP setup is required before completing registration
-        if (data.user.totp_required) {
-          // Redirect to TOTP setup page (session is pendingTotpSetup, not user)
+        // Check if 2FA setup is required before completing registration
+        if (data.second_factor_setup_required) {
+          // Redirect to TOTP setup page (session is pending2FASetup, not user)
           await tick();
           navigate({
             to: '/setup-totp',

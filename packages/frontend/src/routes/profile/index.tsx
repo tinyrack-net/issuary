@@ -22,15 +22,15 @@ import { PasswordSection } from '@/components/profile/password-section.js';
 import { ProfilePageLayout } from '@/components/profile/profile-page-layout.js';
 import { TotpSection } from '@/components/profile/totp-section.js';
 import { UserInfoSection } from '@/components/profile/user-info-section.js';
-import { tick } from '@/libs/promise';
-import { appConfigQueryOptions } from '@/queries/config';
-import { logoutMutationOptions } from '@/queries/logout';
+import { tick } from '@/libs/promise.js';
+import { appConfigQueryOptions } from '@/queries/config.js';
+import { logoutMutationOptions } from '@/queries/logout.js';
 import {
   getOAuthConnectUrl,
   oauthAccountsQueryOptions,
   unlinkOAuthMutationOptions,
-} from '@/queries/oauth';
-import { getSessionQueryOptions } from '@/queries/session';
+} from '@/queries/oauth.js';
+import { getSessionQueryOptions } from '@/queries/session.js';
 
 type PasswordModalType = 'set' | 'change' | 'remove' | null;
 type TotpModalType = 'setup' | 'disable' | null;
@@ -145,7 +145,7 @@ function Profile() {
   })();
 
   // Check if user needs to set up TOTP or Passkey (required settings)
-  const needsTotpSetup = user?.totp_required ?? false;
+  const needsTotpSetup = session.second_factor_setup_required ?? false;
 
   // Auto-open required setup modals
   useEffect(() => {

@@ -1,15 +1,14 @@
 import { mutationOptions } from '@tanstack/react-query';
-import { etch } from '@/libs/etch';
-import type { SessionUser } from './session';
+import { etch } from '@/libs/etch.js';
+import type { SessionUser } from './session.js';
 
 export type VerifyEmailParams = {
   token: string;
 };
 
 export type VerifyEmailResponse = {
-  user: SessionUser & {
-    totp_required?: boolean;
-  };
+  user: SessionUser;
+  second_factor_setup_required?: boolean;
 };
 
 export const verifyEmailMutationOptions = mutationOptions({

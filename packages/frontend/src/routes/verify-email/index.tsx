@@ -76,8 +76,8 @@ function VerifyEmail() {
   const verifyEmailMutation = useMutation({
     ...verifyEmailMutationOptions,
     onSuccess: async (data) => {
-      // If TOTP setup is required, redirect to setup-totp page
-      if (data.user.totp_required) {
+      // If 2FA setup is required, redirect to setup-totp page
+      if (data.second_factor_setup_required) {
         window.location.href = buildSetupTotpUrl(search);
         return;
       }

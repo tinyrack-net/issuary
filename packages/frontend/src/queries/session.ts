@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import { etch } from '@/libs/etch';
+import { etch } from '@/libs/etch.js';
 import { queryKeys } from './keys';
 
 export type SessionUser = {
@@ -9,12 +9,12 @@ export type SessionUser = {
   email_verified: boolean;
   has_password: boolean;
   totp_enabled: boolean;
-  totp_required: boolean;
   passkey_count: number;
 };
 
 export type SessionResponse = {
   user: SessionUser | null;
+  second_factor_setup_required?: boolean;
 };
 
 export const getSessionQueryOptions = queryOptions({
