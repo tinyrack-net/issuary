@@ -16,7 +16,7 @@ export default (fastify: FastifyWithZodInstance) => {
       description: 'Rename a passkey',
       tags: [TAGS.USER],
       params: z.object({
-        id: z.string().uuid(),
+        id: z.uuid(),
       }),
       body: z.object({
         name: z.string().min(1).max(100),
