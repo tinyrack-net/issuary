@@ -9,6 +9,7 @@ export type SessionUser = {
   email_verified: boolean;
   has_password: boolean;
   totp_enabled: boolean;
+  second_factor_required: boolean;
   passkey_count: number;
 };
 

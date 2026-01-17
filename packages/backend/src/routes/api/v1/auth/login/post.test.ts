@@ -23,6 +23,7 @@ describe('POST /api/v1/auth/login', () => {
     const body = res.json();
     expect(body).toHaveProperty('user');
     expect(body.user).toHaveProperty('id');
+    expect(body.user).toHaveProperty('second_factor_required');
     expect(body.email_verification_required).toBe(false);
   });
 
@@ -129,6 +130,7 @@ describe('POST /api/v1/auth/login', () => {
     expect(body).toHaveProperty('user');
     expect(body.user.email).toBe(uniqueEmail);
     expect(body.user.email_verified).toBe(true);
+    expect(body.user).toHaveProperty('second_factor_required');
   });
 
   test('should allow config user to login without email verification', async () => {
@@ -147,6 +149,7 @@ describe('POST /api/v1/auth/login', () => {
     expect(body.email_verification_required).toBe(false);
     expect(body).toHaveProperty('user');
     expect(body.user.managed_by).toBe('config');
+    expect(body.user).toHaveProperty('second_factor_required');
   });
 
   test('should fail with wrong password', async () => {

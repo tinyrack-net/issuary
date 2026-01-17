@@ -52,9 +52,10 @@ describe('GET /api/v1/user/session', () => {
     expect(sessionBody.user).not.toBeNull();
     expect(sessionBody.user).toHaveProperty('id');
 
-    // Verify user id matches the logged-in user
+    // Verify user id matches = logged-in user
     const loginBody = loginRes.json();
     expect(sessionBody.user.id).toBe(loginBody.user.id);
+    expect(sessionBody.user).toHaveProperty('second_factor_required');
   });
 
   test('should return null after logout', async () => {

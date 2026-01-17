@@ -21,6 +21,11 @@ const UserSession = z
     email_verified: f.emailVerified,
     has_password: z.boolean().describe('Whether the user has a password set'),
     totp_enabled: z.boolean().describe('Whether TOTP is enabled for the user'),
+    second_factor_required: z
+      .boolean()
+      .describe(
+        'Whether the user is required to use 2FA (e.g., due to policy)',
+      ),
     passkey_count: z
       .number()
       .int()

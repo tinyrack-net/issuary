@@ -56,6 +56,7 @@ describe('POST /api/v1/auth/register', () => {
     expect(body).toHaveProperty('user');
     expect(body.user).toHaveProperty('id');
     expect(body.user.email_verified).toBe(false);
+    expect(body.user).toHaveProperty('second_factor_required');
   });
 
   test('should fail with app config user email', async () => {

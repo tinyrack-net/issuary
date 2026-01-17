@@ -243,6 +243,11 @@ export class OAuthConnectService {
 
       // Compute totp_enabled from userTotp repository
       const totpEnabled = await this.mikro.userTotp.isEnabled(user.id);
+      const secondFactorRequired =
+        user.managed_by === 'config'
+          ? false
+          : this.config.basic_authentication_methods.password.second_factor
+              .required;
 
       return {
         isNewUser: false,
@@ -253,6 +258,7 @@ export class OAuthConnectService {
           email_verified: user.email_verified,
           has_password: user.hasPassword(),
           totp_enabled: totpEnabled,
+          second_factor_required: secondFactorRequired,
           passkey_count: await this.mikro.userPasskey.countByUserId(user.id),
         },
       };
@@ -293,6 +299,11 @@ export class OAuthConnectService {
 
       // Compute totp_enabled from userTotp repository
       const totpEnabled = await this.mikro.userTotp.isEnabled(existingUser.id);
+      const secondFactorRequired =
+        existingUser.managed_by === 'config'
+          ? false
+          : this.config.basic_authentication_methods.password.second_factor
+              .required;
 
       await this.mikro.em.populate(existingUser, ['password_hash']);
       return {
@@ -304,6 +315,7 @@ export class OAuthConnectService {
           email_verified: existingUser.email_verified,
           has_password: existingUser.hasPassword(),
           totp_enabled: totpEnabled,
+          second_factor_required: secondFactorRequired,
           passkey_count: await this.mikro.userPasskey.countByUserId(
             existingUser.id,
           ),
@@ -343,6 +355,9 @@ export class OAuthConnectService {
         email_verified: newUser.email_verified,
         has_password: false, // New OAuth user has no password
         totp_enabled: false, // New user has no TOTP
+        second_factor_required:
+          this.config.basic_authentication_methods.password.second_factor
+            .required,
         passkey_count: 0, // New user has no passkeys
       },
     };

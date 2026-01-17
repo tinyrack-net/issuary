@@ -64,6 +64,7 @@ export default (fastify: FastifyWithZodInstance) => {
           email_verified: sessionUser.email_verified,
           has_password: sessionUser.has_password,
           totp_enabled: sessionUser.totp_enabled,
+          second_factor_required: sessionUser.second_factor_required,
           passkey_count: sessionUser.passkey_count,
         },
       });

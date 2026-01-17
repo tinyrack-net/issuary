@@ -70,6 +70,7 @@ export default (fastify: FastifyWithZodInstance) => {
           email_verified: user.email_verified,
           has_password: user.hasPassword(),
           totp_enabled: totpEnabled,
+          second_factor_required: secondFactorRequired,
           passkey_count: passkeyCount,
         },
         second_factor_setup_required:

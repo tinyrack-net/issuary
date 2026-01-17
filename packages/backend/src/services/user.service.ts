@@ -41,6 +41,7 @@ export class UserService {
     );
     const totpEnabled = await this.mikro.userTotp.isEnabled(id);
     const passkeyCount = await this.mikro.userPasskey.countByUserId(id);
+    const secondFactorRequired = this.userSecondFactorRequired(user);
 
     return {
       id: user.id,
@@ -49,6 +50,7 @@ export class UserService {
       email_verified: user.email_verified,
       has_password: user.hasPassword(),
       totp_enabled: totpEnabled,
+      second_factor_required: secondFactorRequired,
       passkey_count: passkeyCount,
     };
   }
@@ -71,6 +73,8 @@ export class UserService {
 
     const totpEnabled = await this.mikro.userTotp.isEnabled(user.id);
     const passkeyCount = await this.mikro.userPasskey.countByUserId(user.id);
+    const secondFactorRequired = this.userSecondFactorRequired(user);
+
     return {
       id: user.id,
       managed_by: user.managed_by,
@@ -78,6 +82,7 @@ export class UserService {
       email_verified: user.email_verified,
       has_password: user.hasPassword(),
       totp_enabled: totpEnabled,
+      second_factor_required: secondFactorRequired,
       passkey_count: passkeyCount,
     };
   }
@@ -121,6 +126,7 @@ export class UserService {
         email_verified: user.email_verified,
         has_password: user.hasPassword(),
         totp_enabled: false,
+        second_factor_required: this.userSecondFactorRequired(user),
         passkey_count: 0,
       },
     };
