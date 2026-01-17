@@ -62,17 +62,6 @@ export const IdTokenPayload = BaseJWTPayload.extend({
    */
   auth_time: z.number().int().optional(),
   /**
-   * Authentication Methods References (RFC 8176)
-   * Array of strings indicating the authentication methods used
-   * @see https://www.rfc-editor.org/rfc/rfc8176.html
-   */
-  amr: z.array(z.string()).optional(),
-  /**
-   * Authentication Context Class Reference (OIDC Core 1.0 §2)
-   * String indicating the authentication context class satisfied
-   */
-  acr: z.string().optional(),
-  /**
    * Access Token hash value (OIDC Core 1.0 §3.1.3.6)
    * Left-most half of the hash of the access token using the hash algorithm
    * from the alg Header Parameter of the ID Token's JOSE Header

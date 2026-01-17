@@ -1,28 +1,11 @@
 import fastifySecureSession from '@fastify/secure-session';
 import fastifyPlugin from 'fastify-plugin';
 
-/**
- * Authentication Method Reference values (RFC 8176)
- * @see https://www.rfc-editor.org/rfc/rfc8176.html
- */
-export type AuthenticationMethod =
-  | 'pwd' // Password
-  | 'otp' // TOTP/OTP
-  | 'hwk' // Hardware key (Passkey/WebAuthn)
-  | 'mfa'; // Multi-factor authentication
-
-export type AuthenticationContextClass =
-  | 'urn:tinyrack:acr:0' // Session only (no re-authentication)
-  | 'urn:tinyrack:acr:1' // Single factor (password OR passkey)
-  | 'urn:tinyrack:acr:2'; // Multi-factor (password + TOTP, etc.)
-
 declare module '@fastify/secure-session' {
   interface SessionData {
     user?: {
       id: string;
       authenticated_at: number;
-      auth_methods: AuthenticationMethod[];
-      acr: AuthenticationContextClass;
     };
     /**
      * Pending 2FA user session.
@@ -31,7 +14,6 @@ declare module '@fastify/secure-session' {
      */
     pending2FAUser?: {
       id: string;
-      auth_methods: AuthenticationMethod[];
       authenticated_at: number;
     };
     /**

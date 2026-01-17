@@ -80,8 +80,6 @@ export default (fastify: FastifyWithZodInstance) => {
         req.session.set('user', {
           id: userId,
           authenticated_at: Math.floor(Date.now() / 1000),
-          auth_methods: ['pwd', 'hwk', 'mfa'],
-          acr: 'urn:tinyrack:acr:2',
         });
 
         // Get user data for response

@@ -2,10 +2,6 @@ import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import type { InternalAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
-import type {
-  AuthenticationContextClass,
-  AuthenticationMethod,
-} from '@/plugins/secure-session.js';
 import { e } from '@/schemas/error.js';
 import type { oauthSchema } from '@/schemas/oauth.js';
 import type { OAuthClientService } from './oauth-client.service.js';
@@ -34,10 +30,6 @@ export class OAuthAuthorizeService {
       id: string;
       /** OIDC: Time when End-User authentication occurred (Unix timestamp) */
       authenticated_at: number;
-      /** OIDC: Authentication Methods References (RFC 8176) */
-      auth_methods: AuthenticationMethod[];
-      /** OIDC: Authentication Context Class Reference */
-      acr: AuthenticationContextClass;
     };
   }): Promise<z.infer<typeof oauthSchema.AuthorizeResult>> {
     const { query, userSession } = params;
@@ -133,8 +125,6 @@ export class OAuthAuthorizeService {
       codeChallenge?: string;
       codeChallengeMethod?: 'S256' | 'plain';
       authTime?: number;
-      amr?: AuthenticationMethod[];
-      acr?: AuthenticationContextClass;
     } = {
       clientId: client.id,
       userId: userSession.id,
@@ -154,10 +144,6 @@ export class OAuthAuthorizeService {
     // Include OIDC authentication metadata from session
     if (userSession) {
       codeParams.authTime = userSession.authenticated_at;
-      if (userSession.auth_methods.length > 0) {
-        codeParams.amr = userSession.auth_methods;
-      }
-      codeParams.acr = userSession.acr;
     }
 
     const code = await this.generateAuthorizationCode(codeParams);
@@ -318,8 +304,6 @@ export class OAuthAuthorizeService {
     codeChallenge?: string;
     codeChallengeMethod?: 'S256' | 'plain';
     authTime?: number;
-    amr?: AuthenticationMethod[];
-    acr?: AuthenticationContextClass;
   }): Promise<string> {
     const codeParams: {
       clientId: string;
@@ -330,8 +314,6 @@ export class OAuthAuthorizeService {
       codeChallenge?: string;
       codeChallengeMethod?: 'S256' | 'plain';
       authTime?: number;
-      amr?: AuthenticationMethod[];
-      acr?: AuthenticationContextClass;
     } = {
       clientId: params.clientId,
       userId: params.userId,
@@ -351,12 +333,6 @@ export class OAuthAuthorizeService {
     // Include OIDC authentication metadata
     if (params.authTime !== undefined) {
       codeParams.authTime = params.authTime;
-    }
-    if (params.amr && params.amr.length > 0) {
-      codeParams.amr = params.amr;
-    }
-    if (params.acr) {
-      codeParams.acr = params.acr;
     }
 
     const { code } =

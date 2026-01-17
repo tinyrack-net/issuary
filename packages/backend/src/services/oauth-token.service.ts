@@ -4,10 +4,6 @@ import type z from 'zod/v4';
 import type { InternalAppConfig } from '@/lib/config/index.js';
 import { validatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
-import type {
-  AuthenticationContextClass,
-  AuthenticationMethod,
-} from '@/plugins/secure-session.js';
 import { e } from '@/schemas/error.js';
 import type { jwtPayload } from '@/schemas/jwt.js';
 import type { oauthSchema } from '@/schemas/oauth.js';
@@ -117,8 +113,6 @@ export class OAuthTokenService {
       ...(codeEntity.authTime !== undefined && {
         authTime: codeEntity.authTime,
       }),
-      ...(codeEntity.amr !== undefined && { amr: codeEntity.amr }),
-      ...(codeEntity.acr !== undefined && { acr: codeEntity.acr }),
     });
   }
 
@@ -378,10 +372,6 @@ export class OAuthTokenService {
     nonce?: string;
     /** OIDC: Time when End-User authentication occurred (Unix timestamp) */
     authTime?: number;
-    /** OIDC: Authentication Methods References (RFC 8176) */
-    amr?: AuthenticationMethod[];
-    /** OIDC: Authentication Context Class Reference */
-    acr?: AuthenticationContextClass;
   }): Promise<z.infer<typeof oauthSchema.TokenResponse>> {
     const {
       userId,
@@ -391,8 +381,6 @@ export class OAuthTokenService {
       scope,
       nonce,
       authTime,
-      amr,
-      acr,
     } = params;
 
     const scopeString = scope.join(' ');
@@ -428,8 +416,6 @@ export class OAuthTokenService {
         aud: string;
         nonce?: string;
         auth_time?: number;
-        amr?: string[];
-        acr?: string;
         at_hash?: string;
         email?: string;
         email_verified?: boolean;
@@ -446,14 +432,6 @@ export class OAuthTokenService {
       // Include OIDC authentication metadata claims
       if (authTime !== undefined) {
         idTokenPayload.auth_time = authTime;
-      }
-
-      if (amr && amr.length > 0) {
-        idTokenPayload.amr = amr;
-      }
-
-      if (acr) {
-        idTokenPayload.acr = acr;
       }
 
       // Compute at_hash (OIDC Core 1.0 §3.1.3.6)

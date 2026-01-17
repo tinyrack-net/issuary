@@ -94,8 +94,6 @@ export class JwtService {
    *
    * Includes standard OIDC claims:
    * - auth_time: Time when End-User authentication occurred
-   * - amr: Authentication Methods References (RFC 8176)
-   * - acr: Authentication Context Class Reference
    * - at_hash: Access Token hash (when provided)
    */
   async signIdToken(
@@ -110,8 +108,6 @@ export class JwtService {
       aud: payload.aud,
       ...(payload.nonce && { nonce: payload.nonce }),
       ...(payload.auth_time !== undefined && { auth_time: payload.auth_time }),
-      ...(payload.amr && payload.amr.length > 0 && { amr: payload.amr }),
-      ...(payload.acr && { acr: payload.acr }),
       ...(payload.at_hash && { at_hash: payload.at_hash }),
       ...(payload.email && { email: payload.email }),
       ...(payload.email_verified !== undefined && {

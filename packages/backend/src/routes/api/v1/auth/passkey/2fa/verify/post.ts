@@ -1,7 +1,6 @@
 import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
 import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
-import type { AuthenticationMethod } from '@/plugins/secure-session.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
@@ -68,17 +67,9 @@ export default (fastify: FastifyWithZodInstance) => {
       const authTime =
         pending2FAUser.authenticated_at ?? Math.floor(Date.now() / 1000);
 
-      const authMethods: AuthenticationMethod[] = [
-        ...pending2FAUser.auth_methods,
-        'hwk',
-        'mfa',
-      ];
-
       req.session.set('user', {
         id: user.id,
         authenticated_at: authTime,
-        auth_methods: authMethods,
-        acr: 'urn:tinyrack:acr:2',
       });
 
       return res.status(200).send({

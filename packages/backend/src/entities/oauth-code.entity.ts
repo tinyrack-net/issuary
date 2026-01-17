@@ -10,10 +10,6 @@ import {
   ref,
   t,
 } from '@mikro-orm/core';
-import type {
-  AuthenticationContextClass,
-  AuthenticationMethod,
-} from '@/plugins/secure-session.js';
 import { OAuthCodeRepository } from '@/repositories/oauth-code.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { OAuthClientEntity } from './oauth-client.entity.js';
@@ -148,24 +144,6 @@ export class OAuthCodeEntity extends BaseEntity {
   })
   public authTime?: number;
 
-  @Property({
-    type: t.json,
-    name: 'amr',
-    comment:
-      'Authentication Methods References (RFC 8176). Array of methods used to authenticate the user.',
-    nullable: true,
-  })
-  public amr?: AuthenticationMethod[];
-
-  @Property({
-    type: t.string,
-    name: 'acr',
-    comment:
-      'Authentication Context Class Reference. Indicates the authentication strength level.',
-    nullable: true,
-  })
-  public acr?: AuthenticationContextClass;
-
   public constructor(params: {
     clientId: string;
     userId: string;
@@ -178,10 +156,6 @@ export class OAuthCodeEntity extends BaseEntity {
     expiredAt: Date;
     /** OIDC: Time when End-User authentication occurred (Unix timestamp) */
     authTime?: number;
-    /** OIDC: Authentication Methods References (RFC 8176) */
-    amr?: AuthenticationMethod[];
-    /** OIDC: Authentication Context Class Reference */
-    acr?: AuthenticationContextClass;
   }) {
     super();
     this.client = ref(OAuthClientEntity, params.clientId);
@@ -196,12 +170,6 @@ export class OAuthCodeEntity extends BaseEntity {
     // Only assign OIDC auth metadata when defined (exactOptionalPropertyTypes)
     if (params.authTime !== undefined) {
       this.authTime = params.authTime;
-    }
-    if (params.amr !== undefined) {
-      this.amr = params.amr;
-    }
-    if (params.acr !== undefined) {
-      this.acr = params.acr;
     }
   }
 }

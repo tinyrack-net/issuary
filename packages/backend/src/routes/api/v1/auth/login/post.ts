@@ -58,7 +58,6 @@ export default (fastify: FastifyWithZodInstance) => {
       if (available2FAMethods.length > 0) {
         req.session.set('pending2FAUser', {
           id: user.id,
-          auth_methods: ['pwd'],
           authenticated_at: Math.floor(Date.now() / 1000),
         });
         return res.status(200).send({
@@ -91,8 +90,6 @@ export default (fastify: FastifyWithZodInstance) => {
       req.session.set('user', {
         id: user.id,
         authenticated_at: Math.floor(Date.now() / 1000),
-        auth_methods: ['pwd'],
-        acr: 'urn:tinyrack:acr:1',
       });
 
       return res.status(200).send({

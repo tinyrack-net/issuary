@@ -1,9 +1,5 @@
 import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
-import type {
-  AuthenticationContextClass,
-  AuthenticationMethod,
-} from '@/plugins/secure-session.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import type { oauthSchema } from '@/schemas/oauth.js';
@@ -116,8 +112,6 @@ export default (fastify: FastifyWithZodInstance) => {
           userSession?: {
             id: string;
             authenticated_at: number;
-            auth_methods: AuthenticationMethod[];
-            acr: AuthenticationContextClass;
           };
         } = {
           query: query,
