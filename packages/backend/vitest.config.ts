@@ -4,7 +4,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
-    // reporters: 'verbose',
+    maxWorkers: '90%',
     exclude: ['./dist/*', './node_modules/*'],
   },
 });
