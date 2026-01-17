@@ -21,7 +21,7 @@ describe('POST /api/v1/auth/register', () => {
           public_registration: false,
         },
       },
-    }).start();
+    });
 
     const res = await disabledApp.inject({
       method: 'post',

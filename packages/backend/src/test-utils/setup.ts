@@ -26,6 +26,7 @@ export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
     light_theme: 'light',
     dark_theme: 'dark',
     theme_mode: 'system',
+    trust_proxy: false,
   },
   admin: {
     enabled: true,
@@ -187,7 +188,7 @@ export function setupTestServer(
       ...(options?.configOverrides && {
         configOverrides: options.configOverrides,
       }),
-    }).start();
+    });
   });
 
   afterAll(async () => {
