@@ -28,12 +28,7 @@ export type SecondFactorMethod = 'totp' | 'passkey';
  * Includes methods parameter to show only available 2FA methods
  */
 export const TwoFactorSearchSchema = OAuthSearchSchema.extend({
-  methods: z
-    .string()
-    .optional()
-    .transform((val) =>
-      val ? (val.split(',') as SecondFactorMethod[]) : undefined,
-    ),
+  methods: z.array(z.string()).optional(),
 });
 
 export type TwoFactorSearch = z.infer<typeof TwoFactorSearchSchema>;

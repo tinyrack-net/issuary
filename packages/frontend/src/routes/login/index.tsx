@@ -131,7 +131,7 @@ function Login() {
             to: '/setup-2fa',
             search: {
               ...extractOAuthParams(search),
-              methods: methods.join(','),
+              methods: methods,
             },
           });
         }

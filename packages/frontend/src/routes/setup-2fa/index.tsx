@@ -11,11 +11,9 @@ import {
   TwoFactorSearchSchema,
 } from '@/libs/oauth-search.js';
 
-export const SearchSchema = TwoFactorSearchSchema;
-
 export const Route = createFileRoute('/setup-2fa/')({
   component: Setup2FA,
-  validateSearch: SearchSchema,
+  validateSearch: TwoFactorSearchSchema,
 });
 
 /** Default available methods when not specified */
