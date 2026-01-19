@@ -5,7 +5,7 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChangePasswordModal } from '@/components/modals/profile/change-password-modal.js';
 import { DeleteAccountModal } from '@/components/modals/profile/delete-account-modal.js';
@@ -111,8 +111,8 @@ function Profile() {
     }
   };
 
-  // Handle unauthenticated state (should be redirected, but fallback)
-  if (session.status === 'unauthenticated') {
+  // Handle non-authenticated states (should be redirected, but fallback)
+  if (session.status !== 'authenticated') {
     return null;
   }
 
@@ -148,32 +148,6 @@ function Profile() {
         return 30;
     }
   })();
-
-  // Check if user needs to set up TOTP or Passkey (required settings)
-  const needsTotpSetup = session.status === '2fa_setup_required';
-
-  // Auto-open required setup modals
-  useEffect(() => {
-    if (needsTotpSetup) {
-      // TOTP required
-      if (!totpModal) {
-        setTotpModal('setup');
-      }
-    }
-  }, [needsTotpSetup, totpModal]);
-
-  // Handle modal close with required check
-  const handleCloseTotpModal = () => {
-    if (!needsTotpSetup) {
-      // Only close if not required
-      setTotpModal(null);
-    }
-    // If TOTP is required, prevent closing
-  };
-
-  const handleClosePasskeyModal = () => {
-    setPasskeyModal(null);
-  };
 
   // Determine which security sections to show
   const showPasswordSection = true;
@@ -307,8 +281,7 @@ function Profile() {
       {/* TOTP Modals */}
       <SetupTotpModal
         isOpen={totpModal === 'setup'}
-        onClose={handleCloseTotpModal}
-        isRequired={needsTotpSetup}
+        onClose={() => setTotpModal(null)}
       />
       <DisableTotpModal
         isOpen={totpModal === 'disable'}
@@ -318,7 +291,7 @@ function Profile() {
       {/* Passkey Modals */}
       <SetupPasskeyModal
         isOpen={passkeyModal === 'setup'}
-        onClose={handleClosePasskeyModal}
+        onClose={() => setPasskeyModal(null)}
       />
       <ManagePasskeysModal
         isOpen={passkeyModal === 'manage'}
