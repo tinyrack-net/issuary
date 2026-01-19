@@ -21,7 +21,7 @@ export default (fastify: FastifyWithZodInstance) => {
         password: f.userPassword,
       }),
       response: {
-        200: r.UserSessionResponse,
+        200: r.RegisterResponse,
         400: e.ValidationError.Schema,
         403: e.RegistrationDisabled.Schema,
         409: e.EmailAlreadyExists.Schema,
@@ -36,7 +36,11 @@ export default (fastify: FastifyWithZodInstance) => {
 
       const secondFactorRequired =
         fastify.userService.user2FASetupRequired(userSession);
+      const available2FAMethods =
+        fastify.userService.getAvailable2FASetupMethods();
 
+      // Case 1: Email verification required - always return this status
+      // (2FA setup will happen after email verification)
       if (emailVerificationRequired) {
         if (secondFactorRequired) {
           req.session.set('pending2FASetup', {
@@ -48,11 +52,32 @@ export default (fastify: FastifyWithZodInstance) => {
             authenticated_at: Math.floor(Date.now() / 1000),
           });
         }
+        return res.status(200).send({
+          status: 'email_verification_required',
+          user: userSession,
+        });
       }
 
+      // Case 2: No email verification but 2FA setup required
+      if (secondFactorRequired) {
+        req.session.set('pending2FASetup', {
+          id: userSession.id,
+        });
+        return res.status(200).send({
+          status: '2fa_setup_required',
+          user: userSession,
+          available_methods: available2FAMethods,
+        });
+      }
+
+      // Case 3: Success - fully registered and authenticated
+      req.session.set('user', {
+        id: userSession.id,
+        authenticated_at: Math.floor(Date.now() / 1000),
+      });
       res.status(200).send({
+        status: 'success',
         user: userSession,
-        second_factor_setup_required: secondFactorRequired,
       });
     },
   });

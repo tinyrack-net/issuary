@@ -11,7 +11,7 @@ export default (fastify: FastifyWithZodInstance) =>
       description: 'Get Session',
       tags: [TAGS.USER],
       response: {
-        200: r.UserSessionNullableResponse,
+        200: r.SessionResponse,
       },
     },
     handler: async (req, res) => {
@@ -27,22 +27,35 @@ export default (fastify: FastifyWithZodInstance) =>
           !user.totp_enabled &&
           user.passkey_count === 0;
 
+        const userSession = {
+          id: user.id,
+          managed_by: user.managed_by,
+          email: user.email,
+          email_verified: user.email_verified,
+          has_password: user.has_password,
+          totp_enabled: user.totp_enabled,
+          second_factor_required: user.second_factor_required,
+          passkey_count: user.passkey_count,
+        };
+
+        // Case 1: 2FA setup required
+        if (needsSecondFactorSetup) {
+          return res.status(200).send({
+            status: '2fa_setup_required',
+            user: userSession,
+            available_methods: available2FAMethods,
+          });
+        }
+
+        // Case 2: Authenticated
         return res.status(200).send({
-          user: {
-            id: user.id,
-            managed_by: user.managed_by,
-            email: user.email,
-            email_verified: user.email_verified,
-            has_password: user.has_password,
-            totp_enabled: user.totp_enabled,
-            second_factor_required: user.second_factor_required,
-            passkey_count: user.passkey_count,
-          },
-          second_factor_setup_required: needsSecondFactorSetup,
+          status: 'authenticated',
+          user: userSession,
         });
       } catch {
+        // Case 3: Unauthenticated
         return res.status(200).send({
-          user: null,
+          status: 'unauthenticated',
         });
       }
     },

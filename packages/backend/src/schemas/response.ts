@@ -357,52 +357,85 @@ export const r = {
   OkResponse,
   RedirectUrlResponse,
 
-  // Wrapped response schemas
+  // Simple user session response (for endpoints with no special states)
   UserSessionResponse: z.object({
     user: UserSession,
-    second_factor_setup_required: z.boolean().optional(),
   }),
 
-  // Login response - either full session, 2FA required, 2FA setup required, or email verification required
-  LoginResponse: z.union([
+  // Login response - discriminated union by status field
+  LoginResponse: z.discriminatedUnion('status', [
     z.object({
-      user: UserSession.optional(),
-      second_factor_required: z.boolean().optional(),
-      second_factor_setup_required: z.boolean().optional(),
+      status: z.literal('success'),
+      user: UserSession,
+    }),
+    z.object({
+      status: z.literal('email_verification_required'),
+    }),
+    z.object({
+      status: z.literal('2fa_required'),
       available_methods: z
         .array(z.enum(['totp', 'passkey']))
-        .optional()
         .describe('Available 2FA methods for the user'),
-      email_verification_required: z.boolean().optional(),
     }),
-    // z.object({
-    //   second_factor_required: z.literal(true),
-    //   available_methods: z
-    //     .array(z.enum(['totp', 'passkey']))
-    //     .describe('Available 2FA methods for the user'),
-    //   second_factor_setup_required: z.literal(false),
-    //   email_verification_required: z.literal(false),
-    // }),
-    // z.object({
-    //   second_factor_required: z.literal(false),
-    //   second_factor_setup_required: z.literal(true),
-    //   available_setup_methods: z
-    //     .array(z.enum(['totp', 'passkey']))
-    //     .describe('Available 2FA setup methods for the user'),
-    //   email_verification_required: z.literal(false),
-    // }),
-    // z.object({
-    //   second_factor_required: z.literal(false),
-    //   second_factor_setup_required: z.literal(false),
-    //   email_verification_required: z.literal(true),
-    //   email: f.userEmail.describe('Email address for verification'),
-    // }),
+    z.object({
+      status: z.literal('2fa_setup_required'),
+      available_methods: z
+        .array(z.enum(['totp', 'passkey']))
+        .describe('Available 2FA setup methods for the user'),
+    }),
   ]),
 
-  UserSessionNullableResponse: z.object({
-    user: UserSession.nullable(),
-    second_factor_setup_required: z.boolean().optional(),
-  }),
+  // Register response - discriminated union by status field
+  RegisterResponse: z.discriminatedUnion('status', [
+    z.object({
+      status: z.literal('success'),
+      user: UserSession,
+    }),
+    z.object({
+      status: z.literal('email_verification_required'),
+      user: UserSession,
+    }),
+    z.object({
+      status: z.literal('2fa_setup_required'),
+      user: UserSession,
+      available_methods: z
+        .array(z.enum(['totp', 'passkey']))
+        .describe('Available 2FA setup methods for the user'),
+    }),
+  ]),
+
+  // Email verify response - discriminated union by status field
+  EmailVerifyResponse: z.discriminatedUnion('status', [
+    z.object({
+      status: z.literal('success'),
+      user: UserSession,
+    }),
+    z.object({
+      status: z.literal('2fa_setup_required'),
+      user: UserSession,
+      available_methods: z
+        .array(z.enum(['totp', 'passkey']))
+        .describe('Available 2FA setup methods for the user'),
+    }),
+  ]),
+
+  // Session response - discriminated union by status field
+  SessionResponse: z.discriminatedUnion('status', [
+    z.object({
+      status: z.literal('authenticated'),
+      user: UserSession,
+    }),
+    z.object({
+      status: z.literal('2fa_setup_required'),
+      user: UserSession,
+      available_methods: z
+        .array(z.enum(['totp', 'passkey']))
+        .describe('Available 2FA setup methods for the user'),
+    }),
+    z.object({
+      status: z.literal('unauthenticated'),
+    }),
+  ]),
 
   OAuthCallbackResponse: z.object({
     user: UserSession,

@@ -21,10 +21,9 @@ describe('POST /api/v1/auth/login', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body).toHaveProperty('user');
+    expect(body.status).toBe('success');
     expect(body.user).toHaveProperty('id');
     expect(body.user).toHaveProperty('second_factor_required');
-    expect(body.email_verification_required).toBeFalsy();
   });
 
   test('should login successfully with correct credentials (registered user)', async () => {
@@ -55,7 +54,7 @@ describe('POST /api/v1/auth/login', () => {
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
     // Unverified user should require email verification
-    expect(body.email_verification_required).toBe(true);
+    expect(body.status).toBe('email_verification_required');
     expect(body).not.toHaveProperty('user');
   });
 
@@ -85,9 +84,7 @@ describe('POST /api/v1/auth/login', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    expect(body.email_verification_required).toBe(true);
-    expect(body.second_factor_required).toBeFalsy();
-    expect(body.second_factor_setup_required).toBeFalsy();
+    expect(body.status).toBe('email_verification_required');
     expect(body).not.toHaveProperty('user');
   });
 
@@ -124,8 +121,7 @@ describe('POST /api/v1/auth/login', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    expect(body.email_verification_required).toBeFalsy();
-    expect(body).toHaveProperty('user');
+    expect(body.status).toBe('success');
     expect(body.user.email).toBe(uniqueEmail);
     expect(body.user.email_verified).toBe(true);
     expect(body.user).toHaveProperty('second_factor_required');
@@ -144,8 +140,7 @@ describe('POST /api/v1/auth/login', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.email_verification_required).toBeFalsy();
-    expect(body).toHaveProperty('user');
+    expect(body.status).toBe('success');
     expect(body.user.managed_by).toBe('config');
     expect(body.user).toHaveProperty('second_factor_required');
   });
@@ -261,7 +256,7 @@ describe('POST /api/v1/auth/login', () => {
     expect(loginBeforeRes.statusCode).toBe(200);
     // Unverified user will get email_verification_required
     const beforeBody = loginBeforeRes.json();
-    expect(beforeBody.email_verification_required).toBe(true);
+    expect(beforeBody.status).toBe('email_verification_required');
 
     // Soft delete the user by setting deleted_at
     await app.mikro.em.fork().transactional(async (em) => {

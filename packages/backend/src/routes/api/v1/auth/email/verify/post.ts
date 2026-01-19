@@ -20,7 +20,7 @@ export default (fastify: FastifyWithZodInstance) => {
         token: f.token,
       }),
       response: {
-        200: r.UserSessionResponse,
+        200: r.EmailVerifyResponse,
         400: e.InvalidVerificationToken.Schema,
       },
     },
@@ -43,38 +43,45 @@ export default (fastify: FastifyWithZodInstance) => {
       // Check if 2FA setup is required
       const secondFactorRequired =
         fastify.userService.user2FASetupRequired(user);
-      const available2FAMethods: ('totp' | 'passkey')[] = [];
-      if (totpEnabled) {
-        available2FAMethods.push('totp');
-      }
-      if (passkeyCount > 0) {
-        available2FAMethods.push('passkey');
-      }
+      const available2FAMethods =
+        fastify.userService.getAvailable2FASetupMethods();
 
-      if (secondFactorRequired && available2FAMethods.length === 0) {
+      const userSession = {
+        id: user.id,
+        managed_by: 'database' as const,
+        email: user.email,
+        email_verified: user.email_verified,
+        has_password: user.hasPassword(),
+        totp_enabled: totpEnabled,
+        second_factor_required: secondFactorRequired,
+        passkey_count: passkeyCount,
+      };
+
+      // Case 1: 2FA setup required (user has no 2FA methods set up)
+      if (
+        secondFactorRequired &&
+        !totpEnabled &&
+        passkeyCount === 0 &&
+        available2FAMethods.length > 0
+      ) {
         req.session.set('pending2FASetup', {
           id: user.id,
         });
-      } else {
-        req.session.set('user', {
-          id: user.id,
-          authenticated_at: Math.floor(Date.now() / 1000),
+        return res.status(200).send({
+          status: '2fa_setup_required',
+          user: userSession,
+          available_methods: available2FAMethods,
         });
       }
 
+      // Case 2: Success - email verified and fully authenticated
+      req.session.set('user', {
+        id: user.id,
+        authenticated_at: Math.floor(Date.now() / 1000),
+      });
       res.status(200).send({
-        user: {
-          id: user.id,
-          managed_by: 'database',
-          email: user.email,
-          email_verified: user.email_verified,
-          has_password: user.hasPassword(),
-          totp_enabled: totpEnabled,
-          second_factor_required: secondFactorRequired,
-          passkey_count: passkeyCount,
-        },
-        second_factor_setup_required:
-          secondFactorRequired && available2FAMethods.length === 0,
+        status: 'success',
+        user: userSession,
       });
     },
   });

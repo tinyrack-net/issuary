@@ -10,7 +10,7 @@ import {
 const app = setupTestServer();
 
 describe('GET /api/v1/user/session', () => {
-  test('should return authenticated: false when user is not logged in', async () => {
+  test('should return unauthenticated status when user is not logged in', async () => {
     const res = await app.inject({
       method: 'get',
       url: '/api/v1/user/session',
@@ -18,10 +18,10 @@ describe('GET /api/v1/user/session', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body).toHaveProperty('user', null);
+    expect(body).toHaveProperty('status', 'unauthenticated');
   });
 
-  test('should return user session when user is logged in', async () => {
+  test('should return authenticated status when user is logged in', async () => {
     // First, login to create a session
     const loginRes = await app.inject({
       method: 'post',
@@ -48,8 +48,8 @@ describe('GET /api/v1/user/session', () => {
 
     expect(sessionRes.statusCode).toBe(200);
     const sessionBody = sessionRes.json();
+    expect(sessionBody).toHaveProperty('status', 'authenticated');
     expect(sessionBody).toHaveProperty('user');
-    expect(sessionBody.user).not.toBeNull();
     expect(sessionBody.user).toHaveProperty('id');
 
     // Verify user id matches = logged-in user
@@ -58,7 +58,7 @@ describe('GET /api/v1/user/session', () => {
     expect(sessionBody.user).toHaveProperty('second_factor_required');
   });
 
-  test('should return null after logout', async () => {
+  test('should return unauthenticated after logout', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
     // Verify session exists
@@ -73,7 +73,7 @@ describe('GET /api/v1/user/session', () => {
 
     expect(maybeHasSessionRes.statusCode).toBe(200);
     const sessionBody = maybeHasSessionRes.json();
-    expect(sessionBody.user).not.toBeNull();
+    expect(sessionBody.status).toBe('authenticated');
 
     const logoutRes = await injectWithSession(
       app,
@@ -92,7 +92,7 @@ describe('GET /api/v1/user/session', () => {
       : logoutSetCookieHeader;
     const logoutSessionCookie = logoutCookieValue?.split(';')[0];
 
-    // Verify session is null after logout
+    // Verify session is unauthenticated after logout
     const maybeNoSessionRes = await app.inject({
       method: 'get',
       url: '/api/v1/user/session',
@@ -103,10 +103,10 @@ describe('GET /api/v1/user/session', () => {
 
     expect(maybeNoSessionRes.statusCode).toBe(200);
     const sessionBody2 = maybeNoSessionRes.json();
-    expect(sessionBody2.user).toBeNull();
+    expect(sessionBody2.status).toBe('unauthenticated');
   });
 
-  test('should return authenticated: false with invalid cookie', async () => {
+  test('should return unauthenticated with invalid cookie', async () => {
     const res = await app.inject({
       method: 'get',
       url: '/api/v1/user/session',
@@ -117,7 +117,7 @@ describe('GET /api/v1/user/session', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body).toHaveProperty('user', null);
+    expect(body).toHaveProperty('status', 'unauthenticated');
   });
 
   test('should handle multiple session requests with same cookie', async () => {
@@ -136,7 +136,7 @@ describe('GET /api/v1/user/session', () => {
 
       expect(sessionRes.statusCode).toBe(200);
       const sessionBody = sessionRes.json();
-      expect(sessionBody.user).not.toBeNull();
+      expect(sessionBody.status).toBe('authenticated');
       expect(sessionBody.user).toHaveProperty('id');
     }
   });

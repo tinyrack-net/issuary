@@ -38,7 +38,7 @@ export default (fastify: FastifyWithZodInstance) => {
         !user.email_verified
       ) {
         return res.status(200).send({
-          email_verification_required: true,
+          status: 'email_verification_required',
         });
       }
 
@@ -55,7 +55,7 @@ export default (fastify: FastifyWithZodInstance) => {
           authenticated_at: Math.floor(Date.now() / 1000),
         });
         return res.status(200).send({
-          second_factor_required: true,
+          status: '2fa_required',
           available_methods: userRegistered2FAMethods,
         });
       } else if (user2FASetupRequired) {
@@ -63,7 +63,7 @@ export default (fastify: FastifyWithZodInstance) => {
           id: user.id,
         });
         return res.status(200).send({
-          second_factor_setup_required: true,
+          status: '2fa_setup_required',
           available_methods: available2FAMethods,
         });
       }
@@ -74,6 +74,7 @@ export default (fastify: FastifyWithZodInstance) => {
       });
 
       return res.status(200).send({
+        status: 'success',
         user: user,
       });
     },

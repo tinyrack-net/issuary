@@ -132,7 +132,7 @@ describe('POST /api/v1/auth/logout', () => {
 
     expect(sessionRes2.statusCode).toBe(200);
     const sessionBody2 = JSON.parse(sessionRes2.body);
-    expect(sessionBody2.user).toBeNull();
+    expect(sessionBody2.status).toBe('unauthenticated');
   });
 
   test('should handle multiple logout calls', async () => {

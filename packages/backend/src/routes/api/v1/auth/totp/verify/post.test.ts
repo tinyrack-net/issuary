@@ -33,7 +33,7 @@ describe('POST /api/v1/auth/totp/verify', () => {
     // Enable TOTP for user
     const secret = await enableTotpForUser(app, userId);
 
-    // Login with password - should get second_factor_required
+    // Login with password - should get 2fa_required status
     const loginRes = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/login',
@@ -41,7 +41,7 @@ describe('POST /api/v1/auth/totp/verify', () => {
     });
     expect(loginRes.statusCode).toBe(200);
     const loginBody = loginRes.json();
-    expect(loginBody.second_factor_required).toBe(true);
+    expect(loginBody.status).toBe('2fa_required');
     expect(loginBody).not.toHaveProperty('user');
 
     // Get session cookie from login response
@@ -166,15 +166,15 @@ describe('POST /api/v1/auth/totp/verify', () => {
       cookies: { session: sessionCookie },
     });
 
-    // Should return null user since session is not complete
+    // Should return unauthenticated status since session is not complete
     expect(sessionRes.statusCode).toBe(200);
     const body = sessionRes.json();
-    expect(body.user).toBeNull();
+    expect(body.status).toBe('unauthenticated');
   });
 });
 
 describe('POST /api/v1/auth/login - TOTP flow', () => {
-  test('should return second_factor_required for TOTP-enabled user', async () => {
+  test('should return 2fa_required status for TOTP-enabled user', async () => {
     // Create a user with TOTP enabled (email verified)
     const email = generateUniqueEmail('totp-login-required');
     const password = 'password123';
@@ -194,7 +194,7 @@ describe('POST /api/v1/auth/login - TOTP flow', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    expect(body.second_factor_required).toBe(true);
+    expect(body.status).toBe('2fa_required');
     expect(body).not.toHaveProperty('user');
   });
 
@@ -215,7 +215,7 @@ describe('POST /api/v1/auth/login - TOTP flow', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    expect(body.second_factor_required).toBeFalsy();
+    expect(body.status).toBe('success');
     expect(body).toHaveProperty('user');
     expect(body.user.email).toBe(email);
   });
