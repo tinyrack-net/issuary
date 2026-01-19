@@ -72,46 +72,6 @@ function Register() {
 
   const registerMutation = useMutation({
     ...registerMutationOptions,
-    onSuccess: async (data) => {
-      switch (data.status) {
-        case 'email_verification_required':
-          // Redirect to email verification page
-          await tick();
-          navigate({
-            to: '/verify/email',
-            search: {
-              email: data.user.email,
-              token: '',
-              ...extractOAuthParams(search),
-            },
-          });
-          break;
-
-        case '2fa_setup_required':
-          // Redirect to TOTP setup page (session is pending2FASetup, not user)
-          await tick();
-          navigate({
-            to: '/setup/totp',
-            search: extractOAuthParams(search),
-          });
-          break;
-
-        case 'success':
-          // Normal flow - user session is set
-          queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-            status: 'authenticated',
-            user: data.user,
-          });
-          await tick();
-
-          if (isOAuthFlow(search)) {
-            window.location.href = buildAuthorizeUrl(search);
-          } else {
-            navigate({ to: '/profile' });
-          }
-          break;
-      }
-    },
     onSettled: () => {
       queryClient.invalidateQueries({
         queryKey: getSessionQueryOptions.queryKey,
@@ -134,7 +94,46 @@ function Register() {
 
   const onSubmit = async (values: RegisterFormValues) => {
     try {
-      await registerMutation.mutateAsync(values);
+      const data = await registerMutation.mutateAsync(values);
+
+      switch (data.status) {
+        case 'email_verification_required':
+          // Redirect to email verification page (use form email, not data.user)
+          await tick();
+          navigate({
+            to: '/verify/email',
+            search: {
+              email: values.email,
+              token: '',
+              ...extractOAuthParams(search),
+            },
+          });
+          break;
+
+        case '2fa_setup_required':
+          // Redirect to TOTP setup page (session is pending2FASetup, not user)
+          await tick();
+          navigate({
+            to: '/setup/totp',
+            search: extractOAuthParams(search),
+          });
+          break;
+
+        case 'authenticated':
+          // Normal flow - user session is set
+          queryClient.setQueryData(getSessionQueryOptions.queryKey, {
+            status: 'authenticated',
+            user: data.user,
+          });
+          await tick();
+
+          if (isOAuthFlow(search)) {
+            window.location.href = buildAuthorizeUrl(search);
+          } else {
+            navigate({ to: '/profile' });
+          }
+          break;
+      }
     } catch {
       setError('email', {
         type: 'manual',
