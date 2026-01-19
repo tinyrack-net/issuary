@@ -34,15 +34,15 @@ function VerifyPasskey() {
   const verifyMutation = useMutation({
     ...verifyPasskey2FAMutationOptions,
     onSuccess: async (data) => {
-      queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-        user: data.user,
-      });
-      await tick();
+      if (data.status === 'authenticated') {
+        queryClient.setQueryData(getSessionQueryOptions.queryKey, data);
+        await tick();
 
-      if (isOAuthFlow(search)) {
-        window.location.href = buildAuthorizeUrl(search);
-      } else {
-        router.navigate({ to: '/profile' });
+        if (isOAuthFlow(search)) {
+          window.location.href = buildAuthorizeUrl(search);
+        } else {
+          router.navigate({ to: '/profile' });
+        }
       }
     },
     onSettled: () => {

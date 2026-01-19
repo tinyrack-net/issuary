@@ -67,6 +67,7 @@ function SetupPasskey() {
     onSuccess: async (data) => {
       if (data.second_factor_setup_completed && data.user) {
         queryClient.setQueryData(getSessionQueryOptions.queryKey, {
+          status: 'authenticated',
           user: data.user,
         });
         await tick();

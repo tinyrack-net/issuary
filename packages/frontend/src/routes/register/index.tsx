@@ -73,39 +73,43 @@ function Register() {
   const registerMutation = useMutation({
     ...registerMutationOptions,
     onSuccess: async (data) => {
-      if (data.user.email_verified) {
-        // Check if 2FA setup is required before completing registration
-        if (data.second_factor_setup_required) {
+      switch (data.status) {
+        case 'email_verification_required':
+          // Redirect to email verification page
+          await tick();
+          navigate({
+            to: '/verify/email',
+            search: {
+              email: data.user.email,
+              token: '',
+              ...extractOAuthParams(search),
+            },
+          });
+          break;
+
+        case '2fa_setup_required':
           // Redirect to TOTP setup page (session is pending2FASetup, not user)
           await tick();
           navigate({
             to: '/setup/totp',
             search: extractOAuthParams(search),
           });
-          return;
-        }
+          break;
 
-        // Normal flow - user session is set
-        queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-          user: data.user,
-        });
-        await tick();
+        case 'success':
+          // Normal flow - user session is set
+          queryClient.setQueryData(getSessionQueryOptions.queryKey, {
+            status: 'authenticated',
+            user: data.user,
+          });
+          await tick();
 
-        if (isOAuthFlow(search)) {
-          window.location.href = buildAuthorizeUrl(search);
-        } else {
-          navigate({ to: '/profile' });
-        }
-      } else {
-        await tick();
-        navigate({
-          to: '/verify/email',
-          search: {
-            email: data.user.email,
-            token: '',
-            ...extractOAuthParams(search),
-          },
-        });
+          if (isOAuthFlow(search)) {
+            window.location.href = buildAuthorizeUrl(search);
+          } else {
+            navigate({ to: '/profile' });
+          }
+          break;
       }
     },
     onSettled: () => {

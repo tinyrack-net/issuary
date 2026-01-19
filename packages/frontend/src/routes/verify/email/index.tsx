@@ -76,21 +76,25 @@ function VerifyEmail() {
   const verifyEmailMutation = useMutation({
     ...verifyEmailMutationOptions,
     onSuccess: async (data) => {
-      // If 2FA setup is required, redirect to setup-totp page
-      if (data.second_factor_setup_required) {
-        window.location.href = buildSetupTotpUrl(search);
-        return;
-      }
+      switch (data.status) {
+        case '2fa_setup_required':
+          // Redirect to setup-totp page
+          window.location.href = buildSetupTotpUrl(search);
+          break;
 
-      queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-        user: data.user,
-      });
-      await tick();
+        case 'success':
+          queryClient.setQueryData(getSessionQueryOptions.queryKey, {
+            status: 'authenticated',
+            user: data.user,
+          });
+          await tick();
 
-      if (isOAuthFlow(search)) {
-        window.location.href = buildAuthorizeUrl(search);
-      } else {
-        setVerified(true);
+          if (isOAuthFlow(search)) {
+            window.location.href = buildAuthorizeUrl(search);
+          } else {
+            setVerified(true);
+          }
+          break;
       }
     },
     onSettled: () => {

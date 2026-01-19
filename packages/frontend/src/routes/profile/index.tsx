@@ -69,7 +69,7 @@ function Profile() {
     ...logoutMutationOptions,
     onSuccess: async () => {
       queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-        user: null,
+        status: 'unauthenticated',
       });
       await tick();
       router.navigate({
@@ -111,10 +111,15 @@ function Profile() {
     }
   };
 
+  // Handle unauthenticated state (should be redirected, but fallback)
+  if (session.status === 'unauthenticated') {
+    return null;
+  }
+
   const user = session.user;
   const availableProviders = oauthAccountsData.available_providers;
   const hasLinkedOAuth = availableProviders.some((p) => p.linked);
-  const isConfigManaged = user?.managed_by === 'config';
+  const isConfigManaged = user.managed_by === 'config';
 
   // Check if TOTP and Passkey are enabled in config
   const passwordAuthMethod = appConfig.basic_authentication_methods.password;
@@ -145,7 +150,7 @@ function Profile() {
   })();
 
   // Check if user needs to set up TOTP or Passkey (required settings)
-  const needsTotpSetup = session.second_factor_setup_required ?? false;
+  const needsTotpSetup = session.status === '2fa_setup_required';
 
   // Auto-open required setup modals
   useEffect(() => {
@@ -171,9 +176,9 @@ function Profile() {
   };
 
   // Determine which security sections to show
-  const showPasswordSection = user !== null;
-  const showTotpSection = user && !isConfigManaged && totpEnabled;
-  const showPasskeySection = user && !isConfigManaged && passkeyEnabled;
+  const showPasswordSection = true;
+  const showTotpSection = !isConfigManaged && totpEnabled;
+  const showPasskeySection = !isConfigManaged && passkeyEnabled;
   const showLinkedAccounts = availableProviders.length > 0;
   const hasSecurityOptions =
     showPasswordSection || showTotpSection || showPasskeySection;

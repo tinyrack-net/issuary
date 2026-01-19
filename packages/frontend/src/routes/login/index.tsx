@@ -30,7 +30,7 @@ import {
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
-import { type LoginResponse, loginMutationOptions } from '@/queries/login.js';
+import { loginMutationOptions } from '@/queries/login.js';
 import { oauthProvidersQueryOptions } from '@/queries/oauth.js';
 import { loginWithPasskeyMutationOptions } from '@/queries/passkey.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
@@ -75,80 +75,6 @@ function Login() {
 
   const loginMutation = useMutation({
     ...loginMutationOptions,
-    onSuccess: async (data: LoginResponse) => {
-      if (data.email_verification_required) {
-        window.location.href = buildVerifyEmailUrl(search, data.email);
-        return;
-      }
-
-      if (data.second_factor_required) {
-        const methods = data.available_methods;
-        if (methods.length === 1) {
-          const method = methods[0];
-          if (method === 'totp') {
-            router.navigate({
-              to: '/verify/totp',
-              search: extractOAuthParams(search),
-            });
-          } else if (method === 'passkey') {
-            router.navigate({
-              to: '/verify/passkey',
-              search: extractOAuthParams(search),
-            });
-          }
-        } else {
-          router.navigate({
-            to: '/verify/2fa',
-            search: {
-              ...extractOAuthParams(search),
-              methods: methods,
-            },
-          });
-        }
-        return;
-      }
-
-      // Check if 2FA setup is required (2FA mandatory but not set up)
-      if (data.second_factor_setup_required) {
-        const methods = data.available_setup_methods;
-        // If only one method available, go directly to that setup page
-        if (methods.length === 1) {
-          const method = methods[0];
-          if (method === 'totp') {
-            router.navigate({
-              to: '/setup/totp',
-              search: extractOAuthParams(search),
-            });
-          } else if (method === 'passkey') {
-            router.navigate({
-              to: '/setup/passkey',
-              search: extractOAuthParams(search),
-            });
-          }
-        } else {
-          // Multiple methods available, go to 2FA setup selection page with methods
-          router.navigate({
-            to: '/setup/2fa',
-            search: {
-              ...extractOAuthParams(search),
-              methods: methods,
-            },
-          });
-        }
-        return;
-      }
-
-      queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-        user: data.user,
-      });
-      await tick();
-
-      if (isOAuthFlow(search)) {
-        window.location.href = buildAuthorizeUrl(search);
-      } else {
-        router.navigate({ to: '/profile' });
-      }
-    },
     onSettled: () => {
       queryClient.invalidateQueries({
         queryKey: getSessionQueryOptions.queryKey,
@@ -159,15 +85,15 @@ function Login() {
   const passkeyLoginMutation = useMutation({
     ...loginWithPasskeyMutationOptions,
     onSuccess: async (data) => {
-      queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-        user: data.user,
-      });
-      await tick();
+      if (data.status === 'authenticated') {
+        queryClient.setQueryData(getSessionQueryOptions.queryKey, data);
+        await tick();
 
-      if (isOAuthFlow(search)) {
-        window.location.href = buildAuthorizeUrl(search);
-      } else {
-        router.navigate({ to: '/profile' });
+        if (isOAuthFlow(search)) {
+          window.location.href = buildAuthorizeUrl(search);
+        } else {
+          router.navigate({ to: '/profile' });
+        }
       }
     },
     onSettled: () => {
@@ -192,7 +118,81 @@ function Login() {
 
   const onSubmit = async (values: LoginFormValues) => {
     try {
-      await loginMutation.mutateAsync(values);
+      const data = await loginMutation.mutateAsync(values);
+
+      switch (data.status) {
+        case 'email_verification_required':
+          window.location.href = buildVerifyEmailUrl(search, values.email);
+          break;
+
+        case '2fa_required': {
+          const methods = data.available_methods;
+          if (methods.length === 1) {
+            const method = methods[0];
+            if (method === 'totp') {
+              router.navigate({
+                to: '/verify/totp',
+                search: extractOAuthParams(search),
+              });
+            } else if (method === 'passkey') {
+              router.navigate({
+                to: '/verify/passkey',
+                search: extractOAuthParams(search),
+              });
+            }
+          } else {
+            router.navigate({
+              to: '/verify/2fa',
+              search: {
+                ...extractOAuthParams(search),
+                methods: methods,
+              },
+            });
+          }
+          break;
+        }
+
+        case '2fa_setup_required': {
+          const methods = data.available_methods;
+          if (methods.length === 1) {
+            const method = methods[0];
+            if (method === 'totp') {
+              router.navigate({
+                to: '/setup/totp',
+                search: extractOAuthParams(search),
+              });
+            } else if (method === 'passkey') {
+              router.navigate({
+                to: '/setup/passkey',
+                search: extractOAuthParams(search),
+              });
+            }
+          } else {
+            router.navigate({
+              to: '/setup/2fa',
+              search: {
+                ...extractOAuthParams(search),
+                methods: methods,
+              },
+            });
+          }
+          break;
+        }
+
+        case 'success':
+          queryClient.setQueryData(getSessionQueryOptions.queryKey, {
+            status: 'authenticated',
+            user: data.user,
+          });
+          await tick();
+
+          if (isOAuthFlow(search)) {
+            window.location.href = buildAuthorizeUrl(search);
+          } else {
+            router.navigate({ to: '/profile' });
+          }
+          break;
+      }
     } catch (error) {
       console.error('Login failed:', error);
       setError('email', {
