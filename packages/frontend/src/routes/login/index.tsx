@@ -101,7 +101,7 @@ function Login() {
             to: '/verify-2fa',
             search: {
               ...extractOAuthParams(search),
-              methods: methods.join(','),
+              methods: methods,
             },
           });
         }

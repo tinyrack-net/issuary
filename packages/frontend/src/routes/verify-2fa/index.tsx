@@ -10,11 +10,9 @@ import {
   TwoFactorSearchSchema,
 } from '@/libs/oauth-search.js';
 
-export const SearchSchema = TwoFactorSearchSchema;
-
 export const Route = createFileRoute('/verify-2fa/')({
   component: Verify2FA,
-  validateSearch: SearchSchema,
+  validateSearch: TwoFactorSearchSchema,
 });
 
 /** Default available methods when not specified */
