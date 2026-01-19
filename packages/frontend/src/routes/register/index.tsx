@@ -110,14 +110,34 @@ function Register() {
           });
           break;
 
-        case '2fa_setup_required':
-          // Redirect to TOTP setup page (session is pending2FASetup, not user)
+        case '2fa_setup_required': {
+          // Redirect to 2FA setup page based on available methods
+          const methods = data.available_methods;
           await tick();
-          navigate({
-            to: '/setup/totp',
-            search: extractOAuthParams(search),
-          });
+          if (methods.length === 1) {
+            const method = methods[0];
+            if (method === 'totp') {
+              navigate({
+                to: '/setup/totp',
+                search: extractOAuthParams(search),
+              });
+            } else if (method === 'passkey') {
+              navigate({
+                to: '/setup/passkey',
+                search: extractOAuthParams(search),
+              });
+            }
+          } else {
+            navigate({
+              to: '/setup/2fa',
+              search: {
+                ...extractOAuthParams(search),
+                methods: methods,
+              },
+            });
+          }
           break;
+        }
 
         case 'authenticated':
           // Normal flow - user session is set

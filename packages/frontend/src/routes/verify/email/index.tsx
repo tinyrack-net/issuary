@@ -18,7 +18,7 @@ import { Alert } from '@/components/ui/alert.js';
 import { Divider } from '@/components/ui/divider.js';
 import {
   buildAuthorizeUrl,
-  buildSetupTotpUrl,
+  buildSetup2FAUrl,
   isOAuthFlow,
   OAuthSearchSchema,
 } from '@/libs/oauth-search.js';
@@ -77,10 +77,12 @@ function VerifyEmail() {
     ...verifyEmailMutationOptions,
     onSuccess: async (data) => {
       switch (data.status) {
-        case '2fa_setup_required':
-          // Redirect to setup-totp page
-          window.location.href = buildSetupTotpUrl(search);
+        case '2fa_setup_required': {
+          // Redirect to 2FA setup page based on available methods
+          const methods = data.available_methods;
+          window.location.href = buildSetup2FAUrl(search, methods);
           break;
+        }
 
         case 'authenticated':
           queryClient.setQueryData(getSessionQueryOptions.queryKey, {
