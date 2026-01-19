@@ -157,7 +157,7 @@ export async function loginViaApi(
   const loginData = await loginResponse.json();
 
   // Check if 2FA is required
-  if (loginData.second_factor_required) {
+  if (loginData.status === '2fa_required') {
     if (!totpSecret) {
       return { user: {}, requires2FA: true };
     }
@@ -180,7 +180,12 @@ export async function loginViaApi(
     return { user: verifyData.user, requires2FA: false };
   }
 
-  return { user: loginData.user ?? {}, requires2FA: false };
+  if (loginData.status === 'success') {
+    return { user: loginData.user ?? {}, requires2FA: false };
+  }
+
+  // For other statuses (email_verification_required, 2fa_setup_required)
+  return { user: {}, requires2FA: false };
 }
 
 /**
