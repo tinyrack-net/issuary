@@ -24,7 +24,7 @@ describe('POST /api/v1/auth/email/verify', () => {
     expect(registerRes.statusCode).toBe(200);
     const registerBody = JSON.parse(registerRes.body);
     expect(registerBody.status).toBe('email_verification_required');
-    expect(registerBody.user.email_verified).toBe(false);
+    expect(registerBody).not.toHaveProperty('user');
 
     // 2. Get the verification token from database
     const token = await withMikroContext(app, async () => {
@@ -47,7 +47,7 @@ describe('POST /api/v1/auth/email/verify', () => {
 
     expect(verifyRes.statusCode).toBe(200);
     const verifyBody = JSON.parse(verifyRes.body);
-    expect(verifyBody.status).toBe('success');
+    expect(verifyBody.status).toBe('authenticated');
     expect(verifyBody.user.email_verified).toBe(true);
 
     // 4. Check that user's email is marked as verified in database

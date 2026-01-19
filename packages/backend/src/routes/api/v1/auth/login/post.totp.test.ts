@@ -209,7 +209,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
     // Config user should get full session immediately
-    expect(body.status).toBe('success');
+    expect(body.status).toBe('authenticated');
     expect(body.user.managed_by).toBe('config');
   });
 });
@@ -260,7 +260,7 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    expect(body.status).toBe('success');
+    expect(body.status).toBe('authenticated');
     expect(body.user.email).toBe(email);
     expect(body.user.totp_enabled).toBeFalsy();
   });
@@ -367,7 +367,7 @@ describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    expect(body.status).toBe('success');
+    expect(body.status).toBe('authenticated');
     expect(body.user.email).toBe(email);
   });
 
@@ -615,7 +615,7 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     });
 
     expect(loginRes.statusCode).toBe(200);
-    expect(loginRes.json().status).toBe('success');
+    expect(loginRes.json().status).toBe('authenticated');
 
     const sessionCookie = extractCookie(loginRes, 'session');
 

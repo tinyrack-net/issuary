@@ -215,7 +215,7 @@ describe('POST /api/v1/auth/login - TOTP flow', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    expect(body.status).toBe('success');
+    expect(body.status).toBe('authenticated');
     expect(body).toHaveProperty('user');
     expect(body.user.email).toBe(email);
   });

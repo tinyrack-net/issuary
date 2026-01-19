@@ -54,10 +54,7 @@ describe('POST /api/v1/auth/register', () => {
     expect(res.statusCode).toBe(200);
     const body = res.json();
     expect(body).toHaveProperty('status', 'email_verification_required');
-    expect(body).toHaveProperty('user');
-    expect(body.user).toHaveProperty('id');
-    expect(body.user.email_verified).toBe(false);
-    expect(body.user).toHaveProperty('second_factor_required');
+    expect(body).not.toHaveProperty('user');
   });
 
   test('should fail with app config user email', async () => {
@@ -201,12 +198,14 @@ describe('POST /api/v1/auth/register', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.user.email_verified).toBe(false);
+    expect(body.status).toBe('email_verification_required');
+    expect(body).not.toHaveProperty('user');
 
     // Check that verification token was created in database
     await withMikroContext(app, async () => {
       const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
       expect(user).toBeDefined();
+      expect(user.email_verified).toBe(false);
 
       const verification = await app.mikro.emailVerification.findOneOrFail({
         user: user,

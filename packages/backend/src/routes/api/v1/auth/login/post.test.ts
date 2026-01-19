@@ -21,7 +21,7 @@ describe('POST /api/v1/auth/login', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.status).toBe('success');
+    expect(body.status).toBe('authenticated');
     expect(body.user).toHaveProperty('id');
     expect(body.user).toHaveProperty('second_factor_required');
   });
@@ -121,7 +121,7 @@ describe('POST /api/v1/auth/login', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    expect(body.status).toBe('success');
+    expect(body.status).toBe('authenticated');
     expect(body.user.email).toBe(uniqueEmail);
     expect(body.user.email_verified).toBe(true);
     expect(body.user).toHaveProperty('second_factor_required');
@@ -140,7 +140,7 @@ describe('POST /api/v1/auth/login', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.status).toBe('success');
+    expect(body.status).toBe('authenticated');
     expect(body.user.managed_by).toBe('config');
     expect(body.user).toHaveProperty('second_factor_required');
   });
