@@ -26,9 +26,17 @@ export type SecondFactorMethod = 'totp' | 'passkey';
 /**
  * Extended search schema for 2FA pages
  * Includes methods parameter to show only available 2FA methods
+ * Supports both comma-separated string and array formats
  */
 export const TwoFactorSearchSchema = OAuthSearchSchema.extend({
-  methods: z.array(z.string()).optional(),
+  methods: z
+    .union([z.array(z.string()), z.string()])
+    .optional()
+    .transform((val) => {
+      if (!val) return undefined;
+      if (Array.isArray(val)) return val;
+      return val.split(',').filter(Boolean);
+    }),
 });
 
 export type TwoFactorSearch = z.infer<typeof TwoFactorSearchSchema>;
@@ -113,6 +121,93 @@ export function buildSetupTotpUrl(search: OAuthSearch): string {
   if (search.display) setupUrl.searchParams.set('display', search.display);
 
   return setupUrl.toString();
+}
+
+/**
+ * Passkey 설정 페이지 URL을 빌드하는 헬퍼 함수
+ * Passkey 설정이 필요한 경우 OAuth 파라미터를 유지하며 리다이렉트
+ */
+export function buildSetupPasskeyUrl(search: OAuthSearch): string {
+  const setupUrl = new URL('/setup/passkey', window.location.origin);
+
+  if (search.client_id)
+    setupUrl.searchParams.set('client_id', search.client_id);
+  if (search.redirect_uri)
+    setupUrl.searchParams.set('redirect_uri', search.redirect_uri);
+  if (search.response_type)
+    setupUrl.searchParams.set('response_type', search.response_type);
+  if (search.scope) setupUrl.searchParams.set('scope', search.scope);
+  if (search.state) setupUrl.searchParams.set('state', search.state);
+  if (search.nonce) setupUrl.searchParams.set('nonce', search.nonce);
+  if (search.code_challenge)
+    setupUrl.searchParams.set('code_challenge', search.code_challenge);
+  if (search.code_challenge_method)
+    setupUrl.searchParams.set(
+      'code_challenge_method',
+      search.code_challenge_method,
+    );
+  if (search.prompt) setupUrl.searchParams.set('prompt', search.prompt);
+  if (search.max_age) setupUrl.searchParams.set('max_age', search.max_age);
+  if (search.display) setupUrl.searchParams.set('display', search.display);
+
+  return setupUrl.toString();
+}
+
+/**
+ * 2FA 설정 선택 페이지 URL을 빌드하는 헬퍼 함수
+ * 여러 2FA 방식 중 선택이 필요한 경우 OAuth 파라미터를 유지하며 리다이렉트
+ */
+export function buildSetup2FASelectionUrl(
+  search: OAuthSearch,
+  methods: SecondFactorMethod[],
+): string {
+  const setupUrl = new URL('/setup/2fa', window.location.origin);
+
+  setupUrl.searchParams.set('methods', methods.join(','));
+
+  if (search.client_id)
+    setupUrl.searchParams.set('client_id', search.client_id);
+  if (search.redirect_uri)
+    setupUrl.searchParams.set('redirect_uri', search.redirect_uri);
+  if (search.response_type)
+    setupUrl.searchParams.set('response_type', search.response_type);
+  if (search.scope) setupUrl.searchParams.set('scope', search.scope);
+  if (search.state) setupUrl.searchParams.set('state', search.state);
+  if (search.nonce) setupUrl.searchParams.set('nonce', search.nonce);
+  if (search.code_challenge)
+    setupUrl.searchParams.set('code_challenge', search.code_challenge);
+  if (search.code_challenge_method)
+    setupUrl.searchParams.set(
+      'code_challenge_method',
+      search.code_challenge_method,
+    );
+  if (search.prompt) setupUrl.searchParams.set('prompt', search.prompt);
+  if (search.max_age) setupUrl.searchParams.set('max_age', search.max_age);
+  if (search.display) setupUrl.searchParams.set('display', search.display);
+
+  return setupUrl.toString();
+}
+
+/**
+ * 2FA 설정 URL을 빌드하는 헬퍼 함수
+ * 메소드 수에 따라 적절한 URL을 반환
+ * - 메소드 1개: 해당 메소드 설정 페이지로 직접 이동
+ * - 메소드 2개 이상: 2FA 선택 페이지로 이동
+ */
+export function buildSetup2FAUrl(
+  search: OAuthSearch,
+  methods: SecondFactorMethod[],
+): string {
+  if (methods.length === 1) {
+    const method = methods[0];
+    if (method === 'totp') {
+      return buildSetupTotpUrl(search);
+    }
+    if (method === 'passkey') {
+      return buildSetupPasskeyUrl(search);
+    }
+  }
+  return buildSetup2FASelectionUrl(search, methods);
 }
 
 /**
