@@ -16,6 +16,8 @@ import { hash, verify } from 'argon2';
 import { UserRepository } from '@/repositories/user.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { UserOAuthEntity } from './user-oauth.entity.js';
+import { UserPasskeyEntity } from './user-passkey.entity.js';
+import { UserTotpEntity } from './user-totp.entity.js';
 
 @Entity({
   tableName: 'user',
@@ -142,4 +144,16 @@ export class UserEntity extends BaseEntity {
     (userOAuth) => userOAuth.user,
   )
   public oauthAccounts = new Collection<UserOAuthEntity>(this);
+
+  @OneToMany(
+    () => UserPasskeyEntity,
+    (passkey) => passkey.user,
+  )
+  public passkeys = new Collection<UserPasskeyEntity>(this);
+
+  @OneToMany(
+    () => UserTotpEntity,
+    (totp) => totp.user,
+  )
+  public totps = new Collection<UserTotpEntity>(this);
 }
