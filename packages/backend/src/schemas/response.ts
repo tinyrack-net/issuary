@@ -362,11 +362,16 @@ export const r = {
     user: UserSession,
   }),
 
-  // Login response - discriminated union by status field
-  LoginResponse: z.discriminatedUnion('status', [
+  // Unified auth response - discriminated union by status field
+  // Combines login, register, email verify, and session responses
+  // Note: user info is only provided when status is 'authenticated'
+  AuthResponse: z.discriminatedUnion('status', [
     z.object({
-      status: z.literal('success'),
+      status: z.literal('authenticated'),
       user: UserSession,
+    }),
+    z.object({
+      status: z.literal('unauthenticated'),
     }),
     z.object({
       status: z.literal('email_verification_required'),
@@ -382,58 +387,6 @@ export const r = {
       available_methods: z
         .array(z.enum(['totp', 'passkey']))
         .describe('Available 2FA setup methods for the user'),
-    }),
-  ]),
-
-  // Register response - discriminated union by status field
-  RegisterResponse: z.discriminatedUnion('status', [
-    z.object({
-      status: z.literal('success'),
-      user: UserSession,
-    }),
-    z.object({
-      status: z.literal('email_verification_required'),
-      user: UserSession,
-    }),
-    z.object({
-      status: z.literal('2fa_setup_required'),
-      user: UserSession,
-      available_methods: z
-        .array(z.enum(['totp', 'passkey']))
-        .describe('Available 2FA setup methods for the user'),
-    }),
-  ]),
-
-  // Email verify response - discriminated union by status field
-  EmailVerifyResponse: z.discriminatedUnion('status', [
-    z.object({
-      status: z.literal('success'),
-      user: UserSession,
-    }),
-    z.object({
-      status: z.literal('2fa_setup_required'),
-      user: UserSession,
-      available_methods: z
-        .array(z.enum(['totp', 'passkey']))
-        .describe('Available 2FA setup methods for the user'),
-    }),
-  ]),
-
-  // Session response - discriminated union by status field
-  SessionResponse: z.discriminatedUnion('status', [
-    z.object({
-      status: z.literal('authenticated'),
-      user: UserSession,
-    }),
-    z.object({
-      status: z.literal('2fa_setup_required'),
-      user: UserSession,
-      available_methods: z
-        .array(z.enum(['totp', 'passkey']))
-        .describe('Available 2FA setup methods for the user'),
-    }),
-    z.object({
-      status: z.literal('unauthenticated'),
     }),
   ]),
 
