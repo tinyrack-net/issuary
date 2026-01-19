@@ -20,7 +20,7 @@ export default (fastify: FastifyWithZodInstance) => {
         token: f.token,
       }),
       response: {
-        200: r.EmailVerifyResponse,
+        200: r.AuthResponse,
         400: e.InvalidVerificationToken.Schema,
       },
     },
@@ -69,7 +69,6 @@ export default (fastify: FastifyWithZodInstance) => {
         });
         return res.status(200).send({
           status: '2fa_setup_required',
-          user: userSession,
           available_methods: available2FAMethods,
         });
       }
@@ -80,7 +79,7 @@ export default (fastify: FastifyWithZodInstance) => {
         authenticated_at: Math.floor(Date.now() / 1000),
       });
       res.status(200).send({
-        status: 'success',
+        status: 'authenticated',
         user: userSession,
       });
     },

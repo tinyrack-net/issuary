@@ -21,7 +21,7 @@ export default (fastify: FastifyWithZodInstance) => {
         password: f.userPassword,
       }),
       response: {
-        200: r.LoginResponse,
+        200: r.AuthResponse,
         400: e.ValidationError.Schema,
         401: e.InvalidEmailOrPassword.Schema,
         403: e.EmailVerificationRequired.Schema,
@@ -74,7 +74,7 @@ export default (fastify: FastifyWithZodInstance) => {
       });
 
       return res.status(200).send({
-        status: 'success',
+        status: 'authenticated',
         user: user,
       });
     },

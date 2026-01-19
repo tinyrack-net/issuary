@@ -21,7 +21,7 @@ export default (fastify: FastifyWithZodInstance) => {
         password: f.userPassword,
       }),
       response: {
-        200: r.RegisterResponse,
+        200: r.AuthResponse,
         400: e.ValidationError.Schema,
         403: e.RegistrationDisabled.Schema,
         409: e.EmailAlreadyExists.Schema,
@@ -54,7 +54,6 @@ export default (fastify: FastifyWithZodInstance) => {
         }
         return res.status(200).send({
           status: 'email_verification_required',
-          user: userSession,
         });
       }
 
@@ -65,7 +64,6 @@ export default (fastify: FastifyWithZodInstance) => {
         });
         return res.status(200).send({
           status: '2fa_setup_required',
-          user: userSession,
           available_methods: available2FAMethods,
         });
       }
@@ -76,7 +74,7 @@ export default (fastify: FastifyWithZodInstance) => {
         authenticated_at: Math.floor(Date.now() / 1000),
       });
       res.status(200).send({
-        status: 'success',
+        status: 'authenticated',
         user: userSession,
       });
     },

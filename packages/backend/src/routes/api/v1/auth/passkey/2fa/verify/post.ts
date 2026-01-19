@@ -21,7 +21,7 @@ export default (fastify: FastifyWithZodInstance) => {
         response: r.AuthenticationResponseJSON,
       }),
       response: {
-        200: r.UserSessionResponse,
+        200: r.AuthResponse,
         400: z.union([
           e.PasskeyNotEnabled.Schema,
           e.PasskeyChallengeNotFound.Schema,
@@ -73,6 +73,7 @@ export default (fastify: FastifyWithZodInstance) => {
       });
 
       return res.status(200).send({
+        status: 'authenticated',
         user,
       });
     },

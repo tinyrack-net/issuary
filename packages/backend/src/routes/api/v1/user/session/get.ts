@@ -11,7 +11,7 @@ export default (fastify: FastifyWithZodInstance) =>
       description: 'Get Session',
       tags: [TAGS.USER],
       response: {
-        200: r.SessionResponse,
+        200: r.AuthResponse,
       },
     },
     handler: async (req, res) => {
@@ -42,7 +42,6 @@ export default (fastify: FastifyWithZodInstance) =>
         if (needsSecondFactorSetup) {
           return res.status(200).send({
             status: '2fa_setup_required',
-            user: userSession,
             available_methods: available2FAMethods,
           });
         }
