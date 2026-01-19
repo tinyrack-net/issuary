@@ -366,33 +366,37 @@ export const r = {
   // Login response - either full session, 2FA required, 2FA setup required, or email verification required
   LoginResponse: z.union([
     z.object({
-      user: UserSession,
-      second_factor_required: z.literal(false),
-      second_factor_setup_required: z.literal(false),
-      email_verification_required: z.literal(false),
-    }),
-    z.object({
-      second_factor_required: z.literal(true),
+      user: UserSession.optional(),
+      second_factor_required: z.boolean().optional(),
+      second_factor_setup_required: z.boolean().optional(),
       available_methods: z
         .array(z.enum(['totp', 'passkey']))
+        .optional()
         .describe('Available 2FA methods for the user'),
-      second_factor_setup_required: z.literal(false),
-      email_verification_required: z.literal(false),
+      email_verification_required: z.boolean().optional(),
     }),
-    z.object({
-      second_factor_required: z.literal(false),
-      second_factor_setup_required: z.literal(true),
-      available_setup_methods: z
-        .array(z.enum(['totp', 'passkey']))
-        .describe('Available 2FA setup methods for the user'),
-      email_verification_required: z.literal(false),
-    }),
-    z.object({
-      second_factor_required: z.literal(false),
-      second_factor_setup_required: z.literal(false),
-      email_verification_required: z.literal(true),
-      email: f.userEmail.describe('Email address for verification'),
-    }),
+    // z.object({
+    //   second_factor_required: z.literal(true),
+    //   available_methods: z
+    //     .array(z.enum(['totp', 'passkey']))
+    //     .describe('Available 2FA methods for the user'),
+    //   second_factor_setup_required: z.literal(false),
+    //   email_verification_required: z.literal(false),
+    // }),
+    // z.object({
+    //   second_factor_required: z.literal(false),
+    //   second_factor_setup_required: z.literal(true),
+    //   available_setup_methods: z
+    //     .array(z.enum(['totp', 'passkey']))
+    //     .describe('Available 2FA setup methods for the user'),
+    //   email_verification_required: z.literal(false),
+    // }),
+    // z.object({
+    //   second_factor_required: z.literal(false),
+    //   second_factor_setup_required: z.literal(false),
+    //   email_verification_required: z.literal(true),
+    //   email: f.userEmail.describe('Email address for verification'),
+    // }),
   ]),
 
   UserSessionNullableResponse: z.object({
