@@ -58,6 +58,8 @@ export const ROUTES = {
   verifyPasskey: '/verify/passkey',
   verify2fa: '/verify/2fa',
   setupTotp: '/setup/totp',
+  setupPasskey: '/setup/passkey',
+  setup2fa: '/setup/2fa',
   consent: '/consent',
   error: '/error',
 } as const;
