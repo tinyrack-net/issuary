@@ -41,7 +41,7 @@ export class UserService {
     );
     const totpEnabled = await this.mikro.userTotp.isEnabled(id);
     const passkeyCount = await this.mikro.userPasskey.countByUserId(id);
-    const secondFactorRequired = this.userSecondFactorRequired(user);
+    const secondFactorRequired = this.user2FASetupRequired(user);
 
     return {
       id: user.id,
@@ -73,7 +73,7 @@ export class UserService {
 
     const totpEnabled = await this.mikro.userTotp.isEnabled(user.id);
     const passkeyCount = await this.mikro.userPasskey.countByUserId(user.id);
-    const secondFactorRequired = this.userSecondFactorRequired(user);
+    const secondFactorRequired = this.user2FASetupRequired(user);
 
     return {
       id: user.id,
@@ -126,7 +126,7 @@ export class UserService {
         email_verified: user.email_verified,
         has_password: user.hasPassword(),
         totp_enabled: false,
-        second_factor_required: this.userSecondFactorRequired(user),
+        second_factor_required: this.user2FASetupRequired(user),
         passkey_count: 0,
       },
     };
@@ -173,14 +173,32 @@ export class UserService {
   /**
    * Determines if second factor setup is required for a user.
    */
-  public userSecondFactorRequired(userLike: {
+  public user2FASetupRequired(userLike: {
     managed_by: UserEntity['managed_by'];
   }): boolean {
     if (userLike.managed_by === 'config') {
       return false;
     }
-    const passwordConfig = this.config.basic_authentication_methods.password;
-    return passwordConfig.second_factor.required;
+    return this.config.basic_authentication_methods.password.second_factor
+      .required;
+  }
+
+  public async userRegistered2FAMethods(
+    userId: string,
+  ): Promise<('totp' | 'passkey')[]> {
+    const user = await this.mikro.user.findOneOrFail({
+      id: userId,
+    });
+    const methods: ('totp' | 'passkey')[] = [];
+    const totpEnabled = await this.mikro.userTotp.isEnabled(user.id);
+    if (totpEnabled) {
+      methods.push('totp');
+    }
+    const passkeyCount = await this.mikro.userPasskey.countByUserId(user.id);
+    if (passkeyCount > 0) {
+      methods.push('passkey');
+    }
+    return methods;
   }
 
   /**
