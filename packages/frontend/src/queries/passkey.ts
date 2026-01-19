@@ -9,7 +9,7 @@ import {
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch.js';
 import { queryKeys } from './keys';
-import type { SessionResponse, SessionUser } from './session.js';
+import type { AuthResponse, SessionUser } from './session.js';
 
 export type PasskeyInfo = {
   id: string;
@@ -138,7 +138,7 @@ export const loginWithPasskeyMutationOptions = mutationOptions({
         response: authenticationResponse,
       }),
     });
-    return verifyRes.json() as Promise<SessionResponse>;
+    return verifyRes.json() as Promise<AuthResponse>;
   },
 });
 
@@ -167,6 +167,6 @@ export const verifyPasskey2FAMutationOptions = mutationOptions({
         response: authenticationResponse,
       }),
     });
-    return verifyRes.json() as Promise<SessionResponse>;
+    return verifyRes.json() as Promise<AuthResponse>;
   },
 });
