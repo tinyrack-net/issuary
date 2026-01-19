@@ -13,10 +13,16 @@ export type SessionUser = {
   passkey_count: number;
 };
 
-export type SessionResponse = {
-  user: SessionUser | null;
-  second_factor_setup_required?: boolean;
-};
+export type SecondFactorMethod = 'totp' | 'passkey';
+
+export type SessionResponse =
+  | { status: 'authenticated'; user: SessionUser }
+  | {
+      status: '2fa_setup_required';
+      user: SessionUser;
+      available_methods: SecondFactorMethod[];
+    }
+  | { status: 'unauthenticated' };
 
 export const getSessionQueryOptions = queryOptions({
   queryKey: queryKeys.session(),

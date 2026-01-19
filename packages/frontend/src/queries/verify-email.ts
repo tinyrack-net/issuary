@@ -1,15 +1,18 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch.js';
-import type { SessionUser } from './session.js';
+import type { SecondFactorMethod, SessionUser } from './session.js';
 
 export type VerifyEmailParams = {
   token: string;
 };
 
-export type VerifyEmailResponse = {
-  user: SessionUser;
-  second_factor_setup_required?: boolean;
-};
+export type VerifyEmailResponse =
+  | { status: 'success'; user: SessionUser }
+  | {
+      status: '2fa_setup_required';
+      user: SessionUser;
+      available_methods: SecondFactorMethod[];
+    };
 
 export const verifyEmailMutationOptions = mutationOptions({
   mutationFn: async (values: VerifyEmailParams) => {

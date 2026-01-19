@@ -9,30 +9,10 @@ export type LoginParams = {
 };
 
 export type LoginResponse =
-  | {
-      second_factor_required: false;
-      second_factor_setup_required: false;
-      email_verification_required: false;
-      user: SessionUser;
-    }
-  | {
-      second_factor_required: true;
-      available_methods: SecondFactorMethod[];
-      second_factor_setup_required: false;
-      email_verification_required: false;
-    }
-  | {
-      second_factor_required: false;
-      second_factor_setup_required: true;
-      available_setup_methods: SecondFactorMethod[];
-      email_verification_required: false;
-    }
-  | {
-      second_factor_required: false;
-      second_factor_setup_required: false;
-      email_verification_required: true;
-      email: string;
-    };
+  | { status: 'success'; user: SessionUser }
+  | { status: 'email_verification_required' }
+  | { status: '2fa_required'; available_methods: SecondFactorMethod[] }
+  | { status: '2fa_setup_required'; available_methods: SecondFactorMethod[] };
 
 export const loginMutationOptions = mutationOptions({
   mutationFn: async (values: LoginParams) => {
