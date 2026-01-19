@@ -244,12 +244,12 @@ export async function loginWithTotp(
   await page.getByRole('button', { name: /log in/i }).click();
 
   // Wait for redirect to TOTP verification
-  await page.waitForURL(/\/verify-totp|\/verify-2fa/, { timeout: 10000 });
+  await page.waitForURL(/\/verify\/totp|\/verify\/2fa/, { timeout: 10000 });
 
   // If redirected to 2FA selection page, choose TOTP
-  if (page.url().includes('/verify-2fa')) {
+  if (page.url().includes('/verify/2fa')) {
     await page.getByRole('link', { name: /authenticator app/i }).click();
-    await page.waitForURL(/\/verify-totp/, { timeout: 5000 });
+    await page.waitForURL(/\/verify\/totp/, { timeout: 5000 });
   }
 
   // Complete TOTP verification

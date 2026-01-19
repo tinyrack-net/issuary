@@ -11,7 +11,7 @@ import {
   TwoFactorSearchSchema,
 } from '@/libs/oauth-search.js';
 
-export const Route = createFileRoute('/setup-2fa/')({
+export const Route = createFileRoute('/setup/2fa/')({
   component: Setup2FA,
   validateSearch: TwoFactorSearchSchema,
 });
@@ -43,7 +43,7 @@ function Setup2FA() {
       <div className="mt-4 flex flex-col gap-4">
         {showTotp && (
           <Link
-            to="/setup-totp"
+            to="/setup/totp"
             search={oauthParams}
             className="btn btn-outline btn-block justify-start gap-3"
           >
@@ -59,7 +59,7 @@ function Setup2FA() {
 
         {showPasskey && (
           <Link
-            to="/setup-passkey"
+            to="/setup/passkey"
             search={oauthParams}
             className="btn btn-outline btn-block justify-start gap-3"
           >

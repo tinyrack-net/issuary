@@ -92,7 +92,7 @@ test.describe('TOTP Login Flow - Full Integration', () => {
     // Wait for profile page (config user is exempt, new user might need email verification)
     // Handle potential email verification requirement
     try {
-      await page.waitForURL(/\/profile|\/verify-email|\/setup/, {
+      await page.waitForURL(/\/profile|\/verify\/email|\/setup/, {
         timeout: 5000,
       });
     } catch {
@@ -153,12 +153,12 @@ test.describe('TOTP Login Flow - Full Integration', () => {
     await page.getByRole('button', { name: /log in/i }).click();
 
     // Wait for TOTP page
-    await page.waitForURL(/\/verify-totp|\/verify-2fa/, { timeout: 10000 });
+    await page.waitForURL(/\/verify\/totp|\/verify\/2fa/, { timeout: 10000 });
 
     // Handle 2FA selection if needed
-    if (page.url().includes('/verify-2fa')) {
+    if (page.url().includes('/verify/2fa')) {
       await page.getByRole('link', { name: /authenticator app/i }).click();
-      await page.waitForURL(/\/verify-totp/);
+      await page.waitForURL(/\/verify\/totp/);
     }
 
     // Enter invalid TOTP code
@@ -169,7 +169,7 @@ test.describe('TOTP Login Flow - Full Integration', () => {
     await expect(page.getByText(/invalid/i)).toBeVisible();
 
     // Should still be on verification page
-    await expect(page).toHaveURL(/\/verify-totp/);
+    await expect(page).toHaveURL(/\/verify\/totp/);
 
     // Cleanup
     await ensureLoggedOut(page);

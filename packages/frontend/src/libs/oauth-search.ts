@@ -90,7 +90,7 @@ export function extractOAuthParams(
  * TOTP 설정이 필요한 경우 OAuth 파라미터를 유지하며 리다이렉트
  */
 export function buildSetupTotpUrl(search: OAuthSearch): string {
-  const setupUrl = new URL('/setup-totp', window.location.origin);
+  const setupUrl = new URL('/setup/totp', window.location.origin);
 
   if (search.client_id)
     setupUrl.searchParams.set('client_id', search.client_id);
@@ -123,7 +123,7 @@ export function buildVerifyEmailUrl(
   search: OAuthSearch,
   email: string,
 ): string {
-  const verifyUrl = new URL('/verify-email', window.location.origin);
+  const verifyUrl = new URL('/verify/email', window.location.origin);
 
   verifyUrl.searchParams.set('email', email);
 

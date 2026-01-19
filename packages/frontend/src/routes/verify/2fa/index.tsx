@@ -10,7 +10,7 @@ import {
   TwoFactorSearchSchema,
 } from '@/libs/oauth-search.js';
 
-export const Route = createFileRoute('/verify-2fa/')({
+export const Route = createFileRoute('/verify/2fa/')({
   component: Verify2FA,
   validateSearch: TwoFactorSearchSchema,
 });
@@ -38,7 +38,7 @@ function Verify2FA() {
       <div className="flex flex-col gap-4">
         {showTotp && (
           <Link
-            to="/verify-totp"
+            to="/verify/totp"
             search={oauthParams}
             className="btn btn-outline btn-block justify-start gap-3"
           >
@@ -54,7 +54,7 @@ function Verify2FA() {
 
         {showPasskey && (
           <Link
-            to="/verify-passkey"
+            to="/verify/passkey"
             search={oauthParams}
             className="btn btn-outline btn-block justify-start gap-3"
           >

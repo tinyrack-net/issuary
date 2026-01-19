@@ -37,7 +37,7 @@ const SearchSchema = z
   })
   .merge(OAuthSearchSchema);
 
-export const Route = createFileRoute('/verify-email/')({
+export const Route = createFileRoute('/verify/email/')({
   component: VerifyEmail,
   validateSearch: SearchSchema,
   beforeLoad: async ({ context }) => {

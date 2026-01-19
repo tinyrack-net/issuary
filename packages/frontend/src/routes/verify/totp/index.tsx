@@ -31,7 +31,7 @@ const ERROR_CODES = {
 
 export const SearchSchema = OAuthSearchSchema;
 
-export const Route = createFileRoute('/verify-totp/')({
+export const Route = createFileRoute('/verify/totp/')({
   component: VerifyTotp,
   validateSearch: SearchSchema,
 });

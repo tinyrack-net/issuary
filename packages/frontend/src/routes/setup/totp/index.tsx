@@ -43,7 +43,7 @@ const ERROR_CODES = {
 
 export const SearchSchema = OAuthSearchSchema;
 
-export const Route = createFileRoute('/setup-totp/')({
+export const Route = createFileRoute('/setup/totp/')({
   component: SetupTotp,
   validateSearch: SearchSchema,
 });

@@ -19,7 +19,7 @@ import { getSessionQueryOptions } from '@/queries/session.js';
 
 export const SearchSchema = OAuthSearchSchema;
 
-export const Route = createFileRoute('/verify-passkey/')({
+export const Route = createFileRoute('/verify/passkey/')({
   component: VerifyPasskey,
   validateSearch: SearchSchema,
 });

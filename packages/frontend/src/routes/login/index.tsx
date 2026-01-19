@@ -87,18 +87,18 @@ function Login() {
           const method = methods[0];
           if (method === 'totp') {
             router.navigate({
-              to: '/verify-totp',
+              to: '/verify/totp',
               search: extractOAuthParams(search),
             });
           } else if (method === 'passkey') {
             router.navigate({
-              to: '/verify-passkey',
+              to: '/verify/passkey',
               search: extractOAuthParams(search),
             });
           }
         } else {
           router.navigate({
-            to: '/verify-2fa',
+            to: '/verify/2fa',
             search: {
               ...extractOAuthParams(search),
               methods: methods,
@@ -116,19 +116,19 @@ function Login() {
           const method = methods[0];
           if (method === 'totp') {
             router.navigate({
-              to: '/setup-totp',
+              to: '/setup/totp',
               search: extractOAuthParams(search),
             });
           } else if (method === 'passkey') {
             router.navigate({
-              to: '/setup-passkey',
+              to: '/setup/passkey',
               search: extractOAuthParams(search),
             });
           }
         } else {
           // Multiple methods available, go to 2FA setup selection page with methods
           router.navigate({
-            to: '/setup-2fa',
+            to: '/setup/2fa',
             search: {
               ...extractOAuthParams(search),
               methods: methods,

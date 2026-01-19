@@ -79,7 +79,7 @@ function Register() {
           // Redirect to TOTP setup page (session is pending2FASetup, not user)
           await tick();
           navigate({
-            to: '/setup-totp',
+            to: '/setup/totp',
             search: extractOAuthParams(search),
           });
           return;
@@ -99,7 +99,7 @@ function Register() {
       } else {
         await tick();
         navigate({
-          to: '/verify-email',
+          to: '/verify/email',
           search: {
             email: data.user.email,
             token: '',

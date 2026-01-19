@@ -27,7 +27,7 @@ import { getSessionQueryOptions } from '@/queries/session.js';
 
 export const SearchSchema = OAuthSearchSchema;
 
-export const Route = createFileRoute('/setup-passkey/')({
+export const Route = createFileRoute('/setup/passkey/')({
   component: SetupPasskey,
   validateSearch: SearchSchema,
 });
