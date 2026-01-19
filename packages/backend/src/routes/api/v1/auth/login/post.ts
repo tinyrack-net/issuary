@@ -33,53 +33,38 @@ export default (fastify: FastifyWithZodInstance) => {
         password: req.body.password,
       });
 
-      const emailVerificationRequired =
-        fastify.userService.userEmailVerificationRequired(user);
-
-      if (emailVerificationRequired && !user.email_verified) {
+      if (
+        fastify.userService.userEmailVerificationRequired(user) &&
+        !user.email_verified
+      ) {
         return res.status(200).send({
-          second_factor_required: false,
-          second_factor_setup_required: false,
           email_verification_required: true,
-          email: user.email,
         });
       }
 
-      const available2FAMethods: ('totp' | 'passkey')[] = [];
-      if (user.totp_enabled) {
-        available2FAMethods.push('totp');
-      }
-      if (user.passkey_count > 0) {
-        available2FAMethods.push('passkey');
-      }
+      const user2FASetupRequired =
+        fastify.userService.user2FASetupRequired(user);
+      const userRegistered2FAMethods =
+        await fastify.userService.userRegistered2FAMethods(user.id);
+      const available2FAMethods =
+        fastify.userService.getAvailable2FASetupMethods();
 
-      if (available2FAMethods.length > 0) {
+      if (userRegistered2FAMethods.length > 0) {
         req.session.set('pending2FAUser', {
           id: user.id,
           authenticated_at: Math.floor(Date.now() / 1000),
         });
         return res.status(200).send({
           second_factor_required: true,
-          available_methods: available2FAMethods,
-          second_factor_setup_required: false,
-          email_verification_required: false,
+          available_methods: userRegistered2FAMethods,
         });
-      }
-
-      const secondFactorRequired =
-        fastify.userService.userSecondFactorRequired(user);
-      const availableSetupMethods =
-        fastify.userService.getAvailable2FASetupMethods();
-
-      if (secondFactorRequired && availableSetupMethods.length > 0) {
+      } else if (user2FASetupRequired) {
         req.session.set('pending2FASetup', {
           id: user.id,
         });
         return res.status(200).send({
-          second_factor_required: false,
           second_factor_setup_required: true,
-          available_setup_methods: availableSetupMethods,
-          email_verification_required: false,
+          available_methods: available2FAMethods,
         });
       }
 
@@ -89,19 +74,7 @@ export default (fastify: FastifyWithZodInstance) => {
       });
 
       return res.status(200).send({
-        second_factor_required: false,
-        second_factor_setup_required: false,
-        email_verification_required: false,
-        user: {
-          id: user.id,
-          managed_by: user.managed_by,
-          email: user.email,
-          email_verified: user.email_verified,
-          has_password: user.has_password,
-          totp_enabled: user.totp_enabled,
-          second_factor_required: user.second_factor_required,
-          passkey_count: user.passkey_count,
-        },
+        user: user,
       });
     },
   });

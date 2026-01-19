@@ -18,7 +18,7 @@ export default (fastify: FastifyWithZodInstance) =>
       try {
         const user = await req.auth.verify();
         const secondFactorRequired =
-          fastify.userService.userSecondFactorRequired(user);
+          fastify.userService.user2FASetupRequired(user);
         const available2FAMethods =
           fastify.userService.getAvailable2FASetupMethods();
         const needsSecondFactorSetup =

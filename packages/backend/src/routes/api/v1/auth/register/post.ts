@@ -35,7 +35,7 @@ export default (fastify: FastifyWithZodInstance) => {
         });
 
       const secondFactorRequired =
-        fastify.userService.userSecondFactorRequired(userSession);
+        fastify.userService.user2FASetupRequired(userSession);
 
       if (emailVerificationRequired) {
         if (secondFactorRequired) {

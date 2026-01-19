@@ -42,7 +42,7 @@ export default (fastify: FastifyWithZodInstance) => {
 
       // Check if 2FA setup is required
       const secondFactorRequired =
-        fastify.userService.userSecondFactorRequired(user);
+        fastify.userService.user2FASetupRequired(user);
       const available2FAMethods: ('totp' | 'passkey')[] = [];
       if (totpEnabled) {
         available2FAMethods.push('totp');
