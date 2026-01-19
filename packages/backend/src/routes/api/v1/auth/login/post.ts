@@ -45,7 +45,6 @@ export default (fastify: FastifyWithZodInstance) => {
         });
       }
 
-      // Check available 2FA methods (already configured by user)
       const available2FAMethods: ('totp' | 'passkey')[] = [];
       if (user.totp_enabled) {
         available2FAMethods.push('totp');
@@ -54,7 +53,6 @@ export default (fastify: FastifyWithZodInstance) => {
         available2FAMethods.push('passkey');
       }
 
-      // If 2FA is already configured, require second factor verification
       if (available2FAMethods.length > 0) {
         req.session.set('pending2FAUser', {
           id: user.id,
@@ -68,7 +66,6 @@ export default (fastify: FastifyWithZodInstance) => {
         });
       }
 
-      // Check if 2FA setup is required (user has no 2FA but it's mandatory)
       const secondFactorRequired =
         fastify.userService.userSecondFactorRequired(user);
       const availableSetupMethods =
@@ -86,7 +83,6 @@ export default (fastify: FastifyWithZodInstance) => {
         });
       }
 
-      // No 2FA required, create full session
       req.session.set('user', {
         id: user.id,
         authenticated_at: Math.floor(Date.now() / 1000),
