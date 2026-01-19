@@ -180,7 +180,7 @@ export async function loginViaApi(
     return { user: verifyData.user, requires2FA: false };
   }
 
-  if (loginData.status === 'success') {
+  if (loginData.status === 'authenticated') {
     return { user: loginData.user ?? {}, requires2FA: false };
   }
 
