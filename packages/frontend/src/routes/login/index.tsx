@@ -179,7 +179,7 @@ function Login() {
           break;
         }
 
-        case 'success':
+        case 'authenticated':
           queryClient.setQueryData(getSessionQueryOptions.queryKey, {
             status: 'authenticated',
             user: data.user,
