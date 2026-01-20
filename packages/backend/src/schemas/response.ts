@@ -323,6 +323,33 @@ const OAuthAuthenticationMethod = z
   })
   .describe('OAuth Authentication Method');
 
+const AuthAuthenticatedResponse = z.object({
+  status: z.literal('authenticated'),
+  user: UserSession,
+});
+
+const AuthUnauthenticatedResponse = z.object({
+  status: z.literal('unauthenticated'),
+});
+
+const AuthEmailVerificationRequiredResponse = z.object({
+  status: z.literal('email_verification_required'),
+});
+
+const Auth2FARequiredResponse = z.object({
+  status: z.literal('2fa_required'),
+  available_methods: z
+    .array(z.enum(['totp', 'passkey']))
+    .describe('Available 2FA methods for the user'),
+});
+
+const Auth2FASetupRequiredResponse = z.object({
+  status: z.literal('2fa_setup_required'),
+  available_methods: z
+    .array(z.enum(['totp', 'passkey']))
+    .describe('Available 2FA setup methods for the user'),
+});
+
 export const r = {
   // Base schemas
   UserSession,
@@ -362,32 +389,21 @@ export const r = {
     user: UserSession,
   }),
 
+  AuthAuthenticatedResponse,
+  AuthUnauthenticatedResponse,
+  AuthEmailVerificationRequiredResponse,
+  Auth2FARequiredResponse,
+  Auth2FASetupRequiredResponse,
+
   // Unified auth response - discriminated union by status field
   // Combines login, register, email verify, and session responses
   // Note: user info is only provided when status is 'authenticated'
   AuthResponse: z.discriminatedUnion('status', [
-    z.object({
-      status: z.literal('authenticated'),
-      user: UserSession,
-    }),
-    z.object({
-      status: z.literal('unauthenticated'),
-    }),
-    z.object({
-      status: z.literal('email_verification_required'),
-    }),
-    z.object({
-      status: z.literal('2fa_required'),
-      available_methods: z
-        .array(z.enum(['totp', 'passkey']))
-        .describe('Available 2FA methods for the user'),
-    }),
-    z.object({
-      status: z.literal('2fa_setup_required'),
-      available_methods: z
-        .array(z.enum(['totp', 'passkey']))
-        .describe('Available 2FA setup methods for the user'),
-    }),
+    AuthAuthenticatedResponse,
+    AuthUnauthenticatedResponse,
+    AuthEmailVerificationRequiredResponse,
+    Auth2FARequiredResponse,
+    Auth2FASetupRequiredResponse,
   ]),
 
   OAuthCallbackResponse: z.object({
