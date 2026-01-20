@@ -35,7 +35,7 @@ export default (fastify: FastifyWithZodInstance) => {
 
       await fastify.mikro.em.populate(user, ['password_hash']);
 
-      const totpEnabled = await fastify.mikro.userTotp.isEnabled(user.id);
+      const totpEnabled = await fastify.mikro.userTotp.isRegistered(user.id);
       const passkeyCount = await fastify.mikro.userPasskey.countByUserId(
         user.id,
       );
@@ -51,9 +51,15 @@ export default (fastify: FastifyWithZodInstance) => {
         managed_by: 'database' as const,
         email: user.email,
         email_verified: user.email_verified,
+        email_verification_required:
+          fastify.userService.userEmailVerificationRequired(user),
         has_password: user.hasPassword(),
-        totp_enabled: totpEnabled,
+        totp_enabled:
+          fastify.config.basic_authentication_methods.password.totp.enabled,
+        totp_registered: totpEnabled,
         second_factor_required: secondFactorRequired,
+        passkey_enabled:
+          fastify.config.basic_authentication_methods.passkey.enabled,
         passkey_count: passkeyCount,
       };
 
@@ -68,8 +74,7 @@ export default (fastify: FastifyWithZodInstance) => {
           id: user.id,
         });
         return res.status(200).send({
-          status: '2fa_setup_required',
-          available_methods: available2FAMethods,
+          user: userSession,
         });
       }
 
@@ -79,7 +84,6 @@ export default (fastify: FastifyWithZodInstance) => {
         authenticated_at: Math.floor(Date.now() / 1000),
       });
       res.status(200).send({
-        status: 'authenticated',
         user: userSession,
       });
     },
