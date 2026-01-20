@@ -69,7 +69,7 @@ function Profile() {
     ...logoutMutationOptions,
     onSuccess: async () => {
       queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-        status: 'unauthenticated',
+        user: undefined,
       });
       await tick();
       router.navigate({
@@ -112,7 +112,7 @@ function Profile() {
   };
 
   // Handle non-authenticated states (should be redirected, but fallback)
-  if (session.status !== 'authenticated') {
+  if (!session.user) {
     return null;
   }
 

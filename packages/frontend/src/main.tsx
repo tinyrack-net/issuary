@@ -44,7 +44,7 @@ const Loader = memo(() => {
       router={AppRouter}
       context={{
         queryClient: GlobalQueryClient,
-        user: session.status === 'authenticated' ? session.user : null,
+        user: session.user ?? null,
       }}
     />
   );

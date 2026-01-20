@@ -21,6 +21,7 @@ import {
   buildSetup2FAUrl,
   isOAuthFlow,
   OAuthSearchSchema,
+  type SecondFactorMethod,
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
@@ -76,27 +77,40 @@ function VerifyEmail() {
   const verifyEmailMutation = useMutation({
     ...verifyEmailMutationOptions,
     onSuccess: async (data) => {
-      switch (data.status) {
-        case '2fa_setup_required': {
-          // Redirect to 2FA setup page based on available methods
-          const methods = data.available_methods;
-          window.location.href = buildSetup2FAUrl(search, methods);
-          break;
+      if (!data.user) {
+        return;
+      }
+
+      const user = data.user;
+
+      if (user.second_factor_required) {
+        const methods: SecondFactorMethod[] = [];
+        const config = await queryClient.ensureQueryData(appConfigQueryOptions);
+        if (
+          config.basic_authentication_methods.password.totp.enabled &&
+          user.totp_registered
+        ) {
+          methods.push('totp');
         }
+        if (
+          config.basic_authentication_methods.passkey.enabled &&
+          user.passkey_count > 0
+        ) {
+          methods.push('passkey');
+        }
+        window.location.href = buildSetup2FAUrl(search, methods);
+        return;
+      }
 
-        case 'authenticated':
-          queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-            status: 'authenticated',
-            user: data.user,
-          });
-          await tick();
+      queryClient.setQueryData(getSessionQueryOptions.queryKey, {
+        user: user,
+      });
+      await tick();
 
-          if (isOAuthFlow(search)) {
-            window.location.href = buildAuthorizeUrl(search);
-          } else {
-            setVerified(true);
-          }
-          break;
+      if (isOAuthFlow(search)) {
+        window.location.href = buildAuthorizeUrl(search);
+      } else {
+        setVerified(true);
       }
     },
     onSettled: () => {

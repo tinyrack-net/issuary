@@ -67,7 +67,6 @@ function SetupPasskey() {
     onSuccess: async (data) => {
       if (data.second_factor_setup_completed && data.user) {
         queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-          status: 'authenticated',
           user: data.user,
         });
         await tick();
@@ -78,7 +77,6 @@ function SetupPasskey() {
           router.navigate({ to: '/profile' });
         }
       } else {
-        // Regular passkey setup from profile
         queryClient.invalidateQueries({
           queryKey: getSessionQueryOptions.queryKey,
         });

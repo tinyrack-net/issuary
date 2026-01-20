@@ -70,7 +70,6 @@ function VerifyTotp() {
     ...verifyTotpLoginMutationOptions,
     onSuccess: async (data) => {
       queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-        status: 'authenticated',
         user: data.user,
       });
       await tick();

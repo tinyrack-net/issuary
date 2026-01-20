@@ -34,8 +34,10 @@ function VerifyPasskey() {
   const verifyMutation = useMutation({
     ...verifyPasskey2FAMutationOptions,
     onSuccess: async (data) => {
-      if (data.status === 'authenticated') {
-        queryClient.setQueryData(getSessionQueryOptions.queryKey, data);
+      if (data.user) {
+        queryClient.setQueryData(getSessionQueryOptions.queryKey, {
+          user: data.user,
+        });
         await tick();
 
         if (isOAuthFlow(search)) {

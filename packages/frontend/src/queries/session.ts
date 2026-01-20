@@ -7,24 +7,18 @@ export type SessionUser = {
   managed_by: 'config' | 'database';
   email: string;
   email_verified: boolean;
+  email_verification_required: boolean;
   has_password: boolean;
+  totp_enabled: boolean;
   totp_registered: boolean;
   second_factor_required: boolean;
+  passkey_enabled: boolean;
   passkey_count: number;
 };
 
-export type SecondFactorMethod = 'totp' | 'passkey';
-
-// Unified auth response type - user info is only provided when authenticated
-export type AuthResponse =
-  | { status: 'authenticated'; user: SessionUser }
-  | { status: 'unauthenticated' }
-  | { status: 'email_verification_required' }
-  | { status: '2fa_required'; available_methods: SecondFactorMethod[] }
-  | { status: '2fa_setup_required'; available_methods: SecondFactorMethod[] };
-
-// Alias for backward compatibility
-export type SessionResponse = AuthResponse;
+export type AuthResponse = {
+  user?: SessionUser;
+};
 
 export const getSessionQueryOptions = queryOptions({
   queryKey: queryKeys.session(),

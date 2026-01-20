@@ -6,7 +6,6 @@ export type VerifyEmailParams = {
   token: string;
 };
 
-// Email verify uses the unified AuthResponse type
 export type VerifyEmailResponse = AuthResponse;
 
 export const verifyEmailMutationOptions = mutationOptions({

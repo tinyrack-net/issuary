@@ -85,8 +85,10 @@ function Login() {
   const passkeyLoginMutation = useMutation({
     ...loginWithPasskeyMutationOptions,
     onSuccess: async (data) => {
-      if (data.status === 'authenticated') {
-        queryClient.setQueryData(getSessionQueryOptions.queryKey, data);
+      if (data.user) {
+        queryClient.setQueryData(getSessionQueryOptions.queryKey, {
+          user: data.user,
+        });
         await tick();
 
         if (isOAuthFlow(search)) {
@@ -120,78 +122,70 @@ function Login() {
     try {
       const data = await loginMutation.mutateAsync(values);
 
-      switch (data.status) {
-        case 'email_verification_required':
-          window.location.href = buildVerifyEmailUrl(search, values.email);
-          break;
+      if (!data.user) {
+        setError('email', {
+          type: 'manual',
+          message: t('login.error.failed'),
+        });
+        return;
+      }
 
-        case '2fa_required': {
-          const methods = data.available_methods;
-          if (methods.length === 1) {
-            const method = methods[0];
-            if (method === 'totp') {
-              router.navigate({
-                to: '/verify/totp',
-                search: extractOAuthParams(search),
-              });
-            } else if (method === 'passkey') {
-              router.navigate({
-                to: '/verify/passkey',
-                search: extractOAuthParams(search),
-              });
-            }
-          } else {
-            router.navigate({
-              to: '/verify/2fa',
-              search: {
-                ...extractOAuthParams(search),
-                methods: methods,
-              },
-            });
-          }
-          break;
+      const user = data.user;
+
+      if (user.email_verification_required) {
+        window.location.href = buildVerifyEmailUrl(search, values.email);
+        return;
+      }
+
+      if (user.second_factor_required) {
+        const methods: string[] = [];
+        if (
+          configData.basic_authentication_methods.password.totp.enabled &&
+          user.totp_registered
+        ) {
+          methods.push('totp');
+        }
+        if (
+          configData.basic_authentication_methods.passkey.enabled &&
+          user.passkey_count > 0
+        ) {
+          methods.push('passkey');
         }
 
-        case '2fa_setup_required': {
-          const methods = data.available_methods;
-          if (methods.length === 1) {
-            const method = methods[0];
-            if (method === 'totp') {
-              router.navigate({
-                to: '/setup/totp',
-                search: extractOAuthParams(search),
-              });
-            } else if (method === 'passkey') {
-              router.navigate({
-                to: '/setup/passkey',
-                search: extractOAuthParams(search),
-              });
-            }
-          } else {
+        if (methods.length === 1) {
+          const method = methods[0];
+          if (method === 'totp') {
             router.navigate({
-              to: '/setup/2fa',
-              search: {
-                ...extractOAuthParams(search),
-                methods: methods,
-              },
+              to: '/verify/totp',
+              search: extractOAuthParams(search),
+            });
+          } else if (method === 'passkey') {
+            router.navigate({
+              to: '/verify/passkey',
+              search: extractOAuthParams(search),
             });
           }
-          break;
-        }
-
-        case 'authenticated':
-          queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-            status: 'authenticated',
-            user: data.user,
+        } else {
+          router.navigate({
+            to: '/verify/2fa',
+            search: {
+              ...extractOAuthParams(search),
+              methods: methods,
+            },
           });
-          await tick();
+        }
+        return;
+      }
 
-          if (isOAuthFlow(search)) {
-            window.location.href = buildAuthorizeUrl(search);
-          } else {
-            router.navigate({ to: '/profile' });
-          }
-          break;
+      queryClient.setQueryData(getSessionQueryOptions.queryKey, {
+        user: user,
+      });
+      await tick();
+
+      if (isOAuthFlow(search)) {
+        window.location.href = buildAuthorizeUrl(search);
+      } else {
+        router.navigate({ to: '/profile' });
       }
     } catch (error) {
       console.error('Login failed:', error);

@@ -1,13 +1,12 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch';
-import type { AuthResponse } from './session';
+import type { AuthResponse } from './session.js';
 
 export type LoginParams = {
   email: string;
   password: string;
 };
 
-// Login uses the unified AuthResponse type
 export type LoginResponse = AuthResponse;
 
 export const loginMutationOptions = mutationOptions({

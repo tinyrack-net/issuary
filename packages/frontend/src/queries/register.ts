@@ -7,7 +7,6 @@ export type RegisterParams = {
   password: string;
 };
 
-// Register uses the unified AuthResponse type
 export type RegisterResponse = AuthResponse;
 
 export const registerMutationOptions = mutationOptions({

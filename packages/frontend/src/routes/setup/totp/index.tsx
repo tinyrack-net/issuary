@@ -159,7 +159,6 @@ function SetupTotp() {
     onSuccess: async (data) => {
       if (data.second_factor_setup_completed && data.user) {
         queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-          status: 'authenticated',
           user: data.user,
         });
         await tick();
@@ -170,7 +169,6 @@ function SetupTotp() {
           router.navigate({ to: '/profile' });
         }
       } else {
-        // Regular TOTP setup from profile, just go to profile
         queryClient.invalidateQueries({
           queryKey: getSessionQueryOptions.queryKey,
         });

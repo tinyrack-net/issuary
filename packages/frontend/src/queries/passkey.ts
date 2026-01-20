@@ -138,7 +138,7 @@ export const loginWithPasskeyMutationOptions = mutationOptions({
         response: authenticationResponse,
       }),
     });
-    return verifyRes.json() as Promise<AuthResponse>;
+    return verifyRes.json() as AuthResponse;
   },
 });
 
@@ -167,6 +167,6 @@ export const verifyPasskey2FAMutationOptions = mutationOptions({
         response: authenticationResponse,
       }),
     });
-    return verifyRes.json() as Promise<AuthResponse>;
+    return verifyRes.json() as AuthResponse;
   },
 });

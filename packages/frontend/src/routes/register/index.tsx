@@ -96,63 +96,79 @@ function Register() {
     try {
       const data = await registerMutation.mutateAsync(values);
 
-      switch (data.status) {
-        case 'email_verification_required':
-          // Redirect to email verification page (use form email, not data.user)
-          await tick();
-          navigate({
-            to: '/verify/email',
-            search: {
-              email: values.email,
-              token: '',
-              ...extractOAuthParams(search),
-            },
-          });
-          break;
+      if (!data.user) {
+        setError('email', {
+          type: 'manual',
+          message: t('register.error.emailExists'),
+        });
+        return;
+      }
 
-        case '2fa_setup_required': {
-          // Redirect to 2FA setup page based on available methods
-          const methods = data.available_methods;
-          await tick();
-          if (methods.length === 1) {
-            const method = methods[0];
-            if (method === 'totp') {
-              navigate({
-                to: '/setup/totp',
-                search: extractOAuthParams(search),
-              });
-            } else if (method === 'passkey') {
-              navigate({
-                to: '/setup/passkey',
-                search: extractOAuthParams(search),
-              });
-            }
-          } else {
-            navigate({
-              to: '/setup/2fa',
-              search: {
-                ...extractOAuthParams(search),
-                methods: methods,
-              },
-            });
-          }
-          break;
+      const user = data.user;
+
+      if (user.email_verification_required) {
+        await tick();
+        navigate({
+          to: '/verify/email',
+          search: {
+            email: values.email,
+            token: '',
+            ...extractOAuthParams(search),
+          },
+        });
+        return;
+      }
+
+      if (user.second_factor_required) {
+        const methods: string[] = [];
+        if (
+          configData.basic_authentication_methods.password.totp.enabled &&
+          user.totp_registered
+        ) {
+          methods.push('totp');
+        }
+        if (
+          configData.basic_authentication_methods.passkey.enabled &&
+          user.passkey_count > 0
+        ) {
+          methods.push('passkey');
         }
 
-        case 'authenticated':
-          // Normal flow - user session is set
-          queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-            status: 'authenticated',
-            user: data.user,
-          });
-          await tick();
-
-          if (isOAuthFlow(search)) {
-            window.location.href = buildAuthorizeUrl(search);
-          } else {
-            navigate({ to: '/profile' });
+        await tick();
+        if (methods.length === 1) {
+          const method = methods[0];
+          if (method === 'totp') {
+            navigate({
+              to: '/setup/totp',
+              search: extractOAuthParams(search),
+            });
+          } else if (method === 'passkey') {
+            navigate({
+              to: '/setup/passkey',
+              search: extractOAuthParams(search),
+            });
           }
-          break;
+        } else {
+          navigate({
+            to: '/setup/2fa',
+            search: {
+              ...extractOAuthParams(search),
+              methods: methods,
+            },
+          });
+        }
+        return;
+      }
+
+      queryClient.setQueryData(getSessionQueryOptions.queryKey, {
+        user: user,
+      });
+      await tick();
+
+      if (isOAuthFlow(search)) {
+        window.location.href = buildAuthorizeUrl(search);
+      } else {
+        navigate({ to: '/profile' });
       }
     } catch {
       setError('email', {
