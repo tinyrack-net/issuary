@@ -1,14 +1,14 @@
-import type {
-  PublicKeyCredentialCreationOptionsJSON as SimpleWebAuthnCreationOptionsJSON,
-  RegistrationResponseJSON as SimpleWebAuthnRegistrationResponseJSON,
-  PublicKeyCredentialRequestOptionsJSON as SimpleWebAuthnRequestOptionsJSON,
-} from '@simplewebauthn/server';
-import z from 'zod/v4';
 import {
   AppConfigPasskeyAuth,
   AppConfigPasswordAuth,
   AppTheme,
 } from '@/lib/config/index.js';
+import type {
+  PublicKeyCredentialCreationOptionsJSON as SimpleWebAuthnCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON as SimpleWebAuthnRequestOptionsJSON,
+  RegistrationResponseJSON as SimpleWebAuthnRegistrationResponseJSON,
+} from '@simplewebauthn/server';
+import z from 'zod/v4';
 import { f } from './field.js';
 import { oauthSchema } from './oauth.js';
 
@@ -332,33 +332,6 @@ const OAuthAuthenticationMethod = z
   })
   .describe('OAuth Authentication Method');
 
-const AuthAuthenticatedResponse = z.object({
-  status: z.literal('authenticated'),
-  user: UserSession,
-});
-
-const AuthUnauthenticatedResponse = z.object({
-  status: z.literal('unauthenticated'),
-});
-
-const AuthEmailVerificationRequiredResponse = z.object({
-  status: z.literal('email_verification_required'),
-});
-
-const Auth2FARequiredResponse = z.object({
-  status: z.literal('2fa_required'),
-  available_methods: z
-    .array(z.enum(['totp', 'passkey']))
-    .describe('Available 2FA methods for the user'),
-});
-
-const Auth2FASetupRequiredResponse = z.object({
-  status: z.literal('2fa_setup_required'),
-  available_methods: z
-    .array(z.enum(['totp', 'passkey']))
-    .describe('Available 2FA setup methods for the user'),
-});
-
 export const r = {
   // Base schemas
   UserSession,
@@ -397,12 +370,6 @@ export const r = {
   UserSessionResponse: z.object({
     user: UserSession,
   }),
-
-  AuthAuthenticatedResponse,
-  AuthUnauthenticatedResponse,
-  AuthEmailVerificationRequiredResponse,
-  Auth2FARequiredResponse,
-  Auth2FASetupRequiredResponse,
 
   // Unified auth response - discriminated union by status field
   // Combines login, register, email verify, and session responses

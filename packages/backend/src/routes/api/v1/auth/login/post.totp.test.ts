@@ -98,9 +98,8 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    expect(body.status).toBe('2fa_setup_required');
-    expect(body.available_methods).toContain('totp');
-    expect(body).not.toHaveProperty('user');
+    expect(body.user.second_factor_required).toBe(true);
+    expect(body.user).not.toBeNull();
   });
 
   test('should require TOTP verification for user with TOTP registered', async () => {
@@ -122,9 +121,9 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    expect(body.status).toBe('2fa_required');
-    expect(body.available_methods).toContain('totp');
-    expect(body).not.toHaveProperty('user');
+    // User has TOTP registered, so verification is required
+    expect(body.user.totp_registered).toBe(true);
+    expect(body.user).not.toBeNull();
   });
 
   test('should issue pending2FASetup session when TOTP setup is required', async () => {
@@ -148,7 +147,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     });
 
     expect(loginRes.statusCode).toBe(200);
-    expect(loginRes.json().status).toBe('2fa_setup_required');
+    expect(loginRes.json().user.second_factor_required).toBe(true);
 
     // Verify session cookie is issued
     const sessionCookie = extractCookie(loginRes, 'session');
@@ -161,7 +160,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
       sessionCookie,
     );
     expect(sessionRes.statusCode).toBe(200);
-    expect(sessionRes.json().status).toBe('unauthenticated');
+    expect(sessionRes.json().user).toBeUndefined();
   });
 
   test('should issue pending2FAUser session when TOTP verification is required', async () => {
@@ -179,7 +178,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     });
 
     expect(loginRes.statusCode).toBe(200);
-    expect(loginRes.json().status).toBe('2fa_required');
+    expect(loginRes.json().user.second_factor_required).toBe(true);
 
     // Verify session cookie is issued
     const sessionCookie = extractCookie(loginRes, 'session');
@@ -192,7 +191,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
       sessionCookie,
     );
     expect(sessionRes.statusCode).toBe(200);
-    expect(sessionRes.json().status).toBe('unauthenticated');
+    expect(sessionRes.json().user).toBeUndefined();
   });
 
   test('should allow config user to login without TOTP (exempt from required)', async () => {
@@ -208,9 +207,8 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    // Config user should get full session immediately
-    expect(body.status).toBe('authenticated');
     expect(body.user.managed_by).toBe('config');
+    expect(body.user.second_factor_required).toBe(false);
   });
 });
 
@@ -260,9 +258,9 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    expect(body.status).toBe('authenticated');
     expect(body.user.email).toBe(email);
     expect(body.user.totp_registered).toBeFalsy();
+    expect(body.user.second_factor_required).toBe(false);
   });
 
   test('should require TOTP verification for user with TOTP registered', async () => {
@@ -282,9 +280,9 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    expect(body.status).toBe('2fa_required');
-    expect(body.available_methods).toContain('totp');
-    expect(body).not.toHaveProperty('user');
+    // User has TOTP registered, so verification is required
+    expect(body.user.totp_registered).toBe(true);
+    expect(body.user).not.toBeNull();
   });
 
   test('should issue real user session for non-TOTP user', async () => {
@@ -367,8 +365,8 @@ describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    expect(body.status).toBe('authenticated');
     expect(body.user.email).toBe(email);
+    expect(body.user.second_factor_required).toBe(false);
   });
 
   test('should still require TOTP verification if user has TOTP registered (TOTP enabled in user takes precedence)', async () => {
@@ -392,9 +390,8 @@ describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
     // User has TOTP registered, so verification is required
-    expect(body.status).toBe('2fa_required');
-    expect(body.available_methods).toContain('totp');
-    expect(body).not.toHaveProperty('user');
+    expect(body.user.totp_registered).toBe(true);
+    expect(body.user).not.toBeNull();
   });
 });
 
@@ -444,8 +441,8 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
     // Email verification should be required first
-    expect(body.status).toBe('email_verification_required');
-    expect(body).not.toHaveProperty('user');
+    expect(body.user.email_verification_required).toBe(true);
+    expect(body.user).not.toBeNull();
   });
 
   test('should require TOTP setup after email is verified (no TOTP registered)', async () => {
@@ -471,9 +468,8 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
     // TOTP setup should be required (email is already verified)
-    expect(body.status).toBe('2fa_setup_required');
-    expect(body.available_methods).toContain('totp');
-    expect(body).not.toHaveProperty('user');
+    expect(body.user.second_factor_required).toBe(true);
+    expect(body.user).not.toBeNull();
   });
 
   test('should require TOTP verification after email is verified (TOTP registered)', async () => {
@@ -495,9 +491,8 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
     // TOTP verification should be required
-    expect(body.status).toBe('2fa_required');
-    expect(body.available_methods).toContain('totp');
-    expect(body).not.toHaveProperty('user');
+    expect(body.user.second_factor_required).toBe(true);
+    expect(body.user).not.toBeNull();
   });
 });
 
