@@ -131,7 +131,7 @@ export class TotpService {
    * Check if TOTP is enabled for a user
    */
   public async isEnabled(userId: string): Promise<boolean> {
-    return this.mikro.userTotp.isEnabled(userId);
+    return this.mikro.userTotp.isRegistered(userId);
   }
 
   /**
