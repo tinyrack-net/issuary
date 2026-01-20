@@ -19,13 +19,22 @@ const UserSession = z
     id: f.userId,
     email: f.userEmail,
     email_verified: f.emailVerified,
+    email_verification_required: z
+      .boolean()
+      .describe('Whether email verification is required for the user'),
     has_password: z.boolean().describe('Whether the user has a password set'),
     totp_enabled: z.boolean().describe('Whether TOTP is enabled for the user'),
+    totp_registered: z
+      .boolean()
+      .describe('Whether TOTP is registered for the user'),
     second_factor_required: z
       .boolean()
       .describe(
         'Whether the user is required to use 2FA (e.g., due to policy)',
       ),
+    passkey_enabled: z
+      .boolean()
+      .describe('Whether passkey authentication is enabled for the user'),
     passkey_count: z
       .number()
       .int()
@@ -398,13 +407,9 @@ export const r = {
   // Unified auth response - discriminated union by status field
   // Combines login, register, email verify, and session responses
   // Note: user info is only provided when status is 'authenticated'
-  AuthResponse: z.discriminatedUnion('status', [
-    AuthAuthenticatedResponse,
-    AuthUnauthenticatedResponse,
-    AuthEmailVerificationRequiredResponse,
-    Auth2FARequiredResponse,
-    Auth2FASetupRequiredResponse,
-  ]),
+  AuthResponse: z.object({
+    user: UserSession,
+  }),
 
   OAuthCallbackResponse: z.object({
     user: UserSession,
