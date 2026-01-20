@@ -228,7 +228,7 @@ function Profile() {
                   {/* TOTP */}
                   {showTotpSection && (
                     <TotpSection
-                      totpEnabled={user.totp_enabled}
+                      totpEnabled={user.totp_registered}
                       onOpenModal={setTotpModal}
                     />
                   )}

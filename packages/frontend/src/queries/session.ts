@@ -8,7 +8,7 @@ export type SessionUser = {
   email: string;
   email_verified: boolean;
   has_password: boolean;
-  totp_enabled: boolean;
+  totp_registered: boolean;
   second_factor_required: boolean;
   passkey_count: number;
 };
