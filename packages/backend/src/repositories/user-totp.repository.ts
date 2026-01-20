@@ -31,7 +31,7 @@ export class UserTotpRepository extends EntityRepository<UserTotpEntity> {
    * @param userId - User ID to check
    * @returns True if TOTP is enabled for user
    */
-  async isEnabled(userId: string) {
+  async isRegistered(userId: string) {
     const count = await this.count({ user: { id: userId }, verified: true });
     return count > 0;
   }
