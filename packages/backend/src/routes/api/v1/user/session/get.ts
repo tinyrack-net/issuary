@@ -1,3 +1,4 @@
+import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
@@ -11,7 +12,9 @@ export default (fastify: FastifyWithZodInstance) =>
       description: 'Get Session',
       tags: [TAGS.USER],
       response: {
-        200: r.AuthResponse,
+        200: z.object({
+          user: r.UserSession.optional(),
+        }),
       },
     },
     handler: async (req, res) => {
@@ -26,7 +29,7 @@ export default (fastify: FastifyWithZodInstance) =>
         const needsSecondFactorSetup =
           secondFactorRequired &&
           available2FAMethods.length > 0 &&
-          !user.totp_enabled &&
+          !user.totp_registered &&
           user.passkey_count === 0;
 
         const userSession = {
@@ -34,30 +37,31 @@ export default (fastify: FastifyWithZodInstance) =>
           managed_by: user.managed_by,
           email: user.email,
           email_verified: user.email_verified,
+          email_verification_required:
+            fastify.userService.userEmailVerificationRequired(user),
           has_password: user.has_password,
-          totp_enabled: user.totp_enabled,
+          totp_enabled:
+            fastify.config.basic_authentication_methods.password.totp.enabled,
+          totp_registered: user.totp_registered,
           second_factor_required: user.second_factor_required,
+          passkey_enabled:
+            fastify.config.basic_authentication_methods.passkey.enabled,
           passkey_count: user.passkey_count,
         };
 
         // Case 1: 2FA setup required
         if (needsSecondFactorSetup) {
           return res.status(200).send({
-            status: '2fa_setup_required',
-            available_methods: available2FAMethods,
+            user: userSession,
           });
         }
 
         // Case 2: Authenticated
         return res.status(200).send({
-          status: 'authenticated',
           user: userSession,
         });
       } catch {
-        // Case 3: Unauthenticated
-        return res.status(200).send({
-          status: 'unauthenticated',
-        });
+        return res.status(200).send({});
       }
     },
   });
