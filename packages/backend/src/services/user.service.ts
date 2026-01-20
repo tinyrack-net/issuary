@@ -39,7 +39,7 @@ export class UserService {
         failHandler: () => new e.UserNotFound.Error(),
       },
     );
-    const totpEnabled = await this.mikro.userTotp.isEnabled(id);
+    const totpRegistered = await this.mikro.userTotp.isRegistered(id);
     const passkeyCount = await this.mikro.userPasskey.countByUserId(id);
     const secondFactorRequired = this.user2FASetupRequired(user);
 
@@ -48,9 +48,13 @@ export class UserService {
       managed_by: user.managed_by,
       email: user.email,
       email_verified: user.email_verified,
+      email_verification_required: this.userEmailVerificationRequired(user),
       has_password: user.hasPassword(),
-      totp_enabled: totpEnabled,
+      totp_enabled:
+        this.config.basic_authentication_methods.password.totp.enabled,
+      totp_registered: totpRegistered,
       second_factor_required: secondFactorRequired,
+      passkey_enabled: this.config.basic_authentication_methods.passkey.enabled,
       passkey_count: passkeyCount,
     };
   }
@@ -71,7 +75,7 @@ export class UserService {
       throw new e.InvalidEmailOrPassword.Error();
     }
 
-    const totpEnabled = await this.mikro.userTotp.isEnabled(user.id);
+    const totpEnabled = await this.mikro.userTotp.isRegistered(user.id);
     const passkeyCount = await this.mikro.userPasskey.countByUserId(user.id);
     const secondFactorRequired = this.user2FASetupRequired(user);
 
@@ -80,9 +84,13 @@ export class UserService {
       managed_by: user.managed_by,
       email: user.email,
       email_verified: user.email_verified,
+      email_verification_required: this.userEmailVerificationRequired(user),
       has_password: user.hasPassword(),
-      totp_enabled: totpEnabled,
+      totp_enabled:
+        this.config.basic_authentication_methods.password.totp.enabled,
+      totp_registered: totpEnabled,
       second_factor_required: secondFactorRequired,
+      passkey_enabled: this.config.basic_authentication_methods.passkey.enabled,
       passkey_count: passkeyCount,
     };
   }
@@ -124,9 +132,14 @@ export class UserService {
         managed_by: 'database',
         email: user.email,
         email_verified: user.email_verified,
+        email_verification_required: this.userEmailVerificationRequired(user),
         has_password: user.hasPassword(),
-        totp_enabled: false,
+        totp_enabled:
+          this.config.basic_authentication_methods.password.totp.enabled,
+        totp_registered: false,
         second_factor_required: this.user2FASetupRequired(user),
+        passkey_enabled:
+          this.config.basic_authentication_methods.passkey.enabled,
         passkey_count: 0,
       },
     };
@@ -190,7 +203,7 @@ export class UserService {
       id: userId,
     });
     const methods: ('totp' | 'passkey')[] = [];
-    const totpEnabled = await this.mikro.userTotp.isEnabled(user.id);
+    const totpEnabled = await this.mikro.userTotp.isRegistered(user.id);
     if (totpEnabled) {
       methods.push('totp');
     }
