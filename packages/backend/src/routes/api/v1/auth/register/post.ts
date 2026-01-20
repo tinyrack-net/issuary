@@ -28,53 +28,32 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      const { emailVerificationRequired, userSession } =
-        await fastify.userService.register({
-          email: req.body.email,
-          password: req.body.password,
-        });
+      const { userSession } = await fastify.userService.register({
+        email: req.body.email,
+        password: req.body.password,
+      });
 
-      const secondFactorRequired =
-        fastify.userService.user2FASetupRequired(userSession);
-      const available2FAMethods =
-        fastify.userService.getAvailable2FASetupMethods();
-
-      // Case 1: Email verification required - always return this status
-      // (2FA setup will happen after email verification)
-      if (emailVerificationRequired) {
-        if (secondFactorRequired) {
-          req.session.set('pending2FASetup', {
-            id: userSession.id,
-          });
-        } else {
-          req.session.set('user', {
-            id: userSession.id,
-            authenticated_at: Math.floor(Date.now() / 1000),
-          });
-        }
+      if (userSession.email_verification_required) {
         return res.status(200).send({
-          status: 'email_verification_required',
+          user: userSession,
         });
       }
 
-      // Case 2: No email verification but 2FA setup required
+      const secondFactorRequired =
+        fastify.userService.user2FASetupRequired(userSession);
+
       if (secondFactorRequired) {
         req.session.set('pending2FASetup', {
           id: userSession.id,
         });
-        return res.status(200).send({
-          status: '2fa_setup_required',
-          available_methods: available2FAMethods,
+      } else {
+        req.session.set('user', {
+          id: userSession.id,
+          authenticated_at: Math.floor(Date.now() / 1000),
         });
       }
 
-      // Case 3: Success - fully registered and authenticated
-      req.session.set('user', {
-        id: userSession.id,
-        authenticated_at: Math.floor(Date.now() / 1000),
-      });
       res.status(200).send({
-        status: 'authenticated',
         user: userSession,
       });
     },
