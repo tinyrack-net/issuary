@@ -53,8 +53,8 @@ describe('POST /api/v1/auth/register', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body).toHaveProperty('status', 'email_verification_required');
-    expect(body).not.toHaveProperty('user');
+    expect(body).toHaveProperty('user');
+    expect(body.user.email_verification_required).toBe(true);
   });
 
   test('should fail with app config user email', async () => {
@@ -181,8 +181,6 @@ describe('POST /api/v1/auth/register', () => {
     });
 
     expect(res.statusCode).toBe(200);
-    // Session should NOT be created until email is verified
-    // expect(res.headers['set-cookie']).toBeUndefined();
   });
 
   test('should generate verification token after registration', async () => {
@@ -198,8 +196,8 @@ describe('POST /api/v1/auth/register', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.status).toBe('email_verification_required');
-    expect(body).not.toHaveProperty('user');
+    expect(body).toHaveProperty('user');
+    expect(body.user.email_verification_required).toBe(true);
 
     // Check that verification token was created in database
     await withMikroContext(app, async () => {
