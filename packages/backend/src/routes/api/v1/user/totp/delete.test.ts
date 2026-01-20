@@ -261,7 +261,7 @@ describe('DELETE /api/v1/user/totp', () => {
       },
       sessionCookie,
     );
-    expect(sessionBefore.json().user.totp_enabled).toBe(true);
+    expect(sessionBefore.json().user.totp_registered).toBe(true);
 
     // Disable TOTP
     const validCode = generateSync({ secret });
@@ -286,7 +286,7 @@ describe('DELETE /api/v1/user/totp', () => {
       },
       sessionCookie,
     );
-    expect(sessionAfter.json().user.totp_enabled).toBe(false);
+    expect(sessionAfter.json().user.totp_registered).toBe(false);
   });
 
   test('should not disable TOTP with unverified setup', async () => {

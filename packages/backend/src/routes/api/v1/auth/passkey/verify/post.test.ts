@@ -372,7 +372,7 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
     expect(body.user.email_verified).toBe(true);
     // Check other required fields exist
     expect(typeof body.user.has_password).toBe('boolean');
-    expect(typeof body.user.totp_enabled).toBe('boolean');
+    expect(typeof body.user.totp_registered).toBe('boolean');
     expect(typeof body.user.passkey_count).toBe('number');
 
     // Verify session was created

@@ -322,7 +322,7 @@ describe('POST /api/v1/user/totp/verify', () => {
       },
       sessionCookie,
     );
-    expect(sessionBefore.json().user.totp_enabled).toBe(false);
+    expect(sessionBefore.json().user.totp_registered).toBe(false);
 
     // Start setup and verify
     const secret = await startTotpSetup(sessionCookie);
@@ -349,7 +349,7 @@ describe('POST /api/v1/user/totp/verify', () => {
       },
       sessionCookie,
     );
-    expect(sessionAfter.json().user.totp_enabled).toBe(true);
+    expect(sessionAfter.json().user.totp_registered).toBe(true);
   });
 
   test('should handle concurrent setup/verify attempts correctly', async () => {
