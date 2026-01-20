@@ -38,43 +38,30 @@ export default (fastify: FastifyWithZodInstance) => {
         !user.email_verified
       ) {
         return res.status(200).send({
-          status: 'email_verification_required',
+          user: user,
         });
       }
 
-      const user2FASetupRequired =
-        fastify.userService.user2FASetupRequired(user);
       const userRegistered2FAMethods =
         await fastify.userService.userRegistered2FAMethods(user.id);
-      const available2FAMethods =
-        fastify.userService.getAvailable2FASetupMethods();
 
       if (userRegistered2FAMethods.length > 0) {
         req.session.set('pending2FAUser', {
           id: user.id,
           authenticated_at: Math.floor(Date.now() / 1000),
         });
-        return res.status(200).send({
-          status: '2fa_required',
-          available_methods: userRegistered2FAMethods,
-        });
-      } else if (user2FASetupRequired) {
+      } else if (user.second_factor_required) {
         req.session.set('pending2FASetup', {
           id: user.id,
         });
-        return res.status(200).send({
-          status: '2fa_setup_required',
-          available_methods: available2FAMethods,
+      } else {
+        req.session.set('user', {
+          id: user.id,
+          authenticated_at: Math.floor(Date.now() / 1000),
         });
       }
 
-      req.session.set('user', {
-        id: user.id,
-        authenticated_at: Math.floor(Date.now() / 1000),
-      });
-
       return res.status(200).send({
-        status: 'authenticated',
         user: user,
       });
     },
