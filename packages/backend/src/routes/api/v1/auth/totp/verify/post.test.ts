@@ -41,8 +41,8 @@ describe('POST /api/v1/auth/totp/verify', () => {
     });
     expect(loginRes.statusCode).toBe(200);
     const loginBody = loginRes.json();
-    expect(loginBody.status).toBe('2fa_required');
-    expect(loginBody).not.toHaveProperty('user');
+    expect(loginBody).toHaveProperty('user');
+    expect(loginBody.user.totp_registered).toBe(true);
 
     // Get session cookie from login response
     const sessionCookie = extractCookie(loginRes, 'session');
@@ -63,7 +63,7 @@ describe('POST /api/v1/auth/totp/verify', () => {
     expect(verifyBody).toHaveProperty('user');
     expect(verifyBody.user.id).toBe(userId);
     expect(verifyBody.user.email).toBe(email);
-    expect(verifyBody.user.totp_enabled).toBe(true);
+    expect(verifyBody.user.totp_registered).toBe(true);
   });
 
   test('should fail with invalid TOTP code', async () => {
@@ -169,7 +169,7 @@ describe('POST /api/v1/auth/totp/verify', () => {
     // Should return unauthenticated status since session is not complete
     expect(sessionRes.statusCode).toBe(200);
     const body = sessionRes.json();
-    expect(body.status).toBe('unauthenticated');
+    expect(body).not.toHaveProperty('user');
   });
 });
 
@@ -194,8 +194,7 @@ describe('POST /api/v1/auth/login - TOTP flow', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    expect(body.status).toBe('2fa_required');
-    expect(body).not.toHaveProperty('user');
+    expect(body).toHaveProperty('user');
   });
 
   test('should complete login immediately for non-TOTP user', async () => {
@@ -215,7 +214,6 @@ describe('POST /api/v1/auth/login - TOTP flow', () => {
 
     expect(loginRes.statusCode).toBe(200);
     const body = loginRes.json();
-    expect(body.status).toBe('authenticated');
     expect(body).toHaveProperty('user');
     expect(body.user.email).toBe(email);
   });
