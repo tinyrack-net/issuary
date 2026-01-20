@@ -9,6 +9,7 @@ import { generatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { oauthConnectSchema } from '@/schemas/oauth-connect.js';
+import type { UserService } from './user.service.js';
 
 // Note: This service uses fastify.config for oauth_authentication_methods (OAuth providers config)
 // but user-related config lookups have been removed since users are now synced to DB.
@@ -22,6 +23,7 @@ declare module 'fastify' {
 export class OAuthConnectService {
   public constructor(
     private readonly config: InternalAppConfig,
+    private readonly userService: UserService,
     private readonly mikro: MikroService,
   ) {}
 
@@ -241,8 +243,8 @@ export class OAuthConnectService {
         throw new e.UserNotFound.Error();
       }
 
-      // Compute totp_enabled from userTotp repository
-      const totpEnabled = await this.mikro.userTotp.isEnabled(user.id);
+      // Compute totp_registered from userTotp repository
+      const totpRegistered = await this.mikro.userTotp.isRegistered(user.id);
       const secondFactorRequired =
         user.managed_by === 'config'
           ? false
@@ -256,9 +258,15 @@ export class OAuthConnectService {
           managed_by: 'database',
           email: user.email,
           email_verified: user.email_verified,
+          email_verification_required:
+            this.userService.userEmailVerificationRequired(user),
           has_password: user.hasPassword(),
-          totp_enabled: totpEnabled,
+          totp_enabled:
+            this.config.basic_authentication_methods.password.totp.enabled,
+          totp_registered: totpRegistered,
           second_factor_required: secondFactorRequired,
+          passkey_enabled:
+            this.config.basic_authentication_methods.passkey.enabled,
           passkey_count: await this.mikro.userPasskey.countByUserId(user.id),
         },
       };
@@ -297,8 +305,10 @@ export class OAuthConnectService {
 
       await this.mikro.em.flush();
 
-      // Compute totp_enabled from userTotp repository
-      const totpEnabled = await this.mikro.userTotp.isEnabled(existingUser.id);
+      // Compute totp_registered from userTotp repository
+      const totpRegistered = await this.mikro.userTotp.isRegistered(
+        existingUser.id,
+      );
       const secondFactorRequired =
         existingUser.managed_by === 'config'
           ? false
@@ -313,9 +323,15 @@ export class OAuthConnectService {
           managed_by: existingUser.managed_by,
           email: existingUser.email,
           email_verified: existingUser.email_verified,
+          email_verification_required:
+            this.userService.userEmailVerificationRequired(existingUser),
           has_password: existingUser.hasPassword(),
-          totp_enabled: totpEnabled,
+          totp_enabled:
+            this.config.basic_authentication_methods.password.totp.enabled,
+          totp_registered: totpRegistered,
           second_factor_required: secondFactorRequired,
+          passkey_enabled:
+            this.config.basic_authentication_methods.passkey.enabled,
           passkey_count: await this.mikro.userPasskey.countByUserId(
             existingUser.id,
           ),
@@ -353,11 +369,17 @@ export class OAuthConnectService {
         managed_by: 'database',
         email: newUser.email,
         email_verified: newUser.email_verified,
-        has_password: false, // New OAuth user has no password
-        totp_enabled: false, // New user has no TOTP
+        email_verification_required:
+          this.userService.userEmailVerificationRequired(newUser),
+        has_password: newUser.hasPassword(),
+        totp_enabled:
+          this.config.basic_authentication_methods.password.totp.enabled,
+        totp_registered: false, // New user has no TOTP
         second_factor_required:
           this.config.basic_authentication_methods.password.second_factor
             .required,
+        passkey_enabled:
+          this.config.basic_authentication_methods.passkey.enabled,
         passkey_count: 0, // New user has no passkeys
       },
     };
@@ -482,6 +504,7 @@ export default fastifyPlugin(
   async (fastify) => {
     const oauthConnectService = new OAuthConnectService(
       fastify.config,
+      fastify.userService,
       fastify.mikro,
     );
     fastify.decorate('oauthConnectService', oauthConnectService);
