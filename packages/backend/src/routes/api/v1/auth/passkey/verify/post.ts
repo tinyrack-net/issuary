@@ -57,14 +57,15 @@ export default (fastify: FastifyWithZodInstance) => {
       });
 
       return res.status(200).send({
-        status: 'authenticated',
         user: {
           id: sessionUser.id,
           managed_by: sessionUser.managed_by,
           email: sessionUser.email,
           email_verified: sessionUser.email_verified,
+          email_verification_required:
+            fastify.userService.userEmailVerificationRequired(sessionUser),
           has_password: sessionUser.has_password,
-          totp_enabled: sessionUser.totp_enabled,
+          totp_registered: sessionUser.totp_registered,
           second_factor_required: sessionUser.second_factor_required,
           passkey_count: sessionUser.passkey_count,
         },
