@@ -73,7 +73,6 @@ export default (fastify: FastifyWithZodInstance) => {
       });
 
       return res.status(200).send({
-        status: 'authenticated',
         user,
       });
     },

@@ -40,12 +40,8 @@ export default (fastify: FastifyWithZodInstance) =>
           email_verification_required:
             fastify.userService.userEmailVerificationRequired(user),
           has_password: user.has_password,
-          totp_enabled:
-            fastify.config.basic_authentication_methods.password.totp.enabled,
           totp_registered: user.totp_registered,
           second_factor_required: user.second_factor_required,
-          passkey_enabled:
-            fastify.config.basic_authentication_methods.passkey.enabled,
           passkey_count: user.passkey_count,
         };
 

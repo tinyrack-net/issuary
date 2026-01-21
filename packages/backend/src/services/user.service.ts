@@ -50,11 +50,8 @@ export class UserService {
       email_verified: user.email_verified,
       email_verification_required: this.userEmailVerificationRequired(user),
       has_password: user.hasPassword(),
-      totp_enabled:
-        this.config.basic_authentication_methods.password.totp.enabled,
       totp_registered: totpRegistered,
       second_factor_required: secondFactorRequired,
-      passkey_enabled: this.config.basic_authentication_methods.passkey.enabled,
       passkey_count: passkeyCount,
     };
   }
@@ -86,11 +83,8 @@ export class UserService {
       email_verified: user.email_verified,
       email_verification_required: this.userEmailVerificationRequired(user),
       has_password: user.hasPassword(),
-      totp_enabled:
-        this.config.basic_authentication_methods.password.totp.enabled,
       totp_registered: totpEnabled,
       second_factor_required: secondFactorRequired,
-      passkey_enabled: this.config.basic_authentication_methods.passkey.enabled,
       passkey_count: passkeyCount,
     };
   }
@@ -134,12 +128,8 @@ export class UserService {
         email_verified: user.email_verified,
         email_verification_required: this.userEmailVerificationRequired(user),
         has_password: user.hasPassword(),
-        totp_enabled:
-          this.config.basic_authentication_methods.password.totp.enabled,
         totp_registered: false,
         second_factor_required: this.user2FASetupRequired(user),
-        passkey_enabled:
-          this.config.basic_authentication_methods.passkey.enabled,
         passkey_count: 0,
       },
     };

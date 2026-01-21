@@ -261,12 +261,8 @@ export class OAuthConnectService {
           email_verification_required:
             this.userService.userEmailVerificationRequired(user),
           has_password: user.hasPassword(),
-          totp_enabled:
-            this.config.basic_authentication_methods.password.totp.enabled,
           totp_registered: totpRegistered,
           second_factor_required: secondFactorRequired,
-          passkey_enabled:
-            this.config.basic_authentication_methods.passkey.enabled,
           passkey_count: await this.mikro.userPasskey.countByUserId(user.id),
         },
       };
@@ -326,12 +322,8 @@ export class OAuthConnectService {
           email_verification_required:
             this.userService.userEmailVerificationRequired(existingUser),
           has_password: existingUser.hasPassword(),
-          totp_enabled:
-            this.config.basic_authentication_methods.password.totp.enabled,
           totp_registered: totpRegistered,
           second_factor_required: secondFactorRequired,
-          passkey_enabled:
-            this.config.basic_authentication_methods.passkey.enabled,
           passkey_count: await this.mikro.userPasskey.countByUserId(
             existingUser.id,
           ),
@@ -372,14 +364,10 @@ export class OAuthConnectService {
         email_verification_required:
           this.userService.userEmailVerificationRequired(newUser),
         has_password: newUser.hasPassword(),
-        totp_enabled:
-          this.config.basic_authentication_methods.password.totp.enabled,
         totp_registered: false, // New user has no TOTP
         second_factor_required:
           this.config.basic_authentication_methods.password.second_factor
             .required,
-        passkey_enabled:
-          this.config.basic_authentication_methods.passkey.enabled,
         passkey_count: 0, // New user has no passkeys
       },
     };
