@@ -94,10 +94,16 @@ function Login() {
       await tick();
 
       const registered_2fa_methods = [];
-      if (user.totp_enabled && user.totp_registered) {
+      if (
+        configData.basic_authentication_methods.password.totp.enabled &&
+        user.totp_registered
+      ) {
         registered_2fa_methods.push('totp');
       }
-      if (user.passkey_enabled && user.passkey_count > 0) {
+      if (
+        configData.basic_authentication_methods.passkey.enabled &&
+        user.passkey_count > 0
+      ) {
         registered_2fa_methods.push('passkey');
       }
 
