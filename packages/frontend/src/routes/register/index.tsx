@@ -7,6 +7,7 @@ import { SubmitButton } from '@/components/auth/submit-button.js';
 import { Divider } from '@/components/ui/divider.js';
 import {
   OAuthSearchSchema,
+  type SecondFactorMethod,
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
@@ -96,7 +97,7 @@ function Register() {
       await tick();
 
       if (user.second_factor_required) {
-        const available_2fa_methods: ('totp' | 'passkey')[] = [];
+        const available_2fa_methods: SecondFactorMethod[] = [];
         if (configData.basic_authentication_methods.password.totp.enabled) {
           available_2fa_methods.push('totp');
         }
