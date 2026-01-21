@@ -70,12 +70,10 @@ export class UserRepository extends EntityRepository<UserEntity> {
     if (emailExists) {
       throw new e.EmailAlreadyExists.Error();
     }
-
     const user = this.create({
       email: params.email,
       password_hash: params.password,
     });
-
     await this.getEntityManager().persist(user).flush();
     return user;
   }

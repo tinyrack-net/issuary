@@ -1,9 +1,9 @@
-import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+import z from 'zod/v4';
 
 export default (fastify: FastifyWithZodInstance) => {
   if (!fastify.config.app.public_registration) {
@@ -28,7 +28,7 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      const { userSession } = await fastify.userService.register({
+      const userSession = await fastify.userService.register({
         email: req.body.email,
         password: req.body.password,
       });

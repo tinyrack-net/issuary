@@ -51,29 +51,19 @@ export class UserService {
     };
   }
 
-  public async register(params: { email: string; password: string }): Promise<{
-    userSession: z.infer<typeof r.UserSession>;
-  }> {
-    const emailExists = await this.emailExists(params.email);
-    if (emailExists) {
-      throw new e.EmailAlreadyExists.Error();
-    }
-
-    const user = this.mikro.user.create({
+  public async register(params: { email: string; password: string }): Promise<
+    z.infer<typeof r.UserSession>
+  > {
+    const user = await this.mikro.user.register({
       email: params.email,
-      password_hash: params.password,
+      password: params.password,
     });
-
-    await this.mikro.em.persist(user);
-    await this.mikro.em.flush();
 
     if (this.emailVerificationService) {
       const verification = await this.emailVerificationService.generateToken({
         userId: user.id,
       });
-
       await this.mikro.em.flush();
-
       this.emailService.sendVerificationEmailAsync({
         email: user.email,
         token: verification.token,
@@ -81,17 +71,15 @@ export class UserService {
     }
 
     return {
-      userSession: {
-        id: user.id,
-        managed_by: 'database',
-        email: user.email,
-        email_verified: user.email_verified,
-        email_verification_required: this.userEmailVerificationRequired(user),
-        has_password: user.hasPassword(),
-        totp_registered: false,
-        second_factor_required: this.user2FASetupRequired(user),
-        passkey_count: 0,
-      },
+      id: user.id,
+      managed_by: 'database',
+      email: user.email,
+      email_verified: user.email_verified,
+      email_verification_required: this.userEmailVerificationRequired(user),
+      has_password: user.hasPassword(),
+      totp_registered: false,
+      second_factor_required: this.user2FASetupRequired(user),
+      passkey_count: 0,
     };
   }
 
