@@ -24,12 +24,15 @@ export class UserRepository extends EntityRepository<UserEntity> {
     return user;
   }
 
-  async verifyByEmailAndPassword(params: { email: string; password: string }) {
+  public async verifyByEmailAndPassword(params: {
+    email: string;
+    password: string;
+  }) {
     const err = new e.InvalidEmailOrPassword.Error();
     const user = await this.findOneOrFail(
       {
         email: params.email,
-        deleted_at: null, // Only allow non-deleted users
+        deleted_at: null,
       },
       {
         populate: ['password_hash', 'totps', 'passkeys'],
@@ -53,7 +56,7 @@ export class UserRepository extends EntityRepository<UserEntity> {
    * @param email - Email address to check
    * @returns True if email exists and is not deleted, false otherwise
    */
-  async exists(email: string) {
+  public async exists(email: string) {
     const count = await this.count({ email: email, deleted_at: null });
     return count > 0;
   }
@@ -65,7 +68,7 @@ export class UserRepository extends EntityRepository<UserEntity> {
    * @returns Newly created user entity
    * @throws {EmailAlreadyExists} When email is already registered
    */
-  async register(params: { email: string; password: string }) {
+  public async register(params: { email: string; password: string }) {
     const emailExists = await this.exists(params.email);
     if (emailExists) {
       throw new e.EmailAlreadyExists.Error();
@@ -84,7 +87,7 @@ export class UserRepository extends EntityRepository<UserEntity> {
    * @param userId - User ID to check
    * @returns True if user is deleted
    */
-  async isDeleted(userId: string): Promise<boolean> {
+  public async isDeleted(userId: string): Promise<boolean> {
     const user = await this.findOne({ id: userId });
     return user?.deleted_at !== null;
   }
@@ -96,7 +99,7 @@ export class UserRepository extends EntityRepository<UserEntity> {
    * @returns The updated user entity
    * @throws {UserNotFound} When user is not found
    */
-  async softDelete(userId: string): Promise<UserEntity> {
+  public async softDelete(userId: string): Promise<UserEntity> {
     const user = await this.findOneOrFail(
       { id: userId, deleted_at: null },
       { failHandler: () => new e.UserNotFound.Error() },
