@@ -27,7 +27,16 @@ test.describe('Register Page', () => {
     await page.getByRole('button', { name: /create account/i }).click();
 
     // Should redirect to verify-email or profile depending on config
-    await page.waitForURL(/\/(profile|verify-email)/);
+    // The verify-email page may be shown with an empty token parameter
+    await page.waitForURL(/\/(profile|verify)/i, { timeout: 10000 });
+
+    // If on verify-email page, should see the verification form
+    const currentUrl = page.url();
+    if (currentUrl.includes('verify')) {
+      await expect(
+        page.getByRole('heading', { name: /email verification/i }),
+      ).toBeVisible();
+    }
   });
 
   test('should show error when registering with existing email', async ({

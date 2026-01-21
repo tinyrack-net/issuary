@@ -13,7 +13,9 @@ test.describe('2FA Setup Method Selection Page', () => {
     await expect(
       page.getByRole('heading', { name: /set up two-factor authentication/i }),
     ).toBeVisible();
-    await expect(page.getByText(/choose a verification method/i)).toBeVisible();
+    await expect(
+      page.getByText(/choose your preferred 2fa method/i),
+    ).toBeVisible();
   });
 
   test('should display TOTP setup option', async ({ page }) => {
@@ -21,14 +23,14 @@ test.describe('2FA Setup Method Selection Page', () => {
 
     await expect(page.getByText(/authenticator app/i)).toBeVisible();
     await expect(
-      page.getByText(/use a 6-digit code from your app/i),
+      page.getByText(/use google authenticator, authy, etc/i),
     ).toBeVisible();
   });
 
   test('should display Passkey setup option', async ({ page }) => {
     await page.goto(ROUTES.setup2fa);
 
-    await expect(page.getByText(/passkey/i)).toBeVisible();
+    await expect(page.getByText('Passkey')).toBeVisible();
     await expect(
       page.getByText(/use fingerprint, face, or security key/i),
     ).toBeVisible();

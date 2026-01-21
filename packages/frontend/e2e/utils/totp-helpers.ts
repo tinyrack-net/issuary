@@ -1,6 +1,8 @@
 import type { Page } from '@playwright/test';
-import { authenticator } from 'otplib';
+import * as OTPAuth from 'otplib';
 import { ROUTES } from '../fixtures/test-data';
+
+const authenticator = OTPAuth.authenticator;
 
 /**
  * Generate a TOTP code from a secret
@@ -196,8 +198,12 @@ export async function completeTotpVerification(
   secret: string,
 ): Promise<void> {
   const code = generateTOTPCode(secret);
-  await page.getByPlaceholder(/enter 6-digit code/i).fill(code);
-  await page.getByRole('button', { name: /verify/i }).click();
+  // PinInput uses individual input fields, type into the first one
+  const firstInput = page.getByRole('textbox', { name: /digit 1/i });
+  await firstInput.click();
+  await firstInput.type(code);
+  // Form auto-submits on complete, but we can also click verify if needed
+  await page.waitForTimeout(500);
 }
 
 /**
@@ -222,12 +228,14 @@ export async function completeTotpSetup(page: Page): Promise<string> {
   // Click next to go to verification step
   await page.getByRole('button', { name: /next|continue/i }).click();
 
-  // Enter the TOTP code
+  // Enter the TOTP code using PinInput
   const code = generateTOTPCode(secret);
-  await page.getByPlaceholder(/000000/i).fill(code);
+  const firstInput = page.getByRole('textbox', { name: /digit 1/i });
+  await firstInput.click();
+  await firstInput.type(code);
 
-  // Submit verification
-  await page.getByRole('button', { name: /verify|complete/i }).click();
+  // Form auto-submits on complete
+  await page.waitForTimeout(500);
 
   return secret;
 }

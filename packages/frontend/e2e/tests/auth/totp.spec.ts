@@ -26,15 +26,21 @@ test.describe('TOTP Verification Page', () => {
     await expect(
       page.getByRole('heading', { name: /two-factor authentication/i }),
     ).toBeVisible();
-    await expect(page.getByPlaceholder(/enter 6-digit code/i)).toBeVisible();
+    // PinInput uses individual input fields with aria-labels, not a single placeholder
+    await expect(page.getByRole('textbox', { name: /digit 1/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /verify/i })).toBeVisible();
   });
 
   test('should show error for invalid TOTP code', async ({ page }) => {
     await page.goto(ROUTES.verifyTotp);
 
-    await page.getByPlaceholder(/enter 6-digit code/i).fill('000000');
-    await page.getByRole('button', { name: /verify/i }).click();
+    // Fill in the PinInput by typing into the first input
+    const firstInput = page.getByRole('textbox', { name: /digit 1/i });
+    await firstInput.click();
+    await firstInput.type('000000');
+
+    // The form should auto-submit on complete, or we can click verify
+    await page.waitForTimeout(500); // Wait for auto-submit
 
     // Should show error (session expired or invalid code)
     await expect(page.getByText(/invalid|expired/i)).toBeVisible();
@@ -185,9 +191,12 @@ test.describe('TOTP Login Flow - Full Integration', () => {
     // Go directly to TOTP page without valid session
     await page.goto(ROUTES.verifyTotp);
 
-    // Enter any code
-    await page.getByPlaceholder(/enter 6-digit code/i).fill('123456');
-    await page.getByRole('button', { name: /verify/i }).click();
+    // Fill in the PinInput
+    const firstInput = page.getByRole('textbox', { name: /digit 1/i });
+    await firstInput.click();
+    await firstInput.type('123456');
+
+    await page.waitForTimeout(500); // Wait for auto-submit
 
     // Should show session expired error
     await expect(page.getByText(/expired|session/i)).toBeVisible();

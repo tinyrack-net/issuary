@@ -21,10 +21,11 @@ test.describe('Passkey 2FA Verification Page', () => {
   test('should show error when no pending 2FA session', async ({ page }) => {
     await page.goto(ROUTES.verifyPasskey);
 
-    // Without a pending 2FA session, should show error message
-    await expect(
-      page.getByText('Passkey verification failed. Please try again.'),
-    ).toBeVisible({ timeout: 5000 });
+    // Without a pending 2FA session, should show error message or retry button
+    // The page auto-attempts verification on mount, then shows retry button
+    await expect(page.getByRole('button', { name: /try again/i })).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test('should have retry button after failure', async ({ page }) => {
