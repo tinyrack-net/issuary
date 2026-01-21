@@ -1,15 +1,3 @@
-import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import {
-  CheckCircleIcon,
-  EnvelopeSimpleIcon,
-  KeyIcon,
-} from '@phosphor-icons/react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
 import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
 import { IconInput } from '@/components/auth/icon-input.js';
 import { PageHeader } from '@/components/auth/page-header.js';
@@ -17,11 +5,11 @@ import { SubmitButton } from '@/components/auth/submit-button.js';
 import { Alert } from '@/components/ui/alert.js';
 import { Divider } from '@/components/ui/divider.js';
 import {
+  OAuthSearchSchema,
+  type SecondFactorMethod,
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
-  OAuthSearchSchema,
-  type SecondFactorMethod,
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
@@ -30,6 +18,22 @@ import {
   resendVerificationMutationOptions,
   verifyEmailMutationOptions,
 } from '@/queries/verify-email.js';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import {
+  CheckCircleIcon,
+  EnvelopeSimpleIcon,
+  KeyIcon,
+} from '@phosphor-icons/react';
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { z } from 'zod/v4';
 
 const SearchSchema = z
   .object({
@@ -65,6 +69,7 @@ function VerifyEmail() {
   const { token: queryToken, email } = search;
   const [verified, setVerified] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const { data: appConfig } = useSuspenseQuery(appConfigQueryOptions);
 
   const verifyEmailSchema = useMemo(
     () =>
@@ -77,41 +82,45 @@ function VerifyEmail() {
   const verifyEmailMutation = useMutation({
     ...verifyEmailMutationOptions,
     onSuccess: async (data) => {
-      if (!data.user) {
-        return;
-      }
-
       const user = data.user;
-
-      if (user.second_factor_required) {
-        const methods: SecondFactorMethod[] = [];
-        const config = await queryClient.ensureQueryData(appConfigQueryOptions);
-        if (
-          config.basic_authentication_methods.password.totp.enabled &&
-          user.totp_registered
-        ) {
-          methods.push('totp');
-        }
-        if (
-          config.basic_authentication_methods.passkey.enabled &&
-          user.passkey_count > 0
-        ) {
-          methods.push('passkey');
-        }
-        navigate({
-          to: '/setup/2fa',
-          search: {
-            methods: methods,
-            ...extractOAuthParams(search),
-          },
-        });
-        return;
-      }
 
       queryClient.setQueryData(getSessionQueryOptions.queryKey, {
         user: user,
       });
       await tick();
+
+      if (user.second_factor_required) {
+        const available_2fa_methods: SecondFactorMethod[] = [];
+        if (appConfig.basic_authentication_methods.password.totp.enabled) {
+          available_2fa_methods.push('totp');
+        }
+        if (appConfig.basic_authentication_methods.passkey.enabled) {
+          available_2fa_methods.push('passkey');
+        }
+
+        if (available_2fa_methods.length === 1) {
+          const method = available_2fa_methods[0];
+          if (method === 'totp') {
+            return navigate({
+              to: '/setup/totp',
+              search: extractOAuthParams(search),
+            });
+          } else {
+            return navigate({
+              to: '/setup/passkey',
+              search: extractOAuthParams(search),
+            });
+          }
+        } else {
+          return navigate({
+            to: '/setup/2fa',
+            search: {
+              ...extractOAuthParams(search),
+              methods: available_2fa_methods,
+            },
+          });
+        }
+      }
 
       if (isOAuthFlow(search)) {
         window.location.href = buildAuthorizeUrl(search);
