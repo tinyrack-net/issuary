@@ -234,9 +234,11 @@ After completing code changes, run:
 
 ```bash
 pnpm build      # Build check
-pnpm test       # Test check
+pnpm test 2>&1 | tail -200  # Test check (use tail to avoid long output)
 pnpm biome check .  # Lint check
 ```
+
+**Note**: Backend tests take a long time (~1 min). Always pipe test output through `tail` to see only the summary.
 
 ## General Best Practices
 - Write descriptive commit messages
