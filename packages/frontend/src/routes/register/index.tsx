@@ -1,15 +1,3 @@
-import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { EnvelopeSimpleIcon, LockIcon } from '@phosphor-icons/react';
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from '@tanstack/react-query';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useMemo } from 'react';
-import { useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
 import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
 import { FooterLink } from '@/components/auth/footer-link.js';
 import { IconInput } from '@/components/auth/icon-input.js';
@@ -18,10 +6,10 @@ import { PageHeader } from '@/components/auth/page-header.js';
 import { SubmitButton } from '@/components/auth/submit-button.js';
 import { Divider } from '@/components/ui/divider.js';
 import {
+  OAuthSearchSchema,
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
-  OAuthSearchSchema,
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
@@ -31,16 +19,34 @@ import {
 } from '@/queries/oauth.js';
 import { registerMutationOptions } from '@/queries/register.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { EnvelopeSimpleIcon, LockIcon } from '@phosphor-icons/react';
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { z } from 'zod/v4';
 
 export const Route = createFileRoute('/register/')({
   component: Register,
   validateSearch: OAuthSearchSchema,
+  beforeLoad: async ({ context }) => {
+    const config = await context.queryClient.ensureQueryData(
+      appConfigQueryOptions,
+    );
+    if (!config.app.public_registration) {
+      throw redirect({
+        to: '/',
+        replace: true,
+      });
+    }
+  },
 });
-
-type RegisterFormValues = {
-  email: string;
-  password: string;
-};
 
 function Register() {
   const { t } = useTranslation();
@@ -56,12 +62,11 @@ function Register() {
 
   const isPasswordAuthEnabled =
     configData.basic_authentication_methods.password.enabled;
-  const isPublicRegistrationEnabled = configData.app.public_registration;
 
   const registerSchema = useMemo(
     () =>
       z.object({
-        email: z.string().email(t('validation.email.invalid')),
+        email: z.email(t('validation.email.invalid')),
         password: z
           .string()
           .min(6, t('validation.password.min'))
@@ -72,8 +77,71 @@ function Register() {
 
   const registerMutation = useMutation({
     ...registerMutationOptions,
-    onSettled: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async (data, params) => {
+      const user = data.user;
+
+      if (user.email_verification_required && !user.email_verified) {
+        return navigate({
+          to: '/verify/email',
+          search: {
+            email: params.email,
+            ...extractOAuthParams(search),
+          },
+        });
+      }
+
+      queryClient.setQueryData(getSessionQueryOptions.queryKey, {
+        user: user,
+      });
+      await tick();
+
+      if (user.second_factor_required) {
+        const available_2fa_methods: ('totp' | 'passkey')[] = [];
+        if (configData.basic_authentication_methods.password.totp.enabled) {
+          available_2fa_methods.push('totp');
+        }
+        if (configData.basic_authentication_methods.passkey.enabled) {
+          available_2fa_methods.push('passkey');
+        }
+
+        if (available_2fa_methods.length === 1) {
+          const method = available_2fa_methods[0];
+          if (method === 'totp') {
+            return navigate({
+              to: '/setup/totp',
+              search: extractOAuthParams(search),
+            });
+          } else {
+            return navigate({
+              to: '/setup/passkey',
+              search: extractOAuthParams(search),
+            });
+          }
+        } else {
+          return navigate({
+            to: '/setup/2fa',
+            search: {
+              ...extractOAuthParams(search),
+              methods: available_2fa_methods,
+            },
+          });
+        }
+      }
+
+      if (isOAuthFlow(search)) {
+        window.location.href = buildAuthorizeUrl(search);
+      } else {
+        navigate({ to: '/profile' });
+      }
+    },
+    onError: () => {
+      setError('email', {
+        type: 'manual',
+        message: t('register.error.emailExists'),
+      });
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({
         queryKey: getSessionQueryOptions.queryKey,
       });
     },
@@ -84,7 +152,7 @@ function Register() {
     setError,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterFormValues>({
+  } = useForm<z.infer<typeof registerSchema>>({
     defaultValues: {
       email: '',
       password: '',
@@ -92,113 +160,12 @@ function Register() {
     resolver: standardSchemaResolver(registerSchema),
   });
 
-  const onSubmit = async (values: RegisterFormValues) => {
-    try {
-      const data = await registerMutation.mutateAsync(values);
-
-      if (!data.user) {
-        setError('email', {
-          type: 'manual',
-          message: t('register.error.emailExists'),
-        });
-        return;
-      }
-
-      const user = data.user;
-
-      if (user.email_verification_required) {
-        await tick();
-        navigate({
-          to: '/verify/email',
-          search: {
-            email: values.email,
-            token: '',
-            ...extractOAuthParams(search),
-          },
-        });
-        return;
-      }
-
-      if (user.second_factor_required) {
-        const methods: string[] = [];
-        if (
-          configData.basic_authentication_methods.password.totp.enabled &&
-          user.totp_registered
-        ) {
-          methods.push('totp');
-        }
-        if (
-          configData.basic_authentication_methods.passkey.enabled &&
-          user.passkey_count > 0
-        ) {
-          methods.push('passkey');
-        }
-
-        await tick();
-        if (methods.length === 1) {
-          const method = methods[0];
-          if (method === 'totp') {
-            navigate({
-              to: '/setup/totp',
-              search: extractOAuthParams(search),
-            });
-          } else if (method === 'passkey') {
-            navigate({
-              to: '/setup/passkey',
-              search: extractOAuthParams(search),
-            });
-          }
-        } else {
-          navigate({
-            to: '/setup/2fa',
-            search: {
-              ...extractOAuthParams(search),
-              methods: methods,
-            },
-          });
-        }
-        return;
-      }
-
-      queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-        user: user,
-      });
-      await tick();
-
-      if (isOAuthFlow(search)) {
-        window.location.href = buildAuthorizeUrl(search);
-      } else {
-        navigate({ to: '/profile' });
-      }
-    } catch {
-      setError('email', {
-        type: 'manual',
-        message: t('register.error.emailExists'),
-      });
-    }
+  const onSubmit = (values: z.infer<typeof registerSchema>) => {
+    registerMutation.mutate(values);
   };
 
   const buildOAuthUrl = (providerId: string) =>
     getOAuthConnectUrl(providerId, 'register');
-
-  // If registration is disabled, show disabled message
-  if (isPublicRegistrationEnabled === false) {
-    return (
-      <AuthPageLayout>
-        <PageHeader
-          title={t('register.disabled.title')}
-          subtitle={t('register.disabled.description')}
-        />
-
-        <FooterLink
-          text={t('register.footer.haveAccount')}
-          linkText={t('register.link.login')}
-          to="/login"
-          search={extractOAuthParams(search)}
-        />
-      </AuthPageLayout>
-    );
-  }
 
   return (
     <AuthPageLayout>
