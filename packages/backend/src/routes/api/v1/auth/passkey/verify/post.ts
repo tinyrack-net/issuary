@@ -49,7 +49,9 @@ export default (fastify: FastifyWithZodInstance) => {
         challenge,
       );
 
-      const sessionUser = await fastify.userService.verifyUserById(user.id);
+      const userEntity = await fastify.mikro.user.verifyById(user.id);
+      const sessionUser =
+        await fastify.userService.userEntityToSessionUser(userEntity);
 
       req.session.set('user', {
         id: user.id,

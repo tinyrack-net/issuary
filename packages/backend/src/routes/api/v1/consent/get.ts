@@ -42,7 +42,9 @@ export default (fastify: FastifyWithZodInstance) => {
       const userSession = await req.auth.verify();
 
       // Fetch user information
-      const user = await fastify.userService.verifyUserById(userSession.id);
+      const userEntity = await fastify.mikro.user.verifyById(userSession.id);
+      const user =
+        await fastify.userService.userEntityToSessionUser(userEntity);
 
       // Fetch OAuth client information
       const client = await fastify.oauthClientService.findByClientId(client_id);

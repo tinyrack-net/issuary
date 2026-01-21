@@ -1,12 +1,13 @@
-import fastifyPlugin from 'fastify-plugin';
-import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
 import type { InternalAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
-import type { EmailService } from './email.service.js';
+import type { Loaded } from '@mikro-orm/core';
+import fastifyPlugin from 'fastify-plugin';
+import type z from 'zod/v4';
 import type { EmailVerificationService } from './email-verification.service.js';
+import type { EmailService } from './email.service.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -29,37 +30,14 @@ export class UserService {
     private readonly emailVerificationService?: EmailVerificationService,
   ) {}
 
-  public async verifyUserById(
-    id: string,
-  ): Promise<z.infer<typeof r.UserSession>> {
-    const user = await this.mikro.user.findOneOrFail(
-      { id },
-      {
-        populate: ['password_hash'],
-        failHandler: () => new e.UserNotFound.Error(),
-      },
-    );
-    const totpRegistered = await this.mikro.userTotp.isRegistered(id);
-    const passkeyCount = await this.mikro.userPasskey.countByUserId(id);
-    const secondFactorRequired = this.user2FASetupRequired(user);
-
-    return {
-      id: user.id,
-      managed_by: user.managed_by,
-      email: user.email,
-      email_verified: user.email_verified,
-      email_verification_required: this.userEmailVerificationRequired(user),
-      has_password: user.hasPassword(),
-      totp_registered: totpRegistered,
-      second_factor_required: secondFactorRequired,
-      passkey_count: passkeyCount,
-    };
-  }
-
   public async userEntityToSessionUser(
-    user: UserEntity,
+    user: Loaded<
+      UserEntity,
+      'password_hash' | 'passkeys' | 'totps',
+      '*',
+      never
+    >,
   ): Promise<z.infer<typeof r.UserSession>> {
-    await this.mikro.em.populate(user, ['password_hash']);
     return {
       id: user.id,
       managed_by: user.managed_by,
@@ -67,14 +45,13 @@ export class UserService {
       email_verified: user.email_verified,
       email_verification_required: this.userEmailVerificationRequired(user),
       has_password: user.hasPassword(),
-      totp_registered: false,
+      totp_registered: user.totps.length > 0,
       second_factor_required: this.user2FASetupRequired(user),
-      passkey_count: 0,
+      passkey_count: user.passkeys.length,
     };
   }
 
   public async register(params: { email: string; password: string }): Promise<{
-    emailVerificationRequired: boolean;
     userSession: z.infer<typeof r.UserSession>;
   }> {
     const emailExists = await this.emailExists(params.email);
@@ -104,7 +81,6 @@ export class UserService {
     }
 
     return {
-      emailVerificationRequired: !!this.emailVerificationService,
       userSession: {
         id: user.id,
         managed_by: 'database',
@@ -221,24 +197,24 @@ export default fastifyPlugin(
           if (!userId) {
             throw new e.Unauthorized.Error();
           }
-          const user = await userService.verifyUserById(userId);
-          return user;
+          const userEntity = await fastify.mikro.user.verifyById(userId);
+          return userService.userEntityToSessionUser(userEntity);
         },
         verifyPending2FAUser: async () => {
           const userId = req.session.get('pending2FAUser')?.id;
           if (!userId) {
             throw new e.Unauthorized.Error();
           }
-          const user = await userService.verifyUserById(userId);
-          return user;
+          const userEntity = await fastify.mikro.user.verifyById(userId);
+          return userService.userEntityToSessionUser(userEntity);
         },
         verifyPending2FASetupUser: async () => {
           const userId = req.session.get('pending2FASetup')?.id;
           if (!userId) {
             throw new e.Unauthorized.Error();
           }
-          const user = await userService.verifyUserById(userId);
-          return user;
+          const userEntity = await fastify.mikro.user.verifyById(userId);
+          return userService.userEntityToSessionUser(userEntity);
         },
       };
     });

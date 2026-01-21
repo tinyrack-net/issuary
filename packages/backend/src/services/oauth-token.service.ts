@@ -148,7 +148,8 @@ export class OAuthTokenService {
     }
 
     // 3. Load user (supports both config and DB users)
-    const userData = await this.userService.verifyUserById(refreshPayload.sub);
+    const userEntity = await this.mikro.user.verifyById(refreshPayload.sub);
+    const userData = await this.userService.userEntityToSessionUser(userEntity);
 
     // 4. Get client info
     const client = await this.oauthClientService.findByClientId(clientId);

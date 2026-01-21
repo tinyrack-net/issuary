@@ -38,7 +38,9 @@ export default (fastify: FastifyWithZodInstance) => {
 
       await fastify.totpService.verifyForAuth(pending2FAUser.id, req.body.code);
 
-      const user = await fastify.userService.verifyUserById(pending2FAUser.id);
+      const userEntity = await fastify.mikro.user.verifyById(pending2FAUser.id);
+      const user =
+        await fastify.userService.userEntityToSessionUser(userEntity);
       req.session.set('pending2FAUser', undefined);
 
       const authTime =

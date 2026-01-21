@@ -1,9 +1,9 @@
-import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+import z from 'zod/v4';
 
 export default (fastify: FastifyWithZodInstance) => {
   if (!fastify.config.basic_authentication_methods.password.enabled) {
@@ -28,13 +28,10 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      const userEntity = await fastify.mikro.user.findOneOrFail(
-        { email: req.body.email, deleted_at: null },
-        {
-          populate: ['password_hash'],
-          failHandler: () => new e.InvalidEmailOrPassword.Error(),
-        },
-      );
+      const userEntity = await fastify.mikro.user.verifyByEmailAndPassword({
+        email: req.body.email,
+        password: req.body.password,
+      });
 
       if (!(await userEntity.verifyPassword(req.body.password))) {
         throw new e.InvalidEmailOrPassword.Error();

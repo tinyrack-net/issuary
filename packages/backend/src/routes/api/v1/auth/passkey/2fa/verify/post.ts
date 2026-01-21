@@ -59,7 +59,9 @@ export default (fastify: FastifyWithZodInstance) => {
         throw new e.PasskeyUserMismatch.Error();
       }
 
-      const user = await fastify.userService.verifyUserById(passkeyUser.id);
+      const userEntity = await fastify.mikro.user.verifyById(passkeyUser.id);
+      const user =
+        await fastify.userService.userEntityToSessionUser(userEntity);
 
       // Clear pending session and create full session
       req.session.set('pending2FAUser', undefined);

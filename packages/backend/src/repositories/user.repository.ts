@@ -1,18 +1,30 @@
-import { EntityRepository } from '@mikro-orm/core';
 import type { UserEntity } from '@/entities/user.entity.js';
 import { e } from '@/schemas/error.js';
+import { EntityRepository, type Loaded } from '@mikro-orm/core';
 
 export class UserRepository extends EntityRepository<UserEntity> {
-  /**
-   * Authenticate user with email and password
-   * Blocks deleted users from logging in.
-   *
-   * @param params - Login credentials
-   * @returns Authenticated user entity
-   * @throws {InvalidEmailOrPassword} When email or password is incorrect
-   * @throws {AccountDeleted} When account has been deleted
-   */
-  async login(params: { email: string; password: string }) {
+  public async verifyById(
+    id: string,
+  ): Promise<
+    Loaded<UserEntity, 'password_hash' | 'passkeys' | 'totps', '*', never>
+  > {
+    const user = await this.findOneOrFail(
+      {
+        id: id,
+      },
+      {
+        populate: ['password_hash', 'totps', 'passkeys'],
+        populateWhere: {
+          totps: { verified: true },
+          passkeys: {},
+        },
+        failHandler: () => new e.UserNotFound.Error(),
+      },
+    );
+    return user;
+  }
+
+  async verifyByEmailAndPassword(params: { email: string; password: string }) {
     const err = new e.InvalidEmailOrPassword.Error();
     const user = await this.findOneOrFail(
       {
@@ -20,7 +32,11 @@ export class UserRepository extends EntityRepository<UserEntity> {
         deleted_at: null, // Only allow non-deleted users
       },
       {
-        populate: ['password_hash'],
+        populate: ['password_hash', 'totps', 'passkeys'],
+        populateWhere: {
+          totps: { verified: true },
+          passkeys: {},
+        },
         failHandler: () => err,
       },
     );

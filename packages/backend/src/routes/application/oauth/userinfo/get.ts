@@ -34,9 +34,9 @@ export default (fastify: FastifyWithZodInstance) => {
       const tokenPayload = await fastify.jwtService.validateBearerToken(req);
 
       // Load user (supports both config and DB users)
-      const userData = await fastify.userService.verifyUserById(
-        tokenPayload.sub,
-      );
+      const userEntity = await fastify.mikro.user.verifyById(tokenPayload.sub);
+      const userData =
+        await fastify.userService.userEntityToSessionUser(userEntity);
 
       // Parse scopes from token
       const scopes = tokenPayload.scope.split(' ');

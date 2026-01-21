@@ -83,8 +83,9 @@ export default (fastify: FastifyWithZodInstance) => {
         });
 
         // Get user data for response
+        const userEntity = await fastify.mikro.user.verifyById(userId);
         const userSessionData =
-          await fastify.userService.verifyUserById(userId);
+          await fastify.userService.userEntityToSessionUser(userEntity);
 
         return res.status(200).send({
           success: true,
