@@ -39,10 +39,7 @@ export default (fastify: FastifyWithZodInstance) => {
         });
       }
 
-      const secondFactorRequired =
-        fastify.userService.user2FASetupRequired(userSession);
-
-      if (secondFactorRequired) {
+      if (userSession.second_factor_required) {
         req.session.set('pending2FASetup', {
           id: userSession.id,
         });
