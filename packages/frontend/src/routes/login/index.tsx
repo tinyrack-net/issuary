@@ -1,3 +1,23 @@
+import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
+import { FooterLink } from '@/components/auth/footer-link.js';
+import { IconInput } from '@/components/auth/icon-input.js';
+import { OAuthButtons } from '@/components/auth/oauth-buttons.js';
+import { PageHeader } from '@/components/auth/page-header.js';
+import { SubmitButton } from '@/components/auth/submit-button.js';
+import { Divider } from '@/components/ui/divider.js';
+import {
+  OAuthSearchSchema,
+  type SecondFactorMethod,
+  buildAuthorizeUrl,
+  extractOAuthParams,
+  isOAuthFlow,
+} from '@/libs/oauth-search.js';
+import { tick } from '@/libs/promise.js';
+import { appConfigQueryOptions } from '@/queries/config.js';
+import { loginMutationOptions } from '@/queries/login.js';
+import { oauthProvidersQueryOptions } from '@/queries/oauth.js';
+import { loginWithPasskeyMutationOptions } from '@/queries/passkey.js';
+import { getSessionQueryOptions } from '@/queries/session.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import {
   EnvelopeSimpleIcon,
@@ -9,30 +29,11 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
-import { FooterLink } from '@/components/auth/footer-link.js';
-import { IconInput } from '@/components/auth/icon-input.js';
-import { OAuthButtons } from '@/components/auth/oauth-buttons.js';
-import { PageHeader } from '@/components/auth/page-header.js';
-import { SubmitButton } from '@/components/auth/submit-button.js';
-import { Divider } from '@/components/ui/divider.js';
-import {
-  buildAuthorizeUrl,
-  extractOAuthParams,
-  isOAuthFlow,
-  OAuthSearchSchema,
-} from '@/libs/oauth-search.js';
-import { tick } from '@/libs/promise.js';
-import { appConfigQueryOptions } from '@/queries/config.js';
-import { loginMutationOptions } from '@/queries/login.js';
-import { oauthProvidersQueryOptions } from '@/queries/oauth.js';
-import { loginWithPasskeyMutationOptions } from '@/queries/passkey.js';
-import { getSessionQueryOptions } from '@/queries/session.js';
 
 export const SearchSchema = OAuthSearchSchema;
 
@@ -93,7 +94,7 @@ function Login() {
       });
       await tick();
 
-      const registered_2fa_methods = [];
+      const registered_2fa_methods: SecondFactorMethod[] = [];
       if (
         configData.basic_authentication_methods.password.totp.enabled &&
         user.totp_registered
@@ -110,20 +111,14 @@ function Login() {
       if (user.second_factor_required && registered_2fa_methods.length === 0) {
         return router.navigate({
           to: '/setup/2fa',
-          search: {
-            ...extractOAuthParams(search),
-            methods: registered_2fa_methods,
-          },
+          search: extractOAuthParams(search),
         });
       }
 
       if (registered_2fa_methods.length > 1) {
         return router.navigate({
           to: '/verify/2fa',
-          search: {
-            ...extractOAuthParams(search),
-            methods: registered_2fa_methods,
-          },
+          search: extractOAuthParams(search),
         });
       } else if (registered_2fa_methods.length === 1) {
         const method = registered_2fa_methods[0];

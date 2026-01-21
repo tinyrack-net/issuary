@@ -121,10 +121,7 @@ function Register() {
         } else {
           return navigate({
             to: '/setup/2fa',
-            search: {
-              ...extractOAuthParams(search),
-              methods: available_2fa_methods,
-            },
+            search: extractOAuthParams(search),
           });
         }
       }
