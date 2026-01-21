@@ -23,7 +23,6 @@ import { SubmitButton } from '@/components/auth/submit-button.js';
 import { Divider } from '@/components/ui/divider.js';
 import {
   buildAuthorizeUrl,
-  buildVerifyEmailUrl,
   extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
@@ -75,6 +74,81 @@ function Login() {
 
   const loginMutation = useMutation({
     ...loginMutationOptions,
+    onSuccess: async (data, params) => {
+      const user = data.user;
+
+      if (user.email_verification_required && !user.email_verified) {
+        router.navigate({
+          to: '/verify/email',
+          search: {
+            email: params.email,
+            ...extractOAuthParams(search),
+          },
+        });
+        return;
+      }
+
+      queryClient.setQueryData(getSessionQueryOptions.queryKey, {
+        user: user,
+      });
+      await tick();
+
+      const registered_2fa_methods = [];
+      if (user.totp_enabled && user.totp_registered) {
+        registered_2fa_methods.push('totp');
+      }
+      if (user.passkey_enabled && user.passkey_count > 0) {
+        registered_2fa_methods.push('passkey');
+      }
+
+      if (user.second_factor_required && registered_2fa_methods.length === 0) {
+        router.navigate({
+          to: '/setup/2fa',
+          search: {
+            ...extractOAuthParams(search),
+            methods: registered_2fa_methods,
+          },
+        });
+        return;
+      }
+
+      if (registered_2fa_methods.length > 1) {
+        router.navigate({
+          to: '/verify/2fa',
+          search: {
+            ...extractOAuthParams(search),
+            methods: registered_2fa_methods,
+          },
+        });
+        return;
+      } else if (registered_2fa_methods.length === 1) {
+        const method = registered_2fa_methods[0];
+        if (method === 'totp') {
+          router.navigate({
+            to: '/verify/totp',
+            search: extractOAuthParams(search),
+          });
+        } else {
+          router.navigate({
+            to: '/verify/passkey',
+            search: extractOAuthParams(search),
+          });
+        }
+      } else {
+        if (isOAuthFlow(search)) {
+          window.location.href = buildAuthorizeUrl(search);
+        } else {
+          router.navigate({ to: '/profile' });
+        }
+      }
+    },
+    onError: (error) => {
+      console.error('Login failed:', error);
+      setError('email', {
+        type: 'manual',
+        message: t('login.error.failed'),
+      });
+    },
     onSettled: () => {
       queryClient.invalidateQueries({
         queryKey: getSessionQueryOptions.queryKey,
@@ -119,81 +193,7 @@ function Login() {
   });
 
   const onSubmit = async (values: LoginFormValues) => {
-    try {
-      const data = await loginMutation.mutateAsync(values);
-
-      if (!data.user) {
-        setError('email', {
-          type: 'manual',
-          message: t('login.error.failed'),
-        });
-        return;
-      }
-
-      const user = data.user;
-
-      if (user.email_verification_required) {
-        window.location.href = buildVerifyEmailUrl(search, values.email);
-        return;
-      }
-
-      if (user.second_factor_required) {
-        const methods: string[] = [];
-        if (
-          configData.basic_authentication_methods.password.totp.enabled &&
-          user.totp_registered
-        ) {
-          methods.push('totp');
-        }
-        if (
-          configData.basic_authentication_methods.passkey.enabled &&
-          user.passkey_count > 0
-        ) {
-          methods.push('passkey');
-        }
-
-        if (methods.length === 1) {
-          const method = methods[0];
-          if (method === 'totp') {
-            router.navigate({
-              to: '/verify/totp',
-              search: extractOAuthParams(search),
-            });
-          } else if (method === 'passkey') {
-            router.navigate({
-              to: '/verify/passkey',
-              search: extractOAuthParams(search),
-            });
-          }
-        } else {
-          router.navigate({
-            to: '/verify/2fa',
-            search: {
-              ...extractOAuthParams(search),
-              methods: methods,
-            },
-          });
-        }
-        return;
-      }
-
-      queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-        user: user,
-      });
-      await tick();
-
-      if (isOAuthFlow(search)) {
-        window.location.href = buildAuthorizeUrl(search);
-      } else {
-        router.navigate({ to: '/profile' });
-      }
-    } catch (error) {
-      console.error('Login failed:', error);
-      setError('email', {
-        type: 'manual',
-        message: t('login.error.failed'),
-      });
-    }
+    loginMutation.mutate(values);
   };
 
   const buildOAuthUrl = (providerId: string) => {

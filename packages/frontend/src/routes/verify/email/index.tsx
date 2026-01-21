@@ -18,7 +18,7 @@ import { Alert } from '@/components/ui/alert.js';
 import { Divider } from '@/components/ui/divider.js';
 import {
   buildAuthorizeUrl,
-  buildSetup2FAUrl,
+  extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
   type SecondFactorMethod,
@@ -98,7 +98,13 @@ function VerifyEmail() {
         ) {
           methods.push('passkey');
         }
-        window.location.href = buildSetup2FAUrl(search, methods);
+        navigate({
+          to: '/setup/2fa',
+          search: {
+            methods: methods,
+            ...extractOAuthParams(search),
+          },
+        });
         return;
       }
 
