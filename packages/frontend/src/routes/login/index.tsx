@@ -102,34 +102,32 @@ function Login() {
       }
 
       if (user.second_factor_required && registered_2fa_methods.length === 0) {
-        router.navigate({
+        return router.navigate({
           to: '/setup/2fa',
           search: {
             ...extractOAuthParams(search),
             methods: registered_2fa_methods,
           },
         });
-        return;
       }
 
       if (registered_2fa_methods.length > 1) {
-        router.navigate({
+        return router.navigate({
           to: '/verify/2fa',
           search: {
             ...extractOAuthParams(search),
             methods: registered_2fa_methods,
           },
         });
-        return;
       } else if (registered_2fa_methods.length === 1) {
         const method = registered_2fa_methods[0];
         if (method === 'totp') {
-          router.navigate({
+          return router.navigate({
             to: '/verify/totp',
             search: extractOAuthParams(search),
           });
         } else {
-          router.navigate({
+          return router.navigate({
             to: '/verify/passkey',
             search: extractOAuthParams(search),
           });
@@ -138,7 +136,7 @@ function Login() {
         if (isOAuthFlow(search)) {
           window.location.href = buildAuthorizeUrl(search);
         } else {
-          router.navigate({ to: '/profile' });
+          return router.navigate({ to: '/profile' });
         }
       }
     },
