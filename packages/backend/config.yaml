@@ -38,14 +38,14 @@ database:
   # user: !env DATABASE_USER
   # password: !env DATABASE_PASSWORD
 
-smtp:
-  host: mail.winetree94.com
-  secure: true
-  port: 465
-  user: "tester@tinyrack.net"
-  password: !env SMTP_PASSWORD
-  from: "tester@tinyrack.net"
-  test: false
+# smtp:
+#   host: mail.winetree94.com
+#   secure: true
+#   port: 465
+#   user: "tester@tinyrack.net"
+#   password: !env SMTP_PASSWORD
+#   from: "tester@tinyrack.net"
+#   test: false
 
 basic_authentication_methods:
   password:
@@ -57,7 +57,7 @@ basic_authentication_methods:
       enabled: true
       issuer: tinyrack
   passkey:
-    enabled: true
+    enabled: false
 
 oauth_authentication_methods:
   - id: github
