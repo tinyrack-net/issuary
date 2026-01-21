@@ -28,41 +28,51 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      const user = await fastify.userService.verifyUserByEmailAndPassword({
-        email: req.body.email,
-        password: req.body.password,
-      });
+      const userEntity = await fastify.mikro.user.findOneOrFail(
+        { email: req.body.email, deleted_at: null },
+        {
+          populate: ['password_hash'],
+          failHandler: () => new e.InvalidEmailOrPassword.Error(),
+        },
+      );
+
+      if (!(await userEntity.verifyPassword(req.body.password))) {
+        throw new e.InvalidEmailOrPassword.Error();
+      }
+
+      const userSession =
+        await fastify.userService.userEntityToSessionUser(userEntity);
 
       if (
-        fastify.userService.userEmailVerificationRequired(user) &&
-        !user.email_verified
+        fastify.userService.userEmailVerificationRequired(userSession) &&
+        !userSession.email_verified
       ) {
         return res.status(200).send({
-          user: user,
+          user: userSession,
         });
       }
 
       const userRegistered2FAMethods =
-        await fastify.userService.userRegistered2FAMethods(user.id);
+        await fastify.userService.userRegistered2FAMethods(userSession.id);
 
       if (userRegistered2FAMethods.length > 0) {
         req.session.set('pending2FAUser', {
-          id: user.id,
+          id: userSession.id,
           authenticated_at: Math.floor(Date.now() / 1000),
         });
-      } else if (user.second_factor_required) {
+      } else if (userSession.second_factor_required) {
         req.session.set('pending2FASetup', {
-          id: user.id,
+          id: userSession.id,
         });
       } else {
         req.session.set('user', {
-          id: user.id,
+          id: userSession.id,
           authenticated_at: Math.floor(Date.now() / 1000),
         });
       }
 
       return res.status(200).send({
-        user: user,
+        user: userSession,
       });
     },
   });

@@ -56,26 +56,10 @@ export class UserService {
     };
   }
 
-  public async verifyUserByEmailAndPassword(params: {
-    email: string;
-    password: string;
-  }): Promise<z.infer<typeof r.UserSession>> {
-    const user = await this.mikro.user.findOneOrFail(
-      { email: params.email, deleted_at: null },
-      {
-        populate: ['password_hash'],
-        failHandler: () => new e.InvalidEmailOrPassword.Error(),
-      },
-    );
-
-    if (!(await user.verifyPassword(params.password))) {
-      throw new e.InvalidEmailOrPassword.Error();
-    }
-
-    const totpEnabled = await this.mikro.userTotp.isRegistered(user.id);
-    const passkeyCount = await this.mikro.userPasskey.countByUserId(user.id);
-    const secondFactorRequired = this.user2FASetupRequired(user);
-
+  public async userEntityToSessionUser(
+    user: UserEntity,
+  ): Promise<z.infer<typeof r.UserSession>> {
+    await this.mikro.em.populate(user, ['password_hash']);
     return {
       id: user.id,
       managed_by: user.managed_by,
@@ -83,9 +67,9 @@ export class UserService {
       email_verified: user.email_verified,
       email_verification_required: this.userEmailVerificationRequired(user),
       has_password: user.hasPassword(),
-      totp_registered: totpEnabled,
-      second_factor_required: secondFactorRequired,
-      passkey_count: passkeyCount,
+      totp_registered: false,
+      second_factor_required: this.user2FASetupRequired(user),
+      passkey_count: 0,
     };
   }
 
