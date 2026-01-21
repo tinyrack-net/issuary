@@ -1,9 +1,9 @@
-import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+import z from 'zod/v4';
 
 /**
  * POST /api/v1/user/totp/verify
@@ -28,7 +28,7 @@ export default (fastify: FastifyWithZodInstance) =>
         code: f.totpCode,
       }),
       response: {
-        200: r.TotpSetupVerifyResponse,
+        200: r.AuthResponse,
         400: z.union([e.TotpNotSetup.Schema, e.InvalidTotpCode.Schema]),
         401: e.Unauthorized.Schema,
         409: e.TotpAlreadyEnabled.Schema,
@@ -46,32 +46,20 @@ export default (fastify: FastifyWithZodInstance) =>
 
       await fastify.totpService.verifySetup(userId, req.body.code);
 
-      // Check if this was from pending setup session
-      const wasPendingSetup = !!pending2FASetup;
-
-      if (wasPendingSetup) {
-        // Clear pending setup session and create full user session
+      if (pending2FASetup) {
         req.session.set('pending2FASetup', undefined);
         req.session.set('user', {
           id: userId,
           authenticated_at: Math.floor(Date.now() / 1000),
         });
-
-        // Get user data for response
-        const userEntity = await fastify.mikro.user.verifyById(userId);
-        const user =
-          await fastify.userService.userEntityToSessionUser(userEntity);
-
-        return res.status(200).send({
-          success: true,
-          user,
-          second_factor_setup_completed: true,
-        });
       }
 
+      const userEntity = await fastify.mikro.user.verifyById(userId);
+      const user =
+        await fastify.userService.userEntityToSessionUser(userEntity);
+
       return res.status(200).send({
-        success: true,
-        second_factor_setup_completed: false,
+        user,
       });
     },
   });

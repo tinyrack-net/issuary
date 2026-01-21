@@ -1,3 +1,23 @@
+import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
+import { FooterLink } from '@/components/auth/footer-link.js';
+import { PageHeader } from '@/components/auth/page-header.js';
+import { SubmitButton } from '@/components/auth/submit-button.js';
+import { Alert } from '@/components/ui/alert.js';
+import { PinInput, type PinInputRef } from '@/components/ui/pin-input.js';
+import { ApiError } from '@/libs/error.js';
+import {
+  OAuthSearchSchema,
+  buildAuthorizeUrl,
+  extractOAuthParams,
+  isOAuthFlow,
+} from '@/libs/oauth-search.js';
+import { tick } from '@/libs/promise.js';
+import { getSessionQueryOptions } from '@/queries/session.js';
+import {
+  type TotpSetupResponse,
+  startTotpSetupMutationOptions,
+  verifyTotpMutationOptions,
+} from '@/queries/totp.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import {
   InfoIcon,
@@ -11,26 +31,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
-import { FooterLink } from '@/components/auth/footer-link.js';
-import { PageHeader } from '@/components/auth/page-header.js';
-import { SubmitButton } from '@/components/auth/submit-button.js';
-import { Alert } from '@/components/ui/alert.js';
-import { PinInput, type PinInputRef } from '@/components/ui/pin-input.js';
-import { ApiError } from '@/libs/error.js';
-import {
-  buildAuthorizeUrl,
-  extractOAuthParams,
-  isOAuthFlow,
-  OAuthSearchSchema,
-} from '@/libs/oauth-search.js';
-import { tick } from '@/libs/promise.js';
-import { getSessionQueryOptions } from '@/queries/session.js';
-import {
-  startTotpSetupMutationOptions,
-  type TotpSetupResponse,
-  verifyTotpMutationOptions,
-} from '@/queries/totp.js';
 
 /** Error codes from backend */
 const ERROR_CODES = {
@@ -157,7 +157,7 @@ function SetupTotp() {
   const verifyMutation = useMutation({
     ...verifyTotpMutationOptions,
     onSuccess: async (data) => {
-      if (data.second_factor_setup_completed && data.user) {
+      if (data.user) {
         queryClient.setQueryData(getSessionQueryOptions.queryKey, {
           user: data.user,
         });

@@ -168,7 +168,8 @@ describe('POST /api/v1/user/totp/verify', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.success).toBe(true);
+    expect(body).toHaveProperty('user');
+    expect(body.user.totp_registered).toBe(true);
 
     // Verify TOTP is now enabled in database
     await withMikroContext(app, async () => {

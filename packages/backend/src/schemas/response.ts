@@ -1,14 +1,14 @@
-import type {
-  PublicKeyCredentialCreationOptionsJSON as SimpleWebAuthnCreationOptionsJSON,
-  RegistrationResponseJSON as SimpleWebAuthnRegistrationResponseJSON,
-  PublicKeyCredentialRequestOptionsJSON as SimpleWebAuthnRequestOptionsJSON,
-} from '@simplewebauthn/server';
-import z from 'zod/v4';
 import {
   AppConfigPasskeyAuth,
   AppConfigPasswordAuth,
   AppTheme,
 } from '@/lib/config/index.js';
+import type {
+  PublicKeyCredentialCreationOptionsJSON as SimpleWebAuthnCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON as SimpleWebAuthnRequestOptionsJSON,
+  RegistrationResponseJSON as SimpleWebAuthnRegistrationResponseJSON,
+} from '@simplewebauthn/server';
+import z from 'zod/v4';
 import { f } from './field.js';
 import { oauthSchema } from './oauth.js';
 
@@ -461,16 +461,6 @@ export const r = {
     secret: z.string().describe('TOTP secret key (base32 encoded)'),
     otpauth_url: z.string().describe('OTPAuth URL for authenticator apps'),
     qr_code: z.string().describe('QR code as data URL'),
-  }),
-
-  TotpSetupVerifyResponse: z.object({
-    success: z.boolean(),
-    user: UserSession.optional().describe(
-      'User session if TOTP setup was completed from pending setup state',
-    ),
-    second_factor_setup_completed: z
-      .boolean()
-      .describe('Whether this request completed the mandatory 2FA setup flow'),
   }),
 
   PasskeySetupVerifyResponse: z.object({

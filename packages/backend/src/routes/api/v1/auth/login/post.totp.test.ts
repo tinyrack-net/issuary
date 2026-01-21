@@ -682,9 +682,8 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     );
 
     expect(verifyRes.statusCode).toBe(200);
-    expect(verifyRes.json().success).toBe(true);
-    expect(verifyRes.json().second_factor_setup_completed).toBe(true);
     expect(verifyRes.json()).toHaveProperty('user');
+    expect(verifyRes.json().user.totp_registered).toBe(true);
 
     // Get the updated session cookie from verify response
     const updatedSessionCookie = extractCookie(verifyRes, 'session');

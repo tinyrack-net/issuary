@@ -1,13 +1,13 @@
-import fastifyPlugin from 'fastify-plugin';
-import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
-import qrcode from 'qrcode';
-import type z from 'zod/v4';
-import type { UserEntity } from '@/entities/user.entity.js';
 import { UserTotpEntity } from '@/entities/user-totp.entity.js';
+import type { UserEntity } from '@/entities/user.entity.js';
 import type { InternalAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { totpSchema } from '@/schemas/totp.js';
+import fastifyPlugin from 'fastify-plugin';
+import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
+import qrcode from 'qrcode';
+import type z from 'zod/v4';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -95,7 +95,10 @@ export class TotpService {
     }
 
     // Create new TOTP record
-    const totp = new UserTotpEntity({ user, secret });
+    const totp = await this.mikro.userTotp.create({
+      user: user,
+      secret: secret,
+    });
     this.mikro.em.persist(totp);
     await this.mikro.em.flush();
 

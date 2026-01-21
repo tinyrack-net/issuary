@@ -1,5 +1,5 @@
-import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch.js';
+import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import { queryKeys } from './keys';
 import type { SessionUser } from './session.js';
 
@@ -18,9 +18,7 @@ export type SuccessResponse = {
 };
 
 export type TotpSetupVerifyResponse = {
-  success: boolean;
-  user?: SessionUser;
-  second_factor_setup_completed: boolean;
+  user: SessionUser;
 };
 
 export type TotpLoginVerifyResponse = {
