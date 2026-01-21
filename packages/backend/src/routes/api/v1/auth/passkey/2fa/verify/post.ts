@@ -1,9 +1,9 @@
-import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
-import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
+import z from 'zod/v4';
 
 export default (fastify: FastifyWithZodInstance) => {
   if (!fastify.config.basic_authentication_methods.passkey.enabled) {
