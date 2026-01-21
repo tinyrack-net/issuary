@@ -1,16 +1,18 @@
-import { mutationOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch.js';
-import type { AuthResponse } from './session.js';
+import { mutationOptions } from '@tanstack/react-query';
+import type { SessionUser } from './session.js';
 
 export type VerifyEmailParams = {
   token: string;
 };
 
-export type VerifyEmailResponse = AuthResponse;
+export type VerifyEmailResponse = {
+  user: SessionUser;
+};
 
 export const verifyEmailMutationOptions = mutationOptions({
   mutationFn: async (values: VerifyEmailParams) => {
-    const res = await etch(`/api/v1/auth/email/verify`, {
+    const res = await etch('/api/v1/auth/email/verify', {
       method: 'POST',
       body: JSON.stringify(values),
     });
@@ -29,7 +31,7 @@ export type ResendVerificationResponse = {
 
 export const resendVerificationMutationOptions = mutationOptions({
   mutationFn: async (values: ResendVerificationParams) => {
-    const res = await etch(`/api/v1/auth/email/resend`, {
+    const res = await etch('/api/v1/auth/email/resend', {
       method: 'POST',
       body: JSON.stringify(values),
     });

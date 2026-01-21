@@ -1,9 +1,9 @@
-import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+import z from 'zod/v4';
 
 export default (fastify: FastifyWithZodInstance) => {
   if (!fastify.mail) {
@@ -40,13 +40,12 @@ export default (fastify: FastifyWithZodInstance) => {
         user.id,
       );
 
-      // Check if 2FA setup is required
       const secondFactorRequired =
         fastify.userService.user2FASetupRequired(user);
       const available2FAMethods =
         fastify.userService.getAvailable2FASetupMethods();
 
-      const userSession = {
+      const userSession: z.infer<typeof r.AuthResponse>['user'] = {
         id: user.id,
         managed_by: 'database' as const,
         email: user.email,
@@ -59,7 +58,6 @@ export default (fastify: FastifyWithZodInstance) => {
         passkey_count: passkeyCount,
       };
 
-      // Case 1: 2FA setup required (user has no 2FA methods set up)
       if (
         secondFactorRequired &&
         !totpEnabled &&
@@ -74,7 +72,6 @@ export default (fastify: FastifyWithZodInstance) => {
         });
       }
 
-      // Case 2: Success - email verified and fully authenticated
       req.session.set('user', {
         id: user.id,
         authenticated_at: Math.floor(Date.now() / 1000),
