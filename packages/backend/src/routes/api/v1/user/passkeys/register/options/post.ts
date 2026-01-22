@@ -38,9 +38,14 @@ export default (fastify: FastifyWithZodInstance) => {
       }
 
       // Get user entity for registration
-      const user = await fastify.mikro.user.findOneOrFail({
-        id: userId,
-      });
+      const user = await fastify.mikro.user.findOneOrFail(
+        {
+          id: userId,
+        },
+        {
+          failHandler: () => new e.UserNotFound.Error(),
+        },
+      );
 
       // Generate registration options
       const options =
