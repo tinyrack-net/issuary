@@ -95,7 +95,7 @@ describe('GET /api/v1/config', () => {
 
     const json = res.json();
 
-    // Check oauth methods - should be an array
+    // Check oauth methods - should be an array of only enabled providers
     expect(Array.isArray(json.oauth_authentication_methods)).toBe(true);
 
     // Find Google provider in the array (should be enabled in test config)
@@ -104,7 +104,9 @@ describe('GET /api/v1/config', () => {
     );
     if (googleProvider) {
       expect(googleProvider.type).toBe('google');
-      expect(googleProvider.enabled).toBeTypeOf('boolean');
+      expect(googleProvider.display_name).toBeTypeOf('string');
+      // enabled field should not exist (only enabled providers are returned)
+      expect(googleProvider.enabled).toBeUndefined();
     }
   });
 

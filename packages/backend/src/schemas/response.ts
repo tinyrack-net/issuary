@@ -311,13 +311,12 @@ const BasicAuthenticationMethods = z
   })
   .describe('Basic Authentication Methods');
 
-// OAuth authentication method response schema
+// OAuth authentication method response schema (only enabled providers are returned)
 const OAuthAuthenticationMethod = z
   .object({
     id: z.string(),
     type: z.enum(['github', 'google', 'apple', 'generic_oauth']),
-    enabled: z.boolean(),
-    display_name: z.string().optional(),
+    display_name: z.string(),
     icon_url: z.string().optional(),
   })
   .describe('OAuth Authentication Method');
@@ -371,10 +370,6 @@ export const r = {
     user: UserSession,
     is_new_user: z.boolean(),
     return_url: z.string().optional(),
-  }),
-
-  ProvidersResponse: z.object({
-    providers: z.array(OAuthProvider),
   }),
 
   ConsentInfoResponse: z.object({

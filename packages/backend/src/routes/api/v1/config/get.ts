@@ -18,20 +18,19 @@ export default (fastify: FastifyWithZodInstance) => {
     },
     handler: async (_req, res) => {
       // Transform oauth_authentication_methods array to response format
+      // Only include enabled providers
       const oauthMethods: OAuthAuthenticationMethod[] = [];
 
       for (const config of fastify.config.oauth_authentication_methods) {
+        if (!config.enabled) {
+          continue;
+        }
         const method: OAuthAuthenticationMethod = {
           id: config.id,
           type: config.type,
-          enabled: config.enabled,
+          display_name: config.display_name ?? config.id,
+          icon_url: config.icon_url,
         };
-        if (config.display_name !== undefined) {
-          method.display_name = config.display_name;
-        }
-        if (config.icon_url !== undefined) {
-          method.icon_url = config.icon_url;
-        }
         oauthMethods.push(method);
       }
 
