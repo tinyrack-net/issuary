@@ -21,9 +21,6 @@ export const queryKeys = {
   consent: (clientId: string, scope?: string) =>
     ['/api/v1/consent', clientId, scope] as const,
 
-  // TOTP
-  totp: () => ['/api/v1/user/totp'] as const,
-
   // Passkeys
   passkeys: () => ['/api/v1/user/passkeys'] as const,
 

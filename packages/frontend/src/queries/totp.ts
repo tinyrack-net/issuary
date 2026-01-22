@@ -1,11 +1,6 @@
+import { mutationOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch.js';
-import { mutationOptions, queryOptions } from '@tanstack/react-query';
-import { queryKeys } from './keys';
 import type { SessionUser } from './session.js';
-
-export type TotpStatusResponse = {
-  enabled: boolean;
-};
 
 export type TotpSetupResponse = {
   secret: string;
@@ -24,17 +19,6 @@ export type TotpSetupVerifyResponse = {
 export type TotpLoginVerifyResponse = {
   user: SessionUser;
 };
-
-/**
- * Get TOTP status for current user
- */
-export const getTotpStatusQueryOptions = queryOptions({
-  queryKey: queryKeys.totp(),
-  queryFn: async () => {
-    const res = await etch('/api/v1/user/totp');
-    return res.json() as Promise<TotpStatusResponse>;
-  },
-});
 
 /**
  * Start TOTP setup - generates secret and QR code

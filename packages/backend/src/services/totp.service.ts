@@ -1,13 +1,12 @@
-import { UserTotpEntity } from '@/entities/user-totp.entity.js';
+import fastifyPlugin from 'fastify-plugin';
+import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
+import qrcode from 'qrcode';
+import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
 import type { InternalAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { totpSchema } from '@/schemas/totp.js';
-import fastifyPlugin from 'fastify-plugin';
-import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
-import qrcode from 'qrcode';
-import type z from 'zod/v4';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -128,13 +127,6 @@ export class TotpService {
 
     totp.verified = true;
     await this.mikro.em.flush();
-  }
-
-  /**
-   * Check if TOTP is enabled for a user
-   */
-  public async isEnabled(userId: string): Promise<boolean> {
-    return this.mikro.userTotp.isRegistered(userId);
   }
 
   /**
