@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod/v4';
 import { Modal, ModalActions } from '@/components/ui/modal';
-import { queryKeys } from '@/queries/keys';
 import { getSessionQueryOptions } from '@/queries/session.js';
 import { disableTotpMutationOptions } from '@/queries/totp.js';
 
@@ -37,7 +36,6 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
   const mutation = useMutation({
     ...disableTotpMutationOptions,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.totp() });
       queryClient.invalidateQueries({
         queryKey: getSessionQueryOptions.queryKey,
       });

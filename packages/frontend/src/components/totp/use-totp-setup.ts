@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { queryKeys } from '@/queries/keys.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
 import {
   startTotpSetupMutationOptions,
@@ -65,7 +64,6 @@ export function useTotpSetup(
   const verifyMutation = useMutation({
     ...verifyTotpMutationOptions,
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.totp() });
       queryClient.invalidateQueries({
         queryKey: getSessionQueryOptions.queryKey,
       });
