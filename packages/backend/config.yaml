@@ -54,7 +54,7 @@ basic_authentication_methods:
     second_factor:
       required: true
     totp:
-      enabled: true
+      enabled: false
       issuer: tinyrack
   passkey:
     enabled: true
