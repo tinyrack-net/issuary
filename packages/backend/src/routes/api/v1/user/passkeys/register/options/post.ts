@@ -29,7 +29,6 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      // Allow both full user session and pending 2FA setup session
       const userSession = req.session.get('user');
       const pending2FASetup = req.session.get('pending2FASetup');
       const userId = userSession?.id ?? pending2FASetup?.id;
