@@ -1,5 +1,5 @@
+import { etch } from '@/libs/etch';
 import { queryOptions } from '@tanstack/react-query';
-import { etch } from '@/libs/etch.js';
 import { queryKeys } from './keys';
 
 export type SessionUser = {

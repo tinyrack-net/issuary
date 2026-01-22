@@ -1,5 +1,5 @@
-import { queryOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch';
+import { queryOptions } from '@tanstack/react-query';
 import { queryKeys } from './keys';
 
 export type Theme =
@@ -88,8 +88,9 @@ export type AppConfigs = {
 export const appConfigQueryOptions = queryOptions({
   queryKey: queryKeys.config(),
   queryFn: async () => {
-    const response = await etch('/api/v1/config');
+    const response = await etch('/api/v1/config', {});
     const data = await response.json();
     return data as AppConfigs;
   },
+  staleTime: 1000 * 60,
 });
