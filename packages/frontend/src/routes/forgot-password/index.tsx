@@ -27,6 +27,9 @@ export const Route = createFileRoute('/forgot-password/')({
       throw redirect({ to: '/login' });
     }
   },
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(appConfigQueryOptions);
+  },
 });
 
 type ForgotPasswordFormValues = {

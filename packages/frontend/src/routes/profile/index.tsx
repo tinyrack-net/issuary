@@ -45,6 +45,13 @@ export const Route = createFileRoute('/profile/')({
       });
     }
   },
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(getSessionQueryOptions),
+      context.queryClient.ensureQueryData(oauthAccountsQueryOptions),
+      context.queryClient.ensureQueryData(appConfigQueryOptions),
+    ]);
+  },
 });
 
 function Profile() {

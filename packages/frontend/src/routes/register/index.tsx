@@ -47,6 +47,12 @@ export const Route = createFileRoute('/register/')({
       });
     }
   },
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(appConfigQueryOptions),
+      context.queryClient.ensureQueryData(oauthProvidersQueryOptions),
+    ]);
+  },
 });
 
 function Register() {

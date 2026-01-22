@@ -21,6 +21,18 @@ const ConsentSearchSchema = OAuthSearchSchema.extend({
 export const Route = createFileRoute('/consent/')({
   component: Consent,
   validateSearch: ConsentSearchSchema,
+  loaderDeps: ({ search }) => ({
+    client_id: search.client_id,
+    scope: search.scope,
+  }),
+  loader: async ({ context, deps }) => {
+    await context.queryClient.ensureQueryData(
+      getConsentInfoQueryOptions({
+        client_id: deps.client_id,
+        scope: deps.scope,
+      }),
+    );
+  },
 });
 
 function Consent() {

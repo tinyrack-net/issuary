@@ -11,6 +11,9 @@ import { appConfigQueryOptions } from '@/queries/config';
 
 export const Route = createFileRoute('/setup/2fa/')({
   component: Setup2FA,
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(appConfigQueryOptions);
+  },
 });
 
 function Setup2FA() {

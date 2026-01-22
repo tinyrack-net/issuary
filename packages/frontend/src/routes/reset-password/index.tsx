@@ -41,6 +41,9 @@ export const Route = createFileRoute('/reset-password/')({
       throw redirect({ to: '/login' });
     }
   },
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(appConfigQueryOptions);
+  },
 });
 
 type ResetPasswordFormValues = {

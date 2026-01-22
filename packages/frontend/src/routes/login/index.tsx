@@ -40,12 +40,13 @@ export const SearchSchema = OAuthSearchSchema;
 export const Route = createFileRoute('/login/')({
   component: Login,
   validateSearch: SearchSchema,
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(appConfigQueryOptions),
+      context.queryClient.ensureQueryData(oauthProvidersQueryOptions),
+    ]);
+  },
 });
-
-type LoginFormValues = {
-  email: string;
-  password: string;
-};
 
 function Login() {
   const { t } = useTranslation();
@@ -183,7 +184,7 @@ function Login() {
     setError,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormValues>({
+  } = useForm({
     defaultValues: {
       email: '',
       password: '',
@@ -191,7 +192,7 @@ function Login() {
     resolver: standardSchemaResolver(loginSchema),
   });
 
-  const onSubmit = async (values: LoginFormValues) => {
+  const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     loginMutation.mutate(values);
   };
 

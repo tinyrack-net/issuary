@@ -10,6 +10,9 @@ import { appConfigQueryOptions } from '@/queries/config';
 
 export const Route = createFileRoute('/verify/2fa/')({
   component: Verify2FA,
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(appConfigQueryOptions);
+  },
 });
 
 function Verify2FA() {

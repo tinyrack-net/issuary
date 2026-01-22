@@ -1,23 +1,3 @@
-import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
-import { IconInput } from '@/components/auth/icon-input.js';
-import { PageHeader } from '@/components/auth/page-header.js';
-import { SubmitButton } from '@/components/auth/submit-button.js';
-import { Alert } from '@/components/ui/alert.js';
-import { Divider } from '@/components/ui/divider.js';
-import {
-  OAuthSearchSchema,
-  type SecondFactorMethod,
-  buildAuthorizeUrl,
-  extractOAuthParams,
-  isOAuthFlow,
-} from '@/libs/oauth-search.js';
-import { tick } from '@/libs/promise.js';
-import { appConfigQueryOptions } from '@/queries/config.js';
-import { getSessionQueryOptions } from '@/queries/session.js';
-import {
-  resendVerificationMutationOptions,
-  verifyEmailMutationOptions,
-} from '@/queries/verify-email.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import {
   CheckCircleIcon,
@@ -34,6 +14,26 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
+import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
+import { IconInput } from '@/components/auth/icon-input.js';
+import { PageHeader } from '@/components/auth/page-header.js';
+import { SubmitButton } from '@/components/auth/submit-button.js';
+import { Alert } from '@/components/ui/alert.js';
+import { Divider } from '@/components/ui/divider.js';
+import {
+  buildAuthorizeUrl,
+  extractOAuthParams,
+  isOAuthFlow,
+  OAuthSearchSchema,
+  type SecondFactorMethod,
+} from '@/libs/oauth-search.js';
+import { tick } from '@/libs/promise.js';
+import { appConfigQueryOptions } from '@/queries/config.js';
+import { getSessionQueryOptions } from '@/queries/session.js';
+import {
+  resendVerificationMutationOptions,
+  verifyEmailMutationOptions,
+} from '@/queries/verify-email.js';
 
 const SearchSchema = z
   .object({
@@ -54,6 +54,9 @@ export const Route = createFileRoute('/verify/email/')({
     if (!isPasswordAuthEnabled) {
       throw redirect({ to: '/login' });
     }
+  },
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(appConfigQueryOptions);
   },
 });
 
