@@ -48,18 +48,7 @@ function VerifyPasskey() {
         }
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: getSessionQueryOptions.queryKey,
-      });
-    },
-  });
-
-  const handleVerify = async () => {
-    setError(null);
-    try {
-      await verifyMutation.mutateAsync();
-    } catch (err) {
+    onError: async (err) => {
       console.error('Passkey 2FA verification failed:', err);
       if (err instanceof ApiError) {
         if (err.code === 'SECOND_FACTOR_SESSION_EXPIRED') {
@@ -70,16 +59,23 @@ function VerifyPasskey() {
           setError(t('verifyPasskey.error.userMismatch'));
           return;
         }
+      } else {
+        setError(t('verifyPasskey.error.failed'));
+        return;
       }
-      setError(t('verifyPasskey.error.failed'));
-    }
-  };
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: getSessionQueryOptions.queryKey,
+      });
+    },
+  });
 
   // Auto-start passkey authentication on mount (with guard for StrictMode)
   useEffect(() => {
     if (hasStarted.current) return;
     hasStarted.current = true;
-    handleVerify();
+    verifyMutation.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -103,20 +99,22 @@ function VerifyPasskey() {
         )}
 
         {error && (
-          <Alert type="error" icon={WarningCircleIcon} className="w-full">
-            {error}
-          </Alert>
-        )}
-
-        {!verifyMutation.isPending && (
-          <button
-            type="button"
-            className="btn btn-primary btn-block"
-            onClick={handleVerify}
-          >
-            <FingerprintIcon className="size-5" weight="regular" />
-            {t('verifyPasskey.retry')}
-          </button>
+          <>
+            <Alert type="error" icon={WarningCircleIcon} className="w-full">
+              {error}
+            </Alert>
+            <button
+              type="button"
+              className="btn btn-primary btn-block"
+              onClick={() => {
+                setError(null);
+                verifyMutation.mutate();
+              }}
+            >
+              <FingerprintIcon className="size-5" weight="regular" />
+              {t('verifyPasskey.retry')}
+            </button>
+          </>
         )}
       </div>
 
