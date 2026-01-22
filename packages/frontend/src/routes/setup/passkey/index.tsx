@@ -6,7 +6,7 @@ import {
 } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
@@ -25,7 +25,9 @@ import { tick } from '@/libs/promise.js';
 import { registerPasskeyMutationOptions } from '@/queries/passkey.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
 
-export const SearchSchema = OAuthSearchSchema;
+export const SearchSchema = OAuthSearchSchema.extend({
+  passkey_name: z.string().optional(),
+});
 
 export const Route = createFileRoute('/setup/passkey/')({
   component: SetupPasskey,
@@ -40,8 +42,11 @@ function SetupPasskey() {
   const queryClient = useQueryClient();
   const search = Route.useSearch();
 
-  const [step, setStep] = useState<SetupStep>('form');
+  const [step, setStep] = useState<SetupStep>(
+    search.passkey_name ? 'registering' : 'form',
+  );
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const autoRegisterCalledRef = useRef(false);
 
   const formSchema = useMemo(
     () =>
@@ -102,6 +107,13 @@ function SetupPasskey() {
     },
   });
 
+  useEffect(() => {
+    if (search.passkey_name && !autoRegisterCalledRef.current) {
+      autoRegisterCalledRef.current = true;
+      registerMutation.mutate({ name: search.passkey_name });
+    }
+  }, []);
+
   const onSubmit = (values: FormValues) => {
     setStep('registering');
     setErrorMessage('');
@@ -140,7 +152,15 @@ function SetupPasskey() {
         <button
           type="button"
           className="btn btn-primary btn-block mt-4"
-          onClick={() => setStep('form')}
+          onClick={() => {
+            if (search.passkey_name) {
+              setStep('registering');
+              setErrorMessage('');
+              registerMutation.mutate({ name: search.passkey_name });
+            } else {
+              setStep('form');
+            }
+          }}
         >
           {t('setupPasskey.retry')}
         </button>
