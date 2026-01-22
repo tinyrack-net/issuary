@@ -1,15 +1,11 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch.js';
-import type { SessionUser } from './session.js';
+import type { OkResponse, SessionUser } from './session.js';
 
 export type TotpSetupResponse = {
   secret: string;
   otpauth_url: string;
   qr_code: string;
-};
-
-export type SuccessResponse = {
-  success: boolean;
 };
 
 export type TotpSetupVerifyResponse = {
@@ -62,7 +58,7 @@ export const disableTotpMutationOptions = mutationOptions({
       method: 'DELETE',
       body: JSON.stringify(values),
     });
-    return res.json() as Promise<SuccessResponse>;
+    return res.json() as Promise<OkResponse>;
   },
 });
 

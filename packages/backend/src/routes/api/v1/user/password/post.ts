@@ -26,7 +26,7 @@ export default (fastify: FastifyWithZodInstance) => {
         password: f.userPassword,
       }),
       response: {
-        200: r.SuccessResponse,
+        200: r.OkResponse,
         401: e.Unauthorized.Schema,
         403: e.UserNotEditable.Schema,
         404: e.UserNotFound.Schema,
@@ -64,7 +64,7 @@ export default (fastify: FastifyWithZodInstance) => {
       user.password_hash = req.body.password;
       await fastify.mikro.em.flush();
 
-      return res.status(200).send({ success: true });
+      return res.status(200).send({ ok: true });
     },
   });
 };

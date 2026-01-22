@@ -25,16 +25,15 @@ export default (fastify: FastifyWithZodInstance) =>
         code: f.totpCode,
       }),
       response: {
-        200: r.SuccessResponse,
+        200: r.OkResponse,
         400: z.union([e.TotpNotEnabled.Schema, e.InvalidTotpCode.Schema]),
         401: e.Unauthorized.Schema,
       },
     },
     handler: async (req, res) => {
       const userSession = await req.auth.verify();
-
       await fastify.totpService.disable(userSession.id, req.body.code);
 
-      return res.status(200).send({ success: true });
+      return res.status(200).send({ ok: true });
     },
   });

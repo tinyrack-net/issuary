@@ -1,6 +1,7 @@
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch';
 import { queryKeys } from './keys';
+import type { OkResponse } from './session.js';
 
 /**
  * OAuth provider info for login/register pages
@@ -71,7 +72,7 @@ export const unlinkOAuthMutationOptions = mutationOptions({
     const res = await etch(`/api/v1/oauth/${providerId}/link`, {
       method: 'DELETE',
     });
-    return (await res.json()) as { success: boolean };
+    return (await res.json()) as OkResponse;
   },
 });
 

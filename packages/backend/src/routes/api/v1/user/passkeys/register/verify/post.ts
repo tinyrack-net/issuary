@@ -88,14 +88,14 @@ export default (fastify: FastifyWithZodInstance) => {
           await fastify.userService.userEntityToSessionUser(userEntity);
 
         return res.status(200).send({
-          success: true,
+          ok: true,
           user: userSessionData,
           second_factor_setup_completed: true,
         });
       }
 
       return res.status(200).send({
-        success: true,
+        ok: true,
         second_factor_setup_completed: false,
       });
     },

@@ -9,7 +9,7 @@ import {
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch.js';
 import { queryKeys } from './keys';
-import type { AuthResponse, SessionUser } from './session.js';
+import type { AuthResponse, OkResponse, SessionUser } from './session.js';
 
 export type PasskeyInfo = {
   id: string;
@@ -24,12 +24,8 @@ export type PasskeysResponse = {
   passkeys: PasskeyInfo[];
 };
 
-export type SuccessResponse = {
-  success: boolean;
-};
-
 export type PasskeySetupVerifyResponse = {
-  success: boolean;
+  ok: true;
   user?: SessionUser;
   second_factor_setup_completed: boolean;
 };
@@ -91,7 +87,7 @@ export const deletePasskeyMutationOptions = mutationOptions({
     const res = await etch(`/api/v1/user/passkeys/${params.id}`, {
       method: 'DELETE',
     });
-    return res.json() as Promise<SuccessResponse>;
+    return res.json() as Promise<OkResponse>;
   },
 });
 
@@ -109,7 +105,7 @@ export const renamePasskeyMutationOptions = mutationOptions({
       method: 'PATCH',
       body: JSON.stringify({ name: params.name }),
     });
-    return res.json() as Promise<SuccessResponse>;
+    return res.json() as Promise<OkResponse>;
   },
 });
 

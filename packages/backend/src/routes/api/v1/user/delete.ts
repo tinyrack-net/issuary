@@ -28,26 +28,21 @@ export default (fastify: FastifyWithZodInstance) => {
         401: e.Unauthorized.Schema,
         403: z.union([
           e.AccountDeletionDisabled.Schema,
-          e.ConfigManagedAccountCannotBeDeleted.Schema,
+          e.UserNotEditable.Schema,
         ]),
         404: e.UserNotFound.Schema,
       },
     },
     handler: async (req, res) => {
-      // Check if account deletion is enabled
       if (!fastify.config.account_deletion.enabled) {
         throw new e.AccountDeletionDisabled.Error();
       }
-
-      // Verify user is logged in
       const userSession = await req.auth.verify();
 
-      // Config-managed users cannot be deleted
       if (userSession.managed_by === 'config') {
-        throw new e.ConfigManagedAccountCannotBeDeleted.Error();
+        throw new e.UserNotEditable.Error();
       }
 
-      // Get user and check if already deleted
       const user = await fastify.mikro.user.findOneOrFail(
         { id: userSession.id },
         { failHandler: () => new e.UserNotFound.Error() },
@@ -57,21 +52,18 @@ export default (fastify: FastifyWithZodInstance) => {
         throw new e.AccountAlreadyDeleted.Error();
       }
 
-      // Soft delete the user
       user.deleted_at = new Date();
       await fastify.mikro.em.flush();
 
-      // Clear the session
       req.session.delete();
 
-      // Calculate permanent deletion date
       const permanentDeletionDate = calculatePermanentDeletionDate(
         user.deleted_at,
         fastify.config.account_deletion.retention_period,
       );
 
       return res.status(200).send({
-        success: true,
+        ok: true,
         deleted_at: user.deleted_at.toISOString(),
         permanent_deletion_at: permanentDeletionDate.toISOString(),
       });

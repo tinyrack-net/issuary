@@ -184,7 +184,7 @@ describe('PUT /api/v1/user/password', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.success).toBe(true);
+    expect(body.ok).toBe(true);
 
     // Verify new password works
     const verifyLoginRes = await app.inject({

@@ -1,9 +1,6 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch';
-
-export type SuccessResponse = {
-  success: boolean;
-};
+import type { OkResponse } from './session.js';
 
 /**
  * Set password for OAuth-only users
@@ -19,7 +16,7 @@ export const setPasswordMutationOptions = mutationOptions({
       body: JSON.stringify(values),
     });
     const data = await res.json();
-    return data as SuccessResponse;
+    return data as OkResponse;
   },
 });
 
@@ -38,7 +35,7 @@ export const changePasswordMutationOptions = mutationOptions({
       body: JSON.stringify(values),
     });
     const data = await res.json();
-    return data as SuccessResponse;
+    return data as OkResponse;
   },
 });
 
@@ -56,6 +53,6 @@ export const removePasswordMutationOptions = mutationOptions({
       body: JSON.stringify(values),
     });
     const data = await res.json();
-    return data as SuccessResponse;
+    return data as OkResponse;
   },
 });

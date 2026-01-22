@@ -2,7 +2,7 @@ import { mutationOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch';
 
 export type AccountDeletionResponse = {
-  success: boolean;
+  ok: true;
   deleted_at: string;
   permanent_deletion_at: string;
 };

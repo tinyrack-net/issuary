@@ -198,7 +198,7 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
 
     expect(res.statusCode).toBe(200);
     const json = res.json();
-    expect(json.success).toBe(true);
+    expect(json.ok).toBe(true);
 
     // Verify OAuth account is unlinked
     await withMikroContext(app, async () => {

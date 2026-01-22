@@ -17,7 +17,7 @@ export default (fastify: FastifyWithZodInstance) =>
         provider: f.providerName,
       }),
       response: {
-        200: r.SuccessResponse,
+        200: r.OkResponse,
         400: e.CannotUnlinkLastAuthMethod.Schema,
         401: e.Unauthorized.Schema,
         404: z.union([
@@ -42,6 +42,6 @@ export default (fastify: FastifyWithZodInstance) =>
         provider,
       );
 
-      return res.status(200).send({ success: true });
+      return res.status(200).send({ ok: true });
     },
   });

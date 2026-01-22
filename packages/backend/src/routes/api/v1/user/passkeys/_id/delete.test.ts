@@ -151,7 +151,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.success).toBe(true);
+    expect(body.ok).toBe(true);
 
     // Verify passkey was deleted
     await withMikroContext(app, async () => {
@@ -183,7 +183,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.success).toBe(true);
+    expect(body.ok).toBe(true);
 
     // Verify first passkey was deleted
     await withMikroContext(app, async () => {
@@ -275,7 +275,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.success).toBe(true);
+    expect(body.ok).toBe(true);
 
     // Verify passkey was deleted
     await withMikroContext(app, async () => {
@@ -338,7 +338,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.success).toBe(true);
+    expect(body.ok).toBe(true);
   });
 
   test('should delete all passkeys sequentially when user has password', async () => {
@@ -540,7 +540,7 @@ describe('DELETE /api/v1/user/passkeys/:id - Last auth method protection', () =>
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.success).toBe(true);
+    expect(body.ok).toBe(true);
   });
 });
 

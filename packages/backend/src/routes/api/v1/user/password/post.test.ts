@@ -131,7 +131,7 @@ describe('POST /api/v1/user/password', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.success).toBe(true);
+    expect(body.ok).toBe(true);
 
     // Verify password was set by trying to login
     const verifyLoginRes = await app.inject({

@@ -119,12 +119,6 @@ const MessageResponse = z
   })
   .describe('Message Response');
 
-const SuccessResponse = z
-  .object({
-    success: z.boolean(),
-  })
-  .describe('Success Response');
-
 const OkResponse = z
   .object({
     ok: z.literal(true),
@@ -358,7 +352,6 @@ export const r = {
   GenericError,
   OAuthError,
   MessageResponse,
-  SuccessResponse,
   OkResponse,
   RedirectUrlResponse,
 
@@ -460,7 +453,7 @@ export const r = {
   }),
 
   PasskeySetupVerifyResponse: z.object({
-    success: z.boolean(),
+    ok: z.literal(true),
     user: UserSession.optional().describe(
       'User session if passkey setup was completed from pending setup state',
     ),
@@ -528,7 +521,7 @@ export const r = {
 
   // Account deletion response
   AccountDeletionResponse: z.object({
-    success: z.literal(true),
+    ok: z.literal(true),
     deleted_at: z
       .string()
       .datetime()

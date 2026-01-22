@@ -48,7 +48,7 @@ describe('DELETE /api/v1/user', () => {
 
       expect(deleteRes.statusCode).toBe(200);
       const body = deleteRes.json();
-      expect(body.success).toBe(true);
+      expect(body.ok).toBe(true);
       expect(body.deleted_at).toBeDefined();
       expect(body.permanent_deletion_at).toBeDefined();
 
@@ -95,7 +95,7 @@ describe('DELETE /api/v1/user', () => {
         cookies: { session: sessionCookie },
       });
 
-      expectError(res, e.ConfigManagedAccountCannotBeDeleted);
+      expectError(res, e.UserNotEditable);
     });
 
     test('should fail if account already deleted', async () => {

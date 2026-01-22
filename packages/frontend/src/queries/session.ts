@@ -18,6 +18,10 @@ export type AuthResponse = {
   user?: SessionUser;
 };
 
+export type OkResponse = {
+  ok: true;
+};
+
 export const getSessionQueryOptions = queryOptions({
   queryKey: queryKeys.session(),
   queryFn: async () => {

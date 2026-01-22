@@ -22,7 +22,7 @@ export default (fastify: FastifyWithZodInstance) => {
         name: z.string().min(1).max(100),
       }),
       response: {
-        200: r.SuccessResponse,
+        200: r.OkResponse,
         400: e.PasskeyNotEnabled.Schema,
         401: e.Unauthorized.Schema,
         404: e.PasskeyNotFound.Schema,
@@ -39,7 +39,7 @@ export default (fastify: FastifyWithZodInstance) => {
       );
 
       return res.status(200).send({
-        success: true,
+        ok: true,
       });
     },
   });

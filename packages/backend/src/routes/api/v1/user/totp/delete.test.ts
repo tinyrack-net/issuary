@@ -165,7 +165,7 @@ describe('DELETE /api/v1/user/totp', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.success).toBe(true);
+    expect(body.ok).toBe(true);
 
     // Verify TOTP is removed from database
     await withMikroContext(app, async () => {

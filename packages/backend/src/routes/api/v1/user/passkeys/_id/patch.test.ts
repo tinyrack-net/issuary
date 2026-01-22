@@ -135,7 +135,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.success).toBe(true);
+    expect(body.ok).toBe(true);
 
     // Verify the name was updated in database
     await withMikroContext(app, async () => {
@@ -167,7 +167,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.success).toBe(true);
+    expect(body.ok).toBe(true);
 
     // Verify the name was updated
     await withMikroContext(app, async () => {
@@ -253,7 +253,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.success).toBe(true);
+    expect(body.ok).toBe(true);
 
     await withMikroContext(app, async () => {
       const passkey = await app.mikro.userPasskey.findOne({ id: passkeyId });
@@ -365,7 +365,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.success).toBe(true);
+    expect(body.ok).toBe(true);
 
     await withMikroContext(app, async () => {
       const passkey = await app.mikro.userPasskey.findOne({ id: passkeyId });
@@ -430,7 +430,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.success).toBe(true);
+    expect(body.ok).toBe(true);
   });
 });
 

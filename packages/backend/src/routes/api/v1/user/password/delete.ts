@@ -26,7 +26,7 @@ export default (fastify: FastifyWithZodInstance) => {
         current_password: f.userPassword,
       }),
       response: {
-        200: r.SuccessResponse,
+        200: r.OkResponse,
         400: z.union([
           e.PasswordNotSet.Schema,
           e.CannotRemoveLastAuthMethod.Schema,
@@ -79,7 +79,7 @@ export default (fastify: FastifyWithZodInstance) => {
       user.password_hash = null;
       await fastify.mikro.em.flush();
 
-      return res.status(200).send({ success: true });
+      return res.status(200).send({ ok: true });
     },
   });
 };

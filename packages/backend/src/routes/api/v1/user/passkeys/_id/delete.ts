@@ -19,7 +19,7 @@ export default (fastify: FastifyWithZodInstance) => {
         id: z.string().uuid(),
       }),
       response: {
-        200: r.SuccessResponse,
+        200: r.OkResponse,
         400: z.union([
           e.PasskeyNotEnabled.Schema,
           e.CannotRemoveLastPasskey.Schema,
@@ -48,7 +48,7 @@ export default (fastify: FastifyWithZodInstance) => {
       );
 
       return res.status(200).send({
-        success: true,
+        ok: true,
       });
     },
   });
