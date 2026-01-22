@@ -1,6 +1,6 @@
+import { EntityRepository, ref } from '@mikro-orm/core';
 import { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
-import { EntityRepository, ref } from '@mikro-orm/core';
 
 export class EmailVerificationRepository extends EntityRepository<EmailVerificationEntity> {
   /**

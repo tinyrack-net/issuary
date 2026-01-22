@@ -1,13 +1,13 @@
+import type { Loaded } from '@mikro-orm/core';
+import fastifyPlugin from 'fastify-plugin';
+import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
 import type { InternalAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
-import type { Loaded } from '@mikro-orm/core';
-import fastifyPlugin from 'fastify-plugin';
-import type z from 'zod/v4';
-import type { EmailVerificationService } from './email-verification.service.js';
 import type { EmailService } from './email.service.js';
+import type { EmailVerificationService } from './email-verification.service.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -51,9 +51,10 @@ export class UserService {
     };
   }
 
-  public async register(params: { email: string; password: string }): Promise<
-    z.infer<typeof r.UserSession>
-  > {
+  public async register(params: {
+    email: string;
+    password: string;
+  }): Promise<z.infer<typeof r.UserSession>> {
     const user = await this.mikro.user.register({
       email: params.email,
       password: params.password,
@@ -81,11 +82,6 @@ export class UserService {
       second_factor_required: this.user2FASetupRequired(user),
       passkey_count: 0,
     };
-  }
-
-  private async emailExists(email: string) {
-    const count = await this.mikro.user.count({ email: email });
-    return count > 0;
   }
 
   /**
