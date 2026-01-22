@@ -57,7 +57,7 @@ basic_authentication_methods:
       enabled: true
       issuer: tinyrack
   passkey:
-    enabled: false
+    enabled: true
 
 # oauth_authentication_methods:
 # - id: github
