@@ -1,12 +1,12 @@
+import { FingerprintIcon, ShieldCheckIcon } from '@phosphor-icons/react';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
 import { FooterLink } from '@/components/auth/footer-link.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { extractOAuthParams } from '@/libs/oauth-search.js';
 import { appConfigQueryOptions } from '@/queries/config';
-import { FingerprintIcon, ShieldCheckIcon } from '@phosphor-icons/react';
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { Link, createFileRoute } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/verify/2fa/')({
   component: Verify2FA,
