@@ -1,7 +1,7 @@
 import { FingerprintIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
 import { FooterLink } from '@/components/auth/footer-link.js';
@@ -30,6 +30,7 @@ function VerifyPasskey() {
   const queryClient = useQueryClient();
   const search = Route.useSearch();
   const [error, setError] = useState<string | null>(null);
+  const hasStarted = useRef(false);
 
   const verifyMutation = useMutation({
     ...authenticateWithPasskeyMutationOptions,
@@ -74,8 +75,10 @@ function VerifyPasskey() {
     }
   };
 
-  // Auto-start passkey authentication on mount
+  // Auto-start passkey authentication on mount (with guard for StrictMode)
   useEffect(() => {
+    if (hasStarted.current) return;
+    hasStarted.current = true;
     handleVerify();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
