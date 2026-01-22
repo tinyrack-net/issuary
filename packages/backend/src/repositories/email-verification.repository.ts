@@ -1,6 +1,6 @@
-import { EntityRepository, ref } from '@mikro-orm/core';
 import { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
+import { EntityRepository, ref } from '@mikro-orm/core';
 
 export class EmailVerificationRepository extends EntityRepository<EmailVerificationEntity> {
   /**
@@ -11,14 +11,11 @@ export class EmailVerificationRepository extends EntityRepository<EmailVerificat
     userId: string;
     expiresInHours?: number;
   }): Promise<EmailVerificationEntity> {
-    // Generate a UUID token for security
     const token = crypto.randomUUID();
 
-    // Calculate expiration time (default: 24 hours)
     const expiresInHours = params.expiresInHours || 24;
     const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
 
-    // Invalidate all previous unverified tokens for this user
     const previousTokens = await this.find({
       user: ref(UserEntity, params.userId),
       verified: false,
@@ -28,14 +25,12 @@ export class EmailVerificationRepository extends EntityRepository<EmailVerificat
       prevToken.expiresAt = new Date(); // Expire immediately
     }
 
-    // Create the entity using constructor
     const entity = new EmailVerificationEntity({
       userId: params.userId,
       token,
       expiresAt,
     });
 
-    // Persist to database
     await this.getEntityManager().persist(entity);
 
     return entity;

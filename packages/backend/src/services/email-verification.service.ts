@@ -1,8 +1,8 @@
-import fastifyPlugin from 'fastify-plugin';
 import type { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
 import type { UserEntity } from '@/entities/user.entity.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import fastifyPlugin from 'fastify-plugin';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -25,7 +25,6 @@ export class EmailVerificationService {
       userId: params.userId,
       expiresInHours: params.expiresInHours || 24,
     });
-
     return token;
   }
 
@@ -35,19 +34,15 @@ export class EmailVerificationService {
    */
   public async verifyEmail(token: string): Promise<UserEntity> {
     const verification = await this.mikro.emailVerification.verifyToken(token);
-
     if (!verification) {
       throw new e.InvalidVerificationToken.Error();
     }
-
-    // Mark user's email as verified (user is populated via verifyToken)
     const user = await verification.user.load();
     if (!user) {
       throw new e.UserNotFound.Error();
     }
     user.email_verified = true;
     await this.mikro.em.flush();
-
     return user;
   }
 
@@ -64,17 +59,11 @@ export class EmailVerificationService {
         failHandler: () => new e.UserNotFound.Error(),
       },
     );
-
     if (user.email_verified) {
       throw new e.EmailAlreadyVerified.Error();
     }
-
-    // Generate new token (this invalidates old ones)
     const token = await this.generateToken({ userId: user.id });
-
-    // Ensure changes are persisted
     await this.mikro.em.flush();
-
     return token;
   }
 
@@ -87,7 +76,6 @@ export class EmailVerificationService {
       verified: false,
       expiresAt: { $gt: new Date() },
     });
-
     return count > 0;
   }
 }
