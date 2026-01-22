@@ -81,7 +81,7 @@ export const InternalConfigSchema = z.object({
   oauth_authentication_methods: AppConfigOAuthAuthenticationMethods.default([]),
   smtp: AppConfigSmtp.optional(),
   account_deletion: AppConfigAccountDeletion.default({
-    enabled: false,
+    enabled: true,
     retention_period: '30d',
   }),
   providers: z.array(AppConfigProvider).default([]),
