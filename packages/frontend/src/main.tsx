@@ -53,7 +53,7 @@ const Loader = memo(() => {
 createRoot(RootElement).render(
   <StrictMode>
     <QueryClientProvider client={GlobalQueryClient}>
-      <Suspense>
+      <Suspense fallback={<div>로딩</div>}>
         <Loader />
       </Suspense>
     </QueryClientProvider>
