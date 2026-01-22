@@ -35,10 +35,9 @@ export default (fastify: FastifyWithZodInstance) => {
 
       await fastify.mikro.em.populate(user, ['password_hash']);
 
-      const totpEnabled = await fastify.mikro.userTotp.isRegistered(user.id);
-      const passkeyCount = await fastify.mikro.userPasskey.countByUserId(
-        user.id,
-      );
+      const totpRegistered = await fastify.mikro.userTotp.isRegistered(user.id);
+      const registeredPassKeyCount =
+        await fastify.mikro.userPasskey.countByUserId(user.id);
 
       const secondFactorRequired =
         fastify.userService.user2FASetupRequired(user);
@@ -53,15 +52,15 @@ export default (fastify: FastifyWithZodInstance) => {
         email_verification_required:
           fastify.userService.userEmailVerificationRequired(user),
         has_password: user.hasPassword(),
-        totp_registered: totpEnabled,
+        totp_registered: totpRegistered,
         second_factor_required: secondFactorRequired,
-        passkey_count: passkeyCount,
+        passkey_count: registeredPassKeyCount,
       };
 
       if (
         secondFactorRequired &&
-        !totpEnabled &&
-        passkeyCount === 0 &&
+        !totpRegistered &&
+        registeredPassKeyCount === 0 &&
         available2FAMethods.length > 0
       ) {
         req.session.set('pending2FASetup', {
