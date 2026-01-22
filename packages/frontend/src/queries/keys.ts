@@ -13,7 +13,6 @@ export const queryKeys = {
 
   // OAuth
   oauth: {
-    providers: () => ['/api/v1/oauth/providers'] as const,
     accounts: () => ['/api/v1/user/oauth-accounts'] as const,
   },
 

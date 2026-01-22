@@ -4,15 +4,6 @@ import { queryKeys } from './keys';
 import type { OkResponse } from './session.js';
 
 /**
- * OAuth provider info for login/register pages
- */
-export type OAuthProvider = {
-  id: string;
-  display_name: string;
-  icon_url?: string;
-};
-
-/**
  * Linked OAuth account info
  */
 export type LinkedOAuthAccount = {
@@ -21,17 +12,13 @@ export type LinkedOAuthAccount = {
 };
 
 /**
- * Provider with linked status for profile page
+ * OAuth provider info with linked status for profile page
  */
-export type OAuthProviderWithStatus = OAuthProvider & {
+export type OAuthProviderWithStatus = {
+  id: string;
+  display_name: string;
+  icon_url?: string;
   linked: boolean;
-};
-
-/**
- * Response from GET /api/v1/oauth/providers
- */
-export type OAuthProvidersResponse = {
-  providers: OAuthProvider[];
 };
 
 /**
@@ -41,17 +28,6 @@ export type OAuthAccountsResponse = {
   accounts: LinkedOAuthAccount[];
   available_providers: OAuthProviderWithStatus[];
 };
-
-/**
- * Query options for fetching available OAuth providers
- */
-export const oauthProvidersQueryOptions = queryOptions({
-  queryKey: queryKeys.oauth.providers(),
-  queryFn: async () => {
-    const res = await etch('/api/v1/oauth/providers');
-    return (await res.json()) as OAuthProvidersResponse;
-  },
-});
 
 /**
  * Query options for fetching user's linked OAuth accounts

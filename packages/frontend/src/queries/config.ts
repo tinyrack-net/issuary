@@ -1,5 +1,5 @@
-import { etch } from '@/libs/etch';
 import { queryOptions } from '@tanstack/react-query';
+import { etch } from '@/libs/etch';
 import { queryKeys } from './keys';
 
 export type Theme =
@@ -46,8 +46,7 @@ export type OAuthProviderType = 'github' | 'google' | 'apple' | 'generic_oauth';
 export type OAuthAuthenticationMethod = {
   id: string;
   type: OAuthProviderType;
-  enabled: boolean;
-  display_name?: string;
+  display_name: string;
   icon_url?: string;
 };
 
