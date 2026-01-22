@@ -14,12 +14,12 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
 import { IconInput } from '@/components/auth/icon-input.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { SubmitButton } from '@/components/auth/submit-button.js';
 import { Alert } from '@/components/ui/alert.js';
 import { Divider } from '@/components/ui/divider.js';
+import { PageLayout } from '@/components/ui/page-layout.js';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
@@ -180,7 +180,7 @@ function VerifyEmail() {
 
   if (verified) {
     return (
-      <AuthPageLayout>
+      <PageLayout maxWidth="100" cardPadding>
         <Alert type="success" icon={CheckCircleIcon} className="mb-4">
           {t('verifyEmail.success.title')}
         </Alert>
@@ -197,12 +197,12 @@ function VerifyEmail() {
         >
           {t('verifyEmail.success.goToProfile')}
         </button>
-      </AuthPageLayout>
+      </PageLayout>
     );
   }
 
   return (
-    <AuthPageLayout>
+    <PageLayout maxWidth="100" cardPadding>
       <PageHeader
         title={t('verifyEmail.title')}
         subtitle={t('verifyEmail.subtitle')}
@@ -264,6 +264,6 @@ function VerifyEmail() {
           </button>
         </>
       )}
-    </AuthPageLayout>
+    </PageLayout>
   );
 }

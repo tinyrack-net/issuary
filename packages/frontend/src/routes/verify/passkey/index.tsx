@@ -3,10 +3,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
 import { FooterLink } from '@/components/auth/footer-link.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { Alert } from '@/components/ui/alert.js';
+import { PageLayout } from '@/components/ui/page-layout.js';
 import { ApiError } from '@/libs/error.js';
 import {
   buildAuthorizeUrl,
@@ -80,7 +80,7 @@ function VerifyPasskey() {
   }, []);
 
   return (
-    <AuthPageLayout>
+    <PageLayout maxWidth="100" cardPadding>
       <PageHeader
         title={t('verifyPasskey.title')}
         subtitle={t('verifyPasskey.subtitle')}
@@ -124,6 +124,6 @@ function VerifyPasskey() {
         to="/login"
         search={search}
       />
-    </AuthPageLayout>
+    </PageLayout>
   );
 }

@@ -8,13 +8,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
 import { FooterLink } from '@/components/auth/footer-link.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { QrStep } from '@/components/totp/qr-step.js';
 import { useTotpSetup } from '@/components/totp/use-totp-setup.js';
 import { VerifyStep } from '@/components/totp/verify-step.js';
 import { Alert } from '@/components/ui/alert.js';
+import { PageLayout } from '@/components/ui/page-layout.js';
 import { ApiError } from '@/libs/error.js';
 import {
   buildAuthorizeUrl,
@@ -164,7 +164,7 @@ function SetupTotp() {
   // Loading state
   if (step === 'loading') {
     return (
-      <AuthPageLayout>
+      <PageLayout maxWidth="100" cardPadding>
         <PageHeader
           title={t('setupTotp.title')}
           subtitle={t('setupTotp.subtitle')}
@@ -172,7 +172,7 @@ function SetupTotp() {
         <div className="flex justify-center py-8">
           <span className="loading loading-spinner loading-lg" />
         </div>
-      </AuthPageLayout>
+      </PageLayout>
     );
   }
 
@@ -181,7 +181,7 @@ function SetupTotp() {
     // Session expired error - show countdown and redirect
     if (errorType === 'session_expired') {
       return (
-        <AuthPageLayout>
+        <PageLayout maxWidth="100" cardPadding>
           <PageHeader
             title={t('setupTotp.title')}
             subtitle={t('setupTotp.subtitle')}
@@ -208,14 +208,14 @@ function SetupTotp() {
             to="/login"
             search={extractOAuthParams(search)}
           />
-        </AuthPageLayout>
+        </PageLayout>
       );
     }
 
     // TOTP already enabled error - redirect to profile
     if (errorType === 'already_enabled') {
       return (
-        <AuthPageLayout>
+        <PageLayout maxWidth="100" cardPadding>
           <PageHeader
             title={t('setupTotp.title')}
             subtitle={t('setupTotp.subtitle')}
@@ -236,13 +236,13 @@ function SetupTotp() {
             to="/login"
             search={extractOAuthParams(search)}
           />
-        </AuthPageLayout>
+        </PageLayout>
       );
     }
 
     // Generic error - show retry button
     return (
-      <AuthPageLayout>
+      <PageLayout maxWidth="100" cardPadding>
         <PageHeader
           title={t('setupTotp.title')}
           subtitle={t('setupTotp.subtitle')}
@@ -264,14 +264,14 @@ function SetupTotp() {
           to="/login"
           search={extractOAuthParams(search)}
         />
-      </AuthPageLayout>
+      </PageLayout>
     );
   }
 
   // QR code step
   if (step === 'qr' && setupData) {
     return (
-      <AuthPageLayout>
+      <PageLayout maxWidth="100" cardPadding>
         <PageHeader
           title={t('setupTotp.title')}
           subtitle={t('setupTotp.subtitle')}
@@ -290,13 +290,13 @@ function SetupTotp() {
           to="/login"
           search={extractOAuthParams(search)}
         />
-      </AuthPageLayout>
+      </PageLayout>
     );
   }
 
   // Verify step
   return (
-    <AuthPageLayout>
+    <PageLayout maxWidth="100" cardPadding>
       <PageHeader
         title={t('setupTotp.verifyTitle')}
         subtitle={t('setupTotp.verifySubtitle')}
@@ -307,6 +307,6 @@ function SetupTotp() {
         onBack={goToQr}
         isPending={isVerifyPending}
       />
-    </AuthPageLayout>
+    </PageLayout>
   );
 }

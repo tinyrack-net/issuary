@@ -4,11 +4,31 @@ import { ThemeToggle } from '@/components/ui/theme-toggle.js';
 import { useTheme } from '@/hooks/use-theme.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
 
-type ProfilePageLayoutProps = {
+type PageLayoutProps = {
   children: React.ReactNode;
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '100';
+  cardPadding?: boolean;
+  responsivePadding?: boolean;
 };
 
-export function ProfilePageLayout({ children }: ProfilePageLayoutProps) {
+const maxWidthClasses: Record<
+  NonNullable<PageLayoutProps['maxWidth']>,
+  string
+> = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  '2xl': 'max-w-2xl',
+  '100': 'max-w-100',
+};
+
+export function PageLayout({
+  children,
+  maxWidth = '100',
+  cardPadding = false,
+  responsivePadding = false,
+}: PageLayoutProps) {
   const { themeMode, currentTheme, darkTheme, canToggleTheme, toggleDarkMode } =
     useTheme();
   const isDark = currentTheme === darkTheme;
@@ -16,9 +36,12 @@ export function ProfilePageLayout({ children }: ProfilePageLayoutProps) {
 
   const backgroundUrl = configData.app.background_url;
 
+  const containerClass = responsivePadding ? 'p-4 md:p-8' : 'p-4';
+  const cardClass = `${maxWidthClasses[maxWidth]}${cardPadding ? ' p-12' : ''}`;
+
   return (
     <div
-      className="flex min-h-screen items-center justify-center bg-base-200 bg-cover p-4 md:p-8"
+      className={`flex min-h-screen items-center justify-center bg-base-200 bg-cover ${containerClass}`}
       style={
         backgroundUrl
           ? {
@@ -35,7 +58,9 @@ export function ProfilePageLayout({ children }: ProfilePageLayoutProps) {
         />
       )}
       <LanguageSelector />
-      <div className="card w-full max-w-2xl border border-base-200 bg-base-100 shadow-lg">
+      <div
+        className={`card w-full border border-base-200 bg-base-100 shadow-lg ${cardClass}`}
+      >
         {children}
       </div>
     </div>

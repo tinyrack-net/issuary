@@ -3,9 +3,9 @@ import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { Alert } from '@/components/ui/alert.js';
+import { PageLayout } from '@/components/ui/page-layout.js';
 import { OAuthSearchSchema } from '@/libs/oauth-search';
 import {
   consentDecisionMutationOptions,
@@ -84,7 +84,7 @@ function Consent() {
 
   if (consentInfoQuery.isError) {
     return (
-      <AuthPageLayout>
+      <PageLayout maxWidth="100" cardPadding>
         <Alert type="error" icon={WarningIcon} className="mb-4">
           {t('consent.error.title')}
         </Alert>
@@ -98,14 +98,14 @@ function Consent() {
         >
           {t('consent.error.back')}
         </button>
-      </AuthPageLayout>
+      </PageLayout>
     );
   }
 
   const { client, scopes, user } = consentInfoQuery.data;
 
   return (
-    <AuthPageLayout>
+    <PageLayout maxWidth="100" cardPadding>
       <PageHeader
         title={t('consent.title')}
         subtitle={t('consent.subtitle', { app: client.name })}
@@ -179,6 +179,6 @@ function Consent() {
           )}
         </button>
       </div>
-    </AuthPageLayout>
+    </PageLayout>
   );
 }

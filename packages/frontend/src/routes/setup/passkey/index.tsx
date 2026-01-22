@@ -10,11 +10,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
 import { FooterLink } from '@/components/auth/footer-link.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { SubmitButton } from '@/components/auth/submit-button.js';
 import { Alert } from '@/components/ui/alert.js';
+import { PageLayout } from '@/components/ui/page-layout.js';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
@@ -123,7 +123,7 @@ function SetupPasskey() {
   // Registering state - waiting for WebAuthn
   if (step === 'registering') {
     return (
-      <AuthPageLayout>
+      <PageLayout maxWidth="100" cardPadding>
         <PageHeader
           title={t('setupPasskey.title')}
           subtitle={t('setupPasskey.subtitle')}
@@ -134,14 +134,14 @@ function SetupPasskey() {
             {t('setupPasskey.waiting')}
           </p>
         </div>
-      </AuthPageLayout>
+      </PageLayout>
     );
   }
 
   // Error state
   if (step === 'error') {
     return (
-      <AuthPageLayout>
+      <PageLayout maxWidth="100" cardPadding>
         <PageHeader
           title={t('setupPasskey.title')}
           subtitle={t('setupPasskey.subtitle')}
@@ -170,13 +170,13 @@ function SetupPasskey() {
           to="/login"
           search={extractOAuthParams(search)}
         />
-      </AuthPageLayout>
+      </PageLayout>
     );
   }
 
   // Form state
   return (
-    <AuthPageLayout>
+    <PageLayout maxWidth="100" cardPadding>
       <PageHeader
         title={t('setupPasskey.title')}
         subtitle={t('setupPasskey.subtitle')}
@@ -230,6 +230,6 @@ function SetupPasskey() {
         to="/login"
         search={extractOAuthParams(search)}
       />
-    </AuthPageLayout>
+    </PageLayout>
   );
 }

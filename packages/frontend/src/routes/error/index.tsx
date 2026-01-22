@@ -2,9 +2,9 @@ import { HouseIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { Alert } from '@/components/ui/alert.js';
+import { PageLayout } from '@/components/ui/page-layout.js';
 
 const errorSearchSchema = z.object({
   code: z.string().optional(),
@@ -24,7 +24,7 @@ function ErrorPage() {
   const errorMessage = search.message || t('error.defaultMessage');
 
   return (
-    <AuthPageLayout>
+    <PageLayout maxWidth="100" cardPadding>
       <Alert type="error" icon={WarningCircleIcon} className="mb-4">
         {t('error.title')}
       </Alert>
@@ -67,6 +67,6 @@ function ErrorPage() {
           {t('error.footer.contactSupport')}
         </a>
       </div>
-    </AuthPageLayout>
+    </PageLayout>
   );
 }

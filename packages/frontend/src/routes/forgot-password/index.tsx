@@ -6,12 +6,12 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
 import { FooterLink } from '@/components/auth/footer-link.js';
 import { IconInput } from '@/components/auth/icon-input.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { SubmitButton } from '@/components/auth/submit-button.js';
 import { Alert } from '@/components/ui/alert.js';
+import { PageLayout } from '@/components/ui/page-layout.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
 import { forgotPasswordMutationOptions } from '@/queries/password-reset.js';
 
@@ -91,7 +91,7 @@ function ForgotPassword() {
 
   if (emailSent) {
     return (
-      <AuthPageLayout>
+      <PageLayout maxWidth="100" cardPadding>
         <Alert type="success" icon={CheckCircleIcon} className="mb-4">
           {t('forgotPassword.success.title')}
         </Alert>
@@ -113,12 +113,12 @@ function ForgotPassword() {
         >
           {t('forgotPassword.backToLogin')}
         </Link>
-      </AuthPageLayout>
+      </PageLayout>
     );
   }
 
   return (
-    <AuthPageLayout>
+    <PageLayout maxWidth="100" cardPadding>
       <PageHeader
         title={t('forgotPassword.title')}
         subtitle={t('forgotPassword.subtitle')}
@@ -148,6 +148,6 @@ function ForgotPassword() {
         linkText={t('register.link.login')}
         to="/login"
       />
-    </AuthPageLayout>
+    </PageLayout>
   );
 }

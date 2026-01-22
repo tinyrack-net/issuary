@@ -14,13 +14,13 @@ import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
 import { FooterLink } from '@/components/auth/footer-link.js';
 import { IconInput } from '@/components/auth/icon-input.js';
 import { OAuthButtons } from '@/components/auth/oauth-buttons.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { SubmitButton } from '@/components/auth/submit-button.js';
 import { Divider } from '@/components/ui/divider.js';
+import { PageLayout } from '@/components/ui/page-layout.js';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
@@ -208,7 +208,7 @@ function Login() {
   };
 
   return (
-    <AuthPageLayout>
+    <PageLayout maxWidth="100" cardPadding>
       <PageHeader title={t('login.title')} subtitle={t('login.subtitle')} />
 
       {oauthProviders.length > 0 && (
@@ -288,6 +288,6 @@ function Login() {
           search={extractOAuthParams(search)}
         />
       )}
-    </AuthPageLayout>
+    </PageLayout>
   );
 }

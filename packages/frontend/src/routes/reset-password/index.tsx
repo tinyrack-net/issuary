@@ -16,11 +16,11 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
 import { IconInput } from '@/components/auth/icon-input.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { SubmitButton } from '@/components/auth/submit-button.js';
 import { Alert } from '@/components/ui/alert.js';
+import { PageLayout } from '@/components/ui/page-layout.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
 import { resetPasswordMutationOptions } from '@/queries/password-reset.js';
 
@@ -130,7 +130,7 @@ function ResetPassword() {
 
   if (resetSuccess) {
     return (
-      <AuthPageLayout>
+      <PageLayout maxWidth="100" cardPadding>
         <Alert type="success" icon={CheckCircleIcon} className="mb-4">
           {t('resetPassword.success.title')}
         </Alert>
@@ -147,12 +147,12 @@ function ResetPassword() {
         >
           {t('resetPassword.success.goToLogin')}
         </button>
-      </AuthPageLayout>
+      </PageLayout>
     );
   }
 
   return (
-    <AuthPageLayout>
+    <PageLayout maxWidth="100" cardPadding>
       <PageHeader
         title={t('resetPassword.title')}
         subtitle={t('resetPassword.subtitle')}
@@ -207,6 +207,6 @@ function ResetPassword() {
           {t('resetPassword.backToLogin')}
         </Link>
       </div>
-    </AuthPageLayout>
+    </PageLayout>
   );
 }

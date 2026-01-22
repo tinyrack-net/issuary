@@ -2,10 +2,10 @@ import { FingerprintIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
 import { FooterLink } from '@/components/auth/footer-link.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { Alert } from '@/components/ui/alert.js';
+import { PageLayout } from '@/components/ui/page-layout.js';
 import { extractOAuthParams } from '@/libs/oauth-search.js';
 import { appConfigQueryOptions } from '@/queries/config';
 
@@ -23,7 +23,7 @@ function Setup2FA() {
   const oauthParams = extractOAuthParams(search);
 
   return (
-    <AuthPageLayout>
+    <PageLayout maxWidth="100" cardPadding>
       <PageHeader
         title={t('setup2fa.title')}
         subtitle={t('setup2fa.subtitle')}
@@ -77,6 +77,6 @@ function Setup2FA() {
         to="/login"
         search={oauthParams}
       />
-    </AuthPageLayout>
+    </PageLayout>
   );
 }

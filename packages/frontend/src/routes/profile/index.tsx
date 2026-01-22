@@ -19,9 +19,9 @@ import { DangerZoneSection } from '@/components/profile/danger-zone-section.js';
 import { LinkedAccountsSection } from '@/components/profile/linked-accounts-section.js';
 import { PasskeySection } from '@/components/profile/passkey-section.js';
 import { PasswordSection } from '@/components/profile/password-section.js';
-import { ProfilePageLayout } from '@/components/profile/profile-page-layout.js';
 import { TotpSection } from '@/components/profile/totp-section.js';
 import { UserInfoSection } from '@/components/profile/user-info-section.js';
+import { PageLayout } from '@/components/ui/page-layout.js';
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
 import { logoutMutationOptions } from '@/queries/logout.js';
@@ -165,7 +165,7 @@ function Profile() {
     showPasswordSection || showTotpSection || showPasskeySection;
 
   return (
-    <ProfilePageLayout>
+    <PageLayout maxWidth="2xl" responsivePadding>
       {/* Header */}
       <div className="border-base-200 border-b bg-base-100 p-6 md:p-8">
         <div className="flex items-center justify-between">
@@ -312,6 +312,6 @@ function Profile() {
         onClose={() => setShowDeleteModal(false)}
         retentionDays={retentionDays}
       />
-    </ProfilePageLayout>
+    </PageLayout>
   );
 }
