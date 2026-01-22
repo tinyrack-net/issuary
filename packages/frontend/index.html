@@ -5,6 +5,10 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>frontend</title>
+    <!-- Preload critical API data for faster initial render -->
+    <link rel="preload" href="/api/v1/config" as="fetch" crossorigin="anonymous" />
+    <link rel="preload" href="/api/v1/oauth/providers" as="fetch" crossorigin="anonymous" />
+    <link rel="preload" href="/api/v1/user/session" as="fetch" crossorigin="anonymous" />
   </head>
   <body>
     <div id="root"></div>
