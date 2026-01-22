@@ -1,9 +1,9 @@
+import { initI18n } from '@/i18n';
+import { QueryClientProvider, useSuspenseQueries } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
-import { memo, StrictMode, Suspense, useEffect, useState } from 'react';
+import { StrictMode, memo, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
-import { QueryClientProvider, useSuspenseQueries } from '@tanstack/react-query';
-import { initI18n } from '@/i18n';
 import { GlobalQueryClient } from './libs/query-client';
 import { AppRouter } from './libs/router';
 import { appConfigQueryOptions } from './queries/config';
@@ -53,9 +53,7 @@ const Loader = memo(() => {
 createRoot(RootElement).render(
   <StrictMode>
     <QueryClientProvider client={GlobalQueryClient}>
-      <Suspense fallback={<div>로딩</div>}>
-        <Loader />
-      </Suspense>
+      <Loader />
     </QueryClientProvider>
   </StrictMode>,
 );
