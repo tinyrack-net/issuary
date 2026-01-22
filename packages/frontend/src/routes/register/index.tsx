@@ -26,10 +26,7 @@ import {
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
-import {
-  getOAuthConnectUrl,
-  oauthProvidersQueryOptions,
-} from '@/queries/oauth.js';
+import { getOAuthConnectUrl } from '@/queries/oauth.js';
 import { registerMutationOptions } from '@/queries/register.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
 
@@ -48,10 +45,7 @@ export const Route = createFileRoute('/register/')({
     }
   },
   loader: async ({ context }) => {
-    await Promise.all([
-      context.queryClient.ensureQueryData(appConfigQueryOptions),
-      context.queryClient.ensureQueryData(oauthProvidersQueryOptions),
-    ]);
+    await context.queryClient.ensureQueryData(appConfigQueryOptions);
   },
 });
 
@@ -62,10 +56,7 @@ function Register() {
   const search = Route.useSearch();
 
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
-  const { data: oauthProvidersData } = useSuspenseQuery(
-    oauthProvidersQueryOptions,
-  );
-  const oauthProviders = oauthProvidersData.providers;
+  const oauthProviders = configData.oauth_authentication_methods;
 
   const isPasswordAuthEnabled =
     configData.basic_authentication_methods.password.enabled;

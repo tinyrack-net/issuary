@@ -31,7 +31,6 @@ import {
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
 import { loginMutationOptions } from '@/queries/login.js';
-import { oauthProvidersQueryOptions } from '@/queries/oauth.js';
 import { authenticateWithPasskeyMutationOptions } from '@/queries/passkey.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
 
@@ -41,10 +40,7 @@ export const Route = createFileRoute('/login/')({
   component: Login,
   validateSearch: SearchSchema,
   loader: async ({ context }) => {
-    await Promise.all([
-      context.queryClient.ensureQueryData(appConfigQueryOptions),
-      context.queryClient.ensureQueryData(oauthProvidersQueryOptions),
-    ]);
+    await context.queryClient.ensureQueryData(appConfigQueryOptions);
   },
 });
 
@@ -55,10 +51,7 @@ function Login() {
   const search = Route.useSearch();
 
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
-  const { data: oauthProvidersData } = useSuspenseQuery(
-    oauthProvidersQueryOptions,
-  );
-  const oauthProviders = oauthProvidersData.providers;
+  const oauthProviders = configData.oauth_authentication_methods;
 
   const isPasswordAuthEnabled =
     configData.basic_authentication_methods.password.enabled;
