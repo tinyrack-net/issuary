@@ -384,6 +384,213 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
   });
 });
 
+describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
+  // App with 2FA required for testing pending2FAUser session
+  const app2FA = setupTestServer({
+    configOverrides: {
+      basic_authentication_methods: {
+        password: {
+          enabled: true,
+          second_factor: {
+            required: true,
+          },
+        },
+        passkey: {
+          enabled: true,
+          email_verification: true,
+        },
+      },
+    },
+  });
+
+  test('should return 403 when passkey belongs to different user', async () => {
+    // Create two users with passkeys
+    const email1 = generateUniqueEmail('passkey-2fa-mismatch-user1');
+    const email2 = generateUniqueEmail('passkey-2fa-mismatch-user2');
+    const password = 'testPassword123!';
+    const credentialId1 = `credential-user1-${crypto.randomUUID()}`;
+    const credentialId2 = `credential-user2-${crypto.randomUUID()}`;
+
+    const { user2 } = await withMikroContext(app2FA, async () => {
+      // Create user1 with passkey
+      const userEntity1 = app2FA.mikro.user.create({
+        email: email1,
+        password_hash: password,
+      });
+      userEntity1.email_verified = true;
+      await app2FA.mikro.em.persist(userEntity1).flush();
+
+      const passkey1 = app2FA.mikro.userPasskey.create({
+        user: userEntity1,
+        credential_id: credentialId1,
+        public_key: 'test-public-key-1',
+        counter: 0,
+        device_type: 'multiDevice',
+        backed_up: true,
+        transports: ['internal'],
+        name: 'User1 Passkey',
+        aaguid: 'test-aaguid-1',
+      });
+      await app2FA.mikro.em.persist(passkey1).flush();
+
+      // Create user2 with passkey
+      const userEntity2 = app2FA.mikro.user.create({
+        email: email2,
+        password_hash: password,
+      });
+      userEntity2.email_verified = true;
+      await app2FA.mikro.em.persist(userEntity2).flush();
+
+      const passkey2 = app2FA.mikro.userPasskey.create({
+        user: userEntity2,
+        credential_id: credentialId2,
+        public_key: 'test-public-key-2',
+        counter: 0,
+        device_type: 'multiDevice',
+        backed_up: true,
+        transports: ['internal'],
+        name: 'User2 Passkey',
+        aaguid: 'test-aaguid-2',
+      });
+      await app2FA.mikro.em.persist(passkey2).flush();
+
+      return { user2: userEntity2 };
+    });
+
+    // Login as user1 - should get pending2FAUser session
+    const loginRes = await app2FA.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: { email: email1, password },
+    });
+    expect(loginRes.statusCode).toBe(200);
+
+    const sessionCookie = extractCookie(loginRes, 'session');
+
+    // Get passkey options (for user1's pending session)
+    const optionsRes = await app2FA.inject({
+      method: 'POST',
+      url: '/api/v1/auth/passkey/options',
+      cookies: { session: sessionCookie },
+    });
+    expect(optionsRes.statusCode).toBe(200);
+
+    const optionsSessionCookie = extractCookie(optionsRes, 'session');
+
+    // Mock verifyAuthentication to return user2 (passkey owner)
+    const mockVerifyAuthentication = vi
+      .spyOn(app2FA.passkeyService, 'verifyAuthentication')
+      .mockResolvedValueOnce(user2);
+
+    // Try to verify with user2's passkey while logged in as user1
+    const res = await app2FA.inject({
+      method: 'POST',
+      url: '/api/v1/auth/passkey/verify',
+      cookies: { session: optionsSessionCookie },
+      payload: {
+        response: createMockAuthenticationResponse({
+          id: credentialId2,
+          rawId: credentialId2,
+        }),
+      },
+    });
+
+    expect(res.statusCode).toBe(403);
+    const body = res.json();
+    expect(body.code).toBe('PASSKEY_USER_MISMATCH');
+
+    mockVerifyAuthentication.mockRestore();
+  });
+
+  test('should succeed and clear pending2FAUser session on 2FA verification', async () => {
+    const email = generateUniqueEmail('passkey-2fa-success');
+    const password = 'testPassword123!';
+    const credentialId = `success-2fa-credential-${crypto.randomUUID()}`;
+
+    const { userId, user } = await withMikroContext(app2FA, async () => {
+      const userEntity = app2FA.mikro.user.create({
+        email,
+        password_hash: password,
+      });
+      userEntity.email_verified = true;
+      await app2FA.mikro.em.persist(userEntity).flush();
+
+      const passkey = app2FA.mikro.userPasskey.create({
+        user: userEntity,
+        credential_id: credentialId,
+        public_key: 'test-public-key-base64url',
+        counter: 0,
+        device_type: 'multiDevice',
+        backed_up: true,
+        transports: ['internal'],
+        name: 'Test Passkey',
+        aaguid: 'test-aaguid',
+      });
+      await app2FA.mikro.em.persist(passkey).flush();
+
+      return { userId: userEntity.id, user: userEntity };
+    });
+
+    // Login - should get pending2FAUser session
+    const loginRes = await app2FA.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: { email, password },
+    });
+    expect(loginRes.statusCode).toBe(200);
+
+    const sessionCookie = extractCookie(loginRes, 'session');
+
+    // Get passkey options
+    const optionsRes = await app2FA.inject({
+      method: 'POST',
+      url: '/api/v1/auth/passkey/options',
+      cookies: { session: sessionCookie },
+    });
+    expect(optionsRes.statusCode).toBe(200);
+
+    const optionsSessionCookie = extractCookie(optionsRes, 'session');
+
+    // Mock verifyAuthentication to return success
+    const mockVerifyAuthentication = vi
+      .spyOn(app2FA.passkeyService, 'verifyAuthentication')
+      .mockResolvedValueOnce(user);
+
+    // Verify passkey as 2FA
+    const res = await app2FA.inject({
+      method: 'POST',
+      url: '/api/v1/auth/passkey/verify',
+      cookies: { session: optionsSessionCookie },
+      payload: {
+        response: createMockAuthenticationResponse({
+          id: credentialId,
+          rawId: credentialId,
+        }),
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+
+    expect(body.user).toBeDefined();
+    expect(body.user.id).toBe(userId);
+    expect(body.user.email).toBe(email);
+
+    // Verify we now have a full session (not just pending2FAUser)
+    const newSessionCookie = extractCookie(res, 'session');
+    const sessionRes = await app2FA.inject({
+      method: 'GET',
+      url: '/api/v1/user/session',
+      cookies: { session: newSessionCookie },
+    });
+    expect(sessionRes.statusCode).toBe(200);
+    expect(sessionRes.json().user).toBeDefined();
+    expect(sessionRes.json().user.id).toBe(userId);
+
+    mockVerifyAuthentication.mockRestore();
+  });
+});
+
 describe('POST /api/v1/auth/passkey/verify - Passkey disabled', () => {
   const appDisabled = setupTestServer({
     configOverrides: {

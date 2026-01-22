@@ -12,7 +12,10 @@ export default (fastify: FastifyWithZodInstance) => {
     url: '',
     schema: {
       summary: 'Get Passkey Authentication Options',
-      description: 'Generate WebAuthn authentication options for passkey login',
+      description:
+        'Generate WebAuthn authentication options for passkey login. ' +
+        'Supports both passwordless login and 2FA. ' +
+        'If a pending 2FA session exists, returns options for that user only.',
       tags: [TAGS.AUTH],
       response: {
         200: r.PasskeyAuthenticationOptionsResponse,
@@ -20,8 +23,14 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
+      const pending2FAUser = req.session.get('pending2FAUser');
+
+      // If pending 2FA session exists, generate options for that user only
+      // Otherwise, generate options for discoverable credentials (passwordless)
       const options =
-        await fastify.passkeyService.generateAuthenticationOptions();
+        await fastify.passkeyService.generateAuthenticationOptions(
+          pending2FAUser?.id,
+        );
 
       req.session.set('passkey_challenge', options.challenge);
 

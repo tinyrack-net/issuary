@@ -1,23 +1,3 @@
-import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
-import { FooterLink } from '@/components/auth/footer-link.js';
-import { IconInput } from '@/components/auth/icon-input.js';
-import { OAuthButtons } from '@/components/auth/oauth-buttons.js';
-import { PageHeader } from '@/components/auth/page-header.js';
-import { SubmitButton } from '@/components/auth/submit-button.js';
-import { Divider } from '@/components/ui/divider.js';
-import {
-  OAuthSearchSchema,
-  type SecondFactorMethod,
-  buildAuthorizeUrl,
-  extractOAuthParams,
-  isOAuthFlow,
-} from '@/libs/oauth-search.js';
-import { tick } from '@/libs/promise.js';
-import { appConfigQueryOptions } from '@/queries/config.js';
-import { loginMutationOptions } from '@/queries/login.js';
-import { oauthProvidersQueryOptions } from '@/queries/oauth.js';
-import { loginWithPasskeyMutationOptions } from '@/queries/passkey.js';
-import { getSessionQueryOptions } from '@/queries/session.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import {
   EnvelopeSimpleIcon,
@@ -29,11 +9,31 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
+import { AuthPageLayout } from '@/components/auth/auth-page-layout.js';
+import { FooterLink } from '@/components/auth/footer-link.js';
+import { IconInput } from '@/components/auth/icon-input.js';
+import { OAuthButtons } from '@/components/auth/oauth-buttons.js';
+import { PageHeader } from '@/components/auth/page-header.js';
+import { SubmitButton } from '@/components/auth/submit-button.js';
+import { Divider } from '@/components/ui/divider.js';
+import {
+  buildAuthorizeUrl,
+  extractOAuthParams,
+  isOAuthFlow,
+  OAuthSearchSchema,
+  type SecondFactorMethod,
+} from '@/libs/oauth-search.js';
+import { tick } from '@/libs/promise.js';
+import { appConfigQueryOptions } from '@/queries/config.js';
+import { loginMutationOptions } from '@/queries/login.js';
+import { oauthProvidersQueryOptions } from '@/queries/oauth.js';
+import { authenticateWithPasskeyMutationOptions } from '@/queries/passkey.js';
+import { getSessionQueryOptions } from '@/queries/session.js';
 
 export const SearchSchema = OAuthSearchSchema;
 
@@ -156,7 +156,7 @@ function Login() {
   });
 
   const passkeyLoginMutation = useMutation({
-    ...loginWithPasskeyMutationOptions,
+    ...authenticateWithPasskeyMutationOptions,
     onSuccess: async (data) => {
       if (data.user) {
         queryClient.setQueryData(getSessionQueryOptions.queryKey, {

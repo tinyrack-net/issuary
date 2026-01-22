@@ -14,7 +14,7 @@ import {
   OAuthSearchSchema,
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
-import { verifyPasskey2FAMutationOptions } from '@/queries/passkey.js';
+import { authenticateWithPasskeyMutationOptions } from '@/queries/passkey.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
 
 export const SearchSchema = OAuthSearchSchema;
@@ -32,7 +32,7 @@ function VerifyPasskey() {
   const [error, setError] = useState<string | null>(null);
 
   const verifyMutation = useMutation({
-    ...verifyPasskey2FAMutationOptions,
+    ...authenticateWithPasskeyMutationOptions,
     onSuccess: async (data) => {
       if (data.user) {
         queryClient.setQueryData(getSessionQueryOptions.queryKey, {

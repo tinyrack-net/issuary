@@ -110,9 +110,13 @@ export const renamePasskeyMutationOptions = mutationOptions({
 });
 
 /**
- * Login with passkey (passwordless)
+ * Authenticate with passkey (supports both passwordless and 2FA)
+ *
+ * The server automatically determines the mode based on session state:
+ * - If pending2FAUser session exists: 2FA mode (verifies passkey belongs to that user)
+ * - Otherwise: Passwordless mode (discoverable credentials)
  */
-export const loginWithPasskeyMutationOptions = mutationOptions({
+export const authenticateWithPasskeyMutationOptions = mutationOptions({
   mutationFn: async () => {
     // Step 1: Get authentication options from server
     const optionsRes = await etch('/api/v1/auth/passkey/options', {
@@ -129,35 +133,6 @@ export const loginWithPasskeyMutationOptions = mutationOptions({
 
     // Step 3: Send authentication response to server for verification
     const verifyRes = await etch('/api/v1/auth/passkey/verify', {
-      method: 'POST',
-      body: JSON.stringify({
-        response: authenticationResponse,
-      }),
-    });
-    return verifyRes.json() as AuthResponse;
-  },
-});
-
-/**
- * Verify passkey as 2FA (after password login)
- */
-export const verifyPasskey2FAMutationOptions = mutationOptions({
-  mutationFn: async () => {
-    // Step 1: Get 2FA authentication options from server
-    const optionsRes = await etch('/api/v1/auth/passkey/2fa/options', {
-      method: 'POST',
-    });
-    const { options } = (await optionsRes.json()) as {
-      options: PublicKeyCredentialRequestOptionsJSON;
-    };
-
-    // Step 2: Start WebAuthn authentication in browser
-    const authenticationResponse = await startAuthentication({
-      optionsJSON: options,
-    });
-
-    // Step 3: Send authentication response to server for verification
-    const verifyRes = await etch('/api/v1/auth/passkey/2fa/verify', {
       method: 'POST',
       body: JSON.stringify({
         response: authenticationResponse,

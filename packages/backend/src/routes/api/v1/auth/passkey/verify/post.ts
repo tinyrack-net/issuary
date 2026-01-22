@@ -14,7 +14,11 @@ export default (fastify: FastifyWithZodInstance) => {
     url: '',
     schema: {
       summary: 'Verify Passkey Authentication',
-      description: 'Verify WebAuthn authentication response and create session',
+      description:
+        'Verify WebAuthn authentication response and create session. ' +
+        'Supports both passwordless login and 2FA. ' +
+        'If a pending 2FA session exists, verifies the passkey belongs to ' +
+        'that user and completes the 2FA flow.',
       tags: [TAGS.AUTH],
       body: z.object({
         response: r.AuthenticationResponseJSON,
@@ -26,10 +30,13 @@ export default (fastify: FastifyWithZodInstance) => {
           e.PasskeyChallengeNotFound.Schema,
           e.PasskeyVerificationFailed.Schema,
         ]),
+        403: e.PasskeyUserMismatch.Schema,
         404: e.PasskeyNotFound.Schema,
       },
     },
     handler: async (req, res) => {
+      const pending2FAUser = req.session.get('pending2FAUser');
+
       // Get challenge from session
       const challenge = req.session.get('passkey_challenge');
 
@@ -44,33 +51,36 @@ export default (fastify: FastifyWithZodInstance) => {
       // @simplewebauthn compatibility since it expects its own interface type
       const authResponse = req.body.response as AuthenticationResponseJSON;
 
-      const user = await fastify.passkeyService.verifyAuthentication(
+      const passkeyUser = await fastify.passkeyService.verifyAuthentication(
         authResponse,
         challenge,
       );
 
-      const userEntity = await fastify.mikro.user.verifyById(user.id);
+      // 2FA mode: verify the passkey belongs to the pending user
+      if (pending2FAUser && passkeyUser.id !== pending2FAUser.id) {
+        throw new e.PasskeyUserMismatch.Error();
+      }
+
+      const userEntity = await fastify.mikro.user.verifyById(passkeyUser.id);
       const sessionUser =
         await fastify.userService.userEntityToSessionUser(userEntity);
 
+      // 2FA mode: clear pending session
+      if (pending2FAUser) {
+        req.session.set('pending2FAUser', undefined);
+      }
+
+      // Use authenticated_at from pending session if available (2FA mode)
+      const authTime =
+        pending2FAUser?.authenticated_at ?? Math.floor(Date.now() / 1000);
+
       req.session.set('user', {
-        id: user.id,
-        authenticated_at: Math.floor(Date.now() / 1000),
+        id: passkeyUser.id,
+        authenticated_at: authTime,
       });
 
       return res.status(200).send({
-        user: {
-          id: sessionUser.id,
-          managed_by: sessionUser.managed_by,
-          email: sessionUser.email,
-          email_verified: sessionUser.email_verified,
-          email_verification_required:
-            fastify.userService.userEmailVerificationRequired(sessionUser),
-          has_password: sessionUser.has_password,
-          totp_registered: sessionUser.totp_registered,
-          second_factor_required: sessionUser.second_factor_required,
-          passkey_count: sessionUser.passkey_count,
-        },
+        user: sessionUser,
       });
     },
   });
