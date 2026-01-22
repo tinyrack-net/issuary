@@ -103,7 +103,7 @@ export class UserService {
     );
 
     if (user.managed_by === 'config') {
-      throw new e.ConfigManagedAccountCannotBeDeleted.Error();
+      throw new e.UserNotEditable.Error();
     }
 
     // Soft delete the user

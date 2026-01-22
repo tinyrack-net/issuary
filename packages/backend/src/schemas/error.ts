@@ -485,9 +485,4 @@ export const e = {
     'ACCOUNT_ALREADY_DELETED',
     'This account has already been deleted.',
   ),
-  ConfigManagedAccountCannotBeDeleted: createError(
-    403,
-    'CONFIG_MANAGED_ACCOUNT_CANNOT_BE_DELETED',
-    'Config-managed accounts cannot be deleted.',
-  ),
 };
