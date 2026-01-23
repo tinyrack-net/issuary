@@ -124,6 +124,8 @@ export default (fastify: FastifyWithZodInstance) =>
       );
 
       // Set user session
+      req.session.set('pending2FAUser', undefined);
+      req.session.set('pending2FASetup', undefined);
       req.session.set('user', {
         id: result.user.id,
         authenticated_at: Math.floor(Date.now() / 1000),

@@ -42,6 +42,7 @@ export default (fastify: FastifyWithZodInstance) => {
       const user =
         await fastify.userService.userEntityToSessionUser(userEntity);
       req.session.set('pending2FAUser', undefined);
+      req.session.set('pending2FASetup', undefined);
 
       const authTime =
         pending2FAUser.authenticated_at ?? Math.floor(Date.now() / 1000);

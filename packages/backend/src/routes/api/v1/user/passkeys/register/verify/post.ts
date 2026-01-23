@@ -77,6 +77,7 @@ export default (fastify: FastifyWithZodInstance) => {
       if (wasPendingSetup) {
         // Clear pending setup sessions and create full user session
         req.session.set('pending2FASetup', undefined);
+        req.session.set('pending2FAUser', undefined);
         req.session.set('user', {
           id: userId,
           authenticated_at: Math.floor(Date.now() / 1000),
