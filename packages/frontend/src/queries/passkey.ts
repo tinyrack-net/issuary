@@ -141,3 +141,54 @@ export const authenticateWithPasskeyMutationOptions = mutationOptions({
     return verifyRes.json() as AuthResponse;
   },
 });
+
+/**
+ * Start conditional passkey authentication (browser autofill / Conditional UI)
+ *
+ * This enables the browser to suggest passkeys in the autofill dropdown
+ * when the user focuses on an input with autocomplete="username webauthn".
+ *
+ * Should be called on page load and runs in the background until:
+ * - User selects a passkey from the autofill dropdown
+ * - The AbortController is aborted (e.g., on component unmount)
+ *
+ * @param onSuccess - Callback when passkey authentication succeeds
+ * @param abortSignal - AbortSignal to cancel the conditional authentication
+ */
+export const startConditionalPasskeyAuth = async (
+  onSuccess: (data: AuthResponse) => void,
+  abortSignal: AbortSignal,
+): Promise<void> => {
+  try {
+    // Step 1: Get authentication options from server
+    const optionsRes = await etch('/api/v1/auth/passkey/options', {
+      method: 'POST',
+      signal: abortSignal,
+    });
+    const { options } = (await optionsRes.json()) as {
+      options: PublicKeyCredentialRequestOptionsJSON;
+    };
+
+    // Step 2: Start WebAuthn with conditional mediation (autofill UI)
+    const authenticationResponse = await startAuthentication({
+      optionsJSON: options,
+      useBrowserAutofill: true,
+    });
+
+    // Step 3: Send authentication response to server for verification
+    const verifyRes = await etch('/api/v1/auth/passkey/verify', {
+      method: 'POST',
+      body: JSON.stringify({
+        response: authenticationResponse,
+      }),
+      signal: abortSignal,
+    });
+    const data = (await verifyRes.json()) as AuthResponse;
+    onSuccess(data);
+  } catch (error) {
+    // AbortError is expected when component unmounts, so ignore it
+    if ((error as Error).name !== 'AbortError') {
+      console.error('Conditional passkey auth failed:', error);
+    }
+  }
+};
