@@ -1,5 +1,38 @@
 import fastifySecureSession from '@fastify/secure-session';
+import type { FastifyRequest } from 'fastify';
 import fastifyPlugin from 'fastify-plugin';
+
+declare module 'fastify' {
+  interface FastifyRequest {
+    /**
+     * Set full user session.
+     * Clears pending2FAUser and pending2FASetup sessions.
+     * @param userId - User ID
+     * @param authenticatedAt - Authentication timestamp (defaults to current time)
+     */
+    setUserSession(userId: string, authenticatedAt?: number): void;
+
+    /**
+     * Set pending 2FA verification session.
+     * Clears user and pending2FASetup sessions.
+     * @param userId - User ID
+     * @param authenticatedAt - Authentication timestamp (defaults to current time)
+     */
+    setPending2FASession(userId: string, authenticatedAt?: number): void;
+
+    /**
+     * Set pending 2FA setup session.
+     * Clears user and pending2FAUser sessions.
+     * @param userId - User ID
+     */
+    setPending2FASetupSession(userId: string): void;
+
+    /**
+     * Clear all authentication sessions.
+     */
+    clearAuthSessions(): void;
+  }
+}
 
 declare module '@fastify/secure-session' {
   interface SessionData {
@@ -45,6 +78,46 @@ declare module '@fastify/secure-session' {
   }
 }
 
+function setUserSession(
+  this: FastifyRequest,
+  userId: string,
+  authenticatedAt?: number,
+): void {
+  this.session.set('pending2FAUser', undefined);
+  this.session.set('pending2FASetup', undefined);
+  this.session.set('user', {
+    id: userId,
+    authenticated_at: authenticatedAt ?? Math.floor(Date.now() / 1000),
+  });
+}
+
+function setPending2FASession(
+  this: FastifyRequest,
+  userId: string,
+  authenticatedAt?: number,
+): void {
+  this.session.set('user', undefined);
+  this.session.set('pending2FASetup', undefined);
+  this.session.set('pending2FAUser', {
+    id: userId,
+    authenticated_at: authenticatedAt ?? Math.floor(Date.now() / 1000),
+  });
+}
+
+function setPending2FASetupSession(this: FastifyRequest, userId: string): void {
+  this.session.set('user', undefined);
+  this.session.set('pending2FAUser', undefined);
+  this.session.set('pending2FASetup', {
+    id: userId,
+  });
+}
+
+function clearAuthSessions(this: FastifyRequest): void {
+  this.session.set('user', undefined);
+  this.session.set('pending2FAUser', undefined);
+  this.session.set('pending2FASetup', undefined);
+}
+
 export default fastifyPlugin(
   async (fastify) => {
     const isSecure = fastify.config.app.host.startsWith('https://');
@@ -58,6 +131,14 @@ export default fastifyPlugin(
         sameSite: isSecure ? 'strict' : 'lax',
       },
     });
+
+    fastify.decorateRequest('setUserSession', setUserSession);
+    fastify.decorateRequest('setPending2FASession', setPending2FASession);
+    fastify.decorateRequest(
+      'setPending2FASetupSession',
+      setPending2FASetupSession,
+    );
+    fastify.decorateRequest('clearAuthSessions', clearAuthSessions);
   },
   {
     name: 'secure-session-plugin',
