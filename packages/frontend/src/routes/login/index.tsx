@@ -10,7 +10,7 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
@@ -31,8 +31,14 @@ import {
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
 import { loginMutationOptions } from '@/queries/login.js';
-import { authenticateWithPasskeyMutationOptions } from '@/queries/passkey.js';
-import { getSessionQueryOptions } from '@/queries/session.js';
+import {
+  authenticateWithPasskeyMutationOptions,
+  startConditionalPasskeyAuth,
+} from '@/queries/passkey.js';
+import {
+  type AuthResponse,
+  getSessionQueryOptions,
+} from '@/queries/session.js';
 
 export const SearchSchema = OAuthSearchSchema;
 
@@ -167,28 +173,50 @@ function Login() {
     },
   });
 
+  const handlePasskeySuccess = async (data: AuthResponse) => {
+    if (data.user) {
+      queryClient.setQueryData(getSessionQueryOptions.queryKey, data);
+      await tick();
+
+      if (isOAuthFlow(search)) {
+        window.location.href = buildAuthorizeUrl(search);
+      } else {
+        router.navigate({ to: '/profile' });
+      }
+    }
+    queryClient.invalidateQueries({
+      queryKey: getSessionQueryOptions.queryKey,
+    });
+  };
+
   const passkeyLoginMutation = useMutation({
     ...authenticateWithPasskeyMutationOptions,
-    onSuccess: async (data) => {
-      if (data.user) {
-        queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-          user: data.user,
-        });
-        await tick();
-
-        if (isOAuthFlow(search)) {
-          window.location.href = buildAuthorizeUrl(search);
-        } else {
-          router.navigate({ to: '/profile' });
-        }
-      }
-    },
+    onSuccess: handlePasskeySuccess,
     onSettled: () => {
       queryClient.invalidateQueries({
         queryKey: getSessionQueryOptions.queryKey,
       });
     },
   });
+
+  // Conditional UI: Start passkey autofill on page load
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (!isPasskeyEnabled || !isPasswordAuthEnabled) {
+      return;
+    }
+
+    abortControllerRef.current = new AbortController();
+    startConditionalPasskeyAuth(
+      handlePasskeySuccess,
+      abortControllerRef.current.signal,
+    );
+
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [isPasskeyEnabled, isPasswordAuthEnabled]);
 
   const {
     register,
@@ -237,7 +265,7 @@ function Login() {
             icon={EnvelopeSimpleIcon}
             type="email"
             placeholder={t('login.email.placeholder')}
-            autoComplete="email"
+            autoComplete="username webauthn"
             error={errors.email}
             {...register('email')}
           />
