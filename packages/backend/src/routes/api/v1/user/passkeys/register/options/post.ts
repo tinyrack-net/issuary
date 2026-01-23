@@ -37,6 +37,8 @@ export default (fastify: FastifyWithZodInstance) => {
         throw new e.Unauthorized.Error();
       }
 
+      console.log(userId);
+
       // Get user entity for registration
       const user = await fastify.mikro.user.findOneOrFail(
         {
