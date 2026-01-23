@@ -1,5 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch';
+import type { SecondFactorMethod } from '@/libs/oauth-search';
 import { queryKeys } from './keys';
 
 export type Theme =
@@ -90,6 +91,21 @@ export const appConfigQueryOptions = queryOptions({
     const response = await etch('/api/v1/config', {});
     const data = await response.json();
     return data as AppConfigs;
+  },
+  select: (data) => {
+    return {
+      ...data,
+      available_2fa_setup_methods: (() => {
+        const methods: SecondFactorMethod[] = [];
+        if (data.basic_authentication_methods.password.totp.enabled) {
+          methods.push('totp');
+        }
+        if (data.basic_authentication_methods.passkey.enabled) {
+          methods.push('passkey');
+        }
+        return methods;
+      })(),
+    };
   },
   staleTime: 1000 * 60,
 });

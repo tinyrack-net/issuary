@@ -103,10 +103,28 @@ function Login() {
       }
 
       if (user.second_factor_required && registered_2fa_methods.length === 0) {
-        return router.navigate({
-          to: '/setup/2fa',
-          search: extractOAuthParams(search),
-        });
+        if (configData.available_2fa_setup_methods.length > 1) {
+          return router.navigate({
+            to: '/setup/2fa',
+            search: extractOAuthParams(search),
+          });
+        } else if (configData.available_2fa_setup_methods.length === 1) {
+          const method = configData.available_2fa_setup_methods[0];
+          if (method === 'totp') {
+            return router.navigate({
+              to: '/setup/totp',
+              search: extractOAuthParams(search),
+            });
+          } else {
+            return router.navigate({
+              to: '/setup/passkey',
+              search: {
+                ...extractOAuthParams(search),
+                passkey_name: 'default',
+              },
+            });
+          }
+        }
       }
 
       if (registered_2fa_methods.length > 1) {
