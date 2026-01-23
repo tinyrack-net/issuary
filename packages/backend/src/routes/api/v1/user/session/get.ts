@@ -45,14 +45,12 @@ export default (fastify: FastifyWithZodInstance) =>
           passkey_count: user.passkey_count,
         };
 
-        // Case 1: 2FA setup required
         if (needsSecondFactorSetup) {
           return res.status(200).send({
             user: userSession,
           });
         }
 
-        // Case 2: Authenticated
         return res.status(200).send({
           user: userSession,
         });

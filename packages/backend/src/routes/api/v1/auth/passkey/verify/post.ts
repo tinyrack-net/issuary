@@ -56,7 +56,6 @@ export default (fastify: FastifyWithZodInstance) => {
         challenge,
       );
 
-      // 2FA mode: verify the passkey belongs to the pending user
       if (pending2FAUser && passkeyUser.id !== pending2FAUser.id) {
         throw new e.PasskeyUserMismatch.Error();
       }
@@ -65,12 +64,11 @@ export default (fastify: FastifyWithZodInstance) => {
       const sessionUser =
         await fastify.userService.userEntityToSessionUser(userEntity);
 
-      // 2FA mode: clear pending session
       if (pending2FAUser) {
         req.session.set('pending2FAUser', undefined);
+        req.session.set('pending2FASetup', undefined);
       }
 
-      // Use authenticated_at from pending session if available (2FA mode)
       const authTime =
         pending2FAUser?.authenticated_at ?? Math.floor(Date.now() / 1000);
 

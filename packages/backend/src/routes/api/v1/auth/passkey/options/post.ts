@@ -25,8 +25,6 @@ export default (fastify: FastifyWithZodInstance) => {
     handler: async (req, res) => {
       const pending2FAUser = req.session.get('pending2FAUser');
 
-      // If pending 2FA session exists, generate options for that user only
-      // Otherwise, generate options for discoverable credentials (passwordless)
       const options =
         await fastify.passkeyService.generateAuthenticationOptions(
           pending2FAUser?.id,
