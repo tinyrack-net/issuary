@@ -47,12 +47,7 @@ export default (fastify: FastifyWithZodInstance) =>
       await fastify.totpService.verifySetup(userId, req.body.code);
 
       if (pending2FASetup) {
-        req.session.set('pending2FASetup', undefined);
-        req.session.set('pending2FAUser', undefined);
-        req.session.set('user', {
-          id: userId,
-          authenticated_at: Math.floor(Date.now() / 1000),
-        });
+        req.setUserSession(userId);
       }
 
       const userEntity = await fastify.mikro.user.verifyById(userId);
