@@ -64,18 +64,10 @@ export default (fastify: FastifyWithZodInstance) => {
       const sessionUser =
         await fastify.userService.userEntityToSessionUser(userEntity);
 
-      if (pending2FAUser) {
-        req.session.set('pending2FAUser', undefined);
-        req.session.set('pending2FASetup', undefined);
-      }
-
       const authTime =
         pending2FAUser?.authenticated_at ?? Math.floor(Date.now() / 1000);
 
-      req.session.set('user', {
-        id: passkeyUser.id,
-        authenticated_at: authTime,
-      });
+      req.setUserSession(passkeyUser.id, authTime);
 
       return res.status(200).send({
         user: sessionUser,

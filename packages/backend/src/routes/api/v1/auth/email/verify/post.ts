@@ -63,18 +63,13 @@ export default (fastify: FastifyWithZodInstance) => {
         registeredPassKeyCount === 0 &&
         available2FAMethods.length > 0
       ) {
-        req.session.set('pending2FASetup', {
-          id: user.id,
-        });
+        req.setPending2FASetupSession(user.id);
         return res.status(200).send({
           user: userSession,
         });
       }
 
-      req.session.set('user', {
-        id: user.id,
-        authenticated_at: Math.floor(Date.now() / 1000),
-      });
+      req.setUserSession(user.id);
       res.status(200).send({
         user: userSession,
       });

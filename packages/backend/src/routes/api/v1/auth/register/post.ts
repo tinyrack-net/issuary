@@ -40,18 +40,9 @@ export default (fastify: FastifyWithZodInstance) => {
       }
 
       if (userSession.second_factor_required) {
-        req.session.set('user', undefined);
-        req.session.set('pending2FAUser', undefined);
-        req.session.set('pending2FASetup', {
-          id: userSession.id,
-        });
+        req.setPending2FASetupSession(userSession.id);
       } else {
-        req.session.set('pending2FASetup', undefined);
-        req.session.set('pending2FAUser', undefined);
-        req.session.set('user', {
-          id: userSession.id,
-          authenticated_at: Math.floor(Date.now() / 1000),
-        });
+        req.setUserSession(userSession.id);
       }
 
       res.status(200).send({
