@@ -58,19 +58,19 @@ export class UserService {
     password: string;
     consents?: Array<{ termsId: string; agreed: boolean }>;
   }): Promise<z.infer<typeof r.UserSession>> {
-    // 1. Validate terms consent before user creation
+    // 1. Validate explicit terms consent before user creation
     if (this.termsService) {
-      const consentMode = this.termsService.getConsentMode();
-      const hasRequiredTerms = await this.termsService.hasRequiredTerms();
+      const explicitTerms = await this.termsService.getExplicitTerms();
+      const hasRequiredExplicitTerms = explicitTerms.some((t) => t.required);
 
-      if (hasRequiredTerms && consentMode === 'explicit') {
+      if (hasRequiredExplicitTerms) {
         if (!params.consents || params.consents.length === 0) {
           throw new e.ValidationError.Error(
             'Terms consent is required for registration',
           );
         }
 
-        const validation = await this.termsService.validateRequiredConsents(
+        const validation = await this.termsService.validateExplicitConsents(
           params.consents,
         );
         if (!validation.valid) {
@@ -101,22 +101,18 @@ export class UserService {
 
     // 4. Record terms consent after successful registration
     if (this.termsService) {
-      const consentMode = this.termsService.getConsentMode();
-      const hasRequiredTerms = await this.termsService.hasRequiredTerms();
-
-      if (hasRequiredTerms) {
-        if (consentMode === 'explicit' && params.consents) {
-          await this.termsService.recordConsents({
-            userId: user.id,
-            consents: params.consents,
-            consentType: 'explicit',
-          });
-        } else if (consentMode === 'implicit') {
-          await this.termsService.recordImplicitConsents({
-            userId: user.id,
-          });
-        }
+      // Record explicit consents provided by user
+      if (params.consents && params.consents.length > 0) {
+        await this.termsService.recordConsents({
+          userId: user.id,
+          consents: params.consents,
+        });
       }
+
+      // Record implicit consents for terms with implicit consent mode
+      await this.termsService.recordImplicitConsents({
+        userId: user.id,
+      });
     }
 
     // 5. Return session info
