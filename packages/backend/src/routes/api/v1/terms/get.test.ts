@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { InternalAppConfig } from '@/lib/config/index.js';
+import type { DeepPartial, InternalAppConfig } from '@/lib/config/index.js';
 import {
   createDbUserWithSession,
   generateUniqueEmail,
@@ -311,11 +311,13 @@ describe('GET /api/v1/terms', () => {
     describe('implicit mode', () => {
       const app = setupTestServer({
         configOverrides: {
-          terms: {
-            implicit_notice: {
+          app: {
+            signup_implicit_terms: {
               ko: '가입하시면 약관에 동의하는 것입니다.',
               en: 'By signing up you agree to our terms.',
             },
+          },
+          terms: {
             global: [
               {
                 id: 'tos',
@@ -332,7 +334,7 @@ describe('GET /api/v1/terms', () => {
               },
             ],
           },
-        } as Partial<InternalAppConfig>,
+        } as DeepPartial<InternalAppConfig>,
       });
 
       test('should return implicit consent mode on term', async () => {
@@ -543,7 +545,7 @@ describe('GET /api/v1/terms', () => {
             consent_mode: 'explicit',
             global: [],
           },
-        } as Partial<InternalAppConfig>,
+        } as DeepPartial<InternalAppConfig>,
       });
 
       test('should return empty terms array', async () => {

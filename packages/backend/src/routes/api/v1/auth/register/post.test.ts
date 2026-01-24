@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { InternalAppConfig } from '@/lib/config/index.js';
+import type { DeepPartial, InternalAppConfig } from '@/lib/config/index.js';
 import { e } from '@/schemas/error.js';
 import { createServer } from '@/server.js';
 import {
@@ -307,10 +307,12 @@ describe('POST /api/v1/auth/register', () => {
 describe('POST /api/v1/auth/register (implicit consent mode)', () => {
   const app = setupTestServer({
     configOverrides: {
-      terms: {
-        implicit_notice: {
+      app: {
+        signup_implicit_terms: {
           en: 'By signing up, you agree to our Terms.',
         },
+      },
+      terms: {
         global: [
           {
             id: 'tos',
@@ -327,7 +329,7 @@ describe('POST /api/v1/auth/register (implicit consent mode)', () => {
           },
         ],
       },
-    } as Partial<InternalAppConfig>,
+    } as DeepPartial<InternalAppConfig>,
   });
 
   test('should register without explicit consents in implicit mode', async () => {
@@ -386,7 +388,7 @@ describe('POST /api/v1/auth/register (no terms configured)', () => {
         consent_mode: 'explicit',
         global: [], // No terms
       },
-    } as Partial<InternalAppConfig>,
+    } as DeepPartial<InternalAppConfig>,
   });
 
   test('should register without consents when no terms configured', async () => {

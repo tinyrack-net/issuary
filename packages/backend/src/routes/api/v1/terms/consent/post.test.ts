@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { InternalAppConfig } from '@/lib/config/index.js';
+import type { DeepPartial, InternalAppConfig } from '@/lib/config/index.js';
 import { e } from '@/schemas/error.js';
 import {
   createAuthenticatedSession,
@@ -299,7 +299,7 @@ describe('POST /api/v1/terms/consent', () => {
             },
           ],
         },
-      } as Partial<InternalAppConfig>,
+      } as DeepPartial<InternalAppConfig>,
     });
 
     test('should allow not agreeing to optional terms', async () => {
@@ -586,7 +586,7 @@ describe('POST /api/v1/terms/consent', () => {
               },
             ],
           },
-        } as Partial<InternalAppConfig>,
+        } as DeepPartial<InternalAppConfig>,
       });
 
       test('should record consentType as explicit', async () => {
@@ -636,7 +636,7 @@ describe('POST /api/v1/terms/consent', () => {
               },
             ],
           },
-        } as Partial<InternalAppConfig>,
+        } as DeepPartial<InternalAppConfig>,
       });
 
       test('should record consentType as implicit', async () => {
@@ -807,7 +807,7 @@ describe('POST /api/v1/terms/consent', () => {
           consent_mode: 'explicit',
           global: [],
         },
-      } as Partial<InternalAppConfig>,
+      } as DeepPartial<InternalAppConfig>,
     });
 
     test('should succeed with empty consents when no terms configured', async () => {
