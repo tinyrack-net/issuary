@@ -28,7 +28,7 @@ const SearchSchema = z.object({
   token: z.string().default(''),
 });
 
-export const Route = createFileRoute('/reset-password/')({
+export const Route = createFileRoute('/password/reset/')({
   component: ResetPassword,
   validateSearch: SearchSchema,
   beforeLoad: async ({ context }) => {

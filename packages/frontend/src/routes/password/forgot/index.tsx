@@ -15,7 +15,7 @@ import { PageLayout } from '@/components/ui/page-layout.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
 import { forgotPasswordMutationOptions } from '@/queries/password-reset.js';
 
-export const Route = createFileRoute('/forgot-password/')({
+export const Route = createFileRoute('/password/forgot/')({
   component: ForgotPassword,
   beforeLoad: async ({ context }) => {
     const config = await context.queryClient.ensureQueryData(

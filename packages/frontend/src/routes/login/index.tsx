@@ -280,7 +280,7 @@ function Login() {
           />
 
           <div className="flex items-center justify-end">
-            <Link to="/forgot-password" className="link text-sm">
+            <Link to="/password/forgot" className="link text-sm">
               {t('login.link.forgotPassword')}
             </Link>
           </div>

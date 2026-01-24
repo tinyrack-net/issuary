@@ -10,11 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ResetPasswordIndexRouteImport } from './routes/reset-password/index'
 import { Route as RegisterIndexRouteImport } from './routes/register/index'
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as LoginIndexRouteImport } from './routes/login/index'
-import { Route as ForgotPasswordIndexRouteImport } from './routes/forgot-password/index'
 import { Route as ErrorIndexRouteImport } from './routes/error/index'
 import { Route as ConsentIndexRouteImport } from './routes/consent/index'
 import { Route as VerifyTotpIndexRouteImport } from './routes/verify/totp/index'
@@ -24,15 +22,12 @@ import { Route as Verify2faIndexRouteImport } from './routes/verify/2fa/index'
 import { Route as SetupTotpIndexRouteImport } from './routes/setup/totp/index'
 import { Route as SetupPasskeyIndexRouteImport } from './routes/setup/passkey/index'
 import { Route as Setup2faIndexRouteImport } from './routes/setup/2fa/index'
+import { Route as PasswordResetIndexRouteImport } from './routes/password/reset/index'
+import { Route as PasswordForgotIndexRouteImport } from './routes/password/forgot/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordIndexRoute = ResetPasswordIndexRouteImport.update({
-  id: '/reset-password/',
-  path: '/reset-password/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterIndexRoute = RegisterIndexRouteImport.update({
@@ -48,11 +43,6 @@ const ProfileIndexRoute = ProfileIndexRouteImport.update({
 const LoginIndexRoute = LoginIndexRouteImport.update({
   id: '/login/',
   path: '/login/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForgotPasswordIndexRoute = ForgotPasswordIndexRouteImport.update({
-  id: '/forgot-password/',
-  path: '/forgot-password/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ErrorIndexRoute = ErrorIndexRouteImport.update({
@@ -100,16 +90,26 @@ const Setup2faIndexRoute = Setup2faIndexRouteImport.update({
   path: '/setup/2fa/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PasswordResetIndexRoute = PasswordResetIndexRouteImport.update({
+  id: '/password/reset/',
+  path: '/password/reset/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PasswordForgotIndexRoute = PasswordForgotIndexRouteImport.update({
+  id: '/password/forgot/',
+  path: '/password/forgot/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/consent': typeof ConsentIndexRoute
   '/error': typeof ErrorIndexRoute
-  '/forgot-password': typeof ForgotPasswordIndexRoute
   '/login': typeof LoginIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/register': typeof RegisterIndexRoute
-  '/reset-password': typeof ResetPasswordIndexRoute
+  '/password/forgot': typeof PasswordForgotIndexRoute
+  '/password/reset': typeof PasswordResetIndexRoute
   '/setup/2fa': typeof Setup2faIndexRoute
   '/setup/passkey': typeof SetupPasskeyIndexRoute
   '/setup/totp': typeof SetupTotpIndexRoute
@@ -122,11 +122,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/consent': typeof ConsentIndexRoute
   '/error': typeof ErrorIndexRoute
-  '/forgot-password': typeof ForgotPasswordIndexRoute
   '/login': typeof LoginIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/register': typeof RegisterIndexRoute
-  '/reset-password': typeof ResetPasswordIndexRoute
+  '/password/forgot': typeof PasswordForgotIndexRoute
+  '/password/reset': typeof PasswordResetIndexRoute
   '/setup/2fa': typeof Setup2faIndexRoute
   '/setup/passkey': typeof SetupPasskeyIndexRoute
   '/setup/totp': typeof SetupTotpIndexRoute
@@ -140,11 +140,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/consent/': typeof ConsentIndexRoute
   '/error/': typeof ErrorIndexRoute
-  '/forgot-password/': typeof ForgotPasswordIndexRoute
   '/login/': typeof LoginIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/register/': typeof RegisterIndexRoute
-  '/reset-password/': typeof ResetPasswordIndexRoute
+  '/password/forgot/': typeof PasswordForgotIndexRoute
+  '/password/reset/': typeof PasswordResetIndexRoute
   '/setup/2fa/': typeof Setup2faIndexRoute
   '/setup/passkey/': typeof SetupPasskeyIndexRoute
   '/setup/totp/': typeof SetupTotpIndexRoute
@@ -159,11 +159,11 @@ export interface FileRouteTypes {
     | '/'
     | '/consent'
     | '/error'
-    | '/forgot-password'
     | '/login'
     | '/profile'
     | '/register'
-    | '/reset-password'
+    | '/password/forgot'
+    | '/password/reset'
     | '/setup/2fa'
     | '/setup/passkey'
     | '/setup/totp'
@@ -176,11 +176,11 @@ export interface FileRouteTypes {
     | '/'
     | '/consent'
     | '/error'
-    | '/forgot-password'
     | '/login'
     | '/profile'
     | '/register'
-    | '/reset-password'
+    | '/password/forgot'
+    | '/password/reset'
     | '/setup/2fa'
     | '/setup/passkey'
     | '/setup/totp'
@@ -193,11 +193,11 @@ export interface FileRouteTypes {
     | '/'
     | '/consent/'
     | '/error/'
-    | '/forgot-password/'
     | '/login/'
     | '/profile/'
     | '/register/'
-    | '/reset-password/'
+    | '/password/forgot/'
+    | '/password/reset/'
     | '/setup/2fa/'
     | '/setup/passkey/'
     | '/setup/totp/'
@@ -211,11 +211,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ConsentIndexRoute: typeof ConsentIndexRoute
   ErrorIndexRoute: typeof ErrorIndexRoute
-  ForgotPasswordIndexRoute: typeof ForgotPasswordIndexRoute
   LoginIndexRoute: typeof LoginIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
   RegisterIndexRoute: typeof RegisterIndexRoute
-  ResetPasswordIndexRoute: typeof ResetPasswordIndexRoute
+  PasswordForgotIndexRoute: typeof PasswordForgotIndexRoute
+  PasswordResetIndexRoute: typeof PasswordResetIndexRoute
   Setup2faIndexRoute: typeof Setup2faIndexRoute
   SetupPasskeyIndexRoute: typeof SetupPasskeyIndexRoute
   SetupTotpIndexRoute: typeof SetupTotpIndexRoute
@@ -232,13 +232,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password/': {
-      id: '/reset-password/'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register/': {
@@ -260,13 +253,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password/': {
-      id: '/forgot-password/'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/error/': {
@@ -332,6 +318,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Setup2faIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/password/reset/': {
+      id: '/password/reset/'
+      path: '/password/reset'
+      fullPath: '/password/reset'
+      preLoaderRoute: typeof PasswordResetIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/password/forgot/': {
+      id: '/password/forgot/'
+      path: '/password/forgot'
+      fullPath: '/password/forgot'
+      preLoaderRoute: typeof PasswordForgotIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -339,11 +339,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ConsentIndexRoute: ConsentIndexRoute,
   ErrorIndexRoute: ErrorIndexRoute,
-  ForgotPasswordIndexRoute: ForgotPasswordIndexRoute,
   LoginIndexRoute: LoginIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
   RegisterIndexRoute: RegisterIndexRoute,
-  ResetPasswordIndexRoute: ResetPasswordIndexRoute,
+  PasswordForgotIndexRoute: PasswordForgotIndexRoute,
+  PasswordResetIndexRoute: PasswordResetIndexRoute,
   Setup2faIndexRoute: Setup2faIndexRoute,
   SetupPasskeyIndexRoute: SetupPasskeyIndexRoute,
   SetupTotpIndexRoute: SetupTotpIndexRoute,

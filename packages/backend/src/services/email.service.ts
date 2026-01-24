@@ -69,7 +69,7 @@ export class EmailService {
       throw new e.EmailNotActivated.Error();
     }
 
-    const resetUrl = `${this.config.app.host}/reset-password?token=${params.token}`;
+    const resetUrl = `${this.config.app.host}/password/reset?token=${params.token}`;
 
     const html = this.getPasswordResetEmailTemplate({
       resetUrl,
