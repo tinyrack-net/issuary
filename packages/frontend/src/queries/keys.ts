@@ -25,6 +25,9 @@ export const queryKeys = {
 
   // Account
   account: () => ['/api/v1/user'] as const,
+
+  // Terms
+  terms: (lang?: string) => ['/api/v1/terms', lang] as const,
 } as const;
 
 /**

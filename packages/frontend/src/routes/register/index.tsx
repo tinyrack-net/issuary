@@ -6,7 +6,7 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
@@ -15,6 +15,8 @@ import { IconInput } from '@/components/auth/icon-input.js';
 import { OAuthButtons } from '@/components/auth/oauth-buttons.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { SubmitButton } from '@/components/auth/submit-button.js';
+import { TermsCheckboxList } from '@/components/terms/terms-checkbox-list.js';
+import { TermsImplicitNotice } from '@/components/terms/terms-implicit-notice.js';
 import { Divider } from '@/components/ui/divider.js';
 import { PageLayout } from '@/components/ui/page-layout.js';
 import {
@@ -29,6 +31,7 @@ import { appConfigQueryOptions } from '@/queries/config.js';
 import { getOAuthConnectUrl } from '@/queries/oauth.js';
 import { registerMutationOptions } from '@/queries/register.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
+import { getTermsQueryOptions } from '@/queries/terms.js';
 
 export const Route = createFileRoute('/register/')({
   component: Register,
@@ -45,7 +48,10 @@ export const Route = createFileRoute('/register/')({
     }
   },
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(appConfigQueryOptions);
+    await Promise.all([
+      context.queryClient.ensureQueryData(appConfigQueryOptions),
+      context.queryClient.ensureQueryData(getTermsQueryOptions()),
+    ]);
   },
 });
 
@@ -56,10 +62,36 @@ function Register() {
   const search = Route.useSearch();
 
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
+  const { data: termsData } = useSuspenseQuery(getTermsQueryOptions());
   const oauthProviders = configData.oauth_authentication_methods;
 
   const isPasswordAuthEnabled =
     configData.basic_authentication_methods.password.enabled;
+
+  // Terms consent state
+  const [termsConsents, setTermsConsents] = useState<Record<string, boolean>>(
+    {},
+  );
+
+  const handleTermsChange = (termsId: string, agreed: boolean) => {
+    setTermsConsents((prev) => ({ ...prev, [termsId]: agreed }));
+  };
+
+  // Check if all required terms are agreed (only for explicit mode)
+  const allRequiredTermsAgreed = useMemo(() => {
+    if (termsData.consentMode === 'implicit') {
+      return true; // In implicit mode, no checkbox needed for required terms
+    }
+    return termsData.terms
+      .filter((term) => term.required)
+      .every((term) => termsConsents[term.id]);
+  }, [termsData.terms, termsData.consentMode, termsConsents]);
+
+  // Check if there are any terms to display
+  const hasTerms = termsData.terms.length > 0;
+  const hasExplicitTerms =
+    termsData.consentMode === 'explicit' ||
+    termsData.terms.some((term) => term.alwaysExplicit);
 
   const registerSchema = useMemo(
     () =>
@@ -159,7 +191,21 @@ function Register() {
   });
 
   const onSubmit = (values: z.infer<typeof registerSchema>) => {
-    registerMutation.mutate(values);
+    // Build consents array for registration
+    const consents = hasTerms
+      ? termsData.terms.map((term) => ({
+          termsId: term.id,
+          agreed:
+            termsData.consentMode === 'implicit' && term.required
+              ? true // Auto-agree required terms in implicit mode
+              : (termsConsents[term.id] ?? false),
+        }))
+      : undefined;
+
+    registerMutation.mutate({
+      ...values,
+      consents,
+    });
   };
 
   const buildOAuthUrl = (providerId: string) =>
@@ -198,10 +244,37 @@ function Register() {
             {...register('password')}
           />
 
+          {/* Terms of Service - Explicit mode with checkboxes */}
+          {hasTerms && hasExplicitTerms && (
+            <div className="mt-2">
+              <TermsCheckboxList
+                terms={
+                  termsData.consentMode === 'explicit'
+                    ? termsData.terms
+                    : termsData.terms.filter((t) => t.alwaysExplicit)
+                }
+                values={termsConsents}
+                onChange={handleTermsChange}
+                disabled={registerMutation.isPending}
+              />
+            </div>
+          )}
+
+          {/* Terms of Service - Implicit mode notice */}
+          {hasTerms &&
+            termsData.consentMode === 'implicit' &&
+            termsData.implicitNotice && (
+              <TermsImplicitNotice
+                notice={termsData.implicitNotice}
+                terms={termsData.terms}
+              />
+            )}
+
           <SubmitButton
             isPending={registerMutation.isPending}
             pendingText={t('register.submitting')}
             className="mt-2"
+            disabled={!allRequiredTermsAgreed}
           >
             {t('register.submit')}
           </SubmitButton>
