@@ -74,8 +74,8 @@ async function syncTerms(
         termsId: term.id,
         lang,
         title: content.title,
-        url: content.url ?? null,
-        body: content.body ?? null,
+        type: content.type,
+        content: content.content,
       });
       em.persist(contentEntity);
     }

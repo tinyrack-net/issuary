@@ -98,11 +98,13 @@ export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
         content: {
           ko: {
             title: '이용약관',
-            url: 'https://example.com/terms/ko',
+            type: 'link',
+            content: 'https://example.com/terms/ko',
           },
           en: {
             title: 'Terms of Service',
-            url: 'https://example.com/terms/en',
+            type: 'link',
+            content: 'https://example.com/terms/en',
           },
         },
       },
@@ -114,11 +116,13 @@ export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
         content: {
           ko: {
             title: '개인정보처리방침',
-            url: 'https://example.com/privacy/ko',
+            type: 'link',
+            content: 'https://example.com/privacy/ko',
           },
           en: {
             title: 'Privacy Policy',
-            url: 'https://example.com/privacy/en',
+            type: 'link',
+            content: 'https://example.com/privacy/en',
           },
         },
       },
