@@ -3,6 +3,7 @@ import { e } from '@/schemas/error.js';
 import {
   expectError,
   generateUniqueEmail,
+  registerUser,
   setupTestServer,
 } from '@/test-utils/index.js';
 
@@ -28,13 +29,9 @@ describe('POST /api/v1/auth/login', () => {
   test('should login successfully with correct credentials (registered user)', async () => {
     // First, register a new user
     const uniqueEmail = generateUniqueEmail('loginuser');
-    const registerRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: uniqueEmail,
-        password: 'password123',
-      },
+    const registerRes = await registerUser(app, {
+      email: uniqueEmail,
+      password: 'password123',
     });
 
     expect(registerRes.statusCode).toBe(200);
@@ -57,13 +54,9 @@ describe('POST /api/v1/auth/login', () => {
   test('should require email verification for unverified user when email_verification is enabled', async () => {
     // Register a new user (email_verified will be false by default)
     const uniqueEmail = generateUniqueEmail('unverified');
-    const registerRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: uniqueEmail,
-        password: 'password123',
-      },
+    const registerRes = await registerUser(app, {
+      email: uniqueEmail,
+      password: 'password123',
     });
 
     expect(registerRes.statusCode).toBe(200);
@@ -87,13 +80,9 @@ describe('POST /api/v1/auth/login', () => {
   test('should login successfully after email is verified', async () => {
     // Register a new user
     const uniqueEmail = generateUniqueEmail('verified');
-    const registerRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: uniqueEmail,
-        password: 'password123',
-      },
+    const registerRes = await registerUser(app, {
+      email: uniqueEmail,
+      password: 'password123',
     });
 
     expect(registerRes.statusCode).toBe(200);
@@ -226,13 +215,9 @@ describe('POST /api/v1/auth/login', () => {
     const password = 'password123';
 
     // First, register a new user
-    const registerRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: uniqueEmail,
-        password: password,
-      },
+    const registerRes = await registerUser(app, {
+      email: uniqueEmail,
+      password,
     });
     expect(registerRes.statusCode).toBe(200);
 

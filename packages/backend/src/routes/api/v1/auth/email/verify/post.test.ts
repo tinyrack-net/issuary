@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import {
   generateUniqueEmail,
+  registerUser,
   setupTestServer,
   withMikroContext,
 } from '@/test-utils/index.js';
@@ -12,13 +13,9 @@ describe('POST /api/v1/auth/email/verify', () => {
   test('should verify email with valid token', async () => {
     // 1. Register a new user
     const uniqueEmail = generateUniqueEmail('verify');
-    const registerRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: uniqueEmail,
-        password: 'password123',
-      },
+    const registerRes = await registerUser(app, {
+      email: uniqueEmail,
+      password: 'password123',
     });
 
     expect(registerRes.statusCode).toBe(200);
@@ -80,13 +77,9 @@ describe('POST /api/v1/auth/email/verify', () => {
   test('should fail with expired token', async () => {
     // 1. Register a new user
     const uniqueEmail = generateUniqueEmail('expired');
-    await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: uniqueEmail,
-        password: 'password123',
-      },
+    await registerUser(app, {
+      email: uniqueEmail,
+      password: 'password123',
     });
 
     // 2. Get the verification token and expire it
@@ -126,13 +119,9 @@ describe('POST /api/v1/auth/email/verify', () => {
   test('should fail with already used token', async () => {
     // 1. Register a user
     const uniqueEmail = generateUniqueEmail('used');
-    await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: uniqueEmail,
-        password: 'password123',
-      },
+    await registerUser(app, {
+      email: uniqueEmail,
+      password: 'password123',
     });
 
     // 2. Get the token
@@ -168,13 +157,9 @@ describe('POST /api/v1/auth/email/resend', () => {
   test('should resend verification email', async () => {
     // 1. Register a new user
     const uniqueEmail = generateUniqueEmail('resend');
-    await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: uniqueEmail,
-        password: 'password123',
-      },
+    await registerUser(app, {
+      email: uniqueEmail,
+      password: 'password123',
     });
 
     // 2. Get the first token
@@ -238,13 +223,9 @@ describe('POST /api/v1/auth/email/resend', () => {
   test('should fail to resend for already verified email', async () => {
     // 1. Register a user
     const uniqueEmail = generateUniqueEmail('verified');
-    await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: uniqueEmail,
-        password: 'password123',
-      },
+    await registerUser(app, {
+      email: uniqueEmail,
+      password: 'password123',
     });
 
     // 2. Get token and verify the email

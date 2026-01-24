@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import {
   generateUniqueEmail,
+  registerUser,
   setupTestServer,
   withMikroContext,
 } from '@/test-utils/index.js';
@@ -12,13 +13,9 @@ describe('POST /api/v1/auth/password/forgot', () => {
   test('should send password reset email for valid user', async () => {
     // 1. Register a new user
     const uniqueEmail = generateUniqueEmail('forgot');
-    await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: uniqueEmail,
-        password: 'password123',
-      },
+    await registerUser(app, {
+      email: uniqueEmail,
+      password: 'password123',
     });
 
     // 2. Request password reset
@@ -81,13 +78,9 @@ describe('POST /api/v1/auth/password/forgot', () => {
   test('should invalidate previous reset tokens when new one is generated', async () => {
     // 1. Register a new user
     const uniqueEmail = generateUniqueEmail('invalidate');
-    await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: uniqueEmail,
-        password: 'password123',
-      },
+    await registerUser(app, {
+      email: uniqueEmail,
+      password: 'password123',
     });
 
     // 2. Request first password reset
@@ -149,13 +142,9 @@ describe('POST /api/v1/auth/password/reset', () => {
   test('should reset password with valid token', async () => {
     // 1. Register a new user
     const uniqueEmail = generateUniqueEmail('reset');
-    await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: uniqueEmail,
-        password: 'oldpassword123',
-      },
+    await registerUser(app, {
+      email: uniqueEmail,
+      password: 'oldpassword123',
     });
 
     // 2. Request password reset
@@ -232,13 +221,9 @@ describe('POST /api/v1/auth/password/reset', () => {
   test('should fail with expired token', async () => {
     // 1. Register a new user
     const uniqueEmail = generateUniqueEmail('expired-reset');
-    await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: uniqueEmail,
-        password: 'password123',
-      },
+    await registerUser(app, {
+      email: uniqueEmail,
+      password: 'password123',
     });
 
     // 2. Request password reset
@@ -284,13 +269,9 @@ describe('POST /api/v1/auth/password/reset', () => {
   test('should fail with already used token', async () => {
     // 1. Register a new user
     const uniqueEmail = generateUniqueEmail('used-reset');
-    await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: uniqueEmail,
-        password: 'password123',
-      },
+    await registerUser(app, {
+      email: uniqueEmail,
+      password: 'password123',
     });
 
     // 2. Request password reset

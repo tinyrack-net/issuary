@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   generateUniqueEmail,
+  registerUser,
   setupTestServer,
   withMikroContext,
 } from '@/test-utils/index.js';
@@ -28,11 +29,7 @@ describe('POST /api/v1/auth/password/reset', () => {
     const password = 'TestPassword123!';
 
     // Register user via HTTP
-    const registerRes = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/register',
-      payload: { email, password },
-    });
+    const registerRes = await registerUser(app, { email, password });
     expect(registerRes.statusCode).toBe(200);
 
     // Generate token and then expire it
@@ -72,10 +69,9 @@ describe('POST /api/v1/auth/password/reset', () => {
     const newPassword = 'NewPassword456!';
 
     // Register user via HTTP
-    const registerRes = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/register',
-      payload: { email, password: oldPassword },
+    const registerRes = await registerUser(app, {
+      email,
+      password: oldPassword,
     });
     expect(registerRes.statusCode).toBe(200);
 
@@ -136,11 +132,7 @@ describe('POST /api/v1/auth/password/reset', () => {
     const password = 'TestPassword123!';
 
     // Register user via HTTP
-    const registerRes = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/register',
-      payload: { email, password },
-    });
+    const registerRes = await registerUser(app, { email, password });
     expect(registerRes.statusCode).toBe(200);
 
     // Generate valid token
@@ -187,10 +179,9 @@ describe('POST /api/v1/auth/password/reset', () => {
     const email = generateUniqueEmail('password-reset-config-managed');
 
     // Register user via HTTP
-    const registerRes = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/register',
-      payload: { email, password: 'TestPassword123!' },
+    const registerRes = await registerUser(app, {
+      email,
+      password: 'TestPassword123!',
     });
     expect(registerRes.statusCode).toBe(200);
 
