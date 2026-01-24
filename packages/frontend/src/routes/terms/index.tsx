@@ -1,17 +1,19 @@
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { Check as CheckIcon, WarningIcon } from '@phosphor-icons/react';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { PageHeader } from '@/components/auth/page-header';
-import { TermsCheckboxList } from '@/components/terms/terms-checkbox-list';
-import { Alert } from '@/components/ui/alert';
-import { PageLayout } from '@/components/ui/page-layout';
+import { PageHeader } from '@/components/auth/page-header.js';
+import { TermsCheckboxList } from '@/components/terms/terms-checkbox-list.js';
+import { Alert } from '@/components/ui/alert.js';
+import { PageLayout } from '@/components/ui/page-layout.js';
 import {
   getTermsQueryOptions,
   termsConsentMutationOptions,
-} from '@/queries/terms';
+} from '@/queries/terms.js';
 
 const TermsSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -38,28 +40,44 @@ function Terms() {
 
   const termsQuery = useSuspenseQuery(getTermsQueryOptions(lang));
 
-  const [consents, setConsents] = useState<Record<string, boolean>>(() => {
-    // Initialize with existing consents
-    const initial: Record<string, boolean> = {};
-    for (const term of termsQuery.data.terms) {
-      if (term.userConsent?.agreed && !term.userConsent.requiresUpdate) {
-        initial[term.id] = true;
-      } else {
-        initial[term.id] = false;
-      }
-    }
-    return initial;
-  });
-
-  const handleConsentChange = useCallback(
-    (termsId: string, agreed: boolean) => {
-      setConsents((prev) => ({
-        ...prev,
-        [termsId]: agreed,
-      }));
-    },
-    [],
+  const termsSchema = useMemo(
+    () =>
+      z.object({
+        termsConsents: z.object(
+          Object.fromEntries(
+            termsQuery.data.terms.map((term) => [
+              term.id,
+              term.required
+                ? z.literal(true, {
+                    message: t('validation.terms.required'),
+                  })
+                : z.boolean(),
+            ]),
+          ),
+        ),
+      }),
+    [t, termsQuery.data.terms],
   );
+
+  type TermsFormValues = z.infer<typeof termsSchema>;
+
+  const {
+    handleSubmit,
+    control,
+    setValue,
+    formState: { errors },
+  } = useForm<TermsFormValues>({
+    defaultValues: {
+      termsConsents: Object.fromEntries(
+        termsQuery.data.terms.map((term) => [
+          term.id,
+          term.userConsent?.agreed && !term.userConsent.requiresUpdate,
+        ]),
+      ),
+    },
+    resolver: standardSchemaResolver(termsSchema),
+    mode: 'onChange',
+  });
 
   const consentMutation = useMutation({
     ...termsConsentMutationOptions,
@@ -73,23 +91,18 @@ function Terms() {
     },
   });
 
-  const handleSubmit = () => {
-    const consentItems = Object.entries(consents).map(([termsId, agreed]) => ({
-      termsId,
-      agreed,
-    }));
+  const onSubmit = (values: TermsFormValues) => {
+    const consentItems = Object.entries(values.termsConsents).map(
+      ([termsId, agreed]) => ({
+        termsId,
+        agreed,
+      }),
+    );
 
     consentMutation.mutate({
       consents: consentItems,
     });
   };
-
-  // Check if all required terms are agreed
-  const allRequiredAgreed = useMemo(() => {
-    return termsQuery.data.terms
-      .filter((term) => term.required)
-      .every((term) => consents[term.id]);
-  }, [termsQuery.data.terms, consents]);
 
   if (termsQuery.isError) {
     return (
@@ -115,39 +128,41 @@ function Terms() {
     <PageLayout maxWidth="100" cardPadding>
       <PageHeader title={t('terms.title')} subtitle={t('terms.subtitle')} />
 
-      {/* Terms list */}
-      <div className="mb-6">
-        <TermsCheckboxList
-          terms={termsQuery.data.terms}
-          values={consents}
-          onChange={handleConsentChange}
-          disabled={consentMutation.isPending}
-        />
-      </div>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        {/* Terms list */}
+        <div className="mb-6">
+          <TermsCheckboxList
+            terms={termsQuery.data.terms}
+            control={control}
+            setValue={setValue}
+            errors={errors}
+            disabled={consentMutation.isPending}
+          />
+        </div>
 
-      {/* Error message */}
-      {consentMutation.isError && (
-        <Alert type="error" icon={WarningIcon} className="mb-4">
-          {t('terms.error.submitFailed')}
-        </Alert>
-      )}
-
-      {/* Submit button */}
-      <button
-        type="button"
-        className="btn btn-primary btn-block h-10 font-semibold text-[14px]"
-        onClick={handleSubmit}
-        disabled={!allRequiredAgreed || consentMutation.isPending}
-      >
-        {consentMutation.isPending ? (
-          <span className="loading loading-spinner loading-sm" />
-        ) : (
-          <>
-            <CheckIcon className="size-4" weight="bold" />
-            {t('terms.submit')}
-          </>
+        {/* Error message */}
+        {consentMutation.isError && (
+          <Alert type="error" icon={WarningIcon} className="mb-4">
+            {t('terms.error.submitFailed')}
+          </Alert>
         )}
-      </button>
+
+        {/* Submit button */}
+        <button
+          type="submit"
+          className="btn btn-primary btn-block h-10 font-semibold text-[14px]"
+          disabled={consentMutation.isPending}
+        >
+          {consentMutation.isPending ? (
+            <span className="loading loading-spinner loading-sm" />
+          ) : (
+            <>
+              <CheckIcon className="size-4" weight="bold" />
+              {t('terms.submit')}
+            </>
+          )}
+        </button>
+      </form>
     </PageLayout>
   );
 }

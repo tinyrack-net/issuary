@@ -1,3 +1,24 @@
+import { FooterLink } from '@/components/auth/footer-link.js';
+import { IconInput } from '@/components/auth/icon-input.js';
+import { OAuthButtons } from '@/components/auth/oauth-buttons.js';
+import { PageHeader } from '@/components/auth/page-header.js';
+import { SubmitButton } from '@/components/auth/submit-button.js';
+import { TermsCheckboxList } from '@/components/terms/terms-checkbox-list.js';
+import { Divider } from '@/components/ui/divider.js';
+import { PageLayout } from '@/components/ui/page-layout.js';
+import {
+  OAuthSearchSchema,
+  type SecondFactorMethod,
+  buildAuthorizeUrl,
+  extractOAuthParams,
+  isOAuthFlow,
+} from '@/libs/oauth-search.js';
+import { tick } from '@/libs/promise.js';
+import { appConfigQueryOptions } from '@/queries/config.js';
+import { getOAuthConnectUrl } from '@/queries/oauth.js';
+import { registerMutationOptions } from '@/queries/register.js';
+import { getSessionQueryOptions } from '@/queries/session.js';
+import { getTermsQueryOptions } from '@/queries/terms.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { EnvelopeSimpleIcon, LockIcon } from '@phosphor-icons/react';
 import {
@@ -6,32 +27,10 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { FooterLink } from '@/components/auth/footer-link.js';
-import { IconInput } from '@/components/auth/icon-input.js';
-import { OAuthButtons } from '@/components/auth/oauth-buttons.js';
-import { PageHeader } from '@/components/auth/page-header.js';
-import { SubmitButton } from '@/components/auth/submit-button.js';
-import { TermsCheckboxList } from '@/components/terms/terms-checkbox-list.js';
-import { TermsImplicitNotice } from '@/components/terms/terms-implicit-notice.js';
-import { Divider } from '@/components/ui/divider.js';
-import { PageLayout } from '@/components/ui/page-layout.js';
-import {
-  buildAuthorizeUrl,
-  extractOAuthParams,
-  isOAuthFlow,
-  OAuthSearchSchema,
-  type SecondFactorMethod,
-} from '@/libs/oauth-search.js';
-import { tick } from '@/libs/promise.js';
-import { appConfigQueryOptions } from '@/queries/config.js';
-import { getOAuthConnectUrl } from '@/queries/oauth.js';
-import { registerMutationOptions } from '@/queries/register.js';
-import { getSessionQueryOptions } from '@/queries/session.js';
-import { getTermsQueryOptions } from '@/queries/terms.js';
 
 export const Route = createFileRoute('/register/')({
   component: Register,
@@ -47,49 +46,39 @@ export const Route = createFileRoute('/register/')({
       });
     }
   },
-  loader: async ({ context }) => {
+  loaderDeps: ({ search }) => ({
+    lang: search.lang,
+  }),
+  loader: async ({ context, deps }) => {
     await Promise.all([
       context.queryClient.ensureQueryData(appConfigQueryOptions),
-      context.queryClient.ensureQueryData(getTermsQueryOptions()),
+      context.queryClient.ensureQueryData(getTermsQueryOptions(deps.lang)),
     ]);
   },
 });
 
 function Register() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const search = Route.useSearch();
 
+  const lang = search.lang ?? i18n.language;
+
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
-  const { data: termsData } = useSuspenseQuery(getTermsQueryOptions());
+  const { data: termsData } = useSuspenseQuery(getTermsQueryOptions(lang));
   const oauthProviders = configData.oauth_authentication_methods;
 
   const isPasswordAuthEnabled =
     configData.basic_authentication_methods.password.enabled;
 
-  // Terms consent state
-  const [termsConsents, setTermsConsents] = useState<Record<string, boolean>>(
-    {},
-  );
-
-  const handleTermsChange = (termsId: string, agreed: boolean) => {
-    setTermsConsents((prev) => ({ ...prev, [termsId]: agreed }));
-  };
-
-  // Check if all required explicit terms are agreed
-  const allRequiredTermsAgreed = useMemo(() => {
-    // Only check terms with explicit consent mode
-    return termsData.terms
-      .filter((term) => term.required && term.consentMode === 'explicit')
-      .every((term) => termsConsents[term.id]);
-  }, [termsData.terms, termsConsents]);
-
   // Check if there are any terms to display
   const hasTerms = termsData.terms.length > 0;
-  const hasExplicitTerms = termsData.terms.some(
-    (term) => term.consentMode === 'explicit',
+  const explicitTerms = useMemo(
+    () => termsData.terms.filter((term) => term.consentMode === 'explicit'),
+    [termsData.terms],
   );
+  const hasExplicitTerms = explicitTerms.length > 0;
   const hasImplicitTerms = termsData.terms.some(
     (term) => term.consentMode === 'implicit',
   );
@@ -102,9 +91,23 @@ function Register() {
           .string()
           .min(6, t('validation.password.min'))
           .max(100, t('validation.password.max')),
+        termsConsents: z.object(
+          Object.fromEntries(
+            explicitTerms.map((term) => [
+              term.id,
+              term.required
+                ? z.literal(true, {
+                    message: t('validation.terms.required'),
+                  })
+                : z.boolean(),
+            ]),
+          ),
+        ),
       }),
-    [t],
+    [t, explicitTerms],
   );
+
+  type RegisterFormValues = z.infer<typeof registerSchema>;
 
   const registerMutation = useMutation({
     ...registerMutationOptions,
@@ -182,29 +185,34 @@ function Register() {
     register,
     setError,
     handleSubmit,
+    control,
+    setValue,
     formState: { errors },
-  } = useForm<z.infer<typeof registerSchema>>({
+  } = useForm<RegisterFormValues>({
     defaultValues: {
       email: '',
       password: '',
+      termsConsents: Object.fromEntries(
+        explicitTerms.map((term) => [term.id, false]),
+      ),
     },
     resolver: standardSchemaResolver(registerSchema),
+    mode: 'onChange',
   });
 
-  const onSubmit = (values: z.infer<typeof registerSchema>) => {
+  const onSubmit = (values: RegisterFormValues) => {
     // Build consents array for registration
     // Only send explicit consents - implicit ones are handled by backend
     const consents = hasTerms
-      ? termsData.terms
-          .filter((term) => term.consentMode === 'explicit')
-          .map((term) => ({
-            termsId: term.id,
-            agreed: termsConsents[term.id] ?? false,
-          }))
+      ? explicitTerms.map((term) => ({
+          termsId: term.id,
+          agreed: values.termsConsents[term.id] ?? false,
+        }))
       : undefined;
 
     registerMutation.mutate({
-      ...values,
+      email: values.email,
+      password: values.password,
       consents,
     });
   };
@@ -249,11 +257,10 @@ function Register() {
           {hasTerms && hasExplicitTerms && (
             <div className="mt-2">
               <TermsCheckboxList
-                terms={termsData.terms.filter(
-                  (t) => t.consentMode === 'explicit',
-                )}
-                values={termsConsents}
-                onChange={handleTermsChange}
+                terms={explicitTerms}
+                control={control}
+                setValue={setValue}
+                errors={errors}
                 disabled={registerMutation.isPending}
               />
             </div>
@@ -261,19 +268,20 @@ function Register() {
 
           {/* Terms of Service - Implicit mode notice */}
           {hasTerms && hasImplicitTerms && termsData.implicitNotice && (
-            <TermsImplicitNotice
-              notice={termsData.implicitNotice}
-              terms={termsData.terms.filter(
-                (t) => t.consentMode === 'implicit',
-              )}
-            />
+            <div className="text-center text-base-content/60 text-xs">
+              <div
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+                dangerouslySetInnerHTML={{
+                  __html: termsData.implicitNotice,
+                }}
+              />
+            </div>
           )}
 
           <SubmitButton
             isPending={registerMutation.isPending}
             pendingText={t('register.submitting')}
             className="mt-2"
-            disabled={!allRequiredTermsAgreed}
           >
             {t('register.submit')}
           </SubmitButton>
