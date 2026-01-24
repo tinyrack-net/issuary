@@ -20,6 +20,12 @@ app:
   # trust_proxy: true
   # trust_proxy: '127.0.0.1'
   # trust_proxy: ['10.0.0.0/8', '172.16.0.0/12']
+  # Notice text for implicit consent mode (displayed during signup)
+  # Shown when any term has consent_mode: 'implicit'
+  signup_implicit_terms:
+    ko: 가입 시 이용약관 및 개인정보처리방침에 동의하는 것으로 간주됩니다.
+    en: By signing up, you agree to our Terms of Service and Privacy Policy.
+    ja: 登録することで、利用規約およびプライバシーポリシーに同意したものとみなされます。
 
 admin:
   enabled: true
@@ -31,13 +37,6 @@ account_deletion:
 # Terms of Service configuration
 # Manages user consent for terms, privacy policy, and other agreements
 terms:
-  # Notice text for implicit consent mode (displayed during signup)
-  # Shown when any term has consent_mode: 'implicit'
-  implicit_notice:
-    ko: 가입 시 이용약관 및 개인정보처리방침에 동의하는 것으로 간주됩니다.
-    en: By signing up, you agree to our Terms of Service and Privacy Policy.
-    ja: 登録することで、利用規約およびプライバシーポリシーに同意したものとみなされます。
-
   # Global terms that apply to all users
   global:
     # Terms of Service (required, explicit consent)
