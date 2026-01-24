@@ -27,6 +27,10 @@ export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
     dark_theme: 'dark',
     theme_mode: 'system',
     trust_proxy: false,
+    signup_implicit_terms: {
+      ko: '가입 시 약관에 동의하는 것으로 간주됩니다.',
+      en: 'By signing up, you agree to our Terms.',
+    },
   },
   admin: {
     enabled: true,
@@ -85,10 +89,6 @@ export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
     retention_period: '30d',
   },
   terms: {
-    implicit_notice: {
-      ko: '가입 시 약관에 동의하는 것으로 간주됩니다.',
-      en: 'By signing up, you agree to our Terms.',
-    },
     global: [
       {
         id: 'tos',
