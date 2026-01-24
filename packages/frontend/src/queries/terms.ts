@@ -19,7 +19,7 @@ export type TermsUserConsent = {
 export type TermItem = {
   id: string;
   required: boolean;
-  alwaysExplicit: boolean;
+  consentMode: 'explicit' | 'implicit';
   version: string;
   title: string;
   url?: string;
@@ -31,7 +31,6 @@ export type TermItem = {
  * Terms response from GET /api/v1/terms
  */
 export type TermsResponse = {
-  consentMode: 'explicit' | 'implicit';
   implicitNotice: string | null;
   terms: TermItem[];
   pendingTerms: string[];

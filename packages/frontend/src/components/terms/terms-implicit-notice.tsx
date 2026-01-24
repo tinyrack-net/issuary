@@ -11,6 +11,7 @@ export function TermsImplicitNotice({
   terms,
 }: TermsImplicitNoticeProps) {
   // Filter to required terms only for implicit notice
+  // Note: terms are already filtered by consentMode='implicit' from parent
   const requiredTerms = terms.filter((term) => term.required);
 
   return (
