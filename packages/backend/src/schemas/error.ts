@@ -485,4 +485,16 @@ export const e = {
     'ACCOUNT_ALREADY_DELETED',
     'This account has already been deleted.',
   ),
+
+  // Terms Consent Errors
+  TermsConsentRequired: createError(
+    403,
+    'TERMS_CONSENT_REQUIRED',
+    'You must agree to the terms of service before continuing.',
+  ),
+  TermsNotFound: createError(
+    404,
+    'TERMS_NOT_FOUND',
+    'The specified terms were not found.',
+  ),
 };

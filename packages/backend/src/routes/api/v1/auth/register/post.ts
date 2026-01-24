@@ -5,6 +5,14 @@ import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
+/**
+ * Consent item schema for terms agreement
+ */
+const ConsentItem = z.object({
+  termsId: z.string().describe('Term ID to consent to'),
+  agreed: z.boolean().describe('Whether user agrees to this term'),
+});
+
 export default (fastify: FastifyWithZodInstance) => {
   if (!fastify.config.app.public_registration) {
     return;
@@ -14,11 +22,16 @@ export default (fastify: FastifyWithZodInstance) => {
     url: '',
     schema: {
       summary: 'Register',
-      description: 'Register a new user and send email verification',
+      description:
+        'Register a new user with terms consent and send email verification',
       tags: [TAGS.AUTH],
       body: z.object({
         email: f.userEmail,
         password: f.userPassword,
+        consents: z
+          .array(ConsentItem)
+          .optional()
+          .describe('Terms consent decisions'),
       }),
       response: {
         200: r.AuthResponse,
@@ -28,9 +41,13 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
+      const { email, password, consents } = req.body;
+
+      // Register the user (terms consent validation and recording handled inside)
       const userSession = await fastify.userService.register({
-        email: req.body.email,
-        password: req.body.password,
+        email,
+        password,
+        ...(consents && { consents }),
       });
 
       if (userSession.email_verification_required) {

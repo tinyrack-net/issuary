@@ -8,6 +8,7 @@ import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
 import type { EmailService } from './email.service.js';
 import type { EmailVerificationService } from './email-verification.service.js';
+import type { TermsService } from './terms.service.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -28,6 +29,7 @@ export class UserService {
     private readonly config: InternalAppConfig,
     private readonly emailService: EmailService,
     private readonly emailVerificationService?: EmailVerificationService,
+    private readonly termsService?: TermsService,
   ) {}
 
   public async userEntityToSessionUser(
@@ -54,12 +56,38 @@ export class UserService {
   public async register(params: {
     email: string;
     password: string;
+    consents?: Array<{ termsId: string; agreed: boolean }>;
   }): Promise<z.infer<typeof r.UserSession>> {
+    // 1. Validate terms consent before user creation
+    if (this.termsService) {
+      const consentMode = this.termsService.getConsentMode();
+      const hasRequiredTerms = await this.termsService.hasRequiredTerms();
+
+      if (hasRequiredTerms && consentMode === 'explicit') {
+        if (!params.consents || params.consents.length === 0) {
+          throw new e.ValidationError.Error(
+            'Terms consent is required for registration',
+          );
+        }
+
+        const validation = await this.termsService.validateRequiredConsents(
+          params.consents,
+        );
+        if (!validation.valid) {
+          throw new e.ValidationError.Error(
+            `Missing required terms: ${validation.missingTerms.join(', ')}`,
+          );
+        }
+      }
+    }
+
+    // 2. Register the user
     const user = await this.mikro.user.register({
       email: params.email,
       password: params.password,
     });
 
+    // 3. Generate email verification token
     if (this.emailVerificationService) {
       const verification = await this.emailVerificationService.generateToken({
         userId: user.id,
@@ -71,6 +99,27 @@ export class UserService {
       });
     }
 
+    // 4. Record terms consent after successful registration
+    if (this.termsService) {
+      const consentMode = this.termsService.getConsentMode();
+      const hasRequiredTerms = await this.termsService.hasRequiredTerms();
+
+      if (hasRequiredTerms) {
+        if (consentMode === 'explicit' && params.consents) {
+          await this.termsService.recordConsents({
+            userId: user.id,
+            consents: params.consents,
+            consentType: 'explicit',
+          });
+        } else if (consentMode === 'implicit') {
+          await this.termsService.recordImplicitConsents({
+            userId: user.id,
+          });
+        }
+      }
+    }
+
+    // 5. Return session info
     return {
       id: user.id,
       managed_by: 'database',
@@ -171,6 +220,7 @@ export default fastifyPlugin(
       fastify.config,
       fastify.emailService,
       fastify.emailVerificationService,
+      fastify.termsService,
     );
     fastify.decorate('userService', userService);
 
@@ -209,6 +259,7 @@ export default fastifyPlugin(
       'base-service-plugin',
       'secure-session-plugin',
       'email-service-plugin',
+      'terms-service-plugin',
     ],
   },
 );
