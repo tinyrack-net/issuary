@@ -26,6 +26,13 @@ const TermsUserConsent = z
   .describe('User consent status');
 
 /**
+ * Content type for terms content
+ */
+const TermsContentType = z
+  .enum(['link', 'text'])
+  .describe('Content type: link (URL) or text (inline content)');
+
+/**
  * Term item with localized content and user consent status
  */
 const TermItem = z
@@ -43,8 +50,10 @@ const TermItem = z
       .optional()
       .describe('When this version became effective'),
     title: z.string().describe('Localized title'),
-    url: z.string().url().optional().describe('URL to full term document'),
-    body: z.string().optional().describe('Inline term content'),
+    type: TermsContentType.describe('How to interpret the content'),
+    content: z
+      .string()
+      .describe('Content value (URL if type=link, text if type=text)'),
     userConsent: TermsUserConsent.nullable().describe(
       'User consent status (null if not logged in)',
     ),

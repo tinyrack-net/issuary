@@ -1,18 +1,32 @@
 import z from 'zod/v4';
 
 /**
- * Localized content for a term item.
- * Each language code maps to a title and either a URL or body content.
+ * Content type for terms content.
+ * - 'link': Content is a URL to external document
+ * - 'text': Content is inline text
  */
+export const TermsContentTypeSchema = z.enum(['link', 'text']);
+export type TermsContentType = z.infer<typeof TermsContentTypeSchema>;
+
+/**
+ * Localized content for a term item.
+ * Each language code maps to a title, type, and content.
+ * Type determines how the content should be interpreted.
+ */
+const TermsLocalizedContentLink = z.object({
+  title: z.string().min(1).describe('Display title for the term'),
+  type: z.literal('link').describe('Content type: link to external document'),
+  content: z.url().describe('URL to the full terms document'),
+});
+
+const TermsLocalizedContentText = z.object({
+  title: z.string().min(1).describe('Display title for the term'),
+  type: z.literal('text').describe('Content type: inline text'),
+  content: z.string().min(1).describe('Inline text content'),
+});
+
 const TermsLocalizedContent = z
-  .object({
-    title: z.string().min(1).describe('Display title for the term'),
-    url: z.url().optional().describe('URL to the full terms document'),
-    body: z
-      .string()
-      .optional()
-      .describe('Inline body content (used if url is not provided)'),
-  })
+  .union([TermsLocalizedContentLink, TermsLocalizedContentText])
   .describe('Localized content for a term');
 
 export type TermsLocalizedContent = z.infer<typeof TermsLocalizedContent>;

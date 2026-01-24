@@ -14,10 +14,18 @@ import { BaseEntity } from './base.entity.js';
 import { TermsEntity } from './terms.entity.js';
 
 /**
+ * Content type for terms content.
+ * - 'link': Content is a URL to external document
+ * - 'text': Content is inline text
+ */
+export type TermsContentType = 'link' | 'text';
+
+/**
  * TermsContentEntity stores localized content for terms.
  *
  * Each term can have multiple content entries, one per language.
- * Content includes title, and optionally a URL or body text.
+ * Content includes title and content value, with type indicating
+ * how to interpret the content (as a link or text).
  */
 @Entity({
   tableName: 'terms_content',
@@ -67,36 +75,33 @@ export class TermsContentEntity extends BaseEntity {
 
   @Property({
     type: t.string,
-    name: 'url',
-    comment: 'URL to full document',
-    nullable: true,
+    name: 'type',
+    comment: 'Content type: link or text',
+    nullable: false,
+    default: 'link',
   })
-  public url: string | null = null;
+  public type: TermsContentType = 'link';
 
   @Property({
     type: t.text,
-    name: 'body',
-    comment: 'Inline body content',
-    nullable: true,
+    name: 'content',
+    comment: 'Content value (URL if type=link, text if type=text)',
+    nullable: false,
   })
-  public body: string | null = null;
+  public content: string;
 
   public constructor(params: {
     termsId: string;
     lang: string;
     title: string;
-    url?: string | null;
-    body?: string | null;
+    type?: TermsContentType;
+    content: string;
   }) {
     super();
     this.terms = ref(TermsEntity, params.termsId);
     this.lang = params.lang;
     this.title = params.title;
-    if (params.url !== undefined) {
-      this.url = params.url ?? null;
-    }
-    if (params.body !== undefined) {
-      this.body = params.body ?? null;
-    }
+    this.type = params.type ?? 'link';
+    this.content = params.content;
   }
 }

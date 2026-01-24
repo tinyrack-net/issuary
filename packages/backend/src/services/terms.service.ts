@@ -23,12 +23,17 @@ export interface TermsUserConsent {
 }
 
 /**
+ * Content type for terms content
+ */
+export type TermsContentType = 'link' | 'text';
+
+/**
  * Localized term content for a specific language
  */
 export interface LocalizedTermContent {
   title: string;
-  url?: string | undefined;
-  body?: string | undefined;
+  type: TermsContentType;
+  content: string;
 }
 
 /**
@@ -40,8 +45,8 @@ export interface LocalizedTermItem {
   consentMode: 'explicit' | 'implicit';
   version: string;
   title: string;
-  url?: string | undefined;
-  body?: string | undefined;
+  type: TermsContentType;
+  content: string;
   userConsent: TermsUserConsent | null;
 }
 
@@ -97,8 +102,8 @@ export class TermsService {
 
     return {
       title: result.title,
-      url: result.url ?? undefined,
-      body: result.body ?? undefined,
+      type: result.type,
+      content: result.content,
     };
   }
 
@@ -138,8 +143,8 @@ export class TermsService {
         consentMode: term.consentMode,
         version: term.version,
         title: content?.title ?? term.id,
-        url: content?.url,
-        body: content?.body,
+        type: content?.type ?? 'link',
+        content: content?.content ?? '',
         userConsent,
       };
     });
