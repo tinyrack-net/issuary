@@ -7,6 +7,7 @@ export const TAGS = {
   AUTH: 'Auth',
   USER: 'User',
   CONSENT: 'Consent',
+  TERMS: 'Terms',
   OAUTH_CONNECT: 'OAuth Connect',
   OPENID: 'OpenID',
   HEALTH: 'Health',

@@ -6,6 +6,7 @@ import { AppConfigOAuthAuthenticationMethods } from './auth-oauth.js';
 import { AppConfigDatabase } from './database.js';
 import { AppConfigProvider } from './provider.js';
 import { AppConfigSmtp } from './smtp.js';
+import { AppConfigTerms } from './terms.js';
 import { AppConfigUser } from './user.js';
 
 export const ConfigSchema = z.object({
@@ -48,6 +49,10 @@ export const ConfigSchema = z.object({
     enabled: false,
     retention_period: '30d',
   }),
+  terms: AppConfigTerms.default({
+    consent_mode: 'explicit',
+    global: [],
+  }),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),
 });
@@ -84,6 +89,10 @@ export const InternalConfigSchema = z.object({
     enabled: true,
     retention_period: '30d',
   }),
+  terms: AppConfigTerms.default({
+    consent_mode: 'explicit',
+    global: [],
+  }),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),
 });
@@ -118,4 +127,5 @@ export {
 } from './database.js';
 export { AppConfigProvider } from './provider.js';
 export { AppConfigSmtp } from './smtp.js';
+export { AppConfigTerms, type TermsItem } from './terms.js';
 export { AppConfigUser } from './user.js';
