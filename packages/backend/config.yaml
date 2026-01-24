@@ -31,13 +31,8 @@ account_deletion:
 # Terms of Service configuration
 # Manages user consent for terms, privacy policy, and other agreements
 terms:
-  # Consent collection mode:
-  # - explicit: Users must check each required term (recommended for Korea, EU/GDPR)
-  # - implicit: Signup implies agreement, with notice text displayed
-  consent_mode: implicit
-
   # Notice text for implicit consent mode (displayed during signup)
-  # Only used when consent_mode is 'implicit'
+  # Shown when any term has consent_mode: 'implicit'
   implicit_notice:
     ko: 가입 시 이용약관 및 개인정보처리방침에 동의하는 것으로 간주됩니다.
     en: By signing up, you agree to our Terms of Service and Privacy Policy.
@@ -45,10 +40,10 @@ terms:
 
   # Global terms that apply to all users
   global:
-    # Terms of Service (required)
+    # Terms of Service (required, implicit consent)
     - id: tos
       required: true
-      always_explicit: false
+      consent_mode: implicit
       version: "1.0.0"
       content:
         ko:
@@ -61,10 +56,10 @@ terms:
           title: 利用規約
           url: https://example.com/terms/ja
 
-    # Privacy Policy (required)
+    # Privacy Policy (required, implicit consent)
     - id: privacy
       required: true
-      always_explicit: false
+      consent_mode: implicit
       version: "1.0.0"
       content:
         ko:
@@ -77,11 +72,10 @@ terms:
           title: プライバシーポリシー
           url: https://example.com/privacy/ja
 
-    # Marketing consent (optional)
-    # always_explicit: true means checkbox is shown even in implicit mode
+    # Marketing consent (optional, explicit consent - shows checkbox)
     - id: marketing
       required: false
-      always_explicit: true
+      consent_mode: explicit
       version: "1.0.0"
       content:
         ko:

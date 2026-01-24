@@ -50,7 +50,7 @@ async function syncTerms(
       {
         id: term.id,
         required: term.required,
-        alwaysExplicit: term.always_explicit,
+        consentMode: term.consent_mode,
         version: term.version,
         managed_by: 'config',
         created_at: now,
