@@ -342,5 +342,16 @@
   "setupPasskey.retry": "再試行",
   "setupPasskey.error.failed": "パスキーの登録に失敗しました。もう一度お試しください。",
   "setupPasskey.error.cancelled": "パスキーの登録がキャンセルされました。",
-  "setupPasskey.backToLogin": "ログインに戻る"
+  "setupPasskey.backToLogin": "ログインに戻る",
+  "terms.title": "利用規約",
+  "terms.subtitle": "続行するには以下の規約に同意してください",
+  "terms.required": "必須",
+  "terms.optional": "任意",
+  "terms.agreeAllRequired": "必須規約すべてに同意",
+  "terms.versionUpdated": "規約が更新されました。新しいバージョンに同意してください。",
+  "terms.submit": "同意して続ける",
+  "terms.error.title": "エラー",
+  "terms.error.message": "規約情報を読み込めませんでした。",
+  "terms.error.back": "戻る",
+  "terms.error.submitFailed": "同意の送信に失敗しました。もう一度お試しください。"
 }

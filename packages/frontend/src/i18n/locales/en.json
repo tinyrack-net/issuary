@@ -342,5 +342,16 @@
   "setupPasskey.retry": "Try again",
   "setupPasskey.error.failed": "Failed to register passkey. Please try again.",
   "setupPasskey.error.cancelled": "Passkey registration was cancelled.",
-  "setupPasskey.backToLogin": "Back to login"
+  "setupPasskey.backToLogin": "Back to login",
+  "terms.title": "Terms of Service",
+  "terms.subtitle": "Please agree to the following terms to continue",
+  "terms.required": "Required",
+  "terms.optional": "Optional",
+  "terms.agreeAllRequired": "Agree to all required terms",
+  "terms.versionUpdated": "Terms have been updated. Please agree to the new version.",
+  "terms.submit": "Agree and Continue",
+  "terms.error.title": "Error",
+  "terms.error.message": "Unable to load terms information.",
+  "terms.error.back": "Go back",
+  "terms.error.submitFailed": "Failed to submit consent. Please try again."
 }
