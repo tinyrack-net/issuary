@@ -16,6 +16,7 @@ export const OAuthSearchSchema = z.object({
   prompt: z.enum(['none', 'login', 'consent', 'select_account']).optional(),
   max_age: z.string().optional(),
   display: z.enum(['page', 'popup', 'touch', 'wap']).optional(),
+  lang: z.string().optional(),
 });
 
 export type OAuthSearch = z.infer<typeof OAuthSearchSchema>;
