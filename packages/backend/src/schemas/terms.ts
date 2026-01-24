@@ -32,9 +32,11 @@ const TermItem = z
   .object({
     id: z.string().describe('Unique identifier for the term'),
     required: z.boolean().describe('Whether this term is mandatory'),
-    alwaysExplicit: z
-      .boolean()
-      .describe('Whether this term always requires explicit consent'),
+    consentMode: z
+      .enum(['explicit', 'implicit'])
+      .describe(
+        'Consent mode: explicit (checkbox required) or implicit (auto-agree)',
+      ),
     version: z.string().describe('Version of the term'),
     effectiveDate: z
       .string()
@@ -54,13 +56,10 @@ const TermItem = z
  */
 export const TermsResponse = z
   .object({
-    consentMode: z
-      .enum(['explicit', 'implicit'])
-      .describe('How consent is collected'),
     implicitNotice: z
       .string()
       .nullable()
-      .describe('Notice text for implicit consent mode'),
+      .describe('Notice text for implicit consent mode terms'),
     terms: z.array(TermItem).describe('List of terms'),
     pendingTerms: z.array(z.string()).describe('Term IDs that require consent'),
   })

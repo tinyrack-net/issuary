@@ -85,7 +85,6 @@ export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
     retention_period: '30d',
   },
   terms: {
-    consent_mode: 'explicit',
     implicit_notice: {
       ko: '가입 시 약관에 동의하는 것으로 간주됩니다.',
       en: 'By signing up, you agree to our Terms.',
@@ -94,7 +93,7 @@ export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
       {
         id: 'tos',
         required: true,
-        always_explicit: false,
+        consent_mode: 'explicit',
         version: '1.0.0',
         content: {
           ko: {
@@ -110,7 +109,7 @@ export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
       {
         id: 'privacy',
         required: true,
-        always_explicit: false,
+        consent_mode: 'explicit',
         version: '1.0.0',
         content: {
           ko: {
