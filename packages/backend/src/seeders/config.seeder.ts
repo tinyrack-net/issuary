@@ -1,13 +1,15 @@
 import type { EntityManager } from '@mikro-orm/core';
 import { hash } from 'argon2';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
+import { TermsEntity } from '@/entities/terms.entity.js';
+import { TermsContentEntity } from '@/entities/terms-content.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
 import type { InternalAppConfig } from '@/lib/config/index.js';
 
 /**
  * ConfigSeeder
  *
- * Synchronizes users and OAuth clients from config.yaml to the database.
+ * Synchronizes users, OAuth clients, and terms from config.yaml to the database.
  * This seeder is run on every server startup to ensure config data is in DB.
  *
  * Key behaviors:
@@ -25,8 +27,73 @@ export async function seedConfig(
   em: EntityManager,
   config: InternalAppConfig,
 ): Promise<void> {
+  await syncTerms(em, config);
   await syncUsers(em, config);
   await syncOAuthClients(em, config);
+}
+
+/**
+ * Sync terms from config.yaml to database
+ * Uses em.upsert() for atomic upsert operations that are cluster-safe
+ */
+async function syncTerms(
+  em: EntityManager,
+  config: InternalAppConfig,
+): Promise<void> {
+  const now = new Date();
+  const configTerms = config.terms.global;
+
+  for (const term of configTerms) {
+    // Upsert term entity
+    await em.upsert(
+      TermsEntity,
+      {
+        id: term.id,
+        required: term.required,
+        alwaysExplicit: term.always_explicit,
+        version: term.version,
+        managed_by: 'config',
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        onConflictFields: ['id'],
+        onConflictAction: 'merge',
+        onConflictExcludeFields: ['id', 'created_at'],
+      },
+    );
+
+    // Delete existing content for this term (to handle language changes)
+    await em.nativeDelete(TermsContentEntity, {
+      terms: term.id,
+    });
+
+    // Insert new content for each language
+    for (const [lang, content] of Object.entries(term.content)) {
+      const contentEntity = new TermsContentEntity({
+        termsId: term.id,
+        lang,
+        title: content.title,
+        url: content.url ?? null,
+        body: content.body ?? null,
+      });
+      em.persist(contentEntity);
+    }
+  }
+
+  await em.flush();
+
+  // Remove config-managed terms that are no longer in config
+  const configTermIds = configTerms.map((t) => t.id);
+  if (configTermIds.length > 0) {
+    await em.nativeDelete(TermsEntity, {
+      managed_by: 'config',
+      id: { $nin: configTermIds },
+    });
+  } else {
+    // If no config terms, remove all config-managed terms
+    await em.nativeDelete(TermsEntity, { managed_by: 'config' });
+  }
 }
 
 /**

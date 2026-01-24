@@ -28,6 +28,72 @@ admin:
 account_deletion:
   enabled: true
 
+# Terms of Service configuration
+# Manages user consent for terms, privacy policy, and other agreements
+terms:
+  # Consent collection mode:
+  # - explicit: Users must check each required term (recommended for Korea, EU/GDPR)
+  # - implicit: Signup implies agreement, with notice text displayed
+  consent_mode: implicit
+
+  # Notice text for implicit consent mode (displayed during signup)
+  # Only used when consent_mode is 'implicit'
+  implicit_notice:
+    ko: 가입 시 이용약관 및 개인정보처리방침에 동의하는 것으로 간주됩니다.
+    en: By signing up, you agree to our Terms of Service and Privacy Policy.
+    ja: 登録することで、利用規約およびプライバシーポリシーに同意したものとみなされます。
+
+  # Global terms that apply to all users
+  global:
+    # Terms of Service (required)
+    - id: tos
+      required: true
+      always_explicit: false
+      version: "1.0.0"
+      content:
+        ko:
+          title: 이용약관
+          url: https://example.com/terms/ko
+        en:
+          title: Terms of Service
+          url: https://example.com/terms/en
+        ja:
+          title: 利用規約
+          url: https://example.com/terms/ja
+
+    # Privacy Policy (required)
+    - id: privacy
+      required: true
+      always_explicit: false
+      version: "1.0.0"
+      content:
+        ko:
+          title: 개인정보처리방침
+          url: https://example.com/privacy/ko
+        en:
+          title: Privacy Policy
+          url: https://example.com/privacy/en
+        ja:
+          title: プライバシーポリシー
+          url: https://example.com/privacy/ja
+
+    # Marketing consent (optional)
+    # always_explicit: true means checkbox is shown even in implicit mode
+    - id: marketing
+      required: false
+      always_explicit: true
+      version: "1.0.0"
+      content:
+        ko:
+          title: 마케팅 정보 수신 동의
+          body: 이벤트, 프로모션 등 마케팅 정보를 이메일로 받아보시겠습니까?
+        en:
+          title: Marketing Communications
+          body: Would you like to receive marketing emails about events and promotions?
+        ja:
+          title: マーケティング情報の受信
+          body: イベントやプロモーションなどのマーケティング情報をメールで受け取りますか？
+
 database:
   type: sqlite
   path: test.db
@@ -59,14 +125,14 @@ basic_authentication_methods:
   passkey:
     enabled: true
 
-# oauth_authentication_methods:
-# - id: github
-#   type: github
-#   enabled: true
-#   display_name: GitHub
-#   client_id: !env GITHUB_CLIENT_ID
-#   client_secret: !env GITHUB_CLIENT_SECRET
-#   email_conflict_strategy: auto_link
+oauth_authentication_methods:
+  - id: github
+    type: github
+    enabled: true
+    display_name: GitHub
+    client_id: !env GITHUB_CLIENT_ID
+    client_secret: !env GITHUB_CLIENT_SECRET
+    email_conflict_strategy: auto_link
 # - id: google
 #   type: google
 #   enabled: false
