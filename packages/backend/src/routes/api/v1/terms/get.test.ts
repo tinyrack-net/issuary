@@ -20,11 +20,12 @@ describe('GET /api/v1/terms', () => {
       expect(res.statusCode).toBe(200);
 
       const body = res.json();
-      expect(body).toHaveProperty('consentMode', 'explicit');
       expect(body).toHaveProperty('terms');
       expect(body).toHaveProperty('pendingTerms');
       expect(Array.isArray(body.terms)).toBe(true);
       expect(Array.isArray(body.pendingTerms)).toBe(true);
+      // Each term should have consentMode
+      expect(body.terms[0]).toHaveProperty('consentMode');
     });
 
     test('should include all required terms in pendingTerms for unauthenticated user', async () => {
@@ -75,7 +76,7 @@ describe('GET /api/v1/terms', () => {
       const term = body.terms[0];
       expect(term).toHaveProperty('id');
       expect(term).toHaveProperty('required');
-      expect(term).toHaveProperty('alwaysExplicit');
+      expect(term).toHaveProperty('consentMode');
       expect(term).toHaveProperty('version');
       expect(term).toHaveProperty('title');
       expect(term).toHaveProperty('userConsent');
@@ -125,7 +126,8 @@ describe('GET /api/v1/terms', () => {
       expect(tosTerm?.title).toBe('Terms of Service');
     });
 
-    test('should return localized implicit notice', async () => {
+    test('should return null implicitNotice when no implicit terms exist', async () => {
+      // Default test config has only explicit terms
       const res = await app.inject({
         method: 'GET',
         url: '/api/v1/terms?lang=ko',
@@ -134,9 +136,8 @@ describe('GET /api/v1/terms', () => {
       expect(res.statusCode).toBe(200);
 
       const body = res.json();
-      expect(body.implicitNotice).toBe(
-        '가입 시 약관에 동의하는 것으로 간주됩니다.',
-      );
+      // No implicit terms, so implicitNotice should be null
+      expect(body.implicitNotice).toBeNull();
     });
 
     test('should default to English when lang not provided', async () => {
@@ -303,7 +304,7 @@ describe('GET /api/v1/terms', () => {
         expect(res.statusCode).toBe(200);
 
         const body = res.json();
-        expect(body.consentMode).toBe('explicit');
+        expect(body.terms[0]?.consentMode).toBe('explicit');
       });
     });
 
@@ -311,7 +312,6 @@ describe('GET /api/v1/terms', () => {
       const app = setupTestServer({
         configOverrides: {
           terms: {
-            consent_mode: 'implicit',
             implicit_notice: {
               ko: '가입하시면 약관에 동의하는 것입니다.',
               en: 'By signing up you agree to our terms.',
@@ -320,7 +320,7 @@ describe('GET /api/v1/terms', () => {
               {
                 id: 'tos',
                 required: true,
-                always_explicit: false,
+                consent_mode: 'implicit',
                 version: '1.0.0',
                 content: {
                   en: { title: 'Terms', url: 'https://example.com/terms' },
@@ -331,7 +331,7 @@ describe('GET /api/v1/terms', () => {
         } as Partial<InternalAppConfig>,
       });
 
-      test('should return implicit consent mode', async () => {
+      test('should return implicit consent mode on term', async () => {
         const res = await app.inject({
           method: 'GET',
           url: '/api/v1/terms',
@@ -340,7 +340,7 @@ describe('GET /api/v1/terms', () => {
         expect(res.statusCode).toBe(200);
 
         const body = res.json();
-        expect(body.consentMode).toBe('implicit');
+        expect(body.terms[0]?.consentMode).toBe('implicit');
       });
 
       test('should return implicit notice text', async () => {
@@ -363,12 +363,11 @@ describe('GET /api/v1/terms', () => {
     const app = setupTestServer({
       configOverrides: {
         terms: {
-          consent_mode: 'explicit',
           global: [
             {
               id: 'tos',
               required: true,
-              always_explicit: false,
+              consent_mode: 'explicit',
               version: '1.0.0',
               content: {
                 en: { title: 'Terms', url: 'https://example.com/terms' },
@@ -377,7 +376,7 @@ describe('GET /api/v1/terms', () => {
             {
               id: 'privacy',
               required: true,
-              always_explicit: false,
+              consent_mode: 'explicit',
               version: '1.0.0',
               content: {
                 en: { title: 'Privacy', url: 'https://example.com/privacy' },
@@ -386,7 +385,7 @@ describe('GET /api/v1/terms', () => {
             {
               id: 'marketing',
               required: false,
-              always_explicit: true,
+              consent_mode: 'explicit',
               version: '1.0.0',
               content: {
                 en: { title: 'Marketing', body: 'Receive marketing emails' },
@@ -415,7 +414,7 @@ describe('GET /api/v1/terms', () => {
       expect(marketingTerm?.required).toBe(false);
     });
 
-    test('should correctly flag alwaysExplicit terms', async () => {
+    test('should correctly flag consentMode on terms', async () => {
       const res = await app.inject({
         method: 'GET',
         url: '/api/v1/terms',
@@ -428,7 +427,7 @@ describe('GET /api/v1/terms', () => {
         (t: { id: string }) => t.id === 'marketing',
       );
 
-      expect(marketingTerm?.alwaysExplicit).toBe(true);
+      expect(marketingTerm?.consentMode).toBe('explicit');
     });
 
     test('should only include required terms in pendingTerms', async () => {
@@ -451,12 +450,11 @@ describe('GET /api/v1/terms', () => {
     const app = setupTestServer({
       configOverrides: {
         terms: {
-          consent_mode: 'explicit',
           global: [
             {
               id: 'with-url',
               required: true,
-              always_explicit: false,
+              consent_mode: 'explicit',
               version: '1.0.0',
               content: {
                 en: {
@@ -468,7 +466,7 @@ describe('GET /api/v1/terms', () => {
             {
               id: 'with-body',
               required: true,
-              always_explicit: false,
+              consent_mode: 'explicit',
               version: '1.0.0',
               content: {
                 en: {

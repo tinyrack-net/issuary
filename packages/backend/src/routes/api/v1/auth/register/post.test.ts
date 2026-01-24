@@ -308,7 +308,6 @@ describe('POST /api/v1/auth/register (implicit consent mode)', () => {
   const app = setupTestServer({
     configOverrides: {
       terms: {
-        consent_mode: 'implicit',
         implicit_notice: {
           en: 'By signing up, you agree to our Terms.',
         },
@@ -316,7 +315,7 @@ describe('POST /api/v1/auth/register (implicit consent mode)', () => {
           {
             id: 'tos',
             required: true,
-            always_explicit: false,
+            consent_mode: 'implicit',
             version: '1.0.0',
             content: {
               en: { title: 'Terms', url: 'https://example.com/terms' },

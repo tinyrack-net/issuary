@@ -270,12 +270,11 @@ describe('POST /api/v1/terms/consent', () => {
     const app = setupTestServer({
       configOverrides: {
         terms: {
-          consent_mode: 'explicit',
           global: [
             {
               id: 'tos',
               required: true,
-              always_explicit: false,
+              consent_mode: 'explicit',
               version: '1.0.0',
               content: {
                 en: { title: 'Terms', url: 'https://example.com/terms' },
@@ -284,7 +283,7 @@ describe('POST /api/v1/terms/consent', () => {
             {
               id: 'marketing',
               required: false,
-              always_explicit: true,
+              consent_mode: 'explicit',
               version: '1.0.0',
               content: {
                 en: { title: 'Marketing', body: 'Receive marketing emails' },
@@ -559,16 +558,15 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Consent mode affects consentType field', () => {
-    describe('explicit mode', () => {
+    describe('explicit consent_mode term', () => {
       const app = setupTestServer({
         configOverrides: {
           terms: {
-            consent_mode: 'explicit',
             global: [
               {
                 id: 'tos',
                 required: true,
-                always_explicit: false,
+                consent_mode: 'explicit',
                 version: '1.0.0',
                 content: {
                   en: { title: 'Terms', url: 'https://example.com/terms' },
@@ -606,16 +604,15 @@ describe('POST /api/v1/terms/consent', () => {
       });
     });
 
-    describe('implicit mode', () => {
+    describe('implicit consent_mode term', () => {
       const app = setupTestServer({
         configOverrides: {
           terms: {
-            consent_mode: 'implicit',
             global: [
               {
                 id: 'tos',
                 required: true,
-                always_explicit: false,
+                consent_mode: 'implicit',
                 version: '1.0.0',
                 content: {
                   en: { title: 'Terms', url: 'https://example.com/terms' },
