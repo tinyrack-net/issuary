@@ -14,6 +14,11 @@ export type TermsUserConsent = {
 };
 
 /**
+ * Content type for terms content
+ */
+export type TermsContentType = 'link' | 'text';
+
+/**
  * Term item with localized content
  */
 export type TermItem = {
@@ -22,8 +27,8 @@ export type TermItem = {
   consentMode: 'explicit' | 'implicit';
   version: string;
   title: string;
-  url?: string;
-  body?: string;
+  type: TermsContentType;
+  content: string;
   userConsent: TermsUserConsent | null;
 };
 

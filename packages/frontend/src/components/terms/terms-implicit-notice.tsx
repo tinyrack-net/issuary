@@ -20,9 +20,9 @@ export function TermsImplicitNotice({
       <div className="mt-2 flex flex-wrap justify-center gap-2">
         {requiredTerms.map((term, index) => (
           <span key={term.id}>
-            {term.url ? (
+            {term.type === 'link' ? (
               <a
-                href={term.url}
+                href={term.content}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-primary hover:underline"

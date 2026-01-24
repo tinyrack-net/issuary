@@ -68,9 +68,9 @@ export function TermsCheckboxList({
                 {term.required ? t('terms.required') : t('terms.optional')}
               </span>
               <span className="font-medium text-sm">{term.title}</span>
-              {term.url && (
+              {term.type === 'link' && (
                 <a
-                  href={term.url}
+                  href={term.content}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
