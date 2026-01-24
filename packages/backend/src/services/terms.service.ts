@@ -37,7 +37,7 @@ export interface LocalizedTermContent {
 export interface LocalizedTermItem {
   id: string;
   required: boolean;
-  alwaysExplicit: boolean;
+  consentMode: 'explicit' | 'implicit';
   version: string;
   title: string;
   url?: string | undefined;
@@ -61,10 +61,11 @@ export class TermsService {
   }
 
   /**
-   * Get consent mode from config
+   * Check if any terms have implicit consent mode
    */
-  public getConsentMode(): 'explicit' | 'implicit' {
-    return this.config.terms.consent_mode;
+  public async hasImplicitTerms(): Promise<boolean> {
+    const terms = await this.getGlobalTerms();
+    return terms.some((t) => t.consentMode === 'implicit');
   }
 
   /**
@@ -134,7 +135,7 @@ export class TermsService {
       return {
         id: term.id,
         required: term.required,
-        alwaysExplicit: term.alwaysExplicit,
+        consentMode: term.consentMode,
         version: term.version,
         title: content?.title ?? term.id,
         url: content?.url,
@@ -185,6 +186,7 @@ export class TermsService {
 
   /**
    * Record consent for multiple terms
+   * consentType is determined by each term's consentMode
    */
   public async recordConsents(params: {
     userId: string;
@@ -192,7 +194,7 @@ export class TermsService {
       termsId: string;
       agreed: boolean;
     }>;
-    consentType: 'explicit' | 'implicit';
+    consentType?: 'explicit' | 'implicit';
   }): Promise<UserTermsConsentEntity[]> {
     const terms = await this.getGlobalTerms();
     const termsMap = new Map(terms.map((t) => [t.id, t]));
@@ -209,7 +211,8 @@ export class TermsService {
           termsId: consent.termsId,
           termsVersion: term.version,
           agreed: consent.agreed,
-          consentType: params.consentType,
+          // Use provided consentType or derive from term's consentMode
+          consentType: params.consentType ?? term.consentMode,
         };
       })
       .filter((r): r is NonNullable<typeof r> => r !== null);
@@ -222,24 +225,24 @@ export class TermsService {
   }
 
   /**
-   * Record implicit consent for all required terms
-   * Used when consent_mode is 'implicit' and user signs up
+   * Record implicit consent for terms with implicit consent mode
+   * Used during signup for terms that don't require explicit user action
    */
   public async recordImplicitConsents(params: {
     userId: string;
   }): Promise<UserTermsConsentEntity[]> {
     const terms = await this.getGlobalTerms();
 
-    // Only record consent for required terms that are not always_explicit
-    const requiredTerms = terms.filter((t) => t.required && !t.alwaysExplicit);
+    // Only record consent for terms with implicit consent mode
+    const implicitTerms = terms.filter((t) => t.consentMode === 'implicit');
 
-    if (requiredTerms.length === 0) {
+    if (implicitTerms.length === 0) {
       return [];
     }
 
     return this.recordConsents({
       userId: params.userId,
-      consents: requiredTerms.map((t) => ({
+      consents: implicitTerms.map((t) => ({
         termsId: t.id,
         agreed: true,
       })),
@@ -248,29 +251,42 @@ export class TermsService {
   }
 
   /**
-   * Get terms that need explicit consent even in implicit mode
-   * (optional terms or always_explicit terms)
+   * Get terms that require explicit consent (checkbox)
    */
-  public async getExplicitOnlyTerms(): Promise<
+  public async getExplicitTerms(): Promise<
     Loaded<TermsEntity, 'contents', '*', never>[]
   > {
     const terms = await this.getGlobalTerms();
-    return terms.filter((t) => !t.required || t.alwaysExplicit);
+    return terms.filter((t) => t.consentMode === 'explicit');
   }
 
   /**
-   * Validate that all required terms have been agreed to
+   * Get terms with implicit consent mode
    */
-  public async validateRequiredConsents(
+  public async getImplicitTerms(): Promise<
+    Loaded<TermsEntity, 'contents', '*', never>[]
+  > {
+    const terms = await this.getGlobalTerms();
+    return terms.filter((t) => t.consentMode === 'implicit');
+  }
+
+  /**
+   * Validate that all required explicit terms have been agreed to
+   * (implicit terms are auto-agreed, so they don't need validation)
+   */
+  public async validateExplicitConsents(
     consents: Array<{ termsId: string; agreed: boolean }>,
   ): Promise<{ valid: boolean; missingTerms: string[] }> {
     const terms = await this.getGlobalTerms();
-    const requiredTerms = terms.filter((t) => t.required);
+    // Only validate required terms with explicit consent mode
+    const requiredExplicitTerms = terms.filter(
+      (t) => t.required && t.consentMode === 'explicit',
+    );
     const consentsMap = new Map(consents.map((c) => [c.termsId, c]));
 
     const missingTerms: string[] = [];
 
-    for (const term of requiredTerms) {
+    for (const term of requiredExplicitTerms) {
       const consent = consentsMap.get(term.id);
       if (!consent || !consent.agreed) {
         missingTerms.push(term.id);
