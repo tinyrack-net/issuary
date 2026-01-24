@@ -318,7 +318,11 @@ describe('POST /api/v1/auth/register (implicit consent mode)', () => {
             consent_mode: 'implicit',
             version: '1.0.0',
             content: {
-              en: { title: 'Terms', url: 'https://example.com/terms' },
+              en: {
+                title: 'Terms',
+                type: 'link',
+                content: 'https://example.com/terms',
+              },
             },
           },
         ],

@@ -277,7 +277,11 @@ describe('POST /api/v1/terms/consent', () => {
               consent_mode: 'explicit',
               version: '1.0.0',
               content: {
-                en: { title: 'Terms', url: 'https://example.com/terms' },
+                en: {
+                  title: 'Terms',
+                  type: 'link',
+                  content: 'https://example.com/terms',
+                },
               },
             },
             {
@@ -286,7 +290,11 @@ describe('POST /api/v1/terms/consent', () => {
               consent_mode: 'explicit',
               version: '1.0.0',
               content: {
-                en: { title: 'Marketing', body: 'Receive marketing emails' },
+                en: {
+                  title: 'Marketing',
+                  type: 'text',
+                  content: 'Receive marketing emails',
+                },
               },
             },
           ],
@@ -569,7 +577,11 @@ describe('POST /api/v1/terms/consent', () => {
                 consent_mode: 'explicit',
                 version: '1.0.0',
                 content: {
-                  en: { title: 'Terms', url: 'https://example.com/terms' },
+                  en: {
+                    title: 'Terms',
+                    type: 'link',
+                    content: 'https://example.com/terms',
+                  },
                 },
               },
             ],
@@ -615,7 +627,11 @@ describe('POST /api/v1/terms/consent', () => {
                 consent_mode: 'implicit',
                 version: '1.0.0',
                 content: {
-                  en: { title: 'Terms', url: 'https://example.com/terms' },
+                  en: {
+                    title: 'Terms',
+                    type: 'link',
+                    content: 'https://example.com/terms',
+                  },
                 },
               },
             ],

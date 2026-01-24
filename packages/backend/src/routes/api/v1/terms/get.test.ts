@@ -323,7 +323,11 @@ describe('GET /api/v1/terms', () => {
                 consent_mode: 'implicit',
                 version: '1.0.0',
                 content: {
-                  en: { title: 'Terms', url: 'https://example.com/terms' },
+                  en: {
+                    title: 'Terms',
+                    type: 'link',
+                    content: 'https://example.com/terms',
+                  },
                 },
               },
             ],
@@ -370,7 +374,11 @@ describe('GET /api/v1/terms', () => {
               consent_mode: 'explicit',
               version: '1.0.0',
               content: {
-                en: { title: 'Terms', url: 'https://example.com/terms' },
+                en: {
+                  title: 'Terms',
+                  type: 'link',
+                  content: 'https://example.com/terms',
+                },
               },
             },
             {
@@ -379,7 +387,11 @@ describe('GET /api/v1/terms', () => {
               consent_mode: 'explicit',
               version: '1.0.0',
               content: {
-                en: { title: 'Privacy', url: 'https://example.com/privacy' },
+                en: {
+                  title: 'Privacy',
+                  type: 'link',
+                  content: 'https://example.com/privacy',
+                },
               },
             },
             {
@@ -388,7 +400,11 @@ describe('GET /api/v1/terms', () => {
               consent_mode: 'explicit',
               version: '1.0.0',
               content: {
-                en: { title: 'Marketing', body: 'Receive marketing emails' },
+                en: {
+                  title: 'Marketing',
+                  type: 'text',
+                  content: 'Receive marketing emails',
+                },
               },
             },
           ],
@@ -452,26 +468,28 @@ describe('GET /api/v1/terms', () => {
         terms: {
           global: [
             {
-              id: 'with-url',
+              id: 'with-link',
               required: true,
               consent_mode: 'explicit',
               version: '1.0.0',
               content: {
                 en: {
-                  title: 'Terms with URL',
-                  url: 'https://example.com/terms',
+                  title: 'Terms with Link',
+                  type: 'link',
+                  content: 'https://example.com/terms',
                 },
               },
             },
             {
-              id: 'with-body',
+              id: 'with-text',
               required: true,
               consent_mode: 'explicit',
               version: '1.0.0',
               content: {
                 en: {
-                  title: 'Terms with Body',
-                  body: 'This is the full terms content inline.',
+                  title: 'Terms with Text',
+                  type: 'text',
+                  content: 'This is the full terms content inline.',
                 },
               },
             },
@@ -480,7 +498,7 @@ describe('GET /api/v1/terms', () => {
       } as Partial<InternalAppConfig>,
     });
 
-    test('should return URL when provided', async () => {
+    test('should return link type with URL content', async () => {
       const res = await app.inject({
         method: 'GET',
         url: '/api/v1/terms',
@@ -489,14 +507,15 @@ describe('GET /api/v1/terms', () => {
       expect(res.statusCode).toBe(200);
 
       const body = res.json();
-      const termWithUrl = body.terms.find(
-        (t: { id: string }) => t.id === 'with-url',
+      const termWithLink = body.terms.find(
+        (t: { id: string }) => t.id === 'with-link',
       );
 
-      expect(termWithUrl?.url).toBe('https://example.com/terms');
+      expect(termWithLink?.type).toBe('link');
+      expect(termWithLink?.content).toBe('https://example.com/terms');
     });
 
-    test('should return body when provided', async () => {
+    test('should return text type with text content', async () => {
       const res = await app.inject({
         method: 'GET',
         url: '/api/v1/terms',
@@ -505,11 +524,14 @@ describe('GET /api/v1/terms', () => {
       expect(res.statusCode).toBe(200);
 
       const body = res.json();
-      const termWithBody = body.terms.find(
-        (t: { id: string }) => t.id === 'with-body',
+      const termWithText = body.terms.find(
+        (t: { id: string }) => t.id === 'with-text',
       );
 
-      expect(termWithBody?.body).toBe('This is the full terms content inline.');
+      expect(termWithText?.type).toBe('text');
+      expect(termWithText?.content).toBe(
+        'This is the full terms content inline.',
+      );
     });
   });
 
