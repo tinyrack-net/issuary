@@ -52,6 +52,7 @@
   "validation.confirmPassword.required": "비밀번호 확인을 입력해주세요",
   "validation.confirmPassword.mismatch": "비밀번호가 일치하지 않습니다",
   "validation.confirmText.mismatch": "입력한 텍스트가 일치하지 않습니다",
+  "validation.terms.required": "필수 약관에 동의해주세요",
   "register.success.title": "회원가입 성공!",
   "register.success.subtitle": "이메일 인증 링크를 보냈습니다",
   "register.success.description": "{{email}}로 전송된 이메일을 확인하여 계정을 인증해주세요.",

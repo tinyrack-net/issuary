@@ -52,6 +52,7 @@
   "validation.confirmPassword.required": "Please confirm your password",
   "validation.confirmPassword.mismatch": "Passwords do not match",
   "validation.confirmText.mismatch": "The confirmation text does not match",
+  "validation.terms.required": "Please agree to the required terms",
   "register.success.title": "Registration successful!",
   "register.success.subtitle": "We sent you a verification email",
   "register.success.description": "Please check your email at {{email}} to verify your account.",

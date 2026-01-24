@@ -52,6 +52,7 @@
   "validation.confirmPassword.required": "パスワードの確認を入力してください",
   "validation.confirmPassword.mismatch": "パスワードが一致しません",
   "validation.confirmText.mismatch": "確認テキストが一致しません",
+  "validation.terms.required": "必須規約に同意してください",
   "register.success.title": "登録成功！",
   "register.success.subtitle": "確認メールを送信しました",
   "register.success.description": "{{email}}に送信されたメールを確認してアカウントを認証してください。",
