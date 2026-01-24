@@ -47,11 +47,13 @@ export default (fastify: FastifyWithZodInstance) => {
         pendingTerms = terms.filter((t) => t.required).map((t) => t.id);
       }
 
-      const consentMode = fastify.termsService.getConsentMode();
-      const implicitNotice = fastify.termsService.getImplicitNotice(lang);
+      // Check if there are any implicit terms to determine if notice should be shown
+      const hasImplicitTerms = terms.some((t) => t.consentMode === 'implicit');
+      const implicitNotice = hasImplicitTerms
+        ? fastify.termsService.getImplicitNotice(lang)
+        : null;
 
       return res.status(200).send({
-        consentMode,
         implicitNotice,
         terms: terms.map((t) => ({
           ...t,
