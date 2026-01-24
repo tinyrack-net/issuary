@@ -312,23 +312,21 @@ describe('POST /api/v1/auth/register (implicit consent mode)', () => {
           en: 'By signing up, you agree to our Terms.',
         },
       },
-      terms: {
-        global: [
-          {
-            id: 'tos',
-            required: true,
-            consent_mode: 'implicit',
-            version: '1.0.0',
-            content: {
-              en: {
-                title: 'Terms',
-                type: 'link',
-                content: 'https://example.com/terms',
-              },
+      terms: [
+        {
+          id: 'tos',
+          required: true,
+          consent_mode: 'implicit',
+          version: '1.0.0',
+          content: {
+            en: {
+              title: 'Terms',
+              type: 'link',
+              content: 'https://example.com/terms',
             },
           },
-        ],
-      },
+        },
+      ],
     } as DeepPartial<InternalAppConfig>,
   });
 
@@ -384,10 +382,7 @@ describe('POST /api/v1/auth/register (implicit consent mode)', () => {
 describe('POST /api/v1/auth/register (no terms configured)', () => {
   const app = setupTestServer({
     configOverrides: {
-      terms: {
-        consent_mode: 'explicit',
-        global: [], // No terms
-      },
+      terms: [], // No terms
     } as DeepPartial<InternalAppConfig>,
   });
 

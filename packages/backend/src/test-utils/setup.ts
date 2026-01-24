@@ -88,46 +88,44 @@ export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
     enabled: false,
     retention_period: '30d',
   },
-  terms: {
-    global: [
-      {
-        id: 'tos',
-        required: true,
-        consent_mode: 'explicit',
-        version: '1.0.0',
-        content: {
-          ko: {
-            title: '이용약관',
-            type: 'link',
-            content: 'https://example.com/terms/ko',
-          },
-          en: {
-            title: 'Terms of Service',
-            type: 'link',
-            content: 'https://example.com/terms/en',
-          },
+  terms: [
+    {
+      id: 'tos',
+      required: true,
+      consent_mode: 'explicit',
+      version: '1.0.0',
+      content: {
+        ko: {
+          title: '이용약관',
+          type: 'link',
+          content: 'https://example.com/terms/ko',
+        },
+        en: {
+          title: 'Terms of Service',
+          type: 'link',
+          content: 'https://example.com/terms/en',
         },
       },
-      {
-        id: 'privacy',
-        required: true,
-        consent_mode: 'explicit',
-        version: '1.0.0',
-        content: {
-          ko: {
-            title: '개인정보처리방침',
-            type: 'link',
-            content: 'https://example.com/privacy/ko',
-          },
-          en: {
-            title: 'Privacy Policy',
-            type: 'link',
-            content: 'https://example.com/privacy/en',
-          },
+    },
+    {
+      id: 'privacy',
+      required: true,
+      consent_mode: 'explicit',
+      version: '1.0.0',
+      content: {
+        ko: {
+          title: '개인정보처리방침',
+          type: 'link',
+          content: 'https://example.com/privacy/ko',
+        },
+        en: {
+          title: 'Privacy Policy',
+          type: 'link',
+          content: 'https://example.com/privacy/en',
         },
       },
-    ],
-  },
+    },
+  ],
   providers: [
     {
       id: 'test-config-oauth-client',

@@ -269,36 +269,34 @@ describe('POST /api/v1/terms/consent', () => {
   describe('Optional terms', () => {
     const app = setupTestServer({
       configOverrides: {
-        terms: {
-          global: [
-            {
-              id: 'tos',
-              required: true,
-              consent_mode: 'explicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Terms',
-                  type: 'link',
-                  content: 'https://example.com/terms',
-                },
+        terms: [
+          {
+            id: 'tos',
+            required: true,
+            consent_mode: 'explicit',
+            version: '1.0.0',
+            content: {
+              en: {
+                title: 'Terms',
+                type: 'link',
+                content: 'https://example.com/terms',
               },
             },
-            {
-              id: 'marketing',
-              required: false,
-              consent_mode: 'explicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Marketing',
-                  type: 'text',
-                  content: 'Receive marketing emails',
-                },
+          },
+          {
+            id: 'marketing',
+            required: false,
+            consent_mode: 'explicit',
+            version: '1.0.0',
+            content: {
+              en: {
+                title: 'Marketing',
+                type: 'text',
+                content: 'Receive marketing emails',
               },
             },
-          ],
-        },
+          },
+        ],
       } as DeepPartial<InternalAppConfig>,
     });
 
@@ -569,23 +567,21 @@ describe('POST /api/v1/terms/consent', () => {
     describe('explicit consent_mode term', () => {
       const app = setupTestServer({
         configOverrides: {
-          terms: {
-            global: [
-              {
-                id: 'tos',
-                required: true,
-                consent_mode: 'explicit',
-                version: '1.0.0',
-                content: {
-                  en: {
-                    title: 'Terms',
-                    type: 'link',
-                    content: 'https://example.com/terms',
-                  },
+          terms: [
+            {
+              id: 'tos',
+              required: true,
+              consent_mode: 'explicit',
+              version: '1.0.0',
+              content: {
+                en: {
+                  title: 'Terms',
+                  type: 'link',
+                  content: 'https://example.com/terms',
                 },
               },
-            ],
-          },
+            },
+          ],
         } as DeepPartial<InternalAppConfig>,
       });
 
@@ -619,23 +615,21 @@ describe('POST /api/v1/terms/consent', () => {
     describe('implicit consent_mode term', () => {
       const app = setupTestServer({
         configOverrides: {
-          terms: {
-            global: [
-              {
-                id: 'tos',
-                required: true,
-                consent_mode: 'implicit',
-                version: '1.0.0',
-                content: {
-                  en: {
-                    title: 'Terms',
-                    type: 'link',
-                    content: 'https://example.com/terms',
-                  },
+          terms: [
+            {
+              id: 'tos',
+              required: true,
+              consent_mode: 'implicit',
+              version: '1.0.0',
+              content: {
+                en: {
+                  title: 'Terms',
+                  type: 'link',
+                  content: 'https://example.com/terms',
                 },
               },
-            ],
-          },
+            },
+          ],
         } as DeepPartial<InternalAppConfig>,
       });
 
@@ -803,10 +797,7 @@ describe('POST /api/v1/terms/consent', () => {
   describe('Empty terms configuration', () => {
     const app = setupTestServer({
       configOverrides: {
-        terms: {
-          consent_mode: 'explicit',
-          global: [],
-        },
+        terms: [], // No terms
       } as DeepPartial<InternalAppConfig>,
     });
 

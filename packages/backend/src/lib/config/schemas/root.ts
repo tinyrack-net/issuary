@@ -49,9 +49,7 @@ export const ConfigSchema = z.object({
     enabled: false,
     retention_period: '30d',
   }),
-  terms: AppConfigTerms.default({
-    global: [],
-  }),
+  terms: AppConfigTerms.default([]),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),
 });
@@ -88,9 +86,7 @@ export const InternalConfigSchema = z.object({
     enabled: true,
     retention_period: '30d',
   }),
-  terms: AppConfigTerms.default({
-    global: [],
-  }),
+  terms: AppConfigTerms.default([]),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),
 });

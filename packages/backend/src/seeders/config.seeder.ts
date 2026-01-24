@@ -41,7 +41,7 @@ async function syncTerms(
   config: InternalAppConfig,
 ): Promise<void> {
   const now = new Date();
-  const configTerms = config.terms.global;
+  const configTerms = config.terms;
 
   for (const term of configTerms) {
     // Upsert term entity

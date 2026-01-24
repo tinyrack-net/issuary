@@ -69,12 +69,8 @@ export type TermsItem = z.infer<typeof TermsItem>;
  * Terms configuration schema.
  */
 export const AppConfigTerms = z
-  .object({
-    global: z
-      .array(TermsItem)
-      .default([])
-      .describe('Global terms that apply to all users of the OIDC provider'),
-  })
+  .array(TermsItem)
+  .default([])
   .describe('Terms of service configuration');
 
 export type AppConfigTerms = z.infer<typeof AppConfigTerms>;

@@ -317,23 +317,21 @@ describe('GET /api/v1/terms', () => {
               en: 'By signing up you agree to our terms.',
             },
           },
-          terms: {
-            global: [
-              {
-                id: 'tos',
-                required: true,
-                consent_mode: 'implicit',
-                version: '1.0.0',
-                content: {
-                  en: {
-                    title: 'Terms',
-                    type: 'link',
-                    content: 'https://example.com/terms',
-                  },
+          terms: [
+            {
+              id: 'tos',
+              required: true,
+              consent_mode: 'implicit',
+              version: '1.0.0',
+              content: {
+                en: {
+                  title: 'Terms',
+                  type: 'link',
+                  content: 'https://example.com/terms',
                 },
               },
-            ],
-          },
+            },
+          ],
         } as DeepPartial<InternalAppConfig>,
       });
 
@@ -368,49 +366,47 @@ describe('GET /api/v1/terms', () => {
   describe('Term flags', () => {
     const app = setupTestServer({
       configOverrides: {
-        terms: {
-          global: [
-            {
-              id: 'tos',
-              required: true,
-              consent_mode: 'explicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Terms',
-                  type: 'link',
-                  content: 'https://example.com/terms',
-                },
+        terms: [
+          {
+            id: 'tos',
+            required: true,
+            consent_mode: 'explicit',
+            version: '1.0.0',
+            content: {
+              en: {
+                title: 'Terms',
+                type: 'link',
+                content: 'https://example.com/terms',
               },
             },
-            {
-              id: 'privacy',
-              required: true,
-              consent_mode: 'explicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Privacy',
-                  type: 'link',
-                  content: 'https://example.com/privacy',
-                },
+          },
+          {
+            id: 'privacy',
+            required: true,
+            consent_mode: 'explicit',
+            version: '1.0.0',
+            content: {
+              en: {
+                title: 'Privacy',
+                type: 'link',
+                content: 'https://example.com/privacy',
               },
             },
-            {
-              id: 'marketing',
-              required: false,
-              consent_mode: 'explicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Marketing',
-                  type: 'text',
-                  content: 'Receive marketing emails',
-                },
+          },
+          {
+            id: 'marketing',
+            required: false,
+            consent_mode: 'explicit',
+            version: '1.0.0',
+            content: {
+              en: {
+                title: 'Marketing',
+                type: 'text',
+                content: 'Receive marketing emails',
               },
             },
-          ],
-        },
+          },
+        ],
       } as Partial<InternalAppConfig>,
     });
 
@@ -467,36 +463,34 @@ describe('GET /api/v1/terms', () => {
   describe('Term content', () => {
     const app = setupTestServer({
       configOverrides: {
-        terms: {
-          global: [
-            {
-              id: 'with-link',
-              required: true,
-              consent_mode: 'explicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Terms with Link',
-                  type: 'link',
-                  content: 'https://example.com/terms',
-                },
+        terms: [
+          {
+            id: 'with-link',
+            required: true,
+            consent_mode: 'explicit',
+            version: '1.0.0',
+            content: {
+              en: {
+                title: 'Terms with Link',
+                type: 'link',
+                content: 'https://example.com/terms',
               },
             },
-            {
-              id: 'with-text',
-              required: true,
-              consent_mode: 'explicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Terms with Text',
-                  type: 'text',
-                  content: 'This is the full terms content inline.',
-                },
+          },
+          {
+            id: 'with-text',
+            required: true,
+            consent_mode: 'explicit',
+            version: '1.0.0',
+            content: {
+              en: {
+                title: 'Terms with Text',
+                type: 'text',
+                content: 'This is the full terms content inline.',
               },
             },
-          ],
-        },
+          },
+        ],
       } as Partial<InternalAppConfig>,
     });
 
@@ -541,10 +535,7 @@ describe('GET /api/v1/terms', () => {
     describe('empty terms config', () => {
       const app = setupTestServer({
         configOverrides: {
-          terms: {
-            consent_mode: 'explicit',
-            global: [],
-          },
+          terms: [], // No terms
         } as DeepPartial<InternalAppConfig>,
       });
 
