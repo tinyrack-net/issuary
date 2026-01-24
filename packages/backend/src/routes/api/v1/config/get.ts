@@ -44,6 +44,7 @@ export default (fastify: FastifyWithZodInstance) => {
           dark_theme: fastify.config.app.dark_theme,
           theme_mode: fastify.config.app.theme_mode,
           background_url: fastify.config.app.background_url,
+          signup_implicit_terms: fastify.config.app.signup_implicit_terms,
         },
         database: {
           enabled: !!fastify.config.database?.type,

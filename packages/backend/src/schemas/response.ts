@@ -500,6 +500,10 @@ export const r = {
       dark_theme: AppTheme,
       theme_mode: z.enum(['light', 'dark', 'system']),
       background_url: z.string().url().optional(),
+      signup_implicit_terms: z
+        .record(z.string(), z.string())
+        .optional()
+        .describe('Localized notice text for implicit consent terms'),
     }),
     database: z.object({
       enabled: z.boolean(),

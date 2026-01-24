@@ -61,6 +61,7 @@ export type AppConfigs = {
     theme_mode: ThemeMode;
     background_url?: string;
     public_registration: boolean;
+    signup_implicit_terms?: Record<string, string>;
   };
   database: {
     enabled: boolean;
