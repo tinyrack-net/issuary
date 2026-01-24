@@ -66,23 +66,10 @@ const TermsItem = z
 export type TermsItem = z.infer<typeof TermsItem>;
 
 /**
- * Localized implicit consent notice.
- */
-const ImplicitNotice = z
-  .record(z.string(), z.string())
-  .describe(
-    'Localized implicit consent notice keyed by language code. ' +
-      'Displayed when consent_mode is "implicit".',
-  );
-
-/**
  * Terms configuration schema.
  */
 export const AppConfigTerms = z
   .object({
-    implicit_notice: ImplicitNotice.optional().describe(
-      'Localized notice text for implicit consent mode terms',
-    ),
     global: z
       .array(TermsItem)
       .default([])

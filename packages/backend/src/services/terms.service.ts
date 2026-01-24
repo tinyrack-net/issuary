@@ -77,7 +77,7 @@ export class TermsService {
    * Get implicit notice for a specific language
    */
   public getImplicitNotice(lang: string): string | null {
-    const notice = this.config.terms.implicit_notice;
+    const notice = this.config.app.signup_implicit_terms;
     if (!notice) {
       return null;
     }

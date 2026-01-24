@@ -104,6 +104,14 @@ export const AppConfigApp = z.object({
         'Can be true (trust all), false (trust none), ' +
         'IP/CIDR string, array of IPs, or number (nth hop)',
     ),
+  signup_implicit_terms: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe(
+      'Localized notice text for implicit consent terms during signup. ' +
+        'Keyed by language code (e.g., "en", "ko"). ' +
+        'Displayed when any term has consent_mode: "implicit".',
+    ),
 });
 
 export type AppConfigApp = z.infer<typeof AppConfigApp>;
