@@ -77,21 +77,22 @@ function Register() {
     setTermsConsents((prev) => ({ ...prev, [termsId]: agreed }));
   };
 
-  // Check if all required terms are agreed (only for explicit mode)
+  // Check if all required explicit terms are agreed
   const allRequiredTermsAgreed = useMemo(() => {
-    if (termsData.consentMode === 'implicit') {
-      return true; // In implicit mode, no checkbox needed for required terms
-    }
+    // Only check terms with explicit consent mode
     return termsData.terms
-      .filter((term) => term.required)
+      .filter((term) => term.required && term.consentMode === 'explicit')
       .every((term) => termsConsents[term.id]);
-  }, [termsData.terms, termsData.consentMode, termsConsents]);
+  }, [termsData.terms, termsConsents]);
 
   // Check if there are any terms to display
   const hasTerms = termsData.terms.length > 0;
-  const hasExplicitTerms =
-    termsData.consentMode === 'explicit' ||
-    termsData.terms.some((term) => term.alwaysExplicit);
+  const hasExplicitTerms = termsData.terms.some(
+    (term) => term.consentMode === 'explicit',
+  );
+  const hasImplicitTerms = termsData.terms.some(
+    (term) => term.consentMode === 'implicit',
+  );
 
   const registerSchema = useMemo(
     () =>
@@ -192,14 +193,14 @@ function Register() {
 
   const onSubmit = (values: z.infer<typeof registerSchema>) => {
     // Build consents array for registration
+    // Only send explicit consents - implicit ones are handled by backend
     const consents = hasTerms
-      ? termsData.terms.map((term) => ({
-          termsId: term.id,
-          agreed:
-            termsData.consentMode === 'implicit' && term.required
-              ? true // Auto-agree required terms in implicit mode
-              : (termsConsents[term.id] ?? false),
-        }))
+      ? termsData.terms
+          .filter((term) => term.consentMode === 'explicit')
+          .map((term) => ({
+            termsId: term.id,
+            agreed: termsConsents[term.id] ?? false,
+          }))
       : undefined;
 
     registerMutation.mutate({
@@ -248,11 +249,9 @@ function Register() {
           {hasTerms && hasExplicitTerms && (
             <div className="mt-2">
               <TermsCheckboxList
-                terms={
-                  termsData.consentMode === 'explicit'
-                    ? termsData.terms
-                    : termsData.terms.filter((t) => t.alwaysExplicit)
-                }
+                terms={termsData.terms.filter(
+                  (t) => t.consentMode === 'explicit',
+                )}
                 values={termsConsents}
                 onChange={handleTermsChange}
                 disabled={registerMutation.isPending}
@@ -261,14 +260,14 @@ function Register() {
           )}
 
           {/* Terms of Service - Implicit mode notice */}
-          {hasTerms &&
-            termsData.consentMode === 'implicit' &&
-            termsData.implicitNotice && (
-              <TermsImplicitNotice
-                notice={termsData.implicitNotice}
-                terms={termsData.terms}
-              />
-            )}
+          {hasTerms && hasImplicitTerms && termsData.implicitNotice && (
+            <TermsImplicitNotice
+              notice={termsData.implicitNotice}
+              terms={termsData.terms.filter(
+                (t) => t.consentMode === 'implicit',
+              )}
+            />
+          )}
 
           <SubmitButton
             isPending={registerMutation.isPending}
