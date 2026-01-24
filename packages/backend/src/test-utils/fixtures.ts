@@ -38,6 +38,15 @@ export const TEST_PKCE = {
 export const DEFAULT_SCOPES = 'openid profile email';
 
 /**
+ * Default terms consents for registration tests.
+ * Matches the terms defined in DEFAULT_TEST_CONFIG.
+ */
+export const TEST_CONSENTS = [
+  { termsId: 'tos', agreed: true },
+  { termsId: 'privacy', agreed: true },
+] as const;
+
+/**
  * Generate unique email for testing
  */
 export function generateUniqueEmail(prefix = 'test'): string {

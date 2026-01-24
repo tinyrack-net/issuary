@@ -7,6 +7,7 @@
 export {
   DEFAULT_SCOPES,
   generateUniqueEmail,
+  TEST_CONSENTS,
   TEST_OAUTH_CLIENT,
   TEST_PKCE,
   TEST_USER,
@@ -26,6 +27,7 @@ export {
   grantConsent,
   injectWithCookie,
   injectWithSession,
+  registerUser,
   withMikroContext,
 } from './helpers.js';
 export type {

@@ -5,7 +5,7 @@ import type {
   LightMyRequestResponse,
 } from 'fastify';
 import { expect } from 'vitest';
-import { TEST_USER } from './fixtures.js';
+import { generateUniqueEmail, TEST_CONSENTS, TEST_USER } from './fixtures.js';
 
 /**
  * Extract session cookie from response headers
@@ -371,4 +371,43 @@ export async function enableTotpForUser(
   });
 
   return secret;
+}
+
+/**
+ * Register a new user with default terms consents.
+ * Automatically includes required terms consents for explicit consent mode.
+ *
+ * @param app - Fastify instance
+ * @param options - Registration options
+ * @returns Response from registration endpoint
+ *
+ * @example
+ * ```typescript
+ * const res = await registerUser(app, { email: 'test@example.com', password: 'password123' });
+ * expect(res.statusCode).toBe(200);
+ * ```
+ */
+export async function registerUser(
+  app: FastifyInstance,
+  options: {
+    email?: string;
+    password?: string;
+    consents?: ReadonlyArray<{ termsId: string; agreed: boolean }>;
+  } = {},
+): Promise<LightMyRequestResponse> {
+  const {
+    email = generateUniqueEmail('test'),
+    password = 'password123',
+    consents = TEST_CONSENTS,
+  } = options;
+
+  return app.inject({
+    method: 'POST',
+    url: '/api/v1/auth/register',
+    payload: {
+      email,
+      password,
+      consents,
+    },
+  });
 }

@@ -84,6 +84,47 @@ export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
     enabled: false,
     retention_period: '30d',
   },
+  terms: {
+    consent_mode: 'explicit',
+    implicit_notice: {
+      ko: '가입 시 약관에 동의하는 것으로 간주됩니다.',
+      en: 'By signing up, you agree to our Terms.',
+    },
+    global: [
+      {
+        id: 'tos',
+        required: true,
+        always_explicit: false,
+        version: '1.0.0',
+        content: {
+          ko: {
+            title: '이용약관',
+            url: 'https://example.com/terms/ko',
+          },
+          en: {
+            title: 'Terms of Service',
+            url: 'https://example.com/terms/en',
+          },
+        },
+      },
+      {
+        id: 'privacy',
+        required: true,
+        always_explicit: false,
+        version: '1.0.0',
+        content: {
+          ko: {
+            title: '개인정보처리방침',
+            url: 'https://example.com/privacy/ko',
+          },
+          en: {
+            title: 'Privacy Policy',
+            url: 'https://example.com/privacy/en',
+          },
+        },
+      },
+    ],
+  },
   providers: [
     {
       id: 'test-config-oauth-client',
