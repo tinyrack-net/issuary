@@ -31,10 +31,14 @@ const TermsItem = z
       .boolean()
       .default(true)
       .describe('Whether agreement to this term is mandatory'),
-    always_explicit: z
-      .boolean()
-      .default(false)
-      .describe('If true, always show checkbox even in implicit consent mode'),
+    consent_mode: z
+      .enum(['explicit', 'implicit'])
+      .default('explicit')
+      .describe(
+        'Consent mode for this term: ' +
+          '"explicit" shows checkbox requiring user action, ' +
+          '"implicit" means signup implies agreement',
+      ),
     version: z
       .string()
       .min(1)
@@ -62,16 +66,8 @@ const ImplicitNotice = z
  */
 export const AppConfigTerms = z
   .object({
-    consent_mode: z
-      .enum(['explicit', 'implicit'])
-      .default('explicit')
-      .describe(
-        'Consent collection mode: ' +
-          '"explicit" shows checkboxes for each term, ' +
-          '"implicit" displays a notice that signup implies agreement',
-      ),
     implicit_notice: ImplicitNotice.optional().describe(
-      'Localized notice text for implicit consent mode',
+      'Localized notice text for implicit consent mode terms',
     ),
     global: z
       .array(TermsItem)

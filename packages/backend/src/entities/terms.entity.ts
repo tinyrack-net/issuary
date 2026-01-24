@@ -45,13 +45,13 @@ export class TermsEntity extends BaseEntity {
   public required: Opt<boolean> = true;
 
   @Property({
-    type: t.boolean,
-    name: 'always_explicit',
-    comment: 'Show checkbox even in implicit consent mode',
+    type: t.string,
+    name: 'consent_mode',
+    comment: 'Consent mode: explicit (checkbox) or implicit (auto-agree)',
     nullable: false,
-    default: false,
+    default: 'explicit',
   })
-  public alwaysExplicit: Opt<boolean> = false;
+  public consentMode: Opt<'explicit' | 'implicit'> = 'explicit';
 
   @Property({
     type: t.string,
@@ -88,7 +88,7 @@ export class TermsEntity extends BaseEntity {
   public constructor(params: {
     id: string;
     required?: boolean;
-    alwaysExplicit?: boolean;
+    consentMode?: 'explicit' | 'implicit';
     version: string;
     managed_by?: 'config' | 'database';
   }) {
@@ -97,8 +97,8 @@ export class TermsEntity extends BaseEntity {
     if (params.required !== undefined) {
       this.required = params.required;
     }
-    if (params.alwaysExplicit !== undefined) {
-      this.alwaysExplicit = params.alwaysExplicit;
+    if (params.consentMode !== undefined) {
+      this.consentMode = params.consentMode;
     }
     this.version = params.version;
     if (params.managed_by !== undefined) {
