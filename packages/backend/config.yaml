@@ -40,7 +40,7 @@ terms:
   # Terms of Service (required, explicit consent)
   - id: tos
     required: true
-    consent_mode: implicit
+    consent_mode: explicit
     version: "1.0.0"
     content:
       ko:
@@ -59,7 +59,7 @@ terms:
   # Privacy Policy (required, explicit consent)
   - id: privacy
     required: true
-    consent_mode: implicit
+    consent_mode: explicit
     version: "1.0.0"
     content:
       ko:
