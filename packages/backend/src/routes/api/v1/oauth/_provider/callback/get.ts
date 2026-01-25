@@ -116,7 +116,50 @@ export default (fastify: FastifyWithZodInstance) =>
         return res.redirect(returnUrl);
       }
 
+      // Check if this would be a new user and if explicit terms exist
+      // For GDPR compliance, we defer user creation until terms consent is given
+      const isNewUser = await fastify.oauthConnectService.isNewOAuthUser(
+        provider,
+        userInfo,
+      );
+      const explicitTerms = await fastify.termsService.getExplicitTerms();
+
+      if (isNewUser && explicitTerms.length > 0) {
+        // New user with explicit terms: store in session, don't create in DB yet
+        // User will be created after terms consent on /terms page
+        req.session.set('pendingOAuthRegistration', {
+          providerId: provider,
+          tokens: {
+            access_token: tokens.access_token,
+            refresh_token: tokens.refresh_token,
+            expires_in: tokens.expires_in,
+            token_type: tokens.token_type,
+          },
+          userInfo: {
+            id: userInfo.id,
+            email: userInfo.email,
+            email_verified: userInfo.email_verified,
+            name: userInfo.name,
+            picture: userInfo.picture,
+          },
+          returnUrl: oauthSession.returnUrl,
+          expiresAt: Date.now() + 60 * 60 * 1000, // 1 hour
+        });
+
+        // Clear OAuth flow session
+        req.session.set('oauth', undefined);
+
+        // Redirect to terms page with mode indicating registration completion
+        const termsUrl = new URL('/terms', `${fastify.config.app.host}`);
+        termsUrl.searchParams.set('mode', 'complete_registration');
+        if (oauthSession.returnUrl) {
+          termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
+        }
+        return res.redirect(termsUrl.toString());
+      }
+
       // Login/Register mode: authenticate with OAuth
+      // This handles: existing users, new users without explicit terms
       const result = await fastify.oauthConnectService.authenticateWithOAuth(
         provider,
         tokens,
@@ -129,38 +172,26 @@ export default (fastify: FastifyWithZodInstance) =>
       // Clear OAuth session
       req.session.set('oauth', undefined);
 
-      // Check if user needs to see terms page
-      let shouldRedirectToTerms = false;
-
-      if (result.isNewUser) {
-        // New user: show terms page only if explicit terms exist
-        // (implicit terms are auto-agreed during OAuth registration)
-        const explicitTerms = await fastify.termsService.getExplicitTerms();
-        shouldRedirectToTerms = explicitTerms.length > 0;
-      } else {
-        // Existing user: only show terms page if there are pending explicit required terms
-        // (implicit terms don't require redirect - they're auto-agreed or optional display)
-        const explicitTerms = await fastify.termsService.getExplicitTerms();
-        if (explicitTerms.length > 0) {
-          const pendingTerms =
-            await fastify.termsService.getPendingRequiredTerms(result.user.id);
-          const explicitTermIds = new Set(explicitTerms.map((t) => t.id));
-          shouldRedirectToTerms = pendingTerms.some((id) =>
-            explicitTermIds.has(id),
-          );
-        }
-      }
-
-      if (shouldRedirectToTerms) {
-        // Redirect to terms page, preserving the return URL
-        const termsUrl = new URL(
-          '/terms',
-          `${req.protocol}://${req.headers.host}`,
+      // Check if existing user needs to see terms page for pending required terms
+      if (!result.isNewUser && explicitTerms.length > 0) {
+        const pendingTerms = await fastify.termsService.getPendingRequiredTerms(
+          result.user.id,
         );
-        if (oauthSession.returnUrl) {
-          termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
+        const explicitTermIds = new Set(explicitTerms.map((t) => t.id));
+        const shouldRedirectToTerms = pendingTerms.some((id) =>
+          explicitTermIds.has(id),
+        );
+
+        if (shouldRedirectToTerms) {
+          const termsUrl = new URL(
+            '/terms',
+            `${req.protocol}://${req.headers.host}`,
+          );
+          if (oauthSession.returnUrl) {
+            termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
+          }
+          return res.redirect(termsUrl.toString());
         }
-        return res.redirect(termsUrl.toString());
       }
 
       // If return URL is provided, redirect
