@@ -19,14 +19,22 @@ import {
 const TermsSearchSchema = z.object({
   redirect: z.string().optional(),
   lang: z.string().optional(),
+  mode: z.enum(['normal', 'complete_registration']).optional(),
 });
 
 export const Route = createFileRoute('/terms/')({
   component: Terms,
   validateSearch: TermsSearchSchema,
-  beforeLoad: async ({ context }) => {
-    // Terms page requires authentication
-    // Users are redirected here after OAuth signup when they need to agree to terms
+  beforeLoad: async ({ context, search }) => {
+    // When mode=complete_registration, user is completing OAuth signup
+    // They have pendingOAuthRegistration session but are not logged in yet
+    // Skip auth check in this case - backend will validate the session
+    if (search.mode === 'complete_registration') {
+      return;
+    }
+
+    // Standard mode: requires authentication
+    // Users are redirected here after OAuth login when they need to agree to terms
     if (!context.user) {
       throw redirect({
         to: '/login',
