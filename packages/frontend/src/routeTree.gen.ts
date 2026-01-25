@@ -25,6 +25,7 @@ import { Route as SetupPasskeyIndexRouteImport } from './routes/setup/passkey/in
 import { Route as Setup2faIndexRouteImport } from './routes/setup/2fa/index'
 import { Route as PasswordResetIndexRouteImport } from './routes/password/reset/index'
 import { Route as PasswordForgotIndexRouteImport } from './routes/password/forgot/index'
+import { Route as LoginPasswordIndexRouteImport } from './routes/login/password/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -106,6 +107,11 @@ const PasswordForgotIndexRoute = PasswordForgotIndexRouteImport.update({
   path: '/password/forgot/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginPasswordIndexRoute = LoginPasswordIndexRouteImport.update({
+  id: '/login/password/',
+  path: '/login/password/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileIndexRoute
   '/register': typeof RegisterIndexRoute
   '/terms': typeof TermsIndexRoute
+  '/login/password': typeof LoginPasswordIndexRoute
   '/password/forgot': typeof PasswordForgotIndexRoute
   '/password/reset': typeof PasswordResetIndexRoute
   '/setup/2fa': typeof Setup2faIndexRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileIndexRoute
   '/register': typeof RegisterIndexRoute
   '/terms': typeof TermsIndexRoute
+  '/login/password': typeof LoginPasswordIndexRoute
   '/password/forgot': typeof PasswordForgotIndexRoute
   '/password/reset': typeof PasswordResetIndexRoute
   '/setup/2fa': typeof Setup2faIndexRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/profile/': typeof ProfileIndexRoute
   '/register/': typeof RegisterIndexRoute
   '/terms/': typeof TermsIndexRoute
+  '/login/password/': typeof LoginPasswordIndexRoute
   '/password/forgot/': typeof PasswordForgotIndexRoute
   '/password/reset/': typeof PasswordResetIndexRoute
   '/setup/2fa/': typeof Setup2faIndexRoute
@@ -172,6 +181,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/register'
     | '/terms'
+    | '/login/password'
     | '/password/forgot'
     | '/password/reset'
     | '/setup/2fa'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/register'
     | '/terms'
+    | '/login/password'
     | '/password/forgot'
     | '/password/reset'
     | '/setup/2fa'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/profile/'
     | '/register/'
     | '/terms/'
+    | '/login/password/'
     | '/password/forgot/'
     | '/password/reset/'
     | '/setup/2fa/'
@@ -227,6 +239,7 @@ export interface RootRouteChildren {
   ProfileIndexRoute: typeof ProfileIndexRoute
   RegisterIndexRoute: typeof RegisterIndexRoute
   TermsIndexRoute: typeof TermsIndexRoute
+  LoginPasswordIndexRoute: typeof LoginPasswordIndexRoute
   PasswordForgotIndexRoute: typeof PasswordForgotIndexRoute
   PasswordResetIndexRoute: typeof PasswordResetIndexRoute
   Setup2faIndexRoute: typeof Setup2faIndexRoute
@@ -352,6 +365,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PasswordForgotIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login/password/': {
+      id: '/login/password/'
+      path: '/login/password'
+      fullPath: '/login/password'
+      preLoaderRoute: typeof LoginPasswordIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -363,6 +383,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileIndexRoute: ProfileIndexRoute,
   RegisterIndexRoute: RegisterIndexRoute,
   TermsIndexRoute: TermsIndexRoute,
+  LoginPasswordIndexRoute: LoginPasswordIndexRoute,
   PasswordForgotIndexRoute: PasswordForgotIndexRoute,
   PasswordResetIndexRoute: PasswordResetIndexRoute,
   Setup2faIndexRoute: Setup2faIndexRoute,
