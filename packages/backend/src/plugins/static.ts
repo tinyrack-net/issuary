@@ -2,9 +2,9 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { env } from '@/lib/env.js';
 import fastifyStatic from '@fastify/static';
 import fastifyPlugin from 'fastify-plugin';
-import { env } from '@/lib/env.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.resolve(path.dirname(__filename));
@@ -81,11 +81,11 @@ export default fastifyPlugin(
 
         proxyReq.on('upgrade', (proxyRes, proxySocket, proxyHead) => {
           socket.write(
-            `HTTP/1.1 101 Switching Protocols\r\n` +
-              Object.entries(proxyRes.headers)
-                .map(([key, value]) => `${key}: ${value}`)
-                .join('\r\n') +
-              '\r\n\r\n',
+            `HTTP/1.1 101 Switching Protocols\r\n${Object.entries(
+              proxyRes.headers,
+            )
+              .map(([key, value]) => `${key}: ${value}`)
+              .join('\r\n')}\r\n\r\n`,
           );
 
           if (proxyHead.length > 0) {
