@@ -310,6 +310,15 @@ export class TermsService {
   public async hasRequiredTerms(): Promise<boolean> {
     return this.mikro.terms.hasRequiredTerms();
   }
+
+  /**
+   * Check if any terms exist (regardless of type or required flag)
+   * Used for OAuth signup flow where users must see all terms
+   */
+  public async hasAnyTerms(): Promise<boolean> {
+    const terms = await this.getGlobalTerms();
+    return terms.length > 0;
+  }
 }
 
 export default fastifyPlugin(
