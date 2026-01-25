@@ -28,18 +28,34 @@ declare module 'fastify' {
 }
 
 export class PasskeyService {
-  private readonly rpName: string;
-  private readonly rpId: string;
-  private readonly origin: string;
+  private readonly rpName: string = 'TinyRack Auth';
 
   public constructor(
     private readonly mikro: MikroService,
-    config: InternalAppConfig,
-  ) {
-    const hostUrl = new URL(config.app.host);
-    this.rpName = 'TinyRack Auth';
-    this.rpId = hostUrl.hostname;
-    this.origin = config.app.host;
+    private readonly config: InternalAppConfig,
+  ) {}
+
+  /**
+   * Get rpId from config or extract from app.host hostname
+   */
+  private getRpId(): string {
+    const passkeyConfig = this.config.basic_authentication_methods.passkey;
+    if (passkeyConfig.rp_id) {
+      return passkeyConfig.rp_id;
+    }
+    const hostUrl = new URL(this.config.app.host);
+    return hostUrl.hostname;
+  }
+
+  /**
+   * Get allowed origins from config or use app.host
+   */
+  private getOrigins(): string[] {
+    const passkeyConfig = this.config.basic_authentication_methods.passkey;
+    if (passkeyConfig.origins && passkeyConfig.origins.length > 0) {
+      return passkeyConfig.origins;
+    }
+    return [this.config.app.host];
   }
 
   /**
@@ -53,7 +69,7 @@ export class PasskeyService {
 
     const options = await generateRegistrationOptions({
       rpName: this.rpName,
-      rpID: this.rpId,
+      rpID: this.getRpId(),
       userName: user.email,
       userDisplayName: user.email,
       // Don't prompt for additional authenticator info
@@ -85,8 +101,8 @@ export class PasskeyService {
     const verification = await verifyRegistrationResponse({
       response,
       expectedChallenge,
-      expectedOrigin: this.origin,
-      expectedRPID: this.rpId,
+      expectedOrigin: this.getOrigins(),
+      expectedRPID: this.getRpId(),
     });
 
     if (!verification.verified || !verification.registrationInfo) {
@@ -149,7 +165,7 @@ export class PasskeyService {
     }
 
     const options = await generateAuthenticationOptions({
-      rpID: this.rpId,
+      rpID: this.getRpId(),
       userVerification: 'preferred',
       // Empty array allows discoverable credentials
       allowCredentials: allowCredentials || [],
@@ -178,8 +194,8 @@ export class PasskeyService {
     const verification = await verifyAuthenticationResponse({
       response,
       expectedChallenge,
-      expectedOrigin: this.origin,
-      expectedRPID: this.rpId,
+      expectedOrigin: this.getOrigins(),
+      expectedRPID: this.getRpId(),
       credential: {
         id: passkey.credential_id,
         publicKey: isoBase64URL.toBuffer(passkey.public_key),
