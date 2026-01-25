@@ -74,6 +74,32 @@ declare module '@fastify/secure-session' {
       returnUrl?: string | undefined;
     };
 
+    /**
+     * @description
+     * Pending OAuth registration session.
+     * Set when a new user authenticates via OAuth but needs to agree to explicit terms.
+     * User data is stored here temporarily until terms consent is completed.
+     * After consent, user is created in DB and this session is cleared.
+     */
+    pendingOAuthRegistration?: {
+      providerId: string;
+      tokens: {
+        access_token: string;
+        refresh_token?: string | undefined;
+        expires_in?: number | undefined;
+        token_type: string;
+      };
+      userInfo: {
+        id: string;
+        email: string;
+        email_verified: boolean;
+        name?: string | undefined;
+        picture?: string | undefined;
+      };
+      returnUrl?: string | undefined;
+      expiresAt: number;
+    };
+
     passkey_challenge?: string;
   }
 }
