@@ -236,3 +236,29 @@ describe('POST /api/v1/auth/passkey/options - Passkey disabled', () => {
     expect(res.statusCode).toBe(404);
   });
 });
+
+describe('POST /api/v1/auth/passkey/options - Custom rpId', () => {
+  const appCustomRpId = setupTestServer({
+    configOverrides: {
+      basic_authentication_methods: {
+        passkey: {
+          enabled: true,
+          email_verification: true,
+          rp_id: 'custom.example.com',
+        },
+      },
+    },
+  });
+
+  test('should use custom rp_id from config', async () => {
+    const res = await appCustomRpId.inject({
+      method: 'POST',
+      url: '/api/v1/auth/passkey/options',
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+
+    expect(body.options.rpId).toBe('custom.example.com');
+  });
+});
