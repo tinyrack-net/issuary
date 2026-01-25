@@ -1,7 +1,7 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { Check as CheckIcon, WarningIcon } from '@phosphor-icons/react';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
-import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +23,15 @@ const TermsSearchSchema = z.object({
 export const Route = createFileRoute('/terms/')({
   component: Terms,
   validateSearch: TermsSearchSchema,
+  beforeLoad: async ({ context }) => {
+    // Terms page requires authentication
+    // Users are redirected here after OAuth signup when they need to agree to terms
+    if (!context.user) {
+      throw redirect({
+        to: '/login',
+      });
+    }
+  },
   loaderDeps: ({ search }) => ({
     lang: search.lang,
   }),
@@ -40,12 +49,29 @@ function Terms() {
 
   const termsQuery = useSuspenseQuery(getTermsQueryOptions(lang));
 
+  // Separate explicit and implicit terms
+  const explicitTerms = useMemo(
+    () =>
+      termsQuery.data.terms.filter((term) => term.consentMode === 'explicit'),
+    [termsQuery.data.terms],
+  );
+
+  const implicitTerms = useMemo(
+    () =>
+      termsQuery.data.terms.filter((term) => term.consentMode === 'implicit'),
+    [termsQuery.data.terms],
+  );
+
+  const hasExplicitTerms = explicitTerms.length > 0;
+  const hasImplicitTerms = implicitTerms.length > 0;
+
+  // Schema only validates explicit terms (implicit are auto-agreed)
   const termsSchema = useMemo(
     () =>
       z.object({
         termsConsents: z.object(
           Object.fromEntries(
-            termsQuery.data.terms.map((term) => [
+            explicitTerms.map((term) => [
               term.id,
               term.required
                 ? z.literal(true, {
@@ -56,7 +82,7 @@ function Terms() {
           ),
         ),
       }),
-    [t, termsQuery.data.terms],
+    [t, explicitTerms],
   );
 
   type TermsFormValues = z.infer<typeof termsSchema>;
@@ -69,7 +95,7 @@ function Terms() {
   } = useForm<TermsFormValues>({
     defaultValues: {
       termsConsents: Object.fromEntries(
-        termsQuery.data.terms.map((term) => [
+        explicitTerms.map((term) => [
           term.id,
           term.userConsent?.agreed && !term.userConsent.requiresUpdate,
         ]),
@@ -92,15 +118,24 @@ function Terms() {
   });
 
   const onSubmit = (values: TermsFormValues) => {
-    const consentItems = Object.entries(values.termsConsents).map(
+    // Explicit terms consent (from user checkboxes)
+    const explicitConsents = Object.entries(values.termsConsents).map(
       ([termsId, agreed]) => ({
         termsId,
         agreed,
+        consentType: 'explicit' as const,
       }),
     );
 
+    // Implicit terms consent (auto-agreed when form is submitted)
+    const implicitConsents = implicitTerms.map((term) => ({
+      termsId: term.id,
+      agreed: true,
+      consentType: 'implicit' as const,
+    }));
+
     consentMutation.mutate({
-      consents: consentItems,
+      consents: [...explicitConsents, ...implicitConsents],
     });
   };
 
@@ -129,16 +164,30 @@ function Terms() {
       <PageHeader title={t('terms.title')} subtitle={t('terms.subtitle')} />
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        {/* Terms list */}
-        <div className="mb-6">
-          <TermsCheckboxList
-            terms={termsQuery.data.terms}
-            control={control}
-            setValue={setValue}
-            errors={errors}
-            disabled={consentMutation.isPending}
-          />
-        </div>
+        {/* Explicit terms with checkboxes */}
+        {hasExplicitTerms && (
+          <div className="mb-6">
+            <TermsCheckboxList
+              terms={explicitTerms}
+              control={control}
+              setValue={setValue}
+              errors={errors}
+              disabled={consentMutation.isPending}
+            />
+          </div>
+        )}
+
+        {/* Implicit terms notice */}
+        {hasImplicitTerms && termsQuery.data.implicitNotice && (
+          <div className="mb-6 text-center text-base-content/60 text-xs">
+            <div
+              className="prose prose-sm"
+              dangerouslySetInnerHTML={{
+                __html: termsQuery.data.implicitNotice,
+              }}
+            />
+          </div>
+        )}
 
         {/* Error message */}
         {consentMutation.isError && (
