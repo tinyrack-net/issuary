@@ -6,14 +6,23 @@ import ko from './locales/ko.json';
 
 export const LANGUAGE_STORAGE_KEY = 'tinyrack-auth-language';
 
-// All available translations (static)
+// All available translations with labels (static)
 const ALL_TRANSLATIONS = {
-  ko: { translation: ko },
-  en: { translation: en },
-  ja: { translation: ja },
+  ko: { translation: ko, label: '한국어' },
+  en: { translation: en, label: 'English' },
+  ja: { translation: ja, label: '日本語' },
 } as const;
 
 export type AvailableLanguage = keyof typeof ALL_TRANSLATIONS;
+
+/**
+ * Language display labels for UI
+ */
+export const LANGUAGE_LABELS: Record<AvailableLanguage, string> = {
+  ko: ALL_TRANSLATIONS.ko.label,
+  en: ALL_TRANSLATIONS.en.label,
+  ja: ALL_TRANSLATIONS.ja.label,
+};
 
 /**
  * Check if a language code is available in translations
@@ -23,21 +32,31 @@ export function isAvailableLanguage(lang: string): lang is AvailableLanguage {
 }
 
 /**
- * Detect browser language and map to available translation
+ * Filter supported languages to only those with available translations
  */
-function detectBrowserLanguage(
+export function getAvailableLanguages(
   supportedLanguages: string[],
+): AvailableLanguage[] {
+  return supportedLanguages.filter(isAvailableLanguage);
+}
+
+/**
+ * Detect browser language and return if available, otherwise fallback
+ */
+export function detectBrowserLanguage(
+  availableLanguages: AvailableLanguage[],
   fallbackLanguage: string,
-): string {
+): AvailableLanguage {
   const browserLang = navigator.language.split('-')[0];
   if (
     browserLang &&
-    supportedLanguages.includes(browserLang) &&
-    isAvailableLanguage(browserLang)
+    availableLanguages.includes(browserLang as AvailableLanguage)
   ) {
-    return browserLang;
+    return browserLang as AvailableLanguage;
   }
-  return fallbackLanguage;
+  return (
+    isAvailableLanguage(fallbackLanguage) ? fallbackLanguage : 'en'
+  ) as AvailableLanguage;
 }
 
 /**
@@ -47,29 +66,22 @@ function detectBrowserLanguage(
  * 3. fallback_language from config
  */
 function getInitialLanguage(
-  supportedLanguages: string[],
+  availableLanguages: AvailableLanguage[],
   defaultLanguage: string,
   fallbackLanguage: string,
 ): string {
   // 1. Check localStorage
   const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-  if (
-    stored &&
-    supportedLanguages.includes(stored) &&
-    isAvailableLanguage(stored)
-  ) {
+  if (stored && availableLanguages.includes(stored as AvailableLanguage)) {
     return stored;
   }
 
   // 2. Use default_language (or detect if 'auto')
   if (defaultLanguage === 'auto') {
-    return detectBrowserLanguage(supportedLanguages, fallbackLanguage);
+    return detectBrowserLanguage(availableLanguages, fallbackLanguage);
   }
 
-  if (
-    supportedLanguages.includes(defaultLanguage) &&
-    isAvailableLanguage(defaultLanguage)
-  ) {
+  if (availableLanguages.includes(defaultLanguage as AvailableLanguage)) {
     return defaultLanguage;
   }
 
@@ -89,12 +101,12 @@ export function initI18n(config: {
   const { supportedLanguages, defaultLanguage, fallbackLanguage } = config;
 
   // Filter to only languages we have translations for
-  const availableLanguages = supportedLanguages.filter(isAvailableLanguage);
+  const availableLanguages = getAvailableLanguages(supportedLanguages);
 
   // Build resources for only supported languages
   const resources: Record<string, { translation: typeof ko }> = {};
   for (const lang of availableLanguages) {
-    resources[lang] = ALL_TRANSLATIONS[lang];
+    resources[lang] = { translation: ALL_TRANSLATIONS[lang].translation };
   }
 
   // Ensure fallback language is available
@@ -104,7 +116,9 @@ export function initI18n(config: {
 
   // Always include fallback language in resources
   if (!resources[safeFallback]) {
-    resources[safeFallback] = ALL_TRANSLATIONS[safeFallback];
+    resources[safeFallback] = {
+      translation: ALL_TRANSLATIONS[safeFallback].translation,
+    };
   }
 
   const initialLanguage = getInitialLanguage(
