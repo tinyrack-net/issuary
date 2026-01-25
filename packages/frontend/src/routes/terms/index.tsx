@@ -55,8 +55,6 @@ function Terms() {
   const search = Route.useSearch();
 
   const lang = search.lang ?? i18n.language;
-
-  const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
   const termsQuery = useSuspenseQuery(getTermsQueryOptions(lang));
 
   // Separate explicit and implicit terms
@@ -73,11 +71,6 @@ function Terms() {
   );
 
   const hasExplicitTerms = explicitTerms.length > 0;
-
-  // Get implicit notice from config
-  const implicitNotice =
-    configData.app.signup_implicit_terms?.[lang] ??
-    configData.app.signup_implicit_terms?.[configData.app.fallback_language];
 
   // Schema only validates explicit terms (implicit are auto-agreed)
   const termsSchema = useMemo(
@@ -187,18 +180,6 @@ function Terms() {
               setValue={setValue}
               errors={errors}
               disabled={consentMutation.isPending}
-            />
-          </div>
-        )}
-
-        {/* Implicit terms notice */}
-        {implicitNotice && (
-          <div className="mb-4 text-center text-base-content/60 text-xs">
-            <div
-              className="prose prose-sm !text-xs [&_*]:!text-xs"
-              dangerouslySetInnerHTML={{
-                __html: implicitNotice,
-              }}
             />
           </div>
         )}
