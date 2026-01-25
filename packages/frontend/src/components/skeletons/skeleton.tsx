@@ -36,3 +36,10 @@ export function SkeletonInput({ className = '' }: SkeletonProps) {
 export function SkeletonButton({ className = '' }: SkeletonProps) {
   return <div className={`skeleton h-10 w-full rounded-lg ${className}`} />;
 }
+
+/**
+ * Skeleton for terms checkbox item.
+ */
+export function SkeletonTermsCheckbox({ className = '' }: SkeletonProps) {
+  return <div className={`skeleton h-14 w-full rounded-lg ${className}`} />;
+}
