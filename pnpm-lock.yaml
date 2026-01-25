@@ -9,6 +9,9 @@ catalogs:
     '@biomejs/biome':
       specifier: 2.3.10
       version: 2.3.10
+    '@tailwindcss/typography':
+      specifier: ^0.5.19
+      version: 0.5.19
     '@tailwindcss/vite':
       specifier: ^4.1.18
       version: 4.1.18
@@ -222,7 +225,7 @@ importers:
         specifier: ^13.2.2
         version: 13.2.2
       '@tailwindcss/typography':
-        specifier: ^0.5.19
+        specifier: 'catalog:'
         version: 0.5.19(tailwindcss@4.1.18)
       '@tanstack/react-query':
         specifier: 'catalog:'
@@ -335,6 +338,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.1.18
+      '@tailwindcss/typography':
+        specifier: 'catalog:'
+        version: 0.5.19(tailwindcss@4.1.18)
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.4
