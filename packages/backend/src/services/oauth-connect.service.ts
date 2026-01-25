@@ -380,6 +380,206 @@ export class OAuthConnectService {
   }
 
   /**
+   * Check if a user would be new (not existing) for OAuth authentication
+   * Used to determine if we should defer registration until terms consent
+   */
+  public async isNewOAuthUser(
+    providerId: string,
+    userInfo: z.infer<typeof oauthConnectSchema.OAuthUserInfo>,
+  ): Promise<boolean> {
+    // Check if OAuth account is already linked
+    const existingOAuth = await this.mikro.userOAuth.findByProviderUserId(
+      providerId,
+      userInfo.id,
+    );
+
+    if (existingOAuth) {
+      return false;
+    }
+
+    // Check if user with same email exists in database
+    const existingUser = await this.mikro.user.findOne({
+      email: userInfo.email,
+    });
+
+    return !existingUser;
+  }
+
+  /**
+   * Complete OAuth registration with terms consent
+   * Called after user agrees to terms on /terms page
+   * This creates the user in DB only after consent is given (GDPR compliant)
+   */
+  public async completeOAuthRegistration(params: {
+    providerId: string;
+    tokens: z.infer<typeof oauthConnectSchema.OAuthTokens>;
+    userInfo: z.infer<typeof oauthConnectSchema.OAuthUserInfo>;
+    consents: Array<{ termsId: string; agreed: boolean }>;
+  }): Promise<z.infer<typeof oauthConnectSchema.OAuthAuthResult>> {
+    const { providerId, tokens, userInfo, consents } = params;
+
+    // Double-check that user doesn't exist (in case of race condition)
+    const existingOAuth = await this.mikro.userOAuth.findByProviderUserId(
+      providerId,
+      userInfo.id,
+    );
+
+    if (existingOAuth) {
+      // User was created in the meantime, just return existing user
+      const user = await existingOAuth.user.load({
+        populate: ['password_hash'],
+      });
+      if (!user) {
+        throw new e.UserNotFound.Error();
+      }
+
+      const totpRegistered = await this.mikro.userTotp.isRegistered(user.id);
+      const secondFactorRequired =
+        user.managed_by === 'config'
+          ? false
+          : this.config.basic_authentication_methods.password.second_factor
+              .required;
+
+      return {
+        isNewUser: false,
+        user: {
+          id: user.id,
+          managed_by: 'database',
+          email: user.email,
+          email_verified: user.email_verified,
+          email_verification_required:
+            this.userService.userEmailVerificationRequired(user),
+          has_password: user.hasPassword(),
+          totp_registered: totpRegistered,
+          second_factor_required: secondFactorRequired,
+          passkey_count: await this.mikro.userPasskey.countByUserId(user.id),
+        },
+      };
+    }
+
+    // Check if user with same email exists
+    const existingUser = await this.mikro.user.findOne({
+      email: userInfo.email,
+    });
+
+    if (existingUser) {
+      // Handle as auto_link - link OAuth to existing user
+      const provider = this.getProvider(providerId);
+
+      if (provider.email_conflict_strategy === 'require_link') {
+        throw new e.OAuthEmailConflict.Error();
+      }
+
+      if (!existingUser.email_verified) {
+        existingUser.email_verified = true;
+      }
+
+      await this.mikro.userOAuth.linkAccount({
+        userId: existingUser.id,
+        providerName: providerId,
+        providerUserId: userInfo.id,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token || '',
+        expiresAt: tokens.expires_in
+          ? new Date(Date.now() + tokens.expires_in * 1000)
+          : null,
+      });
+
+      // Record consents for existing user
+      await this.termsService.recordConsents({
+        userId: existingUser.id,
+        consents,
+      });
+
+      // Also record implicit consents
+      await this.termsService.recordImplicitConsents({
+        userId: existingUser.id,
+      });
+
+      await this.mikro.em.flush();
+
+      const totpRegistered = await this.mikro.userTotp.isRegistered(
+        existingUser.id,
+      );
+      const secondFactorRequired =
+        existingUser.managed_by === 'config'
+          ? false
+          : this.config.basic_authentication_methods.password.second_factor
+              .required;
+
+      await this.mikro.em.populate(existingUser, ['password_hash']);
+
+      return {
+        isNewUser: false,
+        user: {
+          id: existingUser.id,
+          managed_by: existingUser.managed_by,
+          email: existingUser.email,
+          email_verified: existingUser.email_verified,
+          email_verification_required:
+            this.userService.userEmailVerificationRequired(existingUser),
+          has_password: existingUser.hasPassword(),
+          totp_registered: totpRegistered,
+          second_factor_required: secondFactorRequired,
+          passkey_count: await this.mikro.userPasskey.countByUserId(
+            existingUser.id,
+          ),
+        },
+      };
+    }
+
+    // Create new user with OAuth
+    const newUser = this.mikro.user.create({
+      email: userInfo.email,
+      password_hash: null,
+    });
+    newUser.email_verified = true;
+
+    await this.mikro.em.persist(newUser);
+
+    // Link OAuth account
+    await this.mikro.userOAuth.linkAccount({
+      userId: newUser.id,
+      providerName: providerId,
+      providerUserId: userInfo.id,
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token || '',
+      expiresAt: tokens.expires_in
+        ? new Date(Date.now() + tokens.expires_in * 1000)
+        : null,
+    });
+
+    await this.mikro.em.flush();
+
+    // Record explicit consents (from user's checkbox selections)
+    await this.termsService.recordConsents({
+      userId: newUser.id,
+      consents,
+    });
+
+    // Record implicit consents automatically
+    await this.termsService.recordImplicitConsents({ userId: newUser.id });
+
+    return {
+      isNewUser: true,
+      user: {
+        id: newUser.id,
+        managed_by: 'database',
+        email: newUser.email,
+        email_verified: newUser.email_verified,
+        email_verification_required:
+          this.userService.userEmailVerificationRequired(newUser),
+        has_password: newUser.hasPassword(),
+        totp_registered: false,
+        second_factor_required:
+          this.config.basic_authentication_methods.password.second_factor
+            .required,
+        passkey_count: 0,
+      },
+    };
+  }
+
+  /**
    * Link OAuth account to existing user
    */
   public async linkOAuthAccount(
