@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+packages/backend/dist
+packages/backend/public
+packages/frontend/dist
+
+# Development files
+*.log
+.git
+.gitignore
+*.md
+.env*
+.vscode
+.idea
+
+# Test files
+**/*.test.ts
+**/test-utils
+**/__tests__
+**/e2e
+coverage
+
+# Database
+*.db
+*.sqlite
+
+# Config (volume mount로 제공)
+packages/backend/config.yaml
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Misc
+.DS_Store
+Thumbs.db
