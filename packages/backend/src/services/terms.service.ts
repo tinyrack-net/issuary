@@ -191,15 +191,15 @@ export class TermsService {
 
   /**
    * Record consent for multiple terms
-   * consentType is determined by each term's consentMode
+   * consentType can be specified per consent item, or defaults to term's consentMode
    */
   public async recordConsents(params: {
     userId: string;
     consents: Array<{
       termsId: string;
       agreed: boolean;
+      consentType?: 'explicit' | 'implicit' | undefined;
     }>;
-    consentType?: 'explicit' | 'implicit';
   }): Promise<UserTermsConsentEntity[]> {
     const terms = await this.getGlobalTerms();
     const termsMap = new Map(terms.map((t) => [t.id, t]));
@@ -217,7 +217,7 @@ export class TermsService {
           termsVersion: term.version,
           agreed: consent.agreed,
           // Use provided consentType or derive from term's consentMode
-          consentType: params.consentType ?? term.consentMode,
+          consentType: consent.consentType ?? term.consentMode,
         };
       })
       .filter((r): r is NonNullable<typeof r> => r !== null);
@@ -250,8 +250,8 @@ export class TermsService {
       consents: implicitTerms.map((t) => ({
         termsId: t.id,
         agreed: true,
+        consentType: 'implicit',
       })),
-      consentType: 'implicit',
     });
   }
 

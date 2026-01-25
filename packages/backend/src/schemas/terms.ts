@@ -80,6 +80,12 @@ export const TermsResponse = z
 const ConsentItem = z.object({
   termsId: z.string().describe('Term ID to consent to'),
   agreed: z.boolean().describe('Whether user agrees to this term'),
+  consentType: z
+    .enum(['explicit', 'implicit'])
+    .optional()
+    .describe(
+      'How consent was obtained. Defaults to term consentMode if omitted',
+    ),
 });
 
 /**

@@ -64,6 +64,7 @@ export const getTermsQueryOptions = (lang?: string) =>
 export type TermsConsentItem = {
   termsId: string;
   agreed: boolean;
+  consentType?: 'explicit' | 'implicit';
 };
 
 /**
