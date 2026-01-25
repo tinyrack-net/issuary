@@ -1,4 +1,5 @@
 import { ArrowSquareOut as ArrowSquareOutIcon } from '@phosphor-icons/react';
+import { useState } from 'react';
 import {
   type Control,
   Controller,
@@ -11,6 +12,7 @@ import {
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { TermItem } from '@/queries/terms.js';
+import { TermsContentModal } from './terms-content-modal.js';
 
 export type TermsConsentsField = {
   termsConsents: Record<string, boolean>;
@@ -32,6 +34,7 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
   disabled = false,
 }: TermsCheckboxListProps<T>) {
   const { t } = useTranslation();
+  const [modalTerm, setModalTerm] = useState<TermItem | null>(null);
 
   const termsConsents = useWatch({
     control,
@@ -57,79 +60,94 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
     | undefined;
 
   return (
-    <div className="space-y-3">
-      {/* All required terms checkbox */}
-      {terms.some((term) => term.required) && (
-        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-base-300 bg-base-200/50 p-3">
-          <input
-            type="checkbox"
-            className="checkbox checkbox-primary mt-0.5"
-            checked={allRequiredChecked}
-            onChange={(e) => handleAllRequiredChange(e.target.checked)}
-            disabled={disabled}
-          />
-          <div className="flex-1">
-            <span className="font-medium text-sm">
+    <>
+      <div className="space-y-1">
+        {/* All required terms checkbox */}
+        {terms.some((term) => term.required) && (
+          <label className="flex cursor-pointer items-center gap-1.5 py-0.5">
+            <input
+              type="checkbox"
+              className="checkbox checkbox-primary checkbox-xs"
+              checked={allRequiredChecked}
+              onChange={(e) => handleAllRequiredChange(e.target.checked)}
+              disabled={disabled}
+            />
+            <span className="font-medium text-xs">
               {t('terms.agreeAllRequired')}
             </span>
-          </div>
-        </label>
-      )}
+          </label>
+        )}
 
-      {/* Individual terms */}
-      {terms.map((term) => (
-        <Controller
-          key={term.id}
-          name={`termsConsents.${term.id}` as Path<T>}
-          control={control}
-          render={({ field }) => (
-            <div>
-              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-base-300 p-3 hover:bg-base-200/30">
-                <input
-                  type="checkbox"
-                  className="checkbox checkbox-primary mt-0.5"
-                  checked={(field.value as boolean) ?? false}
-                  onChange={(e) => field.onChange(e.target.checked)}
-                  disabled={disabled}
-                />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`badge badge-sm ${term.required ? 'badge-error' : 'badge-ghost'}`}
+        {/* Individual terms */}
+        {terms.map((term) => (
+          <Controller
+            key={term.id}
+            name={`termsConsents.${term.id}` as Path<T>}
+            control={control}
+            render={({ field }) => (
+              <div>
+                <label className="flex cursor-pointer items-center gap-1.5 py-0.5">
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-primary checkbox-xs"
+                    checked={(field.value as boolean) ?? false}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                    disabled={disabled}
+                  />
+                  <span
+                    className={`badge badge-xs ${term.required ? 'badge-error' : 'badge-ghost'}`}
+                  >
+                    {term.required ? t('terms.required') : t('terms.optional')}
+                  </span>
+                  <span className="text-xs">{term.title}</span>
+                  {term.type === 'link' && (
+                    <a
+                      href={term.content}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      {term.required
-                        ? t('terms.required')
-                        : t('terms.optional')}
-                    </span>
-                    <span className="font-medium text-sm">{term.title}</span>
-                    {term.type === 'link' && (
-                      <a
-                        href={term.content}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <ArrowSquareOutIcon size={16} />
-                      </a>
-                    )}
-                  </div>
-                  {term.userConsent?.requiresUpdate && (
-                    <p className="mt-1 text-warning text-xs">
-                      {t('terms.versionUpdated')}
-                    </p>
+                      <ArrowSquareOutIcon size={12} />
+                    </a>
                   )}
-                </div>
-              </label>
-              {termsConsentsErrors?.[term.id] && (
-                <p className="mt-1 ml-9 text-error text-xs">
-                  {termsConsentsErrors[term.id]?.message}
-                </p>
-              )}
-            </div>
-          )}
-        />
-      ))}
-    </div>
+                  {term.type === 'text' && (
+                    <button
+                      type="button"
+                      className="link link-primary text-xs"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setModalTerm(term);
+                      }}
+                    >
+                      {t('terms.view')}
+                    </button>
+                  )}
+                </label>
+                {term.userConsent?.requiresUpdate && (
+                  <p className="ml-5 text-warning text-xs">
+                    {t('terms.versionUpdated')}
+                  </p>
+                )}
+                {termsConsentsErrors?.[term.id] && (
+                  <p className="ml-5 text-error text-xs">
+                    {termsConsentsErrors[term.id]?.message}
+                  </p>
+                )}
+              </div>
+            )}
+          />
+        ))}
+      </div>
+
+      {/* Modal for text type terms */}
+      <TermsContentModal
+        isOpen={modalTerm !== null}
+        onClose={() => setModalTerm(null)}
+        title={modalTerm?.title ?? ''}
+        content={modalTerm?.content ?? ''}
+      />
+    </>
   );
 }
