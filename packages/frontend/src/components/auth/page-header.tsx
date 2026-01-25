@@ -1,6 +1,6 @@
 type PageHeaderProps = {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   className?: string;
 };
 
@@ -11,10 +11,16 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <div className={className}>
-      <h1 className="mb-2 text-center font-bold text-3xl">{title}</h1>
-      <p className="mb-6 text-center text-base-content/60 text-xs">
-        {subtitle}
-      </p>
+      <h1
+        className={`text-center font-bold text-3xl ${subtitle ? 'mb-2' : 'mb-6'}`}
+      >
+        {title}
+      </h1>
+      {subtitle && (
+        <p className="mb-6 text-center text-base-content/60 text-xs">
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 }
