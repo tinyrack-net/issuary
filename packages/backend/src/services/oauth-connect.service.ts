@@ -354,6 +354,9 @@ export class OAuthConnectService {
 
     await this.mikro.em.flush();
 
+    // Note: Terms consent (including implicit) is handled in /terms page
+    // OAuth users are redirected there after signup if any terms exist
+
     return {
       isNewUser: true,
       user: {
