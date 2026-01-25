@@ -129,6 +129,33 @@ export default (fastify: FastifyWithZodInstance) =>
       // Clear OAuth session
       req.session.set('oauth', undefined);
 
+      // Check if user needs to see terms page
+      let shouldRedirectToTerms = false;
+
+      if (result.isNewUser) {
+        // New user: show terms page if any terms exist (explicit or implicit)
+        // OAuth users need to see implicit terms notice that they would have
+        // seen on the regular registration page
+        shouldRedirectToTerms = await fastify.termsService.hasAnyTerms();
+      } else {
+        // Existing user: only show terms page if there are pending required terms
+        // (e.g., new required terms added or terms version updated)
+        shouldRedirectToTerms =
+          await fastify.termsService.hasPendingRequiredTerms(result.user.id);
+      }
+
+      if (shouldRedirectToTerms) {
+        // Redirect to terms page, preserving the return URL
+        const termsUrl = new URL(
+          '/terms',
+          `${req.protocol}://${req.headers.host}`,
+        );
+        if (oauthSession.returnUrl) {
+          termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
+        }
+        return res.redirect(termsUrl.toString());
+      }
+
       // If return URL is provided, redirect
       if (oauthSession.returnUrl) {
         return res.redirect(oauthSession.returnUrl);
