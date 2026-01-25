@@ -497,4 +497,11 @@ export const e = {
     'TERMS_NOT_FOUND',
     'The specified terms were not found.',
   ),
+
+  // Proxy Security Errors
+  UntrustedProxy: createError(
+    403,
+    'UNTRUSTED_PROXY',
+    'Request rejected: connection from untrusted source.',
+  ),
 };
