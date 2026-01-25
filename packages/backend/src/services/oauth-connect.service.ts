@@ -499,6 +499,6 @@ export default fastifyPlugin(
   },
   {
     name: 'oauth-connect-service-plugin',
-    dependencies: ['base-service-plugin'],
+    dependencies: ['base-service-plugin', 'user-service-plugin'],
   },
 );
