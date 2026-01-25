@@ -79,6 +79,8 @@ export type TermsConsentRequest = {
 export type TermsConsentResponse = {
   ok: true;
   recorded: number;
+  /** True if OAuth registration was completed with this consent submission */
+  registered?: boolean;
 };
 
 /**
