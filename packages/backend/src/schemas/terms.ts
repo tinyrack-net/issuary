@@ -100,6 +100,12 @@ export const TermsConsentResponse = z
   .object({
     ok: z.literal(true),
     recorded: z.number().int().describe('Number of consents recorded'),
+    registered: z
+      .boolean()
+      .optional()
+      .describe(
+        'True if OAuth registration was completed with this consent submission',
+      ),
   })
   .describe('Terms consent response');
 
