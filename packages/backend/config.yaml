@@ -40,7 +40,7 @@ terms:
   # Terms of Service (required, explicit consent)
   - id: tos
     required: true
-    consent_mode: explicit
+    consent_mode: implicit
     version: "1.0.0"
     content:
       ko:
