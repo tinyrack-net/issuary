@@ -12,12 +12,10 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
 import { FooterLink } from '@/components/auth/footer-link.js';
 import { IconInput } from '@/components/auth/icon-input.js';
-import { OAuthButtons } from '@/components/auth/oauth-buttons.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { SubmitButton } from '@/components/auth/submit-button.js';
 import { SkeletonTermsCheckbox } from '@/components/skeletons/skeleton.js';
 import { TermsCheckboxList } from '@/components/terms/terms-checkbox-list.js';
-import { Divider } from '@/components/ui/divider.js';
 import { PageLayout } from '@/components/ui/page-layout.js';
 import {
   buildAuthorizeUrl,
@@ -28,7 +26,6 @@ import {
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
-import { getOAuthConnectUrl } from '@/queries/oauth.js';
 import { registerMutationOptions } from '@/queries/register.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
 import { getTermsQueryOptions } from '@/queries/terms.js';
@@ -66,7 +63,6 @@ function Register() {
   const { data: termsData } = useSuspenseQuery(
     getTermsQueryOptions(deferredLang),
   );
-  const oauthProviders = configData.oauth_authentication_methods;
 
   const isPasswordAuthEnabled =
     configData.basic_authentication_methods.password.enabled;
@@ -218,21 +214,12 @@ function Register() {
     });
   };
 
-  const buildOAuthUrl = (providerId: string) =>
-    getOAuthConnectUrl(providerId, 'register');
-
   return (
     <PageLayout maxWidth="100" cardPadding>
       <PageHeader
         title={t('register.title')}
         subtitle={t('register.subtitle')}
       />
-
-      <OAuthButtons providers={oauthProviders} buildUrl={buildOAuthUrl} />
-
-      {oauthProviders.length > 0 && isPasswordAuthEnabled && (
-        <Divider text={t('register.divider.orSignUpWithEmail')} />
-      )}
 
       {isPasswordAuthEnabled && (
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
