@@ -36,7 +36,6 @@ export type TermItem = {
  * Terms response from GET /api/v1/terms
  */
 export type TermsResponse = {
-  implicitNotice: string | null;
   terms: TermItem[];
   pendingTerms: string[];
 };

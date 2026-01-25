@@ -78,9 +78,11 @@ function Register() {
     [termsData.terms],
   );
   const hasExplicitTerms = explicitTerms.length > 0;
-  const hasImplicitTerms = termsData.terms.some(
-    (term) => term.consentMode === 'implicit',
-  );
+
+  // Get implicit notice from config
+  const implicitNotice =
+    configData.app.signup_implicit_terms?.[lang] ??
+    configData.app.signup_implicit_terms?.[configData.app.fallback_language];
 
   const registerSchema = useMemo(
     () =>
@@ -275,15 +277,15 @@ function Register() {
           )}
 
           {/* Terms of Service - Implicit mode notice */}
-          {hasTerms && hasImplicitTerms && termsData.implicitNotice && (
+          {implicitNotice && (
             <div
               className={`text-center text-base-content/60 text-xs ${isLangTransitioning ? 'opacity-50' : ''}`}
             >
               <div
-                className="prose prose-sm"
+                className="prose prose-sm !text-xs [&_*]:!text-xs"
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
                 dangerouslySetInnerHTML={{
-                  __html: termsData.implicitNotice,
+                  __html: implicitNotice,
                 }}
               />
             </div>

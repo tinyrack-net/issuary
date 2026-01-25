@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/auth/page-header.js';
 import { TermsCheckboxList } from '@/components/terms/terms-checkbox-list.js';
 import { Alert } from '@/components/ui/alert.js';
 import { PageLayout } from '@/components/ui/page-layout.js';
+import { appConfigQueryOptions } from '@/queries/config.js';
 import {
   getTermsQueryOptions,
   termsConsentMutationOptions,
@@ -47,6 +48,7 @@ function Terms() {
 
   const lang = search.lang ?? i18n.language;
 
+  const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
   const termsQuery = useSuspenseQuery(getTermsQueryOptions(lang));
 
   // Separate explicit and implicit terms
@@ -63,7 +65,11 @@ function Terms() {
   );
 
   const hasExplicitTerms = explicitTerms.length > 0;
-  const hasImplicitTerms = implicitTerms.length > 0;
+
+  // Get implicit notice from config
+  const implicitNotice =
+    configData.app.signup_implicit_terms?.[lang] ??
+    configData.app.signup_implicit_terms?.[configData.app.fallback_language];
 
   // Schema only validates explicit terms (implicit are auto-agreed)
   const termsSchema = useMemo(
@@ -178,12 +184,12 @@ function Terms() {
         )}
 
         {/* Implicit terms notice */}
-        {hasImplicitTerms && termsQuery.data.implicitNotice && (
-          <div className="mb-6 text-center text-base-content/60 text-xs">
+        {implicitNotice && (
+          <div className="mb-4 text-center text-base-content/60 text-xs">
             <div
-              className="prose prose-sm"
+              className="prose prose-sm !text-xs [&_*]:!text-xs"
               dangerouslySetInnerHTML={{
-                __html: termsQuery.data.implicitNotice,
+                __html: implicitNotice,
               }}
             />
           </div>
