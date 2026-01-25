@@ -1,5 +1,5 @@
 app:
-  host: https://test-auth.intranet.winetree94.com
+  host: https://auth-test.intranet.winetree94.com
   port: 8080
   cookie_secret: 3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b
   jwt_access_token_ttl: 3600
@@ -124,6 +124,17 @@ basic_authentication_methods:
       issuer: tinyrack
   passkey:
     enabled: true
+    # WebAuthn Relying Party ID (domain only, no protocol/port)
+    # Must be current domain or a registrable parent domain
+    # If not specified, extracted from app.host hostname
+    # Use parent domain to share passkeys across subdomains
+    # rp_id: winetree94.com
+    #
+    # Allowed origins for WebAuthn verification
+    # If not specified, uses app.host
+    # origins:
+    #   - https://test-auth.intranet.winetree94.com
+    #   - https://other-auth.intranet.winetree94.com
 
 oauth_authentication_methods:
   - id: github
