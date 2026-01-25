@@ -9,6 +9,7 @@ import { generatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { oauthConnectSchema } from '@/schemas/oauth-connect.js';
+import type { TermsService } from './terms.service.js';
 import type { UserService } from './user.service.js';
 
 // Note: This service uses fastify.config for oauth_authentication_methods (OAuth providers config)
@@ -25,6 +26,7 @@ export class OAuthConnectService {
     private readonly config: InternalAppConfig,
     private readonly userService: UserService,
     private readonly mikro: MikroService,
+    private readonly termsService: TermsService,
   ) {}
 
   /**
@@ -354,8 +356,9 @@ export class OAuthConnectService {
 
     await this.mikro.em.flush();
 
-    // Note: Terms consent (including implicit) is handled in /terms page
-    // OAuth users are redirected there after signup if any terms exist
+    // Record implicit consents automatically for OAuth users
+    // Explicit terms consent is handled in /terms page if any explicit terms exist
+    await this.termsService.recordImplicitConsents({ userId: newUser.id });
 
     return {
       isNewUser: true,
@@ -497,11 +500,16 @@ export default fastifyPlugin(
       fastify.config,
       fastify.userService,
       fastify.mikro,
+      fastify.termsService,
     );
     fastify.decorate('oauthConnectService', oauthConnectService);
   },
   {
     name: 'oauth-connect-service-plugin',
-    dependencies: ['base-service-plugin', 'user-service-plugin'],
+    dependencies: [
+      'base-service-plugin',
+      'user-service-plugin',
+      'terms-service-plugin',
+    ],
   },
 );

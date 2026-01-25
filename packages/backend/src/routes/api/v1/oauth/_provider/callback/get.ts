@@ -133,15 +133,22 @@ export default (fastify: FastifyWithZodInstance) =>
       let shouldRedirectToTerms = false;
 
       if (result.isNewUser) {
-        // New user: show terms page if any terms exist (explicit or implicit)
-        // OAuth users need to see implicit terms notice that they would have
-        // seen on the regular registration page
-        shouldRedirectToTerms = await fastify.termsService.hasAnyTerms();
+        // New user: show terms page only if explicit terms exist
+        // (implicit terms are auto-agreed during OAuth registration)
+        const explicitTerms = await fastify.termsService.getExplicitTerms();
+        shouldRedirectToTerms = explicitTerms.length > 0;
       } else {
-        // Existing user: only show terms page if there are pending required terms
-        // (e.g., new required terms added or terms version updated)
-        shouldRedirectToTerms =
-          await fastify.termsService.hasPendingRequiredTerms(result.user.id);
+        // Existing user: only show terms page if there are pending explicit required terms
+        // (implicit terms don't require redirect - they're auto-agreed or optional display)
+        const explicitTerms = await fastify.termsService.getExplicitTerms();
+        if (explicitTerms.length > 0) {
+          const pendingTerms =
+            await fastify.termsService.getPendingRequiredTerms(result.user.id);
+          const explicitTermIds = new Set(explicitTerms.map((t) => t.id));
+          shouldRedirectToTerms = pendingTerms.some((id) =>
+            explicitTermIds.has(id),
+          );
+        }
       }
 
       if (shouldRedirectToTerms) {
