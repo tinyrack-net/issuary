@@ -29,9 +29,14 @@ export function PageLayout({
   cardPadding = false,
   responsivePadding = false,
 }: PageLayoutProps) {
-  const { themeMode, currentTheme, darkTheme, canToggleTheme, toggleDarkMode } =
-    useTheme();
-  const isDark = currentTheme === darkTheme;
+  const {
+    themeMode,
+    darkTheme,
+    canToggleTheme,
+    cycleThemeMode,
+    isAutoMode,
+    detectedTheme,
+  } = useTheme();
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
 
   const backgroundUrl = configData.app.background_url;
@@ -53,8 +58,10 @@ export function PageLayout({
       {canToggleTheme && (
         <ThemeToggle
           themeMode={themeMode}
-          isDark={isDark}
-          onToggle={toggleDarkMode}
+          isAutoMode={isAutoMode}
+          detectedTheme={detectedTheme}
+          darkTheme={darkTheme}
+          onCycle={cycleThemeMode}
         />
       )}
       <LanguageSelector />

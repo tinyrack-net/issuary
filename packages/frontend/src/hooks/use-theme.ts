@@ -154,6 +154,44 @@ export function useTheme() {
     }
   }, [canToggleTheme, serverThemeMode, setThemeMode]);
 
+  const cycleThemeMode = useCallback(() => {
+    // Only allow cycling if server allows it
+    if (!canToggleTheme) return;
+
+    const currentMode = storedThemeMode ?? 'system';
+    // Cycle: system -> light -> dark -> system
+    let nextMode: ThemeMode;
+    if (currentMode === 'system') {
+      nextMode = 'light';
+    } else if (currentMode === 'light') {
+      nextMode = 'dark';
+    } else {
+      nextMode = 'system';
+    }
+
+    if (nextMode === 'system') {
+      localStorage.removeItem(THEME_MODE_STORAGE_KEY);
+    } else {
+      localStorage.setItem(THEME_MODE_STORAGE_KEY, nextMode);
+    }
+    window.dispatchEvent(new CustomEvent(THEME_MODE_CHANGE_EVENT));
+  }, [canToggleTheme, storedThemeMode]);
+
+  const setAutoTheme = useCallback(() => {
+    if (!canToggleTheme) return;
+    localStorage.removeItem(THEME_MODE_STORAGE_KEY);
+    window.dispatchEvent(new CustomEvent(THEME_MODE_CHANGE_EVENT));
+  }, [canToggleTheme]);
+
+  // Check if user is in auto mode (no localStorage preference)
+  const isAutoMode = storedThemeMode === null;
+
+  // Detected theme when in system mode
+  const detectedTheme = useMemo(() => {
+    const systemPref = getSystemThemePreference();
+    return systemPref === 'dark' ? serverDarkTheme : serverLightTheme;
+  }, [serverDarkTheme, serverLightTheme]);
+
   return {
     themeMode,
     currentTheme,
@@ -162,5 +200,9 @@ export function useTheme() {
     canToggleTheme,
     setThemeMode,
     toggleDarkMode,
+    cycleThemeMode,
+    setAutoTheme,
+    isAutoMode,
+    detectedTheme,
   };
 }

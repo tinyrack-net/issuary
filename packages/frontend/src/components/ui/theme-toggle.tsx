@@ -1,23 +1,65 @@
-import { MoonIcon, SunIcon } from '@phosphor-icons/react';
-import type { ThemeMode } from '@/queries/config';
+import { CircleHalfIcon, MoonIcon, SunIcon } from '@phosphor-icons/react';
+import { useTranslation } from 'react-i18next';
+import type { Theme, ThemeMode } from '@/queries/config.js';
 
 type ThemeToggleProps = {
   themeMode: ThemeMode;
-  isDark: boolean;
-  onToggle: () => void;
+  isAutoMode: boolean;
+  detectedTheme: Theme;
+  darkTheme: Theme;
+  onCycle: () => void;
   className?: string;
 };
 
 export function ThemeToggle({
-  isDark,
-  onToggle,
+  themeMode,
+  isAutoMode,
+  detectedTheme,
+  darkTheme,
+  onCycle,
   className = 'absolute start-4 top-4',
 }: ThemeToggleProps) {
+  const { t } = useTranslation();
+
+  // Determine which icon to show based on theme mode
+  const renderIcon = () => {
+    if (themeMode === 'system' || isAutoMode) {
+      return <CircleHalfIcon className="size-4" weight="fill" />;
+    }
+    if (themeMode === 'light') {
+      return <SunIcon className="size-4" weight="fill" />;
+    }
+    return <MoonIcon className="size-4" weight="fill" />;
+  };
+
+  // Build tooltip label
+  const getTooltipLabel = () => {
+    if (themeMode === 'system' || isAutoMode) {
+      const detectedLabel =
+        detectedTheme === darkTheme
+          ? t('common.theme.dark')
+          : t('common.theme.light');
+      return `${t('common.theme.auto')} (${detectedLabel})`;
+    }
+    if (themeMode === 'light') {
+      return t('common.theme.light');
+    }
+    return t('common.theme.dark');
+  };
+
   return (
-    <label className={`swap swap-rotate btn btn-circle btn-sm ${className}`}>
-      <input type="checkbox" checked={isDark} onChange={onToggle} />
-      <SunIcon className="swap-off size-4" weight="fill" />
-      <MoonIcon className="swap-on size-4" weight="fill" />
-    </label>
+    <div
+      className={`tooltip tooltip-right ${className}`}
+      data-tip={getTooltipLabel()}
+    >
+      <button
+        type="button"
+        className="btn btn-circle btn-sm"
+        onClick={onCycle}
+        aria-label={t('common.theme.select')}
+      >
+        {renderIcon()}
+      </button>
+    </div>
   );
 }
