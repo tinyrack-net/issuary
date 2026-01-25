@@ -6,7 +6,7 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { useDeferredValue, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
@@ -15,6 +15,7 @@ import { IconInput } from '@/components/auth/icon-input.js';
 import { OAuthButtons } from '@/components/auth/oauth-buttons.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { SubmitButton } from '@/components/auth/submit-button.js';
+import { SkeletonTermsCheckbox } from '@/components/skeletons/skeleton.js';
 import { TermsCheckboxList } from '@/components/terms/terms-checkbox-list.js';
 import { Divider } from '@/components/ui/divider.js';
 import { PageLayout } from '@/components/ui/page-layout.js';
@@ -46,14 +47,8 @@ export const Route = createFileRoute('/register/')({
       });
     }
   },
-  loaderDeps: ({ search }) => ({
-    lang: search.lang,
-  }),
-  loader: async ({ context, deps }) => {
-    await Promise.all([
-      context.queryClient.ensureQueryData(appConfigQueryOptions),
-      context.queryClient.ensureQueryData(getTermsQueryOptions(deps.lang)),
-    ]);
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(appConfigQueryOptions);
   },
 });
 
@@ -64,9 +59,13 @@ function Register() {
   const search = Route.useSearch();
 
   const lang = search.lang ?? i18n.language;
+  const deferredLang = useDeferredValue(lang);
+  const isLangTransitioning = lang !== deferredLang;
 
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
-  const { data: termsData } = useSuspenseQuery(getTermsQueryOptions(lang));
+  const { data: termsData } = useSuspenseQuery(
+    getTermsQueryOptions(deferredLang),
+  );
   const oauthProviders = configData.oauth_authentication_methods;
 
   const isPasswordAuthEnabled =
@@ -256,20 +255,32 @@ function Register() {
           {/* Terms of Service - Explicit mode with checkboxes */}
           {hasTerms && hasExplicitTerms && (
             <div className="mt-2">
-              <TermsCheckboxList
-                terms={explicitTerms}
-                control={control}
-                setValue={setValue}
-                errors={errors}
-                disabled={registerMutation.isPending}
-              />
+              {isLangTransitioning ? (
+                <div className="space-y-3">
+                  <SkeletonTermsCheckbox />
+                  {explicitTerms.map((term) => (
+                    <SkeletonTermsCheckbox key={term.id} />
+                  ))}
+                </div>
+              ) : (
+                <TermsCheckboxList
+                  terms={explicitTerms}
+                  control={control}
+                  setValue={setValue}
+                  errors={errors}
+                  disabled={registerMutation.isPending}
+                />
+              )}
             </div>
           )}
 
           {/* Terms of Service - Implicit mode notice */}
           {hasTerms && hasImplicitTerms && termsData.implicitNotice && (
-            <div className="text-center text-base-content/60 text-xs">
+            <div
+              className={`text-center text-base-content/60 text-xs ${isLangTransitioning ? 'opacity-50' : ''}`}
+            >
               <div
+                className="prose prose-sm"
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
                 dangerouslySetInnerHTML={{
                   __html: termsData.implicitNotice,
