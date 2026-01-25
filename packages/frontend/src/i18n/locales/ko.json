@@ -359,5 +359,7 @@
   "terms.error.title": "오류",
   "terms.error.message": "약관 정보를 불러올 수 없습니다.",
   "terms.error.back": "돌아가기",
-  "terms.error.submitFailed": "약관 동의 처리에 실패했습니다. 다시 시도해주세요."
+  "terms.error.submitFailed": "약관 동의 처리에 실패했습니다. 다시 시도해주세요.",
+  "terms.view": "보기",
+  "terms.modal.close": "닫기"
 }

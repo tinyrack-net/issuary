@@ -359,5 +359,7 @@
   "terms.error.title": "Error",
   "terms.error.message": "Unable to load terms information.",
   "terms.error.back": "Go back",
-  "terms.error.submitFailed": "Failed to submit consent. Please try again."
+  "terms.error.submitFailed": "Failed to submit consent. Please try again.",
+  "terms.view": "View",
+  "terms.modal.close": "Close"
 }

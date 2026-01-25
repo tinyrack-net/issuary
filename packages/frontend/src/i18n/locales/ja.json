@@ -359,5 +359,7 @@
   "terms.error.title": "エラー",
   "terms.error.message": "規約情報を読み込めませんでした。",
   "terms.error.back": "戻る",
-  "terms.error.submitFailed": "同意の送信に失敗しました。もう一度お試しください。"
+  "terms.error.submitFailed": "同意の送信に失敗しました。もう一度お試しください。",
+  "terms.view": "表示",
+  "terms.modal.close": "閉じる"
 }
