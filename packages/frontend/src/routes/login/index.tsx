@@ -51,12 +51,18 @@ export const Route = createFileRoute('/login/')({
 });
 
 function Login() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const search = Route.useSearch();
 
+  const lang = search.lang ?? i18n.language;
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
+
+  // Get implicit notice from config for OAuth signup
+  const implicitNotice =
+    configData.app.signup_implicit_terms?.[lang] ??
+    configData.app.signup_implicit_terms?.[configData.app.fallback_language];
   const oauthProviders = configData.oauth_authentication_methods;
 
   const isPasswordAuthEnabled =
@@ -292,31 +298,31 @@ function Login() {
           >
             {t('login.submit')}
           </SubmitButton>
-
-          {isPasskeyEnabled && (
-            <>
-              <Divider text={t('login.divider.orUsePasskey')} />
-              <button
-                type="button"
-                className="btn btn-outline btn-block"
-                disabled={passkeyLoginMutation.isPending}
-                onClick={() => passkeyLoginMutation.mutate()}
-              >
-                {passkeyLoginMutation.isPending ? (
-                  <>
-                    <span className="loading loading-spinner loading-sm" />
-                    {t('login.passkey.authenticating')}
-                  </>
-                ) : (
-                  <>
-                    <FingerprintIcon className="size-5" weight="regular" />
-                    {t('login.passkey.loginWithPasskey')}
-                  </>
-                )}
-              </button>
-            </>
-          )}
         </form>
+      )}
+
+      {isPasskeyEnabled && (
+        <>
+          <Divider text={t('login.divider.orUsePasskey')} />
+          <button
+            type="button"
+            className="btn btn-outline btn-block"
+            disabled={passkeyLoginMutation.isPending}
+            onClick={() => passkeyLoginMutation.mutate()}
+          >
+            {passkeyLoginMutation.isPending ? (
+              <>
+                <span className="loading loading-spinner loading-sm" />
+                {t('login.passkey.authenticating')}
+              </>
+            ) : (
+              <>
+                <FingerprintIcon className="size-5" weight="regular" />
+                {t('login.passkey.loginWithPasskey')}
+              </>
+            )}
+          </button>
+        </>
       )}
 
       {isPasswordAuthEnabled && (
@@ -326,6 +332,15 @@ function Login() {
           to="/register"
           search={extractOAuthParams(search)}
         />
+      )}
+
+      {implicitNotice && (
+        <div className="mt-4 text-center text-base-content/60 text-xs">
+          <div
+            className="prose prose-sm !text-xs [&_*]:!text-xs"
+            dangerouslySetInnerHTML={{ __html: implicitNotice }}
+          />
+        </div>
       )}
     </PageLayout>
   );
