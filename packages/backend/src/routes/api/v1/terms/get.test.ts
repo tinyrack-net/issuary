@@ -126,20 +126,6 @@ describe('GET /api/v1/terms', () => {
       expect(tosTerm?.title).toBe('Terms of Service');
     });
 
-    test('should return null implicitNotice when no implicit terms exist', async () => {
-      // Default test config has only explicit terms
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/terms?lang=ko',
-      });
-
-      expect(res.statusCode).toBe(200);
-
-      const body = res.json();
-      // No implicit terms, so implicitNotice should be null
-      expect(body.implicitNotice).toBeNull();
-    });
-
     test('should default to English when lang not provided', async () => {
       const res = await app.inject({
         method: 'GET',
@@ -345,20 +331,6 @@ describe('GET /api/v1/terms', () => {
 
         const body = res.json();
         expect(body.terms[0]?.consentMode).toBe('implicit');
-      });
-
-      test('should return implicit notice text', async () => {
-        const res = await app.inject({
-          method: 'GET',
-          url: '/api/v1/terms?lang=en',
-        });
-
-        expect(res.statusCode).toBe(200);
-
-        const body = res.json();
-        expect(body.implicitNotice).toBe(
-          'By signing up you agree to our terms.',
-        );
       });
     });
   });

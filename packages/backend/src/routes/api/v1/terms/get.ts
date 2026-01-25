@@ -47,14 +47,7 @@ export default (fastify: FastifyWithZodInstance) => {
         pendingTerms = terms.filter((t) => t.required).map((t) => t.id);
       }
 
-      // Check if there are any implicit terms to determine if notice should be shown
-      const hasImplicitTerms = terms.some((t) => t.consentMode === 'implicit');
-      const implicitNotice = hasImplicitTerms
-        ? fastify.termsService.getImplicitNotice(lang)
-        : null;
-
       return res.status(200).send({
-        implicitNotice,
         terms: terms.map((t) => ({
           ...t,
           userConsent: t.userConsent

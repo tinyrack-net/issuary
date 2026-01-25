@@ -65,10 +65,6 @@ const TermItem = z
  */
 export const TermsResponse = z
   .object({
-    implicitNotice: z
-      .string()
-      .nullable()
-      .describe('Notice text for implicit consent mode terms'),
     terms: z.array(TermItem).describe('List of terms'),
     pendingTerms: z.array(z.string()).describe('Term IDs that require consent'),
   })

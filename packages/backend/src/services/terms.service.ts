@@ -2,7 +2,6 @@ import type { Loaded } from '@mikro-orm/core';
 import fastifyPlugin from 'fastify-plugin';
 import type { TermsEntity } from '@/entities/terms.entity.js';
 import type { UserTermsConsentEntity } from '@/entities/user-terms-consent.entity.js';
-import type { InternalAppConfig } from '@/lib/config/schemas/root.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 
 declare module 'fastify' {
@@ -51,10 +50,7 @@ export interface LocalizedTermItem {
 }
 
 export class TermsService {
-  public constructor(
-    private readonly mikro: MikroService,
-    private readonly config: InternalAppConfig,
-  ) {}
+  public constructor(private readonly mikro: MikroService) {}
 
   /**
    * Get all global terms from database
@@ -71,17 +67,6 @@ export class TermsService {
   public async hasImplicitTerms(): Promise<boolean> {
     const terms = await this.getGlobalTerms();
     return terms.some((t) => t.consentMode === 'implicit');
-  }
-
-  /**
-   * Get implicit notice for a specific language
-   */
-  public getImplicitNotice(lang: string): string | null {
-    const notice = this.config.app.signup_implicit_terms;
-    if (!notice) {
-      return null;
-    }
-    return notice[lang] ?? notice['en'] ?? null;
   }
 
   /**
@@ -323,7 +308,7 @@ export class TermsService {
 
 export default fastifyPlugin(
   async (fastify) => {
-    const termsService = new TermsService(fastify.mikro, fastify.config);
+    const termsService = new TermsService(fastify.mikro);
     fastify.decorate('termsService', termsService);
   },
   {
