@@ -1,20 +1,13 @@
-import { EnvelopeSimpleIcon, FingerprintIcon } from '@phosphor-icons/react';
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from '@tanstack/react-query';
-import { createFileRoute, useRouter } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
+import { FooterLink } from '@/components/auth/footer-link';
 import { LoginMethodButton } from '@/components/auth/login-method-button.js';
 import { LoginMethodList } from '@/components/auth/login-method-list.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { PageLayout } from '@/components/ui/page-layout.js';
 import {
+  OAuthSearchSchema,
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
-  OAuthSearchSchema,
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
@@ -23,6 +16,14 @@ import {
   type AuthResponse,
   getSessionQueryOptions,
 } from '@/queries/session.js';
+import { EnvelopeSimpleIcon, FingerprintIcon } from '@phosphor-icons/react';
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 export const SearchSchema = OAuthSearchSchema;
 
