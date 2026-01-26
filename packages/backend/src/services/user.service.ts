@@ -59,8 +59,13 @@ export class UserService {
     consents?: Array<{ termsId: string; agreed: boolean }>;
   }): Promise<z.infer<typeof r.UserSession>> {
     // 1. Validate explicit terms consent before user creation
-    if (this.termsService) {
-      const explicitTerms = await this.termsService.getExplicitTerms();
+    // Load terms once and reuse across validation and recording
+    const terms = this.termsService
+      ? await this.termsService.getGlobalTerms()
+      : undefined;
+
+    if (this.termsService && terms) {
+      const explicitTerms = await this.termsService.getExplicitTerms(terms);
       const hasRequiredExplicitTerms = explicitTerms.some((t) => t.required);
 
       if (hasRequiredExplicitTerms) {
@@ -72,6 +77,7 @@ export class UserService {
 
         const validation = await this.termsService.validateExplicitConsents(
           params.consents,
+          terms,
         );
         if (!validation.valid) {
           throw new e.ValidationError.Error(
@@ -100,18 +106,20 @@ export class UserService {
     }
 
     // 4. Record terms consent after successful registration
-    if (this.termsService) {
+    if (this.termsService && terms) {
       // Record explicit consents provided by user
       if (params.consents && params.consents.length > 0) {
         await this.termsService.recordConsents({
           userId: user.id,
           consents: params.consents,
+          terms,
         });
       }
 
       // Record implicit consents for terms with implicit consent mode
       await this.termsService.recordImplicitConsents({
         userId: user.id,
+        terms,
       });
     }
 

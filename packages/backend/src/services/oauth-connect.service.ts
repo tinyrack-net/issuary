@@ -358,7 +358,9 @@ export class OAuthConnectService {
 
     // Record implicit consents automatically for OAuth users
     // Explicit terms consent is handled in /terms page if any explicit terms exist
-    await this.termsService.recordImplicitConsents({ userId: newUser.id });
+    await this.termsService.recordImplicitConsents({
+      userId: newUser.id,
+    });
 
     return {
       isNewUser: true,
@@ -485,15 +487,16 @@ export class OAuthConnectService {
           : null,
       });
 
-      // Record consents for existing user
+      // Record all consents for existing user (load terms once)
+      const terms = await this.termsService.getGlobalTerms();
       await this.termsService.recordConsents({
         userId: existingUser.id,
         consents,
+        terms,
       });
-
-      // Also record implicit consents
       await this.termsService.recordImplicitConsents({
         userId: existingUser.id,
+        terms,
       });
 
       await this.mikro.em.flush();
@@ -551,14 +554,17 @@ export class OAuthConnectService {
 
     await this.mikro.em.flush();
 
-    // Record explicit consents (from user's checkbox selections)
+    // Record all consents (load terms once)
+    const terms = await this.termsService.getGlobalTerms();
     await this.termsService.recordConsents({
       userId: newUser.id,
       consents,
+      terms,
     });
-
-    // Record implicit consents automatically
-    await this.termsService.recordImplicitConsents({ userId: newUser.id });
+    await this.termsService.recordImplicitConsents({
+      userId: newUser.id,
+      terms,
+    });
 
     return {
       isNewUser: true,
