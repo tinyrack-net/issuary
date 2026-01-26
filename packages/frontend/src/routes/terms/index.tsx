@@ -10,7 +10,6 @@ import { PageHeader } from '@/components/auth/page-header.js';
 import { TermsCheckboxList } from '@/components/terms/terms-checkbox-list.js';
 import { Alert } from '@/components/ui/alert.js';
 import { PageLayout } from '@/components/ui/page-layout.js';
-import { appConfigQueryOptions } from '@/queries/config.js';
 import {
   getTermsQueryOptions,
   termsConsentMutationOptions,
