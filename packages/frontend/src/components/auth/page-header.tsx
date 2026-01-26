@@ -26,7 +26,7 @@ export function PageHeader({
         {title}
       </h1>
       {subtitle && (
-        <p className="mb-6 text-center text-xl text-base-content/60">
+        <p className="mb-6 text-center text-lg text-base-content/60">
           {subtitle}
         </p>
       )}
