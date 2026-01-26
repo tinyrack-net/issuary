@@ -5,15 +5,21 @@ app:
   jwt_access_token_ttl: 3600
   jwt_refresh_token_ttl: 2592000
   public_registration: true
+
+  # Internationalization (i18n) settings
   supported_languages:
     - ko
     - en
     - ja
   default_language: auto
   fallback_language: ko
+
+  # Theme settings for authentication pages
   light_theme: light
   dark_theme: dark
   theme_mode: system
+
+  # Background image URL for authentication pages
   background_url: https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071
   # Icon/logo URL displayed at the top of authentication pages (48x48)
   icon_url: https://example.com/logo.png
@@ -35,12 +41,13 @@ app:
   trust_proxy: ["10.0.0.0/8"]
   # trust_proxy: '127.0.0.1'
   # trust_proxy: ['10.0.0.0/8', '172.16.0.0/12']
+
   # Notice text for implicit consent mode (displayed on login/signup pages)
   # Shown below OAuth buttons and signup form
-  signup_implicit_terms:
-    ko: 계속하면 <a href="https://example.com/terms/ko" class="link">이용약관</a> 및 <a href="https://example.com/privacy/ko" class="link">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
-    en: By continuing, you agree to our <a href="https://example.com/terms/en" class="link">Terms of Service</a> and <a href="https://example.com/privacy/en" class="link">Privacy Policy</a>.
-    ja: 続行することで、<a href="https://example.com/terms/ja" class="link">利用規約</a>および<a href="https://example.com/privacy/ja" class="link">プライバシーポリシー</a>に同意したものとみなされます。
+  # signup_implicit_terms:
+  #   ko: 계속하면 <a href="https://example.com/terms/ko" class="link">이용약관</a> 및 <a href="https://example.com/privacy/ko" class="link">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
+  #   en: By continuing, you agree to our <a href="https://example.com/terms/en" class="link">Terms of Service</a> and <a href="https://example.com/privacy/en" class="link">Privacy Policy</a>.
+  #   ja: 続行することで、<a href="https://example.com/terms/ja" class="link">利用規約</a>および<a href="https://example.com/privacy/ja" class="link">プライバシーポリシー</a>に同意したものとみなされます。
 
 admin:
   enabled: true
