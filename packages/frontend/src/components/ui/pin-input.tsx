@@ -61,15 +61,19 @@ export const PinInput = forwardRef<PinInputRef, PinInputProps>(
     }, [value, length]);
 
     // Expose methods via ref
-    useImperativeHandle(ref, () => ({
-      focus: () => {
-        inputRefs.current[0]?.focus();
-      },
-      clear: () => {
-        setDigits(Array(length).fill(''));
-        inputRefs.current[0]?.focus();
-      },
-    }));
+    useImperativeHandle(
+      ref,
+      () => ({
+        focus: () => {
+          inputRefs.current[0]?.focus();
+        },
+        clear: () => {
+          setDigits(Array(length).fill(''));
+          inputRefs.current[0]?.focus();
+        },
+      }),
+      [length],
+    );
 
     // Auto focus on mount
     useEffect(() => {
