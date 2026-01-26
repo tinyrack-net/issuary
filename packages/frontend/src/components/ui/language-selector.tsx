@@ -31,43 +31,45 @@ export function LanguageSelector({
   const autoLabel = `${t('common.language.auto')} (${detectedLanguageName})`;
 
   return (
-    <div className={`dropdown dropdown-top dropdown-end ${className}`}>
-      <button
-        type="button"
-        tabIndex={0}
-        className="btn btn-circle btn-sm"
-        aria-label={t('common.language.select')}
-      >
-        <GlobeSimpleIcon className="size-4" weight="fill" />
-      </button>
-      <ul className="menu dropdown-content z-1 mb-2 w-52 rounded-box bg-base-100 p-2 shadow">
-        <li>
-          <button
-            type="button"
-            className={`justify-between ${isAutoMode ? 'active' : ''}`}
-            onClick={() => setAutoLanguage()}
-          >
-            {autoLabel}
-            {isAutoMode && <CheckIcon className="size-4" weight="bold" />}
-          </button>
-        </li>
-        <hr className="my-1 border-base-300" />
-        {languages.map((lang) => {
-          const isSelected = !isAutoMode && language === lang;
-          return (
-            <li key={lang}>
-              <button
-                type="button"
-                className={`justify-between ${isSelected ? 'active' : ''}`}
-                onClick={() => setLanguage(lang)}
-              >
-                {LANGUAGE_LABELS[lang] || lang}
-                {isSelected && <CheckIcon className="size-4" weight="bold" />}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+    <div className={className}>
+      <div className="dropdown dropdown-top dropdown-end">
+        <button
+          type="button"
+          tabIndex={0}
+          className="btn btn-circle btn-sm"
+          aria-label={t('common.language.select')}
+        >
+          <GlobeSimpleIcon className="size-4" weight="fill" />
+        </button>
+        <ul className="menu dropdown-content z-1 mb-2 w-52 rounded-box bg-base-100 p-2 shadow">
+          <li>
+            <button
+              type="button"
+              className={`justify-between ${isAutoMode ? 'active' : ''}`}
+              onClick={() => setAutoLanguage()}
+            >
+              {autoLabel}
+              {isAutoMode && <CheckIcon className="size-4" weight="bold" />}
+            </button>
+          </li>
+          <hr className="my-1 border-base-300" />
+          {languages.map((lang) => {
+            const isSelected = !isAutoMode && language === lang;
+            return (
+              <li key={lang}>
+                <button
+                  type="button"
+                  className={`justify-between ${isSelected ? 'active' : ''}`}
+                  onClick={() => setLanguage(lang)}
+                >
+                  {LANGUAGE_LABELS[lang] || lang}
+                  {isSelected && <CheckIcon className="size-4" weight="bold" />}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </div>
   );
 }
