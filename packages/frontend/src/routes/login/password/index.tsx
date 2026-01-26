@@ -60,7 +60,6 @@ function LoginPassword() {
     configData.basic_authentication_methods.password.enabled;
   const isPasskeyEnabled =
     configData.basic_authentication_methods.passkey.enabled;
-  const isPublicRegistration = configData.app.public_registration;
 
   const loginSchema = useMemo(
     () =>
@@ -270,7 +269,7 @@ function LoginPassword() {
         </form>
       )}
 
-      {isPublicRegistration && (
+      {configData.app.public_registration && (
         <FooterLink
           text={t('login.footer.noAccount')}
           linkText={t('login.link.register')}
@@ -279,7 +278,7 @@ function LoginPassword() {
         />
       )}
 
-      <div className="flex flex-col items-center gap-2">
+      {/* <div className="flex flex-col items-center gap-2">
         <Link
           to="/login"
           search={extractOAuthParams(search)}
@@ -287,7 +286,7 @@ function LoginPassword() {
         >
           {t('login.password.backToMethods')}
         </Link>
-      </div>
+      </div> */}
     </PageLayout>
   );
 }
