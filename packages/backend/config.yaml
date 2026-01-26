@@ -116,6 +116,24 @@ terms:
         type: text
         content: イベントやプロモーションなどのマーケティング情報をメールで受け取りますか？
 
+  - id: marketing2
+    required: false
+    consent_mode: explicit
+    version: "1.0.0"
+    content:
+      ko:
+        title: 마케팅 정보 수신 동의
+        type: text
+        content: 이벤트, 프로모션 등 마케팅 정보를 이메일로 받아보시겠습니까?
+      en:
+        title: Marketing Communications
+        type: text
+        content: Would you like to receive marketing emails about events and promotions?
+      ja:
+        title: マーケティング情報の受信
+        type: text
+        content: イベントやプロモーションなどのマーケティング情報をメールで受け取りますか？
+
 database:
   type: sqlite
   path: test.db
