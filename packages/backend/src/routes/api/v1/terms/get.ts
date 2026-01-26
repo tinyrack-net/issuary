@@ -39,13 +39,8 @@ export default (fastify: FastifyWithZodInstance) => {
         lang,
       );
 
-      let pendingTerms: string[] = [];
-      if (userId) {
-        pendingTerms =
-          await fastify.termsService.getPendingRequiredTerms(userId);
-      } else {
-        pendingTerms = terms.filter((t) => t.required).map((t) => t.id);
-      }
+      const pendingTerms =
+        fastify.termsService.getPendingFromLocalizedTerms(terms);
 
       return res.status(200).send({
         terms: terms.map((t) => ({

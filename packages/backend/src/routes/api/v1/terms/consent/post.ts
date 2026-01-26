@@ -92,9 +92,13 @@ export default (fastify: FastifyWithZodInstance) => {
       // Standard flow: authenticated user recording consent
       const userSession = await req.auth.verify();
 
-      // Validate only explicit terms (implicit terms are auto-agreed)
-      const validation =
-        await fastify.termsService.validateExplicitConsents(consents);
+      // Validate and record consents in a single flow
+      // (loads terms only once)
+      const { validation, records } =
+        await fastify.termsService.validateAndRecordConsents({
+          userId: userSession.id,
+          consents,
+        });
 
       if (!validation.valid) {
         throw new e.ValidationError.Error(
@@ -102,15 +106,9 @@ export default (fastify: FastifyWithZodInstance) => {
         );
       }
 
-      // Record consents - consentType is determined by each term's consentMode
-      const recorded = await fastify.termsService.recordConsents({
-        userId: userSession.id,
-        consents,
-      });
-
       return res.status(200).send({
         ok: true,
-        recorded: recorded.length,
+        recorded: records.length,
       });
     },
   });
