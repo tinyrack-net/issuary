@@ -46,7 +46,7 @@ export function PageLayout({
 
   return (
     <div
-      className={`flex min-h-screen items-center justify-center bg-base-200 bg-cover ${containerClass}`}
+      className={`relative flex min-h-screen items-center justify-center bg-base-200 bg-cover ${containerClass}`}
       style={
         backgroundUrl
           ? {

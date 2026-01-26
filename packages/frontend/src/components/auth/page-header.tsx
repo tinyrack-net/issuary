@@ -19,12 +19,14 @@ export function PageHeader({
         </div>
       )}
       <h1
-        className={`text-center font-bold text-3xl ${subtitle ? 'mb-2' : 'mb-6'}`}
+        className={`text-center font-bold text-2xl ${
+          subtitle ? 'mb-0' : 'mb-6'
+        }`}
       >
         {title}
       </h1>
       {subtitle && (
-        <p className="mb-6 text-center text-base-content/60 text-xs">
+        <p className="mb-6 text-center text-xl text-base-content/60">
           {subtitle}
         </p>
       )}
