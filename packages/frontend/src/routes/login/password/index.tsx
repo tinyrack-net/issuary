@@ -1,14 +1,26 @@
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { EnvelopeSimpleIcon, LockIcon } from '@phosphor-icons/react';
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { z } from 'zod/v4';
 import { FooterLink } from '@/components/auth/footer-link.js';
 import { IconInput } from '@/components/auth/icon-input.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { SubmitButton } from '@/components/auth/submit-button.js';
 import { PageLayout } from '@/components/ui/page-layout.js';
 import {
-  OAuthSearchSchema,
-  type SecondFactorMethod,
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
+  OAuthSearchSchema,
+  type SecondFactorMethod,
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
@@ -18,18 +30,6 @@ import {
   type AuthResponse,
   getSessionQueryOptions,
 } from '@/queries/session.js';
-import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { EnvelopeSimpleIcon, LockIcon } from '@phosphor-icons/react';
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from '@tanstack/react-query';
-import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
 
 export const SearchSchema = OAuthSearchSchema;
 
