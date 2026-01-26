@@ -10,12 +10,15 @@ import { PageHeader } from '@/components/auth/page-header.js';
 import { TermsCheckboxList } from '@/components/terms/terms-checkbox-list.js';
 import { Alert } from '@/components/ui/alert.js';
 import { PageLayout } from '@/components/ui/page-layout.js';
+import { OAuthSearchSchema } from '@/libs/oauth-search';
+import { appConfigQueryOptions } from '@/queries/config';
 import {
   getTermsQueryOptions,
+  type TermsConsentItem,
   termsConsentMutationOptions,
 } from '@/queries/terms.js';
 
-const TermsSearchSchema = z.object({
+const TermsSearchSchema = OAuthSearchSchema.extend({
   redirect: z.string().optional(),
   lang: z.string().optional(),
   mode: z.enum(['normal', 'complete_registration']).optional(),
@@ -44,7 +47,10 @@ export const Route = createFileRoute('/terms/')({
     lang: search.lang,
   }),
   loader: async ({ context, deps }) => {
-    await context.queryClient.ensureQueryData(getTermsQueryOptions(deps.lang));
+    await Promise.all([
+      context.queryClient.ensureQueryData(getTermsQueryOptions(deps.lang)),
+      context.queryClient.ensureQueryData(appConfigQueryOptions),
+    ]);
   },
 });
 
@@ -53,8 +59,12 @@ function Terms() {
   const router = useRouter();
   const search = Route.useSearch();
 
+  const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
   const lang = search.lang ?? i18n.language;
   const termsQuery = useSuspenseQuery(getTermsQueryOptions(lang));
+  const implicitNotice =
+    configData.app.signup_implicit_terms?.[lang] ??
+    configData.app.signup_implicit_terms?.[configData.app.fallback_language];
 
   // Separate explicit and implicit terms
   const explicitTerms = useMemo(
@@ -103,7 +113,7 @@ function Terms() {
       termsConsents: Object.fromEntries(
         explicitTerms.map((term) => [
           term.id,
-          term.userConsent?.agreed && !term.userConsent.requiresUpdate,
+          !!(term.userConsent?.agreed && !term.userConsent.requiresUpdate),
         ]),
       ),
     },
@@ -124,20 +134,18 @@ function Terms() {
   });
 
   const onSubmit = (values: TermsFormValues) => {
-    // Explicit terms consent (from user checkboxes)
-    const explicitConsents = Object.entries(values.termsConsents).map(
-      ([termsId, agreed]) => ({
-        termsId,
-        agreed,
-        consentType: 'explicit' as const,
-      }),
-    );
+    const explicitConsents = Object.entries(
+      values.termsConsents,
+    ).map<TermsConsentItem>(([termsId, agreed]) => ({
+      termsId,
+      agreed,
+      consentType: 'explicit',
+    }));
 
-    // Implicit terms consent (auto-agreed when form is submitted)
-    const implicitConsents = implicitTerms.map((term) => ({
+    const implicitConsents = implicitTerms.map<TermsConsentItem>((term) => ({
       termsId: term.id,
       agreed: true,
-      consentType: 'implicit' as const,
+      consentType: 'implicit',
     }));
 
     consentMutation.mutate({
@@ -167,7 +175,21 @@ function Terms() {
 
   return (
     <PageLayout maxWidth="100" cardPadding>
-      <PageHeader title={t('terms.title')} subtitle={t('terms.subtitle')} />
+      <PageHeader title={t('terms.title')} />
+
+      {implicitNotice && (
+        <div className="text-center text-base-content/60 text-xs">
+          <div
+            className="prose prose-sm text-xs! **:text-xs!"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+            dangerouslySetInnerHTML={{ __html: implicitNotice }}
+          />
+        </div>
+      )}
+
+      {implicitNotice && hasExplicitTerms && (
+        <div className="divider text-xs">AND</div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)}>
         {/* Explicit terms with checkboxes */}
