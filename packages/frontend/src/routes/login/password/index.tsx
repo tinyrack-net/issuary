@@ -1,26 +1,14 @@
-import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { EnvelopeSimpleIcon, LockIcon } from '@phosphor-icons/react';
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from '@tanstack/react-query';
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { useEffect, useMemo, useRef } from 'react';
-import { useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
 import { FooterLink } from '@/components/auth/footer-link.js';
 import { IconInput } from '@/components/auth/icon-input.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { SubmitButton } from '@/components/auth/submit-button.js';
 import { PageLayout } from '@/components/ui/page-layout.js';
 import {
+  OAuthSearchSchema,
+  type SecondFactorMethod,
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
-  OAuthSearchSchema,
-  type SecondFactorMethod,
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
@@ -30,6 +18,18 @@ import {
   type AuthResponse,
   getSessionQueryOptions,
 } from '@/queries/session.js';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { EnvelopeSimpleIcon, LockIcon } from '@phosphor-icons/react';
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { z } from 'zod/v4';
 
 export const SearchSchema = OAuthSearchSchema;
 
@@ -42,13 +42,20 @@ export const Route = createFileRoute('/login/password/')({
 });
 
 function LoginPassword() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const search = Route.useSearch();
+  const lang = search.lang ?? i18n.language;
 
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
 
+  const customTitle =
+    configData.app.title?.[lang] ??
+    configData.app.title?.[configData.app.fallback_language];
+  const customSubtitle =
+    configData.app.subtitle?.[lang] ??
+    configData.app.subtitle?.[configData.app.fallback_language];
   const isPasswordAuthEnabled =
     configData.basic_authentication_methods.password.enabled;
   const isPasskeyEnabled =
@@ -164,21 +171,24 @@ function LoginPassword() {
     },
   });
 
-  const handlePasskeySuccess = async (data: AuthResponse) => {
-    if (data.user) {
-      queryClient.setQueryData(getSessionQueryOptions.queryKey, data);
-      await tick();
+  const handlePasskeySuccess = useCallback(
+    async (data: AuthResponse) => {
+      if (data.user) {
+        queryClient.setQueryData(getSessionQueryOptions.queryKey, data);
+        await tick();
 
-      if (isOAuthFlow(search)) {
-        window.location.href = buildAuthorizeUrl(search);
-      } else {
-        router.navigate({ to: '/profile' });
+        if (isOAuthFlow(search)) {
+          window.location.href = buildAuthorizeUrl(search);
+        } else {
+          router.navigate({ to: '/profile' });
+        }
       }
-    }
-    queryClient.invalidateQueries({
-      queryKey: getSessionQueryOptions.queryKey,
-    });
-  };
+      queryClient.invalidateQueries({
+        queryKey: getSessionQueryOptions.queryKey,
+      });
+    },
+    [queryClient, router, search],
+  );
 
   // Conditional UI: Start passkey autofill on page load
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -197,7 +207,7 @@ function LoginPassword() {
     return () => {
       abortControllerRef.current?.abort();
     };
-  }, [isPasskeyEnabled, isPasswordAuthEnabled]);
+  }, [isPasskeyEnabled, isPasswordAuthEnabled, handlePasskeySuccess]);
 
   const {
     register,
@@ -219,8 +229,9 @@ function LoginPassword() {
   return (
     <PageLayout maxWidth="100" cardPadding>
       <PageHeader
-        title={t('login.password.title')}
-        subtitle={t('login.password.subtitle')}
+        iconUrl={configData.app.icon_url}
+        title={customTitle ?? t('login.title')}
+        subtitle={customSubtitle ?? t('login.selectMethod.subtitle')}
       />
 
       {isPasswordAuthEnabled && (
