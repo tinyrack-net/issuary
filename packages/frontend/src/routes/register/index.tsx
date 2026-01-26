@@ -14,7 +14,6 @@ import { FooterLink } from '@/components/auth/footer-link.js';
 import { IconInput } from '@/components/auth/icon-input.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { SubmitButton } from '@/components/auth/submit-button.js';
-import { SkeletonTermsCheckbox } from '@/components/skeletons/skeleton.js';
 import { TermsCheckboxList } from '@/components/terms/terms-checkbox-list.js';
 import { PageLayout } from '@/components/ui/page-layout.js';
 import {
@@ -57,7 +56,6 @@ function Register() {
 
   const lang = search.lang ?? i18n.language;
   const deferredLang = useDeferredValue(lang);
-  const isLangTransitioning = lang !== deferredLang;
 
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
   const { data: termsData } = useSuspenseQuery(
@@ -241,46 +239,38 @@ function Register() {
             {...register('password')}
           />
 
-          {/* Terms of Service - Explicit mode with checkboxes */}
-          {hasTerms && hasExplicitTerms && (
-            <div className="mt-2">
-              {isLangTransitioning ? (
-                <div className="space-y-3">
-                  <SkeletonTermsCheckbox />
-                  {explicitTerms.map((term) => (
-                    <SkeletonTermsCheckbox key={term.id} />
-                  ))}
-                </div>
-              ) : (
-                <TermsCheckboxList
-                  terms={explicitTerms}
-                  control={control}
-                  setValue={setValue}
-                  errors={errors}
-                  disabled={registerMutation.isPending}
+          <div className="flex flex-col">
+            {implicitNotice && (
+              <div className={'text-center text-base-content/60 text-xs'}>
+                <div
+                  className="prose prose-sm text-xs! **:text-xs!"
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+                  dangerouslySetInnerHTML={{
+                    __html: implicitNotice,
+                  }}
                 />
-              )}
-            </div>
-          )}
+              </div>
+            )}
 
-          {/* Terms of Service - Implicit mode notice */}
-          {implicitNotice && (
-            <div
-              className={`text-center text-base-content/60 text-xs ${isLangTransitioning ? 'opacity-50' : ''}`}
-            >
-              <div
-                className="prose prose-sm !text-xs [&_*]:!text-xs"
-                dangerouslySetInnerHTML={{
-                  __html: implicitNotice,
-                }}
+            {implicitNotice && hasExplicitTerms && (
+              <div className="divider text-xs">AND</div>
+            )}
+
+            {hasTerms && hasExplicitTerms && (
+              <TermsCheckboxList
+                terms={explicitTerms}
+                control={control}
+                setValue={setValue}
+                errors={errors}
+                disabled={registerMutation.isPending}
               />
-            </div>
-          )}
+            )}
+          </div>
 
           <SubmitButton
             isPending={registerMutation.isPending}
             pendingText={t('register.submitting')}
-            className="mt-2"
+            className="mt-6"
           >
             {t('register.submit')}
           </SubmitButton>
