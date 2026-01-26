@@ -122,7 +122,12 @@ export default (fastify: FastifyWithZodInstance) =>
         provider,
         userInfo,
       );
-      const explicitTerms = await fastify.termsService.getExplicitTerms();
+
+      // Load terms once and reuse for both new-user and
+      // existing-user checks
+      const allTerms = await fastify.termsService.getGlobalTerms();
+      const explicitTerms =
+        await fastify.termsService.getExplicitTerms(allTerms);
 
       if (isNewUser && explicitTerms.length > 0) {
         // New user with explicit terms: store in session, don't create in DB yet
