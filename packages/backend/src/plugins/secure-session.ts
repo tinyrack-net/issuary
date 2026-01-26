@@ -154,7 +154,7 @@ export default fastifyPlugin(
         path: '/',
         httpOnly: true,
         secure: isSecure,
-        sameSite: isSecure ? 'strict' : 'lax',
+        sameSite: 'lax',
       },
     });
 
