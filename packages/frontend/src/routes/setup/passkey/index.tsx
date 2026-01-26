@@ -1,3 +1,17 @@
+import { FooterLink } from '@/components/auth/footer-link.js';
+import { PageHeader } from '@/components/auth/page-header.js';
+import { SubmitButton } from '@/components/auth/submit-button.js';
+import { Alert } from '@/components/ui/alert.js';
+import { PageLayout } from '@/components/ui/page-layout.js';
+import {
+  OAuthSearchSchema,
+  buildAuthorizeUrl,
+  extractOAuthParams,
+  isOAuthFlow,
+} from '@/libs/oauth-search.js';
+import { tick } from '@/libs/promise.js';
+import { registerPasskeyMutationOptions } from '@/queries/passkey.js';
+import { getSessionQueryOptions } from '@/queries/session.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import {
   FingerprintIcon,
@@ -10,20 +24,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
-import { FooterLink } from '@/components/auth/footer-link.js';
-import { PageHeader } from '@/components/auth/page-header.js';
-import { SubmitButton } from '@/components/auth/submit-button.js';
-import { Alert } from '@/components/ui/alert.js';
-import { PageLayout } from '@/components/ui/page-layout.js';
-import {
-  buildAuthorizeUrl,
-  extractOAuthParams,
-  isOAuthFlow,
-  OAuthSearchSchema,
-} from '@/libs/oauth-search.js';
-import { tick } from '@/libs/promise.js';
-import { registerPasskeyMutationOptions } from '@/queries/passkey.js';
-import { getSessionQueryOptions } from '@/queries/session.js';
 
 export const SearchSchema = OAuthSearchSchema.extend({
   passkey_name: z.string().optional(),
@@ -107,6 +107,7 @@ function SetupPasskey() {
     },
   });
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (search.passkey_name && !autoRegisterCalledRef.current) {
       autoRegisterCalledRef.current = true;
@@ -201,7 +202,9 @@ function SetupPasskey() {
           <input
             id="passkey-name"
             type="text"
-            className={`input input-bordered ${errors.name ? 'input-error' : ''}`}
+            className={`input input-bordered ${
+              errors.name ? 'input-error' : ''
+            }`}
             placeholder={t('setupPasskey.name.placeholder')}
             {...register('name')}
           />
