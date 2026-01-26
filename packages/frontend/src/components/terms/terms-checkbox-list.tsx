@@ -1,4 +1,4 @@
-import { ArrowSquareOut as ArrowSquareOutIcon } from '@phosphor-icons/react';
+import { ArrowSquareOutIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import {
   type Control,
@@ -41,8 +41,8 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
     name: 'termsConsents' as Path<T>,
   }) as Record<string, boolean> | undefined;
 
-  const handleAllRequiredChange = (checked: boolean) => {
-    for (const term of terms.filter((term) => term.required)) {
+  const handleAllChange = (checked: boolean) => {
+    for (const term of terms) {
       setValue(
         `termsConsents.${term.id}` as Path<T>,
         checked as PathValue<T, Path<T>>,
@@ -51,9 +51,9 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
     }
   };
 
-  const allRequiredChecked = terms
-    .filter((term) => term.required)
-    .every((term) => termsConsents?.[term.id]);
+  const allChecked = terms.every((term) => termsConsents?.[term.id]);
+
+  const hasOptionalTerms = terms.some((term) => !term.required);
 
   const termsConsentsErrors = errors?.termsConsents as
     | Record<string, { message?: string }>
@@ -62,19 +62,22 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
   return (
     <>
       <div className="space-y-1">
-        {/* All required terms checkbox */}
-        {terms.some((term) => term.required) && (
+        {/* All terms checkbox */}
+        {terms.length > 1 && (
           <label className="flex cursor-pointer items-center gap-1.5 py-0.5">
             <input
               type="checkbox"
               className="checkbox checkbox-primary checkbox-xs"
-              checked={allRequiredChecked}
-              onChange={(e) => handleAllRequiredChange(e.target.checked)}
+              checked={allChecked}
+              onChange={(e) => handleAllChange(e.target.checked)}
               disabled={disabled}
             />
-            <span className="font-medium text-xs">
-              {t('terms.agreeAllRequired')}
-            </span>
+            <span className="font-medium text-xs">{t('terms.agreeAll')}</span>
+            {hasOptionalTerms && (
+              <span className="text-base-content/50 text-xs">
+                {t('terms.agreeAllOptionalIncluded')}
+              </span>
+            )}
           </label>
         )}
 
@@ -94,22 +97,23 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                     onChange={(e) => field.onChange(e.target.checked)}
                     disabled={disabled}
                   />
-                  <span
-                    className={`badge badge-xs ${term.required ? 'badge-error' : 'badge-ghost'}`}
-                  >
-                    {term.required ? t('terms.required') : t('terms.optional')}
-                  </span>
                   <span className="text-xs">{term.title}</span>
                   {term.type === 'link' && (
-                    <a
-                      href={term.content}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.open(
+                          term.content,
+                          '_blank',
+                          'noopener,noreferrer',
+                        );
+                      }}
                       className="text-primary hover:underline"
-                      onClick={(e) => e.stopPropagation()}
                     >
                       <ArrowSquareOutIcon size={12} />
-                    </a>
+                    </button>
                   )}
                   {term.type === 'text' && (
                     <button
@@ -124,6 +128,13 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                       {t('terms.view')}
                     </button>
                   )}
+                  <span
+                    className={`badge badge-xs ml-auto ${
+                      term.required ? 'badge-error' : 'badge-ghost'
+                    }`}
+                  >
+                    {term.required ? t('terms.required') : t('terms.optional')}
+                  </span>
                 </label>
                 {term.userConsent?.requiresUpdate && (
                   <p className="ml-5 text-warning text-xs">
