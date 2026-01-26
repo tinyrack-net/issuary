@@ -1,8 +1,8 @@
-import type { Loaded } from '@mikro-orm/core';
-import fastifyPlugin from 'fastify-plugin';
 import type { TermsEntity } from '@/entities/terms.entity.js';
 import type { UserTermsConsentEntity } from '@/entities/user-terms-consent.entity.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
+import type { Loaded } from '@mikro-orm/core';
+import fastifyPlugin from 'fastify-plugin';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -59,14 +59,6 @@ export class TermsService {
     Loaded<TermsEntity, 'contents', '*', never>[]
   > {
     return this.mikro.terms.findAllWithContents();
-  }
-
-  /**
-   * Check if any terms have implicit consent mode
-   */
-  public async hasImplicitTerms(): Promise<boolean> {
-    const terms = await this.getGlobalTerms();
-    return terms.some((t) => t.consentMode === 'implicit');
   }
 
   /**
@@ -167,14 +159,6 @@ export class TermsService {
   }
 
   /**
-   * Check if user has any pending required terms
-   */
-  public async hasPendingRequiredTerms(userId: string): Promise<boolean> {
-    const pending = await this.getPendingRequiredTerms(userId);
-    return pending.length > 0;
-  }
-
-  /**
    * Record consent for multiple terms
    * consentType can be specified per consent item, or defaults to term's consentMode
    */
@@ -251,16 +235,6 @@ export class TermsService {
   }
 
   /**
-   * Get terms with implicit consent mode
-   */
-  public async getImplicitTerms(): Promise<
-    Loaded<TermsEntity, 'contents', '*', never>[]
-  > {
-    const terms = await this.getGlobalTerms();
-    return terms.filter((t) => t.consentMode === 'implicit');
-  }
-
-  /**
    * Validate that all required explicit terms have been agreed to
    * (implicit terms are auto-agreed, so they don't need validation)
    */
@@ -287,22 +261,6 @@ export class TermsService {
       valid: missingTerms.length === 0,
       missingTerms,
     };
-  }
-
-  /**
-   * Check if any required terms exist
-   */
-  public async hasRequiredTerms(): Promise<boolean> {
-    return this.mikro.terms.hasRequiredTerms();
-  }
-
-  /**
-   * Check if any terms exist (regardless of type or required flag)
-   * Used for OAuth signup flow where users must see all terms
-   */
-  public async hasAnyTerms(): Promise<boolean> {
-    const terms = await this.getGlobalTerms();
-    return terms.length > 0;
   }
 }
 
