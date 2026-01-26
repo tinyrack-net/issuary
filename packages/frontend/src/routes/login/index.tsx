@@ -54,6 +54,14 @@ function Login() {
   const isPasskeyEnabled =
     configData.basic_authentication_methods.passkey.enabled;
 
+  // Config-based title/subtitle (overrides i18n defaults)
+  const customTitle =
+    configData.app.title?.[lang] ??
+    configData.app.title?.[configData.app.fallback_language];
+  const customSubtitle =
+    configData.app.subtitle?.[lang] ??
+    configData.app.subtitle?.[configData.app.fallback_language];
+
   const handlePasskeySuccess = async (data: AuthResponse) => {
     if (data.user) {
       queryClient.setQueryData(getSessionQueryOptions.queryKey, data);
@@ -94,8 +102,9 @@ function Login() {
   return (
     <PageLayout maxWidth="100" cardPadding>
       <PageHeader
-        title={t('login.title')}
-        subtitle={t('login.selectMethod.subtitle')}
+        iconUrl={configData.app.icon_url}
+        title={customTitle ?? t('login.title')}
+        subtitle={customSubtitle ?? t('login.selectMethod.subtitle')}
       />
 
       <LoginMethodList>

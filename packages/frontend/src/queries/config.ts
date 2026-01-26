@@ -62,6 +62,9 @@ export type AppConfigs = {
     background_url?: string;
     public_registration: boolean;
     signup_implicit_terms?: Record<string, string>;
+    icon_url?: string;
+    title?: Record<string, string>;
+    subtitle?: Record<string, string>;
   };
   database: {
     enabled: boolean;

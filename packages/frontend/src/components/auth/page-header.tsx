@@ -1,16 +1,23 @@
 type PageHeaderProps = {
   title: string;
   subtitle?: string;
+  iconUrl?: string;
   className?: string;
 };
 
 export function PageHeader({
   title,
   subtitle,
+  iconUrl,
   className = '',
 }: PageHeaderProps) {
   return (
     <div className={className}>
+      {iconUrl && (
+        <div className="mb-4 flex justify-center">
+          <img src={iconUrl} alt="" className="h-12 w-12 object-contain" />
+        </div>
+      )}
       <h1
         className={`text-center font-bold text-3xl ${subtitle ? 'mb-2' : 'mb-6'}`}
       >

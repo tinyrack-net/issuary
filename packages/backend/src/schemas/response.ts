@@ -504,6 +504,19 @@ export const r = {
         .record(z.string(), z.string())
         .optional()
         .describe('Localized notice text for implicit consent terms'),
+      icon_url: z
+        .string()
+        .url()
+        .optional()
+        .describe('Icon/logo URL displayed on authentication pages'),
+      title: z
+        .record(z.string(), z.string())
+        .optional()
+        .describe('Localized title text for login page'),
+      subtitle: z
+        .record(z.string(), z.string())
+        .optional()
+        .describe('Localized subtitle text for login page'),
     }),
     database: z.object({
       enabled: z.boolean(),

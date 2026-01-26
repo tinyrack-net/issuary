@@ -112,6 +112,27 @@ export const AppConfigApp = z.object({
         'Keyed by language code (e.g., "en", "ko"). ' +
         'Displayed when any term has consent_mode: "implicit".',
     ),
+  icon_url: z
+    .string()
+    .url()
+    .optional()
+    .describe('Icon/logo URL displayed on authentication pages'),
+  title: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe(
+      'Localized title text for login page. ' +
+        'Keyed by language code (e.g., "en", "ko"). ' +
+        'Overrides the default i18n login title.',
+    ),
+  subtitle: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe(
+      'Localized subtitle text for login page. ' +
+        'Keyed by language code (e.g., "en", "ko"). ' +
+        'Overrides the default i18n login subtitle.',
+    ),
 });
 
 export type AppConfigApp = z.infer<typeof AppConfigApp>;
