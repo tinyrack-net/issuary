@@ -57,21 +57,6 @@ export class UserTermsConsentRepository extends EntityRepository<UserTermsConsen
   }
 
   /**
-   * Check if user has agreed to a specific term version
-   */
-  async hasAgreedToVersion(
-    userId: string,
-    termsId: string,
-    version: string,
-  ): Promise<boolean> {
-    const consent = await this.findLatestConsent(userId, termsId);
-    if (!consent) {
-      return false;
-    }
-    return consent.agreed && consent.termsVersion === version;
-  }
-
-  /**
    * Record a new consent
    */
   async recordConsent(params: {
@@ -118,14 +103,5 @@ export class UserTermsConsentRepository extends EntityRepository<UserTermsConsen
 
     await this.getEntityManager().persist(consents).flush();
     return consents;
-  }
-
-  /**
-   * Delete all consent records for a user
-   */
-  async deleteAllConsents(userId: string): Promise<number> {
-    return this.nativeDelete({
-      user: ref(UserEntity, userId),
-    });
   }
 }
