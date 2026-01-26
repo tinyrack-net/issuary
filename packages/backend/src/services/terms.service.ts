@@ -1,14 +1,19 @@
+import type { Loaded } from '@mikro-orm/core';
+import fastifyPlugin from 'fastify-plugin';
 import type { TermsEntity } from '@/entities/terms.entity.js';
 import type { UserTermsConsentEntity } from '@/entities/user-terms-consent.entity.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
-import type { Loaded } from '@mikro-orm/core';
-import fastifyPlugin from 'fastify-plugin';
 
 declare module 'fastify' {
   interface FastifyInstance {
     termsService: TermsService;
   }
 }
+
+/**
+ * Loaded terms type alias for readability
+ */
+type LoadedTerms = Loaded<TermsEntity, 'contents', '*', never>;
 
 /**
  * User consent status for a specific term
@@ -55,9 +60,7 @@ export class TermsService {
   /**
    * Get all global terms from database
    */
-  public async getGlobalTerms(): Promise<
-    Loaded<TermsEntity, 'contents', '*', never>[]
-  > {
+  public async getGlobalTerms(): Promise<LoadedTerms[]> {
     return this.mikro.terms.findAllWithContents();
   }
 
@@ -65,7 +68,7 @@ export class TermsService {
    * Get localized content for a term from its contents collection
    */
   public getLocalizedContent(
-    term: Loaded<TermsEntity, 'contents', '*', never>,
+    term: LoadedTerms,
     lang: string,
   ): LocalizedTermContent | null {
     const contents = term.contents.getItems();
@@ -128,6 +131,19 @@ export class TermsService {
   }
 
   /**
+   * Extract pending required term IDs from already-loaded
+   * localized terms. Use this instead of getPendingRequiredTerms
+   * when you already have the result of getGlobalTermsWithConsent.
+   */
+  public getPendingFromLocalizedTerms(terms: LocalizedTermItem[]): string[] {
+    return terms
+      .filter(
+        (t) => t.required && (!t.userConsent || t.userConsent.requiresUpdate),
+      )
+      .map((t) => t.id);
+  }
+
+  /**
    * Check if user needs to consent to any required terms
    * Returns list of term IDs that need consent
    */
@@ -159,8 +175,8 @@ export class TermsService {
   }
 
   /**
-   * Record consent for multiple terms
-   * consentType can be specified per consent item, or defaults to term's consentMode
+   * Record consent for multiple terms.
+   * Accepts optional pre-loaded terms to avoid redundant DB queries.
    */
   public async recordConsents(params: {
     userId: string;
@@ -169,8 +185,9 @@ export class TermsService {
       agreed: boolean;
       consentType?: 'explicit' | 'implicit' | undefined;
     }>;
+    terms?: LoadedTerms[];
   }): Promise<UserTermsConsentEntity[]> {
-    const terms = await this.getGlobalTerms();
+    const terms = params.terms ?? (await this.getGlobalTerms());
     const termsMap = new Map(terms.map((t) => [t.id, t]));
 
     const records = params.consents
@@ -199,13 +216,16 @@ export class TermsService {
   }
 
   /**
-   * Record implicit consent for terms with implicit consent mode
-   * Used during signup for terms that don't require explicit user action
+   * Record implicit consent for terms with implicit consent mode.
+   * Used during signup for terms that don't require explicit user
+   * action. Accepts optional pre-loaded terms to avoid redundant
+   * DB queries.
    */
   public async recordImplicitConsents(params: {
     userId: string;
+    terms?: LoadedTerms[];
   }): Promise<UserTermsConsentEntity[]> {
-    const terms = await this.getGlobalTerms();
+    const terms = params.terms ?? (await this.getGlobalTerms());
 
     // Only record consent for terms with implicit consent mode
     const implicitTerms = terms.filter((t) => t.consentMode === 'implicit');
@@ -219,31 +239,35 @@ export class TermsService {
       consents: implicitTerms.map((t) => ({
         termsId: t.id,
         agreed: true,
-        consentType: 'implicit',
+        consentType: 'implicit' as const,
       })),
+      terms,
     });
   }
 
   /**
-   * Get terms that require explicit consent (checkbox)
+   * Get terms that require explicit consent (checkbox).
+   * Accepts optional pre-loaded terms to avoid redundant DB
+   * queries.
    */
-  public async getExplicitTerms(): Promise<
-    Loaded<TermsEntity, 'contents', '*', never>[]
-  > {
-    const terms = await this.getGlobalTerms();
-    return terms.filter((t) => t.consentMode === 'explicit');
+  public async getExplicitTerms(terms?: LoadedTerms[]): Promise<LoadedTerms[]> {
+    const allTerms = terms ?? (await this.getGlobalTerms());
+    return allTerms.filter((t) => t.consentMode === 'explicit');
   }
 
   /**
-   * Validate that all required explicit terms have been agreed to
+   * Validate that all required explicit terms have been agreed to.
    * (implicit terms are auto-agreed, so they don't need validation)
+   * Accepts optional pre-loaded terms to avoid redundant DB
+   * queries.
    */
   public async validateExplicitConsents(
     consents: Array<{ termsId: string; agreed: boolean }>,
+    terms?: LoadedTerms[],
   ): Promise<{ valid: boolean; missingTerms: string[] }> {
-    const terms = await this.getGlobalTerms();
+    const allTerms = terms ?? (await this.getGlobalTerms());
     // Only validate required terms with explicit consent mode
-    const requiredExplicitTerms = terms.filter(
+    const requiredExplicitTerms = allTerms.filter(
       (t) => t.required && t.consentMode === 'explicit',
     );
     const consentsMap = new Map(consents.map((c) => [c.termsId, c]));
@@ -260,6 +284,50 @@ export class TermsService {
     return {
       valid: missingTerms.length === 0,
       missingTerms,
+    };
+  }
+
+  /**
+   * Validate explicit consents, then record all consents
+   * (explicit + implicit) in a single flow. Loads terms only once.
+   */
+  public async validateAndRecordConsents(params: {
+    userId: string;
+    consents: Array<{ termsId: string; agreed: boolean }>;
+  }): Promise<{
+    validation: { valid: boolean; missingTerms: string[] };
+    records: UserTermsConsentEntity[];
+  }> {
+    const terms = await this.getGlobalTerms();
+
+    const validation = await this.validateExplicitConsents(
+      params.consents,
+      terms,
+    );
+
+    if (!validation.valid) {
+      return { validation, records: [] };
+    }
+
+    // Record explicit consents
+    const explicitRecords =
+      params.consents.length > 0
+        ? await this.recordConsents({
+            userId: params.userId,
+            consents: params.consents,
+            terms,
+          })
+        : [];
+
+    // Record implicit consents
+    const implicitRecords = await this.recordImplicitConsents({
+      userId: params.userId,
+      terms,
+    });
+
+    return {
+      validation,
+      records: [...explicitRecords, ...implicitRecords],
     };
   }
 }
