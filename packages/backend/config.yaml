@@ -1,5 +1,5 @@
 app:
-  host: https://auth-test.intranet.winetree94.com
+  # host: https://auth-test.intranet.winetree94.com
   port: 8080
   cookie_secret: 3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b
   jwt_access_token_ttl: 3600
@@ -38,7 +38,7 @@ app:
 
   # Trust proxy configuration for reverse proxy environments
   # Options: true (trust all), false (default), IP/CIDR string, array of IPs, or number (nth hop)
-  trust_proxy: ["10.0.0.0/8"]
+  # trust_proxy: ["10.0.0.0/8"]
   # trust_proxy: '127.0.0.1'
   # trust_proxy: ['10.0.0.0/8', '172.16.0.0/12']
 
