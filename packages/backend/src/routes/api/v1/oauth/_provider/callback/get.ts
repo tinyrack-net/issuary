@@ -49,16 +49,24 @@ export default (fastify: FastifyWithZodInstance) =>
 
       // Handle OAuth error response
       if (error) {
-        // OAuth provider returned an error
-        // Build redirect URL - use referer or construct from host header
-        const baseUrl =
-          req.headers.referer ||
-          `${req.protocol}://${req.headers.host || 'localhost'}`;
-        const errorUrl = new URL('/login', baseUrl);
-        errorUrl.searchParams.set('error', error);
+        const errorUrl = new URL('/login', fastify.config.app.host);
+        errorUrl.searchParams.set('oauth_error', error);
         if (error_description) {
-          errorUrl.searchParams.set('error_description', error_description);
+          errorUrl.searchParams.set(
+            'oauth_error_description',
+            error_description,
+          );
         }
+
+        // Pass return URL if available in session
+        const oauthSession = req.session.get('oauth');
+        if (oauthSession?.returnUrl) {
+          errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
+        }
+
+        // Clean up OAuth session
+        req.session.set('oauth', undefined);
+
         return res.redirect(errorUrl.toString());
       }
 
