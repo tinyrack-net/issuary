@@ -47,8 +47,9 @@ export const Route = createFileRoute('/terms/')({
     lang: search.lang,
   }),
   loader: async ({ context, deps }) => {
+    const lang = deps.lang ?? context.i18n.language;
     await Promise.all([
-      context.queryClient.ensureQueryData(getTermsQueryOptions(deps.lang)),
+      context.queryClient.ensureQueryData(getTermsQueryOptions(lang)),
       context.queryClient.ensureQueryData(appConfigQueryOptions),
     ]);
   },
