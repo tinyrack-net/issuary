@@ -69,14 +69,14 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
       icon={ShieldCheckIcon}
       variant="destructive"
     >
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} className="mt-4 space-y-3">
         <AlertBanner variant="warning">
           {t('profile.totp.disableModal.warning')}
         </AlertBanner>
 
         <div className="form-control">
           <label className="label w-full" htmlFor="disable-totp-code">
-            <span className="label-text text-sm">
+            <span className="label-text text-xs">
               {t('profile.totp.disableModal.codeLabel')}
             </span>
           </label>
@@ -86,7 +86,7 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
             inputMode="numeric"
             pattern="[0-9]*"
             maxLength={6}
-            className={`input input-bordered w-full text-center text-2xl tracking-widest ${
+            className={`input input-bordered input-sm w-full text-center text-xl tracking-widest ${
               form.formState.errors.code ? 'input-error' : ''
             }`}
             placeholder="000000"
@@ -94,7 +94,7 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
             {...form.register('code')}
           />
           {form.formState.errors.code && (
-            <span className="label-text-alt mt-1 text-error">
+            <span className="label-text-alt mt-0.5 text-error">
               {form.formState.errors.code.message}
             </span>
           )}
@@ -103,7 +103,7 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
         <ModalActions>
           <button
             type="button"
-            className="btn"
+            className="btn btn-sm"
             onClick={handleClose}
             disabled={mutation.isPending}
           >
@@ -111,12 +111,12 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
           </button>
           <button
             type="submit"
-            className="btn btn-error"
+            className="btn btn-sm btn-error"
             disabled={mutation.isPending}
           >
             {mutation.isPending ? (
               <>
-                <span className="loading loading-spinner loading-sm" />
+                <span className="loading loading-spinner loading-xs" />
                 {t('profile.totp.disableModal.disabling')}
               </>
             ) : (

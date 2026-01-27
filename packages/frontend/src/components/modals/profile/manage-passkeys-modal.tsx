@@ -108,19 +108,19 @@ export function ManagePasskeysModal({
       icon={FingerprintIcon}
       size="lg"
     >
-      <div className="mt-6 space-y-3">
+      <div className="mt-4 space-y-2">
         {deleteError && (
           <AlertBanner variant="error">{deleteError}</AlertBanner>
         )}
 
         {isLoading && (
-          <div className="flex justify-center py-8">
-            <span className="loading loading-spinner loading-lg" />
+          <div className="flex justify-center py-6">
+            <span className="loading loading-spinner loading-md" />
           </div>
         )}
 
         {!isLoading && passkeys.length === 0 && (
-          <div className="py-8 text-center text-base-content/60">
+          <div className="py-6 text-center text-base-content/60 text-sm">
             <p>{t('profile.passkey.manageModal.noPasskeys')}</p>
           </div>
         )}
@@ -147,12 +147,12 @@ export function ManagePasskeysModal({
       </div>
 
       <ModalActions>
-        <button type="button" className="btn" onClick={handleClose}>
+        <button type="button" className="btn btn-sm" onClick={handleClose}>
           {t('profile.passkey.manageModal.close')}
         </button>
         <button
           type="button"
-          className="btn btn-primary"
+          className="btn btn-sm btn-primary"
           onClick={() => {
             handleClose();
             onAddNew();
@@ -231,7 +231,7 @@ function PasskeyItem({
     return (
       <form
         onSubmit={handleRename}
-        className="flex flex-col gap-2 rounded-lg bg-base-200 p-3"
+        className="flex flex-col gap-1.5 rounded-lg bg-base-200 p-2"
       >
         <input
           type="text"
@@ -274,10 +274,10 @@ function PasskeyItem({
 
   if (isConfirmingDelete) {
     return (
-      <div className="flex items-center justify-between rounded-lg bg-error/10 p-3">
-        <div className="flex items-center gap-3">
-          <TrashIcon className="size-5 text-error" weight="regular" />
-          <span className="text-error text-sm">
+      <div className="flex items-center justify-between rounded-lg bg-error/10 p-2">
+        <div className="flex items-center gap-2">
+          <TrashIcon className="size-4 text-error" weight="regular" />
+          <span className="text-error text-xs">
             {t('profile.passkey.manageModal.deleteConfirmInline')}
           </span>
         </div>
@@ -302,18 +302,18 @@ function PasskeyItem({
   }
 
   return (
-    <div className="flex items-center justify-between rounded-lg bg-base-200 p-3">
-      <div className="flex items-center gap-3">
+    <div className="flex items-center justify-between rounded-lg bg-base-200 p-2">
+      <div className="flex items-center gap-2">
         {passkey.device_type === 'multiDevice' ? (
-          <CloudIcon className="size-5 text-primary" weight="regular" />
+          <CloudIcon className="size-4 text-primary" weight="regular" />
         ) : (
-          <DeviceMobileIcon className="size-5 text-primary" weight="regular" />
+          <DeviceMobileIcon className="size-4 text-primary" weight="regular" />
         )}
         <div>
-          <div className="font-medium text-sm">
+          <div className="font-medium text-xs">
             {passkey.name || t('profile.passkey.manageModal.unnamedPasskey')}
           </div>
-          <div className="flex items-center gap-2 text-base-content/60 text-xs">
+          <div className="flex items-center gap-1.5 text-base-content/60 text-xs">
             <span>
               {t('profile.passkey.manageModal.createdAt', {
                 date: formatDate(passkey.created_at),
@@ -334,7 +334,7 @@ function PasskeyItem({
           onClick={onEdit}
           aria-label={t('profile.passkey.manageModal.rename')}
         >
-          <PencilSimpleIcon className="size-4" weight="regular" />
+          <PencilSimpleIcon className="size-3.5" weight="regular" />
         </button>
         <button
           type="button"
@@ -346,7 +346,7 @@ function PasskeyItem({
           {isDeleting ? (
             <span className="loading loading-spinner loading-xs" />
           ) : (
-            <TrashIcon className="size-4" weight="regular" />
+            <TrashIcon className="size-3.5" weight="regular" />
           )}
         </button>
       </div>

@@ -62,27 +62,29 @@ export function Modal({
   return (
     <dialog className="modal modal-open">
       <div className={`modal-box max-h-[85vh] ${sizeClasses[size]}`}>
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2.5">
           {IconComponent && (
             <div
-              className={`flex size-10 shrink-0 items-center justify-center rounded-full ${iconVariantClasses[variant]}`}
+              className={`flex size-8 shrink-0 items-center justify-center rounded-full ${iconVariantClasses[variant]}`}
             >
-              <IconComponent className="size-5" weight="bold" />
+              <IconComponent className="size-4" weight="bold" />
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <h3 className="font-bold text-lg">{title}</h3>
+            <h3 className="font-bold text-base">{title}</h3>
             {description && (
-              <p className="mt-1 text-base-content/60 text-sm">{description}</p>
+              <p className="mt-0.5 text-base-content/60 text-xs">
+                {description}
+              </p>
             )}
           </div>
           {!preventClose && (
             <button
               type="button"
-              className="btn btn-circle btn-ghost btn-sm shrink-0"
+              className="btn btn-circle btn-ghost btn-xs shrink-0"
               onClick={onClose}
             >
-              <XIcon className="size-4" />
+              <XIcon className="size-3.5" />
             </button>
           )}
         </div>

@@ -74,38 +74,38 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
       description={t('profile.password.setModal.description')}
       icon={KeyIcon}
     >
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} className="mt-4 space-y-3">
         <div className="form-control">
           <label className="label w-full" htmlFor="new-password">
-            <span className="label-text text-sm">
+            <span className="label-text text-xs">
               {t('profile.password.setModal.newPassword')}
             </span>
           </label>
           <input
             id="new-password"
             type="password"
-            className={`input input-bordered w-full ${
+            className={`input input-bordered input-sm w-full ${
               form.formState.errors.password ? 'input-error' : ''
             }`}
             placeholder={t('profile.password.setModal.newPasswordPlaceholder')}
             {...form.register('password')}
           />
           {form.formState.errors.password && (
-            <span className="label-text-alt mt-1 text-error">
+            <span className="label-text-alt mt-0.5 text-error">
               {form.formState.errors.password.message}
             </span>
           )}
         </div>
         <div className="form-control">
           <label className="label w-full" htmlFor="confirm-password">
-            <span className="label-text text-sm">
+            <span className="label-text text-xs">
               {t('profile.password.setModal.confirmPassword')}
             </span>
           </label>
           <input
             id="confirm-password"
             type="password"
-            className={`input input-bordered w-full ${
+            className={`input input-bordered input-sm w-full ${
               form.formState.errors.confirmPassword ? 'input-error' : ''
             }`}
             placeholder={t(
@@ -114,7 +114,7 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
             {...form.register('confirmPassword')}
           />
           {form.formState.errors.confirmPassword && (
-            <span className="label-text-alt mt-1 text-error">
+            <span className="label-text-alt mt-0.5 text-error">
               {form.formState.errors.confirmPassword.message}
             </span>
           )}
@@ -127,7 +127,7 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
         <ModalActions>
           <button
             type="button"
-            className="btn"
+            className="btn btn-sm"
             onClick={handleClose}
             disabled={mutation.isPending}
           >
@@ -135,12 +135,12 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
           </button>
           <button
             type="submit"
-            className="btn btn-primary"
+            className="btn btn-sm btn-primary"
             disabled={mutation.isPending}
           >
             {mutation.isPending ? (
               <>
-                <span className="loading loading-spinner loading-sm" />
+                <span className="loading loading-spinner loading-xs" />
                 {t('profile.password.setModal.submitting')}
               </>
             ) : (

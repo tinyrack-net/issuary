@@ -50,7 +50,7 @@ export function UnlinkOAuthModal({
       variant="destructive"
       preventClose={isPending}
     >
-      <div className="mt-6 space-y-4">
+      <div className="mt-4 space-y-3">
         <AlertBanner variant="warning">
           {t('profile.linkedAccounts.unlinkModal.warning', {
             provider: providerName,
@@ -62,7 +62,7 @@ export function UnlinkOAuthModal({
         <ModalActions>
           <button
             type="button"
-            className="btn"
+            className="btn btn-sm"
             onClick={handleClose}
             disabled={isPending}
           >
@@ -70,13 +70,13 @@ export function UnlinkOAuthModal({
           </button>
           <button
             type="button"
-            className="btn btn-error"
+            className="btn btn-sm btn-error"
             onClick={handleConfirm}
             disabled={isPending}
           >
             {isPending ? (
               <>
-                <span className="loading loading-spinner loading-sm" />
+                <span className="loading loading-spinner loading-xs" />
                 {t('profile.linkedAccounts.unlinking')}
               </>
             ) : (

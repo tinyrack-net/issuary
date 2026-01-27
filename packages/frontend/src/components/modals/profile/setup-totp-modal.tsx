@@ -80,23 +80,23 @@ export function SetupTotpModal({
       preventClose={isRequired}
     >
       {isSetupPending && (
-        <div className="flex justify-center py-8">
-          <span className="loading loading-spinner loading-lg" />
+        <div className="flex justify-center py-6">
+          <span className="loading loading-spinner loading-md" />
         </div>
       )}
 
       {step === 'error' && (
-        <div className="mt-6 space-y-4">
+        <div className="mt-4 space-y-3">
           <AlertBanner variant="error">
             {t('profile.totp.setupModal.setupError')}
           </AlertBanner>
           <ModalActions>
-            <button type="button" className="btn" onClick={handleClose}>
+            <button type="button" className="btn btn-sm" onClick={handleClose}>
               {t('profile.totp.setupModal.cancel')}
             </button>
             <button
               type="button"
-              className="btn btn-primary"
+              className="btn btn-sm btn-primary"
               onClick={startSetup}
             >
               {t('profile.totp.setupModal.retry')}
@@ -106,19 +106,23 @@ export function SetupTotpModal({
       )}
 
       {setupData && step === 'qr' && (
-        <div className="mt-6">
+        <div className="mt-4">
           <QrStep
             setupData={setupData}
             onNext={goToVerify}
             additionalActions={
               <>
                 <ModalActions>
-                  <button type="button" className="btn" onClick={handleClose}>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    onClick={handleClose}
+                  >
                     {t('profile.totp.setupModal.cancel')}
                   </button>
                 </ModalActions>
                 {canSwitchToPasskey && onSwitchToPasskey && (
-                  <p className="mt-3 text-center text-sm">
+                  <p className="mt-2 text-center text-xs">
                     <button
                       type="button"
                       className="link link-primary"
@@ -135,7 +139,7 @@ export function SetupTotpModal({
       )}
 
       {setupData && step === 'verify' && (
-        <div className="mt-6">
+        <div className="mt-4">
           <VerifyStep
             onSubmit={handleVerify}
             onBack={goToQr}

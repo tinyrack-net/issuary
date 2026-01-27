@@ -92,17 +92,17 @@ export function ChangePasswordModal({
       description={t('profile.password.changeModal.description')}
       icon={KeyIcon}
     >
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} className="mt-4 space-y-3">
         <div className="form-control">
           <label className="label w-full" htmlFor="current-password">
-            <span className="label-text text-sm">
+            <span className="label-text text-xs">
               {t('profile.password.changeModal.currentPassword')}
             </span>
           </label>
           <input
             id="current-password"
             type="password"
-            className={`input input-bordered w-full ${
+            className={`input input-bordered input-sm w-full ${
               form.formState.errors.currentPassword ? 'input-error' : ''
             }`}
             placeholder={t(
@@ -111,21 +111,21 @@ export function ChangePasswordModal({
             {...form.register('currentPassword')}
           />
           {form.formState.errors.currentPassword && (
-            <span className="label-text-alt mt-1 text-error">
+            <span className="label-text-alt mt-0.5 text-error">
               {form.formState.errors.currentPassword.message}
             </span>
           )}
         </div>
         <div className="form-control">
           <label className="label w-full" htmlFor="new-password-change">
-            <span className="label-text text-sm">
+            <span className="label-text text-xs">
               {t('profile.password.changeModal.newPassword')}
             </span>
           </label>
           <input
             id="new-password-change"
             type="password"
-            className={`input input-bordered w-full ${
+            className={`input input-bordered input-sm w-full ${
               form.formState.errors.newPassword ? 'input-error' : ''
             }`}
             placeholder={t(
@@ -134,21 +134,21 @@ export function ChangePasswordModal({
             {...form.register('newPassword')}
           />
           {form.formState.errors.newPassword && (
-            <span className="label-text-alt mt-1 text-error">
+            <span className="label-text-alt mt-0.5 text-error">
               {form.formState.errors.newPassword.message}
             </span>
           )}
         </div>
         <div className="form-control">
           <label className="label w-full" htmlFor="confirm-password-change">
-            <span className="label-text text-sm">
+            <span className="label-text text-xs">
               {t('profile.password.changeModal.confirmPassword')}
             </span>
           </label>
           <input
             id="confirm-password-change"
             type="password"
-            className={`input input-bordered w-full ${
+            className={`input input-bordered input-sm w-full ${
               form.formState.errors.confirmPassword ? 'input-error' : ''
             }`}
             placeholder={t(
@@ -157,7 +157,7 @@ export function ChangePasswordModal({
             {...form.register('confirmPassword')}
           />
           {form.formState.errors.confirmPassword && (
-            <span className="label-text-alt mt-1 text-error">
+            <span className="label-text-alt mt-0.5 text-error">
               {form.formState.errors.confirmPassword.message}
             </span>
           )}
@@ -170,7 +170,7 @@ export function ChangePasswordModal({
         <ModalActions>
           <button
             type="button"
-            className="btn"
+            className="btn btn-sm"
             onClick={handleClose}
             disabled={mutation.isPending}
           >
@@ -178,12 +178,12 @@ export function ChangePasswordModal({
           </button>
           <button
             type="submit"
-            className="btn btn-primary"
+            className="btn btn-sm btn-primary"
             disabled={mutation.isPending}
           >
             {mutation.isPending ? (
               <>
-                <span className="loading loading-spinner loading-sm" />
+                <span className="loading loading-spinner loading-xs" />
                 {t('profile.password.changeModal.submitting')}
               </>
             ) : (

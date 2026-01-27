@@ -70,7 +70,7 @@ export function VerifyStep({
     <div className={className}>
       <form
         onSubmit={handleSubmit(handleFormSubmit)}
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-3"
       >
         <PinInput
           ref={pinInputRef}
@@ -85,16 +85,16 @@ export function VerifyStep({
         <SubmitButton
           isPending={isPending}
           pendingText={t('setupTotp.verifying')}
-          className="mt-2"
+          className="btn-sm mt-1"
         >
           {t('setupTotp.verify')}
         </SubmitButton>
       </form>
 
-      <div className="mt-4 text-center">
+      <div className="mt-3 text-center">
         <button
           type="button"
-          className="btn btn-ghost btn-sm"
+          className="btn btn-ghost btn-xs"
           onClick={onBack}
           disabled={isPending}
         >

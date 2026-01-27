@@ -103,8 +103,8 @@ export function SetupPasskeyModal({
       preventClose={isRequired}
     >
       {step === 'name' && (
-        <form onSubmit={handleRegister} className="mt-6 space-y-4">
-          <p className="text-base-content/60 text-sm">
+        <form onSubmit={handleRegister} className="mt-4 space-y-3">
+          <p className="text-base-content/60 text-xs">
             {t('profile.passkey.setupModal.description')}
           </p>
 
@@ -114,39 +114,39 @@ export function SetupPasskeyModal({
 
           <div className="form-control">
             <label className="label w-full" htmlFor="passkey-name">
-              <span className="label-text text-sm">
+              <span className="label-text text-xs">
                 {t('profile.passkey.setupModal.nameLabel')}
               </span>
             </label>
             <input
               id="passkey-name"
               type="text"
-              className={`input input-bordered w-full ${
+              className={`input input-bordered input-sm w-full ${
                 form.formState.errors.name ? 'input-error' : ''
               }`}
               placeholder={t('profile.passkey.setupModal.namePlaceholder')}
               {...form.register('name')}
             />
             {form.formState.errors.name && (
-              <span className="label-text-alt mt-1 text-error">
+              <span className="label-text-alt mt-0.5 text-error">
                 {form.formState.errors.name.message}
               </span>
             )}
-            <span className="label-text-alt mt-1 text-base-content/50">
+            <span className="label-text-alt mt-0.5 text-base-content/50">
               {t('profile.passkey.setupModal.nameHint')}
             </span>
           </div>
 
           <ModalActions>
-            <button type="button" className="btn" onClick={handleClose}>
+            <button type="button" className="btn btn-sm" onClick={handleClose}>
               {t('profile.passkey.setupModal.cancel')}
             </button>
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn btn-sm btn-primary">
               {t('profile.passkey.setupModal.continue')}
             </button>
           </ModalActions>
           {canSwitchToTotp && onSwitchToTotp && (
-            <p className="mt-3 text-center text-sm">
+            <p className="mt-2 text-center text-xs">
               <button
                 type="button"
                 className="link link-primary"
@@ -160,10 +160,10 @@ export function SetupPasskeyModal({
       )}
 
       {step === 'register' && (
-        <div className="mt-6">
-          <div className="flex flex-col items-center gap-4 py-8">
-            <span className="loading loading-spinner loading-lg" />
-            <p className="text-center text-base-content/60 text-sm">
+        <div className="mt-4">
+          <div className="flex flex-col items-center gap-3 py-6">
+            <span className="loading loading-spinner loading-md" />
+            <p className="text-center text-base-content/60 text-xs">
               {t('profile.passkey.setupModal.waitingForDevice')}
             </p>
           </div>
@@ -171,7 +171,7 @@ export function SetupPasskeyModal({
           <ModalActions>
             <button
               type="button"
-              className="btn"
+              className="btn btn-sm"
               onClick={handleClose}
               disabled={isPending}
             >

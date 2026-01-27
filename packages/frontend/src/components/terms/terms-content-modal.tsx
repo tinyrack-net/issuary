@@ -16,7 +16,7 @@ export function TermsContentModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="lg">
       <div
-        className="prose prose-sm mt-4 max-h-[60vh] max-w-none overflow-y-auto"
+        className="prose prose-sm mt-3 max-h-[55vh] max-w-none overflow-y-auto"
         dangerouslySetInnerHTML={{ __html: content }}
       />
     </Modal>

@@ -83,28 +83,28 @@ export function DeleteAccountModal({
       variant="destructive"
       preventClose={mutation.isPending}
     >
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} className="mt-4 space-y-3">
         <AlertBanner variant="error">
           <p>
             {t('profile.deleteAccount.modal.description', {
               days: retentionDays,
             })}
           </p>
-          <p className="mt-1 text-xs opacity-80">
+          <p className="mt-0.5 text-xs opacity-80">
             {t('profile.deleteAccount.modal.warning')}
           </p>
         </AlertBanner>
 
         <div className="form-control">
           <label className="label w-full" htmlFor="delete-confirmation">
-            <span className="label-text text-sm">
+            <span className="label-text text-xs">
               {t('profile.deleteAccount.modal.confirmLabel')}
             </span>
           </label>
           <input
             id="delete-confirmation"
             type="text"
-            className={`input input-bordered w-full ${
+            className={`input input-bordered input-sm w-full ${
               form.formState.errors.confirmation ? 'input-error' : ''
             }`}
             placeholder={t('profile.deleteAccount.modal.confirmPlaceholder')}
@@ -112,7 +112,7 @@ export function DeleteAccountModal({
             autoComplete="off"
           />
           {form.formState.errors.confirmation && (
-            <span className="label-text-alt mt-1 text-error">
+            <span className="label-text-alt mt-0.5 text-error">
               {form.formState.errors.confirmation.message}
             </span>
           )}
@@ -127,7 +127,7 @@ export function DeleteAccountModal({
         <ModalActions>
           <button
             type="button"
-            className="btn"
+            className="btn btn-sm"
             onClick={handleClose}
             disabled={mutation.isPending}
           >
@@ -135,12 +135,12 @@ export function DeleteAccountModal({
           </button>
           <button
             type="submit"
-            className="btn btn-error"
+            className="btn btn-sm btn-error"
             disabled={mutation.isPending}
           >
             {mutation.isPending ? (
               <>
-                <span className="loading loading-spinner loading-sm" />
+                <span className="loading loading-spinner loading-xs" />
                 {t('profile.deleteAccount.modal.confirming')}
               </>
             ) : (
