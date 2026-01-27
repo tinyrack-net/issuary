@@ -1,4 +1,8 @@
-import { SignOutIcon, UserCircleIcon } from '@phosphor-icons/react';
+import {
+  SignOutIcon,
+  UserCircleIcon,
+  WarningCircleIcon,
+} from '@phosphor-icons/react';
 import {
   useMutation,
   useQueryClient,
@@ -7,6 +11,7 @@ import {
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { z } from 'zod/v4';
 import { ChangePasswordModal } from '@/components/modals/profile/change-password-modal.js';
 import { DeleteAccountModal } from '@/components/modals/profile/delete-account-modal.js';
 import { DisableTotpModal } from '@/components/modals/profile/disable-totp-modal.js';
@@ -21,6 +26,7 @@ import { PasskeySection } from '@/components/profile/passkey-section.js';
 import { PasswordSection } from '@/components/profile/password-section.js';
 import { TotpSection } from '@/components/profile/totp-section.js';
 import { UserInfoSection } from '@/components/profile/user-info-section.js';
+import { Alert } from '@/components/ui/alert.js';
 import { PageLayout } from '@/components/ui/page-layout.js';
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
@@ -36,8 +42,20 @@ type PasswordModalType = 'set' | 'change' | 'remove' | null;
 type TotpModalType = 'setup' | 'disable' | null;
 type PasskeyModalType = 'setup' | 'manage' | null;
 
+const SearchSchema = z.object({
+  oauth_error: z.string().optional(),
+  oauth_error_description: z.string().optional(),
+});
+
+const OAUTH_ERROR_I18N_MAP: Record<string, string> = {
+  access_denied: 'oauth.error.accessDenied',
+  temporarily_unavailable: 'oauth.error.temporarilyUnavailable',
+  server_error: 'oauth.error.serverError',
+};
+
 export const Route = createFileRoute('/profile/')({
   component: Profile,
+  validateSearch: SearchSchema,
   beforeLoad: async ({ context }) => {
     if (!context.user) {
       throw redirect({
@@ -58,6 +76,12 @@ function Profile() {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const search = Route.useSearch();
+
+  const oauthError = search.oauth_error;
+  const oauthErrorMessage = oauthError
+    ? t(OAUTH_ERROR_I18N_MAP[oauthError] ?? 'oauth.error.failed')
+    : undefined;
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(
     null,
   );
@@ -198,6 +222,15 @@ function Profile() {
           </button>
         </div>
       </div>
+
+      {/* OAuth Error Alert */}
+      {oauthErrorMessage && (
+        <div className="px-6 pt-4 md:px-8">
+          <Alert type="error" icon={WarningCircleIcon}>
+            {oauthErrorMessage}
+          </Alert>
+        </div>
+      )}
 
       {/* Content */}
       <div className="p-6 md:p-8">
