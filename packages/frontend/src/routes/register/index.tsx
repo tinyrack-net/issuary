@@ -43,8 +43,15 @@ export const Route = createFileRoute('/register/')({
       });
     }
   },
-  loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(appConfigQueryOptions);
+  loaderDeps: ({ search }) => ({
+    lang: search.lang,
+  }),
+  loader: async ({ context, deps }) => {
+    const lang = deps.lang ?? context.i18n.language;
+    await Promise.all([
+      context.queryClient.ensureQueryData(appConfigQueryOptions),
+      context.queryClient.ensureQueryData(getTermsQueryOptions(lang)),
+    ]);
   },
 });
 

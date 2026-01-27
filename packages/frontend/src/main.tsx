@@ -2,7 +2,7 @@ import { QueryClientProvider, useSuspenseQueries } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { memo, StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { initI18n } from '@/i18n';
+import i18n, { initI18n } from '@/i18n';
 import './index.css';
 import { GlobalQueryClient } from './libs/query-client';
 import { AppRouter } from './libs/router';
@@ -45,6 +45,7 @@ const Loader = memo(() => {
       context={{
         queryClient: GlobalQueryClient,
         user: session.user ?? null,
+        i18n: i18n,
       }}
     />
   );
