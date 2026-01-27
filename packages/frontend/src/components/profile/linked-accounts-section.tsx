@@ -15,14 +15,14 @@ interface LinkedAccountsSectionProps {
     mode?: 'login' | 'register' | 'link',
     returnUrl?: string,
   ) => string;
-  onUnlink: (providerId: string) => void;
+  onUnlinkRequest: (provider: OAuthProvider) => void;
 }
 
 export function LinkedAccountsSection({
   providers,
   unlinkingProvider,
   getAuthorizeUrl,
-  onUnlink,
+  onUnlinkRequest,
 }: LinkedAccountsSectionProps) {
   const { t } = useTranslation();
 
@@ -31,10 +31,12 @@ export function LinkedAccountsSection({
   }
 
   return (
-    <div className="rounded-xl border border-base-200 bg-base-100">
-      <div className="border-base-200 border-b p-4">
-        <h2 className="font-semibold">{t('profile.linkedAccounts.title')}</h2>
-        <p className="text-base-content/60 text-sm">
+    <div className="rounded-xl border border-base-200">
+      <div className="border-base-200 border-b px-4 py-3">
+        <h2 className="font-semibold text-sm">
+          {t('profile.linkedAccounts.title')}
+        </h2>
+        <p className="text-base-content/60 text-xs">
           {t('profile.linkedAccounts.description')}
         </p>
       </div>
@@ -73,7 +75,7 @@ export function LinkedAccountsSection({
                 type="button"
                 className="btn btn-ghost btn-xs text-error"
                 disabled={unlinkingProvider === provider.id}
-                onClick={() => onUnlink(provider.id)}
+                onClick={() => onUnlinkRequest(provider)}
               >
                 {unlinkingProvider === provider.id ? (
                   <>

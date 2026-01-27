@@ -1,4 +1,4 @@
-import { Trash, Warning } from '@phosphor-icons/react';
+import { TrashIcon, WarningIcon } from '@phosphor-icons/react';
 import { useTranslation } from 'react-i18next';
 
 interface DangerZoneSectionProps {
@@ -20,23 +20,25 @@ export function DangerZoneSection({
   }
 
   return (
-    <div className="rounded-xl border border-error/30 bg-error/5">
-      <div className="border-error/30 border-b p-4">
+    <div className="rounded-xl border border-base-200 border-l-4 border-l-error/60">
+      <div className="border-base-200 border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <Warning className="size-5 text-error" weight="fill" />
-          <h2 className="font-semibold text-error">
+          <WarningIcon className="size-4 text-error" weight="fill" />
+          <h2 className="font-semibold text-error text-sm">
             {t('profile.dangerZone.title')}
           </h2>
         </div>
-        <p className="mt-1 text-base-content/60 text-sm">
+        <p className="mt-0.5 text-base-content/60 text-xs">
           {t('profile.dangerZone.description')}
         </p>
       </div>
-      <div className="p-4">
+      <div className="px-4 py-3">
         <div className="flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <p className="font-medium">{t('profile.deleteAccount.title')}</p>
-            <p className="text-base-content/60 text-sm">
+          <div className="min-w-0 flex-1">
+            <p className="font-medium text-sm">
+              {t('profile.deleteAccount.title')}
+            </p>
+            <p className="text-base-content/60 text-xs">
               {isConfigManaged
                 ? t('profile.deleteAccount.configManaged')
                 : t('profile.deleteAccount.description')}
@@ -48,7 +50,7 @@ export function DangerZoneSection({
             onClick={onDeleteClick}
             disabled={isConfigManaged}
           >
-            <Trash className="size-4" weight="bold" />
+            <TrashIcon className="size-4" weight="bold" />
             {t('profile.deleteAccount.button')}
           </button>
         </div>
