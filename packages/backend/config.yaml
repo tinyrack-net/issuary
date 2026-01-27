@@ -1,5 +1,5 @@
 app:
-  host: http://localhost:8080
+  host: https://auth-test.intranet.winetree94.com
   port: 8080
   cookie_secret: 3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b
   jwt_access_token_ttl: 3600
@@ -144,14 +144,14 @@ database:
   # user: !env DATABASE_USER
   # password: !env DATABASE_PASSWORD
 
-# smtp:
-#   host: mail.winetree94.com
-#   secure: true
-#   port: 465
-#   user: "tester@tinyrack.net"
-#   password: !env SMTP_PASSWORD
-#   from: "tester@tinyrack.net"
-#   test: false
+smtp:
+  host: mail.winetree94.com
+  secure: true
+  port: 465
+  user: "tester@tinyrack.net"
+  password: !env SMTP_PASSWORD
+  from: "tester@tinyrack.net"
+  test: false
 
 basic_authentication_methods:
   password:
