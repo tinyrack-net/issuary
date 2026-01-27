@@ -1,10 +1,12 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { KeyIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod/v4';
-import { Modal, ModalActions } from '@/components/ui/modal';
+import { AlertBanner } from '@/components/ui/alert-banner.js';
+import { Modal, ModalActions } from '@/components/ui/modal.js';
 import { ApiError } from '@/libs/error.js';
 import { removePasswordMutationOptions } from '@/queries/password.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
@@ -81,18 +83,20 @@ export function RemovePasswordModal({
       onClose={handleClose}
       title={t('profile.password.removeModal.title')}
       description={t('profile.password.removeModal.description')}
+      icon={KeyIcon}
+      variant="destructive"
     >
-      <form onSubmit={handleSubmit} className="mt-4">
-        <div className="form-control mb-4">
-          <label className="label" htmlFor="current-password-remove">
-            <span className="label-text">
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <div className="form-control">
+          <label className="label w-full" htmlFor="current-password-remove">
+            <span className="label-text text-sm">
               {t('profile.password.removeModal.currentPassword')}
             </span>
           </label>
           <input
             id="current-password-remove"
             type="password"
-            className={`input input-bordered ${
+            className={`input input-bordered w-full ${
               form.formState.errors.currentPassword ? 'input-error' : ''
             }`}
             placeholder={t(
@@ -107,9 +111,9 @@ export function RemovePasswordModal({
           )}
         </div>
         {form.formState.errors.root && (
-          <div className="alert alert-error mb-4">
-            <span>{form.formState.errors.root.message}</span>
-          </div>
+          <AlertBanner variant="error">
+            {form.formState.errors.root.message}
+          </AlertBanner>
         )}
         <ModalActions>
           <button

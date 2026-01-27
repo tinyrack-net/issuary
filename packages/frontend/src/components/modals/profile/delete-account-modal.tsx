@@ -1,10 +1,12 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { TrashIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod/v4';
+import { AlertBanner } from '@/components/ui/alert-banner.js';
 import { Modal, ModalActions } from '@/components/ui/modal.js';
 import { tick } from '@/libs/promise.js';
 import { deleteAccountMutationOptions } from '@/queries/account.js';
@@ -77,30 +79,32 @@ export function DeleteAccountModal({
       isOpen={isOpen}
       onClose={handleClose}
       title={t('profile.deleteAccount.modal.title')}
+      icon={TrashIcon}
+      variant="destructive"
       preventClose={mutation.isPending}
     >
-      <form onSubmit={handleSubmit} className="mt-4">
-        <div className="mb-4 rounded-lg bg-error/10 p-4">
-          <p className="text-error text-sm">
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <AlertBanner variant="error">
+          <p>
             {t('profile.deleteAccount.modal.description', {
               days: retentionDays,
             })}
           </p>
-          <p className="mt-2 text-error/80 text-sm">
+          <p className="mt-1 text-xs opacity-80">
             {t('profile.deleteAccount.modal.warning')}
           </p>
-        </div>
+        </AlertBanner>
 
-        <div className="form-control mb-4">
-          <label className="label" htmlFor="delete-confirmation">
-            <span className="label-text">
+        <div className="form-control">
+          <label className="label w-full" htmlFor="delete-confirmation">
+            <span className="label-text text-sm">
               {t('profile.deleteAccount.modal.confirmLabel')}
             </span>
           </label>
           <input
             id="delete-confirmation"
             type="text"
-            className={`input input-bordered ${
+            className={`input input-bordered w-full ${
               form.formState.errors.confirmation ? 'input-error' : ''
             }`}
             placeholder={t('profile.deleteAccount.modal.confirmPlaceholder')}
@@ -115,9 +119,9 @@ export function DeleteAccountModal({
         </div>
 
         {form.formState.errors.root && (
-          <div className="alert alert-error mb-4">
-            <span>{form.formState.errors.root.message}</span>
-          </div>
+          <AlertBanner variant="error">
+            {form.formState.errors.root.message}
+          </AlertBanner>
         )}
 
         <ModalActions>

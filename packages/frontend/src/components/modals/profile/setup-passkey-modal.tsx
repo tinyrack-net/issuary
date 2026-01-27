@@ -1,10 +1,12 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { FingerprintIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod/v4';
-import { Modal, ModalActions } from '@/components/ui/modal';
+import { AlertBanner } from '@/components/ui/alert-banner.js';
+import { Modal, ModalActions } from '@/components/ui/modal.js';
 import { queryKeys } from '@/queries/keys';
 import { registerPasskeyMutationOptions } from '@/queries/passkey.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
@@ -96,31 +98,30 @@ export function SetupPasskeyModal({
           ? t('profile.passkey.setupModal.requiredDescription')
           : undefined
       }
+      icon={FingerprintIcon}
       size="sm"
       preventClose={isRequired}
     >
       {step === 'name' && (
-        <form onSubmit={handleRegister} className="py-4">
-          <p className="mb-4 text-base-content/60 text-sm">
+        <form onSubmit={handleRegister} className="mt-6 space-y-4">
+          <p className="text-base-content/60 text-sm">
             {t('profile.passkey.setupModal.description')}
           </p>
 
           {errorMessage && (
-            <div className="alert alert-error mb-4">
-              <span>{errorMessage}</span>
-            </div>
+            <AlertBanner variant="error">{errorMessage}</AlertBanner>
           )}
 
-          <div className="form-control mb-4">
-            <label className="label" htmlFor="passkey-name">
-              <span className="label-text">
+          <div className="form-control">
+            <label className="label w-full" htmlFor="passkey-name">
+              <span className="label-text text-sm">
                 {t('profile.passkey.setupModal.nameLabel')}
               </span>
             </label>
             <input
               id="passkey-name"
               type="text"
-              className={`input input-bordered ${
+              className={`input input-bordered w-full ${
                 form.formState.errors.name ? 'input-error' : ''
               }`}
               placeholder={t('profile.passkey.setupModal.namePlaceholder')}
@@ -143,21 +144,23 @@ export function SetupPasskeyModal({
             <button type="submit" className="btn btn-primary">
               {t('profile.passkey.setupModal.continue')}
             </button>
-            {canSwitchToTotp && onSwitchToTotp && (
+          </ModalActions>
+          {canSwitchToTotp && onSwitchToTotp && (
+            <p className="mt-3 text-center text-sm">
               <button
                 type="button"
-                className="btn btn-outline"
+                className="link link-primary"
                 onClick={onSwitchToTotp}
               >
                 {t('profile.passkey.setupModal.switchToTotp')}
               </button>
-            )}
-          </ModalActions>
+            </p>
+          )}
         </form>
       )}
 
       {step === 'register' && (
-        <div className="py-4">
+        <div className="mt-6">
           <div className="flex flex-col items-center gap-4 py-8">
             <span className="loading loading-spinner loading-lg" />
             <p className="text-center text-base-content/60 text-sm">

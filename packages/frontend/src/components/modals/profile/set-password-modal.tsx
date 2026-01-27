@@ -1,10 +1,12 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { KeyIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod/v4';
-import { Modal, ModalActions } from '@/components/ui/modal';
+import { AlertBanner } from '@/components/ui/alert-banner.js';
+import { Modal, ModalActions } from '@/components/ui/modal.js';
 import { setPasswordMutationOptions } from '@/queries/password.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
 
@@ -70,18 +72,19 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
       onClose={handleClose}
       title={t('profile.password.setModal.title')}
       description={t('profile.password.setModal.description')}
+      icon={KeyIcon}
     >
-      <form onSubmit={handleSubmit} className="mt-4">
-        <div className="form-control mb-3">
-          <label className="label" htmlFor="new-password">
-            <span className="label-text">
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <div className="form-control">
+          <label className="label w-full" htmlFor="new-password">
+            <span className="label-text text-sm">
               {t('profile.password.setModal.newPassword')}
             </span>
           </label>
           <input
             id="new-password"
             type="password"
-            className={`input input-bordered ${
+            className={`input input-bordered w-full ${
               form.formState.errors.password ? 'input-error' : ''
             }`}
             placeholder={t('profile.password.setModal.newPasswordPlaceholder')}
@@ -93,16 +96,16 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
             </span>
           )}
         </div>
-        <div className="form-control mb-4">
-          <label className="label" htmlFor="confirm-password">
-            <span className="label-text">
+        <div className="form-control">
+          <label className="label w-full" htmlFor="confirm-password">
+            <span className="label-text text-sm">
               {t('profile.password.setModal.confirmPassword')}
             </span>
           </label>
           <input
             id="confirm-password"
             type="password"
-            className={`input input-bordered ${
+            className={`input input-bordered w-full ${
               form.formState.errors.confirmPassword ? 'input-error' : ''
             }`}
             placeholder={t(
@@ -117,9 +120,9 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
           )}
         </div>
         {form.formState.errors.root && (
-          <div className="alert alert-error mb-4">
-            <span>{form.formState.errors.root.message}</span>
-          </div>
+          <AlertBanner variant="error">
+            {form.formState.errors.root.message}
+          </AlertBanner>
         )}
         <ModalActions>
           <button

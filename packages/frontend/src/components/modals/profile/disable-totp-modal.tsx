@@ -1,10 +1,12 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { ShieldCheckIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod/v4';
-import { Modal, ModalActions } from '@/components/ui/modal';
+import { AlertBanner } from '@/components/ui/alert-banner.js';
+import { Modal, ModalActions } from '@/components/ui/modal.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
 import { disableTotpMutationOptions } from '@/queries/totp.js';
 
@@ -64,29 +66,17 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
       onClose={handleClose}
       title={t('profile.totp.disableModal.title')}
       description={t('profile.totp.disableModal.description')}
+      icon={ShieldCheckIcon}
+      variant="destructive"
     >
-      <div className="alert alert-warning mt-2 mb-4">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6 shrink-0 stroke-current"
-          fill="none"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-          />
-        </svg>
-        <span>{t('profile.totp.disableModal.warning')}</span>
-      </div>
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <AlertBanner variant="warning">
+          {t('profile.totp.disableModal.warning')}
+        </AlertBanner>
 
-      <form onSubmit={handleSubmit}>
-        <div className="form-control mb-4">
-          <label className="label" htmlFor="disable-totp-code">
-            <span className="label-text">
+        <div className="form-control">
+          <label className="label w-full" htmlFor="disable-totp-code">
+            <span className="label-text text-sm">
               {t('profile.totp.disableModal.codeLabel')}
             </span>
           </label>
@@ -96,7 +86,7 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
             inputMode="numeric"
             pattern="[0-9]*"
             maxLength={6}
-            className={`input input-bordered text-center text-2xl tracking-widest ${
+            className={`input input-bordered w-full text-center text-2xl tracking-widest ${
               form.formState.errors.code ? 'input-error' : ''
             }`}
             placeholder="000000"
