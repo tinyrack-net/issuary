@@ -2,7 +2,7 @@
   "name": "@tinyrack-auth/base",
   "version": "1.0.0",
   "scripts": {
-    "dev": "pnpm -r --stream dev",
+    "dev": "pnpm -r dev",
     "test": "pnpm -r test",
     "build": "pnpm -r build"
   },
