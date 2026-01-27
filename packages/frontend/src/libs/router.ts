@@ -1,4 +1,6 @@
 import { createRouter } from '@tanstack/react-router';
+import type { i18n as I18nInstance } from 'i18next';
+import i18n from '@/i18n/index.js';
 import type { SessionUser } from '@/queries/session';
 import { routeTree } from '../routeTree.gen';
 import { GlobalQueryClient } from './query-client';
@@ -6,6 +8,7 @@ import { GlobalQueryClient } from './query-client';
 export type AppRouterContext = {
   queryClient: typeof GlobalQueryClient;
   user: SessionUser | null;
+  i18n: I18nInstance;
 };
 
 export const AppRouter = createRouter({
@@ -13,6 +16,7 @@ export const AppRouter = createRouter({
   context: {
     queryClient: GlobalQueryClient,
     user: null,
+    i18n: i18n,
   },
   scrollRestoration: true,
 });
