@@ -30,7 +30,6 @@ export default (fastify: FastifyWithZodInstance) =>
       const { provider } = req.params;
       const { return_url } = req.query;
 
-      // Generate authorization URL and session data for linking
       const { url, sessionData } =
         await fastify.oauthConnectService.generateAuthorizationUrl(
           provider,
@@ -38,10 +37,7 @@ export default (fastify: FastifyWithZodInstance) =>
           return_url,
         );
 
-      // Store OAuth session data in secure session
       req.session.set('oauth', sessionData);
-
-      // Redirect to OAuth provider
       return res.redirect(url);
     },
   });

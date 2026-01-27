@@ -1,12 +1,26 @@
+import {
+  EnvelopeSimpleIcon,
+  FingerprintIcon,
+  WarningCircleIcon,
+} from '@phosphor-icons/react';
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
+import { z } from 'zod/v4';
 import { LoginMethodButton } from '@/components/auth/login-method-button.js';
 import { LoginMethodList } from '@/components/auth/login-method-list.js';
 import { PageHeader } from '@/components/auth/page-header.js';
+import { Alert } from '@/components/ui/alert.js';
 import { PageLayout } from '@/components/ui/page-layout.js';
 import {
-  OAuthSearchSchema,
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
+  OAuthSearchSchema,
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
@@ -15,16 +29,17 @@ import {
   type AuthResponse,
   getSessionQueryOptions,
 } from '@/queries/session.js';
-import { EnvelopeSimpleIcon, FingerprintIcon } from '@phosphor-icons/react';
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from '@tanstack/react-query';
-import { createFileRoute, useRouter } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
 
-export const SearchSchema = OAuthSearchSchema;
+const SearchSchema = OAuthSearchSchema.extend({
+  oauth_error: z.string().optional(),
+  oauth_error_description: z.string().optional(),
+});
+
+const OAUTH_ERROR_I18N_MAP: Record<string, string> = {
+  access_denied: 'oauth.error.accessDenied',
+  temporarily_unavailable: 'oauth.error.temporarilyUnavailable',
+  server_error: 'oauth.error.serverError',
+};
 
 export const Route = createFileRoute('/login/')({
   component: Login,
@@ -48,6 +63,11 @@ function Login() {
     configData.app.signup_implicit_terms?.[lang] ??
     configData.app.signup_implicit_terms?.[configData.app.fallback_language];
   const oauthProviders = configData.oauth_authentication_methods;
+
+  const oauthError = search.oauth_error;
+  const oauthErrorMessage = oauthError
+    ? t(OAUTH_ERROR_I18N_MAP[oauthError] ?? 'oauth.error.failed')
+    : undefined;
 
   const isPasswordAuthEnabled =
     configData.basic_authentication_methods.password.enabled;
@@ -106,6 +126,12 @@ function Login() {
         title={customTitle ?? t('login.title')}
         subtitle={customSubtitle ?? t('login.selectMethod.subtitle')}
       />
+
+      {oauthErrorMessage && (
+        <Alert type="error" icon={WarningCircleIcon} className="mb-4">
+          {oauthErrorMessage}
+        </Alert>
+      )}
 
       <LoginMethodList>
         {/* OAuth Providers */}
