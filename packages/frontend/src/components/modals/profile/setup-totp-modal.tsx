@@ -1,8 +1,10 @@
+import { ShieldCheckIcon } from '@phosphor-icons/react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { QrStep } from '@/components/totp/qr-step.js';
 import { useTotpSetup } from '@/components/totp/use-totp-setup.js';
 import { VerifyStep } from '@/components/totp/verify-step.js';
+import { AlertBanner } from '@/components/ui/alert-banner.js';
 import { Modal, ModalActions } from '@/components/ui/modal.js';
 
 interface SetupTotpModalProps {
@@ -73,6 +75,7 @@ export function SetupTotpModal({
           ? t('profile.totp.setupModal.requiredDescription')
           : undefined
       }
+      icon={ShieldCheckIcon}
       size="sm"
       preventClose={isRequired}
     >
@@ -83,10 +86,10 @@ export function SetupTotpModal({
       )}
 
       {step === 'error' && (
-        <div className="py-4">
-          <div className="alert alert-error">
-            <span>{t('profile.totp.setupModal.setupError')}</span>
-          </div>
+        <div className="mt-6 space-y-4">
+          <AlertBanner variant="error">
+            {t('profile.totp.setupModal.setupError')}
+          </AlertBanner>
           <ModalActions>
             <button type="button" className="btn" onClick={handleClose}>
               {t('profile.totp.setupModal.cancel')}
@@ -103,32 +106,36 @@ export function SetupTotpModal({
       )}
 
       {setupData && step === 'qr' && (
-        <div className="py-4">
+        <div className="mt-6">
           <QrStep
             setupData={setupData}
             onNext={goToVerify}
             additionalActions={
-              <ModalActions>
-                <button type="button" className="btn" onClick={handleClose}>
-                  {t('profile.totp.setupModal.cancel')}
-                </button>
-                {canSwitchToPasskey && onSwitchToPasskey && (
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={onSwitchToPasskey}
-                  >
-                    {t('profile.totp.setupModal.switchToPasskey')}
+              <>
+                <ModalActions>
+                  <button type="button" className="btn" onClick={handleClose}>
+                    {t('profile.totp.setupModal.cancel')}
                   </button>
+                </ModalActions>
+                {canSwitchToPasskey && onSwitchToPasskey && (
+                  <p className="mt-3 text-center text-sm">
+                    <button
+                      type="button"
+                      className="link link-primary"
+                      onClick={onSwitchToPasskey}
+                    >
+                      {t('profile.totp.setupModal.switchToPasskey')}
+                    </button>
+                  </p>
                 )}
-              </ModalActions>
+              </>
             }
           />
         </div>
       )}
 
       {setupData && step === 'verify' && (
-        <div className="py-4">
+        <div className="mt-6">
           <VerifyStep
             onSubmit={handleVerify}
             onBack={goToQr}
