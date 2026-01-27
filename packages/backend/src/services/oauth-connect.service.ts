@@ -221,6 +221,11 @@ export class OAuthConnectService {
   ): Promise<z.infer<typeof oauthConnectSchema.OAuthAuthResult>> {
     const provider = this.getProvider(providerId);
 
+    // Reject if the OAuth provider has not verified the user's email
+    if (!userInfo.email_verified) {
+      throw new e.OAuthEmailNotVerified.Error();
+    }
+
     // Check if OAuth account is already linked
     const existingOAuth = await this.mikro.userOAuth.findByProviderUserId(
       providerId,
@@ -419,6 +424,11 @@ export class OAuthConnectService {
     consents: Array<{ termsId: string; agreed: boolean }>;
   }): Promise<z.infer<typeof oauthConnectSchema.OAuthAuthResult>> {
     const { providerId, tokens, userInfo, consents } = params;
+
+    // Reject if the OAuth provider has not verified the user's email
+    if (!userInfo.email_verified) {
+      throw new e.OAuthEmailNotVerified.Error();
+    }
 
     // Double-check that user doesn't exist (in case of race condition)
     const existingOAuth = await this.mikro.userOAuth.findByProviderUserId(
