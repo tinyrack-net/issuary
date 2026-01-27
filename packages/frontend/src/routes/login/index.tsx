@@ -109,7 +109,7 @@ function Login() {
   });
 
   const buildOAuthUrl = (providerId: string) => {
-    let oauthUrl = `/api/v1/oauth/${providerId}/connect?mode=login`;
+    let oauthUrl = `/api/v1/oauth/${providerId}/authorize?mode=login`;
 
     if (isOAuthFlow(search)) {
       const authUrl = buildAuthorizeUrl(search);

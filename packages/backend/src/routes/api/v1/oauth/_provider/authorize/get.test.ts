@@ -8,12 +8,12 @@ import {
 
 const app = setupTestServer();
 
-describe('GET /api/v1/oauth/:provider/connect', () => {
+describe('GET /api/v1/oauth/:provider/authorize', () => {
   describe('Success Cases', () => {
     test('should redirect to OAuth provider with valid provider', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/google/connect',
+        url: '/api/v1/oauth/google/authorize',
       });
 
       expect(res.statusCode).toBe(302);
@@ -48,7 +48,7 @@ describe('GET /api/v1/oauth/:provider/connect', () => {
     test('should store session data with state and code verifier', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/google/connect',
+        url: '/api/v1/oauth/google/authorize',
       });
 
       expect(res.statusCode).toBe(302);
@@ -61,7 +61,7 @@ describe('GET /api/v1/oauth/:provider/connect', () => {
     test('should support login mode (default)', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/google/connect',
+        url: '/api/v1/oauth/google/authorize',
         query: {
           mode: 'login',
         },
@@ -74,7 +74,7 @@ describe('GET /api/v1/oauth/:provider/connect', () => {
     test('should support register mode', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/google/connect',
+        url: '/api/v1/oauth/google/authorize',
         query: {
           mode: 'register',
         },
@@ -89,7 +89,7 @@ describe('GET /api/v1/oauth/:provider/connect', () => {
 
       const res = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/google/connect',
+        url: '/api/v1/oauth/google/authorize',
         query: {
           mode: 'link',
         },
@@ -105,7 +105,7 @@ describe('GET /api/v1/oauth/:provider/connect', () => {
 
       const res = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/google/connect',
+        url: '/api/v1/oauth/google/authorize',
         query: {
           mode: 'login',
           return_url: returnUrl,
@@ -119,12 +119,12 @@ describe('GET /api/v1/oauth/:provider/connect', () => {
     test('should generate unique state for each request', async () => {
       const res1 = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/google/connect',
+        url: '/api/v1/oauth/google/authorize',
       });
 
       const res2 = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/google/connect',
+        url: '/api/v1/oauth/google/authorize',
       });
 
       const location1 = new URL(res1.headers.location as string);
@@ -139,12 +139,12 @@ describe('GET /api/v1/oauth/:provider/connect', () => {
     test('should generate unique code_challenge for each request', async () => {
       const res1 = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/google/connect',
+        url: '/api/v1/oauth/google/authorize',
       });
 
       const res2 = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/google/connect',
+        url: '/api/v1/oauth/google/authorize',
       });
 
       const location1 = new URL(res1.headers.location as string);
@@ -161,7 +161,7 @@ describe('GET /api/v1/oauth/:provider/connect', () => {
     test('should return 404 for non-existent provider', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/nonexistent/connect',
+        url: '/api/v1/oauth/nonexistent/authorize',
       });
 
       expectError(res, e.OAuthProviderNotFound);
@@ -171,7 +171,7 @@ describe('GET /api/v1/oauth/:provider/connect', () => {
       // GitHub is disabled in test config
       const res = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/github/connect',
+        url: '/api/v1/oauth/github/authorize',
       });
 
       expectError(res, e.OAuthProviderNotFound);
@@ -180,7 +180,7 @@ describe('GET /api/v1/oauth/:provider/connect', () => {
     test('should return 404 for invalid provider id format', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/invalid-provider-123/connect',
+        url: '/api/v1/oauth/invalid-provider-123/authorize',
       });
 
       expectError(res, e.OAuthProviderNotFound);
@@ -191,7 +191,7 @@ describe('GET /api/v1/oauth/:provider/connect', () => {
     test('should reject invalid mode parameter', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/google/connect',
+        url: '/api/v1/oauth/google/authorize',
         query: {
           mode: 'invalid_mode',
         },
@@ -204,7 +204,7 @@ describe('GET /api/v1/oauth/:provider/connect', () => {
     test('should use login as default mode when not specified', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/google/connect',
+        url: '/api/v1/oauth/google/authorize',
       });
 
       expect(res.statusCode).toBe(302);
@@ -213,11 +213,25 @@ describe('GET /api/v1/oauth/:provider/connect', () => {
     });
   });
 
+  describe('Link Mode Authentication', () => {
+    test('should return 401 for link mode without authentication', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/v1/oauth/google/authorize',
+        query: {
+          mode: 'link',
+        },
+      });
+
+      expect(res.statusCode).toBe(401);
+    });
+  });
+
   describe('Security', () => {
     test('should use S256 for PKCE code challenge method', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: '/api/v1/oauth/google/connect',
+        url: '/api/v1/oauth/google/authorize',
       });
 
       const location = new URL(res.headers.location as string);
@@ -230,7 +244,7 @@ describe('GET /api/v1/oauth/:provider/connect', () => {
       for (let i = 0; i < 5; i++) {
         const res = await app.inject({
           method: 'GET',
-          url: '/api/v1/oauth/google/connect',
+          url: '/api/v1/oauth/google/authorize',
         });
 
         const location = new URL(res.headers.location as string);

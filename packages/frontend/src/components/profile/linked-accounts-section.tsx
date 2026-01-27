@@ -10,7 +10,7 @@ interface OAuthProvider {
 interface LinkedAccountsSectionProps {
   providers: OAuthProvider[];
   unlinkingProvider: string | null;
-  getConnectUrl: (
+  getAuthorizeUrl: (
     providerId: string,
     mode?: 'login' | 'register' | 'link',
     returnUrl?: string,
@@ -21,7 +21,7 @@ interface LinkedAccountsSectionProps {
 export function LinkedAccountsSection({
   providers,
   unlinkingProvider,
-  getConnectUrl,
+  getAuthorizeUrl,
   onUnlink,
 }: LinkedAccountsSectionProps) {
   const { t } = useTranslation();
@@ -86,7 +86,7 @@ export function LinkedAccountsSection({
               </button>
             ) : (
               <a
-                href={getConnectUrl(provider.id, 'link', '/profile')}
+                href={getAuthorizeUrl(provider.id, 'link', '/profile')}
                 className="btn btn-ghost btn-xs text-primary"
               >
                 {t('profile.linkedAccounts.link')}

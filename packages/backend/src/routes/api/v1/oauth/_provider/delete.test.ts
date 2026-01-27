@@ -11,11 +11,11 @@ import {
 
 const app = setupTestServer();
 
-describe('DELETE /api/v1/oauth/:provider/link', () => {
+describe('DELETE /api/v1/oauth/:provider', () => {
   test('should return 401 if not authenticated', async () => {
     const res = await app.inject({
       method: 'DELETE',
-      url: '/api/v1/oauth/google/link',
+      url: '/api/v1/oauth/google',
     });
 
     expect(res.statusCode).toBe(401);
@@ -51,7 +51,7 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
       app,
       {
         method: 'DELETE',
-        url: '/api/v1/oauth/nonexistent/link',
+        url: '/api/v1/oauth/nonexistent',
       },
       sessionCookie,
     );
@@ -88,7 +88,7 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
       app,
       {
         method: 'DELETE',
-        url: '/api/v1/oauth/google/link',
+        url: '/api/v1/oauth/google',
       },
       sessionCookie,
     );
@@ -191,7 +191,7 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
       app,
       {
         method: 'DELETE',
-        url: '/api/v1/oauth/google/link',
+        url: '/api/v1/oauth/google',
       },
       sessionCookie,
     );
@@ -220,7 +220,7 @@ describe('DELETE /api/v1/oauth/:provider/link', () => {
       app,
       {
         method: 'DELETE',
-        url: '/api/v1/oauth/google/link',
+        url: '/api/v1/oauth/google',
       },
       sessionCookie,
     );

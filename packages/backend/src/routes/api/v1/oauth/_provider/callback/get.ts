@@ -1,9 +1,9 @@
-import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+import z from 'zod/v4';
 
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
@@ -51,6 +51,7 @@ export default (fastify: FastifyWithZodInstance) =>
       if (error) {
         const errorUrl = new URL('/login', fastify.config.app.host);
         errorUrl.searchParams.set('oauth_error', error);
+
         if (error_description) {
           errorUrl.searchParams.set(
             'oauth_error_description',
@@ -58,15 +59,12 @@ export default (fastify: FastifyWithZodInstance) =>
           );
         }
 
-        // Pass return URL if available in session
         const oauthSession = req.session.get('oauth');
         if (oauthSession?.returnUrl) {
           errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
         }
 
-        // Clean up OAuth session
         req.session.set('oauth', undefined);
-
         return res.redirect(errorUrl.toString());
       }
 

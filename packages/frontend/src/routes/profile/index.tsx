@@ -32,7 +32,7 @@ import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
 import { logoutMutationOptions } from '@/queries/logout.js';
 import {
-  getOAuthConnectUrl,
+  getOAuthAuthorizeUrl,
   oauthAccountsQueryOptions,
   unlinkOAuthMutationOptions,
 } from '@/queries/oauth.js';
@@ -289,7 +289,7 @@ function Profile() {
               <LinkedAccountsSection
                 providers={availableProviders}
                 unlinkingProvider={unlinkingProvider}
-                getConnectUrl={getOAuthConnectUrl}
+                getAuthorizeUrl={getOAuthAuthorizeUrl}
                 onUnlink={handleUnlink}
               />
             )}

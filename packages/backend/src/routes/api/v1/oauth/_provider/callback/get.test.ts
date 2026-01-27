@@ -19,7 +19,7 @@ async function startOAuthFlow(
 ): Promise<{ sessionCookie: string; state: string }> {
   const res = await app.inject({
     method: 'GET',
-    url: `/api/v1/oauth/${provider}/connect`,
+    url: `/api/v1/oauth/${provider}/authorize`,
     query: { mode },
     ...(sessionCookie && { cookies: { session: sessionCookie } }),
   });
@@ -54,8 +54,8 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
       expect(res.statusCode).toBe(302);
       const location = new URL(res.headers.location as string, 'http://test');
       expect(location.pathname).toBe('/login');
-      expect(location.searchParams.get('error')).toBe('access_denied');
-      expect(location.searchParams.get('error_description')).toBe(
+      expect(location.searchParams.get('oauth_error')).toBe('access_denied');
+      expect(location.searchParams.get('oauth_error_description')).toBe(
         'User denied access',
       );
     });
@@ -74,7 +74,7 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
 
       expect(res.statusCode).toBe(302);
       const location = new URL(res.headers.location as string, 'http://test');
-      expect(location.searchParams.get('error')).toBe('server_error');
+      expect(location.searchParams.get('oauth_error')).toBe('server_error');
     });
   });
 

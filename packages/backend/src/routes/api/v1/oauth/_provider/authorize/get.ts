@@ -9,7 +9,7 @@ export default (fastify: FastifyWithZodInstance) =>
     method: 'GET',
     url: '',
     schema: {
-      summary: 'Initiate OAuth Connect Flow',
+      summary: 'Initiate OAuth Authorize Flow',
       description:
         'Redirects the user to the OAuth provider for authentication',
       tags: [TAGS.OAUTH_CONNECT],
@@ -22,12 +22,18 @@ export default (fastify: FastifyWithZodInstance) =>
       }),
       response: {
         302: z.void(),
+        401: e.Unauthorized.Schema,
         404: e.OAuthProviderNotFound.Schema,
       },
     },
     handler: async (req, res) => {
       const { provider } = req.params;
       const { mode, return_url } = req.query;
+
+      // Link mode requires authenticated user
+      if (mode === 'link') {
+        await req.auth.verify();
+      }
 
       // Generate authorization URL and session data
       const { url, sessionData } =

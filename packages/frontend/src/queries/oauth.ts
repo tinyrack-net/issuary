@@ -45,7 +45,7 @@ export const oauthAccountsQueryOptions = queryOptions({
  */
 export const unlinkOAuthMutationOptions = mutationOptions({
   mutationFn: async (providerId: string) => {
-    const res = await etch(`/api/v1/oauth/${providerId}/link`, {
+    const res = await etch(`/api/v1/oauth/${providerId}`, {
       method: 'DELETE',
     });
     return (await res.json()) as OkResponse;
@@ -53,15 +53,15 @@ export const unlinkOAuthMutationOptions = mutationOptions({
 });
 
 /**
- * Helper to get OAuth connect URL
+ * Helper to get OAuth authorize URL
  */
-export function getOAuthConnectUrl(
+export function getOAuthAuthorizeUrl(
   providerId: string,
   mode: 'login' | 'register' | 'link' = 'login',
   returnUrl?: string,
 ): string {
   const url = new URL(
-    `/api/v1/oauth/${providerId}/connect`,
+    `/api/v1/oauth/${providerId}/authorize`,
     window.location.origin,
   );
   url.searchParams.set('mode', mode);
