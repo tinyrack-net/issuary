@@ -1,4 +1,3 @@
-import { ArrowSquareOutIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import {
   type Control,
@@ -98,6 +97,13 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                     disabled={disabled}
                   />
                   <span className="text-xs">{term.title}</span>
+                  <span
+                    className={`badge badge-xs ${
+                      term.required ? 'badge-error' : 'badge-ghost'
+                    }`}
+                  >
+                    {term.required ? t('terms.required') : t('terms.optional')}
+                  </span>
                   {term.type === 'link' && (
                     <button
                       type="button"
@@ -110,15 +116,15 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                           'noopener,noreferrer',
                         );
                       }}
-                      className="text-primary hover:underline"
+                      className="link link-primary ml-auto text-xs"
                     >
-                      <ArrowSquareOutIcon size={12} />
+                      {t('terms.view')}
                     </button>
                   )}
                   {term.type === 'text' && (
                     <button
                       type="button"
-                      className="link link-primary text-xs"
+                      className="link link-primary ml-auto text-xs"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -128,13 +134,6 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                       {t('terms.view')}
                     </button>
                   )}
-                  <span
-                    className={`badge badge-xs ml-auto ${
-                      term.required ? 'badge-error' : 'badge-ghost'
-                    }`}
-                  >
-                    {term.required ? t('terms.required') : t('terms.optional')}
-                  </span>
                 </label>
                 {term.userConsent?.requiresUpdate && (
                   <p className="ml-5 text-warning text-xs">
