@@ -18,12 +18,12 @@ export function QrStep({
   const { t } = useTranslation();
 
   return (
-    <div className={className}>
-      <p className="mb-4 text-center text-base-content/60 text-sm">
+    <div className={`space-y-4 ${className}`}>
+      <p className="text-center text-base-content/60 text-sm">
         {t('setupTotp.qrDescription')}
       </p>
 
-      <div className="mb-4 flex justify-center">
+      <div className="flex justify-center">
         <img
           src={setupData.qr_code}
           alt="TOTP QR Code"
@@ -31,7 +31,7 @@ export function QrStep({
         />
       </div>
 
-      <div className="collapse-arrow collapse mb-4 bg-base-200">
+      <div className="collapse-arrow collapse bg-base-200">
         <input type="checkbox" />
         <div className="collapse-title font-medium text-sm">
           {t('setupTotp.manualEntry')}

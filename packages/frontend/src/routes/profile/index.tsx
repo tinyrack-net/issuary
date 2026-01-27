@@ -1,6 +1,6 @@
 import {
+  CheckCircleIcon,
   SignOutIcon,
-  UserCircleIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react';
 import {
@@ -20,6 +20,7 @@ import { RemovePasswordModal } from '@/components/modals/profile/remove-password
 import { SetPasswordModal } from '@/components/modals/profile/set-password-modal.js';
 import { SetupPasskeyModal } from '@/components/modals/profile/setup-passkey-modal.js';
 import { SetupTotpModal } from '@/components/modals/profile/setup-totp-modal.js';
+import { UnlinkOAuthModal } from '@/components/modals/profile/unlink-oauth-modal.js';
 import { DangerZoneSection } from '@/components/profile/danger-zone-section.js';
 import { LinkedAccountsSection } from '@/components/profile/linked-accounts-section.js';
 import { PasskeySection } from '@/components/profile/passkey-section.js';
@@ -27,6 +28,7 @@ import { PasswordSection } from '@/components/profile/password-section.js';
 import { TotpSection } from '@/components/profile/totp-section.js';
 import { UserInfoSection } from '@/components/profile/user-info-section.js';
 import { Alert } from '@/components/ui/alert.js';
+import { InitialAvatar } from '@/components/ui/initial-avatar.js';
 import { PageLayout } from '@/components/ui/page-layout.js';
 import { tick } from '@/libs/promise.js';
 import { appConfigQueryOptions } from '@/queries/config.js';
@@ -85,6 +87,10 @@ function Profile() {
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(
     null,
   );
+  const [unlinkModal, setUnlinkModal] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [passwordModal, setPasswordModal] = useState<PasswordModalType>(null);
   const [totpModal, setTotpModal] = useState<TotpModalType>(null);
   const [passkeyModal, setPasskeyModal] = useState<PasskeyModalType>(null);
@@ -126,20 +132,10 @@ function Profile() {
     },
   });
 
-  const handleUnlink = async (providerId: string) => {
-    if (
-      !window.confirm(
-        t('profile.linkedAccounts.unlinkConfirm', { provider: providerId }),
-      )
-    ) {
-      return;
-    }
-    setUnlinkingProvider(providerId);
-    try {
-      await unlinkMutation.mutateAsync(providerId);
-    } catch {
-      alert(t('profile.linkedAccounts.unlinkError'));
-    }
+  const handleUnlinkConfirm = async () => {
+    if (!unlinkModal) return;
+    setUnlinkingProvider(unlinkModal.id);
+    await unlinkMutation.mutateAsync(unlinkModal.id);
   };
 
   // Handle non-authenticated states (should be redirected, but fallback)
@@ -189,22 +185,28 @@ function Profile() {
     showPasswordSection || showTotpSection || showPasskeySection;
 
   return (
-    <PageLayout maxWidth="2xl" responsivePadding>
+    <PageLayout maxWidth="xl" responsivePadding>
       {/* Header */}
-      <div className="border-base-200 border-b bg-base-100 p-6 md:p-8">
-        <div className="flex items-center justify-between">
+      <div className="border-base-200 border-b p-6">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="flex size-14 items-center justify-center rounded-full bg-primary/10">
-              <UserCircleIcon
-                className="size-8 text-primary"
-                weight="regular"
-              />
-            </div>
-            <div>
+            <InitialAvatar email={user.email} size="lg" />
+            <div className="min-w-0">
               <h1 className="font-bold text-xl">{t('profile.title')}</h1>
-              <p className="text-base-content/60 text-sm">
-                {t('profile.subtitle')}
+              <p className="truncate text-base-content/70 text-sm">
+                {user.email}
               </p>
+              {user.email_verified && (
+                <div className="mt-1 flex items-center gap-1">
+                  <CheckCircleIcon
+                    className="size-3.5 text-success"
+                    weight="fill"
+                  />
+                  <span className="text-success text-xs">
+                    {t('profile.verified.yes')}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
           <button
@@ -225,83 +227,75 @@ function Profile() {
 
       {/* OAuth Error Alert */}
       {oauthErrorMessage && (
-        <div className="px-6 pt-4 md:px-8">
+        <div className="px-6 pt-4">
           <Alert type="error" icon={WarningCircleIcon}>
             {oauthErrorMessage}
           </Alert>
         </div>
       )}
 
-      {/* Content */}
-      <div className="p-6 md:p-8">
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Left Column - Account Info */}
-          <div className="space-y-6">
-            {/* User Info Card */}
-            {user && <UserInfoSection user={user} />}
+      {/* Content - Single Column */}
+      <div className="space-y-5 p-6">
+        {/* Account Information */}
+        {user && <UserInfoSection user={user} />}
+
+        {/* Security Options */}
+        {hasSecurityOptions && (
+          <div className="rounded-xl border border-base-200">
+            <div className="border-base-200 border-b px-4 py-3">
+              <h2 className="font-semibold text-sm">
+                {t('profile.security.title')}
+              </h2>
+              <p className="text-base-content/60 text-xs">
+                {t('profile.security.description')}
+              </p>
+            </div>
+            <div className="divide-y divide-base-200">
+              {showPasswordSection && (
+                <PasswordSection
+                  hasPassword={user.has_password}
+                  hasLinkedOAuth={hasLinkedOAuth}
+                  isConfigManaged={isConfigManaged}
+                  onOpenModal={setPasswordModal}
+                />
+              )}
+              {showTotpSection && (
+                <TotpSection
+                  totpEnabled={user.totp_registered}
+                  onOpenModal={setTotpModal}
+                />
+              )}
+              {showPasskeySection && (
+                <PasskeySection
+                  passkeyCount={user.passkey_count}
+                  onOpenModal={setPasskeyModal}
+                />
+              )}
+            </div>
           </div>
+        )}
 
-          {/* Right Column - Security & Connections */}
-          <div className="space-y-6">
-            {/* Security Options */}
-            {hasSecurityOptions && (
-              <div className="rounded-xl border border-base-200 bg-base-100">
-                <div className="border-base-200 border-b p-4">
-                  <h2 className="font-semibold">
-                    {t('profile.security.title')}
-                  </h2>
-                  <p className="text-base-content/60 text-sm">
-                    {t('profile.security.description')}
-                  </p>
-                </div>
-                <div className="divide-y divide-base-200">
-                  {/* Password */}
-                  {showPasswordSection && (
-                    <PasswordSection
-                      hasPassword={user.has_password}
-                      hasLinkedOAuth={hasLinkedOAuth}
-                      isConfigManaged={isConfigManaged}
-                      onOpenModal={setPasswordModal}
-                    />
-                  )}
+        {/* Linked OAuth Accounts */}
+        {showLinkedAccounts && (
+          <LinkedAccountsSection
+            providers={availableProviders}
+            unlinkingProvider={unlinkingProvider}
+            getAuthorizeUrl={getOAuthAuthorizeUrl}
+            onUnlinkRequest={(provider) =>
+              setUnlinkModal({
+                id: provider.id,
+                name: provider.display_name,
+              })
+            }
+          />
+        )}
 
-                  {/* TOTP */}
-                  {showTotpSection && (
-                    <TotpSection
-                      totpEnabled={user.totp_registered}
-                      onOpenModal={setTotpModal}
-                    />
-                  )}
-
-                  {/* Passkey */}
-                  {showPasskeySection && (
-                    <PasskeySection
-                      passkeyCount={user.passkey_count}
-                      onOpenModal={setPasskeyModal}
-                    />
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Linked OAuth Accounts */}
-            {showLinkedAccounts && (
-              <LinkedAccountsSection
-                providers={availableProviders}
-                unlinkingProvider={unlinkingProvider}
-                getAuthorizeUrl={getOAuthAuthorizeUrl}
-                onUnlink={handleUnlink}
-              />
-            )}
-
-            {/* Danger Zone - Account Deletion */}
-            <DangerZoneSection
-              isConfigManaged={isConfigManaged}
-              isDeletionEnabled={accountDeletionEnabled}
-              onDeleteClick={() => setShowDeleteModal(true)}
-            />
-          </div>
-        </div>
+        {/* Danger Zone */}
+        <DangerZoneSection
+          isConfigManaged={isConfigManaged}
+          isDeletionEnabled={accountDeletionEnabled}
+          onDeleteClick={() => setShowDeleteModal(true)}
+        />
       </div>
 
       {/* Password Modals */}
@@ -337,6 +331,15 @@ function Profile() {
         isOpen={passkeyModal === 'manage'}
         onClose={() => setPasskeyModal(null)}
         onAddNew={() => setPasskeyModal('setup')}
+      />
+
+      {/* Unlink OAuth Modal */}
+      <UnlinkOAuthModal
+        isOpen={unlinkModal !== null}
+        onClose={() => setUnlinkModal(null)}
+        providerName={unlinkModal?.name ?? ''}
+        isPending={unlinkMutation.isPending}
+        onConfirm={handleUnlinkConfirm}
       />
 
       {/* Delete Account Modal */}
