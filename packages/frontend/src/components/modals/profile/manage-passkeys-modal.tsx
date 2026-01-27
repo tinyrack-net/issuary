@@ -2,6 +2,7 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import {
   CloudIcon,
   DeviceMobileIcon,
+  FingerprintIcon,
   PencilSimpleIcon,
   TrashIcon,
 } from '@phosphor-icons/react';
@@ -10,7 +11,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod/v4';
-import { Modal, ModalActions } from '@/components/ui/modal';
+import { AlertBanner } from '@/components/ui/alert-banner.js';
+import { Modal, ModalActions } from '@/components/ui/modal.js';
 import { queryKeys } from '@/queries/keys';
 import {
   deletePasskeyMutationOptions,
@@ -37,6 +39,10 @@ export function ManagePasskeysModal({
     null,
   );
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(
+    null,
+  );
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { data: passkeysData, isLoading } = useQuery({
     ...getPasskeysQueryOptions,
@@ -59,24 +65,28 @@ export function ManagePasskeysModal({
   const handleClose = useCallback(() => {
     setEditingPasskey(null);
     setDeletingId(null);
+    setConfirmingDeleteId(null);
+    setDeleteError(null);
     onClose();
   }, [onClose]);
 
-  const handleDelete = async (passkey: PasskeyInfo) => {
-    const passkeyName =
-      passkey.name || t('profile.passkey.manageModal.unnamedPasskey');
-    if (
-      !window.confirm(
-        t('profile.passkey.manageModal.deleteConfirm', { name: passkeyName }),
-      )
-    ) {
-      return;
-    }
+  const handleRequestDelete = (passkey: PasskeyInfo) => {
+    setConfirmingDeleteId(passkey.id);
+    setDeleteError(null);
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmingDeleteId(null);
+    setDeleteError(null);
+  };
+
+  const handleConfirmDelete = async (passkey: PasskeyInfo) => {
     setDeletingId(passkey.id);
+    setConfirmingDeleteId(null);
     try {
       await deleteMutation.mutateAsync({ id: passkey.id });
     } catch {
-      alert(t('profile.passkey.manageModal.deleteError'));
+      setDeleteError(t('profile.passkey.manageModal.deleteError'));
     }
   };
 
@@ -95,9 +105,14 @@ export function ManagePasskeysModal({
       isOpen={isOpen}
       onClose={handleClose}
       title={t('profile.passkey.manageModal.title')}
+      icon={FingerprintIcon}
       size="lg"
     >
-      <div className="py-4">
+      <div className="mt-6 space-y-3">
+        {deleteError && (
+          <AlertBanner variant="error">{deleteError}</AlertBanner>
+        )}
+
         {isLoading && (
           <div className="flex justify-center py-8">
             <span className="loading loading-spinner loading-lg" />
@@ -118,9 +133,12 @@ export function ManagePasskeysModal({
                 passkey={passkey}
                 isDeleting={deletingId === passkey.id}
                 isEditing={editingPasskey?.id === passkey.id}
+                isConfirmingDelete={confirmingDeleteId === passkey.id}
                 onEdit={() => setEditingPasskey(passkey)}
                 onCancelEdit={() => setEditingPasskey(null)}
-                onDelete={() => handleDelete(passkey)}
+                onRequestDelete={() => handleRequestDelete(passkey)}
+                onConfirmDelete={() => handleConfirmDelete(passkey)}
+                onCancelDelete={handleCancelDelete}
                 formatDate={formatDate}
               />
             ))}
@@ -151,9 +169,12 @@ interface PasskeyItemProps {
   passkey: PasskeyInfo;
   isDeleting: boolean;
   isEditing: boolean;
+  isConfirmingDelete: boolean;
   onEdit: () => void;
   onCancelEdit: () => void;
-  onDelete: () => void;
+  onRequestDelete: () => void;
+  onConfirmDelete: () => void;
+  onCancelDelete: () => void;
   formatDate: (dateString: string) => string;
 }
 
@@ -161,9 +182,12 @@ function PasskeyItem({
   passkey,
   isDeleting,
   isEditing,
+  isConfirmingDelete,
   onEdit,
   onCancelEdit,
-  onDelete,
+  onRequestDelete,
+  onConfirmDelete,
+  onCancelDelete,
   formatDate,
 }: PasskeyItemProps) {
   const { t } = useTranslation();
@@ -248,6 +272,35 @@ function PasskeyItem({
     );
   }
 
+  if (isConfirmingDelete) {
+    return (
+      <div className="flex items-center justify-between rounded-lg bg-error/10 p-3">
+        <div className="flex items-center gap-3">
+          <TrashIcon className="size-5 text-error" weight="regular" />
+          <span className="text-error text-sm">
+            {t('profile.passkey.manageModal.deleteConfirmInline')}
+          </span>
+        </div>
+        <div className="flex gap-1">
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs"
+            onClick={onCancelDelete}
+          >
+            {t('profile.passkey.manageModal.cancelEdit')}
+          </button>
+          <button
+            type="button"
+            className="btn btn-error btn-xs"
+            onClick={onConfirmDelete}
+          >
+            {t('profile.passkey.manageModal.delete')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center justify-between rounded-lg bg-base-200 p-3">
       <div className="flex items-center gap-3">
@@ -286,7 +339,7 @@ function PasskeyItem({
         <button
           type="button"
           className="btn btn-ghost btn-xs text-error"
-          onClick={onDelete}
+          onClick={onRequestDelete}
           disabled={isDeleting}
           aria-label={t('profile.passkey.manageModal.delete')}
         >
