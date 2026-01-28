@@ -36,7 +36,8 @@ export default (fastify: FastifyWithZodInstance) => {
 
       res.status(200).send({
         app: {
-          public_registration: fastify.config.app.public_registration,
+          public_registration:
+            fastify.config.app.allowed_signup_emails.length > 0,
           supported_languages: fastify.config.app.supported_languages,
           default_language: fastify.config.app.default_language,
           fallback_language: fastify.config.app.fallback_language,

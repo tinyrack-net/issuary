@@ -19,7 +19,7 @@ export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
     jwt_key_rotation_enabled: true,
     jwt_key_rotation_days: 30,
     jwt_key_overlap_days: 7,
-    public_registration: true,
+    allowed_signup_emails: ['*'],
     supported_languages: ['ko', 'en', 'ja'],
     default_language: 'auto',
     fallback_language: 'ko',
@@ -177,7 +177,7 @@ export interface SetupTestServerOptions {
    * const app = setupTestServer({
    *   configOverrides: {
    *     app: {
-   *       public_registration: false,
+   *       allowed_signup_emails: [],
    *     },
    *   },
    * });
@@ -206,7 +206,7 @@ export interface SetupTestServerOptions {
  * const app = setupTestServer({
  *   configOverrides: {
  *     app: {
- *       public_registration: false,
+ *       allowed_signup_emails: [],
  *     },
  *   },
  * });

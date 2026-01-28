@@ -39,6 +39,7 @@ const OAUTH_ERROR_I18N_MAP: Record<string, string> = {
   access_denied: 'oauth.error.accessDenied',
   temporarily_unavailable: 'oauth.error.temporarilyUnavailable',
   server_error: 'oauth.error.serverError',
+  registration_email_not_allowed: 'oauth.error.registrationEmailNotAllowed',
 };
 
 export const Route = createFileRoute('/login/')({
@@ -170,7 +171,6 @@ function Login() {
         <div className="mt-6 text-center text-base-content/60 text-xs">
           <div
             className="prose prose-sm text-xs! **:text-xs!"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{ __html: implicitNotice }}
           />
         </div>

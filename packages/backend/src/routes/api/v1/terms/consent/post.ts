@@ -31,6 +31,7 @@ export default (fastify: FastifyWithZodInstance) => {
         200: termsSchema.TermsConsentResponse,
         400: z.union([e.ValidationError.Schema, e.OAuthSessionExpired.Schema]),
         401: e.Unauthorized.Schema,
+        403: e.RegistrationEmailNotAllowed.Schema,
       },
     },
     handler: async (req, res) => {

@@ -182,7 +182,6 @@ function Terms() {
         <div className="text-center text-base-content/60 text-xs">
           <div
             className="prose prose-sm text-xs! **:text-xs!"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{ __html: implicitNotice }}
           />
         </div>
