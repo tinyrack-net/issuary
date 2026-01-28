@@ -247,7 +247,11 @@ export class PasskeyService {
   public async deletePasskey(
     userId: string,
     passkeyId: string,
-    hasOtherAuthMethods: boolean,
+    options: {
+      hasOtherAuthMethods: boolean;
+      secondFactorRequired: boolean;
+      hasOtherSecondFactor: boolean;
+    },
   ): Promise<void> {
     const passkey = await this.mikro.userPasskey.findByUserIdAndId(
       userId,
@@ -258,10 +262,19 @@ export class PasskeyService {
       throw new e.PasskeyNotFound.Error();
     }
 
-    // Check if this is the last auth method
     const passkeyCount = await this.mikro.userPasskey.countByUserId(userId);
-    if (passkeyCount === 1 && !hasOtherAuthMethods) {
+
+    // Check if this is the last auth method
+    if (passkeyCount === 1 && !options.hasOtherAuthMethods) {
       throw new e.CannotRemoveLastPasskey.Error();
+    }
+
+    // Prevent deleting last passkey when 2FA is required and no TOTP exists
+    if (options.secondFactorRequired) {
+      const willHaveNoPasskeys = passkeyCount === 1;
+      if (willHaveNoPasskeys && !options.hasOtherSecondFactor) {
+        throw new e.CannotRemoveLastSecondFactor.Error();
+      }
     }
 
     await this.mikro.userPasskey.deleteByUserIdAndId(userId, passkeyId);

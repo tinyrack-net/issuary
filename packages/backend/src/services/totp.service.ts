@@ -173,7 +173,14 @@ export class TotpService {
    * Disable TOTP for a user
    * Also deletes all recovery codes
    */
-  public async disable(userId: string, token: string): Promise<void> {
+  public async disable(
+    userId: string,
+    token: string,
+    options: {
+      secondFactorRequired: boolean;
+      hasOtherSecondFactor: boolean;
+    },
+  ): Promise<void> {
     const totp = await this.mikro.userTotp.findFullyRegisteredByUserId(userId);
     if (!totp) {
       throw new e.TotpNotEnabled.Error();
@@ -181,6 +188,11 @@ export class TotpService {
 
     if (!this.verifyToken(token, totp.secret)) {
       throw new e.InvalidTotpCode.Error();
+    }
+
+    // Prevent disabling TOTP when 2FA is required and no other 2FA method exists
+    if (options.secondFactorRequired && !options.hasOtherSecondFactor) {
+      throw new e.CannotRemoveLastSecondFactor.Error();
     }
 
     await this.mikro.userTotp.deleteByUserId(userId);
