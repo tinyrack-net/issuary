@@ -1,7 +1,8 @@
-import { generateSecret, generateSync } from 'otplib';
 import { describe, expect, test } from 'vitest';
+import { e } from '@/schemas/error.js';
 import {
-  extractCookie,
+  createDbUserWithSession,
+  expectError,
   generateUniqueEmail,
   injectWithSession,
   setupTestServer,
@@ -19,36 +20,6 @@ const app = setupTestServer({
     },
   },
 });
-
-/**
- * Helper to create a DB user with session
- */
-async function createDbUserWithSession(
-  email: string,
-  password: string,
-): Promise<{ sessionCookie: string; userId: string }> {
-  await withMikroContext(app, async () => {
-    const user = app.mikro.user.create({
-      email,
-      password_hash: password,
-    });
-    user.email_verified = true;
-    await app.mikro.em.persist(user).flush();
-  });
-
-  const loginRes = await app.inject({
-    method: 'POST',
-    url: '/api/v1/auth/login',
-    payload: { email, password },
-  });
-
-  expect(loginRes.statusCode).toBe(200);
-
-  const sessionCookie = extractCookie(loginRes, 'session');
-  const userId = loginRes.json().user.id;
-
-  return { sessionCookie, userId };
-}
 
 /**
  * Helper to start TOTP setup and return secret
@@ -77,16 +48,18 @@ describe('POST /api/v1/user/totp/verify', () => {
       },
     });
 
-    expect(res.statusCode).toBe(401);
-    const body = res.json();
-    expect(body.code).toBe('UNAUTHORIZED');
+    expectError(res, e.Unauthorized);
   });
 
   test('should return 400 when TOTP setup was not started', async () => {
     const email = generateUniqueEmail('totp-verify-no-setup');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     const res = await injectWithSession(
       app,
@@ -100,26 +73,28 @@ describe('POST /api/v1/user/totp/verify', () => {
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(400);
-    const body = res.json();
-    expect(body.code).toBe('TOTP_NOT_SETUP');
+    expectError(res, e.TotpNotSetup);
   });
 
   test('should return 400 when code is invalid', async () => {
     const email = generateUniqueEmail('totp-verify-invalid-code');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // Start setup and get the secret
     const secret = await startTotpSetup(sessionCookie);
 
     // Generate a code from a DIFFERENT secret to ensure it's always invalid
-    const differentSecret = generateSecret();
-    const invalidCode = generateSync({ secret: differentSecret });
+    const differentSecret = app.totpService.generateSecret();
+    const invalidCode = app.totpService.generateToken(differentSecret);
 
     // Ensure we don't accidentally use the same code
-    const validCode = generateSync({ secret });
+    const validCode = app.totpService.generateToken(secret);
     const codeToUse = invalidCode === validCode ? '999999' : invalidCode;
 
     const res = await injectWithSession(
@@ -134,9 +109,7 @@ describe('POST /api/v1/user/totp/verify', () => {
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(400);
-    const body = res.json();
-    expect(body.code).toBe('INVALID_TOTP_CODE');
+    expectError(res, e.InvalidTotpCode);
   });
 
   test('should successfully verify and enable TOTP with valid code', async () => {
@@ -144,6 +117,7 @@ describe('POST /api/v1/user/totp/verify', () => {
     const password = 'testPassword123!';
 
     const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
       email,
       password,
     );
@@ -152,7 +126,7 @@ describe('POST /api/v1/user/totp/verify', () => {
     const secret = await startTotpSetup(sessionCookie);
 
     // Generate valid code
-    const validCode = generateSync({ secret });
+    const validCode = app.totpService.generateToken(secret);
 
     const res = await injectWithSession(
       app,
@@ -184,12 +158,13 @@ describe('POST /api/v1/user/totp/verify', () => {
     const password = 'testPassword123!';
 
     const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
       email,
       password,
     );
 
     // Enable TOTP directly in database
-    const secret = generateSecret();
+    const secret = app.totpService.generateSecret();
     await withMikroContext(app, async () => {
       const user = await app.mikro.user.findOneOrFail({ id: userId });
       const totp = app.mikro.userTotp.create({
@@ -200,7 +175,7 @@ describe('POST /api/v1/user/totp/verify', () => {
       await app.mikro.em.persist(totp).flush();
     });
 
-    const validCode = generateSync({ secret });
+    const validCode = app.totpService.generateToken(secret);
 
     const res = await injectWithSession(
       app,
@@ -214,16 +189,18 @@ describe('POST /api/v1/user/totp/verify', () => {
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(409);
-    const body = res.json();
-    expect(body.code).toBe('TOTP_ALREADY_ENABLED');
+    expectError(res, e.TotpAlreadyEnabled);
   });
 
   test('should validate code format - non-numeric', async () => {
     const email = generateUniqueEmail('totp-verify-format-nonnumeric');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
     await startTotpSetup(sessionCookie);
 
     const res = await injectWithSession(
@@ -245,7 +222,11 @@ describe('POST /api/v1/user/totp/verify', () => {
     const email = generateUniqueEmail('totp-verify-format-length');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
     await startTotpSetup(sessionCookie);
 
     // Too short
@@ -277,18 +258,23 @@ describe('POST /api/v1/user/totp/verify', () => {
     expect(res2.statusCode).toBe(400);
   });
 
-  test('should reject expired/old codes', async () => {
+  test('should reject codes from different secret (simulating expired/old codes)', async () => {
     const email = generateUniqueEmail('totp-verify-timing');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // Start setup
-    const secret = await startTotpSetup(sessionCookie);
+    await startTotpSetup(sessionCookie);
 
-    // Generate code with wrong time
-    const oldTime = Date.now() - 120000; // 2 minutes ago
-    const oldCode = generateSync({ secret, epoch: Math.floor(oldTime / 1000) });
+    // Generate a code from a completely different secret
+    // This deterministically tests that invalid codes are rejected
+    const differentSecret = app.totpService.generateSecret();
+    const invalidCode = app.totpService.generateToken(differentSecret);
 
     const res = await injectWithSession(
       app,
@@ -296,23 +282,24 @@ describe('POST /api/v1/user/totp/verify', () => {
         method: 'POST',
         url: '/api/v1/user/totp/verify',
         payload: {
-          code: oldCode,
+          code: invalidCode,
         },
       },
       sessionCookie,
     );
 
-    // Should be invalid unless within window
-    // This test may pass if code happens to still be valid
-    // The important thing is the verification logic is exercised
-    expect([200, 400]).toContain(res.statusCode);
+    expectError(res, e.InvalidTotpCode);
   });
 
   test('should update session to reflect TOTP enabled status', async () => {
     const email = generateUniqueEmail('totp-verify-session-update');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // Check initial session - TOTP should be disabled
     const sessionBefore = await injectWithSession(
@@ -327,7 +314,7 @@ describe('POST /api/v1/user/totp/verify', () => {
 
     // Start setup and verify
     const secret = await startTotpSetup(sessionCookie);
-    const validCode = generateSync({ secret });
+    const validCode = app.totpService.generateToken(secret);
 
     await injectWithSession(
       app,
@@ -357,7 +344,11 @@ describe('POST /api/v1/user/totp/verify', () => {
     const email = generateUniqueEmail('totp-verify-concurrent');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // Start first setup
     const secret1 = await startTotpSetup(sessionCookie);
@@ -365,33 +356,11 @@ describe('POST /api/v1/user/totp/verify', () => {
     // Start second setup (should override)
     const secret2 = await startTotpSetup(sessionCookie);
 
+    // Secrets should be different
     expect(secret1).not.toBe(secret2);
 
-    // Generate code from first secret
-    const code1 = generateSync({ secret: secret1 });
-    // Generate code from second secret
-    const code2 = generateSync({ secret: secret2 });
-
-    // If codes happen to be the same, skip this test (very rare)
-    if (code1 === code2) {
-      console.log('Skipping: codes from both secrets are the same');
-      return;
-    }
-
-    // Try to verify with first secret's code - should fail
-    const res1 = await injectWithSession(
-      app,
-      {
-        method: 'POST',
-        url: '/api/v1/user/totp/verify',
-        payload: {
-          code: code1,
-        },
-      },
-      sessionCookie,
-    );
-    expect(res1.statusCode).toBe(400);
-    expect(res1.json().code).toBe('INVALID_TOTP_CODE');
+    // Generate code from second secret (the active one)
+    const code2 = app.totpService.generateToken(secret2);
 
     // Verify with second secret - should succeed
     const res2 = await injectWithSession(
@@ -406,5 +375,90 @@ describe('POST /api/v1/user/totp/verify', () => {
       sessionCookie,
     );
     expect(res2.statusCode).toBe(200);
+  });
+
+  test('should reject old secret code after setup override', async () => {
+    const email = generateUniqueEmail('totp-verify-old-secret');
+    const password = 'testPassword123!';
+
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
+
+    // Start first setup
+    const secret1 = await startTotpSetup(sessionCookie);
+
+    // Start second setup (should override) - use a known different secret
+    // by generating multiple times until we get a different one
+    let secret2 = await startTotpSetup(sessionCookie);
+    let attempts = 0;
+    while (secret2 === secret1 && attempts < 5) {
+      secret2 = await startTotpSetup(sessionCookie);
+      attempts++;
+    }
+
+    expect(secret1).not.toBe(secret2);
+
+    // Generate code from first (old) secret
+    const code1 = app.totpService.generateToken(secret1);
+    // Generate code from second (current) secret
+    const code2 = app.totpService.generateToken(secret2);
+
+    // Only test if codes are different (to avoid false positive)
+    if (code1 !== code2) {
+      // Try to verify with first secret's code - should fail
+      const res1 = await injectWithSession(
+        app,
+        {
+          method: 'POST',
+          url: '/api/v1/user/totp/verify',
+          payload: {
+            code: code1,
+          },
+        },
+        sessionCookie,
+      );
+      expectError(res1, e.InvalidTotpCode);
+    }
+
+    // Verify with second secret - should succeed
+    const res2 = await injectWithSession(
+      app,
+      {
+        method: 'POST',
+        url: '/api/v1/user/totp/verify',
+        payload: {
+          code: code2,
+        },
+      },
+      sessionCookie,
+    );
+    expect(res2.statusCode).toBe(200);
+  });
+
+  test('should return 400 when body is empty', async () => {
+    const email = generateUniqueEmail('totp-verify-empty-body');
+    const password = 'testPassword123!';
+
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
+    await startTotpSetup(sessionCookie);
+
+    const res = await injectWithSession(
+      app,
+      {
+        method: 'POST',
+        url: '/api/v1/user/totp/verify',
+        payload: {},
+      },
+      sessionCookie,
+    );
+
+    expect(res.statusCode).toBe(400);
   });
 });

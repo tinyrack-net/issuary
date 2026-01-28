@@ -1,8 +1,9 @@
-import { generateSecret, generateSync, verifySync } from 'otplib';
 import { describe, expect, test } from 'vitest';
+import { e } from '@/schemas/error.js';
 import {
   createAuthenticatedSession,
   createDbUserWithSession,
+  expectError,
   generateUniqueEmail,
   injectWithSession,
   setupTestServer,
@@ -28,9 +29,7 @@ describe('POST /api/v1/user/totp/setup', () => {
       url: '/api/v1/user/totp/setup',
     });
 
-    expect(res.statusCode).toBe(401);
-    const body = res.json();
-    expect(body.code).toBe('UNAUTHORIZED');
+    expectError(res, e.Unauthorized);
   });
 
   test('should return secret, otpauth_url, and qr_code on successful setup', async () => {
@@ -155,7 +154,7 @@ describe('POST /api/v1/user/totp/setup', () => {
       const user = await app.mikro.user.findOneOrFail({ id: userId });
       const totp = app.mikro.userTotp.create({
         user,
-        secret: generateSecret(),
+        secret: app.totpService.generateSecret(),
       });
       totp.verified = true;
       await app.mikro.em.persist(totp).flush();
@@ -170,9 +169,7 @@ describe('POST /api/v1/user/totp/setup', () => {
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(409);
-    const body = res.json();
-    expect(body.code).toBe('TOTP_ALREADY_ENABLED');
+    expectError(res, e.TotpAlreadyEnabled);
   });
 
   test('should work for config users (synced to DB)', async () => {
@@ -218,15 +215,12 @@ describe('POST /api/v1/user/totp/setup', () => {
     expect(res.statusCode).toBe(200);
     const body = res.json();
 
-    // Generate a valid token using the secret
-    const validToken = generateSync({ secret: body.secret });
+    // Generate a valid token using the secret via totpService
+    const validToken = app.totpService.generateToken(body.secret);
     expect(validToken).toMatch(/^\d{6}$/);
 
-    // Verify the token is valid
-    const result = verifySync({
-      token: validToken,
-      secret: body.secret,
-    });
-    expect(result.valid).toBe(true);
+    // Verify the token is valid using totpService
+    const isValid = app.totpService.verifyToken(validToken, body.secret);
+    expect(isValid).toBe(true);
   });
 });

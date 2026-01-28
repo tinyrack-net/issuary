@@ -1,7 +1,9 @@
-import { generateSecret, generateSync } from 'otplib';
 import { describe, expect, test } from 'vitest';
+import { e } from '@/schemas/error.js';
 import {
-  extractCookie,
+  createDbUserWithSession,
+  enableTotpForUser,
+  expectError,
   generateUniqueEmail,
   injectWithSession,
   setupTestServer,
@@ -20,55 +22,6 @@ const app = setupTestServer({
   },
 });
 
-/**
- * Helper to create a DB user with session
- */
-async function createDbUserWithSession(
-  email: string,
-  password: string,
-): Promise<{ sessionCookie: string; userId: string }> {
-  await withMikroContext(app, async () => {
-    const user = app.mikro.user.create({
-      email,
-      password_hash: password,
-    });
-    user.email_verified = true;
-    await app.mikro.em.persist(user).flush();
-  });
-
-  const loginRes = await app.inject({
-    method: 'POST',
-    url: '/api/v1/auth/login',
-    payload: { email, password },
-  });
-
-  expect(loginRes.statusCode).toBe(200);
-
-  const sessionCookie = extractCookie(loginRes, 'session');
-  const userId = loginRes.json().user.id;
-
-  return { sessionCookie, userId };
-}
-
-/**
- * Helper to enable TOTP for a user and return the secret
- */
-async function enableTotpForUser(userId: string): Promise<string> {
-  const secret = generateSecret();
-
-  await withMikroContext(app, async () => {
-    const user = await app.mikro.user.findOneOrFail({ id: userId });
-    const totp = app.mikro.userTotp.create({
-      user,
-      secret,
-    });
-    totp.verified = true;
-    await app.mikro.em.persist(totp).flush();
-  });
-
-  return secret;
-}
-
 describe('DELETE /api/v1/user/totp', () => {
   test('should return 401 when not authenticated', async () => {
     const res = await app.inject({
@@ -79,16 +32,18 @@ describe('DELETE /api/v1/user/totp', () => {
       },
     });
 
-    expect(res.statusCode).toBe(401);
-    const body = res.json();
-    expect(body.code).toBe('UNAUTHORIZED');
+    expectError(res, e.Unauthorized);
   });
 
   test('should return 400 when TOTP is not enabled', async () => {
     const email = generateUniqueEmail('totp-delete-not-enabled');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     const res = await injectWithSession(
       app,
@@ -102,9 +57,7 @@ describe('DELETE /api/v1/user/totp', () => {
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(400);
-    const body = res.json();
-    expect(body.code).toBe('TOTP_NOT_ENABLED');
+    expectError(res, e.TotpNotEnabled);
   });
 
   test('should return 400 when code is invalid', async () => {
@@ -112,12 +65,13 @@ describe('DELETE /api/v1/user/totp', () => {
     const password = 'testPassword123!';
 
     const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
       email,
       password,
     );
 
     // Enable TOTP
-    await enableTotpForUser(userId);
+    await enableTotpForUser(app, userId);
 
     const res = await injectWithSession(
       app,
@@ -131,9 +85,7 @@ describe('DELETE /api/v1/user/totp', () => {
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(400);
-    const body = res.json();
-    expect(body.code).toBe('INVALID_TOTP_CODE');
+    expectError(res, e.InvalidTotpCode);
   });
 
   test('should successfully disable TOTP with valid code', async () => {
@@ -141,15 +93,16 @@ describe('DELETE /api/v1/user/totp', () => {
     const password = 'testPassword123!';
 
     const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
       email,
       password,
     );
 
     // Enable TOTP
-    const secret = await enableTotpForUser(userId);
+    const secret = await enableTotpForUser(app, userId);
 
     // Generate valid code
-    const validCode = generateSync({ secret });
+    const validCode = app.totpService.generateToken(secret);
 
     const res = await injectWithSession(
       app,
@@ -179,11 +132,12 @@ describe('DELETE /api/v1/user/totp', () => {
     const password = 'testPassword123!';
 
     const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
       email,
       password,
     );
 
-    await enableTotpForUser(userId);
+    await enableTotpForUser(app, userId);
 
     const res = await injectWithSession(
       app,
@@ -205,11 +159,12 @@ describe('DELETE /api/v1/user/totp', () => {
     const password = 'testPassword123!';
 
     const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
       email,
       password,
     );
 
-    await enableTotpForUser(userId);
+    await enableTotpForUser(app, userId);
 
     // Too short
     const res1 = await injectWithSession(
@@ -245,12 +200,13 @@ describe('DELETE /api/v1/user/totp', () => {
     const password = 'testPassword123!';
 
     const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
       email,
       password,
     );
 
     // Enable TOTP
-    const secret = await enableTotpForUser(userId);
+    const secret = await enableTotpForUser(app, userId);
 
     // Check initial session - TOTP should be enabled
     const sessionBefore = await injectWithSession(
@@ -264,7 +220,7 @@ describe('DELETE /api/v1/user/totp', () => {
     expect(sessionBefore.json().user.totp_registered).toBe(true);
 
     // Disable TOTP
-    const validCode = generateSync({ secret });
+    const validCode = app.totpService.generateToken(secret);
     await injectWithSession(
       app,
       {
@@ -294,12 +250,13 @@ describe('DELETE /api/v1/user/totp', () => {
     const password = 'testPassword123!';
 
     const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
       email,
       password,
     );
 
     // Create unverified TOTP record
-    const secret = generateSecret();
+    const secret = app.totpService.generateSecret();
     await withMikroContext(app, async () => {
       const user = await app.mikro.user.findOneOrFail({ id: userId });
       const totp = app.mikro.userTotp.create({
@@ -310,7 +267,7 @@ describe('DELETE /api/v1/user/totp', () => {
       await app.mikro.em.persist(totp).flush();
     });
 
-    const validCode = generateSync({ secret });
+    const validCode = app.totpService.generateToken(secret);
 
     const res = await injectWithSession(
       app,
@@ -324,9 +281,7 @@ describe('DELETE /api/v1/user/totp', () => {
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(400);
-    const body = res.json();
-    expect(body.code).toBe('TOTP_NOT_ENABLED');
+    expectError(res, e.TotpNotEnabled);
   });
 
   test('should prevent replay attacks with same code', async () => {
@@ -334,13 +289,14 @@ describe('DELETE /api/v1/user/totp', () => {
     const password = 'testPassword123!';
 
     const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
       email,
       password,
     );
 
     // Enable TOTP
-    const secret = await enableTotpForUser(userId);
-    const validCode = generateSync({ secret });
+    const secret = await enableTotpForUser(app, userId);
+    const validCode = app.totpService.generateToken(secret);
 
     // First deletion should succeed
     const res1 = await injectWithSession(
@@ -368,8 +324,7 @@ describe('DELETE /api/v1/user/totp', () => {
       },
       sessionCookie,
     );
-    expect(res2.statusCode).toBe(400);
-    expect(res2.json().code).toBe('TOTP_NOT_ENABLED');
+    expectError(res2, e.TotpNotEnabled);
   });
 
   test('should allow re-enabling TOTP after disabling', async () => {
@@ -377,13 +332,14 @@ describe('DELETE /api/v1/user/totp', () => {
     const password = 'testPassword123!';
 
     const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
       email,
       password,
     );
 
     // Enable TOTP
-    const secret1 = await enableTotpForUser(userId);
-    const validCode1 = generateSync({ secret: secret1 });
+    const secret1 = await enableTotpForUser(app, userId);
+    const validCode1 = app.totpService.generateToken(secret1);
 
     // Disable TOTP
     const disableRes = await injectWithSession(
@@ -412,7 +368,7 @@ describe('DELETE /api/v1/user/totp', () => {
     const newSecret = setupRes.json().secret;
 
     // Verify new setup
-    const newCode = generateSync({ secret: newSecret });
+    const newCode = app.totpService.generateToken(newSecret);
     const verifyRes = await injectWithSession(
       app,
       {
@@ -439,11 +395,12 @@ describe('DELETE /api/v1/user/totp', () => {
     const password = 'testPassword123!';
 
     const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
       email,
       password,
     );
 
-    await enableTotpForUser(userId);
+    await enableTotpForUser(app, userId);
 
     const res = await injectWithSession(
       app,
