@@ -478,6 +478,16 @@ export const e = {
     'CANNOT_REMOVE_LAST_PASSKEY',
     'Cannot remove the last passkey. You need at least one way to log in.',
   ),
+  CannotRemoveLastSecondFactor: createError(
+    400,
+    'CANNOT_REMOVE_LAST_SECOND_FACTOR',
+    'Cannot remove the last second factor. At least one 2FA method is required.',
+  ),
+  SecondFactorNotAllowedForConfigUser: createError(
+    403,
+    'SECOND_FACTOR_NOT_ALLOWED_FOR_CONFIG_USER',
+    'Second factor authentication is not available for config-managed users.',
+  ),
   PasskeyUserMismatch: createError(
     403,
     'PASSKEY_USER_MISMATCH',
