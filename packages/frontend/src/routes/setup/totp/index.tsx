@@ -25,7 +25,10 @@ import {
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
-import type { TotpSetupVerifyResponse } from '@/queries/totp.js';
+import type {
+  TotpConfirmResponse,
+  TotpSetupVerifyResponse,
+} from '@/queries/totp.js';
 
 /** Error codes from backend */
 const ERROR_CODES = {
@@ -90,24 +93,30 @@ function SetupTotp() {
   }, []);
 
   const handleVerifySuccess = useCallback(
-    async (data: TotpSetupVerifyResponse) => {
+    async (_data: TotpSetupVerifyResponse) => {
+      // Recovery codes step is handled by useTotpSetup hook
+      // (step transitions to 'recovery' automatically)
+      // Session update happens after confirm, not here
+      await tick();
+    },
+    [],
+  );
+
+  const handleConfirmSuccess = useCallback(
+    async (data: TotpConfirmResponse) => {
       queryClient.setQueryData(getSessionQueryOptions.queryKey, {
         user: data.user,
       });
       await tick();
-      // Recovery codes step is handled by useTotpSetup hook
-      // (step transitions to 'recovery' automatically)
+      // Navigate after successful confirm
+      if (isOAuthFlow(search)) {
+        window.location.href = buildAuthorizeUrl(search);
+      } else {
+        router.navigate({ to: '/profile' });
+      }
     },
-    [queryClient],
+    [queryClient, router, search],
   );
-
-  const handleRecoveryConfirm = useCallback(() => {
-    if (isOAuthFlow(search)) {
-      window.location.href = buildAuthorizeUrl(search);
-    } else {
-      router.navigate({ to: '/profile' });
-    }
-  }, [router, search]);
 
   const {
     step,
@@ -115,15 +124,17 @@ function SetupTotp() {
     recoveryCodes,
     isSetupPending,
     isVerifyPending,
+    isConfirmPending,
     startSetup,
     verify,
     goToQr,
     goToVerify,
+    confirmRecoveryCodes,
   } = useTotpSetup({
     autoStart: true,
     onSetupError: handleSetupError,
     onVerifySuccess: handleVerifySuccess,
-    onRecoveryConfirm: handleRecoveryConfirm,
+    onConfirmSuccess: handleConfirmSuccess,
     onVerifyError: (error) => {
       if (error instanceof ApiError) {
         switch (error.code) {
@@ -287,7 +298,8 @@ function SetupTotp() {
         />
         <RecoveryCodesStep
           recoveryCodes={recoveryCodes}
-          onConfirm={handleRecoveryConfirm}
+          onConfirm={confirmRecoveryCodes}
+          isLoading={isConfirmPending}
         />
       </PageLayout>
     );

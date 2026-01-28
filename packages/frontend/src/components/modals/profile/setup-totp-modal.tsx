@@ -25,28 +25,31 @@ export function SetupTotpModal({
 }: SetupTotpModalProps) {
   const { t } = useTranslation();
 
-  const handleClose = useCallback(() => {
-    reset();
-    onClose();
-  }, [onClose]);
-
   const {
     step,
     setupData,
     recoveryCodes,
     isSetupPending,
     isVerifyPending,
+    isConfirmPending,
     startSetup,
     verify,
     goToVerify,
     goToQr,
+    confirmRecoveryCodes,
     reset,
   } = useTotpSetup({
     autoStart: false,
-    onRecoveryConfirm: () => {
-      handleClose();
+    onConfirmSuccess: () => {
+      reset();
+      onClose();
     },
   });
+
+  const handleClose = useCallback(() => {
+    reset();
+    onClose();
+  }, [onClose, reset]);
 
   // Start setup when modal opens
   const handleModalOpen = useCallback(() => {
@@ -159,7 +162,8 @@ export function SetupTotpModal({
         <div className="mt-4">
           <RecoveryCodesStep
             recoveryCodes={recoveryCodes}
-            onConfirm={handleClose}
+            onConfirm={confirmRecoveryCodes}
+            isLoading={isConfirmPending}
           />
         </div>
       )}

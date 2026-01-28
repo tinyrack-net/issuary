@@ -5,16 +5,19 @@ import { useTranslation } from 'react-i18next';
 export interface RecoveryCodesStepProps {
   recoveryCodes: string[];
   onConfirm: () => void;
+  isLoading?: boolean;
   className?: string;
 }
 
 export function RecoveryCodesStep({
   recoveryCodes,
   onConfirm,
+  isLoading = false,
   className = '',
 }: RecoveryCodesStepProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
   const handleCopy = useCallback(async () => {
     const text = recoveryCodes.join('\n');
@@ -63,12 +66,30 @@ export function RecoveryCodesStep({
         )}
       </button>
 
+      <label className="flex cursor-pointer items-center gap-2">
+        <input
+          type="checkbox"
+          className="checkbox checkbox-sm"
+          checked={confirmed}
+          onChange={(event) => setConfirmed(event.target.checked)}
+          disabled={isLoading}
+        />
+        <span className="text-sm">
+          {t('setupTotp.recoveryCodes.confirmCheckbox')}
+        </span>
+      </label>
+
       <button
         type="button"
         className="btn btn-sm btn-primary btn-block"
         onClick={onConfirm}
+        disabled={!confirmed || isLoading}
       >
-        {t('setupTotp.recoveryCodes.confirm')}
+        {isLoading ? (
+          <span className="loading loading-spinner loading-sm" />
+        ) : (
+          t('setupTotp.recoveryCodes.confirm')
+        )}
       </button>
     </div>
   );
