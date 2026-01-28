@@ -30,6 +30,7 @@ export default (fastify: FastifyWithZodInstance) => {
         400: z.union([
           e.PasswordNotSet.Schema,
           e.CannotRemoveLastAuthMethod.Schema,
+          e.CannotRemovePasswordWithSecondFactorOnly.Schema,
         ]),
         401: z.union([e.Unauthorized.Schema, e.InvalidCurrentPassword.Schema]),
         403: e.UserNotEditable.Schema,
@@ -71,7 +72,21 @@ export default (fastify: FastifyWithZodInstance) => {
 
       // Check if user has at least one OAuth account
       const oauthCount = await fastify.mikro.userOAuth.countByUser(user.id);
+
+      // Check if user has 2FA enabled (TOTP or Passkey)
+      const hasTotp = await fastify.mikro.userTotp.isRegistered(user.id);
+      const passkeyCount = await fastify.mikro.userPasskey.countByUserId(
+        user.id,
+      );
+      const hasSecondFactor = hasTotp || passkeyCount > 0;
+
+      // Cannot remove password if:
+      // 1. No OAuth accounts (CANNOT_REMOVE_LAST_AUTH_METHOD)
+      // 2. Has 2FA but no OAuth (CANNOT_REMOVE_PASSWORD_WITH_SECOND_FACTOR_ONLY)
       if (oauthCount === 0) {
+        if (hasSecondFactor) {
+          throw new e.CannotRemovePasswordWithSecondFactorOnly.Error();
+        }
         throw new e.CannotRemoveLastAuthMethod.Error();
       }
 
