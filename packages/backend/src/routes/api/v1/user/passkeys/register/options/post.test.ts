@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'vitest';
+import { e } from '@/schemas/error.js';
 import {
   createAuthenticatedSession,
   createDbUserWithSession,
   createPasskeyForUser,
+  expectError,
   generateUniqueEmail,
   injectWithSession,
   setupTestServer,
@@ -244,7 +246,7 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     expect(body.options.challenge).toBeDefined();
   });
 
-  test('should work for config-managed users', async () => {
+  test('should return 403 for config-managed users', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
     const res = await injectWithSession(
@@ -256,10 +258,8 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
-    expect(body.options).toBeDefined();
-    expect(body.options.challenge).toBeDefined();
+    // Config users cannot setup 2FA
+    expectError(res, e.SecondFactorNotAllowedForConfigUser);
   });
 
   test('should include timeout in options', async () => {

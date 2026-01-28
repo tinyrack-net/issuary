@@ -26,6 +26,7 @@ export default (fastify: FastifyWithZodInstance) => {
         200: r.PasskeyRegistrationOptionsResponse,
         400: e.PasskeyNotEnabled.Schema,
         401: e.Unauthorized.Schema,
+        403: e.SecondFactorNotAllowedForConfigUser.Schema,
       },
     },
     handler: async (req, res) => {
@@ -37,8 +38,6 @@ export default (fastify: FastifyWithZodInstance) => {
         throw new e.Unauthorized.Error();
       }
 
-      console.log(userId);
-
       // Get user entity for registration
       const user = await fastify.mikro.user.findOneOrFail(
         {
@@ -48,6 +47,11 @@ export default (fastify: FastifyWithZodInstance) => {
           failHandler: () => new e.UserNotFound.Error(),
         },
       );
+
+      // Config users cannot setup 2FA
+      if (user.managed_by === 'config') {
+        throw new e.SecondFactorNotAllowedForConfigUser.Error();
+      }
 
       // Generate registration options
       const options =
