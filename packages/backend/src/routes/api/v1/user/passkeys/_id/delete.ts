@@ -23,13 +23,20 @@ export default (fastify: FastifyWithZodInstance) => {
         400: z.union([
           e.PasskeyNotEnabled.Schema,
           e.CannotRemoveLastPasskey.Schema,
+          e.CannotRemoveLastSecondFactor.Schema,
         ]),
         401: e.Unauthorized.Schema,
+        403: e.SecondFactorNotAllowedForConfigUser.Schema,
         404: e.PasskeyNotFound.Schema,
       },
     },
     handler: async (req, res) => {
       const userSession = await req.auth.verify();
+
+      // Config users cannot manage 2FA
+      if (userSession.managed_by === 'config') {
+        throw new e.SecondFactorNotAllowedForConfigUser.Error();
+      }
 
       // Check if user has other auth methods
       const user = await fastify.mikro.user.findOneOrFail(
@@ -40,11 +47,25 @@ export default (fastify: FastifyWithZodInstance) => {
         (await fastify.mikro.userOAuth.count({ user: { id: user.id } })) > 0;
       const hasOtherAuthMethods = user.hasPassword() || hasLinkedOAuth;
 
+      // Check if 2FA is required
+      const secondFactorRequired =
+        fastify.config.basic_authentication_methods.password.second_factor
+          .required;
+
+      // Check if user has other 2FA method (TOTP)
+      const totpEnabled = await fastify.mikro.userTotp.isRegistered(
+        userSession.id,
+      );
+
       // Delete passkey
       await fastify.passkeyService.deletePasskey(
         userSession.id,
         req.params.id,
-        hasOtherAuthMethods,
+        {
+          hasOtherAuthMethods,
+          secondFactorRequired,
+          hasOtherSecondFactor: totpEnabled,
+        },
       );
 
       return res.status(200).send({
