@@ -68,10 +68,15 @@ export const AppConfigApp = z.object({
     .optional()
     .default(7)
     .describe('Days to keep previous keys valid after rotation'),
-  public_registration: z
-    .boolean()
-    .default(true)
-    .describe('Allow public user registration'),
+  allowed_signup_emails: z
+    .array(z.string())
+    .default([])
+    .describe(
+      'Email patterns allowed for signup. ' +
+        '"*" allows all emails, "*@domain.com" allows a specific domain, ' +
+        '"user@domain.com" allows a specific email. ' +
+        'Empty array disables signup entirely.',
+    ),
   supported_languages: z
     .array(z.string())
     .default(['en'])
