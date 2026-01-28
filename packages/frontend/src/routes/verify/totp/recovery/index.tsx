@@ -10,7 +10,6 @@ import { FooterLink } from '@/components/auth/footer-link.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { SubmitButton } from '@/components/auth/submit-button.js';
 import { PageLayout } from '@/components/ui/page-layout.js';
-import { PinInput, type PinInputRef } from '@/components/ui/pin-input.js';
 import { ApiError } from '@/libs/error.js';
 import {
   buildAuthorizeUrl,
@@ -20,54 +19,57 @@ import {
 } from '@/libs/oauth-search.js';
 import { tick } from '@/libs/promise.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
-import { verifyTotpLoginMutationOptions } from '@/queries/totp.js';
+import { verifyRecoveryCodeMutationOptions } from '@/queries/totp.js';
 
 /** Error codes from backend */
 const ERROR_CODES = {
   SECOND_FACTOR_SESSION_EXPIRED: 'SECOND_FACTOR_SESSION_EXPIRED',
-  INVALID_TOTP_CODE: 'INVALID_TOTP_CODE',
+  INVALID_RECOVERY_CODE: 'INVALID_RECOVERY_CODE',
+  NO_RECOVERY_CODES_AVAILABLE: 'NO_RECOVERY_CODES_AVAILABLE',
   TOTP_NOT_ENABLED: 'TOTP_NOT_ENABLED',
 } as const;
 
 export const SearchSchema = OAuthSearchSchema;
 
-export const Route = createFileRoute('/verify/totp/')({
-  component: VerifyTotp,
+export const Route = createFileRoute('/verify/totp/recovery/')({
+  component: VerifyRecovery,
   validateSearch: SearchSchema,
 });
 
-type VerifyTotpFormValues = {
+type RecoveryFormValues = {
   code: string;
 };
 
 /** Auto redirect countdown seconds */
 const REDIRECT_COUNTDOWN_SECONDS = 5;
 
-function VerifyTotp() {
+function VerifyRecovery() {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const search = Route.useSearch();
-  const pinInputRef = useRef<PinInputRef>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const [sessionExpired, setSessionExpired] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState(
     REDIRECT_COUNTDOWN_SECONDS,
   );
 
-  const verifySchema = useMemo(
+  const recoverySchema = useMemo(
     () =>
       z.object({
         code: z
           .string()
-          .length(6, t('validation.totp.length'))
-          .regex(/^\d{6}$/, t('validation.totp.digits')),
+          .regex(
+            /^[a-z0-9]{4}-[a-z0-9]{4}$/,
+            t('verifyRecovery.error.invalid'),
+          ),
       }),
     [t],
   );
 
   const verifyMutation = useMutation({
-    ...verifyTotpLoginMutationOptions,
+    ...verifyRecoveryCodeMutationOptions,
     onSuccess: async (data) => {
       queryClient.setQueryData(getSessionQueryOptions.queryKey, {
         user: data.user,
@@ -88,19 +90,17 @@ function VerifyTotp() {
   });
 
   const {
-    setValue,
+    register,
     setError,
     handleSubmit,
-    watch,
+    setValue,
     formState: { errors },
-  } = useForm<VerifyTotpFormValues>({
+  } = useForm<RecoveryFormValues>({
     defaultValues: {
       code: '',
     },
-    resolver: standardSchemaResolver(verifySchema),
+    resolver: standardSchemaResolver(recoverySchema),
   });
-
-  const codeValue = watch('code');
 
   // Auto redirect when session expires
   const redirectToLogin = useCallback(() => {
@@ -127,33 +127,39 @@ function VerifyTotp() {
     return () => clearInterval(timer);
   }, [sessionExpired, redirectToLogin]);
 
-  const onSubmit = async (values: VerifyTotpFormValues) => {
+  const onSubmit = async (values: RecoveryFormValues) => {
     try {
       await verifyMutation.mutateAsync(values);
     } catch (error) {
-      console.error('TOTP verification failed:', error);
+      console.error('Recovery code verification failed:', error);
 
       if (error instanceof ApiError) {
         switch (error.code) {
           case ERROR_CODES.SECOND_FACTOR_SESSION_EXPIRED:
-            // Session expired - show alert and start auto redirect
             setSessionExpired(true);
             setRedirectCountdown(REDIRECT_COUNTDOWN_SECONDS);
             return;
 
           case ERROR_CODES.TOTP_NOT_ENABLED:
-            // TOTP not enabled - redirect to login
             redirectToLogin();
             return;
 
-          case ERROR_CODES.INVALID_TOTP_CODE:
-            // Invalid code - show specific error and clear input
+          case ERROR_CODES.NO_RECOVERY_CODES_AVAILABLE:
             setError('code', {
               type: 'manual',
-              message: t('verifyTotp.error.invalid'),
+              message: t('verifyRecovery.error.noCodesAvailable'),
             });
             setValue('code', '');
-            pinInputRef.current?.focus();
+            inputRef.current?.focus();
+            return;
+
+          case ERROR_CODES.INVALID_RECOVERY_CODE:
+            setError('code', {
+              type: 'manual',
+              message: t('verifyRecovery.error.invalid'),
+            });
+            setValue('code', '');
+            inputRef.current?.focus();
             return;
         }
       }
@@ -161,50 +167,65 @@ function VerifyTotp() {
       // Generic error fallback
       setError('code', {
         type: 'manual',
-        message: t('verifyTotp.error.invalid'),
+        message: t('verifyRecovery.error.invalid'),
       });
       setValue('code', '');
-      pinInputRef.current?.focus();
+      inputRef.current?.focus();
     }
   };
+
+  const { ref: formRef, ...registerRest } = register('code');
 
   return (
     <PageLayout maxWidth="100" cardPadding>
       <PageHeader
-        title={t('verifyTotp.title')}
-        subtitle={t('verifyTotp.subtitle')}
+        title={t('verifyRecovery.title')}
+        subtitle={t('verifyRecovery.subtitle')}
       />
 
       {sessionExpired && (
         <div className="alert alert-warning mb-4">
           <WarningCircleIcon className="size-5" weight="fill" />
           <div className="flex flex-col gap-1">
-            <span>{t('verifyTotp.error.expired')}</span>
+            <span>{t('verifyRecovery.error.expired')}</span>
             <span className="text-sm opacity-80">
-              {t('verifyTotp.redirecting', { seconds: redirectCountdown })}
+              {t('verifyRecovery.redirecting', {
+                seconds: redirectCountdown,
+              })}
             </span>
             <button
               type="button"
               className="btn btn-sm btn-ghost mt-2 w-fit"
               onClick={redirectToLogin}
             >
-              {t('verifyTotp.redirectNow')}
+              {t('verifyRecovery.redirectNow')}
             </button>
           </div>
         </div>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        <PinInput
-          ref={pinInputRef}
-          length={6}
-          value={codeValue}
-          onChange={(value) => setValue('code', value)}
-          onComplete={() => handleSubmit(onSubmit)()}
-          error={errors.code}
-          disabled={sessionExpired}
-          autoFocus
-        />
+        <fieldset className="fieldset">
+          <input
+            {...registerRest}
+            ref={(el) => {
+              formRef(el);
+              (
+                inputRef as React.MutableRefObject<HTMLInputElement | null>
+              ).current = el;
+            }}
+            type="text"
+            placeholder={t('verifyRecovery.placeholder')}
+            className={`input input-bordered w-full text-center font-mono ${
+              errors.code ? 'input-error' : ''
+            }`}
+            disabled={sessionExpired}
+            autoComplete="off"
+          />
+          {errors.code && (
+            <p className="fieldset-label text-error">{errors.code.message}</p>
+          )}
+        </fieldset>
 
         {sessionExpired ? (
           <button
@@ -212,15 +233,15 @@ function VerifyTotp() {
             className="btn btn-block btn-disabled mt-2"
             disabled
           >
-            {t('verifyTotp.submit')}
+            {t('verifyRecovery.submit')}
           </button>
         ) : (
           <SubmitButton
             isPending={verifyMutation.isPending}
-            pendingText={t('verifyTotp.submitting')}
+            pendingText={t('verifyRecovery.submitting')}
             className="mt-2"
           >
-            {t('verifyTotp.submit')}
+            {t('verifyRecovery.submit')}
           </SubmitButton>
         )}
       </form>
@@ -231,18 +252,18 @@ function VerifyTotp() {
           className="link link-info font-medium text-xs"
           onClick={() =>
             router.navigate({
-              to: '/verify/totp/recovery',
+              to: '/verify/totp',
               search: extractOAuthParams(search),
             })
           }
         >
-          {t('verifyTotp.useRecoveryCode')}
+          {t('verifyRecovery.backToTotp')}
         </button>
       </div>
 
       <FooterLink
         text=""
-        linkText={t('verifyTotp.backToLogin')}
+        linkText={t('verifyRecovery.backToLogin')}
         to="/login"
         search={extractOAuthParams(search)}
       />

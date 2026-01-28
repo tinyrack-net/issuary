@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { FooterLink } from '@/components/auth/footer-link.js';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { QrStep } from '@/components/totp/qr-step.js';
+import { RecoveryCodesStep } from '@/components/totp/recovery-codes-step.js';
 import { useTotpSetup } from '@/components/totp/use-totp-setup.js';
 import { VerifyStep } from '@/components/totp/verify-step.js';
 import { Alert } from '@/components/ui/alert.js';
@@ -94,19 +95,24 @@ function SetupTotp() {
         user: data.user,
       });
       await tick();
-
-      if (isOAuthFlow(search)) {
-        window.location.href = buildAuthorizeUrl(search);
-      } else {
-        router.navigate({ to: '/profile' });
-      }
+      // Recovery codes step is handled by useTotpSetup hook
+      // (step transitions to 'recovery' automatically)
     },
-    [queryClient, router, search],
+    [queryClient],
   );
+
+  const handleRecoveryConfirm = useCallback(() => {
+    if (isOAuthFlow(search)) {
+      window.location.href = buildAuthorizeUrl(search);
+    } else {
+      router.navigate({ to: '/profile' });
+    }
+  }, [router, search]);
 
   const {
     step,
     setupData,
+    recoveryCodes,
     isSetupPending,
     isVerifyPending,
     startSetup,
@@ -117,6 +123,7 @@ function SetupTotp() {
     autoStart: true,
     onSetupError: handleSetupError,
     onVerifySuccess: handleVerifySuccess,
+    onRecoveryConfirm: handleRecoveryConfirm,
     onVerifyError: (error) => {
       if (error instanceof ApiError) {
         switch (error.code) {
@@ -191,7 +198,9 @@ function SetupTotp() {
             <div className="flex flex-col gap-1">
               <span>{t('setupTotp.error.expired')}</span>
               <span className="text-sm opacity-80">
-                {t('setupTotp.redirecting', { seconds: redirectCountdown })}
+                {t('setupTotp.redirecting', {
+                  seconds: redirectCountdown,
+                })}
               </span>
               <button
                 type="button"
@@ -263,6 +272,22 @@ function SetupTotp() {
           linkText={t('setupTotp.backToLogin')}
           to="/login"
           search={extractOAuthParams(search)}
+        />
+      </PageLayout>
+    );
+  }
+
+  // Recovery codes step
+  if (step === 'recovery' && recoveryCodes.length > 0) {
+    return (
+      <PageLayout maxWidth="100" cardPadding>
+        <PageHeader
+          title={t('setupTotp.recoveryCodes.title')}
+          subtitle={t('setupTotp.subtitle')}
+        />
+        <RecoveryCodesStep
+          recoveryCodes={recoveryCodes}
+          onConfirm={handleRecoveryConfirm}
         />
       </PageLayout>
     );
