@@ -82,7 +82,9 @@ export class TotpService {
   ): Promise<z.infer<typeof totpSchema.TotpSetupData>> {
     const existingTotp = await this.mikro.userTotp.findByUserId(user.id);
 
-    if (existingTotp?.verified) {
+    // Only throw if TOTP is fully registered (verified AND recovery confirmed)
+    // If user verified but didn't confirm recovery codes, allow re-setup
+    if (existingTotp?.verified && existingTotp?.recovery_confirmed) {
       throw new e.TotpAlreadyEnabled.Error();
     }
 
@@ -124,7 +126,9 @@ export class TotpService {
       throw new e.TotpNotSetup.Error();
     }
 
-    if (totp.verified) {
+    // Only throw if TOTP is fully registered (verified AND recovery confirmed)
+    // If user verified but didn't confirm recovery codes, allow re-verification
+    if (totp.verified && totp.recovery_confirmed) {
       throw new e.TotpAlreadyEnabled.Error();
     }
 
@@ -148,11 +152,29 @@ export class TotpService {
   }
 
   /**
+   * Confirm TOTP setup by acknowledging recovery codes.
+   * This marks the TOTP setup as fully complete.
+   */
+  public async confirmSetup(userId: string): Promise<void> {
+    const totp = await this.mikro.userTotp.findVerifiedByUserId(userId);
+    if (!totp) {
+      throw new e.TotpNotSetup.Error();
+    }
+
+    if (totp.recovery_confirmed) {
+      throw new e.TotpAlreadyEnabled.Error();
+    }
+
+    totp.recovery_confirmed = true;
+    await this.mikro.em.flush();
+  }
+
+  /**
    * Disable TOTP for a user
    * Also deletes all recovery codes
    */
   public async disable(userId: string, token: string): Promise<void> {
-    const totp = await this.mikro.userTotp.findVerifiedByUserId(userId);
+    const totp = await this.mikro.userTotp.findFullyRegisteredByUserId(userId);
     if (!totp) {
       throw new e.TotpNotEnabled.Error();
     }
@@ -166,7 +188,7 @@ export class TotpService {
   }
 
   public async verifyForAuth(userId: string, token: string): Promise<void> {
-    const totp = await this.mikro.userTotp.findVerifiedByUserId(userId);
+    const totp = await this.mikro.userTotp.findFullyRegisteredByUserId(userId);
     if (!totp) {
       throw new e.TotpNotEnabled.Error();
     }
@@ -227,8 +249,8 @@ export class TotpService {
    * The code is single-use: once verified, it is marked as used.
    */
   public async verifyRecoveryCode(userId: string, code: string): Promise<void> {
-    // Ensure TOTP is actually enabled for this user
-    const totp = await this.mikro.userTotp.findVerifiedByUserId(userId);
+    // Ensure TOTP is actually fully enabled for this user
+    const totp = await this.mikro.userTotp.findFullyRegisteredByUserId(userId);
     if (!totp) {
       throw new e.TotpNotEnabled.Error();
     }

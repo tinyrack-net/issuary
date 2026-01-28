@@ -40,6 +40,11 @@ export class UserService {
       never
     >,
   ): Promise<z.infer<typeof r.UserSession>> {
+    // Check if TOTP is fully registered (verified AND recovery_confirmed)
+    const totpFullyRegistered = user.totps
+      .getItems()
+      .some((totp) => totp.verified && totp.recovery_confirmed);
+
     return {
       id: user.id,
       managed_by: user.managed_by,
@@ -47,7 +52,7 @@ export class UserService {
       email_verified: user.email_verified,
       email_verification_required: this.userEmailVerificationRequired(user),
       has_password: user.hasPassword(),
-      totp_registered: user.totps.length > 0,
+      totp_registered: totpFullyRegistered,
       second_factor_required: this.user2FASetupRequired(user),
       passkey_count: user.passkeys.length,
     };
