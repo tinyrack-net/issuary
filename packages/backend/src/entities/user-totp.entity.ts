@@ -56,6 +56,15 @@ export class UserTotpEntity extends BaseEntity {
   })
   public verified: Opt<boolean> = false;
 
+  @Property({
+    type: t.boolean,
+    name: 'recovery_confirmed',
+    comment: 'Whether the user has confirmed saving recovery codes',
+    nullable: false,
+    default: false,
+  })
+  public recovery_confirmed: Opt<boolean> = false;
+
   public constructor(params: { user: UserEntity; secret: string }) {
     super();
     this.user = params.user;
