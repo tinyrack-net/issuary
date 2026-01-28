@@ -10,6 +10,7 @@ export type TotpSetupResponse = {
 
 export type TotpSetupVerifyResponse = {
   user: SessionUser;
+  recovery_codes: string[];
 };
 
 export type TotpLoginVerifyResponse = {
@@ -76,5 +77,26 @@ export const verifyTotpLoginMutationOptions = mutationOptions({
       body: JSON.stringify(values),
     });
     return res.json() as Promise<TotpLoginVerifyResponse>;
+  },
+});
+
+/**
+ * Verify recovery code during login (complete 2FA login)
+ */
+export type VerifyRecoveryCodeParams = {
+  code: string;
+};
+
+export type VerifyRecoveryCodeResponse = {
+  user: SessionUser;
+};
+
+export const verifyRecoveryCodeMutationOptions = mutationOptions({
+  mutationFn: async (values: VerifyRecoveryCodeParams) => {
+    const res = await etch('/api/v1/auth/totp/recovery/verify', {
+      method: 'POST',
+      body: JSON.stringify(values),
+    });
+    return res.json() as Promise<VerifyRecoveryCodeResponse>;
   },
 });
