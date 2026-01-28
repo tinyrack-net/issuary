@@ -209,6 +209,8 @@
   "profile.password.removeModal.error": "Failed to remove password",
   "profile.password.removeModal.invalidCurrent": "Current password is incorrect",
   "profile.password.removeModal.noOAuth": "You must have at least one OAuth account linked",
+  "profile.password.removeModal.noOAuthWith2FA": "Cannot remove password when 2FA is set up. Add an OAuth account first, or disable 2FA before removing password.",
+  "profile.password.removeDisabledReason": "Cannot remove password when 2FA is set up. Add an OAuth account first.",
   "profile.password.configManaged": "This account is managed by configuration and the password cannot be changed",
   "profile.totp.title": "Two-Factor Authentication",
   "profile.totp.description": "Add an extra layer of security using an authenticator app",

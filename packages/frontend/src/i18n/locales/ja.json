@@ -209,6 +209,8 @@
   "profile.password.removeModal.error": "パスワードの削除に失敗しました",
   "profile.password.removeModal.invalidCurrent": "現在のパスワードが正しくありません",
   "profile.password.removeModal.noOAuth": "少なくとも1つのOAuthアカウントが連携されている必要があります",
+  "profile.password.removeModal.noOAuthWith2FA": "2FAが設定されている場合、パスワードを削除できません。まずOAuthアカウントを連携するか、2FAを無効にしてからパスワードを削除してください。",
+  "profile.password.removeDisabledReason": "2FAが設定されている場合、パスワードを削除できません。まずOAuthアカウントを連携してください。",
   "profile.password.configManaged": "このアカウントは設定ファイルで管理されているため、パスワードを変更できません",
   "profile.totp.title": "二要素認証",
   "profile.totp.description": "認証アプリを使用してセキュリティを強化",
