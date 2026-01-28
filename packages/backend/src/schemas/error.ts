@@ -99,6 +99,11 @@ export const e = {
     'REGISTRATION_DISABLED',
     'Public registration is disabled.',
   ),
+  RegistrationEmailNotAllowed: createError(
+    403,
+    'REGISTRATION_EMAIL_NOT_ALLOWED',
+    'This email address is not allowed for registration.',
+  ),
   ValidationError: createErrorWithData(
     400,
     'VALIDATION_ERROR',
