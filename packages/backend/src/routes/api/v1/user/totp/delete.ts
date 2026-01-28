@@ -26,13 +26,38 @@ export default (fastify: FastifyWithZodInstance) =>
       }),
       response: {
         200: r.OkResponse,
-        400: z.union([e.TotpNotEnabled.Schema, e.InvalidTotpCode.Schema]),
+        400: z.union([
+          e.TotpNotEnabled.Schema,
+          e.InvalidTotpCode.Schema,
+          e.CannotRemoveLastSecondFactor.Schema,
+        ]),
         401: e.Unauthorized.Schema,
+        403: e.SecondFactorNotAllowedForConfigUser.Schema,
       },
     },
     handler: async (req, res) => {
       const userSession = await req.auth.verify();
-      await fastify.totpService.disable(userSession.id, req.body.code);
+
+      // Config users cannot manage 2FA
+      if (userSession.managed_by === 'config') {
+        throw new e.SecondFactorNotAllowedForConfigUser.Error();
+      }
+
+      // Check if 2FA is required
+      const secondFactorRequired =
+        fastify.config.basic_authentication_methods.password.second_factor
+          .required;
+
+      // Check if user has other 2FA method (passkey)
+      const passkeyCount = await fastify.mikro.userPasskey.countByUserId(
+        userSession.id,
+      );
+      const hasOtherSecondFactor = passkeyCount > 0;
+
+      await fastify.totpService.disable(userSession.id, req.body.code, {
+        secondFactorRequired,
+        hasOtherSecondFactor,
+      });
 
       return res.status(200).send({ ok: true });
     },
