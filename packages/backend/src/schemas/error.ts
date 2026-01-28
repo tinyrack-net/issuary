@@ -392,6 +392,11 @@ export const e = {
     'CANNOT_REMOVE_LAST_AUTH_METHOD',
     'Cannot remove password. You need at least one way to log in.',
   ),
+  CannotRemovePasswordWithSecondFactorOnly: createError(
+    400,
+    'CANNOT_REMOVE_PASSWORD_WITH_SECOND_FACTOR_ONLY',
+    'Cannot remove password when 2FA (TOTP/Passkey) is set up without OAuth. Add an OAuth account first, or disable 2FA before removing password.',
+  ),
 
   // TOTP Errors
   TotpAlreadyEnabled: createError(
