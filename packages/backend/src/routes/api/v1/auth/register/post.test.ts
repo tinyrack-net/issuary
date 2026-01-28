@@ -21,13 +21,12 @@ const REQUIRED_CONSENTS = [
 ];
 
 describe('POST /api/v1/auth/register', () => {
-  test('should fail when public_registration is disabled', async () => {
-    // Create a separate server instance with disabled registration
+  test('should return 403 when signup is disabled (empty allowed_signup_emails)', async () => {
     const disabledApp = await createServer({
       baseConfig: DEFAULT_TEST_CONFIG,
       configOverrides: {
         app: {
-          public_registration: false,
+          allowed_signup_emails: [],
         },
       },
     });
@@ -38,14 +37,169 @@ describe('POST /api/v1/auth/register', () => {
       payload: {
         email: 'test@example.com',
         password: 'password123',
+        consents: REQUIRED_CONSENTS,
       },
     });
 
-    // Route is not registered when public_registration is disabled
-    expect(res.statusCode).toBe(404);
+    expectError(res, e.RegistrationDisabled);
 
-    // Cleanup
     await disabledApp.close();
+  });
+
+  test('should return 403 when email is not in allowed patterns', async () => {
+    const restrictedApp = await createServer({
+      baseConfig: DEFAULT_TEST_CONFIG,
+      configOverrides: {
+        app: {
+          allowed_signup_emails: ['*@allowed.com'],
+        },
+      },
+    });
+
+    const res = await restrictedApp.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: 'user@notallowed.com',
+        password: 'password123',
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+
+    expectError(res, e.RegistrationEmailNotAllowed);
+
+    await restrictedApp.close();
+  });
+
+  test('should allow registration with domain wildcard pattern', async () => {
+    const restrictedApp = await createServer({
+      baseConfig: DEFAULT_TEST_CONFIG,
+      configOverrides: {
+        app: {
+          allowed_signup_emails: ['*@allowed.com'],
+        },
+      },
+    });
+
+    const uniqueEmail = `user${Date.now()}@allowed.com`;
+    const res = await restrictedApp.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: uniqueEmail,
+        password: 'password123',
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toHaveProperty('user');
+
+    await restrictedApp.close();
+  });
+
+  test('should allow registration with exact email pattern', async () => {
+    const exactEmail = `exact${Date.now()}@specific.com`;
+    const restrictedApp = await createServer({
+      baseConfig: DEFAULT_TEST_CONFIG,
+      configOverrides: {
+        app: {
+          allowed_signup_emails: [exactEmail],
+        },
+      },
+    });
+
+    const res = await restrictedApp.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: exactEmail,
+        password: 'password123',
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toHaveProperty('user');
+
+    await restrictedApp.close();
+  });
+
+  test('should reject non-matching email with exact email pattern', async () => {
+    const restrictedApp = await createServer({
+      baseConfig: DEFAULT_TEST_CONFIG,
+      configOverrides: {
+        app: {
+          allowed_signup_emails: ['allowed@specific.com'],
+        },
+      },
+    });
+
+    const res = await restrictedApp.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: 'other@specific.com',
+        password: 'password123',
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+
+    expectError(res, e.RegistrationEmailNotAllowed);
+
+    await restrictedApp.close();
+  });
+
+  test('should allow registration with multiple patterns', async () => {
+    const restrictedApp = await createServer({
+      baseConfig: DEFAULT_TEST_CONFIG,
+      configOverrides: {
+        app: {
+          allowed_signup_emails: ['*@company.com', 'special@other.com'],
+        },
+      },
+    });
+
+    // Test domain wildcard
+    const email1 = `user${Date.now()}@company.com`;
+    const res1 = await restrictedApp.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: email1,
+        password: 'password123',
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+    expect(res1.statusCode).toBe(200);
+
+    // Test exact match
+    const res2 = await restrictedApp.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: 'special@other.com',
+        password: 'password123',
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+    expect(res2.statusCode).toBe(200);
+
+    // Test rejected email
+    const res3 = await restrictedApp.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: 'nobody@rejected.com',
+        password: 'password123',
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+    expectError(res3, e.RegistrationEmailNotAllowed);
+
+    await restrictedApp.close();
   });
 
   test('should register successfully with valid credentials and consents', async () => {
@@ -256,7 +410,9 @@ describe('POST /api/v1/auth/register', () => {
 
     // Check that verification token was created in database
     await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
+      const user = await app.mikro.user.findOneOrFail({
+        email: uniqueEmail,
+      });
       expect(user).toBeDefined();
       expect(user.email_verified).toBe(false);
 
