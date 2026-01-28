@@ -9,8 +9,11 @@ export type TotpSetupResponse = {
 };
 
 export type TotpSetupVerifyResponse = {
-  user: SessionUser;
   recovery_codes: string[];
+};
+
+export type TotpConfirmResponse = {
+  user: SessionUser;
 };
 
 export type TotpLoginVerifyResponse = {
@@ -30,7 +33,7 @@ export const startTotpSetupMutationOptions = mutationOptions({
 });
 
 /**
- * Verify TOTP code and complete setup
+ * Verify TOTP code during setup (returns recovery codes)
  */
 export type VerifyTotpParams = {
   code: string;
@@ -43,6 +46,18 @@ export const verifyTotpMutationOptions = mutationOptions({
       body: JSON.stringify(values),
     });
     return res.json() as Promise<TotpSetupVerifyResponse>;
+  },
+});
+
+/**
+ * Confirm TOTP setup after user acknowledges recovery codes
+ */
+export const confirmTotpSetupMutationOptions = mutationOptions({
+  mutationFn: async () => {
+    const res = await etch('/api/v1/user/totp/confirm', {
+      method: 'POST',
+    });
+    return res.json() as Promise<TotpConfirmResponse>;
   },
 });
 
