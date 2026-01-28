@@ -1,4 +1,4 @@
-import { GearIcon, KeyIcon } from '@phosphor-icons/react';
+import { GearIcon, InfoIcon, KeyIcon } from '@phosphor-icons/react';
 import { useTranslation } from 'react-i18next';
 
 type PasswordModalType = 'set' | 'change' | 'remove' | null;
@@ -7,6 +7,7 @@ interface PasswordSectionProps {
   hasPassword: boolean;
   hasLinkedOAuth: boolean;
   isConfigManaged: boolean;
+  hasSecondFactorOnly: boolean;
   onOpenModal: (type: PasswordModalType) => void;
 }
 
@@ -14,6 +15,7 @@ export function PasswordSection({
   hasPassword,
   hasLinkedOAuth,
   isConfigManaged,
+  hasSecondFactorOnly,
   onOpenModal,
 }: PasswordSectionProps) {
   const { t } = useTranslation();
@@ -61,7 +63,7 @@ export function PasswordSection({
               >
                 {t('profile.password.change')}
               </button>
-              {hasLinkedOAuth && (
+              {hasLinkedOAuth ? (
                 <button
                   type="button"
                   className="btn btn-ghost btn-xs text-error"
@@ -69,6 +71,24 @@ export function PasswordSection({
                 >
                   {t('profile.password.remove')}
                 </button>
+              ) : null}
+              {!hasLinkedOAuth && hasSecondFactorOnly && (
+                <div className="dropdown dropdown-end">
+                  <button
+                    type="button"
+                    className="btn btn-disabled btn-ghost btn-xs cursor-not-allowed text-base-content/30"
+                  >
+                    {t('profile.password.remove')}
+                  </button>
+                  <div className="dropdown-content z-50 w-64 rounded-xl border border-base-200 bg-base-100 p-4 shadow-lg">
+                    <div className="flex items-start gap-2">
+                      <InfoIcon className="size-4 shrink-0 text-warning" />
+                      <div className="text-xs">
+                        {t('profile.password.removeDisabledReason')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
             </>
           ) : (
