@@ -297,4 +297,132 @@ describe('DELETE /api/v1/user/password', () => {
     const body = res.json();
     expect(body.ok).toBe(true);
   });
+
+  test('should return 400 when 2FA (TOTP) is set up without OAuth', async () => {
+    const email = generateUniqueEmail('password-delete-totp-no-oauth');
+    const password = 'validPassword123!';
+
+    const { sessionCookie, userId } = await createUserWithPasswordAndSession(
+      email,
+      password,
+    );
+
+    // Enable TOTP for the user
+    await withMikroContext(app, async () => {
+      const secret = app.totpService.generateSecret();
+      const totp = app.mikro.userTotp.create({
+        user: app.mikro.user.getReference(userId),
+        secret,
+      });
+      totp.verified = true;
+      totp.recovery_confirmed = true;
+      await app.mikro.em.persist(totp).flush();
+    });
+
+    // Try to delete password without OAuth account
+    const res = await injectWithSession(
+      app,
+      {
+        method: 'DELETE',
+        url: '/api/v1/user/password',
+        payload: {
+          current_password: password,
+        },
+      },
+      sessionCookie,
+    );
+
+    expect(res.statusCode).toBe(400);
+    const body = res.json();
+    expect(body.code).toBe('CANNOT_REMOVE_PASSWORD_WITH_SECOND_FACTOR_ONLY');
+  });
+
+  test('should return 400 when Passkey is set up without OAuth', async () => {
+    const email = generateUniqueEmail('password-delete-passkey-no-oauth');
+    const password = 'validPassword123!';
+
+    const { sessionCookie, userId } = await createUserWithPasswordAndSession(
+      email,
+      password,
+    );
+
+    // Register a passkey for the user
+    await withMikroContext(app, async () => {
+      const passkey = app.mikro.userPasskey.create({
+        user: app.mikro.user.getReference(userId),
+        credential_id: btoa('test-credential-id'),
+        public_key: 'mock-public-key',
+        counter: 0,
+        device_type: 'singleDevice',
+        backed_up: false,
+        transports: ['usb'],
+      });
+      await app.mikro.em.persist(passkey).flush();
+    });
+
+    // Try to delete password without OAuth account
+    const res = await injectWithSession(
+      app,
+      {
+        method: 'DELETE',
+        url: '/api/v1/user/password',
+        payload: {
+          current_password: password,
+        },
+      },
+      sessionCookie,
+    );
+
+    expect(res.statusCode).toBe(400);
+    const body = res.json();
+    expect(body.code).toBe('CANNOT_REMOVE_PASSWORD_WITH_SECOND_FACTOR_ONLY');
+  });
+
+  test('should allow password removal with 2FA and OAuth', async () => {
+    const email = generateUniqueEmail('password-delete-totp-with-oauth');
+    const password = 'validPassword123!';
+
+    const { sessionCookie, userId } = await createUserWithPasswordAndSession(
+      email,
+      password,
+    );
+
+    // Enable TOTP AND link OAuth account
+    await withMikroContext(app, async () => {
+      const secret = app.totpService.generateSecret();
+      const totp = app.mikro.userTotp.create({
+        user: app.mikro.user.getReference(userId),
+        secret,
+      });
+      totp.verified = true;
+      totp.recovery_confirmed = true;
+      await app.mikro.em.persist(totp).flush();
+
+      await app.mikro.userOAuth.linkAccount({
+        userId,
+        providerName: 'google',
+        providerUserId: `google-${Date.now()}`,
+        accessToken: 'fake-access-token',
+        refreshToken: 'fake-refresh-token',
+        expiresAt: null,
+      });
+    });
+
+    // Delete password should succeed
+    const res = await injectWithSession(
+      app,
+      {
+        method: 'DELETE',
+        url: '/api/v1/user/password',
+        payload: {
+          current_password: password,
+        },
+      },
+      sessionCookie,
+    );
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.ok).toBe(true);
+  });
 });
