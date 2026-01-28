@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
+import { e } from '@/schemas/error.js';
 import {
   createAuthenticatedSession,
+  expectError,
   extractCookie,
   generateUniqueEmail,
   injectWithSession,
@@ -435,10 +437,10 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     expect([400, 500].includes(res.statusCode)).toBe(true);
   });
 
-  test('should work for config-managed users', async () => {
+  test('should return 403 for config-managed users', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    // Get registration options
+    // Try to get registration options first - should fail for config users
     const optionsRes = await injectWithSession(
       app,
       {
@@ -447,30 +449,9 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       },
       sessionCookie,
     );
-    expect(optionsRes.statusCode).toBe(200);
 
-    const updatedSessionCookie =
-      extractCookie(optionsRes, 'session') ?? sessionCookie;
-
-    // Try to verify (will fail due to invalid response)
-    const res = await injectWithSession(
-      app,
-      {
-        method: 'POST',
-        url: '/api/v1/user/passkeys/register/verify',
-        payload: {
-          response: createMockRegistrationResponse(),
-        },
-      },
-      updatedSessionCookie,
-    );
-
-    // Should fail at verification, not authorization
-    // WebAuthn library may throw unhandled error (500) or handled error (400)
-    expect([400, 500].includes(res.statusCode)).toBe(true);
-    if (res.statusCode === 400) {
-      expect(res.json().code).toBe('PASSKEY_VERIFICATION_FAILED');
-    }
+    // Config users cannot setup 2FA
+    expectError(optionsRes, e.SecondFactorNotAllowedForConfigUser);
   });
 
   test('should validate clientDataJSON structure', async () => {
