@@ -8,12 +8,12 @@ import type { FastifyWithZodInstance } from '@/server.js';
 /**
  * POST /api/v1/user/totp/verify
  *
- * Verify TOTP code and complete setup.
+ * Verify TOTP code during setup.
  * This endpoint verifies the code from user's authenticator app
- * and activates TOTP for the account.
+ * and returns recovery codes. The user must confirm the recovery codes
+ * via the confirm endpoint to complete the TOTP setup.
  * Accepts both full user session and pending 2FA setup session.
- * If from pending setup session, converts to full user session.
- * Returns recovery codes upon successful setup.
+ * Does NOT convert session - that happens in the confirm endpoint.
  */
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
@@ -22,15 +22,16 @@ export default (fastify: FastifyWithZodInstance) =>
     schema: {
       summary: 'Verify TOTP Setup',
       description:
-        'Verify the TOTP code from authenticator app to complete setup. ' +
+        'Verify the TOTP code from authenticator app. ' +
         'Must call setup endpoint first to get the QR code. ' +
-        'Returns one-time recovery codes upon success.',
+        'Returns one-time recovery codes. Call confirm endpoint after ' +
+        'user acknowledges saving the recovery codes to complete setup.',
       tags: [TAGS.USER],
       body: z.object({
         code: f.totpCode,
       }),
       response: {
-        200: r.TotpSetupVerifyResponse,
+        200: r.RecoveryCodesResponse,
         400: z.union([e.TotpNotSetup.Schema, e.InvalidTotpCode.Schema]),
         401: e.Unauthorized.Schema,
         409: e.TotpAlreadyEnabled.Schema,
@@ -51,16 +52,10 @@ export default (fastify: FastifyWithZodInstance) =>
         req.body.code,
       );
 
-      if (pending2FASetup) {
-        req.setUserSession(userId);
-      }
-
-      const userEntity = await fastify.mikro.user.verifyById(userId);
-      const user =
-        await fastify.userService.userEntityToSessionUser(userEntity);
+      // Do NOT convert session here - that happens in the confirm endpoint
+      // after user acknowledges saving the recovery codes
 
       return res.status(200).send({
-        user,
         recovery_codes: recoveryCodes,
       });
     },

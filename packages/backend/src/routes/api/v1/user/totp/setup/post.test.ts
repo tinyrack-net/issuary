@@ -139,7 +139,7 @@ describe('POST /api/v1/user/totp/setup', () => {
     expect(secondSecret).not.toBe(firstSecret);
   });
 
-  test('should return 409 when TOTP is already enabled', async () => {
+  test('should return 409 when TOTP is fully registered', async () => {
     const email = generateUniqueEmail('totp-setup-already-enabled');
     const password = 'testPassword123!';
 
@@ -149,7 +149,7 @@ describe('POST /api/v1/user/totp/setup', () => {
       password,
     );
 
-    // Enable TOTP directly in database
+    // Enable TOTP fully in database (verified AND recovery_confirmed)
     await withMikroContext(app, async () => {
       const user = await app.mikro.user.findOneOrFail({ id: userId });
       const totp = app.mikro.userTotp.create({
@@ -157,6 +157,7 @@ describe('POST /api/v1/user/totp/setup', () => {
         secret: app.totpService.generateSecret(),
       });
       totp.verified = true;
+      totp.recovery_confirmed = true;
       await app.mikro.em.persist(totp).flush();
     });
 
@@ -170,6 +171,45 @@ describe('POST /api/v1/user/totp/setup', () => {
     );
 
     expectError(res, e.TotpAlreadyEnabled);
+  });
+
+  test('should allow re-setup when TOTP is verified but not confirmed', async () => {
+    const email = generateUniqueEmail('totp-setup-not-confirmed');
+    const password = 'testPassword123!';
+
+    const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
+
+    // Create TOTP with verified=true but recovery_confirmed=false
+    await withMikroContext(app, async () => {
+      const user = await app.mikro.user.findOneOrFail({ id: userId });
+      const totp = app.mikro.userTotp.create({
+        user,
+        secret: app.totpService.generateSecret(),
+      });
+      totp.verified = true;
+      totp.recovery_confirmed = false;
+      await app.mikro.em.persist(totp).flush();
+    });
+
+    const res = await injectWithSession(
+      app,
+      {
+        method: 'POST',
+        url: '/api/v1/user/totp/setup',
+      },
+      sessionCookie,
+    );
+
+    // Should succeed and allow user to start fresh setup
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.secret).toBeDefined();
+    expect(body.otpauth_url).toBeDefined();
+    expect(body.qr_code).toBeDefined();
   });
 
   test('should work for config users (synced to DB)', async () => {

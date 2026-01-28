@@ -264,6 +264,47 @@ describe('DELETE /api/v1/user/totp', () => {
         secret,
       });
       totp.verified = false;
+      totp.recovery_confirmed = false;
+      await app.mikro.em.persist(totp).flush();
+    });
+
+    const validCode = app.totpService.generateToken(secret);
+
+    const res = await injectWithSession(
+      app,
+      {
+        method: 'DELETE',
+        url: '/api/v1/user/totp',
+        payload: {
+          code: validCode,
+        },
+      },
+      sessionCookie,
+    );
+
+    expectError(res, e.TotpNotEnabled);
+  });
+
+  test('should not disable TOTP with verified but unconfirmed setup', async () => {
+    const email = generateUniqueEmail('totp-delete-unconfirmed');
+    const password = 'testPassword123!';
+
+    const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
+
+    // Create verified but unconfirmed TOTP record
+    const secret = app.totpService.generateSecret();
+    await withMikroContext(app, async () => {
+      const user = await app.mikro.user.findOneOrFail({ id: userId });
+      const totp = app.mikro.userTotp.create({
+        user,
+        secret,
+      });
+      totp.verified = true;
+      totp.recovery_confirmed = false;
       await app.mikro.em.persist(totp).flush();
     });
 
@@ -337,7 +378,7 @@ describe('DELETE /api/v1/user/totp', () => {
       password,
     );
 
-    // Enable TOTP
+    // Enable TOTP (fully)
     const secret1 = await enableTotpForUser(app, userId);
     const validCode1 = app.totpService.generateToken(secret1);
 
@@ -382,9 +423,21 @@ describe('DELETE /api/v1/user/totp', () => {
     );
     expect(verifyRes.statusCode).toBe(200);
 
-    // Verify TOTP is enabled again
+    // Confirm new setup
+    const confirmRes = await injectWithSession(
+      app,
+      {
+        method: 'POST',
+        url: '/api/v1/user/totp/confirm',
+        payload: {},
+      },
+      sessionCookie,
+    );
+    expect(confirmRes.statusCode).toBe(200);
+
+    // Verify TOTP is fully enabled again
     await withMikroContext(app, async () => {
-      const totp = await app.mikro.userTotp.findVerifiedByUserId(userId);
+      const totp = await app.mikro.userTotp.findFullyRegisteredByUserId(userId);
       expect(totp).not.toBeNull();
       expect(totp?.secret).toBe(newSecret);
     });

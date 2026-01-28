@@ -356,6 +356,7 @@ export async function enableTotpForUser(
     const existingTotp = await app.mikro.userTotp.findByUserId(userId);
     if (existingTotp) {
       existingTotp.verified = true;
+      existingTotp.recovery_confirmed = true;
       secret = existingTotp.secret;
     } else {
       secret = app.totpService.generateSecret();
@@ -363,6 +364,7 @@ export async function enableTotpForUser(
         user,
         secret,
         verified: true,
+        recovery_confirmed: true,
       });
       app.mikro.em.persist(totp);
     }

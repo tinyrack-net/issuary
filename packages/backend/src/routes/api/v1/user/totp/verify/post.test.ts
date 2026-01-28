@@ -112,7 +112,7 @@ describe('POST /api/v1/user/totp/verify', () => {
     expectError(res, e.InvalidTotpCode);
   });
 
-  test('should successfully verify and enable TOTP with valid code', async () => {
+  test('should successfully verify TOTP and return recovery codes', async () => {
     const email = generateUniqueEmail('totp-verify-success');
     const password = 'testPassword123!';
 
@@ -142,18 +142,22 @@ describe('POST /api/v1/user/totp/verify', () => {
 
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body).toHaveProperty('user');
-    expect(body.user.totp_registered).toBe(true);
+    // Should return recovery codes, not user session
+    expect(body).toHaveProperty('recovery_codes');
+    expect(body).not.toHaveProperty('user');
+    expect(Array.isArray(body.recovery_codes)).toBe(true);
+    expect(body.recovery_codes.length).toBe(8);
 
-    // Verify TOTP is now enabled in database
+    // Verify TOTP is verified but NOT fully registered in database
     await withMikroContext(app, async () => {
       const totp = await app.mikro.userTotp.findByUserId(userId);
       expect(totp).not.toBeNull();
       expect(totp?.verified).toBe(true);
+      expect(totp?.recovery_confirmed).toBe(false);
     });
   });
 
-  test('should return 409 when TOTP is already enabled', async () => {
+  test('should return 409 when TOTP is fully registered', async () => {
     const email = generateUniqueEmail('totp-verify-already-enabled');
     const password = 'testPassword123!';
 
@@ -163,7 +167,7 @@ describe('POST /api/v1/user/totp/verify', () => {
       password,
     );
 
-    // Enable TOTP directly in database
+    // Enable TOTP fully in database (verified=true AND recovery_confirmed=true)
     const secret = app.totpService.generateSecret();
     await withMikroContext(app, async () => {
       const user = await app.mikro.user.findOneOrFail({ id: userId });
@@ -172,6 +176,7 @@ describe('POST /api/v1/user/totp/verify', () => {
         secret,
       });
       totp.verified = true;
+      totp.recovery_confirmed = true;
       await app.mikro.em.persist(totp).flush();
     });
 
@@ -190,6 +195,48 @@ describe('POST /api/v1/user/totp/verify', () => {
     );
 
     expectError(res, e.TotpAlreadyEnabled);
+  });
+
+  test('should allow re-verification when TOTP is verified but not confirmed', async () => {
+    const email = generateUniqueEmail('totp-verify-not-confirmed');
+    const password = 'testPassword123!';
+
+    const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
+
+    // Create TOTP with verified=true but recovery_confirmed=false
+    const secret = app.totpService.generateSecret();
+    await withMikroContext(app, async () => {
+      const user = await app.mikro.user.findOneOrFail({ id: userId });
+      const totp = app.mikro.userTotp.create({
+        user,
+        secret,
+      });
+      totp.verified = true;
+      totp.recovery_confirmed = false;
+      await app.mikro.em.persist(totp).flush();
+    });
+
+    const validCode = app.totpService.generateToken(secret);
+
+    const res = await injectWithSession(
+      app,
+      {
+        method: 'POST',
+        url: '/api/v1/user/totp/verify',
+        payload: {
+          code: validCode,
+        },
+      },
+      sessionCookie,
+    );
+
+    // Should succeed and return recovery codes (allowing user to complete setup)
+    expect(res.statusCode).toBe(200);
+    expect(res.json().recovery_codes).toHaveLength(8);
   });
 
   test('should validate code format - non-numeric', async () => {
@@ -291,7 +338,7 @@ describe('POST /api/v1/user/totp/verify', () => {
     expectError(res, e.InvalidTotpCode);
   });
 
-  test('should update session to reflect TOTP enabled status', async () => {
+  test('should NOT update session after verify (requires confirm)', async () => {
     const email = generateUniqueEmail('totp-verify-session-update');
     const password = 'testPassword123!';
 
@@ -328,7 +375,8 @@ describe('POST /api/v1/user/totp/verify', () => {
       sessionCookie,
     );
 
-    // Check session after - TOTP should be enabled
+    // Check session after verify - TOTP should still NOT be enabled
+    // (requires confirm step)
     const sessionAfter = await injectWithSession(
       app,
       {
@@ -337,7 +385,7 @@ describe('POST /api/v1/user/totp/verify', () => {
       },
       sessionCookie,
     );
-    expect(sessionAfter.json().user.totp_registered).toBe(true);
+    expect(sessionAfter.json().user.totp_registered).toBe(false);
   });
 
   test('should handle concurrent setup/verify attempts correctly', async () => {

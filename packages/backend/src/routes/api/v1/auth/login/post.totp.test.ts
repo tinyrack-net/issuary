@@ -682,13 +682,28 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     );
 
     expect(verifyRes.statusCode).toBe(200);
-    expect(verifyRes.json()).toHaveProperty('user');
-    expect(verifyRes.json().user.totp_registered).toBe(true);
+    expect(verifyRes.json()).toHaveProperty('recovery_codes');
+    expect(verifyRes.json().recovery_codes).toHaveLength(8);
 
-    // Get the updated session cookie from verify response
-    const updatedSessionCookie = extractCookie(verifyRes, 'session');
+    // Step 4: Confirm recovery codes saved
+    const confirmRes = await injectWithSession(
+      app,
+      {
+        method: 'POST',
+        url: '/api/v1/user/totp/confirm',
+        payload: {},
+      },
+      sessionCookie,
+    );
 
-    // Step 4: Now should be able to access protected endpoints
+    expect(confirmRes.statusCode).toBe(200);
+    expect(confirmRes.json()).toHaveProperty('user');
+    expect(confirmRes.json().user.totp_registered).toBe(true);
+
+    // Get the updated session cookie from confirm response
+    const updatedSessionCookie = extractCookie(confirmRes, 'session');
+
+    // Step 5: Now should be able to access protected endpoints
     const finalSessionRes = await injectWithSession(
       app,
       { method: 'GET', url: '/api/v1/user/session' },

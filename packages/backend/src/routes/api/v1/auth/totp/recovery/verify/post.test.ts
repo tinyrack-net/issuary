@@ -75,6 +75,18 @@ async function createUserWithTotpAndRecoveryCodes(
   const recoveryCodes = verifyRes.json().recovery_codes;
   expect(recoveryCodes).toHaveLength(8);
 
+  // Confirm TOTP setup (acknowledge recovery codes)
+  const confirmRes = await injectWithSession(
+    app,
+    {
+      method: 'POST',
+      url: '/api/v1/user/totp/confirm',
+      payload: {},
+    },
+    sessionCookie,
+  );
+  expect(confirmRes.statusCode).toBe(200);
+
   // Now login again to get a pending 2FA session
   const loginRes = await app.inject({
     method: 'POST',
@@ -324,6 +336,18 @@ describe('POST /api/v1/auth/totp/recovery/verify', () => {
     );
     expect(verifyRes.statusCode).toBe(200);
     expect(verifyRes.json().recovery_codes).toHaveLength(8);
+
+    // Confirm recovery codes saved
+    const confirmRes = await injectWithSession(
+      app,
+      {
+        method: 'POST',
+        url: '/api/v1/user/totp/confirm',
+        payload: {},
+      },
+      sessionCookie,
+    );
+    expect(confirmRes.statusCode).toBe(200);
 
     // Verify recovery codes exist
     await withMikroContext(app, async () => {
