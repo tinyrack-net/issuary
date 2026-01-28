@@ -171,6 +171,85 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const body = sessionRes.json();
     expect(body).not.toHaveProperty('user');
   });
+
+  test('should allow access to protected routes after successful TOTP verification', async () => {
+    // Create a user with TOTP enabled (email verified)
+    const email = generateUniqueEmail('totp-verify-protected-access');
+    const password = 'password123';
+
+    // Create user with verified email
+    const { userId } = await createDbUserWithSession(app, email, password);
+
+    // Enable TOTP for user
+    const secret = await enableTotpForUser(app, userId);
+
+    // Login with password (creates pending TOTP session)
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: { email, password },
+    });
+    expect(loginRes.statusCode).toBe(200);
+    const pendingSessionCookie = extractCookie(loginRes, 'session');
+
+    // Verify TOTP code
+    const validCode = app.totpService.generateToken(secret);
+    const verifyRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/totp/verify',
+      cookies: { session: pendingSessionCookie },
+      payload: { code: validCode },
+    });
+    expect(verifyRes.statusCode).toBe(200);
+
+    // Get the new session cookie from verify response
+    const authenticatedCookie = extractCookie(verifyRes, 'session');
+
+    // Now access protected route (session endpoint) with authenticated session
+    const sessionRes = await app.inject({
+      method: 'GET',
+      url: '/api/v1/user/session',
+      cookies: { session: authenticatedCookie },
+    });
+
+    expect(sessionRes.statusCode).toBe(200);
+    const body = sessionRes.json();
+    expect(body).toHaveProperty('user');
+    expect(body.user.id).toBe(userId);
+    expect(body.user.email).toBe(email);
+    expect(body.user.totp_registered).toBe(true);
+  });
+
+  test('should return 400 when body is empty', async () => {
+    // Create a user with TOTP enabled (email verified)
+    const email = generateUniqueEmail('totp-verify-empty-body');
+    const password = 'password123';
+
+    // Create user with verified email
+    const { userId } = await createDbUserWithSession(app, email, password);
+
+    // Enable TOTP for user
+    await enableTotpForUser(app, userId);
+
+    // Login with password
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: { email, password },
+    });
+    expect(loginRes.statusCode).toBe(200);
+    const sessionCookie = extractCookie(loginRes, 'session');
+
+    // Try to verify with empty body
+    const verifyRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/totp/verify',
+      cookies: { session: sessionCookie },
+      payload: {},
+    });
+
+    expect(verifyRes.statusCode).toBe(400);
+  });
 });
 
 describe('POST /api/v1/auth/login - TOTP flow', () => {
