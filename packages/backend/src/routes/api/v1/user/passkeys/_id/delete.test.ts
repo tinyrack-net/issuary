@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'vitest';
+import { e } from '@/schemas/error.js';
 import {
   createAuthenticatedSession,
+  enableTotpForUser,
+  expectError,
   extractCookie,
   generateUniqueEmail,
   injectWithSession,
@@ -310,7 +313,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
     expect(res.statusCode).toBe(200);
   });
 
-  test('should work for config-managed users', async () => {
+  test('should return 403 for config-managed users', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
     // Get user ID from session
@@ -324,7 +327,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
     );
     const userId = sessionRes.json().user.id;
 
-    // Create passkey for config user
+    // Create passkey for config user directly in DB
     const passkeyId = await createPasskeyForUser(userId, 'Config User Passkey');
 
     const res = await injectWithSession(
@@ -336,9 +339,8 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
-    expect(body.ok).toBe(true);
+    // Config users cannot manage 2FA
+    expectError(res, e.SecondFactorNotAllowedForConfigUser);
   });
 
   test('should delete all passkeys sequentially when user has password', async () => {
@@ -570,5 +572,257 @@ describe('DELETE /api/v1/user/passkeys/:id - Passkey disabled', () => {
 
     // When passkey is disabled, the route is not registered at all
     expect(res.statusCode).toBe(404);
+  });
+});
+
+describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () => {
+  const appWith2FARequired = setupTestServer({
+    configOverrides: {
+      basic_authentication_methods: {
+        password: {
+          second_factor: {
+            required: true,
+          },
+          totp: {
+            enabled: true,
+          },
+        },
+        passkey: {
+          enabled: true,
+        },
+      },
+    },
+  });
+
+  /**
+   * Helper to create a passkey for a user
+   */
+  async function createPasskeyFor2FATest(
+    userId: string,
+    name: string | null = null,
+  ): Promise<string> {
+    let passkeyId = '';
+
+    await withMikroContext(appWith2FARequired, async () => {
+      const user = await appWith2FARequired.mikro.user.findOneOrFail({
+        id: userId,
+      });
+      const passkey = appWith2FARequired.mikro.userPasskey.create({
+        user,
+        credential_id: `test-credential-${crypto.randomUUID()}`,
+        public_key: 'test-public-key-base64url',
+        counter: 0,
+        device_type: 'multiDevice',
+        backed_up: true,
+        transports: ['internal'],
+        name,
+        aaguid: 'test-aaguid',
+      });
+      await appWith2FARequired.mikro.em.persist(passkey).flush();
+      passkeyId = passkey.id;
+    });
+
+    return passkeyId;
+  }
+
+  /**
+   * Create a user with passkey already setup, then login and verify passkey
+   * to get a full session (not pending2FASetup)
+   * Since we can't actually do WebAuthn in tests, we create passkey directly
+   * and use TOTP for authentication
+   */
+  async function createUserWithPasskeySession(
+    emailPrefix: string,
+    password: string,
+  ): Promise<{ sessionCookie: string; userId: string }> {
+    const email = generateUniqueEmail(emailPrefix);
+
+    // Create user directly in DB
+    let userId = '';
+    await withMikroContext(appWith2FARequired, async () => {
+      const user = appWith2FARequired.mikro.user.create({
+        email,
+        password_hash: password,
+      });
+      user.email_verified = true;
+      await appWith2FARequired.mikro.em.persist(user).flush();
+      userId = user.id;
+    });
+
+    // Enable TOTP for user (to be able to login)
+    const totpSecret = await enableTotpForUser(appWith2FARequired, userId);
+
+    // Login - will require 2FA verification
+    const loginRes = await appWith2FARequired.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: { email, password },
+    });
+    expect(loginRes.statusCode).toBe(200);
+
+    const pending2FACookie =
+      loginRes.cookies.find((c) => c.name === 'session')?.value ?? '';
+
+    // Verify TOTP to get full session
+    const validCode = appWith2FARequired.totpService.generateToken(totpSecret);
+    const verifyRes = await appWith2FARequired.inject({
+      method: 'POST',
+      url: '/api/v1/auth/totp/verify',
+      cookies: { session: pending2FACookie },
+      payload: { code: validCode },
+    });
+    expect(verifyRes.statusCode).toBe(200);
+
+    const sessionCookie =
+      verifyRes.cookies.find((c) => c.name === 'session')?.value ?? '';
+
+    return { sessionCookie, userId };
+  }
+
+  test('should prevent deleting last passkey when no TOTP exists and 2FA is required', async () => {
+    const password = 'testPassword123!';
+
+    // First create user with TOTP to get session
+    const { sessionCookie, userId } = await createUserWithPasskeySession(
+      'passkey-delete-2fa-required-no-totp',
+      password,
+    );
+
+    // Remove TOTP from user (to test passkey-only scenario)
+    await withMikroContext(appWith2FARequired, async () => {
+      await appWith2FARequired.mikro.userTotp.deleteByUserId(userId);
+    });
+
+    // Create only one passkey
+    const passkeyId = await createPasskeyFor2FATest(userId, 'Only Passkey');
+
+    const res = await injectWithSession(
+      appWith2FARequired,
+      {
+        method: 'DELETE',
+        url: `/api/v1/user/passkeys/${passkeyId}`,
+      },
+      sessionCookie,
+    );
+
+    expectError(res, e.CannotRemoveLastSecondFactor);
+
+    // Verify passkey was NOT deleted
+    await withMikroContext(appWith2FARequired, async () => {
+      const passkey = await appWith2FARequired.mikro.userPasskey.findOne({
+        id: passkeyId,
+      });
+      expect(passkey).not.toBeNull();
+    });
+  });
+
+  test('should allow deleting passkey when TOTP exists and 2FA is required', async () => {
+    const password = 'testPassword123!';
+
+    const { sessionCookie, userId } = await createUserWithPasskeySession(
+      'passkey-delete-2fa-required-has-totp',
+      password,
+    );
+
+    // Create passkey (user already has TOTP from session setup)
+    const passkeyId = await createPasskeyFor2FATest(userId, 'Test Passkey');
+
+    const res = await injectWithSession(
+      appWith2FARequired,
+      {
+        method: 'DELETE',
+        url: `/api/v1/user/passkeys/${passkeyId}`,
+      },
+      sessionCookie,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().ok).toBe(true);
+
+    // Verify passkey was deleted
+    await withMikroContext(appWith2FARequired, async () => {
+      const passkey = await appWith2FARequired.mikro.userPasskey.findOne({
+        id: passkeyId,
+      });
+      expect(passkey).toBeNull();
+    });
+  });
+
+  test('should allow deleting one of multiple passkeys when 2FA is required', async () => {
+    const password = 'testPassword123!';
+
+    const { sessionCookie, userId } = await createUserWithPasskeySession(
+      'passkey-delete-2fa-required-multiple',
+      password,
+    );
+
+    // Remove TOTP to test passkey-only scenario
+    await withMikroContext(appWith2FARequired, async () => {
+      await appWith2FARequired.mikro.userTotp.deleteByUserId(userId);
+    });
+
+    // Create multiple passkeys (no TOTP)
+    const passkeyId1 = await createPasskeyFor2FATest(userId, 'Passkey 1');
+    await createPasskeyFor2FATest(userId, 'Passkey 2');
+
+    const res = await injectWithSession(
+      appWith2FARequired,
+      {
+        method: 'DELETE',
+        url: `/api/v1/user/passkeys/${passkeyId1}`,
+      },
+      sessionCookie,
+    );
+
+    // Should succeed because user still has another passkey
+    expect(res.statusCode).toBe(200);
+    expect(res.json().ok).toBe(true);
+  });
+
+  test('should prevent config user from deleting passkey', async () => {
+    const sessionCookie = await createAuthenticatedSession(appWith2FARequired);
+
+    // Get user ID from session
+    const sessionRes = await injectWithSession(
+      appWith2FARequired,
+      {
+        method: 'GET',
+        url: '/api/v1/user/session',
+      },
+      sessionCookie,
+    );
+    const userId = sessionRes.json().user.id;
+
+    // Create passkey directly in database for config user
+    let passkeyId = '';
+    await withMikroContext(appWith2FARequired, async () => {
+      const user = await appWith2FARequired.mikro.user.findOneOrFail({
+        id: userId,
+      });
+      const passkey = appWith2FARequired.mikro.userPasskey.create({
+        user,
+        credential_id: `test-credential-${crypto.randomUUID()}`,
+        public_key: 'test-public-key-base64url',
+        counter: 0,
+        device_type: 'multiDevice',
+        backed_up: true,
+        transports: ['internal'],
+        name: 'Config User Passkey',
+        aaguid: 'test-aaguid',
+      });
+      await appWith2FARequired.mikro.em.persist(passkey).flush();
+      passkeyId = passkey.id;
+    });
+
+    const res = await injectWithSession(
+      appWith2FARequired,
+      {
+        method: 'DELETE',
+        url: `/api/v1/user/passkeys/${passkeyId}`,
+      },
+      sessionCookie,
+    );
+
+    expectError(res, e.SecondFactorNotAllowedForConfigUser);
   });
 });

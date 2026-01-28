@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import {
+  createAuthenticatedSession,
   createDbUserWithSession,
+  createPasskeyForUser,
   enableTotpForUser,
   expectError,
   generateUniqueEmail,
@@ -466,5 +468,199 @@ describe('DELETE /api/v1/user/totp', () => {
     );
 
     expect(res.statusCode).toBe(400);
+  });
+});
+
+describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
+  const appWith2FARequired = setupTestServer({
+    configOverrides: {
+      basic_authentication_methods: {
+        password: {
+          second_factor: {
+            required: true,
+          },
+          totp: {
+            enabled: true,
+          },
+        },
+        passkey: {
+          enabled: true,
+        },
+      },
+    },
+  });
+
+  /**
+   * Create a user with TOTP already enabled, then login and verify TOTP
+   * to get a full session (not pending2FASetup)
+   */
+  async function createUserWithTotpSession(
+    emailPrefix: string,
+    password: string,
+  ): Promise<{ sessionCookie: string; userId: string; totpSecret: string }> {
+    const email = generateUniqueEmail(emailPrefix);
+
+    // Create user directly in DB
+    let userId = '';
+    await withMikroContext(appWith2FARequired, async () => {
+      const user = appWith2FARequired.mikro.user.create({
+        email,
+        password_hash: password,
+      });
+      user.email_verified = true;
+      await appWith2FARequired.mikro.em.persist(user).flush();
+      userId = user.id;
+    });
+
+    // Enable TOTP for user
+    const totpSecret = await enableTotpForUser(appWith2FARequired, userId);
+
+    // Login - will require 2FA verification
+    const loginRes = await appWith2FARequired.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: { email, password },
+    });
+    expect(loginRes.statusCode).toBe(200);
+
+    const pending2FACookie =
+      loginRes.cookies.find((c) => c.name === 'session')?.value ?? '';
+
+    // Verify TOTP to get full session
+    const validCode = appWith2FARequired.totpService.generateToken(totpSecret);
+    const verifyRes = await appWith2FARequired.inject({
+      method: 'POST',
+      url: '/api/v1/auth/totp/verify',
+      cookies: { session: pending2FACookie },
+      payload: { code: validCode },
+    });
+    expect(verifyRes.statusCode).toBe(200);
+
+    const sessionCookie =
+      verifyRes.cookies.find((c) => c.name === 'session')?.value ?? '';
+
+    return { sessionCookie, userId, totpSecret };
+  }
+
+  test('should prevent disabling TOTP when no passkey exists and 2FA is required', async () => {
+    const password = 'testPassword123!';
+
+    const { sessionCookie, userId, totpSecret } =
+      await createUserWithTotpSession(
+        'totp-delete-2fa-required-no-passkey',
+        password,
+      );
+
+    // User has only TOTP as 2FA, try to disable it
+    const validCode = appWith2FARequired.totpService.generateToken(totpSecret);
+
+    const res = await injectWithSession(
+      appWith2FARequired,
+      {
+        method: 'DELETE',
+        url: '/api/v1/user/totp',
+        payload: {
+          code: validCode,
+        },
+      },
+      sessionCookie,
+    );
+
+    expectError(res, e.CannotRemoveLastSecondFactor);
+
+    // Verify TOTP was NOT deleted
+    await withMikroContext(appWith2FARequired, async () => {
+      const totp =
+        await appWith2FARequired.mikro.userTotp.findFullyRegisteredByUserId(
+          userId,
+        );
+      expect(totp).not.toBeNull();
+    });
+  });
+
+  test('should allow disabling TOTP when passkey exists and 2FA is required', async () => {
+    const password = 'testPassword123!';
+
+    const { sessionCookie, userId, totpSecret } =
+      await createUserWithTotpSession(
+        'totp-delete-2fa-required-has-passkey',
+        password,
+      );
+
+    // Also add a passkey
+    await createPasskeyForUser(appWith2FARequired, userId, 'Test Passkey');
+
+    const validCode = appWith2FARequired.totpService.generateToken(totpSecret);
+
+    const res = await injectWithSession(
+      appWith2FARequired,
+      {
+        method: 'DELETE',
+        url: '/api/v1/user/totp',
+        payload: {
+          code: validCode,
+        },
+      },
+      sessionCookie,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().ok).toBe(true);
+
+    // Verify TOTP was deleted
+    await withMikroContext(appWith2FARequired, async () => {
+      const totp =
+        await appWith2FARequired.mikro.userTotp.findFullyRegisteredByUserId(
+          userId,
+        );
+      expect(totp).toBeNull();
+    });
+  });
+
+  test('should prevent config user from disabling TOTP', async () => {
+    // Create TOTP for config user first (bypassing normal flow)
+    const sessionCookie = await createAuthenticatedSession(appWith2FARequired);
+
+    // Get user ID from session
+    const sessionRes = await injectWithSession(
+      appWith2FARequired,
+      {
+        method: 'GET',
+        url: '/api/v1/user/session',
+      },
+      sessionCookie,
+    );
+    const userId = sessionRes.json().user.id;
+
+    // Create TOTP directly in database for config user
+    const secret = appWith2FARequired.totpService.generateSecret();
+    await withMikroContext(appWith2FARequired, async () => {
+      const user = await appWith2FARequired.mikro.user.findOneOrFail({
+        id: userId,
+      });
+      const totp = appWith2FARequired.mikro.userTotp.create({
+        user,
+        secret,
+        verified: true,
+        recovery_confirmed: true,
+      });
+      await appWith2FARequired.mikro.em.persist(totp).flush();
+    });
+
+    const validCode = appWith2FARequired.totpService.generateToken(secret);
+
+    const res = await injectWithSession(
+      appWith2FARequired,
+      {
+        method: 'DELETE',
+        url: '/api/v1/user/totp',
+        payload: {
+          code: validCode,
+        },
+      },
+      sessionCookie,
+    );
+
+    expectError(res, e.SecondFactorNotAllowedForConfigUser);
   });
 });
