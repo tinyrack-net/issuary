@@ -447,6 +447,19 @@ export const r = {
     qr_code: z.string().describe('QR code as data URL'),
   }),
 
+  TotpSetupVerifyResponse: z.object({
+    user: UserSession,
+    recovery_codes: z
+      .array(z.string())
+      .describe('One-time recovery codes (shown only once, store securely)'),
+  }),
+
+  RecoveryCodesResponse: z.object({
+    recovery_codes: z
+      .array(z.string())
+      .describe('One-time recovery codes (shown only once, store securely)'),
+  }),
+
   PasskeySetupVerifyResponse: z.object({
     ok: z.literal(true),
     user: UserSession.optional().describe(

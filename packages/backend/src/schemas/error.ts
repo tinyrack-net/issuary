@@ -430,6 +430,18 @@ export const e = {
     'Second factor authentication session has expired. Please login again.',
   ),
 
+  // TOTP Recovery Code Errors
+  InvalidRecoveryCode: createError(
+    400,
+    'INVALID_RECOVERY_CODE',
+    'The provided recovery code is invalid.',
+  ),
+  NoRecoveryCodesAvailable: createError(
+    400,
+    'NO_RECOVERY_CODES_AVAILABLE',
+    'No recovery codes are available. All codes have been used.',
+  ),
+
   // Passkey Errors
   PasskeyNotEnabled: createError(
     400,

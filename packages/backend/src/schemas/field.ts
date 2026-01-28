@@ -60,6 +60,15 @@ export const f = {
     .regex(/^\d{6}$/, 'TOTP code must be 6 digits')
     .describe('6-digit TOTP code from authenticator app'),
 
+  // TOTP Recovery Code fields
+  recoveryCode: z
+    .string()
+    .regex(
+      /^[a-z0-9]{4}-[a-z0-9]{4}$/,
+      'Recovery code must be in format: xxxx-xxxx',
+    )
+    .describe('One-time recovery code for TOTP (format: xxxx-xxxx)'),
+
   // WebAuthn/Passkey fields
   base64UrlString: z.string().describe('Base64URL-encoded string'),
   passkeyCredentialId: z.string().describe('Passkey credential ID'),
