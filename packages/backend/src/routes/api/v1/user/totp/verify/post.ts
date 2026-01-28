@@ -13,6 +13,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
  * and activates TOTP for the account.
  * Accepts both full user session and pending 2FA setup session.
  * If from pending setup session, converts to full user session.
+ * Returns recovery codes upon successful setup.
  */
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
@@ -22,13 +23,14 @@ export default (fastify: FastifyWithZodInstance) =>
       summary: 'Verify TOTP Setup',
       description:
         'Verify the TOTP code from authenticator app to complete setup. ' +
-        'Must call setup endpoint first to get the QR code.',
+        'Must call setup endpoint first to get the QR code. ' +
+        'Returns one-time recovery codes upon success.',
       tags: [TAGS.USER],
       body: z.object({
         code: f.totpCode,
       }),
       response: {
-        200: r.AuthResponse,
+        200: r.TotpSetupVerifyResponse,
         400: z.union([e.TotpNotSetup.Schema, e.InvalidTotpCode.Schema]),
         401: e.Unauthorized.Schema,
         409: e.TotpAlreadyEnabled.Schema,
@@ -44,7 +46,10 @@ export default (fastify: FastifyWithZodInstance) =>
         throw new e.Unauthorized.Error();
       }
 
-      await fastify.totpService.verifySetup(userId, req.body.code);
+      const recoveryCodes = await fastify.totpService.verifySetup(
+        userId,
+        req.body.code,
+      );
 
       if (pending2FASetup) {
         req.setUserSession(userId);
@@ -56,6 +61,7 @@ export default (fastify: FastifyWithZodInstance) =>
 
       return res.status(200).send({
         user,
+        recovery_codes: recoveryCodes,
       });
     },
   });
