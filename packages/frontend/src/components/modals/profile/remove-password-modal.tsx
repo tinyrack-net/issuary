@@ -70,6 +70,12 @@ export function RemovePasswordModal({
           });
           return;
         }
+        if (err.code === 'CANNOT_REMOVE_PASSWORD_WITH_SECOND_FACTOR_ONLY') {
+          form.setError('root', {
+            message: t('profile.password.removeModal.noOAuthWith2FA'),
+          });
+          return;
+        }
       }
       form.setError('root', {
         message: t('profile.password.removeModal.error'),

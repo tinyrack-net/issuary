@@ -256,6 +256,11 @@ function Profile() {
                   hasPassword={user.has_password}
                   hasLinkedOAuth={hasLinkedOAuth}
                   isConfigManaged={isConfigManaged}
+                  hasSecondFactorOnly={
+                    user.has_password &&
+                    !hasLinkedOAuth &&
+                    (user.totp_registered || user.passkey_count > 0)
+                  }
                   onOpenModal={setPasswordModal}
                 />
               )}
