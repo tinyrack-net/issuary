@@ -5,6 +5,7 @@ import {
   type ResolvedOAuthConfig,
   resolveOAuthConfig,
 } from '@/lib/config/index.js';
+import { isEmailAllowed } from '@/lib/email-pattern.js';
 import { generatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/mikro-orm.js';
 import { e } from '@/schemas/error.js';
@@ -338,6 +339,13 @@ export class OAuthConnectService {
       };
     }
 
+    // Check if the email is allowed for registration
+    if (
+      !isEmailAllowed(userInfo.email, this.config.app.allowed_signup_emails)
+    ) {
+      throw new e.RegistrationEmailNotAllowed.Error();
+    }
+
     // Create new user with OAuth
     const newUser = this.mikro.user.create({
       email: userInfo.email,
@@ -539,6 +547,13 @@ export class OAuthConnectService {
           ),
         },
       };
+    }
+
+    // Check if the email is allowed for registration
+    if (
+      !isEmailAllowed(userInfo.email, this.config.app.allowed_signup_emails)
+    ) {
+      throw new e.RegistrationEmailNotAllowed.Error();
     }
 
     // Create new user with OAuth
