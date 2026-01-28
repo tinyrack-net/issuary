@@ -1,3 +1,4 @@
+import { hash, verify } from 'argon2';
 import fastifyPlugin from 'fastify-plugin';
 import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
 import qrcode from 'qrcode';
@@ -13,6 +14,9 @@ declare module 'fastify' {
     totpService: TotpService;
   }
 }
+
+/** Number of recovery codes to generate */
+const RECOVERY_CODE_COUNT = 8;
 
 export class TotpService {
   public constructor(
@@ -109,9 +113,12 @@ export class TotpService {
   }
 
   /**
-   * Verify and complete TOTP setup
+   * Verify and complete TOTP setup.
+   * Also generates recovery codes upon successful verification.
+   *
+   * @returns Array of plain-text recovery codes (shown only once)
    */
-  public async verifySetup(userId: string, token: string): Promise<void> {
+  public async verifySetup(userId: string, token: string): Promise<string[]> {
     const totp = await this.mikro.userTotp.findByUserId(userId);
     if (!totp) {
       throw new e.TotpNotSetup.Error();
@@ -125,12 +132,24 @@ export class TotpService {
       throw new e.InvalidTotpCode.Error();
     }
 
+    // Flush verified status before generating recovery codes,
+    // because generateRecoveryCodes calls em.clear() which
+    // would discard the pending verified change.
     totp.verified = true;
     await this.mikro.em.flush();
+
+    // Generate recovery codes on TOTP setup completion
+    const user = await this.mikro.user.findOneOrFail({
+      id: userId,
+    });
+    const recoveryCodes = await this.generateRecoveryCodes(user);
+
+    return recoveryCodes;
   }
 
   /**
    * Disable TOTP for a user
+   * Also deletes all recovery codes
    */
   public async disable(userId: string, token: string): Promise<void> {
     const totp = await this.mikro.userTotp.findVerifiedByUserId(userId);
@@ -143,6 +162,7 @@ export class TotpService {
     }
 
     await this.mikro.userTotp.deleteByUserId(userId);
+    await this.mikro.userTotpRecoveryCode.deleteByUserId(userId);
   }
 
   public async verifyForAuth(userId: string, token: string): Promise<void> {
@@ -151,6 +171,88 @@ export class TotpService {
       throw new e.TotpNotEnabled.Error();
     }
     await this.verifyToken(token, totp.secret);
+  }
+
+  /**
+   * Generate a single recovery code in the format xxxx-xxxx
+   * Uses lowercase alphanumeric characters (a-z, 0-9)
+   */
+  public generateRecoveryCodeString(): string {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    const array = new Uint8Array(8);
+    crypto.getRandomValues(array);
+    const code = Array.from(array)
+      .map((byte) => chars[byte % chars.length])
+      .join('');
+    return `${code.slice(0, 4)}-${code.slice(4)}`;
+  }
+
+  /**
+   * Generate recovery codes for a user.
+   * Deletes any existing recovery codes first, then creates new ones.
+   *
+   * @returns Array of plain-text recovery codes (shown only once)
+   */
+  public async generateRecoveryCodes(user: UserEntity): Promise<string[]> {
+    // Delete any existing recovery codes
+    await this.mikro.userTotpRecoveryCode.deleteByUserId(user.id);
+    this.mikro.em.clear();
+
+    // Re-fetch user after clearing identity map
+    const freshUser = await this.mikro.user.findOneOrFail({
+      id: user.id,
+    });
+
+    const plainCodes: string[] = [];
+
+    for (let i = 0; i < RECOVERY_CODE_COUNT; i++) {
+      const code = this.generateRecoveryCodeString();
+      plainCodes.push(code);
+
+      const codeHash = await hash(code);
+      const entity = this.mikro.userTotpRecoveryCode.create({
+        user: freshUser,
+        code_hash: codeHash,
+      });
+      this.mikro.em.persist(entity);
+    }
+
+    await this.mikro.em.flush();
+
+    return plainCodes;
+  }
+
+  /**
+   * Verify a recovery code for authentication.
+   * The code is single-use: once verified, it is marked as used.
+   */
+  public async verifyRecoveryCode(userId: string, code: string): Promise<void> {
+    // Ensure TOTP is actually enabled for this user
+    const totp = await this.mikro.userTotp.findVerifiedByUserId(userId);
+    if (!totp) {
+      throw new e.TotpNotEnabled.Error();
+    }
+
+    const unusedCodes =
+      await this.mikro.userTotpRecoveryCode.findUnusedByUserId(userId);
+
+    if (unusedCodes.length === 0) {
+      throw new e.NoRecoveryCodesAvailable.Error();
+    }
+
+    // Try each unused code (argon2 verify is needed since codes
+    // are hashed)
+    for (const recoveryCode of unusedCodes) {
+      const isMatch = await verify(recoveryCode.code_hash, code);
+      if (isMatch) {
+        recoveryCode.used = true;
+        recoveryCode.used_at = new Date();
+        await this.mikro.em.flush();
+        return;
+      }
+    }
+
+    throw new e.InvalidRecoveryCode.Error();
   }
 }
 
