@@ -26,6 +26,7 @@ export default (fastify: FastifyWithZodInstance) => {
       response: {
         200: r.TotpSetupResponse,
         401: e.Unauthorized.Schema,
+        403: e.SecondFactorNotAllowedForConfigUser.Schema,
         409: e.TotpAlreadyEnabled.Schema,
       },
     },
@@ -42,6 +43,11 @@ export default (fastify: FastifyWithZodInstance) => {
         { id: userId },
         { failHandler: () => new e.UserNotFound.Error() },
       );
+
+      // Config users cannot setup 2FA
+      if (user.managed_by === 'config') {
+        throw new e.SecondFactorNotAllowedForConfigUser.Error();
+      }
 
       const setupData = await fastify.totpService.startSetup(user);
 

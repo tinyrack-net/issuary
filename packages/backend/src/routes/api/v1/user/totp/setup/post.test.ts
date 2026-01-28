@@ -212,8 +212,8 @@ describe('POST /api/v1/user/totp/setup', () => {
     expect(body.qr_code).toBeDefined();
   });
 
-  test('should work for config users (synced to DB)', async () => {
-    // Config users are now synced to DB, so TOTP setup should work
+  test('should return 403 for config users', async () => {
+    // Config users cannot setup 2FA
     const sessionCookie = await createAuthenticatedSession(app);
 
     const res = await injectWithSession(
@@ -225,12 +225,8 @@ describe('POST /api/v1/user/totp/setup', () => {
       sessionCookie,
     );
 
-    // Should return 200 since config users are synced to DB
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
-    expect(body.secret).toBeDefined();
-    expect(body.otpauth_url).toBeDefined();
-    expect(body.qr_code).toBeDefined();
+    // Config users cannot setup 2FA
+    expectError(res, e.SecondFactorNotAllowedForConfigUser);
   });
 
   test('should generate valid OTP auth URL that works with authenticator', async () => {
