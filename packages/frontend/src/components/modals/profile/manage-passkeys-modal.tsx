@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import z from 'zod/v4';
 import { AlertBanner } from '@/components/ui/alert-banner.js';
 import { Modal, ModalActions } from '@/components/ui/modal.js';
+import { ApiError } from '@/libs/error.js';
 import { queryKeys } from '@/queries/keys';
 import {
   deletePasskeyMutationOptions,
@@ -85,7 +86,15 @@ export function ManagePasskeysModal({
     setConfirmingDeleteId(null);
     try {
       await deleteMutation.mutateAsync({ id: passkey.id });
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.code === 'CANNOT_REMOVE_LAST_SECOND_FACTOR') {
+          setDeleteError(
+            t('profile.passkey.manageModal.cannotRemoveLastSecondFactor'),
+          );
+          return;
+        }
+      }
       setDeleteError(t('profile.passkey.manageModal.deleteError'));
     }
   };

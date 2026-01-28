@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import z from 'zod/v4';
 import { AlertBanner } from '@/components/ui/alert-banner.js';
 import { Modal, ModalActions } from '@/components/ui/modal.js';
+import { ApiError } from '@/libs/error.js';
 import { getSessionQueryOptions } from '@/queries/session.js';
 import { disableTotpMutationOptions } from '@/queries/totp.js';
 
@@ -53,7 +54,17 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
   const handleSubmit = form.handleSubmit(async (data) => {
     try {
       await mutation.mutateAsync({ code: data.code });
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.code === 'CANNOT_REMOVE_LAST_SECOND_FACTOR') {
+          form.setError('code', {
+            message: t(
+              'profile.totp.disableModal.cannotRemoveLastSecondFactor',
+            ),
+          });
+          return;
+        }
+      }
       form.setError('code', {
         message: t('profile.totp.disableModal.error'),
       });
