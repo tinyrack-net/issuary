@@ -1,4 +1,4 @@
-export type TotpSetupStep = 'loading' | 'qr' | 'verify' | 'error';
+export type TotpSetupStep = 'loading' | 'qr' | 'verify' | 'recovery' | 'error';
 
 export interface TotpSetupData {
   qr_code: string;

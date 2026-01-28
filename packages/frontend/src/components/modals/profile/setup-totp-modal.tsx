@@ -2,6 +2,7 @@ import { ShieldCheckIcon } from '@phosphor-icons/react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { QrStep } from '@/components/totp/qr-step.js';
+import { RecoveryCodesStep } from '@/components/totp/recovery-codes-step.js';
 import { useTotpSetup } from '@/components/totp/use-totp-setup.js';
 import { VerifyStep } from '@/components/totp/verify-step.js';
 import { AlertBanner } from '@/components/ui/alert-banner.js';
@@ -32,6 +33,7 @@ export function SetupTotpModal({
   const {
     step,
     setupData,
+    recoveryCodes,
     isSetupPending,
     isVerifyPending,
     startSetup,
@@ -41,7 +43,7 @@ export function SetupTotpModal({
     reset,
   } = useTotpSetup({
     autoStart: false,
-    onVerifySuccess: () => {
+    onRecoveryConfirm: () => {
       handleClose();
     },
   });
@@ -65,11 +67,16 @@ export function SetupTotpModal({
     [verify],
   );
 
+  const modalTitle =
+    step === 'recovery'
+      ? t('setupTotp.recoveryCodes.title')
+      : t('profile.totp.setupModal.title');
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title={t('profile.totp.setupModal.title')}
+      title={modalTitle}
       description={
         isRequired
           ? t('profile.totp.setupModal.requiredDescription')
@@ -77,7 +84,7 @@ export function SetupTotpModal({
       }
       icon={ShieldCheckIcon}
       size="sm"
-      preventClose={isRequired}
+      preventClose={isRequired || step === 'recovery'}
     >
       {isSetupPending && (
         <div className="flex justify-center py-6">
@@ -144,6 +151,15 @@ export function SetupTotpModal({
             onSubmit={handleVerify}
             onBack={goToQr}
             isPending={isVerifyPending}
+          />
+        </div>
+      )}
+
+      {step === 'recovery' && recoveryCodes.length > 0 && (
+        <div className="mt-4">
+          <RecoveryCodesStep
+            recoveryCodes={recoveryCodes}
+            onConfirm={handleClose}
           />
         </div>
       )}

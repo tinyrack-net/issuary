@@ -14,12 +14,14 @@ export interface UseTotpSetupOptions {
   onSetupError?: (error: Error) => void;
   onVerifySuccess?: (data: TotpSetupVerifyResponse) => void;
   onVerifyError?: (error: Error) => void;
+  onRecoveryConfirm?: () => void;
   autoStart?: boolean;
 }
 
 export interface UseTotpSetupReturn {
   step: TotpSetupStep;
   setupData: TotpSetupResponse | null;
+  recoveryCodes: string[];
   isSetupPending: boolean;
   isVerifyPending: boolean;
   isPending: boolean;
@@ -29,6 +31,7 @@ export interface UseTotpSetupReturn {
   verify: (code: string) => Promise<TotpSetupVerifyResponse>;
   goToQr: () => void;
   goToVerify: () => void;
+  confirmRecoveryCodes: () => void;
   reset: () => void;
 }
 
@@ -40,12 +43,14 @@ export function useTotpSetup(
     onSetupError,
     onVerifySuccess,
     onVerifyError,
+    onRecoveryConfirm,
     autoStart = false,
   } = options;
 
   const queryClient = useQueryClient();
   const [step, setStep] = useState<TotpSetupStep>(autoStart ? 'loading' : 'qr');
   const [setupData, setSetupData] = useState<TotpSetupResponse | null>(null);
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const setupInitiatedRef = useRef(false);
 
   const setupMutation = useMutation({
@@ -67,6 +72,8 @@ export function useTotpSetup(
       queryClient.invalidateQueries({
         queryKey: getSessionQueryOptions.queryKey,
       });
+      setRecoveryCodes(data.recovery_codes);
+      setStep('recovery');
       onVerifySuccess?.(data);
     },
     onError: (error) => {
@@ -95,9 +102,14 @@ export function useTotpSetup(
     setStep('verify');
   }, []);
 
+  const confirmRecoveryCodes = useCallback(() => {
+    onRecoveryConfirm?.();
+  }, [onRecoveryConfirm]);
+
   const reset = useCallback(() => {
     setStep(autoStart ? 'loading' : 'qr');
     setSetupData(null);
+    setRecoveryCodes([]);
     setupInitiatedRef.current = false;
     setupMutation.reset();
     verifyMutation.reset();
@@ -114,6 +126,7 @@ export function useTotpSetup(
   return {
     step,
     setupData,
+    recoveryCodes,
     isSetupPending: setupMutation.isPending,
     isVerifyPending: verifyMutation.isPending,
     isPending: setupMutation.isPending || verifyMutation.isPending,
@@ -123,6 +136,7 @@ export function useTotpSetup(
     verify,
     goToQr,
     goToVerify,
+    confirmRecoveryCodes,
     reset,
   };
 }
