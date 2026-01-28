@@ -170,11 +170,24 @@ function Register() {
         navigate({ to: '/profile' });
       }
     },
-    onError: () => {
-      setError('email', {
-        type: 'manual',
-        message: t('register.error.emailExists'),
-      });
+    onError: (error) => {
+      const apiError = error as { code?: string };
+      if (apiError.code === 'REGISTRATION_EMAIL_NOT_ALLOWED') {
+        setError('email', {
+          type: 'manual',
+          message: t('register.error.emailNotAllowed'),
+        });
+      } else if (apiError.code === 'REGISTRATION_DISABLED') {
+        setError('email', {
+          type: 'manual',
+          message: t('register.error.registrationDisabled'),
+        });
+      } else {
+        setError('email', {
+          type: 'manual',
+          message: t('register.error.emailExists'),
+        });
+      }
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({
@@ -251,7 +264,6 @@ function Register() {
               <div className={'text-center text-base-content/60 text-xs'}>
                 <div
                   className="prose prose-sm text-xs! **:text-xs!"
-                  // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
                   dangerouslySetInnerHTML={{
                     __html: implicitNotice,
                   }}
