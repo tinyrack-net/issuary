@@ -1,9 +1,10 @@
+import z from 'zod/v4';
+import { isEmailAllowed } from '@/lib/email-pattern.js';
 import { TAGS } from '@/lib/swagger-tags.js';
-import { e } from '@/schemas/error.js';
+import { ApiError, e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
-import z from 'zod/v4';
 
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
@@ -31,7 +32,10 @@ export default (fastify: FastifyWithZodInstance) =>
           e.OAuthSessionExpired.Schema,
           e.OAuthInvalidRequest.Schema,
         ]),
-        403: e.OAuthEmailNotVerified.Schema,
+        403: z.union([
+          e.OAuthEmailNotVerified.Schema,
+          e.RegistrationEmailNotAllowed.Schema,
+        ]),
         404: e.OAuthProviderNotFound.Schema,
         409: z.union([
           e.OAuthEmailConflict.Schema,
@@ -130,6 +134,24 @@ export default (fastify: FastifyWithZodInstance) =>
         userInfo,
       );
 
+      // For new users, check email allowlist before proceeding
+      if (isNewUser) {
+        const { allowed_signup_emails } = fastify.config.app;
+        if (!isEmailAllowed(userInfo.email, allowed_signup_emails)) {
+          // Redirect to login page with error
+          const errorUrl = new URL('/login', fastify.config.app.host);
+          errorUrl.searchParams.set(
+            'oauth_error',
+            'registration_email_not_allowed',
+          );
+          if (oauthSession.returnUrl) {
+            errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
+          }
+          req.session.set('oauth', undefined);
+          return res.redirect(errorUrl.toString());
+        }
+      }
+
       // Load terms once and reuse for both new-user and
       // existing-user checks
       const allTerms = await fastify.termsService.getGlobalTerms();
@@ -172,46 +194,65 @@ export default (fastify: FastifyWithZodInstance) =>
 
       // Login/Register mode: authenticate with OAuth
       // This handles: existing users, new users without explicit terms
-      const result = await fastify.oauthConnectService.authenticateWithOAuth(
-        provider,
-        tokens,
-        userInfo,
-      );
-
-      // Set user session
-      req.setUserSession(result.user.id);
-
-      // Clear OAuth session
-      req.session.set('oauth', undefined);
-
-      // Check if existing user needs to see terms page for pending required terms
-      if (!result.isNewUser && explicitTerms.length > 0) {
-        const pendingTerms = await fastify.termsService.getPendingRequiredTerms(
-          result.user.id,
-        );
-        const explicitTermIds = new Set(explicitTerms.map((t) => t.id));
-        const shouldRedirectToTerms = pendingTerms.some((id) =>
-          explicitTermIds.has(id),
+      try {
+        const result = await fastify.oauthConnectService.authenticateWithOAuth(
+          provider,
+          tokens,
+          userInfo,
         );
 
-        if (shouldRedirectToTerms) {
-          const termsUrl = new URL(
-            '/terms',
-            `${req.protocol}://${req.headers.host}`,
+        // Set user session
+        req.setUserSession(result.user.id);
+
+        // Clear OAuth session
+        req.session.set('oauth', undefined);
+
+        // Check if existing user needs to see terms page for pending required terms
+        if (!result.isNewUser && explicitTerms.length > 0) {
+          const pendingTerms =
+            await fastify.termsService.getPendingRequiredTerms(result.user.id);
+          const explicitTermIds = new Set(explicitTerms.map((t) => t.id));
+          const shouldRedirectToTerms = pendingTerms.some((id) =>
+            explicitTermIds.has(id),
+          );
+
+          if (shouldRedirectToTerms) {
+            const termsUrl = new URL(
+              '/terms',
+              `${req.protocol}://${req.headers.host}`,
+            );
+            if (oauthSession.returnUrl) {
+              termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
+            }
+            return res.redirect(termsUrl.toString());
+          }
+        }
+
+        // If return URL is provided, redirect
+        if (oauthSession.returnUrl) {
+          return res.redirect(oauthSession.returnUrl);
+        }
+
+        // Default: redirect to profile page
+        return res.redirect('/profile');
+      } catch (err) {
+        // Catch RegistrationEmailNotAllowed and redirect to login
+        if (
+          err instanceof ApiError &&
+          err.code === 'REGISTRATION_EMAIL_NOT_ALLOWED'
+        ) {
+          const errorUrl = new URL('/login', fastify.config.app.host);
+          errorUrl.searchParams.set(
+            'oauth_error',
+            'registration_email_not_allowed',
           );
           if (oauthSession.returnUrl) {
-            termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
+            errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
           }
-          return res.redirect(termsUrl.toString());
+          req.session.set('oauth', undefined);
+          return res.redirect(errorUrl.toString());
         }
+        throw err;
       }
-
-      // If return URL is provided, redirect
-      if (oauthSession.returnUrl) {
-        return res.redirect(oauthSession.returnUrl);
-      }
-
-      // Default: redirect to profile page
-      return res.redirect('/profile');
     },
   });
