@@ -5,8 +5,8 @@ app:
   jwt_access_token_ttl: 3600
   jwt_refresh_token_ttl: 2592000
   allowed_signup_emails:
-    - '*' # Allow all emails (equivalent to public_registration: true)
-    # - 'me@winetree94.com'    # Allow specific email
+    # - '*' # Allow all emails (equivalent to public_registration: true)
+    - "me@winetree94.com" # Allow specific email
     # - '*@winetree94.com'     # Allow all emails at domain
     # - '*@vivident.xyz'       # Allow all emails at domain
 
@@ -164,7 +164,7 @@ basic_authentication_methods:
     second_factor:
       required: true
     totp:
-      enabled: false
+      enabled: true
       issuer: tinyrack
   passkey:
     enabled: true
