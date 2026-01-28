@@ -15,6 +15,7 @@ import { UserOAuthEntity } from '@/entities/user-oauth.entity.js';
 import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
 import { UserTermsConsentEntity } from '@/entities/user-terms-consent.entity.js';
 import { UserTotpEntity } from '@/entities/user-totp.entity.js';
+import { UserTotpRecoveryCodeEntity } from '@/entities/user-totp-recovery-code.entity.js';
 import { env } from '@/lib/env.js';
 import type { EmailVerificationRepository } from '@/repositories/email-verification.repository.js';
 import type { JwtKeyRepository } from '@/repositories/jwt-key.repository.js';
@@ -30,6 +31,7 @@ import type { UserOAuthRepository } from '@/repositories/user-oauth.repository.j
 import type { UserPasskeyRepository } from '@/repositories/user-passkey.repository.js';
 import type { UserTermsConsentRepository } from '@/repositories/user-terms-consent.repository.js';
 import type { UserTotpRepository } from '@/repositories/user-totp.repository.js';
+import type { UserTotpRecoveryCodeRepository } from '@/repositories/user-totp-recovery-code.repository.js';
 
 export interface MikroService {
   orm: MikroORM;
@@ -45,6 +47,7 @@ export interface MikroService {
   userConsent: UserConsentRepository;
   userTermsConsent: UserTermsConsentRepository;
   userTotp: UserTotpRepository;
+  userTotpRecoveryCode: UserTotpRecoveryCodeRepository;
   userPasskey: UserPasskeyRepository;
   terms: TermsRepository;
   termsContent: TermsContentRepository;
@@ -95,6 +98,7 @@ export default fastifyPlugin(
       userConsent: orm.em.getRepository(UserConsentEntity),
       userTermsConsent: orm.em.getRepository(UserTermsConsentEntity),
       userTotp: orm.em.getRepository(UserTotpEntity),
+      userTotpRecoveryCode: orm.em.getRepository(UserTotpRecoveryCodeEntity),
       userPasskey: orm.em.getRepository(UserPasskeyEntity),
       terms: orm.em.getRepository(TermsEntity),
       termsContent: orm.em.getRepository(TermsContentEntity),

@@ -18,6 +18,7 @@ import { BaseEntity } from './base.entity.js';
 import { UserOAuthEntity } from './user-oauth.entity.js';
 import { UserPasskeyEntity } from './user-passkey.entity.js';
 import { UserTotpEntity } from './user-totp.entity.js';
+import { UserTotpRecoveryCodeEntity } from './user-totp-recovery-code.entity.js';
 
 @Entity({
   tableName: 'user',
@@ -156,4 +157,10 @@ export class UserEntity extends BaseEntity {
     (totp) => totp.user,
   )
   public totps = new Collection<UserTotpEntity>(this);
+
+  @OneToMany(
+    () => UserTotpRecoveryCodeEntity,
+    (recoveryCode) => recoveryCode.user,
+  )
+  public totpRecoveryCodes = new Collection<UserTotpRecoveryCodeEntity>(this);
 }
