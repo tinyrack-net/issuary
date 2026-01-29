@@ -32,3 +32,10 @@ tsconfig.tsbuildinfo
 *.db
 *.sqlite
 *.sqlite3
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+.aider*
