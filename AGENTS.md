@@ -19,7 +19,10 @@ This project is an **OpenID Connect (OIDC) Provider** implementation that provid
 This is a monorepo with the following packages:
 - `packages/backend` - Fastify-based OAuth2/OIDC authentication server
 - `packages/frontend` - React frontend using TanStack Router and Daisy UI
-- `packages/next-basic` - Next.js test client
+
+Example applications for testing OIDC flows:
+- `examples/next-basic` - Next.js OIDC test client (server-side token handling)
+- `examples/react-spa` - React SPA OIDC test client (client-side PKCE flow)
 
 ### Backend Directory Structure
 ```

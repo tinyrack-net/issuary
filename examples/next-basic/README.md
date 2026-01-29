@@ -138,7 +138,7 @@ pnpm start
 
 2. **Start Test Client**
    ```bash
-   cd packages/next-basic
+   cd examples/next-basic
    pnpm dev
    ```
    
