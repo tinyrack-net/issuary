@@ -6,7 +6,7 @@ import {
   type ThemeMode,
 } from '@/queries/config.js';
 
-const THEME_MODE_STORAGE_KEY = 'tinyrack-auth-theme-mode';
+const THEME_MODE_STORAGE_KEY = 'tinyauth-theme-mode';
 
 /**
  * Get the system's preferred color scheme
@@ -53,7 +53,7 @@ function resolveTheme(
 }
 
 // Custom event for theme mode changes
-const THEME_MODE_CHANGE_EVENT = 'tinyrack-theme-mode-change';
+const THEME_MODE_CHANGE_EVENT = 'tinyauth-theme-mode-change';
 
 function subscribeToThemeModeChanges(callback: () => void): () => void {
   window.addEventListener(THEME_MODE_CHANGE_EVENT, callback);

@@ -1,5 +1,5 @@
 {
-  "name": "@tinyrack-auth/base",
+  "name": "@tinyauth/base",
   "version": "1.0.0",
   "scripts": {
     "dev": "pnpm -r dev",

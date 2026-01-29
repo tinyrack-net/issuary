@@ -1,6 +1,6 @@
 # Agent Development Guide
 
-This document provides guidelines for AI coding agents working in the tinyrack/auth repository.
+This document provides guidelines for AI coding agents working in the tinyauth repository.
 
 ## Project Overview
 

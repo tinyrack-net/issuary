@@ -1,5 +1,5 @@
 {
-  "name": "@tinyrack-auth/example-next-basic",
+  "name": "@tinyauth/example-next-basic",
   "version": "0.1.0",
   "private": true,
   "scripts": {
