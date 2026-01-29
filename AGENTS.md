@@ -45,20 +45,12 @@ packages/backend/src/
 ### Frontend Directory Structure
 ```
 packages/frontend/src/
-├── components/            # React components (auth, modals/profile, profile, skeletons, ui)
+├── components/            # React components (auth, modals/profile, profile, terms, totp, ui)
 ├── hooks/                 # Custom React hooks
 ├── queries/               # TanStack Query options
 ├── routes/                # TanStack Router file-based routes
 ├── i18n/                  # Internationalization
 └── libs/                  # Utility libraries
-```
-
-### Frontend E2E Tests Structure
-```
-packages/frontend/e2e/
-├── fixtures/              # Test constants
-├── utils/                 # Test helper functions
-└── tests/                 # Playwright E2E tests (auth, oauth, profile)
 ```
 
 ## Build, Lint, and Test Commands
@@ -67,12 +59,12 @@ packages/frontend/e2e/
 ```bash
 pnpm dev        # Start all packages in dev mode
 pnpm build      # Build all packages
+pnpm test       # Run all tests
 ```
 
 ### Backend (packages/backend)
 ```bash
 pnpm dev        # Development mode with hot reload
-pnpm dev:test   # Dev mode with test environment
 pnpm build      # Compile TypeScript
 pnpm test       # Run all tests with Vitest
 pnpm start      # Start production server
@@ -193,15 +185,6 @@ Services are Fastify plugins that encapsulate business logic:
 #### HTTP Client (etch)
 - Use `etch()` wrapper from `libs/etch.ts` for all HTTP requests
 - Centralized error handling and JSON headers
-
-#### Frontend Testing with Playwright
-- Start dev server: `pnpm dev`
-- Use MCP tools: `playwright_browser_navigate`, `playwright_browser_snapshot`, `playwright_browser_click`, `playwright_browser_fill_form`
-
-#### E2E Testing with Playwright
-- Tests in `packages/frontend/e2e/tests/`
-- Run: `pnpm test:e2e` (headless), `pnpm test:e2e:ui` (interactive)
-- Prerequisites: Both dev servers running (`pnpm dev`)
 
 ### Error Handling
 - Centralized error definitions in `schemas/error.ts` using `createError` function
