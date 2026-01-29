@@ -1,9 +1,9 @@
 ---
 title: 설치
-description: Tinyrack Auth를 설치하고 설정하는 방법
+description: Tinyauth를 설치하고 설정하는 방법
 ---
 
-이 가이드는 개발 또는 프로덕션 용도로 Tinyrack Auth를 설정하는 방법을 안내합니다.
+이 가이드는 개발 또는 프로덕션 용도로 Tinyauth를 설정하는 방법을 안내합니다.
 
 ## 사전 요구 사항
 
@@ -89,7 +89,7 @@ ADMIN_PASSWORD=your-secure-admin-password
 
 ## 데이터베이스 옵션
 
-Tinyrack Auth는 여러 데이터베이스 백엔드를 지원합니다:
+Tinyauth는 여러 데이터베이스 백엔드를 지원합니다:
 
 ### SQLite (기본값)
 
@@ -108,7 +108,7 @@ database:
   port: 5432
   user: postgres
   password: !env DB_PASSWORD
-  database: tinyrack_auth
+  database: tinyauth
 ```
 
 ### 인메모리 (테스트용)

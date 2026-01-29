@@ -1,9 +1,9 @@
 ---
 title: 환경 변수
-description: Tinyrack Auth 환경 변수 참조
+description: Tinyauth 환경 변수 참조
 ---
 
-Tinyrack Auth는 민감한 설정 값에 환경 변수를 사용합니다. 이 페이지에서는 지원되는 모든 환경 변수와 사용 방법을 설명합니다.
+Tinyauth는 민감한 설정 값에 환경 변수를 사용합니다. 이 페이지에서는 지원되는 모든 환경 변수와 사용 방법을 설명합니다.
 
 ## 설정에서 환경 변수 사용
 
@@ -27,7 +27,7 @@ smtp:
 | `CONFIG_PATH` | `/opt/config.yaml` | 설정 파일 경로 |
 
 ```bash
-CONFIG_PATH=/etc/tinyrack/config.yaml pnpm start
+CONFIG_PATH=/etc/tinyauth/config.yaml pnpm start
 ```
 
 ## 필수 변수
@@ -130,7 +130,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USER=auth_user
 DB_PASSWORD=your-db-password
-DB_NAME=tinyrack_auth
+DB_NAME=tinyauth
 
 # SMTP
 SMTP_PASSWORD=your-smtp-password
@@ -161,13 +161,13 @@ docker run -d \
   -e COOKIE_SECRET=your-secret \
   -e DB_PASSWORD=your-db-password \
   -e SMTP_PASSWORD=your-smtp-password \
-  tinyrack/auth
+  tinyauth
 ```
 
 또는 env 파일 사용:
 
 ```bash
-docker run -d --env-file .env tinyrack/auth
+docker run -d --env-file .env tinyauth
 ```
 
 ## Docker Compose
@@ -177,13 +177,13 @@ version: '3.8'
 
 services:
   auth:
-    image: tinyrack/auth
+    image: tinyauth
     environment:
       - COOKIE_SECRET=${COOKIE_SECRET}
       - DB_HOST=postgres
       - DB_USER=auth_user
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=tinyrack_auth
+      - DB_NAME=tinyauth
       - SMTP_PASSWORD=${SMTP_PASSWORD}
 ```
 
@@ -192,7 +192,7 @@ services:
 Kubernetes 시크릿 생성:
 
 ```bash
-kubectl create secret generic tinyrack-auth-secrets \
+kubectl create secret generic tinyauth-secrets \
   --from-literal=COOKIE_SECRET=your-secret \
   --from-literal=DB_PASSWORD=your-db-password \
   --from-literal=SMTP_PASSWORD=your-smtp-password
@@ -210,7 +210,7 @@ spec:
         - name: auth
           envFrom:
             - secretRef:
-                name: tinyrack-auth-secrets
+                name: tinyauth-secrets
 ```
 
 ## 보안 모범 사례

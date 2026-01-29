@@ -1,15 +1,15 @@
 ---
 title: 소개
-description: Tinyrack Auth가 무엇이며 인증 구현에 어떻게 도움이 되는지 알아봅니다
+description: Tinyauth가 무엇이며 인증 구현에 어떻게 도움이 되는지 알아봅니다
 ---
 
-Tinyrack Auth는 OAuth2 및 OIDC 인증 서비스를 제공하는 경량 **OpenID Connect (OIDC) 프로바이더** 구현체입니다. 클라이언트 애플리케이션이 표준 OIDC 플로우를 통해 사용자를 인증하고 신원 정보를 얻을 수 있도록 하는 아이덴티티 프로바이더(IdP) 역할을 합니다.
+Tinyauth는 OAuth2 및 OIDC 인증 서비스를 제공하는 경량 **OpenID Connect (OIDC) 프로바이더** 구현체입니다. 클라이언트 애플리케이션이 표준 OIDC 플로우를 통해 사용자를 인증하고 신원 정보를 얻을 수 있도록 하는 아이덴티티 프로바이더(IdP) 역할을 합니다.
 
 ## OIDC 프로바이더란?
 
 OpenID Connect 프로바이더(아이덴티티 프로바이더 또는 IdP라고도 함)는 사용자를 인증하고 클라이언트 애플리케이션에 신원 정보를 제공하는 서비스입니다. "Google로 로그인" 또는 "GitHub로 로그인" 버튼을 보셨다면, 이러한 서비스들이 OIDC 프로바이더로 작동하는 것입니다.
 
-Tinyrack Auth를 사용하면 자체 OIDC 프로바이더를 운영하여 표준 프로토콜과의 호환성을 유지하면서 사용자 인증을 완전히 제어할 수 있습니다.
+Tinyauth를 사용하면 자체 OIDC 프로바이더를 운영하여 표준 프로토콜과의 호환성을 유지하면서 사용자 인증을 완전히 제어할 수 있습니다.
 
 ## 주요 기능
 
@@ -37,14 +37,14 @@ Tinyrack Auth를 사용하면 자체 OIDC 프로바이더를 운영하여 표준
 
 ## 아키텍처
 
-Tinyrack Auth는 다음 패키지를 포함한 모노레포로 구축되었습니다:
+Tinyauth는 다음 패키지를 포함한 모노레포로 구축되었습니다:
 
 | 패키지 | 설명 |
 |--------|------|
-| `@tinyrack-auth/backend` | Fastify 기반 OAuth2/OIDC 인증 서버 |
-| `@tinyrack-auth/frontend` | TanStack Router와 DaisyUI를 사용한 React 프론트엔드 |
-| `@tinyrack-auth/homepage` | 문서 사이트 (현재 보고 계신 페이지) |
+| `@tinyauth/backend` | Fastify 기반 OAuth2/OIDC 인증 서버 |
+| `@tinyauth/frontend` | TanStack Router와 DaisyUI를 사용한 React 프론트엔드 |
+| `@tinyauth/homepage` | 문서 사이트 (현재 보고 계신 페이지) |
 
 ## 다음 단계
 
-시작할 준비가 되셨나요? [설치 가이드](/ko/getting-started/installation/)로 이동하여 프로젝트에 Tinyrack Auth를 설정하세요.
+시작할 준비가 되셨나요? [설치 가이드](/ko/getting-started/installation/)로 이동하여 프로젝트에 Tinyauth를 설정하세요.

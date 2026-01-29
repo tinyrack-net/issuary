@@ -1,9 +1,9 @@
 ---
 title: Next.js 연동
-description: Next.js 애플리케이션과 Tinyrack Auth 연동하기
+description: Next.js 애플리케이션과 Tinyauth 연동하기
 ---
 
-이 가이드에서는 서버 측 인증을 사용하여 Next.js 애플리케이션과 Tinyrack Auth를 연동하는 방법을 보여줍니다.
+이 가이드에서는 서버 측 인증을 사용하여 Next.js 애플리케이션과 Tinyauth를 연동하는 방법을 보여줍니다.
 
 ## 개요
 
@@ -23,7 +23,7 @@ npm install jose
 
 ### 2. OAuth 클라이언트 구성
 
-Tinyrack Auth `config.yaml`에서:
+Tinyauth `config.yaml`에서:
 
 ```yaml
 providers:
@@ -336,8 +336,8 @@ import NextAuth from 'next-auth';
 const handler = NextAuth({
   providers: [
     {
-      id: 'tinyrack',
-      name: 'Tinyrack Auth',
+      id: 'tinyauth',
+      name: 'Tinyauth',
       type: 'oauth',
       wellKnown: `${process.env.AUTH_URL}/.well-known/openid-configuration`,
       clientId: process.env.AUTH_CLIENT_ID,
@@ -360,4 +360,4 @@ export { handler as GET, handler as POST };
 
 ## 예제 저장소
 
-Tinyrack Auth 저장소의 `examples/next-basic`에서 전체 예제를 확인하세요.
+Tinyauth 저장소의 `examples/next-basic`에서 전체 예제를 확인하세요.

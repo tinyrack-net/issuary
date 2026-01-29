@@ -1,9 +1,9 @@
 ---
 title: 데이터베이스 설정
-description: Tinyrack Auth의 데이터베이스 백엔드 구성하기
+description: Tinyauth의 데이터베이스 백엔드 구성하기
 ---
 
-Tinyrack Auth는 여러 데이터베이스 백엔드를 지원합니다. 배포 요구 사항에 맞는 것을 선택하세요.
+Tinyauth는 여러 데이터베이스 백엔드를 지원합니다. 배포 요구 사항에 맞는 것을 선택하세요.
 
 ## 지원되는 데이터베이스
 
@@ -38,7 +38,7 @@ database:
 # 프로덕션 예제
 database:
   type: sqlite
-  path: /var/lib/tinyrack-auth/auth.db
+  path: /var/lib/tinyauth/auth.db
 ```
 
 ## PostgreSQL 설정
@@ -52,7 +52,7 @@ database:
   port: 5432
   user: auth_user
   password: !env DB_PASSWORD
-  name: tinyrack_auth
+  name: tinyauth
 ```
 
 | 필드 | 타입 | 기본값 | 설명 |
@@ -70,7 +70,7 @@ database:
 
 ```sql
 CREATE USER auth_user WITH PASSWORD 'your-secure-password';
-CREATE DATABASE tinyrack_auth OWNER auth_user;
+CREATE DATABASE tinyauth OWNER auth_user;
 ```
 
 2. `config.yaml` 구성:
@@ -82,7 +82,7 @@ database:
   port: 5432
   user: auth_user
   password: !env DB_PASSWORD
-  name: tinyrack_auth
+  name: tinyauth
 ```
 
 3. 환경 변수 설정:
@@ -96,7 +96,7 @@ export DB_PASSWORD=your-secure-password
 설정은 내부적으로 연결 문자열로 변환됩니다:
 
 ```
-postgresql://auth_user:password@localhost:5432/tinyrack_auth
+postgresql://auth_user:password@localhost:5432/tinyauth
 ```
 
 ## 인메모리 데이터베이스
@@ -127,7 +127,7 @@ basic_authentication_methods:
 
 ## 데이터베이스 마이그레이션
 
-Tinyrack Auth는 시작 시 자동으로 데이터베이스 스키마 마이그레이션을 관리합니다. 수동 마이그레이션 명령이 필요하지 않습니다.
+Tinyauth는 시작 시 자동으로 데이터베이스 스키마 마이그레이션을 관리합니다. 수동 마이그레이션 명령이 필요하지 않습니다.
 
 ### 마이그레이션 동작
 
@@ -171,12 +171,12 @@ version: '3.8'
 
 services:
   auth:
-    image: tinyrack/auth
+    image: tinyauth
     environment:
       - DB_HOST=postgres
       - DB_USER=auth_user
       - DB_PASSWORD=secret
-      - DB_NAME=tinyrack_auth
+      - DB_NAME=tinyauth
     depends_on:
       - postgres
 
@@ -185,7 +185,7 @@ services:
     environment:
       - POSTGRES_USER=auth_user
       - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=tinyrack_auth
+      - POSTGRES_DB=tinyauth
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
