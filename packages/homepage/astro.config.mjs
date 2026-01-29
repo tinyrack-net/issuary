@@ -38,6 +38,34 @@ export default defineConfig({
           items: [
             { slug: 'getting-started/introduction' },
             { slug: 'getting-started/installation' },
+            { slug: 'getting-started/quick-start' },
+          ],
+        },
+        {
+          label: 'Configuration',
+          translations: {
+            ko: '설정',
+            ja: '設定',
+          },
+          items: [
+            { slug: 'configuration/overview' },
+            { slug: 'configuration/app' },
+            { slug: 'configuration/database' },
+            { slug: 'configuration/smtp' },
+            { slug: 'configuration/environment-variables' },
+          ],
+        },
+        {
+          label: 'Authentication',
+          translations: {
+            ko: '인증',
+            ja: '認証',
+          },
+          items: [
+            { slug: 'authentication/password' },
+            { slug: 'authentication/passkey' },
+            { slug: 'authentication/totp' },
+            { slug: 'authentication/email-verification' },
           ],
         },
         {
@@ -47,6 +75,17 @@ export default defineConfig({
             ja: 'ガイド',
           },
           autogenerate: { directory: 'guides' },
+        },
+        {
+          label: 'Integration',
+          translations: {
+            ko: '연동',
+            ja: '連携',
+          },
+          items: [
+            { slug: 'integration/nextjs' },
+            { slug: 'integration/react-spa' },
+          ],
         },
         {
           label: 'Reference',
