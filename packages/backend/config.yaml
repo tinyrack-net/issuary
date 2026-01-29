@@ -165,7 +165,7 @@ basic_authentication_methods:
       required: true
     totp:
       enabled: true
-      issuer: tinyrack
+      issuer: tinyauth
   passkey:
     enabled: true
     # WebAuthn Relying Party ID (domain only, no protocol/port)
