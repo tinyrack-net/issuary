@@ -2,7 +2,7 @@
   "name": "@tinyauth/base",
   "version": "1.0.0",
   "scripts": {
-    "dev": "pnpm -r dev",
+    "dev": "pnpm -r --parallel dev",
     "test": "pnpm -r test",
     "build": "pnpm -r build"
   },
