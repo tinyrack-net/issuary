@@ -1,0 +1,275 @@
+---
+title: 토큰 관리
+description: Tinyrack Auth에서 OAuth 토큰 이해 및 관리하기
+---
+
+Tinyrack Auth는 세 가지 유형의 토큰을 발급합니다: ID 토큰, 액세스 토큰, 리프레시 토큰. 이 가이드에서는 이러한 토큰을 사용하고 관리하는 방법을 설명합니다.
+
+## 토큰 유형
+
+| 토큰 | 목적 | 수명 | 형식 |
+|------|------|------|------|
+| ID 토큰 | 사용자 신원 정보 | 1시간 | JWT |
+| 액세스 토큰 | API 인증 | 1시간 | JWT |
+| 리프레시 토큰 | 새 액세스 토큰 획득 | 30일 | 불투명 |
+
+## 토큰 수명
+
+`config.yaml`에서 토큰 수명을 구성합니다:
+
+```yaml
+app:
+  jwt_access_token_ttl: 3600      # 1시간 (초)
+  jwt_refresh_token_ttl: 2592000  # 30일 (초)
+```
+
+## ID 토큰
+
+ID 토큰에는 인증된 사용자에 대한 신원 클레임이 포함됩니다.
+
+### 클레임
+
+| 클레임 | 설명 |
+|--------|------|
+| `sub` | 사용자 식별자 (UUID) |
+| `email` | 사용자의 이메일 주소 |
+| `email_verified` | 이메일 인증 상태 |
+| `name` | 사용자의 표시 이름 |
+| `iat` | 발급 시간 타임스탬프 |
+| `exp` | 만료 타임스탬프 |
+| `aud` | 대상 (client_id) |
+| `iss` | 발급자 (인증 서버 URL) |
+
+### ID 토큰 페이로드 예제
+
+```json
+{
+  "sub": "550e8400-e29b-41d4-a716-446655440000",
+  "email": "user@example.com",
+  "email_verified": true,
+  "name": "홍길동",
+  "iat": 1640000000,
+  "exp": 1640003600,
+  "aud": "my-app-client-id",
+  "iss": "https://auth.example.com"
+}
+```
+
+## 액세스 토큰
+
+액세스 토큰은 API 요청을 인증합니다.
+
+### 액세스 토큰 사용
+
+Authorization 헤더에 액세스 토큰을 포함합니다:
+
+```http
+GET /api/v1/user/session
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### 액세스 토큰 검증
+
+JWKS 엔드포인트를 사용하여 토큰을 검증합니다:
+
+```javascript
+import { createRemoteJWKSet, jwtVerify } from 'jose';
+
+const JWKS = createRemoteJWKSet(
+  new URL('https://auth.example.com/.well-known/jwks.json')
+);
+
+async function validateToken(token) {
+  const { payload } = await jwtVerify(token, JWKS, {
+    issuer: 'https://auth.example.com',
+    audience: 'my-app-client-id',
+  });
+  return payload;
+}
+```
+
+## 리프레시 토큰
+
+리프레시 토큰은 재인증 없이 새 액세스 토큰을 얻을 수 있게 합니다.
+
+### 토큰 갱신 흐름
+
+```
+┌──────────┐                              ┌──────────────┐
+│ 클라이언트│                              │ Tinyrack Auth│
+└──────────┘                              └──────────────┘
+      │                                          │
+      │  액세스 토큰 만료                         │
+      │                                          │
+      │────── 토큰 갱신 요청 ───────────────────>│
+      │   grant_type=refresh_token               │
+      │   refresh_token=...                      │
+      │                                          │
+      │<───── 새 액세스 토큰 ───────────────────│
+      │       + 새 리프레시 토큰 (로테이션됨)     │
+      │                                          │
+```
+
+### 갱신 요청
+
+```http
+POST /application/oauth/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token&
+refresh_token=dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4...&
+client_id=my-app-client-id&
+client_secret=my-app-client-secret
+```
+
+### 응답
+
+```json
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_token": "bmV3IHJlZnJlc2ggdG9rZW4...",
+  "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+:::note
+리프레시 토큰은 사용할 때마다 로테이션됩니다. 이전 리프레시 토큰은 무효화됩니다.
+:::
+
+## 토큰 인트로스펙션
+
+토큰을 검증하고 메타데이터를 검색합니다:
+
+```http
+POST /application/oauth/introspect
+Content-Type: application/x-www-form-urlencoded
+
+token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...&
+token_type_hint=access_token
+```
+
+### 응답
+
+```json
+{
+  "active": true,
+  "sub": "550e8400-e29b-41d4-a716-446655440000",
+  "client_id": "my-app-client-id",
+  "scope": "openid profile email",
+  "exp": 1640003600,
+  "iat": 1640000000,
+  "iss": "https://auth.example.com"
+}
+```
+
+유효하지 않은 토큰의 경우:
+
+```json
+{
+  "active": false
+}
+```
+
+## 토큰 폐기
+
+토큰을 즉시 무효화하려면 폐기합니다:
+
+```http
+POST /application/oauth/revoke
+Content-Type: application/x-www-form-urlencoded
+
+token=dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4...&
+token_type_hint=refresh_token
+```
+
+## UserInfo 엔드포인트
+
+액세스 토큰을 사용하여 사용자 정보를 검색합니다:
+
+```http
+GET /application/oauth/userinfo
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### 응답
+
+```json
+{
+  "sub": "550e8400-e29b-41d4-a716-446655440000",
+  "email": "user@example.com",
+  "email_verified": true,
+  "name": "홍길동"
+}
+```
+
+## JWT 키 로테이션
+
+Tinyrack Auth는 보안 강화를 위해 서명 키를 자동으로 로테이션합니다.
+
+### 설정
+
+```yaml
+app:
+  jwt_key_rotation_enabled: true
+  jwt_key_rotation_days: 30    # 30일마다 로테이션
+  jwt_key_overlap_days: 7      # 이전 키를 7일 동안 유효하게 유지
+```
+
+### 키 생명주기
+
+```
+next ──► active ──► previous ──► retired
+```
+
+1. **next**: 생성됨, 아직 서명에 사용되지 않음
+2. **active**: 현재 새 토큰 서명에 사용
+3. **previous**: 이전 키, 검증에는 여전히 유효
+4. **retired**: JWKS에서 제거됨
+
+### JWKS 엔드포인트
+
+현재 공개 키 검색:
+
+```http
+GET /.well-known/jwks.json
+```
+
+```json
+{
+  "keys": [
+    {
+      "kty": "RSA",
+      "kid": "key-id-1",
+      "use": "sig",
+      "alg": "RS256",
+      "n": "...",
+      "e": "AQAB"
+    }
+  ]
+}
+```
+
+## 모범 사례
+
+1. **토큰을 안전하게 저장**
+   - 액세스 토큰: 메모리에만
+   - 리프레시 토큰: HttpOnly 쿠키 또는 보안 스토리지
+
+2. **토큰 갱신 구현**
+   - 만료 전에 갱신
+   - 갱신 실패를 우아하게 처리
+
+3. **토큰을 올바르게 검증**
+   - 항상 서명 검증
+   - 발급자, 대상, 만료 확인
+   - 공개 키 검색에 JWKS 사용
+
+4. **로그아웃 시 폐기**
+   - 사용자 로그아웃 시 리프레시 토큰 폐기
+   - 클라이언트에서 저장된 토큰 삭제
+
+5. **로테이션 처리**
+   - 오버랩 기간 동안 이전 키로 서명된 토큰 수락
+   - 적절한 TTL로 JWKS 캐시

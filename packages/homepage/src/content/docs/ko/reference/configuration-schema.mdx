@@ -1,0 +1,292 @@
+---
+title: 설정 스키마
+description: 전체 config.yaml 스키마 레퍼런스
+---
+
+이 페이지는 Tinyrack Auth의 `config.yaml` 파일에 대한 전체 설정 스키마를 문서화합니다.
+
+## 전체 스키마
+
+```yaml
+# 애플리케이션 설정
+app:
+  name: string                      # 애플리케이션 이름 (기본값: "Tinyrack Auth")
+  host: string                      # 기본 URL (기본값: "http://localhost:8080")
+  port: number                      # 서버 포트 (기본값: 8080)
+  cookie_secret: string             # 세션 쿠키 시크릿 (필수, 최소 16자)
+  
+  # JWT 설정
+  jwt_access_token_ttl: number      # 액세스 토큰 TTL (초, 기본값: 3600)
+  jwt_refresh_token_ttl: number     # 리프레시 토큰 TTL (초, 기본값: 2592000)
+  jwt_key_rotation_enabled: boolean # 키 로테이션 활성화 (기본값: true)
+  jwt_key_rotation_days: number     # 로테이션 간격 (일, 기본값: 30)
+  jwt_key_overlap_days: number      # 이전 키 유효 기간 (일, 기본값: 7)
+  
+  # 다국어
+  supported_languages: string[]     # 지원 언어 (기본값: ["en"])
+  default_language: string          # 기본 언어 (기본값: "auto")
+  fallback_language: string         # 폴백 언어 (기본값: "en")
+  
+  # 테마
+  light_theme: string               # 라이트 테마 (기본값: "light")
+  dark_theme: string                # 다크 테마 (기본값: "dark")
+  theme_mode: string                # "light" | "dark" | "system" (기본값: "system")
+  background_url: string            # 배경 이미지 URL (선택)
+  icon_url: string                  # 로고 URL (선택)
+  
+  # 사용자 지정 텍스트 (언어 코드별)
+  title: { [lang]: string }         # 로그인 페이지 제목 (선택)
+  subtitle: { [lang]: string }      # 로그인 페이지 부제목 (선택)
+  signup_implicit_terms: { [lang]: string }  # 암시적 동의 알림 (선택)
+  
+  # 회원가입 제한
+  allowed_signup_emails: string[]   # 허용 이메일 패턴 (기본값: [])
+  
+  # 프록시
+  trust_proxy: boolean | string | string[] | number  # 프록시 신뢰 설정 (기본값: false)
+
+# 관리자 서버 (선택)
+admin:
+  enabled: boolean                  # 관리자 서버 활성화 (기본값: false)
+  port: number                      # 관리자 서버 포트 (기본값: 8081)
+
+# 데이터베이스 설정
+database:
+  type: "sqlite" | "postgres" | "memory"
+  
+  # SQLite 옵션
+  path: string                      # SQLite 데이터베이스 경로 (기본값: "test.db")
+  
+  # PostgreSQL 옵션
+  host: string                      # 데이터베이스 호스트 (기본값: "localhost")
+  port: number                      # 데이터베이스 포트 (기본값: 5432)
+  user: string                      # 데이터베이스 사용자 (기본값: "test")
+  password: string                  # 데이터베이스 비밀번호 (기본값: "test")
+  name: string                      # 데이터베이스 이름 (기본값: "test")
+
+# SMTP 설정 (선택)
+smtp:
+  test: boolean                     # 테스트 모드 - 이메일 로그 (기본값: false)
+  host: string                      # SMTP 호스트 (기본값: "localhost")
+  port: number                      # SMTP 포트 (기본값: 465)
+  secure: boolean                   # TLS 사용 (기본값: true)
+  user: string                      # SMTP 사용자명
+  password: string                  # SMTP 비밀번호
+  from: string                      # 발신자 이메일 주소
+
+# 기본 인증 방법
+basic_authentication_methods:
+  password:
+    enabled: boolean                # 비밀번호 인증 활성화 (기본값: true)
+    email_verification: boolean     # 이메일 인증 필요 (기본값: true)
+    second_factor:
+      required: boolean             # 2FA 설정 필요 (기본값: false)
+    totp:
+      enabled: boolean              # TOTP 활성화 (기본값: false)
+      issuer: string                # TOTP 발급자 이름 (선택)
+  
+  passkey:
+    enabled: boolean                # 패스키 인증 활성화 (기본값: false)
+    email_verification: boolean     # 이메일 인증 필요 (기본값: true)
+    rp_id: string                   # WebAuthn Relying Party ID (선택)
+    origins: string[]               # 허용 오리진 (선택)
+
+# OAuth 인증 방법 (소셜 로그인)
+oauth_authentication_methods:
+  - type: "google" | "github" | "apple" | "generic_oauth"
+    id: string                      # 고유 식별자
+    enabled: boolean                # 프로바이더 활성화 (기본값: false)
+    display_name: string            # UI 표시 이름 (선택)
+    icon_url: string                # 아이콘 URL (선택)
+    client_id: string               # OAuth 클라이언트 ID
+    client_secret: string           # OAuth 클라이언트 시크릿
+    scopes: string[]                # OAuth 스코프 (선택)
+    email_conflict_strategy: "auto_link" | "require_link"  # (기본값: "auto_link")
+    
+    # Generic OAuth 전용
+    authorization_url: string       # 인증 엔드포인트
+    token_url: string               # 토큰 엔드포인트
+    userinfo_url: string            # UserInfo 엔드포인트
+    email_url: string               # 이메일 엔드포인트 (선택)
+    response_mode: "query" | "fragment" | "form_post"  # (선택)
+    userinfo_mapping:
+      id: string                    # 사용자 ID 필드
+      email: string                 # 이메일 필드
+      email_verified: string        # email_verified 필드 (선택)
+      name: string                  # 이름 필드 (선택)
+      picture: string               # 사진 필드 (선택)
+
+# OAuth 클라이언트 프로바이더 (애플리케이션)
+providers:
+  - id: string                      # 고유 식별자
+    name: string                    # 표시 이름
+    logo_uri: string                # 로고 URL (선택)
+    client_id: string               # 클라이언트 ID
+    client_secret: string           # 클라이언트 시크릿 (퍼블릭 클라이언트는 선택)
+    redirect_uris: string[]         # 허용 리디렉션 URI
+    response_types: string[]        # 허용 응답 타입
+    grant_types: string[]           # 허용 그랜트 타입
+    scope: string                   # 허용 스코프
+
+# 사전 설정된 사용자 (선택)
+users:
+  - id: string                      # 고유 식별자
+    email: string                   # 이메일 주소
+    password: string                # 비밀번호 (해시됨)
+    name: string                    # 표시 이름 (선택)
+
+# 이용약관 (선택)
+terms:
+  - id: string                      # 고유 식별자 (소문자, 영숫자, -, _)
+    required: boolean               # 필수 동의 (기본값: true)
+    consent_mode: "explicit" | "implicit"  # 동의 모드 (기본값: "explicit")
+    version: string                 # 버전 문자열
+    content:
+      [lang]:                       # 언어 코드 (예: "en", "ko")
+        title: string               # 표시 제목
+        type: "link" | "text"       # 콘텐츠 타입
+        content: string             # URL 또는 텍스트 콘텐츠
+
+# 계정 삭제 설정
+account_deletion:
+  enabled: boolean                  # 계정 삭제 허용 (기본값: false)
+  retention_period: string          # 보존 기간 (기본값: "30d")
+```
+
+## 환경 변수 보간
+
+환경 변수를 참조하려면 `!env`를 사용합니다:
+
+```yaml
+app:
+  cookie_secret: !env COOKIE_SECRET
+
+database:
+  password: !env DB_PASSWORD
+```
+
+## 최소 설정
+
+```yaml
+app:
+  host: http://localhost:8080
+  port: 8080
+  cookie_secret: !env COOKIE_SECRET
+
+database:
+  type: sqlite
+  path: ./data/auth.db
+
+basic_authentication_methods:
+  password:
+    enabled: true
+```
+
+## 프로덕션 설정
+
+```yaml
+app:
+  name: My Auth Server
+  host: https://auth.example.com
+  port: 8080
+  cookie_secret: !env COOKIE_SECRET
+  jwt_key_rotation_enabled: true
+  supported_languages: [en, ko, ja]
+  trust_proxy: true
+
+database:
+  type: postgres
+  host: !env DB_HOST
+  port: 5432
+  user: !env DB_USER
+  password: !env DB_PASSWORD
+  name: !env DB_NAME
+
+smtp:
+  host: smtp.example.com
+  port: 587
+  secure: true
+  user: !env SMTP_USER
+  password: !env SMTP_PASSWORD
+  from: noreply@example.com
+
+basic_authentication_methods:
+  password:
+    enabled: true
+    email_verification: true
+    totp:
+      enabled: true
+      issuer: My App
+  passkey:
+    enabled: true
+    rp_id: example.com
+
+oauth_authentication_methods:
+  - type: google
+    id: google
+    enabled: true
+    client_id: !env GOOGLE_CLIENT_ID
+    client_secret: !env GOOGLE_CLIENT_SECRET
+
+providers:
+  - id: my-web-app
+    name: My Web App
+    client_id: web-app-client
+    client_secret: !env WEB_APP_SECRET
+    redirect_uris:
+      - https://myapp.example.com/callback
+    response_types: [code]
+    grant_types: [authorization_code, refresh_token]
+    scope: openid profile email
+
+account_deletion:
+  enabled: true
+  retention_period: 30d
+
+terms:
+  - id: privacy-policy
+    required: true
+    consent_mode: implicit
+    version: "1.0.0"
+    content:
+      en:
+        title: Privacy Policy
+        type: link
+        content: https://example.com/privacy
+      ko:
+        title: 개인정보처리방침
+        type: link
+        content: https://example.com/ko/privacy
+```
+
+## 타입 레퍼런스
+
+### AppTheme
+
+사용 가능한 DaisyUI 테마 값:
+
+```
+light, dark, cupcake, bumblebee, emerald, corporate, synthwave, retro,
+cyberpunk, valentine, halloween, garden, forest, aqua, lofi, pastel,
+fantasy, wireframe, black, luxury, dracula, cmyk, autumn, business,
+acid, lemonade, night, coffee, winter, dim, nord, sunset, caramellatte,
+abyss, silk
+```
+
+### 기간 형식
+
+`retention_period`용:
+
+- `30d` - 30일
+- `24h` - 24시간
+- `60m` - 60분
+
+### trust_proxy 값
+
+| 값 | 설명 |
+|----|------|
+| `true` | 모든 프록시 신뢰 |
+| `false` | 프록시 신뢰 안 함 |
+| `"loopback"` | 루프백 주소 신뢰 |
+| `["10.0.0.0/8"]` | 특정 CIDR 범위 신뢰 |
+| `1` | n번째 홉 신뢰 |

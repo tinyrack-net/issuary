@@ -1,0 +1,65 @@
+---
+title: 빠른 시작
+description: 5분 안에 Tinyrack Auth 실행하기
+---
+
+이 가이드는 개발 목적으로 Tinyrack Auth를 빠르게 실행하는 방법을 안내합니다.
+
+## 사전 요구 사항
+
+- Node.js 20.x 이상
+- pnpm 9.x 이상
+
+## 1. 복제 및 설치
+
+```bash
+git clone https://github.com/tinyrack/auth.git
+cd auth
+pnpm install
+```
+
+## 2. 설정 생성
+
+최소 설정으로 `packages/backend/config.yaml` 파일을 생성합니다:
+
+```yaml
+app:
+  host: http://localhost:8080
+  port: 8080
+  cookie_secret: your-super-secret-key-min-16-chars
+
+database:
+  type: sqlite
+  path: ./data/auth.db
+
+basic_authentication_methods:
+  password:
+    enabled: true
+    email_verification: false
+```
+
+## 3. 서버 시작
+
+```bash
+pnpm dev
+```
+
+OIDC 프로바이더가 이제 `http://localhost:8080`에서 실행됩니다.
+
+## 4. 설정 확인
+
+다음 URL을 방문하여 확인합니다:
+
+- **로그인 페이지**: http://localhost:8080
+- **OpenID 설정**: http://localhost:8080/.well-known/openid-configuration
+- **JWKS**: http://localhost:8080/.well-known/jwks.json
+
+## 5. 테스트 사용자 등록
+
+`http://localhost:8080`으로 이동하여 "회원가입"을 클릭하여 첫 번째 사용자를 생성합니다.
+
+## 다음 단계
+
+- [OAuth 클라이언트 설정](/ko/guides/oauth-clients/)으로 애플리케이션과 연동하기
+- [소셜 로그인 설정](/ko/guides/social-login/)으로 Google, GitHub, Apple 인증 추가하기
+- [TOTP 2FA 활성화](/ko/authentication/totp/)로 보안 강화하기

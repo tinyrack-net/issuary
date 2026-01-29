@@ -1,0 +1,289 @@
+---
+title: 패스키 인증
+description: Tinyrack Auth에서 WebAuthn/패스키 인증 구성하기
+---
+
+패스키(WebAuthn)는 생체 인식, 보안 키 또는 기기 기반 자격 증명을 사용하여 비밀번호 없는 인증을 제공합니다. 이것은 사용 가능한 가장 안전한 인증 방법입니다.
+
+## 패스키란?
+
+패스키는 공개 키 암호화를 사용하여 비밀번호 없이 사용자를 인증합니다:
+
+- **생체 인식**: Face ID, Touch ID, Windows Hello
+- **보안 키**: YubiKey, Google Titan
+- **기기 자격 증명**: 기기에 내장된 플랫폼 인증자
+
+## 설정
+
+```yaml
+basic_authentication_methods:
+  passkey:
+    enabled: true
+    email_verification: true
+    rp_id: example.com
+    origins:
+      - https://auth.example.com
+      - https://app.example.com
+```
+
+## 옵션
+
+| 필드 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `enabled` | boolean | `false` | 패스키 인증 활성화 |
+| `email_verification` | boolean | `true` | 패스키 등록에 이메일 인증 필요 |
+| `rp_id` | string | (host에서) | Relying Party ID (도메인만) |
+| `origins` | string[] | (host에서) | WebAuthn 허용 오리진 |
+
+## Relying Party ID (rp_id)
+
+`rp_id`는 인증 서버를 식별하는 도메인입니다. 다음이어야 합니다:
+
+- 현재 도메인, 또는
+- 등록 가능한 상위 도메인 (서브도메인 공유용)
+
+```yaml
+# auth.example.com용
+passkey:
+  enabled: true
+  rp_id: example.com  # *.example.com에서 패스키 공유
+```
+
+:::note
+`rp_id`에는 다음이 포함되면 안 됩니다:
+- 프로토콜 (`https://`)
+- 포트 (`:8080`)
+- 경로 (`/auth`)
+
+유효함: `example.com`, `localhost`
+유효하지 않음: `https://example.com`, `example.com:8080`
+:::
+
+## 오리진 설정
+
+WebAuthn 검증을 위한 허용 오리진을 지정합니다:
+
+```yaml
+passkey:
+  enabled: true
+  origins:
+    - https://auth.example.com
+    - https://app.example.com
+```
+
+지정하지 않으면 `app.host`에서 오리진이 파생됩니다.
+
+## 등록 흐름
+
+1. 사용자가 패스키 등록 시작
+2. 서버가 등록 옵션 생성
+3. 브라우저가 생체 인식/보안 키 프롬프트
+4. 자격 증명 생성 및 저장
+5. 사용자가 이제 패스키로 인증 가능
+
+```
+사용자가 등록 요청
+          │
+          ▼
+서버가 챌린지 생성
+          │
+          ▼
+브라우저가 자격 증명 생성 ◄── 생체인식/키
+          │
+          ▼
+서버가 검증 및 저장
+          │
+          ▼
+등록 완료
+```
+
+## 인증 흐름
+
+1. 사용자가 패스키 로그인 시작
+2. 서버가 인증 옵션 생성
+3. 브라우저가 생체 인식/보안 키 프롬프트
+4. 서명 검증
+5. 사용자 인증됨
+
+```
+사용자가 로그인 요청
+        │
+        ▼
+서버가 챌린지 생성
+        │
+        ▼
+브라우저가 챌린지 서명 ◄── 생체인식/키
+        │
+        ▼
+서버가 서명 검증
+        │
+        ▼
+로그인 완료
+```
+
+## API 엔드포인트
+
+### 등록 옵션
+
+```http
+POST /api/v1/user/passkeys/register/options
+Content-Type: application/json
+
+{}
+```
+
+응답:
+```json
+{
+  "challenge": "base64-encoded-challenge",
+  "rp": {
+    "id": "example.com",
+    "name": "My App"
+  },
+  "user": {
+    "id": "base64-user-id",
+    "name": "user@example.com",
+    "displayName": "User"
+  },
+  "pubKeyCredParams": [...],
+  "timeout": 60000,
+  "attestation": "none"
+}
+```
+
+### 등록 검증
+
+```http
+POST /api/v1/user/passkeys/register/verify
+Content-Type: application/json
+
+{
+  "id": "credential-id",
+  "rawId": "base64-raw-id",
+  "response": {
+    "clientDataJSON": "base64-client-data",
+    "attestationObject": "base64-attestation"
+  },
+  "type": "public-key"
+}
+```
+
+### 인증 옵션
+
+```http
+POST /api/v1/auth/passkey/options
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+```
+
+### 인증 검증
+
+```http
+POST /api/v1/auth/passkey/verify
+Content-Type: application/json
+
+{
+  "id": "credential-id",
+  "rawId": "base64-raw-id",
+  "response": {
+    "clientDataJSON": "base64-client-data",
+    "authenticatorData": "base64-auth-data",
+    "signature": "base64-signature"
+  },
+  "type": "public-key"
+}
+```
+
+## 패스키 관리
+
+### 패스키 목록
+
+```http
+GET /api/v1/user/passkeys
+```
+
+### 패스키 이름 업데이트
+
+```http
+PATCH /api/v1/user/passkeys/:id
+Content-Type: application/json
+
+{
+  "name": "내 YubiKey"
+}
+```
+
+### 패스키 삭제
+
+```http
+DELETE /api/v1/user/passkeys/:id
+```
+
+## 2단계 인증으로 사용
+
+패스키는 비밀번호와 함께 2단계 인증으로 사용할 수 있습니다:
+
+```yaml
+basic_authentication_methods:
+  password:
+    enabled: true
+    second_factor:
+      required: true
+  passkey:
+    enabled: true
+```
+
+사용자는 TOTP 대신 패스키를 2FA 방법으로 등록할 수 있습니다.
+
+## 브라우저 지원
+
+패스키는 다음에서 지원됩니다:
+
+- Chrome 67+
+- Safari 14+
+- Firefox 60+
+- Edge 79+
+
+모바일 지원:
+- iOS 14+
+- Android 7+
+
+## 모범 사례
+
+1. 향상된 보안을 위해 **패스키를 기본 인증으로 제공**
+2. 백업 기기를 등록할 수 있도록 **여러 패스키 허용**
+3. 사용자가 접근을 잃을 경우를 위한 **복구 옵션 제공**
+4. 서브도메인에서 패스키 공유를 위해 **상위 도메인을 rp_id로 사용**
+5. 광범위한 호환성을 위해 **여러 기기에서 테스트**
+
+## 문제 해결
+
+### "오리진이 허용되지 않음" 오류
+
+`origins` 배열에 인증이 발생하는 모든 도메인이 포함되어 있는지 확인:
+
+```yaml
+passkey:
+  origins:
+    - https://auth.example.com
+    - https://app.example.com
+```
+
+### "유효하지 않은 rp_id" 오류
+
+`rp_id`는 다음이어야 합니다:
+- 유효한 도메인 (프로토콜/포트 없음)
+- 현재 도메인 또는 상위 도메인
+
+### 서브도메인에서 패스키가 작동하지 않음
+
+상위 도메인을 `rp_id`로 사용:
+
+```yaml
+# app.example.com 및 auth.example.com용
+passkey:
+  rp_id: example.com
+```

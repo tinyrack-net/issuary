@@ -1,0 +1,185 @@
+---
+title: SMTP 설정
+description: Tinyrack Auth의 이메일 전송 구성하기
+---
+
+이메일 인증, 비밀번호 재설정, 알림과 같은 이메일 기반 기능에는 SMTP 설정이 필요합니다.
+
+## 설정
+
+```yaml
+smtp:
+  host: smtp.example.com
+  port: 587
+  secure: true
+  user: noreply@example.com
+  password: !env SMTP_PASSWORD
+  from: noreply@example.com
+```
+
+| 필드 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `host` | string | `localhost` | SMTP 서버 호스트명 |
+| `port` | number | `465` | SMTP 서버 포트 |
+| `secure` | boolean | `true` | TLS/SSL 연결 사용 |
+| `user` | string | - | SMTP 인증 사용자명 |
+| `password` | string | - | SMTP 인증 비밀번호 |
+| `from` | string | - | 발신자 이메일 주소 |
+
+## 테스트 모드
+
+실제 SMTP 서버 없이 개발하려면 테스트 모드를 활성화하세요:
+
+```yaml
+smtp:
+  test: true
+```
+
+테스트 모드에서는 이메일이 전송되지 않고 콘솔에 로그로 출력됩니다.
+
+## 일반적인 SMTP 프로바이더
+
+### Gmail
+
+```yaml
+smtp:
+  host: smtp.gmail.com
+  port: 587
+  secure: true
+  user: your-email@gmail.com
+  password: !env GMAIL_APP_PASSWORD  # 일반 비밀번호가 아닌 앱 비밀번호 사용
+  from: your-email@gmail.com
+```
+
+:::note
+Gmail은 2FA가 활성화된 경우 앱 비밀번호가 필요합니다. [Google 계정 설정](https://myaccount.google.com/apppasswords)에서 생성하세요.
+:::
+
+### Amazon SES
+
+```yaml
+smtp:
+  host: email-smtp.us-east-1.amazonaws.com
+  port: 587
+  secure: true
+  user: !env AWS_SES_USER
+  password: !env AWS_SES_PASSWORD
+  from: noreply@your-verified-domain.com
+```
+
+### SendGrid
+
+```yaml
+smtp:
+  host: smtp.sendgrid.net
+  port: 587
+  secure: true
+  user: apikey
+  password: !env SENDGRID_API_KEY
+  from: noreply@your-domain.com
+```
+
+### Mailgun
+
+```yaml
+smtp:
+  host: smtp.mailgun.org
+  port: 587
+  secure: true
+  user: postmaster@your-domain.mailgun.org
+  password: !env MAILGUN_PASSWORD
+  from: noreply@your-domain.com
+```
+
+### Postmark
+
+```yaml
+smtp:
+  host: smtp.postmarkapp.com
+  port: 587
+  secure: true
+  user: !env POSTMARK_API_TOKEN
+  password: !env POSTMARK_API_TOKEN
+  from: noreply@your-domain.com
+```
+
+## 포트 설정
+
+| 포트 | 프로토콜 | 설명 |
+|------|----------|------|
+| 25 | SMTP | 암호화되지 않음 (권장하지 않음) |
+| 465 | SMTPS | 암시적 TLS (secure: true) |
+| 587 | Submission | STARTTLS (secure: true) |
+
+## 이메일 기능
+
+SMTP는 다음 기능에 사용됩니다:
+
+| 기능 | 필요한 설정 |
+|------|-----------|
+| 이메일 인증 | `basic_authentication_methods.password.email_verification: true` |
+| 비밀번호 재설정 | SMTP가 설정되면 항상 사용 가능 |
+| 계정 알림 | SMTP가 설정되면 자동 |
+
+### 이메일 인증 비활성화
+
+SMTP를 설정하지 않으려면 이메일 인증을 비활성화하세요:
+
+```yaml
+basic_authentication_methods:
+  password:
+    enabled: true
+    email_verification: false  # SMTP 불필요
+```
+
+## 문제 해결
+
+### 연결 거부
+
+SMTP 호스트와 포트가 올바른지, 방화벽이 아웃바운드 연결을 허용하는지 확인하세요.
+
+### 인증 실패
+
+자격 증명을 확인하세요. 일부 프로바이더는 다음이 필요합니다:
+- 앱 비밀번호 (Gmail)
+- API 키 (SendGrid, Postmark)
+- 특정 사용자명 (SendGrid는 사용자명으로 `apikey` 사용)
+
+### 이메일 수신 안됨
+
+1. 스팸/정크 폴더 확인
+2. `from` 주소가 전송 권한이 있는지 확인
+3. 도메인의 SPF, DKIM, DMARC 레코드 확인
+4. SMTP 서버 로그 검토
+
+### SSL/TLS 오류
+
+`secure` 설정을 토글해 보세요:
+
+```yaml
+smtp:
+  secure: false  # 포트 587의 STARTTLS용
+  # 또는
+  secure: true   # 포트 465의 암시적 TLS용
+```
+
+## 개발 설정
+
+로컬 개발의 경우 [Mailhog](https://github.com/mailhog/MailHog) 또는 [Mailpit](https://github.com/axllent/mailpit) 같은 서비스를 사용할 수 있습니다:
+
+```yaml
+smtp:
+  host: localhost
+  port: 1025
+  secure: false
+  user: ""
+  password: ""
+  from: test@localhost
+```
+
+또는 단순히 테스트 모드를 사용하세요:
+
+```yaml
+smtp:
+  test: true
+```

@@ -1,0 +1,189 @@
+---
+title: 앱 설정
+description: Tinyrack Auth의 애플리케이션 설정 구성하기
+---
+
+`app` 섹션에는 서버 설정, JWT 설정, 테마, 다국어 지원을 포함한 핵심 애플리케이션 설정이 포함됩니다.
+
+## 기본 설정
+
+```yaml
+app:
+  name: Tinyrack Auth          # UI에 표시되는 애플리케이션 이름
+  host: http://localhost:8080  # 애플리케이션 기본 URL
+  port: 8080                   # 서버 포트
+  cookie_secret: <최소-16자>   # 세션 쿠키 비밀 키 (필수)
+```
+
+### 필수 필드
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `cookie_secret` | string | 세션 쿠키 암호화를 위한 비밀 키. 최소 16자 이상이어야 합니다. |
+
+### 선택적 필드
+
+| 필드 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `name` | string | `Tinyrack Auth` | UI에 표시되는 애플리케이션 이름 |
+| `host` | string | `http://localhost:8080` | 애플리케이션 기본 URL |
+| `port` | number | `8080` | 서버가 리슨할 포트 |
+
+## JWT 설정
+
+JSON Web Token 동작을 구성합니다:
+
+```yaml
+app:
+  jwt_access_token_ttl: 3600      # 액세스 토큰 수명 (초, 1시간)
+  jwt_refresh_token_ttl: 2592000  # 리프레시 토큰 수명 (초, 30일)
+  jwt_key_rotation_enabled: true  # 자동 키 로테이션 활성화
+  jwt_key_rotation_days: 30       # 키 로테이션 간격 (일)
+  jwt_key_overlap_days: 7         # 이전 키 유효 유지 기간 (일)
+```
+
+| 필드 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `jwt_access_token_ttl` | number | `3600` | 액세스 토큰 TTL (초, 최소: 60) |
+| `jwt_refresh_token_ttl` | number | `2592000` | 리프레시 토큰 TTL (초, 최소: 3600) |
+| `jwt_key_rotation_enabled` | boolean | `true` | 자동 RS256 키 로테이션 활성화 |
+| `jwt_key_rotation_days` | number | `30` | 키 로테이션 간격 (일, 최소: 1) |
+| `jwt_key_overlap_days` | number | `7` | 이전 키 유효 유지 기간 (일, 최소: 1) |
+
+## 다국어 지원
+
+다국어 지원을 구성합니다:
+
+```yaml
+app:
+  supported_languages:
+    - en
+    - ko
+    - ja
+  default_language: auto    # 'auto'는 브라우저에서 감지, 또는 'en', 'ko', 'ja' 지정
+  fallback_language: en     # 번역이 없을 때 사용할 언어
+```
+
+| 필드 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `supported_languages` | string[] | `['en']` | 지원되는 언어 코드 목록 |
+| `default_language` | string | `auto` | 기본 언어 또는 브라우저 감지를 위한 'auto' |
+| `fallback_language` | string | `en` | 번역이 없을 때 사용할 폴백 언어 |
+
+## 테마
+
+인증 페이지의 외관을 사용자 지정합니다:
+
+```yaml
+app:
+  light_theme: light        # 라이트 모드용 DaisyUI 테마
+  dark_theme: dark          # 다크 모드용 DaisyUI 테마
+  theme_mode: system        # 'light', 'dark', 또는 'system'
+  background_url: https://example.com/bg.jpg  # 배경 이미지 URL
+  icon_url: https://example.com/logo.png      # 로고 URL
+```
+
+### 사용 가능한 테마
+
+Tinyrack Auth는 모든 DaisyUI 테마를 지원합니다:
+
+`light`, `dark`, `cupcake`, `bumblebee`, `emerald`, `corporate`, `synthwave`, `retro`, `cyberpunk`, `valentine`, `halloween`, `garden`, `forest`, `aqua`, `lofi`, `pastel`, `fantasy`, `wireframe`, `black`, `luxury`, `dracula`, `cmyk`, `autumn`, `business`, `acid`, `lemonade`, `night`, `coffee`, `winter`, `dim`, `nord`, `sunset`, `caramellatte`, `abyss`, `silk`
+
+## 사용자 지정 UI 텍스트
+
+기본 로그인 페이지 텍스트를 재정의합니다:
+
+```yaml
+app:
+  title:
+    en: Welcome to My App
+    ko: 내 앱에 오신 것을 환영합니다
+  subtitle:
+    en: Sign in to continue
+    ko: 계속하려면 로그인하세요
+  signup_implicit_terms:
+    en: By signing up, you agree to our Terms of Service
+    ko: 가입하면 서비스 약관에 동의하게 됩니다
+```
+
+## 회원가입 제한
+
+가입할 수 있는 사용자를 제어합니다:
+
+```yaml
+app:
+  allowed_signup_emails:
+    - "*"                     # 모든 이메일 허용
+    - "*@company.com"         # 특정 도메인 허용
+    - "admin@example.com"     # 특정 이메일 허용
+```
+
+- 빈 배열 `[]`은 회원가입을 완전히 비활성화합니다
+- `"*"`는 모든 이메일 주소를 허용합니다
+- `"*@domain.com"`은 해당 도메인의 모든 이메일을 허용합니다
+- 특정 이메일을 개별적으로 화이트리스트에 추가할 수 있습니다
+
+## 프록시 설정
+
+리버스 프록시 뒤에서 실행할 때:
+
+```yaml
+app:
+  trust_proxy: true           # 모든 프록시 신뢰
+  # 또는 더 구체적으로:
+  trust_proxy: "loopback"     # 루프백 주소 신뢰
+  trust_proxy:
+    - "10.0.0.0/8"            # 특정 CIDR 범위 신뢰
+  trust_proxy: 1              # n번째 홉 신뢰
+```
+
+| 값 | 설명 |
+|----|------|
+| `true` | 모든 프록시 신뢰 |
+| `false` | 어떤 프록시도 신뢰하지 않음 |
+| IP/CIDR 문자열 | 특정 주소 신뢰 |
+| IP 배열 | 여러 주소 신뢰 |
+| 숫자 | 전면에서 n번째 홉 신뢰 |
+
+## 전체 예제
+
+```yaml
+app:
+  name: My Authentication Server
+  host: https://auth.example.com
+  port: 8080
+  cookie_secret: !env COOKIE_SECRET
+  
+  # JWT
+  jwt_access_token_ttl: 3600
+  jwt_refresh_token_ttl: 2592000
+  jwt_key_rotation_enabled: true
+  jwt_key_rotation_days: 30
+  
+  # 다국어
+  supported_languages:
+    - en
+    - ko
+    - ja
+  default_language: auto
+  fallback_language: en
+  
+  # 테마
+  light_theme: corporate
+  dark_theme: business
+  theme_mode: system
+  icon_url: https://example.com/logo.png
+  background_url: https://example.com/bg.jpg
+  
+  # 사용자 지정 텍스트
+  title:
+    en: Welcome
+    ko: 환영합니다
+  
+  # 회원가입
+  allowed_signup_emails:
+    - "*@example.com"
+  
+  # 프록시
+  trust_proxy: true
+```

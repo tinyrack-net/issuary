@@ -1,0 +1,202 @@
+---
+title: API 레퍼런스
+description: Tinyrack Auth API 엔드포인트 레퍼런스
+---
+
+이 페이지는 Tinyrack Auth에서 제공하는 주요 API 엔드포인트를 문서화합니다.
+
+## OAuth/OIDC 엔드포인트
+
+### 인증 엔드포인트
+
+```http
+GET /application/oauth/authorize
+```
+
+OAuth2 인증 흐름을 시작합니다.
+
+**쿼리 매개변수:**
+
+| 매개변수 | 필수 | 설명 |
+|----------|------|------|
+| `client_id` | 예 | OAuth 클라이언트 식별자 |
+| `redirect_uri` | 예 | 인증 후 리디렉션할 URL |
+| `response_type` | 예 | `code`이어야 함 |
+| `scope` | 예 | 공백으로 구분된 스코프 목록 |
+| `state` | 권장 | CSRF 보호 토큰 |
+| `code_challenge` | PKCE | Base64-URL 인코딩된 SHA256 해시 |
+| `code_challenge_method` | PKCE | `S256`이어야 함 |
+
+**예제:**
+
+```
+/application/oauth/authorize?
+  client_id=my-app&
+  redirect_uri=http://localhost:3000/callback&
+  response_type=code&
+  scope=openid%20profile%20email&
+  state=abc123&
+  code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&
+  code_challenge_method=S256
+```
+
+---
+
+### 토큰 엔드포인트
+
+```http
+POST /application/oauth/token
+```
+
+인증 코드를 토큰으로 교환하거나 토큰을 갱신합니다.
+
+**Content-Type:** `application/x-www-form-urlencoded`
+
+#### Authorization Code Grant
+
+| 매개변수 | 필수 | 설명 |
+|----------|------|------|
+| `grant_type` | 예 | `authorization_code` |
+| `code` | 예 | 인증 코드 |
+| `redirect_uri` | 예 | 원래 요청과 일치해야 함 |
+| `client_id` | 예 | OAuth 클라이언트 식별자 |
+| `client_secret` | 조건부 | 컨피덴셜 클라이언트에 필수 |
+| `code_verifier` | PKCE | 원본 랜덤 문자열 |
+
+#### Refresh Token Grant
+
+| 매개변수 | 필수 | 설명 |
+|----------|------|------|
+| `grant_type` | 예 | `refresh_token` |
+| `refresh_token` | 예 | 리프레시 토큰 |
+| `client_id` | 예 | OAuth 클라이언트 식별자 |
+| `client_secret` | 조건부 | 컨피덴셜 클라이언트에 필수 |
+
+**응답:**
+
+```json
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_token": "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4...",
+  "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+---
+
+### UserInfo 엔드포인트
+
+```http
+GET /application/oauth/userinfo
+```
+
+인증된 사용자에 대한 클레임을 반환합니다.
+
+**헤더:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**응답:**
+
+```json
+{
+  "sub": "user-uuid",
+  "email": "user@example.com",
+  "email_verified": true,
+  "name": "홍길동"
+}
+```
+
+---
+
+### 토큰 인트로스펙션
+
+```http
+POST /application/oauth/introspect
+```
+
+토큰을 검증하고 메타데이터를 반환합니다.
+
+**매개변수:**
+
+| 매개변수 | 필수 | 설명 |
+|----------|------|------|
+| `token` | 예 | 인트로스펙션할 토큰 |
+| `token_type_hint` | 아니오 | `access_token` 또는 `refresh_token` |
+
+---
+
+### 토큰 폐기
+
+```http
+POST /application/oauth/revoke
+```
+
+토큰을 폐기합니다.
+
+**매개변수:**
+
+| 매개변수 | 필수 | 설명 |
+|----------|------|------|
+| `token` | 예 | 폐기할 토큰 |
+| `token_type_hint` | 아니오 | `access_token` 또는 `refresh_token` |
+
+---
+
+## 검색 엔드포인트
+
+### OpenID 설정
+
+```http
+GET /.well-known/openid-configuration
+```
+
+OpenID Connect 검색 문서를 반환합니다.
+
+### JWKS 엔드포인트
+
+```http
+GET /.well-known/jwks.json
+```
+
+토큰 검증을 위한 JSON Web Key Set을 반환합니다.
+
+---
+
+## REST API 엔드포인트
+
+### 인증
+
+| 메서드 | 엔드포인트 | 설명 |
+|--------|-----------|------|
+| POST | `/api/v1/auth/login` | 사용자 로그인 |
+| POST | `/api/v1/auth/register` | 사용자 등록 |
+| POST | `/api/v1/auth/logout` | 사용자 로그아웃 |
+
+### 사용자 관리
+
+| 메서드 | 엔드포인트 | 설명 |
+|--------|-----------|------|
+| GET | `/api/v1/user/session` | 현재 세션 조회 |
+| PUT | `/api/v1/user/password` | 비밀번호 업데이트 |
+| DELETE | `/api/v1/user/password` | 비밀번호 제거 |
+
+### 패스키
+
+| 메서드 | 엔드포인트 | 설명 |
+|--------|-----------|------|
+| GET | `/api/v1/user/passkeys` | 사용자 패스키 목록 |
+| POST | `/api/v1/user/passkeys` | 새 패스키 등록 |
+| DELETE | `/api/v1/user/passkeys/:id` | 패스키 삭제 |
+
+### TOTP
+
+| 메서드 | 엔드포인트 | 설명 |
+|--------|-----------|------|
+| POST | `/api/v1/user/totp/setup` | TOTP 설정 초기화 |
+| POST | `/api/v1/user/totp/verify` | TOTP 확인 및 활성화 |
+| DELETE | `/api/v1/user/totp` | TOTP 비활성화 |
