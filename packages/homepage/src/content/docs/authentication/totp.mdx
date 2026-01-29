@@ -1,0 +1,240 @@
+---
+title: TOTP Two-Factor Authentication
+description: Configure Time-based One-Time Password (TOTP) 2FA in Tinyrack Auth
+---
+
+TOTP (Time-based One-Time Password) provides an additional layer of security by requiring a time-sensitive code from an authenticator app during login.
+
+## What is TOTP?
+
+TOTP generates 6-digit codes that change every 30 seconds. Users set up TOTP by:
+
+1. Scanning a QR code with an authenticator app
+2. Entering the generated code to verify setup
+3. Using codes from the app during future logins
+
+## Configuration
+
+```yaml
+basic_authentication_methods:
+  password:
+    enabled: true
+    second_factor:
+      required: false
+    totp:
+      enabled: true
+      issuer: My App
+```
+
+## Options
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `totp.enabled` | boolean | `false` | Enable TOTP as 2FA option |
+| `totp.issuer` | string | `Tinyrack` | Issuer name shown in authenticator apps |
+| `second_factor.required` | boolean | `false` | Require 2FA setup after registration |
+
+## Issuer Configuration
+
+The `issuer` appears in authenticator apps to help users identify the account:
+
+```yaml
+totp:
+  enabled: true
+  issuer: Acme Corp
+```
+
+In the authenticator app, the account will appear as:
+```
+Acme Corp
+user@example.com
+```
+
+## Setup Flow
+
+1. User navigates to security settings
+2. Initiates TOTP setup
+3. Scans QR code with authenticator app
+4. Enters verification code
+5. TOTP is enabled for their account
+
+```
+User Initiates Setup
+        │
+        ▼
+Server Generates Secret
+        │
+        ▼
+QR Code Displayed ──► User Scans with App
+        │
+        ▼
+User Enters Code
+        │
+        ▼
+Server Verifies Code
+        │
+        ▼
+TOTP Enabled + Recovery Codes Provided
+```
+
+## Login Flow
+
+When a user with TOTP enabled logs in:
+
+1. User enters email and password
+2. Password is verified
+3. User is prompted for TOTP code
+4. User enters code from authenticator app
+5. Code is verified, login completes
+
+```
+Email + Password
+       │
+       ▼
+Password Verified
+       │
+       ▼
+TOTP Code Required ──► User Enters Code
+       │
+       ▼
+Code Verified
+       │
+       ▼
+Login Complete
+```
+
+## API Endpoints
+
+### Initialize TOTP Setup
+
+```http
+POST /api/v1/user/totp/setup
+```
+
+Response:
+```json
+{
+  "secret": "JBSWY3DPEHPK3PXP",
+  "qrCode": "data:image/png;base64,...",
+  "uri": "otpauth://totp/My%20App:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=My%20App"
+}
+```
+
+### Verify and Enable TOTP
+
+```http
+POST /api/v1/user/totp/confirm
+Content-Type: application/json
+
+{
+  "code": "123456"
+}
+```
+
+Response includes recovery codes:
+```json
+{
+  "recoveryCodes": [
+    "ABCD-1234-EFGH",
+    "IJKL-5678-MNOP",
+    ...
+  ]
+}
+```
+
+### Verify TOTP During Login
+
+```http
+POST /api/v1/auth/totp/verify
+Content-Type: application/json
+
+{
+  "code": "123456"
+}
+```
+
+### Disable TOTP
+
+```http
+DELETE /api/v1/user/totp
+Content-Type: application/json
+
+{
+  "code": "123456"
+}
+```
+
+## Recovery Codes
+
+When TOTP is enabled, recovery codes are provided for emergency access:
+
+- 10 single-use codes
+- Each code can only be used once
+- Store them securely offline
+
+### Using Recovery Codes
+
+```http
+POST /api/v1/auth/totp/recovery/verify
+Content-Type: application/json
+
+{
+  "code": "ABCD-1234-EFGH"
+}
+```
+
+## Requiring 2FA
+
+Force all users to set up 2FA:
+
+```yaml
+basic_authentication_methods:
+  password:
+    enabled: true
+    second_factor:
+      required: true
+    totp:
+      enabled: true
+```
+
+When `second_factor.required` is `true`:
+
+1. New users must set up 2FA after registration
+2. They cannot access the application until 2FA is configured
+3. Existing users without 2FA are prompted to set it up
+
+## Compatible Authenticator Apps
+
+TOTP works with any standard authenticator app:
+
+- Google Authenticator (iOS, Android)
+- Microsoft Authenticator (iOS, Android)
+- Authy (iOS, Android, Desktop)
+- 1Password (iOS, Android, Desktop)
+- Bitwarden (iOS, Android, Desktop)
+
+## Best Practices
+
+1. **Encourage 2FA adoption** - Display security prompts
+2. **Provide recovery codes** - Users need backup access
+3. **Allow multiple 2FA methods** - TOTP + Passkeys
+4. **Use descriptive issuer name** - Help users identify accounts
+5. **Implement rate limiting** - Prevent brute force on codes
+
+## Troubleshooting
+
+### "Invalid code" Error
+
+1. **Time sync**: Ensure the user's device time is accurate
+2. **Code expiry**: Codes are valid for 30 seconds
+3. **Wrong account**: User may be using code from different account
+
+### QR Code Not Scanning
+
+1. Provide the manual entry option (secret key)
+2. Ensure QR code is large enough to scan
+3. Check for screen glare or damage
+
+### Lost Authenticator Access
+
+Users can use recovery codes to regain access, then set up TOTP again on their new device.

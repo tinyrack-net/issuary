@@ -1,0 +1,289 @@
+---
+title: Passkey Authentication
+description: Configure WebAuthn/Passkey authentication in Tinyrack Auth
+---
+
+Passkeys (WebAuthn) provide passwordless authentication using biometrics, security keys, or device-based credentials. This is the most secure authentication method available.
+
+## What are Passkeys?
+
+Passkeys use public-key cryptography to authenticate users without passwords:
+
+- **Biometrics**: Face ID, Touch ID, Windows Hello
+- **Security Keys**: YubiKey, Google Titan
+- **Device Credentials**: Platform authenticators built into devices
+
+## Configuration
+
+```yaml
+basic_authentication_methods:
+  passkey:
+    enabled: true
+    email_verification: true
+    rp_id: example.com
+    origins:
+      - https://auth.example.com
+      - https://app.example.com
+```
+
+## Options
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | boolean | `false` | Enable passkey authentication |
+| `email_verification` | boolean | `true` | Require email verification for passkey registration |
+| `rp_id` | string | (from host) | Relying Party ID (domain only) |
+| `origins` | string[] | (from host) | Allowed origins for WebAuthn |
+
+## Relying Party ID (rp_id)
+
+The `rp_id` is the domain that identifies your authentication server. It must be:
+
+- The current domain, OR
+- A registrable parent domain (for subdomain sharing)
+
+```yaml
+# For auth.example.com
+passkey:
+  enabled: true
+  rp_id: example.com  # Share passkeys across *.example.com
+```
+
+:::note
+The `rp_id` must NOT include:
+- Protocol (`https://`)
+- Port (`:8080`)
+- Path (`/auth`)
+
+Valid: `example.com`, `localhost`
+Invalid: `https://example.com`, `example.com:8080`
+:::
+
+## Origins Configuration
+
+Specify allowed origins for WebAuthn verification:
+
+```yaml
+passkey:
+  enabled: true
+  origins:
+    - https://auth.example.com
+    - https://app.example.com
+```
+
+If not specified, the origin is derived from `app.host`.
+
+## Registration Flow
+
+1. User initiates passkey registration
+2. Server generates registration options
+3. Browser prompts for biometric/security key
+4. Credential is created and stored
+5. User can now authenticate with passkey
+
+```
+User Requests Registration
+          │
+          ▼
+Server Generates Challenge
+          │
+          ▼
+Browser Creates Credential ◄── Biometric/Key
+          │
+          ▼
+Server Verifies & Stores
+          │
+          ▼
+Registration Complete
+```
+
+## Authentication Flow
+
+1. User initiates passkey login
+2. Server generates authentication options
+3. Browser prompts for biometric/security key
+4. Signature is verified
+5. User is authenticated
+
+```
+User Requests Login
+        │
+        ▼
+Server Generates Challenge
+        │
+        ▼
+Browser Signs Challenge ◄── Biometric/Key
+        │
+        ▼
+Server Verifies Signature
+        │
+        ▼
+Login Complete
+```
+
+## API Endpoints
+
+### Registration Options
+
+```http
+POST /api/v1/user/passkeys/register/options
+Content-Type: application/json
+
+{}
+```
+
+Response:
+```json
+{
+  "challenge": "base64-encoded-challenge",
+  "rp": {
+    "id": "example.com",
+    "name": "My App"
+  },
+  "user": {
+    "id": "base64-user-id",
+    "name": "user@example.com",
+    "displayName": "User"
+  },
+  "pubKeyCredParams": [...],
+  "timeout": 60000,
+  "attestation": "none"
+}
+```
+
+### Verify Registration
+
+```http
+POST /api/v1/user/passkeys/register/verify
+Content-Type: application/json
+
+{
+  "id": "credential-id",
+  "rawId": "base64-raw-id",
+  "response": {
+    "clientDataJSON": "base64-client-data",
+    "attestationObject": "base64-attestation"
+  },
+  "type": "public-key"
+}
+```
+
+### Authentication Options
+
+```http
+POST /api/v1/auth/passkey/options
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+```
+
+### Verify Authentication
+
+```http
+POST /api/v1/auth/passkey/verify
+Content-Type: application/json
+
+{
+  "id": "credential-id",
+  "rawId": "base64-raw-id",
+  "response": {
+    "clientDataJSON": "base64-client-data",
+    "authenticatorData": "base64-auth-data",
+    "signature": "base64-signature"
+  },
+  "type": "public-key"
+}
+```
+
+## Managing Passkeys
+
+### List Passkeys
+
+```http
+GET /api/v1/user/passkeys
+```
+
+### Update Passkey Name
+
+```http
+PATCH /api/v1/user/passkeys/:id
+Content-Type: application/json
+
+{
+  "name": "My YubiKey"
+}
+```
+
+### Delete Passkey
+
+```http
+DELETE /api/v1/user/passkeys/:id
+```
+
+## Using as Second Factor
+
+Passkeys can be used alongside passwords as a second factor:
+
+```yaml
+basic_authentication_methods:
+  password:
+    enabled: true
+    second_factor:
+      required: true
+  passkey:
+    enabled: true
+```
+
+Users can register passkeys as their 2FA method instead of TOTP.
+
+## Browser Support
+
+Passkeys are supported in:
+
+- Chrome 67+
+- Safari 14+
+- Firefox 60+
+- Edge 79+
+
+Mobile support:
+- iOS 14+
+- Android 7+
+
+## Best Practices
+
+1. **Offer passkeys as primary auth** for enhanced security
+2. **Allow multiple passkeys** so users can register backup devices
+3. **Provide recovery options** in case users lose access
+4. **Use parent domain for rp_id** to share passkeys across subdomains
+5. **Test on multiple devices** to ensure broad compatibility
+
+## Troubleshooting
+
+### "Origin not allowed" Error
+
+Ensure the `origins` array includes all domains where authentication occurs:
+
+```yaml
+passkey:
+  origins:
+    - https://auth.example.com
+    - https://app.example.com
+```
+
+### "Invalid rp_id" Error
+
+The `rp_id` must be:
+- A valid domain (no protocol/port)
+- The current domain or a parent domain
+
+### Passkeys Not Working on Subdomain
+
+Use the parent domain as `rp_id`:
+
+```yaml
+# For app.example.com and auth.example.com
+passkey:
+  rp_id: example.com
+```
