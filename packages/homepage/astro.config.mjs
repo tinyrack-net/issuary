@@ -4,8 +4,9 @@ import starlight from '@astrojs/starlight';
 export default defineConfig({
   integrations: [
     starlight({
-      title: 'Tinyrack Auth',
+      title: 'Tinyauth',
       description: 'OpenID Connect (OIDC) Provider Documentation',
+      customCss: ['./src/styles/custom.css'],
       defaultLocale: 'root',
       locales: {
         root: {
