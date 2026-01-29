@@ -1,13 +1,13 @@
 ---
 title: Configuration Overview
-description: Understanding Tinyrack Auth configuration system
+description: Understanding Tinyauth configuration system
 ---
 
-Tinyrack Auth uses a YAML-based configuration system that allows you to customize every aspect of your authentication server.
+Tinyauth uses a YAML-based configuration system that allows you to customize every aspect of your authentication server.
 
 ## Configuration File Location
 
-By default, Tinyrack Auth looks for configuration at:
+By default, Tinyauth looks for configuration at:
 
 - `packages/backend/config.yaml` (development)
 - `/opt/config.yaml` (production)
@@ -94,7 +94,7 @@ database:
   port: 5432
   user: auth_user
   password: !env DB_PASSWORD
-  name: tinyrack_auth
+  name: tinyauth
 
 smtp:
   host: smtp.example.com

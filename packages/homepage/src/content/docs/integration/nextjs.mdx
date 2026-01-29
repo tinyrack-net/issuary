@@ -1,9 +1,9 @@
 ---
 title: Next.js Integration
-description: Integrate Tinyrack Auth with Next.js applications
+description: Integrate Tinyauth with Next.js applications
 ---
 
-This guide shows how to integrate Tinyrack Auth with Next.js applications using server-side authentication.
+This guide shows how to integrate Tinyauth with Next.js applications using server-side authentication.
 
 ## Overview
 
@@ -23,7 +23,7 @@ npm install jose
 
 ### 2. Configure OAuth Client
 
-In Tinyrack Auth `config.yaml`:
+In Tinyauth `config.yaml`:
 
 ```yaml
 providers:
@@ -372,8 +372,8 @@ import NextAuth from 'next-auth';
 const handler = NextAuth({
   providers: [
     {
-      id: 'tinyrack',
-      name: 'Tinyrack Auth',
+      id: 'tinyauth',
+      name: 'Tinyauth',
       type: 'oauth',
       wellKnown: `${process.env.AUTH_URL}/.well-known/openid-configuration`,
       clientId: process.env.AUTH_CLIENT_ID,
@@ -396,4 +396,4 @@ export { handler as GET, handler as POST };
 
 ## Example Repository
 
-See the complete example in `examples/next-basic` in the Tinyrack Auth repository.
+See the complete example in `examples/next-basic` in the Tinyauth repository.

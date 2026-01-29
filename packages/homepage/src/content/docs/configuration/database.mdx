@@ -1,9 +1,9 @@
 ---
 title: Database Configuration
-description: Configure database backends for Tinyrack Auth
+description: Configure database backends for Tinyauth
 ---
 
-Tinyrack Auth supports multiple database backends. Choose the one that best fits your deployment needs.
+Tinyauth supports multiple database backends. Choose the one that best fits your deployment needs.
 
 ## Supported Databases
 
@@ -38,7 +38,7 @@ database:
 # Production example
 database:
   type: sqlite
-  path: /var/lib/tinyrack-auth/auth.db
+  path: /var/lib/tinyauth/auth.db
 ```
 
 ## PostgreSQL Configuration
@@ -52,7 +52,7 @@ database:
   port: 5432
   user: auth_user
   password: !env DB_PASSWORD
-  name: tinyrack_auth
+  name: tinyauth
 ```
 
 | Field | Type | Default | Description |
@@ -70,7 +70,7 @@ database:
 
 ```sql
 CREATE USER auth_user WITH PASSWORD 'your-secure-password';
-CREATE DATABASE tinyrack_auth OWNER auth_user;
+CREATE DATABASE tinyauth OWNER auth_user;
 ```
 
 2. Configure your `config.yaml`:
@@ -82,7 +82,7 @@ database:
   port: 5432
   user: auth_user
   password: !env DB_PASSWORD
-  name: tinyrack_auth
+  name: tinyauth
 ```
 
 3. Set the environment variable:
@@ -96,7 +96,7 @@ export DB_PASSWORD=your-secure-password
 The configuration is internally converted to a connection string:
 
 ```
-postgresql://auth_user:password@localhost:5432/tinyrack_auth
+postgresql://auth_user:password@localhost:5432/tinyauth
 ```
 
 ## In-Memory Database
@@ -127,7 +127,7 @@ basic_authentication_methods:
 
 ## Database Migrations
 
-Tinyrack Auth automatically manages database schema migrations on startup. No manual migration commands are required.
+Tinyauth automatically manages database schema migrations on startup. No manual migration commands are required.
 
 ### Migration Behavior
 
@@ -171,12 +171,12 @@ version: '3.8'
 
 services:
   auth:
-    image: tinyrack/auth
+    image: tinyauth
     environment:
       - DB_HOST=postgres
       - DB_USER=auth_user
       - DB_PASSWORD=secret
-      - DB_NAME=tinyrack_auth
+      - DB_NAME=tinyauth
     depends_on:
       - postgres
 
@@ -185,7 +185,7 @@ services:
     environment:
       - POSTGRES_USER=auth_user
       - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=tinyrack_auth
+      - POSTGRES_DB=tinyauth
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

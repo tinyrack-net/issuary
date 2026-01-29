@@ -1,9 +1,9 @@
 ---
 title: Environment Variables
-description: Environment variable reference for Tinyrack Auth
+description: Environment variable reference for Tinyauth
 ---
 
-Tinyrack Auth uses environment variables for sensitive configuration values. This page documents all supported environment variables and how to use them.
+Tinyauth uses environment variables for sensitive configuration values. This page documents all supported environment variables and how to use them.
 
 ## Using Environment Variables in Config
 
@@ -27,7 +27,7 @@ smtp:
 | `CONFIG_PATH` | `/opt/config.yaml` | Path to the configuration file |
 
 ```bash
-CONFIG_PATH=/etc/tinyrack/config.yaml pnpm start
+CONFIG_PATH=/etc/tinyauth/config.yaml pnpm start
 ```
 
 ## Required Variables
@@ -130,7 +130,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USER=auth_user
 DB_PASSWORD=your-db-password
-DB_NAME=tinyrack_auth
+DB_NAME=tinyauth
 
 # SMTP
 SMTP_PASSWORD=your-smtp-password
@@ -161,13 +161,13 @@ docker run -d \
   -e COOKIE_SECRET=your-secret \
   -e DB_PASSWORD=your-db-password \
   -e SMTP_PASSWORD=your-smtp-password \
-  tinyrack/auth
+  tinyauth
 ```
 
 Or use an env file:
 
 ```bash
-docker run -d --env-file .env tinyrack/auth
+docker run -d --env-file .env tinyauth
 ```
 
 ## Docker Compose
@@ -177,13 +177,13 @@ version: '3.8'
 
 services:
   auth:
-    image: tinyrack/auth
+    image: tinyauth
     environment:
       - COOKIE_SECRET=${COOKIE_SECRET}
       - DB_HOST=postgres
       - DB_USER=auth_user
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=tinyrack_auth
+      - DB_NAME=tinyauth
       - SMTP_PASSWORD=${SMTP_PASSWORD}
 ```
 
@@ -192,7 +192,7 @@ services:
 Create a Kubernetes secret:
 
 ```bash
-kubectl create secret generic tinyrack-auth-secrets \
+kubectl create secret generic tinyauth-secrets \
   --from-literal=COOKIE_SECRET=your-secret \
   --from-literal=DB_PASSWORD=your-db-password \
   --from-literal=SMTP_PASSWORD=your-smtp-password
@@ -210,7 +210,7 @@ spec:
         - name: auth
           envFrom:
             - secretRef:
-                name: tinyrack-auth-secrets
+                name: tinyauth-secrets
 ```
 
 ## Security Best Practices
