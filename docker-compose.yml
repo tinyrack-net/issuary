@@ -3,8 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: tinyrack-auth:latest
-    container_name: tinyrack-auth
+    image: tinyauth:latest
+    container_name: tinyauth
     ports:
       - "8080:8080"
     volumes:

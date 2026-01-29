@@ -17,14 +17,14 @@ RUN pnpm install --frozen-lockfile
 # ===== Stage 3: Frontend Build =====
 FROM deps AS frontend-build
 COPY packages/frontend ./packages/frontend
-RUN pnpm --filter @tinyrack-auth/frontend build
+RUN pnpm --filter @tinyauth/frontend build
 
 # ===== Stage 4: Backend Build =====
 FROM deps AS backend-build
 COPY packages/backend ./packages/backend
 COPY --from=frontend-build /app/packages/backend/public ./packages/backend/public
 # tsc-alias는 build 스크립트에 포함됨
-RUN pnpm --filter @tinyrack-auth/backend build
+RUN pnpm --filter @tinyauth/backend build
 
 # ===== Stage 5: Production Dependencies =====
 FROM base AS prod-deps
@@ -33,7 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/backend/package.json ./packages/backend/
-RUN pnpm install --frozen-lockfile --filter @tinyrack-auth/backend
+RUN pnpm install --frozen-lockfile --filter @tinyauth/backend
 
 # ===== Stage 6: Production =====
 FROM node:24-slim AS production
