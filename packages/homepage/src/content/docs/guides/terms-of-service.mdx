@@ -1,0 +1,280 @@
+---
+title: Terms of Service
+description: Configure terms of service and consent management
+---
+
+Tinyrack Auth supports configurable terms of service that users must agree to during registration. Terms can be required or optional, with explicit or implicit consent modes.
+
+## Configuration
+
+Terms are configured in the `terms` section:
+
+```yaml
+terms:
+  - id: privacy-policy
+    required: true
+    consent_mode: explicit
+    version: "1.0.0"
+    content:
+      en:
+        title: Privacy Policy
+        type: link
+        content: https://example.com/privacy
+      ko:
+        title: 개인정보처리방침
+        type: link
+        content: https://example.com/ko/privacy
+
+  - id: terms-of-service
+    required: true
+    consent_mode: explicit
+    version: "1.0.0"
+    content:
+      en:
+        title: Terms of Service
+        type: text
+        content: |
+          By using our service, you agree to...
+```
+
+## Term Configuration
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `id` | string | - | Unique identifier (lowercase, alphanumeric, `-`, `_`) |
+| `required` | boolean | `true` | Whether agreement is mandatory |
+| `consent_mode` | string | `explicit` | `explicit` or `implicit` |
+| `version` | string | - | Version string for tracking changes |
+| `content` | object | - | Localized content by language code |
+
+## Content Types
+
+### Link Content
+
+Link to an external document:
+
+```yaml
+content:
+  en:
+    title: Privacy Policy
+    type: link
+    content: https://example.com/privacy
+```
+
+### Text Content
+
+Inline text content:
+
+```yaml
+content:
+  en:
+    title: Terms of Service
+    type: text
+    content: |
+      1. Acceptance of Terms
+      By accessing or using our service...
+      
+      2. User Responsibilities
+      You agree to...
+```
+
+## Consent Modes
+
+### Explicit Consent
+
+Users must actively check a checkbox to agree:
+
+```yaml
+terms:
+  - id: marketing
+    required: false
+    consent_mode: explicit
+    version: "1.0.0"
+    content:
+      en:
+        title: Marketing Communications
+        type: text
+        content: I agree to receive marketing emails
+```
+
+In the UI, this displays as a checkbox the user must check.
+
+### Implicit Consent
+
+Signup implies agreement (no checkbox shown):
+
+```yaml
+terms:
+  - id: privacy-policy
+    required: true
+    consent_mode: implicit
+    version: "1.0.0"
+    content:
+      en:
+        title: Privacy Policy
+        type: link
+        content: https://example.com/privacy
+```
+
+For implicit consent terms, configure a notice message:
+
+```yaml
+app:
+  signup_implicit_terms:
+    en: By signing up, you agree to our Privacy Policy and Terms of Service
+    ko: 가입하면 개인정보처리방침 및 서비스 약관에 동의하게 됩니다
+```
+
+## Version Tracking
+
+When terms are updated, increment the version:
+
+```yaml
+terms:
+  - id: privacy-policy
+    version: "2.0.0"  # Updated from 1.0.0
+```
+
+Users who agreed to a previous version may be prompted to agree to the new version.
+
+## Localization
+
+Provide content in multiple languages:
+
+```yaml
+terms:
+  - id: privacy-policy
+    required: true
+    consent_mode: explicit
+    version: "1.0.0"
+    content:
+      en:
+        title: Privacy Policy
+        type: link
+        content: https://example.com/privacy
+      ko:
+        title: 개인정보처리방침
+        type: link
+        content: https://example.com/ko/privacy
+      ja:
+        title: プライバシーポリシー
+        type: link
+        content: https://example.com/ja/privacy
+```
+
+The UI automatically displays content in the user's preferred language.
+
+## API Endpoints
+
+### Get Terms
+
+```http
+GET /api/v1/terms
+```
+
+Returns all terms requiring consent for the current user.
+
+### Submit Consent
+
+```http
+POST /api/v1/terms/consent
+Content-Type: application/json
+
+{
+  "consents": [
+    {
+      "termId": "privacy-policy",
+      "version": "1.0.0",
+      "agreed": true
+    },
+    {
+      "termId": "marketing",
+      "version": "1.0.0",
+      "agreed": false
+    }
+  ]
+}
+```
+
+## Complete Example
+
+```yaml
+app:
+  signup_implicit_terms:
+    en: By signing up, you agree to our Privacy Policy
+    ko: 가입하면 개인정보처리방침에 동의하게 됩니다
+
+terms:
+  # Privacy policy - required, implicit
+  - id: privacy-policy
+    required: true
+    consent_mode: implicit
+    version: "1.0.0"
+    content:
+      en:
+        title: Privacy Policy
+        type: link
+        content: https://example.com/privacy
+      ko:
+        title: 개인정보처리방침
+        type: link
+        content: https://example.com/ko/privacy
+
+  # Terms of service - required, explicit
+  - id: terms-of-service
+    required: true
+    consent_mode: explicit
+    version: "1.0.0"
+    content:
+      en:
+        title: Terms of Service
+        type: link
+        content: https://example.com/terms
+      ko:
+        title: 서비스 이용약관
+        type: link
+        content: https://example.com/ko/terms
+
+  # Marketing - optional, explicit
+  - id: marketing
+    required: false
+    consent_mode: explicit
+    version: "1.0.0"
+    content:
+      en:
+        title: Marketing Communications
+        type: text
+        content: I agree to receive promotional emails and updates
+      ko:
+        title: 마케팅 수신 동의
+        type: text
+        content: 프로모션 이메일 및 업데이트 수신에 동의합니다
+```
+
+## Registration Flow with Terms
+
+```
+User Fills Registration Form
+           │
+           ▼
+Terms Displayed ──► Required: Must agree
+           │        Optional: Can skip
+           ▼
+User Submits Consent
+           │
+           ▼
+Consent Recorded with Version
+           │
+           ▼
+Registration Completes
+```
+
+## Best Practices
+
+1. **Keep IDs stable** - Don't change term IDs after users have consented
+2. **Version your terms** - Track changes for compliance
+3. **Use links for long documents** - Keep signup flow clean
+4. **Provide translations** - Support all your user languages
+5. **Required vs Optional** - Only make truly necessary terms required
+6. **Implicit for standard terms** - Privacy policy can be implicit
+7. **Explicit for marketing** - Marketing consent should be explicit
