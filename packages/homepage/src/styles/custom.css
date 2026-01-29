@@ -1,0 +1,234 @@
+/* Minimal ASCII-Art Black Theme for Starlight */
+
+/* Import monospace font - JetBrains Mono for terminal aesthetic */
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+/* ============================================
+   Base Theme Variables
+   ============================================ */
+
+:root {
+  /* Typography - Monospace throughout for ASCII feel */
+  --sl-font:
+    "JetBrains Mono", ui-monospace, "Cascadia Code", "Source Code Pro", Menlo,
+    Consolas, "DejaVu Sans Mono", monospace;
+  --sl-font-system-mono:
+    "JetBrains Mono", ui-monospace, "Cascadia Code", "Source Code Pro", Menlo,
+    Consolas, "DejaVu Sans Mono", monospace;
+
+  /* Remove rounded corners - sharp ASCII look */
+  --sl-border-radius: 0;
+
+  /* Tighter text shadow for crisp edges */
+  --sl-text-shadow: none;
+}
+
+/* ============================================
+   Dark Theme Only - Applied to all states
+   ============================================ */
+
+:root,
+:root[data-theme="dark"],
+:root[data-theme="light"] {
+  /* Accent colors - white on black */
+  --sl-color-accent-low: #1a1a1a;
+  --sl-color-accent: #ffffff;
+  --sl-color-accent-high: #e0e0e0;
+
+  /* Grayscale palette */
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #e0e0e0;
+  --sl-color-gray-2: #b0b0b0;
+  --sl-color-gray-3: #808080;
+  --sl-color-gray-4: #505050;
+  --sl-color-gray-5: #303030;
+  --sl-color-gray-6: #1a1a1a;
+  --sl-color-black: #000000;
+
+  /* Background colors - pure black */
+  --sl-color-bg: #000000;
+  --sl-color-bg-nav: #0a0a0a;
+  --sl-color-bg-sidebar: #050505;
+  --sl-color-bg-accent: #1a1a1a;
+
+  /* Border colors */
+  --sl-color-hairline-light: #2a2a2a;
+  --sl-color-hairline: #3a3a3a;
+
+  /* Text colors */
+  --sl-color-text: #e0e0e0;
+  --sl-color-text-accent: #ffffff;
+
+  /* Force dark color scheme */
+  color-scheme: dark;
+}
+
+/* ============================================
+   Component Overrides
+   ============================================ */
+
+/* Hide theme picker - dark mode only */
+starlight-theme-select,
+[data-theme-select] {
+  display: none !important;
+}
+
+/* Global: Remove ALL rounded corners */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
+
+/* Links - classic underline style */
+a:not([class]) {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+a:not([class]):hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Code blocks - terminal-like appearance */
+pre {
+  border: 1px solid var(--sl-color-hairline) !important;
+}
+
+/* Inline code */
+code:not(pre code) {
+  padding: 0.15em 0.35em !important;
+  border: 1px solid var(--sl-color-hairline-light);
+}
+
+/* Sidebar - cleaner borders */
+.sidebar-content {
+  border-right: 1px solid var(--sl-color-hairline);
+}
+
+/* Navigation header */
+header.header {
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+
+/* Cards and callouts - sharp edges */
+.card,
+.sl-card,
+aside,
+article {
+  border: 1px solid var(--sl-color-hairline);
+}
+
+/* Starlight hero cards */
+.sl-link-card,
+.sl-link-card article {
+  border: 1px solid var(--sl-color-hairline) !important;
+}
+
+/* Homepage feature cards */
+.card-grid article {
+  border: 1px solid var(--sl-color-hairline) !important;
+  background: var(--sl-color-bg-nav) !important;
+}
+
+/* All links that look like buttons */
+a[class*="primary"],
+a[class*="secondary"],
+.action {
+  border: 1px solid var(--sl-color-hairline) !important;
+}
+
+/* Table styling - ASCII-like */
+table {
+  border-collapse: collapse;
+}
+
+table th,
+table td {
+  border: 1px solid var(--sl-color-hairline);
+  padding: 8px;
+}
+
+/* Horizontal rules - simple line */
+hr {
+  border: none;
+  border-top: 1px solid var(--sl-color-hairline);
+}
+
+/* Blockquotes - minimal style */
+blockquote {
+  border-left: 2px solid var(--sl-color-hairline);
+  padding-left: 1rem;
+  font-style: normal;
+}
+
+/* Search dialog */
+dialog {
+  border: 1px solid var(--sl-color-hairline) !important;
+}
+
+/* Pagination / Next links */
+.sl-flex.pagination-links a {
+  border: 1px solid var(--sl-color-hairline) !important;
+}
+
+/* ============================================
+   Custom ASCII Decorations
+   ============================================ */
+
+/* Add subtle ASCII-style markers to headings */
+.sl-markdown-content h2::before {
+  content: "## ";
+  opacity: 0.4;
+}
+
+.sl-markdown-content h3::before {
+  content: "### ";
+  opacity: 0.4;
+}
+
+/* Page title styling */
+h1 {
+  letter-spacing: -0.02em;
+}
+
+/* Hero section - add ASCII border decoration */
+.hero {
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+
+/* ASCII-style list markers */
+.sl-markdown-content ul {
+  list-style-type: none;
+  padding-left: 1.5em;
+}
+
+.sl-markdown-content ul li::before {
+  content: "- ";
+  position: absolute;
+  margin-left: -1.5em;
+  opacity: 0.6;
+}
+
+.sl-markdown-content ul li {
+  position: relative;
+}
+
+/* Sidebar active item - cleaner highlight */
+nav[aria-label="Main"] a[aria-current="page"] {
+  border-left: 2px solid var(--sl-color-accent) !important;
+  background: var(--sl-color-bg-accent) !important;
+}
+
+/* Focus styles - visible but minimal */
+:focus-visible {
+  outline: 1px solid var(--sl-color-accent) !important;
+  outline-offset: 2px;
+}
+
+/* Selection color */
+::selection {
+  background: var(--sl-color-accent);
+  color: var(--sl-color-bg);
+}
