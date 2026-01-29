@@ -1,0 +1,229 @@
+---
+title: Environment Variables
+description: Environment variable reference for Tinyrack Auth
+---
+
+Tinyrack Auth uses environment variables for sensitive configuration values. This page documents all supported environment variables and how to use them.
+
+## Using Environment Variables in Config
+
+Use the `!env` YAML tag to reference environment variables:
+
+```yaml
+app:
+  cookie_secret: !env COOKIE_SECRET
+
+database:
+  password: !env DB_PASSWORD
+
+smtp:
+  password: !env SMTP_PASSWORD
+```
+
+## Configuration Path
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CONFIG_PATH` | `/opt/config.yaml` | Path to the configuration file |
+
+```bash
+CONFIG_PATH=/etc/tinyrack/config.yaml pnpm start
+```
+
+## Required Variables
+
+These variables are commonly required for production deployments:
+
+| Variable | Description |
+|----------|-------------|
+| `COOKIE_SECRET` | Secret key for session cookies (min 16 characters) |
+| `DB_PASSWORD` | Database password (when using PostgreSQL) |
+| `SMTP_PASSWORD` | SMTP server password |
+
+## Database Variables
+
+When using PostgreSQL:
+
+| Variable | Description |
+|----------|-------------|
+| `DB_HOST` | Database server hostname |
+| `DB_PORT` | Database server port |
+| `DB_USER` | Database username |
+| `DB_PASSWORD` | Database password |
+| `DB_NAME` | Database name |
+
+```yaml
+database:
+  type: postgres
+  host: !env DB_HOST
+  port: 5432
+  user: !env DB_USER
+  password: !env DB_PASSWORD
+  name: !env DB_NAME
+```
+
+## OAuth Provider Variables
+
+For social login providers:
+
+### Google
+
+| Variable | Description |
+|----------|-------------|
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
+
+### GitHub
+
+| Variable | Description |
+|----------|-------------|
+| `GITHUB_CLIENT_ID` | GitHub OAuth client ID |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth client secret |
+
+### Apple
+
+| Variable | Description |
+|----------|-------------|
+| `APPLE_CLIENT_ID` | Apple OAuth client ID |
+| `APPLE_CLIENT_SECRET` | Apple OAuth client secret |
+
+## OAuth Client Variables
+
+For your application's OAuth clients:
+
+| Variable | Description |
+|----------|-------------|
+| `MY_APP_CLIENT_SECRET` | Client secret for your OAuth application |
+
+```yaml
+providers:
+  - id: my-app
+    client_id: my-app-client-id
+    client_secret: !env MY_APP_CLIENT_SECRET
+```
+
+## Pre-configured User Variables
+
+For config-based user accounts:
+
+| Variable | Description |
+|----------|-------------|
+| `ADMIN_PASSWORD` | Password for admin user defined in config |
+
+```yaml
+users:
+  - id: admin
+    email: admin@example.com
+    password: !env ADMIN_PASSWORD
+```
+
+## Environment File
+
+Create a `.env` file in your project root for local development:
+
+```bash
+# .env
+COOKIE_SECRET=your-super-secret-cookie-key-here
+
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=auth_user
+DB_PASSWORD=your-db-password
+DB_NAME=tinyrack_auth
+
+# SMTP
+SMTP_PASSWORD=your-smtp-password
+
+# OAuth Providers
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+
+# Application Clients
+MY_APP_CLIENT_SECRET=your-app-client-secret
+
+# Admin User
+ADMIN_PASSWORD=your-admin-password
+```
+
+:::caution
+Never commit `.env` files to version control. Add `.env` to your `.gitignore` file.
+:::
+
+## Docker Environment
+
+Pass environment variables to Docker containers:
+
+```bash
+docker run -d \
+  -e COOKIE_SECRET=your-secret \
+  -e DB_PASSWORD=your-db-password \
+  -e SMTP_PASSWORD=your-smtp-password \
+  tinyrack/auth
+```
+
+Or use an env file:
+
+```bash
+docker run -d --env-file .env tinyrack/auth
+```
+
+## Docker Compose
+
+```yaml
+version: '3.8'
+
+services:
+  auth:
+    image: tinyrack/auth
+    environment:
+      - COOKIE_SECRET=${COOKIE_SECRET}
+      - DB_HOST=postgres
+      - DB_USER=auth_user
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=tinyrack_auth
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+```
+
+## Kubernetes Secrets
+
+Create a Kubernetes secret:
+
+```bash
+kubectl create secret generic tinyrack-auth-secrets \
+  --from-literal=COOKIE_SECRET=your-secret \
+  --from-literal=DB_PASSWORD=your-db-password \
+  --from-literal=SMTP_PASSWORD=your-smtp-password
+```
+
+Reference in your deployment:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+        - name: auth
+          envFrom:
+            - secretRef:
+                name: tinyrack-auth-secrets
+```
+
+## Security Best Practices
+
+1. **Use strong secrets**: Generate random strings for secrets
+   ```bash
+   openssl rand -base64 32
+   ```
+
+2. **Rotate secrets regularly**: Update secrets periodically
+
+3. **Limit access**: Only authorized personnel should access secrets
+
+4. **Use secret management**: Consider tools like HashiCorp Vault, AWS Secrets Manager, or Kubernetes Secrets
+
+5. **Audit access**: Log and monitor access to sensitive configuration

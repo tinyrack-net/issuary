@@ -1,0 +1,148 @@
+---
+title: Configuration Overview
+description: Understanding Tinyrack Auth configuration system
+---
+
+Tinyrack Auth uses a YAML-based configuration system that allows you to customize every aspect of your authentication server.
+
+## Configuration File Location
+
+By default, Tinyrack Auth looks for configuration at:
+
+- `packages/backend/config.yaml` (development)
+- `/opt/config.yaml` (production)
+
+You can override this with the `CONFIG_PATH` environment variable:
+
+```bash
+CONFIG_PATH=/path/to/config.yaml pnpm start
+```
+
+## Configuration Structure
+
+The configuration file is organized into the following sections:
+
+| Section | Description |
+|---------|-------------|
+| `app` | Application settings (host, port, themes, JWT settings) |
+| `database` | Database connection settings |
+| `smtp` | Email server configuration |
+| `basic_authentication_methods` | Password and passkey authentication settings |
+| `oauth_authentication_methods` | Social login providers (Google, GitHub, Apple) |
+| `providers` | OAuth client applications |
+| `users` | Pre-configured user accounts |
+| `terms` | Terms of service configuration |
+| `account_deletion` | Account deletion settings |
+
+## Environment Variable Interpolation
+
+Use the `!env` tag to reference environment variables:
+
+```yaml
+app:
+  cookie_secret: !env COOKIE_SECRET
+
+database:
+  type: postgres
+  password: !env DB_PASSWORD
+
+smtp:
+  password: !env SMTP_PASSWORD
+```
+
+## Minimal Configuration Example
+
+```yaml
+app:
+  host: http://localhost:8080
+  port: 8080
+  cookie_secret: !env COOKIE_SECRET
+
+database:
+  type: sqlite
+  path: ./data/auth.db
+
+basic_authentication_methods:
+  password:
+    enabled: true
+```
+
+## Full Configuration Example
+
+```yaml
+app:
+  name: My Auth Server
+  host: https://auth.example.com
+  port: 8080
+  cookie_secret: !env COOKIE_SECRET
+  jwt_access_token_ttl: 3600
+  jwt_refresh_token_ttl: 2592000
+  jwt_key_rotation_enabled: true
+  jwt_key_rotation_days: 30
+  supported_languages:
+    - en
+    - ko
+    - ja
+  default_language: auto
+  light_theme: light
+  dark_theme: dark
+  theme_mode: system
+
+database:
+  type: postgres
+  host: localhost
+  port: 5432
+  user: auth_user
+  password: !env DB_PASSWORD
+  name: tinyrack_auth
+
+smtp:
+  host: smtp.example.com
+  port: 587
+  secure: true
+  user: noreply@example.com
+  password: !env SMTP_PASSWORD
+  from: noreply@example.com
+
+basic_authentication_methods:
+  password:
+    enabled: true
+    email_verification: true
+    totp:
+      enabled: true
+      issuer: My App
+  passkey:
+    enabled: true
+
+oauth_authentication_methods:
+  - type: google
+    id: google
+    enabled: true
+    client_id: !env GOOGLE_CLIENT_ID
+    client_secret: !env GOOGLE_CLIENT_SECRET
+
+providers:
+  - id: my-app
+    name: My Application
+    client_id: my-app-client-id
+    client_secret: !env MY_APP_CLIENT_SECRET
+    redirect_uris:
+      - http://localhost:3000/callback
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+      - refresh_token
+    scope: openid profile email
+
+account_deletion:
+  enabled: true
+  retention_period: 30d
+```
+
+## Configuration Sections
+
+- [App Configuration](/configuration/app/) - Application settings
+- [Database Configuration](/configuration/database/) - Database setup
+- [SMTP Configuration](/configuration/smtp/) - Email settings
+- [Environment Variables](/configuration/environment-variables/) - Environment variable reference

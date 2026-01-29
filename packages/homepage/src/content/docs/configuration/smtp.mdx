@@ -1,0 +1,185 @@
+---
+title: SMTP Configuration
+description: Configure email delivery for Tinyrack Auth
+---
+
+SMTP configuration is required for email-based features such as email verification, password reset, and notifications.
+
+## Configuration
+
+```yaml
+smtp:
+  host: smtp.example.com
+  port: 587
+  secure: true
+  user: noreply@example.com
+  password: !env SMTP_PASSWORD
+  from: noreply@example.com
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `host` | string | `localhost` | SMTP server hostname |
+| `port` | number | `465` | SMTP server port |
+| `secure` | boolean | `true` | Use TLS/SSL connection |
+| `user` | string | - | SMTP authentication username |
+| `password` | string | - | SMTP authentication password |
+| `from` | string | - | Sender email address |
+
+## Test Mode
+
+For development without a real SMTP server, enable test mode:
+
+```yaml
+smtp:
+  test: true
+```
+
+In test mode, emails are logged to the console instead of being sent.
+
+## Common SMTP Providers
+
+### Gmail
+
+```yaml
+smtp:
+  host: smtp.gmail.com
+  port: 587
+  secure: true
+  user: your-email@gmail.com
+  password: !env GMAIL_APP_PASSWORD  # Use App Password, not regular password
+  from: your-email@gmail.com
+```
+
+:::note
+Gmail requires an App Password when 2FA is enabled. Generate one at [Google Account Settings](https://myaccount.google.com/apppasswords).
+:::
+
+### Amazon SES
+
+```yaml
+smtp:
+  host: email-smtp.us-east-1.amazonaws.com
+  port: 587
+  secure: true
+  user: !env AWS_SES_USER
+  password: !env AWS_SES_PASSWORD
+  from: noreply@your-verified-domain.com
+```
+
+### SendGrid
+
+```yaml
+smtp:
+  host: smtp.sendgrid.net
+  port: 587
+  secure: true
+  user: apikey
+  password: !env SENDGRID_API_KEY
+  from: noreply@your-domain.com
+```
+
+### Mailgun
+
+```yaml
+smtp:
+  host: smtp.mailgun.org
+  port: 587
+  secure: true
+  user: postmaster@your-domain.mailgun.org
+  password: !env MAILGUN_PASSWORD
+  from: noreply@your-domain.com
+```
+
+### Postmark
+
+```yaml
+smtp:
+  host: smtp.postmarkapp.com
+  port: 587
+  secure: true
+  user: !env POSTMARK_API_TOKEN
+  password: !env POSTMARK_API_TOKEN
+  from: noreply@your-domain.com
+```
+
+## Port Configuration
+
+| Port | Protocol | Description |
+|------|----------|-------------|
+| 25 | SMTP | Unencrypted (not recommended) |
+| 465 | SMTPS | Implicit TLS (secure: true) |
+| 587 | Submission | STARTTLS (secure: true) |
+
+## Email Features
+
+SMTP is used for the following features:
+
+| Feature | Configuration Required |
+|---------|----------------------|
+| Email Verification | `basic_authentication_methods.password.email_verification: true` |
+| Password Reset | Always available when SMTP is configured |
+| Account Notifications | Automatic when SMTP is configured |
+
+### Disabling Email Verification
+
+If you don't want to configure SMTP, disable email verification:
+
+```yaml
+basic_authentication_methods:
+  password:
+    enabled: true
+    email_verification: false  # No SMTP required
+```
+
+## Troubleshooting
+
+### Connection Refused
+
+Check that the SMTP host and port are correct, and that your firewall allows outbound connections.
+
+### Authentication Failed
+
+Verify your credentials. Some providers require:
+- App passwords (Gmail)
+- API keys (SendGrid, Postmark)
+- Specific usernames (SendGrid uses `apikey` as username)
+
+### Emails Not Received
+
+1. Check spam/junk folders
+2. Verify the `from` address is authorized to send
+3. Check SPF, DKIM, and DMARC records for your domain
+4. Review SMTP server logs
+
+### SSL/TLS Errors
+
+Try toggling the `secure` setting:
+
+```yaml
+smtp:
+  secure: false  # For STARTTLS on port 587
+  # or
+  secure: true   # For implicit TLS on port 465
+```
+
+## Development Configuration
+
+For local development, you can use services like [Mailhog](https://github.com/mailhog/MailHog) or [Mailpit](https://github.com/axllent/mailpit):
+
+```yaml
+smtp:
+  host: localhost
+  port: 1025
+  secure: false
+  user: ""
+  password: ""
+  from: test@localhost
+```
+
+Or simply use test mode:
+
+```yaml
+smtp:
+  test: true
+```
