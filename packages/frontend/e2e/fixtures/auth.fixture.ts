@@ -1,5 +1,6 @@
 import { test as base, type Page } from '@playwright/test';
 import { generateEmail, generatePassword } from './test-data.fixture';
+import { createApiHelpers } from '../utils/api-helpers';
 
 /**
  * Test user credentials type
@@ -26,11 +27,6 @@ export type AuthFixtures = {
 };
 
 /**
- * API base URL for direct API calls
- */
-const API_BASE_URL = 'http://localhost:8080';
-
-/**
  * Extended test with auth fixtures
  */
 export const test = base.extend<AuthFixtures>({
@@ -41,14 +37,9 @@ export const test = base.extend<AuthFixtures>({
     const email = generateEmail();
     const password = generatePassword();
 
-    // Register the test user via API
-    const registerResponse = await request.post(`${API_BASE_URL}/api/v1/auth/register`, {
-      data: { email, password },
-    });
-
-    if (!registerResponse.ok()) {
-      throw new Error(`Failed to create test user: ${await registerResponse.text()}`);
-    }
+    // Register the test user via API (with auto terms consent)
+    const apiHelpers = createApiHelpers(request);
+    await apiHelpers.register(email, password);
 
     const cleanup = async () => {
       // Note: Account deletion may require authentication
@@ -69,23 +60,12 @@ export const test = base.extend<AuthFixtures>({
     const email = generateEmail();
     const password = generatePassword();
 
-    // Register the test user via API
-    const registerResponse = await request.post(`${API_BASE_URL}/api/v1/auth/register`, {
-      data: { email, password },
-    });
-
-    if (!registerResponse.ok()) {
-      throw new Error(`Failed to create test user: ${await registerResponse.text()}`);
-    }
+    // Register the test user via API (with auto terms consent)
+    const apiHelpers = createApiHelpers(request);
+    await apiHelpers.register(email, password);
 
     // Login via API to get session cookie
-    const loginResponse = await request.post(`${API_BASE_URL}/api/v1/auth/login`, {
-      data: { email, password },
-    });
-
-    if (!loginResponse.ok()) {
-      throw new Error(`Failed to login test user: ${await loginResponse.text()}`);
-    }
+    await apiHelpers.login(email, password);
 
     // Get cookies from the API request context and apply to page
     const cookies = await request.storageState();

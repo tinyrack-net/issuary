@@ -6,6 +6,28 @@ import type { APIRequestContext } from '@playwright/test';
 const API_BASE_URL = 'http://localhost:8080';
 
 /**
+ * Terms item type from the API
+ */
+export type TermsItem = {
+  id: string;
+  required: boolean;
+  consentMode: 'explicit' | 'implicit';
+  version: string;
+  content: {
+    title: string;
+    type: 'link' | 'text';
+    content: string;
+  };
+};
+
+/**
+ * Terms response from the API
+ */
+export type TermsResponse = {
+  terms: TermsItem[];
+};
+
+/**
  * Session user type from the API
  */
 export type SessionUser = {
@@ -42,15 +64,46 @@ export class ApiHelpers {
   constructor(private request: APIRequestContext) {}
 
   /**
+   * Fetch terms configuration from the API
+   */
+  async getTerms(lang = 'en'): Promise<TermsResponse> {
+    const response = await this.request.get(`${API_BASE_URL}/api/v1/terms?lang=${lang}`);
+
+    if (!response.ok()) {
+      const error = await response.text();
+      throw new Error(`Get terms failed: ${response.status()} - ${error}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Generate default consents for all required explicit terms
+   */
+  async generateRequiredConsents(): Promise<Array<{ termsId: string; agreed: boolean }>> {
+    const termsData = await this.getTerms();
+    return termsData.terms
+      .filter((term) => term.consentMode === 'explicit')
+      .map((term) => ({
+        termsId: term.id,
+        agreed: term.required, // Agree to required terms, leave optional as false
+      }));
+  }
+
+  /**
    * Register a new user via API
+   * If consents is not provided, automatically fetches and agrees to required terms
    */
   async register(
     email: string,
     password: string,
     consents?: Array<{ termsId: string; agreed: boolean }>
   ): Promise<RegisterResponse> {
+    // Auto-generate consents if not provided
+    const finalConsents = consents ?? (await this.generateRequiredConsents());
+
     const response = await this.request.post(`${API_BASE_URL}/api/v1/auth/register`, {
-      data: { email, password, consents },
+      data: { email, password, consents: finalConsents },
     });
 
     if (!response.ok()) {
