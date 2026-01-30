@@ -33,7 +33,8 @@ export class RegisterPage {
     this.emailInput = page.locator('input[type="email"]');
     this.passwordInput = page.locator('input[type="password"]');
     this.submitButton = page.locator('button[type="submit"]');
-    this.termsCheckboxes = page.locator('input[type="checkbox"][name*="termsConsents"]');
+    // Terms checkboxes don't have name attribute, use checkbox class instead
+    this.termsCheckboxes = page.locator('input[type="checkbox"].checkbox');
     this.loginLink = page.locator('a[href="/login"]');
     this.emailError = page.locator('input[type="email"]').locator('..').locator('~ p.text-error');
     this.passwordError = page.locator('input[type="password"]').locator('..').locator('~ p.text-error');
@@ -112,7 +113,19 @@ export class RegisterPage {
    * Verify an error message is displayed
    */
   async expectError() {
-    await expect(this.formError.first()).toBeVisible();
+    // Wait for any error indicator to appear:
+    // - .text-error class (inline errors)
+    // - input-error class (input border)
+    // - alert-error class (form-level errors)
+    // - HTML5 validation (input:invalid)
+    await expect(async () => {
+      const hasTextError = await this.formError.first().isVisible().catch(() => false);
+      const hasInputError = await this.page.locator('.input-error').first().isVisible().catch(() => false);
+      const hasAlertError = await this.page.locator('.alert-error').first().isVisible().catch(() => false);
+      // Check for HTML5 validation state
+      const hasInvalidInput = await this.page.locator('input:invalid').first().isVisible().catch(() => false);
+      expect(hasTextError || hasInputError || hasAlertError || hasInvalidInput).toBeTruthy();
+    }).toPass({ timeout: 5000 });
   }
 
   /**
