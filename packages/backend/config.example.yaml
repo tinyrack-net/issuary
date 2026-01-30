@@ -1,0 +1,603 @@
+# =============================================================================
+# TinyAuth Configuration Example
+# =============================================================================
+# This file contains all available configuration options with detailed explanations.
+# Copy this file to config.yaml and modify according to your needs.
+#
+# Environment variables can be referenced using the !env tag:
+#   password: !env MY_SECRET_PASSWORD
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Application Settings
+# -----------------------------------------------------------------------------
+# Core application configuration including server, security, and UI settings.
+# -----------------------------------------------------------------------------
+app:
+  # --------------------------------------------------------------------------
+  # Server Configuration
+  # --------------------------------------------------------------------------
+
+  # host: The public URL where the authentication service is accessible.
+  # This is used for generating callback URLs, links in emails, and CORS settings.
+  # Must include the protocol (http:// or https://) and optionally the port.
+  # Example: https://auth.example.com or http://localhost:8080
+  host: https://auth.example.com
+
+  # port: The port number on which the server listens for incoming connections.
+  # Default: 8080
+  # For production behind a reverse proxy, this is typically the internal port.
+  port: 8080
+
+  # --------------------------------------------------------------------------
+  # Security Settings
+  # --------------------------------------------------------------------------
+
+  # cookie_secret: A 256-bit (32 bytes) secret key for signing session cookies.
+  # IMPORTANT: Generate a unique, random value for production environments.
+  # You can generate one using: openssl rand -hex 32
+  # WARNING: Changing this value will invalidate all existing sessions.
+  cookie_secret: !env COOKIE_SECRET
+
+  # jwt_access_token_ttl: Time-to-live for JWT access tokens in seconds.
+  # Access tokens are short-lived and used for API authentication.
+  # Default: 3600 (1 hour)
+  # Recommended: 900-3600 (15 minutes to 1 hour)
+  jwt_access_token_ttl: 3600
+
+  # jwt_refresh_token_ttl: Time-to-live for JWT refresh tokens in seconds.
+  # Refresh tokens are long-lived and used to obtain new access tokens.
+  # Default: 2592000 (30 days)
+  # Recommended: 604800-2592000 (7-30 days)
+  jwt_refresh_token_ttl: 2592000
+
+  # --------------------------------------------------------------------------
+  # Registration & Access Control
+  # --------------------------------------------------------------------------
+
+  # allowed_signup_emails: List of email patterns allowed to register.
+  # Controls who can create new accounts on your authentication server.
+  #
+  # Pattern syntax:
+  #   - '*'                : Allow all emails (public registration)
+  #   - 'user@example.com' : Allow only this specific email address
+  #   - '*@example.com'    : Allow all emails from the example.com domain
+  #   - '*@*.example.com'  : Allow all emails from any subdomain of example.com
+  #
+  # Multiple patterns can be combined. If any pattern matches, signup is allowed.
+  # If this list is empty or not specified, no new signups are allowed.
+  allowed_signup_emails:
+    # - '*'                    # Allow all emails (public registration)
+    - 'admin@example.com'      # Allow specific email
+    - '*@example.com'          # Allow all emails from domain
+
+  # --------------------------------------------------------------------------
+  # Internationalization (i18n) Settings
+  # --------------------------------------------------------------------------
+
+  # supported_languages: List of language codes supported by the application.
+  # These languages will be available in the language selector.
+  # Currently supported: en (English), ko (Korean), ja (Japanese)
+  supported_languages:
+    - en
+    - ko
+    - ja
+
+  # default_language: The default language for new users.
+  # Options:
+  #   - 'auto': Automatically detect from browser's Accept-Language header
+  #   - A specific language code from supported_languages (e.g., 'en', 'ko')
+  # Default: 'auto'
+  default_language: auto
+
+  # fallback_language: Language to use when requested language is not available.
+  # Must be one of the supported_languages.
+  # This is used when auto-detection fails or user's preferred language is not supported.
+  fallback_language: en
+
+  # --------------------------------------------------------------------------
+  # UI Customization
+  # --------------------------------------------------------------------------
+
+  # light_theme: Theme name for light mode.
+  # Available themes depend on the frontend implementation.
+  # Default: 'light'
+  # light_theme: light
+
+  # dark_theme: Theme name for dark mode.
+  # Available themes depend on the frontend implementation.
+  # Default: 'dark'
+  # dark_theme: dark
+
+  # theme_mode: How the theme is selected.
+  # Options:
+  #   - 'system': Follow the user's system preference (light/dark)
+  #   - 'light': Always use light theme
+  #   - 'dark': Always use dark theme
+  # Default: 'system'
+  # theme_mode: system
+
+  # background_url: URL of the background image for authentication pages.
+  # Supports any publicly accessible image URL.
+  # Recommended: High-resolution image (1920x1080 or higher) for best quality.
+  # Set to empty string or remove to use a solid color background.
+  background_url: https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071
+
+  # icon_url: URL of the logo/icon displayed on authentication pages.
+  # Recommended size: 48x48 pixels (will be displayed at this size).
+  # Supports PNG, SVG, JPG formats.
+  icon_url: https://example.com/logo.png
+
+  # title: Localized title text displayed on the login page.
+  # Overrides the default "Welcome back!" message.
+  # Provide translations for each supported language.
+  title:
+    en: My App
+    ko: 내 앱
+    ja: マイアプリ
+
+  # subtitle: Localized subtitle text displayed below the title on login page.
+  # Provides additional context or instructions for users.
+  subtitle:
+    en: Log in to your account
+    ko: 계정에 로그인하세요
+    ja: アカウントにログインしてください
+
+  # --------------------------------------------------------------------------
+  # Proxy Configuration
+  # --------------------------------------------------------------------------
+
+  # trust_proxy: Configuration for trusting reverse proxy headers.
+  # Essential when running behind a load balancer or reverse proxy (nginx, etc.)
+  # to correctly identify client IP addresses and protocol.
+  #
+  # Options:
+  #   - true        : Trust all proxy headers (use only in fully trusted networks)
+  #   - false       : Don't trust any proxy headers (default)
+  #   - '127.0.0.1' : Trust only the specified IP address
+  #   - ['10.0.0.0/8', '172.16.0.0/12'] : Trust IPs in specified CIDR ranges
+  #   - 1           : Trust the first hop (immediate proxy)
+  #   - 2           : Trust up to 2 hops
+  #
+  # WARNING: Incorrectly configuring this can lead to IP spoofing vulnerabilities.
+  # trust_proxy: ['10.0.0.0/8']
+
+  # --------------------------------------------------------------------------
+  # Consent Notice (Implicit Mode)
+  # --------------------------------------------------------------------------
+
+  # signup_implicit_terms: Notice text displayed on login/signup pages.
+  # Used when you want to inform users about terms without requiring explicit consent.
+  # Displayed below OAuth buttons and signup forms.
+  # Supports HTML for links (use class="link" for consistent styling).
+  #
+  # signup_implicit_terms:
+  #   en: By continuing, you agree to our <a href="https://example.com/terms" class="link">Terms of Service</a> and <a href="https://example.com/privacy" class="link">Privacy Policy</a>.
+  #   ko: 계속하면 <a href="https://example.com/terms/ko" class="link">이용약관</a> 및 <a href="https://example.com/privacy/ko" class="link">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
+  #   ja: 続行することで、<a href="https://example.com/terms/ja" class="link">利用規約</a>および<a href="https://example.com/privacy/ja" class="link">プライバシーポリシー</a>に同意したものとみなされます。
+
+# -----------------------------------------------------------------------------
+# Admin Panel Configuration
+# -----------------------------------------------------------------------------
+# Settings for the administrative dashboard.
+# -----------------------------------------------------------------------------
+admin:
+  # enabled: Whether the admin panel is accessible.
+  # Set to false to completely disable admin access.
+  # Default: false
+  enabled: true
+
+  # port: Port number for the admin panel.
+  # Can be the same as the main app port or a different port for isolation.
+  # Using a separate port allows you to restrict admin access at the network level.
+  port: !env ADMIN_PORT
+
+# -----------------------------------------------------------------------------
+# Account Deletion Settings
+# -----------------------------------------------------------------------------
+# Configuration for user account self-deletion feature.
+# -----------------------------------------------------------------------------
+account_deletion:
+  # enabled: Whether users can delete their own accounts.
+  # When enabled, users can request account deletion from their profile settings.
+  # Default: false
+  enabled: true
+
+# -----------------------------------------------------------------------------
+# Terms of Service Configuration
+# -----------------------------------------------------------------------------
+# Manages user consent for terms, privacy policy, and other legal agreements.
+# Each term can be configured independently with different consent modes.
+# -----------------------------------------------------------------------------
+terms:
+  # Each term is defined as a list item with the following properties:
+  #
+  # - id: Unique identifier for the term (used internally and in API)
+  # - required: Whether acceptance is mandatory for registration
+  # - consent_mode: How consent is collected
+  #     - 'explicit': User must actively check a checkbox
+  #     - 'implicit': Consent is implied by continuing (use with signup_implicit_terms)
+  # - version: Version string for the term (increment when content changes)
+  #     When version changes, users will be prompted to re-accept
+  # - content: Localized content for each supported language
+  #     - title: Display name of the term
+  #     - type: Content type ('link' for external URL, 'text' for inline text)
+  #     - content: The URL (if type is 'link') or text content (if type is 'text')
+
+  # Terms of Service (typically required, explicit consent)
+  - id: tos
+    required: true
+    consent_mode: explicit
+    version: "1.0.0"
+    content:
+      en:
+        title: Terms of Service
+        type: link
+        content: https://example.com/terms
+      ko:
+        title: 이용약관
+        type: link
+        content: https://example.com/terms/ko
+      ja:
+        title: 利用規約
+        type: link
+        content: https://example.com/terms/ja
+
+  # Privacy Policy (typically required, explicit consent)
+  - id: privacy
+    required: true
+    consent_mode: explicit
+    version: "1.0.0"
+    content:
+      en:
+        title: Privacy Policy
+        type: link
+        content: https://example.com/privacy
+      ko:
+        title: 개인정보처리방침
+        type: link
+        content: https://example.com/privacy/ko
+      ja:
+        title: プライバシーポリシー
+        type: link
+        content: https://example.com/privacy/ja
+
+  # Marketing consent (optional, explicit consent - shows checkbox)
+  - id: marketing
+    required: false
+    consent_mode: explicit
+    version: "1.0.0"
+    content:
+      en:
+        title: Marketing Communications
+        type: text
+        content: Would you like to receive marketing emails about events and promotions?
+      ko:
+        title: 마케팅 정보 수신 동의
+        type: text
+        content: 이벤트, 프로모션 등 마케팅 정보를 이메일로 받아보시겠습니까?
+      ja:
+        title: マーケティング情報の受信
+        type: text
+        content: イベントやプロモーションなどのマーケティング情報をメールで受け取りますか？
+
+# -----------------------------------------------------------------------------
+# Database Configuration
+# -----------------------------------------------------------------------------
+# TinyAuth supports SQLite and PostgreSQL databases.
+# Choose the appropriate configuration for your deployment.
+# -----------------------------------------------------------------------------
+database:
+  # type: Database engine to use.
+  # Options: 'sqlite' or 'postgres'
+  type: sqlite
+
+  # --------------------------------------------------------------------------
+  # SQLite Configuration (when type: sqlite)
+  # --------------------------------------------------------------------------
+  # path: Path to the SQLite database file.
+  # Can be absolute or relative to the application directory.
+  # The directory must exist and be writable by the application.
+  path: data/auth.db
+
+  # --------------------------------------------------------------------------
+  # PostgreSQL Configuration (when type: postgres)
+  # --------------------------------------------------------------------------
+  # Uncomment and configure these options when using PostgreSQL:
+  #
+  # type: postgres
+  # host: Database server hostname or IP address
+  # host: !env DATABASE_HOST
+  #
+  # port: Database server port (default: 5432)
+  # port: !env DATABASE_PORT
+  #
+  # name: Database name
+  # name: !env DATABASE_NAME
+  #
+  # user: Database user for authentication
+  # user: !env DATABASE_USER
+  #
+  # password: Database password
+  # password: !env DATABASE_PASSWORD
+
+# -----------------------------------------------------------------------------
+# SMTP Configuration
+# -----------------------------------------------------------------------------
+# Email settings for sending verification emails, password resets, etc.
+# Required when email verification is enabled.
+# -----------------------------------------------------------------------------
+smtp:
+  # host: SMTP server hostname.
+  # Examples: smtp.gmail.com, smtp.sendgrid.net, mail.example.com
+  host: smtp.example.com
+
+  # port: SMTP server port.
+  # Common ports:
+  #   - 25: Standard SMTP (often blocked by ISPs)
+  #   - 465: SMTPS (SMTP over SSL/TLS) - recommended
+  #   - 587: SMTP with STARTTLS
+  port: 465
+
+  # secure: Whether to use SSL/TLS for the connection.
+  # Set to true for port 465 (SMTPS), false for port 587 with STARTTLS.
+  secure: true
+
+  # user: SMTP authentication username.
+  # Usually your email address or API key.
+  user: !env SMTP_USER
+
+  # password: SMTP authentication password.
+  # For services like Gmail, use an App Password instead of your account password.
+  password: !env SMTP_PASSWORD
+
+  # from: The "From" address for outgoing emails.
+  # Can be just an email or "Name <email@example.com>" format.
+  # Must be authorized to send from your SMTP server.
+  from: "TinyAuth <noreply@example.com>"
+
+  # test: Enable test mode for SMTP.
+  # When true, emails are logged to console instead of being sent.
+  # Useful for development and testing.
+  # Default: false
+  test: false
+
+# -----------------------------------------------------------------------------
+# Basic Authentication Methods
+# -----------------------------------------------------------------------------
+# Configure local authentication methods (password-based and passkey).
+# These methods authenticate users directly against the TinyAuth database.
+# -----------------------------------------------------------------------------
+basic_authentication_methods:
+  # --------------------------------------------------------------------------
+  # Password Authentication
+  # --------------------------------------------------------------------------
+  password:
+    # enabled: Whether password-based login is available.
+    enabled: true
+
+    # email_verification: Whether new users must verify their email address.
+    # When enabled, users receive a verification email after registration.
+    # They cannot fully access the system until verification is complete.
+    # Requires SMTP to be configured.
+    email_verification: true
+
+    # second_factor: Two-factor authentication (2FA) settings.
+    second_factor:
+      # required: Whether 2FA is mandatory for all users.
+      # When true, users must set up 2FA during registration.
+      # When false, 2FA is optional (users can enable it in settings).
+      required: false
+
+    # totp: Time-based One-Time Password (TOTP) settings.
+    # TOTP is compatible with authenticator apps like Google Authenticator,
+    # Authy, Microsoft Authenticator, etc.
+    totp:
+      # enabled: Whether TOTP 2FA is available.
+      enabled: true
+
+      # issuer: The name displayed in authenticator apps.
+      # Helps users identify which service the code is for.
+      # Typically your application or company name.
+      issuer: TinyAuth
+
+  # --------------------------------------------------------------------------
+  # Passkey Authentication (WebAuthn/FIDO2)
+  # --------------------------------------------------------------------------
+  passkey:
+    # enabled: Whether passkey authentication is available.
+    # Passkeys provide passwordless authentication using biometrics,
+    # security keys, or platform authenticators (Touch ID, Windows Hello).
+    enabled: true
+
+    # rp_id: WebAuthn Relying Party ID.
+    # Must be the current domain or a registrable parent domain.
+    # If not specified, automatically extracted from app.host hostname.
+    #
+    # Use the parent domain to share passkeys across subdomains:
+    #   - Set to 'example.com' to allow passkeys created on auth.example.com
+    #     to work on app.example.com, admin.example.com, etc.
+    #
+    # rp_id: example.com
+
+    # origins: Allowed origins for WebAuthn verification.
+    # If not specified, uses app.host.
+    # Use this when your auth server is accessed from multiple domains.
+    #
+    # origins:
+    #   - https://auth.example.com
+    #   - https://login.example.com
+
+# -----------------------------------------------------------------------------
+# OAuth Authentication Methods
+# -----------------------------------------------------------------------------
+# Configure external OAuth/OIDC providers for social login.
+# Users can sign in using their existing accounts from these providers.
+# -----------------------------------------------------------------------------
+oauth_authentication_methods:
+  # Each OAuth provider is configured as a list item with these properties:
+  #
+  # Common properties for all providers:
+  # - id: Unique identifier for the provider (used in URLs and database)
+  # - type: Provider type (github, google, generic_oauth)
+  # - enabled: Whether this provider is active
+  # - display_name: Name shown on the login button
+  # - client_id: OAuth client ID from the provider
+  # - client_secret: OAuth client secret from the provider
+  # - email_conflict_strategy: How to handle email conflicts with existing accounts
+  #     - 'auto_link': Automatically link to existing account with same email
+  #     - 'error': Reject login and show error (user must link manually)
+
+  # --------------------------------------------------------------------------
+  # GitHub OAuth
+  # --------------------------------------------------------------------------
+  # Create OAuth App at: https://github.com/settings/developers
+  # Authorization callback URL: {app.host}/oauth/callback/github
+  - id: github
+    type: github
+    enabled: true
+    display_name: GitHub
+    client_id: !env GITHUB_CLIENT_ID
+    client_secret: !env GITHUB_CLIENT_SECRET
+    email_conflict_strategy: auto_link
+
+  # --------------------------------------------------------------------------
+  # Google OAuth
+  # --------------------------------------------------------------------------
+  # Create credentials at: https://console.cloud.google.com/apis/credentials
+  # Authorized redirect URI: {app.host}/oauth/callback/google
+  # - id: google
+  #   type: google
+  #   enabled: true
+  #   display_name: Google
+  #   client_id: !env GOOGLE_CLIENT_ID
+  #   client_secret: !env GOOGLE_CLIENT_SECRET
+  #   email_conflict_strategy: auto_link
+
+  # --------------------------------------------------------------------------
+  # Generic OAuth Provider
+  # --------------------------------------------------------------------------
+  # For custom Identity Providers (IdP) that support OAuth 2.0/OIDC.
+  # Requires manual configuration of endpoints and field mappings.
+  #
+  # - id: custom-idp
+  #   type: generic_oauth
+  #   enabled: true
+  #   display_name: My Custom IDP
+  #   client_id: !env CUSTOM_CLIENT_ID
+  #   client_secret: !env CUSTOM_CLIENT_SECRET
+  #
+  #   # OAuth endpoint URLs from your IdP
+  #   authorization_url: https://idp.example.com/authorize
+  #   token_url: https://idp.example.com/token
+  #   userinfo_url: https://idp.example.com/userinfo
+  #
+  #   # OAuth scopes to request
+  #   scopes:
+  #     - openid
+  #     - email
+  #     - profile
+  #
+  #   # Field mapping from IdP's userinfo response to TinyAuth user fields
+  #   # Maps IdP field names (right) to TinyAuth fields (left)
+  #   userinfo_mapping:
+  #     id: sub              # Unique user identifier
+  #     email: email         # User's email address
+  #     email_verified: email_verified  # Whether email is verified (boolean)
+  #     name: name           # User's display name
+  #     picture: picture     # URL to user's avatar/profile picture
+  #
+  #   email_conflict_strategy: auto_link
+
+# -----------------------------------------------------------------------------
+# OAuth Providers (OIDC Clients)
+# -----------------------------------------------------------------------------
+# Configure applications that can use TinyAuth as their identity provider.
+# These are OAuth 2.0 / OpenID Connect clients that authenticate through TinyAuth.
+# -----------------------------------------------------------------------------
+providers:
+  # Each client application is configured as a list item:
+  #
+  # - id: Unique identifier for the client (internal use)
+  # - name: Display name shown to users during authorization
+  # - logo_uri: URL to the client's logo (shown during authorization)
+  # - client_id: Public identifier for the client (used in OAuth requests)
+  # - client_secret: Secret for confidential clients (omit for public clients)
+  # - redirect_uris: List of allowed callback URLs after authorization
+  # - response_types: OAuth response types allowed
+  #     - 'code': Authorization Code flow (recommended)
+  # - grant_types: OAuth grant types allowed
+  #     - 'authorization_code': Standard OAuth flow
+  #     - 'refresh_token': Allow token refresh
+  # - scope: Space-separated list of allowed scopes
+  #     - 'openid': Required for OIDC
+  #     - 'profile': Access to user's profile (name, picture)
+  #     - 'email': Access to user's email address
+
+  # --------------------------------------------------------------------------
+  # Confidential Client Example (Backend Application)
+  # --------------------------------------------------------------------------
+  # Has a client_secret, suitable for server-side applications
+  # that can securely store the secret.
+  - id: my-backend-app
+    name: My Backend Application
+    logo_uri: https://example.com/logo.png
+    client_id: my-backend-app-client-id
+    client_secret: !env MY_BACKEND_APP_CLIENT_SECRET
+    redirect_uris:
+      - https://app.example.com/api/auth/callback
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+      - refresh_token
+    scope: openid profile email
+
+  # --------------------------------------------------------------------------
+  # Public Client Example (SPA / Mobile App)
+  # --------------------------------------------------------------------------
+  # No client_secret, suitable for browser-based or mobile applications
+  # that cannot securely store secrets. Uses PKCE for security.
+  - id: my-spa-app
+    name: My Single Page Application
+    logo_uri: https://spa.example.com/logo.png
+    client_id: my-spa-app-client-id
+    # No client_secret - this is a Public Client using PKCE
+    redirect_uris:
+      - https://spa.example.com/callback
+      - http://localhost:3000/callback  # For local development
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+      - refresh_token
+    scope: openid profile email
+
+# -----------------------------------------------------------------------------
+# Pre-configured Users
+# -----------------------------------------------------------------------------
+# Define initial user accounts that are created on first startup.
+# Useful for setting up admin accounts or test users.
+# These users are only created if they don't already exist.
+# -----------------------------------------------------------------------------
+users:
+  # Each user is defined with the following properties:
+  #
+  # - id: Unique identifier for the user
+  # - email: User's email address (must be unique)
+  # - password: Initial password (user should change after first login)
+  # - role: User's role
+  #     - 'admin': Full administrative access
+  #     - 'user': Standard user (default if not specified)
+
+  # Example: Admin user
+  - id: admin-user
+    email: admin@example.com
+    password: !env ADMIN_INITIAL_PASSWORD
+    role: admin
+
+  # Example: Test user (for development/testing)
+  # - id: test-user
+  #   email: test@example.com
+  #   password: testpassword123
+  #   role: user
