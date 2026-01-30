@@ -131,7 +131,12 @@ function ResetPassword() {
   if (resetSuccess) {
     return (
       <PageLayout maxWidth="100" cardPadding>
-        <Alert type="success" icon={CheckCircleIcon} className="mb-4">
+        <Alert
+          type="success"
+          icon={CheckCircleIcon}
+          className="mb-4"
+          data-testid="password-reset-success-alert"
+        >
           {t('resetPassword.success.title')}
         </Alert>
 
@@ -144,6 +149,7 @@ function ResetPassword() {
           type="button"
           onClick={() => navigate({ to: '/login' })}
           className="btn btn-block h-10 font-semibold text-[14px]"
+          data-testid="password-reset-login-btn"
         >
           {t('resetPassword.success.goToLogin')}
         </button>
@@ -162,48 +168,59 @@ function ResetPassword() {
         {!queryToken && (
           <IconInput
             icon={KeyIcon}
-            type="text"
             placeholder={t('resetPassword.token.placeholder')}
             error={errors.token}
             {...register('token')}
+            type="text"
+            data-testid="password-reset-token-input"
           />
         )}
 
         {queryToken && errors.token && (
-          <div className="alert alert-error">
+          <div
+            className="alert alert-error"
+            data-testid="password-reset-token-error-alert"
+          >
             <span className="text-sm">{errors.token.message}</span>
           </div>
         )}
 
         <IconInput
           icon={LockIcon}
-          type="password"
           placeholder={t('resetPassword.password.placeholder')}
           autoComplete="new-password"
           error={errors.password}
           {...register('password')}
+          type="password"
+          data-testid="password-reset-password-input"
         />
 
         <IconInput
           icon={LockKeyIcon}
-          type="password"
           placeholder={t('resetPassword.confirmPassword.placeholder')}
           autoComplete="new-password"
           error={errors.confirmPassword}
           {...register('confirmPassword')}
+          type="password"
+          data-testid="password-reset-confirm-input"
         />
 
         <SubmitButton
           isPending={resetPasswordMutation.isPending}
           pendingText={t('resetPassword.submitting')}
           className="mt-2"
+          data-testid="password-reset-submit-btn"
         >
           {t('resetPassword.submit')}
         </SubmitButton>
       </form>
 
       <div className="mt-6 text-center text-base-content/70 text-xs">
-        <Link to="/login" className="link link-info font-medium">
+        <Link
+          to="/login"
+          className="link link-info font-medium"
+          data-testid="password-reset-login-link"
+        >
           {t('resetPassword.backToLogin')}
         </Link>
       </div>

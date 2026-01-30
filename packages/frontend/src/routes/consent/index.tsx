@@ -153,6 +153,7 @@ function Consent() {
           className="btn btn-outline h-10 flex-1 font-semibold text-[14px]"
           onClick={handleDeny}
           disabled={consentMutation.isPending}
+          data-testid="consent-deny-btn"
         >
           {consentMutation.isPending ? (
             <span className="loading loading-spinner loading-sm" />
@@ -168,6 +169,7 @@ function Consent() {
           className="btn btn-primary h-10 flex-1 font-semibold text-[14px]"
           onClick={handleAllow}
           disabled={consentMutation.isPending}
+          data-testid="consent-allow-btn"
         >
           {consentMutation.isPending ? (
             <span className="loading loading-spinner loading-sm" />

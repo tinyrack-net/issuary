@@ -184,7 +184,10 @@ function VerifyRecovery() {
       />
 
       {sessionExpired && (
-        <div className="alert alert-warning mb-4">
+        <div
+          className="alert alert-warning mb-4"
+          data-testid="verify-totp-recovery-expired-alert"
+        >
           <WarningCircleIcon className="size-5" weight="fill" />
           <div className="flex flex-col gap-1">
             <span>{t('verifyRecovery.error.expired')}</span>
@@ -197,6 +200,7 @@ function VerifyRecovery() {
               type="button"
               className="btn btn-sm btn-ghost mt-2 w-fit"
               onClick={redirectToLogin}
+              data-testid="verify-totp-recovery-redirect-btn"
             >
               {t('verifyRecovery.redirectNow')}
             </button>
@@ -221,9 +225,15 @@ function VerifyRecovery() {
             }`}
             disabled={sessionExpired}
             autoComplete="off"
+            data-testid="verify-totp-recovery-code-input"
           />
           {errors.code && (
-            <p className="fieldset-label text-error">{errors.code.message}</p>
+            <p
+              className="fieldset-label text-error"
+              data-testid="verify-totp-recovery-code-error"
+            >
+              {errors.code.message}
+            </p>
           )}
         </fieldset>
 
@@ -240,6 +250,7 @@ function VerifyRecovery() {
             isPending={verifyMutation.isPending}
             pendingText={t('verifyRecovery.submitting')}
             className="mt-2"
+            data-testid="verify-totp-recovery-submit-btn"
           >
             {t('verifyRecovery.submit')}
           </SubmitButton>
@@ -256,6 +267,7 @@ function VerifyRecovery() {
               search: extractOAuthParams(search),
             })
           }
+          data-testid="verify-totp-recovery-back-link"
         >
           {t('verifyRecovery.backToTotp')}
         </button>
@@ -266,6 +278,7 @@ function VerifyRecovery() {
         linkText={t('verifyRecovery.backToLogin')}
         to="/login"
         search={extractOAuthParams(search)}
+        data-testid="verify-totp-recovery-login-link"
       />
     </PageLayout>
   );

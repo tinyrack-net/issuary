@@ -176,7 +176,10 @@ function VerifyTotp() {
       />
 
       {sessionExpired && (
-        <div className="alert alert-warning mb-4">
+        <div
+          className="alert alert-warning mb-4"
+          data-testid="verify-totp-expired-alert"
+        >
           <WarningCircleIcon className="size-5" weight="fill" />
           <div className="flex flex-col gap-1">
             <span>{t('verifyTotp.error.expired')}</span>
@@ -187,6 +190,7 @@ function VerifyTotp() {
               type="button"
               className="btn btn-sm btn-ghost mt-2 w-fit"
               onClick={redirectToLogin}
+              data-testid="verify-totp-redirect-btn"
             >
               {t('verifyTotp.redirectNow')}
             </button>
@@ -204,6 +208,7 @@ function VerifyTotp() {
           error={errors.code}
           disabled={sessionExpired}
           autoFocus
+          data-testid="verify-totp-pin"
         />
 
         {sessionExpired ? (
@@ -219,6 +224,7 @@ function VerifyTotp() {
             isPending={verifyMutation.isPending}
             pendingText={t('verifyTotp.submitting')}
             className="mt-2"
+            data-testid="verify-totp-submit-btn"
           >
             {t('verifyTotp.submit')}
           </SubmitButton>
@@ -235,6 +241,7 @@ function VerifyTotp() {
               search: extractOAuthParams(search),
             })
           }
+          data-testid="verify-totp-recovery-link"
         >
           {t('verifyTotp.useRecoveryCode')}
         </button>
@@ -245,6 +252,7 @@ function VerifyTotp() {
         linkText={t('verifyTotp.backToLogin')}
         to="/login"
         search={extractOAuthParams(search)}
+        data-testid="verify-totp-login-link"
       />
     </PageLayout>
   );

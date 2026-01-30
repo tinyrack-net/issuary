@@ -181,7 +181,12 @@ function VerifyEmail() {
   if (verified) {
     return (
       <PageLayout maxWidth="100" cardPadding>
-        <Alert type="success" icon={CheckCircleIcon} className="mb-4">
+        <Alert
+          type="success"
+          icon={CheckCircleIcon}
+          className="mb-4"
+          data-testid="verify-email-success-alert"
+        >
           {t('verifyEmail.success.title')}
         </Alert>
 
@@ -194,6 +199,7 @@ function VerifyEmail() {
           type="button"
           onClick={() => navigate({ to: '/profile' })}
           className="btn btn-block h-10 font-semibold text-[14px]"
+          data-testid="verify-email-profile-btn"
         >
           {t('verifyEmail.success.goToProfile')}
         </button>
@@ -209,7 +215,12 @@ function VerifyEmail() {
       />
 
       {email && (
-        <Alert type="info" icon={EnvelopeSimpleIcon} className="mb-4">
+        <Alert
+          type="info"
+          icon={EnvelopeSimpleIcon}
+          className="mb-4"
+          data-testid="verify-email-info-alert"
+        >
           <div className="text-left">
             <p className="font-semibold">{t('register.success.subtitle')}</p>
             <p className="text-xs">
@@ -222,16 +233,18 @@ function VerifyEmail() {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <IconInput
           icon={KeyIcon}
-          type="text"
           placeholder={t('verifyEmail.token.placeholder')}
           error={errors.token}
           {...register('token')}
+          type="text"
+          data-testid="verify-email-token-input"
         />
 
         <SubmitButton
           isPending={verifyEmailMutation.isPending}
           pendingText={t('verifyEmail.submitting')}
           className="mt-2"
+          data-testid="verify-email-submit-btn"
         >
           {t('verifyEmail.submit')}
         </SubmitButton>
@@ -242,7 +255,12 @@ function VerifyEmail() {
           <Divider />
 
           {resendSuccess && (
-            <Alert type="success" icon={CheckCircleIcon} className="mb-2">
+            <Alert
+              type="success"
+              icon={CheckCircleIcon}
+              className="mb-2"
+              data-testid="verify-email-resend-success-alert"
+            >
               {t('verifyEmail.resendSuccess')}
             </Alert>
           )}
@@ -252,6 +270,7 @@ function VerifyEmail() {
             onClick={handleResend}
             disabled={resendVerificationMutation.isPending || resendSuccess}
             className="btn btn-ghost btn-sm w-full"
+            data-testid="verify-email-resend-btn"
           >
             {resendVerificationMutation.isPending ? (
               <>

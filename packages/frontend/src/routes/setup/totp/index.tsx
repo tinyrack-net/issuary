@@ -300,6 +300,7 @@ function SetupTotp() {
           recoveryCodes={recoveryCodes}
           onConfirm={confirmRecoveryCodes}
           isLoading={isConfirmPending}
+          data-testid="setup-totp-recovery"
         />
       </PageLayout>
     );
@@ -319,13 +320,18 @@ function SetupTotp() {
           <span>{t('setupTotp.required')}</span>
         </div>
 
-        <QrStep setupData={setupData} onNext={goToVerify} />
+        <QrStep
+          setupData={setupData}
+          onNext={goToVerify}
+          data-testid="setup-totp-qr"
+        />
 
         <FooterLink
           text=""
           linkText={t('setupTotp.backToLogin')}
           to="/login"
           search={extractOAuthParams(search)}
+          data-testid="setup-totp-login-link"
         />
       </PageLayout>
     );
@@ -343,6 +349,7 @@ function SetupTotp() {
         onSubmit={handleVerify}
         onBack={goToQr}
         isPending={isVerifyPending}
+        data-testid="setup-totp-verify"
       />
     </PageLayout>
   );

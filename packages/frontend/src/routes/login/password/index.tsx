@@ -237,24 +237,30 @@ function LoginPassword() {
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <IconInput
             icon={EnvelopeSimpleIcon}
-            type="email"
             placeholder={t('login.email.placeholder')}
             autoComplete="username webauthn"
             error={errors.email}
             {...register('email')}
+            type="email"
+            data-testid="login-password-email-input"
           />
 
           <IconInput
             icon={LockIcon}
-            type="password"
             placeholder={t('login.password.placeholder')}
             autoComplete="current-password"
             error={errors.password}
             {...register('password')}
+            type="password"
+            data-testid="login-password-password-input"
           />
 
           <div className="flex items-center justify-end">
-            <Link to="/password/forgot" className="link text-sm">
+            <Link
+              to="/password/forgot"
+              className="link text-sm"
+              data-testid="login-password-forgot-link"
+            >
               {t('login.link.forgotPassword')}
             </Link>
           </div>
@@ -263,6 +269,7 @@ function LoginPassword() {
             isPending={loginMutation.isPending}
             pendingText={t('login.submitting')}
             className="mt-2"
+            data-testid="login-password-submit-btn"
           >
             {t('login.submit')}
           </SubmitButton>
@@ -275,6 +282,7 @@ function LoginPassword() {
           linkText={t('login.link.register')}
           to="/register"
           search={extractOAuthParams(search)}
+          data-testid="login-password-register-link"
         />
       )}
 

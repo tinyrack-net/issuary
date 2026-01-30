@@ -214,6 +214,7 @@ function Profile() {
             className="btn btn-ghost btn-sm gap-2"
             disabled={logoutMutation.isPending}
             onClick={() => logoutMutation.mutate()}
+            data-testid="profile-logout-btn"
           >
             {logoutMutation.isPending ? (
               <span className="loading loading-spinner loading-sm" />
@@ -228,7 +229,11 @@ function Profile() {
       {/* OAuth Error Alert */}
       {oauthErrorMessage && (
         <div className="px-6 pt-4">
-          <Alert type="error" icon={WarningCircleIcon}>
+          <Alert
+            type="error"
+            icon={WarningCircleIcon}
+            data-testid="profile-oauth-error-alert"
+          >
             {oauthErrorMessage}
           </Alert>
         </div>

@@ -129,7 +129,12 @@ function Login() {
       />
 
       {oauthErrorMessage && (
-        <Alert type="error" icon={WarningCircleIcon} className="mb-4">
+        <Alert
+          type="error"
+          icon={WarningCircleIcon}
+          className="mb-4"
+          data-testid="login-oauth-error-alert"
+        >
           {oauthErrorMessage}
         </Alert>
       )}
@@ -143,6 +148,7 @@ function Login() {
             icon={provider.icon_url}
             label={provider.display_name}
             href={buildOAuthUrl(provider.id)}
+            data-testid={`login-oauth-${provider.id}-btn`}
           />
         ))}
 
@@ -153,6 +159,7 @@ function Login() {
             label={t('login.method.password')}
             to="/login/password"
             search={extractOAuthParams(search)}
+            data-testid="login-password-method-btn"
           />
         )}
 
@@ -163,6 +170,7 @@ function Login() {
             label={t('login.method.passkey')}
             onClick={() => passkeyLoginMutation.mutate()}
             isLoading={passkeyLoginMutation.isPending}
+            data-testid="login-passkey-method-btn"
           />
         )}
       </LoginMethodList>

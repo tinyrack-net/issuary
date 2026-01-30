@@ -92,7 +92,12 @@ function ForgotPassword() {
   if (emailSent) {
     return (
       <PageLayout maxWidth="100" cardPadding>
-        <Alert type="success" icon={CheckCircleIcon} className="mb-4">
+        <Alert
+          type="success"
+          icon={CheckCircleIcon}
+          className="mb-4"
+          data-testid="password-forgot-success-alert"
+        >
           {t('forgotPassword.success.title')}
         </Alert>
 
@@ -103,13 +108,19 @@ function ForgotPassword() {
           })}
         />
 
-        <Alert type="info" icon={EnvelopeSimpleIcon} className="mb-4">
+        <Alert
+          type="info"
+          icon={EnvelopeSimpleIcon}
+          className="mb-4"
+          data-testid="password-forgot-spam-alert"
+        >
           {t('forgotPassword.success.checkSpam')}
         </Alert>
 
         <Link
           to="/login"
           className="btn btn-block h-10 font-semibold text-[14px]"
+          data-testid="password-forgot-login-btn"
         >
           {t('forgotPassword.backToLogin')}
         </Link>
@@ -127,17 +138,19 @@ function ForgotPassword() {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <IconInput
           icon={EnvelopeSimpleIcon}
-          type="email"
           placeholder={t('forgotPassword.email.placeholder')}
           autoComplete="email"
           error={errors.email}
           {...register('email')}
+          type="email"
+          data-testid="password-forgot-email-input"
         />
 
         <SubmitButton
           isPending={forgotPasswordMutation.isPending}
           pendingText={t('forgotPassword.submitting')}
           className="mt-2"
+          data-testid="password-forgot-submit-btn"
         >
           {t('forgotPassword.submit')}
         </SubmitButton>
@@ -147,6 +160,7 @@ function ForgotPassword() {
         text={t('forgotPassword.footer.rememberedPassword')}
         linkText={t('register.link.login')}
         to="/login"
+        data-testid="password-forgot-login-link"
       />
     </PageLayout>
   );

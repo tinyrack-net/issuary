@@ -243,20 +243,22 @@ function Register() {
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <IconInput
             icon={EnvelopeSimpleIcon}
-            type="email"
             placeholder={t('register.email.placeholder')}
             autoComplete="email"
             error={errors.email}
             {...register('email')}
+            type="email"
+            data-testid="register-email-input"
           />
 
           <IconInput
             icon={LockIcon}
-            type="password"
             placeholder={t('register.password.placeholder')}
             autoComplete="new-password"
             error={errors.password}
             {...register('password')}
+            type="password"
+            data-testid="register-password-input"
           />
 
           <div className="flex flex-col">
@@ -290,6 +292,7 @@ function Register() {
             isPending={registerMutation.isPending}
             pendingText={t('register.submitting')}
             className="mt-6"
+            data-testid="register-submit-btn"
           >
             {t('register.submit')}
           </SubmitButton>
@@ -301,6 +304,7 @@ function Register() {
         linkText={t('register.link.login')}
         to="/login"
         search={extractOAuthParams(search)}
+        data-testid="register-login-link"
       />
     </PageLayout>
   );
