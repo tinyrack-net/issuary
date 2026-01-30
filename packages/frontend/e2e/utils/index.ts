@@ -7,27 +7,25 @@
 // API helpers
 export {
   ApiHelpers,
-  createApiHelpers,
-  type SessionUser,
   type AuthResponse,
+  createApiHelpers,
   type LoginResponse,
   type RegisterResponse,
+  type SessionUser,
   type TermsItem,
   type TermsResponse,
 } from './api-helpers';
-
-// WebAuthn mock
-export {
-  WebAuthnMock,
-  createWebAuthnMock,
-  type VirtualAuthenticatorOptions,
-} from './webauthn-mock';
-
 // Test user utilities
 export {
-  TestUserManager,
-  createTestUserManager,
   applySessionToPage,
+  createTestUserManager,
   setupAuthenticatedUser,
   type TestUser,
+  TestUserManager,
 } from './test-user';
+// WebAuthn mock
+export {
+  createWebAuthnMock,
+  type VirtualAuthenticatorOptions,
+  WebAuthnMock,
+} from './webauthn-mock';

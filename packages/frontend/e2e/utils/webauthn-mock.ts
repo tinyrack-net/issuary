@@ -31,7 +31,8 @@ const DEFAULT_AUTHENTICATOR_OPTIONS: VirtualAuthenticatorOptions = {
  * for testing WebAuthn/Passkey flows without physical security keys.
  */
 export class WebAuthnMock {
-  private cdpSession: Awaited<ReturnType<typeof this.getCdpSession>> | null = null;
+  private cdpSession: Awaited<ReturnType<typeof this.getCdpSession>> | null =
+    null;
   private authenticatorId: string | null = null;
 
   constructor(private page: Page) {}
@@ -46,8 +47,13 @@ export class WebAuthnMock {
   /**
    * Enable WebAuthn virtual environment and add a virtual authenticator
    */
-  async setup(options: Partial<VirtualAuthenticatorOptions> = {}): Promise<void> {
-    const authenticatorOptions = { ...DEFAULT_AUTHENTICATOR_OPTIONS, ...options };
+  async setup(
+    options: Partial<VirtualAuthenticatorOptions> = {},
+  ): Promise<void> {
+    const authenticatorOptions = {
+      ...DEFAULT_AUTHENTICATOR_OPTIONS,
+      ...options,
+    };
 
     this.cdpSession = await this.getCdpSession();
 
@@ -55,9 +61,12 @@ export class WebAuthnMock {
     await this.cdpSession.send('WebAuthn.enable');
 
     // Add virtual authenticator
-    const result = await this.cdpSession.send('WebAuthn.addVirtualAuthenticator', {
-      options: authenticatorOptions,
-    });
+    const result = await this.cdpSession.send(
+      'WebAuthn.addVirtualAuthenticator',
+      {
+        options: authenticatorOptions,
+      },
+    );
 
     this.authenticatorId = result.authenticatorId;
   }

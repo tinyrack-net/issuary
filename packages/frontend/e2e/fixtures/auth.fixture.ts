@@ -1,6 +1,6 @@
 import { test as base, type Page } from '@playwright/test';
-import { generateEmail, generatePassword } from './test-data.fixture';
 import { createApiHelpers } from '../utils/api-helpers';
+import { generateEmail, generatePassword } from './test-data.fixture';
 
 /**
  * Test user credentials type

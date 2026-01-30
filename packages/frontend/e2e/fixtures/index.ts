@@ -5,7 +5,7 @@
  */
 
 // Auth fixtures
-export { test, expect, type TestUser, type AuthFixtures } from './auth.fixture';
+export { type AuthFixtures, expect, type TestUser, test } from './auth.fixture';
 
 // Test data utilities
 export {

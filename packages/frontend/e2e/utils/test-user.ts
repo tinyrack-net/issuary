@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from '@playwright/test';
-import { createApiHelpers, type SessionUser } from './api-helpers';
 import { generateEmail, generatePassword } from '../fixtures/test-data.fixture';
+import { createApiHelpers, type SessionUser } from './api-helpers';
 
 /**
  * Test user representation
@@ -25,7 +25,10 @@ export class TestUserManager {
   /**
    * Create a new test user with random credentials
    */
-  async createUser(options?: { email?: string; password?: string }): Promise<TestUser> {
+  async createUser(options?: {
+    email?: string;
+    password?: string;
+  }): Promise<TestUser> {
     const email = options?.email ?? generateEmail();
     const password = options?.password ?? generatePassword();
 
@@ -49,7 +52,10 @@ export class TestUserManager {
     password?: string;
   }): Promise<TestUser> {
     const testUser = await this.createUser(options);
-    const response = await this.apiHelpers.login(testUser.email, testUser.password);
+    const response = await this.apiHelpers.login(
+      testUser.email,
+      testUser.password,
+    );
     testUser.user = response.user;
     return testUser;
   }
@@ -101,7 +107,7 @@ export class TestUserManager {
  */
 export async function applySessionToPage(
   request: APIRequestContext,
-  page: Page
+  page: Page,
 ): Promise<void> {
   const cookies = await request.storageState();
   await page.context().addCookies(cookies.cookies);
@@ -110,7 +116,9 @@ export async function applySessionToPage(
 /**
  * Create a test user manager
  */
-export function createTestUserManager(request: APIRequestContext): TestUserManager {
+export function createTestUserManager(
+  request: APIRequestContext,
+): TestUserManager {
   return new TestUserManager(request);
 }
 
@@ -120,7 +128,7 @@ export function createTestUserManager(request: APIRequestContext): TestUserManag
 export async function setupAuthenticatedUser(
   request: APIRequestContext,
   page: Page,
-  options?: { email?: string; password?: string }
+  options?: { email?: string; password?: string },
 ): Promise<TestUser> {
   const manager = createTestUserManager(request);
   const testUser = await manager.createAndLogin(options);
