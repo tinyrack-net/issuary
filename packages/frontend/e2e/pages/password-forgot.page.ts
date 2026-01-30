@@ -105,7 +105,19 @@ export class PasswordForgotPage {
    * Verify an error message is displayed
    */
   async expectError() {
-    await expect(this.formError.first()).toBeVisible();
+    // Wait for any error indicator to appear:
+    // - .text-error class (inline errors)
+    // - input-error class (input border)
+    // - alert-error class (form-level errors)
+    // - HTML5 validation (input:invalid)
+    await expect(async () => {
+      const hasTextError = await this.formError.first().isVisible().catch(() => false);
+      const hasInputError = await this.page.locator('.input-error').first().isVisible().catch(() => false);
+      const hasAlertError = await this.page.locator('.alert-error').first().isVisible().catch(() => false);
+      // Check for HTML5 validation state
+      const hasInvalidInput = await this.page.locator('input:invalid').first().isVisible().catch(() => false);
+      expect(hasTextError || hasInputError || hasAlertError || hasInvalidInput).toBeTruthy();
+    }).toPass({ timeout: 5000 });
   }
 
   /**

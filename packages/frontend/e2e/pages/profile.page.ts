@@ -57,7 +57,8 @@ export class ProfilePage {
     this.pageTitle = page.locator('h1');
     this.userEmail = page.locator('h1').locator('..').locator('p');
     this.verifiedBadge = page.locator('.text-success').filter({ hasText: /verified/i });
-    this.logoutButton = page.locator('button').filter({ has: page.locator('[class*="SignOut"]') });
+    // Logout button - use multiple strategies for reliability
+    this.logoutButton = page.locator('button.btn-ghost').filter({ hasText: /logout|sign.*out/i });
     this.avatar = page.locator('[class*="avatar"]');
 
     // Account Information

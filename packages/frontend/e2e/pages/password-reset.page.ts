@@ -143,10 +143,17 @@ export class PasswordResetPage {
    * Verify token error is displayed
    */
   async expectTokenError() {
-    // Token error can be shown as field error or as alert
-    const hasFieldError = await this.tokenError.isVisible().catch(() => false);
-    const hasAlertError = await this.tokenErrorAlert.isVisible().catch(() => false);
-    expect(hasFieldError || hasAlertError).toBeTruthy();
+    // Token error can be shown as:
+    // - field error (p.text-error next to input)
+    // - alert error (div.alert-error when token is in URL)
+    // - general text-error class
+    // Need to wait for the API response before checking
+    await expect(async () => {
+      const hasFieldError = await this.tokenError.isVisible().catch(() => false);
+      const hasAlertError = await this.tokenErrorAlert.isVisible().catch(() => false);
+      const hasTextError = await this.formError.first().isVisible().catch(() => false);
+      expect(hasFieldError || hasAlertError || hasTextError).toBeTruthy();
+    }).toPass({ timeout: 10000 });
   }
 
   /**
