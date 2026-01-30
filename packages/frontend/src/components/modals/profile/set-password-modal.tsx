@@ -88,6 +88,7 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
               form.formState.errors.password ? 'input-error' : ''
             }`}
             placeholder={t('profile.password.setModal.newPasswordPlaceholder')}
+            data-testid="modal-set-password-password-input"
             {...form.register('password')}
           />
           {form.formState.errors.password && (
@@ -111,6 +112,7 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
             placeholder={t(
               'profile.password.setModal.confirmPasswordPlaceholder',
             )}
+            data-testid="modal-set-password-confirm-input"
             {...form.register('confirmPassword')}
           />
           {form.formState.errors.confirmPassword && (
@@ -130,6 +132,7 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
             className="btn btn-sm"
             onClick={handleClose}
             disabled={mutation.isPending}
+            data-testid="modal-set-password-cancel-btn"
           >
             {t('profile.password.setModal.cancel')}
           </button>
@@ -137,6 +140,7 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
             type="submit"
             className="btn btn-sm btn-primary"
             disabled={mutation.isPending}
+            data-testid="modal-set-password-submit-btn"
           >
             {mutation.isPending ? (
               <>

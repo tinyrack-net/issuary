@@ -60,6 +60,7 @@ export function PasswordSection({
                 type="button"
                 className="btn btn-ghost btn-xs text-primary"
                 onClick={() => onOpenModal('change')}
+                data-testid="profile-password-change-btn"
               >
                 {t('profile.password.change')}
               </button>
@@ -68,6 +69,7 @@ export function PasswordSection({
                   type="button"
                   className="btn btn-ghost btn-xs text-error"
                   onClick={() => onOpenModal('remove')}
+                  data-testid="profile-password-remove-btn"
                 >
                   {t('profile.password.remove')}
                 </button>
@@ -96,6 +98,7 @@ export function PasswordSection({
               type="button"
               className="btn btn-ghost btn-xs text-primary"
               onClick={() => onOpenModal('set')}
+              data-testid="profile-password-set-btn"
             >
               {t('profile.password.set')}
             </button>

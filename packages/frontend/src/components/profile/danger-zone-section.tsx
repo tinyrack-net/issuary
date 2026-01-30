@@ -49,6 +49,7 @@ export function DangerZoneSection({
             className="btn btn-error btn-outline btn-sm gap-2"
             onClick={onDeleteClick}
             disabled={isConfigManaged}
+            data-testid="profile-delete-account-btn"
           >
             <TrashIcon className="size-4" weight="bold" />
             {t('profile.deleteAccount.button')}

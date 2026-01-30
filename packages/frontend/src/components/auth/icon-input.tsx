@@ -9,7 +9,11 @@ type IconInputProps = {
   autoComplete?: string;
   error?: FieldError;
   className?: string;
-} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'className'>;
+  'data-testid'?: string;
+} & Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'className' | 'data-testid'
+>;
 
 export const IconInput = forwardRef<HTMLInputElement, IconInputProps>(
   (
@@ -20,6 +24,7 @@ export const IconInput = forwardRef<HTMLInputElement, IconInputProps>(
       autoComplete,
       error,
       className = '',
+      'data-testid': testId,
       ...props
     },
     ref,
@@ -38,10 +43,18 @@ export const IconInput = forwardRef<HTMLInputElement, IconInputProps>(
             className="grow"
             placeholder={placeholder}
             autoComplete={autoComplete}
+            data-testid={testId}
             {...props}
           />
         </label>
-        {error && <p className="mt-1 text-error text-sm">{error.message}</p>}
+        {error && (
+          <p
+            className="mt-1 text-error text-sm"
+            data-testid={testId ? `${testId}-error` : undefined}
+          >
+            {error.message}
+          </p>
+        )}
       </div>
     );
   },

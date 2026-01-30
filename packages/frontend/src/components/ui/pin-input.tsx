@@ -25,6 +25,8 @@ type PinInputProps = {
   autoFocus?: boolean;
   /** Additional class name for the container */
   className?: string;
+  /** Base test ID for E2E testing (each digit will have {testId}-{index}) */
+  'data-testid'?: string;
 };
 
 export type PinInputRef = {
@@ -43,6 +45,7 @@ export const PinInput = forwardRef<PinInputRef, PinInputProps>(
       value = '',
       autoFocus = false,
       className = '',
+      'data-testid': testId,
     },
     ref,
   ) => {
@@ -215,11 +218,17 @@ export const PinInput = forwardRef<PinInputRef, PinInputProps>(
                 error ? 'input-error' : ''
               } ${disabled ? 'input-disabled' : ''}`}
               aria-label={`Digit ${index + 1} of ${length}`}
+              data-testid={testId ? `${testId}-${index}` : undefined}
             />
           ))}
         </div>
         {error && (
-          <p className="mt-2 text-center text-error text-sm">{error.message}</p>
+          <p
+            className="mt-2 text-center text-error text-sm"
+            data-testid={testId ? `${testId}-error` : undefined}
+          >
+            {error.message}
+          </p>
         )}
       </div>
     );

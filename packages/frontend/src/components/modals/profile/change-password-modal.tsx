@@ -108,6 +108,7 @@ export function ChangePasswordModal({
             placeholder={t(
               'profile.password.changeModal.currentPasswordPlaceholder',
             )}
+            data-testid="modal-change-password-current-input"
             {...form.register('currentPassword')}
           />
           {form.formState.errors.currentPassword && (
@@ -131,6 +132,7 @@ export function ChangePasswordModal({
             placeholder={t(
               'profile.password.changeModal.newPasswordPlaceholder',
             )}
+            data-testid="modal-change-password-new-input"
             {...form.register('newPassword')}
           />
           {form.formState.errors.newPassword && (
@@ -154,6 +156,7 @@ export function ChangePasswordModal({
             placeholder={t(
               'profile.password.changeModal.confirmPasswordPlaceholder',
             )}
+            data-testid="modal-change-password-confirm-input"
             {...form.register('confirmPassword')}
           />
           {form.formState.errors.confirmPassword && (
@@ -173,6 +176,7 @@ export function ChangePasswordModal({
             className="btn btn-sm"
             onClick={handleClose}
             disabled={mutation.isPending}
+            data-testid="modal-change-password-cancel-btn"
           >
             {t('profile.password.changeModal.cancel')}
           </button>
@@ -180,6 +184,7 @@ export function ChangePasswordModal({
             type="submit"
             className="btn btn-sm btn-primary"
             disabled={mutation.isPending}
+            data-testid="modal-change-password-submit-btn"
           >
             {mutation.isPending ? (
               <>
