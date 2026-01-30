@@ -79,8 +79,8 @@ test.describe('Password Login Page', () => {
     // Login through UI
     await loginPasswordPage.login(email, password);
 
-    // Should redirect to profile or verification page
-    await expect(page).toHaveURL(/\/(profile|verify)/);
+    // Should redirect to profile, verification, or 2FA setup page
+    await expect(page).toHaveURL(/\/(profile|verify|setup\/(totp|2fa|passkey))/);
   });
 
   test('should redirect to profile after successful login', async ({ page, request }) => {
@@ -93,11 +93,11 @@ test.describe('Password Login Page', () => {
     // Login through UI
     await loginPasswordPage.login(email, password);
 
-    // Wait for navigation
-    await page.waitForURL(/\/(profile|verify)/, { timeout: 10000 });
+    // Wait for navigation (may go to profile, verify, or 2FA setup)
+    await page.waitForURL(/\/(profile|verify|setup\/(totp|2fa|passkey))/, { timeout: 10000 });
 
     // Check that we're on a protected page
     const url = page.url();
-    expect(url).toMatch(/\/(profile|verify)/);
+    expect(url).toMatch(/\/(profile|verify|setup\/(totp|2fa|passkey))/);
   });
 });

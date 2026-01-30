@@ -69,10 +69,11 @@ test.describe('Register Page', () => {
 
     await registerPage.register(email, password);
 
-    // Should redirect to email verification or profile page
-    await page.waitForURL(/\/(verify\/email|profile)/, { timeout: 10000 });
+    // Should redirect to email verification, 2FA setup, or profile page
+    // Depending on backend configuration
+    await page.waitForURL(/\/(verify\/email|setup\/(totp|2fa|passkey)|profile)/, { timeout: 10000 });
     const url = page.url();
-    expect(url).toMatch(/\/(verify\/email|profile)/);
+    expect(url).toMatch(/\/(verify\/email|setup\/(totp|2fa|passkey)|profile)/);
   });
 
   test('should show error when registering with existing email', async ({ page }) => {
@@ -81,7 +82,7 @@ test.describe('Register Page', () => {
 
     // First registration
     await registerPage.register(email, password);
-    await page.waitForURL(/\/(verify\/email|profile)/, { timeout: 10000 });
+    await page.waitForURL(/\/(verify\/email|setup\/(totp|2fa|passkey)|profile)/, { timeout: 10000 });
 
     // Try to register again with same email
     await registerPage.goto();
