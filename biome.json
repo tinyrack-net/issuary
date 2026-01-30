@@ -73,6 +73,16 @@
       "assist": {
         "enabled": false
       }
+    },
+    {
+      "includes": ["packages/homepage/src/styles/**/*.css"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noImportantStyles": "off"
+          }
+        }
+      }
     }
   ],
   "javascript": {
