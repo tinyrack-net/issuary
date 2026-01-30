@@ -1,4 +1,4 @@
-import { type Locator, type Page, expect } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * Page Object for the forgot password page (/password/forgot)
@@ -31,14 +31,26 @@ export class PasswordForgotPage {
   constructor(page: Page) {
     this.page = page;
     this.pageTitle = page.locator('h1');
-    this.emailInput = page.locator('input[type="email"]');
-    this.submitButton = page.locator('button[type="submit"]');
-    this.successAlert = page.locator('.alert-success');
-    this.checkSpamInfo = page.locator('.alert-info');
-    this.backToLoginButton = page.locator('a[href="/login"]').filter({ hasText: /login/i });
-    this.emailError = page.locator('input[type="email"]').locator('..').locator('~ p.text-error');
+    this.emailInput = page.locator(
+      '[data-testid="password-forgot-email-input"]',
+    );
+    this.submitButton = page.locator(
+      '[data-testid="password-forgot-submit-btn"]',
+    );
+    this.successAlert = page.locator(
+      '[data-testid="password-forgot-success-alert"]',
+    );
+    this.checkSpamInfo = page.locator(
+      '[data-testid="password-forgot-spam-alert"]',
+    );
+    this.backToLoginButton = page.locator(
+      '[data-testid="password-forgot-login-btn"]',
+    );
+    this.emailError = page.locator(
+      '[data-testid="password-forgot-email-input-error"]',
+    );
     this.formError = page.locator('.text-error');
-    this.loginLink = page.locator('a[href="/login"]');
+    this.loginLink = page.locator('[data-testid="password-forgot-login-link"]');
     this.loadingSpinner = page.locator('.loading-spinner');
   }
 
@@ -111,12 +123,29 @@ export class PasswordForgotPage {
     // - alert-error class (form-level errors)
     // - HTML5 validation (input:invalid)
     await expect(async () => {
-      const hasTextError = await this.formError.first().isVisible().catch(() => false);
-      const hasInputError = await this.page.locator('.input-error').first().isVisible().catch(() => false);
-      const hasAlertError = await this.page.locator('.alert-error').first().isVisible().catch(() => false);
+      const hasTextError = await this.formError
+        .first()
+        .isVisible()
+        .catch(() => false);
+      const hasInputError = await this.page
+        .locator('.input-error')
+        .first()
+        .isVisible()
+        .catch(() => false);
+      const hasAlertError = await this.page
+        .locator('.alert-error')
+        .first()
+        .isVisible()
+        .catch(() => false);
       // Check for HTML5 validation state
-      const hasInvalidInput = await this.page.locator('input:invalid').first().isVisible().catch(() => false);
-      expect(hasTextError || hasInputError || hasAlertError || hasInvalidInput).toBeTruthy();
+      const hasInvalidInput = await this.page
+        .locator('input:invalid')
+        .first()
+        .isVisible()
+        .catch(() => false);
+      expect(
+        hasTextError || hasInputError || hasAlertError || hasInvalidInput,
+      ).toBeTruthy();
     }).toPass({ timeout: 5000 });
   }
 

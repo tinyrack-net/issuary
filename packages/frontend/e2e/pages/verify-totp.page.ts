@@ -1,4 +1,4 @@
-import { type Locator, type Page, expect } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * Page Object for the TOTP verification page (/verify/totp)
@@ -33,15 +33,24 @@ export class VerifyTotpPage {
   constructor(page: Page) {
     this.page = page;
     this.pageTitle = page.locator('h1');
-    this.pinInputs = page.locator('input[inputmode="numeric"]');
+    // Use data-testid pattern for pin inputs: verify-totp-pin-0 through verify-totp-pin-5
+    this.pinInputs = page.locator('[data-testid^="verify-totp-pin-"]');
     this.pinContainer = page.locator('[class*="pin-input"]');
-    this.submitButton = page.locator('button[type="submit"]');
-    this.useRecoveryCodeLink = page.locator('button').filter({ hasText: /recovery/i });
-    this.backToLoginLink = page.locator('a[href="/login"]');
-    this.sessionExpiredAlert = page.locator('.alert-warning');
-    this.errorMessage = page.locator('.text-error');
+    this.submitButton = page.locator('[data-testid="verify-totp-submit-btn"]');
+    this.useRecoveryCodeLink = page.locator(
+      '[data-testid="verify-totp-recovery-link"]',
+    );
+    this.backToLoginLink = page.locator(
+      '[data-testid="verify-totp-login-link"]',
+    );
+    this.sessionExpiredAlert = page.locator(
+      '[data-testid="verify-totp-expired-alert"]',
+    );
+    this.errorMessage = page.locator('[data-testid="verify-totp-pin-error"]');
     this.loadingSpinner = page.locator('.loading-spinner');
-    this.redirectNowButton = page.locator('button').filter({ hasText: /redirect now/i });
+    this.redirectNowButton = page.locator(
+      '[data-testid="verify-totp-redirect-btn"]',
+    );
   }
 
   /**

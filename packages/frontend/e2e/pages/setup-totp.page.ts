@@ -1,4 +1,4 @@
-import { type Locator, type Page, expect } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * Page Object for the TOTP setup page (/setup/totp)
@@ -44,30 +44,46 @@ export class SetupTotpPage {
     this.loadingSpinner = page.locator('.loading-spinner');
 
     // QR Step
-    this.qrCode = page.locator('canvas, img[alt*="QR"], svg[class*="qr"]');
-    this.secretKey = page.locator('code, [class*="secret"]');
-    this.nextButton = page.locator('button').filter({ hasText: /next|continue/i });
+    this.qrCode = page.locator('[data-testid="setup-totp-qr-qr-code"]');
+    this.secretKey = page.locator('[data-testid="setup-totp-qr-secret"]');
+    this.nextButton = page.locator('[data-testid="setup-totp-qr-next-btn"]');
 
     // Verify Step
-    this.pinInputs = page.locator('input[inputmode="numeric"]');
-    this.verifySubmitButton = page.locator('button[type="submit"]');
-    this.backButton = page.locator('button').filter({ hasText: /back/i });
+    this.pinInputs = page.locator('[data-testid^="setup-totp-verify-pin-"]');
+    this.verifySubmitButton = page.locator(
+      '[data-testid="setup-totp-verify-submit-btn"]',
+    );
+    this.backButton = page.locator(
+      '[data-testid="setup-totp-verify-back-btn"]',
+    );
 
     // Recovery Codes Step
-    this.recoveryCodes = page.locator('[class*="recovery"]');
-    this.recoveryCodesList = page.locator('code, pre, [class*="recovery-code"]');
-    this.confirmButton = page.locator('button').filter({ hasText: /confirm|done|finish|complete/i });
-    this.copyButton = page.locator('button').filter({ hasText: /copy/i });
+    this.recoveryCodes = page.locator(
+      '[data-testid="setup-totp-recovery-codes"]',
+    );
+    this.recoveryCodesList = page.locator(
+      '[data-testid^="setup-totp-recovery-code-"]',
+    );
+    this.confirmButton = page.locator(
+      '[data-testid="setup-totp-recovery-confirm-btn"]',
+    );
+    this.copyButton = page.locator(
+      '[data-testid="setup-totp-recovery-copy-btn"]',
+    );
 
     // Error states
     this.errorAlert = page.locator('.alert-error');
     this.sessionExpiredAlert = page.locator('.alert-warning');
     this.alreadyEnabledAlert = page.locator('.alert-info');
     this.retryButton = page.locator('button').filter({ hasText: /retry/i });
-    this.goToProfileButton = page.locator('button').filter({ hasText: /profile/i });
+    this.goToProfileButton = page
+      .locator('button')
+      .filter({ hasText: /profile/i });
 
     // Links
-    this.backToLoginLink = page.locator('a[href="/login"]');
+    this.backToLoginLink = page.locator(
+      '[data-testid="setup-totp-login-link"]',
+    );
   }
 
   /**

@@ -1,4 +1,4 @@
-import { type Locator, type Page, expect } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * Page Object for the email verification page (/verify/email)
@@ -30,13 +30,19 @@ export class VerifyEmailPage {
   constructor(page: Page) {
     this.page = page;
     this.pageTitle = page.locator('h1');
-    this.tokenInput = page.locator('input[type="text"]');
-    this.submitButton = page.locator('button[type="submit"]');
-    this.resendButton = page.locator('button').filter({ hasText: /resend/i });
-    this.infoAlert = page.locator('.alert-info');
-    this.successAlert = page.locator('.alert-success');
-    this.errorMessage = page.locator('.text-error');
-    this.goToProfileButton = page.locator('button').filter({ hasText: /profile/i });
+    this.tokenInput = page.locator('[data-testid="verify-email-token-input"]');
+    this.submitButton = page.locator('[data-testid="verify-email-submit-btn"]');
+    this.resendButton = page.locator('[data-testid="verify-email-resend-btn"]');
+    this.infoAlert = page.locator('[data-testid="verify-email-info-alert"]');
+    this.successAlert = page.locator(
+      '[data-testid="verify-email-success-alert"]',
+    );
+    this.errorMessage = page.locator(
+      '[data-testid="verify-email-token-input-error"]',
+    );
+    this.goToProfileButton = page.locator(
+      '[data-testid="verify-email-profile-btn"]',
+    );
     this.loadingSpinner = page.locator('.loading-spinner');
   }
 

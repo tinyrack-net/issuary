@@ -1,4 +1,4 @@
-import { type Locator, type Page, expect } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * Page Object for the password reset page (/password/reset)
@@ -35,18 +35,40 @@ export class PasswordResetPage {
   constructor(page: Page) {
     this.page = page;
     this.pageTitle = page.locator('h1');
-    this.tokenInput = page.locator('input[type="text"]');
-    this.passwordInput = page.locator('input[type="password"]').first();
-    this.confirmPasswordInput = page.locator('input[type="password"]').nth(1);
-    this.submitButton = page.locator('button[type="submit"]');
-    this.successAlert = page.locator('.alert-success');
-    this.goToLoginButton = page.locator('button').filter({ hasText: /login/i });
-    this.tokenError = page.locator('input[type="text"]').locator('..').locator('~ p.text-error');
-    this.tokenErrorAlert = page.locator('.alert-error');
-    this.passwordError = page.locator('input[type="password"]').first().locator('..').locator('~ p.text-error');
-    this.confirmPasswordError = page.locator('input[type="password"]').nth(1).locator('..').locator('~ p.text-error');
+    this.tokenInput = page.locator(
+      '[data-testid="password-reset-token-input"]',
+    );
+    this.passwordInput = page.locator(
+      '[data-testid="password-reset-password-input"]',
+    );
+    this.confirmPasswordInput = page.locator(
+      '[data-testid="password-reset-confirm-input"]',
+    );
+    this.submitButton = page.locator(
+      '[data-testid="password-reset-submit-btn"]',
+    );
+    this.successAlert = page.locator(
+      '[data-testid="password-reset-success-alert"]',
+    );
+    this.goToLoginButton = page.locator(
+      '[data-testid="password-reset-login-btn"]',
+    );
+    this.tokenError = page.locator(
+      '[data-testid="password-reset-token-input-error"]',
+    );
+    this.tokenErrorAlert = page.locator(
+      '[data-testid="password-reset-token-error-alert"]',
+    );
+    this.passwordError = page.locator(
+      '[data-testid="password-reset-password-input-error"]',
+    );
+    this.confirmPasswordError = page.locator(
+      '[data-testid="password-reset-confirm-input-error"]',
+    );
     this.formError = page.locator('.text-error');
-    this.backToLoginLink = page.locator('a[href="/login"]');
+    this.backToLoginLink = page.locator(
+      '[data-testid="password-reset-login-link"]',
+    );
     this.loadingSpinner = page.locator('.loading-spinner');
   }
 
@@ -92,7 +114,11 @@ export class PasswordResetPage {
   /**
    * Complete password reset flow
    */
-  async resetPassword(password: string, confirmPassword?: string, token?: string) {
+  async resetPassword(
+    password: string,
+    confirmPassword?: string,
+    token?: string,
+  ) {
     if (token) {
       await this.fillToken(token);
     }
@@ -149,9 +175,16 @@ export class PasswordResetPage {
     // - general text-error class
     // Need to wait for the API response before checking
     await expect(async () => {
-      const hasFieldError = await this.tokenError.isVisible().catch(() => false);
-      const hasAlertError = await this.tokenErrorAlert.isVisible().catch(() => false);
-      const hasTextError = await this.formError.first().isVisible().catch(() => false);
+      const hasFieldError = await this.tokenError
+        .isVisible()
+        .catch(() => false);
+      const hasAlertError = await this.tokenErrorAlert
+        .isVisible()
+        .catch(() => false);
+      const hasTextError = await this.formError
+        .first()
+        .isVisible()
+        .catch(() => false);
       expect(hasFieldError || hasAlertError || hasTextError).toBeTruthy();
     }).toPass({ timeout: 10000 });
   }

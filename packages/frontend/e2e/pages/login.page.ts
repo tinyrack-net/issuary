@@ -1,4 +1,4 @@
-import { type Locator, type Page, expect } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * Page Object for the login method selection page (/login)
@@ -22,10 +22,14 @@ export class LoginPage {
   constructor(page: Page) {
     this.page = page;
     this.pageTitle = page.locator('h1');
-    this.passwordMethodButton = page.locator('a[href="/login/password"]');
-    this.passkeyMethodButton = page.locator('button').filter({ hasText: /passkey/i });
-    this.oauthButtons = page.locator('a[href*="/api/v1/auth/oauth/"]');
-    this.errorAlert = page.locator('.alert-error');
+    this.passwordMethodButton = page.locator(
+      '[data-testid="login-password-method-btn"]',
+    );
+    this.passkeyMethodButton = page.locator(
+      '[data-testid="login-passkey-method-btn"]',
+    );
+    this.oauthButtons = page.locator('[data-testid^="login-oauth-"]');
+    this.errorAlert = page.locator('[data-testid="login-oauth-error-alert"]');
   }
 
   /**

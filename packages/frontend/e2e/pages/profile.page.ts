@@ -1,4 +1,4 @@
-import { type Locator, type Page, expect } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * Page Object for the profile page (/profile)
@@ -56,44 +56,76 @@ export class ProfilePage {
     // Header
     this.pageTitle = page.locator('h1');
     this.userEmail = page.locator('h1').locator('..').locator('p');
-    this.verifiedBadge = page.locator('.text-success').filter({ hasText: /verified/i });
-    // Logout button - use multiple strategies for reliability
-    this.logoutButton = page.locator('button.btn-ghost').filter({ hasText: /logout|sign.*out/i });
+    this.verifiedBadge = page
+      .locator('.text-success')
+      .filter({ hasText: /verified/i });
+    // Logout button - use data-testid for stability
+    this.logoutButton = page.locator('[data-testid="profile-logout-btn"]');
     this.avatar = page.locator('[class*="avatar"]');
 
     // Account Information
-    this.accountInfoSection = page.locator('div').filter({ hasText: /account information/i }).first();
+    this.accountInfoSection = page
+      .locator('div')
+      .filter({ hasText: /account information/i })
+      .first();
     this.userId = page.locator('text=/User ID/i').locator('..').locator('span');
 
     // Security section
-    this.securitySection = page.locator('h2').filter({ hasText: /security/i }).locator('..');
+    this.securitySection = page
+      .locator('h2')
+      .filter({ hasText: /security/i })
+      .locator('..');
 
     // Password section
     this.passwordSection = page.locator('[class*="password"]').first();
-    this.setPasswordButton = page.locator('button').filter({ hasText: /^set$/i });
-    this.changePasswordButton = page.locator('button').filter({ hasText: /^change$/i });
-    this.removePasswordButton = page.locator('button').filter({ hasText: /^remove$/i });
+    this.setPasswordButton = page.locator(
+      '[data-testid="profile-password-set-btn"]',
+    );
+    this.changePasswordButton = page.locator(
+      '[data-testid="profile-password-change-btn"]',
+    );
+    this.removePasswordButton = page.locator(
+      '[data-testid="profile-password-remove-btn"]',
+    );
 
     // TOTP section
     this.totpSection = page.locator('[class*="totp"]').first();
-    this.enableTotpButton = page.locator('button').filter({ hasText: /^enable$/i });
-    this.disableTotpButton = page.locator('button').filter({ hasText: /^disable$/i });
+    this.enableTotpButton = page.locator(
+      '[data-testid="profile-totp-enable-btn"]',
+    );
+    this.disableTotpButton = page.locator(
+      '[data-testid="profile-totp-disable-btn"]',
+    );
 
     // Passkey section
     this.passkeySection = page.locator('[class*="passkey"]').first();
-    this.addPasskeyButton = page.locator('button').filter({ hasText: /^add$/i });
-    this.managePasskeysButton = page.locator('button').filter({ hasText: /^manage$/i });
+    this.addPasskeyButton = page.locator(
+      '[data-testid="profile-passkey-add-btn"]',
+    );
+    this.managePasskeysButton = page.locator(
+      '[data-testid="profile-passkey-manage-btn"]',
+    );
 
     // OAuth section
-    this.linkedAccountsSection = page.locator('h2').filter({ hasText: /linked accounts/i }).locator('..');
+    this.linkedAccountsSection = page
+      .locator('h2')
+      .filter({ hasText: /linked accounts/i })
+      .locator('..');
 
     // Danger zone
-    this.dangerZoneSection = page.locator('h2').filter({ hasText: /danger zone/i }).locator('..');
-    this.deleteAccountButton = page.locator('button').filter({ hasText: /delete account/i });
+    this.dangerZoneSection = page
+      .locator('h2')
+      .filter({ hasText: /danger zone/i })
+      .locator('..');
+    this.deleteAccountButton = page.locator(
+      '[data-testid="profile-delete-account-btn"]',
+    );
 
     // Modal
     this.modal = page.locator('dialog.modal');
-    this.modalCloseButton = page.locator('dialog.modal button').filter({ hasText: /×|close|cancel/i });
+    this.modalCloseButton = page
+      .locator('dialog.modal button')
+      .filter({ hasText: /×|close|cancel/i });
 
     // Loading
     this.loadingSpinner = page.locator('.loading-spinner');
