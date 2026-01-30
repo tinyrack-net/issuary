@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
-import { VerifyTotpPage } from '../../pages';
+import { expect, test } from '@playwright/test';
 import { testData } from '../../fixtures';
+import { VerifyTotpPage } from '../../pages';
 
 test.describe('TOTP Verification Page', () => {
   let verifyTotpPage: VerifyTotpPage;
@@ -24,44 +24,50 @@ test.describe('TOTP Verification Page', () => {
     // If no PIN inputs, check for error state or redirect
     if (!hasPinInputs) {
       const isOnLogin = page.url().includes('/login');
-      const hasExpired = await verifyTotpPage.sessionExpiredAlert.isVisible().catch(() => false);
+      const hasExpired = await verifyTotpPage.sessionExpiredAlert
+        .isVisible()
+        .catch(() => false);
       expect(isOnLogin || hasExpired).toBeTruthy();
       return;
     }
     await verifyTotpPage.expectPageLoaded();
   });
 
-  test('should have 6 PIN input fields', async ({ page }) => {
+  test('should have 6 PIN input fields', async () => {
     test.skip(!hasPinInputs, 'No valid 2FA session - PIN inputs not rendered');
     const inputs = await verifyTotpPage.pinInputs.all();
     expect(inputs.length).toBe(6);
   });
 
-  test('should have submit button', async ({ page }) => {
+  test('should have submit button', async () => {
     test.skip(!hasPinInputs, 'No valid 2FA session - form not rendered');
     await expect(verifyTotpPage.submitButton).toBeVisible();
   });
 
-  test('should have recovery code link', async ({ page }) => {
+  test('should have recovery code link', async () => {
     // Recovery code link should be visible even without PIN inputs
     await expect(verifyTotpPage.useRecoveryCodeLink).toBeVisible();
   });
 
-  test('should have back to login link', async ({ page }) => {
+  test('should have back to login link', async () => {
     await expect(verifyTotpPage.backToLoginLink).toBeVisible();
   });
 
-  test('should navigate to recovery code page when clicking use recovery code', async ({ page }) => {
+  test('should navigate to recovery code page when clicking use recovery code', async ({
+    page,
+  }) => {
     await verifyTotpPage.clickUseRecoveryCode();
     await expect(page).toHaveURL(/\/verify\/totp\/recovery/);
   });
 
-  test('should navigate to login when clicking back to login', async ({ page }) => {
+  test('should navigate to login when clicking back to login', async ({
+    page,
+  }) => {
     await verifyTotpPage.clickBackToLogin();
     await expect(page).toHaveURL('/login');
   });
 
-  test('should accept only numeric input', async ({ page }) => {
+  test('should accept only numeric input', async () => {
     test.skip(!hasPinInputs, 'No valid 2FA session - PIN inputs not rendered');
     await verifyTotpPage.fillCode('123456');
     const code = await verifyTotpPage.getCode();
@@ -72,7 +78,7 @@ test.describe('TOTP Verification Page', () => {
   // Without completing a login flow that triggers 2FA, the page redirects to login
   // or shows session expired state, making it impossible to test invalid code submission.
   // TODO: Implement proper 2FA flow fixture to enable this test.
-  test.skip('should show error for invalid TOTP code', async ({ page }) => {
+  test.skip('should show error for invalid TOTP code', async () => {
     // To properly test this:
     // 1. Create a user with 2FA enabled
     // 2. Start a login flow that triggers 2FA verification
@@ -84,7 +90,9 @@ test.describe('TOTP Verification Page', () => {
     await verifyTotpPage.expectError();
   });
 
-  test('should show session expired alert and redirect countdown', async ({ page }) => {
+  test('should show session expired alert and redirect countdown', async ({
+    page,
+  }) => {
     // This test verifies behavior when there's no valid 2FA session
     // The page should either:
     // 1. Show a session expired alert
@@ -98,12 +106,22 @@ test.describe('TOTP Verification Page', () => {
     await page.waitForTimeout(1000);
 
     // All of these outcomes are acceptable without a valid 2FA session
-    const hasExpiredAlert = await verifyTotpPage.sessionExpiredAlert.isVisible().catch(() => false);
+    const hasExpiredAlert = await verifyTotpPage.sessionExpiredAlert
+      .isVisible()
+      .catch(() => false);
     const isOnLoginPage = page.url().includes('/login');
-    const submitButtonDisabled = await verifyTotpPage.submitButton.isDisabled().catch(() => true);
+    const submitButtonDisabled = await verifyTotpPage.submitButton
+      .isDisabled()
+      .catch(() => true);
     const formRendered = hasPinInputs; // Form rendering is also acceptable - validation happens on submit
 
     // Test passes if any of these conditions is true
-    expect(hasExpiredAlert || isOnLoginPage || submitButtonDisabled || !hasPinInputs || formRendered).toBeTruthy();
+    expect(
+      hasExpiredAlert ||
+        isOnLoginPage ||
+        submitButtonDisabled ||
+        !hasPinInputs ||
+        formRendered,
+    ).toBeTruthy();
   });
 });

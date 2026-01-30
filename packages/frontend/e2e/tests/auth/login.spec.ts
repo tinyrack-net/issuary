@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { LoginPage } from '../../pages';
 
 test.describe('Login Page', () => {
@@ -18,7 +18,9 @@ test.describe('Login Page', () => {
     await loginPage.expectPasswordMethodVisible();
   });
 
-  test('should navigate to password login page when clicking password method', async ({ page }) => {
+  test('should navigate to password login page when clicking password method', async ({
+    page,
+  }) => {
     await loginPage.clickPasswordMethod();
     await expect(page).toHaveURL('/login/password');
   });

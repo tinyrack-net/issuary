@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { ProfilePage } from '../../pages';
 import { setupAuthenticatedUser } from '../../utils';
 
@@ -18,11 +18,17 @@ test.describe('Profile Page - TOTP Management', () => {
 
     // Check if we landed on profile or were redirected (e.g., to 2FA setup)
     const currentUrl = page.url();
-    onProfilePage = currentUrl.includes('/profile') && !currentUrl.includes('/setup');
+    onProfilePage =
+      currentUrl.includes('/profile') && !currentUrl.includes('/setup');
   });
 
-  test('should display TOTP section in security area if TOTP is enabled in config', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+  test('should display TOTP section in security area if TOTP is enabled in config', async ({
+    page,
+  }) => {
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     // TOTP section visibility depends on server config
     // This test checks if the section is rendered
     const totpSection = page.locator('text=/TOTP|authenticator|2FA/i').first();
@@ -32,8 +38,12 @@ test.describe('Profile Page - TOTP Management', () => {
       const isVisible = await totpSection.isVisible().catch(() => false);
       // If visible, it should have enable or disable button
       if (isVisible) {
-        const hasEnableButton = await profilePage.enableTotpButton.isVisible().catch(() => false);
-        const hasDisableButton = await profilePage.disableTotpButton.isVisible().catch(() => false);
+        const hasEnableButton = await profilePage.enableTotpButton
+          .isVisible()
+          .catch(() => false);
+        const hasDisableButton = await profilePage.disableTotpButton
+          .isVisible()
+          .catch(() => false);
         expect(hasEnableButton || hasDisableButton).toBeTruthy();
       }
       // Test passes either way - section visibility depends on config
@@ -41,21 +51,27 @@ test.describe('Profile Page - TOTP Management', () => {
     }).toPass({ timeout: 5000 });
   });
 
-  test('should show enable TOTP button when TOTP is not registered', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+  test('should show enable TOTP button when TOTP is not registered', async () => {
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     // For a new user, TOTP should not be registered
     // Check if enable button is visible
     const enableButton = profilePage.enableTotpButton;
 
     await expect(async () => {
-      const isVisible = await enableButton.isVisible().catch(() => false);
+      await enableButton.isVisible().catch(() => false);
       // Either visible or TOTP section is not configured
       expect(true).toBeTruthy();
     }).toPass();
   });
 
-  test('should open TOTP setup modal when clicking enable', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+  test('should open TOTP setup modal when clicking enable', async () => {
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     const enableButton = profilePage.enableTotpButton;
     const isVisible = await enableButton.isVisible().catch(() => false);
 
@@ -65,8 +81,11 @@ test.describe('Profile Page - TOTP Management', () => {
     }
   });
 
-  test('should close TOTP setup modal when clicking outside or cancel', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+  test('should close TOTP setup modal when clicking outside or cancel', async () => {
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     const enableButton = profilePage.enableTotpButton;
     const isVisible = await enableButton.isVisible().catch(() => false);
 
@@ -79,7 +98,10 @@ test.describe('Profile Page - TOTP Management', () => {
   });
 
   test('should display QR code in TOTP setup modal', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     const enableButton = profilePage.enableTotpButton;
     const isVisible = await enableButton.isVisible().catch(() => false);
 
@@ -89,9 +111,14 @@ test.describe('Profile Page - TOTP Management', () => {
 
       // Wait for QR code to appear
       await expect(async () => {
-        const qrCode = page.locator('dialog.modal canvas, dialog.modal img[alt*="QR"], dialog.modal svg');
+        const qrCode = page.locator(
+          'dialog.modal canvas, dialog.modal img[alt*="QR"], dialog.modal svg',
+        );
         const hasQr = await qrCode.isVisible().catch(() => false);
-        const hasLoading = await page.locator('dialog.modal .loading').isVisible().catch(() => false);
+        const hasLoading = await page
+          .locator('dialog.modal .loading')
+          .isVisible()
+          .catch(() => false);
         expect(hasQr || hasLoading).toBeTruthy();
       }).toPass({ timeout: 10000 });
     }

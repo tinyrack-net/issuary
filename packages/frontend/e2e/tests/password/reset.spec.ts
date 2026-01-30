@@ -1,6 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import {
+  generatePassword,
+  generateWeakPassword,
+  testData,
+} from '../../fixtures';
 import { PasswordResetPage } from '../../pages';
-import { generatePassword, generateWeakPassword, testData } from '../../fixtures';
 
 test.describe('Password Reset Page', () => {
   let resetPasswordPage: PasswordResetPage;
@@ -84,7 +88,11 @@ test.describe('Password Reset Page', () => {
   test('should show error for invalid token', async () => {
     await resetPasswordPage.goto();
     const password = generatePassword();
-    await resetPasswordPage.resetPassword(password, password, testData.tokens.invalid);
+    await resetPasswordPage.resetPassword(
+      password,
+      password,
+      testData.tokens.invalid,
+    );
     await resetPasswordPage.expectTokenError();
   });
 

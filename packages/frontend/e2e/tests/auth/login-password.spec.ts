@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { generateEmail, generatePassword, testData } from '../../fixtures';
 import { LoginPasswordPage } from '../../pages';
 import { createApiHelpers } from '../../utils';
-import { generateEmail, generatePassword, testData } from '../../fixtures';
 
 test.describe('Password Login Page', () => {
   let loginPasswordPage: LoginPasswordPage;
@@ -64,12 +64,15 @@ test.describe('Password Login Page', () => {
   test('should show error for invalid credentials', async () => {
     await loginPasswordPage.login(
       testData.invalidCredentials.email,
-      testData.invalidCredentials.password
+      testData.invalidCredentials.password,
     );
     await loginPasswordPage.expectError();
   });
 
-  test('should successfully login with valid credentials', async ({ page, request }) => {
+  test('should successfully login with valid credentials', async ({
+    page,
+    request,
+  }) => {
     // Create a test user via API
     const api = createApiHelpers(request);
     const email = generateEmail();
@@ -80,10 +83,15 @@ test.describe('Password Login Page', () => {
     await loginPasswordPage.login(email, password);
 
     // Should redirect to profile, verification, or 2FA setup page
-    await expect(page).toHaveURL(/\/(profile|verify|setup\/(totp|2fa|passkey))/);
+    await expect(page).toHaveURL(
+      /\/(profile|verify|setup\/(totp|2fa|passkey))/,
+    );
   });
 
-  test('should redirect to profile after successful login', async ({ page, request }) => {
+  test('should redirect to profile after successful login', async ({
+    page,
+    request,
+  }) => {
     // Create a test user via API
     const api = createApiHelpers(request);
     const email = generateEmail();
@@ -94,7 +102,9 @@ test.describe('Password Login Page', () => {
     await loginPasswordPage.login(email, password);
 
     // Wait for navigation (may go to profile, verify, or 2FA setup)
-    await page.waitForURL(/\/(profile|verify|setup\/(totp|2fa|passkey))/, { timeout: 10000 });
+    await page.waitForURL(/\/(profile|verify|setup\/(totp|2fa|passkey))/, {
+      timeout: 10000,
+    });
 
     // Check that we're on a protected page
     const url = page.url();

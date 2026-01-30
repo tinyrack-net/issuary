@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { ProfilePage } from '../../pages';
 import { setupAuthenticatedUser } from '../../utils';
 
@@ -19,37 +19,56 @@ test.describe('Profile Page - User Information', () => {
 
     // Check if we landed on profile or were redirected (e.g., to 2FA setup)
     const currentUrl = page.url();
-    onProfilePage = currentUrl.includes('/profile') && !currentUrl.includes('/setup');
+    onProfilePage =
+      currentUrl.includes('/profile') && !currentUrl.includes('/setup');
   });
 
-  test('should display the profile page', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+  test('should display the profile page', async () => {
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     await profilePage.expectPageLoaded();
   });
 
-  test('should display page title', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+  test('should display page title', async () => {
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     await expect(profilePage.pageTitle).toBeVisible();
   });
 
-  test('should display user email', async ({ page, request }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+  test('should display user email', async () => {
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     // The email should be visible on the page
     await expect(profilePage.userEmail).toBeVisible();
   });
 
-  test('should display logout button', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+  test('should display logout button', async () => {
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     await expect(profilePage.logoutButton).toBeVisible();
   });
 
   test('should redirect to login after logout', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     await profilePage.logout();
     await expect(page).toHaveURL('/login');
   });
 
-  test('should require authentication to access profile', async ({ page, context }) => {
+  test('should require authentication to access profile', async ({
+    page,
+    context,
+  }) => {
     // Clear cookies to simulate unauthenticated state
     await context.clearCookies();
 

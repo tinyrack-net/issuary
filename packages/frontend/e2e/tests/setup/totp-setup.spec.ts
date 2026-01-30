@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { SetupTotpPage } from '../../pages';
 import { setupAuthenticatedUser } from '../../utils';
 
@@ -15,7 +15,10 @@ test.describe('TOTP Setup Page', () => {
    * Helper to setup auth and navigate to TOTP setup page
    * Returns true if QR code is visible (full auth), false otherwise
    */
-  async function setupAndNavigate(page: Parameters<typeof setupAuthenticatedUser>[1], request: Parameters<typeof setupAuthenticatedUser>[0]): Promise<boolean> {
+  async function setupAndNavigate(
+    page: Parameters<typeof setupAuthenticatedUser>[1],
+    request: Parameters<typeof setupAuthenticatedUser>[0],
+  ): Promise<boolean> {
     await setupAuthenticatedUser(request, page);
     await setupTotpPage.goto();
 
@@ -33,36 +36,63 @@ test.describe('TOTP Setup Page', () => {
 
     // Page may show loading briefly, QR step, or error state
     await expect(async () => {
-      const isLoading = await setupTotpPage.loadingSpinner.isVisible().catch(() => false);
+      const isLoading = await setupTotpPage.loadingSpinner
+        .isVisible()
+        .catch(() => false);
       const hasQr = await setupTotpPage.qrCode.isVisible().catch(() => false);
-      const hasError = await setupTotpPage.errorAlert.isVisible().catch(() => false);
-      const hasExpired = await setupTotpPage.sessionExpiredAlert.isVisible().catch(() => false);
+      const hasError = await setupTotpPage.errorAlert
+        .isVisible()
+        .catch(() => false);
+      const hasExpired = await setupTotpPage.sessionExpiredAlert
+        .isVisible()
+        .catch(() => false);
       expect(isLoading || hasQr || hasError || hasExpired).toBeTruthy();
     }).toPass({ timeout: 10000 });
   });
 
-  test('should display QR code step for authenticated user', async ({ page, request }) => {
+  test('should display QR code step for authenticated user', async ({
+    page,
+    request,
+  }) => {
     hasQrCode = await setupAndNavigate(page, request);
-    test.skip(!hasQrCode, 'QR code not available - may require email verification');
+    test.skip(
+      !hasQrCode,
+      'QR code not available - may require email verification',
+    );
     await setupTotpPage.expectQrStep();
   });
 
   test('should have next button in QR step', async ({ page, request }) => {
     hasQrCode = await setupAndNavigate(page, request);
-    test.skip(!hasQrCode, 'QR code not available - may require email verification');
+    test.skip(
+      !hasQrCode,
+      'QR code not available - may require email verification',
+    );
     await expect(setupTotpPage.nextButton).toBeVisible();
   });
 
-  test('should navigate to verify step when clicking next', async ({ page, request }) => {
+  test('should navigate to verify step when clicking next', async ({
+    page,
+    request,
+  }) => {
     hasQrCode = await setupAndNavigate(page, request);
-    test.skip(!hasQrCode, 'QR code not available - may require email verification');
+    test.skip(
+      !hasQrCode,
+      'QR code not available - may require email verification',
+    );
     await setupTotpPage.clickNext();
     await setupTotpPage.expectVerifyStep();
   });
 
-  test('should have 6 PIN input fields in verify step', async ({ page, request }) => {
+  test('should have 6 PIN input fields in verify step', async ({
+    page,
+    request,
+  }) => {
     hasQrCode = await setupAndNavigate(page, request);
-    test.skip(!hasQrCode, 'QR code not available - may require email verification');
+    test.skip(
+      !hasQrCode,
+      'QR code not available - may require email verification',
+    );
     await setupTotpPage.clickNext();
 
     const inputs = await setupTotpPage.pinInputs.all();
@@ -71,37 +101,58 @@ test.describe('TOTP Setup Page', () => {
 
   test('should have back button in verify step', async ({ page, request }) => {
     hasQrCode = await setupAndNavigate(page, request);
-    test.skip(!hasQrCode, 'QR code not available - may require email verification');
+    test.skip(
+      !hasQrCode,
+      'QR code not available - may require email verification',
+    );
     await setupTotpPage.clickNext();
     await expect(setupTotpPage.backButton).toBeVisible();
   });
 
-  test('should navigate back to QR step when clicking back', async ({ page, request }) => {
+  test('should navigate back to QR step when clicking back', async ({
+    page,
+    request,
+  }) => {
     hasQrCode = await setupAndNavigate(page, request);
-    test.skip(!hasQrCode, 'QR code not available - may require email verification');
+    test.skip(
+      !hasQrCode,
+      'QR code not available - may require email verification',
+    );
     await setupTotpPage.clickNext();
     await setupTotpPage.expectVerifyStep();
     await setupTotpPage.clickBack();
     await setupTotpPage.expectQrStep();
   });
 
-  test('should show error for invalid verification code', async ({ page, request }) => {
+  test('should show error for invalid verification code', async ({
+    page,
+    request,
+  }) => {
     hasQrCode = await setupAndNavigate(page, request);
-    test.skip(!hasQrCode, 'QR code not available - may require email verification');
+    test.skip(
+      !hasQrCode,
+      'QR code not available - may require email verification',
+    );
     await setupTotpPage.clickNext();
     await setupTotpPage.fillVerificationCode('000000');
     await setupTotpPage.submitVerificationCode();
 
     // Should show error (invalid code)
     await expect(async () => {
-      const hasError = await setupTotpPage.page.locator('.text-error').isVisible().catch(() => false);
+      const hasError = await setupTotpPage.page
+        .locator('.text-error')
+        .isVisible()
+        .catch(() => false);
       expect(hasError).toBeTruthy();
     }).toPass({ timeout: 5000 });
   });
 
   test('should have back to login link', async ({ page, request }) => {
     hasQrCode = await setupAndNavigate(page, request);
-    test.skip(!hasQrCode, 'QR code not available - may require email verification');
+    test.skip(
+      !hasQrCode,
+      'QR code not available - may require email verification',
+    );
     await expect(setupTotpPage.backToLoginLink).toBeVisible();
   });
 
@@ -112,8 +163,12 @@ test.describe('TOTP Setup Page', () => {
     // Should either show session expired or redirect to login
     await expect(async () => {
       const isOnLogin = page.url().includes('/login');
-      const hasExpiredAlert = await setupTotpPage.sessionExpiredAlert.isVisible().catch(() => false);
-      const hasError = await setupTotpPage.errorAlert.isVisible().catch(() => false);
+      const hasExpiredAlert = await setupTotpPage.sessionExpiredAlert
+        .isVisible()
+        .catch(() => false);
+      const hasError = await setupTotpPage.errorAlert
+        .isVisible()
+        .catch(() => false);
       expect(isOnLogin || hasExpiredAlert || hasError).toBeTruthy();
     }).toPass({ timeout: 10000 });
   });

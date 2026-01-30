@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { generateEmail, generatePassword, testData } from '../../fixtures';
 import { VerifyEmailPage } from '../../pages';
-import { testData, generateEmail, generatePassword } from '../../fixtures';
 import { createApiHelpers } from '../../utils';
 
 test.describe('Email Verification Page', () => {
@@ -37,7 +37,7 @@ test.describe('Email Verification Page', () => {
     await verifyEmailPage.expectError();
   });
 
-  test('should pre-fill token from URL parameter', async ({ page }) => {
+  test('should pre-fill token from URL parameter', async () => {
     const testToken = 'test-token-123';
     await verifyEmailPage.goto({ token: testToken });
 
@@ -62,7 +62,10 @@ test.describe('Email Verification Page', () => {
     await expect(verifyEmailPage.resendButton).not.toBeVisible();
   });
 
-  test('should navigate to profile after successful verification', async ({ page, request }) => {
+  test('should navigate to profile after successful verification', async ({
+    page,
+    request,
+  }) => {
     // Create and login a user first
     const api = createApiHelpers(request);
     const email = generateEmail();

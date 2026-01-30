@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { generatePassword } from '../../fixtures';
 import { ProfilePage } from '../../pages';
 import { setupAuthenticatedUser } from '../../utils';
-import { generatePassword } from '../../fixtures';
 
 test.describe('Profile Page - Password Management', () => {
   let profilePage: ProfilePage;
@@ -19,31 +19,46 @@ test.describe('Profile Page - Password Management', () => {
 
     // Check if we landed on profile or were redirected (e.g., to 2FA setup)
     const currentUrl = page.url();
-    onProfilePage = currentUrl.includes('/profile') && !currentUrl.includes('/setup');
+    onProfilePage =
+      currentUrl.includes('/profile') && !currentUrl.includes('/setup');
   });
 
-  test('should display password section in security area', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+  test('should display password section in security area', async () => {
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     // User created via API has password, so change button should be visible
     await expect(profilePage.changePasswordButton).toBeVisible();
   });
 
-  test('should open change password modal when clicking change button', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+  test('should open change password modal when clicking change button', async () => {
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     await profilePage.clickChangePassword();
     await profilePage.expectModalOpen();
   });
 
-  test('should close modal when clicking outside or cancel', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+  test('should close modal when clicking outside or cancel', async () => {
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     await profilePage.clickChangePassword();
     await profilePage.expectModalOpen();
     await profilePage.closeModal();
     await profilePage.expectModalClosed();
   });
 
-  test('should display password input fields in change password modal', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+  test('should display password input fields in change password modal', async ({
+    page,
+  }) => {
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     await profilePage.clickChangePassword();
     await profilePage.expectModalOpen();
 
@@ -53,7 +68,10 @@ test.describe('Profile Page - Password Management', () => {
   });
 
   test('should show error for wrong current password', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     await profilePage.clickChangePassword();
     await profilePage.expectModalOpen();
 
@@ -61,7 +79,7 @@ test.describe('Profile Page - Password Management', () => {
     const passwordInputs = page.locator('dialog.modal input[type="password"]');
     await passwordInputs.first().fill('WrongPassword123!');
 
-    const newPassword = generatePassword() + 'New';
+    const newPassword = `${generatePassword()}New`;
     if ((await passwordInputs.count()) > 1) {
       await passwordInputs.nth(1).fill(newPassword);
     }
@@ -75,13 +93,21 @@ test.describe('Profile Page - Password Management', () => {
 
     // Should show error
     await expect(async () => {
-      const hasError = await page.locator('dialog.modal .text-error, dialog.modal .alert-error').isVisible().catch(() => false);
+      const hasError = await page
+        .locator('dialog.modal .text-error, dialog.modal .alert-error')
+        .isVisible()
+        .catch(() => false);
       expect(hasError).toBeTruthy();
     }).toPass({ timeout: 5000 });
   });
 
-  test('should show error for password mismatch in change modal', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+  test('should show error for password mismatch in change modal', async ({
+    page,
+  }) => {
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     await profilePage.clickChangePassword();
     await profilePage.expectModalOpen();
 
@@ -99,14 +125,20 @@ test.describe('Profile Page - Password Management', () => {
 
       // Should show mismatch error
       await expect(async () => {
-        const hasError = await page.locator('dialog.modal .text-error').isVisible().catch(() => false);
+        const hasError = await page
+          .locator('dialog.modal .text-error')
+          .isVisible()
+          .catch(() => false);
         expect(hasError).toBeTruthy();
       }).toPass({ timeout: 5000 });
     }
   });
 
-  test('should show remove password button if user has password and other auth', async ({ page }) => {
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+  test('should show remove password button if user has password and other auth', async () => {
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
     // Note: Remove button is only visible if user has password AND another auth method
     // This test checks if the button exists when expected
     const removeButton = profilePage.removePasswordButton;

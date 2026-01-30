@@ -1,9 +1,12 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { ProfilePage } from '../../pages';
 import { setupAuthenticatedUser } from '../../utils';
 
 test.describe('Logout', () => {
-  test('should logout and redirect to login page', async ({ page, request }) => {
+  test('should logout and redirect to login page', async ({
+    page,
+    request,
+  }) => {
     // Setup authenticated user
     await setupAuthenticatedUser(request, page);
 
@@ -16,8 +19,12 @@ test.describe('Logout', () => {
     await page.waitForTimeout(500);
 
     const currentUrl = page.url();
-    const onProfilePage = currentUrl.includes('/profile') && !currentUrl.includes('/setup');
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+    const onProfilePage =
+      currentUrl.includes('/profile') && !currentUrl.includes('/setup');
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
 
     await profilePage.expectPageLoaded();
 
@@ -42,8 +49,12 @@ test.describe('Logout', () => {
     await page.waitForTimeout(500);
 
     const currentUrl = page.url();
-    const onProfilePage = currentUrl.includes('/profile') && !currentUrl.includes('/setup');
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+    const onProfilePage =
+      currentUrl.includes('/profile') && !currentUrl.includes('/setup');
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
 
     await profilePage.expectPageLoaded();
 
@@ -58,7 +69,10 @@ test.describe('Logout', () => {
     await expect(page).toHaveURL('/login');
   });
 
-  test('should show logout button on profile page', async ({ page, request }) => {
+  test('should show logout button on profile page', async ({
+    page,
+    request,
+  }) => {
     // Setup authenticated user
     await setupAuthenticatedUser(request, page);
 
@@ -71,8 +85,12 @@ test.describe('Logout', () => {
     await page.waitForTimeout(500);
 
     const currentUrl = page.url();
-    const onProfilePage = currentUrl.includes('/profile') && !currentUrl.includes('/setup');
-    test.skip(!onProfilePage, 'Redirected to 2FA setup - profile not accessible');
+    const onProfilePage =
+      currentUrl.includes('/profile') && !currentUrl.includes('/setup');
+    test.skip(
+      !onProfilePage,
+      'Redirected to 2FA setup - profile not accessible',
+    );
 
     // Logout button should be visible
     await expect(profilePage.logoutButton).toBeVisible();

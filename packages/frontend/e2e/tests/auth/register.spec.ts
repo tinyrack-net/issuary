@@ -1,6 +1,11 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import {
+  generateEmail,
+  generatePassword,
+  generateWeakPassword,
+  testData,
+} from '../../fixtures';
 import { RegisterPage } from '../../pages';
-import { generateEmail, generatePassword, generateWeakPassword, testData } from '../../fixtures';
 
 test.describe('Register Page', () => {
   let registerPage: RegisterPage;
@@ -63,7 +68,9 @@ test.describe('Register Page', () => {
     await registerPage.expectError();
   });
 
-  test('should successfully register with valid credentials', async ({ page }) => {
+  test('should successfully register with valid credentials', async ({
+    page,
+  }) => {
     const email = generateEmail();
     const password = generatePassword();
 
@@ -71,18 +78,26 @@ test.describe('Register Page', () => {
 
     // Should redirect to email verification, 2FA setup, or profile page
     // Depending on backend configuration
-    await page.waitForURL(/\/(verify\/email|setup\/(totp|2fa|passkey)|profile)/, { timeout: 10000 });
+    await page.waitForURL(
+      /\/(verify\/email|setup\/(totp|2fa|passkey)|profile)/,
+      { timeout: 10000 },
+    );
     const url = page.url();
     expect(url).toMatch(/\/(verify\/email|setup\/(totp|2fa|passkey)|profile)/);
   });
 
-  test('should show error when registering with existing email', async ({ page }) => {
+  test('should show error when registering with existing email', async ({
+    page,
+  }) => {
     const email = generateEmail();
     const password = generatePassword();
 
     // First registration
     await registerPage.register(email, password);
-    await page.waitForURL(/\/(verify\/email|setup\/(totp|2fa|passkey)|profile)/, { timeout: 10000 });
+    await page.waitForURL(
+      /\/(verify\/email|setup\/(totp|2fa|passkey)|profile)/,
+      { timeout: 10000 },
+    );
 
     // Try to register again with same email
     await registerPage.goto();

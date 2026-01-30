@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
-import { PasswordForgotPage } from '../../pages';
+import { expect, test } from '@playwright/test';
 import { generateEmail, testData } from '../../fixtures';
+import { PasswordForgotPage } from '../../pages';
 import { createApiHelpers } from '../../utils';
 
 test.describe('Forgot Password Page', () => {
@@ -49,7 +49,9 @@ test.describe('Forgot Password Page', () => {
     }
   });
 
-  test('should show success message after submitting valid email', async ({ request }) => {
+  test('should show success message after submitting valid email', async ({
+    request,
+  }) => {
     // Create a user first
     const api = createApiHelpers(request);
     const email = generateEmail();
@@ -83,7 +85,9 @@ test.describe('Forgot Password Page', () => {
     await forgotPasswordPage.expectCheckSpamInfo();
   });
 
-  test('should show back to login button after success', async ({ request }) => {
+  test('should show back to login button after success', async ({
+    request,
+  }) => {
     const api = createApiHelpers(request);
     const email = generateEmail();
     const password = 'TestPassword123!';
@@ -94,7 +98,10 @@ test.describe('Forgot Password Page', () => {
     await expect(forgotPasswordPage.backToLoginButton).toBeVisible();
   });
 
-  test('should navigate to login from success state', async ({ page, request }) => {
+  test('should navigate to login from success state', async ({
+    page,
+    request,
+  }) => {
     const api = createApiHelpers(request);
     const email = generateEmail();
     const password = 'TestPassword123!';
