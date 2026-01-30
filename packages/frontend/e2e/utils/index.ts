@@ -12,6 +12,8 @@ export {
   type AuthResponse,
   type LoginResponse,
   type RegisterResponse,
+  type TermsItem,
+  type TermsResponse,
 } from './api-helpers';
 
 // WebAuthn mock
