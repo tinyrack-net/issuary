@@ -19,11 +19,12 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'pnpm start',
+      command: 'pnpm dev',
       cwd: '../backend',
-      url: 'http://localhost:8080',
+      url: 'http://localhost:8080/api/v1/config',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
+      stdout: 'pipe',
     },
     {
       command: 'pnpm dev',
@@ -31,6 +32,7 @@ export default defineConfig({
       url: 'http://localhost:8081',
       reuseExistingServer: !process.env.CI,
       timeout: 60000,
+      stdout: 'pipe',
     },
   ],
 });
