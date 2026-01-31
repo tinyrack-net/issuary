@@ -1,4 +1,13 @@
 // Config loader
+
+// Duration utilities
+export {
+  calculateCutoffDate,
+  calculatePermanentDeletionDate,
+  DurationString,
+  formatDuration,
+  parseDurationToMs,
+} from './duration.js';
 export { type DeepPartial, loadConfig } from './loader.js';
 // OAuth resolver
 export {
@@ -8,11 +17,7 @@ export {
   type WellKnownOAuthProvider,
 } from './oauth-resolver.js';
 // Account deletion config schema
-export {
-  AppConfigAccountDeletion,
-  calculatePermanentDeletionDate,
-  parseDurationToMs,
-} from './schemas/account-deletion.js';
+export { AppConfigAccountDeletion } from './schemas/account-deletion.js';
 // App config schemas
 export {
   AppConfigAdmin,
@@ -35,6 +40,8 @@ export {
   GithubOAuthSchema,
   GoogleOAuthSchema,
 } from './schemas/auth-oauth.js';
+// Cleanup config schema
+export { AppConfigCleanup, DEFAULT_CLEANUP_CONFIG } from './schemas/cleanup.js';
 // Database config schemas
 export {
   AppConfigDatabase,
