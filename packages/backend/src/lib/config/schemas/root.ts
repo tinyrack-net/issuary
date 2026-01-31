@@ -5,6 +5,7 @@ import { AppConfigBasicAuthenticationMethods } from './auth-basic.js';
 import { AppConfigOAuthAuthenticationMethods } from './auth-oauth.js';
 import { AppConfigDatabase } from './database.js';
 import { AppConfigProvider } from './provider.js';
+import { AppConfigScheduler, DEFAULT_SCHEDULER_CONFIG } from './scheduler.js';
 import { AppConfigSmtp } from './smtp.js';
 import { AppConfigTerms } from './terms.js';
 import { AppConfigUser } from './user.js';
@@ -49,6 +50,7 @@ export const ConfigSchema = z.object({
     enabled: false,
     retention_period: '30d',
   }),
+  scheduler: AppConfigScheduler.default(DEFAULT_SCHEDULER_CONFIG),
   terms: AppConfigTerms.default([]),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),
@@ -86,6 +88,7 @@ export const InternalConfigSchema = z.object({
     enabled: true,
     retention_period: '30d',
   }),
+  scheduler: AppConfigScheduler.default(DEFAULT_SCHEDULER_CONFIG),
   terms: AppConfigTerms.default([]),
   providers: z.array(AppConfigProvider).default([]),
   users: z.array(AppConfigUser).default([]),
@@ -120,6 +123,11 @@ export {
   AppConfigDatabaseSqlite,
 } from './database.js';
 export { AppConfigProvider } from './provider.js';
+export {
+  AppConfigScheduler,
+  DEFAULT_SCHEDULER_CONFIG,
+  SchedulerJobConfig,
+} from './scheduler.js';
 export { AppConfigSmtp } from './smtp.js';
 export { AppConfigTerms, type TermsItem } from './terms.js';
 export { AppConfigUser } from './user.js';
