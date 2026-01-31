@@ -17,7 +17,7 @@ export function ThemeToggle({
   detectedTheme,
   darkTheme,
   onCycle,
-  className = 'absolute start-4 top-4',
+  className = 'fixed start-3 top-3 z-50 sm:absolute sm:start-4 sm:top-4',
 }: ThemeToggleProps) {
   const { t } = useTranslation();
 
