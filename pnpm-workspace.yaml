@@ -9,7 +9,7 @@ catalog:
   '@tanstack/react-query': ^5.90.16
   '@tanstack/react-router': ^1.144.0
   '@tanstack/router-plugin': ^1.144.0
-  '@types/node': 'catalog:'
+  '@types/node': ^24.0.3
   '@types/react': ^19.2.5
   '@types/react-dom': ^19.2.3
   '@vitejs/plugin-react': ^5.1.1
@@ -25,5 +25,4 @@ catalog:
 onlyBuiltDependencies:
   - argon2
   - esbuild
-  - sharp
   - sqlite3
