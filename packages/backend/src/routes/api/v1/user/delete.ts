@@ -59,7 +59,7 @@ export default (fastify: FastifyWithZodInstance) => {
 
       const permanentDeletionDate = calculatePermanentDeletionDate(
         user.deleted_at,
-        fastify.config.account_deletion.retention_period,
+        fastify.config.cleanup.deleted_users.retention,
       );
 
       return res.status(200).send({

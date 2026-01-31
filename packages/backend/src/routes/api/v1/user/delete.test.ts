@@ -23,7 +23,12 @@ describe('DELETE /api/v1/user', () => {
       configOverrides: {
         account_deletion: {
           enabled: true,
-          retention_period: '30d',
+        },
+        cleanup: {
+          deleted_users: {
+            enabled: true,
+            retention: '30d',
+          },
         },
       },
     });
@@ -165,7 +170,6 @@ describe('DELETE /api/v1/user', () => {
       configOverrides: {
         account_deletion: {
           enabled: false,
-          retention_period: '30d',
         },
       },
     });
