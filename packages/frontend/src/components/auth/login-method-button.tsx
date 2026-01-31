@@ -1,3 +1,4 @@
+import type { OAuthProviderType } from '@/queries/config.js';
 import {
   AppleLogoIcon,
   GithubLogoIcon,
@@ -6,7 +7,6 @@ import {
 } from '@phosphor-icons/react';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import type { OAuthProviderType } from '@/queries/config.js';
 
 type LoginMethodButtonProps = {
   icon?: string | ReactNode;
@@ -68,7 +68,7 @@ export function LoginMethodButton({
   );
 
   const className =
-    'btn btn-ghost flex h-auto flex-col gap-2 border-base-300 py-4';
+    'btn btn-ghost flex h-auto flex-row gap-2 border-base-300 py-3 sm:flex-col';
 
   // External link
   if (href) {
