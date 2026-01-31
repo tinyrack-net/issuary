@@ -1,3 +1,4 @@
+import { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
 import {
   calculateCutoffDate,
   formatDuration,
@@ -25,11 +26,15 @@ export const emailVerificationsTask: CleanupTask = {
       return { deletedCount: 0, skipped: true, message: 'Disabled in config' };
     }
 
+    // Fork EntityManager for CLI context isolation
+    const em = ctx.fastify.mikro.orm.em.fork();
+    const emailVerificationRepo = em.getRepository(EmailVerificationEntity);
+
     const retentionMs = parseDurationToMs(config.retention);
     const cutoffDate = calculateCutoffDate(config.retention);
 
     // Count expired tokens before the cutoff date
-    const count = await ctx.fastify.mikro.emailVerification.count({
+    const count = await emailVerificationRepo.count({
       expiresAt: { $lt: cutoffDate },
       verified: false,
     });
@@ -47,12 +52,10 @@ export const emailVerificationsTask: CleanupTask = {
     }
 
     // Use native delete for efficiency
-    const deletedCount = await ctx.fastify.mikro.emailVerification.nativeDelete(
-      {
-        expiresAt: { $lt: cutoffDate },
-        verified: false,
-      },
-    );
+    const deletedCount = await emailVerificationRepo.nativeDelete({
+      expiresAt: { $lt: cutoffDate },
+      verified: false,
+    });
 
     if (retentionMs > 0) {
       return {

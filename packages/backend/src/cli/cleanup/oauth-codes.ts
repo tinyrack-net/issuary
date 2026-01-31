@@ -1,3 +1,4 @@
+import { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
 import {
   calculateCutoffDate,
   formatDuration,
@@ -25,17 +26,21 @@ export const oauthCodesTask: CleanupTask = {
       return { deletedCount: 0, skipped: true, message: 'Disabled in config' };
     }
 
+    // Fork EntityManager for CLI context isolation
+    const em = ctx.fastify.mikro.orm.em.fork();
+    const oauthCodeRepo = em.getRepository(OAuthCodeEntity);
+
     const now = new Date();
     const consumedRetentionMs = parseDurationToMs(config.consumed_retention);
     const consumedCutoffDate = calculateCutoffDate(config.consumed_retention);
 
     // Find expired authorization codes
-    const expiredCodes = await ctx.fastify.mikro.oauthCode.find({
+    const expiredCodes = await oauthCodeRepo.find({
       expiredAt: { $lt: now },
     });
 
     // Find consumed codes older than retention period
-    const consumedCodes = await ctx.fastify.mikro.oauthCode.find({
+    const consumedCodes = await oauthCodeRepo.find({
       consumedAt: { $ne: null, $lt: consumedCutoffDate },
     });
 
@@ -60,7 +65,6 @@ export const oauthCodesTask: CleanupTask = {
     }
 
     // Delete the codes
-    const em = ctx.fastify.mikro.orm.em.fork();
     for (const code of expiredCodes) {
       em.remove(code);
     }

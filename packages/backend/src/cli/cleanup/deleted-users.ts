@@ -1,3 +1,12 @@
+import { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
+import { PasswordResetEntity } from '@/entities/password-reset.entity.js';
+import { UserEntity } from '@/entities/user.entity.js';
+import { UserConsentEntity } from '@/entities/user-consent.entity.js';
+import { UserOAuthEntity } from '@/entities/user-oauth.entity.js';
+import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
+import { UserTermsConsentEntity } from '@/entities/user-terms-consent.entity.js';
+import { UserTotpEntity } from '@/entities/user-totp.entity.js';
+import { UserTotpRecoveryCodeEntity } from '@/entities/user-totp-recovery-code.entity.js';
 import {
   calculateCutoffDate,
   formatDuration,
@@ -38,11 +47,25 @@ export const deletedUsersTask: CleanupTask = {
       };
     }
 
+    // Fork EntityManager for CLI context isolation
+    const em = ctx.fastify.mikro.orm.em.fork();
+    const userRepo = em.getRepository(UserEntity);
+    const userOAuthRepo = em.getRepository(UserOAuthEntity);
+    const userTotpRepo = em.getRepository(UserTotpEntity);
+    const userTotpRecoveryCodeRepo = em.getRepository(
+      UserTotpRecoveryCodeEntity,
+    );
+    const userPasskeyRepo = em.getRepository(UserPasskeyEntity);
+    const userConsentRepo = em.getRepository(UserConsentEntity);
+    const userTermsConsentRepo = em.getRepository(UserTermsConsentEntity);
+    const emailVerificationRepo = em.getRepository(EmailVerificationEntity);
+    const passwordResetRepo = em.getRepository(PasswordResetEntity);
+
     const retentionMs = parseDurationToMs(config.retention);
     const cutoffDate = calculateCutoffDate(config.retention);
 
     // Find users marked for deletion whose retention period has expired
-    const usersToDelete = await ctx.fastify.mikro.user.find({
+    const usersToDelete = await userRepo.find({
       deleted_at: { $ne: null, $lt: cutoffDate },
       managed_by: 'database', // Only delete database-managed users
     });
@@ -63,14 +86,13 @@ export const deletedUsersTask: CleanupTask = {
       };
     }
 
-    const em = ctx.fastify.mikro.orm.em.fork();
     let deletedCount = 0;
 
     for (const user of usersToDelete) {
       try {
         // Delete related entities first (cascading delete)
         // OAuth accounts
-        const oauthAccounts = await ctx.fastify.mikro.userOAuth.find({
+        const oauthAccounts = await userOAuthRepo.find({
           user: user.id,
         });
         for (const account of oauthAccounts) {
@@ -78,23 +100,21 @@ export const deletedUsersTask: CleanupTask = {
         }
 
         // TOTP
-        const totps = await ctx.fastify.mikro.userTotp.find({ user: user.id });
+        const totps = await userTotpRepo.find({ user: user.id });
         for (const totp of totps) {
           em.remove(totp);
         }
 
         // TOTP recovery codes
-        const recoveryCodes = await ctx.fastify.mikro.userTotpRecoveryCode.find(
-          {
-            user: user.id,
-          },
-        );
+        const recoveryCodes = await userTotpRecoveryCodeRepo.find({
+          user: user.id,
+        });
         for (const code of recoveryCodes) {
           em.remove(code);
         }
 
         // Passkeys
-        const passkeys = await ctx.fastify.mikro.userPasskey.find({
+        const passkeys = await userPasskeyRepo.find({
           user: user.id,
         });
         for (const passkey of passkeys) {
@@ -102,7 +122,7 @@ export const deletedUsersTask: CleanupTask = {
         }
 
         // User consents
-        const consents = await ctx.fastify.mikro.userConsent.find({
+        const consents = await userConsentRepo.find({
           user: user.id,
         });
         for (const consent of consents) {
@@ -110,7 +130,7 @@ export const deletedUsersTask: CleanupTask = {
         }
 
         // User terms consents
-        const termsConsents = await ctx.fastify.mikro.userTermsConsent.find({
+        const termsConsents = await userTermsConsentRepo.find({
           user: user.id,
         });
         for (const consent of termsConsents) {
@@ -118,7 +138,7 @@ export const deletedUsersTask: CleanupTask = {
         }
 
         // Email verifications
-        const verifications = await ctx.fastify.mikro.emailVerification.find({
+        const verifications = await emailVerificationRepo.find({
           user: user.id,
         });
         for (const verification of verifications) {
@@ -126,7 +146,7 @@ export const deletedUsersTask: CleanupTask = {
         }
 
         // Password resets
-        const passwordResets = await ctx.fastify.mikro.passwordReset.find({
+        const passwordResets = await passwordResetRepo.find({
           user: user.id,
         });
         for (const reset of passwordResets) {

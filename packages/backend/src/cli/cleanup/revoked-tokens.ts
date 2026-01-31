@@ -1,3 +1,4 @@
+import { RevokedTokenEntity } from '@/entities/revoked-token.entity.js';
 import {
   calculateCutoffDate,
   formatDuration,
@@ -26,11 +27,15 @@ export const revokedTokensTask: CleanupTask = {
       return { deletedCount: 0, skipped: true, message: 'Disabled in config' };
     }
 
+    // Fork EntityManager for CLI context isolation
+    const em = ctx.fastify.mikro.orm.em.fork();
+    const revokedTokenRepo = em.getRepository(RevokedTokenEntity);
+
     const retentionMs = parseDurationToMs(config.retention);
     const cutoffDate = calculateCutoffDate(config.retention);
 
     // Find tokens that expired before the cutoff date
-    const expiredTokens = await ctx.fastify.mikro.revokedToken.find({
+    const expiredTokens = await revokedTokenRepo.find({
       expires_at: { $lt: cutoffDate },
     });
 
@@ -49,7 +54,6 @@ export const revokedTokensTask: CleanupTask = {
     }
 
     // Delete the tokens
-    const em = ctx.fastify.mikro.orm.em.fork();
     for (const token of expiredTokens) {
       em.remove(token);
     }

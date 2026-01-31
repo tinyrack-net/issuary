@@ -1,3 +1,4 @@
+import { PasswordResetEntity } from '@/entities/password-reset.entity.js';
 import {
   calculateCutoffDate,
   formatDuration,
@@ -25,11 +26,15 @@ export const passwordResetsTask: CleanupTask = {
       return { deletedCount: 0, skipped: true, message: 'Disabled in config' };
     }
 
+    // Fork EntityManager for CLI context isolation
+    const em = ctx.fastify.mikro.orm.em.fork();
+    const passwordResetRepo = em.getRepository(PasswordResetEntity);
+
     const retentionMs = parseDurationToMs(config.retention);
     const cutoffDate = calculateCutoffDate(config.retention);
 
     // Count expired tokens before the cutoff date
-    const count = await ctx.fastify.mikro.passwordReset.count({
+    const count = await passwordResetRepo.count({
       expiresAt: { $lt: cutoffDate },
       used: false,
     });
@@ -47,7 +52,7 @@ export const passwordResetsTask: CleanupTask = {
     }
 
     // Use native delete for efficiency
-    const deletedCount = await ctx.fastify.mikro.passwordReset.nativeDelete({
+    const deletedCount = await passwordResetRepo.nativeDelete({
       expiresAt: { $lt: cutoffDate },
       used: false,
     });
