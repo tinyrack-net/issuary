@@ -35,6 +35,11 @@ export interface CreateServerOptions {
    * Partial config to override loaded values (useful for testing).
    */
   configOverrides?: DeepPartial<InternalAppConfig>;
+  /**
+   * Skip listening on port (useful for CLI job execution).
+   * When true, the server is initialized but does not bind to a port.
+   */
+  skipListen?: boolean;
 }
 
 export async function createServer(options?: CreateServerOptions) {
@@ -77,14 +82,13 @@ export async function createServer(options?: CreateServerOptions) {
       ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
     });
 
-    if (env.APP_ENV !== 'test') {
+    if (env.APP_ENV !== 'test' && !options?.skipListen) {
       await appInstance.listen({
         host: '0.0.0.0',
         port: config.app.port,
       });
+      console.log('listening on port', config.app.port);
     }
-
-    console.log('listening on port', config.app.port);
 
     return appInstance;
   } catch (err) {
