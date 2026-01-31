@@ -126,7 +126,7 @@ export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
       return false;
     }
 
-    await this.getEntityManager().removeAndFlush(oauthAccount);
+    await this.getEntityManager().remove(oauthAccount).flush();
     return true;
   }
 
