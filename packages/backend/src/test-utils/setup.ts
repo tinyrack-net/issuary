@@ -86,27 +86,30 @@ export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
   ],
   account_deletion: {
     enabled: false,
-    retention_period: '30d',
   },
-  scheduler: {
-    enabled: false, // Disable scheduler in tests
-    jobs: {
-      rotate_jwt_keys: {
-        enabled: true,
-        cron: '0 0 * * *',
-      },
-      cleanup_expired_tokens: {
-        enabled: true,
-        cron: '0 */6 * * *',
-      },
-      cleanup_sessions: {
-        enabled: true,
-        cron: '0 1 * * *',
-      },
-      cleanup_deleted_users: {
-        enabled: true,
-        cron: '0 2 * * 0',
-      },
+  cleanup: {
+    revoked_tokens: {
+      enabled: true,
+      retention: '0',
+    },
+    oauth_codes: {
+      enabled: true,
+      consumed_retention: '24h',
+    },
+    email_verifications: {
+      enabled: true,
+      retention: '0',
+    },
+    password_resets: {
+      enabled: true,
+      retention: '0',
+    },
+    deleted_users: {
+      enabled: true,
+      retention: '30d',
+    },
+    jwt_keys: {
+      enabled: true,
     },
   },
   terms: [
