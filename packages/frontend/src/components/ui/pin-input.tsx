@@ -196,7 +196,7 @@ export const PinInput = forwardRef<PinInputRef, PinInputProps>(
 
     return (
       <div className={className}>
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center gap-1.5 sm:gap-2">
           {digits.map((digit, index) => (
             <input
               key={index}
@@ -214,7 +214,7 @@ export const PinInput = forwardRef<PinInputRef, PinInputProps>(
               onFocus={handleFocus}
               disabled={disabled}
               autoComplete={index === 0 ? 'one-time-code' : 'off'}
-              className={`input input-bordered h-14 w-12 text-center font-mono text-2xl ${
+              className={`input input-bordered h-12 w-10 text-center font-mono text-xl sm:h-14 sm:w-12 sm:text-2xl ${
                 error ? 'input-error' : ''
               } ${disabled ? 'input-disabled' : ''}`}
               aria-label={`Digit ${index + 1} of ${length}`}
