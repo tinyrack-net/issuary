@@ -131,8 +131,6 @@ function VerifyTotp() {
     try {
       await verifyMutation.mutateAsync(values);
     } catch (error) {
-      console.error('TOTP verification failed:', error);
-
       if (error instanceof ApiError) {
         switch (error.code) {
           case ERROR_CODES.SECOND_FACTOR_SESSION_EXPIRED:
