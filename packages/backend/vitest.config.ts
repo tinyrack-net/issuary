@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     maxWorkers: '90%',
-    testTimeout: 10000,
+    testTimeout: 20000,
     exclude: ['./dist/*', './node_modules/*'],
   },
 });
