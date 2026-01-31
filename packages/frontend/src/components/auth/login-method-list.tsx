@@ -5,5 +5,5 @@ type LoginMethodListProps = {
 };
 
 export function LoginMethodList({ children }: LoginMethodListProps) {
-  return <div className="grid grid-cols-3 gap-3">{children}</div>;
+  return <div className="grid grid-cols-3 gap-2">{children}</div>;
 }
