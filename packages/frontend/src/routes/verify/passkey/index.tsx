@@ -49,7 +49,6 @@ function VerifyPasskey() {
       }
     },
     onError: async (err) => {
-      console.error('Passkey 2FA verification failed:', err);
       if (err instanceof ApiError) {
         if (err.code === 'SECOND_FACTOR_SESSION_EXPIRED') {
           setError(t('verifyPasskey.error.expired'));
@@ -77,7 +76,7 @@ function VerifyPasskey() {
     hasStarted.current = true;
     verifyMutation.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [verifyMutation.mutate]);
 
   return (
     <PageLayout maxWidth="100" cardPadding>
