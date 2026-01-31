@@ -1,5 +1,5 @@
 app:
-  host: https://auth-test.intranet.winetree94.com
+  host: http://localhost:8080
   port: 8080
   cookie_secret: 3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b
   jwt_access_token_ttl: 3600
@@ -143,7 +143,7 @@ basic_authentication_methods:
     enabled: true
     email_verification: true
     second_factor:
-      required: true
+      required: false
     totp:
       enabled: true
       issuer: tinyauth

@@ -1,15 +1,15 @@
-import 'reflect-metadata';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import fastifyAutoload from '@fastify/autoload';
-import Fastify from 'fastify';
-import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
   type DeepPartial,
   type InternalAppConfig,
   loadConfig,
 } from '@/lib/config/index.js';
 import { env } from '@/lib/env.js';
+import fastifyAutoload from '@fastify/autoload';
+import Fastify from 'fastify';
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+import 'reflect-metadata';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.resolve(path.dirname(__filename));
@@ -52,6 +52,8 @@ export async function createServer(options?: CreateServerOptions) {
     },
     trustProxy: config.app.trust_proxy,
   }).withTypeProvider<ZodTypeProvider>();
+
+  appInstance.log.info(`App config loaded: ${env.CONFIG_PATH}`);
 
   try {
     // Register config as a decorator for DI
