@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { jobCommand } from './cli/commands/job.js';
+import { cleanupCommand } from './cli/commands/cleanup.js';
 import { serveCommand } from './cli/commands/serve.js';
 
 /**
@@ -9,19 +9,20 @@ import { serveCommand } from './cli/commands/serve.js';
  * Main entry point for the TinyAuth OIDC Provider.
  *
  * Commands:
- *   serve   Start the TinyAuth server (default)
- *   job     Run a scheduled job once (for K8s CronJob integration)
+ *   serve     Start the TinyAuth server (default)
+ *   cleanup   Run all cleanup and maintenance tasks (for K8s CronJob)
  *
  * Examples:
- *   tinyauth serve                    # Start server with scheduler
- *   tinyauth job rotate-jwt-keys      # Run JWT key rotation job
- *   tinyauth job --list               # List available jobs
+ *   tinyauth serve                    # Start server
+ *   tinyauth cleanup                  # Run all cleanup tasks
+ *   tinyauth cleanup --dry-run        # Show what would be cleaned
+ *   tinyauth cleanup --verbose        # Show detailed progress
  */
 const program = new Command();
 
 program.name('tinyauth').description('TinyAuth OIDC Provider').version('1.0.0');
 
 program.addCommand(serveCommand, { isDefault: true });
-program.addCommand(jobCommand);
+program.addCommand(cleanupCommand);
 
 program.parse();
