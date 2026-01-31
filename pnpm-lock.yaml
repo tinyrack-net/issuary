@@ -63,7 +63,11 @@ catalogs:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.3.10
 
   examples/next-basic:
     dependencies:
