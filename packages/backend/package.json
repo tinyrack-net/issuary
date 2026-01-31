@@ -5,13 +5,17 @@
   "description": "",
   "license": "ISC",
   "main": "dist/index.js",
+  "bin": {
+    "tinyauth": "./dist/index.js"
+  },
   "scripts": {
-    "dev": "APP_ENV=development CONFIG_PATH=./config.dev.yaml tsx watch --include './src/**/*' --include ./config.dev.yaml src/index.ts",
+    "dev": "APP_ENV=development CONFIG_PATH=./config.dev.yaml tsx watch --include './src/**/*' --include ./config.dev.yaml src/index.ts serve",
     "test": "APP_ENV=test NODE_OPTIONS='--import tsx' vitest",
-    "start": "node dist/index.js",
+    "start": "node dist/index.js serve",
     "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
     "build:watch": "tsc -w",
-    "serve": "APP_ENV=production node dist/index.js",
+    "serve": "APP_ENV=production node dist/index.js serve",
+    "job": "APP_ENV=production node dist/index.js job",
     "mikro-orm": "NODE_OPTIONS='--import tsx' mikro-orm-esm ",
     "mikro-orm:debug": "NODE_OPTIONS='--import tsx' mikro-orm-esm debug",
     "mikro-orm:schema:create": "NODE_OPTIONS='--import tsx' mikro-orm-esm migration:create --initial"
@@ -46,6 +50,8 @@
     "@simplewebauthn/server": "^13.2.2",
     "@types/nodemailer": "^7.0.4",
     "argon2": "^0.44.0",
+    "commander": "^14.0.3",
+    "croner": "^9.1.0",
     "dotenv": "^17.2.3",
     "fastify": "^5.6.2",
     "fastify-plugin": "^5.1.0",
