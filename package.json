@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "pnpm -r --parallel dev",
     "test": "pnpm -r test",
-    "build": "pnpm -r build"
+    "build": "pnpm -r build",
+    "biome": "biome"
   },
   "workspaces": [
     "./packages/*",
@@ -12,5 +13,8 @@
   ],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "@biomejs/biome": "catalog:"
+  }
 }

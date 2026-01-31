@@ -1,14 +1,14 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import fastifyAutoload from '@fastify/autoload';
+import Fastify from 'fastify';
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
   type DeepPartial,
   type InternalAppConfig,
   loadConfig,
 } from '@/lib/config/index.js';
 import { env } from '@/lib/env.js';
-import fastifyAutoload from '@fastify/autoload';
-import Fastify from 'fastify';
-import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import 'reflect-metadata';
 
 const __filename = fileURLToPath(import.meta.url);
