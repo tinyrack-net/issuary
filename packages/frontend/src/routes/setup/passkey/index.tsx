@@ -112,7 +112,7 @@ function SetupPasskey() {
       autoRegisterCalledRef.current = true;
       registerMutation.mutate({ name: search.passkey_name });
     }
-  }, []);
+  }, [registerMutation.mutate, search.passkey_name]);
 
   const onSubmit = (values: FormValues) => {
     setStep('registering');
