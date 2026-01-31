@@ -158,8 +158,7 @@ function VerifyEmail() {
   const onSubmit = async (values: VerifyEmailFormValues) => {
     try {
       await verifyEmailMutation.mutateAsync(values);
-    } catch (error) {
-      console.error('Verification failed:', error);
+    } catch (_error) {
       setError('token', {
         type: 'manual',
         message: t('verifyEmail.error.invalidToken'),
@@ -173,9 +172,7 @@ function VerifyEmail() {
     }
     try {
       await resendVerificationMutation.mutateAsync({ email });
-    } catch (error) {
-      console.error('Resend failed:', error);
-    }
+    } catch (_error) {}
   };
 
   if (verified) {
