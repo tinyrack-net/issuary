@@ -205,6 +205,12 @@ importers:
       argon2:
         specifier: ^0.44.0
         version: 0.44.0
+      commander:
+        specifier: ^14.0.3
+        version: 14.0.3
+      croner:
+        specifier: ^9.1.0
+        version: 9.1.0
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
@@ -2569,8 +2575,8 @@ packages:
     resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
     engines: {node: '>=16'}
 
-  commander@14.0.2:
-    resolution: {integrity: sha512-TywoWNNRbhoD0BXs1P3ZEScW8W5iKrnbithIl0YH+uCmBd0QpPOA8yc82DS3BIE5Ma6FnBVUsJ7wVUDz4dvOWQ==}
+  commander@14.0.3:
+    resolution: {integrity: sha512-H+y0Jo/T1RZ9qPP4Eh1pkcQcLRglraJaSLoyOtHxu6AapkjWVCy2Sit1QQ4x3Dng8qDlSsZEet7g5Pq06MvTgw==}
     engines: {node: '>=20'}
 
   commander@9.5.0:
@@ -2605,6 +2611,10 @@ packages:
 
   create-require@1.1.1:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
+
+  croner@9.1.0:
+    resolution: {integrity: sha512-p9nwwR4qyT5W996vBZhdvBCnMhicY5ytZkR4D1Xj0wuTDEiMnjwR57Q3RXYY/s0EpX6Ay3vgIcfaR+ewGHsi+g==}
+    engines: {node: '>=18.0'}
 
   cross-env@10.1.0:
     resolution: {integrity: sha512-GsYosgnACZTADcmEyJctkJIoqAhHjttw7RsFrVoJNXbsWWqaq6Ym+7kZjq6mS45O0jij6vtiReppKQEtqWy6Dw==}
@@ -7840,7 +7850,7 @@ snapshots:
 
   commander@11.1.0: {}
 
-  commander@14.0.2: {}
+  commander@14.0.3: {}
 
   commander@9.5.0: {}
 
@@ -7863,6 +7873,8 @@ snapshots:
   cookie@1.1.1: {}
 
   create-require@1.1.1: {}
+
+  croner@9.1.0: {}
 
   cross-env@10.1.0:
     dependencies:
@@ -8231,7 +8243,7 @@ snapshots:
 
   figlet@1.9.4:
     dependencies:
-      commander: 14.0.2
+      commander: 14.0.3
 
   file-uri-to-path@1.0.0: {}
 
