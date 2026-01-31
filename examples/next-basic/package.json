@@ -11,9 +11,7 @@
   "dependencies": {
     "jose": "catalog:",
     "next": "16.1.1",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "zod": "catalog:"
+    "react": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
