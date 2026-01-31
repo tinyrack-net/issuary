@@ -48,10 +48,10 @@ app:
 
   # Notice text for implicit consent mode (displayed on login/signup pages)
   # Shown below OAuth buttons and signup form
-  # signup_implicit_terms:
-  #   ko: 계속하면 <a href="https://example.com/terms/ko" class="link">이용약관</a> 및 <a href="https://example.com/privacy/ko" class="link">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
-  #   en: By continuing, you agree to our <a href="https://example.com/terms/en" class="link">Terms of Service</a> and <a href="https://example.com/privacy/en" class="link">Privacy Policy</a>.
-  #   ja: 続行することで、<a href="https://example.com/terms/ja" class="link">利用規約</a>および<a href="https://example.com/privacy/ja" class="link">プライバシーポリシー</a>に同意したものとみなされます。
+  signup_implicit_terms:
+    ko: 계속하면 <a href="https://example.com/terms/ko" class="link">이용약관</a> 및 <a href="https://example.com/privacy/ko" class="link">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
+    en: By continuing, you agree to our <a href="https://example.com/terms/en" class="link">Terms of Service</a> and <a href="https://example.com/privacy/en" class="link">Privacy Policy</a>.
+    ja: 続行することで、<a href="https://example.com/terms/ja" class="link">利用規約</a>および<a href="https://example.com/privacy/ja" class="link">プライバシーポリシー</a>に同意したものとみなされます。
 
 admin:
   enabled: true
@@ -66,7 +66,7 @@ terms:
   # Terms of Service (required, explicit consent)
   - id: tos
     required: true
-    consent_mode: explicit
+    consent_mode: implicit
     version: "1.0.0"
     content:
       ko:
@@ -85,7 +85,7 @@ terms:
   # Privacy Policy (required, explicit consent)
   - id: privacy
     required: true
-    consent_mode: explicit
+    consent_mode: implicit
     version: "1.0.0"
     content:
       ko:
@@ -100,25 +100,6 @@ terms:
         title: プライバシーポリシー
         type: link
         content: https://example.com/privacy/ja
-
-  # Marketing consent (optional, explicit consent - shows checkbox)
-  - id: marketing
-    required: false
-    consent_mode: explicit
-    version: "1.0.0"
-    content:
-      ko:
-        title: 마케팅 정보 수신 동의
-        type: text
-        content: 이벤트, 프로모션 등 마케팅 정보를 이메일로 받아보시겠습니까?
-      en:
-        title: Marketing Communications
-        type: text
-        content: Would you like to receive marketing emails about events and promotions?
-      ja:
-        title: マーケティング情報の受信
-        type: text
-        content: イベントやプロモーションなどのマーケティング情報をメールで受け取りますか？
 
   - id: marketing2
     required: false
