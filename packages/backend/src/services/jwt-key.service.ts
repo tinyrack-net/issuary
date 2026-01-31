@@ -230,7 +230,7 @@ export class JwtKeyService {
   /**
    * Check and perform rotation if needed
    *
-   * Called periodically by scheduler.
+   * Called by `tinyauth cleanup` command.
    * Rotates if active key is past expiration date.
    */
   async checkAndRotate(): Promise<boolean> {
@@ -415,11 +415,11 @@ export default fastifyPlugin(
     // Clear cache after bootstrap
     fastify.jwtKeyService.clearActiveKeyCache();
 
-    // NOTE: JWT key rotation is now handled by the scheduler (cli/jobs/rotate-jwt-keys.ts)
+    // NOTE: JWT key rotation is handled by the cleanup command (tinyauth cleanup)
     // instead of setInterval. This provides:
-    // - Better control via config.yaml (scheduler.jobs.rotate_jwt_keys)
-    // - K8s CronJob compatibility (tinyauth job rotate-jwt-keys)
-    // - Consistent job management across all scheduled tasks
+    // - Better control via config.yaml (cleanup.jwt_keys)
+    // - K8s CronJob compatibility (single `tinyauth cleanup` command)
+    // - Consistent maintenance task management
   },
   {
     name: 'jwt-key-service-plugin',
