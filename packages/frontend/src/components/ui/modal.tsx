@@ -17,9 +17,9 @@ interface ModalProps {
 }
 
 const sizeClasses = {
-  sm: 'max-w-sm',
-  md: '',
-  lg: 'max-w-lg',
+  sm: 'max-w-[calc(100vw-2rem)] sm:max-w-sm',
+  md: 'max-w-[calc(100vw-2rem)] sm:max-w-md',
+  lg: 'max-w-[calc(100vw-2rem)] sm:max-w-lg',
 } as const;
 
 const iconVariantClasses: Record<ModalVariant, string> = {
@@ -61,7 +61,7 @@ export function Modal({
 
   return (
     <dialog className="modal modal-open">
-      <div className={`modal-box max-h-[85vh] ${sizeClasses[size]}`}>
+      <div className={`modal-box max-h-[90vh] sm:max-h-[85vh] ${sizeClasses[size]}`}>
         <div className="flex items-start gap-2.5">
           {IconComponent && (
             <div
