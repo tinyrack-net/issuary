@@ -415,28 +415,11 @@ export default fastifyPlugin(
     // Clear cache after bootstrap
     fastify.jwtKeyService.clearActiveKeyCache();
 
-    // Optional: Set up periodic rotation check
-    const rotationEnabled = fastify.config.app.jwt_key_rotation_enabled ?? true;
-
-    if (rotationEnabled) {
-      const checkInterval = setInterval(
-        async () => {
-          try {
-            const rotated = await fastify.jwtKeyService.checkAndRotate();
-            if (rotated) {
-              fastify.log.info('JWT key rotation performed');
-            }
-          } catch (err) {
-            fastify.log.error(err, 'JWT key rotation check failed');
-          }
-        },
-        60 * 60 * 1000,
-      ); // Check every hour
-
-      fastify.addHook('onClose', () => {
-        clearInterval(checkInterval);
-      });
-    }
+    // NOTE: JWT key rotation is now handled by the scheduler (cli/jobs/rotate-jwt-keys.ts)
+    // instead of setInterval. This provides:
+    // - Better control via config.yaml (scheduler.jobs.rotate_jwt_keys)
+    // - K8s CronJob compatibility (tinyauth job rotate-jwt-keys)
+    // - Consistent job management across all scheduled tasks
   },
   {
     name: 'jwt-key-service-plugin',
