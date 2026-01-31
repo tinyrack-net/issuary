@@ -6,7 +6,6 @@ import z from 'zod/v4';
  * - m: minutes (e.g., "30m")
  * - h: hours (e.g., "24h")
  * - d: days (e.g., "7d")
- * - M: months (e.g., "1M")
  * - y: years (e.g., "1y")
  *
  * Special value "0" means immediate (no retention).
@@ -14,10 +13,10 @@ import z from 'zod/v4';
 export const DurationString = z
   .string()
   .regex(
-    /^(0|\d+[smhdMy])$/,
-    'Duration must be "0" or format like "30s", "30m", "24h", "7d", "1M", "1y"',
+    /^(0|\d+[smhdy])$/,
+    'Duration must be "0" or format like "30s", "30m", "24h", "7d", "1y"',
   )
-  .describe('Duration string (e.g., "0", "30m", "24h", "7d", "1M", "1y")');
+  .describe('Duration string (e.g., "0", "30m", "24h", "7d", "1y")');
 
 export type DurationString = z.infer<typeof DurationString>;
 
@@ -25,12 +24,11 @@ const MS_PER_SECOND = 1000;
 const MS_PER_MINUTE = 60 * MS_PER_SECOND;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 const MS_PER_DAY = 24 * MS_PER_HOUR;
-const MS_PER_MONTH = 30 * MS_PER_DAY; // Approximate month as 30 days
 const MS_PER_YEAR = 365 * MS_PER_DAY; // Approximate year as 365 days
 
 /**
  * Parse duration string to milliseconds
- * @param duration - Duration string like "30s", "30m", "24h", "7d", "1M", "1y" or "0"
+ * @param duration - Duration string like "30s", "30m", "24h", "7d", "1y" or "0"
  * @returns Duration in milliseconds
  */
 export function parseDurationToMs(duration: string): number {
@@ -39,7 +37,7 @@ export function parseDurationToMs(duration: string): number {
     return 0;
   }
 
-  const match = duration.match(/^(\d+)([smhdMy])$/);
+  const match = duration.match(/^(\d+)([smhdy])$/);
   if (!match) {
     throw new Error(`Invalid duration format: ${duration}`);
   }
@@ -56,8 +54,6 @@ export function parseDurationToMs(duration: string): number {
       return value * MS_PER_HOUR;
     case 'd':
       return value * MS_PER_DAY;
-    case 'M':
-      return value * MS_PER_MONTH;
     case 'y':
       return value * MS_PER_YEAR;
     default:
@@ -100,14 +96,9 @@ export function formatDuration(ms: number): string {
     return `${hours} hour${hours !== 1 ? 's' : ''}`;
   }
 
-  if (ms < MS_PER_MONTH) {
+  if (ms < MS_PER_YEAR) {
     const days = Math.round(ms / MS_PER_DAY);
     return `${days} day${days !== 1 ? 's' : ''}`;
-  }
-
-  if (ms < MS_PER_YEAR) {
-    const months = Math.round(ms / MS_PER_MONTH);
-    return `${months} month${months !== 1 ? 's' : ''}`;
   }
 
   const years = Math.round(ms / MS_PER_YEAR);
