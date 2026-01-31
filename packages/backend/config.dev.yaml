@@ -60,6 +60,25 @@ admin:
 account_deletion:
   enabled: true
 
+# Scheduler configuration
+# Controls the in-process job scheduler for automated tasks
+# Set enabled: false when using Kubernetes CronJobs instead
+scheduler:
+  enabled: true
+  jobs:
+    rotate_jwt_keys:
+      enabled: true
+      cron: "0 0 * * *" # Daily at midnight
+    cleanup_expired_tokens:
+      enabled: true
+      cron: "0 */6 * * *" # Every 6 hours
+    cleanup_sessions:
+      enabled: true
+      cron: "0 1 * * *" # Daily at 1 AM
+    cleanup_deleted_users:
+      enabled: true
+      cron: "0 2 * * 0" # Weekly on Sunday at 2 AM
+
 # Terms of Service configuration
 # Manages user consent for terms, privacy policy, and other agreements
 terms:
