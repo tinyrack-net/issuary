@@ -156,8 +156,7 @@ function LoginPassword() {
         }
       }
     },
-    onError: (error) => {
-      console.error('Login failed:', error);
+    onError: (_error) => {
       setError('email', {
         type: 'manual',
         message: t('login.error.failed'),
