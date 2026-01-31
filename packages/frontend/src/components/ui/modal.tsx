@@ -61,7 +61,9 @@ export function Modal({
 
   return (
     <dialog className="modal modal-open">
-      <div className={`modal-box max-h-[90vh] sm:max-h-[85vh] ${sizeClasses[size]}`}>
+      <div
+        className={`modal-box max-h-[90vh] sm:max-h-[85vh] ${sizeClasses[size]}`}
+      >
         <div className="flex items-start gap-2.5">
           {IconComponent && (
             <div

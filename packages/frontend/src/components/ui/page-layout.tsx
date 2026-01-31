@@ -72,7 +72,7 @@ export function PageLayout({
           {children}
         </div>
       </div>
-      <LanguageSelector className="mx-auto pb-2 mt-4" />
+      <LanguageSelector className="mx-auto mt-4 pb-2" />
     </div>
   );
 }
