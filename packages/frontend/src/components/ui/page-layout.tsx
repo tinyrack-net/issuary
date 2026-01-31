@@ -46,7 +46,7 @@ export function PageLayout({
 
   return (
     <div
-      className={`relative flex min-h-screen items-center justify-center bg-base-200 bg-cover ${containerClass}`}
+      className={`relative flex min-h-screen flex-col bg-base-200 bg-cover ${containerClass}`}
       style={
         backgroundUrl
           ? {
@@ -62,14 +62,17 @@ export function PageLayout({
           detectedTheme={detectedTheme}
           darkTheme={darkTheme}
           onCycle={cycleThemeMode}
+          className="fixed start-3 top-3 z-50 sm:absolute sm:start-4 sm:top-4"
         />
       )}
-      <LanguageSelector />
-      <div
-        className={`card w-full border border-base-200 bg-base-100 shadow-lg ${cardClass}`}
-      >
-        {children}
+      <div className="flex flex-1 items-center justify-center">
+        <div
+          className={`card w-full border border-base-200 bg-base-100 shadow-lg ${cardClass}`}
+        >
+          {children}
+        </div>
       </div>
+      <LanguageSelector className="mx-auto pb-2 mt-4" />
     </div>
   );
 }
