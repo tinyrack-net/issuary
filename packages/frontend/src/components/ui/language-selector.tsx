@@ -6,9 +6,7 @@ type LanguageSelectorProps = {
   className?: string;
 };
 
-export function LanguageSelector({
-  className = '',
-}: LanguageSelectorProps) {
+export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
   const { t } = useTranslation();
   const {
     language,
