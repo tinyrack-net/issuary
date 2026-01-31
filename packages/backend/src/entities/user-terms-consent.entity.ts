@@ -49,6 +49,7 @@ export class UserTermsConsentEntity extends BaseEntity {
     nullable: false,
     ref: true,
     index: 'user_terms_consent_user_id_index',
+    deleteRule: 'cascade',
   })
   public user: Ref<UserEntity>;
 
@@ -59,6 +60,7 @@ export class UserTermsConsentEntity extends BaseEntity {
     nullable: false,
     ref: true,
     index: 'user_terms_consent_terms_id_index',
+    deleteRule: 'cascade',
   })
   public terms: Ref<TermsEntity>;
 
