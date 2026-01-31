@@ -188,7 +188,6 @@ export const startConditionalPasskeyAuth = async (
   } catch (error) {
     // AbortError is expected when component unmounts, so ignore it
     if ((error as Error).name !== 'AbortError') {
-      console.error('Conditional passkey auth failed:', error);
     }
   }
 };
