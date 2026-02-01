@@ -30,11 +30,12 @@ export const AppConfigPasswordAuth = z.object({
   totp: z
     .object({
       enabled: z.boolean().optional().default(false),
-      issuer: z.string().optional(),
+      issuer: z.string().optional().default('Tinyrack'),
     })
     .optional()
     .default({
       enabled: false,
+      issuer: 'Tinyrack',
     }),
 });
 
@@ -96,6 +97,7 @@ export const AppConfigBasicAuthenticationMethods = z.object({
     },
     totp: {
       enabled: false,
+      issuer: 'Tinyrack',
     },
   }),
   passkey: AppConfigPasskeyAuth.optional().default({
