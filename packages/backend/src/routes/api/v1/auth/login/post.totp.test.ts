@@ -68,7 +68,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
-        basic_authentication_methods: {
+        auth: {
           password: {
             email_verification: false,
             second_factor: {
@@ -237,7 +237,7 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
     app = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        basic_authentication_methods: {
+        auth: {
           password: {
             email_verification: false,
             second_factor: {
@@ -354,7 +354,7 @@ describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
     app = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        basic_authentication_methods: {
+        auth: {
           password: {
             email_verification: false,
             second_factor: {
@@ -438,7 +438,7 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
     app = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        basic_authentication_methods: {
+        auth: {
           password: {
             email_verification: true,
             second_factor: {
@@ -548,7 +548,7 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
-        basic_authentication_methods: {
+        auth: {
           password: {
             email_verification: false,
             second_factor: {

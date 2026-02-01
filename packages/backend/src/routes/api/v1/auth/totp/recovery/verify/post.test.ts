@@ -17,7 +17,7 @@ beforeAll(async () => {
   app = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
-      basic_authentication_methods: {
+      auth: {
         password: {
           second_factor: {
             required: false,

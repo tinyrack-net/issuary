@@ -15,7 +15,7 @@ describe('POST /api/v1/auth/passkey/options', () => {
     app = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        basic_authentication_methods: {
+        auth: {
           passkey: {
             enabled: true,
             email_verification: true,
@@ -135,7 +135,7 @@ describe('POST /api/v1/auth/passkey/options - 2FA mode', () => {
     app2FA = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        basic_authentication_methods: {
+        auth: {
           password: {
             enabled: true,
             second_factor: {
@@ -224,7 +224,7 @@ describe('POST /api/v1/auth/passkey/options - 2FA mode', () => {
     const appForTest = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        basic_authentication_methods: {
+        auth: {
           passkey: {
             enabled: true,
             email_verification: true,
@@ -258,7 +258,7 @@ describe('POST /api/v1/auth/passkey/options - Passkey disabled', () => {
     appDisabled = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        basic_authentication_methods: {
+        auth: {
           passkey: {
             enabled: false,
             email_verification: true,
@@ -289,7 +289,7 @@ describe('POST /api/v1/auth/passkey/options - Custom rpId', () => {
     appCustomRpId = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        basic_authentication_methods: {
+        auth: {
           passkey: {
             enabled: true,
             email_verification: true,

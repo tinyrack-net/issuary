@@ -55,7 +55,7 @@ describe('POST /api/v1/auth/passkey/verify', () => {
     app = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        basic_authentication_methods: {
+        auth: {
           passkey: {
             enabled: true,
             email_verification: true,
@@ -322,7 +322,7 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
     app = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        basic_authentication_methods: {
+        auth: {
           passkey: {
             enabled: true,
             email_verification: true,
@@ -421,7 +421,7 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
     app2FA = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        basic_authentication_methods: {
+        auth: {
           password: {
             enabled: true,
             second_factor: {
@@ -636,7 +636,7 @@ describe('POST /api/v1/auth/passkey/verify - Passkey disabled', () => {
     appDisabled = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        basic_authentication_methods: {
+        auth: {
           passkey: {
             enabled: false,
             email_verification: true,

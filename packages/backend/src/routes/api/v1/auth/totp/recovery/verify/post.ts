@@ -14,8 +14,8 @@ import type { FastifyWithZodInstance } from '@/server.js';
  */
 export default (fastify: FastifyWithZodInstance) => {
   if (
-    !fastify.config.basic_authentication_methods.password.enabled ||
-    !fastify.config.basic_authentication_methods.password.totp.enabled
+    !fastify.config.auth.password.enabled ||
+    !fastify.config.auth.password.totp.enabled
   ) {
     return;
   }
