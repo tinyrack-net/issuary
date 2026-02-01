@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import type { DeepPartial, InternalAppConfig } from '@/lib/config/index.js';
+import { deepMerge } from '@/lib/config/index.js';
 import { e } from '@/schemas/error.js';
-import { createServer } from '@/server.js';
 import {
   expectError,
   generateUniqueEmail,
@@ -21,187 +20,6 @@ const REQUIRED_CONSENTS = [
 ];
 
 describe('POST /api/v1/auth/register', () => {
-  test('should return 403 when signup is disabled (empty allowed_signup_emails)', async () => {
-    const disabledApp = await createServer({
-      baseConfig: DEFAULT_TEST_CONFIG,
-      configOverrides: {
-        app: {
-          allowed_signup_emails: [],
-        },
-      },
-    });
-
-    const res = await disabledApp.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: 'test@example.com',
-        password: 'password123',
-        consents: REQUIRED_CONSENTS,
-      },
-    });
-
-    expectError(res, e.RegistrationDisabled);
-
-    await disabledApp.close();
-  });
-
-  test('should return 403 when email is not in allowed patterns', async () => {
-    const restrictedApp = await createServer({
-      baseConfig: DEFAULT_TEST_CONFIG,
-      configOverrides: {
-        app: {
-          allowed_signup_emails: ['*@allowed.com'],
-        },
-      },
-    });
-
-    const res = await restrictedApp.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: 'user@notallowed.com',
-        password: 'password123',
-        consents: REQUIRED_CONSENTS,
-      },
-    });
-
-    expectError(res, e.RegistrationEmailNotAllowed);
-
-    await restrictedApp.close();
-  });
-
-  test('should allow registration with domain wildcard pattern', async () => {
-    const restrictedApp = await createServer({
-      baseConfig: DEFAULT_TEST_CONFIG,
-      configOverrides: {
-        app: {
-          allowed_signup_emails: ['*@allowed.com'],
-        },
-      },
-    });
-
-    const uniqueEmail = `user${Date.now()}@allowed.com`;
-    const res = await restrictedApp.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: uniqueEmail,
-        password: 'password123',
-        consents: REQUIRED_CONSENTS,
-      },
-    });
-
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
-    expect(body).toHaveProperty('user');
-
-    await restrictedApp.close();
-  });
-
-  test('should allow registration with exact email pattern', async () => {
-    const exactEmail = `exact${Date.now()}@specific.com`;
-    const restrictedApp = await createServer({
-      baseConfig: DEFAULT_TEST_CONFIG,
-      configOverrides: {
-        app: {
-          allowed_signup_emails: [exactEmail],
-        },
-      },
-    });
-
-    const res = await restrictedApp.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: exactEmail,
-        password: 'password123',
-        consents: REQUIRED_CONSENTS,
-      },
-    });
-
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
-    expect(body).toHaveProperty('user');
-
-    await restrictedApp.close();
-  });
-
-  test('should reject non-matching email with exact email pattern', async () => {
-    const restrictedApp = await createServer({
-      baseConfig: DEFAULT_TEST_CONFIG,
-      configOverrides: {
-        app: {
-          allowed_signup_emails: ['allowed@specific.com'],
-        },
-      },
-    });
-
-    const res = await restrictedApp.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: 'other@specific.com',
-        password: 'password123',
-        consents: REQUIRED_CONSENTS,
-      },
-    });
-
-    expectError(res, e.RegistrationEmailNotAllowed);
-
-    await restrictedApp.close();
-  });
-
-  test('should allow registration with multiple patterns', async () => {
-    const restrictedApp = await createServer({
-      baseConfig: DEFAULT_TEST_CONFIG,
-      configOverrides: {
-        app: {
-          allowed_signup_emails: ['*@company.com', 'special@other.com'],
-        },
-      },
-    });
-
-    // Test domain wildcard
-    const email1 = `user${Date.now()}@company.com`;
-    const res1 = await restrictedApp.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: email1,
-        password: 'password123',
-        consents: REQUIRED_CONSENTS,
-      },
-    });
-    expect(res1.statusCode).toBe(200);
-
-    // Test exact match
-    const res2 = await restrictedApp.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: 'special@other.com',
-        password: 'password123',
-        consents: REQUIRED_CONSENTS,
-      },
-    });
-    expect(res2.statusCode).toBe(200);
-
-    // Test rejected email
-    const res3 = await restrictedApp.inject({
-      method: 'post',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: 'nobody@rejected.com',
-        password: 'password123',
-        consents: REQUIRED_CONSENTS,
-      },
-    });
-    expectError(res3, e.RegistrationEmailNotAllowed);
-
-    await restrictedApp.close();
-  });
-
   test('should register successfully with valid credentials and consents', async () => {
     const uniqueEmail = generateUniqueEmail();
 
@@ -460,9 +278,165 @@ describe('POST /api/v1/auth/register', () => {
   });
 });
 
+describe('POST /api/v1/auth/register (signup disabled)', () => {
+  const app = setupTestServer({
+    config: deepMerge(DEFAULT_TEST_CONFIG, {
+      app: {
+        allowed_signup_emails: [],
+      },
+    }),
+  });
+
+  test('should return 403 when signup is disabled (empty allowed_signup_emails)', async () => {
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: 'test@example.com',
+        password: 'password123',
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+
+    expectError(res, e.RegistrationDisabled);
+  });
+});
+
+describe('POST /api/v1/auth/register (domain wildcard pattern)', () => {
+  const app = setupTestServer({
+    config: deepMerge(DEFAULT_TEST_CONFIG, {
+      app: {
+        allowed_signup_emails: ['*@allowed.com'],
+      },
+    }),
+  });
+
+  test('should return 403 when email is not in allowed patterns', async () => {
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: 'user@notallowed.com',
+        password: 'password123',
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+
+    expectError(res, e.RegistrationEmailNotAllowed);
+  });
+
+  test('should allow registration with domain wildcard pattern', async () => {
+    const uniqueEmail = `user${Date.now()}@allowed.com`;
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: uniqueEmail,
+        password: 'password123',
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toHaveProperty('user');
+  });
+});
+
+describe('POST /api/v1/auth/register (exact email pattern)', () => {
+  const exactEmail = 'exact-allowed@specific.com';
+  const app = setupTestServer({
+    config: deepMerge(DEFAULT_TEST_CONFIG, {
+      app: {
+        allowed_signup_emails: [exactEmail],
+      },
+    }),
+  });
+
+  test('should allow registration with exact email pattern', async () => {
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: exactEmail,
+        password: 'password123',
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toHaveProperty('user');
+  });
+
+  test('should reject non-matching email with exact email pattern', async () => {
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: 'other@specific.com',
+        password: 'password123',
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+
+    expectError(res, e.RegistrationEmailNotAllowed);
+  });
+});
+
+describe('POST /api/v1/auth/register (multiple patterns)', () => {
+  const app = setupTestServer({
+    config: deepMerge(DEFAULT_TEST_CONFIG, {
+      app: {
+        allowed_signup_emails: ['*@company.com', 'special@other.com'],
+      },
+    }),
+  });
+
+  test('should allow registration with domain wildcard from multiple patterns', async () => {
+    const email = `user${Date.now()}@company.com`;
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email,
+        password: 'password123',
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  test('should allow registration with exact match from multiple patterns', async () => {
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: 'special@other.com',
+        password: 'password123',
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  test('should reject email not matching any pattern', async () => {
+    const res = await app.inject({
+      method: 'post',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: 'nobody@rejected.com',
+        password: 'password123',
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+    expectError(res, e.RegistrationEmailNotAllowed);
+  });
+});
+
 describe('POST /api/v1/auth/register (implicit consent mode)', () => {
   const app = setupTestServer({
-    configOverrides: {
+    config: deepMerge(DEFAULT_TEST_CONFIG, {
       app: {
         signup_implicit_terms: {
           en: 'By signing up, you agree to our Terms.',
@@ -483,7 +457,7 @@ describe('POST /api/v1/auth/register (implicit consent mode)', () => {
           },
         },
       ],
-    } as DeepPartial<InternalAppConfig>,
+    }),
   });
 
   test('should register without explicit consents in implicit mode', async () => {
@@ -537,9 +511,9 @@ describe('POST /api/v1/auth/register (implicit consent mode)', () => {
 
 describe('POST /api/v1/auth/register (no terms configured)', () => {
   const app = setupTestServer({
-    configOverrides: {
+    config: deepMerge(DEFAULT_TEST_CONFIG, {
       terms: [], // No terms
-    } as DeepPartial<InternalAppConfig>,
+    }),
   });
 
   test('should register without consents when no terms configured', async () => {
