@@ -19,7 +19,7 @@ beforeAll(async () => {
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
-      providers: [TEST_OAUTH_CLIENT_CONFIG],
+      clients: [TEST_OAUTH_CLIENT_CONFIG],
     },
   });
 });
