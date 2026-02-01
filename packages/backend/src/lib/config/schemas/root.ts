@@ -10,7 +10,14 @@ import { AppConfigSmtp } from './smtp.js';
 import { AppConfigTerms } from './terms.js';
 import { AppConfigUser } from './user.js';
 
-export const ExternalConfigSchema = z.object({
+/**
+ * Unified application configuration schema.
+ *
+ * This schema defines the structure for both user input (config.yaml)
+ * and parsed configuration. The SMTP field supports a `{ test: true }`
+ * shorthand that gets resolved to actual SMTP credentials at runtime.
+ */
+export const AppConfigSchema = z.object({
   app: AppConfigApp,
   admin: AppConfigAdmin.optional().default({
     enabled: false,
@@ -29,6 +36,7 @@ export const ExternalConfigSchema = z.object({
         },
         totp: {
           enabled: false,
+          issuer: 'Tinyrack',
         },
       },
       passkey: {
@@ -58,57 +66,27 @@ export const ExternalConfigSchema = z.object({
 });
 
 /**
- * Input type for ExternalConfigSchema - use this for function parameters.
+ * Input type for AppConfigSchema - use this for function parameters.
  * Fields with defaults are optional in this type.
  */
-export type ExternalAppConfigInput = z.input<typeof ExternalConfigSchema>;
+export type AppConfigInput = z.input<typeof AppConfigSchema>;
 
 /**
- * Output type for ExternalConfigSchema - use this for parsed/resolved config.
+ * Output type for AppConfigSchema - use this for parsed config.
  * All fields are present after parsing (defaults applied).
+ * Note: smtp field may still be `{ test: true }` - use ResolvedAppConfig
+ * for runtime usage where smtp is fully resolved.
  */
-export type ExternalAppConfig = z.infer<typeof ExternalConfigSchema>;
+export type AppConfig = z.infer<typeof AppConfigSchema>;
 
-export const InternalConfigSchema = z.object({
-  app: AppConfigApp,
-  admin: AppConfigAdmin.optional().default({
-    enabled: false,
-  }),
-  database: AppConfigDatabase.optional().default({
-    type: 'sqlite',
-    path: 'test.db',
-  }),
-  basic_authentication_methods:
-    AppConfigBasicAuthenticationMethods.optional().default({
-      password: {
-        enabled: true,
-        email_verification: true,
-        second_factor: {
-          required: false,
-        },
-        totp: {
-          enabled: false,
-          issuer: 'Tinyrack',
-        },
-      },
-      passkey: {
-        enabled: false,
-        email_verification: true,
-      },
-    }),
-  oauth_authentication_methods:
-    AppConfigOAuthAuthenticationMethods.optional().default([]),
-  smtp: AppConfigSmtp.optional(),
-  account_deletion: AppConfigAccountDeletion.optional().default({
-    enabled: true,
-  }),
-  cleanup: AppConfigCleanup.optional().default(DEFAULT_CLEANUP_CONFIG),
-  terms: AppConfigTerms.optional().default([]),
-  providers: z.array(AppConfigProvider).optional().default([]),
-  users: z.array(AppConfigUser).optional().default([]),
-});
-
-export type InternalAppConfig = z.infer<typeof InternalConfigSchema>;
+/**
+ * Fully resolved configuration type - use this at runtime.
+ * The smtp field is guaranteed to be either a full AppConfigSmtp object
+ * or undefined (the `{ test: true }` shorthand has been resolved).
+ */
+export type ResolvedAppConfig = Omit<AppConfig, 'smtp'> & {
+  smtp: AppConfigSmtp | undefined;
+};
 
 export { AppConfigAccountDeletion } from './account-deletion.js';
 // Re-export individual schemas for external use
