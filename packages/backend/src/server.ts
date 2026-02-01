@@ -3,7 +3,11 @@ import { fileURLToPath } from 'node:url';
 import fastifyAutoload from '@fastify/autoload';
 import Fastify from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
-import type { InternalAppConfig } from '@/lib/config/index.js';
+import {
+  type ExternalAppConfig,
+  type InternalAppConfig,
+  resolveConfig,
+} from '@/lib/config/index.js';
 import { env } from '@/lib/env.js';
 import 'reflect-metadata';
 
@@ -20,10 +24,10 @@ export type FastifyWithZodInstance = Awaited<ReturnType<typeof createServer>>;
 
 export interface CreateServerOptions {
   /**
-   * Pre-loaded application configuration.
-   * The caller is responsible for loading and merging config before passing it.
+   * Application configuration in external format.
+   * This will be resolved to internal format with all defaults applied.
    */
-  config: InternalAppConfig;
+  config: ExternalAppConfig;
   /**
    * Skip listening on port (useful for CLI job execution).
    * When true, the server is initialized but does not bind to a port.
@@ -38,7 +42,10 @@ export interface CreateServerOptions {
 }
 
 export async function createServer(options: CreateServerOptions) {
-  const { config, skipListen, cliMode } = options;
+  const { config: externalConfig, skipListen, cliMode } = options;
+
+  // Resolve external config to internal config with all defaults applied
+  const config = await resolveConfig(externalConfig);
 
   // Create Fastify instance with config-based trustProxy
   const appInstance = Fastify({
