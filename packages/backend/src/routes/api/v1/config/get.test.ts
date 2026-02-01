@@ -9,7 +9,7 @@ beforeAll(async () => {
   app = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
-      oauth_authentication_methods: [
+      identity_providers: [
         {
           id: 'google',
           type: 'google',
@@ -50,16 +50,16 @@ describe('GET /api/v1/config', () => {
     expect(json.database).toBeDefined();
     expect(json.database.enabled).toBeTypeOf('boolean');
 
-    // Verify basic_authentication_methods structure
-    expect(json.basic_authentication_methods).toBeDefined();
-    expect(typeof json.basic_authentication_methods).toBe('object');
+    // Verify auth structure
+    expect(json.auth).toBeDefined();
+    expect(typeof json.auth).toBe('object');
 
-    // Verify oauth_authentication_methods structure (now an array)
-    expect(json.oauth_authentication_methods).toBeDefined();
-    expect(Array.isArray(json.oauth_authentication_methods)).toBe(true);
+    // Verify identity_providers structure (now an array)
+    expect(json.identity_providers).toBeDefined();
+    expect(Array.isArray(json.identity_providers)).toBe(true);
   });
 
-  test('should include password authentication method in basic_authentication_methods', async () => {
+  test('should include password authentication method in auth', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/v1/config',
@@ -70,27 +70,21 @@ describe('GET /api/v1/config', () => {
     const json = res.json();
 
     // Check password auth method exists
-    expect(json.basic_authentication_methods.password).toBeDefined();
-    expect(json.basic_authentication_methods.password.enabled).toBeTypeOf(
-      'boolean',
-    );
+    expect(json.auth.password).toBeDefined();
+    expect(json.auth.password.enabled).toBeTypeOf('boolean');
 
     // Check second_factor configuration
-    if (json.basic_authentication_methods.password.second_factor) {
-      expect(
-        json.basic_authentication_methods.password.second_factor.required,
-      ).toBeTypeOf('boolean');
+    if (json.auth.password.second_factor) {
+      expect(json.auth.password.second_factor.required).toBeTypeOf('boolean');
     }
 
     // Check TOTP configuration
-    if (json.basic_authentication_methods.password.totp) {
-      expect(
-        json.basic_authentication_methods.password.totp.enabled,
-      ).toBeTypeOf('boolean');
+    if (json.auth.password.totp) {
+      expect(json.auth.password.totp.enabled).toBeTypeOf('boolean');
     }
   });
 
-  test('should include passkey authentication method in basic_authentication_methods', async () => {
+  test('should include passkey authentication method in auth', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/v1/config',
@@ -101,16 +95,12 @@ describe('GET /api/v1/config', () => {
     const json = res.json();
 
     // Check passkey auth method exists
-    expect(json.basic_authentication_methods.passkey).toBeDefined();
-    expect(json.basic_authentication_methods.passkey.enabled).toBeTypeOf(
-      'boolean',
-    );
-    expect(
-      json.basic_authentication_methods.passkey.email_verification,
-    ).toBeTypeOf('boolean');
+    expect(json.auth.passkey).toBeDefined();
+    expect(json.auth.passkey.enabled).toBeTypeOf('boolean');
+    expect(json.auth.passkey.email_verification).toBeTypeOf('boolean');
   });
 
-  test('should include oauth authentication methods', async () => {
+  test('should include identity providers', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/v1/config',
@@ -120,11 +110,11 @@ describe('GET /api/v1/config', () => {
 
     const json = res.json();
 
-    // Check oauth methods - should be an array of only enabled providers
-    expect(Array.isArray(json.oauth_authentication_methods)).toBe(true);
+    // Check identity providers - should be an array of only enabled providers
+    expect(Array.isArray(json.identity_providers)).toBe(true);
 
     // Find Google provider in the array (should be enabled in test config)
-    const googleProvider = json.oauth_authentication_methods.find(
+    const googleProvider = json.identity_providers.find(
       (m: { id: string }) => m.id === 'google',
     );
     if (googleProvider) {

@@ -17,11 +17,11 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (_req, res) => {
-      // Transform oauth_authentication_methods array to response format
+      // Transform identity_providers array to response format
       // Only include enabled providers
-      const oauthMethods: OAuthAuthenticationMethod[] = [];
+      const identityProviders: OAuthAuthenticationMethod[] = [];
 
-      for (const config of fastify.config.oauth_authentication_methods) {
+      for (const config of fastify.config.identity_providers) {
         if (!config.enabled) {
           continue;
         }
@@ -31,7 +31,7 @@ export default (fastify: FastifyWithZodInstance) => {
           display_name: config.display_name ?? config.id,
           icon_url: config.icon_url,
         };
-        oauthMethods.push(method);
+        identityProviders.push(method);
       }
 
       res.status(200).send({
@@ -53,11 +53,10 @@ export default (fastify: FastifyWithZodInstance) => {
         database: {
           enabled: !!fastify.config.database?.type,
         },
-        basic_authentication_methods:
-          fastify.config.basic_authentication_methods,
-        oauth_authentication_methods: oauthMethods,
+        auth: fastify.config.auth,
+        identity_providers: identityProviders,
         account_deletion: {
-          enabled: fastify.config.account_deletion.enabled,
+          enabled: fastify.config.app.account_deletion,
           retention_period: fastify.config.cleanup.deleted_users.retention,
         },
       });

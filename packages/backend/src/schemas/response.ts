@@ -534,8 +534,8 @@ export const r = {
     database: z.object({
       enabled: z.boolean(),
     }),
-    basic_authentication_methods: BasicAuthenticationMethods,
-    oauth_authentication_methods: z.array(OAuthAuthenticationMethod),
+    auth: BasicAuthenticationMethods,
+    identity_providers: z.array(OAuthAuthenticationMethod),
     account_deletion: z.object({
       enabled: z.boolean().describe('Whether account deletion is enabled'),
       retention_period: z
