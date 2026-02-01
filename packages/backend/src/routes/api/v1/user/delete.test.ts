@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'vitest';
+import { deepMerge } from '@/lib/config/index.js';
 import { e } from '@/schemas/error.js';
 import {
   createAuthenticatedSession,
   createDbUserWithSession,
+  DEFAULT_TEST_CONFIG,
   expectError,
   generateUniqueEmail,
   setupTestServer,
@@ -20,7 +22,7 @@ import {
 describe('DELETE /api/v1/user', () => {
   describe('with account deletion enabled', () => {
     const app = setupTestServer({
-      configOverrides: {
+      config: deepMerge(DEFAULT_TEST_CONFIG, {
         account_deletion: {
           enabled: true,
         },
@@ -30,7 +32,7 @@ describe('DELETE /api/v1/user', () => {
             retention: '30d',
           },
         },
-      },
+      }),
     });
 
     test('should delete account successfully', async () => {
@@ -167,11 +169,11 @@ describe('DELETE /api/v1/user', () => {
 
   describe('with account deletion disabled', () => {
     const app = setupTestServer({
-      configOverrides: {
+      config: deepMerge(DEFAULT_TEST_CONFIG, {
         account_deletion: {
           enabled: false,
         },
-      },
+      }),
     });
 
     test('should fail when account deletion is disabled', async () => {

@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'vitest';
+import { deepMerge } from '@/lib/config/index.js';
 import { e } from '@/schemas/error.js';
 import {
   createAuthenticatedSession,
   createDbUserWithSession,
   createPasskeyForUser,
+  DEFAULT_TEST_CONFIG,
   enableTotpForUser,
   expectError,
   generateUniqueEmail,
@@ -13,7 +15,7 @@ import {
 } from '@/test-utils/index.js';
 
 const app = setupTestServer({
-  configOverrides: {
+  config: deepMerge(DEFAULT_TEST_CONFIG, {
     basic_authentication_methods: {
       password: {
         totp: {
@@ -21,7 +23,7 @@ const app = setupTestServer({
         },
       },
     },
-  },
+  }),
 });
 
 describe('DELETE /api/v1/user/totp', () => {
@@ -473,7 +475,7 @@ describe('DELETE /api/v1/user/totp', () => {
 
 describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
   const appWith2FARequired = setupTestServer({
-    configOverrides: {
+    config: deepMerge(DEFAULT_TEST_CONFIG, {
       basic_authentication_methods: {
         password: {
           second_factor: {
@@ -487,7 +489,7 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
           enabled: true,
         },
       },
-    },
+    }),
   });
 
   /**

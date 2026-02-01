@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'vitest';
+import { deepMerge } from '@/lib/config/index.js';
 import { e } from '@/schemas/error.js';
 import {
   createAuthenticatedSession,
   createDbUserWithSession,
+  DEFAULT_TEST_CONFIG,
   expectError,
   generateUniqueEmail,
   injectWithSession,
@@ -11,7 +13,7 @@ import {
 } from '@/test-utils/index.js';
 
 const app = setupTestServer({
-  configOverrides: {
+  config: deepMerge(DEFAULT_TEST_CONFIG, {
     basic_authentication_methods: {
       password: {
         totp: {
@@ -19,7 +21,7 @@ const app = setupTestServer({
         },
       },
     },
-  },
+  }),
 });
 
 describe('POST /api/v1/user/totp/setup', () => {

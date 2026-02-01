@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest';
+import { deepMerge } from '@/lib/config/index.js';
 import { e } from '@/schemas/error.js';
 import {
   createAuthenticatedSession,
+  DEFAULT_TEST_CONFIG,
   expectError,
   extractCookie,
   generateUniqueEmail,
@@ -11,14 +13,14 @@ import {
 } from '@/test-utils/index.js';
 
 const app = setupTestServer({
-  configOverrides: {
+  config: deepMerge(DEFAULT_TEST_CONFIG, {
     basic_authentication_methods: {
       passkey: {
         enabled: true,
         email_verification: true,
       },
     },
-  },
+  }),
 });
 
 /**
@@ -638,14 +640,14 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
 
 describe('POST /api/v1/user/passkeys/register/verify - Passkey disabled', () => {
   const appDisabled = setupTestServer({
-    configOverrides: {
+    config: deepMerge(DEFAULT_TEST_CONFIG, {
       basic_authentication_methods: {
         passkey: {
           enabled: false,
           email_verification: true,
         },
       },
-    },
+    }),
   });
 
   test('should return 404 when passkey is disabled in config (route not registered)', async () => {

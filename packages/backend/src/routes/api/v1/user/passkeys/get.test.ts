@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
+import { deepMerge } from '@/lib/config/index.js';
 import {
   createAuthenticatedSession,
+  DEFAULT_TEST_CONFIG,
   extractCookie,
   generateUniqueEmail,
   injectWithSession,
@@ -9,14 +11,14 @@ import {
 } from '@/test-utils/index.js';
 
 const app = setupTestServer({
-  configOverrides: {
+  config: deepMerge(DEFAULT_TEST_CONFIG, {
     basic_authentication_methods: {
       passkey: {
         enabled: true,
         email_verification: true,
       },
     },
-  },
+  }),
 });
 
 /**
