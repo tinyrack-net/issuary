@@ -8,7 +8,12 @@ export {
   formatDuration,
   parseDurationToMs,
 } from './duration.js';
-export { type DeepPartial, deepMerge, loadConfig } from './loader.js';
+export {
+  type DeepPartial,
+  deepMerge,
+  loadConfig,
+  resolveConfig,
+} from './loader.js';
 // OAuth resolver
 export {
   type ResolvedOAuthConfig,
@@ -53,6 +58,8 @@ export {
 export { AppConfigProvider } from './schemas/provider.js';
 // Root config schemas and types
 export {
+  type ExternalAppConfig,
+  ExternalConfigSchema,
   ExternalConfigSchema as ConfigSchema,
   type InternalAppConfig,
   InternalConfigSchema,

@@ -4,6 +4,7 @@ import nodemailer from 'nodemailer';
 import YAML from 'yaml';
 import { env } from '../env.js';
 import {
+  type ExternalAppConfig,
   ExternalConfigSchema,
   type InternalAppConfig,
   InternalConfigSchema,
@@ -20,9 +21,50 @@ const resolveConfigPath = () => {
   }
 };
 
-const loadConfigFromPath = async (
-  configPath: string,
-): Promise<InternalAppConfig> => {
+/**
+ * Resolve SMTP configuration.
+ * If `test: true`, creates a test account via nodemailer.
+ * Otherwise, returns the provided SMTP config as-is.
+ */
+const resolveSmtpConfig = async (
+  smtp: ExternalAppConfig['smtp'],
+): Promise<InternalAppConfig['smtp']> => {
+  if (!smtp) {
+    return undefined;
+  }
+  if (smtp.test) {
+    const testAccount = await nodemailer.createTestAccount();
+    return {
+      host: testAccount.smtp.host,
+      port: testAccount.smtp.port,
+      secure: testAccount.smtp.secure,
+      user: testAccount.user,
+      password: testAccount.pass,
+      from: testAccount.user,
+      test: true,
+    };
+  }
+  return smtp;
+};
+
+/**
+ * Transform ExternalAppConfig to InternalAppConfig.
+ * This resolves test SMTP accounts and applies all defaults.
+ *
+ * @param external - The external configuration (from config file or programmatic input)
+ * @returns The fully resolved internal configuration with all defaults applied
+ */
+export async function resolveConfig(
+  external: ExternalAppConfig,
+): Promise<InternalAppConfig> {
+  const smtpConfig = await resolveSmtpConfig(external.smtp);
+  return InternalConfigSchema.parse({
+    ...external,
+    smtp: smtpConfig,
+  });
+}
+
+const loadConfigFromPath = (configPath: string): ExternalAppConfig => {
   if (!existsSync(configPath)) {
     throw new Error(`Config file not found at "${configPath}"`);
   }
@@ -35,32 +77,7 @@ const loadConfigFromPath = async (
       },
     ],
   });
-  const parsed = ExternalConfigSchema.parse(rawConfig);
-
-  const smtpConfig = await (async () => {
-    if (!parsed.smtp) {
-      return undefined;
-    }
-    if (parsed.smtp.test) {
-      const testAccount = await nodemailer.createTestAccount();
-      return {
-        host: testAccount.smtp.host,
-        port: testAccount.smtp.port,
-        secure: testAccount.smtp.secure,
-        user: testAccount.user,
-        password: testAccount.pass,
-        from: testAccount.user,
-        test: true,
-      };
-    } else {
-      return parsed.smtp;
-    }
-  })();
-
-  return InternalConfigSchema.parse({
-    ...parsed,
-    smtp: smtpConfig,
-  });
+  return ExternalConfigSchema.parse(rawConfig);
 };
 
 /**
@@ -108,14 +125,15 @@ export type DeepPartial<T> = {
 
 /**
  * Load configuration from file.
+ * Returns ExternalAppConfig which can be passed to createServer().
  * The caller is responsible for any config merging or overrides.
  *
  * @param options - Optional configuration options
  * @param options.configPath - Custom config file path (defaults to resolved path based on APP_ENV)
  */
-export async function loadConfig(options?: {
+export function loadConfig(options?: {
   configPath?: string | undefined;
-}): Promise<InternalAppConfig> {
+}): ExternalAppConfig {
   const configPath = options?.configPath ?? resolveConfigPath();
   console.info(`Loading config from: ${configPath}`);
   return loadConfigFromPath(configPath);

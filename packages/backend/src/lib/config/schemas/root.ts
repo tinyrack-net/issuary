@@ -55,6 +55,8 @@ export const ExternalConfigSchema = z.object({
   users: z.array(AppConfigUser).default([]),
 });
 
+export type ExternalAppConfig = z.infer<typeof ExternalConfigSchema>;
+
 export const InternalConfigSchema = z.object({
   app: AppConfigApp,
   admin: AppConfigAdmin.default({

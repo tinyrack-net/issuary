@@ -91,7 +91,6 @@ export const AppConfigApp = z.object({
     .default('system')
     .describe('Default theme mode'),
   background_url: z
-    .string()
     .url()
     .optional()
     .describe('Background image URL for authentication pages'),
