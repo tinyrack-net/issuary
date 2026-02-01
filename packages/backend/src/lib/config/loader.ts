@@ -69,8 +69,12 @@ const loadConfigFromPath = async (
 /**
  * Deep merge utility for config objects.
  * Arrays are replaced, not merged.
+ * Exported for use by callers who need to merge configs (e.g., tests).
  */
-function deepMerge<T extends object>(target: T, source: Partial<T>): T {
+export function deepMerge<T extends object>(
+  target: T,
+  source: DeepPartial<T>,
+): T {
   const result = { ...target };
 
   for (const key in source) {
@@ -106,32 +110,16 @@ export type DeepPartial<T> = {
 };
 
 /**
- * Load configuration from file with optional overrides.
+ * Load configuration from file.
+ * The caller is responsible for any config merging or overrides.
+ *
  * @param options - Optional configuration options
  * @param options.configPath - Custom config file path (defaults to resolved path based on APP_ENV)
- * @param options.baseConfig - Base config object to use instead of loading from file (useful for testing)
- * @param options.overrides - Partial config to override loaded values (useful for testing)
  */
 export async function loadConfig(options?: {
-  configPath?: string;
-  baseConfig?: InternalAppConfig;
-  overrides?: DeepPartial<InternalAppConfig>;
+  configPath?: string | undefined;
 }): Promise<InternalAppConfig> {
-  let config: InternalAppConfig;
-
-  if (options?.baseConfig) {
-    // Use provided base config instead of loading from file
-    console.info('Using provided base config');
-    config = options.baseConfig;
-  } else {
-    const configPath = options?.configPath ?? resolveConfigPath();
-    console.info(`Loading config from: ${configPath}`);
-    config = await loadConfigFromPath(configPath);
-  }
-
-  if (options?.overrides) {
-    return deepMerge(config, options.overrides as Partial<InternalAppConfig>);
-  }
-
-  return config;
+  const configPath = options?.configPath ?? resolveConfigPath();
+  console.info(`Loading config from: ${configPath}`);
+  return loadConfigFromPath(configPath);
 }

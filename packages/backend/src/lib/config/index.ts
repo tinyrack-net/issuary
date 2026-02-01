@@ -8,7 +8,7 @@ export {
   formatDuration,
   parseDurationToMs,
 } from './duration.js';
-export { type DeepPartial, loadConfig } from './loader.js';
+export { type DeepPartial, deepMerge, loadConfig } from './loader.js';
 // OAuth resolver
 export {
   type ResolvedOAuthConfig,
