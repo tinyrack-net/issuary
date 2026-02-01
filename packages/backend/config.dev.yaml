@@ -53,12 +53,12 @@ app:
     en: By continuing, you agree to our <a href="https://example.com/terms/en" class="link">Terms of Service</a> and <a href="https://example.com/privacy/en" class="link">Privacy Policy</a>.
     ja: 続行することで、<a href="https://example.com/terms/ja" class="link">利用規約</a>および<a href="https://example.com/privacy/ja" class="link">プライバシーポリシー</a>に同意したものとみなされます。
 
+  # Account deletion feature
+  account_deletion: true
+
 admin:
   enabled: true
   port: !env ADMIN_PORT
-
-account_deletion:
-  enabled: true
 
 # Scheduler configuration
 # Controls the in-process scheduler for automated cleanup tasks.
@@ -72,7 +72,7 @@ account_deletion:
 #      $ tinyauth cleanup
 scheduler:
   enabled: true
-  cleanup_cron: "0 2 * * *" # Daily at 2 AM
+  cron: "0 2 * * *" # Daily at 2 AM
 
 # Cleanup configuration
 # Controls the retention periods for various entities.
@@ -186,7 +186,7 @@ smtp:
   from: "tester@tinyrack.net"
   test: false
 
-basic_authentication_methods:
+auth:
   password:
     enabled: true
     email_verification: true
@@ -209,7 +209,7 @@ basic_authentication_methods:
     #   - https://test-auth.intranet.winetree94.com
     #   - https://other-auth.intranet.winetree94.com
 
-oauth_authentication_methods:
+identity_providers:
   - id: github
     type: github
     enabled: true
@@ -247,7 +247,7 @@ oauth_authentication_methods:
 #     name: name
 #     picture: picture
 
-providers:
+clients:
   - id: test-config-oauth-client
     name: OIDC Test Client
     logo_uri: http://localhost:3000

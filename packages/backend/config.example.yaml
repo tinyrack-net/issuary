@@ -72,6 +72,16 @@ app:
     - '*@example.com'          # Allow all emails from domain
 
   # --------------------------------------------------------------------------
+  # Account Deletion
+  # --------------------------------------------------------------------------
+
+  # account_deletion: Whether users can delete their own accounts.
+  # When enabled, users can request account deletion from their profile settings.
+  # The retention period is configured in the cleanup section.
+  # Default: false
+  account_deletion: true
+
+  # --------------------------------------------------------------------------
   # Internationalization (i18n) Settings
   # --------------------------------------------------------------------------
 
@@ -193,17 +203,6 @@ admin:
   port: !env ADMIN_PORT
 
 # -----------------------------------------------------------------------------
-# Account Deletion Settings
-# -----------------------------------------------------------------------------
-# Configuration for user account self-deletion feature.
-# -----------------------------------------------------------------------------
-account_deletion:
-  # enabled: Whether users can delete their own accounts.
-  # When enabled, users can request account deletion from their profile settings.
-  # Default: false
-  enabled: true
-
-# -----------------------------------------------------------------------------
 # Scheduler Configuration
 # -----------------------------------------------------------------------------
 # Controls the in-process scheduler for automated cleanup tasks.
@@ -227,14 +226,14 @@ scheduler:
   # Default: true
   enabled: true
 
-  # cleanup_cron: Cron schedule for running all cleanup tasks.
+  # cron: Cron schedule for running all cleanup tasks.
   # Uses standard 5-field format: minute hour day month weekday
   # Examples:
   #   "0 2 * * *"    - Daily at 2 AM (default)
   #   "0 */6 * * *"  - Every 6 hours
   #   "0 0 * * 0"    - Weekly on Sunday at midnight
   # Default: "0 2 * * *"
-  cleanup_cron: "0 2 * * *"
+  cron: "0 2 * * *"
 
 # -----------------------------------------------------------------------------
 # Terms of Service Configuration
@@ -396,12 +395,12 @@ smtp:
   test: false
 
 # -----------------------------------------------------------------------------
-# Basic Authentication Methods
+# Authentication Methods
 # -----------------------------------------------------------------------------
 # Configure local authentication methods (password-based and passkey).
 # These methods authenticate users directly against the TinyAuth database.
 # -----------------------------------------------------------------------------
-basic_authentication_methods:
+auth:
   # --------------------------------------------------------------------------
   # Password Authentication
   # --------------------------------------------------------------------------
@@ -462,12 +461,12 @@ basic_authentication_methods:
     #   - https://login.example.com
 
 # -----------------------------------------------------------------------------
-# OAuth Authentication Methods
+# Identity Providers (External OAuth/OIDC)
 # -----------------------------------------------------------------------------
 # Configure external OAuth/OIDC providers for social login.
 # Users can sign in using their existing accounts from these providers.
 # -----------------------------------------------------------------------------
-oauth_authentication_methods:
+identity_providers:
   # Each OAuth provider is configured as a list item with these properties:
   #
   # Common properties for all providers:
@@ -543,12 +542,12 @@ oauth_authentication_methods:
   #   email_conflict_strategy: auto_link
 
 # -----------------------------------------------------------------------------
-# OAuth Providers (OIDC Clients)
+# OAuth/OIDC Clients
 # -----------------------------------------------------------------------------
 # Configure applications that can use TinyAuth as their identity provider.
 # These are OAuth 2.0 / OpenID Connect clients that authenticate through TinyAuth.
 # -----------------------------------------------------------------------------
-providers:
+clients:
   # Each client application is configured as a list item:
   #
   # - id: Unique identifier for the client (internal use)
