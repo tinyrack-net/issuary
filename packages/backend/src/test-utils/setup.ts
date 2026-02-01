@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll } from 'vitest';
-import type { DeepPartial, InternalAppConfig } from '@/lib/config/index.js';
+import type { InternalAppConfig } from '@/lib/config/index.js';
 import { createServer } from '@/server.js';
 
 /**
@@ -183,56 +183,51 @@ let appInstance: FastifyInstance | null = null;
  */
 export interface SetupTestServerOptions {
   /**
-   * Custom config file path.
-   * If provided, this takes precedence over baseConfig.
-   */
-  configPath?: string;
-  /**
-   * Base config to use instead of DEFAULT_TEST_CONFIG.
-   * Useful for completely replacing the test config.
-   */
-  baseConfig?: InternalAppConfig;
-  /**
-   * Partial config to override loaded values.
-   * Useful for testing different configuration scenarios.
+   * Full config to use instead of DEFAULT_TEST_CONFIG.
+   * The caller is responsible for merging configs if needed.
+   * Use `deepMerge` from `@/lib/config/index.js` to merge configs.
    *
    * @example
    * ```typescript
+   * import { deepMerge } from '@/lib/config/index.js';
+   * import { DEFAULT_TEST_CONFIG } from '@/test-utils/setup.js';
+   *
    * const app = setupTestServer({
-   *   configOverrides: {
+   *   config: deepMerge(DEFAULT_TEST_CONFIG, {
    *     app: {
    *       allowed_signup_emails: [],
    *     },
-   *   },
+   *   }),
    * });
    * ```
    */
-  configOverrides?: DeepPartial<InternalAppConfig>;
+  config?: InternalAppConfig;
 }
 
 /**
  * Setup and teardown Fastify server for tests.
  * Call this function in your test file to automatically set up and tear down the server.
  *
- * Uses DEFAULT_TEST_CONFIG as the base configuration by default.
- * You can override specific values using configOverrides.
+ * Uses DEFAULT_TEST_CONFIG as the configuration by default.
+ * To customize config, use `deepMerge` to merge your overrides before passing.
  *
  * @param options - Optional configuration options for the test server
  *
  * @example
  * ```typescript
- * import { setupTestServer } from '@/test-utils/setup.js';
+ * import { deepMerge } from '@/lib/config/index.js';
+ * import { setupTestServer, DEFAULT_TEST_CONFIG } from '@/test-utils/setup.js';
  *
  * // Basic usage (uses DEFAULT_TEST_CONFIG)
  * const app = setupTestServer();
  *
- * // With config overrides
+ * // With custom config
  * const app = setupTestServer({
- *   configOverrides: {
+ *   config: deepMerge(DEFAULT_TEST_CONFIG, {
  *     app: {
  *       allowed_signup_emails: [],
  *     },
- *   },
+ *   }),
  * });
  *
  * describe('My Tests', () => {
@@ -247,14 +242,8 @@ export function setupTestServer(
   options?: SetupTestServerOptions,
 ): FastifyInstance {
   beforeAll(async () => {
-    appInstance = await createServer({
-      ...(options?.configPath && { configPath: options.configPath }),
-      // Use provided baseConfig or default to DEFAULT_TEST_CONFIG
-      baseConfig: options?.baseConfig ?? DEFAULT_TEST_CONFIG,
-      ...(options?.configOverrides && {
-        configOverrides: options.configOverrides,
-      }),
-    });
+    const config = options?.config ?? DEFAULT_TEST_CONFIG;
+    appInstance = await createServer({ config });
   });
 
   afterAll(async () => {

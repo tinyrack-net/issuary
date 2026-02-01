@@ -54,4 +54,4 @@ export {
   revokeToken,
 } from './oauth.js';
 // Setup utilities
-export { setupTestServer } from './setup.js';
+export { DEFAULT_TEST_CONFIG, setupTestServer } from './setup.js';
