@@ -34,8 +34,8 @@ function Setup2FA() {
       </Alert>
 
       <div className="mt-4 flex flex-col gap-4">
-        {appConfig.basic_authentication_methods.password.enabled &&
-          appConfig.basic_authentication_methods.password.totp.enabled && (
+        {appConfig.auth.password.enabled &&
+          appConfig.auth.password.totp.enabled && (
             <Link
               to="/setup/totp"
               search={oauthParams}
@@ -51,7 +51,7 @@ function Setup2FA() {
             </Link>
           )}
 
-        {appConfig.basic_authentication_methods.passkey.enabled && (
+        {appConfig.auth.passkey.enabled && (
           <Link
             to="/setup/passkey"
             search={{

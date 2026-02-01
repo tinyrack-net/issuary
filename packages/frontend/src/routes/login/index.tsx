@@ -63,17 +63,15 @@ function Login() {
   const implicitNotice =
     configData.app.signup_implicit_terms?.[lang] ??
     configData.app.signup_implicit_terms?.[configData.app.fallback_language];
-  const oauthProviders = configData.oauth_authentication_methods;
+  const oauthProviders = configData.identity_providers;
 
   const oauthError = search.oauth_error;
   const oauthErrorMessage = oauthError
     ? t(OAUTH_ERROR_I18N_MAP[oauthError] ?? 'oauth.error.failed')
     : undefined;
 
-  const isPasswordAuthEnabled =
-    configData.basic_authentication_methods.password.enabled;
-  const isPasskeyEnabled =
-    configData.basic_authentication_methods.passkey.enabled;
+  const isPasswordAuthEnabled = configData.auth.password.enabled;
+  const isPasskeyEnabled = configData.auth.passkey.enabled;
 
   // Config-based title/subtitle (overrides i18n defaults)
   const customTitle =

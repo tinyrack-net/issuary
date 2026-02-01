@@ -56,10 +56,8 @@ function LoginPassword() {
   const customSubtitle =
     configData.app.subtitle?.[lang] ??
     configData.app.subtitle?.[configData.app.fallback_language];
-  const isPasswordAuthEnabled =
-    configData.basic_authentication_methods.password.enabled;
-  const isPasskeyEnabled =
-    configData.basic_authentication_methods.passkey.enabled;
+  const isPasswordAuthEnabled = configData.auth.password.enabled;
+  const isPasskeyEnabled = configData.auth.passkey.enabled;
 
   const loginSchema = useMemo(
     () =>
@@ -92,16 +90,10 @@ function LoginPassword() {
       await tick();
 
       const registered_2fa_methods: SecondFactorMethod[] = [];
-      if (
-        configData.basic_authentication_methods.password.totp.enabled &&
-        user.totp_registered
-      ) {
+      if (configData.auth.password.totp.enabled && user.totp_registered) {
         registered_2fa_methods.push('totp');
       }
-      if (
-        configData.basic_authentication_methods.passkey.enabled &&
-        user.passkey_count > 0
-      ) {
+      if (configData.auth.passkey.enabled && user.passkey_count > 0) {
         registered_2fa_methods.push('passkey');
       }
 

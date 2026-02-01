@@ -145,8 +145,8 @@ function Profile() {
   const isConfigManaged = user.managed_by === 'config';
 
   // Check if TOTP and Passkey are enabled in config
-  const passwordAuthMethod = appConfig.basic_authentication_methods.password;
-  const passkeyAuthMethod = appConfig.basic_authentication_methods.passkey;
+  const passwordAuthMethod = appConfig.auth.password;
+  const passkeyAuthMethod = appConfig.auth.passkey;
   const totpEnabled = passwordAuthMethod.totp.enabled;
   const passkeyEnabled = passkeyAuthMethod.enabled;
 

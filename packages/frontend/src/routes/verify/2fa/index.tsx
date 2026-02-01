@@ -29,8 +29,8 @@ function Verify2FA() {
       />
 
       <div className="flex flex-col gap-4">
-        {appConfig.basic_authentication_methods.password.enabled &&
-          appConfig.basic_authentication_methods.password.totp.enabled && (
+        {appConfig.auth.password.enabled &&
+          appConfig.auth.password.totp.enabled && (
             <Link
               to="/verify/totp"
               search={oauthParams}
@@ -46,7 +46,7 @@ function Verify2FA() {
             </Link>
           )}
 
-        {appConfig.basic_authentication_methods.passkey.enabled && (
+        {appConfig.auth.passkey.enabled && (
           <Link
             to="/verify/passkey"
             search={oauthParams}

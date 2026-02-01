@@ -49,8 +49,7 @@ export const Route = createFileRoute('/verify/email/')({
     const config = await context.queryClient.ensureQueryData(
       appConfigQueryOptions,
     );
-    const isPasswordAuthEnabled =
-      config.basic_authentication_methods.password.enabled;
+    const isPasswordAuthEnabled = config.auth.password.enabled;
     if (!isPasswordAuthEnabled) {
       throw redirect({ to: '/login' });
     }
@@ -94,10 +93,10 @@ function VerifyEmail() {
 
       if (user.second_factor_required) {
         const available_2fa_methods: SecondFactorMethod[] = [];
-        if (appConfig.basic_authentication_methods.password.totp.enabled) {
+        if (appConfig.auth.password.totp.enabled) {
           available_2fa_methods.push('totp');
         }
-        if (appConfig.basic_authentication_methods.passkey.enabled) {
+        if (appConfig.auth.passkey.enabled) {
           available_2fa_methods.push('passkey');
         }
 

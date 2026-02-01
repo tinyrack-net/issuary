@@ -69,7 +69,7 @@ export type AppConfigs = {
   database: {
     enabled: boolean;
   };
-  basic_authentication_methods: {
+  auth: {
     password: {
       enabled: boolean;
       totp: {
@@ -82,7 +82,7 @@ export type AppConfigs = {
       email_verification: boolean;
     };
   };
-  oauth_authentication_methods: OAuthAuthenticationMethod[];
+  identity_providers: OAuthAuthenticationMethod[];
   account_deletion: {
     enabled: boolean;
     retention_period: string;
@@ -101,10 +101,10 @@ export const appConfigQueryOptions = queryOptions({
       ...data,
       available_2fa_setup_methods: (() => {
         const methods: SecondFactorMethod[] = [];
-        if (data.basic_authentication_methods.password.totp.enabled) {
+        if (data.auth.password.totp.enabled) {
           methods.push('totp');
         }
-        if (data.basic_authentication_methods.passkey.enabled) {
+        if (data.auth.passkey.enabled) {
           methods.push('passkey');
         }
         return methods;

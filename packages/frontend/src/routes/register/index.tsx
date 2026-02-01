@@ -69,8 +69,7 @@ function Register() {
     getTermsQueryOptions(deferredLang),
   );
 
-  const isPasswordAuthEnabled =
-    configData.basic_authentication_methods.password.enabled;
+  const isPasswordAuthEnabled = configData.auth.password.enabled;
 
   // Check if there are any terms to display
   const hasTerms = termsData.terms.length > 0;
@@ -133,10 +132,10 @@ function Register() {
 
       if (user.second_factor_required) {
         const available_2fa_methods: SecondFactorMethod[] = [];
-        if (configData.basic_authentication_methods.password.totp.enabled) {
+        if (configData.auth.password.totp.enabled) {
           available_2fa_methods.push('totp');
         }
-        if (configData.basic_authentication_methods.passkey.enabled) {
+        if (configData.auth.passkey.enabled) {
           available_2fa_methods.push('passkey');
         }
 

@@ -21,8 +21,7 @@ export const Route = createFileRoute('/password/forgot/')({
     const config = await context.queryClient.ensureQueryData(
       appConfigQueryOptions,
     );
-    const isPasswordAuthEnabled =
-      config?.basic_authentication_methods.password.enabled;
+    const isPasswordAuthEnabled = config?.auth.password.enabled;
     if (!isPasswordAuthEnabled) {
       throw redirect({ to: '/login' });
     }
