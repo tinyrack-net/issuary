@@ -9,8 +9,11 @@ export {
   generateUniqueEmail,
   TEST_CONSENTS,
   TEST_OAUTH_CLIENT,
+  TEST_OAUTH_CLIENT_CONFIG,
   TEST_PKCE,
+  TEST_TERMS_CONFIG,
   TEST_USER,
+  TEST_USER_CONFIG,
 } from './fixtures.js';
 // Types
 export type { ErrorDefinition } from './helpers.js';
@@ -54,4 +57,4 @@ export {
   revokeToken,
 } from './oauth.js';
 // Setup utilities
-export { DEFAULT_TEST_CONFIG, setupTestServer } from './setup.js';
+export { MINIMAL_TEST_CONFIG } from './setup.js';
