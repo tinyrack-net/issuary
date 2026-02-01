@@ -9,11 +9,18 @@ import {
   SignJWT,
 } from 'jose';
 import type z from 'zod/v4';
+import { RevokedTokenEntity } from '@/entities/revoked-token.entity.js';
+import {
+  calculateCutoffDate,
+  formatDuration,
+  parseDurationToMs,
+} from '@/lib/config/duration.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { jwtPayload } from '@/schemas/jwt.js';
 import type { JwtKeyService } from './jwt-key.service.js';
+import type { CleanupOptions, CleanupResult } from './types.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -282,6 +289,69 @@ export class JwtService {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Remove expired revoked tokens from the database.
+   *
+   * Revoked tokens can be safely deleted after their original expiration time
+   * since they would be invalid anyway due to JWT expiration.
+   * The retention period allows keeping expired tokens for a while longer
+   * for debugging purposes. Default is "0" (immediate cleanup after expiry).
+   *
+   * @param options - Cleanup options (dryRun)
+   * @returns Cleanup result with deleted count and details
+   */
+  async cleanupRevokedTokens(options: CleanupOptions): Promise<CleanupResult> {
+    const config = this.config.cleanup.revoked_tokens;
+
+    if (!config.enabled) {
+      return { deletedCount: 0, skipped: true, message: 'Disabled in config' };
+    }
+
+    const em = this.mikro.orm.em.fork();
+    const revokedTokenRepo = em.getRepository(RevokedTokenEntity);
+
+    const retentionMs = parseDurationToMs(config.retention);
+    const cutoffDate = calculateCutoffDate(config.retention);
+
+    // Find tokens that expired before the cutoff date
+    const expiredTokens = await revokedTokenRepo.find({
+      expires_at: { $lt: cutoffDate },
+    });
+
+    const count = expiredTokens.length;
+
+    if (count === 0) {
+      return { deletedCount: 0, skipped: false, message: 'No expired tokens' };
+    }
+
+    if (options.dryRun) {
+      return {
+        deletedCount: count,
+        skipped: false,
+        message: `Would delete ${count} tokens (retention: ${formatDuration(retentionMs)})`,
+      };
+    }
+
+    // Delete the tokens
+    for (const token of expiredTokens) {
+      em.remove(token);
+    }
+    await em.flush();
+
+    if (retentionMs > 0) {
+      return {
+        deletedCount: count,
+        skipped: false,
+        message: `Retention: ${formatDuration(retentionMs)}`,
+      };
+    }
+
+    return {
+      deletedCount: count,
+      skipped: false,
+    };
   }
 
   /**

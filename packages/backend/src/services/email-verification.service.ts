@@ -1,8 +1,15 @@
 import fastifyPlugin from 'fastify-plugin';
-import type { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
+import { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
 import type { UserEntity } from '@/entities/user.entity.js';
+import {
+  calculateCutoffDate,
+  formatDuration,
+  parseDurationToMs,
+} from '@/lib/config/duration.js';
+import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import type { CleanupOptions, CleanupResult } from './types.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -11,7 +18,10 @@ declare module 'fastify' {
 }
 
 export class EmailVerificationService {
-  public constructor(private readonly mikro: MikroService) {}
+  public constructor(
+    private readonly mikro: MikroService,
+    private readonly config: ResolvedAppConfig,
+  ) {}
 
   /**
    * Generate email verification token for a user
@@ -78,11 +88,72 @@ export class EmailVerificationService {
     });
     return count > 0;
   }
+
+  /**
+   * Remove expired email verification tokens.
+   *
+   * Expired tokens are no longer valid and can be safely deleted.
+   * The retention period allows keeping expired tokens for a while longer
+   * for debugging purposes. Default is "0" (immediate cleanup after expiry).
+   *
+   * @param options - Cleanup options (dryRun)
+   * @returns Cleanup result with deleted count and details
+   */
+  public async cleanupExpired(options: CleanupOptions): Promise<CleanupResult> {
+    const config = this.config.cleanup.email_verifications;
+
+    if (!config.enabled) {
+      return { deletedCount: 0, skipped: true, message: 'Disabled in config' };
+    }
+
+    const em = this.mikro.orm.em.fork();
+    const emailVerificationRepo = em.getRepository(EmailVerificationEntity);
+
+    const retentionMs = parseDurationToMs(config.retention);
+    const cutoffDate = calculateCutoffDate(config.retention);
+
+    // Count expired tokens before the cutoff date
+    const count = await emailVerificationRepo.count({
+      expiresAt: { $lt: cutoffDate },
+      verified: false,
+    });
+
+    if (count === 0) {
+      return { deletedCount: 0, skipped: false, message: 'No expired tokens' };
+    }
+
+    if (options.dryRun) {
+      return {
+        deletedCount: count,
+        skipped: false,
+        message: `Would delete ${count} tokens (retention: ${formatDuration(retentionMs)})`,
+      };
+    }
+
+    // Use native delete for efficiency
+    const deletedCount = await emailVerificationRepo.nativeDelete({
+      expiresAt: { $lt: cutoffDate },
+      verified: false,
+    });
+
+    if (retentionMs > 0) {
+      return {
+        deletedCount,
+        skipped: false,
+        message: `Retention: ${formatDuration(retentionMs)}`,
+      };
+    }
+
+    return {
+      deletedCount,
+      skipped: false,
+    };
+  }
 }
 
 export default fastifyPlugin(
   async (fastify) => {
-    const service = new EmailVerificationService(fastify.mikro);
+    const service = new EmailVerificationService(fastify.mikro, fastify.config);
     fastify.decorate('emailVerificationService', service);
   },
   {

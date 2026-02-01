@@ -1,7 +1,20 @@
 import type { Loaded } from '@mikro-orm/core';
 import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
-import type { UserEntity } from '@/entities/user.entity.js';
+import { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
+import { PasswordResetEntity } from '@/entities/password-reset.entity.js';
+import { UserEntity } from '@/entities/user.entity.js';
+import { UserConsentEntity } from '@/entities/user-consent.entity.js';
+import { UserOAuthEntity } from '@/entities/user-oauth.entity.js';
+import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
+import { UserTermsConsentEntity } from '@/entities/user-terms-consent.entity.js';
+import { UserTotpEntity } from '@/entities/user-totp.entity.js';
+import { UserTotpRecoveryCodeEntity } from '@/entities/user-totp-recovery-code.entity.js';
+import {
+  calculateCutoffDate,
+  formatDuration,
+  parseDurationToMs,
+} from '@/lib/config/duration.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
@@ -9,6 +22,7 @@ import type { r } from '@/schemas/response.js';
 import type { EmailService } from './email.service.js';
 import type { EmailVerificationService } from './email-verification.service.js';
 import type { TermsService } from './terms.service.js';
+import type { CleanupOptions, CleanupResult } from './types.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -219,6 +233,161 @@ export class UserService {
       methods.push('passkey');
     }
     return methods;
+  }
+
+  /**
+   * Permanently delete users marked for deletion whose retention period
+   * has expired.
+   *
+   * This is a destructive operation that:
+   * 1. Deletes all user-related data (OAuth accounts, TOTP, passkeys, consents)
+   * 2. Removes the user record permanently
+   *
+   * The retention period is configured in cleanup.deleted_users.retention
+   * (e.g., "30d", "90d").
+   *
+   * @param options - Cleanup options (dryRun)
+   * @returns Cleanup result with deleted count and details
+   */
+  public async purgeDeletedUsers(
+    options: CleanupOptions,
+  ): Promise<CleanupResult> {
+    const config = this.config.cleanup.deleted_users;
+
+    if (!config.enabled) {
+      return { deletedCount: 0, skipped: true, message: 'Disabled in config' };
+    }
+
+    // Check if account deletion feature is enabled
+    if (!this.config.account_deletion.enabled) {
+      return {
+        deletedCount: 0,
+        skipped: true,
+        message: 'Account deletion feature is disabled',
+      };
+    }
+
+    const em = this.mikro.orm.em.fork();
+    const userRepo = em.getRepository(UserEntity);
+    const userOAuthRepo = em.getRepository(UserOAuthEntity);
+    const userTotpRepo = em.getRepository(UserTotpEntity);
+    const userTotpRecoveryCodeRepo = em.getRepository(
+      UserTotpRecoveryCodeEntity,
+    );
+    const userPasskeyRepo = em.getRepository(UserPasskeyEntity);
+    const userConsentRepo = em.getRepository(UserConsentEntity);
+    const userTermsConsentRepo = em.getRepository(UserTermsConsentEntity);
+    const emailVerificationRepo = em.getRepository(EmailVerificationEntity);
+    const passwordResetRepo = em.getRepository(PasswordResetEntity);
+
+    const retentionMs = parseDurationToMs(config.retention);
+    const cutoffDate = calculateCutoffDate(config.retention);
+
+    // Find users marked for deletion whose retention period has expired
+    const usersToDelete = await userRepo.find({
+      deleted_at: { $ne: null, $lt: cutoffDate },
+      managed_by: 'database', // Only delete database-managed users
+    });
+
+    if (usersToDelete.length === 0) {
+      return {
+        deletedCount: 0,
+        skipped: false,
+        message: 'No users ready for permanent deletion',
+      };
+    }
+
+    if (options.dryRun) {
+      return {
+        deletedCount: usersToDelete.length,
+        skipped: false,
+        message: `Would delete ${usersToDelete.length} users (retention: ${formatDuration(retentionMs)})`,
+      };
+    }
+
+    let deletedCount = 0;
+
+    for (const user of usersToDelete) {
+      try {
+        // Delete related entities first (cascading delete)
+        // OAuth accounts
+        const oauthAccounts = await userOAuthRepo.find({
+          user: user.id,
+        });
+        for (const account of oauthAccounts) {
+          em.remove(account);
+        }
+
+        // TOTP
+        const totps = await userTotpRepo.find({ user: user.id });
+        for (const totp of totps) {
+          em.remove(totp);
+        }
+
+        // TOTP recovery codes
+        const recoveryCodes = await userTotpRecoveryCodeRepo.find({
+          user: user.id,
+        });
+        for (const code of recoveryCodes) {
+          em.remove(code);
+        }
+
+        // Passkeys
+        const passkeys = await userPasskeyRepo.find({
+          user: user.id,
+        });
+        for (const passkey of passkeys) {
+          em.remove(passkey);
+        }
+
+        // User consents
+        const consents = await userConsentRepo.find({
+          user: user.id,
+        });
+        for (const consent of consents) {
+          em.remove(consent);
+        }
+
+        // User terms consents
+        const termsConsents = await userTermsConsentRepo.find({
+          user: user.id,
+        });
+        for (const consent of termsConsents) {
+          em.remove(consent);
+        }
+
+        // Email verifications
+        const verifications = await emailVerificationRepo.find({
+          user: user.id,
+        });
+        for (const verification of verifications) {
+          em.remove(verification);
+        }
+
+        // Password resets
+        const passwordResets = await passwordResetRepo.find({
+          user: user.id,
+        });
+        for (const reset of passwordResets) {
+          em.remove(reset);
+        }
+
+        // Finally delete the user
+        em.remove(user);
+        deletedCount++;
+      } catch {
+        // Log error but continue with other users
+        // Note: In production, consider adding a logger parameter
+      }
+    }
+
+    await em.flush();
+
+    return {
+      deletedCount,
+      skipped: false,
+      message: `Retention: ${formatDuration(retentionMs)}`,
+    };
   }
 }
 

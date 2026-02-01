@@ -1,8 +1,15 @@
 import fastifyPlugin from 'fastify-plugin';
-import type { PasswordResetEntity } from '@/entities/password-reset.entity.js';
+import { PasswordResetEntity } from '@/entities/password-reset.entity.js';
 import type { UserEntity } from '@/entities/user.entity.js';
+import {
+  calculateCutoffDate,
+  formatDuration,
+  parseDurationToMs,
+} from '@/lib/config/duration.js';
+import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import type { CleanupOptions, CleanupResult } from './types.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -11,7 +18,10 @@ declare module 'fastify' {
 }
 
 export class PasswordResetService {
-  public constructor(private readonly mikro: MikroService) {}
+  public constructor(
+    private readonly mikro: MikroService,
+    private readonly config: ResolvedAppConfig,
+  ) {}
 
   /**
    * Generate password reset token for a user
@@ -90,11 +100,72 @@ export class PasswordResetService {
     const entity = await this.mikro.passwordReset.findValidToken(token);
     return entity !== null;
   }
+
+  /**
+   * Remove expired password reset tokens.
+   *
+   * Expired tokens are no longer valid and can be safely deleted.
+   * The retention period allows keeping expired tokens for a while longer
+   * for debugging purposes. Default is "0" (immediate cleanup after expiry).
+   *
+   * @param options - Cleanup options (dryRun)
+   * @returns Cleanup result with deleted count and details
+   */
+  async cleanupExpired(options: CleanupOptions): Promise<CleanupResult> {
+    const config = this.config.cleanup.password_resets;
+
+    if (!config.enabled) {
+      return { deletedCount: 0, skipped: true, message: 'Disabled in config' };
+    }
+
+    const em = this.mikro.orm.em.fork();
+    const passwordResetRepo = em.getRepository(PasswordResetEntity);
+
+    const retentionMs = parseDurationToMs(config.retention);
+    const cutoffDate = calculateCutoffDate(config.retention);
+
+    // Count expired tokens before the cutoff date
+    const count = await passwordResetRepo.count({
+      expiresAt: { $lt: cutoffDate },
+      used: false,
+    });
+
+    if (count === 0) {
+      return { deletedCount: 0, skipped: false, message: 'No expired tokens' };
+    }
+
+    if (options.dryRun) {
+      return {
+        deletedCount: count,
+        skipped: false,
+        message: `Would delete ${count} tokens (retention: ${formatDuration(retentionMs)})`,
+      };
+    }
+
+    // Use native delete for efficiency
+    const deletedCount = await passwordResetRepo.nativeDelete({
+      expiresAt: { $lt: cutoffDate },
+      used: false,
+    });
+
+    if (retentionMs > 0) {
+      return {
+        deletedCount,
+        skipped: false,
+        message: `Retention: ${formatDuration(retentionMs)}`,
+      };
+    }
+
+    return {
+      deletedCount,
+      skipped: false,
+    };
+  }
 }
 
 export default fastifyPlugin(
   async (fastify) => {
-    const service = new PasswordResetService(fastify.mikro);
+    const service = new PasswordResetService(fastify.mikro, fastify.config);
     fastify.decorate('passwordResetService', service);
   },
   {
