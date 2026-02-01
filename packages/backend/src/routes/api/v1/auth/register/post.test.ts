@@ -1,15 +1,15 @@
-import { describe, expect, test } from 'vitest';
-import { deepMerge } from '@/lib/config/index.js';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
+import { createServer } from '@/server.js';
 import {
   expectError,
   generateUniqueEmail,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
+  TEST_TERMS_CONFIG,
+  TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
-import { DEFAULT_TEST_CONFIG } from '@/test-utils/setup.js';
-
-const app = setupTestServer();
 
 /**
  * Default consents for required terms in test config
@@ -20,6 +20,26 @@ const REQUIRED_CONSENTS = [
 ];
 
 describe('POST /api/v1/auth/register', () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        app: {
+          ...MINIMAL_TEST_CONFIG.app,
+          allowed_signup_emails: ['*'],
+        },
+        users: [TEST_USER_CONFIG],
+        terms: TEST_TERMS_CONFIG,
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
   test('should register successfully with valid credentials and consents', async () => {
     const uniqueEmail = generateUniqueEmail();
 
@@ -279,12 +299,23 @@ describe('POST /api/v1/auth/register', () => {
 });
 
 describe('POST /api/v1/auth/register (signup disabled)', () => {
-  const app = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      app: {
-        allowed_signup_emails: [],
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        app: {
+          ...MINIMAL_TEST_CONFIG.app,
+          allowed_signup_emails: [],
+        },
+        terms: TEST_TERMS_CONFIG,
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   test('should return 403 when signup is disabled (empty allowed_signup_emails)', async () => {
@@ -303,12 +334,23 @@ describe('POST /api/v1/auth/register (signup disabled)', () => {
 });
 
 describe('POST /api/v1/auth/register (domain wildcard pattern)', () => {
-  const app = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      app: {
-        allowed_signup_emails: ['*@allowed.com'],
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        app: {
+          ...MINIMAL_TEST_CONFIG.app,
+          allowed_signup_emails: ['*@allowed.com'],
+        },
+        terms: TEST_TERMS_CONFIG,
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   test('should return 403 when email is not in allowed patterns', async () => {
@@ -344,13 +386,24 @@ describe('POST /api/v1/auth/register (domain wildcard pattern)', () => {
 });
 
 describe('POST /api/v1/auth/register (exact email pattern)', () => {
+  let app: FastifyInstance;
   const exactEmail = 'exact-allowed@specific.com';
-  const app = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      app: {
-        allowed_signup_emails: [exactEmail],
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        app: {
+          ...MINIMAL_TEST_CONFIG.app,
+          allowed_signup_emails: [exactEmail],
+        },
+        terms: TEST_TERMS_CONFIG,
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   test('should allow registration with exact email pattern', async () => {
@@ -385,12 +438,23 @@ describe('POST /api/v1/auth/register (exact email pattern)', () => {
 });
 
 describe('POST /api/v1/auth/register (multiple patterns)', () => {
-  const app = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      app: {
-        allowed_signup_emails: ['*@company.com', 'special@other.com'],
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        app: {
+          ...MINIMAL_TEST_CONFIG.app,
+          allowed_signup_emails: ['*@company.com', 'special@other.com'],
+        },
+        terms: TEST_TERMS_CONFIG,
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   test('should allow registration with domain wildcard from multiple patterns', async () => {
@@ -435,29 +499,40 @@ describe('POST /api/v1/auth/register (multiple patterns)', () => {
 });
 
 describe('POST /api/v1/auth/register (implicit consent mode)', () => {
-  const app = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      app: {
-        signup_implicit_terms: {
-          en: 'By signing up, you agree to our Terms.',
-        },
-      },
-      terms: [
-        {
-          id: 'tos',
-          required: true,
-          consent_mode: 'implicit',
-          version: '1.0.0',
-          content: {
-            en: {
-              title: 'Terms',
-              type: 'link',
-              content: 'https://example.com/terms',
-            },
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        app: {
+          ...MINIMAL_TEST_CONFIG.app,
+          allowed_signup_emails: ['*'],
+          signup_implicit_terms: {
+            en: 'By signing up, you agree to our Terms.',
           },
         },
-      ],
-    }),
+        terms: [
+          {
+            id: 'tos',
+            required: true,
+            consent_mode: 'implicit',
+            version: '1.0.0',
+            content: {
+              en: {
+                title: 'Terms',
+                type: 'link',
+                content: 'https://example.com/terms',
+              },
+            },
+          },
+        ],
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   test('should register without explicit consents in implicit mode', async () => {
@@ -510,10 +585,23 @@ describe('POST /api/v1/auth/register (implicit consent mode)', () => {
 });
 
 describe('POST /api/v1/auth/register (no terms configured)', () => {
-  const app = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      terms: [], // No terms
-    }),
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        app: {
+          ...MINIMAL_TEST_CONFIG.app,
+          allowed_signup_emails: ['*'],
+        },
+        terms: [],
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   test('should register without consents when no terms configured', async () => {

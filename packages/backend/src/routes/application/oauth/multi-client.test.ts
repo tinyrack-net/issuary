@@ -1,20 +1,22 @@
+import type { FastifyInstance } from 'fastify';
 import * as jose from 'jose';
-import { describe, expect, test } from 'vitest';
-import type { AppConfigInput } from '@/lib/config/index.js';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
   exchangeCodeForTokens,
   getAuthorizationCode,
   getUserInfo,
   introspectToken,
+  MINIMAL_TEST_CONFIG,
   refreshAccessToken,
   revokeToken,
-  setupTestServer,
   TEST_OAUTH_CLIENT,
+  TEST_OAUTH_CLIENT_CONFIG,
   TEST_PKCE,
   TEST_USER,
+  TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
-import { DEFAULT_TEST_CONFIG } from '@/test-utils/setup.js';
 
 /**
  * Second OAuth client for multi-client testing
@@ -26,37 +28,35 @@ const SECOND_OAUTH_CLIENT = {
 } as const;
 
 /**
- * Config with multiple OAuth clients for testing client isolation
+ * Config for second OAuth client
  */
-const multiClientConfig: AppConfigInput = {
-  ...DEFAULT_TEST_CONFIG,
-  providers: [
-    // First client - existing test client
-    {
-      id: 'test-config-oauth-client',
-      name: 'First Client',
-      logo_uri: 'https://first-client.com/logo',
-      client_id: TEST_OAUTH_CLIENT.clientId,
-      client_secret: TEST_OAUTH_CLIENT.clientSecret,
-      redirect_uris: [TEST_OAUTH_CLIENT.redirectUri],
-      response_types: ['code'],
-      grant_types: ['authorization_code', 'refresh_token'],
-      scope: 'openid profile email',
+const SECOND_OAUTH_CLIENT_CONFIG = {
+  id: 'second-oauth-client',
+  name: 'Second Client',
+  logo_uri: 'https://second-client.com/logo',
+  client_id: SECOND_OAUTH_CLIENT.clientId,
+  client_secret: SECOND_OAUTH_CLIENT.clientSecret,
+  redirect_uris: [SECOND_OAUTH_CLIENT.redirectUri],
+  response_types: ['code'],
+  grant_types: ['authorization_code', 'refresh_token'],
+  scope: 'openid profile email',
+} as const;
+
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = await createServer({
+    config: {
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      providers: [TEST_OAUTH_CLIENT_CONFIG, SECOND_OAUTH_CLIENT_CONFIG],
     },
-    // Second client - different client for isolation testing
-    {
-      id: 'second-oauth-client',
-      name: 'Second Client',
-      logo_uri: 'https://second-client.com/logo',
-      client_id: SECOND_OAUTH_CLIENT.clientId,
-      client_secret: SECOND_OAUTH_CLIENT.clientSecret,
-      redirect_uris: [SECOND_OAUTH_CLIENT.redirectUri],
-      response_types: ['code'],
-      grant_types: ['authorization_code', 'refresh_token'],
-      scope: 'openid profile email',
-    },
-  ],
-};
+  });
+});
+
+afterAll(async () => {
+  await app.close();
+});
 
 /**
  * Multi-Client Isolation Tests
@@ -68,8 +68,6 @@ const multiClientConfig: AppConfigInput = {
  * - Client credentials are properly validated
  */
 describe('Multi-Client Isolation', () => {
-  const app = setupTestServer({ config: multiClientConfig });
-
   describe('Token Isolation Between Clients', () => {
     test(
       'should issue different tokens for different clients',

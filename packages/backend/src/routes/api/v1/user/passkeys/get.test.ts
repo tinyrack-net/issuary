@@ -1,86 +1,69 @@
-import { describe, expect, test } from 'vitest';
-import { deepMerge } from '@/lib/config/index.js';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
-  DEFAULT_TEST_CONFIG,
+  createPasskeyForUser,
   extractCookie,
   generateUniqueEmail,
   injectWithSession,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
+  TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
 
-const app = setupTestServer({
-  config: deepMerge(DEFAULT_TEST_CONFIG, {
-    basic_authentication_methods: {
-      passkey: {
-        enabled: true,
-        email_verification: true,
-      },
-    },
-  }),
-});
-
-/**
- * Helper to create a DB user with session
- */
-async function createDbUserWithSession(
-  email: string,
-  password: string,
-): Promise<{ sessionCookie: string; userId: string }> {
-  await withMikroContext(app, async () => {
-    const user = app.mikro.user.create({
-      email,
-      password_hash: password,
-    });
-    user.email_verified = true;
-    await app.mikro.em.persist(user).flush();
-  });
-
-  const loginRes = await app.inject({
-    method: 'POST',
-    url: '/api/v1/auth/login',
-    payload: { email, password },
-  });
-
-  expect(loginRes.statusCode).toBe(200);
-
-  const sessionCookie = extractCookie(loginRes, 'session');
-  const userId = loginRes.json().user.id;
-
-  return { sessionCookie, userId };
-}
-
-/**
- * Helper to create a passkey for a user
- */
-async function createPasskeyForUser(
-  userId: string,
-  name: string | null = null,
-): Promise<string> {
-  let passkeyId = '';
-
-  await withMikroContext(app, async () => {
-    const user = await app.mikro.user.findOneOrFail({ id: userId });
-    const passkey = app.mikro.userPasskey.create({
-      user,
-      credential_id: `test-credential-${crypto.randomUUID()}`,
-      public_key: 'test-public-key-base64url',
-      counter: 0,
-      device_type: 'multiDevice',
-      backed_up: true,
-      transports: ['internal'],
-      name,
-      aaguid: 'test-aaguid',
-    });
-    await app.mikro.em.persist(passkey).flush();
-    passkeyId = passkey.id;
-  });
-
-  return passkeyId;
-}
-
 describe('GET /api/v1/user/passkeys', () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        users: [TEST_USER_CONFIG],
+        basic_authentication_methods: {
+          passkey: {
+            enabled: true,
+            email_verification: true,
+          },
+        },
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  /**
+   * Helper to create a DB user with session
+   */
+  async function createDbUserWithSession(
+    email: string,
+    password: string,
+  ): Promise<{ sessionCookie: string; userId: string }> {
+    await withMikroContext(app, async () => {
+      const user = app.mikro.user.create({
+        email,
+        password_hash: password,
+      });
+      user.email_verified = true;
+      await app.mikro.em.persist(user).flush();
+    });
+
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: { email, password },
+    });
+
+    expect(loginRes.statusCode).toBe(200);
+
+    const sessionCookie = extractCookie(loginRes, 'session');
+    const userId = loginRes.json().user.id;
+
+    return { sessionCookie, userId };
+  }
+
   test('should return 401 when not authenticated', async () => {
     const res = await app.inject({
       method: 'GET',
@@ -122,7 +105,7 @@ describe('GET /api/v1/user/passkeys', () => {
     );
 
     // Create a passkey
-    await createPasskeyForUser(userId, 'My MacBook');
+    await createPasskeyForUser(app, userId, 'My MacBook');
 
     const res = await injectWithSession(
       app,
@@ -154,9 +137,9 @@ describe('GET /api/v1/user/passkeys', () => {
     );
 
     // Create multiple passkeys
-    await createPasskeyForUser(userId, 'MacBook Pro');
-    await createPasskeyForUser(userId, 'iPhone');
-    await createPasskeyForUser(userId, null);
+    await createPasskeyForUser(app, userId, 'MacBook Pro');
+    await createPasskeyForUser(app, userId, 'iPhone');
+    await createPasskeyForUser(app, userId, null);
 
     const res = await injectWithSession(
       app,
@@ -187,7 +170,7 @@ describe('GET /api/v1/user/passkeys', () => {
       password,
     );
 
-    await createPasskeyForUser(userId, 'Test Device');
+    await createPasskeyForUser(app, userId, 'Test Device');
 
     const res = await injectWithSession(
       app,
@@ -219,11 +202,11 @@ describe('GET /api/v1/user/passkeys', () => {
     );
 
     // Create passkeys with slight delay to ensure different timestamps
-    await createPasskeyForUser(userId, 'First Device');
+    await createPasskeyForUser(app, userId, 'First Device');
     await new Promise((resolve) => setTimeout(resolve, 10));
-    await createPasskeyForUser(userId, 'Second Device');
+    await createPasskeyForUser(app, userId, 'Second Device');
     await new Promise((resolve) => setTimeout(resolve, 10));
-    await createPasskeyForUser(userId, 'Third Device');
+    await createPasskeyForUser(app, userId, 'Third Device');
 
     const res = await injectWithSession(
       app,
@@ -271,8 +254,8 @@ describe('GET /api/v1/user/passkeys', () => {
     const { userId: userId2 } = await createDbUserWithSession(email2, password);
 
     // Create passkeys for both users
-    await createPasskeyForUser(userId1, 'User1 Device');
-    await createPasskeyForUser(userId2, 'User2 Device');
+    await createPasskeyForUser(app, userId1, 'User1 Device');
+    await createPasskeyForUser(app, userId2, 'User2 Device');
 
     // User 1 should only see their passkey
     const res = await injectWithSession(

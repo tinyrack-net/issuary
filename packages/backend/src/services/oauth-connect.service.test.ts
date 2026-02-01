@@ -1,9 +1,9 @@
-import { describe, expect, test } from 'vitest';
-import { deepMerge } from '@/lib/config/index.js';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
 import {
-  DEFAULT_TEST_CONFIG,
   generateUniqueEmail,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
 
@@ -36,7 +36,34 @@ async function expectApiError(
 }
 
 describe('OAuthConnectService - auto_link strategy', () => {
-  const app = setupTestServer();
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        app: {
+          ...MINIMAL_TEST_CONFIG.app,
+          allowed_signup_emails: ['*'],
+        },
+        oauth_authentication_methods: [
+          {
+            id: 'google',
+            type: 'google',
+            enabled: true,
+            display_name: 'Google',
+            client_id: 'test-google-client-id',
+            client_secret: 'test-google-client-secret',
+            email_conflict_strategy: 'auto_link',
+          },
+        ],
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
 
   test('should reject when email_verified is false (existing user)', async () => {
     const email = generateUniqueEmail('oauth-unverified');
@@ -120,20 +147,33 @@ describe('OAuthConnectService - auto_link strategy', () => {
 });
 
 describe('OAuthConnectService - require_link strategy', () => {
-  const app = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      oauth_authentication_methods: [
-        {
-          id: 'google',
-          type: 'google',
-          enabled: true,
-          display_name: 'Google',
-          client_id: 'test-google-client-id',
-          client_secret: 'test-google-client-secret',
-          email_conflict_strategy: 'require_link',
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        app: {
+          ...MINIMAL_TEST_CONFIG.app,
+          allowed_signup_emails: ['*'],
         },
-      ],
-    }),
+        oauth_authentication_methods: [
+          {
+            id: 'google',
+            type: 'google',
+            enabled: true,
+            display_name: 'Google',
+            client_id: 'test-google-client-id',
+            client_secret: 'test-google-client-secret',
+            email_conflict_strategy: 'require_link',
+          },
+        ],
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   test('should throw OAuthEmailConflict when email matches existing user', async () => {
@@ -178,7 +218,34 @@ describe('OAuthConnectService - require_link strategy', () => {
 });
 
 describe('OAuthConnectService - completeOAuthRegistration', () => {
-  const app = setupTestServer();
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        app: {
+          ...MINIMAL_TEST_CONFIG.app,
+          allowed_signup_emails: ['*'],
+        },
+        oauth_authentication_methods: [
+          {
+            id: 'google',
+            type: 'google',
+            enabled: true,
+            display_name: 'Google',
+            client_id: 'test-google-client-id',
+            client_secret: 'test-google-client-secret',
+            email_conflict_strategy: 'auto_link',
+          },
+        ],
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
 
   test('should reject when email_verified is false', async () => {
     const email = generateUniqueEmail('oauth-complete-unverified');

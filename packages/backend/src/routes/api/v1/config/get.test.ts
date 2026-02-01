@@ -1,7 +1,32 @@
-import { describe, expect, test } from 'vitest';
-import { setupTestServer } from '@/test-utils/index.js';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
+import { MINIMAL_TEST_CONFIG } from '@/test-utils/index.js';
 
-const app = setupTestServer();
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = await createServer({
+    config: {
+      ...MINIMAL_TEST_CONFIG,
+      oauth_authentication_methods: [
+        {
+          id: 'google',
+          type: 'google',
+          enabled: true,
+          display_name: 'Google',
+          client_id: 'test-google-client-id',
+          client_secret: 'test-google-client-secret',
+          email_conflict_strategy: 'auto_link',
+        },
+      ],
+    },
+  });
+});
+
+afterAll(async () => {
+  await app.close();
+});
 
 describe('GET /api/v1/config', () => {
   test('should return app configuration', async () => {

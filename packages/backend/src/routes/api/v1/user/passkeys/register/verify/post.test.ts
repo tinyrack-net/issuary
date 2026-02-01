@@ -1,32 +1,23 @@
-import { describe, expect, test } from 'vitest';
-import { deepMerge } from '@/lib/config/index.js';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
+import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
-  DEFAULT_TEST_CONFIG,
   expectError,
   extractCookie,
   generateUniqueEmail,
   injectWithSession,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
+  TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
-
-const app = setupTestServer({
-  config: deepMerge(DEFAULT_TEST_CONFIG, {
-    basic_authentication_methods: {
-      passkey: {
-        enabled: true,
-        email_verification: true,
-      },
-    },
-  }),
-});
 
 /**
  * Helper to create a DB user with session
  */
 async function createDbUserWithSession(
+  app: FastifyInstance,
   email: string,
   password: string,
 ): Promise<{ sessionCookie: string; userId: string }> {
@@ -57,6 +48,7 @@ async function createDbUserWithSession(
  * Helper to create a passkey for a user directly in DB
  */
 async function createPasskeyForUser(
+  app: FastifyInstance,
   userId: string,
   credentialId: string,
 ): Promise<string> {
@@ -114,6 +106,27 @@ function createMockRegistrationResponse(overrides?: {
 }
 
 describe('POST /api/v1/user/passkeys/register/verify', () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        users: [TEST_USER_CONFIG],
+        basic_authentication_methods: {
+          passkey: {
+            enabled: true,
+            email_verification: true,
+          },
+        },
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
   test('should return 401 when not authenticated', async () => {
     const res = await app.inject({
       method: 'POST',
@@ -132,7 +145,11 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     const email = generateUniqueEmail('passkey-verify-no-challenge');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // Directly call verify without getting options first
     const res = await injectWithSession(
@@ -156,7 +173,11 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     const email = generateUniqueEmail('passkey-verify-invalid-response');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // First get registration options to set challenge in session
     const optionsRes = await injectWithSession(
@@ -198,7 +219,11 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     const email = generateUniqueEmail('passkey-verify-missing-fields');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // Get registration options first
     const optionsRes = await injectWithSession(
@@ -239,7 +264,11 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     const email = generateUniqueEmail('passkey-verify-invalid-type');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // Get registration options first
     const optionsRes = await injectWithSession(
@@ -273,7 +302,11 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     const email = generateUniqueEmail('passkey-verify-with-name');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // Get registration options first
     const optionsRes = await injectWithSession(
@@ -313,7 +346,11 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     const email = generateUniqueEmail('passkey-verify-long-name');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // Get registration options first
     const optionsRes = await injectWithSession(
@@ -349,7 +386,11 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     const email = generateUniqueEmail('passkey-verify-empty-body');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     const res = await injectWithSession(
       app,
@@ -368,7 +409,11 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     const email = generateUniqueEmail('passkey-verify-missing-response');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     const res = await injectWithSession(
       app,
@@ -395,13 +440,14 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     const password = 'testPassword123!';
 
     const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
       email,
       password,
     );
 
     // Create a passkey with specific credential ID
     const existingCredentialId = 'existing-credential-id-123';
-    await createPasskeyForUser(userId, existingCredentialId);
+    await createPasskeyForUser(app, userId, existingCredentialId);
 
     // Get registration options
     const optionsRes = await injectWithSession(
@@ -460,7 +506,11 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     const email = generateUniqueEmail('passkey-verify-invalid-clientdata');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // Get registration options
     const optionsRes = await injectWithSession(
@@ -497,7 +547,11 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     const email = generateUniqueEmail('passkey-verify-clears-on-fail');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // Get registration options
     const optionsRes = await injectWithSession(
@@ -548,7 +602,11 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     const email = generateUniqueEmail('passkey-verify-concurrent');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // Get registration options
     const optionsRes = await injectWithSession(
@@ -599,7 +657,11 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     const email = generateUniqueEmail('passkey-verify-nested-structure');
     const password = 'testPassword123!';
 
-    const { sessionCookie } = await createDbUserWithSession(email, password);
+    const { sessionCookie } = await createDbUserWithSession(
+      app,
+      email,
+      password,
+    );
 
     // Get registration options
     const optionsRes = await injectWithSession(
@@ -639,15 +701,25 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
 });
 
 describe('POST /api/v1/user/passkeys/register/verify - Passkey disabled', () => {
-  const appDisabled = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      basic_authentication_methods: {
-        passkey: {
-          enabled: false,
-          email_verification: true,
+  let appDisabled: FastifyInstance;
+
+  beforeAll(async () => {
+    appDisabled = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        users: [TEST_USER_CONFIG],
+        basic_authentication_methods: {
+          passkey: {
+            enabled: false,
+            email_verification: true,
+          },
         },
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await appDisabled.close();
   });
 
   test('should return 404 when passkey is disabled in config (route not registered)', async () => {

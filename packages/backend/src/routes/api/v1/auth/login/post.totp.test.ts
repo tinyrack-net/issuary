@@ -15,16 +15,16 @@
  */
 
 import type { FastifyInstance } from 'fastify';
-import { describe, expect, test } from 'vitest';
-import { deepMerge } from '@/lib/config/index.js';
-import { TEST_USER } from '@/test-utils/fixtures.js';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
 import {
-  DEFAULT_TEST_CONFIG,
   enableTotpForUser,
   extractCookie,
   generateUniqueEmail,
   injectWithSession,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
+  TEST_USER,
+  TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
 
@@ -61,20 +61,30 @@ async function createUserInDb(
  * =============================================================================
  */
 describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
-  const app = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      basic_authentication_methods: {
-        password: {
-          email_verification: false, // Disable email verification to isolate TOTP tests
-          second_factor: {
-            required: true,
-          },
-          totp: {
-            enabled: true,
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        users: [TEST_USER_CONFIG],
+        basic_authentication_methods: {
+          password: {
+            email_verification: false,
+            second_factor: {
+              required: true,
+            },
+            totp: {
+              enabled: true,
+            },
           },
         },
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   test('should require TOTP setup for user without TOTP registered', async () => {
@@ -221,20 +231,29 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
  * =============================================================================
  */
 describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
-  const app = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      basic_authentication_methods: {
-        password: {
-          email_verification: false, // Disable email verification to isolate TOTP tests
-          second_factor: {
-            required: false,
-          },
-          totp: {
-            enabled: true,
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        basic_authentication_methods: {
+          password: {
+            email_verification: false,
+            second_factor: {
+              required: false,
+            },
+            totp: {
+              enabled: true,
+            },
           },
         },
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   test('should login immediately for user without TOTP registered', async () => {
@@ -329,20 +348,29 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
  * =============================================================================
  */
 describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
-  const app = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      basic_authentication_methods: {
-        password: {
-          email_verification: false, // Disable email verification to isolate TOTP tests
-          second_factor: {
-            required: false,
-          },
-          totp: {
-            enabled: false,
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        basic_authentication_methods: {
+          password: {
+            email_verification: false,
+            second_factor: {
+              required: false,
+            },
+            totp: {
+              enabled: false,
+            },
           },
         },
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   test('should login immediately for user without TOTP', async () => {
@@ -404,20 +432,29 @@ describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
  * =============================================================================
  */
 describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
-  const app = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      basic_authentication_methods: {
-        password: {
-          email_verification: true,
-          second_factor: {
-            required: true,
-          },
-          totp: {
-            enabled: true,
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        basic_authentication_methods: {
+          password: {
+            email_verification: true,
+            second_factor: {
+              required: true,
+            },
+            totp: {
+              enabled: true,
+            },
           },
         },
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   test('should require email verification first for unverified user (before TOTP)', async () => {
@@ -504,20 +541,30 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
  * =============================================================================
  */
 describe('POST /api/v1/auth/login - Session State Verification', () => {
-  const app = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      basic_authentication_methods: {
-        password: {
-          email_verification: false,
-          second_factor: {
-            required: true,
-          },
-          totp: {
-            enabled: true,
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        users: [TEST_USER_CONFIG],
+        basic_authentication_methods: {
+          password: {
+            email_verification: false,
+            second_factor: {
+              required: true,
+            },
+            totp: {
+              enabled: true,
+            },
           },
         },
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   test('should not allow protected API access with pending2FASetup session', async () => {

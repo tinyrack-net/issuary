@@ -1,13 +1,29 @@
-import { describe, expect, test } from 'vitest';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
+import { createServer } from '@/server.js';
 import {
   generateUniqueEmail,
+  MINIMAL_TEST_CONFIG,
   registerUser,
-  setupTestServer,
+  TEST_TERMS_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
 
-const app = setupTestServer();
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = await createServer({
+    config: {
+      ...MINIMAL_TEST_CONFIG,
+      terms: TEST_TERMS_CONFIG,
+    },
+  });
+});
+
+afterAll(async () => {
+  await app.close();
+});
 
 describe('POST /api/v1/auth/email/verify', () => {
   test('should verify email with valid token', async () => {

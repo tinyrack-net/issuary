@@ -1,12 +1,30 @@
-import { describe, expect, test } from 'vitest';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
   TEST_OAUTH_CLIENT,
+  TEST_OAUTH_CLIENT_CONFIG,
+  TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
 
-const app = setupTestServer();
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = await createServer({
+    config: {
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      providers: [TEST_OAUTH_CLIENT_CONFIG],
+    },
+  });
+});
+
+afterAll(async () => {
+  await app.close();
+});
 
 describe('POST /api/v1/consent', () => {
   describe('Allow decision', () => {

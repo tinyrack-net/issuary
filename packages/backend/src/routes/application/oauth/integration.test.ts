@@ -1,5 +1,7 @@
+import type { FastifyInstance } from 'fastify';
 import * as jose from 'jose';
-import { describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
   exchangeCodeForTokens,
@@ -7,20 +9,35 @@ import {
   getUserInfo,
   grantConsent,
   introspectToken,
+  MINIMAL_TEST_CONFIG,
   refreshAccessToken,
-  setupTestServer,
   TEST_OAUTH_CLIENT,
+  TEST_OAUTH_CLIENT_CONFIG,
   TEST_PKCE,
   TEST_USER,
+  TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
+
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = await createServer({
+    config: {
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      providers: [TEST_OAUTH_CLIENT_CONFIG],
+    },
+  });
+});
+
+afterAll(async () => {
+  await app.close();
+});
 
 /**
  * Helper to get all tokens (access, refresh, id)
  */
-async function getAllTokens(
-  app: ReturnType<typeof setupTestServer>,
-  params: { scope?: string; nonce?: string } = {},
-) {
+async function getAllTokens(params: { scope?: string; nonce?: string } = {}) {
   const sessionCookie = await createAuthenticatedSession(app);
   const { code } = await getAuthorizationCode(app, {
     sessionCookie,
@@ -31,8 +48,6 @@ async function getAllTokens(
   expect(tokenRes.statusCode).toBe(200);
   return tokenRes.json();
 }
-
-const app = setupTestServer();
 
 /**
  * Integration Tests for complete OAuth/OIDC flows
@@ -133,7 +148,7 @@ describe('OAuth Integration Flows', () => {
   describe('Token Refresh Flow', () => {
     test('should refresh access token successfully', async () => {
       // Get initial tokens
-      const tokens = await getAllTokens(app);
+      const tokens = await getAllTokens();
       const { refresh_token } = tokens;
 
       // Wait a moment to ensure different token
@@ -158,7 +173,7 @@ describe('OAuth Integration Flows', () => {
     });
 
     test('should issue new refresh token on refresh', async () => {
-      const tokens = await getAllTokens(app);
+      const tokens = await getAllTokens();
 
       const refreshRes = await refreshAccessToken(app, {
         refreshToken: tokens.refresh_token,
@@ -174,7 +189,7 @@ describe('OAuth Integration Flows', () => {
 
   describe('Token Introspection Flow', () => {
     test('should introspect active access token', async () => {
-      const tokens = await getAllTokens(app);
+      const tokens = await getAllTokens();
 
       const introspectRes = await introspectToken(app, {
         token: tokens.access_token,
@@ -189,7 +204,7 @@ describe('OAuth Integration Flows', () => {
     });
 
     test('should introspect refresh token', async () => {
-      const tokens = await getAllTokens(app);
+      const tokens = await getAllTokens();
 
       const introspectRes = await introspectToken(app, {
         token: tokens.refresh_token,
@@ -204,7 +219,7 @@ describe('OAuth Integration Flows', () => {
 
   describe('Token Revocation Flow', () => {
     test('should revoke access token and invalidate it', async () => {
-      const tokens = await getAllTokens(app);
+      const tokens = await getAllTokens();
 
       // Verify token works before revocation
       const beforeRes = await getUserInfo(app, tokens.access_token);
@@ -227,7 +242,7 @@ describe('OAuth Integration Flows', () => {
     });
 
     test('should revoke refresh token and prevent refresh', async () => {
-      const tokens = await getAllTokens(app);
+      const tokens = await getAllTokens();
 
       // Revoke refresh token
       await app.inject({
@@ -251,7 +266,7 @@ describe('OAuth Integration Flows', () => {
   describe('OIDC ID Token Flow', () => {
     test('should include correct claims in ID token', async () => {
       const nonce = `test-nonce-${Date.now()}`;
-      const tokens = await getAllTokens(app, {
+      const tokens = await getAllTokens({
         scope: 'openid profile email',
         nonce,
       });
@@ -276,7 +291,7 @@ describe('OAuth Integration Flows', () => {
     });
 
     test('should validate ID token signature', async () => {
-      const tokens = await getAllTokens(app, {
+      const tokens = await getAllTokens({
         scope: 'openid profile email',
       });
 
@@ -360,7 +375,7 @@ describe('OAuth Integration Flows', () => {
     });
 
     test('should include all requested claims when full scope granted', async () => {
-      const tokens = await getAllTokens(app, {
+      const tokens = await getAllTokens({
         scope: 'openid profile email',
       });
 
@@ -439,7 +454,7 @@ describe('OAuth Integration Flows', () => {
 
   describe('Token Lifetime Validation', () => {
     test('should issue tokens with correct expiration', async () => {
-      const tokens = await getAllTokens(app);
+      const tokens = await getAllTokens();
 
       const accessDecoded = jose.decodeJwt(tokens.access_token);
       const idDecoded = jose.decodeJwt(tokens.id_token);

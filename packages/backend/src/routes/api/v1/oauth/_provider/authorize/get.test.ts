@@ -1,12 +1,48 @@
-import { describe, expect, test } from 'vitest';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
+import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
   expectError,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
+  TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
 
-const app = setupTestServer();
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = await createServer({
+    config: {
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      oauth_authentication_methods: [
+        {
+          id: 'google',
+          type: 'google',
+          enabled: true,
+          display_name: 'Google',
+          client_id: 'test-google-client-id',
+          client_secret: 'test-google-client-secret',
+          email_conflict_strategy: 'auto_link',
+        },
+        {
+          id: 'github',
+          type: 'github',
+          enabled: false,
+          display_name: 'GitHub',
+          client_id: 'test-github-client-id',
+          client_secret: 'test-github-client-secret',
+          email_conflict_strategy: 'auto_link',
+        },
+      ],
+    },
+  });
+});
+
+afterAll(async () => {
+  await app.close();
+});
 
 describe('GET /api/v1/oauth/:provider/authorize', () => {
   describe('Success Cases', () => {

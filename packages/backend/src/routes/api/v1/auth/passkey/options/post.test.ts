@@ -1,25 +1,34 @@
-import { describe, expect, test } from 'vitest';
-import { deepMerge } from '@/lib/config/index.js';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
 import {
-  DEFAULT_TEST_CONFIG,
   extractCookie,
   generateUniqueEmail,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
 
-const app = setupTestServer({
-  config: deepMerge(DEFAULT_TEST_CONFIG, {
-    basic_authentication_methods: {
-      passkey: {
-        enabled: true,
-        email_verification: true,
-      },
-    },
-  }),
-});
-
 describe('POST /api/v1/auth/passkey/options', () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        basic_authentication_methods: {
+          passkey: {
+            enabled: true,
+            email_verification: true,
+          },
+        },
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
   test('should return WebAuthn authentication options', async () => {
     const res = await app.inject({
       method: 'POST',
@@ -120,22 +129,30 @@ describe('POST /api/v1/auth/passkey/options', () => {
 });
 
 describe('POST /api/v1/auth/passkey/options - 2FA mode', () => {
-  // App with 2FA required for testing pending2FAUser session
-  const app2FA = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      basic_authentication_methods: {
-        password: {
-          enabled: true,
-          second_factor: {
-            required: true,
+  let app2FA: FastifyInstance;
+
+  beforeAll(async () => {
+    app2FA = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        basic_authentication_methods: {
+          password: {
+            enabled: true,
+            second_factor: {
+              required: true,
+            },
+          },
+          passkey: {
+            enabled: true,
+            email_verification: true,
           },
         },
-        passkey: {
-          enabled: true,
-          email_verification: true,
-        },
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await app2FA.close();
   });
 
   test('should return options with allowCredentials for pending 2FA user', async () => {
@@ -203,30 +220,56 @@ describe('POST /api/v1/auth/passkey/options - 2FA mode', () => {
   });
 
   test('should return empty allowCredentials for passwordless mode', async () => {
-    const res = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/passkey/options',
+    // Create a new app instance just to get options without session
+    const appForTest = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        basic_authentication_methods: {
+          passkey: {
+            enabled: true,
+            email_verification: true,
+          },
+        },
+      },
     });
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    try {
+      const res = await appForTest.inject({
+        method: 'POST',
+        url: '/api/v1/auth/passkey/options',
+      });
 
-    // Should have empty allowCredentials for discoverable credentials
-    expect(body.options.allowCredentials).toBeDefined();
-    expect(body.options.allowCredentials).toHaveLength(0);
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+
+      // Should have empty allowCredentials for discoverable credentials
+      expect(body.options.allowCredentials).toBeDefined();
+      expect(body.options.allowCredentials).toHaveLength(0);
+    } finally {
+      await appForTest.close();
+    }
   });
 });
 
 describe('POST /api/v1/auth/passkey/options - Passkey disabled', () => {
-  const appDisabled = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      basic_authentication_methods: {
-        passkey: {
-          enabled: false,
-          email_verification: true,
+  let appDisabled: FastifyInstance;
+
+  beforeAll(async () => {
+    appDisabled = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        basic_authentication_methods: {
+          passkey: {
+            enabled: false,
+            email_verification: true,
+          },
         },
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await appDisabled.close();
   });
 
   test('should return 404 when passkey is disabled (route not registered)', async () => {
@@ -240,16 +283,25 @@ describe('POST /api/v1/auth/passkey/options - Passkey disabled', () => {
 });
 
 describe('POST /api/v1/auth/passkey/options - Custom rpId', () => {
-  const appCustomRpId = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      basic_authentication_methods: {
-        passkey: {
-          enabled: true,
-          email_verification: true,
-          rp_id: 'custom.example.com',
+  let appCustomRpId: FastifyInstance;
+
+  beforeAll(async () => {
+    appCustomRpId = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        basic_authentication_methods: {
+          passkey: {
+            enabled: true,
+            email_verification: true,
+            rp_id: 'custom.example.com',
+          },
         },
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await appCustomRpId.close();
   });
 
   test('should use custom rp_id from config', async () => {

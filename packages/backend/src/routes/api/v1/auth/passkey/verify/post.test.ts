@@ -1,25 +1,14 @@
-import { describe, expect, test, vi } from 'vitest';
-import { deepMerge } from '@/lib/config/index.js';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { createServer } from '@/server.js';
 import {
   createDbUserWithSession,
-  DEFAULT_TEST_CONFIG,
   extractCookie,
   generateUniqueEmail,
   injectWithSession,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
-
-const app = setupTestServer({
-  config: deepMerge(DEFAULT_TEST_CONFIG, {
-    basic_authentication_methods: {
-      passkey: {
-        enabled: true,
-        email_verification: true,
-      },
-    },
-  }),
-});
 
 /**
  * Create a mock WebAuthn authentication response
@@ -60,8 +49,27 @@ function createMockAuthenticationResponse(overrides?: {
 }
 
 describe('POST /api/v1/auth/passkey/verify', () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        basic_authentication_methods: {
+          passkey: {
+            enabled: true,
+            email_verification: true,
+          },
+        },
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
   test('should return 400 when no challenge in session', async () => {
-    // First need a valid session, then try to verify without getting options
     const email = generateUniqueEmail('passkey-verify-no-challenge');
     const password = 'testPassword123!';
 
@@ -308,6 +316,26 @@ describe('POST /api/v1/auth/passkey/verify', () => {
 });
 
 describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        basic_authentication_methods: {
+          passkey: {
+            enabled: true,
+            email_verification: true,
+          },
+        },
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
   test('should return 200 and create session on successful verification', async () => {
     const email = generateUniqueEmail('passkey-auth-success');
     const password = 'testPassword123!';
@@ -387,22 +415,30 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
 });
 
 describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
-  // App with 2FA required for testing pending2FAUser session
-  const app2FA = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      basic_authentication_methods: {
-        password: {
-          enabled: true,
-          second_factor: {
-            required: true,
+  let app2FA: FastifyInstance;
+
+  beforeAll(async () => {
+    app2FA = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        basic_authentication_methods: {
+          password: {
+            enabled: true,
+            second_factor: {
+              required: true,
+            },
+          },
+          passkey: {
+            enabled: true,
+            email_verification: true,
           },
         },
-        passkey: {
-          enabled: true,
-          email_verification: true,
-        },
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await app2FA.close();
   });
 
   test('should return 403 when passkey belongs to different user', async () => {
@@ -594,15 +630,24 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
 });
 
 describe('POST /api/v1/auth/passkey/verify - Passkey disabled', () => {
-  const appDisabled = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      basic_authentication_methods: {
-        passkey: {
-          enabled: false,
-          email_verification: true,
+  let appDisabled: FastifyInstance;
+
+  beforeAll(async () => {
+    appDisabled = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        basic_authentication_methods: {
+          passkey: {
+            enabled: false,
+            email_verification: true,
+          },
         },
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await appDisabled.close();
   });
 
   test('should return 404 when passkey is disabled (route not registered)', async () => {

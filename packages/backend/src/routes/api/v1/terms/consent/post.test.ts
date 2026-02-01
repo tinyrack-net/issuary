@@ -1,19 +1,35 @@
-import { describe, expect, test } from 'vitest';
-import { deepMerge } from '@/lib/config/index.js';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
+import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
   createDbUserWithSession,
-  DEFAULT_TEST_CONFIG,
   expectError,
   generateUniqueEmail,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
+  TEST_TERMS_CONFIG,
+  TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
 
 describe('POST /api/v1/terms/consent', () => {
   describe('Authentication', () => {
-    const app = setupTestServer();
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [...TEST_TERMS_CONFIG],
+          users: [TEST_USER_CONFIG],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
 
     test('should return 401 when not authenticated', async () => {
       const res = await app.inject({
@@ -43,7 +59,21 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Validation', () => {
-    const app = setupTestServer();
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [...TEST_TERMS_CONFIG],
+          users: [TEST_USER_CONFIG],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
 
     test('should return 400 when consents array is empty', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
@@ -164,7 +194,20 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Successful consent recording', () => {
-    const app = setupTestServer();
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [...TEST_TERMS_CONFIG],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
 
     test('should record consent and return success', async () => {
       const email = generateUniqueEmail('consent-success');
@@ -268,37 +311,46 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Optional terms', () => {
-    const app = setupTestServer({
-      config: deepMerge(DEFAULT_TEST_CONFIG, {
-        terms: [
-          {
-            id: 'tos',
-            required: true,
-            consent_mode: 'explicit',
-            version: '1.0.0',
-            content: {
-              en: {
-                title: 'Terms',
-                type: 'link',
-                content: 'https://example.com/terms',
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [
+            {
+              id: 'tos',
+              required: true,
+              consent_mode: 'explicit',
+              version: '1.0.0',
+              content: {
+                en: {
+                  title: 'Terms',
+                  type: 'link',
+                  content: 'https://example.com/terms',
+                },
               },
             },
-          },
-          {
-            id: 'marketing',
-            required: false,
-            consent_mode: 'explicit',
-            version: '1.0.0',
-            content: {
-              en: {
-                title: 'Marketing',
-                type: 'text',
-                content: 'Receive marketing emails',
+            {
+              id: 'marketing',
+              required: false,
+              consent_mode: 'explicit',
+              version: '1.0.0',
+              content: {
+                en: {
+                  title: 'Marketing',
+                  type: 'text',
+                  content: 'Receive marketing emails',
+                },
               },
             },
-          },
-        ],
-      }),
+          ],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
     });
 
     test('should allow not agreeing to optional terms', async () => {
@@ -382,7 +434,20 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Unknown terms handling', () => {
-    const app = setupTestServer();
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [...TEST_TERMS_CONFIG],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
 
     test('should ignore unknown term IDs', async () => {
       const email = generateUniqueEmail('consent-unknown');
@@ -423,7 +488,20 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Version tracking', () => {
-    const app = setupTestServer();
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [...TEST_TERMS_CONFIG],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
 
     test('should record the current term version', async () => {
       const email = generateUniqueEmail('consent-version');
@@ -457,7 +535,20 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Re-consent after version update', () => {
-    const app = setupTestServer();
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [...TEST_TERMS_CONFIG],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
 
     test('should create new consent record for new version', async () => {
       const email = generateUniqueEmail('consent-reconsent');
@@ -566,24 +657,33 @@ describe('POST /api/v1/terms/consent', () => {
 
   describe('Consent mode affects consentType field', () => {
     describe('explicit consent_mode term', () => {
-      const app = setupTestServer({
-        config: deepMerge(DEFAULT_TEST_CONFIG, {
-          terms: [
-            {
-              id: 'tos',
-              required: true,
-              consent_mode: 'explicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Terms',
-                  type: 'link',
-                  content: 'https://example.com/terms',
+      let app: FastifyInstance;
+
+      beforeAll(async () => {
+        app = await createServer({
+          config: {
+            ...MINIMAL_TEST_CONFIG,
+            terms: [
+              {
+                id: 'tos',
+                required: true,
+                consent_mode: 'explicit',
+                version: '1.0.0',
+                content: {
+                  en: {
+                    title: 'Terms',
+                    type: 'link',
+                    content: 'https://example.com/terms',
+                  },
                 },
               },
-            },
-          ],
-        }),
+            ],
+          },
+        });
+      });
+
+      afterAll(async () => {
+        await app.close();
       });
 
       test('should record consentType as explicit', async () => {
@@ -614,24 +714,33 @@ describe('POST /api/v1/terms/consent', () => {
     });
 
     describe('implicit consent_mode term', () => {
-      const app = setupTestServer({
-        config: deepMerge(DEFAULT_TEST_CONFIG, {
-          terms: [
-            {
-              id: 'tos',
-              required: true,
-              consent_mode: 'implicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Terms',
-                  type: 'link',
-                  content: 'https://example.com/terms',
+      let app: FastifyInstance;
+
+      beforeAll(async () => {
+        app = await createServer({
+          config: {
+            ...MINIMAL_TEST_CONFIG,
+            terms: [
+              {
+                id: 'tos',
+                required: true,
+                consent_mode: 'implicit',
+                version: '1.0.0',
+                content: {
+                  en: {
+                    title: 'Terms',
+                    type: 'link',
+                    content: 'https://example.com/terms',
+                  },
                 },
               },
-            },
-          ],
-        }),
+            ],
+          },
+        });
+      });
+
+      afterAll(async () => {
+        await app.close();
       });
 
       test('should record consentType as implicit', async () => {
@@ -663,7 +772,20 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Concurrent consent submissions', () => {
-    const app = setupTestServer();
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [...TEST_TERMS_CONFIG],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
 
     test('should handle multiple rapid consent submissions', async () => {
       const email = generateUniqueEmail('consent-concurrent');
@@ -709,7 +831,21 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Edge cases', () => {
-    const app = setupTestServer();
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [...TEST_TERMS_CONFIG],
+          users: [TEST_USER_CONFIG],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
 
     test('should handle very long user agent', async () => {
       const email = generateUniqueEmail('consent-long-ua');
@@ -796,10 +932,19 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Empty terms configuration', () => {
-    const app = setupTestServer({
-      config: deepMerge(DEFAULT_TEST_CONFIG, {
-        terms: [], // No terms
-      }),
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
     });
 
     test('should succeed with empty consents when no terms configured', async () => {
@@ -828,7 +973,20 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Integration with GET /api/v1/terms', () => {
-    const app = setupTestServer();
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [...TEST_TERMS_CONFIG],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
 
     test('should show consent in GET response after POST', async () => {
       const email = generateUniqueEmail('consent-integration');

@@ -1,7 +1,19 @@
-import { describe, expect, test } from 'vitest';
-import { setupTestServer } from '@/test-utils/index.js';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
+import { MINIMAL_TEST_CONFIG } from '@/test-utils/index.js';
 
-const app = setupTestServer();
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = await createServer({
+    config: MINIMAL_TEST_CONFIG,
+  });
+});
+
+afterAll(async () => {
+  await app.close();
+});
 
 describe('GET /application/oauth/.well-known/jwks', () => {
   const url = '/application/oauth/.well-known/jwks';

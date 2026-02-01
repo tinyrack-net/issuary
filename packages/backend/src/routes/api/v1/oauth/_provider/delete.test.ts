@@ -1,15 +1,42 @@
-import { describe, expect, test } from 'vitest';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
   extractCookie,
   generateUniqueEmail,
   injectWithSession,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
   TEST_USER,
+  TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
 
-const app = setupTestServer();
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = await createServer({
+    config: {
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      oauth_authentication_methods: [
+        {
+          id: 'google',
+          type: 'google',
+          enabled: true,
+          display_name: 'Google',
+          client_id: 'test-google-client-id',
+          client_secret: 'test-google-client-secret',
+          email_conflict_strategy: 'auto_link',
+        },
+      ],
+    },
+  });
+});
+
+afterAll(async () => {
+  await app.close();
+});
 
 describe('DELETE /api/v1/oauth/:provider', () => {
   test('should return 401 if not authenticated', async () => {

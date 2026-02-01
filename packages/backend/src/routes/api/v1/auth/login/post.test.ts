@@ -1,13 +1,32 @@
-import { describe, expect, test } from 'vitest';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
+import { createServer } from '@/server.js';
 import {
   expectError,
   generateUniqueEmail,
+  MINIMAL_TEST_CONFIG,
   registerUser,
-  setupTestServer,
+  TEST_TERMS_CONFIG,
+  TEST_USER,
+  TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
 
-const app = setupTestServer();
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = await createServer({
+    config: {
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      terms: TEST_TERMS_CONFIG,
+    },
+  });
+});
+
+afterAll(async () => {
+  await app.close();
+});
 
 describe('POST /api/v1/auth/login', () => {
   test('should login successfully with correct credentials (app config user)', async () => {
@@ -15,8 +34,8 @@ describe('POST /api/v1/auth/login', () => {
       method: 'post',
       url: '/api/v1/auth/login',
       payload: {
-        email: 'test-config-user@example.com',
-        password: 'changemelater',
+        email: TEST_USER.email,
+        password: TEST_USER.password,
       },
     });
 
@@ -116,8 +135,8 @@ describe('POST /api/v1/auth/login', () => {
       method: 'post',
       url: '/api/v1/auth/login',
       payload: {
-        email: 'test-config-user@example.com',
-        password: 'changemelater',
+        email: TEST_USER.email,
+        password: TEST_USER.password,
       },
     });
 

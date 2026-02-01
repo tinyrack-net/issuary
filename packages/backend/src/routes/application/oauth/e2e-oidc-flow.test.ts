@@ -1,17 +1,35 @@
+import type { FastifyInstance } from 'fastify';
 import * as jose from 'jose';
-import { describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
   exchangeCodeForTokens,
   getAuthorizationCode,
   getUserInfo,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
   TEST_OAUTH_CLIENT,
+  TEST_OAUTH_CLIENT_CONFIG,
   TEST_PKCE,
   TEST_USER,
+  TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
 
-const app = setupTestServer();
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = await createServer({
+    config: {
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      providers: [TEST_OAUTH_CLIENT_CONFIG],
+    },
+  });
+});
+
+afterAll(async () => {
+  await app.close();
+});
 
 /**
  * End-to-End OIDC Flow Tests

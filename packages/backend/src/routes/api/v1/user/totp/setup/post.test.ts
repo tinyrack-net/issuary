@@ -1,27 +1,38 @@
-import { describe, expect, test } from 'vitest';
-import { deepMerge } from '@/lib/config/index.js';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
+import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
   createDbUserWithSession,
-  DEFAULT_TEST_CONFIG,
   expectError,
   generateUniqueEmail,
   injectWithSession,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
+  TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
 
-const app = setupTestServer({
-  config: deepMerge(DEFAULT_TEST_CONFIG, {
-    basic_authentication_methods: {
-      password: {
-        totp: {
-          enabled: true,
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = await createServer({
+    config: {
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      basic_authentication_methods: {
+        password: {
+          totp: {
+            enabled: true,
+          },
         },
       },
     },
-  }),
+  });
+});
+
+afterAll(async () => {
+  await app.close();
 });
 
 describe('POST /api/v1/user/totp/setup', () => {

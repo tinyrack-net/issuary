@@ -1,14 +1,15 @@
-import { describe, expect, test } from 'vitest';
-import { deepMerge } from '@/lib/config/index.js';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
+import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
   createDbUserWithSession,
-  DEFAULT_TEST_CONFIG,
   expectError,
   generateUniqueEmail,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
   TEST_USER,
+  TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
 
@@ -21,18 +22,28 @@ import {
 
 describe('DELETE /api/v1/user', () => {
   describe('with account deletion enabled', () => {
-    const app = setupTestServer({
-      config: deepMerge(DEFAULT_TEST_CONFIG, {
-        account_deletion: {
-          enabled: true,
-        },
-        cleanup: {
-          deleted_users: {
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          users: [TEST_USER_CONFIG],
+          account_deletion: {
             enabled: true,
-            retention: '30d',
+          },
+          cleanup: {
+            deleted_users: {
+              enabled: true,
+              retention: '30d',
+            },
           },
         },
-      }),
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
     });
 
     test('should delete account successfully', async () => {
@@ -168,12 +179,21 @@ describe('DELETE /api/v1/user', () => {
   });
 
   describe('with account deletion disabled', () => {
-    const app = setupTestServer({
-      config: deepMerge(DEFAULT_TEST_CONFIG, {
-        account_deletion: {
-          enabled: false,
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          account_deletion: {
+            enabled: false,
+          },
         },
-      }),
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
     });
 
     test('should fail when account deletion is disabled', async () => {

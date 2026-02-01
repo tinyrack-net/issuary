@@ -1,14 +1,32 @@
-import { describe, expect, test } from 'vitest';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
   exchangeCodeForTokens,
   getAuthorizationCode,
+  MINIMAL_TEST_CONFIG,
   refreshAccessToken,
-  setupTestServer,
   TEST_OAUTH_CLIENT,
+  TEST_OAUTH_CLIENT_CONFIG,
+  TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
 
-const app = setupTestServer();
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = await createServer({
+    config: {
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      providers: [TEST_OAUTH_CLIENT_CONFIG],
+    },
+  });
+});
+
+afterAll(async () => {
+  await app.close();
+});
 
 /**
  * Helper: Revoke a token

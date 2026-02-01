@@ -1,86 +1,69 @@
-import { describe, expect, test } from 'vitest';
-import { deepMerge } from '@/lib/config/index.js';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
-  DEFAULT_TEST_CONFIG,
+  createPasskeyForUser,
   extractCookie,
   generateUniqueEmail,
   injectWithSession,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
+  TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
 
-const app = setupTestServer({
-  config: deepMerge(DEFAULT_TEST_CONFIG, {
-    basic_authentication_methods: {
-      passkey: {
-        enabled: true,
-        email_verification: true,
-      },
-    },
-  }),
-});
-
-/**
- * Helper to create a DB user with session
- */
-async function createDbUserWithSession(
-  email: string,
-  password: string,
-): Promise<{ sessionCookie: string; userId: string }> {
-  await withMikroContext(app, async () => {
-    const user = app.mikro.user.create({
-      email,
-      password_hash: password,
-    });
-    user.email_verified = true;
-    await app.mikro.em.persist(user).flush();
-  });
-
-  const loginRes = await app.inject({
-    method: 'POST',
-    url: '/api/v1/auth/login',
-    payload: { email, password },
-  });
-
-  expect(loginRes.statusCode).toBe(200);
-
-  const sessionCookie = extractCookie(loginRes, 'session');
-  const userId = loginRes.json().user.id;
-
-  return { sessionCookie, userId };
-}
-
-/**
- * Helper to create a passkey for a user
- */
-async function createPasskeyForUser(
-  userId: string,
-  name: string | null = null,
-): Promise<string> {
-  let passkeyId = '';
-
-  await withMikroContext(app, async () => {
-    const user = await app.mikro.user.findOneOrFail({ id: userId });
-    const passkey = app.mikro.userPasskey.create({
-      user,
-      credential_id: `test-credential-${crypto.randomUUID()}`,
-      public_key: 'test-public-key-base64url',
-      counter: 0,
-      device_type: 'multiDevice',
-      backed_up: true,
-      transports: ['internal'],
-      name,
-      aaguid: 'test-aaguid',
-    });
-    await app.mikro.em.persist(passkey).flush();
-    passkeyId = passkey.id;
-  });
-
-  return passkeyId;
-}
-
 describe('PATCH /api/v1/user/passkeys/:id', () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        users: [TEST_USER_CONFIG],
+        basic_authentication_methods: {
+          passkey: {
+            enabled: true,
+            email_verification: true,
+          },
+        },
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  /**
+   * Helper to create a DB user with session
+   */
+  async function createDbUserWithSession(
+    email: string,
+    password: string,
+  ): Promise<{ sessionCookie: string; userId: string }> {
+    await withMikroContext(app, async () => {
+      const user = app.mikro.user.create({
+        email,
+        password_hash: password,
+      });
+      user.email_verified = true;
+      await app.mikro.em.persist(user).flush();
+    });
+
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: { email, password },
+    });
+
+    expect(loginRes.statusCode).toBe(200);
+
+    const sessionCookie = extractCookie(loginRes, 'session');
+    const userId = loginRes.json().user.id;
+
+    return { sessionCookie, userId };
+  }
+
   test('should return 401 when not authenticated', async () => {
     const res = await app.inject({
       method: 'PATCH',
@@ -123,7 +106,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       password,
     );
 
-    const passkeyId = await createPasskeyForUser(userId, 'Old Name');
+    const passkeyId = await createPasskeyForUser(app, userId, 'Old Name');
 
     const res = await injectWithSession(
       app,
@@ -155,7 +138,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       password,
     );
 
-    const passkeyId = await createPasskeyForUser(userId, null);
+    const passkeyId = await createPasskeyForUser(app, userId, null);
 
     const res = await injectWithSession(
       app,
@@ -187,7 +170,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       password,
     );
 
-    const passkeyId = await createPasskeyForUser(userId, 'Original Name');
+    const passkeyId = await createPasskeyForUser(app, userId, 'Original Name');
 
     const res = await injectWithSession(
       app,
@@ -211,7 +194,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       password,
     );
 
-    const passkeyId = await createPasskeyForUser(userId, 'Original Name');
+    const passkeyId = await createPasskeyForUser(app, userId, 'Original Name');
 
     // Create a name longer than 100 characters
     const longName = 'a'.repeat(101);
@@ -238,7 +221,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       password,
     );
 
-    const passkeyId = await createPasskeyForUser(userId, 'Original Name');
+    const passkeyId = await createPasskeyForUser(app, userId, 'Original Name');
 
     // Create a name exactly 100 characters
     const maxName = 'a'.repeat(100);
@@ -275,7 +258,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
     const { userId: userId2 } = await createDbUserWithSession(email2, password);
 
     // Create passkey for user2
-    const passkeyId = await createPasskeyForUser(userId2, 'User2 Passkey');
+    const passkeyId = await createPasskeyForUser(app, userId2, 'User2 Passkey');
 
     // User1 tries to rename user2's passkey
     const res = await injectWithSession(
@@ -308,7 +291,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       password,
     );
 
-    const passkeyId = await createPasskeyForUser(userId, 'Original Name');
+    const passkeyId = await createPasskeyForUser(app, userId, 'Original Name');
 
     const res = await injectWithSession(
       app,
@@ -351,7 +334,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       password,
     );
 
-    const passkeyId = await createPasskeyForUser(userId, 'Original');
+    const passkeyId = await createPasskeyForUser(app, userId, 'Original');
 
     const specialName = "My iPhone 📱 - John's Device (2024)";
 
@@ -384,7 +367,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       password,
     );
 
-    const passkeyId = await createPasskeyForUser(userId, 'Original');
+    const passkeyId = await createPasskeyForUser(app, userId, 'Original');
 
     // Whitespace-only name should be accepted as the schema doesn't
     // explicitly trim
@@ -418,7 +401,11 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
     const userId = sessionRes.json().user.id;
 
     // Create passkey for config user
-    const passkeyId = await createPasskeyForUser(userId, 'Config User Passkey');
+    const passkeyId = await createPasskeyForUser(
+      app,
+      userId,
+      'Config User Passkey',
+    );
 
     const res = await injectWithSession(
       app,
@@ -437,15 +424,25 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 });
 
 describe('PATCH /api/v1/user/passkeys/:id - Passkey disabled', () => {
-  const appDisabled = setupTestServer({
-    config: deepMerge(DEFAULT_TEST_CONFIG, {
-      basic_authentication_methods: {
-        passkey: {
-          enabled: false,
-          email_verification: true,
+  let appDisabled: FastifyInstance;
+
+  beforeAll(async () => {
+    appDisabled = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        users: [TEST_USER_CONFIG],
+        basic_authentication_methods: {
+          passkey: {
+            enabled: false,
+            email_verification: true,
+          },
         },
       },
-    }),
+    });
+  });
+
+  afterAll(async () => {
+    await appDisabled.close();
   });
 
   test('should return 404 when passkey is disabled in config (route not registered)', async () => {

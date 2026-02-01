@@ -1,17 +1,30 @@
-import { describe, expect, test } from 'vitest';
-import type { AppConfigInput } from '@/lib/config/index.js';
-import { deepMerge } from '@/lib/config/index.js';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
 import {
   createDbUserWithSession,
-  DEFAULT_TEST_CONFIG,
   generateUniqueEmail,
-  setupTestServer,
+  MINIMAL_TEST_CONFIG,
+  TEST_TERMS_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
 
 describe('GET /api/v1/terms', () => {
   describe('Unauthenticated access', () => {
-    const app = setupTestServer();
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [...TEST_TERMS_CONFIG],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
 
     test('should return terms list without authentication', async () => {
       const res = await app.inject({
@@ -86,7 +99,20 @@ describe('GET /api/v1/terms', () => {
   });
 
   describe('Language support', () => {
-    const app = setupTestServer();
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [...TEST_TERMS_CONFIG],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
 
     test('should return Korean content with lang=ko', async () => {
       const res = await app.inject({
@@ -143,7 +169,20 @@ describe('GET /api/v1/terms', () => {
   });
 
   describe('Authenticated access', () => {
-    const app = setupTestServer();
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [...TEST_TERMS_CONFIG],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
 
     test('should return empty pendingTerms after user consents', async () => {
       const email = generateUniqueEmail('terms-test');
@@ -281,7 +320,20 @@ describe('GET /api/v1/terms', () => {
 
   describe('Consent mode', () => {
     describe('explicit mode (default)', () => {
-      const app = setupTestServer();
+      let app: FastifyInstance;
+
+      beforeAll(async () => {
+        app = await createServer({
+          config: {
+            ...MINIMAL_TEST_CONFIG,
+            terms: [...TEST_TERMS_CONFIG],
+          },
+        });
+      });
+
+      afterAll(async () => {
+        await app.close();
+      });
 
       test('should return explicit consent mode', async () => {
         const res = await app.inject({
@@ -297,30 +349,40 @@ describe('GET /api/v1/terms', () => {
     });
 
     describe('implicit mode', () => {
-      const app = setupTestServer({
-        config: deepMerge(DEFAULT_TEST_CONFIG, {
-          app: {
-            signup_implicit_terms: {
-              ko: '가입하시면 약관에 동의하는 것입니다.',
-              en: 'By signing up you agree to our terms.',
-            },
-          },
-          terms: [
-            {
-              id: 'tos',
-              required: true,
-              consent_mode: 'implicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Terms',
-                  type: 'link',
-                  content: 'https://example.com/terms',
-                },
+      let app: FastifyInstance;
+
+      beforeAll(async () => {
+        app = await createServer({
+          config: {
+            ...MINIMAL_TEST_CONFIG,
+            app: {
+              ...MINIMAL_TEST_CONFIG.app,
+              signup_implicit_terms: {
+                ko: '가입하시면 약관에 동의하는 것입니다.',
+                en: 'By signing up you agree to our terms.',
               },
             },
-          ],
-        }),
+            terms: [
+              {
+                id: 'tos',
+                required: true,
+                consent_mode: 'implicit',
+                version: '1.0.0',
+                content: {
+                  en: {
+                    title: 'Terms',
+                    type: 'link',
+                    content: 'https://example.com/terms',
+                  },
+                },
+              },
+            ],
+          },
+        });
+      });
+
+      afterAll(async () => {
+        await app.close();
       });
 
       test('should return implicit consent mode on term', async () => {
@@ -338,50 +400,59 @@ describe('GET /api/v1/terms', () => {
   });
 
   describe('Term flags', () => {
-    const app = setupTestServer({
-      config: deepMerge(DEFAULT_TEST_CONFIG, {
-        terms: [
-          {
-            id: 'tos',
-            required: true,
-            consent_mode: 'explicit',
-            version: '1.0.0',
-            content: {
-              en: {
-                title: 'Terms',
-                type: 'link',
-                content: 'https://example.com/terms',
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [
+            {
+              id: 'tos',
+              required: true,
+              consent_mode: 'explicit',
+              version: '1.0.0',
+              content: {
+                en: {
+                  title: 'Terms',
+                  type: 'link',
+                  content: 'https://example.com/terms',
+                },
               },
             },
-          },
-          {
-            id: 'privacy',
-            required: true,
-            consent_mode: 'explicit',
-            version: '1.0.0',
-            content: {
-              en: {
-                title: 'Privacy',
-                type: 'link',
-                content: 'https://example.com/privacy',
+            {
+              id: 'privacy',
+              required: true,
+              consent_mode: 'explicit',
+              version: '1.0.0',
+              content: {
+                en: {
+                  title: 'Privacy',
+                  type: 'link',
+                  content: 'https://example.com/privacy',
+                },
               },
             },
-          },
-          {
-            id: 'marketing',
-            required: false,
-            consent_mode: 'explicit',
-            version: '1.0.0',
-            content: {
-              en: {
-                title: 'Marketing',
-                type: 'text',
-                content: 'Receive marketing emails',
+            {
+              id: 'marketing',
+              required: false,
+              consent_mode: 'explicit',
+              version: '1.0.0',
+              content: {
+                en: {
+                  title: 'Marketing',
+                  type: 'text',
+                  content: 'Receive marketing emails',
+                },
               },
             },
-          },
-        ],
-      }) as AppConfigInput,
+          ],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
     });
 
     test('should correctly flag required vs optional terms', async () => {
@@ -435,37 +506,46 @@ describe('GET /api/v1/terms', () => {
   });
 
   describe('Term content', () => {
-    const app = setupTestServer({
-      config: deepMerge(DEFAULT_TEST_CONFIG, {
-        terms: [
-          {
-            id: 'with-link',
-            required: true,
-            consent_mode: 'explicit',
-            version: '1.0.0',
-            content: {
-              en: {
-                title: 'Terms with Link',
-                type: 'link',
-                content: 'https://example.com/terms',
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [
+            {
+              id: 'with-link',
+              required: true,
+              consent_mode: 'explicit',
+              version: '1.0.0',
+              content: {
+                en: {
+                  title: 'Terms with Link',
+                  type: 'link',
+                  content: 'https://example.com/terms',
+                },
               },
             },
-          },
-          {
-            id: 'with-text',
-            required: true,
-            consent_mode: 'explicit',
-            version: '1.0.0',
-            content: {
-              en: {
-                title: 'Terms with Text',
-                type: 'text',
-                content: 'This is the full terms content inline.',
+            {
+              id: 'with-text',
+              required: true,
+              consent_mode: 'explicit',
+              version: '1.0.0',
+              content: {
+                en: {
+                  title: 'Terms with Text',
+                  type: 'text',
+                  content: 'This is the full terms content inline.',
+                },
               },
             },
-          },
-        ],
-      }) as AppConfigInput,
+          ],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
     });
 
     test('should return link type with URL content', async () => {
@@ -507,10 +587,19 @@ describe('GET /api/v1/terms', () => {
 
   describe('Edge cases', () => {
     describe('empty terms config', () => {
-      const app = setupTestServer({
-        config: deepMerge(DEFAULT_TEST_CONFIG, {
-          terms: [], // No terms
-        }),
+      let app: FastifyInstance;
+
+      beforeAll(async () => {
+        app = await createServer({
+          config: {
+            ...MINIMAL_TEST_CONFIG,
+            terms: [],
+          },
+        });
+      });
+
+      afterAll(async () => {
+        await app.close();
       });
 
       test('should return empty terms array', async () => {
@@ -528,7 +617,20 @@ describe('GET /api/v1/terms', () => {
     });
 
     describe('invalid session handling', () => {
-      const app = setupTestServer();
+      let app: FastifyInstance;
+
+      beforeAll(async () => {
+        app = await createServer({
+          config: {
+            ...MINIMAL_TEST_CONFIG,
+            terms: [...TEST_TERMS_CONFIG],
+          },
+        });
+      });
+
+      afterAll(async () => {
+        await app.close();
+      });
 
       test('should handle invalid session gracefully', async () => {
         const res = await app.inject({
@@ -549,7 +651,20 @@ describe('GET /api/v1/terms', () => {
   });
 
   describe('Multiple consents history', () => {
-    const app = setupTestServer();
+    let app: FastifyInstance;
+
+    beforeAll(async () => {
+      app = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          terms: [...TEST_TERMS_CONFIG],
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
 
     test('should return latest consent when multiple exist', async () => {
       const email = generateUniqueEmail('terms-multi');

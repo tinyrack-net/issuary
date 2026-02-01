@@ -1,7 +1,26 @@
-import { describe, expect, test } from 'vitest';
-import { setupTestServer } from '@/test-utils/index.js';
+import type { FastifyInstance } from 'fastify';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
+import {
+  MINIMAL_TEST_CONFIG,
+  TEST_USER,
+  TEST_USER_CONFIG,
+} from '@/test-utils/index.js';
 
-const app = setupTestServer();
+let app: FastifyInstance;
+
+beforeAll(async () => {
+  app = await createServer({
+    config: {
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+    },
+  });
+});
+
+afterAll(async () => {
+  await app.close();
+});
 
 describe('POST /api/v1/auth/logout', () => {
   test('should logout successfully with valid session', async () => {
@@ -10,8 +29,8 @@ describe('POST /api/v1/auth/logout', () => {
       method: 'post',
       url: '/api/v1/auth/login',
       payload: {
-        email: 'test-config-user@example.com',
-        password: 'changemelater',
+        email: TEST_USER.email,
+        password: TEST_USER.password,
       },
     });
 
@@ -77,8 +96,8 @@ describe('POST /api/v1/auth/logout', () => {
       method: 'post',
       url: '/api/v1/auth/login',
       payload: {
-        email: 'test-config-user@example.com',
-        password: 'changemelater',
+        email: TEST_USER.email,
+        password: TEST_USER.password,
       },
     });
 
@@ -141,8 +160,8 @@ describe('POST /api/v1/auth/logout', () => {
       method: 'post',
       url: '/api/v1/auth/login',
       payload: {
-        email: 'test-config-user@example.com',
-        password: 'changemelater',
+        email: TEST_USER.email,
+        password: TEST_USER.password,
       },
     });
 
