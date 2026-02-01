@@ -206,69 +206,35 @@ account_deletion:
 # -----------------------------------------------------------------------------
 # Scheduler Configuration
 # -----------------------------------------------------------------------------
-# Controls the in-process job scheduler for automated maintenance tasks.
-# The scheduler handles tasks like JWT key rotation, token cleanup, and more.
+# Controls the in-process scheduler for automated cleanup tasks.
 #
 # Deployment options:
-#   1. Single Container (default): Set enabled: true
-#      The scheduler runs inside the application process.
+#   1. Single Container (default): Keep enabled: true
+#      The scheduler runs cleanup tasks automatically on a cron schedule.
 #
 #   2. Kubernetes CronJob: Set enabled: false
-#      Use external K8s CronJobs to run jobs via CLI:
-#      $ tinyauth job rotate-jwt-keys
-#      $ tinyauth job cleanup-expired-tokens
+#      Use external K8s CronJobs to run cleanup via CLI:
+#      $ tinyauth cleanup
 #
-# Available CLI commands:
-#   tinyauth job --list           List all available jobs
-#   tinyauth job <job-name>       Run a specific job once
+# The scheduler runs all cleanup tasks (revoked tokens, OAuth codes,
+# email verifications, password resets, deleted users, JWT key rotation)
+# on a single cron schedule. Individual tasks can be disabled in the
+# 'cleanup' section below.
 # -----------------------------------------------------------------------------
 scheduler:
-  # enabled: Whether the in-process scheduler is active.
+  # enabled: Whether the in-process cleanup scheduler is active.
   # Set to false when using external schedulers (Kubernetes CronJob, etc.)
   # Default: true
   enabled: true
 
-  # jobs: Configuration for individual scheduled jobs.
-  # Each job can be enabled/disabled and have its schedule customized.
-  # Cron expressions use standard 5-field format: minute hour day month weekday
-  jobs:
-    # --------------------------------------------------------------------------
-    # JWT Key Rotation
-    # --------------------------------------------------------------------------
-    # Rotates expired JWT signing keys to maintain security.
-    # Keys follow lifecycle: next -> active -> previous -> retired
-    # Rotation is also controlled by app.jwt_key_rotation_enabled
-    rotate_jwt_keys:
-      enabled: true
-      cron: "0 0 * * *"  # Daily at midnight
-
-    # --------------------------------------------------------------------------
-    # Expired Token Cleanup
-    # --------------------------------------------------------------------------
-    # Removes expired entries from the revoked_tokens table.
-    # Keeps the database clean and improves token validation performance.
-    cleanup_expired_tokens:
-      enabled: true
-      cron: "0 */6 * * *"  # Every 6 hours
-
-    # --------------------------------------------------------------------------
-    # Session Cleanup
-    # --------------------------------------------------------------------------
-    # Removes expired OAuth authorization codes and consumed codes.
-    # Authorization codes have short lifetimes (typically 10 minutes).
-    cleanup_sessions:
-      enabled: true
-      cron: "0 1 * * *"  # Daily at 1 AM
-
-    # --------------------------------------------------------------------------
-    # Deleted User Cleanup
-    # --------------------------------------------------------------------------
-    # Permanently removes users who requested account deletion
-    # after the retention period (configured in account_deletion.retention_period).
-    # Only runs when account_deletion.enabled is true.
-    cleanup_deleted_users:
-      enabled: true
-      cron: "0 2 * * 0"  # Weekly on Sunday at 2 AM
+  # cleanup_cron: Cron schedule for running all cleanup tasks.
+  # Uses standard 5-field format: minute hour day month weekday
+  # Examples:
+  #   "0 2 * * *"    - Daily at 2 AM (default)
+  #   "0 */6 * * *"  - Every 6 hours
+  #   "0 0 * * 0"    - Weekly on Sunday at midnight
+  # Default: "0 2 * * *"
+  cleanup_cron: "0 2 * * *"
 
 # -----------------------------------------------------------------------------
 # Terms of Service Configuration
