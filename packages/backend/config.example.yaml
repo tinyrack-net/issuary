@@ -4,8 +4,17 @@
 # This file contains all available configuration options with detailed explanations.
 # Copy this file to config.yaml and modify according to your needs.
 #
-# Environment variables can be referenced using the !env tag:
-#   password: !env MY_SECRET_PASSWORD
+# Environment Variable Syntax:
+#   $VAR              - Simple syntax, replaced with env value (empty if unset)
+#   ${VAR}            - Brace syntax, allows concatenation: ${VAR}suffix
+#   ${VAR:-default}   - Default value when VAR is not set
+#   ${VAR:-"default"} - Quoted default (preserves spaces)
+#
+# Examples:
+#   password: $DATABASE_PASSWORD
+#   host: ${DATABASE_HOST:-localhost}
+#   url: https://${HOST}:${PORT:-8080}/api
+#   path: $DATA_DIR/auth.db
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -37,7 +46,7 @@ app:
   # IMPORTANT: Generate a unique, random value for production environments.
   # You can generate one using: openssl rand -hex 32
   # WARNING: Changing this value will invalidate all existing sessions.
-  cookie_secret: !env COOKIE_SECRET
+  cookie_secret: $COOKIE_SECRET
 
   # jwt_access_token_ttl: Time-to-live for JWT access tokens in seconds.
   # Access tokens are short-lived and used for API authentication.
@@ -200,7 +209,7 @@ admin:
   # port: Port number for the admin panel.
   # Can be the same as the main app port or a different port for isolation.
   # Using a separate port allows you to restrict admin access at the network level.
-  port: !env ADMIN_PORT
+  port: ${ADMIN_PORT:-8081}
 
 # -----------------------------------------------------------------------------
 # Scheduler Configuration
@@ -339,19 +348,19 @@ database:
   #
   # type: postgres
   # host: Database server hostname or IP address
-  # host: !env DATABASE_HOST
+  # host: ${DATABASE_HOST:-localhost}
   #
   # port: Database server port (default: 5432)
-  # port: !env DATABASE_PORT
+  # port: ${DATABASE_PORT:-5432}
   #
   # name: Database name
-  # name: !env DATABASE_NAME
+  # name: $DATABASE_NAME
   #
   # user: Database user for authentication
-  # user: !env DATABASE_USER
+  # user: $DATABASE_USER
   #
   # password: Database password
-  # password: !env DATABASE_PASSWORD
+  # password: $DATABASE_PASSWORD
 
 # -----------------------------------------------------------------------------
 # SMTP Configuration
@@ -377,11 +386,11 @@ smtp:
 
   # user: SMTP authentication username.
   # Usually your email address or API key.
-  user: !env SMTP_USER
+  user: $SMTP_USER
 
   # password: SMTP authentication password.
   # For services like Gmail, use an App Password instead of your account password.
-  password: !env SMTP_PASSWORD
+  password: $SMTP_PASSWORD
 
   # from: The "From" address for outgoing emails.
   # Can be just an email or "Name <email@example.com>" format.
@@ -489,8 +498,8 @@ identity_providers:
     type: github
     enabled: true
     display_name: GitHub
-    client_id: !env GITHUB_CLIENT_ID
-    client_secret: !env GITHUB_CLIENT_SECRET
+    client_id: $GITHUB_CLIENT_ID
+    client_secret: $GITHUB_CLIENT_SECRET
     email_conflict_strategy: auto_link
 
   # --------------------------------------------------------------------------
@@ -502,8 +511,8 @@ identity_providers:
   #   type: google
   #   enabled: true
   #   display_name: Google
-  #   client_id: !env GOOGLE_CLIENT_ID
-  #   client_secret: !env GOOGLE_CLIENT_SECRET
+  #   client_id: $GOOGLE_CLIENT_ID
+  #   client_secret: $GOOGLE_CLIENT_SECRET
   #   email_conflict_strategy: auto_link
 
   # --------------------------------------------------------------------------
@@ -516,8 +525,8 @@ identity_providers:
   #   type: generic_oauth
   #   enabled: true
   #   display_name: My Custom IDP
-  #   client_id: !env CUSTOM_CLIENT_ID
-  #   client_secret: !env CUSTOM_CLIENT_SECRET
+  #   client_id: $CUSTOM_CLIENT_ID
+  #   client_secret: $CUSTOM_CLIENT_SECRET
   #
   #   # OAuth endpoint URLs from your IdP
   #   authorization_url: https://idp.example.com/authorize
@@ -575,7 +584,7 @@ clients:
     name: My Backend Application
     logo_uri: https://example.com/logo.png
     client_id: my-backend-app-client-id
-    client_secret: !env MY_BACKEND_APP_CLIENT_SECRET
+    client_secret: $MY_BACKEND_APP_CLIENT_SECRET
     redirect_uris:
       - https://app.example.com/api/auth/callback
     response_types:
@@ -625,7 +634,7 @@ users:
   # Example: Admin user
   - id: admin-user
     email: admin@example.com
-    password: !env ADMIN_INITIAL_PASSWORD
+    password: $ADMIN_INITIAL_PASSWORD
     role: admin
 
   # Example: Test user (for development/testing)
