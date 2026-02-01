@@ -10,6 +10,7 @@ export const AppConfigAccountDeletion = z
   .object({
     enabled: z
       .boolean()
+      .optional()
       .default(false)
       .describe('Whether account deletion is enabled'),
   })

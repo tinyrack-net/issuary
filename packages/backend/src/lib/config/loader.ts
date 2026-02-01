@@ -5,6 +5,7 @@ import YAML from 'yaml';
 import { env } from '../env.js';
 import {
   type ExternalAppConfig,
+  type ExternalAppConfigInput,
   ExternalConfigSchema,
   type InternalAppConfig,
   InternalConfigSchema,
@@ -48,16 +49,23 @@ const resolveSmtpConfig = async (
 };
 
 /**
- * Transform ExternalAppConfig to InternalAppConfig.
- * This resolves test SMTP accounts and applies all defaults.
+ * Transform ExternalAppConfigInput to InternalAppConfig.
+ * This parses the input through the schema (applying defaults),
+ * resolves test SMTP accounts, and returns the fully resolved config.
  *
- * @param external - The external configuration (from config file or programmatic input)
+ * @param input - The external configuration input (with optional fields)
  * @returns The fully resolved internal configuration with all defaults applied
  */
 export async function resolveConfig(
-  external: ExternalAppConfig,
+  input: ExternalAppConfigInput,
 ): Promise<InternalAppConfig> {
+  // First parse through ExternalConfigSchema to apply all defaults
+  const external = ExternalConfigSchema.parse(input);
+
+  // Resolve SMTP config (handle test: true case)
   const smtpConfig = await resolveSmtpConfig(external.smtp);
+
+  // Parse through InternalConfigSchema for final validation
   return InternalConfigSchema.parse({
     ...external,
     smtp: smtpConfig,

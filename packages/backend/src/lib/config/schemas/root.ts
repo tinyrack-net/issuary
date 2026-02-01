@@ -12,30 +12,32 @@ import { AppConfigUser } from './user.js';
 
 export const ExternalConfigSchema = z.object({
   app: AppConfigApp,
-  admin: AppConfigAdmin.default({
+  admin: AppConfigAdmin.optional().default({
     enabled: false,
-  }).optional(),
-  database: AppConfigDatabase.default({
+  }),
+  database: AppConfigDatabase.optional().default({
     type: 'sqlite',
     path: 'test.db',
   }),
-  basic_authentication_methods: AppConfigBasicAuthenticationMethods.default({
-    password: {
-      enabled: true,
-      email_verification: true,
-      second_factor: {
-        required: false,
+  basic_authentication_methods:
+    AppConfigBasicAuthenticationMethods.optional().default({
+      password: {
+        enabled: true,
+        email_verification: true,
+        second_factor: {
+          required: false,
+        },
+        totp: {
+          enabled: false,
+        },
       },
-      totp: {
+      passkey: {
         enabled: false,
+        email_verification: true,
       },
-    },
-    passkey: {
-      enabled: false,
-      email_verification: true,
-    },
-  }),
-  oauth_authentication_methods: AppConfigOAuthAuthenticationMethods.default([]),
+    }),
+  oauth_authentication_methods:
+    AppConfigOAuthAuthenticationMethods.optional().default([]),
   smtp: z
     .discriminatedUnion('test', [
       AppConfigSmtp.extend({
@@ -46,52 +48,64 @@ export const ExternalConfigSchema = z.object({
       }),
     ])
     .optional(),
-  account_deletion: AppConfigAccountDeletion.default({
+  account_deletion: AppConfigAccountDeletion.optional().default({
     enabled: false,
   }),
-  cleanup: AppConfigCleanup.default(DEFAULT_CLEANUP_CONFIG),
-  terms: AppConfigTerms.default([]),
-  providers: z.array(AppConfigProvider).default([]),
-  users: z.array(AppConfigUser).default([]),
+  cleanup: AppConfigCleanup.optional().default(DEFAULT_CLEANUP_CONFIG),
+  terms: AppConfigTerms.optional().default([]),
+  providers: z.array(AppConfigProvider).optional().default([]),
+  users: z.array(AppConfigUser).optional().default([]),
 });
 
+/**
+ * Input type for ExternalConfigSchema - use this for function parameters.
+ * Fields with defaults are optional in this type.
+ */
+export type ExternalAppConfigInput = z.input<typeof ExternalConfigSchema>;
+
+/**
+ * Output type for ExternalConfigSchema - use this for parsed/resolved config.
+ * All fields are present after parsing (defaults applied).
+ */
 export type ExternalAppConfig = z.infer<typeof ExternalConfigSchema>;
 
 export const InternalConfigSchema = z.object({
   app: AppConfigApp,
-  admin: AppConfigAdmin.default({
+  admin: AppConfigAdmin.optional().default({
     enabled: false,
-  }).optional(),
-  database: AppConfigDatabase.default({
+  }),
+  database: AppConfigDatabase.optional().default({
     type: 'sqlite',
     path: 'test.db',
   }),
-  basic_authentication_methods: AppConfigBasicAuthenticationMethods.default({
-    password: {
-      enabled: true,
-      email_verification: true,
-      second_factor: {
-        required: false,
+  basic_authentication_methods:
+    AppConfigBasicAuthenticationMethods.optional().default({
+      password: {
+        enabled: true,
+        email_verification: true,
+        second_factor: {
+          required: false,
+        },
+        totp: {
+          enabled: false,
+          issuer: 'Tinyrack',
+        },
       },
-      totp: {
+      passkey: {
         enabled: false,
-        issuer: 'Tinyrack',
+        email_verification: true,
       },
-    },
-    passkey: {
-      enabled: false,
-      email_verification: true,
-    },
-  }),
-  oauth_authentication_methods: AppConfigOAuthAuthenticationMethods.default([]),
+    }),
+  oauth_authentication_methods:
+    AppConfigOAuthAuthenticationMethods.optional().default([]),
   smtp: AppConfigSmtp.optional(),
-  account_deletion: AppConfigAccountDeletion.default({
+  account_deletion: AppConfigAccountDeletion.optional().default({
     enabled: true,
   }),
-  cleanup: AppConfigCleanup.default(DEFAULT_CLEANUP_CONFIG),
-  terms: AppConfigTerms.default([]),
-  providers: z.array(AppConfigProvider).default([]),
-  users: z.array(AppConfigUser).default([]),
+  cleanup: AppConfigCleanup.optional().default(DEFAULT_CLEANUP_CONFIG),
+  terms: AppConfigTerms.optional().default([]),
+  providers: z.array(AppConfigProvider).optional().default([]),
+  users: z.array(AppConfigUser).optional().default([]),
 });
 
 export type InternalAppConfig = z.infer<typeof InternalConfigSchema>;

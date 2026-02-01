@@ -4,7 +4,7 @@ import fastifyAutoload from '@fastify/autoload';
 import Fastify from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
-  type ExternalAppConfig,
+  type ExternalAppConfigInput,
   type InternalAppConfig,
   resolveConfig,
 } from '@/lib/config/index.js';
@@ -26,8 +26,9 @@ export interface CreateServerOptions {
   /**
    * Application configuration in external format.
    * This will be resolved to internal format with all defaults applied.
+   * Only `app.cookie_secret` is required - all other fields have defaults.
    */
-  config: ExternalAppConfig;
+  config: ExternalAppConfigInput;
   /**
    * Skip listening on port (useful for CLI job execution).
    * When true, the server is initialized but does not bind to a port.

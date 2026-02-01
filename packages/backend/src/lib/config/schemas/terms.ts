@@ -43,10 +43,12 @@ const TermsItem = z
       .describe('Unique identifier for the term'),
     required: z
       .boolean()
+      .optional()
       .default(true)
       .describe('Whether agreement to this term is mandatory'),
     consent_mode: z
       .enum(['explicit', 'implicit'])
+      .optional()
       .default('explicit')
       .describe(
         'Consent mode for this term: ' +

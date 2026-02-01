@@ -42,7 +42,11 @@ export const AppTheme = z.enum([
 export type AppTheme = z.infer<typeof AppTheme>;
 
 export const AppConfigApp = z.object({
-  name: z.string().default('Tinyrack Auth').describe('Application name'),
+  name: z
+    .string()
+    .optional()
+    .default('Tinyrack Auth')
+    .describe('Application name'),
   host: z.string().optional().default('http://localhost:8080'),
   port: zz.PORT.optional().default(8080),
   cookie_secret: z.string().min(16),
@@ -70,6 +74,7 @@ export const AppConfigApp = z.object({
     .describe('Days to keep previous keys valid after rotation'),
   allowed_signup_emails: z
     .array(z.string())
+    .optional()
     .default([])
     .describe(
       'Email patterns allowed for signup. ' +
@@ -79,15 +84,27 @@ export const AppConfigApp = z.object({
     ),
   supported_languages: z
     .array(z.string())
+    .optional()
     .default(['en'])
     .describe('Supported languages'),
-  default_language: z.string().default('auto').describe('Default language'),
-  fallback_language: z.string().default('en').describe('Fallback language'),
+  default_language: z
+    .string()
+    .optional()
+    .default('auto')
+    .describe('Default language'),
+  fallback_language: z
+    .string()
+    .optional()
+    .default('en')
+    .describe('Fallback language'),
 
-  light_theme: AppTheme.default('light').describe('Light theme name'),
-  dark_theme: AppTheme.default('dark').describe('Dark theme name'),
+  light_theme: AppTheme.optional()
+    .default('light')
+    .describe('Light theme name'),
+  dark_theme: AppTheme.optional().default('dark').describe('Dark theme name'),
   theme_mode: z
     .enum(['light', 'dark', 'system'])
+    .optional()
     .default('system')
     .describe('Default theme mode'),
   background_url: z

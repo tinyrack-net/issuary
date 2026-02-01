@@ -8,11 +8,14 @@ export const CleanupRevokedTokensConfig = z
   .object({
     enabled: z
       .boolean()
+      .optional()
       .default(true)
       .describe('Enable revoked tokens cleanup'),
-    retention: DurationString.default('0').describe(
-      'How long to keep expired revoked tokens. "0" means delete immediately after expiry.',
-    ),
+    retention: DurationString.optional()
+      .default('0')
+      .describe(
+        'How long to keep expired revoked tokens. "0" means delete immediately after expiry.',
+      ),
   })
   .describe('Revoked tokens cleanup settings');
 
@@ -21,10 +24,16 @@ export const CleanupRevokedTokensConfig = z
  */
 export const CleanupOAuthCodesConfig = z
   .object({
-    enabled: z.boolean().default(true).describe('Enable OAuth codes cleanup'),
-    consumed_retention: DurationString.default('24h').describe(
-      'How long to keep consumed authorization codes for debugging/audit.',
-    ),
+    enabled: z
+      .boolean()
+      .optional()
+      .default(true)
+      .describe('Enable OAuth codes cleanup'),
+    consumed_retention: DurationString.optional()
+      .default('24h')
+      .describe(
+        'How long to keep consumed authorization codes for debugging/audit.',
+      ),
   })
   .describe('OAuth authorization codes cleanup settings');
 
@@ -35,11 +44,14 @@ export const CleanupEmailVerificationsConfig = z
   .object({
     enabled: z
       .boolean()
+      .optional()
       .default(true)
       .describe('Enable email verification tokens cleanup'),
-    retention: DurationString.default('0').describe(
-      'How long to keep expired email verification tokens. "0" means delete immediately after expiry.',
-    ),
+    retention: DurationString.optional()
+      .default('0')
+      .describe(
+        'How long to keep expired email verification tokens. "0" means delete immediately after expiry.',
+      ),
   })
   .describe('Email verification tokens cleanup settings');
 
@@ -50,11 +62,14 @@ export const CleanupPasswordResetsConfig = z
   .object({
     enabled: z
       .boolean()
+      .optional()
       .default(true)
       .describe('Enable password reset tokens cleanup'),
-    retention: DurationString.default('0').describe(
-      'How long to keep expired password reset tokens. "0" means delete immediately after expiry.',
-    ),
+    retention: DurationString.optional()
+      .default('0')
+      .describe(
+        'How long to keep expired password reset tokens. "0" means delete immediately after expiry.',
+      ),
   })
   .describe('Password reset tokens cleanup settings');
 
@@ -63,10 +78,16 @@ export const CleanupPasswordResetsConfig = z
  */
 export const CleanupDeletedUsersConfig = z
   .object({
-    enabled: z.boolean().default(true).describe('Enable deleted users cleanup'),
-    retention: DurationString.default('30d').describe(
-      'How long to retain soft-deleted users before permanent deletion.',
-    ),
+    enabled: z
+      .boolean()
+      .optional()
+      .default(true)
+      .describe('Enable deleted users cleanup'),
+    retention: DurationString.optional()
+      .default('30d')
+      .describe(
+        'How long to retain soft-deleted users before permanent deletion.',
+      ),
   })
   .describe('Deleted users cleanup settings');
 
@@ -75,7 +96,11 @@ export const CleanupDeletedUsersConfig = z
  */
 export const CleanupJwtKeysConfig = z
   .object({
-    enabled: z.boolean().default(true).describe('Enable JWT key rotation'),
+    enabled: z
+      .boolean()
+      .optional()
+      .default(true)
+      .describe('Enable JWT key rotation'),
   })
   .describe('JWT key rotation settings');
 
@@ -119,22 +144,24 @@ export const DEFAULT_CLEANUP_CONFIG = {
  */
 export const AppConfigCleanup = z
   .object({
-    revoked_tokens: CleanupRevokedTokensConfig.default(
+    revoked_tokens: CleanupRevokedTokensConfig.optional().default(
       DEFAULT_CLEANUP_CONFIG.revoked_tokens,
     ),
-    oauth_codes: CleanupOAuthCodesConfig.default(
+    oauth_codes: CleanupOAuthCodesConfig.optional().default(
       DEFAULT_CLEANUP_CONFIG.oauth_codes,
     ),
-    email_verifications: CleanupEmailVerificationsConfig.default(
+    email_verifications: CleanupEmailVerificationsConfig.optional().default(
       DEFAULT_CLEANUP_CONFIG.email_verifications,
     ),
-    password_resets: CleanupPasswordResetsConfig.default(
+    password_resets: CleanupPasswordResetsConfig.optional().default(
       DEFAULT_CLEANUP_CONFIG.password_resets,
     ),
-    deleted_users: CleanupDeletedUsersConfig.default(
+    deleted_users: CleanupDeletedUsersConfig.optional().default(
       DEFAULT_CLEANUP_CONFIG.deleted_users,
     ),
-    jwt_keys: CleanupJwtKeysConfig.default(DEFAULT_CLEANUP_CONFIG.jwt_keys),
+    jwt_keys: CleanupJwtKeysConfig.optional().default(
+      DEFAULT_CLEANUP_CONFIG.jwt_keys,
+    ),
   })
   .describe('Cleanup configuration for maintenance tasks');
 

@@ -59,6 +59,7 @@ export { AppConfigProvider } from './schemas/provider.js';
 // Root config schemas and types
 export {
   type ExternalAppConfig,
+  type ExternalAppConfigInput,
   ExternalConfigSchema,
   ExternalConfigSchema as ConfigSchema,
   type InternalAppConfig,
