@@ -24,7 +24,19 @@ import {
   createTestUser,
 } from '@/test-utils/cli.js';
 import { MINIMAL_TEST_CONFIG, withMikroContext } from '@/test-utils/index.js';
-import { cleanupTasks, runCleanup } from './index.js';
+import { runCleanup } from './index.js';
+
+/**
+ * Expected cleanup task names in execution order
+ */
+const EXPECTED_TASK_NAMES = [
+  'revoked-tokens',
+  'oauth-codes',
+  'email-verifications',
+  'password-resets',
+  'deleted-users',
+  'jwt-keys',
+];
 
 describe('runCleanup', () => {
   let app: FastifyInstance;
@@ -62,13 +74,13 @@ describe('runCleanup', () => {
     const summary = await runCleanup(app, { dryRun: false, verbose: false });
 
     // Verify all tasks were executed
-    expect(summary.tasks.length).toBe(cleanupTasks.length);
+    expect(summary.tasks.length).toBe(EXPECTED_TASK_NAMES.length);
 
-    // Verify task order matches registry order
-    for (let i = 0; i < cleanupTasks.length; i++) {
-      const expectedTask = cleanupTasks[i];
+    // Verify task order matches expected order
+    for (let i = 0; i < EXPECTED_TASK_NAMES.length; i++) {
+      const expectedName = EXPECTED_TASK_NAMES[i];
       const executedTask = summary.tasks[i];
-      expect(executedTask?.task.name).toBe(expectedTask?.name);
+      expect(executedTask?.name).toBe(expectedName);
     }
   });
 
@@ -166,7 +178,7 @@ describe('runCleanup', () => {
       });
 
       expect(summary.totalDeleted).toBe(0);
-      expect(summary.totalSkipped).toBe(cleanupTasks.length);
+      expect(summary.totalSkipped).toBe(EXPECTED_TASK_NAMES.length);
       expect(summary.totalFailed).toBe(0);
     } finally {
       await allDisabledApp.close();
@@ -234,13 +246,10 @@ describe('runCleanup', () => {
 
     for (const taskResult of summary.tasks) {
       // Each result should have required properties
-      expect(taskResult).toHaveProperty('task');
+      expect(taskResult).toHaveProperty('name');
+      expect(taskResult).toHaveProperty('description');
       expect(taskResult).toHaveProperty('result');
       expect(taskResult).toHaveProperty('durationMs');
-
-      // Task should have name and description
-      expect(taskResult.task).toHaveProperty('name');
-      expect(taskResult.task).toHaveProperty('description');
 
       // Result should have required properties
       expect(taskResult.result).toHaveProperty('deletedCount');
@@ -249,41 +258,45 @@ describe('runCleanup', () => {
   });
 });
 
-describe('cleanupTasks registry', () => {
-  test('should contain all expected tasks', () => {
-    const expectedTasks = [
-      'revoked-tokens',
-      'oauth-codes',
-      'email-verifications',
-      'password-resets',
-      'deleted-users',
-      'jwt-keys',
-    ];
+describe('cleanup tasks registry', () => {
+  let app: FastifyInstance;
 
-    expect(cleanupTasks.length).toBe(expectedTasks.length);
+  beforeAll(async () => {
+    app = await createServer({
+      config: CLI_TEST_CONFIG,
+      cliMode: true,
+      skipListen: true,
+    });
+  });
 
-    for (const expectedName of expectedTasks) {
-      const task = cleanupTasks.find((t) => t.name === expectedName);
+  afterAll(async () => {
+    await app.close();
+  });
+
+  test('should contain all expected tasks', async () => {
+    const summary = await runCleanup(app, { dryRun: true, verbose: false });
+
+    expect(summary.tasks.length).toBe(EXPECTED_TASK_NAMES.length);
+
+    for (const expectedName of EXPECTED_TASK_NAMES) {
+      const task = summary.tasks.find((t) => t.name === expectedName);
       expect(task).toBeDefined();
     }
   });
 
-  test('should have unique task names', () => {
-    const names = cleanupTasks.map((t) => t.name);
+  test('should have unique task names', async () => {
+    const summary = await runCleanup(app, { dryRun: true, verbose: false });
+    const names = summary.tasks.map((t) => t.name);
     const uniqueNames = new Set(names);
     expect(uniqueNames.size).toBe(names.length);
   });
 
-  test('should have descriptions for all tasks', () => {
-    for (const task of cleanupTasks) {
+  test('should have descriptions for all tasks', async () => {
+    const summary = await runCleanup(app, { dryRun: true, verbose: false });
+
+    for (const task of summary.tasks) {
       expect(task.description).toBeDefined();
       expect(task.description.length).toBeGreaterThan(0);
-    }
-  });
-
-  test('should have run functions for all tasks', () => {
-    for (const task of cleanupTasks) {
-      expect(typeof task.run).toBe('function');
     }
   });
 });

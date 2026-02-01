@@ -1,23 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { deletedUsersTask } from './deleted-users.js';
-import { emailVerificationsTask } from './email-verifications.js';
-import { jwtKeysTask } from './jwt-keys.js';
-import { oauthCodesTask } from './oauth-codes.js';
-import { passwordResetsTask } from './password-resets.js';
-import { revokedTokensTask } from './revoked-tokens.js';
-import type { CleanupResult, CleanupTask } from './types.js';
-
-/**
- * Registry of all cleanup tasks in execution order
- */
-export const cleanupTasks: CleanupTask[] = [
-  revokedTokensTask,
-  oauthCodesTask,
-  emailVerificationsTask,
-  passwordResetsTask,
-  deletedUsersTask,
-  jwtKeysTask,
-];
+import type { CleanupResult } from '@/services/types.js';
 
 /**
  * Options for running cleanup tasks
@@ -30,10 +12,23 @@ export interface CleanupOptions {
 }
 
 /**
+ * Cleanup task definition
+ */
+interface CleanupTask {
+  /** Unique task identifier (kebab-case) */
+  name: string;
+  /** Human-readable description */
+  description: string;
+  /** Execute the cleanup task */
+  run: () => Promise<CleanupResult>;
+}
+
+/**
  * Result of a single task execution
  */
 export interface TaskExecutionResult {
-  task: CleanupTask;
+  name: string;
+  description: string;
   result: CleanupResult;
   durationMs: number;
   error?: Error;
@@ -51,7 +46,54 @@ export interface CleanupSummary {
 }
 
 /**
- * Run all cleanup tasks
+ * Build cleanup tasks from services
+ */
+function buildCleanupTasks(
+  fastify: FastifyInstance,
+  dryRun: boolean,
+): CleanupTask[] {
+  return [
+    {
+      name: 'revoked-tokens',
+      description: 'Remove expired revoked tokens',
+      run: () => fastify.jwtService.cleanupRevokedTokens({ dryRun }),
+    },
+    {
+      name: 'oauth-codes',
+      description: 'Remove expired and consumed OAuth authorization codes',
+      run: () => fastify.oauthTokenService.cleanupExpiredCodes({ dryRun }),
+    },
+    {
+      name: 'email-verifications',
+      description: 'Remove expired email verification tokens',
+      run: () =>
+        fastify.emailVerificationService?.cleanupExpired({ dryRun }) ??
+        Promise.resolve({
+          deletedCount: 0,
+          skipped: true,
+          message: 'Service not available',
+        }),
+    },
+    {
+      name: 'password-resets',
+      description: 'Remove expired password reset tokens',
+      run: () => fastify.passwordResetService.cleanupExpired({ dryRun }),
+    },
+    {
+      name: 'deleted-users',
+      description: 'Permanently delete users after retention period',
+      run: () => fastify.userService.purgeDeletedUsers({ dryRun }),
+    },
+    {
+      name: 'jwt-keys',
+      description: 'Rotate expired JWT signing keys',
+      run: () => fastify.jwtKeyService.rotateExpiredKeys({ dryRun }),
+    },
+  ];
+}
+
+/**
+ * Run all cleanup tasks via their respective services.
  *
  * @param fastify - Fastify instance with all services
  * @param options - Cleanup options (dryRun, verbose)
@@ -64,24 +106,24 @@ export async function runCleanup(
   const results: TaskExecutionResult[] = [];
   const startTime = Date.now();
 
-  for (const task of cleanupTasks) {
+  const tasks = buildCleanupTasks(fastify, options.dryRun);
+
+  for (const task of tasks) {
     const taskStart = Date.now();
 
     try {
-      const result = await task.run({
-        fastify,
-        dryRun: options.dryRun,
-        verbose: options.verbose,
-      });
+      const result = await task.run();
 
       results.push({
-        task,
+        name: task.name,
+        description: task.description,
         result,
         durationMs: Date.now() - taskStart,
       });
     } catch (error) {
       results.push({
-        task,
+        name: task.name,
+        description: task.description,
         result: {
           deletedCount: 0,
           skipped: false,
@@ -112,4 +154,4 @@ export async function runCleanup(
   };
 }
 
-export type { CleanupContext, CleanupResult, CleanupTask } from './types.js';
+export type { CleanupResult } from '@/services/types.js';
