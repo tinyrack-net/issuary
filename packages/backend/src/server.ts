@@ -82,6 +82,9 @@ export async function createServer(options: CreateServerOptions) {
       ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
     });
 
+    // Start scheduler after services are loaded (if enabled)
+    appInstance.scheduler.start();
+
     // Routes (skip in CLI mode)
     if (!cliMode) {
       await appInstance.register(fastifyAutoload, {
