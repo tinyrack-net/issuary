@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'vitest';
-import type { DeepPartial, InternalAppConfig } from '@/lib/config/index.js';
+import { deepMerge } from '@/lib/config/index.js';
 import { e } from '@/schemas/error.js';
 import {
   createAuthenticatedSession,
   createDbUserWithSession,
+  DEFAULT_TEST_CONFIG,
   expectError,
   generateUniqueEmail,
   setupTestServer,
@@ -268,7 +269,7 @@ describe('POST /api/v1/terms/consent', () => {
 
   describe('Optional terms', () => {
     const app = setupTestServer({
-      configOverrides: {
+      config: deepMerge(DEFAULT_TEST_CONFIG, {
         terms: [
           {
             id: 'tos',
@@ -297,7 +298,7 @@ describe('POST /api/v1/terms/consent', () => {
             },
           },
         ],
-      } as DeepPartial<InternalAppConfig>,
+      }),
     });
 
     test('should allow not agreeing to optional terms', async () => {
@@ -566,7 +567,7 @@ describe('POST /api/v1/terms/consent', () => {
   describe('Consent mode affects consentType field', () => {
     describe('explicit consent_mode term', () => {
       const app = setupTestServer({
-        configOverrides: {
+        config: deepMerge(DEFAULT_TEST_CONFIG, {
           terms: [
             {
               id: 'tos',
@@ -582,7 +583,7 @@ describe('POST /api/v1/terms/consent', () => {
               },
             },
           ],
-        } as DeepPartial<InternalAppConfig>,
+        }),
       });
 
       test('should record consentType as explicit', async () => {
@@ -614,7 +615,7 @@ describe('POST /api/v1/terms/consent', () => {
 
     describe('implicit consent_mode term', () => {
       const app = setupTestServer({
-        configOverrides: {
+        config: deepMerge(DEFAULT_TEST_CONFIG, {
           terms: [
             {
               id: 'tos',
@@ -630,7 +631,7 @@ describe('POST /api/v1/terms/consent', () => {
               },
             },
           ],
-        } as DeepPartial<InternalAppConfig>,
+        }),
       });
 
       test('should record consentType as implicit', async () => {
@@ -796,9 +797,9 @@ describe('POST /api/v1/terms/consent', () => {
 
   describe('Empty terms configuration', () => {
     const app = setupTestServer({
-      configOverrides: {
+      config: deepMerge(DEFAULT_TEST_CONFIG, {
         terms: [], // No terms
-      } as DeepPartial<InternalAppConfig>,
+      }),
     });
 
     test('should succeed with empty consents when no terms configured', async () => {

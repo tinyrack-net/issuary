@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest';
-import type { DeepPartial, InternalAppConfig } from '@/lib/config/index.js';
+import type { InternalAppConfig } from '@/lib/config/index.js';
+import { deepMerge } from '@/lib/config/index.js';
 import {
   createDbUserWithSession,
+  DEFAULT_TEST_CONFIG,
   generateUniqueEmail,
   setupTestServer,
   withMikroContext,
@@ -296,7 +298,7 @@ describe('GET /api/v1/terms', () => {
 
     describe('implicit mode', () => {
       const app = setupTestServer({
-        configOverrides: {
+        config: deepMerge(DEFAULT_TEST_CONFIG, {
           app: {
             signup_implicit_terms: {
               ko: '가입하시면 약관에 동의하는 것입니다.',
@@ -318,7 +320,7 @@ describe('GET /api/v1/terms', () => {
               },
             },
           ],
-        } as DeepPartial<InternalAppConfig>,
+        }),
       });
 
       test('should return implicit consent mode on term', async () => {
@@ -337,7 +339,7 @@ describe('GET /api/v1/terms', () => {
 
   describe('Term flags', () => {
     const app = setupTestServer({
-      configOverrides: {
+      config: deepMerge(DEFAULT_TEST_CONFIG, {
         terms: [
           {
             id: 'tos',
@@ -379,7 +381,7 @@ describe('GET /api/v1/terms', () => {
             },
           },
         ],
-      } as Partial<InternalAppConfig>,
+      }) as InternalAppConfig,
     });
 
     test('should correctly flag required vs optional terms', async () => {
@@ -434,7 +436,7 @@ describe('GET /api/v1/terms', () => {
 
   describe('Term content', () => {
     const app = setupTestServer({
-      configOverrides: {
+      config: deepMerge(DEFAULT_TEST_CONFIG, {
         terms: [
           {
             id: 'with-link',
@@ -463,7 +465,7 @@ describe('GET /api/v1/terms', () => {
             },
           },
         ],
-      } as Partial<InternalAppConfig>,
+      }) as InternalAppConfig,
     });
 
     test('should return link type with URL content', async () => {
@@ -506,9 +508,9 @@ describe('GET /api/v1/terms', () => {
   describe('Edge cases', () => {
     describe('empty terms config', () => {
       const app = setupTestServer({
-        configOverrides: {
+        config: deepMerge(DEFAULT_TEST_CONFIG, {
           terms: [], // No terms
-        } as DeepPartial<InternalAppConfig>,
+        }),
       });
 
       test('should return empty terms array', async () => {
