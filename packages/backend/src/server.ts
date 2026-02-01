@@ -4,8 +4,8 @@ import fastifyAutoload from '@fastify/autoload';
 import Fastify from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
-  type ExternalAppConfigInput,
-  type InternalAppConfig,
+  type AppConfigInput,
+  type ResolvedAppConfig,
   resolveConfig,
 } from '@/lib/config/index.js';
 import { env } from '@/lib/env.js';
@@ -16,7 +16,7 @@ const __dirname = path.resolve(path.dirname(__filename));
 
 declare module 'fastify' {
   interface FastifyInstance {
-    config: InternalAppConfig;
+    config: ResolvedAppConfig;
   }
 }
 
@@ -28,7 +28,7 @@ export interface CreateServerOptions {
    * This will be resolved to internal format with all defaults applied.
    * Only `app.cookie_secret` is required - all other fields have defaults.
    */
-  config: ExternalAppConfigInput;
+  config: AppConfigInput;
   /**
    * Skip listening on port (useful for CLI job execution).
    * When true, the server is initialized but does not bind to a port.
