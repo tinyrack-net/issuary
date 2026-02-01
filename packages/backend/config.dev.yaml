@@ -60,36 +60,34 @@ admin:
 account_deletion:
   enabled: true
 
+# Scheduler configuration
+# Controls the in-process scheduler for automated cleanup tasks.
+#
+# Deployment options:
+#   1. Single Container (default): Keep enabled: true
+#      The scheduler runs cleanup tasks automatically on a cron schedule.
+#
+#   2. Kubernetes CronJob: Set enabled: false
+#      Use external K8s CronJobs to run cleanup via CLI:
+#      $ tinyauth cleanup
+scheduler:
+  enabled: true
+  cleanup_cron: "0 2 * * *" # Daily at 2 AM
+
 # Cleanup configuration
 # Controls the retention periods for various entities.
-# Run `tinyauth cleanup` as a Kubernetes CronJob for maintenance.
-#
-# Example Kubernetes CronJob:
-#   apiVersion: batch/v1
-#   kind: CronJob
-#   metadata:
-#     name: tinyauth-cleanup
-#   spec:
-#     schedule: "0 2 * * *"  # Daily at 2 AM
-#     jobTemplate:
-#       spec:
-#         template:
-#           spec:
-#             containers:
-#             - name: tinyauth
-#               image: tinyauth:latest
-#               command: ["tinyauth", "cleanup"]
-#             restartPolicy: OnFailure
+# Cleanup tasks are run automatically by the scheduler (if enabled)
+# or manually via `tinyauth cleanup` CLI command.
 cleanup:
   # Revoked tokens (already expired, safe to delete immediately)
   revoked_tokens:
     enabled: true
-    retention: "0"  # 0 = immediate after expiry
+    retention: "0" # 0 = immediate after expiry
 
   # OAuth authorization codes
   oauth_codes:
     enabled: true
-    consumed_retention: "24h"  # Keep consumed codes for debugging
+    consumed_retention: "24h" # Keep consumed codes for debugging
 
   # Email verification tokens
   email_verifications:
@@ -104,7 +102,7 @@ cleanup:
   # Soft-deleted users (permanent deletion)
   deleted_users:
     enabled: true
-    retention: "30d"  # Retention period before permanent deletion
+    retention: "30d" # Retention period before permanent deletion
 
   # JWT signing key rotation
   jwt_keys:
