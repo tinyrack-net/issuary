@@ -198,8 +198,7 @@ export class UserService {
     if (userLike.managed_by === 'config') {
       return false;
     }
-    return this.config.basic_authentication_methods.password.second_factor
-      .required;
+    return this.config.auth.password.second_factor.required;
   }
 
   public async userRegistered2FAMethods(
@@ -226,10 +225,10 @@ export class UserService {
    */
   public getAvailable2FASetupMethods(): ('totp' | 'passkey')[] {
     const methods: ('totp' | 'passkey')[] = [];
-    if (this.config.basic_authentication_methods.password.totp.enabled) {
+    if (this.config.auth.password.totp.enabled) {
       methods.push('totp');
     }
-    if (this.config.basic_authentication_methods.passkey.enabled) {
+    if (this.config.auth.passkey.enabled) {
       methods.push('passkey');
     }
     return methods;
@@ -259,7 +258,7 @@ export class UserService {
     }
 
     // Check if account deletion feature is enabled
-    if (!this.config.account_deletion.enabled) {
+    if (!this.config.app.account_deletion) {
       return {
         deletedCount: 0,
         skipped: true,

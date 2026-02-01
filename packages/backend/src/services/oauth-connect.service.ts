@@ -13,7 +13,7 @@ import type { oauthConnectSchema } from '@/schemas/oauth-connect.js';
 import type { TermsService } from './terms.service.js';
 import type { UserService } from './user.service.js';
 
-// Note: This service uses fastify.config for oauth_authentication_methods (OAuth providers config)
+// Note: This service uses fastify.config for identity_providers (OAuth providers config)
 // but user-related config lookups have been removed since users are now synced to DB.
 
 declare module 'fastify' {
@@ -44,7 +44,7 @@ export class OAuthConnectService {
       icon_url?: string | undefined;
     }> = [];
 
-    for (const config of this.config.oauth_authentication_methods) {
+    for (const config of this.config.identity_providers) {
       if (config.enabled) {
         const resolved = resolveOAuthConfig(config);
         providers.push({
@@ -62,9 +62,7 @@ export class OAuthConnectService {
    * Get OAuth provider config by id
    */
   public getProvider(id: string): ResolvedOAuthConfig {
-    const config = this.config.oauth_authentication_methods.find(
-      (c) => c.id === id,
-    );
+    const config = this.config.identity_providers.find((c) => c.id === id);
 
     if (!config || !config.enabled) {
       throw new e.OAuthProviderNotFound.Error();
@@ -256,8 +254,7 @@ export class OAuthConnectService {
       const secondFactorRequired =
         user.managed_by === 'config'
           ? false
-          : this.config.basic_authentication_methods.password.second_factor
-              .required;
+          : this.config.auth.password.second_factor.required;
 
       return {
         isNewUser: false,
@@ -316,8 +313,7 @@ export class OAuthConnectService {
       const secondFactorRequired =
         existingUser.managed_by === 'config'
           ? false
-          : this.config.basic_authentication_methods.password.second_factor
-              .required;
+          : this.config.auth.password.second_factor.required;
 
       await this.mikro.em.populate(existingUser, ['password_hash']);
       return {
@@ -387,8 +383,7 @@ export class OAuthConnectService {
         has_password: newUser.hasPassword(),
         totp_registered: false, // New user has no TOTP
         second_factor_required:
-          this.config.basic_authentication_methods.password.second_factor
-            .required,
+          this.config.auth.password.second_factor.required,
         passkey_count: 0, // New user has no passkeys
       },
     };
@@ -457,8 +452,7 @@ export class OAuthConnectService {
       const secondFactorRequired =
         user.managed_by === 'config'
           ? false
-          : this.config.basic_authentication_methods.password.second_factor
-              .required;
+          : this.config.auth.password.second_factor.required;
 
       return {
         isNewUser: false,
@@ -525,8 +519,7 @@ export class OAuthConnectService {
       const secondFactorRequired =
         existingUser.managed_by === 'config'
           ? false
-          : this.config.basic_authentication_methods.password.second_factor
-              .required;
+          : this.config.auth.password.second_factor.required;
 
       await this.mikro.em.populate(existingUser, ['password_hash']);
 
@@ -603,8 +596,7 @@ export class OAuthConnectService {
         has_password: newUser.hasPassword(),
         totp_registered: false,
         second_factor_required:
-          this.config.basic_authentication_methods.password.second_factor
-            .required,
+          this.config.auth.password.second_factor.required,
         passkey_count: 0,
       },
     };

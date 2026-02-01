@@ -36,9 +36,7 @@ export class TotpService {
    */
   public generateOtpAuthUrl(email: string, secret: string): string {
     return generateURI({
-      issuer:
-        this.config.basic_authentication_methods.password.totp.issuer ||
-        this.config.app.host,
+      issuer: this.config.auth.password.totp.issuer || this.config.app.host,
       label: email,
       secret,
     });

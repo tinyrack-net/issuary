@@ -46,7 +46,7 @@ describe('OAuthConnectService - auto_link strategy', () => {
           ...MINIMAL_TEST_CONFIG.app,
           allowed_signup_emails: ['*'],
         },
-        oauth_authentication_methods: [
+        identity_providers: [
           {
             id: 'google',
             type: 'google',
@@ -157,7 +157,7 @@ describe('OAuthConnectService - require_link strategy', () => {
           ...MINIMAL_TEST_CONFIG.app,
           allowed_signup_emails: ['*'],
         },
-        oauth_authentication_methods: [
+        identity_providers: [
           {
             id: 'google',
             type: 'google',
@@ -228,7 +228,7 @@ describe('OAuthConnectService - completeOAuthRegistration', () => {
           ...MINIMAL_TEST_CONFIG.app,
           allowed_signup_emails: ['*'],
         },
-        oauth_authentication_methods: [
+        identity_providers: [
           {
             id: 'google',
             type: 'google',

@@ -89,11 +89,12 @@ describe('UserService', () => {
       const noAccountDeletionApp = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
+          app: {
+            ...MINIMAL_TEST_CONFIG.app,
+            account_deletion: false,
+          },
           cleanup: {
             deleted_users: { enabled: true, retention: '0' },
-          },
-          account_deletion: {
-            enabled: false,
           },
         },
         cliMode: true,
@@ -277,11 +278,12 @@ describe('UserService', () => {
       const retentionApp = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
+          app: {
+            ...MINIMAL_TEST_CONFIG.app,
+            account_deletion: true,
+          },
           cleanup: {
             deleted_users: { enabled: true, retention: '1d' },
-          },
-          account_deletion: {
-            enabled: true,
           },
         },
         cliMode: true,

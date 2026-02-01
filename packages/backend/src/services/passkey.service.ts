@@ -39,7 +39,7 @@ export class PasskeyService {
    * Get rpId from config or extract from app.host hostname
    */
   private getRpId(): string {
-    const passkeyConfig = this.config.basic_authentication_methods.passkey;
+    const passkeyConfig = this.config.auth.passkey;
     if (passkeyConfig.rp_id) {
       return passkeyConfig.rp_id;
     }
@@ -51,7 +51,7 @@ export class PasskeyService {
    * Get allowed origins from config or use app.host
    */
   private getOrigins(): string[] {
-    const passkeyConfig = this.config.basic_authentication_methods.passkey;
+    const passkeyConfig = this.config.auth.passkey;
     if (passkeyConfig.origins && passkeyConfig.origins.length > 0) {
       return passkeyConfig.origins;
     }
