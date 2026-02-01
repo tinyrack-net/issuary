@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest';
+import { deepMerge } from '@/lib/config/index.js';
 import {
+  DEFAULT_TEST_CONFIG,
   extractCookie,
   generateUniqueEmail,
   setupTestServer,
@@ -7,14 +9,14 @@ import {
 } from '@/test-utils/index.js';
 
 const app = setupTestServer({
-  configOverrides: {
+  config: deepMerge(DEFAULT_TEST_CONFIG, {
     basic_authentication_methods: {
       passkey: {
         enabled: true,
         email_verification: true,
       },
     },
-  },
+  }),
 });
 
 describe('POST /api/v1/auth/passkey/options', () => {
@@ -120,7 +122,7 @@ describe('POST /api/v1/auth/passkey/options', () => {
 describe('POST /api/v1/auth/passkey/options - 2FA mode', () => {
   // App with 2FA required for testing pending2FAUser session
   const app2FA = setupTestServer({
-    configOverrides: {
+    config: deepMerge(DEFAULT_TEST_CONFIG, {
       basic_authentication_methods: {
         password: {
           enabled: true,
@@ -133,7 +135,7 @@ describe('POST /api/v1/auth/passkey/options - 2FA mode', () => {
           email_verification: true,
         },
       },
-    },
+    }),
   });
 
   test('should return options with allowCredentials for pending 2FA user', async () => {
@@ -217,14 +219,14 @@ describe('POST /api/v1/auth/passkey/options - 2FA mode', () => {
 
 describe('POST /api/v1/auth/passkey/options - Passkey disabled', () => {
   const appDisabled = setupTestServer({
-    configOverrides: {
+    config: deepMerge(DEFAULT_TEST_CONFIG, {
       basic_authentication_methods: {
         passkey: {
           enabled: false,
           email_verification: true,
         },
       },
-    },
+    }),
   });
 
   test('should return 404 when passkey is disabled (route not registered)', async () => {
@@ -239,7 +241,7 @@ describe('POST /api/v1/auth/passkey/options - Passkey disabled', () => {
 
 describe('POST /api/v1/auth/passkey/options - Custom rpId', () => {
   const appCustomRpId = setupTestServer({
-    configOverrides: {
+    config: deepMerge(DEFAULT_TEST_CONFIG, {
       basic_authentication_methods: {
         passkey: {
           enabled: true,
@@ -247,7 +249,7 @@ describe('POST /api/v1/auth/passkey/options - Custom rpId', () => {
           rp_id: 'custom.example.com',
         },
       },
-    },
+    }),
   });
 
   test('should use custom rp_id from config', async () => {

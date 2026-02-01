@@ -1,6 +1,8 @@
 import { describe, expect, test, vi } from 'vitest';
+import { deepMerge } from '@/lib/config/index.js';
 import {
   createDbUserWithSession,
+  DEFAULT_TEST_CONFIG,
   extractCookie,
   generateUniqueEmail,
   injectWithSession,
@@ -9,14 +11,14 @@ import {
 } from '@/test-utils/index.js';
 
 const app = setupTestServer({
-  configOverrides: {
+  config: deepMerge(DEFAULT_TEST_CONFIG, {
     basic_authentication_methods: {
       passkey: {
         enabled: true,
         email_verification: true,
       },
     },
-  },
+  }),
 });
 
 /**
@@ -387,7 +389,7 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
 describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
   // App with 2FA required for testing pending2FAUser session
   const app2FA = setupTestServer({
-    configOverrides: {
+    config: deepMerge(DEFAULT_TEST_CONFIG, {
       basic_authentication_methods: {
         password: {
           enabled: true,
@@ -400,7 +402,7 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
           email_verification: true,
         },
       },
-    },
+    }),
   });
 
   test('should return 403 when passkey belongs to different user', async () => {
@@ -593,14 +595,14 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
 
 describe('POST /api/v1/auth/passkey/verify - Passkey disabled', () => {
   const appDisabled = setupTestServer({
-    configOverrides: {
+    config: deepMerge(DEFAULT_TEST_CONFIG, {
       basic_authentication_methods: {
         passkey: {
           enabled: false,
           email_verification: true,
         },
       },
-    },
+    }),
   });
 
   test('should return 404 when passkey is disabled (route not registered)', async () => {

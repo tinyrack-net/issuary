@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest';
+import { deepMerge } from '@/lib/config/index.js';
 import { e } from '@/schemas/error.js';
 import {
   createDbUserWithSession,
+  DEFAULT_TEST_CONFIG,
   expectError,
   extractCookie,
   injectWithSession,
@@ -10,7 +12,7 @@ import {
 } from '@/test-utils/index.js';
 
 const app = setupTestServer({
-  configOverrides: {
+  config: deepMerge(DEFAULT_TEST_CONFIG, {
     basic_authentication_methods: {
       password: {
         second_factor: {
@@ -21,7 +23,7 @@ const app = setupTestServer({
         },
       },
     },
-  },
+  }),
 });
 
 /**
