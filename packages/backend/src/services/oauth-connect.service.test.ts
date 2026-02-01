@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest';
+import { deepMerge } from '@/lib/config/index.js';
 import {
+  DEFAULT_TEST_CONFIG,
   generateUniqueEmail,
   setupTestServer,
   withMikroContext,
@@ -119,7 +121,7 @@ describe('OAuthConnectService - auto_link strategy', () => {
 
 describe('OAuthConnectService - require_link strategy', () => {
   const app = setupTestServer({
-    configOverrides: {
+    config: deepMerge(DEFAULT_TEST_CONFIG, {
       oauth_authentication_methods: [
         {
           id: 'google',
@@ -131,7 +133,7 @@ describe('OAuthConnectService - require_link strategy', () => {
           email_conflict_strategy: 'require_link',
         },
       ],
-    },
+    }),
   });
 
   test('should throw OAuthEmailConflict when email matches existing user', async () => {

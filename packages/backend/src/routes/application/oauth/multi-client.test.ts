@@ -68,7 +68,7 @@ const multiClientConfig: InternalAppConfig = {
  * - Client credentials are properly validated
  */
 describe('Multi-Client Isolation', () => {
-  const app = setupTestServer({ baseConfig: multiClientConfig });
+  const app = setupTestServer({ config: multiClientConfig });
 
   describe('Token Isolation Between Clients', () => {
     test(
