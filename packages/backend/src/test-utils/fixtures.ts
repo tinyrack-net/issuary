@@ -4,7 +4,8 @@
  */
 
 /**
- * OAuth client configuration for testing
+ * OAuth client configuration for testing.
+ * To use in tests, include TEST_OAUTH_CLIENT_CONFIG in your server config's providers array.
  */
 export const TEST_OAUTH_CLIENT = {
   clientId: 'sdlk3n3dkj2',
@@ -14,11 +15,39 @@ export const TEST_OAUTH_CLIENT = {
 } as const;
 
 /**
- * Test user credentials (exists in config.yaml)
+ * Config snippet for TEST_OAUTH_CLIENT.
+ * Spread this into your server config's providers array.
+ */
+export const TEST_OAUTH_CLIENT_CONFIG = {
+  id: 'test-config-oauth-client',
+  name: 'My App',
+  logo_uri: 'https://myapp.com/auth/callback',
+  client_id: TEST_OAUTH_CLIENT.clientId,
+  client_secret: TEST_OAUTH_CLIENT.clientSecret,
+  redirect_uris: [TEST_OAUTH_CLIENT.redirectUri],
+  response_types: ['code'],
+  grant_types: ['authorization_code'],
+  scope: 'openid profile email id_token',
+} as const;
+
+/**
+ * Test user credentials.
+ * To use in tests, include TEST_USER_CONFIG in your server config's users array.
  */
 export const TEST_USER = {
   email: 'test-config-user@example.com',
   password: 'changemelater',
+} as const;
+
+/**
+ * Config snippet for TEST_USER.
+ * Spread this into your server config's users array.
+ */
+export const TEST_USER_CONFIG = {
+  id: 'test-config-user',
+  email: TEST_USER.email,
+  password: TEST_USER.password,
+  role: 'admin',
 } as const;
 
 /**
@@ -38,8 +67,51 @@ export const TEST_PKCE = {
 export const DEFAULT_SCOPES = 'openid profile email';
 
 /**
+ * Test terms configuration.
+ * Include these in your server config's terms array when testing terms/consent flows.
+ */
+export const TEST_TERMS_CONFIG = [
+  {
+    id: 'tos',
+    required: true,
+    consent_mode: 'explicit',
+    version: '1.0.0',
+    content: {
+      ko: {
+        title: '이용약관',
+        type: 'link',
+        content: 'https://example.com/terms/ko',
+      },
+      en: {
+        title: 'Terms of Service',
+        type: 'link',
+        content: 'https://example.com/terms/en',
+      },
+    },
+  },
+  {
+    id: 'privacy',
+    required: true,
+    consent_mode: 'explicit',
+    version: '1.0.0',
+    content: {
+      ko: {
+        title: '개인정보처리방침',
+        type: 'link',
+        content: 'https://example.com/privacy/ko',
+      },
+      en: {
+        title: 'Privacy Policy',
+        type: 'link',
+        content: 'https://example.com/privacy/en',
+      },
+    },
+  },
+] as const;
+
+/**
  * Default terms consents for registration tests.
- * Matches the terms defined in DEFAULT_TEST_CONFIG.
+ * Matches the terms defined in TEST_TERMS_CONFIG.
  */
 export const TEST_CONSENTS = [
   { termsId: 'tos', agreed: true },
