@@ -16,7 +16,7 @@ import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
 import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
-import type { InternalAppConfig } from '@/lib/config/index.js';
+import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { passkeySchema } from '@/schemas/passkey.js';
@@ -32,7 +32,7 @@ export class PasskeyService {
 
   public constructor(
     private readonly mikro: MikroService,
-    private readonly config: InternalAppConfig,
+    private readonly config: ResolvedAppConfig,
   ) {}
 
   /**

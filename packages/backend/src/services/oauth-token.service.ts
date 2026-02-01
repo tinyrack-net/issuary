@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
-import type { InternalAppConfig } from '@/lib/config/index.js';
+import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import { validatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
@@ -28,7 +28,7 @@ declare module 'fastify' {
  */
 export class OAuthTokenService {
   constructor(
-    private readonly config: InternalAppConfig,
+    private readonly config: ResolvedAppConfig,
     private readonly mikro: MikroService,
     private readonly userService: UserService,
     private readonly oauthClientService: OAuthClientService,

@@ -9,7 +9,7 @@ import {
   SignJWT,
 } from 'jose';
 import type z from 'zod/v4';
-import type { InternalAppConfig } from '@/lib/config/index.js';
+import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { jwtPayload } from '@/schemas/jwt.js';
@@ -30,7 +30,7 @@ declare module 'fastify' {
  */
 export class JwtService {
   constructor(
-    private readonly config: InternalAppConfig,
+    private readonly config: ResolvedAppConfig,
     private readonly jwtKeyService: JwtKeyService,
     private readonly mikro: MikroService,
   ) {}
