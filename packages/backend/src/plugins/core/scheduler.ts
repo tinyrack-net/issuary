@@ -24,7 +24,7 @@ declare module 'fastify' {
  */
 export default fastifyPlugin(
   async (fastify) => {
-    const { enabled, cleanup_cron } = fastify.config.scheduler;
+    const { enabled, cron } = fastify.config.scheduler;
 
     const scheduler = {
       cleanupJob: null as Cron | null,
@@ -34,12 +34,9 @@ export default fastifyPlugin(
           return;
         }
 
-        fastify.log.info(
-          { cron: cleanup_cron },
-          'Starting in-process cleanup scheduler',
-        );
+        fastify.log.info({ cron }, 'Starting in-process cleanup scheduler');
 
-        const job = new Cron(cleanup_cron, async () => {
+        const job = new Cron(cron, async () => {
           const startTime = Date.now();
           fastify.log.info('Starting scheduled cleanup tasks');
 

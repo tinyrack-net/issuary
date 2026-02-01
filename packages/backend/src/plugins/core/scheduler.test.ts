@@ -43,7 +43,7 @@ describe('scheduler plugin', () => {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {
             enabled: true,
-            cleanup_cron: '0 2 * * *', // Daily at 2 AM
+            cron: '0 2 * * *', // Daily at 2 AM
           },
         },
         skipListen: true,
@@ -85,7 +85,7 @@ describe('scheduler plugin', () => {
     });
 
     it('should use default cron schedule', () => {
-      expect(app.config.scheduler.cleanup_cron).toBe('0 2 * * *');
+      expect(app.config.scheduler.cron).toBe('0 2 * * *');
     });
 
     it('should start the cleanup job', () => {
@@ -100,7 +100,7 @@ describe('scheduler plugin', () => {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {
             enabled: true,
-            cleanup_cron: '*/30 * * * *', // Every 30 minutes
+            cron: '*/30 * * * *', // Every 30 minutes
           },
         },
         skipListen: true,
@@ -116,7 +116,7 @@ describe('scheduler plugin', () => {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {
             enabled: true,
-            cleanup_cron: '0 */6 * * *', // Every 6 hours
+            cron: '0 */6 * * *', // Every 6 hours
           },
         },
         skipListen: true,
