@@ -154,6 +154,11 @@ export const AppConfigApp = z.object({
         'Keyed by language code (e.g., "en", "ko"). ' +
         'Overrides the default i18n login subtitle.',
     ),
+  account_deletion: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Whether users can delete their own accounts'),
 });
 
 export type AppConfigApp = z.infer<typeof AppConfigApp>;

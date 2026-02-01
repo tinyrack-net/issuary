@@ -21,32 +21,23 @@ export {
   WELL_KNOWN_OAUTH_PROVIDERS,
   type WellKnownOAuthProvider,
 } from './oauth-resolver.js';
-// Account deletion config schema
-export { AppConfigAccountDeletion } from './schemas/account-deletion.js';
 // App config schemas
 export {
   AppConfigAdmin,
   AppConfigApp,
   AppTheme,
 } from './schemas/app.js';
-// Basic authentication schemas
+// Authentication schemas
 export {
-  AppConfigBasicAuthenticationMethods,
+  AppConfigAuth,
   AppConfigPasskeyAuth,
   AppConfigPasswordAuth,
   AppConfigSecondFactor,
-} from './schemas/auth-basic.js';
-// OAuth authentication schemas
-export {
-  AppConfigAuthMethodOAuth,
-  AppConfigOAuthAuthenticationMethods,
-  AppleOAuthSchema,
-  GenericOAuthSchema,
-  GithubOAuthSchema,
-  GoogleOAuthSchema,
-} from './schemas/auth-oauth.js';
+} from './schemas/auth.js';
 // Cleanup config schema
 export { AppConfigCleanup, DEFAULT_CLEANUP_CONFIG } from './schemas/cleanup.js';
+// Client config schema
+export { AppConfigClient } from './schemas/client.js';
 // Database config schemas
 export {
   AppConfigDatabase,
@@ -54,8 +45,15 @@ export {
   AppConfigDatabasePostgres,
   AppConfigDatabaseSqlite,
 } from './schemas/database.js';
-// Provider config schema
-export { AppConfigProvider } from './schemas/provider.js';
+// Identity provider schemas
+export {
+  AppConfigIdentityProvider,
+  AppConfigIdentityProviders,
+  AppleOAuthSchema,
+  GenericOAuthSchema,
+  GithubOAuthSchema,
+  GoogleOAuthSchema,
+} from './schemas/identity-providers.js';
 // Root config schemas and types
 export {
   type AppConfig,
@@ -71,5 +69,7 @@ export {
 } from './schemas/scheduler.js';
 // SMTP config schema
 export { AppConfigSmtp } from './schemas/smtp.js';
+// Terms config schema
+export { AppConfigTerms, type TermsItem } from './schemas/terms.js';
 // User config schema
 export { AppConfigUser } from './schemas/user.js';

@@ -122,28 +122,30 @@ export const GenericOAuthSchema = z.object({
 export type GenericOAuthSchema = z.infer<typeof GenericOAuthSchema>;
 
 /**
- * OAuth authentication method configuration.
+ * Identity provider configuration.
  * Discriminated union based on 'type' field.
  * Well-known providers (github, google, apple) use pre-configured endpoints.
  * Generic OAuth requires all endpoints to be specified.
  */
-export const AppConfigAuthMethodOAuth = z.discriminatedUnion('type', [
+export const AppConfigIdentityProvider = z.discriminatedUnion('type', [
   GithubOAuthSchema,
   GoogleOAuthSchema,
   AppleOAuthSchema,
   GenericOAuthSchema,
 ]);
 
-export type AppConfigAuthMethodOAuth = z.infer<typeof AppConfigAuthMethodOAuth>;
+export type AppConfigIdentityProvider = z.infer<
+  typeof AppConfigIdentityProvider
+>;
 
 /**
- * OAuth authentication methods configuration.
- * Array of OAuth provider configurations.
+ * Identity providers configuration.
+ * Array of external OAuth/OIDC provider configurations for social login.
  */
-export const AppConfigOAuthAuthenticationMethods = z
-  .array(AppConfigAuthMethodOAuth)
+export const AppConfigIdentityProviders = z
+  .array(AppConfigIdentityProvider)
   .default([]);
 
-export type AppConfigOAuthAuthenticationMethods = z.infer<
-  typeof AppConfigOAuthAuthenticationMethods
+export type AppConfigIdentityProviders = z.infer<
+  typeof AppConfigIdentityProviders
 >;

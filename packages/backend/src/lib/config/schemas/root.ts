@@ -1,11 +1,10 @@
 import z from 'zod/v4';
-import { AppConfigAccountDeletion } from './account-deletion.js';
 import { AppConfigAdmin, AppConfigApp } from './app.js';
-import { AppConfigBasicAuthenticationMethods } from './auth-basic.js';
-import { AppConfigOAuthAuthenticationMethods } from './auth-oauth.js';
+import { AppConfigAuth } from './auth.js';
 import { AppConfigCleanup, DEFAULT_CLEANUP_CONFIG } from './cleanup.js';
+import { AppConfigClient } from './client.js';
 import { AppConfigDatabase } from './database.js';
-import { AppConfigProvider } from './provider.js';
+import { AppConfigIdentityProviders } from './identity-providers.js';
 import { AppConfigScheduler, DEFAULT_SCHEDULER_CONFIG } from './scheduler.js';
 import { AppConfigSmtp } from './smtp.js';
 import { AppConfigTerms } from './terms.js';
@@ -27,26 +26,24 @@ export const AppConfigSchema = z.object({
     type: 'sqlite',
     path: 'test.db',
   }),
-  basic_authentication_methods:
-    AppConfigBasicAuthenticationMethods.optional().default({
-      password: {
-        enabled: true,
-        email_verification: true,
-        second_factor: {
-          required: false,
-        },
-        totp: {
-          enabled: false,
-          issuer: 'Tinyrack',
-        },
+  auth: AppConfigAuth.optional().default({
+    password: {
+      enabled: true,
+      email_verification: true,
+      second_factor: {
+        required: false,
       },
-      passkey: {
+      totp: {
         enabled: false,
-        email_verification: true,
+        issuer: 'Tinyrack',
       },
-    }),
-  oauth_authentication_methods:
-    AppConfigOAuthAuthenticationMethods.optional().default([]),
+    },
+    passkey: {
+      enabled: false,
+      email_verification: true,
+    },
+  }),
+  identity_providers: AppConfigIdentityProviders.optional().default([]),
   smtp: z
     .discriminatedUnion('test', [
       AppConfigSmtp.extend({
@@ -57,13 +54,10 @@ export const AppConfigSchema = z.object({
       }),
     ])
     .optional(),
-  account_deletion: AppConfigAccountDeletion.optional().default({
-    enabled: false,
-  }),
   cleanup: AppConfigCleanup.optional().default(DEFAULT_CLEANUP_CONFIG),
   scheduler: AppConfigScheduler.optional().default(DEFAULT_SCHEDULER_CONFIG),
   terms: AppConfigTerms.optional().default([]),
-  providers: z.array(AppConfigProvider).optional().default([]),
+  clients: z.array(AppConfigClient).optional().default([]),
   users: z.array(AppConfigUser).optional().default([]),
 });
 
@@ -90,30 +84,29 @@ export type ResolvedAppConfig = Omit<AppConfig, 'smtp'> & {
   smtp: AppConfigSmtp | undefined;
 };
 
-export { AppConfigAccountDeletion } from './account-deletion.js';
 // Re-export individual schemas for external use
 export { AppConfigAdmin, AppConfigApp } from './app.js';
 export {
-  AppConfigBasicAuthenticationMethods,
+  AppConfigAuth,
   AppConfigPasskeyAuth,
   AppConfigPasswordAuth,
-} from './auth-basic.js';
-export {
-  AppConfigAuthMethodOAuth,
-  AppConfigOAuthAuthenticationMethods,
-  AppleOAuthSchema,
-  GenericOAuthSchema,
-  GithubOAuthSchema,
-  GoogleOAuthSchema,
-} from './auth-oauth.js';
+} from './auth.js';
 export { AppConfigCleanup, DEFAULT_CLEANUP_CONFIG } from './cleanup.js';
+export { AppConfigClient } from './client.js';
 export {
   AppConfigDatabase,
   AppConfigDatabaseMemory,
   AppConfigDatabasePostgres,
   AppConfigDatabaseSqlite,
 } from './database.js';
-export { AppConfigProvider } from './provider.js';
+export {
+  AppConfigIdentityProvider,
+  AppConfigIdentityProviders,
+  AppleOAuthSchema,
+  GenericOAuthSchema,
+  GithubOAuthSchema,
+  GoogleOAuthSchema,
+} from './identity-providers.js';
 export {
   AppConfigScheduler,
   DEFAULT_SCHEDULER_CONFIG,

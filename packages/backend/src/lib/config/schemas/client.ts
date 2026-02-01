@@ -1,6 +1,10 @@
 import z from 'zod/v4';
 
-export const AppConfigProvider = z.object({
+/**
+ * OAuth/OIDC client configuration.
+ * Defines applications that can authenticate through TinyAuth.
+ */
+export const AppConfigClient = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   logo_uri: z.string().optional(),
@@ -12,4 +16,4 @@ export const AppConfigProvider = z.object({
   scope: z.string().min(1),
 });
 
-export type AppConfigProvider = z.infer<typeof AppConfigProvider>;
+export type AppConfigClient = z.infer<typeof AppConfigClient>;

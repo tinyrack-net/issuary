@@ -1,4 +1,4 @@
-import type { AppConfigAuthMethodOAuth } from './schemas/auth-oauth.js';
+import type { AppConfigIdentityProvider } from './schemas/identity-providers.js';
 
 /**
  * Well-known OAuth providers with pre-configured endpoints.
@@ -78,7 +78,7 @@ export interface ResolvedOAuthConfig {
  * Resolves well-known provider endpoints and merges with user config.
  */
 export function resolveOAuthConfig(
-  config: AppConfigAuthMethodOAuth,
+  config: AppConfigIdentityProvider,
 ): ResolvedOAuthConfig {
   // Get well-known provider config if applicable
   const wellKnown =

@@ -85,10 +85,10 @@ export const AppConfigPasskeyAuth = z.object({
 export type AppConfigPasskeyAuth = z.infer<typeof AppConfigPasskeyAuth>;
 
 /**
- * Basic authentication methods configuration (fixed structure).
+ * Authentication methods configuration (fixed structure).
  * Contains password and passkey authentication settings.
  */
-export const AppConfigBasicAuthenticationMethods = z.object({
+export const AppConfigAuth = z.object({
   password: AppConfigPasswordAuth.optional().default({
     enabled: true,
     email_verification: true,
@@ -106,6 +106,4 @@ export const AppConfigBasicAuthenticationMethods = z.object({
   }),
 });
 
-export type AppConfigBasicAuthenticationMethods = z.infer<
-  typeof AppConfigBasicAuthenticationMethods
->;
+export type AppConfigAuth = z.infer<typeof AppConfigAuth>;

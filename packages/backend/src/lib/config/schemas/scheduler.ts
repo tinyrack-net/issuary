@@ -18,7 +18,7 @@ const CronExpression = z
  */
 export const DEFAULT_SCHEDULER_CONFIG = {
   enabled: true,
-  cleanup_cron: '0 2 * * *', // Daily at 2 AM
+  cron: '0 2 * * *', // Daily at 2 AM
 } as const;
 
 /**
@@ -39,8 +39,8 @@ export const AppConfigScheduler = z
       .describe(
         'Enable in-process cleanup scheduler. Disable when using external schedulers (K8s CronJob).',
       ),
-    cleanup_cron: CronExpression.optional()
-      .default(DEFAULT_SCHEDULER_CONFIG.cleanup_cron)
+    cron: CronExpression.optional()
+      .default(DEFAULT_SCHEDULER_CONFIG.cron)
       .describe(
         'Cron schedule for running all cleanup tasks. Default: daily at 2 AM.',
       ),
