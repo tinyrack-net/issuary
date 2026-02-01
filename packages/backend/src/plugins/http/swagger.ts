@@ -28,7 +28,7 @@ export default fastifyPlugin(
     });
 
     // OpenAPI JSON 스키마 제공 라우트
-    fastify.get('/docs/json', {
+    fastify.get('/api/docs/json', {
       schema: {
         hide: true,
       },

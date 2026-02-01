@@ -38,7 +38,7 @@ function parseUpstream(url: string): { hostname: string; port: number } {
  * - Proxies WebSocket connections for Vite HMR
  *
  * In production/test mode:
- * - API routes (/api, /application, /docs) return 404 when not found
+ * - API routes (/api, /application) return 404 when not found
  * - Static files (HTML, JS, CSS, images, etc.) are served if they exist
  * - All other routes fall back to index.html for client-side routing (SPA mode)
  */
@@ -58,11 +58,7 @@ export default fastifyPlugin(
       fastify.server.on('upgrade', (req, socket, head) => {
         const url = req.url || '/';
         // Only proxy WebSocket requests that are not API routes
-        if (
-          url.startsWith('/api') ||
-          url.startsWith('/application') ||
-          url.startsWith('/docs')
-        ) {
+        if (url.startsWith('/api') || url.startsWith('/application')) {
           socket.destroy();
           return;
         }
@@ -118,10 +114,6 @@ export default fastifyPlugin(
           return;
         }
         if (request.url.startsWith('/application')) {
-          reply.code(404).send({ error: 'Not Found' });
-          return;
-        }
-        if (request.url.startsWith('/docs')) {
           reply.code(404).send({ error: 'Not Found' });
           return;
         }
@@ -195,9 +187,6 @@ export default fastifyPlugin(
         return reply.code(404).send({ error: 'Not Found' });
       }
       if (request.url.startsWith('/application')) {
-        return reply.code(404).send({ error: 'Not Found' });
-      }
-      if (request.url.startsWith('/docs')) {
         return reply.code(404).send({ error: 'Not Found' });
       }
       if (request.url.startsWith('/.well-known')) {

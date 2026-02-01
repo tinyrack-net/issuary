@@ -4,13 +4,13 @@ import fastifyPlugin from 'fastify-plugin';
 export default fastifyPlugin(
   (fastify) => {
     fastify.register(fastifyScalar, {
-      routePrefix: '/docs',
+      routePrefix: '/api/docs',
       configuration: {
         layout: 'modern',
         darkMode: true,
         persistAuth: true,
         defaultOpenAllTags: true,
-        sources: [{ url: '/docs/json', title: 'Main API' }],
+        sources: [{ url: '/api/docs/json', title: 'Main API' }],
         authentication: {
           preferredSecurityScheme: 'bearerAuth',
           securitySchemes: {
