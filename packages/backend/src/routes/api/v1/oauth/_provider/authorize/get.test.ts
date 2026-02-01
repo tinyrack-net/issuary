@@ -16,7 +16,7 @@ beforeAll(async () => {
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
-      oauth_authentication_methods: [
+      identity_providers: [
         {
           id: 'google',
           type: 'google',
