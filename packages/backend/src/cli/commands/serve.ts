@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { loadConfig } from '../../lib/config/index.js';
 import { createServer } from '../../server.js';
 
 /**
@@ -11,8 +12,10 @@ import { createServer } from '../../server.js';
  */
 export const serveCommand = new Command('serve')
   .description('Start the TinyAuth server')
-  .action(async () => {
-    const app = await createServer();
+  .option('-c, --config-path <path>', 'Path to config file')
+  .action(async (options: { configPath?: string }) => {
+    const config = await loadConfig({ configPath: options.configPath });
+    const app = await createServer({ config });
 
     // Handle graceful shutdown
     const shutdown = async (signal: string) => {
