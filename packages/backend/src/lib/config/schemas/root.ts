@@ -6,6 +6,7 @@ import { AppConfigOAuthAuthenticationMethods } from './auth-oauth.js';
 import { AppConfigCleanup, DEFAULT_CLEANUP_CONFIG } from './cleanup.js';
 import { AppConfigDatabase } from './database.js';
 import { AppConfigProvider } from './provider.js';
+import { AppConfigScheduler, DEFAULT_SCHEDULER_CONFIG } from './scheduler.js';
 import { AppConfigSmtp } from './smtp.js';
 import { AppConfigTerms } from './terms.js';
 import { AppConfigUser } from './user.js';
@@ -60,6 +61,7 @@ export const AppConfigSchema = z.object({
     enabled: false,
   }),
   cleanup: AppConfigCleanup.optional().default(DEFAULT_CLEANUP_CONFIG),
+  scheduler: AppConfigScheduler.optional().default(DEFAULT_SCHEDULER_CONFIG),
   terms: AppConfigTerms.optional().default([]),
   providers: z.array(AppConfigProvider).optional().default([]),
   users: z.array(AppConfigUser).optional().default([]),
@@ -112,6 +114,10 @@ export {
   AppConfigDatabaseSqlite,
 } from './database.js';
 export { AppConfigProvider } from './provider.js';
+export {
+  AppConfigScheduler,
+  DEFAULT_SCHEDULER_CONFIG,
+} from './scheduler.js';
 export { AppConfigSmtp } from './smtp.js';
 export { AppConfigTerms, type TermsItem } from './terms.js';
 export { AppConfigUser } from './user.js';

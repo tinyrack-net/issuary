@@ -64,6 +64,11 @@ export {
   AppConfigSchema as ConfigSchema,
   type ResolvedAppConfig,
 } from './schemas/root.js';
+// Scheduler config schema
+export {
+  AppConfigScheduler,
+  DEFAULT_SCHEDULER_CONFIG,
+} from './schemas/scheduler.js';
 // SMTP config schema
 export { AppConfigSmtp } from './schemas/smtp.js';
 // User config schema
