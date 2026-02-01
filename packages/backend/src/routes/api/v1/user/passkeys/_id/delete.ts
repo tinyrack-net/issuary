@@ -5,7 +5,7 @@ import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
-  if (!fastify.config.basic_authentication_methods.passkey.enabled) {
+  if (!fastify.config.auth.passkey.enabled) {
     return;
   }
   fastify.route({
@@ -49,8 +49,7 @@ export default (fastify: FastifyWithZodInstance) => {
 
       // Check if 2FA is required
       const secondFactorRequired =
-        fastify.config.basic_authentication_methods.password.second_factor
-          .required;
+        fastify.config.auth.password.second_factor.required;
 
       // Check if user has other 2FA method (TOTP)
       const totpEnabled = await fastify.mikro.userTotp.isRegistered(

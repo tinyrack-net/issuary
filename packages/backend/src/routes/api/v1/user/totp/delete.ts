@@ -45,8 +45,7 @@ export default (fastify: FastifyWithZodInstance) =>
 
       // Check if 2FA is required
       const secondFactorRequired =
-        fastify.config.basic_authentication_methods.password.second_factor
-          .required;
+        fastify.config.auth.password.second_factor.required;
 
       // Check if user has other 2FA method (passkey)
       const passkeyCount = await fastify.mikro.userPasskey.countByUserId(

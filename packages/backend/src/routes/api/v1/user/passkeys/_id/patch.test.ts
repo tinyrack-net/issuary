@@ -20,7 +20,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
-        basic_authentication_methods: {
+        auth: {
           passkey: {
             enabled: true,
             email_verification: true,
@@ -431,7 +431,7 @@ describe('PATCH /api/v1/user/passkeys/:id - Passkey disabled', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
-        basic_authentication_methods: {
+        auth: {
           passkey: {
             enabled: false,
             email_verification: true,

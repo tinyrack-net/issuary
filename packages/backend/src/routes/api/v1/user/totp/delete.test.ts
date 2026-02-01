@@ -22,7 +22,7 @@ describe('DELETE /api/v1/user/totp', () => {
     app = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        basic_authentication_methods: {
+        auth: {
           password: {
             totp: {
               enabled: true,
@@ -491,7 +491,7 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
-        basic_authentication_methods: {
+        auth: {
           password: {
             second_factor: {
               required: true,

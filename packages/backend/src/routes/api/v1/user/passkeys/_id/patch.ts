@@ -5,7 +5,7 @@ import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
 export default (fastify: FastifyWithZodInstance) => {
-  if (!fastify.config.basic_authentication_methods.passkey.enabled) {
+  if (!fastify.config.auth.passkey.enabled) {
     return;
   }
   fastify.route({

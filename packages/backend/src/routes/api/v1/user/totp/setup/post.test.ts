@@ -20,7 +20,7 @@ beforeAll(async () => {
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
-      basic_authentication_methods: {
+      auth: {
         password: {
           totp: {
             enabled: true,

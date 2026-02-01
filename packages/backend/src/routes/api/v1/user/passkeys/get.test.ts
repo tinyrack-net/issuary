@@ -20,7 +20,7 @@ describe('GET /api/v1/user/passkeys', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
-        basic_authentication_methods: {
+        auth: {
           passkey: {
             enabled: true,
             email_verification: true,

@@ -113,7 +113,7 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
-        basic_authentication_methods: {
+        auth: {
           passkey: {
             enabled: true,
             email_verification: true,
@@ -708,7 +708,7 @@ describe('POST /api/v1/user/passkeys/register/verify - Passkey disabled', () => 
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
-        basic_authentication_methods: {
+        auth: {
           passkey: {
             enabled: false,
             email_verification: true,

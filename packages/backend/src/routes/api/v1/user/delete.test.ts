@@ -28,10 +28,11 @@ describe('DELETE /api/v1/user', () => {
       app = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
-          users: [TEST_USER_CONFIG],
-          account_deletion: {
-            enabled: true,
+          app: {
+            ...MINIMAL_TEST_CONFIG.app,
+            account_deletion: true,
           },
+          users: [TEST_USER_CONFIG],
           cleanup: {
             deleted_users: {
               enabled: true,
@@ -185,8 +186,9 @@ describe('DELETE /api/v1/user', () => {
       app = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
-          account_deletion: {
-            enabled: false,
+          app: {
+            ...MINIMAL_TEST_CONFIG.app,
+            account_deletion: false,
           },
         },
       });

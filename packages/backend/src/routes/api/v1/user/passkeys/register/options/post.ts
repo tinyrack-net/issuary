@@ -10,7 +10,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
  * Accepts both full user session and pending 2FA setup session.
  */
 export default (fastify: FastifyWithZodInstance) => {
-  if (!fastify.config.basic_authentication_methods.passkey.enabled) {
+  if (!fastify.config.auth.passkey.enabled) {
     return;
   }
   fastify.route({

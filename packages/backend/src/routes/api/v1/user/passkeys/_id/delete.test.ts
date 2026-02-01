@@ -23,7 +23,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
-        basic_authentication_methods: {
+        auth: {
           passkey: {
             enabled: true,
             email_verification: true,
@@ -456,7 +456,7 @@ describe('DELETE /api/v1/user/passkeys/:id - Last auth method protection', () =>
     app = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        basic_authentication_methods: {
+        auth: {
           passkey: {
             enabled: true,
             email_verification: true,
@@ -594,7 +594,7 @@ describe('DELETE /api/v1/user/passkeys/:id - Passkey disabled', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
-        basic_authentication_methods: {
+        auth: {
           passkey: {
             enabled: false,
             email_verification: true,
@@ -633,7 +633,7 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
-        basic_authentication_methods: {
+        auth: {
           password: {
             second_factor: {
               required: true,

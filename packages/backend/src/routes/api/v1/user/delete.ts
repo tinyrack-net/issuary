@@ -34,7 +34,7 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (req, res) => {
-      if (!fastify.config.account_deletion.enabled) {
+      if (!fastify.config.app.account_deletion) {
         throw new e.AccountDeletionDisabled.Error();
       }
       const userSession = await req.auth.verify();
