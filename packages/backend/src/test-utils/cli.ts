@@ -24,6 +24,10 @@ import { MINIMAL_TEST_CONFIG } from './setup.js';
  */
 export const CLI_TEST_CONFIG = {
   ...MINIMAL_TEST_CONFIG,
+  app: {
+    ...MINIMAL_TEST_CONFIG.app,
+    account_deletion: true,
+  },
   cleanup: {
     revoked_tokens: { enabled: true, retention: '0' },
     oauth_codes: { enabled: true, consumed_retention: '0' },
@@ -31,9 +35,6 @@ export const CLI_TEST_CONFIG = {
     password_resets: { enabled: true, retention: '0' },
     deleted_users: { enabled: true, retention: '0' },
     jwt_keys: { enabled: true },
-  },
-  account_deletion: {
-    enabled: true,
   },
 } as const satisfies AppConfigInput;
 

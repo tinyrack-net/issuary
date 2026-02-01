@@ -21,7 +21,7 @@ import type { AppConfigInput } from '@/lib/config/schemas/root.js';
  *     config: {
  *       ...MINIMAL_TEST_CONFIG,
  *       // Only add config this test actually needs:
- *       basic_authentication_methods: {
+ *       auth: {
  *         password: {
  *           totp: { enabled: true },
  *         },

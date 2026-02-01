@@ -155,10 +155,10 @@ async function syncOAuthClients(
 ): Promise<void> {
   const now = new Date();
 
-  for (const provider of config.providers) {
+  for (const client of config.clients) {
     // Public clients (PKCE-only) don't have client_secret
-    const hashedSecret = provider.client_secret
-      ? await hash(provider.client_secret)
+    const hashedSecret = client.client_secret
+      ? await hash(client.client_secret)
       : null;
 
     // Use upsert for atomic INSERT ON CONFLICT DO UPDATE
@@ -166,15 +166,15 @@ async function syncOAuthClients(
     await em.upsert(
       OAuthClientEntity,
       {
-        id: provider.id,
-        clientId: provider.client_id,
+        id: client.id,
+        clientId: client.client_id,
         clientSecretHash: hashedSecret,
-        name: provider.name,
-        logoUri: provider.logo_uri ?? null,
-        redirectUris: provider.redirect_uris,
-        responseTypes: provider.response_types,
-        grantTypes: provider.grant_types,
-        scopes: provider.scope.split(' '),
+        name: client.name,
+        logoUri: client.logo_uri ?? null,
+        redirectUris: client.redirect_uris,
+        responseTypes: client.response_types,
+        grantTypes: client.grant_types,
+        scopes: client.scope.split(' '),
         enabled: true,
         managed_by: 'config',
         created_at: now,
@@ -190,7 +190,7 @@ async function syncOAuthClients(
   }
 
   // Remove config-managed clients that are no longer in config
-  const configClientIds = config.providers.map((p) => p.id);
+  const configClientIds = config.clients.map((c) => c.id);
   if (configClientIds.length > 0) {
     await em.nativeDelete(OAuthClientEntity, {
       managed_by: 'config',
