@@ -12,10 +12,7 @@ import {
 const DEFAULT_CONFIG_PATH = '/opt/config.yaml';
 
 const resolveConfigPath = () => {
-  const configPath =
-    env.APP_ENV === 'test'
-      ? './config.test.yaml'
-      : env.CONFIG_PATH || DEFAULT_CONFIG_PATH;
+  const configPath = env.CONFIG_PATH || DEFAULT_CONFIG_PATH;
   if (path.isAbsolute(configPath)) {
     return configPath;
   } else {
