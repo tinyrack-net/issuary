@@ -1,6 +1,6 @@
 import fastifyPlugin from 'fastify-plugin';
 import type { UserConsentEntity } from '@/entities/user-consent.entity.js';
-import type { MikroService } from '@/plugins/mikro-orm.js';
+import type { MikroService } from '@/plugins/core/mikro-orm.js';
 
 declare module 'fastify' {
   interface FastifyInstance {

@@ -17,7 +17,7 @@ import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
 import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
 import type { InternalAppConfig } from '@/lib/config/index.js';
-import type { MikroService } from '@/plugins/mikro-orm.js';
+import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { passkeySchema } from '@/schemas/passkey.js';
 

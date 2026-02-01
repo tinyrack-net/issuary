@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { createServer } from '../../server.js';
+import { createServer, type FastifyWithZodInstance } from '../../server.js';
 import { runCleanup } from '../cleanup/index.js';
 
 /**
@@ -29,14 +29,14 @@ export const cleanupCommand = new Command('cleanup')
     }
     console.log('');
 
-    // Create server without listening (for cleanup only)
+    // Create server in CLI mode (skip HTTP plugins and routes for faster startup)
     if (verbose) {
-      console.log('Initializing server...');
+      console.log('Initializing server in CLI mode...');
     }
 
-    let app: Awaited<ReturnType<typeof createServer>> | undefined;
+    let app: FastifyWithZodInstance | undefined;
     try {
-      app = await createServer({ skipListen: true });
+      app = await createServer({ cliMode: true, skipListen: true });
     } catch (error) {
       console.error('Failed to initialize server:', error);
       process.exit(1);

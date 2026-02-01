@@ -1,7 +1,7 @@
 import fastifyPlugin from 'fastify-plugin';
 import type { PasswordResetEntity } from '@/entities/password-reset.entity.js';
 import type { UserEntity } from '@/entities/user.entity.js';
-import type { MikroService } from '@/plugins/mikro-orm.js';
+import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 
 declare module 'fastify' {

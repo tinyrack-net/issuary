@@ -40,6 +40,12 @@ export interface CreateServerOptions {
    * When true, the server is initialized but does not bind to a port.
    */
   skipListen?: boolean;
+  /**
+   * CLI mode - only load core plugins required for CLI commands.
+   * Skips HTTP-related plugins (cors, session, static, swagger, etc.) and routes
+   * for faster startup and reduced memory usage.
+   */
+  cliMode?: boolean;
 }
 
 export async function createServer(options?: CreateServerOptions) {
@@ -64,23 +70,36 @@ export async function createServer(options?: CreateServerOptions) {
     // Register config as a decorator for DI
     appInstance.decorate('config', config);
 
+    // Core plugins (always loaded - database, config seeding, validation, email)
     await appInstance.register(fastifyAutoload, {
-      dir: path.join(__dirname, 'plugins'),
+      dir: path.join(__dirname, 'plugins/core'),
       ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
     });
 
+    // HTTP plugins (skip in CLI mode - cors, session, static, swagger, etc.)
+    if (!options?.cliMode) {
+      await appInstance.register(fastifyAutoload, {
+        dir: path.join(__dirname, 'plugins/http'),
+        ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
+      });
+    }
+
+    // Services (always loaded - some needed for CLI commands like cleanup)
     await appInstance.register(fastifyAutoload, {
       dir: path.join(__dirname, 'services'),
       ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
     });
 
-    await appInstance.register(fastifyAutoload, {
-      dir: path.join(__dirname, 'routes'),
-      routeParams: true,
-      autoHooks: true,
-      options: {},
-      ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
-    });
+    // Routes (skip in CLI mode)
+    if (!options?.cliMode) {
+      await appInstance.register(fastifyAutoload, {
+        dir: path.join(__dirname, 'routes'),
+        routeParams: true,
+        autoHooks: true,
+        options: {},
+        ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
+      });
+    }
 
     if (env.APP_ENV !== 'test' && !options?.skipListen) {
       await appInstance.listen({

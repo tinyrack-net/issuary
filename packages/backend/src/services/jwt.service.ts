@@ -10,7 +10,7 @@ import {
 } from 'jose';
 import type z from 'zod/v4';
 import type { InternalAppConfig } from '@/lib/config/index.js';
-import type { MikroService } from '@/plugins/mikro-orm.js';
+import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { jwtPayload } from '@/schemas/jwt.js';
 import type { JwtKeyService } from './jwt-key.service.js';

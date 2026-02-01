@@ -10,7 +10,7 @@ import {
 import type z from 'zod/v4';
 import { JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
 import type { InternalAppConfig } from '@/lib/config/index.js';
-import type { MikroService } from '@/plugins/mikro-orm.js';
+import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import type { jwtKeySchema } from '@/schemas/jwt-key.js';
 
 declare module 'fastify' {

@@ -7,7 +7,7 @@ import {
 } from '@/lib/config/index.js';
 import { isEmailAllowed } from '@/lib/email-pattern.js';
 import { generatePKCE } from '@/lib/pkce.js';
-import type { MikroService } from '@/plugins/mikro-orm.js';
+import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { oauthConnectSchema } from '@/schemas/oauth-connect.js';
 import type { TermsService } from './terms.service.js';
