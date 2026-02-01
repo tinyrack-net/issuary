@@ -1,14 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll } from 'vitest';
-import type { ExternalAppConfigInput } from '@/lib/config/index.js';
+import type { AppConfigInput } from '@/lib/config/index.js';
 import { createServer } from '@/server.js';
 
 /**
  * Default test configuration.
  * This replaces config.test.yaml and is used as the base config for all tests.
- * Uses ExternalAppConfigInput format - will be resolved to InternalAppConfig by createServer.
+ * Uses AppConfigInput format - will be resolved to ResolvedAppConfig by createServer.
  */
-export const DEFAULT_TEST_CONFIG: ExternalAppConfigInput = {
+export const DEFAULT_TEST_CONFIG: AppConfigInput = {
   app: {
     name: 'Tinyrack Auth',
     host: 'http://localhost:8080',
@@ -196,7 +196,7 @@ export interface SetupTestServerOptions {
    * });
    * ```
    */
-  config?: ExternalAppConfigInput;
+  config?: AppConfigInput;
 }
 
 /**

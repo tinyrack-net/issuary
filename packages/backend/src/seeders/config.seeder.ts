@@ -4,7 +4,7 @@ import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import { TermsEntity } from '@/entities/terms.entity.js';
 import { TermsContentEntity } from '@/entities/terms-content.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
-import type { InternalAppConfig } from '@/lib/config/index.js';
+import type { ResolvedAppConfig } from '@/lib/config/index.js';
 
 /**
  * ConfigSeeder
@@ -25,7 +25,7 @@ import type { InternalAppConfig } from '@/lib/config/index.js';
  */
 export async function seedConfig(
   em: EntityManager,
-  config: InternalAppConfig,
+  config: ResolvedAppConfig,
 ): Promise<void> {
   await syncTerms(em, config);
   await syncUsers(em, config);
@@ -38,7 +38,7 @@ export async function seedConfig(
  */
 async function syncTerms(
   em: EntityManager,
-  config: InternalAppConfig,
+  config: ResolvedAppConfig,
 ): Promise<void> {
   const now = new Date();
   const configTerms = config.terms;
@@ -102,7 +102,7 @@ async function syncTerms(
  */
 async function syncUsers(
   em: EntityManager,
-  config: InternalAppConfig,
+  config: ResolvedAppConfig,
 ): Promise<void> {
   const now = new Date();
 
@@ -151,7 +151,7 @@ async function syncUsers(
  */
 async function syncOAuthClients(
   em: EntityManager,
-  config: InternalAppConfig,
+  config: ResolvedAppConfig,
 ): Promise<void> {
   const now = new Date();
 
