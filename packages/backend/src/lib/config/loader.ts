@@ -4,11 +4,11 @@ import nodemailer from 'nodemailer';
 import YAML from 'yaml';
 import { env } from '../env.js';
 import {
-  type ExternalAppConfig,
-  type ExternalAppConfigInput,
-  ExternalConfigSchema,
-  type InternalAppConfig,
-  InternalConfigSchema,
+  type AppConfig,
+  type AppConfigInput,
+  AppConfigSchema,
+  type AppConfigSmtp,
+  type ResolvedAppConfig,
 } from './schemas/root.js';
 
 const DEFAULT_CONFIG_PATH = '/opt/config.yaml';
@@ -28,8 +28,8 @@ const resolveConfigPath = () => {
  * Otherwise, returns the provided SMTP config as-is.
  */
 const resolveSmtpConfig = async (
-  smtp: ExternalAppConfig['smtp'],
-): Promise<InternalAppConfig['smtp']> => {
+  smtp: AppConfig['smtp'],
+): Promise<AppConfigSmtp | undefined> => {
   if (!smtp) {
     return undefined;
   }
@@ -49,30 +49,29 @@ const resolveSmtpConfig = async (
 };
 
 /**
- * Transform ExternalAppConfigInput to InternalAppConfig.
+ * Transform AppConfigInput to ResolvedAppConfig.
  * This parses the input through the schema (applying defaults),
  * resolves test SMTP accounts, and returns the fully resolved config.
  *
- * @param input - The external configuration input (with optional fields)
- * @returns The fully resolved internal configuration with all defaults applied
+ * @param input - The configuration input (with optional fields)
+ * @returns The fully resolved configuration with all defaults applied
  */
 export async function resolveConfig(
-  input: ExternalAppConfigInput,
-): Promise<InternalAppConfig> {
-  // First parse through ExternalConfigSchema to apply all defaults
-  const external = ExternalConfigSchema.parse(input);
+  input: AppConfigInput,
+): Promise<ResolvedAppConfig> {
+  // Parse through AppConfigSchema to apply all defaults
+  const parsed = AppConfigSchema.parse(input);
 
   // Resolve SMTP config (handle test: true case)
-  const smtpConfig = await resolveSmtpConfig(external.smtp);
+  const smtpConfig = await resolveSmtpConfig(parsed.smtp);
 
-  // Parse through InternalConfigSchema for final validation
-  return InternalConfigSchema.parse({
-    ...external,
+  return {
+    ...parsed,
     smtp: smtpConfig,
-  });
+  };
 }
 
-const loadConfigFromPath = (configPath: string): ExternalAppConfig => {
+const loadConfigFromPath = (configPath: string): AppConfig => {
   if (!existsSync(configPath)) {
     throw new Error(`Config file not found at "${configPath}"`);
   }
@@ -85,7 +84,7 @@ const loadConfigFromPath = (configPath: string): ExternalAppConfig => {
       },
     ],
   });
-  return ExternalConfigSchema.parse(rawConfig);
+  return AppConfigSchema.parse(rawConfig);
 };
 
 /**
@@ -133,7 +132,7 @@ export type DeepPartial<T> = {
 
 /**
  * Load configuration from file.
- * Returns ExternalAppConfig which can be passed to createServer().
+ * Returns AppConfig which can be passed to createServer().
  * The caller is responsible for any config merging or overrides.
  *
  * @param options - Optional configuration options
@@ -141,7 +140,7 @@ export type DeepPartial<T> = {
  */
 export function loadConfig(options?: {
   configPath?: string | undefined;
-}): ExternalAppConfig {
+}): AppConfig {
   const configPath = options?.configPath ?? resolveConfigPath();
   console.info(`Loading config from: ${configPath}`);
   return loadConfigFromPath(configPath);
