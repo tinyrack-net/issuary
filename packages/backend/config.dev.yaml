@@ -58,7 +58,7 @@ app:
 
 admin:
   enabled: true
-  port: !env ADMIN_PORT
+  port: ${ADMIN_PORT:-8081}
 
 # Scheduler configuration
 # Controls the in-process scheduler for automated cleanup tasks.
@@ -171,18 +171,18 @@ database:
   type: sqlite
   path: test.db
   # type: postgres
-  # host: !env DATABASE_URL
-  # port: !env DATABASE_PORT
-  # name: !env DATABASE_NAME
-  # user: !env DATABASE_USER
-  # password: !env DATABASE_PASSWORD
+  # host: ${DATABASE_HOST:-localhost}
+  # port: ${DATABASE_PORT:-5432}
+  # name: $DATABASE_NAME
+  # user: $DATABASE_USER
+  # password: $DATABASE_PASSWORD
 
 smtp:
   host: mail.winetree94.com
   secure: true
   port: 465
   user: "tester@tinyrack.net"
-  password: !env SMTP_PASSWORD
+  password: $SMTP_PASSWORD
   from: "tester@tinyrack.net"
   test: false
 
@@ -214,16 +214,16 @@ identity_providers:
     type: github
     enabled: true
     display_name: GitHub
-    client_id: !env GITHUB_CLIENT_ID
-    client_secret: !env GITHUB_CLIENT_SECRET
+    client_id: $GITHUB_CLIENT_ID
+    client_secret: $GITHUB_CLIENT_SECRET
     email_conflict_strategy: auto_link
 
 # - id: google
 #   type: google
 #   enabled: false
 #   display_name: Google
-#   client_id: !env GOOGLE_CLIENT_ID
-#   client_secret: !env GOOGLE_CLIENT_SECRET
+#   client_id: $GOOGLE_CLIENT_ID
+#   client_secret: $GOOGLE_CLIENT_SECRET
 #   email_conflict_strategy: auto_link
 #
 # Example: Generic OAuth provider (custom IDP)
@@ -231,8 +231,8 @@ identity_providers:
 #   type: generic_oauth
 #   enabled: false
 #   display_name: My Custom IDP
-#   client_id: !env CUSTOM_CLIENT_ID
-#   client_secret: !env CUSTOM_CLIENT_SECRET
+#   client_id: $CUSTOM_CLIENT_ID
+#   client_secret: $CUSTOM_CLIENT_SECRET
 #   authorization_url: https://idp.example.com/authorize
 #   token_url: https://idp.example.com/token
 #   userinfo_url: https://idp.example.com/userinfo
