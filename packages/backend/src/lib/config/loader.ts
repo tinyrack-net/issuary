@@ -4,7 +4,7 @@ import nodemailer from 'nodemailer';
 import YAML from 'yaml';
 import { env } from '../env.js';
 import {
-  ConfigSchema,
+  ExternalConfigSchema,
   type InternalAppConfig,
   InternalConfigSchema,
 } from './schemas/root.js';
@@ -35,7 +35,7 @@ const loadConfigFromPath = async (
       },
     ],
   });
-  const parsed = ConfigSchema.parse(rawConfig);
+  const parsed = ExternalConfigSchema.parse(rawConfig);
 
   const smtpConfig = await (async () => {
     if (!parsed.smtp) {

@@ -10,7 +10,7 @@ import { AppConfigSmtp } from './smtp.js';
 import { AppConfigTerms } from './terms.js';
 import { AppConfigUser } from './user.js';
 
-export const ConfigSchema = z.object({
+export const ExternalConfigSchema = z.object({
   app: AppConfigApp,
   admin: AppConfigAdmin.default({
     enabled: false,
