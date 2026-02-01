@@ -60,19 +60,19 @@ export const cleanupCommand = new Command('cleanup')
         for (let i = 0; i < summary.tasks.length; i++) {
           const taskResult = summary.tasks[i];
           if (!taskResult) continue;
-          const { task, result, error, durationMs } = taskResult;
+          const { description, result, error, durationMs } = taskResult;
           const index = i + 1;
 
           if (error) {
-            console.log(`[${index}/${totalTasks}] ${task.description}`);
+            console.log(`[${index}/${totalTasks}] ${description}`);
             console.log(`      ERROR: ${error.message}`);
           } else if (result.skipped) {
             if (verbose) {
-              console.log(`[${index}/${totalTasks}] ${task.description}`);
+              console.log(`[${index}/${totalTasks}] ${description}`);
               console.log(`      Skipped: ${result.message || 'Disabled'}`);
             }
           } else {
-            console.log(`[${index}/${totalTasks}] ${task.description}`);
+            console.log(`[${index}/${totalTasks}] ${description}`);
             if (result.deletedCount > 0) {
               const action = dryRun ? 'Would delete' : 'Deleted';
               const suffix = result.message ? ` (${result.message})` : '';
