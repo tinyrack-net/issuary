@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { InternalAppConfig } from '@/lib/config/index.js';
+import type { ExternalAppConfig } from '@/lib/config/index.js';
 import { deepMerge } from '@/lib/config/index.js';
 import {
   createDbUserWithSession,
@@ -381,7 +381,7 @@ describe('GET /api/v1/terms', () => {
             },
           },
         ],
-      }) as InternalAppConfig,
+      }) as ExternalAppConfig,
     });
 
     test('should correctly flag required vs optional terms', async () => {
@@ -465,7 +465,7 @@ describe('GET /api/v1/terms', () => {
             },
           },
         ],
-      }) as InternalAppConfig,
+      }) as ExternalAppConfig,
     });
 
     test('should return link type with URL content', async () => {

@@ -1,13 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll } from 'vitest';
-import type { InternalAppConfig } from '@/lib/config/index.js';
+import type { ExternalAppConfig } from '@/lib/config/index.js';
 import { createServer } from '@/server.js';
 
 /**
  * Default test configuration.
  * This replaces config.test.yaml and is used as the base config for all tests.
+ * Uses ExternalAppConfig format - will be resolved to InternalAppConfig by createServer.
  */
-export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
+export const DEFAULT_TEST_CONFIG: ExternalAppConfig = {
   app: {
     name: 'Tinyrack Auth',
     host: 'http://localhost:8080',
@@ -40,12 +41,6 @@ export const DEFAULT_TEST_CONFIG: InternalAppConfig = {
     type: 'memory',
   },
   smtp: {
-    host: 'smtp.ethereal.email',
-    port: 587,
-    secure: false,
-    user: 'test@ethereal.email',
-    password: 'test',
-    from: 'test@ethereal.email',
     test: true,
   },
   basic_authentication_methods: {
@@ -201,7 +196,7 @@ export interface SetupTestServerOptions {
    * });
    * ```
    */
-  config?: InternalAppConfig;
+  config?: ExternalAppConfig;
 }
 
 /**
