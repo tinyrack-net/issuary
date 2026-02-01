@@ -40,7 +40,7 @@ const SECOND_OAUTH_CLIENT_CONFIG = {
   response_types: ['code'],
   grant_types: ['authorization_code', 'refresh_token'],
   scope: 'openid profile email',
-} as const;
+};
 
 let app: FastifyInstance;
 

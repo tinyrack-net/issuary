@@ -28,7 +28,7 @@ export const TEST_OAUTH_CLIENT_CONFIG = {
   response_types: ['code'],
   grant_types: ['authorization_code'],
   scope: 'openid profile email id_token',
-} as const;
+};
 
 /**
  * Test user credentials.
@@ -74,17 +74,17 @@ export const TEST_TERMS_CONFIG = [
   {
     id: 'tos',
     required: true,
-    consent_mode: 'explicit',
+    consent_mode: 'explicit' as const,
     version: '1.0.0',
     content: {
       ko: {
         title: '이용약관',
-        type: 'link',
+        type: 'link' as const,
         content: 'https://example.com/terms/ko',
       },
       en: {
         title: 'Terms of Service',
-        type: 'link',
+        type: 'link' as const,
         content: 'https://example.com/terms/en',
       },
     },
@@ -92,22 +92,22 @@ export const TEST_TERMS_CONFIG = [
   {
     id: 'privacy',
     required: true,
-    consent_mode: 'explicit',
+    consent_mode: 'explicit' as const,
     version: '1.0.0',
     content: {
       ko: {
         title: '개인정보처리방침',
-        type: 'link',
+        type: 'link' as const,
         content: 'https://example.com/privacy/ko',
       },
       en: {
         title: 'Privacy Policy',
-        type: 'link',
+        type: 'link' as const,
         content: 'https://example.com/privacy/en',
       },
     },
   },
-] as const;
+];
 
 /**
  * Default terms consents for registration tests.
