@@ -2,11 +2,16 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
 export default defineConfig({
+  server: {
+    host: '0.0.0.0',
+    port: 8082,
+    allowedHosts: ['desktop.server.lan'],
+  },
   integrations: [
     starlight({
       title: 'Tinyauth',
       description: 'OpenID Connect (OIDC) Provider Documentation',
-      customCss: ['./src/styles/custom.css'],
+      // customCss: ['./src/styles/custom.css'],
       defaultLocale: 'root',
       locales: {
         root: {
@@ -97,6 +102,29 @@ export default defineConfig({
           items: [
             { slug: 'integration/nextjs' },
             { slug: 'integration/react-spa' },
+          ],
+        },
+        {
+          label: 'Database',
+          translations: {
+            ko: '데이터베이스',
+            ja: 'データベース',
+          },
+          items: [
+            { slug: 'database/sqlite' },
+            { slug: 'database/postgresql' },
+          ],
+        },
+        {
+          label: 'Terms of Service',
+          translations: {
+            ko: '약관',
+            ja: '利用規約',
+          },
+          items: [
+            { slug: 'terms/overview' },
+            { slug: 'terms/implicit-flow' },
+            { slug: 'terms/explicit-flow' },
           ],
         },
         {
