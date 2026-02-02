@@ -38,8 +38,19 @@ export default defineConfig({
           },
           items: [
             { slug: 'getting-started/introduction' },
-            { slug: 'getting-started/installation' },
-            { slug: 'getting-started/quick-start' },
+            { slug: 'getting-started/one-minute-start' },
+            { slug: 'getting-started/comparison' },
+          ],
+        },
+        {
+          label: 'Deployment',
+          translations: {
+            ko: '배포',
+            ja: 'デプロイ',
+          },
+          items: [
+            { slug: 'deployment/docker' },
+            { slug: 'deployment/kubernetes' },
           ],
         },
         {
@@ -76,17 +87,6 @@ export default defineConfig({
             ja: 'ガイド',
           },
           autogenerate: { directory: 'guides' },
-        },
-        {
-          label: 'Deployment',
-          translations: {
-            ko: '배포',
-            ja: 'デプロイ',
-          },
-          items: [
-            { slug: 'deployment/docker' },
-            { slug: 'deployment/kubernetes' },
-          ],
         },
         {
           label: 'Integration',
