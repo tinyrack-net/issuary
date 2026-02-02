@@ -78,6 +78,17 @@ export default defineConfig({
           autogenerate: { directory: 'guides' },
         },
         {
+          label: 'Deployment',
+          translations: {
+            ko: '배포',
+            ja: 'デプロイ',
+          },
+          items: [
+            { slug: 'deployment/docker' },
+            { slug: 'deployment/kubernetes' },
+          ],
+        },
+        {
           label: 'Integration',
           translations: {
             ko: '연동',
