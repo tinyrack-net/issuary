@@ -2,3 +2,83 @@
 title: Comparison
 description: How Tinyauth compares to other authentication solutions
 ---
+
+There are already many authentication solutions out there. SaaS options include `clerk`, `auth0`, and `zitadel`, while self-hosted solutions include `authentik`, `keycloak`, and `pocketid`.
+
+They are all great products that solve their own unique problems. And so does `Tinyauth`.
+
+---
+
+## Enterprise solutions
+
+`Authentik` and `Keycloak` are powerful authentication solutions designed for enterprise environments. They provide features needed by large organizations such as LDAP integration, fine-grained permission management, and complex authentication policies.
+
+However, these features can become obstacles in B2C SaaS environments. End users may be exposed to complex admin UIs, or unnecessary steps may be added to simple login flows.
+
+They also require significant learning curves for configuration and operation, and have high resource requirements.
+
+---
+
+## Lightweight solutions
+
+On the other end, there are ultra-lightweight solutions like `PocketID`. They have the advantage of very simple configuration and quick setup.
+
+However, they often lack features needed for B2C SaaS services. Essential features for user experience and compliance such as email verification, terms of service management, and various 2FA options may be missing.
+
+---
+
+## Tinyauth's position
+
+`Tinyauth` aims to find the balance between these two extremes.
+
+**Borrowed from enterprise solutions:**
+- Full support for standard OAuth 2.0 / OIDC protocols
+- Various authentication methods (passkeys, social login, TOTP)
+- Email verification and terms of service management
+
+**Borrowed from lightweight solutions:**
+- All configuration in a single YAML file
+- Minimal resource requirements
+- Quick start and simple operation
+
+**And Tinyauth's unique features:**
+- UI optimized for B2C user experience
+- Profile page where users can manage their own accounts
+- Customization with 35+ themes to match your brand
+
+---
+
+## Comparison table
+
+| Feature | Keycloak | Authentik | PocketID | Tinyauth |
+|---------|----------|-----------|----------|----------|
+| OAuth 2.0 / OIDC | ✅ | ✅ | ✅ | ✅ |
+| Passkey (WebAuthn) | ✅ | ✅ | ✅ | ✅ |
+| Social login | ✅ | ✅ | ❌ | ✅ |
+| TOTP 2FA | ✅ | ✅ | ❌ | ✅ |
+| Email verification | ✅ | ✅ | ❌ | ✅ |
+| Terms of service | ⚠️ | ⚠️ | ❌ | ✅ |
+| User profile page | ⚠️ | ⚠️ | ✅ | ✅ |
+| YAML-based config | ❌ | ❌ | ✅ | ✅ |
+| Lightweight deploy | ❌ | ❌ | ✅ | ✅ |
+| B2C optimized UI | ❌ | ❌ | ⚠️ | ✅ |
+
+✅ Full support | ⚠️ Partial support or requires additional config | ❌ Not supported
+
+---
+
+## When to choose Tinyauth?
+
+Tinyauth is suitable if:
+
+- You're building a B2C SaaS service
+- User-friendly login experience is important
+- You want self-hosting but want to avoid complex configuration
+- You need standard OIDC protocol
+
+Consider other solutions if:
+
+- **You need enterprise SSO**: Keycloak or Authentik
+- **You need LDAP/Active Directory integration**: Keycloak or Authentik
+- **You need minimal features only**: PocketID
+- **You want a managed service**: Auth0, Clerk, Zitadel
