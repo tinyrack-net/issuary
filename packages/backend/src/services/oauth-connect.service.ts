@@ -1,5 +1,4 @@
 import fastifyPlugin from 'fastify-plugin';
-import type z from 'zod/v4';
 import {
   type ResolvedAppConfig,
   type ResolvedOAuthConfig,
@@ -9,9 +8,80 @@ import { isEmailAllowed } from '@/lib/email-pattern.js';
 import { generatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
-import type { oauthConnectSchema } from '@/schemas/oauth-connect.js';
 import type { TermsService } from './terms.service.js';
 import type { UserService } from './user.service.js';
+
+/**
+ * OAuth user info returned from provider
+ * Normalized user information from external OAuth providers
+ */
+export interface OAuthUserInfo {
+  /** Provider's user ID */
+  id: string;
+  /** User's email address */
+  email: string;
+  /** Whether the email is verified by the provider */
+  email_verified: boolean;
+  /** User's display name */
+  name?: string | undefined;
+  /** User's profile picture URL */
+  picture?: string | undefined;
+}
+
+/**
+ * Token response from OAuth provider
+ * Standard OAuth 2.0 token response structure
+ */
+export interface OAuthTokens {
+  /** OAuth access token */
+  access_token: string;
+  /** OAuth refresh token (if provided) */
+  refresh_token?: string | undefined;
+  /** Token expiration time in seconds */
+  expires_in?: number | undefined;
+  /** Token type (usually "Bearer") */
+  token_type: string;
+  /** OIDC ID token (if openid scope was requested) */
+  id_token?: string | undefined;
+}
+
+/**
+ * OAuth session data stored in secure session
+ * Used to maintain state during OAuth flow
+ */
+export interface OAuthSessionData {
+  /** State parameter for CSRF protection */
+  state: string;
+  /** PKCE code verifier */
+  codeVerifier: string;
+  /** OAuth provider ID */
+  providerId: string;
+  /** Authentication mode */
+  mode: 'login' | 'register' | 'link';
+  /** URL to return to after authentication */
+  returnUrl?: string | undefined;
+}
+
+/**
+ * Result of OAuth authentication
+ * Returned after successful OAuth login/registration
+ */
+export interface OAuthAuthResult {
+  /** Whether this is a newly created user */
+  isNewUser: boolean;
+  /** Authenticated user session data */
+  user: {
+    managed_by: 'database' | 'config';
+    id: string;
+    email: string;
+    email_verified: boolean;
+    email_verification_required: boolean;
+    has_password: boolean;
+    totp_registered: boolean;
+    second_factor_required: boolean;
+    passkey_count: number;
+  };
+}
 
 // Note: This service uses fastify.config for identity_providers (OAuth providers config)
 // but user-related config lookups have been removed since users are now synced to DB.
@@ -80,7 +150,7 @@ export class OAuthConnectService {
     returnUrl?: string,
   ): Promise<{
     url: string;
-    sessionData: z.infer<typeof oauthConnectSchema.OAuthSessionData>;
+    sessionData: OAuthSessionData;
   }> {
     const provider = this.getProvider(providerId);
     const pkce = await generatePKCE();
@@ -103,7 +173,7 @@ export class OAuthConnectService {
 
     const url = `${provider.authorization_url}?${params.toString()}`;
 
-    const sessionData: z.infer<typeof oauthConnectSchema.OAuthSessionData> = {
+    const sessionData: OAuthSessionData = {
       state,
       codeVerifier: pkce.verifier,
       providerId,
@@ -121,7 +191,7 @@ export class OAuthConnectService {
     providerId: string,
     code: string,
     codeVerifier: string,
-  ): Promise<z.infer<typeof oauthConnectSchema.OAuthTokens>> {
+  ): Promise<OAuthTokens> {
     const provider = this.getProvider(providerId);
 
     const params = new URLSearchParams({
@@ -146,9 +216,7 @@ export class OAuthConnectService {
       throw new e.OAuthTokenExchangeFailed.Error();
     }
 
-    const tokens = (await response.json()) as z.infer<
-      typeof oauthConnectSchema.OAuthTokens
-    >;
+    const tokens = (await response.json()) as OAuthTokens;
     return tokens;
   }
 
@@ -158,7 +226,7 @@ export class OAuthConnectService {
   public async fetchUserInfo(
     providerId: string,
     accessToken: string,
-  ): Promise<z.infer<typeof oauthConnectSchema.OAuthUserInfo>> {
+  ): Promise<OAuthUserInfo> {
     const provider = this.getProvider(providerId);
 
     // Apple doesn't have a userinfo endpoint - info is in the ID token
@@ -215,9 +283,9 @@ export class OAuthConnectService {
    */
   public async authenticateWithOAuth(
     providerId: string,
-    tokens: z.infer<typeof oauthConnectSchema.OAuthTokens>,
-    userInfo: z.infer<typeof oauthConnectSchema.OAuthUserInfo>,
-  ): Promise<z.infer<typeof oauthConnectSchema.OAuthAuthResult>> {
+    tokens: OAuthTokens,
+    userInfo: OAuthUserInfo,
+  ): Promise<OAuthAuthResult> {
     const provider = this.getProvider(providerId);
 
     // Reject if the OAuth provider has not verified the user's email
@@ -395,7 +463,7 @@ export class OAuthConnectService {
    */
   public async isNewOAuthUser(
     providerId: string,
-    userInfo: z.infer<typeof oauthConnectSchema.OAuthUserInfo>,
+    userInfo: OAuthUserInfo,
   ): Promise<boolean> {
     // Check if OAuth account is already linked
     const existingOAuth = await this.mikro.userOAuth.findByProviderUserId(
@@ -422,10 +490,10 @@ export class OAuthConnectService {
    */
   public async completeOAuthRegistration(params: {
     providerId: string;
-    tokens: z.infer<typeof oauthConnectSchema.OAuthTokens>;
-    userInfo: z.infer<typeof oauthConnectSchema.OAuthUserInfo>;
+    tokens: OAuthTokens;
+    userInfo: OAuthUserInfo;
     consents: Array<{ termsId: string; agreed: boolean }>;
-  }): Promise<z.infer<typeof oauthConnectSchema.OAuthAuthResult>> {
+  }): Promise<OAuthAuthResult> {
     const { providerId, tokens, userInfo, consents } = params;
 
     // Reject if the OAuth provider has not verified the user's email
@@ -608,8 +676,8 @@ export class OAuthConnectService {
   public async linkOAuthAccount(
     userId: string,
     providerId: string,
-    tokens: z.infer<typeof oauthConnectSchema.OAuthTokens>,
-    userInfo: z.infer<typeof oauthConnectSchema.OAuthUserInfo>,
+    tokens: OAuthTokens,
+    userInfo: OAuthUserInfo,
   ): Promise<void> {
     // Check if OAuth account is already linked to another user
     const existingOAuth = await this.mikro.userOAuth.findByProviderUserId(
