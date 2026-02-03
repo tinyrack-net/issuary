@@ -369,6 +369,9 @@ importers:
       '@astrojs/starlight':
         specifier: ^0.37.4
         version: 0.37.4(astro@5.17.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.54.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2))
+      '@scalar/astro':
+        specifier: ^0.1.15
+        version: 0.1.15(astro@5.17.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.54.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2))
       astro:
         specifier: ^5.17.0
         version: 5.17.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.54.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
@@ -1687,12 +1690,26 @@ packages:
   '@rushstack/ts-command-line@4.23.7':
     resolution: {integrity: sha512-Gr9cB7DGe6uz5vq2wdr89WbVDKz0UeuFEn5H2CfWDe7JvjFFaiV15gi6mqDBTbHhHCWS7w8mF1h3BnIfUndqdA==}
 
+  '@scalar/astro@0.1.15':
+    resolution: {integrity: sha512-ZirYbWhuz8vZRHwBm23fzI/RjY/ErMBVEdOUGqxX2mrTIQeFq+MjPWjJGQSL/mkE2Gi/ixOWlFAiY7BNXWSoog==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      astro: ^4.0.0 || ^5.0.0
+
   '@scalar/core@0.3.28':
     resolution: {integrity: sha512-Ka+g5P3Fe4f9lsJcBxfI+XAgwMYeZRgzIBWw1/HBrDoRmH3rV/N//410MBKEYXUw7pWpS+dZPJANZRvU5jtxhw==}
     engines: {node: '>=20'}
 
+  '@scalar/core@0.3.36':
+    resolution: {integrity: sha512-gdgoF/XP2RkvhqGlI0l2MWTR/2522GPdaiQkWwS348Po8oCkJy2npxFuZbC2jtp6DIrWDrOD6qYgHssyzMmcrA==}
+    engines: {node: '>=20'}
+
   '@scalar/fastify-api-reference@1.40.9':
     resolution: {integrity: sha512-0IncKsLX5bglC8JZ1ty8F2zsMGBjC94Rir26fyMsOpzmUHJeFlwuF4I+DRS88TFS5eWCy2FXqJizSpo1TVvIdA==}
+    engines: {node: '>=20'}
+
+  '@scalar/helpers@0.2.10':
+    resolution: {integrity: sha512-VS32setBEAGY9JifuDZKHIq8SUCUWLEfL1V+h3s5V4wcmE8OZVkzaJemsMq/YAM9e7gb9ZbkvJLL4zzEvPSrVg==}
     engines: {node: '>=20'}
 
   '@scalar/helpers@0.2.4':
@@ -1717,6 +1734,10 @@ packages:
 
   '@scalar/types@0.5.4':
     resolution: {integrity: sha512-5FNQH/zx3tnERzxfpErscPHfRxLCuhncmhFYiaSz196Xi2iG1YI08BtxTV2slfT6of52epJ/MrKerarplKf9eg==}
+    engines: {node: '>=20'}
+
+  '@scalar/types@0.6.1':
+    resolution: {integrity: sha512-2u/pZTauRLoUDD2PpJF8XDflZX3PgaYSD72cFDBL1WVM/jb0IxoWggxWKm34OR03LnNYbTvXlwfyr2QZ0hm3Xg==}
     engines: {node: '>=20'}
 
   '@scure/base@2.0.0':
@@ -3770,6 +3791,11 @@ packages:
     engines: {node: ^18 || >=20}
     hasBin: true
 
+  nanoid@5.1.6:
+    resolution: {integrity: sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg==}
+    engines: {node: ^18 || >=20}
+    hasBin: true
+
   napi-build-utils@2.0.0:
     resolution: {integrity: sha512-GEbrYkbfF7MoNaoh2iGG84Mnf/WZfB0GdGEsM8wz7Expx/LlWf5U8t9nvJKXSp3qr5IsEbK04cBGhol/KwOsWA==}
 
@@ -4733,6 +4759,10 @@ packages:
 
   type-fest@5.0.0:
     resolution: {integrity: sha512-GeJop7+u7BYlQ6yQCAY1nBQiRSHR+6OdCEtd8Bwp9a3NK3+fWAVjOaPKJDteB9f6cIJ0wt4IfnScjLG450EpXA==}
+    engines: {node: '>=20'}
+
+  type-fest@5.4.3:
+    resolution: {integrity: sha512-AXSAQJu79WGc79/3e9/CR77I/KQgeY1AhNvcShIH4PTcGYyC4xv6H4R4AUOwkPS5799KlVDAu8zExeCrkGquiA==}
     engines: {node: '>=20'}
 
   typescript@5.9.3:
@@ -6696,9 +6726,18 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
+  '@scalar/astro@0.1.15(astro@5.17.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.54.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2))':
+    dependencies:
+      '@scalar/core': 0.3.36
+      astro: 5.17.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.54.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+
   '@scalar/core@0.3.28':
     dependencies:
       '@scalar/types': 0.5.4
+
+  '@scalar/core@0.3.36':
+    dependencies:
+      '@scalar/types': 0.6.1
 
   '@scalar/fastify-api-reference@1.40.9':
     dependencies:
@@ -6707,6 +6746,8 @@ snapshots:
       '@scalar/openapi-types': 0.5.3
       fastify-plugin: 4.5.1
       github-slugger: 2.0.0
+
+  '@scalar/helpers@0.2.10': {}
 
   '@scalar/helpers@0.2.4': {}
 
@@ -6740,6 +6781,13 @@ snapshots:
       '@scalar/helpers': 0.2.4
       nanoid: 5.1.5
       type-fest: 5.0.0
+      zod: 4.3.5
+
+  '@scalar/types@0.6.1':
+    dependencies:
+      '@scalar/helpers': 0.2.10
+      nanoid: 5.1.6
+      type-fest: 5.4.3
       zod: 4.3.5
 
   '@scure/base@2.0.0': {}
@@ -9440,6 +9488,8 @@ snapshots:
 
   nanoid@5.1.5: {}
 
+  nanoid@5.1.6: {}
+
   napi-build-utils@2.0.0: {}
 
   negotiator@0.6.4:
@@ -10504,6 +10554,10 @@ snapshots:
   type-fest@4.41.0: {}
 
   type-fest@5.0.0:
+    dependencies:
+      tagged-tag: 1.0.0
+
+  type-fest@5.4.3:
     dependencies:
       tagged-tag: 1.0.0
 
