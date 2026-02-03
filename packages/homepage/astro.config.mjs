@@ -11,7 +11,7 @@ export default defineConfig({
     starlight({
       title: 'Tinyauth',
       description: 'OpenID Connect (OIDC) Provider Documentation',
-      // customCss: ['./src/styles/custom.css'],
+      customCss: ['./src/styles/custom.css'],
       defaultLocale: 'root',
       locales: {
         root: {
@@ -158,7 +158,19 @@ export default defineConfig({
             ko: '레퍼런스',
             ja: 'リファレンス',
           },
-          autogenerate: { directory: 'reference' },
+          items: [
+            { slug: 'reference/api' },
+            { slug: 'reference/configuration-schema' },
+            {
+              label: 'Interactive API Docs',
+              translations: {
+                ko: '인터랙티브 API 문서',
+                ja: 'インタラクティブAPIドキュメント',
+              },
+              link: '/api-reference',
+              attrs: { target: '_blank' },
+            },
+          ],
         },
       ],
     }),

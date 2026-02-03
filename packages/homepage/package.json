@@ -4,12 +4,14 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
+    "generate:openapi": "pnpm --filter @tinyauth/backend export:openapi ../homepage/public/openapi.json",
+    "dev": "pnpm generate:openapi && astro dev",
+    "build": "pnpm generate:openapi && astro build",
     "preview": "astro preview"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.37.4",
+    "@scalar/astro": "^0.1.15",
     "astro": "^5.17.0",
     "sharp": "^0.34.5"
   },
