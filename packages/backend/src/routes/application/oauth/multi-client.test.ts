@@ -348,63 +348,8 @@ describe('Multi-Client Isolation', () => {
   });
 
   describe('Client Credential Validation', () => {
-    test('should reject wrong client_secret', { timeout: 15000 }, async () => {
-      const sessionCookie = await createAuthenticatedSession(
-        app,
-        TEST_USER.email,
-        TEST_USER.password,
-      );
-
-      const { code } = await getAuthorizationCode(app, {
-        sessionCookie,
-        clientId: TEST_OAUTH_CLIENT.clientId,
-        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
-        codeChallenge: TEST_PKCE.codeChallenge,
-        codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
-      });
-
-      // Try to exchange with wrong secret
-      const tokenRes = await exchangeCodeForTokens(app, {
-        code,
-        clientId: TEST_OAUTH_CLIENT.clientId,
-        clientSecret: 'wrong-secret',
-        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
-        codeVerifier: TEST_PKCE.codeVerifier,
-      });
-
-      expect([400, 401]).toContain(tokenRes.statusCode);
-    });
-
-    test(
-      'should reject mismatched redirect_uri',
-      { timeout: 15000 },
-      async () => {
-        const sessionCookie = await createAuthenticatedSession(
-          app,
-          TEST_USER.email,
-          TEST_USER.password,
-        );
-
-        const { code } = await getAuthorizationCode(app, {
-          sessionCookie,
-          clientId: TEST_OAUTH_CLIENT.clientId,
-          redirectUri: TEST_OAUTH_CLIENT.redirectUri,
-          codeChallenge: TEST_PKCE.codeChallenge,
-          codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
-        });
-
-        // Try to exchange with different redirect_uri
-        const tokenRes = await exchangeCodeForTokens(app, {
-          code,
-          clientId: TEST_OAUTH_CLIENT.clientId,
-          clientSecret: TEST_OAUTH_CLIENT.clientSecret,
-          redirectUri: 'http://attacker.com/callback', // Wrong redirect
-          codeVerifier: TEST_PKCE.codeVerifier,
-        });
-
-        expect([400, 401]).toContain(tokenRes.statusCode);
-      },
-    );
+    // Note: Wrong client_secret and redirect_uri mismatch are tested in
+    // server-side-flow.test.ts and token/post.test.ts
 
     test(
       'should reject non-existent client_id',
