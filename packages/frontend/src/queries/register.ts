@@ -1,11 +1,7 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { etch } from '@/libs/etch.js';
 import type { SessionUser } from './session.js';
-
-export type TermsConsentItem = {
-  termsId: string;
-  agreed: boolean;
-};
+import type { TermsConsentItem } from './terms.js';
 
 export type RegisterParams = {
   email: string;
