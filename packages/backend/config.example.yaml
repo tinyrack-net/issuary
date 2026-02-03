@@ -196,22 +196,6 @@ app:
   #   ja: 続行することで、<a href="https://example.com/terms/ja" class="link">利用規約</a>および<a href="https://example.com/privacy/ja" class="link">プライバシーポリシー</a>に同意したものとみなされます。
 
 # -----------------------------------------------------------------------------
-# Admin Panel Configuration
-# -----------------------------------------------------------------------------
-# Settings for the administrative dashboard.
-# -----------------------------------------------------------------------------
-admin:
-  # enabled: Whether the admin panel is accessible.
-  # Set to false to completely disable admin access.
-  # Default: false
-  enabled: true
-
-  # port: Port number for the admin panel.
-  # Can be the same as the main app port or a different port for isolation.
-  # Using a separate port allows you to restrict admin access at the network level.
-  port: ${ADMIN_PORT:-8081}
-
-# -----------------------------------------------------------------------------
 # Scheduler Configuration
 # -----------------------------------------------------------------------------
 # Controls the in-process scheduler for automated cleanup tasks.

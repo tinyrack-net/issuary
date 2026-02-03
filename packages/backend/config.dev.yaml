@@ -56,10 +56,6 @@ app:
   # Account deletion feature
   account_deletion: true
 
-admin:
-  enabled: true
-  port: ${ADMIN_PORT:-8081}
-
 # Scheduler configuration
 # Controls the in-process scheduler for automated cleanup tasks.
 #

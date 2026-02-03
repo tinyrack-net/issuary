@@ -23,7 +23,6 @@ export {
 } from './oauth-resolver.js';
 // App config schemas
 export {
-  AppConfigAdmin,
   AppConfigApp,
   AppTheme,
 } from './schemas/app.js';

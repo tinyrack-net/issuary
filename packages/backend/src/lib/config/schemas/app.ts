@@ -162,15 +162,3 @@ export const AppConfigApp = z.object({
 });
 
 export type AppConfigApp = z.infer<typeof AppConfigApp>;
-
-export const AppConfigAdmin = z.discriminatedUnion('enabled', [
-  z.object({
-    enabled: z.literal(false),
-  }),
-  z.object({
-    enabled: z.literal(true),
-    port: zz.PORT.optional().default(8081),
-  }),
-]);
-
-export type AppConfigAdmin = z.infer<typeof AppConfigAdmin>;

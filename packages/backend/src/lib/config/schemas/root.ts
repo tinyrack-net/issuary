@@ -1,5 +1,5 @@
 import z from 'zod/v4';
-import { AppConfigAdmin, AppConfigApp } from './app.js';
+import { AppConfigApp } from './app.js';
 import { AppConfigAuth } from './auth.js';
 import { AppConfigCleanup, DEFAULT_CLEANUP_CONFIG } from './cleanup.js';
 import { AppConfigClient } from './client.js';
@@ -19,9 +19,6 @@ import { AppConfigUser } from './user.js';
  */
 export const AppConfigSchema = z.object({
   app: AppConfigApp,
-  admin: AppConfigAdmin.optional().default({
-    enabled: false,
-  }),
   database: AppConfigDatabase.optional().default({
     type: 'sqlite',
     path: 'test.db',
@@ -85,7 +82,7 @@ export type ResolvedAppConfig = Omit<AppConfig, 'smtp'> & {
 };
 
 // Re-export individual schemas for external use
-export { AppConfigAdmin, AppConfigApp } from './app.js';
+export { AppConfigApp } from './app.js';
 export {
   AppConfigAuth,
   AppConfigPasskeyAuth,
