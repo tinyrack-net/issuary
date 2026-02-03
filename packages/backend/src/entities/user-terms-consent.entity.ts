@@ -117,11 +117,4 @@ export class UserTermsConsentEntity extends BaseEntity {
   public get termsId(): string {
     return this.terms.id;
   }
-
-  /**
-   * Check if this consent matches the given version
-   */
-  public matchesVersion(version: string): boolean {
-    return this.termsVersion === version;
-  }
 }

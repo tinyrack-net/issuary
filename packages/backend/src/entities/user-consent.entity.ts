@@ -105,11 +105,4 @@ export class UserConsentEntity extends BaseEntity {
     }
     return requestedScopes.every((scope) => this.scopes.includes(scope));
   }
-
-  /**
-   * Check if consent is active (not revoked)
-   */
-  public isActive(): boolean {
-    return this.revoked_at === null || this.revoked_at === undefined;
-  }
 }
