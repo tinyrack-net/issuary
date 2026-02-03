@@ -1,11 +1,51 @@
 import fastifyPlugin from 'fastify-plugin';
-import type z from 'zod/v4';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
-import type { oauthSchema } from '@/schemas/oauth.js';
 import type { OAuthClientService } from './oauth-client.service.js';
 import type { UserConsentService } from './user-consent.service.js';
+
+/**
+ * OAuth authorization request parameters (RFC 6749 §4.1.1)
+ * Also includes OpenID Connect parameters (OIDC Core 1.0 §3.1.2.1)
+ * @see https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.1
+ * @see https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest
+ */
+export interface AuthorizeParams {
+  /** OAuth response type (e.g., "code" for authorization code flow) */
+  response_type: string;
+  /** Redirect URI where the authorization response will be sent */
+  redirect_uri: string;
+  /** Opaque value used to maintain state between request and callback (CSRF protection) */
+  state?: string | undefined;
+  /** OAuth client identifier */
+  client_id: string;
+  /** PKCE code challenge derived from code verifier (RFC 7636) */
+  code_challenge?: string | undefined;
+  /** PKCE code challenge method (S256 or plain) */
+  code_challenge_method?: 'S256' | 'plain' | undefined;
+  /** Space-separated list of requested scopes */
+  scope?: string | undefined;
+  /** OIDC nonce for replay attack prevention */
+  nonce?: string | undefined;
+  /** OIDC prompt parameter to control authentication/consent UI */
+  prompt?: 'none' | 'login' | 'consent' | 'select_account' | undefined;
+  /** OIDC max authentication age in seconds */
+  max_age?: number | undefined;
+  /** OIDC display mode for authentication UI */
+  display?: 'page' | 'popup' | 'touch' | 'wap' | undefined;
+}
+
+/**
+ * OAuth authorization result
+ * Currently only supports redirect type
+ */
+export interface AuthorizeResult {
+  /** Result type discriminator */
+  type: 'redirect';
+  /** URL to redirect the user agent to */
+  url: string;
+}
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -25,13 +65,13 @@ export class OAuthAuthorizeService {
    * Handle OAuth authorization request
    */
   public async authorize(params: {
-    query: z.infer<typeof oauthSchema.AuthorizeParams>;
+    query: AuthorizeParams;
     userSession?: {
       id: string;
       /** OIDC: Time when End-User authentication occurred (Unix timestamp) */
       authenticated_at: number;
     };
-  }): Promise<z.infer<typeof oauthSchema.AuthorizeResult>> {
+  }): Promise<AuthorizeResult> {
     const { query, userSession } = params;
 
     // 1. Validate and fetch OAuth client DTO for validation methods
@@ -173,9 +213,7 @@ export class OAuthAuthorizeService {
   /**
    * Build login redirect URL
    */
-  private buildLoginRedirectUrl(
-    query: z.infer<typeof oauthSchema.AuthorizeParams>,
-  ): string {
+  private buildLoginRedirectUrl(query: AuthorizeParams): string {
     const loginUrl = new URL('/login', this.config.app.host);
     loginUrl.searchParams.set('client_id', query.client_id);
     loginUrl.searchParams.set('redirect_uri', query.redirect_uri);
@@ -215,9 +253,7 @@ export class OAuthAuthorizeService {
   /**
    * Build consent redirect URL
    */
-  private buildConsentRedirectUrl(
-    query: z.infer<typeof oauthSchema.AuthorizeParams>,
-  ): string {
+  private buildConsentRedirectUrl(query: AuthorizeParams): string {
     const consentUrl = new URL('/consent', this.config.app.host);
     consentUrl.searchParams.set('client_id', query.client_id);
     consentUrl.searchParams.set('redirect_uri', query.redirect_uri);

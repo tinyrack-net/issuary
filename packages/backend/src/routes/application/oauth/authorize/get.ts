@@ -2,9 +2,9 @@ import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
-import type { oauthSchema } from '@/schemas/oauth.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
+import type { AuthorizeParams } from '@/services/oauth-authorize.service.js';
 
 export default (fastify: FastifyWithZodInstance) => {
   return fastify.route({
@@ -108,7 +108,7 @@ export default (fastify: FastifyWithZodInstance) => {
 
         // Call authorize service
         const authorizeParams: {
-          query: z.infer<typeof oauthSchema.AuthorizeParams>;
+          query: AuthorizeParams;
           userSession?: {
             id: string;
             authenticated_at: number;
