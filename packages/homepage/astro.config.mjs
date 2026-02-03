@@ -11,7 +11,7 @@ export default defineConfig({
     starlight({
       title: 'Tinyauth',
       description: 'OpenID Connect (OIDC) Provider Documentation',
-      customCss: ['./src/styles/custom.css'],
+      // customCss: ['./src/styles/custom.css'],
       defaultLocale: 'root',
       locales: {
         root: {
@@ -74,10 +74,10 @@ export default defineConfig({
                 ja: '基本設定',
               },
               items: [
-                { slug: 'general/theme' },
-                { slug: 'general/security' },
-                { slug: 'general/language' },
-                { slug: 'general/branding' },
+                { slug: 'configuration/general/theme' },
+                { slug: 'configuration/general/security' },
+                { slug: 'configuration/general/language' },
+                { slug: 'configuration/general/branding' },
               ],
             },
             {
@@ -87,8 +87,8 @@ export default defineConfig({
                 ja: 'データベース',
               },
               items: [
-                { slug: 'database/sqlite' },
-                { slug: 'database/postgresql' },
+                { slug: 'configuration/database/sqlite' },
+                { slug: 'configuration/database/postgresql' },
               ],
             },
             {
@@ -98,10 +98,10 @@ export default defineConfig({
                 ja: '認証',
               },
               items: [
-                { slug: 'authentication/email-verification' },
-                { slug: 'authentication/password' },
-                { slug: 'authentication/totp' },
-                { slug: 'authentication/passkey' },
+                { slug: 'configuration/authentication/email-verification' },
+                { slug: 'configuration/authentication/password' },
+                { slug: 'configuration/authentication/totp' },
+                { slug: 'configuration/authentication/passkey' },
               ],
             },
             {
@@ -111,11 +111,11 @@ export default defineConfig({
                 ja: 'アイデンティティプロバイダー',
               },
               items: [
-                { slug: 'oauth/overview' },
-                { slug: 'oauth/google' },
-                { slug: 'oauth/apple' },
-                { slug: 'oauth/github' },
-                { slug: 'oauth/others' },
+                { slug: 'configuration/oauth/overview' },
+                { slug: 'configuration/oauth/google' },
+                { slug: 'configuration/oauth/apple' },
+                { slug: 'configuration/oauth/github' },
+                { slug: 'configuration/oauth/others' },
               ],
             },
             {
@@ -125,8 +125,8 @@ export default defineConfig({
                 ja: '利用規約',
               },
               items: [
-                { slug: 'terms/implicit-flow' },
-                { slug: 'terms/explicit-flow' },
+                { slug: 'configuration/terms/implicit-flow' },
+                { slug: 'configuration/terms/explicit-flow' },
               ],
             },
             {
@@ -136,7 +136,7 @@ export default defineConfig({
                 ja: '連携',
               },
               items: [
-                { slug: 'client-integration/overview' },
+                { slug: 'configuration/client-integration/overview' },
               ],
             },
           ],

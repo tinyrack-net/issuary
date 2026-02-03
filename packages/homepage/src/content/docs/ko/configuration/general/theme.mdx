@@ -1,0 +1,27 @@
+---
+title: 테마
+description: Tinyauth용 PostgreSQL 데이터베이스 구성하기
+---
+
+```yaml
+app:
+  host: http://localhost:8080
+  port: 8080
+  cookie_secret: 3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b
+  jwt_access_token_ttl: 3600
+  jwt_refresh_token_ttl: 2592000
+
+  # Internationalization (i18n) settings
+  supported_languages:
+    - en
+    - ko
+    - ja
+  default_language: auto
+  fallback_language: ko
+
+  # Theme settings for authentication pages
+  light_theme: light
+  dark_theme: dark
+  theme_mode: system
+
+```
