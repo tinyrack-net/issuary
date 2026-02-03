@@ -13,13 +13,30 @@ import {
 } from '@simplewebauthn/server';
 import { isoBase64URL } from '@simplewebauthn/server/helpers';
 import fastifyPlugin from 'fastify-plugin';
-import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
 import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
-import type { passkeySchema } from '@/schemas/passkey.js';
+
+/**
+ * Passkey information for user passkey list
+ * Used to display registered passkeys to the user
+ */
+export interface PasskeyInfo {
+  /** Passkey entity ID */
+  id: string;
+  /** WebAuthn credential ID */
+  credential_id: string;
+  /** User-defined name for the passkey */
+  name: string | null;
+  /** Device type: single device or multi-device (synced) */
+  device_type: 'singleDevice' | 'multiDevice';
+  /** Whether the passkey is backed up (synced to cloud) */
+  backed_up: boolean;
+  /** When the passkey was registered */
+  created_at: Date;
+}
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -220,9 +237,7 @@ export class PasskeyService {
   /**
    * Get all passkeys for a user
    */
-  public async getUserPasskeys(
-    userId: string,
-  ): Promise<z.infer<typeof passkeySchema.PasskeyInfo>[]> {
+  public async getUserPasskeys(userId: string): Promise<PasskeyInfo[]> {
     const passkeys = await this.mikro.userPasskey.findByUserId(userId);
     return passkeys.map((p) => ({
       id: p.id,
