@@ -128,32 +128,6 @@ export function useTheme() {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [themeMode, serverLightTheme, serverDarkTheme]);
 
-  const setThemeMode = useCallback(
-    (mode: ThemeMode) => {
-      // Only allow setting theme mode if server allows it
-      if (!canToggleTheme) return;
-      localStorage.setItem(THEME_MODE_STORAGE_KEY, mode);
-      window.dispatchEvent(new CustomEvent(THEME_MODE_CHANGE_EVENT));
-    },
-    [canToggleTheme],
-  );
-
-  const toggleDarkMode = useCallback(() => {
-    // Only allow toggling if server allows it
-    if (!canToggleTheme) return;
-
-    const currentMode = getStoredThemeMode() ?? serverThemeMode;
-    // If system mode, check current actual theme to determine toggle direction
-    if (currentMode === 'system') {
-      const systemPref = getSystemThemePreference();
-      const newMode = systemPref === 'dark' ? 'light' : 'dark';
-      setThemeMode(newMode);
-    } else {
-      const newMode = currentMode === 'dark' ? 'light' : 'dark';
-      setThemeMode(newMode);
-    }
-  }, [canToggleTheme, serverThemeMode, setThemeMode]);
-
   const cycleThemeMode = useCallback(() => {
     // Only allow cycling if server allows it
     if (!canToggleTheme) return;
@@ -177,12 +151,6 @@ export function useTheme() {
     window.dispatchEvent(new CustomEvent(THEME_MODE_CHANGE_EVENT));
   }, [canToggleTheme, storedThemeMode]);
 
-  const setAutoTheme = useCallback(() => {
-    if (!canToggleTheme) return;
-    localStorage.removeItem(THEME_MODE_STORAGE_KEY);
-    window.dispatchEvent(new CustomEvent(THEME_MODE_CHANGE_EVENT));
-  }, [canToggleTheme]);
-
   // Check if user is in auto mode (no localStorage preference)
   const isAutoMode = storedThemeMode === null;
 
@@ -194,14 +162,9 @@ export function useTheme() {
 
   return {
     themeMode,
-    currentTheme,
-    lightTheme: serverLightTheme,
     darkTheme: serverDarkTheme,
     canToggleTheme,
-    setThemeMode,
-    toggleDarkMode,
     cycleThemeMode,
-    setAutoTheme,
     isAutoMode,
     detectedTheme,
   };
