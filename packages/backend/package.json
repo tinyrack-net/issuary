@@ -19,7 +19,8 @@
     "job": "APP_ENV=production node dist/index.js job",
     "mikro-orm": "NODE_OPTIONS='--import tsx' mikro-orm-esm ",
     "mikro-orm:debug": "NODE_OPTIONS='--import tsx' mikro-orm-esm debug",
-    "mikro-orm:schema:create": "NODE_OPTIONS='--import tsx' mikro-orm-esm migration:create --initial"
+    "mikro-orm:schema:create": "NODE_OPTIONS='--import tsx' mikro-orm-esm migration:create --initial",
+    "export:openapi": "APP_ENV=test NODE_OPTIONS='--import tsx' tsx src/export-openapi.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
