@@ -2,3 +2,35 @@
 title: 설정 개요
 description: Tinyauth 설정 시스템 이해하기
 ---
+
+`tinyauth`은 `config.yaml` 이라는 단일 구성 파일을 사용하여 설정돼요. 이 파일은 `tinyauth`의 동작 방식을 정의하는 다양한 옵션들을 포함하고 있어요. 설정 파일은 YAML 형식으로 작성되며, 다음과 같은 주요 섹션들로 구성되어 있어요.
+
+```yaml
+app:
+scheduler:
+terms:
+database:
+smtp:
+auth:
+identity_providers:
+clients:
+users:
+```
+
+---
+
+## 최소 요구 설정
+
+`tinyauth`을 시작하려면 최소한 다음과 같은 설정이 필요해요:
+
+```yaml
+app:
+  host: "https://your-tinyauth-domain.com"
+  port: 8080
+  cookie_secret: "your_cookie_secret"
+```
+
+- `host`: `tinyauth` 인스턴스의 기본 URL을 지정해요.
+- `port`: `tinyauth`가 수신 대기할 포트를 설정해
+- `cookie_secret`: 세션 쿠키를 암호화하는 데 사용되는 비밀 키예요.
+
