@@ -8,7 +8,6 @@ import {
   jwtVerify,
   SignJWT,
 } from 'jose';
-import type z from 'zod/v4';
 import { RevokedTokenEntity } from '@/entities/revoked-token.entity.js';
 import {
   calculateCutoffDate,
@@ -18,9 +17,85 @@ import {
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
-import type { jwtPayload } from '@/schemas/jwt.js';
 import type { JwtKeyService } from './jwt-key.service.js';
 import type { CleanupOptions, CleanupResult } from './types.js';
+
+/**
+ * Base JWT payload with standard claims (RFC 7519)
+ * @see https://datatracker.ietf.org/doc/html/rfc7519#section-4.1
+ */
+interface BaseJWTPayload {
+  /** Subject - identifies the principal that is the subject of the JWT */
+  sub: string;
+  /** JWT ID - unique identifier for the JWT */
+  jti?: string | undefined;
+  /** Issued At - time at which the JWT was issued (seconds since epoch) */
+  iat?: number | undefined;
+  /** Expiration Time - time after which the JWT must not be accepted (seconds since epoch) */
+  exp?: number | undefined;
+  /** Issuer - identifies the principal that issued the JWT */
+  iss?: string | undefined;
+}
+
+/**
+ * Access token payload structure (RFC 6749)
+ * @see https://datatracker.ietf.org/doc/html/rfc6749#section-1.4
+ */
+export interface AccessTokenPayload extends BaseJWTPayload {
+  /** Token type discriminator */
+  typ: 'access_token';
+  /** Client identifier */
+  client_id: string;
+  /** Space-separated list of scopes */
+  scope: string;
+  /** Audience - intended recipient of the token */
+  aud?: string | undefined;
+}
+
+/**
+ * Refresh token payload structure (RFC 6749)
+ * @see https://datatracker.ietf.org/doc/html/rfc6749#section-1.5
+ */
+export interface RefreshTokenPayload extends BaseJWTPayload {
+  /** Token type discriminator */
+  typ: 'refresh_token';
+  /** Client identifier */
+  client_id: string;
+  /** Space-separated list of scopes */
+  scope: string;
+  /** Audience - intended recipient of the token */
+  aud?: string | undefined;
+}
+
+/**
+ * ID token payload structure (OpenID Connect Core 1.0 §2)
+ * @see https://openid.net/specs/openid-connect-core-1_0.html#IDToken
+ */
+export interface IdTokenPayload extends BaseJWTPayload {
+  /** Audience - client_id of the Relying Party */
+  aud: string;
+  /** Nonce - value used to associate a Client session with an ID Token */
+  nonce?: string | undefined;
+  /**
+   * Time when the End-User authentication occurred (OIDC Core 1.0 §2)
+   * Unix timestamp in seconds
+   */
+  auth_time?: number | undefined;
+  /**
+   * Access Token hash value (OIDC Core 1.0 §3.1.3.6)
+   * Left-most half of the hash of the access token using the hash algorithm
+   * from the alg Header Parameter of the ID Token's JOSE Header
+   */
+  at_hash?: string | undefined;
+  /** Email address */
+  email?: string | undefined;
+  /** Whether the email address has been verified */
+  email_verified?: boolean | undefined;
+  /** Full name */
+  name?: string | undefined;
+  /** Profile picture URL */
+  picture?: string | undefined;
+}
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -45,9 +120,7 @@ export class JwtService {
   /**
    * Sign an access token using RS256
    */
-  async signAccessToken(
-    payload: z.infer<typeof jwtPayload.AccessTokenPayload>,
-  ): Promise<string> {
+  async signAccessToken(payload: AccessTokenPayload): Promise<string> {
     const ttl = this.config.app.jwt_access_token_ttl || 3600;
     const key = await this.jwtKeyService.getActiveKey();
     const privateKey = await importPKCS8(key.private_key, key.algorithm);
@@ -72,9 +145,7 @@ export class JwtService {
   /**
    * Sign a refresh token using RS256
    */
-  async signRefreshToken(
-    payload: z.infer<typeof jwtPayload.RefreshTokenPayload>,
-  ): Promise<string> {
+  async signRefreshToken(payload: RefreshTokenPayload): Promise<string> {
     const ttl = this.config.app.jwt_refresh_token_ttl || 2592000;
     const key = await this.jwtKeyService.getActiveKey();
     const privateKey = await importPKCS8(key.private_key, key.algorithm);
@@ -103,9 +174,7 @@ export class JwtService {
    * - auth_time: Time when End-User authentication occurred
    * - at_hash: Access Token hash (when provided)
    */
-  async signIdToken(
-    payload: z.infer<typeof jwtPayload.IdTokenPayload>,
-  ): Promise<string> {
+  async signIdToken(payload: IdTokenPayload): Promise<string> {
     const ttl = this.config.app.jwt_access_token_ttl || 3600;
     const key = await this.jwtKeyService.getActiveKey();
     const privateKey = await importPKCS8(key.private_key, key.algorithm);
@@ -137,9 +206,7 @@ export class JwtService {
    *
    * @throws {InvalidAccessToken} When token is invalid, expired, or revoked
    */
-  async verifyAccessToken(
-    token: string,
-  ): Promise<z.infer<typeof jwtPayload.AccessTokenPayload>> {
+  async verifyAccessToken(token: string): Promise<AccessTokenPayload> {
     try {
       const payload = await this.verifyToken(token);
 
@@ -155,7 +222,7 @@ export class JwtService {
         }
       }
 
-      return payload as z.infer<typeof jwtPayload.AccessTokenPayload>;
+      return payload as unknown as AccessTokenPayload;
     } catch {
       throw new e.InvalidAccessToken.Error();
     }
@@ -166,9 +233,7 @@ export class JwtService {
    *
    * @throws {InvalidRefreshToken} When token is invalid, expired, or revoked
    */
-  async verifyRefreshToken(
-    token: string,
-  ): Promise<z.infer<typeof jwtPayload.RefreshTokenPayload>> {
+  async verifyRefreshToken(token: string): Promise<RefreshTokenPayload> {
     try {
       const payload = await this.verifyToken(token);
 
@@ -184,7 +249,7 @@ export class JwtService {
         }
       }
 
-      return payload as z.infer<typeof jwtPayload.RefreshTokenPayload>;
+      return payload as unknown as RefreshTokenPayload;
     } catch {
       throw new e.InvalidRefreshToken.Error();
     }
@@ -195,9 +260,7 @@ export class JwtService {
    *
    * @throws {InvalidIdToken} When token is invalid or expired
    */
-  async verifyIdToken(
-    token: string,
-  ): Promise<z.infer<typeof jwtPayload.IdTokenPayload>> {
+  async verifyIdToken(token: string): Promise<IdTokenPayload> {
     try {
       const payload = await this.verifyToken(token);
 
@@ -205,7 +268,7 @@ export class JwtService {
         throw new Error('Invalid ID token payload structure');
       }
 
-      return payload as z.infer<typeof jwtPayload.IdTokenPayload>;
+      return payload as unknown as IdTokenPayload;
     } catch {
       throw new e.InvalidIdToken.Error();
     }
@@ -412,9 +475,7 @@ export class JwtService {
    * console.log(payload.scope);     // Granted scopes
    * ```
    */
-  async validateBearerToken(
-    req: FastifyRequest,
-  ): Promise<z.infer<typeof jwtPayload.AccessTokenPayload>> {
+  async validateBearerToken(req: FastifyRequest): Promise<AccessTokenPayload> {
     const token = this.extractBearerToken(req);
 
     // Use jwtService for RS256 token verification

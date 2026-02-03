@@ -7,13 +7,52 @@ import {
   importPKCS8,
   importSPKI,
 } from 'jose';
-import type z from 'zod/v4';
 import { JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import type { JwtKeyRepository } from '@/repositories/jwt-key.repository.js';
-import type { jwtKeySchema } from '@/schemas/jwt-key.js';
 import type { CleanupOptions, CleanupResult } from './types.js';
+
+/**
+ * Key pair with PEM-encoded keys
+ * Used for JWT signing key generation
+ */
+export interface KeyPair {
+  /** Key ID for identifying the key in JWKS */
+  kid: string;
+  /** PEM-encoded private key (PKCS#8 format) */
+  privateKey: string;
+  /** PEM-encoded public key (SPKI format) */
+  publicKey: string;
+  /** Algorithm (e.g., "RS256") */
+  algorithm: string;
+}
+
+/**
+ * Public JWK for JWKS endpoint (RFC 7517)
+ * All required fields are guaranteed to be present.
+ * @see https://datatracker.ietf.org/doc/html/rfc7517
+ */
+export interface PublicJWK {
+  /** Key Type (e.g., "RSA") */
+  kty: string;
+  /** Public Key Use ("sig" for signature) */
+  use: string;
+  /** Key ID */
+  kid: string;
+  /** Algorithm (e.g., "RS256") */
+  alg: string;
+  /** RSA modulus (base64url encoded) */
+  n?: string | undefined;
+  /** RSA exponent (base64url encoded) */
+  e?: string | undefined;
+  /** EC x coordinate (base64url encoded) */
+  x?: string | undefined;
+  /** EC y coordinate (base64url encoded) */
+  y?: string | undefined;
+  /** EC curve name */
+  crv?: string | undefined;
+}
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -49,7 +88,7 @@ export class JwtKeyService {
    *
    * @returns Generated key pair with PEM-encoded keys
    */
-  async generateKeyPair(): Promise<z.infer<typeof jwtKeySchema.KeyPair>> {
+  async generateKeyPair(): Promise<KeyPair> {
     // Generate RSA key pair using jose
     const { privateKey, publicKey } = await generateKeyPair('RS256', {
       modulusLength: 2048,
@@ -302,9 +341,7 @@ export class JwtKeyService {
    * @param key - JWT Key entity
    * @returns JWK object
    */
-  async convertToJWK(
-    key: JwtKeyEntity,
-  ): Promise<z.infer<typeof jwtKeySchema.PublicJWK>> {
+  async convertToJWK(key: JwtKeyEntity): Promise<PublicJWK> {
     // Import PEM to KeyLike
     const publicKey = await importSPKI(key.public_key, key.algorithm);
 
@@ -330,7 +367,7 @@ export class JwtKeyService {
    * @returns JWKS object with keys array
    */
   async getJWKS(): Promise<{
-    keys: z.infer<typeof jwtKeySchema.PublicJWK>[];
+    keys: PublicJWK[];
   }> {
     const keys = await this.mikro.jwtKey.getPublicKeys();
 
