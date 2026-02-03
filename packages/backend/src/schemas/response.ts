@@ -52,14 +52,6 @@ const OAuthClient = z
   })
   .describe('OAuth Client Information');
 
-const OAuthProvider = z
-  .object({
-    id: z.string(),
-    display_name: z.string(),
-    icon_url: z.string().optional(),
-  })
-  .describe('OAuth Provider');
-
 const ConsentClient = z
   .object({
     id: z.string(),
@@ -99,13 +91,6 @@ const AvailableOAuthProvider = z
   .describe('Available OAuth Provider');
 
 // Generic response schemas
-const GenericError = z
-  .object({
-    code: z.string(),
-    message: z.string(),
-  })
-  .describe('Generic Error Response');
-
 const OAuthError = z
   .object({
     error: z.string(),
@@ -325,7 +310,6 @@ export const r = {
   // Base schemas
   UserSession,
   OAuthClient,
-  OAuthProvider,
   ConsentClient,
   ConsentScope,
   ConsentUser,
@@ -348,7 +332,6 @@ export const r = {
   AuthenticationResponseJSON,
 
   // Generic responses
-  GenericError,
   OAuthError,
   MessageResponse,
   OkResponse,

@@ -3,7 +3,7 @@
  *
  * These are used for consent page display and scope validation.
  */
-export const SCOPE_DESCRIPTIONS: Record<string, string> = {
+const SCOPE_DESCRIPTIONS: Record<string, string> = {
   openid: 'Access your unique user identifier',
   profile: 'Access your profile information (name, picture, etc.)',
   email: 'Access your email address',
@@ -17,7 +17,7 @@ export const SCOPE_DESCRIPTIONS: Record<string, string> = {
  * @param scopeName - The scope name
  * @returns Description string, or a generic fallback
  */
-export const getScopeDescription = (scopeName: string): string => {
+const getScopeDescription = (scopeName: string): string => {
   return SCOPE_DESCRIPTIONS[scopeName] || `Access to ${scopeName} data`;
 };
 
@@ -36,17 +36,3 @@ export const parseScopesWithDescriptions = (
     description: getScopeDescription(name),
   }));
 };
-
-/**
- * Standard OIDC scopes
- */
-export const OIDC_SCOPES = [
-  'openid',
-  'profile',
-  'email',
-  'address',
-  'phone',
-  'offline_access',
-] as const;
-
-export type OIDCScope = (typeof OIDC_SCOPES)[number];

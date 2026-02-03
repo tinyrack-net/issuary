@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import z from 'zod/v4';
 
-export const EnvironmentSchema = z.object({
+const EnvironmentSchema = z.object({
   /**
    * @description
    * The application environment
@@ -19,7 +19,5 @@ export const EnvironmentSchema = z.object({
    */
   CONFIG_PATH: z.string().optional(),
 });
-
-export type Environment = z.infer<typeof EnvironmentSchema>;
 
 export const env = EnvironmentSchema.parse(process.env);

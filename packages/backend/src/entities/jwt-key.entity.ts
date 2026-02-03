@@ -180,26 +180,9 @@ export class JwtKeyEntity extends BaseEntity<'kid'> {
   }
 
   /**
-   * Check if key can be used for signing
-   */
-  isSigningKey(): boolean {
-    return this.status === JwtKeyStatus.ACTIVE;
-  }
-
-  /**
    * Check if key can be used for verification
    */
   isVerificationKey(): boolean {
-    return (
-      this.status === JwtKeyStatus.ACTIVE ||
-      this.status === JwtKeyStatus.PREVIOUS
-    );
-  }
-
-  /**
-   * Check if key should be exposed in JWKS
-   */
-  isPublicKey(): boolean {
     return (
       this.status === JwtKeyStatus.ACTIVE ||
       this.status === JwtKeyStatus.PREVIOUS
