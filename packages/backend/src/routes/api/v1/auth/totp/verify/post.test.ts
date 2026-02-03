@@ -263,48 +263,4 @@ describe('POST /api/v1/auth/totp/verify', () => {
   });
 });
 
-describe('POST /api/v1/auth/login - TOTP flow', () => {
-  test('should return 2fa_required status for TOTP-enabled user', async () => {
-    // Create a user with TOTP enabled (email verified)
-    const email = generateUniqueEmail('totp-login-required');
-    const password = 'password123';
-
-    // Create user with verified email
-    const { userId } = await createDbUserWithSession(app, email, password);
-
-    // Enable TOTP for user
-    await enableTotpForUser(app, userId);
-
-    // Login with password
-    const loginRes = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
-    });
-
-    expect(loginRes.statusCode).toBe(200);
-    const body = loginRes.json();
-    expect(body).toHaveProperty('user');
-  });
-
-  test('should complete login immediately for non-TOTP user', async () => {
-    // Create a user without TOTP (email verified)
-    const email = generateUniqueEmail('totp-login-not-required');
-    const password = 'password123';
-
-    // Create user with verified email
-    await createDbUserWithSession(app, email, password);
-
-    // Login with password
-    const loginRes = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
-    });
-
-    expect(loginRes.statusCode).toBe(200);
-    const body = loginRes.json();
-    expect(body).toHaveProperty('user');
-    expect(body.user.email).toBe(email);
-  });
-});
+// Note: Login TOTP flow tests are in the dedicated login/post.totp.test.ts file
