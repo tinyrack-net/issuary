@@ -8,9 +8,10 @@ export default fastifyPlugin(
       openapi: {
         openapi: '3.0.0',
         info: {
-          title: 'Test swagger',
-          description: 'Testing the Fastify swagger API',
-          version: '0.0.1',
+          title: 'Tinyauth API',
+          description:
+            'OpenID Connect (OIDC) Provider API for OAuth2 authentication and authorization',
+          version: '1.0.0',
         },
         servers: [],
         components: {
