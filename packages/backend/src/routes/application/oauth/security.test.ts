@@ -276,19 +276,7 @@ describe('OAuth Security Tests', () => {
   });
 
   describe('Authorization Code Security', () => {
-    test('should reject reused authorization code', async () => {
-      const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
-
-      // First use - should succeed
-      const res1 = await exchangeCodeForTokens(app, { code });
-      expect(res1.statusCode).toBe(200);
-
-      // Second use - should fail (single-use)
-      const res2 = await exchangeCodeForTokens(app, { code });
-      expect(res2.statusCode).toBe(400);
-      expect(res2.json().code).toBe('INVALID_AUTHORIZATION_CODE');
-    });
+    // Note: Authorization code single-use is tested in token-lifecycle.test.ts
 
     test('should reject code from different client', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
@@ -309,86 +297,11 @@ describe('OAuth Security Tests', () => {
       expect(res.statusCode).toBe(400);
     });
 
-    test('should reject code with different redirect_uri', async () => {
-      const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
-
-      const res = await app.inject({
-        method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
-          grant_type: 'authorization_code',
-          code,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: 'http://different.com/callback',
-        },
-      });
-
-      expect(res.statusCode).toBe(400);
-      expect(res.json().code).toBe('REDIRECT_URI_MISMATCH');
-    });
+    // Note: Redirect URI mismatch is tested in token/post.test.ts
   });
 
-  describe('PKCE Security', () => {
-    test('should require code_verifier when code_challenge was used', async () => {
-      const sessionCookie = await createAuthenticatedSession(app);
-      const _codeVerifier = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
-      // SHA256 of code_verifier in base64url
-      const codeChallenge = 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM';
-
-      const { code } = await getAuthorizationCode(app, {
-        sessionCookie,
-        codeChallenge,
-        codeChallengeMethod: 'S256',
-      });
-
-      // Try without code_verifier
-      const res = await app.inject({
-        method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
-          grant_type: 'authorization_code',
-          code,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          // Missing code_verifier
-        },
-      });
-
-      expect(res.statusCode).toBe(400);
-      expect(res.json().code).toBe('MISSING_CODE_VERIFIER');
-    });
-
-    test('should reject incorrect code_verifier', async () => {
-      const sessionCookie = await createAuthenticatedSession(app);
-      const codeChallenge = 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM';
-
-      const { code } = await getAuthorizationCode(app, {
-        sessionCookie,
-        codeChallenge,
-        codeChallengeMethod: 'S256',
-      });
-
-      // code_verifier must be 43-128 characters - use a valid length but wrong value
-      const wrongVerifier =
-        'wrong-verifier-value-that-is-long-enough-to-pass-validation';
-
-      const res = await app.inject({
-        method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
-          grant_type: 'authorization_code',
-          code,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          code_verifier: wrongVerifier,
-        },
-      });
-
-      expect(res.statusCode).toBe(400);
-      expect(res.json().code).toBe('INVALID_PKCE_VERIFIER');
-    });
-  });
+  // Note: PKCE security (missing/wrong code_verifier) is tested in
+  // spa-pkce-flow.test.ts and token/post.test.ts
 
   describe('Token Security', () => {
     test('should not accept expired tokens', async () => {
@@ -443,27 +356,8 @@ describe('OAuth Security Tests', () => {
     });
   });
 
-  describe('Client Credential Security', () => {
-    test('should reject invalid client_secret', async () => {
-      const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
-
-      const res = await app.inject({
-        method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
-          grant_type: 'authorization_code',
-          code,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          client_secret: 'wrong-secret',
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        },
-      });
-
-      expect(res.statusCode).toBe(401);
-      expect(res.json().code).toBe('INVALID_CLIENT_CREDENTIALS');
-    });
-  });
+  // Note: Client credential security (wrong client_secret) is tested in
+  // server-side-flow.test.ts and token/post.test.ts
 
   describe('Rate Limiting and Abuse Prevention', () => {
     test('should handle large number of parameters gracefully', async () => {
