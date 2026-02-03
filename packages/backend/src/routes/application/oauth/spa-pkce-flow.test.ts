@@ -645,32 +645,7 @@ describe('SPA PKCE Authentication Flow', () => {
   });
 
   describe('SPA Error Handling', () => {
-    test('should handle network retry scenario (same code used twice)', async () => {
-      const codeVerifier = generateCodeVerifier();
-      const codeChallenge = await generateS256Challenge(codeVerifier);
-
-      const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, {
-        sessionCookie,
-        codeChallenge,
-        codeChallengeMethod: 'S256',
-      });
-
-      // First request succeeds
-      const res1 = await exchangeCodeForTokens(app, {
-        code,
-        codeVerifier,
-      });
-      expect(res1.statusCode).toBe(200);
-
-      // Retry (network failure scenario) should fail - code is single-use
-      const res2 = await exchangeCodeForTokens(app, {
-        code,
-        codeVerifier,
-      });
-      expect(res2.statusCode).toBe(400);
-      expect(res2.json().code).toBe('INVALID_AUTHORIZATION_CODE');
-    });
+    // Note: Authorization code single-use is tested in token-lifecycle.test.ts
 
     test('should handle expired authorization code gracefully', async () => {
       // Use a fake/expired code
