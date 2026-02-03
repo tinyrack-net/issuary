@@ -6,7 +6,7 @@ import z from 'zod/v4';
  * @see https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.1
  * @see https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest
  */
-export const AuthorizeParams = z.object({
+const AuthorizeParams = z.object({
   /** OAuth response type (e.g., "code" for authorization code flow) */
   response_type: z.string(),
   /** Redirect URI where the authorization response will be sent */
@@ -35,7 +35,7 @@ export const AuthorizeParams = z.object({
  * OAuth authorization result
  * Currently only supports redirect type
  */
-export const AuthorizeResult = z.object({
+const AuthorizeResult = z.object({
   /** Result type discriminator */
   type: z.literal('redirect'),
   /** URL to redirect the user agent to */
@@ -46,7 +46,7 @@ export const AuthorizeResult = z.object({
  * Parameters for authorization code grant (RFC 6749 §4.1.3)
  * @see https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
  */
-export const AuthorizationCodeGrantParams = z.object({
+const AuthorizationCodeGrantParams = z.object({
   /** Authorization code received from /authorize endpoint */
   code: z.string(),
   /** Redirect URI used in authorization request (must match) */
@@ -61,7 +61,7 @@ export const AuthorizationCodeGrantParams = z.object({
  * Parameters for refresh token grant (RFC 6749 §6)
  * @see https://datatracker.ietf.org/doc/html/rfc6749#section-6
  */
-export const RefreshTokenGrantParams = z.object({
+const RefreshTokenGrantParams = z.object({
   /** Refresh token from previous token response */
   refreshToken: z.string(),
   /** OAuth client identifier (must match original request) */
@@ -72,7 +72,7 @@ export const RefreshTokenGrantParams = z.object({
  * Token introspection result (RFC 7662 §2.2)
  * @see https://datatracker.ietf.org/doc/html/rfc7662#section-2.2
  */
-export const TokenIntrospectionResult = z.object({
+const TokenIntrospectionResult = z.object({
   /** Whether the token is currently active */
   active: z.boolean(),
   /** Space-separated list of scopes (only if active) */
@@ -96,7 +96,7 @@ export const TokenIntrospectionResult = z.object({
  * @see https://datatracker.ietf.org/doc/html/rfc6749#section-5.1
  * @see https://openid.net/specs/openid-connect-core-1_0.html#TokenResponse
  */
-export const TokenResponse = z.object({
+const TokenResponse = z.object({
   /** OAuth 2.0 access token (JWT format) */
   access_token: z.string(),
   /** Token type identifier */

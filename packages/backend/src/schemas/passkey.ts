@@ -4,7 +4,7 @@ import z from 'zod/v4';
  * Passkey information for user passkey list
  * Used to display registered passkeys to the user
  */
-export const PasskeyInfo = z
+const PasskeyInfo = z
   .object({
     /** Passkey entity ID */
     id: z.string(),

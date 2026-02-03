@@ -9,7 +9,3 @@ export const zz = {
       message: 'PORT must be a valid port number between 1 and 65535',
     }),
 };
-
-export const OIDCProvider = z.object({
-  type: z.literal('oidc'),
-});

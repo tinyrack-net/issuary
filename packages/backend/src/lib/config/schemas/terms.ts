@@ -5,8 +5,6 @@ import z from 'zod/v4';
  * - 'link': Content is a URL to external document
  * - 'text': Content is inline text
  */
-export const TermsContentTypeSchema = z.enum(['link', 'text']);
-export type TermsContentType = z.infer<typeof TermsContentTypeSchema>;
 
 /**
  * Localized content for a term item.
@@ -28,8 +26,6 @@ const TermsLocalizedContentText = z.object({
 const TermsLocalizedContent = z
   .union([TermsLocalizedContentLink, TermsLocalizedContentText])
   .describe('Localized content for a term');
-
-export type TermsLocalizedContent = z.infer<typeof TermsLocalizedContent>;
 
 /**
  * Individual term item configuration.

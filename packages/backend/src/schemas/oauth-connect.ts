@@ -5,7 +5,7 @@ import { r } from './response.js';
  * OAuth user info returned from provider
  * Normalized user information from external OAuth providers
  */
-export const OAuthUserInfo = z
+const OAuthUserInfo = z
   .object({
     /** Provider's user ID */
     id: z.string(),
@@ -24,7 +24,7 @@ export const OAuthUserInfo = z
  * Token response from OAuth provider
  * Standard OAuth 2.0 token response structure
  */
-export const OAuthTokens = z
+const OAuthTokens = z
   .object({
     /** OAuth access token */
     access_token: z.string(),
@@ -43,7 +43,7 @@ export const OAuthTokens = z
  * OAuth session data stored in secure session
  * Used to maintain state during OAuth flow
  */
-export const OAuthSessionData = z
+const OAuthSessionData = z
   .object({
     /** State parameter for CSRF protection */
     state: z.string(),
@@ -62,7 +62,7 @@ export const OAuthSessionData = z
  * Result of OAuth authentication
  * Returned after successful OAuth login/registration
  */
-export const OAuthAuthResult = z
+const OAuthAuthResult = z
   .object({
     /** Whether this is a newly created user */
     isNewUser: z.boolean(),

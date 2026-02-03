@@ -12,5 +12,3 @@ export const TAGS = {
   OPENID: 'OpenID',
   HEALTH: 'Health',
 } as const;
-
-export type SwaggerTag = (typeof TAGS)[keyof typeof TAGS];

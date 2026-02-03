@@ -63,7 +63,7 @@ const TermItem = z
 /**
  * GET /api/v1/terms response
  */
-export const TermsResponse = z
+const TermsResponse = z
   .object({
     terms: z.array(TermItem).describe('List of terms'),
     pendingTerms: z.array(z.string()).describe('Term IDs that require consent'),
@@ -87,7 +87,7 @@ const ConsentItem = z.object({
 /**
  * POST /api/v1/terms/consent request body
  */
-export const TermsConsentRequest = z
+const TermsConsentRequest = z
   .object({
     consents: z.array(ConsentItem).min(1).describe('List of consent decisions'),
   })
@@ -96,7 +96,7 @@ export const TermsConsentRequest = z
 /**
  * POST /api/v1/terms/consent response
  */
-export const TermsConsentResponse = z
+const TermsConsentResponse = z
   .object({
     ok: z.literal(true),
     recorded: z.number().int().describe('Number of consents recorded'),

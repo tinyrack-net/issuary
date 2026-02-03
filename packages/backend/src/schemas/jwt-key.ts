@@ -4,7 +4,7 @@ import z from 'zod/v4';
  * Key pair with PEM-encoded keys
  * Used for JWT signing key generation
  */
-export const KeyPair = z
+const KeyPair = z
   .object({
     /** Key ID for identifying the key in JWKS */
     kid: z.string(),
@@ -22,7 +22,7 @@ export const KeyPair = z
  * All required fields are guaranteed to be present.
  * @see https://datatracker.ietf.org/doc/html/rfc7517
  */
-export const PublicJWK = z
+const PublicJWK = z
   .object({
     /** Key Type (e.g., "RSA") */
     kty: z.string(),

@@ -12,8 +12,6 @@ import {
   type ResolvedAppConfig,
 } from './schemas/root.js';
 
-export { interpolateEnv, resolveEnvVariables } from '../interpolate-env.js';
-
 const DEFAULT_CONFIG_PATH = '/opt/config.yaml';
 
 const resolveConfigPath = () => {

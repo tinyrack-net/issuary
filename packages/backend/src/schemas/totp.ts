@@ -4,7 +4,7 @@ import z from 'zod/v4';
  * TOTP setup data returned when initiating 2FA setup
  * Contains all information needed to display QR code and manual entry
  */
-export const TotpSetupData = z
+const TotpSetupData = z
   .object({
     /** Base32-encoded TOTP secret key */
     secret: z.string(),

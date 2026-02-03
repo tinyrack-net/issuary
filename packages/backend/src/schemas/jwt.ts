@@ -4,7 +4,7 @@ import z from 'zod/v4';
  * Base JWT payload with standard claims (RFC 7519)
  * @see https://datatracker.ietf.org/doc/html/rfc7519#section-4.1
  */
-export const BaseJWTPayload = z.object({
+const BaseJWTPayload = z.object({
   /** Subject - identifies the principal that is the subject of the JWT */
   sub: z.string(),
   /** JWT ID - unique identifier for the JWT */
@@ -21,7 +21,7 @@ export const BaseJWTPayload = z.object({
  * Access token payload structure (RFC 6749)
  * @see https://datatracker.ietf.org/doc/html/rfc6749#section-1.4
  */
-export const AccessTokenPayload = BaseJWTPayload.extend({
+const AccessTokenPayload = BaseJWTPayload.extend({
   /** Token type discriminator */
   typ: z.literal('access_token'),
   /** Client identifier */
@@ -36,7 +36,7 @@ export const AccessTokenPayload = BaseJWTPayload.extend({
  * Refresh token payload structure (RFC 6749)
  * @see https://datatracker.ietf.org/doc/html/rfc6749#section-1.5
  */
-export const RefreshTokenPayload = BaseJWTPayload.extend({
+const RefreshTokenPayload = BaseJWTPayload.extend({
   /** Token type discriminator */
   typ: z.literal('refresh_token'),
   /** Client identifier */
@@ -51,7 +51,7 @@ export const RefreshTokenPayload = BaseJWTPayload.extend({
  * ID token payload structure (OpenID Connect Core 1.0 §2)
  * @see https://openid.net/specs/openid-connect-core-1_0.html#IDToken
  */
-export const IdTokenPayload = BaseJWTPayload.extend({
+const IdTokenPayload = BaseJWTPayload.extend({
   /** Audience - client_id of the Relying Party */
   aud: z.string(),
   /** Nonce - value used to associate a Client session with an ID Token */
