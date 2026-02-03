@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto';
 import fastifyPlugin from 'fastify-plugin';
-import type z from 'zod/v4';
 import { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
 import {
   calculateCutoffDate,
@@ -11,12 +10,83 @@ import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import { validatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
-import type { jwtPayload } from '@/schemas/jwt.js';
-import type { oauthSchema } from '@/schemas/oauth.js';
-import type { JwtService } from './jwt.service.js';
+import type {
+  AccessTokenPayload,
+  JwtService,
+  RefreshTokenPayload,
+} from './jwt.service.js';
 import type { OAuthClientService } from './oauth-client.service.js';
 import type { CleanupOptions, CleanupResult } from './types.js';
 import type { UserService } from './user.service.js';
+
+/**
+ * Parameters for authorization code grant (RFC 6749 §4.1.3)
+ * @see https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
+ */
+export interface AuthorizationCodeGrantParams {
+  /** Authorization code received from /authorize endpoint */
+  code: string;
+  /** Redirect URI used in authorization request (must match) */
+  redirectUri: string;
+  /** OAuth client identifier */
+  clientId: string;
+  /** PKCE code verifier (required if code_challenge was used) */
+  codeVerifier?: string | undefined;
+}
+
+/**
+ * Parameters for refresh token grant (RFC 6749 §6)
+ * @see https://datatracker.ietf.org/doc/html/rfc6749#section-6
+ */
+export interface RefreshTokenGrantParams {
+  /** Refresh token from previous token response */
+  refreshToken: string;
+  /** OAuth client identifier (must match original request) */
+  clientId: string;
+}
+
+/**
+ * Token introspection result (RFC 7662 §2.2)
+ * @see https://datatracker.ietf.org/doc/html/rfc7662#section-2.2
+ */
+export interface TokenIntrospectionResult {
+  /** Whether the token is currently active */
+  active: boolean;
+  /** Space-separated list of scopes (only if active) */
+  scope?: string | undefined;
+  /** Client identifier (only if active) */
+  client_id?: string | undefined;
+  /** Type of token (only if active) */
+  token_type?: 'Bearer' | undefined;
+  /** Expiration timestamp in seconds (only if active) */
+  exp?: number | undefined;
+  /** Issued-at timestamp in seconds (only if active) */
+  iat?: number | undefined;
+  /** Subject identifier - user ID (only if active) */
+  sub?: string | undefined;
+  /** Issuer identifier (only if active) */
+  iss?: string | undefined;
+}
+
+/**
+ * OAuth 2.0 / OIDC token response (RFC 6749 §5.1)
+ * @see https://datatracker.ietf.org/doc/html/rfc6749#section-5.1
+ * @see https://openid.net/specs/openid-connect-core-1_0.html#TokenResponse
+ */
+export interface TokenResponse {
+  /** OAuth 2.0 access token (JWT format) */
+  access_token: string;
+  /** Token type identifier */
+  token_type: 'Bearer';
+  /** Access token lifetime in seconds */
+  expires_in: number;
+  /** Refresh token for obtaining new access tokens */
+  refresh_token: string;
+  /** OpenID Connect ID Token (JWT format, only if openid scope requested) */
+  id_token?: string | undefined;
+  /** Space-separated list of granted scopes */
+  scope: string;
+}
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -55,9 +125,7 @@ export class OAuthTokenService {
    * @throws {MissingCodeVerifier} - PKCE verifier required but not provided
    * @throws {InvalidPKCEVerifier} - PKCE verification failed
    */
-  async exchangeAuthorizationCode(
-    params: z.infer<typeof oauthSchema.AuthorizationCodeGrantParams>,
-  ) {
+  async exchangeAuthorizationCode(params: AuthorizationCodeGrantParams) {
     const { code, redirectUri, clientId, codeVerifier } = params;
 
     // 1. Look up client to get primary key (clientId in request is the business key)
@@ -139,9 +207,7 @@ export class OAuthTokenService {
    * @throws {InvalidRefreshToken} - Refresh token is invalid, expired, or revoked
    * @throws {ClientIdMismatch} - Client ID doesn't match original token request
    */
-  async refreshAccessToken(
-    params: z.infer<typeof oauthSchema.RefreshTokenGrantParams>,
-  ) {
+  async refreshAccessToken(params: RefreshTokenGrantParams) {
     const { refreshToken, clientId } = params;
 
     // 1. Verify refresh token (also checks revocation)
@@ -199,12 +265,9 @@ export class OAuthTokenService {
   async introspectToken(
     token: string,
     tokenTypeHint?: 'access_token' | 'refresh_token',
-  ): Promise<z.infer<typeof oauthSchema.TokenIntrospectionResult>> {
+  ): Promise<TokenIntrospectionResult> {
     // Try to verify the token based on hint or both types
-    let payload:
-      | z.infer<typeof jwtPayload.AccessTokenPayload>
-      | z.infer<typeof jwtPayload.RefreshTokenPayload>
-      | null = null;
+    let payload: AccessTokenPayload | RefreshTokenPayload | null = null;
     let tokenType: 'access_token' | 'refresh_token' | null = null;
 
     // 1. Try to verify as hinted token type first (if hint provided)
@@ -380,7 +443,7 @@ export class OAuthTokenService {
     nonce?: string;
     /** OIDC: Time when End-User authentication occurred (Unix timestamp) */
     authTime?: number;
-  }): Promise<z.infer<typeof oauthSchema.TokenResponse>> {
+  }): Promise<TokenResponse> {
     const {
       userId,
       userEmail,
@@ -409,7 +472,7 @@ export class OAuthTokenService {
       scope: scopeString,
     });
 
-    const response: z.infer<typeof oauthSchema.TokenResponse> = {
+    const response: TokenResponse = {
       access_token: accessToken,
       token_type: 'Bearer',
       expires_in: this.config.app.jwt_access_token_ttl || 3600,
