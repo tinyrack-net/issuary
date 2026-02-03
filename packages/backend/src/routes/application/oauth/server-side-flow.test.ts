@@ -597,27 +597,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
     });
   });
 
-  describe('Redirect URI Validation', () => {
-    test('should reject mismatched redirect_uri', async () => {
-      const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
-
-      const tokenRes = await app.inject({
-        method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
-          grant_type: 'authorization_code',
-          code,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          client_secret: TEST_OAUTH_CLIENT.clientSecret,
-          redirect_uri: 'http://different.com/callback',
-        },
-      });
-
-      expect(tokenRes.statusCode).toBe(400);
-      expect(tokenRes.json().code).toBe('REDIRECT_URI_MISMATCH');
-    });
-  });
+  // Note: Redirect URI validation is tested in token/post.test.ts
 
   describe('ID Token Claims for Confidential Clients', () => {
     test('should include azp claim when client authenticates', async () => {
