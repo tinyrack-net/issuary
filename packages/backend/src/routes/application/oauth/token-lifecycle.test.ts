@@ -360,6 +360,33 @@ describe('Token Lifecycle and Rotation', () => {
   });
 
   describe('Token Validity and Expiration', () => {
+    test('should issue tokens with correct expiration matching expires_in', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        codeChallenge: TEST_PKCE.codeChallenge,
+        codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const tokenRes = await exchangeCodeForTokens(app, {
+        code,
+        codeVerifier: TEST_PKCE.codeVerifier,
+      });
+
+      const tokens = tokenRes.json();
+      const accessDecoded = jose.decodeJwt(tokens.access_token);
+      const idDecoded = jose.decodeJwt(tokens.id_token);
+      const now = Math.floor(Date.now() / 1000);
+
+      // Tokens should have valid exp
+      expect(accessDecoded.exp).toBeGreaterThan(now);
+      expect(idDecoded.exp).toBeGreaterThan(now);
+
+      // iat should be around now
+      expect(accessDecoded.iat).toBeLessThanOrEqual(now + 5);
+      expect(idDecoded.iat).toBeLessThanOrEqual(now + 5);
+    });
+
     test('should have reasonable expiration times', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
