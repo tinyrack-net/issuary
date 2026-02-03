@@ -8,25 +8,6 @@ import { expect } from 'vitest';
 import { generateUniqueEmail, TEST_CONSENTS, TEST_USER } from './fixtures.js';
 
 /**
- * Extract session cookie from response headers
- */
-export function extractSessionCookie(
-  res: LightMyRequestResponse,
-): string | undefined {
-  const setCookieHeader = res.headers['set-cookie'];
-
-  if (!setCookieHeader) {
-    return undefined;
-  }
-
-  const cookieValue = Array.isArray(setCookieHeader)
-    ? setCookieHeader[0]
-    : setCookieHeader;
-
-  return cookieValue?.split(';')[0];
-}
-
-/**
  * Extract cookie value by name from response.
  * Throws an error if the cookie is not found.
  *
@@ -209,29 +190,6 @@ export function expectError(
   const body = res.json();
   expect(body).toHaveProperty('code', expectedError.code);
   expect(body).toHaveProperty('message', expectedError.message);
-}
-
-/**
- * Assert that a response has a specific status code and error code.
- * Use this for simpler error assertions when you don't need the full error definition.
- *
- * @param res - Response from app.inject()
- * @param statusCode - Expected HTTP status code
- * @param errorCode - Expected error code in response body
- *
- * @example
- * ```typescript
- * expectErrorCode(res, 401, 'UNAUTHORIZED');
- * ```
- */
-export function expectErrorCode(
-  res: LightMyRequestResponse,
-  statusCode: number,
-  errorCode: string,
-): void {
-  expect(res.statusCode).toBe(statusCode);
-  const body = res.json();
-  expect(body).toHaveProperty('code', errorCode);
 }
 
 /**
