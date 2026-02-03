@@ -372,6 +372,9 @@ importers:
       astro:
         specifier: ^5.17.0
         version: 5.17.0(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.54.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      sharp:
+        specifier: ^0.34.5
+        version: 0.34.5
     devDependencies:
       '@biomejs/biome':
         specifier: 'catalog:'
@@ -6104,8 +6107,7 @@ snapshots:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.70.0(react@19.2.3)
 
-  '@img/colour@1.0.0':
-    optional: true
+  '@img/colour@1.0.0': {}
 
   '@img/sharp-darwin-arm64@0.34.5':
     optionalDependencies:
@@ -10191,7 +10193,6 @@ snapshots:
       '@img/sharp-win32-arm64': 0.34.5
       '@img/sharp-win32-ia32': 0.34.5
       '@img/sharp-win32-x64': 0.34.5
-    optional: true
 
   shebang-command@2.0.0:
     dependencies:
