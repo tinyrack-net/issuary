@@ -22,10 +22,10 @@ export default defineConfig({
           label: '한국어',
           lang: 'ko',
         },
-        ja: {
-          label: '日本語',
-          lang: 'ja',
-        },
+        // ja: {
+        //   label: '日本語',
+        //   lang: 'ja',
+        // },
       },
       social: [
         {
@@ -66,65 +66,90 @@ export default defineConfig({
           },
           items: [
             { slug: 'configuration/overview' },
-            { slug: 'configuration/app' },
-            { slug: 'configuration/database' },
-            { slug: 'configuration/smtp' },
             { slug: 'configuration/environment-variables' },
+            {
+              label: 'Basic Configuration',
+              translations: {
+                ko: '기본 설정',
+                ja: '基本設定',
+              },
+              items: [
+                { slug: 'general/theme' },
+                { slug: 'general/security' },
+                { slug: 'general/language' },
+                { slug: 'general/branding' },
+              ],
+            },
+            {
+              label: 'Database',
+              translations: {
+                ko: '데이터베이스',
+                ja: 'データベース',
+              },
+              items: [
+                { slug: 'database/sqlite' },
+                { slug: 'database/postgresql' },
+              ],
+            },
+            {
+              label: 'Authentication',
+              translations: {
+                ko: '기본 인증',
+                ja: '認証',
+              },
+              items: [
+                { slug: 'authentication/email-verification' },
+                { slug: 'authentication/password' },
+                { slug: 'authentication/totp' },
+                { slug: 'authentication/passkey' },
+              ],
+            },
+            {
+              label: 'Identity Provider',
+              translations: {
+                ko: '타사 로그인',
+                ja: 'アイデンティティプロバイダー',
+              },
+              items: [
+                { slug: 'oauth/overview' },
+                { slug: 'oauth/google' },
+                { slug: 'oauth/apple' },
+                { slug: 'oauth/github' },
+                { slug: 'oauth/others' },
+              ],
+            },
+            {
+              label: 'Terms of Service',
+              translations: {
+                ko: '약관',
+                ja: '利用規約',
+              },
+              items: [
+                { slug: 'terms/implicit-flow' },
+                { slug: 'terms/explicit-flow' },
+              ],
+            },
+            {
+              label: 'Client Integration',
+              translations: {
+                ko: '클라이언트 연동',
+                ja: '連携',
+              },
+              items: [
+                { slug: 'client-integration/overview' },
+              ],
+            },
           ],
-        },
-        {
-          label: 'Authentication',
-          translations: {
-            ko: '인증',
-            ja: '認証',
-          },
-          items: [
-            { slug: 'authentication/password' },
-            { slug: 'authentication/passkey' },
-            { slug: 'authentication/totp' },
-            { slug: 'authentication/email-verification' },
-          ],
-        },
-        {
-          label: 'Guides',
-          translations: {
-            ko: '가이드',
-            ja: 'ガイド',
-          },
-          autogenerate: { directory: 'guides' },
         },
         {
           label: 'Integration',
           translations: {
-            ko: '연동',
-            ja: '連携',
+            ko: '앱 연동',
+            ja: 'インテグレーション',
           },
           items: [
             { slug: 'integration/nextjs' },
             { slug: 'integration/react-spa' },
-          ],
-        },
-        {
-          label: 'Database',
-          translations: {
-            ko: '데이터베이스',
-            ja: 'データベース',
-          },
-          items: [
-            { slug: 'database/sqlite' },
-            { slug: 'database/postgresql' },
-          ],
-        },
-        {
-          label: 'Terms of Service',
-          translations: {
-            ko: '약관',
-            ja: '利用規約',
-          },
-          items: [
-            { slug: 'terms/overview' },
-            { slug: 'terms/implicit-flow' },
-            { slug: 'terms/explicit-flow' },
           ],
         },
         {
