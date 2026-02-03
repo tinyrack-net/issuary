@@ -2,12 +2,23 @@ import { hash, verify } from 'argon2';
 import fastifyPlugin from 'fastify-plugin';
 import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
 import qrcode from 'qrcode';
-import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
-import type { totpSchema } from '@/schemas/totp.js';
+
+/**
+ * TOTP setup data returned when initiating 2FA setup
+ * Contains all information needed to display QR code and manual entry
+ */
+export interface TotpSetupData {
+  /** Base32-encoded TOTP secret key */
+  secret: string;
+  /** OTPAuth URL for authenticator apps (otpauth://totp/...) */
+  otpauthUrl: string;
+  /** QR code as data URL (data:image/png;base64,...) */
+  qrCodeDataUrl: string;
+}
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -75,9 +86,7 @@ export class TotpService {
    * Start TOTP setup for a user
    * Creates or updates unverified TOTP record
    */
-  public async startSetup(
-    user: UserEntity,
-  ): Promise<z.infer<typeof totpSchema.TotpSetupData>> {
+  public async startSetup(user: UserEntity): Promise<TotpSetupData> {
     const existingTotp = await this.mikro.userTotp.findByUserId(user.id);
 
     // Only throw if TOTP is fully registered (verified AND recovery confirmed)
