@@ -560,6 +560,39 @@ describe('POST /application/oauth/token', () => {
     });
   });
 
+  describe('Error Recovery', () => {
+    test('should allow retry after failed token exchange', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+
+      // First code
+      const { code: code1 } = await getAuthorizationCode(app, {
+        sessionCookie,
+      });
+
+      // Try to exchange with wrong redirect_uri (will fail)
+      const failRes = await app.inject({
+        method: 'POST',
+        url: '/application/oauth/token',
+        payload: {
+          grant_type: 'authorization_code',
+          code: code1,
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: 'http://wrong.com/callback',
+        },
+      });
+      expect(failRes.statusCode).toBe(400);
+
+      // Get a new code (original is now consumed)
+      const { code: code2 } = await getAuthorizationCode(app, {
+        sessionCookie,
+      });
+
+      // Exchange should succeed with new code
+      const successRes = await exchangeCode({ code: code2 });
+      expect(successRes.statusCode).toBe(200);
+    });
+  });
+
   describe('Grant Type Validation', () => {
     test('should reject unsupported grant_type', async () => {
       const res = await app.inject({
