@@ -23,16 +23,6 @@ export const queryKeys = {
   // Passkeys
   passkeys: () => ['/api/v1/user/passkeys'] as const,
 
-  // Account
-  account: () => ['/api/v1/user'] as const,
-
   // Terms
   terms: (lang?: string) => ['/api/v1/terms', lang] as const,
 } as const;
-
-/**
- * Query Key 타입 유틸리티
- *
- * 개별 Query Key의 타입을 추출할 때 사용합니다.
- */
-export type QueryKeys = typeof queryKeys;
