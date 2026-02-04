@@ -1,7 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fastifyAutoload from '@fastify/autoload';
-import { consola } from 'consola';
 import Fastify from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
@@ -66,56 +65,50 @@ export async function createServer(options: CreateServerOptions) {
 
   appInstance.log.info('Server initialized with provided config');
 
-  try {
-    // Register config as a decorator for DI
-    appInstance.decorate('config', config);
+  // Register config as a decorator for DI
+  appInstance.decorate('config', config);
 
-    // Core plugins (always loaded - database, config seeding, validation, email)
+  // Core plugins (always loaded - database, config seeding, validation, email)
+  await appInstance.register(fastifyAutoload, {
+    dir: path.join(__dirname, 'plugins/core'),
+    ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
+  });
+
+  // HTTP plugins (skip in CLI mode - cors, session, static, swagger, etc.)
+  if (!cliMode) {
     await appInstance.register(fastifyAutoload, {
-      dir: path.join(__dirname, 'plugins/core'),
+      dir: path.join(__dirname, 'plugins/http'),
       ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
     });
-
-    // HTTP plugins (skip in CLI mode - cors, session, static, swagger, etc.)
-    if (!cliMode) {
-      await appInstance.register(fastifyAutoload, {
-        dir: path.join(__dirname, 'plugins/http'),
-        ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
-      });
-    }
-
-    // Services (always loaded - some needed for CLI commands like cleanup)
-    await appInstance.register(fastifyAutoload, {
-      dir: path.join(__dirname, 'services'),
-      ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
-    });
-
-    // Start scheduler after services are loaded (if enabled)
-    appInstance.scheduler.start();
-
-    // Routes (skip in CLI mode)
-    if (!cliMode) {
-      await appInstance.register(fastifyAutoload, {
-        dir: path.join(__dirname, 'routes'),
-        routeParams: true,
-        autoHooks: true,
-        options: {},
-        ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
-      });
-    }
-
-    if (env.APP_ENV !== 'test' && !skipListen) {
-      await appInstance.listen({
-        host: '0.0.0.0',
-        port: config.app.port,
-      });
-      consola.success('listening on port', config.app.port);
-    }
-
-    return appInstance;
-  } catch (err) {
-    appInstance.log.error(err);
-    consola.fatal(err);
-    process.exit(1);
   }
+
+  // Services (always loaded - some needed for CLI commands like cleanup)
+  await appInstance.register(fastifyAutoload, {
+    dir: path.join(__dirname, 'services'),
+    ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
+  });
+
+  // Start scheduler after services are loaded (if enabled)
+  appInstance.scheduler.start();
+
+  // Routes (skip in CLI mode)
+  if (!cliMode) {
+    await appInstance.register(fastifyAutoload, {
+      dir: path.join(__dirname, 'routes'),
+      routeParams: true,
+      autoHooks: true,
+      options: {},
+      ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
+    });
+  }
+
+  if (env.APP_ENV !== 'test' && !skipListen) {
+    await appInstance.listen({
+      host: '0.0.0.0',
+      port: config.app.port,
+    });
+    appInstance.log.info(`listening on port ${config.app.port}`);
+  }
+
+  return appInstance;
 }
