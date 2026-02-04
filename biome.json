@@ -94,6 +94,16 @@
       }
     },
     {
+      "includes": ["packages/backend/src/lib/config/loader.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noTemplateCurlyInString": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["examples/**"],
       "linter": {
         "domains": {
