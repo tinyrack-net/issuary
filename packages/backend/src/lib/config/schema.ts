@@ -13,7 +13,7 @@ export const AppConfigSmtp = z.object({
   secure: z.boolean().default(true),
   user: z.string().min(1),
   password: z.string().min(1),
-  from: z.email(),
+  from: z.string().optional(),
   test: z.boolean().default(false),
 });
 

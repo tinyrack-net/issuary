@@ -1,4 +1,3 @@
-# yaml-language-server: $schema=./config.schema.json
 # =============================================================================
 # TinyAuth Configuration Example
 # =============================================================================
@@ -28,16 +27,20 @@ app:
   # Server Configuration
   # --------------------------------------------------------------------------
 
+  # name: Application name displayed in the UI and emails.
+  # Default: 'Tinyrack Auth'
+  name: ${APP_NAME:-Tinyrack Auth}
+
   # host: The public URL where the authentication service is accessible.
   # This is used for generating callback URLs, links in emails, and CORS settings.
   # Must include the protocol (http:// or https://) and optionally the port.
   # Example: https://auth.example.com or http://localhost:8080
-  host: https://auth.example.com
+  host: ${APP_HOST:-http://localhost:8080}
 
   # port: The port number on which the server listens for incoming connections.
   # Default: 8080
   # For production behind a reverse proxy, this is typically the internal port.
-  port: 8080
+  port: ${PORT:-8080}
 
   # --------------------------------------------------------------------------
   # Security Settings
@@ -47,19 +50,31 @@ app:
   # IMPORTANT: Generate a unique, random value for production environments.
   # You can generate one using: openssl rand -hex 32
   # WARNING: Changing this value will invalidate all existing sessions.
-  cookie_secret: $COOKIE_SECRET
+  cookie_secret: ${COOKIE_SECRET}
 
   # jwt_access_token_ttl: Time-to-live for JWT access tokens in seconds.
   # Access tokens are short-lived and used for API authentication.
   # Default: 3600 (1 hour)
   # Recommended: 900-3600 (15 minutes to 1 hour)
-  jwt_access_token_ttl: 3600
+  jwt_access_token_ttl: ${JWT_ACCESS_TOKEN_TTL:-3600}
 
   # jwt_refresh_token_ttl: Time-to-live for JWT refresh tokens in seconds.
   # Refresh tokens are long-lived and used to obtain new access tokens.
   # Default: 2592000 (30 days)
   # Recommended: 604800-2592000 (7-30 days)
-  jwt_refresh_token_ttl: 2592000
+  jwt_refresh_token_ttl: ${JWT_REFRESH_TOKEN_TTL:-2592000}
+
+  # jwt_key_rotation_enabled: Enable automatic JWT key rotation (RS256).
+  # Default: true
+  jwt_key_rotation_enabled: ${JWT_KEY_ROTATION_ENABLED:-true}
+
+  # jwt_key_rotation_days: Days between key rotations.
+  # Default: 30
+  jwt_key_rotation_days: ${JWT_KEY_ROTATION_DAYS:-30}
+
+  # jwt_key_overlap_days: Days to keep previous keys valid after rotation.
+  # Default: 7
+  jwt_key_overlap_days: ${JWT_KEY_OVERLAP_DAYS:-7}
 
   # --------------------------------------------------------------------------
   # Registration & Access Control
@@ -76,10 +91,10 @@ app:
   #
   # Multiple patterns can be combined. If any pattern matches, signup is allowed.
   # If this list is empty or not specified, no new signups are allowed.
-  allowed_signup_emails:
+  allowed_signup_emails: []
     # - '*'                    # Allow all emails (public registration)
-    - 'admin@example.com'      # Allow specific email
-    - '*@example.com'          # Allow all emails from domain
+    # - 'admin@example.com'   # Allow specific email
+    # - '*@example.com'       # Allow all emails from domain
 
   # --------------------------------------------------------------------------
   # Account Deletion
@@ -89,7 +104,7 @@ app:
   # When enabled, users can request account deletion from their profile settings.
   # The retention period is configured in the cleanup section.
   # Default: false
-  account_deletion: true
+  account_deletion: ${ACCOUNT_DELETION:-false}
 
   # --------------------------------------------------------------------------
   # Internationalization (i18n) Settings
@@ -100,20 +115,18 @@ app:
   # Currently supported: en (English), ko (Korean), ja (Japanese)
   supported_languages:
     - en
-    - ko
-    - ja
 
   # default_language: The default language for new users.
   # Options:
   #   - 'auto': Automatically detect from browser's Accept-Language header
   #   - A specific language code from supported_languages (e.g., 'en', 'ko')
   # Default: 'auto'
-  default_language: auto
+  default_language: ${DEFAULT_LANGUAGE:-auto}
 
   # fallback_language: Language to use when requested language is not available.
   # Must be one of the supported_languages.
   # This is used when auto-detection fails or user's preferred language is not supported.
-  fallback_language: en
+  fallback_language: ${FALLBACK_LANGUAGE:-en}
 
   # --------------------------------------------------------------------------
   # UI Customization
@@ -122,12 +135,12 @@ app:
   # light_theme: Theme name for light mode.
   # Available themes depend on the frontend implementation.
   # Default: 'light'
-  # light_theme: light
+  light_theme: ${LIGHT_THEME:-light}
 
   # dark_theme: Theme name for dark mode.
   # Available themes depend on the frontend implementation.
   # Default: 'dark'
-  # dark_theme: dark
+  dark_theme: ${DARK_THEME:-dark}
 
   # theme_mode: How the theme is selected.
   # Options:
@@ -135,33 +148,33 @@ app:
   #   - 'light': Always use light theme
   #   - 'dark': Always use dark theme
   # Default: 'system'
-  # theme_mode: system
+  theme_mode: ${THEME_MODE:-system}
 
   # background_url: URL of the background image for authentication pages.
   # Supports any publicly accessible image URL.
   # Recommended: High-resolution image (1920x1080 or higher) for best quality.
   # Set to empty string or remove to use a solid color background.
-  background_url: https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071
+  # background_url: https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071
 
   # icon_url: URL of the logo/icon displayed on authentication pages.
   # Recommended size: 48x48 pixels (will be displayed at this size).
   # Supports PNG, SVG, JPG formats.
-  icon_url: https://example.com/logo.png
+  # icon_url: https://example.com/logo.png
 
   # title: Localized title text displayed on the login page.
   # Overrides the default "Welcome back!" message.
   # Provide translations for each supported language.
-  title:
-    en: My App
-    ko: 내 앱
-    ja: マイアプリ
+  # title:
+  #   en: My App
+  #   ko: 내 앱
+  #   ja: マイアプリ
 
   # subtitle: Localized subtitle text displayed below the title on login page.
   # Provides additional context or instructions for users.
-  subtitle:
-    en: Log in to your account
-    ko: 계정에 로그인하세요
-    ja: アカウントにログインしてください
+  # subtitle:
+  #   en: Log in to your account
+  #   ko: 계정에 로그인하세요
+  #   ja: アカウントにログインしてください
 
   # --------------------------------------------------------------------------
   # Proxy Configuration
@@ -180,7 +193,7 @@ app:
   #   - 2           : Trust up to 2 hops
   #
   # WARNING: Incorrectly configuring this can lead to IP spoofing vulnerabilities.
-  # trust_proxy: ['10.0.0.0/8']
+  trust_proxy: ${TRUST_PROXY:-false}
 
   # --------------------------------------------------------------------------
   # Consent Notice (Implicit Mode)
@@ -218,7 +231,7 @@ scheduler:
   # enabled: Whether the in-process cleanup scheduler is active.
   # Set to false when using external schedulers (Kubernetes CronJob, etc.)
   # Default: true
-  enabled: true
+  enabled: ${SCHEDULER_ENABLED:-true}
 
   # cron: Cron schedule for running all cleanup tasks.
   # Uses standard 5-field format: minute hour day month weekday
@@ -227,7 +240,7 @@ scheduler:
   #   "0 */6 * * *"  - Every 6 hours
   #   "0 0 * * 0"    - Weekly on Sunday at midnight
   # Default: "0 2 * * *"
-  cron: "0 2 * * *"
+  cron: ${SCHEDULER_CRON:-0 2 * * *}
 
 # -----------------------------------------------------------------------------
 # Terms of Service Configuration
@@ -316,7 +329,7 @@ terms:
 database:
   # type: Database engine to use.
   # Options: 'sqlite' or 'postgres'
-  type: sqlite
+  type: ${DB_TYPE:-sqlite}
 
   # --------------------------------------------------------------------------
   # SQLite Configuration (when type: sqlite)
@@ -324,7 +337,7 @@ database:
   # path: Path to the SQLite database file.
   # Can be absolute or relative to the application directory.
   # The directory must exist and be writable by the application.
-  path: data/auth.db
+  path: ${DB_PATH:-/opt/tinyauth/database.db}
 
   # --------------------------------------------------------------------------
   # PostgreSQL Configuration (when type: postgres)
@@ -420,12 +433,12 @@ auth:
     # Authy, Microsoft Authenticator, etc.
     totp:
       # enabled: Whether TOTP 2FA is available.
-      enabled: true
+      enabled: false
 
       # issuer: The name displayed in authenticator apps.
       # Helps users identify which service the code is for.
       # Typically your application or company name.
-      issuer: TinyAuth
+      issuer: Tinyrack
 
   # --------------------------------------------------------------------------
   # Passkey Authentication (WebAuthn/FIDO2)
