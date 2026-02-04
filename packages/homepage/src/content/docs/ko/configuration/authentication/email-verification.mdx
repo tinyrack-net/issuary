@@ -3,33 +3,25 @@ title: 이메일 인증
 description: 사용자 등록을 위한 이메일 인증 구성하기
 ---
 
+이메일 인증은 비밀번호 로그인 기능을 사용할 때 이메일을 통한 추가 인증 절차를 요구하는 기능이에요.
+다음의 옵션을 통해 이 기능을 활성화 할 수 있어요.
+
 ```yaml
+auth:
+  password:
+    enabled: true
+    email_verification: true
 smtp:
-  # host: SMTP server hostname.
-  # Examples: smtp.gmail.com, smtp.sendgrid.net, mail.example.com
   host: smtp.example.com
-
-  # port: SMTP server port.
-  # Common ports:
-  #   - 25: Standard SMTP (often blocked by ISPs)
-  #   - 465: SMTPS (SMTP over SSL/TLS) - recommended
-  #   - 587: SMTP with STARTTLS
   port: 465
-
-  # secure: Whether to use SSL/TLS for the connection.
-  # Set to true for port 465 (SMTPS), false for port 587 with STARTTLS.
   secure: true
-
-  # user: SMTP authentication username.
-  # Usually your email address or API key.
   user: $SMTP_USER
-
-  # password: SMTP authentication password.
-  # For services like Gmail, use an App Password instead of your account password.
   password: $SMTP_PASSWORD
-
-  # from: The "From" address for outgoing emails.
-  # Can be just an email or "Name <email@example.com>" format.
-  # Must be authorized to send from your SMTP server.
-  from: "TinyAuth <noreply@example.com>"
+  from: "TinyAuth <noreply@tinyauth.com>"
 ```
+
+이 기능을 활성화면 사용자는 다음의 기능을 사용할 수 있게 돼요.
+
+- 사용자 회원가입 시 인증 코드 전송
+- 사용자 비밀번호 초기화 링크 전송
+
