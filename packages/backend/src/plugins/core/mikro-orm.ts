@@ -1,5 +1,4 @@
 import { MikroORM, type Options, RequestContext } from '@mikro-orm/core';
-import { consola } from 'consola';
 import fastifyPlugin from 'fastify-plugin';
 import { getDbConfigs } from '@/db/index.js';
 import { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
@@ -62,7 +61,7 @@ declare module 'fastify' {
 
 export default fastifyPlugin(
   async (fastify) => {
-    consola.info('Initializing MikroORM...');
+    fastify.log.info('Initializing MikroORM...');
 
     const configs = getDbConfigs(fastify.config);
     const ormOptions: Options = {
@@ -81,7 +80,7 @@ export default fastifyPlugin(
       await orm.migrator.up();
     }
 
-    consola.success('MikroORM initialized successfully');
+    fastify.log.info('MikroORM initialized successfully');
 
     fastify.decorate('mikro', {
       orm,
