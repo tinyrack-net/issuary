@@ -1,4 +1,5 @@
 import z from 'zod/v4';
+import { zz } from '@/schemas/provider.js';
 
 /**
  * Cron expression string.
@@ -32,9 +33,7 @@ export const DEFAULT_SCHEDULER_CONFIG = {
  */
 export const AppConfigScheduler = z
   .object({
-    enabled: z
-      .boolean()
-      .optional()
+    enabled: zz.COERCE_BOOLEAN.optional()
       .default(DEFAULT_SCHEDULER_CONFIG.enabled)
       .describe(
         'Enable in-process cleanup scheduler. Disable when using external schedulers (K8s CronJob).',
