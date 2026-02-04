@@ -1,6 +1,9 @@
 import z from 'zod/v4';
 
 export const f = {
+  // Common fields
+  uuid: z.uuid().describe('Entity UUID'),
+
   // User fields
   userId: z.string().describe('User ID'),
   userEmail: z.email().describe('User email address'),
@@ -39,6 +42,11 @@ export const f = {
   grantType: z
     .enum(['authorization_code', 'refresh_token'])
     .describe('OAuth grant type'),
+  authorizationCode: z
+    .string()
+    .min(1)
+    .max(1000)
+    .describe('OAuth authorization code'),
   token: z
     .string()
     .min(1)
@@ -47,11 +55,41 @@ export const f = {
     .enum(['access_token', 'refresh_token'])
     .describe('Hint about the type of token'),
 
+  // OIDC fields
+  prompt: z
+    .enum(['none', 'login', 'consent', 'select_account'])
+    .describe('OIDC prompt parameter'),
+  display: z
+    .enum(['page', 'popup', 'touch', 'wap'])
+    .describe('OIDC display parameter'),
+  maxAge: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .describe('Maximum authentication age in seconds'),
+
+  // Consent fields
+  consentDecision: z.enum(['allow', 'deny']).describe('User consent decision'),
+
   // Provider fields
   providerName: z
     .string()
     .min(1)
     .describe('OAuth provider name (e.g., "google", "github")'),
+  oauthConnectMode: z
+    .enum(['login', 'register', 'link'])
+    .describe('OAuth connect mode'),
+  returnUrl: z
+    .string()
+    .min(1)
+    .max(2000)
+    .describe('URL to redirect after completion'),
+
+  // i18n fields
+  languageCode: z
+    .string()
+    .default('en')
+    .describe('Language code for localized content'),
 
   // TOTP fields
   totpCode: z
@@ -73,6 +111,10 @@ export const f = {
   base64UrlString: z.string().describe('Base64URL-encoded string'),
   passkeyCredentialId: z.string().describe('Passkey credential ID'),
   passkeyChallenge: z.string().describe('WebAuthn challenge'),
+  passkeyName: z.string().min(1).max(100).describe('Passkey display name'),
+  passkeyDeviceType: z
+    .enum(['singleDevice', 'multiDevice'])
+    .describe('Passkey device type'),
   authenticatorTransport: z
     .enum(['ble', 'cable', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb'])
     .describe('Authenticator transport method'),
