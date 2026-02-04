@@ -1,3 +1,4 @@
+import { consola } from 'consola';
 import type { FastifyInstance } from 'fastify';
 import fastifyPlugin from 'fastify-plugin';
 import nodemailer from 'nodemailer';
@@ -40,12 +41,12 @@ export class EmailService {
       html,
     });
 
-    console.log('Email sent: %s', info.messageId);
+    consola.success('Email sent: %s', info.messageId);
 
     if (this.config.smtp.test) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
-        console.log('Preview URL: %s', previewUrl);
+        consola.info('Preview URL: %s', previewUrl);
       }
     }
 
@@ -57,7 +58,7 @@ export class EmailService {
     token: string;
   }): void {
     this.sendVerificationEmail(params).catch((err) => {
-      console.error('Failed to send verification email:', err);
+      consola.error('Failed to send verification email:', err);
     });
   }
 
@@ -84,12 +85,12 @@ export class EmailService {
       html,
     });
 
-    console.log('Password reset email sent: %s', info.messageId);
+    consola.success('Password reset email sent: %s', info.messageId);
 
     if (this.config.smtp.test) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
-        console.log('Preview URL: %s', previewUrl);
+        consola.info('Preview URL: %s', previewUrl);
       }
     }
 
@@ -105,7 +106,7 @@ export class EmailService {
     token: string;
   }): void {
     this.sendPasswordResetEmail(params).catch((err) => {
-      console.error('Failed to send password reset email:', err);
+      consola.error('Failed to send password reset email:', err);
     });
   }
 

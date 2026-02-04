@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fastifyAutoload from '@fastify/autoload';
+import { consola } from 'consola';
 import Fastify from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
@@ -101,13 +102,13 @@ export async function createServer(options: CreateServerOptions) {
         host: '0.0.0.0',
         port: config.app.port,
       });
-      console.log('listening on port', config.app.port);
+      consola.success('listening on port', config.app.port);
     }
 
     return appInstance;
   } catch (err) {
     appInstance.log.error(err);
-    console.error(err);
+    consola.fatal(err);
     process.exit(1);
   }
 }

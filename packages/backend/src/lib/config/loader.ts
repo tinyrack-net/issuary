@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { consola } from 'consola';
 import nodemailer from 'nodemailer';
 import YAML from 'yaml';
 import { env } from '../env.js';
@@ -183,25 +184,25 @@ export function loadConfig(options?: {
   // 1. Explicit path provided by caller (e.g., CLI --config-path)
   if (options?.configPath) {
     const configPath = resolveAbsolutePath(options.configPath);
-    console.info(`Loading config from: ${configPath}`);
+    consola.info(`Loading config from: ${configPath}`);
     return loadConfigFromPath(configPath);
   }
 
   // 2. CONFIG_PATH env var is set — error if file missing
   if (env.CONFIG_PATH) {
     const configPath = resolveAbsolutePath(env.CONFIG_PATH);
-    console.info(`Loading config from: ${configPath}`);
+    consola.info(`Loading config from: ${configPath}`);
     return loadConfigFromPath(configPath);
   }
 
   // 3. Default path exists — use it
   if (existsSync(DEFAULT_CONFIG_PATH)) {
-    console.info(`Loading config from: ${DEFAULT_CONFIG_PATH}`);
+    consola.info(`Loading config from: ${DEFAULT_CONFIG_PATH}`);
     return loadConfigFromPath(DEFAULT_CONFIG_PATH);
   }
 
   // 4. Fall back to environment variables with defaults
-  console.info(
+  consola.info(
     'No config file found, using environment variables with defaults',
   );
   const resolved = resolveEnvVariables(DEFAULT_CONFIG);
