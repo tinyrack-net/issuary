@@ -21,29 +21,15 @@ export default (fastify: FastifyWithZodInstance) => {
       description: 'Handles the user consent decision for OAuth authorization.',
       tags: [TAGS.CONSENT],
       body: z.object({
-        client_id: f.clientId.describe(
-          'OAuth client ID requesting authorization',
-        ),
-        redirect_uri: f.redirectUri.describe(
-          'URI to redirect after authorization',
-        ),
-        response_type: f.responseType.describe('OAuth2 response type'),
-        scope: f.scope
-          .optional()
-          .describe('Space-delimited list of requested scopes'),
-        state: f.state
-          .optional()
-          .describe('State parameter to return to the client'),
-        nonce: f.nonce.optional().describe('OIDC nonce parameter'),
-        code_challenge: f.codeChallenge
-          .optional()
-          .describe('PKCE code challenge'),
-        code_challenge_method: f.codeChallengeMethod
-          .optional()
-          .describe('PKCE code challenge method'),
-        decision: z
-          .enum(['allow', 'deny'])
-          .describe('User consent decision: "allow" or "deny"'),
+        client_id: f.clientId,
+        redirect_uri: f.redirectUri,
+        response_type: f.responseType,
+        scope: f.scope.optional(),
+        state: f.state.optional(),
+        nonce: f.nonce.optional(),
+        code_challenge: f.codeChallenge.optional(),
+        code_challenge_method: f.codeChallengeMethod.optional(),
+        decision: f.consentDecision,
       }),
       response: {
         200: r.RedirectUrlResponse,
