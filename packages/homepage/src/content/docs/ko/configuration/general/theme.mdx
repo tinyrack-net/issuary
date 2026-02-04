@@ -3,11 +3,22 @@ title: 테마
 description: Tinyauth용 PostgreSQL 데이터베이스 구성하기
 ---
 
-테마는 `tinyauth`의 외관을 정의해요. `tinyauth`은 라이트 모드와 다크 모드를 모두 지원하며, 사용자가 선호하는 모드에 따라 자동으로 전환돼요.
+`tinyauth` 의 프론트엔드는 [daisyUI](https://daisyui.com/)를 기반으로 구축됐어요. 이 덕분에 다양한 테마 옵션을 제공하며, 선호하는 인터페이스 모양과 느낌을 지정할 수 있어요. 설정의 기본값은 다음과 같아요.
 
 ```yaml
 app:
-  light_theme: light
-  dark_theme: dark
-  theme_mode: system
+  light_theme: ${LIGHT_THEME:-light}
+  dark_theme: ${DARK_THEME:-dark}
+  theme_mode: ${THEME_MODE:-system}
 ```
+
+- `theme_mode`: 테마 전환 모드를 설정해요.
+  - `system`: 시스템 설정에 따라 라이트 또는 다크 모드를 자동으로 선택해요. 사용자에게 테마 전환 토글이 제공돼요.
+  - `light`: 항상 라이트 모드를 사용해요.
+  - `dark`: 항상 다크 모드를 사용해요.
+- `light_theme`: 라이트 모드에서 사용할 테마 이름이에요. 기본값은 `light`예요.
+- `dark_theme`: 다크 모드에서 사용할 테마 이름이에요. 기본값은 `dark`예요.
+
+사용 가능한 테마의 적용 모습은 [daisyUI 테마 문서](https://daisyui.com/docs/themes/)에서 확인할 수 있어요. 선호하는 테마를 선택하여 `light_theme` 및 `dark_theme` 설정에 지정해 주세요. 사용 가능한 테마 이름은 다음과 같아요.
+
+> `light`, `dark`, `cupcake`, `bumblebee`, `emerald`, `corporate`, `synthwave`, `retro`, `cyberpunk`, `valentine`, `halloween`, `garden`, `forest`, `aqua`, `lofi`, `pastel`, `fantasy`, `wireframe`, `black`, `luxury`, `dracula`, `cmyk`, `autumn`, `business`, `acid`, `lemonade`, `night`, `coffee`, `winter`, `dim`, `nord`, `sunset`, `caramellatte`, `abyss`,

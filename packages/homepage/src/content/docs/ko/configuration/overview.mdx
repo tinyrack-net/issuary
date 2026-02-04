@@ -25,11 +25,13 @@ users:
 
 ```yaml
 app:
-  host: "https://your-tinyauth-domain.com"
-  cookie_secret: "your_cookie_secret"
+  host: "https://내_도메인.com"
+  cookie_secret: "아주_강력한_비밀_키"
 ```
 
 - `host`: `tinyauth` 인스턴스의 기본 URL을 지정해요.
 - `cookie_secret`: 세션 쿠키를 암호화하는 데 사용되는 비밀 키예요.
+
+> `openssl rand -hex 32` 명령어를 사용하여 강력한 비밀 키를 생성할 수 있어요.
 
 다른 값들은 모두 시작하기에 좋은 기본값을 가지고 있으니 필요에 따라 문서를 참고하여 하나씩 조정해 나가시길 바래요.
