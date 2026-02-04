@@ -4,15 +4,8 @@ import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
+import { termsSchema } from '@/schemas/terms.js';
 import type { FastifyWithZodInstance } from '@/server.js';
-
-/**
- * Consent item schema for terms agreement
- */
-const ConsentItem = z.object({
-  termsId: z.string().describe('Term ID to consent to'),
-  agreed: z.boolean().describe('Whether user agrees to this term'),
-});
 
 export default (fastify: FastifyWithZodInstance) => {
   fastify.route({
@@ -27,7 +20,7 @@ export default (fastify: FastifyWithZodInstance) => {
         email: f.userEmail,
         password: f.userPassword,
         consents: z
-          .array(ConsentItem)
+          .array(termsSchema.ConsentItem)
           .optional()
           .describe('Terms consent decisions'),
       }),
