@@ -1,0 +1,1144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "app": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "default": "Tinyrack Auth",
+          "description": "Application name",
+          "type": "string"
+        },
+        "host": {
+          "default": "http://localhost:8080",
+          "type": "string"
+        },
+        "port": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "cookie_secret": {
+          "type": "string",
+          "minLength": 16
+        },
+        "jwt_access_token_ttl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "jwt_refresh_token_ttl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "jwt_key_rotation_enabled": {
+          "description": "Enable automatic JWT key rotation",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "jwt_key_rotation_days": {
+          "description": "Days between key rotations",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "jwt_key_overlap_days": {
+          "description": "Days to keep previous keys valid after rotation",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "allowed_signup_emails": {
+          "default": [],
+          "description": "Email patterns allowed for signup. \"*\" allows all emails, \"*@domain.com\" allows a specific domain, \"user@domain.com\" allows a specific email. Empty array disables signup entirely.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "supported_languages": {
+          "default": ["en"],
+          "description": "Supported languages",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "default_language": {
+          "default": "auto",
+          "description": "Default language",
+          "type": "string"
+        },
+        "fallback_language": {
+          "default": "en",
+          "description": "Fallback language",
+          "type": "string"
+        },
+        "light_theme": {
+          "default": "light",
+          "description": "Light theme name",
+          "type": "string",
+          "enum": [
+            "light",
+            "dark",
+            "cupcake",
+            "bumblebee",
+            "emerald",
+            "corporate",
+            "synthwave",
+            "retro",
+            "cyberpunk",
+            "valentine",
+            "halloween",
+            "garden",
+            "forest",
+            "aqua",
+            "lofi",
+            "pastel",
+            "fantasy",
+            "wireframe",
+            "black",
+            "luxury",
+            "dracula",
+            "cmyk",
+            "autumn",
+            "business",
+            "acid",
+            "lemonade",
+            "night",
+            "coffee",
+            "winter",
+            "dim",
+            "nord",
+            "sunset",
+            "caramellatte",
+            "abyss",
+            "silk"
+          ]
+        },
+        "dark_theme": {
+          "default": "dark",
+          "description": "Dark theme name",
+          "type": "string",
+          "enum": [
+            "light",
+            "dark",
+            "cupcake",
+            "bumblebee",
+            "emerald",
+            "corporate",
+            "synthwave",
+            "retro",
+            "cyberpunk",
+            "valentine",
+            "halloween",
+            "garden",
+            "forest",
+            "aqua",
+            "lofi",
+            "pastel",
+            "fantasy",
+            "wireframe",
+            "black",
+            "luxury",
+            "dracula",
+            "cmyk",
+            "autumn",
+            "business",
+            "acid",
+            "lemonade",
+            "night",
+            "coffee",
+            "winter",
+            "dim",
+            "nord",
+            "sunset",
+            "caramellatte",
+            "abyss",
+            "silk"
+          ]
+        },
+        "theme_mode": {
+          "default": "system",
+          "description": "Default theme mode",
+          "type": "string",
+          "enum": ["light", "dark", "system"]
+        },
+        "background_url": {
+          "description": "Background image URL for authentication pages",
+          "type": "string",
+          "format": "uri"
+        },
+        "trust_proxy": {
+          "description": "Trust proxy configuration for X-Forwarded-* headers. Can be true (trust all), false (trust none), IP/CIDR string, array of IPs, or number (nth hop)",
+          "default": false,
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          ]
+        },
+        "signup_implicit_terms": {
+          "description": "Localized notice text for implicit consent terms during signup. Keyed by language code (e.g., \"en\", \"ko\"). Displayed when any term has consent_mode: \"implicit\".",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "icon_url": {
+          "description": "Icon/logo URL displayed on authentication pages",
+          "type": "string",
+          "format": "uri"
+        },
+        "title": {
+          "description": "Localized title text for login page. Keyed by language code (e.g., \"en\", \"ko\"). Overrides the default i18n login title.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "subtitle": {
+          "description": "Localized subtitle text for login page. Keyed by language code (e.g., \"en\", \"ko\"). Overrides the default i18n login subtitle.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "account_deletion": {
+          "description": "Whether users can delete their own accounts",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "required": ["cookie_secret"]
+    },
+    "database": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "memory"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "sqlite"
+            },
+            "path": {
+              "default": "test.db",
+              "type": "string"
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "postgres"
+            },
+            "host": {
+              "default": "localhost",
+              "type": "string"
+            },
+            "port": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "user": {
+              "default": "test",
+              "type": "string",
+              "minLength": 1
+            },
+            "password": {
+              "default": "test",
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "default": "test",
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["type"]
+        }
+      ]
+    },
+    "auth": {
+      "default": {
+        "password": {
+          "enabled": true,
+          "email_verification": true,
+          "second_factor": {
+            "required": false
+          },
+          "totp": {
+            "enabled": false,
+            "issuer": "Tinyrack"
+          }
+        },
+        "passkey": {
+          "enabled": false,
+          "email_verification": true
+        }
+      },
+      "type": "object",
+      "properties": {
+        "password": {
+          "default": {
+            "enabled": true,
+            "email_verification": true,
+            "second_factor": {
+              "required": false
+            },
+            "totp": {
+              "enabled": false,
+              "issuer": "Tinyrack"
+            }
+          },
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "type": "boolean"
+            },
+            "email_verification": {
+              "default": true,
+              "type": "boolean"
+            },
+            "second_factor": {
+              "default": {
+                "required": false
+              },
+              "type": "object",
+              "properties": {
+                "required": {
+                  "default": false,
+                  "type": "boolean"
+                }
+              }
+            },
+            "totp": {
+              "default": {
+                "enabled": false,
+                "issuer": "Tinyrack"
+              },
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "default": false,
+                  "type": "boolean"
+                },
+                "issuer": {
+                  "default": "Tinyrack",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "passkey": {
+          "default": {
+            "enabled": false,
+            "email_verification": true
+          },
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": false,
+              "type": "boolean"
+            },
+            "email_verification": {
+              "default": true,
+              "type": "boolean"
+            },
+            "rp_id": {
+              "type": "string",
+              "pattern": "^(?!.*:\\/\\/)(?!.*:\\d)(localhost|[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+)$"
+            },
+            "origins": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          }
+        }
+      }
+    },
+    "identity_providers": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique identifier for this OAuth provider"
+              },
+              "type": {
+                "type": "string",
+                "const": "github"
+              },
+              "enabled": {
+                "default": false,
+                "type": "boolean"
+              },
+              "display_name": {
+                "description": "Display name shown in UI",
+                "type": "string"
+              },
+              "icon_url": {
+                "description": "Icon URL shown in UI",
+                "type": "string"
+              },
+              "client_id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "OAuth client ID"
+              },
+              "client_secret": {
+                "type": "string",
+                "minLength": 1,
+                "description": "OAuth client secret"
+              },
+              "scopes": {
+                "description": "OAuth scopes (defaults to provider defaults)",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "email_conflict_strategy": {
+                "default": "auto_link",
+                "description": "Email conflict resolution strategy",
+                "type": "string",
+                "enum": ["auto_link", "require_link"]
+              }
+            },
+            "required": ["id", "type", "client_id", "client_secret"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique identifier for this OAuth provider"
+              },
+              "type": {
+                "type": "string",
+                "const": "google"
+              },
+              "enabled": {
+                "default": false,
+                "type": "boolean"
+              },
+              "display_name": {
+                "description": "Display name shown in UI",
+                "type": "string"
+              },
+              "icon_url": {
+                "description": "Icon URL shown in UI",
+                "type": "string"
+              },
+              "client_id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "OAuth client ID"
+              },
+              "client_secret": {
+                "type": "string",
+                "minLength": 1,
+                "description": "OAuth client secret"
+              },
+              "scopes": {
+                "description": "OAuth scopes (defaults to provider defaults)",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "email_conflict_strategy": {
+                "default": "auto_link",
+                "description": "Email conflict resolution strategy",
+                "type": "string",
+                "enum": ["auto_link", "require_link"]
+              }
+            },
+            "required": ["id", "type", "client_id", "client_secret"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique identifier for this OAuth provider"
+              },
+              "type": {
+                "type": "string",
+                "const": "apple"
+              },
+              "enabled": {
+                "default": false,
+                "type": "boolean"
+              },
+              "display_name": {
+                "description": "Display name shown in UI",
+                "type": "string"
+              },
+              "icon_url": {
+                "description": "Icon URL shown in UI",
+                "type": "string"
+              },
+              "client_id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "OAuth client ID"
+              },
+              "client_secret": {
+                "type": "string",
+                "minLength": 1,
+                "description": "OAuth client secret"
+              },
+              "scopes": {
+                "description": "OAuth scopes (defaults to provider defaults)",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "response_mode": {
+                "description": "Response mode (defaults to form_post for Apple)",
+                "type": "string",
+                "enum": ["query", "fragment", "form_post"]
+              },
+              "email_conflict_strategy": {
+                "default": "auto_link",
+                "description": "Email conflict resolution strategy",
+                "type": "string",
+                "enum": ["auto_link", "require_link"]
+              }
+            },
+            "required": ["id", "type", "client_id", "client_secret"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Unique identifier for this OAuth provider"
+              },
+              "type": {
+                "type": "string",
+                "const": "generic_oauth"
+              },
+              "enabled": {
+                "default": false,
+                "type": "boolean"
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Display name shown in UI"
+              },
+              "icon_url": {
+                "description": "Icon URL shown in UI",
+                "type": "string"
+              },
+              "client_id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "OAuth client ID"
+              },
+              "client_secret": {
+                "type": "string",
+                "minLength": 1,
+                "description": "OAuth client secret"
+              },
+              "authorization_url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Authorization endpoint URL"
+              },
+              "token_url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Token endpoint URL"
+              },
+              "userinfo_url": {
+                "description": "UserInfo endpoint URL",
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "email_url": {
+                "description": "Additional URL for fetching email (e.g., GitHub)",
+                "type": "string",
+                "format": "uri"
+              },
+              "scopes": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "OAuth scopes to request"
+              },
+              "response_mode": {
+                "description": "Response mode",
+                "type": "string",
+                "enum": ["query", "fragment", "form_post"]
+              },
+              "email_conflict_strategy": {
+                "default": "auto_link",
+                "description": "Email conflict resolution strategy",
+                "type": "string",
+                "enum": ["auto_link", "require_link"]
+              },
+              "userinfo_mapping": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Field name for user ID"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "Field name for email"
+                  },
+                  "email_verified": {
+                    "description": "Field name for email_verified",
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "Field name for name",
+                    "type": "string"
+                  },
+                  "picture": {
+                    "description": "Field name for picture",
+                    "type": "string"
+                  }
+                },
+                "required": ["id", "email"],
+                "description": "Mapping from provider userinfo response to standard fields"
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "display_name",
+              "client_id",
+              "client_secret",
+              "authorization_url",
+              "token_url",
+              "scopes",
+              "userinfo_mapping"
+            ]
+          }
+        ]
+      }
+    },
+    "smtp": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "host": {
+              "default": "localhost",
+              "type": "string"
+            },
+            "port": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "secure": {
+              "default": true,
+              "type": "boolean"
+            },
+            "user": {
+              "type": "string",
+              "minLength": 1
+            },
+            "password": {
+              "type": "string",
+              "minLength": 1
+            },
+            "from": {
+              "type": "string",
+              "format": "email",
+              "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+            },
+            "test": {
+              "type": "boolean",
+              "const": false
+            }
+          },
+          "required": ["user", "password", "from", "test"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "test": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": ["test"]
+        }
+      ]
+    },
+    "cleanup": {
+      "default": {
+        "revoked_tokens": {
+          "enabled": true,
+          "retention": "0"
+        },
+        "oauth_codes": {
+          "enabled": true,
+          "consumed_retention": "24h"
+        },
+        "email_verifications": {
+          "enabled": true,
+          "retention": "0"
+        },
+        "password_resets": {
+          "enabled": true,
+          "retention": "0"
+        },
+        "deleted_users": {
+          "enabled": true,
+          "retention": "30d"
+        },
+        "jwt_keys": {
+          "enabled": true
+        }
+      },
+      "type": "object",
+      "properties": {
+        "revoked_tokens": {
+          "default": {
+            "enabled": true,
+            "retention": "0"
+          },
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "description": "Enable revoked tokens cleanup",
+              "type": "boolean"
+            },
+            "retention": {
+              "default": "0",
+              "description": "How long to keep expired revoked tokens. \"0\" means delete immediately after expiry.",
+              "type": "string",
+              "pattern": "^(0|\\d+[smhdy])$"
+            }
+          },
+          "description": "Revoked tokens cleanup settings"
+        },
+        "oauth_codes": {
+          "default": {
+            "enabled": true,
+            "consumed_retention": "24h"
+          },
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "description": "Enable OAuth codes cleanup",
+              "type": "boolean"
+            },
+            "consumed_retention": {
+              "default": "24h",
+              "description": "How long to keep consumed authorization codes for debugging/audit.",
+              "type": "string",
+              "pattern": "^(0|\\d+[smhdy])$"
+            }
+          },
+          "description": "OAuth authorization codes cleanup settings"
+        },
+        "email_verifications": {
+          "default": {
+            "enabled": true,
+            "retention": "0"
+          },
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "description": "Enable email verification tokens cleanup",
+              "type": "boolean"
+            },
+            "retention": {
+              "default": "0",
+              "description": "How long to keep expired email verification tokens. \"0\" means delete immediately after expiry.",
+              "type": "string",
+              "pattern": "^(0|\\d+[smhdy])$"
+            }
+          },
+          "description": "Email verification tokens cleanup settings"
+        },
+        "password_resets": {
+          "default": {
+            "enabled": true,
+            "retention": "0"
+          },
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "description": "Enable password reset tokens cleanup",
+              "type": "boolean"
+            },
+            "retention": {
+              "default": "0",
+              "description": "How long to keep expired password reset tokens. \"0\" means delete immediately after expiry.",
+              "type": "string",
+              "pattern": "^(0|\\d+[smhdy])$"
+            }
+          },
+          "description": "Password reset tokens cleanup settings"
+        },
+        "deleted_users": {
+          "default": {
+            "enabled": true,
+            "retention": "30d"
+          },
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "description": "Enable deleted users cleanup",
+              "type": "boolean"
+            },
+            "retention": {
+              "default": "30d",
+              "description": "How long to retain soft-deleted users before permanent deletion.",
+              "type": "string",
+              "pattern": "^(0|\\d+[smhdy])$"
+            }
+          },
+          "description": "Deleted users cleanup settings"
+        },
+        "jwt_keys": {
+          "default": {
+            "enabled": true
+          },
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "description": "Enable JWT key rotation",
+              "type": "boolean"
+            }
+          },
+          "description": "JWT key rotation settings"
+        }
+      },
+      "description": "Cleanup configuration for maintenance tasks"
+    },
+    "scheduler": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Enable in-process cleanup scheduler. Disable when using external schedulers (K8s CronJob).",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "cron": {
+          "default": "0 2 * * *",
+          "description": "Cron schedule for running all cleanup tasks. Default: daily at 2 AM.",
+          "type": "string",
+          "minLength": 9
+        }
+      },
+      "description": "In-process scheduler configuration for automated cleanup tasks"
+    },
+    "terms": {
+      "default": [],
+      "description": "Terms of service configuration",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9-_]+$",
+            "description": "Unique identifier for the term"
+          },
+          "required": {
+            "default": true,
+            "description": "Whether agreement to this term is mandatory",
+            "type": "boolean"
+          },
+          "consent_mode": {
+            "default": "explicit",
+            "description": "Consent mode for this term: \"explicit\" shows checkbox requiring user action, \"implicit\" means signup implies agreement",
+            "type": "string",
+            "enum": ["explicit", "implicit"]
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Version string for tracking changes (e.g., \"1.0.0\")"
+          },
+          "content": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Display title for the term"
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "link",
+                      "description": "Content type: link to external document"
+                    },
+                    "content": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "URL to the full terms document"
+                    }
+                  },
+                  "required": ["title", "type", "content"]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Display title for the term"
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "text",
+                      "description": "Content type: inline text"
+                    },
+                    "content": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Inline text content"
+                    }
+                  },
+                  "required": ["title", "type", "content"]
+                }
+              ],
+              "description": "Localized content for a term"
+            },
+            "description": "Localized content keyed by language code (e.g., \"en\", \"ko\")"
+          }
+        },
+        "required": ["id", "version", "content"],
+        "description": "Individual term configuration"
+      }
+    },
+    "clients": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "logo_uri": {
+            "type": "string"
+          },
+          "client_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "client_secret": {
+            "type": "string",
+            "minLength": 1
+          },
+          "redirect_uris": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "response_types": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "grant_types": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "scope": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "client_id",
+          "redirect_uris",
+          "response_types",
+          "grant_types",
+          "scope"
+        ]
+      }
+    },
+    "users": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "description": "User email address"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 100,
+            "description": "User's password"
+          },
+          "role": {
+            "default": "user",
+            "type": "string",
+            "enum": ["user", "admin"]
+          }
+        },
+        "required": ["id", "email", "password"]
+      }
+    }
+  },
+  "required": ["app"],
+  "title": "TinyAuth Configuration",
+  "description": "Configuration schema for TinyAuth OIDC Provider. See config.example.yaml for detailed documentation of each option."
+}

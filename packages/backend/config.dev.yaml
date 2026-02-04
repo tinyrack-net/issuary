@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=./config.schema.json
 app:
   host: http://localhost:8080
   port: 8080
