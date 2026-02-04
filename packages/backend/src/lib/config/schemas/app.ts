@@ -50,25 +50,29 @@ export const AppConfigApp = z.object({
   host: z.string().optional().default('http://localhost:8080'),
   port: zz.PORT.optional().default(8080),
   cookie_secret: z.string().min(16),
-  jwt_access_token_ttl: z.number().int().min(60).optional().default(3600), // 1 hour
-  jwt_refresh_token_ttl: z.number().int().min(3600).optional().default(2592000), // 30 days
-  // JWT Key Rotation Settings (RS256)
-  jwt_key_rotation_enabled: z
-    .boolean()
+  jwt_access_token_ttl: zz
+    .coerceInt()
+    .pipe(z.number().int().min(60))
     .optional()
+    .default(3600), // 1 hour
+  jwt_refresh_token_ttl: zz
+    .coerceInt()
+    .pipe(z.number().int().min(3600))
+    .optional()
+    .default(2592000), // 30 days
+  // JWT Key Rotation Settings (RS256)
+  jwt_key_rotation_enabled: zz.COERCE_BOOLEAN.optional()
     .default(true)
     .describe('Enable automatic JWT key rotation'),
-  jwt_key_rotation_days: z
-    .number()
-    .int()
-    .min(1)
+  jwt_key_rotation_days: zz
+    .coerceInt()
+    .pipe(z.number().int().min(1))
     .optional()
     .default(30)
     .describe('Days between key rotations'),
-  jwt_key_overlap_days: z
-    .number()
-    .int()
-    .min(1)
+  jwt_key_overlap_days: zz
+    .coerceInt()
+    .pipe(z.number().int().min(1))
     .optional()
     .default(7)
     .describe('Days to keep previous keys valid after rotation'),
@@ -120,6 +124,15 @@ export const AppConfigApp = z.object({
     ])
     .optional()
     .default(false)
+    .transform((val) => {
+      if (typeof val === 'string') {
+        if (val === 'true') return true;
+        if (val === 'false') return false;
+        const num = Number(val);
+        if (!Number.isNaN(num) && String(num) === val) return num;
+      }
+      return val;
+    })
     .describe(
       'Trust proxy configuration for X-Forwarded-* headers. ' +
         'Can be true (trust all), false (trust none), ' +
@@ -154,9 +167,7 @@ export const AppConfigApp = z.object({
         'Keyed by language code (e.g., "en", "ko"). ' +
         'Overrides the default i18n login subtitle.',
     ),
-  account_deletion: z
-    .boolean()
-    .optional()
+  account_deletion: zz.COERCE_BOOLEAN.optional()
     .default(false)
     .describe('Whether users can delete their own accounts'),
 });
