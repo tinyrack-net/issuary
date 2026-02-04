@@ -1,4 +1,4 @@
-import type { AppConfigInput } from '@/lib/config/schemas/root.js';
+import type { AppConfigInput } from '@/lib/config/index.js';
 
 /**
  * Minimal test configuration.

@@ -14,7 +14,7 @@ import {
   type TokenType,
 } from '@/entities/revoked-token.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
-import type { AppConfigInput } from '@/lib/config/schemas/root.js';
+import type { AppConfigInput } from '@/lib/config/index.js';
 import { withMikroContext } from './helpers.js';
 import { MINIMAL_TEST_CONFIG } from './setup.js';
 
