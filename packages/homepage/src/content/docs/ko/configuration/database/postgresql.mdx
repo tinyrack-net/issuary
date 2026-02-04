@@ -2,3 +2,16 @@
 title: PostgreSQL
 description: Tinyauth용 PostgreSQL 데이터베이스 구성하기
 ---
+
+PostgreSQL은 강력하고 확장 가능한 오픈 소스 관계형 데이터베이스 관리 시스템이에요. `tinyauth`는 PostgreSQL을 데이터베이스로 지원하며, 중대형 배포나 고성능이 요구되는 환경에 적합해요. 다음은 PostgreSQL 데이터베이스 설정 예시예요.
+
+```yaml
+database:
+  type: ${DB_TYPE:-postgresql}
+  host: ${DB_HOST:-localhost}
+  port: ${DB_PORT:-5432}
+  name: ${DB_NAME:-tinyauth}
+  user: ${DB_USER:-tinyauth_user}
+  password: ${DB_PASSWORD:-강력한_비밀번호}
+  ssl_mode: ${DB_SSL_MODE:-disable}
+```

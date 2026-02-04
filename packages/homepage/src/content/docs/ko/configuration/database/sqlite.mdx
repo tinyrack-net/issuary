@@ -2,3 +2,14 @@
 title: SQLite
 description: Tinyauth용 SQLite 데이터베이스 구성하기
 ---
+
+SQLite 데이터베이스는 가볍고 설정이 간단한 데이터베이스에요. `tinyauth`는 SQLite를 기본 데이터베이스로 지원하며, 소규모 배포나 개발 환경에 적합해요. 다음은 SQLite 데이터베이스 설정 예시예요.
+
+```yaml
+database:
+  type: ${DB_TYPE:-sqlite}
+  path: ${DB_PATH:-/opt/tinyauth/database.db}
+```
+
+- `type`: 사용할 데이터베이스 유형을 지정해요. SQLite의 경우 `sqlite`로 설정해야 해요.
+- `path`: SQLite 데이터베이스 파일의 경로를 지정해요.
