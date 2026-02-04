@@ -15,41 +15,13 @@ export default (fastify: FastifyWithZodInstance) => {
         'OAuth2 Token Endpoint - Exchange authorization code or refresh token for access tokens (RFC 6749)',
       tags: [TAGS.OPENID],
       body: z.object({
-        grant_type: f.grantType.describe(
-          'OAuth 2.0 grant type. "authorization_code" for initial token request after user authorization, "refresh_token" to refresh expired access tokens without re-authentication.',
-        ),
-        code: z
-          .string()
-          .min(1)
-          .max(1000)
-          .optional()
-          .describe(
-            'Authorization code received from /authorize endpoint. Single-use, expires after 10 minutes. Required for authorization_code grant.',
-          ),
-        redirect_uri: f.redirectUri
-          .optional()
-          .describe(
-            'Redirect URI used in the authorization request. Must exactly match the original value for security validation. Required for authorization_code grant.',
-          ),
-        client_id: f.clientId.describe(
-          'Unique identifier of the OAuth client application. Must match the client that initiated the authorization flow.',
-        ),
-        client_secret: f.clientSecret
-          .optional()
-          .describe(
-            'Client secret for confidential clients (server-side apps). Required for confidential clients, optional for public clients using PKCE. Never expose in browser/mobile apps.',
-          ),
-        code_verifier: f.codeVerifier
-          .optional()
-          .describe(
-            'PKCE code verifier (random string, 43-128 chars). Required if code_challenge was used in authorization request. Proves the token request comes from the same client that initiated authorization (RFC 7636).',
-          ),
-        refresh_token: z
-          .string()
-          .optional()
-          .describe(
-            'Refresh token received from a previous token response. Used to obtain new access tokens without user interaction. Required for refresh_token grant.',
-          ),
+        grant_type: f.grantType,
+        code: f.authorizationCode.optional(),
+        redirect_uri: f.redirectUri.optional(),
+        client_id: f.clientId,
+        client_secret: f.clientSecret.optional(),
+        code_verifier: f.codeVerifier.optional(),
+        refresh_token: f.token.optional(),
       }),
       response: {
         200: r.TokenResponse,
