@@ -1,4 +1,18 @@
 ---
-title: 패스키 인증
+title: 패스키
 description: Tinyrack Auth에서 WebAuthn/패스키 인증 구성하기
 ---
+
+Passkey 는 차세대 인증 수단이에요.
+
+```yaml
+auth:
+  passkey:
+    enabled: true
+    rp_id: example.com
+    origins:
+      - https://auth.example.com
+      - https://login.example.com
+```
+
+
