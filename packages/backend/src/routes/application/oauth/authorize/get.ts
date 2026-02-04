@@ -15,61 +15,17 @@ export default (fastify: FastifyWithZodInstance) => {
       description: 'OAuth2 Authorization Endpoint',
       tags: [TAGS.OPENID],
       querystring: z.object({
-        response_type: f.responseType.describe(
-          'OAuth2 response type (e.g., "code", "token"). Must be registered for this client.',
-        ),
-        redirect_uri: f.redirectUri.describe(
-          'URI to redirect the user after authorization. Must exactly match one of the pre-registered redirect URIs for the client.',
-        ),
-        state: f.state
-          .optional()
-          .describe(
-            'Opaque value used to maintain state between the request and callback. Recommended for CSRF protection. Will be returned unchanged in the redirect.',
-          ),
-        client_id: f.clientId.describe(
-          'Unique identifier of the OAuth client application. Used to validate the client and verify allowed configurations.',
-        ),
-        code_challenge: f.codeChallenge
-          .optional()
-          .describe(
-            'PKCE code challenge derived from a code verifier. Used to prevent authorization code interception attacks. Recommended for public clients (SPAs, mobile apps).',
-          ),
-        code_challenge_method: f.codeChallengeMethod
-          .optional()
-          .default('S256')
-          .describe(
-            'Method used to derive the code challenge from the verifier. "S256" (SHA-256 hash, recommended) or "plain" (no transformation). Defaults to "S256".',
-          ),
-        scope: f.scope
-          .optional()
-          .describe(
-            'Space-delimited list of requested permission scopes (e.g., "openid profile email"). Each scope must be allowed for this client. Include "openid" for OIDC requests.',
-          ),
-        nonce: f.nonce
-          .optional()
-          .describe(
-            'Random value used to mitigate replay attacks in OIDC flows. Will be included in the ID token for client verification.',
-          ),
-        prompt: z
-          .enum(['none', 'login', 'consent', 'select_account'])
-          .optional()
-          .describe(
-            'Controls authorization UI behavior. "none" (no UI, fail if interaction needed), "login" (force re-authentication), "consent" (show consent screen), "select_account" (account chooser).',
-          ),
-        max_age: z.coerce
-          .number()
-          .int()
-          .min(0)
-          .optional()
-          .describe(
-            "Maximum authentication age in seconds. If the user's last authentication is older than this value, re-authentication will be required.",
-          ),
-        display: z
-          .enum(['page', 'popup', 'touch', 'wap'])
-          .optional()
-          .describe(
-            'How the authorization server should display the authentication UI. "page" (full page), "popup" (popup window), "touch" (touch-optimized), "wap" (WAP device).',
-          ),
+        response_type: f.responseType,
+        redirect_uri: f.redirectUri,
+        state: f.state.optional(),
+        client_id: f.clientId,
+        code_challenge: f.codeChallenge.optional(),
+        code_challenge_method: f.codeChallengeMethod.optional().default('S256'),
+        scope: f.scope.optional(),
+        nonce: f.nonce.optional(),
+        prompt: f.prompt.optional(),
+        max_age: f.maxAge.optional(),
+        display: f.display.optional(),
       }),
       response: {
         302: z.null(),
