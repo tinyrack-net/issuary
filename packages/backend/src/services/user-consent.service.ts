@@ -1,6 +1,8 @@
 import fastifyPlugin from 'fastify-plugin';
+import type z from 'zod/v4';
 import type { UserConsentEntity } from '@/entities/user-consent.entity.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
+import type { f } from '@/schemas/field.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -33,7 +35,7 @@ export class UserConsentService {
     userId: string;
     clientId: string;
     requestedScopes: string[];
-    prompt?: 'none' | 'login' | 'consent' | 'select_account' | undefined;
+    prompt?: z.infer<typeof f.prompt> | undefined;
   }): Promise<boolean> {
     const { userId, clientId, requestedScopes, prompt } = params;
 

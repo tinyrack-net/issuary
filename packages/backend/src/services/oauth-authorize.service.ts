@@ -1,7 +1,9 @@
 import fastifyPlugin from 'fastify-plugin';
+import type z from 'zod/v4';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import type { f } from '@/schemas/field.js';
 import type { OAuthClientService } from './oauth-client.service.js';
 import type { UserConsentService } from './user-consent.service.js';
 
@@ -29,11 +31,11 @@ export interface AuthorizeParams {
   /** OIDC nonce for replay attack prevention */
   nonce?: string | undefined;
   /** OIDC prompt parameter to control authentication/consent UI */
-  prompt?: 'none' | 'login' | 'consent' | 'select_account' | undefined;
+  prompt?: z.infer<typeof f.prompt> | undefined;
   /** OIDC max authentication age in seconds */
   max_age?: number | undefined;
   /** OIDC display mode for authentication UI */
-  display?: 'page' | 'popup' | 'touch' | 'wap' | undefined;
+  display?: z.infer<typeof f.display> | undefined;
 }
 
 /**

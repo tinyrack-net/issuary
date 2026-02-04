@@ -1,4 +1,5 @@
 import fastifyPlugin from 'fastify-plugin';
+import type z from 'zod/v4';
 import {
   type ResolvedAppConfig,
   type ResolvedOAuthConfig,
@@ -8,6 +9,7 @@ import { isEmailAllowed } from '@/lib/email-pattern.js';
 import { generatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import type { f } from '@/schemas/field.js';
 import type { TermsService } from './terms.service.js';
 import type { UserService } from './user.service.js';
 
@@ -57,7 +59,7 @@ export interface OAuthSessionData {
   /** OAuth provider ID */
   providerId: string;
   /** Authentication mode */
-  mode: 'login' | 'register' | 'link';
+  mode: z.infer<typeof f.oauthConnectMode>;
   /** URL to return to after authentication */
   returnUrl?: string | undefined;
 }
@@ -146,7 +148,7 @@ export class OAuthConnectService {
    */
   public async generateAuthorizationUrl(
     providerId: string,
-    mode: 'login' | 'register' | 'link',
+    mode: z.infer<typeof f.oauthConnectMode>,
     returnUrl?: string,
   ): Promise<{
     url: string;
