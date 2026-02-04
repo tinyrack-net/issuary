@@ -17,8 +17,8 @@ export default (fastify: FastifyWithZodInstance) =>
         provider: f.providerName,
       }),
       querystring: z.object({
-        mode: z.enum(['login', 'register', 'link']).default('login'),
-        return_url: z.string().optional(),
+        mode: f.oauthConnectMode.default('login'),
+        return_url: f.returnUrl.optional(),
       }),
       response: {
         302: z.void(),

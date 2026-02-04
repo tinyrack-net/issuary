@@ -19,7 +19,7 @@ export default (fastify: FastifyWithZodInstance) =>
         provider: f.providerName,
       }),
       querystring: z.object({
-        code: z.string().min(1).optional(),
+        code: f.authorizationCode.optional(),
         state: f.state.optional(),
         error: z.string().optional(),
         error_description: z.string().optional(),
