@@ -1,5 +1,6 @@
 import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
+import { f } from '@/schemas/field.js';
 import { termsSchema } from '@/schemas/terms.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
@@ -20,10 +21,7 @@ export default (fastify: FastifyWithZodInstance) => {
         'If user is authenticated, includes their consent history.',
       tags: [TAGS.TERMS],
       querystring: z.object({
-        lang: z
-          .string()
-          .default('en')
-          .describe('Language code for localized content'),
+        lang: f.languageCode,
       }),
       response: {
         200: termsSchema.TermsResponse,
