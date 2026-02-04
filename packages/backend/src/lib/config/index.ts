@@ -1,5 +1,3 @@
-// Config loader
-
 // Duration utilities
 export {
   calculateCutoffDate,
@@ -8,6 +6,7 @@ export {
   formatDuration,
   parseDurationToMs,
 } from './duration.js';
+// Config loader
 export { loadConfig, resolveConfig } from './loader.js';
 // OAuth resolver
 export {
@@ -16,24 +15,16 @@ export {
   WELL_KNOWN_OAUTH_PROVIDERS,
   type WellKnownOAuthProvider,
 } from './oauth-resolver.js';
-// App config schemas
-export {
-  AppConfigApp,
-  AppTheme,
-} from './schemas/app.js';
-// Authentication schemas
-export {
-  AppConfigPasskeyAuth,
-  AppConfigPasswordAuth,
-} from './schemas/auth.js';
-// Root config schemas and types
+// Config schemas and types
 export {
   type AppConfig,
+  AppConfigApp,
   type AppConfigInput,
+  AppConfigPasskeyAuth,
+  AppConfigPasswordAuth,
   AppConfigSchema,
+  AppConfigSmtp,
+  AppConfigTerms,
+  AppTheme,
   type ResolvedAppConfig,
-} from './schemas/root.js';
-// SMTP config schema
-export { AppConfigSmtp } from './schemas/smtp.js';
-// Terms config schema
-export { AppConfigTerms } from './schemas/terms.js';
+} from './schema.js';

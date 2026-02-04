@@ -10,7 +10,7 @@ import {
   AppConfigSchema,
   type AppConfigSmtp,
   type ResolvedAppConfig,
-} from './schemas/root.js';
+} from './schema.js';
 
 const DEFAULT_CONFIG_PATH = '/opt/config.yaml';
 
