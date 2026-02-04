@@ -1,6 +1,7 @@
 import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
+import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
 
@@ -16,10 +17,10 @@ export default (fastify: FastifyWithZodInstance) => {
       description: 'Rename a passkey',
       tags: [TAGS.USER],
       params: z.object({
-        id: z.uuid(),
+        id: f.uuid,
       }),
       body: z.object({
-        name: z.string().min(1).max(100),
+        name: f.passkeyName,
       }),
       response: {
         200: r.OkResponse,

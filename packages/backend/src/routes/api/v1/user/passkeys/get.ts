@@ -1,16 +1,8 @@
 import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
+import { r } from '@/schemas/response.js';
 import type { FastifyWithZodInstance } from '@/server.js';
-
-const PasskeyInfo = z.object({
-  id: z.string(),
-  credential_id: z.string(),
-  name: z.string().nullable(),
-  device_type: z.enum(['singleDevice', 'multiDevice']),
-  backed_up: z.boolean(),
-  created_at: z.date(),
-});
 
 export default (fastify: FastifyWithZodInstance) => {
   if (!fastify.config.auth.passkey.enabled) {
@@ -25,7 +17,7 @@ export default (fastify: FastifyWithZodInstance) => {
       tags: [TAGS.USER],
       response: {
         200: z.object({
-          passkeys: z.array(PasskeyInfo),
+          passkeys: z.array(r.PasskeyInfo),
         }),
         401: e.Unauthorized.Schema,
       },
