@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { consola } from 'consola';
 import { loadConfig } from '../../lib/config/index.js';
 import { createServer, type FastifyWithZodInstance } from '../../server.js';
 import { runCleanup } from '../cleanup/index.js';
@@ -27,19 +28,17 @@ export const cleanupCommand = new Command('cleanup')
     }) => {
       const { configPath, dryRun, verbose } = options;
 
+      // Set log level: 4 = verbose, 3 = info
+      consola.level = verbose ? 4 : 3;
+
       // Print header
-      console.log('');
-      console.log('TinyAuth Cleanup');
-      console.log('================');
+      consola.box('TinyAuth Cleanup');
       if (dryRun) {
-        console.log('[DRY RUN] No changes will be made');
+        consola.warn('[DRY RUN] No changes will be made');
       }
-      console.log('');
 
       // Create server in CLI mode (skip HTTP plugins and routes for faster startup)
-      if (verbose) {
-        console.log('Initializing server in CLI mode...');
-      }
+      consola.verbose('Initializing server in CLI mode...');
 
       let app: FastifyWithZodInstance | undefined;
       try {
@@ -48,7 +47,7 @@ export const cleanupCommand = new Command('cleanup')
         );
         app = await createServer({ config, cliMode: true, skipListen: true });
       } catch (error) {
-        console.error('Failed to initialize server:', error);
+        consola.fatal('Failed to initialize server:', error);
         process.exit(1);
       }
 
@@ -62,53 +61,43 @@ export const cleanupCommand = new Command('cleanup')
           if (!taskResult) continue;
           const { description, result, error, durationMs } = taskResult;
           const index = i + 1;
+          const prefix = `[${index}/${totalTasks}]`;
 
           if (error) {
-            console.log(`[${index}/${totalTasks}] ${description}`);
-            console.log(`      ERROR: ${error.message}`);
+            consola.fail(`${prefix} ${description}: ${error.message}`);
           } else if (result.skipped) {
-            if (verbose) {
-              console.log(`[${index}/${totalTasks}] ${description}`);
-              console.log(`      Skipped: ${result.message || 'Disabled'}`);
-            }
+            consola.verbose(
+              `${prefix} ${description}: Skipped - ${result.message || 'Disabled'}`,
+            );
           } else {
-            console.log(`[${index}/${totalTasks}] ${description}`);
             if (result.deletedCount > 0) {
               const action = dryRun ? 'Would delete' : 'Deleted';
               const suffix = result.message ? ` (${result.message})` : '';
-              console.log(`      ${action}: ${result.deletedCount}${suffix}`);
+              consola.success(
+                `${prefix} ${description}: ${action} ${result.deletedCount}${suffix}`,
+              );
             } else {
-              console.log(`      ${result.message || 'Nothing to clean'}`);
+              consola.info(
+                `${prefix} ${description}: ${result.message || 'Nothing to clean'}`,
+              );
             }
-
-            if (verbose) {
-              console.log(`      Duration: ${durationMs}ms`);
-            }
+            consola.verbose(`  Duration: ${durationMs}ms`);
           }
         }
 
         // Print summary
-        console.log('');
-        console.log('-'.repeat(40));
+        const verb = dryRun ? 'would be cleaned' : 'cleaned';
+        consola.info(`Summary: ${summary.totalDeleted} items ${verb}`);
 
-        if (dryRun) {
-          console.log(
-            `Summary: ${summary.totalDeleted} items would be cleaned`,
-          );
-        } else {
-          console.log(`Summary: ${summary.totalDeleted} items cleaned`);
-        }
-
-        if (summary.totalSkipped > 0 && verbose) {
-          console.log(`         ${summary.totalSkipped} tasks skipped`);
+        if (summary.totalSkipped > 0) {
+          consola.verbose(`         ${summary.totalSkipped} tasks skipped`);
         }
 
         if (summary.totalFailed > 0) {
-          console.log(`         ${summary.totalFailed} tasks failed`);
+          consola.error(`         ${summary.totalFailed} tasks failed`);
         }
 
-        console.log(`Duration: ${summary.totalDurationMs}ms`);
-        console.log('');
+        consola.info(`Duration: ${summary.totalDurationMs}ms`);
 
         // Exit with error code if any task failed
         if (summary.totalFailed > 0) {
@@ -116,7 +105,7 @@ export const cleanupCommand = new Command('cleanup')
           process.exit(1);
         }
       } catch (error) {
-        console.error('Cleanup failed:', error);
+        consola.fatal('Cleanup failed:', error);
         await app.close();
         process.exit(1);
       }
