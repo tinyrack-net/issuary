@@ -12,11 +12,5 @@
   "files.readonlyInclude": {
     "**/routeTree.gen.ts": true
   },
-  "git.ignoreLimitWarning": true,
-  "yaml.schemas": {
-    "./packages/backend/config.schema.json": [
-      "packages/backend/config.yaml",
-      "packages/backend/config.*.yaml"
-    ]
-  }
+  "git.ignoreLimitWarning": true
 }
