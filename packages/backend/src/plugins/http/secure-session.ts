@@ -1,6 +1,8 @@
 import fastifySecureSession from '@fastify/secure-session';
 import type { FastifyRequest } from 'fastify';
 import fastifyPlugin from 'fastify-plugin';
+import type z from 'zod/v4';
+import type { f } from '@/schemas/field.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -70,7 +72,7 @@ declare module '@fastify/secure-session' {
       state: string;
       codeVerifier: string;
       providerId: string;
-      mode: 'login' | 'register' | 'link';
+      mode: z.infer<typeof f.oauthConnectMode>;
       returnUrl?: string | undefined;
     };
 
