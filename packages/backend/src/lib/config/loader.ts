@@ -14,13 +14,49 @@ import {
 
 const DEFAULT_CONFIG_PATH = '/opt/config.yaml';
 
-const resolveConfigPath = () => {
-  const configPath = env.CONFIG_PATH || DEFAULT_CONFIG_PATH;
+/**
+ * Default configuration with environment variable references.
+ * Always used as the base layer — user config.yaml is deep-merged
+ * on top, then env vars are resolved last.
+ *
+ * This ensures environment variables work regardless of whether
+ * a config file exists. Only `COOKIE_SECRET` is required.
+ * Arrays and complex nested objects are omitted; they use Zod defaults.
+ */
+const DEFAULT_CONFIG = {
+  app: {
+    name: '${APP_NAME:-Tinyrack Auth}',
+    host: '${APP_HOST:-http://localhost:8080}',
+    port: '${PORT:-8080}',
+    cookie_secret: '${COOKIE_SECRET}',
+    jwt_access_token_ttl: '${JWT_ACCESS_TOKEN_TTL:-3600}',
+    jwt_refresh_token_ttl: '${JWT_REFRESH_TOKEN_TTL:-2592000}',
+    jwt_key_rotation_enabled: '${JWT_KEY_ROTATION_ENABLED:-true}',
+    jwt_key_rotation_days: '${JWT_KEY_ROTATION_DAYS:-30}',
+    jwt_key_overlap_days: '${JWT_KEY_OVERLAP_DAYS:-7}',
+    default_language: '${DEFAULT_LANGUAGE:-auto}',
+    fallback_language: '${FALLBACK_LANGUAGE:-en}',
+    light_theme: '${LIGHT_THEME:-light}',
+    dark_theme: '${DARK_THEME:-dark}',
+    theme_mode: '${THEME_MODE:-system}',
+    trust_proxy: '${TRUST_PROXY:-false}',
+    account_deletion: '${ACCOUNT_DELETION:-false}',
+  },
+  database: {
+    type: '${DB_TYPE:-sqlite}',
+    path: '${DB_PATH:-/opt/tinyauth/database.db}',
+  },
+  scheduler: {
+    enabled: '${SCHEDULER_ENABLED:-true}',
+    cron: '${SCHEDULER_CRON:-0 2 * * *}',
+  },
+};
+
+const resolveAbsolutePath = (configPath: string): string => {
   if (path.isAbsolute(configPath)) {
     return configPath;
-  } else {
-    return path.resolve(process.cwd(), configPath);
   }
+  return path.resolve(process.cwd(), configPath);
 };
 
 /**
@@ -78,7 +114,8 @@ const loadConfigFromPath = (configPath: string): AppConfig => {
   }
   const file = readFileSync(configPath, 'utf8');
   const rawConfig = YAML.parse(file);
-  const resolvedConfig = resolveEnvVariables(rawConfig);
+  const merged = deepMerge(DEFAULT_CONFIG, rawConfig);
+  const resolvedConfig = resolveEnvVariables(merged);
   return AppConfigSchema.parse(resolvedConfig);
 };
 
@@ -126,17 +163,47 @@ export type DeepPartial<T> = {
 };
 
 /**
- * Load configuration from file.
- * Returns AppConfig which can be passed to createServer().
- * The caller is responsible for any config merging or overrides.
+ * Load configuration from file or environment variables.
+ *
+ * Resolution order:
+ * 1. Explicit `configPath` option (CLI --config-path) — error if missing
+ * 2. `CONFIG_PATH` environment variable — error if missing
+ * 3. Default path `/opt/config.yaml` — used if exists
+ * 4. Fall back to `DEFAULT_CONFIG` with env var interpolation
+ *
+ * In the fallback case, only `COOKIE_SECRET` env var is required.
+ * All other fields have sensible defaults.
  *
  * @param options - Optional configuration options
- * @param options.configPath - Custom config file path (defaults to resolved path based on APP_ENV)
+ * @param options.configPath - Custom config file path
  */
 export function loadConfig(options?: {
   configPath?: string | undefined;
 }): AppConfig {
-  const configPath = options?.configPath ?? resolveConfigPath();
-  console.info(`Loading config from: ${configPath}`);
-  return loadConfigFromPath(configPath);
+  // 1. Explicit path provided by caller (e.g., CLI --config-path)
+  if (options?.configPath) {
+    const configPath = resolveAbsolutePath(options.configPath);
+    console.info(`Loading config from: ${configPath}`);
+    return loadConfigFromPath(configPath);
+  }
+
+  // 2. CONFIG_PATH env var is set — error if file missing
+  if (env.CONFIG_PATH) {
+    const configPath = resolveAbsolutePath(env.CONFIG_PATH);
+    console.info(`Loading config from: ${configPath}`);
+    return loadConfigFromPath(configPath);
+  }
+
+  // 3. Default path exists — use it
+  if (existsSync(DEFAULT_CONFIG_PATH)) {
+    console.info(`Loading config from: ${DEFAULT_CONFIG_PATH}`);
+    return loadConfigFromPath(DEFAULT_CONFIG_PATH);
+  }
+
+  // 4. Fall back to environment variables with defaults
+  console.info(
+    'No config file found, using environment variables with defaults',
+  );
+  const resolved = resolveEnvVariables(DEFAULT_CONFIG);
+  return AppConfigSchema.parse(resolved);
 }
