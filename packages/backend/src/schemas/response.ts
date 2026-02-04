@@ -453,6 +453,18 @@ export const r = {
       .describe('Whether this request completed the mandatory 2FA setup flow'),
   }),
 
+  // Passkey info schema
+  PasskeyInfo: z
+    .object({
+      id: z.string(),
+      credential_id: z.string(),
+      name: z.string().nullable(),
+      device_type: f.passkeyDeviceType,
+      backed_up: z.boolean(),
+      created_at: z.date(),
+    })
+    .describe('Passkey information'),
+
   // Passkey responses
   // Use z.custom to maintain type compatibility with @simplewebauthn types
   // Actual validation is done by @simplewebauthn library, not Zod
@@ -478,11 +490,7 @@ export const r = {
         return false;
       return true;
     }),
-    name: z
-      .string()
-      .max(100)
-      .optional()
-      .describe('Optional name for the passkey'),
+    name: f.passkeyName.optional().describe('Optional name for the passkey'),
   }),
 
   // App config response

@@ -115,4 +115,5 @@ export const termsSchema = {
   TermsConsentResponse,
   TermsUserConsent,
   TermItem,
+  ConsentItem,
 };
