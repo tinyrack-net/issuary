@@ -98,8 +98,8 @@ export default defineConfig({
                 ja: '認証',
               },
               items: [
-                { slug: 'configuration/authentication/email-verification' },
                 { slug: 'configuration/authentication/password' },
+                { slug: 'configuration/authentication/email-verification' },
                 { slug: 'configuration/authentication/totp' },
                 { slug: 'configuration/authentication/passkey' },
               ],
