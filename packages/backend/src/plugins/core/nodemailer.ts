@@ -1,3 +1,4 @@
+import { consola } from 'consola';
 import fastifyPlugin from 'fastify-plugin';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
@@ -26,10 +27,11 @@ export default fastifyPlugin(
         },
       });
       fastify.decorate('mail', transport);
-      fastify.log.info(`SMTP configured: ${fastify.config.smtp.host}`);
+      consola.success('SMTP configured:', fastify.config.smtp.host);
     } else {
+      // No email configuration - create a dummy transporter
       fastify.decorate('mail', null);
-      fastify.log.warn('No email configuration found, emails will not be sent');
+      consola.warn('No email configuration found, emails will not be sent');
       return;
     }
   },

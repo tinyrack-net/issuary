@@ -26,7 +26,7 @@ async function main() {
 
   if (outputPath) {
     writeFileSync(outputPath, json, 'utf-8');
-    console.log(`OpenAPI spec written to ${outputPath}`);
+    consola.success(`OpenAPI spec written to ${outputPath}`);
   } else {
     process.stdout.write(json);
   }
@@ -35,6 +35,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('Failed to export OpenAPI spec:', err);
+  consola.fatal('Failed to export OpenAPI spec:', err);
   process.exit(1);
 });
