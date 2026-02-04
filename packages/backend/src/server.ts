@@ -41,10 +41,17 @@ export interface CreateServerOptions {
    * for faster startup and reduced memory usage.
    */
   cliMode?: boolean;
+  /**
+   * Suppress Fastify logger output.
+   * When true, the Fastify instance logger is disabled.
+   * Useful for CLI commands where server logs are noise.
+   * Defaults to false.
+   */
+  silent?: boolean;
 }
 
 export async function createServer(options: CreateServerOptions) {
-  const { config: externalConfig, skipListen, cliMode } = options;
+  const { config: externalConfig, skipListen, cliMode, silent } = options;
 
   // Resolve external config to internal config with all defaults applied
   const config = await resolveConfig(externalConfig);
@@ -52,7 +59,7 @@ export async function createServer(options: CreateServerOptions) {
   // Create Fastify instance with config-based trustProxy
   const appInstance = Fastify({
     logger: {
-      enabled: env.APP_ENV !== 'production',
+      enabled: !silent && env.APP_ENV !== 'production',
     },
     trustProxy: config.app.trust_proxy,
   }).withTypeProvider<ZodTypeProvider>();

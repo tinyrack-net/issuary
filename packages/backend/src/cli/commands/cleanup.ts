@@ -45,7 +45,12 @@ export const cleanupCommand = new Command('cleanup')
         const config = await loadConfig(
           configPath ? { configPath } : undefined,
         );
-        app = await createServer({ config, cliMode: true, skipListen: true });
+        app = await createServer({
+          config,
+          cliMode: true,
+          skipListen: true,
+          silent: true,
+        });
       } catch (error) {
         consola.fatal('Failed to initialize server:', error);
         process.exit(1);
