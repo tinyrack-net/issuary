@@ -15,24 +15,10 @@ export default (fastify: FastifyWithZodInstance) => {
         'OAuth2 Token Introspection Endpoint - Returns metadata about tokens (RFC 7662)',
       tags: [TAGS.OPENID],
       body: z.object({
-        token: f.token.describe(
-          'The token to introspect (access token or refresh token). Required.',
-        ),
-        token_type_hint: f.tokenTypeHint
-          .optional()
-          .describe(
-            'Optional hint about the type of token being introspected. Helps optimize validation.',
-          ),
-        client_id: f.clientId
-          .optional()
-          .describe(
-            'OAuth client identifier. Optional but recommended for client authentication.',
-          ),
-        client_secret: f.clientSecret
-          .optional()
-          .describe(
-            'Client secret for confidential clients. Required if client_id is provided for confidential clients.',
-          ),
+        token: f.token,
+        token_type_hint: f.tokenTypeHint.optional(),
+        client_id: f.clientId.optional(),
+        client_secret: f.clientSecret.optional(),
       }),
       response: {
         200: r.IntrospectionResponse,
