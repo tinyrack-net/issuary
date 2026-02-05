@@ -1,11 +1,5 @@
 import { createHash } from 'node:crypto';
 import fastifyPlugin from 'fastify-plugin';
-import { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
-import {
-  calculateCutoffDate,
-  formatDuration,
-  parseDurationToMs,
-} from '@/lib/config/duration.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import { validatePKCE } from '@/lib/pkce.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
@@ -16,7 +10,6 @@ import type {
   RefreshTokenPayload,
 } from './jwt.service.js';
 import type { OAuthClientService } from './oauth-client.service.js';
-import type { CleanupOptions, CleanupResult } from './types.js';
 import type { UserService } from './user.service.js';
 
 /**
@@ -523,76 +516,6 @@ export class OAuthTokenService {
     }
 
     return response;
-  }
-
-  /**
-   * Remove expired and consumed OAuth authorization codes.
-   *
-   * Authorization codes have a short lifetime (typically 10 minutes)
-   * and should be cleaned up regularly to prevent database bloat.
-   * Also cleans up consumed codes after the configured retention period.
-   *
-   * @param options - Cleanup options (dryRun)
-   * @returns Cleanup result with deleted count and details
-   */
-  async cleanupExpiredCodes(options: CleanupOptions): Promise<CleanupResult> {
-    const config = this.config.cleanup.oauth_codes;
-
-    if (!config.enabled) {
-      return { deletedCount: 0, skipped: true, message: 'Disabled in config' };
-    }
-
-    const em = this.mikro.orm.em.fork();
-    const oauthCodeRepo = em.getRepository(OAuthCodeEntity);
-
-    const now = new Date();
-    const consumedRetentionMs = parseDurationToMs(config.consumed_retention);
-    const consumedCutoffDate = calculateCutoffDate(config.consumed_retention);
-
-    // Find expired authorization codes
-    const expiredCodes = await oauthCodeRepo.find({
-      expiredAt: { $lt: now },
-    });
-
-    // Find consumed codes older than retention period
-    const consumedCodes = await oauthCodeRepo.find({
-      consumedAt: { $ne: null, $lt: consumedCutoffDate },
-    });
-
-    const expiredCount = expiredCodes.length;
-    const consumedCount = consumedCodes.length;
-    const totalCount = expiredCount + consumedCount;
-
-    if (totalCount === 0) {
-      return {
-        deletedCount: 0,
-        skipped: false,
-        message: 'No expired or consumed codes',
-      };
-    }
-
-    if (options.dryRun) {
-      return {
-        deletedCount: totalCount,
-        skipped: false,
-        message: `Would delete ${expiredCount} expired, ${consumedCount} consumed (retention: ${formatDuration(consumedRetentionMs)})`,
-      };
-    }
-
-    // Delete the codes
-    for (const code of expiredCodes) {
-      em.remove(code);
-    }
-    for (const code of consumedCodes) {
-      em.remove(code);
-    }
-    await em.flush();
-
-    return {
-      deletedCount: totalCount,
-      skipped: false,
-      message: `${expiredCount} expired, ${consumedCount} consumed`,
-    };
   }
 }
 
