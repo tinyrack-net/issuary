@@ -1,7 +1,7 @@
 import z from 'zod/v4';
+import { DurationString } from '@/lib/duration.js';
 import { f } from '@/schemas/field.js';
 import { zz } from '@/schemas/provider.js';
-import { DurationString } from './duration.js';
 
 // ---------------------------------------------------------------------------
 // SMTP

@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import nodemailer from 'nodemailer';
 import YAML from 'yaml';
+import { type DeepPartial, deepMerge } from '../deep-merge.js';
 import { env } from '../env.js';
 import { resolveEnvVariables } from '../interpolate-env.js';
 import {
@@ -11,6 +12,9 @@ import {
   type AppConfigSmtp,
   type ResolvedAppConfig,
 } from './schema.js';
+
+// Re-export deepMerge and DeepPartial for backward compatibility
+export { deepMerge, type DeepPartial };
 
 const DEFAULT_CONFIG_PATH = '/opt/config.yaml';
 
@@ -117,49 +121,6 @@ const loadConfigFromPath = (configPath: string): AppConfig => {
   const merged = deepMerge(DEFAULT_CONFIG, rawConfig);
   const resolvedConfig = resolveEnvVariables(merged);
   return AppConfigSchema.parse(resolvedConfig);
-};
-
-/**
- * Deep merge utility for config objects.
- * Arrays are replaced, not merged.
- * Exported for use by callers who need to merge configs (e.g., tests).
- */
-export function deepMerge<T extends object>(
-  target: T,
-  source: DeepPartial<T>,
-): T {
-  const result = { ...target };
-
-  for (const key in source) {
-    const sourceValue = source[key];
-    const targetValue = result[key];
-
-    if (
-      sourceValue !== undefined &&
-      typeof sourceValue === 'object' &&
-      sourceValue !== null &&
-      !Array.isArray(sourceValue) &&
-      typeof targetValue === 'object' &&
-      targetValue !== null &&
-      !Array.isArray(targetValue)
-    ) {
-      result[key] = deepMerge(
-        targetValue as object,
-        sourceValue as object,
-      ) as T[Extract<keyof T, string>];
-    } else if (sourceValue !== undefined) {
-      result[key] = sourceValue as T[Extract<keyof T, string>];
-    }
-  }
-
-  return result;
-}
-
-/**
- * DeepPartial type for nested partial objects.
- */
-export type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
 
 /**

@@ -5,7 +5,7 @@ export {
   type DurationString,
   formatDuration,
   parseDurationToMs,
-} from './duration.js';
+} from '@/lib/duration.js';
 // Config loader
 export { loadConfig, resolveConfig } from './loader.js';
 // OAuth resolver
