@@ -1,7 +1,6 @@
 import fastifyPlugin from 'fastify-plugin';
 import type { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
 import type { UserEntity } from '@/entities/user.entity.js';
-import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 
@@ -12,10 +11,7 @@ declare module 'fastify' {
 }
 
 export class EmailVerificationService {
-  public constructor(
-    private readonly mikro: MikroService,
-    private readonly config: ResolvedAppConfig,
-  ) {}
+  public constructor(private readonly mikro: MikroService) {}
 
   /**
    * Generate email verification token for a user
@@ -86,7 +82,7 @@ export class EmailVerificationService {
 
 export default fastifyPlugin(
   async (fastify) => {
-    const service = new EmailVerificationService(fastify.mikro, fastify.config);
+    const service = new EmailVerificationService(fastify.mikro);
     fastify.decorate('emailVerificationService', service);
   },
   {

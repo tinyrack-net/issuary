@@ -11,12 +11,12 @@ import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
 import { UserTermsConsentEntity } from '@/entities/user-terms-consent.entity.js';
 import { UserTotpEntity } from '@/entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntity } from '@/entities/user-totp-recovery-code.entity.js';
+import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import {
   calculateCutoffDate,
   formatDuration,
   parseDurationToMs,
-} from '@/lib/config/duration.js';
-import type { ResolvedAppConfig } from '@/lib/config/index.js';
+} from '@/lib/duration.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import type { JwtKeyRepository } from '@/repositories/jwt-key.repository.js';
 import type { JwtService } from './jwt.service.js';
