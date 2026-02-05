@@ -1,3 +1,4 @@
+import i18n from '@/i18n/index.js';
 import { ApiError } from './error';
 
 /**
@@ -26,10 +27,11 @@ const headersToRecord = (headers?: HeadersInit): Record<string, string> => {
 /**
  * Enhanced fetch wrapper
  *
- * - 자동으로 JSON Content-Type 헤더 설정
- * - 에러 응답을 ApiError로 변환
+ * - Automatically sets JSON Content-Type header
+ * - Automatically sets Accept-Language header from i18n
+ * - Converts error responses to ApiError
  *
- * @throws {ApiError} HTTP 에러 응답 시
+ * @throws {ApiError} On HTTP error response
  */
 export const etch = async (url: string, options?: RequestInit) => {
   const headers = headersToRecord(options?.headers);
@@ -37,6 +39,11 @@ export const etch = async (url: string, options?: RequestInit) => {
   // Only set Content-Type: application/json when there's a body to send
   if (options?.body) {
     headers['Content-Type'] = 'application/json';
+  }
+
+  // Set Accept-Language header from i18n current language
+  if (!headers['Accept-Language']) {
+    headers['Accept-Language'] = i18n.language;
   }
 
   const res = await fetch(url, {
