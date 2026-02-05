@@ -50,9 +50,9 @@ export default (fastify: FastifyWithZodInstance) => {
       },
     },
     handler: async (_req, res) => {
-      // Get JWKS from JwtKeyService
+      // Get JWKS from JwtService
       // Returns all active and previous keys for token verification
-      const jwks = await fastify.jwtKeyService.getJWKS();
+      const jwks = await fastify.jwtService.getJWKS();
 
       // Set cache headers for client optimization
       // Keys rotate infrequently, so caching is beneficial

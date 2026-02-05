@@ -1,6 +1,5 @@
 import { Cron } from 'croner';
 import fastifyPlugin from 'fastify-plugin';
-import { runCleanup } from '@/cli/cleanup/index.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -41,7 +40,7 @@ export default fastifyPlugin(
           fastify.log.info('Starting scheduled cleanup tasks');
 
           try {
-            const summary = await runCleanup(fastify, {
+            const summary = await fastify.cleanupService.runAll({
               dryRun: false,
               verbose: false,
             });

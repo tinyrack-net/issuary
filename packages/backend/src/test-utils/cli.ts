@@ -317,7 +317,7 @@ export async function createJwtKey(
 
   await withMikroContext(app, async () => {
     // Generate a real key pair for testing
-    const keyPair = await app.jwtKeyService.generateKeyPair();
+    const keyPair = await app.jwtService.generateKeyPair();
 
     const key = app.mikro.jwtKey.create({
       kid: keyPair.kid,
