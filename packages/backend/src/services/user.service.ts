@@ -3,6 +3,7 @@ import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
+import type { Locale } from '@/lib/locale.js';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
@@ -62,6 +63,7 @@ export class UserService {
     email: string;
     password: string;
     consents?: Array<{ termsId: string; agreed: boolean }>;
+    locale?: Locale | undefined;
   }): Promise<z.infer<typeof r.UserSession>> {
     // 1. Validate explicit terms consent before user creation
     // Load terms once and reuse across validation and recording
@@ -107,6 +109,7 @@ export class UserService {
       this.emailService.sendVerificationEmailAsync({
         email: user.email,
         token: verification.token,
+        locale: params.locale,
       });
     }
 
