@@ -1,4 +1,9 @@
 import z from 'zod/v4';
+import {
+  AVAILABLE_LOCALES,
+  DEFAULT_LOCALE,
+  type Locale,
+} from '@/lib/locale.js';
 
 export const f = {
   // Common fields
@@ -90,6 +95,41 @@ export const f = {
     .string()
     .default('en')
     .describe('Language code for localized content'),
+
+  /**
+   * Accept-Language header schema with transform.
+   * Parses header like "ko-KR,ko;q=0.9,en-US;q=0.8" into Locale.
+   */
+  acceptLanguage: z
+    .string()
+    .optional()
+    .transform((val): Locale => {
+      if (!val) {
+        return DEFAULT_LOCALE;
+      }
+
+      // Parse Accept-Language header (e.g., "ko-KR,ko;q=0.9,en-US;q=0.8")
+      const languages = val
+        .split(',')
+        .map((lang) => {
+          const [code, qValue] = lang.trim().split(';q=');
+          return {
+            code: code?.split('-')[0]?.toLowerCase(),
+            q: qValue ? Number.parseFloat(qValue) : 1,
+          };
+        })
+        .filter((lang) => lang.code)
+        .sort((a, b) => b.q - a.q);
+
+      for (const lang of languages) {
+        if (lang.code && AVAILABLE_LOCALES.includes(lang.code as Locale)) {
+          return lang.code as Locale;
+        }
+      }
+
+      return DEFAULT_LOCALE;
+    })
+    .describe('Accept-Language header (e.g., "ko-KR,ko;q=0.9,en;q=0.8")'),
 
   // TOTP fields
   totpCode: z
