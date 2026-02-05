@@ -19,6 +19,9 @@ export default (fastify: FastifyWithZodInstance) => {
       description:
         'Sends a password reset email to the user. Always returns success to prevent email enumeration.',
       tags: [TAGS.AUTH],
+      headers: z.object({
+        'accept-language': f.acceptLanguage,
+      }),
       body: z.object({
         email: f.userEmail,
       }),
@@ -37,6 +40,7 @@ export default (fastify: FastifyWithZodInstance) => {
           fastify.emailService.sendPasswordResetEmailAsync({
             email,
             token: resetEntity.token,
+            locale: req.headers['accept-language'],
           });
         }
 

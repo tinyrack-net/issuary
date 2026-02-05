@@ -16,6 +16,9 @@ export default (fastify: FastifyWithZodInstance) => {
       summary: 'Resend Verification Email',
       description: 'Resend email verification link to user',
       tags: [TAGS.AUTH],
+      headers: z.object({
+        'accept-language': f.acceptLanguage,
+      }),
       body: z.object({
         email: f.userEmail,
       }),
@@ -38,6 +41,7 @@ export default (fastify: FastifyWithZodInstance) => {
       fastify.emailService.sendVerificationEmailAsync({
         email: req.body.email,
         token: verification.token,
+        locale: req.headers['accept-language'],
       });
 
       res.status(200).send({

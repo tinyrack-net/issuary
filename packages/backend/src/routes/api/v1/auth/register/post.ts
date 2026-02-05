@@ -16,6 +16,9 @@ export default (fastify: FastifyWithZodInstance) => {
       description:
         'Register a new user with terms consent and send email verification',
       tags: [TAGS.AUTH],
+      headers: z.object({
+        'accept-language': f.acceptLanguage,
+      }),
       body: z.object({
         email: f.userEmail,
         password: f.userPassword,
@@ -52,6 +55,7 @@ export default (fastify: FastifyWithZodInstance) => {
       const userSession = await fastify.userService.register({
         email,
         password,
+        locale: req.headers['accept-language'],
         ...(consents && { consents }),
       });
 
