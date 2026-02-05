@@ -7,7 +7,7 @@ import {
   renderVerificationEmail,
 } from '@/emails/render.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
-import type { Locale } from '@/lib/locale.js';
+import { DEFAULT_LOCALE, type Locale } from '@/lib/locale.js';
 import { e } from '@/schemas/error.js';
 
 declare module 'fastify' {
@@ -21,6 +21,25 @@ export class EmailService {
     private readonly config: ResolvedAppConfig,
     private readonly transporter: FastifyInstance['mail'],
   ) {}
+
+  /**
+   * Get the localized application name from app.title config.
+   * Falls back through: specified locale -> fallback_language -> DEFAULT_LOCALE -> 'TinyAuth'
+   */
+  private getAppName(locale?: Locale): string {
+    const title = this.config.app.title;
+    if (!title) {
+      return 'TinyAuth';
+    }
+
+    const localeKey = locale ?? DEFAULT_LOCALE;
+    return (
+      title[localeKey] ??
+      title[this.config.app.fallback_language] ??
+      title[DEFAULT_LOCALE] ??
+      'TinyAuth'
+    );
+  }
 
   public async sendVerificationEmail(params: {
     email: string;
@@ -37,7 +56,7 @@ export class EmailService {
       verificationUrl,
       token: params.token,
       locale: params.locale,
-      appName: this.config.app.name,
+      appName: this.getAppName(params.locale),
     });
 
     const info = await this.transporter.sendMail({
@@ -85,7 +104,7 @@ export class EmailService {
       resetUrl,
       token: params.token,
       locale: params.locale,
-      appName: this.config.app.name,
+      appName: this.getAppName(params.locale),
     });
 
     const info = await this.transporter.sendMail({

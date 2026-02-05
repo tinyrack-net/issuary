@@ -27,10 +27,6 @@ app:
   # Server Configuration
   # --------------------------------------------------------------------------
 
-  # name: Application name displayed in the UI and emails.
-  # Default: 'Tinyrack Auth'
-  name: ${APP_NAME:-Tinyrack Auth}
-
   # host: The public URL where the authentication service is accessible.
   # This is used for generating callback URLs, links in emails, and CORS settings.
   # Must include the protocol (http:// or https://) and optionally the port.
