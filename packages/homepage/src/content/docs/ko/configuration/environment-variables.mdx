@@ -3,7 +3,7 @@ title: 환경 변수
 description: Tinyauth 환경 변수 참조
 ---
 
-`tinyauth` 서버 설정을 구성할 때, 특정 구성은 환경 변수를 참조하게 만들 수 있어요. 이는 민감한 정보를 다룰 때 유용하며, 컨테이너화된 배포나 클라우드 환경에서 설정을 관리하는 데 도움이 될 거예요. 예시는 다음과 같아요.
+`tinyauth` 서버 설정을 구성할 때, 특정 구성은 환경 변수를 참조하게 만들 수 있어요. 이는 민감한 정보를 다룰 때 유용하며, 컨테이너화된 배포나 클라우드 환경에서 설정을 관리하는 데 도움이 될 수 있어요. 간단한 사용 예시는 다음과 같아요.
 
 ```yaml
 app:
@@ -11,25 +11,30 @@ app:
   cookie_secret: "$TINYAUTH_COOKIE_SECRET"
 ```
 
-> `$VAR` 와 `${VAR}` 두 가지 형식을 모두 지원해요.
+---
 
 ## 기본값 지정
 
-환경 변수가 있다면 사용하되, 없는 경우의 기본값을 지정하고 싶다면 다음과 같이 사용할 수 있어요.
+환경 변수가 있다면 사용하되, 없는 경우의 기본값을 지정하고 싶을 수 있어요. 그럴 땐 다음과 같이 사용할 수 있어요.
 
 ```yaml
 app:
   host: "${TINYAUTH_APP_HOST:-https://default-tinyauth-domain.com}"
 ```
 
-`tinyauth`는 설정의 많은 부분에서 환경 변수를 먼저 참조하도록 기본값이 구성되어 있어요. 예를 들어, `database` 섹션에서는 다음과 같은 환경 변수를 자동으로 인식해요.
+이 경우 `TINYAUTH_APP_HOST` 환경 변수가 설정돼 있으면 그 값을 사용하고, 설정돼 있지 않으면 `https://default-tinyauth-domain.com` 을 기본값으로 사용해요.
+
+`tinyauth`는 이미 설정의 많은 부분에서 환경 변수를 먼저 참조하도록 기본값이 구성되어 있어요. 예를 들어, `app` 섹션에서는 다음과 같은 환경 변수와 기본값이 할당되어 있어요.
 
 ```yaml
-database:
-  type: "${DB_TYPE:-sqlite}"
-  host: "${DB_HOST:-localhost}"
-  port: "${DB_PORT:-5432}"
-  user: "${DB_USER:-tinyauth}"
-  password: "${DB_PASSWORD:-tinyauth_password}"
-  name: "${DB_NAME:-tinyauth_db}"
+app:
+  name: ${APP_NAME:-Tinyrack Auth}
+  host: ${APP_HOST:-http://localhost:8080}
+  jwt_access_token_ttl: ${JWT_ACCESS_TOKEN_TTL:-3600}
+  jwt_refresh_token_ttl: ${JWT_REFRESH_TOKEN_TTL:-2592000}
+  jwt_key_rotation_enabled: ${JWT_KEY_ROTATION_ENABLED:-true}
+  jwt_key_rotation_days: ${JWT_KEY_ROTATION_DAYS:-30}
+  jwt_key_overlap_days: ${JWT_KEY_OVERLAP_DAYS:-7}
 ```
+
+전체 환경 변수와 기본값을 확인하려면 [설정 스키마 문서](../development/config-schema.md)를 참고해 주세요.

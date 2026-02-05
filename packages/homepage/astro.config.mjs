@@ -92,6 +92,15 @@ export default defineConfig({
               ],
             },
             {
+              label: 'Basic Configuration',
+              translations: {
+                ko: '작업 스케줄러',
+                ja: '基本設定',
+              },
+              slug: 'configuration/scheduler',
+
+            },
+            {
               label: 'Authentication',
               translations: {
                 ko: '기본 인증',

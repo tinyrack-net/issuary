@@ -1,0 +1,37 @@
+---
+title: 작업 스케줄러
+description: Tinyauth 설정 시스템 이해하기
+---
+
+`tinyauth`은 `config.yaml` 이라는 단일 구성 파일을 사용하여 설정돼요. 이를 통해 로그인 방식, 보안, 데이터베이스 등 다양한 설정을 지정할 수 있어요. 설정 파일은 YAML 형식으로 작성되며, 다음과 같은 주요 섹션들로 구성되어 있어요.
+
+```yaml
+app:                  # 애플리케이션 설정
+scheduler:            # 스케줄러 설정
+terms:                # 이용 약관 설정
+database:             # 데이터베이스 설정
+smtp:                 # SMTP 이메일 설정
+auth:                 # 기본 인증 방식 설정
+identity_providers:   # 타사 인증 방식 설정
+clients:              # 인증 클라이언트 설정
+users:                # 사용자 설정
+```
+
+---
+
+## 최소 요구 설정
+
+`tinyauth`을 사용하려면 최소한 다음의 설정을 구성해야 해요.
+
+```yaml
+app:
+  host: "https://내_도메인.com"        # tinyauth 인스턴스의 기본 URL
+  cookie_secret: "아주_강력한_비밀_키"  # 세션 쿠키 암호화에 사용되는 비밀 키
+```
+
+- `host`: `tinyauth` 인스턴스의 기본 URL을 지정해요.
+- `cookie_secret`: 세션 쿠키를 암호화하는 데 사용되는 비밀 키예요.
+
+> `openssl rand -hex 32` 명령어를 사용하여 강력한 비밀 키를 생성할 수 있어요.
+
+다른 값들은 모두 시작하기에 좋은 기본값을 가지고 있으니 필요에 따라 문서를 참고하여 하나씩 조정해 나가시길 바래요.
