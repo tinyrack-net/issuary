@@ -1,0 +1,26 @@
+{
+  "verification": {
+    "subject": "Verify your email address",
+    "title": "Verify Your Email",
+    "greeting": "Thank you for signing up!",
+    "description": "Please verify your email address to complete registration.",
+    "buttonText": "Verify Email",
+    "linkAlt": "Or copy and paste this link into your browser:",
+    "codeLabel": "Alternatively, you can use this verification code:",
+    "expiry": "This link will expire in 24 hours.",
+    "ignore": "If you didn't create an account, you can safely ignore this email."
+  },
+  "passwordReset": {
+    "subject": "Reset your password",
+    "title": "Reset Your Password",
+    "description": "We received a request to reset your password. Click the button below to create a new password:",
+    "buttonText": "Reset Password",
+    "linkAlt": "Or copy and paste this link into your browser:",
+    "codeLabel": "Alternatively, you can use this reset code:",
+    "expiry": "This link will expire in 1 hour.",
+    "ignore": "If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged."
+  },
+  "common": {
+    "poweredBy": "Powered by"
+  }
+}
