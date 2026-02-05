@@ -1,7 +1,14 @@
 import z from 'zod/v4';
 import { DurationString } from '@/lib/duration.js';
+import { AVAILABLE_LOCALES, DEFAULT_LOCALE } from '@/lib/locale.js';
 import { f } from '@/schemas/field.js';
 import { zz } from '@/schemas/provider.js';
+
+/**
+ * Zod schema for locale validation.
+ * Validates that a string is one of the available locales.
+ */
+const LocaleSchema = z.enum(AVAILABLE_LOCALES);
 
 // ---------------------------------------------------------------------------
 // SMTP
@@ -474,20 +481,24 @@ export const AppConfigApp = z.object({
         'Empty array disables signup entirely.',
     ),
   supported_languages: z
-    .array(z.string())
+    .array(LocaleSchema)
     .optional()
-    .default(['en'])
-    .describe('Supported languages'),
+    .default([DEFAULT_LOCALE])
+    .describe(
+      `Supported languages. Must be a subset of available locales: ${AVAILABLE_LOCALES.join(', ')}`,
+    ),
   default_language: z
-    .string()
+    .union([z.literal('auto'), LocaleSchema])
     .optional()
     .default('auto')
-    .describe('Default language'),
-  fallback_language: z
-    .string()
-    .optional()
-    .default('en')
-    .describe('Fallback language'),
+    .describe(
+      `Default language. Use 'auto' to detect from browser, or specify a locale: ${AVAILABLE_LOCALES.join(', ')}`,
+    ),
+  fallback_language: LocaleSchema.optional()
+    .default(DEFAULT_LOCALE)
+    .describe(
+      `Fallback language when requested locale is unavailable. Must be one of: ${AVAILABLE_LOCALES.join(', ')}`,
+    ),
 
   light_theme: AppTheme.optional()
     .default('light')
