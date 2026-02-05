@@ -13,6 +13,7 @@
     "moduleResolution": "nodenext",
     "target": "esnext",
     "types": ["node"],
+    "jsx": "react-jsx",
 
     "sourceMap": true,
     "declaration": true,
@@ -38,9 +39,10 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "resolveJsonModule": true
   },
-  "include": ["src/**/*", "src/**/.*/**/*"],
+  "include": ["src/**/*", "src/**/.*/**/*", "src/**/*.json"],
   "exclude": ["node_modules", "dist"],
   "ts-node": {
     "esm": true,
