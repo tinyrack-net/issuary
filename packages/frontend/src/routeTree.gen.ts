@@ -121,23 +121,23 @@ const VerifyTotpRecoveryIndexRoute = VerifyTotpRecoveryIndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/consent': typeof ConsentIndexRoute
-  '/error': typeof ErrorIndexRoute
-  '/login': typeof LoginIndexRoute
-  '/profile': typeof ProfileIndexRoute
-  '/register': typeof RegisterIndexRoute
-  '/terms': typeof TermsIndexRoute
-  '/login/password': typeof LoginPasswordIndexRoute
-  '/password/forgot': typeof PasswordForgotIndexRoute
-  '/password/reset': typeof PasswordResetIndexRoute
-  '/setup/2fa': typeof Setup2faIndexRoute
-  '/setup/passkey': typeof SetupPasskeyIndexRoute
-  '/setup/totp': typeof SetupTotpIndexRoute
-  '/verify/2fa': typeof Verify2faIndexRoute
-  '/verify/email': typeof VerifyEmailIndexRoute
-  '/verify/passkey': typeof VerifyPasskeyIndexRoute
-  '/verify/totp': typeof VerifyTotpIndexRoute
-  '/verify/totp/recovery': typeof VerifyTotpRecoveryIndexRoute
+  '/consent/': typeof ConsentIndexRoute
+  '/error/': typeof ErrorIndexRoute
+  '/login/': typeof LoginIndexRoute
+  '/profile/': typeof ProfileIndexRoute
+  '/register/': typeof RegisterIndexRoute
+  '/terms/': typeof TermsIndexRoute
+  '/login/password/': typeof LoginPasswordIndexRoute
+  '/password/forgot/': typeof PasswordForgotIndexRoute
+  '/password/reset/': typeof PasswordResetIndexRoute
+  '/setup/2fa/': typeof Setup2faIndexRoute
+  '/setup/passkey/': typeof SetupPasskeyIndexRoute
+  '/setup/totp/': typeof SetupTotpIndexRoute
+  '/verify/2fa/': typeof Verify2faIndexRoute
+  '/verify/email/': typeof VerifyEmailIndexRoute
+  '/verify/passkey/': typeof VerifyPasskeyIndexRoute
+  '/verify/totp/': typeof VerifyTotpIndexRoute
+  '/verify/totp/recovery/': typeof VerifyTotpRecoveryIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -184,23 +184,23 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/consent'
-    | '/error'
-    | '/login'
-    | '/profile'
-    | '/register'
-    | '/terms'
-    | '/login/password'
-    | '/password/forgot'
-    | '/password/reset'
-    | '/setup/2fa'
-    | '/setup/passkey'
-    | '/setup/totp'
-    | '/verify/2fa'
-    | '/verify/email'
-    | '/verify/passkey'
-    | '/verify/totp'
-    | '/verify/totp/recovery'
+    | '/consent/'
+    | '/error/'
+    | '/login/'
+    | '/profile/'
+    | '/register/'
+    | '/terms/'
+    | '/login/password/'
+    | '/password/forgot/'
+    | '/password/reset/'
+    | '/setup/2fa/'
+    | '/setup/passkey/'
+    | '/setup/totp/'
+    | '/verify/2fa/'
+    | '/verify/email/'
+    | '/verify/passkey/'
+    | '/verify/totp/'
+    | '/verify/totp/recovery/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -276,119 +276,119 @@ declare module '@tanstack/react-router' {
     '/terms/': {
       id: '/terms/'
       path: '/terms'
-      fullPath: '/terms'
+      fullPath: '/terms/'
       preLoaderRoute: typeof TermsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register/': {
       id: '/register/'
       path: '/register'
-      fullPath: '/register'
+      fullPath: '/register/'
       preLoaderRoute: typeof RegisterIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile/': {
       id: '/profile/'
       path: '/profile'
-      fullPath: '/profile'
+      fullPath: '/profile/'
       preLoaderRoute: typeof ProfileIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login/': {
       id: '/login/'
       path: '/login'
-      fullPath: '/login'
+      fullPath: '/login/'
       preLoaderRoute: typeof LoginIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/error/': {
       id: '/error/'
       path: '/error'
-      fullPath: '/error'
+      fullPath: '/error/'
       preLoaderRoute: typeof ErrorIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/consent/': {
       id: '/consent/'
       path: '/consent'
-      fullPath: '/consent'
+      fullPath: '/consent/'
       preLoaderRoute: typeof ConsentIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/verify/totp/': {
       id: '/verify/totp/'
       path: '/verify/totp'
-      fullPath: '/verify/totp'
+      fullPath: '/verify/totp/'
       preLoaderRoute: typeof VerifyTotpIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/verify/passkey/': {
       id: '/verify/passkey/'
       path: '/verify/passkey'
-      fullPath: '/verify/passkey'
+      fullPath: '/verify/passkey/'
       preLoaderRoute: typeof VerifyPasskeyIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/verify/email/': {
       id: '/verify/email/'
       path: '/verify/email'
-      fullPath: '/verify/email'
+      fullPath: '/verify/email/'
       preLoaderRoute: typeof VerifyEmailIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/verify/2fa/': {
       id: '/verify/2fa/'
       path: '/verify/2fa'
-      fullPath: '/verify/2fa'
+      fullPath: '/verify/2fa/'
       preLoaderRoute: typeof Verify2faIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/setup/totp/': {
       id: '/setup/totp/'
       path: '/setup/totp'
-      fullPath: '/setup/totp'
+      fullPath: '/setup/totp/'
       preLoaderRoute: typeof SetupTotpIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/setup/passkey/': {
       id: '/setup/passkey/'
       path: '/setup/passkey'
-      fullPath: '/setup/passkey'
+      fullPath: '/setup/passkey/'
       preLoaderRoute: typeof SetupPasskeyIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/setup/2fa/': {
       id: '/setup/2fa/'
       path: '/setup/2fa'
-      fullPath: '/setup/2fa'
+      fullPath: '/setup/2fa/'
       preLoaderRoute: typeof Setup2faIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/password/reset/': {
       id: '/password/reset/'
       path: '/password/reset'
-      fullPath: '/password/reset'
+      fullPath: '/password/reset/'
       preLoaderRoute: typeof PasswordResetIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/password/forgot/': {
       id: '/password/forgot/'
       path: '/password/forgot'
-      fullPath: '/password/forgot'
+      fullPath: '/password/forgot/'
       preLoaderRoute: typeof PasswordForgotIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login/password/': {
       id: '/login/password/'
       path: '/login/password'
-      fullPath: '/login/password'
+      fullPath: '/login/password/'
       preLoaderRoute: typeof LoginPasswordIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/verify/totp/recovery/': {
       id: '/verify/totp/recovery/'
       path: '/verify/totp/recovery'
-      fullPath: '/verify/totp/recovery'
+      fullPath: '/verify/totp/recovery/'
       preLoaderRoute: typeof VerifyTotpRecoveryIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
