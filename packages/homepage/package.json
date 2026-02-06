@@ -10,9 +10,9 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.37.4",
-    "@scalar/astro": "^0.1.15",
-    "astro": "^5.17.0",
+    "@astrojs/starlight": "^0.37.6",
+    "@scalar/astro": "^0.1.16",
+    "astro": "^5.17.1",
     "sharp": "^0.34.5"
   },
   "devDependencies": {
