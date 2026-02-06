@@ -22,6 +22,9 @@ catalog:
   vite: ^7.3.0
   zod: ^4.3.5
 
+ignoredBuiltDependencies:
+  - sharp
+
 onlyBuiltDependencies:
   - argon2
   - esbuild
