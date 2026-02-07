@@ -1,5 +1,5 @@
 import type { EntityManager } from '@mikro-orm/core';
-import { hash } from 'argon2';
+import { hash } from '@node-rs/argon2';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
 import { TermsEntity } from '@/entities/terms.entity.js';
 import { TermsContentEntity } from '@/entities/terms-content.entity.js';

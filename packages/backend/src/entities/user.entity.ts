@@ -12,7 +12,7 @@ import {
   Property,
   t,
 } from '@mikro-orm/core';
-import { hash, verify } from 'argon2';
+import { hash, verify } from '@node-rs/argon2';
 import { UserRepository } from '@/repositories/user.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { UserOAuthEntity } from './user-oauth.entity.js';

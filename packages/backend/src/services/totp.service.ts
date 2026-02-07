@@ -1,4 +1,4 @@
-import { hash, verify } from 'argon2';
+import { hash, verify } from '@node-rs/argon2';
 import fastifyPlugin from 'fastify-plugin';
 import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
 import qrcode from 'qrcode';

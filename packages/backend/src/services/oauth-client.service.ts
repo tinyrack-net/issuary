@@ -1,4 +1,4 @@
-import { verify } from 'argon2';
+import { verify } from '@node-rs/argon2';
 import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import type { MikroService } from '@/plugins/core/mikro-orm.js';
