@@ -3,13 +3,15 @@ title: 환경 변수
 description: Tinyauth 환경 변수 참조
 ---
 
-`tinyauth` 서버 설정을 구성할 때, 특정 구성은 환경 변수를 참조하게 만들 수 있어요. 이는 민감한 정보를 다룰 때 유용하며, 컨테이너화된 배포나 클라우드 환경에서 설정을 관리하는 데 도움이 될 수 있어요. 간단한 사용 예시는 다음과 같아요.
+`tinyauth` 의 `config.yaml`을 구성할 때, 특정 설정은 환경 변수를 참조하게 만들 수 있어요. 이는 민감한 정보를 다룰 때 유용하며, 컨테이너화된 배포나 클라우드 환경에서 민감한 설정을 관리하는 데 도움이 될 수 있어요. 간단한 사용 예시는 다음과 같아요.
 
 ```yaml
 app:
   host: "${TINYAUTH_APP_HOST}"
   cookie_secret: "$TINYAUTH_COOKIE_SECRET"
 ```
+
+> `$VAR` 또는 `${VAR}` 구문 모두 유효한 표현이에요.
 
 위 설정을 사용하는 경우, `docker`에서는 다음과 같이 환경 변수를 전달해 사용할 수 있어요.
 
@@ -33,7 +35,7 @@ app:
   host: "${TINYAUTH_APP_HOST:-https://default-tinyauth-domain.com}"
 ```
 
-이 경우 `TINYAUTH_APP_HOST` 환경 변수가 설정돼 있으면 그 값을 사용하고, 설정돼 있지 않으면 `https://default-tinyauth-domain.com` 을 기본값으로 사용해요.
+이 경우 `TINYAUTH_APP_HOST` 환경 변수가 설정돼 있으면 그 값을 사용하고, 설정되어 있지 않다면 `https://default-tinyauth-domain.com` 을 기본값으로 사용해요.
 
 `tinyauth`는 이미 설정의 많은 부분에서 환경 변수를 먼저 참조하도록 기본값이 구성되어 있어요. 예를 들어, `app` 섹션에서는 다음과 같은 환경 변수와 기본값이 할당되어 있어요.
 
