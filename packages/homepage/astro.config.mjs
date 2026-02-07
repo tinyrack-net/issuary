@@ -11,6 +11,7 @@ export default defineConfig({
     starlight({
       title: 'Tinyauth',
       description: 'OpenID Connect (OIDC) Provider Documentation',
+      plugins: [],
       // customCss: ['./src/styles/custom.css'],
       defaultLocale: 'root',
       locales: {
@@ -70,12 +71,14 @@ export default defineConfig({
             {
               label: 'Basic Configuration',
               translations: {
-                ko: '기본 설정',
+                ko: '애플리케이션',
                 ja: '基本設定',
               },
               items: [
-                { slug: 'configuration/general/theme' },
+                { slug: 'configuration/general/general' },
+                { slug: 'configuration/general/register' },
                 { slug: 'configuration/general/security' },
+                { slug: 'configuration/general/theme' },
                 { slug: 'configuration/general/language' },
                 { slug: 'configuration/general/branding' },
               ],
@@ -90,15 +93,6 @@ export default defineConfig({
                 { slug: 'configuration/database/sqlite' },
                 { slug: 'configuration/database/postgresql' },
               ],
-            },
-            {
-              label: 'Basic Configuration',
-              translations: {
-                ko: '작업 스케줄러',
-                ja: '基本設定',
-              },
-              slug: 'configuration/scheduler',
-
             },
             {
               label: 'Authentication',
@@ -148,6 +142,23 @@ export default defineConfig({
                 { slug: 'configuration/client-integration/overview' },
               ],
             },
+            {
+              label: 'Management',
+              translations: {
+                ko: '관리',
+                ja: '管理',
+              },
+              items: [
+                {
+                  label: 'Basic Configuration',
+                  translations: {
+                    ko: '작업 스케줄러',
+                    ja: '基本設定',
+                  },
+                  slug: 'configuration/scheduler',
+                },
+              ],
+            }
           ],
         },
         {
