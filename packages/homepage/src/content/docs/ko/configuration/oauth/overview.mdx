@@ -1,4 +1,78 @@
 ---
 title: OAuth 개요
-description: Tinyrack Auth에서 OAuth 클라이언트를 구성하는 방법
+description: Tinyauth에서 타사 OAuth 로그인 제공자 구성하기
 ---
+
+`tinyauth`는 타사 OAuth 제공자를 통한 소셜 로그인을 지원해요. 사용자는 기존 계정(Google, GitHub, Apple 등)으로 간편하게 로그인하거나 회원가입할 수 있어요. 타사 로그인은 `identity_providers` 섹션에서 구성하며, 여러 제공자를 동시에 활성화할 수 있어요.
+
+```yaml
+# config.yaml
+identity_providers:
+  - id: google
+    type: google
+    enabled: true
+    client_id: ${GOOGLE_CLIENT_ID}
+    client_secret: ${GOOGLE_CLIENT_SECRET}
+
+  - id: github
+    type: github
+    enabled: true
+    client_id: ${GITHUB_CLIENT_ID}
+    client_secret: ${GITHUB_CLIENT_SECRET}
+```
+
+---
+
+## 지원하는 제공자 유형
+
+| 유형 | 설명 |
+|------|------|
+| `google` | Google 계정 로그인 ([설정 가이드](/ko/configuration/oauth/google)) |
+| `apple` | Apple ID 로그인 ([설정 가이드](/ko/configuration/oauth/apple)) |
+| `github` | GitHub 계정 로그인 ([설정 가이드](/ko/configuration/oauth/github)) |
+| `generic_oauth` | 기타 OAuth/OIDC 제공자 ([설정 가이드](/ko/configuration/oauth/others)) |
+
+---
+
+## 공통 설정 항목
+
+모든 제공자 유형에 공통으로 적용되는 설정 항목이에요.
+
+| 항목 | 필수 | 기본값 | 설명 |
+|------|------|--------|------|
+| `id` | O | - | 제공자의 고유 식별자예요. URL 및 데이터베이스에서 사용돼요. |
+| `type` | O | - | 제공자 유형이에요. `google`, `apple`, `github`, `generic_oauth` 중 하나예요. |
+| `enabled` | X | `false` | 이 제공자의 활성화 여부예요. |
+| `display_name` | △ | - | 로그인 버튼에 표시될 이름이에요. `generic_oauth` 유형에서는 필수예요. |
+| `icon_url` | X | - | 로그인 버튼에 표시될 아이콘 URL이에요. |
+| `client_id` | O | - | OAuth 제공자에서 발급받은 클라이언트 ID예요. |
+| `client_secret` | O | - | OAuth 제공자에서 발급받은 클라이언트 시크릿이에요. |
+| `scopes` | X | 유형별 기본값 | OAuth 스코프 목록이에요. 지정하지 않으면 제공자 유형별 기본값이 사용돼요. |
+| `email_conflict_strategy` | X | `auto_link` | 기존 계정과 이메일이 충돌할 때의 처리 방식이에요. |
+
+---
+
+## 이메일 충돌 전략
+
+사용자가 이미 비밀번호로 가입한 이메일과 동일한 이메일을 가진 OAuth 계정으로 로그인하려 할 때의 처리 방식을 지정해요.
+
+- `auto_link`: 동일한 이메일의 기존 계정에 OAuth 계정을 자동으로 연결해요. 대부분의 경우 이 방식이 편리해요.
+- `require_link`: 자동 연결하지 않고 사용자에게 직접 연결을 요구해요. 보안이 더 중요한 경우 사용해요.
+
+---
+
+## 콜백 URL
+
+OAuth 제공자에 애플리케이션을 등록할 때 콜백(리다이렉트) URL을 지정해야 해요. `tinyauth`의 콜백 URL은 다음 형식이에요.
+
+```
+{app.host}/application/oauth/{id}/callback
+```
+
+예를 들어, `app.host`가 `https://auth.example.com`이고 `id`가 `google`인 경우:
+
+```
+https://auth.example.com/application/oauth/google/callback
+```
+
+각 제공자별 상세 설정 방법은 해당 가이드를 참고해 주세요.
