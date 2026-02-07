@@ -1,11 +1,111 @@
 ---
 title: 개요
-description: 1분 안에 Tinyauth를 실행해 보세요
+description: Tinyauth에 OAuth/OIDC 클라이언트를 등록하는 방법
 ---
 
-`Tinyauth`를 1분 만에 실행해 보세요! 아래 단계에 따라 Docker 컨테이너로 빠르게 시작할 수 있어요.
+`tinyauth`를 통해 사용자를 인증하려는 애플리케이션은 먼저 OAuth/OIDC 클라이언트로 등록해야 해요. 클라이언트 등록은 `config.yaml`의 `clients` 섹션에서 할 수 있어요.
 
-```bash
-docker run --rm -p 8080:8080 tinyrack/tinyauth:latest \
-  --app.cookie_secret your_cookie_secret_here
+```yaml
+# config.yaml
+clients:
+  - id: my-app
+    name: My Application
+    client_id: my-app-client-id
+    client_secret: my-app-client-secret
+    redirect_uris:
+      - https://myapp.example.com/callback
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+      - refresh_token
+    scope: openid profile email
 ```
+
+---
+
+## 설정 항목
+
+| 항목 | 필수 | 설명 |
+|------|------|------|
+| `id` | O | 클라이언트의 내부 고유 식별자예요. |
+| `name` | O | 사용자에게 표시될 애플리케이션 이름이에요. 동의 화면에서 보여요. |
+| `logo_uri` | X | 동의 화면에 표시될 로고 이미지 URL이에요. |
+| `client_id` | O | OAuth 요청에서 사용하는 공개 클라이언트 식별자예요. |
+| `client_secret` | △ | 클라이언트 시크릿이에요. 기밀 클라이언트(서버 측 앱)에서만 필요하며, 공개 클라이언트(SPA/모바일)에서는 생략해요. |
+| `redirect_uris` | O | 인증 후 리다이렉트할 수 있는 허용 URL 목록이에요. |
+| `response_types` | O | 허용할 OAuth 응답 유형이에요. 일반적으로 `code`를 사용해요. |
+| `grant_types` | O | 허용할 OAuth 권한 부여 유형이에요. |
+| `scope` | O | 허용할 OAuth 스코프(공백으로 구분)예요. |
+
+---
+
+## 기밀 클라이언트 vs 공개 클라이언트
+
+OAuth에서는 클라이언트를 두 가지 유형으로 구분해요.
+
+### 기밀 클라이언트 (Confidential Client)
+
+서버 측에서 시크릿을 안전하게 보관할 수 있는 애플리케이션이에요. `client_secret`을 설정하며, 토큰 교환 시 시크릿을 함께 전송해요.
+
+- Next.js, Express, Spring Boot 등 서버 사이드 앱
+- `client_secret`이 필수
+
+```yaml
+clients:
+  - id: web-server-app
+    name: Web Server App
+    client_id: web-server-client
+    client_secret: ${WEB_SERVER_SECRET}
+    redirect_uris:
+      - https://myapp.com/api/callback
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+      - refresh_token
+    scope: openid profile email
+```
+
+### 공개 클라이언트 (Public Client)
+
+클라이언트 측 코드에서 시크릿을 안전하게 보관할 수 없는 애플리케이션이에요. `client_secret`을 생략하며, 대신 [PKCE](https://datatracker.ietf.org/doc/html/rfc7636) 를 사용하여 보안을 확보해요.
+
+- React SPA, Vue SPA, 모바일 앱 등
+- `client_secret` 생략
+
+```yaml
+clients:
+  - id: spa-app
+    name: Single Page App
+    client_id: spa-client
+    redirect_uris:
+      - https://myapp.com/callback
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+      - refresh_token
+    scope: openid profile email
+```
+
+---
+
+## OIDC Discovery
+
+등록된 클라이언트 애플리케이션은 `tinyauth`의 OIDC Discovery 엔드포인트를 사용하여 인증에 필요한 정보를 자동으로 가져올 수 있어요.
+
+```
+{app.host}/.well-known/openid-configuration
+```
+
+이 엔드포인트는 인증, 토큰, 사용자 정보, JWKS 등의 엔드포인트 URL을 반환해요. 대부분의 OIDC 클라이언트 라이브러리는 이 URL만으로 자동 설정이 가능해요.
+
+---
+
+## 다음 단계
+
+클라이언트를 등록한 후 실제 애플리케이션에 연동하는 방법은 다음 가이드를 참고해 주세요.
+
+- [Next.js 연동](/ko/integration/nextjs) - 서버 사이드 앱 (기밀 클라이언트)
+- [React SPA 연동](/ko/integration/react-spa) - 클라이언트 사이드 앱 (공개 클라이언트)
