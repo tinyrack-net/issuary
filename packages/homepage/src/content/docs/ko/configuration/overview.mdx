@@ -3,26 +3,28 @@ title: 시작하기
 description: Tinyauth 설정 시스템 이해하기
 ---
 
-`tinyauth`은 `config.yaml` 이라는 단일 구성 파일로 설정돼요. 이를 통해 로그인 방식, 보안, 데이터베이스 등 다양한 설정을 지정할 수 있어요. 설정 파일은 YAML 형식으로 작성되며, 다음과 같은 주요 섹션들로 구성되어 있어요.
+`tinyauth`은 `config.yaml` 이라는 단일 구성 파일로 설정돼요. 이를 통해 로그인 방식, 보안, 데이터베이스 등 `tinyauth`를 운영하는데 필요한 대부분의 설정을 지정할 수 있어요. 설정 파일은 YAML 형식으로 작성되며, 다음과 같은 주요 섹션들로 구성되어 있어요.
 
 ```yaml
+# config.yaml
 app:                  # 애플리케이션 설정
-scheduler:            # 스케줄러 설정
-terms:                # 이용 약관 설정
 database:             # 데이터베이스 설정
-smtp:                 # SMTP 이메일 설정
 auth:                 # 기본 인증 방식 설정
 identity_providers:   # 타사 인증 방식 설정
+smtp:                 # SMTP 이메일 설정
 clients:              # 인증 클라이언트 설정
 users:                # 사용자 설정
+terms:                # 이용 약관 설정
+cleanup:              # 데이터 정리 설정
+scheduler:            # 작업 스케줄러 설정
 ```
 
-작성한 `config.yaml`을 도커와 함께 사용하려는 경우 작성한 다음과 같이 사용할 수 있어요.
+작성한 `config.yaml`을 도커와 함께 사용하려는 경우 다음과 같이 사용할 수 있어요.
 
 ```bash
 docker run \
   -p 8080:8080 \
-  -v ./config.yaml:/opt/tinyauth/config.yaml \
+  -v ./config.yaml:/opt/config.yaml \
   tinyrack/tinyauth
 ```
 
@@ -33,12 +35,28 @@ docker run \
 `tinyauth`을 사용하려면 최소한 다음의 설정을 구성해야 해요.
 
 ```yaml
+# config.yaml
 app:
   host: "https://내_도메인.com"
   cookie_secret: "아주_중요한_비밀_키"
 ```
 
-- `host`: tinyauth 접속에 사용할 URL을 지정해요. 공개된 서비스인 경우 보안을 위해 리버스 프록시와 `https` 프로토콜을 사용할 것을 강력히 권장드려요.
-- `cookie_secret`: 로그인된 사용자의 세션 쿠키를 암호화하는 데 사용되는 키예요. 이 값은 `openssl rand -hex 32` 명령어를 통해 생성할 수 있어요.
+- `host`: `tinyauth`에 접속할 때 사용할 URL을 지정해요. 공개된 서비스인 경우 보안을 위해 리버스 프록시와 `https` 프로토콜을 사용할 것을 강력히 권장드려요.
+- `cookie_secret`: 로그인된 사용자의 세션 쿠키를 암호화하는 데 사용되는 비밀 키예요. 최소 **16자 이상**이어야 하며, `openssl rand -hex 32` 명령어를 통해 안전하게 생성할 수 있어요.
 
-이외의 다른 설정들은 문서를 참고하여 선호에 맞게 하나씩 조정해 나가시길 바래요.
+---
+
+## 다음 단계
+
+이외의 다른 설정들은 아래 문서를 참고하여 선호에 맞게 하나씩 조정해 나가시길 바라요.
+
+- [테마](/ko/configuration/general/theme) - UI 테마와 다크 모드 설정
+- [보안](/ko/configuration/general/security) - 쿠키 암호화, JWT 토큰, 회원가입 제어
+- [언어](/ko/configuration/general/language) - 지원 언어와 기본 언어 설정
+- [브랜딩](/ko/configuration/general/branding) - 로고, 배경 이미지, 타이틀 커스터마이징
+- [데이터베이스](/ko/configuration/database/sqlite) - SQLite 또는 PostgreSQL 설정
+- [비밀번호 인증](/ko/configuration/authentication/password) - 비밀번호 로그인 활성화
+- [타사 로그인](/ko/configuration/oauth/overview) - Google, Apple, GitHub 등 소셜 로그인
+- [클라이언트 연동](/ko/configuration/client-integration/overview) - OAuth/OIDC 클라이언트 등록
+- [약관](/ko/configuration/terms/implicit-flow) - 이용 약관 설정
+- [환경 변수](/ko/configuration/environment-variables) - 설정 파일 내 환경 변수 참조
