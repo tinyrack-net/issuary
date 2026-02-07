@@ -27,3 +27,18 @@ app:
   - `*@*.example.com`: example.com의 모든 하위 도메인의 이메일 허용
   여러 패턴을 결합할 수 있어요. 어떤 패턴이라도 일치하면 가입이 허용돼요. 이 목록이 비어 있거나 지정되지 않은 경우 새 가입이 허용되지 않아요.
 - `account_deletion`: 사용자가 자신의 계정을 삭제할 수 있는지 여부예요. 활성화되면 사용자는 프로필 설정에서 계정 삭제를 요청할 수 있어요. 보존 기간은 정리 섹션에서 구성돼요. 기본값은 `false`예요.
+
+## Client JWT 토큰 수명 설정
+
+```yaml
+app:
+  jwt_access_token_ttl: 3600
+  jwt_refresh_token_ttl: 2592000
+  account_deletion: true
+```
+
+## 회원 탈퇴 기능 활성화
+
+```yaml
+
+```
