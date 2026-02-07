@@ -5,10 +5,6 @@ WORKDIR /app
 
 # ===== Stage 2: Dependencies =====
 FROM base AS deps
-# 네이티브 모듈 빌드에 필요한 도구들
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 make g++ \
-    && rm -rf /var/lib/apt/lists/*
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/frontend/package.json ./packages/frontend/
 COPY packages/backend/package.json ./packages/backend/
@@ -28,9 +24,6 @@ RUN pnpm --filter @tinyauth/backend build
 
 # ===== Stage 5: Production Dependencies =====
 FROM base AS prod-deps
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 make g++ \
-    && rm -rf /var/lib/apt/lists/*
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/backend/package.json ./packages/backend/
 RUN pnpm install --frozen-lockfile --filter @tinyauth/backend
