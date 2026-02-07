@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
+  "license": "AGPL-3.0-only",
   "scripts": {
     "generate:openapi": "pnpm --filter @tinyauth/backend export:openapi ../homepage/public/openapi.json",
     "dev": "pnpm generate:openapi && astro dev",
