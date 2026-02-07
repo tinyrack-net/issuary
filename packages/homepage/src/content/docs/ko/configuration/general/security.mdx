@@ -3,20 +3,12 @@ title: 보안
 description: Tinyauth용 PostgreSQL 데이터베이스 구성하기
 ---
 
-`tinyauth`는 기본적으로 안전한 옵션을 기본값으로 사용하지만, 특정 요구 사항에 맞게 일부 보안 설정을 조정할 수 있어요. 이 문서에서는 `tinyauth`의 보안 관련 구성 옵션들을 설명해드릴게요.
-
-## Cookie 비밀 키 지정
-
-```yaml
-app:
-  cookie_secret: $COOKIE_SECRET
-```
-
-- `cookie_secret`: 세션 쿠키를 암호화 하는데 사용되는 256비트(32바이트) 비밀 키예요. 프로덕션 환경에서는 고유하고 무작위인 값을 생성하는 것이 중요해요. `openssl rand -hex 32` 명령어를 사용하여 생성할 수 있어요. 이 값을 변경하면 기존의 모든 세션이 무효화돼요.
-
-## Client JWT 토큰 수명 설정
+`tinyauth`는 OAuth2/OIDC 클라이언트에게 JWT 기반의 액세스 토큰과 리프레시 토큰을 발급해요.
+액세스 토큰은 API 요청 인증에 사용되며 짧은 수명을 가지고, 리프레시 토큰은 액세스 토큰이 만료되었을 때 새로운 액세스 토큰을 발급받기 위해 사용되며 상대적으로 긴 수명을 가져요.
+토큰 수명을 짧게 설정하면 보안이 강화되지만 클라이언트가 더 자주 토큰을 갱신해야 하고, 길게 설정하면 편의성은 높아지지만 토큰 탈취 시 위험 노출 시간이 길어져요.
 
 ```yaml
+# config.yaml
 app:
   jwt_access_token_ttl: 3600
   jwt_refresh_token_ttl: 2592000
@@ -24,31 +16,3 @@ app:
 
 - `jwt_access_token_ttl`: JWT 액세스 토큰의 수명(초 단위)이에요. 액세스 토큰은 짧은 수명을 가지며 API 인증에 사용돼요. 기본값은 3600초(1시간)이며, 권장 900초에서 3600초(15분에서 1시간) 사이로 설정하는 것이 좋아요.
 - `jwt_refresh_token_ttl`: JWT 리프레시 토큰의 수명(초 단위)이에요. 리프레시 토큰은 긴 수명을 가지며 새로운 액세스 토큰을 얻는 데 사용돼요. 기본값은 2592000초(30일)이며, 권장 604800초에서 2592000초(7일에서 30일) 사이로 설정하는 것이 좋아요.
-
-## 회원 탈퇴 기능 활성화
-
-```yaml
-app:
-  account_deletion: true
-```
-
-- `account_deletion`: 사용자가 자신의 계정을 삭제할 수 있는지 여부예요. 활성화되면 사용자는 프로필 설정에서 계정 삭제를 요청할 수 있어요. 보존 기간은 정리 섹션에서 구성돼요. 기본값은 `false`예요.
-
-## 가입을 허용할 이메일 패턴 설정
-
-`tinyauth`는 화이트리스트 기본 보안 정책을 가지므로, 명시적으로 허용한 이메일이 아니라면 가입을 허용하지 않아요. 가입을 허용할 이메일 패턴을 구성하려면 `allowed_signup_emails` 옵션을 사용할 수 있어요. 설정 예시는 다음과 같아요.
-
-```yaml
-app:
-  allowed_signup_emails:
-    - '*'                        # Allow all emails (public registration)
-    # - 'admin@example.com'      # Allow specific email
-    # - '*@example.com'          # Allow all emails from domain
-```
-
-- `allowed_signup_emails`: 등록을 허용할 이메일 패턴 목록이에요. 인증 서버에서 누가 새 계정을 생성할 수 있는지 제어해요. 패턴 구문은 다음과 같아요.
-  - `*`: 모든 이메일 허용(공개 등록)
-  - `user@example.com`: 특정 이메일 주소만 허용
-  - `*@example.com`: example.com 도메인의 모든 이메일 허용
-  - `*@*.example.com`: example.com의 모든 하위 도메인의 이메일 허용
-  여러 패턴을 결합할 수 있어요. 어떤 패턴이라도 일치하면 가입이 허용돼요. 이 목록이 비어 있거나 지정되지 않은 경우 새 가입이 허용되지 않아요.
