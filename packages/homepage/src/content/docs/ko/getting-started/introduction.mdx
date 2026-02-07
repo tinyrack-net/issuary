@@ -3,63 +3,44 @@ title: 소개
 description: Tinyauth가 무엇이며 인증 구현에 어떻게 도움이 되는지 알아봅니다
 ---
 
-![An illustration of planets and stars featuring the word “astro”](../../../../assets/tinyauth-overview.png)
+![An illustration of planets and stars featuring the word "astro"](../../../../assets/tinyauth-overview.png)
 
-`Tinyauth`는 **사용자**를 위한 오픈소스 인증 제공자(OIDC Provider) 소프트웨어에요. 사용자 경험을 중심으로 설계되어 빠르고 편리한 로그인 과정을 제공하는 것을 목표로 가지고 있어요.
+`Tinyauth`는 **오픈소스 인증 공급자(OIDC Provider)** 소프트웨어에요. 사용자 경험을 중심으로 설계되어 빠르고 편리한 로그인 과정을 제공하는 것을 목표로 가지고 있어요.
 
-또한 `Tinyauth`는 경량, 오픈소스, 선언적, 단순성도 핵심 가치로 삼고 있어요. 복잡한 설정 없이도 몇 분 만에 완전한 기능을 갖춘 인증 서버를 구축할 수 있으면서, 추후 필요에 따라 수평적으로도 확장할 수 있도록 설계됐어요.
+단일 YAML 파일로 선언적으로 관리하며, 단일 Docker 컨테이너로 배포할 수 있어요. 별도의 데이터베이스 서버나 런타임 의존성 없이, SQLite만으로도 바로 시작할 수 있어요.
 
-Tinyauth를 사용하면 복잡한 인증 시스템을 직접 구축하는 대신, 단일 YAML 파일만으로 완전한 기능을 갖춘 인증 서버를 운영할 수 있어요.
-
-```yaml
-app:
-  cookie_secret: your_cookie_secret_here
-```
+패스워드 인증은 물론, 패스키(WebAuthn), 소셜 로그인(GitHub·Google·Apple), TOTP 이중 인증, 이용약관 동의 관리, 34가지 테마, 다국어(한·영·일) 지원까지 — 작지만 완전한 인증 서버를 지향해요.
 
 ---
 
-## 주요 특징
+## 주요 기능
 
-### 표준 프로토콜 지원
+- **다양한 인증 방식**: 비밀번호, 패스키(WebAuthn/FIDO2), 소셜 로그인(Google, GitHub, Apple), 커스텀 OAuth
+- **이중 인증(2FA)**: TOTP 기반 인증 앱 지원 (Google Authenticator, Authy 등)
+- **표준 프로토콜**: OAuth 2.0 및 OpenID Connect (OIDC) 완벽 지원
+- **PKCE 지원**: Authorization Code Flow + PKCE로 SPA와 모바일 앱 보안 확보
+- **이용약관 관리**: 명시적/암시적 동의 플로우, 버전 관리 및 재동의 기능
+- **다국어 지원**: 한국어, 영어, 일본어 기본 제공
+- **34가지 테마**: daisyUI 기반의 라이트/다크 모드 및 다양한 테마
+- **간편한 배포**: 단일 Docker 이미지, 단일 YAML 설정 파일
+- **유연한 데이터베이스**: SQLite (기본) 또는 PostgreSQL
+- **자동 키 관리**: RS256 JWT 서명 키 자동 생성 및 순환
+- **오픈소스**: MIT 라이선스, 무료, 엔터프라이즈 제한 없음
 
-- **OAuth 2.0 / OIDC 완전 호환** - Authorization Code Flow with PKCE 지원
-- **표준 엔드포인트** - authorize, token, userinfo, introspect, revoke
-- **JWKS 자동 관리** - RS256 비대칭 키 자동 생성 및 로테이션
+---
 
-### 다양한 인증 방법
+## 아키텍처 개요
 
-- **비밀번호 인증** - 이메일 인증, 비밀번호 재설정 지원
-- **패스키(WebAuthn)** - 생체 인식, 보안 키를 활용한 비밀번호 없는 로그인
-- **소셜 로그인** - GitHub, Google, Apple 및 Generic OAuth 지원
-- **2단계 인증(2FA)** - TOTP(인증 앱) 및 패스키 2FA 지원
+`tinyauth`는 프론트엔드와 백엔드가 하나의 서버로 통합된 구조예요.
 
-### 간편한 설정과 배포
+- **백엔드**: Fastify 기반 Node.js 서버로 OAuth2/OIDC 엔드포인트, 사용자 관리, 토큰 발급을 처리해요.
+- **프론트엔드**: React 기반 SPA로 로그인, 회원가입, 프로필, 동의 화면 등 사용자 인터페이스를 제공해요.
+- **데이터베이스**: MikroORM을 통해 SQLite 또는 PostgreSQL과 연동해요.
 
-- **Configuration-as-Code** - 단일 `config.yaml` 파일로 모든 설정 관리
-- **선언적 사용자/클라이언트 관리** - 설정 파일에서 직접 정의 가능
-- **Docker 지원** - 단일 컨테이너로 즉시 배포
-- **데이터베이스 유연성** - PostgreSQL, SQLite 지원
-
-### 커스터마이징
-
-- **UI 테마** - 35개 이상의 DaisyUI 테마 지원
-- **브랜딩** - 로고, 배경 이미지, 제목/부제목 커스터마이징
-- **다국어 지원** - 한국어, 영어, 일본어
-- **약관 관리** - 이용약관, 개인정보처리방침 설정
-
-## 언제 Tinyauth를 사용하나요?
-
-Tinyauth는 다음과 같은 상황에 적합해요:
-
-- **자체 인증 서버가 필요할 때** - SaaS 서비스나 사내 시스템에 표준 기반 인증이 필요한 경우
-- **셀프호스팅을 원할 때** - 데이터 주권이 중요하거나 클라우드 종속성을 피하고 싶은 경우
-- **빠른 설정이 필요할 때** - YAML 설정 파일 하나로 몇 분 안에 인증 서버를 구축하고 싶은 경우
-- **표준 프로토콜이 필요할 때** - OAuth 2.0/OIDC 호환 클라이언트와 통합해야 하는 경우
+---
 
 ## 다음 단계
 
-준비가 되셨나요? 다음 문서들을 참고해서 시작해 보세요:
-
-- [빠른 시작](/ko/getting-started/quick-start) - 5분 안에 Tinyauth 실행하기
-- [설치 가이드](/ko/getting-started/installation) - 상세 설치 방법
-- [설정 개요](/ko/configuration/overview) - config.yaml 작성 방법
+- [1분 시작](/ko/getting-started/one-minute-start) - Docker로 바로 실행해 보기
+- [다른 솔루션과의 비교](/ko/getting-started/comparison) - Tinyauth가 다른 인증 솔루션과 어떻게 다른지 확인
+- [설정 시작하기](/ko/configuration/overview) - 프로덕션 환경을 위한 설정 가이드
