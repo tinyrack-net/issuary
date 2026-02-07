@@ -1,0 +1,42 @@
+---
+title: 회원가입
+description: Tinyauth용 PostgreSQL 데이터베이스 구성하기
+---
+
+`tinyauth`는 기본적으로 화이트리스트 보안 정책을 가져요. 관리자의 명시적 '허가' 설정 없이는 새로운 사용자가 가입할 수 없어요. 그래서 `tinyauth`를 운영할 대상에 따라 가입을 허용할 이메일 필터를 지정해야 해요. 설정 예시는 다음과 같아요.
+
+```yaml
+# config.yaml
+app:
+  account_deletion: true
+  allowed_signup_emails:
+    - '*'
+```
+
+- `allowed_signup_emails`: 등록을 허용할 이메일 패턴 목록이에요.
+- `account_deletion`: 사용자의 직접 탈퇴 기능을 허용할 지 여부에요.
+
+---
+
+## 예시
+
+`tinyauth.net`, `tinyrack.net` 이메일을 가진 사용자의 가입을 허용하고, 사용자가 자신의 계정을 삭제할 수 있도록 설정하려면 다음과 같이 구성할 수 있어요.
+
+```yaml
+# config.yaml
+app:
+  allowed_signup_emails:
+    - '*@tinyauth.net'
+    - '*@tinyrack.net'
+  account_deletion: true
+```
+
+모든 이메일 도메인에서의 가입을 허용하고 회원 탈퇴 기능을 비활성화 하려면 다음과 같이 구성할 수 있어요.
+
+```yaml
+# config.yaml
+app:
+  allowed_signup_emails:
+    - '*'
+  account_deletion: false
+```
