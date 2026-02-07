@@ -17,6 +17,15 @@ clients:              # 인증 클라이언트 설정
 users:                # 사용자 설정
 ```
 
+작성한 `config.yaml`을 도커와 함께 사용하려는 경우 작성한 다음과 같이 사용할 수 있어요.
+
+```bash
+docker run \
+  -p 8080:8080 \
+  -v ./config.yaml:/opt/tinyauth/config.yaml \
+  tinyrack/tinyauth
+```
+
 ---
 
 ## 최소 요구 설정
