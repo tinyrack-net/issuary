@@ -2,3 +2,296 @@
 title: Kubernetes
 description: Kubernetes에 Tinyauth를 배포하는 방법
 ---
+
+이 가이드는 Kubernetes에 `tinyauth`를 배포하는 방법을 설명해요. ConfigMap, Secret, Deployment, Service, Ingress 및 데이터 정리를 위한 CronJob 구성을 다뤄요.
+
+---
+
+## 사전 준비
+
+- Kubernetes 클러스터 (v1.25 이상 권장)
+- `kubectl` CLI 도구
+- Ingress 컨트롤러 (예: nginx-ingress, traefik)
+- TLS 인증서 관리 (예: cert-manager)
+
+---
+
+## 1. 네임스페이스 생성
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tinyauth
+```
+
+---
+
+## 2. 설정 파일 (ConfigMap)
+
+민감하지 않은 설정은 ConfigMap으로 관리해요.
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tinyauth-config
+  namespace: tinyauth
+data:
+  config.yaml: |
+    app:
+      host: https://auth.example.com
+      port: 8080
+      cookie_secret: ${COOKIE_SECRET}
+      trust_proxy: true
+
+    database:
+      type: postgres
+      host: ${DATABASE_HOST}
+      port: ${DATABASE_PORT}
+      name: ${DATABASE_NAME}
+      user: ${DATABASE_USER}
+      password: ${DATABASE_PASSWORD}
+
+    scheduler:
+      enabled: false
+
+    auth:
+      password:
+        enabled: true
+        email_verification: true
+
+    app:
+      allowed_signup_emails:
+        - '*'
+```
+
+:::note
+Kubernetes 환경에서는 내장 스케줄러를 비활성화(`scheduler.enabled: false`)하고, 대신 CronJob으로 정리 작업을 실행하는 것을 권장해요. 이렇게 하면 여러 파드가 동시에 정리 작업을 실행하는 것을 방지할 수 있어요.
+:::
+
+---
+
+## 3. 민감 정보 (Secret)
+
+비밀번호, 시크릿 등 민감한 정보는 Secret으로 관리해요.
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tinyauth-secrets
+  namespace: tinyauth
+type: Opaque
+stringData:
+  COOKIE_SECRET: "your-32-byte-random-secret-key-here"
+  DATABASE_HOST: "postgres-host"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "tinyauth"
+  DATABASE_USER: "tinyauth"
+  DATABASE_PASSWORD: "your-database-password"
+  SMTP_USER: "smtp-user@example.com"
+  SMTP_PASSWORD: "your-smtp-password"
+```
+
+:::caution
+프로덕션 환경에서는 `stringData` 대신 외부 비밀 관리 도구(Vault, AWS Secrets Manager, Sealed Secrets 등)를 사용하는 것을 권장해요.
+:::
+
+---
+
+## 4. Deployment
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinyauth
+  namespace: tinyauth
+  labels:
+    app: tinyauth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tinyauth
+  template:
+    metadata:
+      labels:
+        app: tinyauth
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: tinyauth
+          image: tinyrack/tinyauth:latest
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: tinyauth-secrets
+          volumeMounts:
+            - name: config
+              mountPath: /opt/config.yaml
+              subPath: config.yaml
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: tinyauth-config
+        - name: tmp
+          emptyDir: {}
+```
+
+---
+
+## 5. Service
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: tinyauth
+  namespace: tinyauth
+spec:
+  selector:
+    app: tinyauth
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+```
+
+---
+
+## 6. Ingress
+
+nginx-ingress를 사용하는 예시예요. cert-manager로 TLS 인증서를 자동 발급한다고 가정해요.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tinyauth
+  namespace: tinyauth
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - auth.example.com
+      secretName: tinyauth-tls
+  rules:
+    - host: auth.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tinyauth
+                port:
+                  number: 80
+```
+
+---
+
+## 7. CronJob (데이터 정리)
+
+내장 스케줄러 대신 Kubernetes CronJob으로 정리 작업을 실행해요.
+
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: tinyauth-cleanup
+  namespace: tinyauth
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+          containers:
+            - name: cleanup
+              image: tinyrack/tinyauth:latest
+              command: ["tinyauth", "cleanup"]
+              envFrom:
+                - secretRef:
+                    name: tinyauth-secrets
+              volumeMounts:
+                - name: config
+                  mountPath: /opt/config.yaml
+                  subPath: config.yaml
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+          restartPolicy: OnFailure
+          volumes:
+            - name: config
+              configMap:
+                name: tinyauth-config
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+```
+
+---
+
+## PostgreSQL 참고
+
+Kubernetes에서 `tinyauth`를 운영할 때는 PostgreSQL 사용을 권장해요.
+
+- SQLite는 단일 파드에서만 사용 가능해요 (파일 기반이므로 여러 파드에서 공유 불가).
+- PostgreSQL을 사용하면 수평 확장(`replicas > 1`)이 가능해요.
+- 기존 PostgreSQL 클러스터가 있다면 그것을 사용하거나, [CloudNativePG](https://cloudnative-pg.io/)와 같은 Kubernetes 네이티브 PostgreSQL 오퍼레이터를 고려해 보세요.
+
+---
+
+## 보안 권장 사항
+
+- **readOnlyRootFilesystem**: 컨테이너의 파일 시스템을 읽기 전용으로 설정해요.
+- **runAsNonRoot**: root가 아닌 사용자로 실행해요.
+- **allowPrivilegeEscalation: false**: 권한 상승을 방지해요.
+- **capabilities.drop: ALL**: 불필요한 Linux 커널 capabilities를 모두 제거해요.
+- **trust_proxy: true**: Ingress 컨트롤러를 통해 들어오는 X-Forwarded-* 헤더를 신뢰하도록 설정해요.
+- 민감 정보는 반드시 Secret 또는 외부 비밀 관리 도구로 관리해요.
