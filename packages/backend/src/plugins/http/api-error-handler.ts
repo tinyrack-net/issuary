@@ -15,6 +15,10 @@ const sendError = (reply: FastifyReply, status: number, body: object) => {
 
 export default fastifyPlugin(
   (fastify) => {
+    if (!fastify.serverOptions.silent) {
+      console.info('API error handler plugin registered');
+    }
+
     fastify.setErrorHandler(async (error, request, reply) => {
       // Handle custom ApiError instances
       if (error instanceof ApiError) {

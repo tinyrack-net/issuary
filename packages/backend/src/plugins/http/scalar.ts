@@ -3,6 +3,10 @@ import fastifyPlugin from 'fastify-plugin';
 
 export default fastifyPlugin(
   (fastify) => {
+    if (!fastify.serverOptions.silent) {
+      console.info('Scalar API docs plugin registered (route: /api/docs)');
+    }
+
     fastify.register(fastifyScalar, {
       routePrefix: '/api/docs',
       configuration: {

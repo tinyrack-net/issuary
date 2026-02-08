@@ -149,6 +149,14 @@ function clearAuthSessions(this: FastifyRequest): void {
 export default fastifyPlugin(
   async (fastify) => {
     const isSecure = fastify.config.app.host.startsWith('https://');
+
+    if (!fastify.serverOptions.silent) {
+      console.info(
+        'Secure session plugin registered (cookie: session, secure: %s)',
+        isSecure,
+      );
+    }
+
     await fastify.register(fastifySecureSession, {
       cookieName: 'session',
       key: Buffer.from(fastify.config.app.cookie_secret, 'hex'),

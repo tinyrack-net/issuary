@@ -6,6 +6,10 @@ export default fastifyPlugin(
     fastify.register(fastifyCookie, {
       hook: 'onRequest',
     });
+
+    if (!fastify.serverOptions.silent) {
+      console.info('Cookie plugin registered');
+    }
   },
   {
     name: 'cookie-plugin',

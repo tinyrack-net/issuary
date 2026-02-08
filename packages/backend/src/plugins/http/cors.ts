@@ -18,6 +18,13 @@ export default fastifyPlugin(
       origin: allowedOrigins,
       credentials: true,
     });
+
+    if (!fastify.serverOptions.silent) {
+      console.info(
+        'CORS plugin registered (origin: %s)',
+        allowedOrigins === true ? '*' : fastify.config.app.host,
+      );
+    }
   },
   {
     name: 'cors-plugin',

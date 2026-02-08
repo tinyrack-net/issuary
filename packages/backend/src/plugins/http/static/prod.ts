@@ -20,6 +20,10 @@ const __dirname = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
  */
 export default fastifyPlugin(
   async (fastify) => {
+    if (!fastify.serverOptions.silent) {
+      console.info('Static plugin registered (production mode)');
+    }
+
     const publicPath = path.join(__dirname, '../../../public');
     const variables = fastify.config.app.html_variables;
     const hasVariables = Object.keys(variables).length > 0;

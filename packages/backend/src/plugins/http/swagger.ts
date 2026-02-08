@@ -28,6 +28,10 @@ export default fastifyPlugin(
       transform: jsonSchemaTransform,
     });
 
+    if (!fastify.serverOptions.silent) {
+      console.info('Swagger plugin registered');
+    }
+
     // OpenAPI JSON 스키마 제공 라우트
     fastify.get('/api/docs/json', {
       schema: {
