@@ -1,0 +1,85 @@
+---
+title: 클라이언트 보안
+description: Tinyauth의 쿠키 비밀 키, JWT 토큰 수명 및 키 순환 구성하기
+---
+
+`tinyauth`는 OAuth2/OIDC 클라이언트에게 JWT 기반의 액세스 토큰과 리프레시 토큰을 발급해요. 액세스 토큰은 API 요청 인증에 사용되며 짧은 수명을 가지고, 리프레시 토큰은 새로운 액세스 토큰을 발급받기 위해 사용되며 상대적으로 긴 수명을 가져요. 설정 예시는 다음과 같아요.
+
+```yaml
+# config.yaml
+app:
+  cookie_secret: ${COOKIE_SECRET}
+  jwt_access_token_ttl: ${JWT_ACCESS_TOKEN_TTL:-3600}
+  jwt_refresh_token_ttl: ${JWT_REFRESH_TOKEN_TTL:-2592000}
+  jwt_key_rotation_enabled: ${JWT_KEY_ROTATION_ENABLED:-true}
+  jwt_key_rotation_days: ${JWT_KEY_ROTATION_DAYS:-30}
+  jwt_key_overlap_days: ${JWT_KEY_OVERLAP_DAYS:-7}
+```
+
+- `cookie_secret`: 세션 쿠키를 암호화하는 데 사용하는 256비트(32바이트) 비밀 키예요. 프로덕션 환경에서는 반드시 고유하고 무작위인 값을 생성해야 해요. 이 값을 변경하면 기존의 모든 세션이 무효화돼요.
+- `jwt_access_token_ttl`: JWT 액세스 토큰의 수명(초 단위)이에요. 기본값은 `3600`(1시간)이에요. 권장 범위는 900~3600(15분~1시간)이에요.
+- `jwt_refresh_token_ttl`: JWT 리프레시 토큰의 수명(초 단위)이에요. 기본값은 `2592000`(30일)이에요. 권장 범위는 604800~2592000(7~30일)이에요.
+- `jwt_key_rotation_enabled`: JWT 서명 키 자동 순환을 활성화할지 여부예요. 기본값은 `true`예요.
+- `jwt_key_rotation_days`: 키 순환 주기(일 단위)예요. 기본값은 `30`일이에요. 이 주기마다 새로운 서명 키가 활성화돼요.
+- `jwt_key_overlap_days`: 이전 키를 유효하게 유지하는 기간(일 단위)이에요. 기본값은 `7`일이에요. 키 교체 직후에도 이전 키로 서명된 토큰을 검증할 수 있도록 하는 유예 기간이에요.
+
+:::note
+`cookie_secret`은 `openssl rand -hex 32` 명령어로 안전한 값을 생성할 수 있어요.
+:::
+
+---
+
+## 토큰 수명
+
+토큰 수명을 짧게 설정하면 보안이 강화되지만 클라이언트가 더 자주 토큰을 갱신해야 하고, 길게 설정하면 편의성은 높아지지만 토큰 탈취 시 위험 노출 시간이 길어져요. 서비스의 보안 요구 수준에 맞게 적절히 조절하세요.
+
+```yaml
+# config.yaml
+app:
+  jwt_access_token_ttl: 1800
+  jwt_refresh_token_ttl: 604800
+```
+
+위 설정은 액세스 토큰을 30분, 리프레시 토큰을 7일로 설정하는 예시예요. 보안이 중요한 서비스라면 이처럼 짧은 수명을 사용하는 것이 좋아요.
+
+---
+
+## JWT 키 순환
+
+`tinyauth`는 RS256 비대칭 키로 JWT에 서명해요. 보안을 강화하기 위해 서명 키를 주기적으로 교체(순환)하는 기능을 제공하며, 기본적으로 활성화되어 있어요.
+
+```yaml
+# config.yaml
+app:
+  jwt_key_rotation_enabled: true
+  jwt_key_rotation_days: 30
+  jwt_key_overlap_days: 7
+```
+
+키 순환이 활성화되면, `jwt_key_rotation_days`마다 새로운 서명 키가 생성되고 활성화돼요. 이전 키는 `jwt_key_overlap_days` 동안 유효하게 유지되어, 키 전환 기간 동안에도 기존 토큰을 정상적으로 검증할 수 있어요.
+
+:::note
+키 순환은 `next` → `active` → `previous` → `retired` 수명 주기를 따라요. 활성 키와 이전 키 모두 `/.well-known/jwks.json` 엔드포인트를 통해 공개되므로, 클라이언트는 키 전환 기간 동안에도 토큰을 정상적으로 검증할 수 있어요.
+:::
+
+---
+
+## 프록시 설정
+
+리버스 프록시(nginx, Caddy 등) 뒤에서 `tinyauth`를 운영하는 경우, 클라이언트의 실제 IP 주소와 프로토콜을 올바르게 식별하기 위해 `trust_proxy`를 설정해야 해요.
+
+```yaml
+# config.yaml
+app:
+  trust_proxy: true
+```
+
+- `trust_proxy`: 리버스 프록시 헤더를 신뢰할지 여부를 설정해요. 기본값은 `false`예요.
+  - `true`: 모든 프록시 헤더를 신뢰해요. 완전히 신뢰할 수 있는 네트워크에서만 사용하세요.
+  - `false`: 프록시 헤더를 신뢰하지 않아요.
+  - `'127.0.0.1'`: 지정된 IP 주소의 프록시만 신뢰해요.
+  - `1` 또는 `2`: 지정된 홉 수만큼의 프록시를 신뢰해요.
+
+:::caution
+`trust_proxy`를 올바르게 구성하지 않으면 IP 스푸핑 취약점이 발생할 수 있어요. 프로덕션 환경에서는 `true` 대신 구체적인 프록시 IP 주소나 홉 수를 지정하는 것을 권장해요.
+:::

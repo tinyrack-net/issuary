@@ -77,7 +77,8 @@ export default defineConfig({
               items: [
                 { slug: 'configuration/general/general' },
                 { slug: 'configuration/general/register' },
-                { slug: 'configuration/general/security' },
+                { slug: 'configuration/general/reverse-proxy' },
+                { slug: 'configuration/general/client-security' },
                 { slug: 'configuration/general/theme' },
                 { slug: 'configuration/general/language' },
                 { slug: 'configuration/general/branding' },
@@ -128,6 +129,7 @@ export default defineConfig({
                 ja: '利用規約',
               },
               items: [
+                { slug: 'configuration/terms/choose-flow' },
                 { slug: 'configuration/terms/implicit-flow' },
                 { slug: 'configuration/terms/explicit-flow' },
               ],
@@ -140,6 +142,8 @@ export default defineConfig({
               },
               items: [
                 { slug: 'configuration/client-integration/overview' },
+                { slug: 'configuration/client-integration/nextjs' },
+                { slug: 'configuration/client-integration/react-spa' },
               ],
             },
             {
@@ -162,30 +166,18 @@ export default defineConfig({
           ],
         },
         {
-          label: 'Integration',
-          translations: {
-            ko: '앱 연동',
-            ja: 'インテグレーション',
-          },
-          items: [
-            { slug: 'integration/nextjs' },
-            { slug: 'integration/react-spa' },
-          ],
-        },
-        {
           label: 'Reference',
           translations: {
             ko: '레퍼런스',
             ja: 'リファレンス',
           },
           items: [
-            { slug: 'reference/api' },
             { slug: 'reference/configuration-schema' },
             {
-              label: 'Interactive API Docs',
+              label: 'API Reference',
               translations: {
-                ko: '인터랙티브 API 문서',
-                ja: 'インタラクティブAPIドキュメント',
+                ko: 'API 문서',
+                ja: 'API リファレンス',
               },
               link: '/api-reference',
               attrs: { target: '_blank' },
