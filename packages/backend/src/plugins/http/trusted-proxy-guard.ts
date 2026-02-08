@@ -24,18 +24,21 @@ export default fastifyPlugin(
       typeof trustProxy === 'string' || Array.isArray(trustProxy);
 
     if (!requiresFiltering) {
-      fastify.log.info(
-        { trustProxy },
-        'Trusted proxy guard: IP filtering disabled (trust_proxy is not IP/CIDR based)',
-      );
+      if (!fastify.serverOptions.silent) {
+        console.info(
+          'Trusted proxy guard plugin registered (filtering: disabled)',
+        );
+      }
       done();
       return;
     }
 
-    fastify.log.info(
-      { trustProxy },
-      'Trusted proxy guard: IP filtering enabled',
-    );
+    if (!fastify.serverOptions.silent) {
+      console.info(
+        'Trusted proxy guard plugin registered (filtering: %s)',
+        JSON.stringify(trustProxy),
+      );
+    }
 
     fastify.addHook('onRequest', async (request, _reply) => {
       // Get the raw socket IP address (this is the actual connecting IP)

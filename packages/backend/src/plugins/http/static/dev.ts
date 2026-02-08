@@ -31,9 +31,12 @@ function parseUpstream(url: string): { hostname: string; port: number } {
  */
 export default fastifyPlugin(
   async (fastify) => {
-    fastify.log.info(
-      `Development mode: Proxying static files to Vite dev server at ${VITE_DEV_SERVER_URL}`,
-    );
+    if (!fastify.serverOptions.silent) {
+      console.info(
+        'Static plugin registered (development mode, proxy: %s)',
+        VITE_DEV_SERVER_URL,
+      );
+    }
 
     const upstream = parseUpstream(VITE_DEV_SERVER_URL);
     const variables = fastify.config.app.html_variables;
