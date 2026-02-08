@@ -94,8 +94,18 @@ export default fastifyPlugin(
     fastify.decorate('scheduler', scheduler);
 
     if (!enabled) {
-      fastify.log.info('In-process scheduler is disabled');
+      if (!fastify.serverOptions.silent) {
+        console.info('Scheduler plugin registered (disabled)');
+      }
       return;
+    }
+
+    if (!fastify.serverOptions.silent) {
+      console.info(
+        'Scheduler plugin registered (enabled: %s, cron: %s)',
+        enabled,
+        cron,
+      );
     }
 
     // Stop scheduler on server close

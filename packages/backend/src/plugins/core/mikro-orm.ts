@@ -61,7 +61,9 @@ declare module 'fastify' {
 
 export default fastifyPlugin(
   async (fastify) => {
-    console.info('Initializing MikroORM...');
+    if (!fastify.serverOptions.silent) {
+      console.info('Initializing MikroORM...');
+    }
 
     const configs = getDbConfigs(fastify.config);
     const ormOptions: Options = {
@@ -80,7 +82,12 @@ export default fastifyPlugin(
       await orm.migrator.up();
     }
 
-    console.info('MikroORM initialized successfully');
+    if (!fastify.serverOptions.silent) {
+      console.info(
+        'MikroORM plugin registered (database: %s)',
+        fastify.config.database.type,
+      );
+    }
 
     fastify.decorate('mikro', {
       orm,

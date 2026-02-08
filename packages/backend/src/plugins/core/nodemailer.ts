@@ -26,11 +26,22 @@ export default fastifyPlugin(
         },
       });
       fastify.decorate('mail', transport);
-      console.info('SMTP configured:', fastify.config.smtp.host);
+      if (!fastify.serverOptions.silent) {
+        console.info(
+          'Nodemailer plugin registered (host: %s, port: %d, secure: %s)',
+          fastify.config.smtp.host,
+          fastify.config.smtp.port,
+          fastify.config.smtp.secure,
+        );
+      }
     } else {
       // No email configuration - create a dummy transporter
       fastify.decorate('mail', null);
-      console.warn('No email configuration found, emails will not be sent');
+      if (!fastify.serverOptions.silent) {
+        console.warn(
+          'Nodemailer plugin registered (no SMTP config, emails disabled)',
+        );
+      }
       return;
     }
   },

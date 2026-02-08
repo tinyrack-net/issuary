@@ -8,6 +8,10 @@ export default fastifyPlugin(
   (fastify) => {
     fastify.setValidatorCompiler(validatorCompiler);
     fastify.setSerializerCompiler(serializerCompiler);
+
+    if (!fastify.serverOptions.silent) {
+      console.info('Zod plugin registered');
+    }
   },
   {
     name: 'zod-plugin',
