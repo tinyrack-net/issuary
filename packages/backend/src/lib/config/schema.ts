@@ -563,6 +563,15 @@ export const AppConfigApp = z.object({
   account_deletion: zz.COERCE_BOOLEAN.optional()
     .default(false)
     .describe('Whether users can delete their own accounts'),
+  html_variables: z
+    .record(z.string(), z.string())
+    .optional()
+    .default({})
+    .describe(
+      'Key-value pairs for HTML template variable interpolation. ' +
+        'Variables are replaced in served HTML files using {{KEY}} syntax. ' +
+        'Example: { "APP_TITLE": "My App" } replaces {{APP_TITLE}} in HTML.',
+    ),
 });
 
 export type AppConfigApp = z.infer<typeof AppConfigApp>;

@@ -103,6 +103,31 @@ app:
   account_deletion: ${ACCOUNT_DELETION:-false}
 
   # --------------------------------------------------------------------------
+  # HTML Template Variables
+  # --------------------------------------------------------------------------
+
+  # html_variables: Key-value pairs injected into served HTML files.
+  # Use {{KEY}} syntax in HTML files to reference these variables.
+  # Variables are replaced at runtime when the HTML file is first requested
+  # and cached for subsequent requests.
+  #
+  # Use cases:
+  #   - Inject analytics tracking IDs
+  #   - Set dynamic page titles or metadata
+  #   - Pass runtime configuration to the frontend
+  #
+  # Example HTML usage:
+  #   <title>{{APP_TITLE}}</title>
+  #   <script>
+  #     window.__CONFIG__ = { analyticsId: "{{ANALYTICS_ID}}" };
+  #   </script>
+  #
+  # html_variables:
+  #   APP_TITLE: My Auth Service
+  #   ANALYTICS_ID: ${ANALYTICS_ID:-}
+  #   CDN_URL: https://cdn.example.com
+
+  # --------------------------------------------------------------------------
   # Internationalization (i18n) Settings
   # --------------------------------------------------------------------------
 
