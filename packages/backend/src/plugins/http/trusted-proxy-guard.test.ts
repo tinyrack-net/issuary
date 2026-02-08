@@ -12,6 +12,11 @@ const mockConfigPlugin = (trustProxy: boolean | string | string[] | number) =>
           trust_proxy: trustProxy,
         },
       } as never);
+      fastify.decorate('serverOptions', {
+        skipListen: false,
+        cliMode: false,
+        silent: true,
+      });
       done();
     },
     { name: 'mock-config' },
