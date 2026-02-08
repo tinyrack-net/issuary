@@ -14,9 +14,16 @@ import 'reflect-metadata';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.resolve(path.dirname(__filename));
 
+export interface ServerOptions {
+  skipListen: boolean;
+  cliMode: boolean;
+  silent: boolean;
+}
+
 declare module 'fastify' {
   interface FastifyInstance {
     config: ResolvedAppConfig;
+    serverOptions: ServerOptions;
   }
 }
 
@@ -49,24 +56,32 @@ export interface CreateServerOptions {
   silent?: boolean;
 }
 
-export async function createServer(options: CreateServerOptions) {
-  const { config: externalConfig, skipListen, cliMode, silent } = options;
+export async function createServer(createOptions: CreateServerOptions) {
+  const { config: externalConfig } = createOptions;
 
   // Resolve external config to internal config with all defaults applied
   const config = await resolveConfig(externalConfig);
 
+  // Resolve server options with defaults
+  const serverOptions: ServerOptions = {
+    skipListen: createOptions.skipListen ?? false,
+    cliMode: createOptions.cliMode ?? false,
+    silent: createOptions.silent ?? false,
+  };
+
   // Create Fastify instance with config-based trustProxy
   const appInstance = Fastify({
     logger: {
-      enabled: !silent && env.APP_ENV !== 'production',
+      enabled: !serverOptions.silent && env.APP_ENV !== 'production',
     },
     trustProxy: config.app.trust_proxy,
   }).withTypeProvider<ZodTypeProvider>();
 
   appInstance.log.info('Server initialized with provided config');
 
-  // Register config as a decorator for DI
+  // Register config and server options as decorators for DI
   appInstance.decorate('config', config);
+  appInstance.decorate('serverOptions', serverOptions);
 
   // Core plugins (always loaded - database, config seeding, validation, email)
   await appInstance.register(fastifyAutoload, {
@@ -75,7 +90,7 @@ export async function createServer(options: CreateServerOptions) {
   });
 
   // HTTP plugins (skip in CLI mode - cors, session, static, swagger, etc.)
-  if (!cliMode) {
+  if (!serverOptions.cliMode) {
     await appInstance.register(fastifyAutoload, {
       dir: path.join(__dirname, 'plugins/http'),
       ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
@@ -92,7 +107,7 @@ export async function createServer(options: CreateServerOptions) {
   appInstance.scheduler.start();
 
   // Routes (skip in CLI mode)
-  if (!cliMode) {
+  if (!serverOptions.cliMode) {
     await appInstance.register(fastifyAutoload, {
       dir: path.join(__dirname, 'routes'),
       routeParams: true,
@@ -102,7 +117,7 @@ export async function createServer(options: CreateServerOptions) {
     });
   }
 
-  if (env.APP_ENV !== 'test' && !skipListen) {
+  if (env.APP_ENV !== 'test' && !serverOptions.skipListen) {
     await appInstance.listen({
       host: '0.0.0.0',
       port: config.app.port,
