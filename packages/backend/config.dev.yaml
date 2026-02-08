@@ -56,6 +56,13 @@ app:
   # Account deletion feature
   account_deletion: true
 
+  # HTML template variables (use {{KEY}} syntax in HTML files)
+  html_variables:
+    TITLE: tinyauth
+    APP_TITLE: tinyauth
+    ANALYTICS_ID: ${ANALYTICS_ID:-}
+    CDN_URL: https://cdn.example.com
+
 # Scheduler configuration
 # Controls the in-process scheduler for automated cleanup tasks.
 #

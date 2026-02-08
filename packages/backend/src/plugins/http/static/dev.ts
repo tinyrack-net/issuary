@@ -1,5 +1,6 @@
 import http from 'node:http';
 import fastifyPlugin from 'fastify-plugin';
+import { interpolateHtml } from '@/lib/interpolate-html.js';
 
 /**
  * Default Vite dev server URL.
@@ -25,6 +26,8 @@ function parseUpstream(url: string): { hostname: string; port: number } {
  * Development mode static file plugin.
  * Proxies all non-API requests to Vite dev server for HMR support,
  * including WebSocket connections.
+ * When html_variables is configured, HTML responses from Vite are
+ * intercepted and {{KEY}} placeholders are replaced before forwarding.
  */
 export default fastifyPlugin(
   async (fastify) => {
@@ -33,6 +36,8 @@ export default fastifyPlugin(
     );
 
     const upstream = parseUpstream(VITE_DEV_SERVER_URL);
+    const variables = fastify.config.app.html_variables;
+    const hasVariables = Object.keys(variables).length > 0;
 
     // Handle WebSocket upgrade requests
     fastify.server.on('upgrade', (req, socket, head) => {
@@ -118,6 +123,35 @@ export default fastifyPlugin(
           },
         },
         (proxyRes) => {
+          const contentType = proxyRes.headers['content-type'] ?? '';
+          const isHtml = contentType.includes('text/html');
+
+          // When html_variables is configured and response is HTML,
+          // buffer the response body to apply interpolation.
+          // No caching in dev mode — Vite HMR changes HTML frequently.
+          if (hasVariables && isHtml) {
+            const chunks: Buffer[] = [];
+            proxyRes.on('data', (chunk: Buffer) => {
+              chunks.push(chunk);
+            });
+            proxyRes.on('end', () => {
+              const raw = Buffer.concat(chunks).toString('utf-8');
+              const interpolated = interpolateHtml(raw, variables);
+              const buf = Buffer.from(interpolated, 'utf-8');
+              const headers = {
+                ...(proxyRes.headers as http.OutgoingHttpHeaders),
+                'content-length': buf.length,
+              };
+              reply.raw.writeHead(
+                proxyRes.statusCode || 200,
+                proxyRes.statusMessage,
+                headers,
+              );
+              reply.raw.end(buf);
+            });
+            return;
+          }
+
           reply.raw.writeHead(
             proxyRes.statusCode || 200,
             proxyRes.statusMessage,
