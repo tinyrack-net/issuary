@@ -5,11 +5,11 @@ description: Tinyauth가 무엇이며 인증 구현에 어떻게 도움이 되�
 
 ![An illustration of planets and stars featuring the word "astro"](../../../../assets/tinyauth-overview.png)
 
-`Tinyauth`는 **오픈소스 인증 공급자(OIDC Provider)** 소프트웨어에요. 사용자 경험을 중심으로 설계되어 빠르고 편리한 로그인 과정을 제공하는 것을 목표로 가지고 있어요.
+`Tinyauth`는 **오픈소스 인증 공급자(OIDC Provider)** 소프트웨어에요. 사용자 경험을 중심으로 설계되어 빠르고 편리한 로그인 여정을 제공하는 것을 목표로 두고 있어요.
 
 단일 YAML 파일로 선언적으로 관리하며, 단일 Docker 컨테이너로 배포할 수 있어요. 별도의 데이터베이스 서버나 런타임 의존성 없이, SQLite만으로도 바로 시작할 수 있어요.
 
-패스워드 인증은 물론, 패스키(WebAuthn), 소셜 로그인(GitHub·Google·Apple), TOTP 이중 인증, 이용약관 동의 관리, 34가지 테마, 다국어(한·영·일) 지원까지 — 작지만 완전한 인증 서버를 지향해요.
+패스워드 인증은 물론, 패스키(WebAuthn), 소셜 로그인(GitHub·Google·Apple), TOTP 이중 인증, 이용약관 동의 관리, 34가지 테마, 다국어(한·영·일) 지원까지 — 단순하지만 완전한 인증 서버를 지향해요.
 
 ---
 
@@ -27,20 +27,3 @@ description: Tinyauth가 무엇이며 인증 구현에 어떻게 도움이 되�
 - **자동 키 관리**: RS256 JWT 서명 키 자동 생성 및 순환
 - **오픈소스**: MIT 라이선스, 무료, 엔터프라이즈 제한 없음
 
----
-
-## 아키텍처 개요
-
-`tinyauth`는 프론트엔드와 백엔드가 하나의 서버로 통합된 구조예요.
-
-- **백엔드**: Fastify 기반 Node.js 서버로 OAuth2/OIDC 엔드포인트, 사용자 관리, 토큰 발급을 처리해요.
-- **프론트엔드**: React 기반 SPA로 로그인, 회원가입, 프로필, 동의 화면 등 사용자 인터페이스를 제공해요.
-- **데이터베이스**: MikroORM을 통해 SQLite 또는 PostgreSQL과 연동해요.
-
----
-
-## 다음 단계
-
-- [1분 시작](/ko/getting-started/one-minute-start) - Docker로 바로 실행해 보기
-- [다른 솔루션과의 비교](/ko/getting-started/comparison) - Tinyauth가 다른 인증 솔루션과 어떻게 다른지 확인
-- [설정 시작하기](/ko/configuration/overview) - 프로덕션 환경을 위한 설정 가이드
