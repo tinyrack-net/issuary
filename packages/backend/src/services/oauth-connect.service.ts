@@ -100,7 +100,7 @@ export class OAuthConnectService {
     private readonly userService: UserService,
     private readonly mikro: MikroService,
     private readonly termsService: TermsService,
-  ) {}
+  ) { }
 
   /**
    * Get all enabled OAuth providers
