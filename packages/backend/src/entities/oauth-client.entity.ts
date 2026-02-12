@@ -1,7 +1,9 @@
 import {
+  Collection,
   Entity,
   EntityRepositoryType,
   Index,
+  OneToMany,
   type Opt,
   PrimaryKey,
   Property,
@@ -9,6 +11,9 @@ import {
 } from '@mikro-orm/core';
 import { OAuthClientRepository } from '@/repositories/oauth-client.repository.js';
 import { BaseEntity } from './base.entity.js';
+import { OAuthCodeEntity } from './oauth-code.entity.js';
+import { RevokedTokenEntity } from './revoked-token.entity.js';
+import { UserConsentEntity } from './user-consent.entity.js';
 
 @Entity({
   tableName: 'oauth_client',
@@ -118,6 +123,24 @@ export class OAuthClientEntity extends BaseEntity {
     default: null,
   })
   public logoUri: string | null = null;
+
+  @OneToMany(
+    () => OAuthCodeEntity,
+    (code) => code.client,
+  )
+  public codes = new Collection<OAuthCodeEntity>(this);
+
+  @OneToMany(
+    () => UserConsentEntity,
+    (consent) => consent.client,
+  )
+  public consents = new Collection<UserConsentEntity>(this);
+
+  @OneToMany(
+    () => RevokedTokenEntity,
+    (token) => token.client,
+  )
+  public revokedTokens = new Collection<RevokedTokenEntity>(this);
 
   public constructor(params: {
     id?: string;
