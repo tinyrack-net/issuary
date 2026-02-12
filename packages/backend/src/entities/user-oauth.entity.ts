@@ -1,5 +1,7 @@
 import {
   Entity,
+  EntityRepositoryType,
+  Index,
   ManyToOne,
   PrimaryKey,
   Property,
@@ -7,6 +9,7 @@ import {
   type RequiredNullable,
   ref,
   t,
+  Unique,
 } from '@mikro-orm/core';
 import { UserOAuthRepository } from '@/repositories/user-oauth.repository.js';
 import { BaseEntity } from './base.entity.js';
@@ -17,7 +20,17 @@ import { UserEntity } from './user.entity.js';
   comment: 'OAuth accounts linked to users',
   repository: () => UserOAuthRepository,
 })
+@Unique({
+  properties: ['provider_name', 'provider_user_id'],
+  name: 'user_oauth_provider_unique',
+})
+@Index({
+  properties: ['user', 'provider_name'],
+  name: 'user_oauth_user_provider_idx',
+})
 export class UserOAuthEntity extends BaseEntity {
+  [EntityRepositoryType]?: UserOAuthRepository;
+
   @PrimaryKey({
     type: t.bigint,
     name: 'id',
@@ -33,6 +46,7 @@ export class UserOAuthEntity extends BaseEntity {
     name: 'user_id',
     comment: 'Reference to the user',
     ref: true,
+    index: 'user_oauth_user_id_idx',
   })
   public user: Ref<UserEntity>;
 
