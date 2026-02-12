@@ -41,12 +41,12 @@ const Loader = memo(() => {
 
   return (
     <RouterProvider
-      router={AppRouter}
       context={{
         queryClient: GlobalQueryClient,
         user: session.user ?? null,
         i18n: i18n,
       }}
+      router={AppRouter}
     />
   );
 });
