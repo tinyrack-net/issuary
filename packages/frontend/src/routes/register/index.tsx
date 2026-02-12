@@ -232,32 +232,32 @@ function Register() {
   };
 
   return (
-    <PageLayout maxWidth="100" cardPadding>
+    <PageLayout cardPadding maxWidth="100">
       <PageHeader
-        title={t('register.title')}
         subtitle={t('register.subtitle')}
+        title={t('register.title')}
       />
 
       {isPasswordAuthEnabled && (
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
           <IconInput
-            icon={EnvelopeSimpleIcon}
-            placeholder={t('register.email.placeholder')}
             autoComplete="email"
             error={errors.email}
+            icon={EnvelopeSimpleIcon}
+            placeholder={t('register.email.placeholder')}
             {...register('email')}
-            type="email"
             data-testid="register-email-input"
+            type="email"
           />
 
           <IconInput
-            icon={LockIcon}
-            placeholder={t('register.password.placeholder')}
             autoComplete="new-password"
             error={errors.password}
+            icon={LockIcon}
+            placeholder={t('register.password.placeholder')}
             {...register('password')}
-            type="password"
             data-testid="register-password-input"
+            type="password"
           />
 
           <div className="flex flex-col">
@@ -278,20 +278,20 @@ function Register() {
 
             {hasTerms && hasExplicitTerms && (
               <TermsCheckboxList
-                terms={explicitTerms}
                 control={control}
-                setValue={setValue}
-                errors={errors}
                 disabled={registerMutation.isPending}
+                errors={errors}
+                setValue={setValue}
+                terms={explicitTerms}
               />
             )}
           </div>
 
           <SubmitButton
-            isPending={registerMutation.isPending}
-            pendingText={t('register.submitting')}
             className="mt-6"
             data-testid="register-submit-btn"
+            isPending={registerMutation.isPending}
+            pendingText={t('register.submitting')}
           >
             {t('register.submit')}
           </SubmitButton>
@@ -299,11 +299,11 @@ function Register() {
       )}
 
       <FooterLink
-        text={t('register.footer.haveAccount')}
-        linkText={t('register.link.login')}
-        to="/login"
-        search={extractOAuthParams(search)}
         data-testid="register-login-link"
+        linkText={t('register.link.login')}
+        search={extractOAuthParams(search)}
+        text={t('register.footer.haveAccount')}
+        to="/login"
       />
     </PageLayout>
   );

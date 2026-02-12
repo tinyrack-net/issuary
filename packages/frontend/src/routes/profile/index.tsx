@@ -195,11 +195,11 @@ function Profile() {
             </div>
           </div>
           <button
-            type="button"
             className="btn btn-ghost btn-sm gap-2"
+            data-testid="profile-logout-btn"
             disabled={logoutMutation.isPending}
             onClick={() => logoutMutation.mutate()}
-            data-testid="profile-logout-btn"
+            type="button"
           >
             {logoutMutation.isPending ? (
               <span className="loading loading-spinner loading-sm" />
@@ -215,9 +215,9 @@ function Profile() {
       {oauthErrorMessage && (
         <div className="px-6 pt-4">
           <Alert
-            type="error"
-            icon={WarningCircleIcon}
             data-testid="profile-oauth-error-alert"
+            icon={WarningCircleIcon}
+            type="error"
           >
             {oauthErrorMessage}
           </Alert>
@@ -243,27 +243,27 @@ function Profile() {
             <div className="divide-y divide-base-200">
               {showPasswordSection && (
                 <PasswordSection
-                  hasPassword={user.has_password}
                   hasLinkedOAuth={hasLinkedOAuth}
-                  isConfigManaged={isConfigManaged}
+                  hasPassword={user.has_password}
                   hasSecondFactorOnly={
                     user.has_password &&
                     !hasLinkedOAuth &&
                     (user.totp_registered || user.passkey_count > 0)
                   }
+                  isConfigManaged={isConfigManaged}
                   onOpenModal={setPasswordModal}
                 />
               )}
               {showTotpSection && (
                 <TotpSection
-                  totpEnabled={user.totp_registered}
                   onOpenModal={setTotpModal}
+                  totpEnabled={user.totp_registered}
                 />
               )}
               {showPasskeySection && (
                 <PasskeySection
-                  passkeyCount={user.passkey_count}
                   onOpenModal={setPasskeyModal}
+                  passkeyCount={user.passkey_count}
                 />
               )}
             </div>
@@ -273,8 +273,6 @@ function Profile() {
         {/* Linked OAuth Accounts */}
         {showLinkedAccounts && (
           <LinkedAccountsSection
-            providers={availableProviders}
-            unlinkingProvider={unlinkingProvider}
             getAuthorizeUrl={getOAuthAuthorizeUrl}
             onUnlinkRequest={(provider) =>
               setUnlinkModal({
@@ -282,6 +280,8 @@ function Profile() {
                 name: provider.display_name,
               })
             }
+            providers={availableProviders}
+            unlinkingProvider={unlinkingProvider}
           />
         )}
 
@@ -324,17 +324,17 @@ function Profile() {
       />
       <ManagePasskeysModal
         isOpen={passkeyModal === 'manage'}
-        onClose={() => setPasskeyModal(null)}
         onAddNew={() => setPasskeyModal('setup')}
+        onClose={() => setPasskeyModal(null)}
       />
 
       {/* Unlink OAuth Modal */}
       <UnlinkOAuthModal
         isOpen={unlinkModal !== null}
-        onClose={() => setUnlinkModal(null)}
-        providerName={unlinkModal?.name ?? ''}
         isPending={unlinkMutation.isPending}
+        onClose={() => setUnlinkModal(null)}
         onConfirm={handleUnlinkConfirm}
+        providerName={unlinkModal?.name ?? ''}
       />
 
       {/* Delete Account Modal */}

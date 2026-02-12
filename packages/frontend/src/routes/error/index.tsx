@@ -24,12 +24,12 @@ function ErrorPage() {
   const errorMessage = search.message || t('error.defaultMessage');
 
   return (
-    <PageLayout maxWidth="100" cardPadding>
-      <Alert type="error" icon={WarningCircleIcon} className="mb-4">
+    <PageLayout cardPadding maxWidth="100">
+      <Alert className="mb-4" icon={WarningCircleIcon} type="error">
         {t('error.title')}
       </Alert>
 
-      <PageHeader title={t('error.subtitle')} subtitle={errorMessage} />
+      <PageHeader subtitle={errorMessage} title={t('error.subtitle')} />
 
       {/* Error Code */}
       <div className="mb-6 rounded-lg bg-base-200 p-4 text-center">
@@ -42,15 +42,15 @@ function ErrorPage() {
       {/* Actions */}
       <div className="flex flex-col gap-3">
         <Link
-          to="/login"
           className="btn btn-block h-10 font-semibold text-[14px]"
+          to="/login"
         >
           {t('error.goToLogin')}
         </Link>
         <button
-          type="button"
           className="btn btn-ghost btn-block h-10 font-semibold text-[14px]"
           onClick={() => window.history.back()}
+          type="button"
         >
           <HouseIcon className="size-4" weight="fill" />
           {t('error.goBack')}
@@ -61,8 +61,8 @@ function ErrorPage() {
       <div className="mt-6 text-center text-base-content/70 text-xs">
         {t('error.footer.needHelp')}{' '}
         <a
-          href="mailto:support@example.com"
           className="link link-info font-medium"
+          href="mailto:support@example.com"
         >
           {t('error.footer.contactSupport')}
         </a>

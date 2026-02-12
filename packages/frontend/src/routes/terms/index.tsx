@@ -156,17 +156,17 @@ function Terms() {
 
   if (termsQuery.isError) {
     return (
-      <PageLayout maxWidth="100" cardPadding>
-        <Alert type="error" icon={WarningIcon} className="mb-4">
+      <PageLayout cardPadding maxWidth="100">
+        <Alert className="mb-4" icon={WarningIcon} type="error">
           {t('terms.error.title')}
         </Alert>
         <p className="mb-6 text-center text-base-content/70 text-sm">
           {t('terms.error.message')}
         </p>
         <button
-          type="button"
           className="btn btn-block h-10 font-semibold text-[14px]"
           onClick={() => router.navigate({ to: '/' })}
+          type="button"
         >
           {t('terms.error.back')}
         </button>
@@ -175,7 +175,7 @@ function Terms() {
   }
 
   return (
-    <PageLayout maxWidth="100" cardPadding>
+    <PageLayout cardPadding maxWidth="100">
       <PageHeader title={t('terms.title')} />
 
       {implicitNotice && (
@@ -196,27 +196,27 @@ function Terms() {
         {hasExplicitTerms && (
           <div className="mb-6">
             <TermsCheckboxList
-              terms={explicitTerms}
               control={control}
-              setValue={setValue}
-              errors={errors}
               disabled={consentMutation.isPending}
+              errors={errors}
+              setValue={setValue}
+              terms={explicitTerms}
             />
           </div>
         )}
 
         {/* Error message */}
         {consentMutation.isError && (
-          <Alert type="error" icon={WarningIcon} className="mb-4">
+          <Alert className="mb-4" icon={WarningIcon} type="error">
             {t('terms.error.submitFailed')}
           </Alert>
         )}
 
         {/* Submit button */}
         <button
-          type="submit"
           className="btn btn-primary btn-block h-10 font-semibold text-[14px]"
           disabled={consentMutation.isPending}
+          type="submit"
         >
           {consentMutation.isPending ? (
             <span className="loading loading-spinner loading-sm" />

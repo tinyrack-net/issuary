@@ -119,19 +119,19 @@ function Login() {
   };
 
   return (
-    <PageLayout maxWidth="100" cardPadding>
+    <PageLayout cardPadding maxWidth="100">
       <PageHeader
         iconUrl={configData.app.icon_url}
-        title={customTitle ?? t('login.title')}
         subtitle={customSubtitle ?? t('login.selectMethod.subtitle')}
+        title={customTitle ?? t('login.title')}
       />
 
       {oauthErrorMessage && (
         <Alert
-          type="error"
-          icon={WarningCircleIcon}
           className="mb-4"
           data-testid="login-oauth-error-alert"
+          icon={WarningCircleIcon}
+          type="error"
         >
           {oauthErrorMessage}
         </Alert>
@@ -141,34 +141,34 @@ function Login() {
         {/* OAuth Providers */}
         {oauthProviders.map((provider) => (
           <LoginMethodButton
-            key={provider.id}
-            providerType={provider.type}
-            icon={provider.icon_url}
-            label={provider.display_name}
-            href={buildOAuthUrl(provider.id)}
             data-testid={`login-oauth-${provider.id}-btn`}
+            href={buildOAuthUrl(provider.id)}
+            icon={provider.icon_url}
+            key={provider.id}
+            label={provider.display_name}
+            providerType={provider.type}
           />
         ))}
 
         {/* Password Login */}
         {isPasswordAuthEnabled && (
           <LoginMethodButton
+            data-testid="login-password-method-btn"
             icon={<EnvelopeSimpleIcon className="size-6" weight="regular" />}
             label={t('login.method.password')}
-            to="/login/password"
             search={extractOAuthParams(search)}
-            data-testid="login-password-method-btn"
+            to="/login/password"
           />
         )}
 
         {/* Passkey Login */}
         {isPasskeyEnabled && (
           <LoginMethodButton
+            data-testid="login-passkey-method-btn"
             icon={<FingerprintIcon className="size-6" weight="regular" />}
+            isLoading={passkeyLoginMutation.isPending}
             label={t('login.method.passkey')}
             onClick={() => passkeyLoginMutation.mutate()}
-            isLoading={passkeyLoginMutation.isPending}
-            data-testid="login-passkey-method-btn"
           />
         )}
       </LoginMethodList>

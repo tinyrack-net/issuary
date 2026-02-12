@@ -182,10 +182,10 @@ function SetupTotp() {
   // Loading state
   if (step === 'loading') {
     return (
-      <PageLayout maxWidth="100" cardPadding>
+      <PageLayout cardPadding maxWidth="100">
         <PageHeader
-          title={t('setupTotp.title')}
           subtitle={t('setupTotp.subtitle')}
+          title={t('setupTotp.title')}
         />
         <div className="flex justify-center py-8">
           <span className="loading loading-spinner loading-lg" />
@@ -199,10 +199,10 @@ function SetupTotp() {
     // Session expired error - show countdown and redirect
     if (errorType === 'session_expired') {
       return (
-        <PageLayout maxWidth="100" cardPadding>
+        <PageLayout cardPadding maxWidth="100">
           <PageHeader
-            title={t('setupTotp.title')}
             subtitle={t('setupTotp.subtitle')}
+            title={t('setupTotp.title')}
           />
           <div className="alert alert-warning mb-4">
             <WarningCircleIcon className="size-5" weight="fill" />
@@ -214,19 +214,19 @@ function SetupTotp() {
                 })}
               </span>
               <button
-                type="button"
                 className="btn btn-sm btn-ghost mt-2 w-fit"
                 onClick={redirectToLogin}
+                type="button"
               >
                 {t('setupTotp.redirectNow')}
               </button>
             </div>
           </div>
           <FooterLink
-            text=""
             linkText={t('setupTotp.backToLogin')}
-            to="/login"
             search={extractOAuthParams(search)}
+            text=""
+            to="/login"
           />
         </PageLayout>
       );
@@ -235,26 +235,26 @@ function SetupTotp() {
     // TOTP already enabled error - redirect to profile
     if (errorType === 'already_enabled') {
       return (
-        <PageLayout maxWidth="100" cardPadding>
+        <PageLayout cardPadding maxWidth="100">
           <PageHeader
-            title={t('setupTotp.title')}
             subtitle={t('setupTotp.subtitle')}
+            title={t('setupTotp.title')}
           />
-          <Alert type="info" icon={InfoIcon} className="mb-4">
+          <Alert className="mb-4" icon={InfoIcon} type="info">
             {t('setupTotp.error.alreadyEnabled')}
           </Alert>
           <button
-            type="button"
             className="btn btn-primary btn-block"
             onClick={redirectToProfile}
+            type="button"
           >
             {t('setupTotp.goToProfile')}
           </button>
           <FooterLink
-            text=""
             linkText={t('setupTotp.backToLogin')}
-            to="/login"
             search={extractOAuthParams(search)}
+            text=""
+            to="/login"
           />
         </PageLayout>
       );
@@ -262,27 +262,27 @@ function SetupTotp() {
 
     // Generic error - show retry button
     return (
-      <PageLayout maxWidth="100" cardPadding>
+      <PageLayout cardPadding maxWidth="100">
         <PageHeader
-          title={t('setupTotp.title')}
           subtitle={t('setupTotp.subtitle')}
+          title={t('setupTotp.title')}
         />
-        <Alert type="error" icon={XCircleIcon} className="mb-4">
+        <Alert className="mb-4" icon={XCircleIcon} type="error">
           {t('setupTotp.error.setupFailed')}
         </Alert>
         <button
-          type="button"
           className="btn btn-primary btn-block"
-          onClick={startSetup}
           disabled={isSetupPending}
+          onClick={startSetup}
+          type="button"
         >
           {t('setupTotp.retry')}
         </button>
         <FooterLink
-          text=""
           linkText={t('setupTotp.backToLogin')}
-          to="/login"
           search={extractOAuthParams(search)}
+          text=""
+          to="/login"
         />
       </PageLayout>
     );
@@ -291,16 +291,16 @@ function SetupTotp() {
   // Recovery codes step
   if (step === 'recovery' && recoveryCodes.length > 0) {
     return (
-      <PageLayout maxWidth="100" cardPadding>
+      <PageLayout cardPadding maxWidth="100">
         <PageHeader
-          title={t('setupTotp.recoveryCodes.title')}
           subtitle={t('setupTotp.subtitle')}
+          title={t('setupTotp.recoveryCodes.title')}
         />
         <RecoveryCodesStep
-          recoveryCodes={recoveryCodes}
-          onConfirm={confirmRecoveryCodes}
-          isLoading={isConfirmPending}
           data-testid="setup-totp-recovery"
+          isLoading={isConfirmPending}
+          onConfirm={confirmRecoveryCodes}
+          recoveryCodes={recoveryCodes}
         />
       </PageLayout>
     );
@@ -309,10 +309,10 @@ function SetupTotp() {
   // QR code step
   if (step === 'qr' && setupData) {
     return (
-      <PageLayout maxWidth="100" cardPadding>
+      <PageLayout cardPadding maxWidth="100">
         <PageHeader
-          title={t('setupTotp.title')}
           subtitle={t('setupTotp.subtitle')}
+          title={t('setupTotp.title')}
         />
 
         <div className="alert alert-info mb-4">
@@ -321,17 +321,17 @@ function SetupTotp() {
         </div>
 
         <QrStep
-          setupData={setupData}
-          onNext={goToVerify}
           data-testid="setup-totp-qr"
+          onNext={goToVerify}
+          setupData={setupData}
         />
 
         <FooterLink
-          text=""
-          linkText={t('setupTotp.backToLogin')}
-          to="/login"
-          search={extractOAuthParams(search)}
           data-testid="setup-totp-login-link"
+          linkText={t('setupTotp.backToLogin')}
+          search={extractOAuthParams(search)}
+          text=""
+          to="/login"
         />
       </PageLayout>
     );
@@ -339,17 +339,17 @@ function SetupTotp() {
 
   // Verify step
   return (
-    <PageLayout maxWidth="100" cardPadding>
+    <PageLayout cardPadding maxWidth="100">
       <PageHeader
-        title={t('setupTotp.verifyTitle')}
         subtitle={t('setupTotp.verifySubtitle')}
+        title={t('setupTotp.verifyTitle')}
       />
 
       <VerifyStep
-        onSubmit={handleVerify}
-        onBack={goToQr}
-        isPending={isVerifyPending}
         data-testid="setup-totp-verify"
+        isPending={isVerifyPending}
+        onBack={goToQr}
+        onSubmit={handleVerify}
       />
     </PageLayout>
   );

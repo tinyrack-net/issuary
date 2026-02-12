@@ -175,10 +175,10 @@ function VerifyRecovery() {
   const { ref: formRef, ...registerRest } = register('code');
 
   return (
-    <PageLayout maxWidth="100" cardPadding>
+    <PageLayout cardPadding maxWidth="100">
       <PageHeader
-        title={t('verifyRecovery.title')}
         subtitle={t('verifyRecovery.subtitle')}
+        title={t('verifyRecovery.title')}
       />
 
       {sessionExpired && (
@@ -195,10 +195,10 @@ function VerifyRecovery() {
               })}
             </span>
             <button
-              type="button"
               className="btn btn-sm btn-ghost mt-2 w-fit"
-              onClick={redirectToLogin}
               data-testid="verify-totp-recovery-redirect-btn"
+              onClick={redirectToLogin}
+              type="button"
             >
               {t('verifyRecovery.redirectNow')}
             </button>
@@ -206,10 +206,17 @@ function VerifyRecovery() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
         <fieldset className="fieldset">
           <input
             {...registerRest}
+            autoComplete="off"
+            className={`input input-bordered w-full text-center font-mono ${
+              errors.code ? 'input-error' : ''
+            }`}
+            data-testid="verify-totp-recovery-code-input"
+            disabled={sessionExpired}
+            placeholder={t('verifyRecovery.placeholder')}
             ref={(el) => {
               formRef(el);
               (
@@ -217,13 +224,6 @@ function VerifyRecovery() {
               ).current = el;
             }}
             type="text"
-            placeholder={t('verifyRecovery.placeholder')}
-            className={`input input-bordered w-full text-center font-mono ${
-              errors.code ? 'input-error' : ''
-            }`}
-            disabled={sessionExpired}
-            autoComplete="off"
-            data-testid="verify-totp-recovery-code-input"
           />
           {errors.code && (
             <p
@@ -237,18 +237,18 @@ function VerifyRecovery() {
 
         {sessionExpired ? (
           <button
-            type="button"
             className="btn btn-block btn-disabled mt-2"
             disabled
+            type="button"
           >
             {t('verifyRecovery.submit')}
           </button>
         ) : (
           <SubmitButton
-            isPending={verifyMutation.isPending}
-            pendingText={t('verifyRecovery.submitting')}
             className="mt-2"
             data-testid="verify-totp-recovery-submit-btn"
+            isPending={verifyMutation.isPending}
+            pendingText={t('verifyRecovery.submitting')}
           >
             {t('verifyRecovery.submit')}
           </SubmitButton>
@@ -257,26 +257,26 @@ function VerifyRecovery() {
 
       <div className="mt-4 text-center">
         <button
-          type="button"
           className="link link-info font-medium text-xs"
+          data-testid="verify-totp-recovery-back-link"
           onClick={() =>
             router.navigate({
               to: '/verify/totp',
               search: extractOAuthParams(search),
             })
           }
-          data-testid="verify-totp-recovery-back-link"
+          type="button"
         >
           {t('verifyRecovery.backToTotp')}
         </button>
       </div>
 
       <FooterLink
-        text=""
-        linkText={t('verifyRecovery.backToLogin')}
-        to="/login"
-        search={extractOAuthParams(search)}
         data-testid="verify-totp-recovery-login-link"
+        linkText={t('verifyRecovery.backToLogin')}
+        search={extractOAuthParams(search)}
+        text=""
+        to="/login"
       />
     </PageLayout>
   );

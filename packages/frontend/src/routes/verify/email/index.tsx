@@ -176,26 +176,26 @@ function VerifyEmail() {
 
   if (verified) {
     return (
-      <PageLayout maxWidth="100" cardPadding>
+      <PageLayout cardPadding maxWidth="100">
         <Alert
-          type="success"
-          icon={CheckCircleIcon}
           className="mb-4"
           data-testid="verify-email-success-alert"
+          icon={CheckCircleIcon}
+          type="success"
         >
           {t('verifyEmail.success.title')}
         </Alert>
 
         <PageHeader
-          title={t('verifyEmail.success.subtitle')}
           subtitle={t('verifyEmail.success.description')}
+          title={t('verifyEmail.success.subtitle')}
         />
 
         <button
-          type="button"
-          onClick={() => navigate({ to: '/profile' })}
           className="btn btn-block h-10 font-semibold text-[14px]"
           data-testid="verify-email-profile-btn"
+          onClick={() => navigate({ to: '/profile' })}
+          type="button"
         >
           {t('verifyEmail.success.goToProfile')}
         </button>
@@ -204,18 +204,18 @@ function VerifyEmail() {
   }
 
   return (
-    <PageLayout maxWidth="100" cardPadding>
+    <PageLayout cardPadding maxWidth="100">
       <PageHeader
-        title={t('verifyEmail.title')}
         subtitle={t('verifyEmail.subtitle')}
+        title={t('verifyEmail.title')}
       />
 
       {email && (
         <Alert
-          type="info"
-          icon={EnvelopeSimpleIcon}
           className="mb-4"
           data-testid="verify-email-info-alert"
+          icon={EnvelopeSimpleIcon}
+          type="info"
         >
           <div className="text-left">
             <p className="font-semibold">{t('register.success.subtitle')}</p>
@@ -226,21 +226,21 @@ function VerifyEmail() {
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
         <IconInput
+          error={errors.token}
           icon={KeyIcon}
           placeholder={t('verifyEmail.token.placeholder')}
-          error={errors.token}
           {...register('token')}
-          type="text"
           data-testid="verify-email-token-input"
+          type="text"
         />
 
         <SubmitButton
-          isPending={verifyEmailMutation.isPending}
-          pendingText={t('verifyEmail.submitting')}
           className="mt-2"
           data-testid="verify-email-submit-btn"
+          isPending={verifyEmailMutation.isPending}
+          pendingText={t('verifyEmail.submitting')}
         >
           {t('verifyEmail.submit')}
         </SubmitButton>
@@ -252,21 +252,21 @@ function VerifyEmail() {
 
           {resendSuccess && (
             <Alert
-              type="success"
-              icon={CheckCircleIcon}
               className="mb-2"
               data-testid="verify-email-resend-success-alert"
+              icon={CheckCircleIcon}
+              type="success"
             >
               {t('verifyEmail.resendSuccess')}
             </Alert>
           )}
 
           <button
-            type="button"
-            onClick={handleResend}
-            disabled={resendVerificationMutation.isPending || resendSuccess}
             className="btn btn-ghost btn-sm w-full"
             data-testid="verify-email-resend-btn"
+            disabled={resendVerificationMutation.isPending || resendSuccess}
+            onClick={handleResend}
+            type="button"
           >
             {resendVerificationMutation.isPending ? (
               <>

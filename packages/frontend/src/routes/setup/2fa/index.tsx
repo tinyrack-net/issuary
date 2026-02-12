@@ -23,13 +23,13 @@ function Setup2FA() {
   const oauthParams = extractOAuthParams(search);
 
   return (
-    <PageLayout maxWidth="100" cardPadding>
+    <PageLayout cardPadding maxWidth="100">
       <PageHeader
-        title={t('setup2fa.title')}
         subtitle={t('setup2fa.subtitle')}
+        title={t('setup2fa.title')}
       />
 
-      <Alert type="info" icon={ShieldCheckIcon}>
+      <Alert icon={ShieldCheckIcon} type="info">
         {t('setup2fa.required')}
       </Alert>
 
@@ -37,9 +37,9 @@ function Setup2FA() {
         {appConfig.auth.password.enabled &&
           appConfig.auth.password.totp.enabled && (
             <Link
-              to="/setup/totp"
-              search={oauthParams}
               className="btn btn-outline btn-block justify-start gap-3"
+              search={oauthParams}
+              to="/setup/totp"
             >
               <ShieldCheckIcon className="size-5" weight="regular" />
               <div className="flex flex-col items-start">
@@ -53,12 +53,12 @@ function Setup2FA() {
 
         {appConfig.auth.passkey.enabled && (
           <Link
-            to="/setup/passkey"
+            className="btn btn-outline btn-block justify-start gap-3"
             search={{
               ...oauthParams,
               passkey_name: 'default',
             }}
-            className="btn btn-outline btn-block justify-start gap-3"
+            to="/setup/passkey"
           >
             <FingerprintIcon className="size-5" weight="regular" />
             <div className="flex flex-col items-start">
@@ -72,10 +72,10 @@ function Setup2FA() {
       </div>
 
       <FooterLink
-        text=""
         linkText={t('setup2fa.backToLogin')}
-        to="/login"
         search={oauthParams}
+        text=""
+        to="/login"
       />
     </PageLayout>
   );

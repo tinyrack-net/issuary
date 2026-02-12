@@ -112,7 +112,7 @@ function SetupPasskey() {
       autoRegisterCalledRef.current = true;
       registerMutation.mutate({ name: search.passkey_name });
     }
-  }, [registerMutation.mutate, search.passkey_name]);
+  }, [registerMutation, search.passkey_name]);
 
   const onSubmit = (values: FormValues) => {
     setStep('registering');
@@ -123,10 +123,10 @@ function SetupPasskey() {
   // Registering state - waiting for WebAuthn
   if (step === 'registering') {
     return (
-      <PageLayout maxWidth="100" cardPadding>
+      <PageLayout cardPadding maxWidth="100">
         <PageHeader
-          title={t('setupPasskey.title')}
           subtitle={t('setupPasskey.subtitle')}
+          title={t('setupPasskey.title')}
         />
         <div className="flex flex-col items-center gap-4 py-8">
           <FingerprintIcon className="size-16 animate-pulse text-primary" />
@@ -141,16 +141,15 @@ function SetupPasskey() {
   // Error state
   if (step === 'error') {
     return (
-      <PageLayout maxWidth="100" cardPadding>
+      <PageLayout cardPadding maxWidth="100">
         <PageHeader
-          title={t('setupPasskey.title')}
           subtitle={t('setupPasskey.subtitle')}
+          title={t('setupPasskey.title')}
         />
-        <Alert type="error" icon={WarningCircleIcon}>
+        <Alert icon={WarningCircleIcon} type="error">
           {errorMessage}
         </Alert>
         <button
-          type="button"
           className="btn btn-primary btn-block mt-4"
           onClick={() => {
             if (search.passkey_name) {
@@ -161,14 +160,15 @@ function SetupPasskey() {
               setStep('form');
             }
           }}
+          type="button"
         >
           {t('setupPasskey.retry')}
         </button>
         <FooterLink
-          text=""
           linkText={t('setupPasskey.backToLogin')}
-          to="/login"
           search={extractOAuthParams(search)}
+          text=""
+          to="/login"
         />
       </PageLayout>
     );
@@ -176,13 +176,13 @@ function SetupPasskey() {
 
   // Form state
   return (
-    <PageLayout maxWidth="100" cardPadding>
+    <PageLayout cardPadding maxWidth="100">
       <PageHeader
-        title={t('setupPasskey.title')}
         subtitle={t('setupPasskey.subtitle')}
+        title={t('setupPasskey.title')}
       />
 
-      <Alert type="info" icon={ShieldCheckIcon}>
+      <Alert icon={ShieldCheckIcon} type="info">
         {t('setupPasskey.required')}
       </Alert>
 
@@ -191,20 +191,20 @@ function SetupPasskey() {
       </p>
 
       <form
-        onSubmit={handleSubmit(onSubmit)}
         className="mt-4 flex flex-col gap-4"
+        onSubmit={handleSubmit(onSubmit)}
       >
         <div className="form-control">
           <label className="label" htmlFor="passkey-name">
             <span className="label-text">{t('setupPasskey.name.label')}</span>
           </label>
           <input
-            id="passkey-name"
-            type="text"
             className={`input input-bordered ${
               errors.name ? 'input-error' : ''
             }`}
+            id="passkey-name"
             placeholder={t('setupPasskey.name.placeholder')}
+            type="text"
             {...register('name')}
           />
           <span className="label-text-alt mt-1 text-base-content/50">
@@ -218,19 +218,19 @@ function SetupPasskey() {
         </div>
 
         <SubmitButton
+          className="mt-2"
           isPending={registerMutation.isPending}
           pendingText={t('setupPasskey.registering')}
-          className="mt-2"
         >
           {t('setupPasskey.continue')}
         </SubmitButton>
       </form>
 
       <FooterLink
-        text=""
         linkText={t('setupPasskey.backToLogin')}
-        to="/login"
         search={extractOAuthParams(search)}
+        text=""
+        to="/login"
       />
     </PageLayout>
   );

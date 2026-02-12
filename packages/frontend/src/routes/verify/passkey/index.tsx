@@ -75,14 +75,13 @@ function VerifyPasskey() {
     if (hasStarted.current) return;
     hasStarted.current = true;
     verifyMutation.mutate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [verifyMutation.mutate]);
+  }, [verifyMutation]);
 
   return (
-    <PageLayout maxWidth="100" cardPadding>
+    <PageLayout cardPadding maxWidth="100">
       <PageHeader
-        title={t('verifyPasskey.title')}
         subtitle={t('verifyPasskey.subtitle')}
+        title={t('verifyPasskey.title')}
       />
 
       <div className="flex flex-col items-center gap-6">
@@ -99,16 +98,16 @@ function VerifyPasskey() {
 
         {error && (
           <>
-            <Alert type="error" icon={WarningCircleIcon} className="w-full">
+            <Alert className="w-full" icon={WarningCircleIcon} type="error">
               {error}
             </Alert>
             <button
-              type="button"
               className="btn btn-primary btn-block"
               onClick={() => {
                 setError(null);
                 verifyMutation.mutate();
               }}
+              type="button"
             >
               <FingerprintIcon className="size-5" weight="regular" />
               {t('verifyPasskey.retry')}
@@ -118,10 +117,10 @@ function VerifyPasskey() {
       </div>
 
       <FooterLink
-        text=""
         linkText={t('verifyPasskey.backToLogin')}
-        to="/login"
         search={search}
+        text=""
+        to="/login"
       />
     </PageLayout>
   );

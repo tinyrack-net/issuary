@@ -217,50 +217,50 @@ function LoginPassword() {
   };
 
   return (
-    <PageLayout maxWidth="100" cardPadding>
+    <PageLayout cardPadding maxWidth="100">
       <PageHeader
         iconUrl={configData.app.icon_url}
-        title={customTitle ?? t('login.title')}
         subtitle={customSubtitle ?? t('login.selectMethod.subtitle')}
+        title={customTitle ?? t('login.title')}
       />
 
       {isPasswordAuthEnabled && (
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
           <IconInput
-            icon={EnvelopeSimpleIcon}
-            placeholder={t('login.email.placeholder')}
             autoComplete="username webauthn"
             error={errors.email}
+            icon={EnvelopeSimpleIcon}
+            placeholder={t('login.email.placeholder')}
             {...register('email')}
-            type="email"
             data-testid="login-password-email-input"
+            type="email"
           />
 
           <IconInput
-            icon={LockIcon}
-            placeholder={t('login.password.placeholder')}
             autoComplete="current-password"
             error={errors.password}
+            icon={LockIcon}
+            placeholder={t('login.password.placeholder')}
             {...register('password')}
-            type="password"
             data-testid="login-password-password-input"
+            type="password"
           />
 
           <div className="flex items-center justify-end">
             <Link
-              to="/password/forgot"
               className="link text-sm"
               data-testid="login-password-forgot-link"
+              to="/password/forgot"
             >
               {t('login.link.forgotPassword')}
             </Link>
           </div>
 
           <SubmitButton
-            isPending={loginMutation.isPending}
-            pendingText={t('login.submitting')}
             className="mt-2"
             data-testid="login-password-submit-btn"
+            isPending={loginMutation.isPending}
+            pendingText={t('login.submitting')}
           >
             {t('login.submit')}
           </SubmitButton>
@@ -269,11 +269,11 @@ function LoginPassword() {
 
       {configData.app.public_registration && (
         <FooterLink
-          text={t('login.footer.noAccount')}
-          linkText={t('login.link.register')}
-          to="/register"
-          search={extractOAuthParams(search)}
           data-testid="login-password-register-link"
+          linkText={t('login.link.register')}
+          search={extractOAuthParams(search)}
+          text={t('login.footer.noAccount')}
+          to="/register"
         />
       )}
 

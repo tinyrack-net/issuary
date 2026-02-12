@@ -90,36 +90,36 @@ function ForgotPassword() {
 
   if (emailSent) {
     return (
-      <PageLayout maxWidth="100" cardPadding>
+      <PageLayout cardPadding maxWidth="100">
         <Alert
-          type="success"
-          icon={CheckCircleIcon}
           className="mb-4"
           data-testid="password-forgot-success-alert"
+          icon={CheckCircleIcon}
+          type="success"
         >
           {t('forgotPassword.success.title')}
         </Alert>
 
         <PageHeader
-          title={t('forgotPassword.success.subtitle')}
           subtitle={t('forgotPassword.success.description', {
             email: submittedEmail,
           })}
+          title={t('forgotPassword.success.subtitle')}
         />
 
         <Alert
-          type="info"
-          icon={EnvelopeSimpleIcon}
           className="mb-4"
           data-testid="password-forgot-spam-alert"
+          icon={EnvelopeSimpleIcon}
+          type="info"
         >
           {t('forgotPassword.success.checkSpam')}
         </Alert>
 
         <Link
-          to="/login"
           className="btn btn-block h-10 font-semibold text-[14px]"
           data-testid="password-forgot-login-btn"
+          to="/login"
         >
           {t('forgotPassword.backToLogin')}
         </Link>
@@ -128,38 +128,38 @@ function ForgotPassword() {
   }
 
   return (
-    <PageLayout maxWidth="100" cardPadding>
+    <PageLayout cardPadding maxWidth="100">
       <PageHeader
-        title={t('forgotPassword.title')}
         subtitle={t('forgotPassword.subtitle')}
+        title={t('forgotPassword.title')}
       />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
         <IconInput
-          icon={EnvelopeSimpleIcon}
-          placeholder={t('forgotPassword.email.placeholder')}
           autoComplete="email"
           error={errors.email}
+          icon={EnvelopeSimpleIcon}
+          placeholder={t('forgotPassword.email.placeholder')}
           {...register('email')}
-          type="email"
           data-testid="password-forgot-email-input"
+          type="email"
         />
 
         <SubmitButton
-          isPending={forgotPasswordMutation.isPending}
-          pendingText={t('forgotPassword.submitting')}
           className="mt-2"
           data-testid="password-forgot-submit-btn"
+          isPending={forgotPasswordMutation.isPending}
+          pendingText={t('forgotPassword.submitting')}
         >
           {t('forgotPassword.submit')}
         </SubmitButton>
       </form>
 
       <FooterLink
-        text={t('forgotPassword.footer.rememberedPassword')}
-        linkText={t('register.link.login')}
-        to="/login"
         data-testid="password-forgot-login-link"
+        linkText={t('register.link.login')}
+        text={t('forgotPassword.footer.rememberedPassword')}
+        to="/login"
       />
     </PageLayout>
   );

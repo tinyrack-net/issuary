@@ -84,17 +84,17 @@ function Consent() {
 
   if (consentInfoQuery.isError) {
     return (
-      <PageLayout maxWidth="100" cardPadding>
-        <Alert type="error" icon={WarningIcon} className="mb-4">
+      <PageLayout cardPadding maxWidth="100">
+        <Alert className="mb-4" icon={WarningIcon} type="error">
           {t('consent.error.title')}
         </Alert>
         <p className="mb-6 text-center text-base-content/70 text-sm">
           {t('consent.error.message')}
         </p>
         <button
-          type="button"
           className="btn btn-block h-10 font-semibold text-[14px]"
           onClick={() => router.navigate({ to: '/' })}
+          type="button"
         >
           {t('consent.error.back')}
         </button>
@@ -105,10 +105,10 @@ function Consent() {
   const { client, scopes, user } = consentInfoQuery.data;
 
   return (
-    <PageLayout maxWidth="100" cardPadding>
+    <PageLayout cardPadding maxWidth="100">
       <PageHeader
-        title={t('consent.title')}
         subtitle={t('consent.subtitle', { app: client.name })}
+        title={t('consent.title')}
       />
 
       {/* User info */}
@@ -127,8 +127,8 @@ function Consent() {
         <ul className="flex flex-col gap-2">
           {scopes.map((scope: { name: string; description: string }) => (
             <li
-              key={scope.name}
               className="flex items-start gap-3 rounded-lg bg-base-200 p-3"
+              key={scope.name}
             >
               <div className="mt-0.5 rounded-full bg-primary/20 p-1">
                 <ShieldCheckIcon
@@ -149,11 +149,11 @@ function Consent() {
       {/* Action buttons */}
       <div className="flex gap-3">
         <button
-          type="button"
           className="btn btn-outline h-10 flex-1 font-semibold text-[14px]"
-          onClick={handleDeny}
-          disabled={consentMutation.isPending}
           data-testid="consent-deny-btn"
+          disabled={consentMutation.isPending}
+          onClick={handleDeny}
+          type="button"
         >
           {consentMutation.isPending ? (
             <span className="loading loading-spinner loading-sm" />
@@ -165,11 +165,11 @@ function Consent() {
           )}
         </button>
         <button
-          type="button"
           className="btn btn-primary h-10 flex-1 font-semibold text-[14px]"
-          onClick={handleAllow}
-          disabled={consentMutation.isPending}
           data-testid="consent-allow-btn"
+          disabled={consentMutation.isPending}
+          onClick={handleAllow}
+          type="button"
         >
           {consentMutation.isPending ? (
             <span className="loading loading-spinner loading-sm" />

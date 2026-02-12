@@ -22,19 +22,19 @@ function Verify2FA() {
   const { data: appConfig } = useSuspenseQuery(appConfigQueryOptions);
 
   return (
-    <PageLayout maxWidth="100" cardPadding>
+    <PageLayout cardPadding maxWidth="100">
       <PageHeader
-        title={t('verify2fa.title')}
         subtitle={t('verify2fa.subtitle')}
+        title={t('verify2fa.title')}
       />
 
       <div className="flex flex-col gap-4">
         {appConfig.auth.password.enabled &&
           appConfig.auth.password.totp.enabled && (
             <Link
-              to="/verify/totp"
-              search={oauthParams}
               className="btn btn-outline btn-block justify-start gap-3"
+              search={oauthParams}
+              to="/verify/totp"
             >
               <ShieldCheckIcon className="size-5" weight="regular" />
               <div className="flex flex-col items-start">
@@ -48,9 +48,9 @@ function Verify2FA() {
 
         {appConfig.auth.passkey.enabled && (
           <Link
-            to="/verify/passkey"
-            search={oauthParams}
             className="btn btn-outline btn-block justify-start gap-3"
+            search={oauthParams}
+            to="/verify/passkey"
           >
             <FingerprintIcon className="size-5" weight="regular" />
             <div className="flex flex-col items-start">
@@ -66,10 +66,10 @@ function Verify2FA() {
       </div>
 
       <FooterLink
-        text=""
         linkText={t('verify2fa.backToLogin')}
-        to="/login"
         search={oauthParams}
+        text=""
+        to="/login"
       />
     </PageLayout>
   );

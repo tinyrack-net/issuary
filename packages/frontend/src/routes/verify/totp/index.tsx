@@ -167,10 +167,10 @@ function VerifyTotp() {
   };
 
   return (
-    <PageLayout maxWidth="100" cardPadding>
+    <PageLayout cardPadding maxWidth="100">
       <PageHeader
-        title={t('verifyTotp.title')}
         subtitle={t('verifyTotp.subtitle')}
+        title={t('verifyTotp.title')}
       />
 
       {sessionExpired && (
@@ -185,10 +185,10 @@ function VerifyTotp() {
               {t('verifyTotp.redirecting', { seconds: redirectCountdown })}
             </span>
             <button
-              type="button"
               className="btn btn-sm btn-ghost mt-2 w-fit"
-              onClick={redirectToLogin}
               data-testid="verify-totp-redirect-btn"
+              onClick={redirectToLogin}
+              type="button"
             >
               {t('verifyTotp.redirectNow')}
             </button>
@@ -196,33 +196,33 @@ function VerifyTotp() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
         <PinInput
-          ref={pinInputRef}
-          length={6}
-          value={codeValue}
-          onChange={(value) => setValue('code', value)}
-          onComplete={() => handleSubmit(onSubmit)()}
-          error={errors.code}
-          disabled={sessionExpired}
           autoFocus
           data-testid="verify-totp-pin"
+          disabled={sessionExpired}
+          error={errors.code}
+          length={6}
+          onChange={(value) => setValue('code', value)}
+          onComplete={() => handleSubmit(onSubmit)()}
+          ref={pinInputRef}
+          value={codeValue}
         />
 
         {sessionExpired ? (
           <button
-            type="button"
             className="btn btn-block btn-disabled mt-2"
             disabled
+            type="button"
           >
             {t('verifyTotp.submit')}
           </button>
         ) : (
           <SubmitButton
-            isPending={verifyMutation.isPending}
-            pendingText={t('verifyTotp.submitting')}
             className="mt-2"
             data-testid="verify-totp-submit-btn"
+            isPending={verifyMutation.isPending}
+            pendingText={t('verifyTotp.submitting')}
           >
             {t('verifyTotp.submit')}
           </SubmitButton>
@@ -231,26 +231,26 @@ function VerifyTotp() {
 
       <div className="mt-4 text-center">
         <button
-          type="button"
           className="link link-info font-medium text-xs"
+          data-testid="verify-totp-recovery-link"
           onClick={() =>
             router.navigate({
               to: '/verify/totp/recovery',
               search: extractOAuthParams(search),
             })
           }
-          data-testid="verify-totp-recovery-link"
+          type="button"
         >
           {t('verifyTotp.useRecoveryCode')}
         </button>
       </div>
 
       <FooterLink
-        text=""
-        linkText={t('verifyTotp.backToLogin')}
-        to="/login"
-        search={extractOAuthParams(search)}
         data-testid="verify-totp-login-link"
+        linkText={t('verifyTotp.backToLogin')}
+        search={extractOAuthParams(search)}
+        text=""
+        to="/login"
       />
     </PageLayout>
   );
