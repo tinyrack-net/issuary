@@ -170,9 +170,8 @@ describe('POST /api/v1/auth/passkey/verify', () => {
     const credentialId = `test-credential-${crypto.randomUUID()}`;
 
     await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ id: userId });
       const passkey = app.mikro.userPasskey.create({
-        user,
+        user: userId,
         credential_id: credentialId,
         public_key: 'test-public-key-base64url',
         counter: 0,
@@ -348,7 +347,7 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
     const user = await withMikroContext(app, async () => {
       const userEntity = await app.mikro.user.findOneOrFail({ id: userId });
       const passkey = app.mikro.userPasskey.create({
-        user: userEntity,
+        user: userId,
         credential_id: credentialId,
         public_key: 'test-public-key-base64url',
         counter: 0,
@@ -459,7 +458,7 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
       await app2FA.mikro.em.persist(userEntity1).flush();
 
       const passkey1 = app2FA.mikro.userPasskey.create({
-        user: userEntity1,
+        user: userEntity1.id,
         credential_id: credentialId1,
         public_key: 'test-public-key-1',
         counter: 0,
@@ -480,7 +479,7 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
       await app2FA.mikro.em.persist(userEntity2).flush();
 
       const passkey2 = app2FA.mikro.userPasskey.create({
-        user: userEntity2,
+        user: userEntity2.id,
         credential_id: credentialId2,
         public_key: 'test-public-key-2',
         counter: 0,
@@ -554,7 +553,7 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
       await app2FA.mikro.em.persist(userEntity).flush();
 
       const passkey = app2FA.mikro.userPasskey.create({
-        user: userEntity,
+        user: userEntity.id,
         credential_id: credentialId,
         public_key: 'test-public-key-base64url',
         counter: 0,
