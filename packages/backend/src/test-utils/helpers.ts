@@ -268,9 +268,8 @@ export async function createPasskeyForUser(
   let passkeyId = '';
 
   await withMikroContext(app, async () => {
-    const user = await app.mikro.user.findOneOrFail({ id: userId });
     const passkey = app.mikro.userPasskey.create({
-      user,
+      user: userId,
       credential_id: `test-credential-${crypto.randomUUID()}`,
       public_key: 'test-public-key-base64url',
       counter: 0,
@@ -308,8 +307,6 @@ export async function enableTotpForUser(
   let secret = '';
 
   await withMikroContext(app, async () => {
-    const user = await app.mikro.user.findOneOrFail({ id: userId });
-
     // Check if TOTP already exists
     const existingTotp = await app.mikro.userTotp.findByUserId(userId);
     if (existingTotp) {
@@ -319,7 +316,7 @@ export async function enableTotpForUser(
     } else {
       secret = app.totpService.generateSecret();
       const totp = app.mikro.userTotp.create({
-        user,
+        user: userId,
         secret,
         verified: true,
         recovery_confirmed: true,
