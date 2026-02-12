@@ -5,7 +5,8 @@ import {
   type Opt,
   PrimaryKey,
   Property,
-  type Rel,
+  type Ref,
+  ref,
   t,
 } from '@mikro-orm/core';
 import { UserTotpRecoveryCodeRepository } from '@/repositories/user-totp-recovery-code.repository.js';
@@ -28,13 +29,16 @@ export class UserTotpRecoveryCodeEntity extends BaseEntity {
   })
   public id: string = crypto.randomUUID();
 
-  @ManyToOne(() => UserEntity, {
+  @ManyToOne({
+    entity: () => UserEntity,
     name: 'user_id',
     comment: 'Reference to the user',
     nullable: false,
     deleteRule: 'cascade',
+    ref: true,
+    index: 'user_totp_recovery_code_user_id_idx',
   })
-  public user: Rel<UserEntity>;
+  public user: Ref<UserEntity>;
 
   @Property({
     type: t.string,
@@ -62,9 +66,9 @@ export class UserTotpRecoveryCodeEntity extends BaseEntity {
   })
   public used_at: Date | null = null;
 
-  public constructor(params: { user: UserEntity; code_hash: string }) {
+  public constructor(params: { userId: string; code_hash: string }) {
     super();
-    this.user = params.user;
+    this.user = ref(UserEntity, params.userId);
     this.code_hash = params.code_hash;
   }
 }

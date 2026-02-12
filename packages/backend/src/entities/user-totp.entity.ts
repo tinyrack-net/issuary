@@ -5,7 +5,8 @@ import {
   type Opt,
   PrimaryKey,
   Property,
-  type Rel,
+  type Ref,
+  ref,
   t,
   Unique,
 } from '@mikro-orm/core';
@@ -18,7 +19,7 @@ import { UserEntity } from './user.entity.js';
   comment: 'User TOTP secrets for two-factor authentication',
   repository: () => UserTotpRepository,
 })
-@Unique({ properties: ['user'] })
+@Unique({ properties: ['user'], name: 'user_totp_user_unique' })
 export class UserTotpEntity extends BaseEntity {
   [EntityRepositoryType]?: UserTotpRepository;
 
@@ -30,13 +31,15 @@ export class UserTotpEntity extends BaseEntity {
   })
   public id: string = crypto.randomUUID();
 
-  @ManyToOne(() => UserEntity, {
+  @ManyToOne({
+    entity: () => UserEntity,
     name: 'user_id',
     comment: 'Reference to the user',
     nullable: false,
     deleteRule: 'cascade',
+    ref: true,
   })
-  public user: Rel<UserEntity>;
+  public user: Ref<UserEntity>;
 
   @Property({
     type: t.string,
@@ -65,9 +68,9 @@ export class UserTotpEntity extends BaseEntity {
   })
   public recovery_confirmed: Opt<boolean> = false;
 
-  public constructor(params: { user: UserEntity; secret: string }) {
+  public constructor(params: { userId: string; secret: string }) {
     super();
-    this.user = params.user;
+    this.user = ref(UserEntity, params.userId);
     this.secret = params.secret;
   }
 }

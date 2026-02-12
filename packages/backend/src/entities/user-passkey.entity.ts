@@ -6,7 +6,8 @@ import {
   type Opt,
   PrimaryKey,
   Property,
-  type Rel,
+  type Ref,
+  ref,
   t,
 } from '@mikro-orm/core';
 import type { AuthenticatorTransportFuture } from '@simplewebauthn/server';
@@ -30,13 +31,16 @@ export class UserPasskeyEntity extends BaseEntity {
   })
   public id: string = crypto.randomUUID();
 
-  @ManyToOne(() => UserEntity, {
+  @ManyToOne({
+    entity: () => UserEntity,
     name: 'user_id',
     comment: 'Reference to the user',
     nullable: false,
     deleteRule: 'cascade',
+    ref: true,
+    index: 'user_passkey_user_id_idx',
   })
-  public user: Rel<UserEntity>;
+  public user: Ref<UserEntity>;
 
   @Index({
     name: 'user_passkey_credential_id_unique',
@@ -116,7 +120,7 @@ export class UserPasskeyEntity extends BaseEntity {
   public aaguid: string | null = null;
 
   public constructor(params: {
-    user: UserEntity;
+    userId: string;
     credential_id: string;
     public_key: string;
     counter?: number;
@@ -127,7 +131,7 @@ export class UserPasskeyEntity extends BaseEntity {
     aaguid?: string | null;
   }) {
     super();
-    this.user = params.user;
+    this.user = ref(UserEntity, params.userId);
     this.credential_id = params.credential_id;
     this.public_key = params.public_key;
     if (params.counter !== undefined) {
