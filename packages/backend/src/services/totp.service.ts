@@ -108,7 +108,7 @@ export class TotpService {
 
     // Create new TOTP record
     const totp = await this.mikro.userTotp.create({
-      user: user,
+      user: user.id,
       secret: secret,
     });
     this.mikro.em.persist(totp);
@@ -252,7 +252,7 @@ export class TotpService {
 
       const codeHash = await hash(code);
       const entity = this.mikro.userTotpRecoveryCode.create({
-        user: freshUser,
+        user: freshUser.id,
         code_hash: codeHash,
       });
       this.mikro.em.persist(entity);

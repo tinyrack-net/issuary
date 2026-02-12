@@ -139,7 +139,7 @@ export class PasskeyService {
 
     // Create and save passkey
     const passkey = new UserPasskeyEntity({
-      user,
+      userId: user.id,
       credential_id: credential.id,
       public_key: isoBase64URL.fromBuffer(credential.publicKey),
       counter: Number(credential.counter),
@@ -231,7 +231,7 @@ export class PasskeyService {
     passkey.counter = verification.authenticationInfo.newCounter;
     await this.mikro.em.flush();
 
-    return passkey.user;
+    return passkey.user.getEntity();
   }
 
   /**
