@@ -327,7 +327,7 @@ describe('DELETE /api/v1/user/password', () => {
     await withMikroContext(app, async () => {
       const secret = app.totpService.generateSecret();
       const totp = app.mikro.userTotp.create({
-        user: app.mikro.user.getReference(userId),
+        user: userId,
         secret,
       });
       totp.verified = true;
@@ -365,7 +365,7 @@ describe('DELETE /api/v1/user/password', () => {
     // Register a passkey for the user
     await withMikroContext(app, async () => {
       const passkey = app.mikro.userPasskey.create({
-        user: app.mikro.user.getReference(userId),
+        user: userId,
         credential_id: btoa('test-credential-id'),
         public_key: 'mock-public-key',
         counter: 0,
@@ -407,7 +407,7 @@ describe('DELETE /api/v1/user/password', () => {
     await withMikroContext(app, async () => {
       const secret = app.totpService.generateSecret();
       const totp = app.mikro.userTotp.create({
-        user: app.mikro.user.getReference(userId),
+        user: userId,
         secret,
       });
       totp.verified = true;
