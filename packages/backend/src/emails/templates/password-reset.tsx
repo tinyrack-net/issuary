@@ -19,7 +19,7 @@ export const PasswordResetEmail = ({
   const t = getTranslations(locale).passwordReset;
 
   return (
-    <EmailLayout preview={t.title} appName={appName}>
+    <EmailLayout appName={appName} preview={t.title}>
       <Heading className="m-0 mb-4 font-bold text-2xl text-neutral-800">
         {t.title}
       </Heading>
@@ -30,8 +30,8 @@ export const PasswordResetEmail = ({
 
       <Section className="my-6 text-center">
         <Button
-          href={resetUrl}
           className="rounded-md bg-red-600 px-6 py-3 font-medium text-white"
+          href={resetUrl}
         >
           {t.buttonText}
         </Button>
@@ -39,8 +39,8 @@ export const PasswordResetEmail = ({
 
       <Text className="m-0 mb-2 text-neutral-500 text-sm">{t.linkAlt}</Text>
       <Link
-        href={resetUrl}
         className="mb-6 block break-all text-blue-600 text-sm"
+        href={resetUrl}
       >
         {resetUrl}
       </Link>
