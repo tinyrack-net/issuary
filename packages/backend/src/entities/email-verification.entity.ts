@@ -36,6 +36,7 @@ export class EmailVerificationEntity extends BaseEntity {
     comment: 'Reference to the user',
     nullable: false,
     ref: true,
+    index: 'email_verification_user_id_idx',
   })
   public user: Ref<UserEntity>;
 

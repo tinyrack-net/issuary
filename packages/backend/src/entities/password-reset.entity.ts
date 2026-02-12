@@ -36,6 +36,7 @@ export class PasswordResetEntity extends BaseEntity {
     comment: 'Reference to the user',
     nullable: false,
     ref: true,
+    index: 'password_reset_user_id_idx',
   })
   public user: Ref<UserEntity>;
 

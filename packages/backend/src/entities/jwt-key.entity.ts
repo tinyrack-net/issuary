@@ -2,6 +2,7 @@ import {
   Entity,
   EntityRepositoryType,
   Enum,
+  Index,
   type Opt,
   PrimaryKey,
   Property,
@@ -103,6 +104,10 @@ export class JwtKeyEntity extends BaseEntity<'kid'> {
   /**
    * Key status in rotation lifecycle
    */
+  @Index({
+    name: 'jwt_key_status_idx',
+    properties: ['status'],
+  })
   @Enum({
     items: () => JwtKeyStatus,
     name: 'status',

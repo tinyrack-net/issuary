@@ -28,6 +28,14 @@ export type OAuthCodeChallengeMethods =
   comment: 'Issued OAuth authorization codes',
   repository: () => OAuthCodeRepository,
 })
+@Index({
+  properties: ['client', 'consumedAt'],
+  name: 'oauth_code_client_consumed_idx',
+})
+@Index({
+  properties: ['expiredAt'],
+  name: 'oauth_code_expired_at_idx',
+})
 export class OAuthCodeEntity extends BaseEntity {
   [EntityRepositoryType]?: OAuthCodeRepository;
 
