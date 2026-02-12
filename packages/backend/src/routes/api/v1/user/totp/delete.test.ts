@@ -272,9 +272,8 @@ describe('DELETE /api/v1/user/totp', () => {
     // Create unverified TOTP record
     const secret = app.totpService.generateSecret();
     await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ id: userId });
       const totp = app.mikro.userTotp.create({
-        user,
+        user: userId,
         secret,
       });
       totp.verified = false;
@@ -312,9 +311,8 @@ describe('DELETE /api/v1/user/totp', () => {
     // Create verified but unconfirmed TOTP record
     const secret = app.totpService.generateSecret();
     await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ id: userId });
       const totp = app.mikro.userTotp.create({
-        user,
+        user: userId,
         secret,
       });
       totp.verified = true;
@@ -657,11 +655,8 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
     // Create TOTP directly in database for config user
     const secret = appWith2FARequired.totpService.generateSecret();
     await withMikroContext(appWith2FARequired, async () => {
-      const user = await appWith2FARequired.mikro.user.findOneOrFail({
-        id: userId,
-      });
       const totp = appWith2FARequired.mikro.userTotp.create({
-        user,
+        user: userId,
         secret,
         verified: true,
         recovery_confirmed: true,

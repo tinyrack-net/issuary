@@ -181,9 +181,8 @@ describe('POST /api/v1/user/totp/verify', () => {
     // Enable TOTP fully in database (verified=true AND recovery_confirmed=true)
     const secret = app.totpService.generateSecret();
     await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ id: userId });
       const totp = app.mikro.userTotp.create({
-        user,
+        user: userId,
         secret,
       });
       totp.verified = true;
@@ -221,9 +220,8 @@ describe('POST /api/v1/user/totp/verify', () => {
     // Create TOTP with verified=true but recovery_confirmed=false
     const secret = app.totpService.generateSecret();
     await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ id: userId });
       const totp = app.mikro.userTotp.create({
-        user,
+        user: userId,
         secret,
       });
       totp.verified = true;
