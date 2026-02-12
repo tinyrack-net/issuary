@@ -57,19 +57,19 @@ export function PasswordSection({
           {hasPassword ? (
             <>
               <button
-                type="button"
                 className="btn btn-ghost btn-xs text-primary"
-                onClick={() => onOpenModal('change')}
                 data-testid="profile-password-change-btn"
+                onClick={() => onOpenModal('change')}
+                type="button"
               >
                 {t('profile.password.change')}
               </button>
               {hasLinkedOAuth ? (
                 <button
-                  type="button"
                   className="btn btn-ghost btn-xs text-error"
-                  onClick={() => onOpenModal('remove')}
                   data-testid="profile-password-remove-btn"
+                  onClick={() => onOpenModal('remove')}
+                  type="button"
                 >
                   {t('profile.password.remove')}
                 </button>
@@ -77,8 +77,8 @@ export function PasswordSection({
               {!hasLinkedOAuth && hasSecondFactorOnly && (
                 <div className="dropdown dropdown-end">
                   <button
-                    type="button"
                     className="btn btn-disabled btn-ghost btn-xs cursor-not-allowed text-base-content/30"
+                    type="button"
                   >
                     {t('profile.password.remove')}
                   </button>
@@ -95,10 +95,10 @@ export function PasswordSection({
             </>
           ) : (
             <button
-              type="button"
               className="btn btn-ghost btn-xs text-primary"
-              onClick={() => onOpenModal('set')}
               data-testid="profile-password-set-btn"
+              onClick={() => onOpenModal('set')}
+              type="button"
             >
               {t('profile.password.set')}
             </button>

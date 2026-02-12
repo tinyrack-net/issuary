@@ -68,13 +68,13 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
 
   return (
     <Modal
+      description={t('profile.password.setModal.description')}
+      icon={KeyIcon}
       isOpen={isOpen}
       onClose={handleClose}
       title={t('profile.password.setModal.title')}
-      description={t('profile.password.setModal.description')}
-      icon={KeyIcon}
     >
-      <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+      <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
         <div className="form-control">
           <label className="label w-full" htmlFor="new-password">
             <span className="label-text text-xs">
@@ -82,13 +82,13 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
             </span>
           </label>
           <input
-            id="new-password"
-            type="password"
             className={`input input-bordered input-sm w-full ${
               form.formState.errors.password ? 'input-error' : ''
             }`}
-            placeholder={t('profile.password.setModal.newPasswordPlaceholder')}
             data-testid="modal-set-password-password-input"
+            id="new-password"
+            placeholder={t('profile.password.setModal.newPasswordPlaceholder')}
+            type="password"
             {...form.register('password')}
           />
           {form.formState.errors.password && (
@@ -104,15 +104,15 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
             </span>
           </label>
           <input
-            id="confirm-password"
-            type="password"
             className={`input input-bordered input-sm w-full ${
               form.formState.errors.confirmPassword ? 'input-error' : ''
             }`}
+            data-testid="modal-set-password-confirm-input"
+            id="confirm-password"
             placeholder={t(
               'profile.password.setModal.confirmPasswordPlaceholder',
             )}
-            data-testid="modal-set-password-confirm-input"
+            type="password"
             {...form.register('confirmPassword')}
           />
           {form.formState.errors.confirmPassword && (
@@ -128,19 +128,19 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
         )}
         <ModalActions>
           <button
-            type="button"
             className="btn btn-sm"
-            onClick={handleClose}
-            disabled={mutation.isPending}
             data-testid="modal-set-password-cancel-btn"
+            disabled={mutation.isPending}
+            onClick={handleClose}
+            type="button"
           >
             {t('profile.password.setModal.cancel')}
           </button>
           <button
-            type="submit"
             className="btn btn-sm btn-primary"
-            disabled={mutation.isPending}
             data-testid="modal-set-password-submit-btn"
+            disabled={mutation.isPending}
+            type="submit"
           >
             {mutation.isPending ? (
               <>

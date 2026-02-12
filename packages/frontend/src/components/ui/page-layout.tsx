@@ -57,12 +57,12 @@ export function PageLayout({
     >
       {canToggleTheme && (
         <ThemeToggle
-          themeMode={themeMode}
-          isAutoMode={isAutoMode}
-          detectedTheme={detectedTheme}
-          darkTheme={darkTheme}
-          onCycle={cycleThemeMode}
           className="fixed start-3 top-3 z-50 sm:absolute sm:start-4 sm:top-4"
+          darkTheme={darkTheme}
+          detectedTheme={detectedTheme}
+          isAutoMode={isAutoMode}
+          onCycle={cycleThemeMode}
+          themeMode={themeMode}
         />
       )}
       <div className="flex flex-1 items-center justify-center">

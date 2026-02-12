@@ -15,7 +15,7 @@ export function PageHeader({
     <div className={className}>
       {iconUrl && (
         <div className="mb-4 flex justify-center">
-          <img src={iconUrl} alt="" className="h-12 w-12 object-contain" />
+          <img alt="" className="h-12 w-12 object-contain" src={iconUrl} />
         </div>
       )}
       <h1

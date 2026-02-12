@@ -17,10 +17,10 @@ export function SubmitButton({
 }: SubmitButtonProps) {
   return (
     <button
-      type="submit"
       className={`btn btn-block h-10 font-semibold text-[14px] ${className}`}
-      disabled={isPending || disabled}
       data-testid={testId}
+      disabled={isPending || disabled}
+      type="submit"
     >
       {isPending ? (
         <>

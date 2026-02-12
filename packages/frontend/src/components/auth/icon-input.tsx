@@ -38,12 +38,12 @@ export const IconInput = forwardRef<HTMLInputElement, IconInputProps>(
         >
           <IconComponent className="size-5 opacity-70" />
           <input
+            autoComplete={autoComplete}
+            className="grow"
+            data-testid={testId}
+            placeholder={placeholder}
             ref={ref}
             type={type}
-            className="grow"
-            placeholder={placeholder}
-            autoComplete={autoComplete}
-            data-testid={testId}
             {...props}
           />
         </label>

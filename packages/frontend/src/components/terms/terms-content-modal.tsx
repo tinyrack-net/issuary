@@ -14,7 +14,7 @@ export function TermsContentModal({
   content,
 }: TermsContentModalProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" title={title}>
       <div
         className="prose prose-sm mt-3 max-h-[55vh] max-w-none overflow-y-auto"
         dangerouslySetInnerHTML={{ __html: content }}

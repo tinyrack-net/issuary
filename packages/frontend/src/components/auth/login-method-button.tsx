@@ -51,7 +51,7 @@ export function LoginMethodButton({
   if (providerType && providerType !== 'generic_oauth') {
     iconElement = PROVIDER_ICONS[providerType];
   } else if (typeof icon === 'string') {
-    iconElement = <img src={icon} alt="" className="size-6" />;
+    iconElement = <img alt="" className="size-6" src={icon} />;
   } else if (icon) {
     iconElement = icon;
   } else {
@@ -73,7 +73,7 @@ export function LoginMethodButton({
   // External link
   if (href) {
     return (
-      <a href={href} className={className} data-testid={testId}>
+      <a className={className} data-testid={testId} href={href}>
         {content}
       </a>
     );
@@ -82,7 +82,7 @@ export function LoginMethodButton({
   // Internal route
   if (to) {
     return (
-      <Link to={to} search={search} className={className} data-testid={testId}>
+      <Link className={className} data-testid={testId} search={search} to={to}>
         {content}
       </Link>
     );
@@ -91,11 +91,11 @@ export function LoginMethodButton({
   // Button
   return (
     <button
-      type="button"
       className={className}
-      onClick={onClick}
-      disabled={disabled || isLoading}
       data-testid={testId}
+      disabled={disabled || isLoading}
+      onClick={onClick}
+      type="button"
     >
       {content}
     </button>

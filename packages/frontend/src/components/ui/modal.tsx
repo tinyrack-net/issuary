@@ -82,9 +82,9 @@ export function Modal({
           </div>
           {!preventClose && (
             <button
-              type="button"
               className="btn btn-circle btn-ghost btn-xs shrink-0"
               onClick={onClose}
+              type="button"
             >
               <XIcon className="size-3.5" />
             </button>
@@ -92,8 +92,8 @@ export function Modal({
         </div>
         {children}
       </div>
-      <form method="dialog" className="modal-backdrop">
-        <button type="button" onClick={handleBackdropClick}>
+      <form className="modal-backdrop" method="dialog">
+        <button onClick={handleBackdropClick} type="button">
           close
         </button>
       </form>

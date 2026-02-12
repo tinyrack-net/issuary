@@ -111,11 +111,11 @@ export function ManagePasskeysModal({
 
   return (
     <Modal
+      icon={FingerprintIcon}
       isOpen={isOpen}
       onClose={handleClose}
-      title={t('profile.passkey.manageModal.title')}
-      icon={FingerprintIcon}
       size="lg"
+      title={t('profile.passkey.manageModal.title')}
     >
       <div className="mt-4 space-y-2">
         {deleteError && (
@@ -138,17 +138,17 @@ export function ManagePasskeysModal({
           <div className="flex flex-col gap-2">
             {passkeys.map((passkey) => (
               <PasskeyItem
-                key={passkey.id}
-                passkey={passkey}
+                formatDate={formatDate}
+                isConfirmingDelete={confirmingDeleteId === passkey.id}
                 isDeleting={deletingId === passkey.id}
                 isEditing={editingPasskey?.id === passkey.id}
-                isConfirmingDelete={confirmingDeleteId === passkey.id}
-                onEdit={() => setEditingPasskey(passkey)}
-                onCancelEdit={() => setEditingPasskey(null)}
-                onRequestDelete={() => handleRequestDelete(passkey)}
-                onConfirmDelete={() => handleConfirmDelete(passkey)}
+                key={passkey.id}
                 onCancelDelete={handleCancelDelete}
-                formatDate={formatDate}
+                onCancelEdit={() => setEditingPasskey(null)}
+                onConfirmDelete={() => handleConfirmDelete(passkey)}
+                onEdit={() => setEditingPasskey(passkey)}
+                onRequestDelete={() => handleRequestDelete(passkey)}
+                passkey={passkey}
               />
             ))}
           </div>
@@ -156,16 +156,16 @@ export function ManagePasskeysModal({
       </div>
 
       <ModalActions>
-        <button type="button" className="btn btn-sm" onClick={handleClose}>
+        <button className="btn btn-sm" onClick={handleClose} type="button">
           {t('profile.passkey.manageModal.close')}
         </button>
         <button
-          type="button"
           className="btn btn-sm btn-primary"
           onClick={() => {
             handleClose();
             onAddNew();
           }}
+          type="button"
         >
           {t('profile.passkey.manageModal.addNew')}
         </button>
@@ -239,15 +239,15 @@ function PasskeyItem({
   if (isEditing) {
     return (
       <form
-        onSubmit={handleRename}
         className="flex flex-col gap-1.5 rounded-lg bg-base-200 p-2"
+        onSubmit={handleRename}
       >
         <input
-          type="text"
           className={`input input-bordered input-sm w-full ${
             form.formState.errors.name ? 'input-error' : ''
           }`}
           placeholder={t('profile.passkey.manageModal.namePlaceholder')}
+          type="text"
           {...form.register('name')}
         />
         {form.formState.errors.name && (
@@ -257,20 +257,20 @@ function PasskeyItem({
         )}
         <div className="flex justify-end gap-1">
           <button
-            type="button"
             className="btn btn-ghost btn-xs"
+            disabled={renameMutation.isPending}
             onClick={() => {
               form.reset();
               onCancelEdit();
             }}
-            disabled={renameMutation.isPending}
+            type="button"
           >
             {t('profile.passkey.manageModal.cancelEdit')}
           </button>
           <button
-            type="submit"
             className="btn btn-primary btn-xs"
             disabled={renameMutation.isPending}
+            type="submit"
           >
             {renameMutation.isPending
               ? t('profile.passkey.manageModal.saving')
@@ -292,16 +292,16 @@ function PasskeyItem({
         </div>
         <div className="flex gap-1">
           <button
-            type="button"
             className="btn btn-ghost btn-xs"
             onClick={onCancelDelete}
+            type="button"
           >
             {t('profile.passkey.manageModal.cancelEdit')}
           </button>
           <button
-            type="button"
             className="btn btn-error btn-xs"
             onClick={onConfirmDelete}
+            type="button"
           >
             {t('profile.passkey.manageModal.delete')}
           </button>
@@ -338,19 +338,19 @@ function PasskeyItem({
       </div>
       <div className="flex gap-1">
         <button
-          type="button"
+          aria-label={t('profile.passkey.manageModal.rename')}
           className="btn btn-ghost btn-xs"
           onClick={onEdit}
-          aria-label={t('profile.passkey.manageModal.rename')}
+          type="button"
         >
           <PencilSimpleIcon className="size-3.5" weight="regular" />
         </button>
         <button
-          type="button"
-          className="btn btn-ghost btn-xs text-error"
-          onClick={onRequestDelete}
-          disabled={isDeleting}
           aria-label={t('profile.passkey.manageModal.delete')}
+          className="btn btn-ghost btn-xs text-error"
+          disabled={isDeleting}
+          onClick={onRequestDelete}
+          type="button"
         >
           {isDeleting ? (
             <span className="loading loading-spinner loading-xs" />

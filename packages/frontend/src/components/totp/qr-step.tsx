@@ -27,10 +27,10 @@ export function QrStep({
 
       <div className="flex justify-center">
         <img
-          src={setupData.qr_code}
           alt="TOTP QR Code"
           className="h-40 w-40 rounded-lg border"
           data-testid={testId ? `${testId}-qr-code` : undefined}
+          src={setupData.qr_code}
         />
       </div>
 
@@ -50,10 +50,10 @@ export function QrStep({
       </div>
 
       <button
-        type="button"
         className="btn btn-sm btn-primary btn-block"
-        onClick={onNext}
         data-testid={testId ? `${testId}-next-btn` : undefined}
+        onClick={onNext}
+        type="button"
       >
         {t('setupTotp.next')}
       </button>

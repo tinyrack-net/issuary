@@ -199,26 +199,26 @@ export const PinInput = forwardRef<PinInputRef, PinInputProps>(
         <div className="flex justify-center gap-1.5 sm:gap-2">
           {digits.map((digit, index) => (
             <input
-              key={index}
-              ref={(el) => {
-                inputRefs.current[index] = el;
-              }}
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={1}
-              value={digit}
-              onChange={(e) => handleChange(index, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(index, e)}
-              onPaste={handlePaste}
-              onFocus={handleFocus}
-              disabled={disabled}
+              aria-label={`Digit ${index + 1} of ${length}`}
               autoComplete={index === 0 ? 'one-time-code' : 'off'}
               className={`input input-bordered h-12 w-10 text-center font-mono text-xl sm:h-14 sm:w-12 sm:text-2xl ${
                 error ? 'input-error' : ''
               } ${disabled ? 'input-disabled' : ''}`}
-              aria-label={`Digit ${index + 1} of ${length}`}
               data-testid={testId ? `${testId}-${index}` : undefined}
+              disabled={disabled}
+              inputMode="numeric"
+              key={index}
+              maxLength={1}
+              onChange={(e) => handleChange(index, e.target.value)}
+              onFocus={handleFocus}
+              onKeyDown={(e) => handleKeyDown(index, e)}
+              onPaste={handlePaste}
+              pattern="[0-9]*"
+              ref={(el) => {
+                inputRefs.current[index] = el;
+              }}
+              type="text"
+              value={digit}
             />
           ))}
         </div>

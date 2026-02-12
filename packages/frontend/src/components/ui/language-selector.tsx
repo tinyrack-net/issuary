@@ -41,10 +41,10 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
   return (
     <div className={className}>
       <select
-        className="select select-ghost select-sm text-base-content/60"
-        value={currentValue}
-        onChange={handleChange}
         aria-label={t('common.language.select')}
+        className="select select-ghost select-sm text-base-content/60"
+        onChange={handleChange}
+        value={currentValue}
       >
         <option value="auto">{autoLabel}</option>
         {languages.map((lang) => (

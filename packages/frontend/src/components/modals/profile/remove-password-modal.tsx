@@ -85,14 +85,14 @@ export function RemovePasswordModal({
 
   return (
     <Modal
+      description={t('profile.password.removeModal.description')}
+      icon={KeyIcon}
       isOpen={isOpen}
       onClose={handleClose}
       title={t('profile.password.removeModal.title')}
-      description={t('profile.password.removeModal.description')}
-      icon={KeyIcon}
       variant="destructive"
     >
-      <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+      <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
         <div className="form-control">
           <label className="label w-full" htmlFor="current-password-remove">
             <span className="label-text text-xs">
@@ -100,14 +100,14 @@ export function RemovePasswordModal({
             </span>
           </label>
           <input
-            id="current-password-remove"
-            type="password"
             className={`input input-bordered input-sm w-full ${
               form.formState.errors.currentPassword ? 'input-error' : ''
             }`}
+            id="current-password-remove"
             placeholder={t(
               'profile.password.removeModal.currentPasswordPlaceholder',
             )}
+            type="password"
             {...form.register('currentPassword')}
           />
           {form.formState.errors.currentPassword && (
@@ -123,17 +123,17 @@ export function RemovePasswordModal({
         )}
         <ModalActions>
           <button
-            type="button"
             className="btn btn-sm"
-            onClick={handleClose}
             disabled={mutation.isPending}
+            onClick={handleClose}
+            type="button"
           >
             {t('profile.password.removeModal.cancel')}
           </button>
           <button
-            type="submit"
             className="btn btn-sm btn-error"
             disabled={mutation.isPending}
+            type="submit"
           >
             {mutation.isPending ? (
               <>

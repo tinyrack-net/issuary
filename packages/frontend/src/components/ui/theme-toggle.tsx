@@ -53,10 +53,10 @@ export function ThemeToggle({
       data-tip={getTooltipLabel()}
     >
       <button
-        type="button"
+        aria-label={t('common.theme.select')}
         className="btn btn-circle btn-sm"
         onClick={onCycle}
-        aria-label={t('common.theme.select')}
+        type="button"
       >
         {renderIcon()}
       </button>

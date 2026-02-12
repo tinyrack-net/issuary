@@ -65,11 +65,11 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
         {terms.length > 1 && (
           <label className="flex cursor-pointer items-center gap-1.5 py-0.5">
             <input
-              type="checkbox"
-              className="checkbox checkbox-primary checkbox-xs"
               checked={allChecked}
-              onChange={(e) => handleAllChange(e.target.checked)}
+              className="checkbox checkbox-primary checkbox-xs"
               disabled={disabled}
+              onChange={(e) => handleAllChange(e.target.checked)}
+              type="checkbox"
             />
             <span className="font-medium text-xs">{t('terms.agreeAll')}</span>
             {hasOptionalTerms && (
@@ -83,18 +83,18 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
         {/* Individual terms */}
         {terms.map((term) => (
           <Controller
+            control={control}
             key={term.id}
             name={`termsConsents.${term.id}` as Path<T>}
-            control={control}
             render={({ field }) => (
               <div>
                 <label className="flex cursor-pointer items-center gap-1.5 py-0.5">
                   <input
-                    type="checkbox"
-                    className="checkbox checkbox-primary checkbox-xs"
                     checked={(field.value as boolean) ?? false}
-                    onChange={(e) => field.onChange(e.target.checked)}
+                    className="checkbox checkbox-primary checkbox-xs"
                     disabled={disabled}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                    type="checkbox"
                   />
                   <span className="text-xs">{term.title}</span>
                   <span
@@ -106,7 +106,7 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                   </span>
                   {term.type === 'link' && (
                     <button
-                      type="button"
+                      className="link link-primary ml-auto text-xs"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -116,20 +116,20 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                           'noopener,noreferrer',
                         );
                       }}
-                      className="link link-primary ml-auto text-xs"
+                      type="button"
                     >
                       {t('terms.view')}
                     </button>
                   )}
                   {term.type === 'text' && (
                     <button
-                      type="button"
                       className="link link-primary ml-auto text-xs"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         setModalTerm(term);
                       }}
+                      type="button"
                     >
                       {t('terms.view')}
                     </button>
@@ -153,10 +153,10 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
 
       {/* Modal for text type terms */}
       <TermsContentModal
+        content={modalTerm?.content ?? ''}
         isOpen={modalTerm !== null}
         onClose={() => setModalTerm(null)}
         title={modalTerm?.title ?? ''}
-        content={modalTerm?.content ?? ''}
       />
     </>
   );

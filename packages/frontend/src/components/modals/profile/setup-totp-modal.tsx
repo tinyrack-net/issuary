@@ -77,17 +77,17 @@ export function SetupTotpModal({
 
   return (
     <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title={modalTitle}
       description={
         isRequired
           ? t('profile.totp.setupModal.requiredDescription')
           : undefined
       }
       icon={ShieldCheckIcon}
-      size="sm"
+      isOpen={isOpen}
+      onClose={handleClose}
       preventClose={isRequired || step === 'recovery'}
+      size="sm"
+      title={modalTitle}
     >
       {isSetupPending && (
         <div className="flex justify-center py-6">
@@ -101,13 +101,13 @@ export function SetupTotpModal({
             {t('profile.totp.setupModal.setupError')}
           </AlertBanner>
           <ModalActions>
-            <button type="button" className="btn btn-sm" onClick={handleClose}>
+            <button className="btn btn-sm" onClick={handleClose} type="button">
               {t('profile.totp.setupModal.cancel')}
             </button>
             <button
-              type="button"
               className="btn btn-sm btn-primary"
               onClick={startSetup}
+              type="button"
             >
               {t('profile.totp.setupModal.retry')}
             </button>
@@ -118,15 +118,13 @@ export function SetupTotpModal({
       {setupData && step === 'qr' && (
         <div className="mt-4">
           <QrStep
-            setupData={setupData}
-            onNext={goToVerify}
             additionalActions={
               <>
                 <ModalActions>
                   <button
-                    type="button"
                     className="btn btn-sm"
                     onClick={handleClose}
+                    type="button"
                   >
                     {t('profile.totp.setupModal.cancel')}
                   </button>
@@ -134,9 +132,9 @@ export function SetupTotpModal({
                 {canSwitchToPasskey && onSwitchToPasskey && (
                   <p className="mt-2 text-center text-xs">
                     <button
-                      type="button"
                       className="link link-primary"
                       onClick={onSwitchToPasskey}
+                      type="button"
                     >
                       {t('profile.totp.setupModal.switchToPasskey')}
                     </button>
@@ -144,6 +142,8 @@ export function SetupTotpModal({
                 )}
               </>
             }
+            onNext={goToVerify}
+            setupData={setupData}
           />
         </div>
       )}
@@ -151,9 +151,9 @@ export function SetupTotpModal({
       {setupData && step === 'verify' && (
         <div className="mt-4">
           <VerifyStep
-            onSubmit={handleVerify}
-            onBack={goToQr}
             isPending={isVerifyPending}
+            onBack={goToQr}
+            onSubmit={handleVerify}
           />
         </div>
       )}
@@ -161,9 +161,9 @@ export function SetupTotpModal({
       {step === 'recovery' && recoveryCodes.length > 0 && (
         <div className="mt-4">
           <RecoveryCodesStep
-            recoveryCodes={recoveryCodes}
-            onConfirm={confirmRecoveryCodes}
             isLoading={isConfirmPending}
+            onConfirm={confirmRecoveryCodes}
+            recoveryCodes={recoveryCodes}
           />
         </div>
       )}

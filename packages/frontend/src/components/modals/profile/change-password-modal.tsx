@@ -86,13 +86,13 @@ export function ChangePasswordModal({
 
   return (
     <Modal
+      description={t('profile.password.changeModal.description')}
+      icon={KeyIcon}
       isOpen={isOpen}
       onClose={handleClose}
       title={t('profile.password.changeModal.title')}
-      description={t('profile.password.changeModal.description')}
-      icon={KeyIcon}
     >
-      <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+      <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
         <div className="form-control">
           <label className="label w-full" htmlFor="current-password">
             <span className="label-text text-xs">
@@ -100,15 +100,15 @@ export function ChangePasswordModal({
             </span>
           </label>
           <input
-            id="current-password"
-            type="password"
             className={`input input-bordered input-sm w-full ${
               form.formState.errors.currentPassword ? 'input-error' : ''
             }`}
+            data-testid="modal-change-password-current-input"
+            id="current-password"
             placeholder={t(
               'profile.password.changeModal.currentPasswordPlaceholder',
             )}
-            data-testid="modal-change-password-current-input"
+            type="password"
             {...form.register('currentPassword')}
           />
           {form.formState.errors.currentPassword && (
@@ -124,15 +124,15 @@ export function ChangePasswordModal({
             </span>
           </label>
           <input
-            id="new-password-change"
-            type="password"
             className={`input input-bordered input-sm w-full ${
               form.formState.errors.newPassword ? 'input-error' : ''
             }`}
+            data-testid="modal-change-password-new-input"
+            id="new-password-change"
             placeholder={t(
               'profile.password.changeModal.newPasswordPlaceholder',
             )}
-            data-testid="modal-change-password-new-input"
+            type="password"
             {...form.register('newPassword')}
           />
           {form.formState.errors.newPassword && (
@@ -148,15 +148,15 @@ export function ChangePasswordModal({
             </span>
           </label>
           <input
-            id="confirm-password-change"
-            type="password"
             className={`input input-bordered input-sm w-full ${
               form.formState.errors.confirmPassword ? 'input-error' : ''
             }`}
+            data-testid="modal-change-password-confirm-input"
+            id="confirm-password-change"
             placeholder={t(
               'profile.password.changeModal.confirmPasswordPlaceholder',
             )}
-            data-testid="modal-change-password-confirm-input"
+            type="password"
             {...form.register('confirmPassword')}
           />
           {form.formState.errors.confirmPassword && (
@@ -172,19 +172,19 @@ export function ChangePasswordModal({
         )}
         <ModalActions>
           <button
-            type="button"
             className="btn btn-sm"
-            onClick={handleClose}
-            disabled={mutation.isPending}
             data-testid="modal-change-password-cancel-btn"
+            disabled={mutation.isPending}
+            onClick={handleClose}
+            type="button"
           >
             {t('profile.password.changeModal.cancel')}
           </button>
           <button
-            type="submit"
             className="btn btn-sm btn-primary"
-            disabled={mutation.isPending}
             data-testid="modal-change-password-submit-btn"
+            disabled={mutation.isPending}
+            type="submit"
           >
             {mutation.isPending ? (
               <>

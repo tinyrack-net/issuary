@@ -90,20 +90,20 @@ export function SetupPasskeyModal({
 
   return (
     <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title={t('profile.passkey.setupModal.title')}
       description={
         isRequired
           ? t('profile.passkey.setupModal.requiredDescription')
           : undefined
       }
       icon={FingerprintIcon}
-      size="sm"
+      isOpen={isOpen}
+      onClose={handleClose}
       preventClose={isRequired}
+      size="sm"
+      title={t('profile.passkey.setupModal.title')}
     >
       {step === 'name' && (
-        <form onSubmit={handleRegister} className="mt-4 space-y-3">
+        <form className="mt-4 space-y-3" onSubmit={handleRegister}>
           <p className="text-base-content/60 text-xs">
             {t('profile.passkey.setupModal.description')}
           </p>
@@ -119,12 +119,12 @@ export function SetupPasskeyModal({
               </span>
             </label>
             <input
-              id="passkey-name"
-              type="text"
               className={`input input-bordered input-sm w-full ${
                 form.formState.errors.name ? 'input-error' : ''
               }`}
+              id="passkey-name"
               placeholder={t('profile.passkey.setupModal.namePlaceholder')}
+              type="text"
               {...form.register('name')}
             />
             {form.formState.errors.name && (
@@ -138,19 +138,19 @@ export function SetupPasskeyModal({
           </div>
 
           <ModalActions>
-            <button type="button" className="btn btn-sm" onClick={handleClose}>
+            <button className="btn btn-sm" onClick={handleClose} type="button">
               {t('profile.passkey.setupModal.cancel')}
             </button>
-            <button type="submit" className="btn btn-sm btn-primary">
+            <button className="btn btn-sm btn-primary" type="submit">
               {t('profile.passkey.setupModal.continue')}
             </button>
           </ModalActions>
           {canSwitchToTotp && onSwitchToTotp && (
             <p className="mt-2 text-center text-xs">
               <button
-                type="button"
                 className="link link-primary"
                 onClick={onSwitchToTotp}
+                type="button"
               >
                 {t('profile.passkey.setupModal.switchToTotp')}
               </button>
@@ -170,10 +170,10 @@ export function SetupPasskeyModal({
 
           <ModalActions>
             <button
-              type="button"
               className="btn btn-sm"
-              onClick={handleClose}
               disabled={isPending}
+              onClick={handleClose}
+              type="button"
             >
               {t('profile.passkey.setupModal.cancel')}
             </button>

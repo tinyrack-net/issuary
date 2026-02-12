@@ -43,19 +43,19 @@ export function PasskeySection({
       <div className="flex gap-1">
         {passkeyCount > 0 ? (
           <button
-            type="button"
             className="btn btn-ghost btn-xs text-primary"
-            onClick={() => onOpenModal('manage')}
             data-testid="profile-passkey-manage-btn"
+            onClick={() => onOpenModal('manage')}
+            type="button"
           >
             {t('profile.passkey.manage')}
           </button>
         ) : (
           <button
-            type="button"
             className="btn btn-ghost btn-xs text-primary"
-            onClick={() => onOpenModal('setup')}
             data-testid="profile-passkey-add-btn"
+            onClick={() => onOpenModal('setup')}
+            type="button"
           >
             {t('profile.passkey.add')}
           </button>

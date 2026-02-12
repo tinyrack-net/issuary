@@ -40,9 +40,9 @@ export function RecoveryCodesStep({
       >
         {recoveryCodes.map((code, index) => (
           <code
-            key={code}
             className="rounded bg-base-300 px-2 py-1 text-center font-mono text-sm"
             data-testid={testId ? `${testId}-code-${index}` : undefined}
+            key={code}
           >
             {code}
           </code>
@@ -55,10 +55,10 @@ export function RecoveryCodesStep({
       </div>
 
       <button
-        type="button"
         className="btn btn-sm btn-outline btn-block gap-2"
-        onClick={handleCopy}
         data-testid={testId ? `${testId}-copy-btn` : undefined}
+        onClick={handleCopy}
+        type="button"
       >
         {copied ? (
           <>
@@ -75,12 +75,12 @@ export function RecoveryCodesStep({
 
       <label className="flex cursor-pointer items-center gap-2">
         <input
-          type="checkbox"
-          className="checkbox checkbox-sm"
           checked={confirmed}
-          onChange={(event) => setConfirmed(event.target.checked)}
-          disabled={isLoading}
+          className="checkbox checkbox-sm"
           data-testid={testId ? `${testId}-confirm-checkbox` : undefined}
+          disabled={isLoading}
+          onChange={(event) => setConfirmed(event.target.checked)}
+          type="checkbox"
         />
         <span className="text-sm">
           {t('setupTotp.recoveryCodes.confirmCheckbox')}
@@ -88,11 +88,11 @@ export function RecoveryCodesStep({
       </label>
 
       <button
-        type="button"
         className="btn btn-sm btn-primary btn-block"
-        onClick={onConfirm}
-        disabled={!confirmed || isLoading}
         data-testid={testId ? `${testId}-confirm-btn` : undefined}
+        disabled={!confirmed || isLoading}
+        onClick={onConfirm}
+        type="button"
       >
         {isLoading ? (
           <span className="loading loading-spinner loading-sm" />

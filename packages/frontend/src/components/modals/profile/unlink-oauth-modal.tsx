@@ -40,15 +40,15 @@ export function UnlinkOAuthModal({
 
   return (
     <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title={t('profile.linkedAccounts.unlinkModal.title')}
       description={t('profile.linkedAccounts.unlinkModal.description', {
         provider: providerName,
       })}
       icon={LinkBreakIcon}
-      variant="destructive"
+      isOpen={isOpen}
+      onClose={handleClose}
       preventClose={isPending}
+      title={t('profile.linkedAccounts.unlinkModal.title')}
+      variant="destructive"
     >
       <div className="mt-4 space-y-3">
         <AlertBanner variant="warning">
@@ -61,18 +61,18 @@ export function UnlinkOAuthModal({
 
         <ModalActions>
           <button
-            type="button"
             className="btn btn-sm"
-            onClick={handleClose}
             disabled={isPending}
+            onClick={handleClose}
+            type="button"
           >
             {t('profile.linkedAccounts.unlinkModal.cancel')}
           </button>
           <button
-            type="button"
             className="btn btn-sm btn-error"
-            onClick={handleConfirm}
             disabled={isPending}
+            onClick={handleConfirm}
+            type="button"
           >
             {isPending ? (
               <>

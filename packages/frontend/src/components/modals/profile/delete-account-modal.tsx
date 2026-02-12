@@ -76,14 +76,14 @@ export function DeleteAccountModal({
 
   return (
     <Modal
+      icon={TrashIcon}
       isOpen={isOpen}
       onClose={handleClose}
-      title={t('profile.deleteAccount.modal.title')}
-      icon={TrashIcon}
-      variant="destructive"
       preventClose={mutation.isPending}
+      title={t('profile.deleteAccount.modal.title')}
+      variant="destructive"
     >
-      <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+      <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
         <AlertBanner variant="error">
           <p>
             {t('profile.deleteAccount.modal.description', {
@@ -102,12 +102,12 @@ export function DeleteAccountModal({
             </span>
           </label>
           <input
-            id="delete-confirmation"
-            type="text"
             className={`input input-bordered input-sm w-full ${
               form.formState.errors.confirmation ? 'input-error' : ''
             }`}
+            id="delete-confirmation"
             placeholder={t('profile.deleteAccount.modal.confirmPlaceholder')}
+            type="text"
             {...form.register('confirmation')}
             autoComplete="off"
           />
@@ -126,17 +126,17 @@ export function DeleteAccountModal({
 
         <ModalActions>
           <button
-            type="button"
             className="btn btn-sm"
-            onClick={handleClose}
             disabled={mutation.isPending}
+            onClick={handleClose}
+            type="button"
           >
             {t('profile.deleteAccount.modal.cancel')}
           </button>
           <button
-            type="submit"
             className="btn btn-sm btn-error"
             disabled={mutation.isPending}
+            type="submit"
           >
             {mutation.isPending ? (
               <>

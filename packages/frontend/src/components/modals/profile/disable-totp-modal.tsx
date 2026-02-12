@@ -73,14 +73,14 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
 
   return (
     <Modal
+      description={t('profile.totp.disableModal.description')}
+      icon={ShieldCheckIcon}
       isOpen={isOpen}
       onClose={handleClose}
       title={t('profile.totp.disableModal.title')}
-      description={t('profile.totp.disableModal.description')}
-      icon={ShieldCheckIcon}
       variant="destructive"
     >
-      <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+      <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
         <AlertBanner variant="warning">
           {t('profile.totp.disableModal.warning')}
         </AlertBanner>
@@ -92,16 +92,16 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
             </span>
           </label>
           <input
-            id="disable-totp-code"
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={6}
+            autoComplete="one-time-code"
             className={`input input-bordered input-sm w-full text-center text-xl tracking-widest ${
               form.formState.errors.code ? 'input-error' : ''
             }`}
+            id="disable-totp-code"
+            inputMode="numeric"
+            maxLength={6}
+            pattern="[0-9]*"
             placeholder="000000"
-            autoComplete="one-time-code"
+            type="text"
             {...form.register('code')}
           />
           {form.formState.errors.code && (
@@ -113,17 +113,17 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
 
         <ModalActions>
           <button
-            type="button"
             className="btn btn-sm"
-            onClick={handleClose}
             disabled={mutation.isPending}
+            onClick={handleClose}
+            type="button"
           >
             {t('profile.totp.disableModal.cancel')}
           </button>
           <button
-            type="submit"
             className="btn btn-sm btn-error"
             disabled={mutation.isPending}
+            type="submit"
           >
             {mutation.isPending ? (
               <>

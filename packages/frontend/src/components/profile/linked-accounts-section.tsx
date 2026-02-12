@@ -43,8 +43,8 @@ export function LinkedAccountsSection({
       <div className="divide-y divide-base-200">
         {providers.map((provider) => (
           <div
-            key={provider.id}
             className="flex items-center justify-between p-4"
+            key={provider.id}
           >
             <div className="flex items-center gap-3">
               <div
@@ -72,10 +72,10 @@ export function LinkedAccountsSection({
             </div>
             {provider.linked ? (
               <button
-                type="button"
                 className="btn btn-ghost btn-xs text-error"
                 disabled={unlinkingProvider === provider.id}
                 onClick={() => onUnlinkRequest(provider)}
+                type="button"
               >
                 {unlinkingProvider === provider.id ? (
                   <>
@@ -88,8 +88,8 @@ export function LinkedAccountsSection({
               </button>
             ) : (
               <a
-                href={getAuthorizeUrl(provider.id, 'link', '/profile')}
                 className="btn btn-ghost btn-xs text-primary"
+                href={getAuthorizeUrl(provider.id, 'link', '/profile')}
               >
                 {t('profile.linkedAccounts.link')}
               </a>

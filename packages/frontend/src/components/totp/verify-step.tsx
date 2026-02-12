@@ -71,25 +71,25 @@ export function VerifyStep({
   return (
     <div className={className}>
       <form
-        onSubmit={handleSubmit(handleFormSubmit)}
         className="flex flex-col gap-3"
+        onSubmit={handleSubmit(handleFormSubmit)}
       >
         <PinInput
-          ref={pinInputRef}
-          length={6}
-          value={codeValue}
-          onChange={(value) => setValue('code', value)}
-          onComplete={() => handleSubmit(handleFormSubmit)()}
-          error={errors.code}
           autoFocus
           data-testid={testId ? `${testId}-pin` : undefined}
+          error={errors.code}
+          length={6}
+          onChange={(value) => setValue('code', value)}
+          onComplete={() => handleSubmit(handleFormSubmit)()}
+          ref={pinInputRef}
+          value={codeValue}
         />
 
         <SubmitButton
-          isPending={isPending}
-          pendingText={t('setupTotp.verifying')}
           className="btn-sm mt-1"
           data-testid={testId ? `${testId}-submit-btn` : undefined}
+          isPending={isPending}
+          pendingText={t('setupTotp.verifying')}
         >
           {t('setupTotp.verify')}
         </SubmitButton>
@@ -97,11 +97,11 @@ export function VerifyStep({
 
       <div className="mt-3 text-center">
         <button
-          type="button"
           className="btn btn-ghost btn-xs"
-          onClick={onBack}
-          disabled={isPending}
           data-testid={testId ? `${testId}-back-btn` : undefined}
+          disabled={isPending}
+          onClick={onBack}
+          type="button"
         >
           {t('setupTotp.back')}
         </button>

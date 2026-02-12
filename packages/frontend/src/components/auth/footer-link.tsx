@@ -23,10 +23,10 @@ export function FooterLink({
     >
       {text}{' '}
       <Link
-        to={to}
-        search={search}
         className="link link-info font-medium"
         data-testid={testId}
+        search={search}
+        to={to}
       >
         {linkText}
       </Link>

@@ -38,19 +38,19 @@ export function TotpSection({ totpEnabled, onOpenModal }: TotpSectionProps) {
       <div className="flex gap-1">
         {totpEnabled ? (
           <button
-            type="button"
             className="btn btn-ghost btn-xs text-error"
-            onClick={() => onOpenModal('disable')}
             data-testid="profile-totp-disable-btn"
+            onClick={() => onOpenModal('disable')}
+            type="button"
           >
             {t('profile.totp.disable')}
           </button>
         ) : (
           <button
-            type="button"
             className="btn btn-ghost btn-xs text-primary"
-            onClick={() => onOpenModal('setup')}
             data-testid="profile-totp-enable-btn"
+            onClick={() => onOpenModal('setup')}
+            type="button"
           >
             {t('profile.totp.enable')}
           </button>
