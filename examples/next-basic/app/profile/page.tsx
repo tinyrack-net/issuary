@@ -141,20 +141,20 @@ export default async function ProfilePage() {
 
         <div className="flex flex-wrap gap-4">
           <Link
-            href="/api/auth/logout"
             className="flex h-12 items-center justify-center rounded-lg bg-red-600 px-6 font-medium text-base text-white transition-colors hover:bg-red-700"
+            href="/api/auth/logout"
           >
             Logout
           </Link>
           <Link
-            href="/discovery"
             className="flex h-12 items-center justify-center rounded-lg border border-zinc-300 px-6 font-medium text-base text-zinc-900 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-900"
+            href="/discovery"
           >
             Discovery Endpoints
           </Link>
           <Link
-            href="/"
             className="flex h-12 items-center justify-center rounded-lg border border-zinc-300 px-6 font-medium text-base text-zinc-900 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-900"
+            href="/"
           >
             Home
           </Link>

@@ -23,15 +23,15 @@ export default async function Home() {
 
         <div className="flex w-full flex-col gap-4">
           <Link
-            href="/api/auth/login"
             className="flex h-12 items-center justify-center rounded-lg bg-blue-600 px-6 font-medium text-base text-white transition-colors hover:bg-blue-700"
+            href="/api/auth/login"
           >
             Sign In with OIDC
           </Link>
 
           <Link
-            href="/discovery"
             className="flex h-12 items-center justify-center rounded-lg border border-blue-600 px-6 font-medium text-base text-blue-600 transition-colors hover:bg-blue-50 dark:border-blue-500 dark:text-blue-500 dark:hover:bg-blue-950"
+            href="/discovery"
           >
             View Discovery Endpoints
           </Link>

@@ -126,20 +126,20 @@ export function RevokeSection({
         {/* Individual Token Revocation */}
         <div className="flex flex-wrap items-center gap-3">
           <button
-            type="button"
-            onClick={revokeAccessToken}
-            disabled={loading}
             className="rounded bg-orange-600 px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-orange-700 disabled:opacity-50"
+            disabled={loading}
+            onClick={revokeAccessToken}
+            type="button"
           >
             {loading ? 'Revoking...' : 'Revoke Access Token'}
           </button>
 
           {refreshToken && (
             <button
-              type="button"
-              onClick={revokeRefreshToken}
-              disabled={loading}
               className="rounded bg-orange-600 px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-orange-700 disabled:opacity-50"
+              disabled={loading}
+              onClick={revokeRefreshToken}
+              type="button"
             >
               {loading ? 'Revoking...' : 'Revoke Refresh Token'}
             </button>
@@ -152,10 +152,10 @@ export function RevokeSection({
             Revoke all tokens and clear local session:
           </p>
           <button
-            type="button"
-            onClick={revokeAllAndLogout}
-            disabled={loading}
             className="rounded bg-red-600 px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+            disabled={loading}
+            onClick={revokeAllAndLogout}
+            type="button"
           >
             {loading ? 'Revoking...' : 'Revoke All & Logout'}
           </button>

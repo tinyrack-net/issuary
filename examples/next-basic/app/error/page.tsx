@@ -22,8 +22,8 @@ export default async function ErrorPage({
           </p>
         </div>
         <a
-          href="/"
           className="mt-6 inline-block rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          href="/"
         >
           Back to Home
         </a>

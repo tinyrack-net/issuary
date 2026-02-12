@@ -135,8 +135,8 @@ export default async function DiscoveryPage() {
                   {discoveryConfig.id_token_signing_alg_values_supported.map(
                     (alg) => (
                       <span
-                        key={alg}
                         className="rounded bg-blue-100 px-2 py-1 font-mono text-blue-800 text-xs dark:bg-blue-900 dark:text-blue-200"
+                        key={alg}
                       >
                         {alg}
                       </span>
@@ -152,8 +152,8 @@ export default async function DiscoveryPage() {
                 <div className="flex flex-wrap gap-2">
                   {discoveryConfig.scopes_supported?.map((scope) => (
                     <span
-                      key={scope}
                       className="rounded bg-zinc-100 px-2 py-1 font-mono text-xs text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
+                      key={scope}
                     >
                       {scope}
                     </span>
@@ -169,8 +169,8 @@ export default async function DiscoveryPage() {
                   {discoveryConfig.code_challenge_methods_supported?.map(
                     (method) => (
                       <span
-                        key={method}
                         className="rounded bg-purple-100 px-2 py-1 font-mono text-purple-800 text-xs dark:bg-purple-900 dark:text-purple-200"
+                        key={method}
                       >
                         {method}
                       </span>
@@ -238,8 +238,8 @@ export default async function DiscoveryPage() {
                 <div className="space-y-3">
                   {jwks.keys.map((key, index) => (
                     <div
-                      key={key.kid || index}
                       className="rounded border border-zinc-200 p-4 dark:border-zinc-700"
+                      key={key.kid || index}
                     >
                       <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -322,8 +322,8 @@ export default async function DiscoveryPage() {
 
         <div className="flex gap-4">
           <Link
-            href="/"
             className="flex h-12 items-center justify-center rounded-lg border border-zinc-300 px-6 font-medium text-base text-zinc-900 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-900"
+            href="/"
           >
             Back to Home
           </Link>
