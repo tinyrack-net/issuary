@@ -30,16 +30,16 @@ export function TokenDisplay({ tokens }: TokenDisplayProps) {
               <span className="font-semibold">Access Token</span>
               <div className="flex gap-2">
                 <button
-                  type="button"
-                  onClick={() => setShowAccessToken(!showAccessToken)}
                   className="btn btn-ghost btn-xs"
+                  onClick={() => setShowAccessToken(!showAccessToken)}
+                  type="button"
                 >
                   {showAccessToken ? 'Hide' : 'Show'}
                 </button>
                 <button
-                  type="button"
-                  onClick={() => copyToClipboard(tokens.access_token)}
                   className="btn btn-ghost btn-xs"
+                  onClick={() => copyToClipboard(tokens.access_token)}
+                  type="button"
                 >
                   Copy
                 </button>
@@ -58,21 +58,21 @@ export function TokenDisplay({ tokens }: TokenDisplayProps) {
 
           {tokens.refresh_token && (
             <RefreshTokenSection
-              refreshToken={tokens.refresh_token}
-              showRefreshToken={showRefreshToken}
-              setShowRefreshToken={setShowRefreshToken}
-              maskToken={maskToken}
               copyToClipboard={copyToClipboard}
+              maskToken={maskToken}
+              refreshToken={tokens.refresh_token}
+              setShowRefreshToken={setShowRefreshToken}
+              showRefreshToken={showRefreshToken}
             />
           )}
 
           {tokens.id_token && (
             <IdTokenSection
-              idToken={tokens.id_token}
-              showIdToken={showIdToken}
-              setShowIdToken={setShowIdToken}
-              maskToken={maskToken}
               copyToClipboard={copyToClipboard}
+              idToken={tokens.id_token}
+              maskToken={maskToken}
+              setShowIdToken={setShowIdToken}
+              showIdToken={showIdToken}
             />
           )}
 
@@ -109,16 +109,16 @@ function RefreshTokenSection({
         <span className="font-semibold">Refresh Token</span>
         <div className="flex gap-2">
           <button
-            type="button"
-            onClick={() => setShowRefreshToken(!showRefreshToken)}
             className="btn btn-ghost btn-xs"
+            onClick={() => setShowRefreshToken(!showRefreshToken)}
+            type="button"
           >
             {showRefreshToken ? 'Hide' : 'Show'}
           </button>
           <button
-            type="button"
-            onClick={() => copyToClipboard(refreshToken)}
             className="btn btn-ghost btn-xs"
+            onClick={() => copyToClipboard(refreshToken)}
+            type="button"
           >
             Copy
           </button>
@@ -152,16 +152,16 @@ function IdTokenSection({
         <span className="font-semibold">ID Token</span>
         <div className="flex gap-2">
           <button
-            type="button"
-            onClick={() => setShowIdToken(!showIdToken)}
             className="btn btn-ghost btn-xs"
+            onClick={() => setShowIdToken(!showIdToken)}
+            type="button"
           >
             {showIdToken ? 'Hide' : 'Show'}
           </button>
           <button
-            type="button"
-            onClick={() => copyToClipboard(idToken)}
             className="btn btn-ghost btn-xs"
+            onClick={() => copyToClipboard(idToken)}
+            type="button"
           >
             Copy
           </button>

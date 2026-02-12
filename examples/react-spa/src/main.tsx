@@ -52,11 +52,11 @@ function App() {
 
   return (
     <RouterProvider
-      router={router}
       context={{
         queryClient,
         tokens,
       }}
+      router={router}
     />
   );
 }

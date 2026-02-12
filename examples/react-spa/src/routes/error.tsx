@@ -26,7 +26,7 @@ function ErrorPage() {
           )}
           {description && <p className="mt-2 text-sm">{description}</p>}
           <div className="card-actions mt-4 justify-end">
-            <Link to="/" className="btn btn-primary">
+            <Link className="btn btn-primary" to="/">
               Back to Home
             </Link>
           </div>

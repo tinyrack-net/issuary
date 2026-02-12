@@ -55,7 +55,7 @@ function DiscoveryPage() {
             <h2 className="card-title text-error">Error</h2>
             <p className="text-sm">{error}</p>
             <div className="card-actions mt-4 justify-end">
-              <Link to="/" className="btn btn-primary">
+              <Link className="btn btn-primary" to="/">
                 Back to Home
               </Link>
             </div>
@@ -106,7 +106,7 @@ function DiscoveryPage() {
         )}
 
         <div className="flex gap-4">
-          <Link to="/" className="btn btn-outline">
+          <Link className="btn btn-outline" to="/">
             Back to Home
           </Link>
         </div>

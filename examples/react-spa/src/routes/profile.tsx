@@ -122,12 +122,12 @@ function ProfilePage() {
 
             <div className="mt-4 flex flex-wrap gap-2">
               <button
-                type="button"
+                className="btn btn-outline btn-sm"
+                disabled={introspectionLoading}
                 onClick={() =>
                   handleIntrospect(tokens.access_token, 'access_token')
                 }
-                className="btn btn-outline btn-sm"
-                disabled={introspectionLoading}
+                type="button"
               >
                 {introspectionLoading && (
                   <span className="loading loading-spinner loading-xs" />
@@ -136,9 +136,9 @@ function ProfilePage() {
               </button>
               {tokens.refresh_token && (
                 <RefreshTokenIntrospectButton
-                  refreshToken={tokens.refresh_token}
-                  onIntrospect={handleIntrospect}
                   loading={introspectionLoading}
+                  onIntrospect={handleIntrospect}
+                  refreshToken={tokens.refresh_token}
                 />
               )}
             </div>
@@ -166,12 +166,12 @@ function ProfilePage() {
 
             <div className="mt-4 flex flex-wrap gap-2">
               <button
-                type="button"
+                className="btn btn-error btn-outline btn-sm"
+                disabled={revokeLoading}
                 onClick={() =>
                   handleRevoke(tokens.access_token, 'access_token')
                 }
-                className="btn btn-error btn-outline btn-sm"
-                disabled={revokeLoading}
+                type="button"
               >
                 {revokeLoading && (
                   <span className="loading loading-spinner loading-xs" />
@@ -180,9 +180,9 @@ function ProfilePage() {
               </button>
               {tokens.refresh_token && (
                 <RefreshTokenRevokeButton
-                  refreshToken={tokens.refresh_token}
-                  onRevoke={handleRevoke}
                   loading={revokeLoading}
+                  onRevoke={handleRevoke}
+                  refreshToken={tokens.refresh_token}
                 />
               )}
             </div>
@@ -203,16 +203,16 @@ function ProfilePage() {
 
         <div className="flex flex-wrap gap-4">
           <button
-            type="button"
-            onClick={handleLogout}
             className="btn btn-error"
+            onClick={handleLogout}
+            type="button"
           >
             Logout
           </button>
-          <Link to="/discovery" className="btn btn-outline">
+          <Link className="btn btn-outline" to="/discovery">
             Discovery Endpoints
           </Link>
-          <Link to="/" className="btn btn-outline">
+          <Link className="btn btn-outline" to="/">
             Home
           </Link>
         </div>
@@ -237,10 +237,10 @@ function RefreshTokenIntrospectButton({
 }: RefreshTokenIntrospectButtonProps) {
   return (
     <button
-      type="button"
-      onClick={() => onIntrospect(refreshToken, 'refresh_token')}
       className="btn btn-outline btn-sm"
       disabled={loading}
+      onClick={() => onIntrospect(refreshToken, 'refresh_token')}
+      type="button"
     >
       {loading && <span className="loading loading-spinner loading-xs" />}
       Introspect Refresh Token
@@ -264,10 +264,10 @@ function RefreshTokenRevokeButton({
 }: RefreshTokenRevokeButtonProps) {
   return (
     <button
-      type="button"
-      onClick={() => onRevoke(refreshToken, 'refresh_token')}
       className="btn btn-error btn-outline btn-sm"
       disabled={loading}
+      onClick={() => onRevoke(refreshToken, 'refresh_token')}
+      type="button"
     >
       {loading && <span className="loading loading-spinner loading-xs" />}
       Revoke Refresh Token

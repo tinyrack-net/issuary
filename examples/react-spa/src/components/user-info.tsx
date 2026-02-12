@@ -18,7 +18,7 @@ export function UserInfo({ payload }: UserInfoProps) {
           {payload.picture && (
             <div className="avatar">
               <div className="w-16 rounded-full">
-                <img src={payload.picture} alt="Profile" />
+                <img alt="Profile" src={payload.picture} />
               </div>
             </div>
           )}

@@ -39,14 +39,14 @@ function HomePage() {
 
           <div className="mt-6 flex flex-col gap-4">
             <button
-              type="button"
-              onClick={handleLogin}
               className="btn btn-primary btn-lg"
+              onClick={handleLogin}
+              type="button"
             >
               Sign In with OIDC
             </button>
 
-            <Link to="/discovery" className="btn btn-outline">
+            <Link className="btn btn-outline" to="/discovery">
               View Discovery Endpoints
             </Link>
           </div>

@@ -76,9 +76,9 @@ function CallbackPage() {
             <p className="text-sm">{error}</p>
             <div className="card-actions mt-4 justify-end">
               <button
-                type="button"
-                onClick={() => navigate({ to: '/' })}
                 className="btn btn-primary"
+                onClick={() => navigate({ to: '/' })}
+                type="button"
               >
                 Back to Home
               </button>
