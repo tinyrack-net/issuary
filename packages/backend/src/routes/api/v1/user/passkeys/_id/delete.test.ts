@@ -664,11 +664,8 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
     let passkeyId = '';
 
     await withMikroContext(appWith2FARequired, async () => {
-      const user = await appWith2FARequired.mikro.user.findOneOrFail({
-        id: userId,
-      });
       const passkey = appWith2FARequired.mikro.userPasskey.create({
-        user,
+        user: userId,
         credential_id: `test-credential-${crypto.randomUUID()}`,
         public_key: 'test-public-key-base64url',
         counter: 0,
@@ -856,11 +853,8 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
     // Create passkey directly in database for config user
     let passkeyId = '';
     await withMikroContext(appWith2FARequired, async () => {
-      const user = await appWith2FARequired.mikro.user.findOneOrFail({
-        id: userId,
-      });
       const passkey = appWith2FARequired.mikro.userPasskey.create({
-        user,
+        user: userId,
         credential_id: `test-credential-${crypto.randomUUID()}`,
         public_key: 'test-public-key-base64url',
         counter: 0,

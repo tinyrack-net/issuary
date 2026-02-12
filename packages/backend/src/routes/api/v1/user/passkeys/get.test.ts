@@ -284,10 +284,8 @@ describe('GET /api/v1/user/passkeys', () => {
 
     // Create passkeys with different device types
     await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ id: userId });
-
       const passkey1 = app.mikro.userPasskey.create({
-        user,
+        user: userId,
         credential_id: `test-single-${crypto.randomUUID()}`,
         public_key: 'test-public-key-1',
         counter: 0,
@@ -297,7 +295,7 @@ describe('GET /api/v1/user/passkeys', () => {
       });
 
       const passkey2 = app.mikro.userPasskey.create({
-        user,
+        user: userId,
         credential_id: `test-multi-${crypto.randomUUID()}`,
         public_key: 'test-public-key-2',
         counter: 0,

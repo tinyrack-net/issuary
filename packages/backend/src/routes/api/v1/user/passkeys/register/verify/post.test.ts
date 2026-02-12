@@ -55,9 +55,8 @@ async function createPasskeyForUser(
   let passkeyId = '';
 
   await withMikroContext(app, async () => {
-    const user = await app.mikro.user.findOneOrFail({ id: userId });
     const passkey = app.mikro.userPasskey.create({
-      user,
+      user: userId,
       credential_id: credentialId,
       public_key: 'test-public-key-base64url',
       counter: 0,
