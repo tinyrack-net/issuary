@@ -1,14 +1,7 @@
-import fastifyPlugin from 'fastify-plugin';
 import type { PasswordResetEntity } from '@/entities/password-reset.entity.js';
 import type { UserEntity } from '@/entities/user.entity.js';
-import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    passwordResetService: PasswordResetService;
-  }
-}
+import type { MikroService } from '@/types.js';
 
 export class PasswordResetService {
   public constructor(private readonly mikro: MikroService) {}
@@ -91,14 +84,3 @@ export class PasswordResetService {
     return entity !== null;
   }
 }
-
-export default fastifyPlugin(
-  async (fastify) => {
-    const service = new PasswordResetService(fastify.mikro);
-    fastify.decorate('passwordResetService', service);
-  },
-  {
-    name: 'password-reset-service-plugin',
-    dependencies: ['mikro-orm-plugin'],
-  },
-);

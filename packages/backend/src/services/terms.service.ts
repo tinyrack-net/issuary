@@ -1,14 +1,7 @@
 import type { Loaded } from '@mikro-orm/core';
-import fastifyPlugin from 'fastify-plugin';
 import type { TermsEntity } from '@/entities/terms.entity.js';
 import type { UserTermsConsentEntity } from '@/entities/user-terms-consent.entity.js';
-import type { MikroService } from '@/plugins/core/mikro-orm.js';
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    termsService: TermsService;
-  }
-}
+import type { MikroService } from '@/types.js';
 
 /**
  * Loaded terms type alias for readability
@@ -331,14 +324,3 @@ export class TermsService {
     };
   }
 }
-
-export default fastifyPlugin(
-  async (fastify) => {
-    const termsService = new TermsService(fastify.mikro);
-    fastify.decorate('termsService', termsService);
-  },
-  {
-    name: 'terms-service-plugin',
-    dependencies: ['base-service-plugin'],
-  },
-);

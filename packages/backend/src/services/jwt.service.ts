@@ -1,5 +1,3 @@
-import type { FastifyRequest } from 'fastify';
-import fastifyPlugin from 'fastify-plugin';
 import {
   decodeJwt,
   exportJWK,
@@ -12,10 +10,10 @@ import {
   jwtVerify,
   SignJWT,
 } from 'jose';
-import { JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
+import { type JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
-import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import type { MikroService } from '@/types.js';
 
 // ---------------------------------------------------------------------------
 // Key Management Types
@@ -141,12 +139,6 @@ export interface IdTokenPayload extends BaseJWTPayload {
   name?: string | undefined;
   /** Profile picture URL */
   picture?: string | undefined;
-}
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    jwtService: JwtService;
-  }
 }
 
 /**
@@ -765,7 +757,7 @@ export class JwtService {
    * // Returns: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
    * ```
    */
-  extractBearerToken(req: FastifyRequest): string {
+  extractBearerToken(req: { headers: { authorization?: string } }): string {
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
@@ -808,7 +800,9 @@ export class JwtService {
    * console.log(payload.scope);     // Granted scopes
    * ```
    */
-  async validateBearerToken(req: FastifyRequest): Promise<AccessTokenPayload> {
+  async validateBearerToken(req: {
+    headers: { authorization?: string };
+  }): Promise<AccessTokenPayload> {
     const token = this.extractBearerToken(req);
 
     // Use jwtService for RS256 token verification
@@ -816,61 +810,3 @@ export class JwtService {
     return payload;
   }
 }
-
-export default fastifyPlugin(
-  async (fastify) => {
-    fastify.decorate(
-      'jwtService',
-      new JwtService(fastify.config, fastify.mikro),
-    );
-
-    // Ensure active key exists on startup (use forked EM for bootstrap)
-    const em = fastify.mikro.orm.em.fork();
-    const jwtKeyRepo = em.getRepository(JwtKeyEntity);
-
-    // Check if active key exists, if not create one
-    const activeKey = await jwtKeyRepo.findOne({
-      status: JwtKeyStatus.ACTIVE,
-    });
-    if (!activeKey) {
-      const nextKey = await jwtKeyRepo.findOne({
-        status: JwtKeyStatus.NEXT,
-      });
-      if (nextKey) {
-        nextKey.status = JwtKeyStatus.ACTIVE;
-        nextKey.activated_at = new Date();
-        await em.flush();
-      } else {
-        // Generate and activate a new key
-        const keyPair = await fastify.jwtService.generateKeyPair();
-        const rotationDays = fastify.config.app.jwt_key_rotation_days ?? 30;
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + rotationDays);
-
-        const entity = em.create(JwtKeyEntity, {
-          kid: keyPair.kid,
-          private_key: keyPair.privateKey,
-          public_key: keyPair.publicKey,
-          algorithm: keyPair.algorithm,
-          status: JwtKeyStatus.ACTIVE,
-          activated_at: new Date(),
-          expires_at: expiresAt,
-        });
-        await em.persist(entity).flush();
-      }
-    }
-
-    // Clear cache after bootstrap
-    fastify.jwtService.clearActiveKeyCache();
-
-    // NOTE: JWT key rotation is handled by the cleanup command (tinyauth cleanup)
-    // instead of setInterval. This provides:
-    // - Better control via config.yaml (cleanup.jwt_keys)
-    // - K8s CronJob compatibility (single `tinyauth cleanup` command)
-    // - Consistent maintenance task management
-  },
-  {
-    name: 'jwt-service-plugin',
-    dependencies: ['mikro-orm-plugin'],
-  },
-);

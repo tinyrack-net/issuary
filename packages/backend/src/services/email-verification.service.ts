@@ -1,14 +1,7 @@
-import fastifyPlugin from 'fastify-plugin';
 import type { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
 import type { UserEntity } from '@/entities/user.entity.js';
-import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    emailVerificationService?: EmailVerificationService;
-  }
-}
+import type { MikroService } from '@/types.js';
 
 export class EmailVerificationService {
   public constructor(private readonly mikro: MikroService) {}
@@ -79,14 +72,3 @@ export class EmailVerificationService {
     return count > 0;
   }
 }
-
-export default fastifyPlugin(
-  async (fastify) => {
-    const service = new EmailVerificationService(fastify.mikro);
-    fastify.decorate('emailVerificationService', service);
-  },
-  {
-    name: 'email-verification-service-plugin',
-    dependencies: ['mikro-orm-plugin'],
-  },
-);

@@ -12,12 +12,11 @@ import {
   verifyRegistrationResponse,
 } from '@simplewebauthn/server';
 import { isoBase64URL } from '@simplewebauthn/server/helpers';
-import fastifyPlugin from 'fastify-plugin';
 import type { UserEntity } from '@/entities/user.entity.js';
 import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
-import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import type { MikroService } from '@/types.js';
 
 /**
  * Passkey information for user passkey list
@@ -36,12 +35,6 @@ export interface PasskeyInfo {
   backed_up: boolean;
   /** When the passkey was registered */
   created_at: Date;
-}
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    passkeyService: PasskeyService;
-  }
 }
 
 export class PasskeyService {
@@ -316,14 +309,3 @@ export class PasskeyService {
     await this.mikro.em.flush();
   }
 }
-
-export default fastifyPlugin(
-  async (fastify) => {
-    const passkeyService = new PasskeyService(fastify.mikro, fastify.config);
-    fastify.decorate('passkeyService', passkeyService);
-  },
-  {
-    name: 'passkey-service-plugin',
-    dependencies: ['base-service-plugin'],
-  },
-);

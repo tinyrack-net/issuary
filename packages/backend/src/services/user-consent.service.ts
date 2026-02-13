@@ -1,14 +1,7 @@
-import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import type { UserConsentEntity } from '@/entities/user-consent.entity.js';
-import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import type { f } from '@/schemas/field.js';
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    userConsentService: UserConsentService;
-  }
-}
+import type { MikroService } from '@/types.js';
 
 export class UserConsentService {
   public constructor(private readonly mikro: MikroService) {}
@@ -106,14 +99,3 @@ export class UserConsentService {
     return this.mikro.userConsent.findConsent(userId, clientId);
   }
 }
-
-export default fastifyPlugin(
-  async (fastify) => {
-    const userConsentService = new UserConsentService(fastify.mikro);
-    fastify.decorate('userConsentService', userConsentService);
-  },
-  {
-    name: 'user-consent-service-plugin',
-    dependencies: ['base-service-plugin'],
-  },
-);

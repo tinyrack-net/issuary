@@ -1,5 +1,3 @@
-import type { FastifyInstance } from 'fastify';
-import fastifyPlugin from 'fastify-plugin';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 import {
@@ -10,16 +8,13 @@ import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import { DEFAULT_LOCALE, type Locale } from '@/lib/locale.js';
 import { e } from '@/schemas/error.js';
 
-declare module 'fastify' {
-  interface FastifyInstance {
-    emailService: EmailService;
-  }
-}
-
 export class EmailService {
   public constructor(
     private readonly config: ResolvedAppConfig,
-    private readonly transporter: FastifyInstance['mail'],
+    private readonly transporter: nodemailer.Transporter<
+      SMTPTransport.SentMessageInfo,
+      SMTPTransport.Options
+    > | null,
   ) {}
 
   /**
@@ -141,14 +136,3 @@ export class EmailService {
     });
   }
 }
-
-export default fastifyPlugin(
-  async (fastify) => {
-    const service = new EmailService(fastify.config, fastify.mail);
-    fastify.decorate('emailService', service);
-  },
-  {
-    name: 'email-service-plugin',
-    dependencies: [],
-  },
-);

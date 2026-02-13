@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import {
   afterAll,
   beforeAll,
@@ -27,39 +26,43 @@ import {
   getJwtKey,
 } from '@/test-utils/cli.js';
 import { MINIMAL_TEST_CONFIG, withMikroContext } from '@/test-utils/index.js';
+import type { ServiceContainer } from '@/types.js';
 
 describe('CleanupService', () => {
   describe('cleanupRevokedTokens', () => {
-    let app: FastifyInstance;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
     let userId: string;
     let clientId: string;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: CLI_TEST_CONFIG,
         cliMode: true,
         skipListen: true,
       });
+      services = server.services;
+      cleanup = server.cleanup;
 
       // Create test user and client for all tests
-      userId = await createTestUser(app);
-      clientId = await createTestOAuthClient(app);
+      userId = await createTestUser(services);
+      clientId = await createTestOAuthClient(services);
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     beforeEach(async () => {
       // Clean up revoked tokens before each test
-      await withMikroContext(app, async () => {
-        const em = app.mikro.em.fork();
+      await withMikroContext(services, async () => {
+        const em = services.mikro.em.fork();
         await em.nativeDelete(RevokedTokenEntity, {});
       });
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledApp = await createServer({
+      const disabledServer = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -71,20 +74,21 @@ describe('CleanupService', () => {
       });
 
       try {
-        const result = await disabledApp.cleanupService.cleanupRevokedTokens({
-          dryRun: false,
-        });
+        const result =
+          await disabledServer.services.cleanupService.cleanupRevokedTokens({
+            dryRun: false,
+          });
 
         expect(result.skipped).toBe(true);
         expect(result.deletedCount).toBe(0);
         expect(result.message).toBe('Disabled in config');
       } finally {
-        await disabledApp.close();
+        await disabledServer.cleanup();
       }
     });
 
     test('should return "No expired tokens" when nothing to clean', async () => {
-      const result = await app.cleanupService.cleanupRevokedTokens({
+      const result = await services.cleanupService.cleanupRevokedTokens({
         dryRun: false,
       });
 
@@ -95,22 +99,22 @@ describe('CleanupService', () => {
 
     test('should delete expired revoked tokens', async () => {
       // Create expired tokens
-      await createRevokedToken(app, {
+      await createRevokedToken(services, {
         userId,
         clientId,
         expiresAt: new Date(Date.now() - 10000), // Expired 10 seconds ago
       });
-      await createRevokedToken(app, {
+      await createRevokedToken(services, {
         userId,
         clientId,
         expiresAt: new Date(Date.now() - 20000), // Expired 20 seconds ago
       });
 
       // Verify tokens exist
-      const countBefore = await countEntities(app, 'revokedToken');
+      const countBefore = await countEntities(services, 'revokedToken');
       expect(countBefore).toBe(2);
 
-      const result = await app.cleanupService.cleanupRevokedTokens({
+      const result = await services.cleanupService.cleanupRevokedTokens({
         dryRun: false,
       });
 
@@ -118,48 +122,48 @@ describe('CleanupService', () => {
       expect(result.deletedCount).toBe(2);
 
       // Verify tokens are deleted
-      const countAfter = await countEntities(app, 'revokedToken');
+      const countAfter = await countEntities(services, 'revokedToken');
       expect(countAfter).toBe(0);
     });
 
     test('should not delete non-expired tokens', async () => {
       // Create one expired and one non-expired token
-      await createRevokedToken(app, {
+      await createRevokedToken(services, {
         userId,
         clientId,
         expiresAt: new Date(Date.now() - 10000), // Expired
       });
-      await createRevokedToken(app, {
+      await createRevokedToken(services, {
         userId,
         clientId,
         expiresAt: new Date(Date.now() + 60000), // Expires in 1 minute
       });
 
-      const result = await app.cleanupService.cleanupRevokedTokens({
+      const result = await services.cleanupService.cleanupRevokedTokens({
         dryRun: false,
       });
 
       expect(result.deletedCount).toBe(1);
 
       // Verify one token remains
-      const countAfter = await countEntities(app, 'revokedToken');
+      const countAfter = await countEntities(services, 'revokedToken');
       expect(countAfter).toBe(1);
     });
 
     test('should work in dry-run mode (report but not delete)', async () => {
       // Create expired tokens
-      await createRevokedToken(app, {
+      await createRevokedToken(services, {
         userId,
         clientId,
         expiresAt: new Date(Date.now() - 10000),
       });
-      await createRevokedToken(app, {
+      await createRevokedToken(services, {
         userId,
         clientId,
         expiresAt: new Date(Date.now() - 20000),
       });
 
-      const result = await app.cleanupService.cleanupRevokedTokens({
+      const result = await services.cleanupService.cleanupRevokedTokens({
         dryRun: true,
       });
 
@@ -168,13 +172,13 @@ describe('CleanupService', () => {
       expect(result.message).toContain('Would delete');
 
       // Verify tokens are NOT deleted
-      const countAfter = await countEntities(app, 'revokedToken');
+      const countAfter = await countEntities(services, 'revokedToken');
       expect(countAfter).toBe(2);
     });
 
     test('should respect retention period configuration', async () => {
       // Create app with 1 hour retention
-      const retentionApp = await createServer({
+      const retentionServer = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -186,50 +190,53 @@ describe('CleanupService', () => {
       });
 
       try {
-        const testUserId = await createTestUser(retentionApp);
-        const testClientId = await createTestOAuthClient(retentionApp);
+        const testUserId = await createTestUser(retentionServer.services);
+        const testClientId = await createTestOAuthClient(
+          retentionServer.services,
+        );
 
         // Create token expired 30 minutes ago (within retention)
-        await createRevokedToken(retentionApp, {
+        await createRevokedToken(retentionServer.services, {
           userId: testUserId,
           clientId: testClientId,
           expiresAt: new Date(Date.now() - 30 * 60 * 1000),
         });
 
         // Create token expired 2 hours ago (past retention)
-        await createRevokedToken(retentionApp, {
+        await createRevokedToken(retentionServer.services, {
           userId: testUserId,
           clientId: testClientId,
           expiresAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
         });
 
-        const result = await retentionApp.cleanupService.cleanupRevokedTokens({
-          dryRun: false,
-        });
+        const result =
+          await retentionServer.services.cleanupService.cleanupRevokedTokens({
+            dryRun: false,
+          });
 
         // Only the 2-hour old token should be deleted
         expect(result.deletedCount).toBe(1);
         expect(result.message).toContain('1 hour');
       } finally {
-        await retentionApp.close();
+        await retentionServer.cleanup();
       }
     });
 
     test('should handle both access and refresh tokens', async () => {
-      await createRevokedToken(app, {
+      await createRevokedToken(services, {
         userId,
         clientId,
         expiresAt: new Date(Date.now() - 10000),
         tokenType: 'access_token',
       });
-      await createRevokedToken(app, {
+      await createRevokedToken(services, {
         userId,
         clientId,
         expiresAt: new Date(Date.now() - 10000),
         tokenType: 'refresh_token',
       });
 
-      const result = await app.cleanupService.cleanupRevokedTokens({
+      const result = await services.cleanupService.cleanupRevokedTokens({
         dryRun: false,
       });
 
@@ -238,10 +245,11 @@ describe('CleanupService', () => {
   });
 
   describe('rotateExpiredJwtKeys', () => {
-    let app: FastifyInstance;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...CLI_TEST_CONFIG,
           app: {
@@ -254,24 +262,26 @@ describe('CleanupService', () => {
         cliMode: true,
         skipListen: true,
       });
+      services = server.services;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     beforeEach(async () => {
       // Clean up JWT keys before each test
-      await withMikroContext(app, async () => {
-        const em = app.mikro.em.fork();
+      await withMikroContext(services, async () => {
+        const em = services.mikro.em.fork();
         await em.nativeDelete(JwtKeyEntity, {});
       });
       // Clear service cache
-      app.jwtService.clearActiveKeyCache();
+      services.jwtService.clearActiveKeyCache();
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledApp = await createServer({
+      const disabledServer = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -283,20 +293,21 @@ describe('CleanupService', () => {
       });
 
       try {
-        const result = await disabledApp.cleanupService.rotateExpiredJwtKeys({
-          dryRun: false,
-        });
+        const result =
+          await disabledServer.services.cleanupService.rotateExpiredJwtKeys({
+            dryRun: false,
+          });
 
         expect(result.skipped).toBe(true);
         expect(result.deletedCount).toBe(0);
         expect(result.message).toBe('Disabled in config');
       } finally {
-        await disabledApp.close();
+        await disabledServer.cleanup();
       }
     });
 
     test('should skip when jwt_key_rotation_enabled is false', async () => {
-      const noRotationApp = await createServer({
+      const noRotationServer = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
@@ -312,28 +323,29 @@ describe('CleanupService', () => {
       });
 
       try {
-        const result = await noRotationApp.cleanupService.rotateExpiredJwtKeys({
-          dryRun: false,
-        });
+        const result =
+          await noRotationServer.services.cleanupService.rotateExpiredJwtKeys({
+            dryRun: false,
+          });
 
         expect(result.skipped).toBe(true);
         expect(result.message).toBe(
           'JWT key rotation is disabled in app config',
         );
       } finally {
-        await noRotationApp.close();
+        await noRotationServer.cleanup();
       }
     });
 
     test('should return "No rotation needed" when no expired active keys', async () => {
       // Create active key that is not expired
-      await createJwtKey(app, {
+      await createJwtKey(services, {
         status: JwtKeyStatus.ACTIVE,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // Expires in 1 day
         activatedAt: new Date(),
       });
 
-      const result = await app.cleanupService.rotateExpiredJwtKeys({
+      const result = await services.cleanupService.rotateExpiredJwtKeys({
         dryRun: false,
       });
 
@@ -344,13 +356,13 @@ describe('CleanupService', () => {
 
     test('should rotate expired active keys to previous status', async () => {
       // Create expired active key
-      const kid = await createJwtKey(app, {
+      const kid = await createJwtKey(services, {
         status: JwtKeyStatus.ACTIVE,
         expiresAt: new Date(Date.now() - 1000), // Expired
         activatedAt: new Date(Date.now() - 86400000),
       });
 
-      const result = await app.cleanupService.rotateExpiredJwtKeys({
+      const result = await services.cleanupService.rotateExpiredJwtKeys({
         dryRun: false,
       });
 
@@ -359,7 +371,7 @@ describe('CleanupService', () => {
       expect(result.message).toContain('rotation performed');
 
       // Verify key status changed to PREVIOUS
-      const key = await getJwtKey(app, kid);
+      const key = await getJwtKey(services, kid);
       expect(key).not.toBeNull();
       expect(key?.status).toBe(JwtKeyStatus.PREVIOUS);
       expect(key?.deactivated_at).not.toBeNull();
@@ -367,27 +379,27 @@ describe('CleanupService', () => {
 
     test('should promote next key to active', async () => {
       // Create expired active key
-      await createJwtKey(app, {
+      await createJwtKey(services, {
         status: JwtKeyStatus.ACTIVE,
         expiresAt: new Date(Date.now() - 1000),
         activatedAt: new Date(Date.now() - 86400000),
       });
 
       // Create next key ready for promotion
-      const nextKid = await createJwtKey(app, {
+      const nextKid = await createJwtKey(services, {
         status: JwtKeyStatus.NEXT,
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         activatedAt: null,
       });
 
-      const result = await app.cleanupService.rotateExpiredJwtKeys({
+      const result = await services.cleanupService.rotateExpiredJwtKeys({
         dryRun: false,
       });
 
       expect(result.deletedCount).toBe(1);
 
       // Verify next key was promoted to active
-      const promotedKey = await getJwtKey(app, nextKid);
+      const promotedKey = await getJwtKey(services, nextKid);
       expect(promotedKey).not.toBeNull();
       expect(promotedKey?.status).toBe(JwtKeyStatus.ACTIVE);
       expect(promotedKey?.activated_at).not.toBeNull();
@@ -395,27 +407,27 @@ describe('CleanupService', () => {
 
     test('should generate new key if no next key exists', async () => {
       // Create expired active key without a next key
-      await createJwtKey(app, {
+      await createJwtKey(services, {
         status: JwtKeyStatus.ACTIVE,
         expiresAt: new Date(Date.now() - 1000),
         activatedAt: new Date(Date.now() - 86400000),
       });
 
-      const countBefore = await countEntities(app, 'jwtKey');
+      const countBefore = await countEntities(services, 'jwtKey');
       expect(countBefore).toBe(1);
 
-      const result = await app.cleanupService.rotateExpiredJwtKeys({
+      const result = await services.cleanupService.rotateExpiredJwtKeys({
         dryRun: false,
       });
 
       expect(result.deletedCount).toBe(1);
 
       // Should have created a new key
-      const countAfter = await countEntities(app, 'jwtKey');
+      const countAfter = await countEntities(services, 'jwtKey');
       expect(countAfter).toBe(2);
 
       // Verify there's an active key
-      const activeCount = await countEntities(app, 'jwtKey', {
+      const activeCount = await countEntities(services, 'jwtKey', {
         status: JwtKeyStatus.ACTIVE,
       });
       expect(activeCount).toBe(1);
@@ -423,28 +435,28 @@ describe('CleanupService', () => {
 
     test('should retire old previous keys past overlap period', async () => {
       // Create expired active key
-      await createJwtKey(app, {
+      await createJwtKey(services, {
         status: JwtKeyStatus.ACTIVE,
         expiresAt: new Date(Date.now() - 1000),
         activatedAt: new Date(Date.now() - 86400000),
       });
 
       // Create old previous key (deactivated 10 days ago, past 7-day overlap)
-      const oldPreviousKid = await createJwtKey(app, {
+      const oldPreviousKid = await createJwtKey(services, {
         status: JwtKeyStatus.PREVIOUS,
         expiresAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
         activatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
         deactivatedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
       });
 
-      const result = await app.cleanupService.rotateExpiredJwtKeys({
+      const result = await services.cleanupService.rotateExpiredJwtKeys({
         dryRun: false,
       });
 
       expect(result.message).toContain('retired');
 
       // Verify old previous key was retired
-      const retiredKey = await getJwtKey(app, oldPreviousKid);
+      const retiredKey = await getJwtKey(services, oldPreviousKid);
       expect(retiredKey).not.toBeNull();
       expect(retiredKey?.status).toBe(JwtKeyStatus.RETIRED);
       expect(retiredKey?.retired_at).not.toBeNull();
@@ -452,33 +464,33 @@ describe('CleanupService', () => {
 
     test('should not retire recent previous keys within overlap period', async () => {
       // Create expired active key
-      await createJwtKey(app, {
+      await createJwtKey(services, {
         status: JwtKeyStatus.ACTIVE,
         expiresAt: new Date(Date.now() - 1000),
         activatedAt: new Date(Date.now() - 86400000),
       });
 
       // Create recent previous key (deactivated 1 day ago, within 7-day overlap)
-      const recentPreviousKid = await createJwtKey(app, {
+      const recentPreviousKid = await createJwtKey(services, {
         status: JwtKeyStatus.PREVIOUS,
         expiresAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
         activatedAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
         deactivatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
       });
 
-      await app.cleanupService.rotateExpiredJwtKeys({
+      await services.cleanupService.rotateExpiredJwtKeys({
         dryRun: false,
       });
 
       // Verify recent previous key was NOT retired
-      const previousKey = await getJwtKey(app, recentPreviousKid);
+      const previousKey = await getJwtKey(services, recentPreviousKid);
       expect(previousKey).not.toBeNull();
       expect(previousKey?.status).toBe(JwtKeyStatus.PREVIOUS);
     });
 
     test('should clear service cache after rotation', async () => {
       // Create expired active key
-      await createJwtKey(app, {
+      await createJwtKey(services, {
         status: JwtKeyStatus.ACTIVE,
         expiresAt: new Date(Date.now() - 1000),
         activatedAt: new Date(Date.now() - 86400000),
@@ -486,7 +498,7 @@ describe('CleanupService', () => {
 
       // The method should call clearActiveKeyCache
       // We can verify this indirectly by checking the rotation completes
-      const result = await app.cleanupService.rotateExpiredJwtKeys({
+      const result = await services.cleanupService.rotateExpiredJwtKeys({
         dryRun: false,
       });
 
@@ -496,13 +508,13 @@ describe('CleanupService', () => {
 
     test('should work in dry-run mode', async () => {
       // Create expired active key
-      const kid = await createJwtKey(app, {
+      const kid = await createJwtKey(services, {
         status: JwtKeyStatus.ACTIVE,
         expiresAt: new Date(Date.now() - 1000),
         activatedAt: new Date(Date.now() - 86400000),
       });
 
-      const result = await app.cleanupService.rotateExpiredJwtKeys({
+      const result = await services.cleanupService.rotateExpiredJwtKeys({
         dryRun: true,
       });
 
@@ -510,25 +522,25 @@ describe('CleanupService', () => {
       expect(result.message).toContain('Would rotate');
 
       // Verify key was NOT rotated
-      const key = await getJwtKey(app, kid);
+      const key = await getJwtKey(services, kid);
       expect(key).not.toBeNull();
       expect(key?.status).toBe(JwtKeyStatus.ACTIVE);
     });
 
     test('should handle multiple expired active keys', async () => {
       // Create multiple expired active keys (unusual but possible)
-      await createJwtKey(app, {
+      await createJwtKey(services, {
         status: JwtKeyStatus.ACTIVE,
         expiresAt: new Date(Date.now() - 1000),
         activatedAt: new Date(Date.now() - 86400000),
       });
-      await createJwtKey(app, {
+      await createJwtKey(services, {
         status: JwtKeyStatus.ACTIVE,
         expiresAt: new Date(Date.now() - 2000),
         activatedAt: new Date(Date.now() - 172800000),
       });
 
-      const result = await app.cleanupService.rotateExpiredJwtKeys({
+      const result = await services.cleanupService.rotateExpiredJwtKeys({
         dryRun: false,
       });
 
@@ -537,7 +549,7 @@ describe('CleanupService', () => {
       expect(result.message).toContain('rotation performed');
 
       // Both should now be PREVIOUS
-      const previousCount = await countEntities(app, 'jwtKey', {
+      const previousCount = await countEntities(services, 'jwtKey', {
         status: JwtKeyStatus.PREVIOUS,
       });
       expect(previousCount).toBe(2);
@@ -545,35 +557,38 @@ describe('CleanupService', () => {
   });
 
   describe('cleanupOAuthCodes', () => {
-    let app: FastifyInstance;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
     let userId: string;
     let clientId: string;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: CLI_TEST_CONFIG,
         cliMode: true,
         skipListen: true,
       });
+      services = server.services;
+      cleanup = server.cleanup;
 
-      userId = await createTestUser(app);
-      clientId = await createTestOAuthClient(app);
+      userId = await createTestUser(services);
+      clientId = await createTestOAuthClient(services);
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     beforeEach(async () => {
       // Clean up OAuth codes before each test
-      await withMikroContext(app, async () => {
-        const em = app.mikro.em.fork();
+      await withMikroContext(services, async () => {
+        const em = services.mikro.em.fork();
         await em.nativeDelete(OAuthCodeEntity, {});
       });
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledApp = await createServer({
+      const disabledServer = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -585,20 +600,21 @@ describe('CleanupService', () => {
       });
 
       try {
-        const result = await disabledApp.cleanupService.cleanupOAuthCodes({
-          dryRun: false,
-        });
+        const result =
+          await disabledServer.services.cleanupService.cleanupOAuthCodes({
+            dryRun: false,
+          });
 
         expect(result.skipped).toBe(true);
         expect(result.deletedCount).toBe(0);
         expect(result.message).toBe('Disabled in config');
       } finally {
-        await disabledApp.close();
+        await disabledServer.cleanup();
       }
     });
 
     test('should return message when nothing to clean', async () => {
-      const result = await app.cleanupService.cleanupOAuthCodes({
+      const result = await services.cleanupService.cleanupOAuthCodes({
         dryRun: false,
       });
 
@@ -609,23 +625,23 @@ describe('CleanupService', () => {
 
     test('should delete expired authorization codes', async () => {
       // Create expired codes
-      await createOAuthCode(app, {
+      await createOAuthCode(services, {
         userId,
         clientId,
         expiredAt: new Date(Date.now() - 10000), // Expired
         consumedAt: null,
       });
-      await createOAuthCode(app, {
+      await createOAuthCode(services, {
         userId,
         clientId,
         expiredAt: new Date(Date.now() - 20000), // Expired
         consumedAt: null,
       });
 
-      const countBefore = await countEntities(app, 'oauthCode');
+      const countBefore = await countEntities(services, 'oauthCode');
       expect(countBefore).toBe(2);
 
-      const result = await app.cleanupService.cleanupOAuthCodes({
+      const result = await services.cleanupService.cleanupOAuthCodes({
         dryRun: false,
       });
 
@@ -633,20 +649,20 @@ describe('CleanupService', () => {
       expect(result.deletedCount).toBe(2);
       expect(result.message).toContain('2 expired');
 
-      const countAfter = await countEntities(app, 'oauthCode');
+      const countAfter = await countEntities(services, 'oauthCode');
       expect(countAfter).toBe(0);
     });
 
     test('should delete consumed codes older than retention period', async () => {
       // Create consumed code older than retention (retention is 0 in CLI_TEST_CONFIG)
-      await createOAuthCode(app, {
+      await createOAuthCode(services, {
         userId,
         clientId,
         expiredAt: new Date(Date.now() + 60000), // Not expired
         consumedAt: new Date(Date.now() - 10000), // Consumed 10 seconds ago
       });
 
-      const result = await app.cleanupService.cleanupOAuthCodes({
+      const result = await services.cleanupService.cleanupOAuthCodes({
         dryRun: false,
       });
 
@@ -656,7 +672,7 @@ describe('CleanupService', () => {
 
     test('should not delete recently consumed codes within retention', async () => {
       // Create app with 1 hour consumed retention
-      const retentionApp = await createServer({
+      const retentionServer = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -668,62 +684,65 @@ describe('CleanupService', () => {
       });
 
       try {
-        const testUserId = await createTestUser(retentionApp);
-        const testClientId = await createTestOAuthClient(retentionApp);
+        const testUserId = await createTestUser(retentionServer.services);
+        const testClientId = await createTestOAuthClient(
+          retentionServer.services,
+        );
 
         // Create recently consumed code (30 minutes ago, within 1 hour retention)
-        await createOAuthCode(retentionApp, {
+        await createOAuthCode(retentionServer.services, {
           userId: testUserId,
           clientId: testClientId,
           expiredAt: new Date(Date.now() + 60000),
           consumedAt: new Date(Date.now() - 30 * 60 * 1000),
         });
 
-        const result = await retentionApp.cleanupService.cleanupOAuthCodes({
-          dryRun: false,
-        });
+        const result =
+          await retentionServer.services.cleanupService.cleanupOAuthCodes({
+            dryRun: false,
+          });
 
         // Should not delete the recently consumed code
         expect(result.deletedCount).toBe(0);
       } finally {
-        await retentionApp.close();
+        await retentionServer.cleanup();
       }
     });
 
     test('should not delete non-expired and non-consumed codes', async () => {
       // Create a valid, non-consumed code
-      await createOAuthCode(app, {
+      await createOAuthCode(services, {
         userId,
         clientId,
         expiredAt: new Date(Date.now() + 60000), // Valid
         consumedAt: null, // Not consumed
       });
 
-      const result = await app.cleanupService.cleanupOAuthCodes({
+      const result = await services.cleanupService.cleanupOAuthCodes({
         dryRun: false,
       });
 
       expect(result.deletedCount).toBe(0);
 
-      const countAfter = await countEntities(app, 'oauthCode');
+      const countAfter = await countEntities(services, 'oauthCode');
       expect(countAfter).toBe(1);
     });
 
     test('should work in dry-run mode', async () => {
-      await createOAuthCode(app, {
+      await createOAuthCode(services, {
         userId,
         clientId,
         expiredAt: new Date(Date.now() - 10000),
         consumedAt: null,
       });
-      await createOAuthCode(app, {
+      await createOAuthCode(services, {
         userId,
         clientId,
         expiredAt: new Date(Date.now() + 60000),
         consumedAt: new Date(Date.now() - 10000),
       });
 
-      const result = await app.cleanupService.cleanupOAuthCodes({
+      const result = await services.cleanupService.cleanupOAuthCodes({
         dryRun: true,
       });
 
@@ -731,19 +750,19 @@ describe('CleanupService', () => {
       expect(result.message).toContain('Would delete');
 
       // Codes should NOT be deleted
-      const countAfter = await countEntities(app, 'oauthCode');
+      const countAfter = await countEntities(services, 'oauthCode');
       expect(countAfter).toBe(2);
     });
 
     test('should report correct counts for expired vs consumed', async () => {
       // Create 2 expired codes
-      await createOAuthCode(app, {
+      await createOAuthCode(services, {
         userId,
         clientId,
         expiredAt: new Date(Date.now() - 10000),
         consumedAt: null,
       });
-      await createOAuthCode(app, {
+      await createOAuthCode(services, {
         userId,
         clientId,
         expiredAt: new Date(Date.now() - 20000),
@@ -751,14 +770,14 @@ describe('CleanupService', () => {
       });
 
       // Create 1 consumed code
-      await createOAuthCode(app, {
+      await createOAuthCode(services, {
         userId,
         clientId,
         expiredAt: new Date(Date.now() + 60000),
         consumedAt: new Date(Date.now() - 10000),
       });
 
-      const result = await app.cleanupService.cleanupOAuthCodes({
+      const result = await services.cleanupService.cleanupOAuthCodes({
         dryRun: false,
       });
 
@@ -769,32 +788,35 @@ describe('CleanupService', () => {
   });
 
   describe('cleanupEmailVerifications', () => {
-    let app: FastifyInstance;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
     let userId: string;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: CLI_TEST_CONFIG,
         cliMode: true,
         skipListen: true,
       });
+      services = server.services;
+      cleanup = server.cleanup;
 
-      userId = await createTestUser(app);
+      userId = await createTestUser(services);
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     beforeEach(async () => {
-      await withMikroContext(app, async () => {
-        const em = app.mikro.em.fork();
+      await withMikroContext(services, async () => {
+        const em = services.mikro.em.fork();
         await em.nativeDelete(EmailVerificationEntity, {});
       });
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledApp = await createServer({
+      const disabledServer = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -807,20 +829,22 @@ describe('CleanupService', () => {
 
       try {
         const result =
-          await disabledApp.cleanupService.cleanupEmailVerifications({
-            dryRun: false,
-          });
+          await disabledServer.services.cleanupService.cleanupEmailVerifications(
+            {
+              dryRun: false,
+            },
+          );
 
         expect(result.skipped).toBe(true);
         expect(result.deletedCount).toBe(0);
         expect(result.message).toBe('Disabled in config');
       } finally {
-        await disabledApp.close();
+        await disabledServer.cleanup();
       }
     });
 
     test('should return "No expired tokens" when nothing to clean', async () => {
-      const result = await app.cleanupService.cleanupEmailVerifications({
+      const result = await services.cleanupService.cleanupEmailVerifications({
         dryRun: false,
       });
 
@@ -830,102 +854,105 @@ describe('CleanupService', () => {
     });
 
     test('should delete expired unverified tokens', async () => {
-      await createEmailVerification(app, {
+      await createEmailVerification(services, {
         userId,
         expiresAt: new Date(Date.now() - 10000),
         verified: false,
       });
-      await createEmailVerification(app, {
+      await createEmailVerification(services, {
         userId,
         expiresAt: new Date(Date.now() - 20000),
         verified: false,
       });
 
-      const countBefore = await countEntities(app, 'emailVerification');
+      const countBefore = await countEntities(services, 'emailVerification');
       expect(countBefore).toBe(2);
 
-      const result = await app.cleanupService.cleanupEmailVerifications({
+      const result = await services.cleanupService.cleanupEmailVerifications({
         dryRun: false,
       });
 
       expect(result.skipped).toBe(false);
       expect(result.deletedCount).toBe(2);
 
-      const countAfter = await countEntities(app, 'emailVerification');
+      const countAfter = await countEntities(services, 'emailVerification');
       expect(countAfter).toBe(0);
     });
 
     test('should not delete verified tokens', async () => {
       // Create expired but verified token (should not be deleted)
-      await createEmailVerification(app, {
+      await createEmailVerification(services, {
         userId,
         expiresAt: new Date(Date.now() - 10000),
         verified: true,
       });
 
       // Create expired unverified token (should be deleted)
-      await createEmailVerification(app, {
+      await createEmailVerification(services, {
         userId,
         expiresAt: new Date(Date.now() - 10000),
         verified: false,
       });
 
-      const result = await app.cleanupService.cleanupEmailVerifications({
+      const result = await services.cleanupService.cleanupEmailVerifications({
         dryRun: false,
       });
 
       expect(result.deletedCount).toBe(1);
 
-      const countAfter = await countEntities(app, 'emailVerification');
+      const countAfter = await countEntities(services, 'emailVerification');
       expect(countAfter).toBe(1);
     });
 
     test('should work in dry-run mode', async () => {
-      await createEmailVerification(app, {
+      await createEmailVerification(services, {
         userId,
         expiresAt: new Date(Date.now() - 10000),
         verified: false,
       });
 
-      const result = await app.cleanupService.cleanupEmailVerifications({
+      const result = await services.cleanupService.cleanupEmailVerifications({
         dryRun: true,
       });
 
       expect(result.deletedCount).toBe(1);
       expect(result.message).toContain('Would delete');
 
-      const countAfter = await countEntities(app, 'emailVerification');
+      const countAfter = await countEntities(services, 'emailVerification');
       expect(countAfter).toBe(1);
     });
   });
 
   describe('cleanupPasswordResets', () => {
-    let app: FastifyInstance;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
     let userId: string;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: CLI_TEST_CONFIG,
         cliMode: true,
         skipListen: true,
       });
+      services = server.services;
+      cleanup = server.cleanup;
 
-      userId = await createTestUser(app);
+      userId = await createTestUser(services);
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     beforeEach(async () => {
-      await withMikroContext(app, async () => {
-        const em = app.mikro.em.fork();
+      await withMikroContext(services, async () => {
+        const em = services.mikro.em.fork();
         await em.nativeDelete(PasswordResetEntity, {});
       });
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledApp = await createServer({
+      const disabledServer = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -937,20 +964,21 @@ describe('CleanupService', () => {
       });
 
       try {
-        const result = await disabledApp.cleanupService.cleanupPasswordResets({
-          dryRun: false,
-        });
+        const result =
+          await disabledServer.services.cleanupService.cleanupPasswordResets({
+            dryRun: false,
+          });
 
         expect(result.skipped).toBe(true);
         expect(result.deletedCount).toBe(0);
         expect(result.message).toBe('Disabled in config');
       } finally {
-        await disabledApp.close();
+        await disabledServer.cleanup();
       }
     });
 
     test('should return "No expired tokens" when nothing to clean', async () => {
-      const result = await app.cleanupService.cleanupPasswordResets({
+      const result = await services.cleanupService.cleanupPasswordResets({
         dryRun: false,
       });
 
@@ -960,99 +988,102 @@ describe('CleanupService', () => {
     });
 
     test('should delete expired unused tokens', async () => {
-      await createPasswordReset(app, {
+      await createPasswordReset(services, {
         userId,
         expiresAt: new Date(Date.now() - 10000),
         used: false,
       });
-      await createPasswordReset(app, {
+      await createPasswordReset(services, {
         userId,
         expiresAt: new Date(Date.now() - 20000),
         used: false,
       });
 
-      const countBefore = await countEntities(app, 'passwordReset');
+      const countBefore = await countEntities(services, 'passwordReset');
       expect(countBefore).toBe(2);
 
-      const result = await app.cleanupService.cleanupPasswordResets({
+      const result = await services.cleanupService.cleanupPasswordResets({
         dryRun: false,
       });
 
       expect(result.skipped).toBe(false);
       expect(result.deletedCount).toBe(2);
 
-      const countAfter = await countEntities(app, 'passwordReset');
+      const countAfter = await countEntities(services, 'passwordReset');
       expect(countAfter).toBe(0);
     });
 
     test('should not delete used tokens', async () => {
       // Create expired but used token (should not be deleted)
-      await createPasswordReset(app, {
+      await createPasswordReset(services, {
         userId,
         expiresAt: new Date(Date.now() - 10000),
         used: true,
       });
 
       // Create expired unused token (should be deleted)
-      await createPasswordReset(app, {
+      await createPasswordReset(services, {
         userId,
         expiresAt: new Date(Date.now() - 10000),
         used: false,
       });
 
-      const result = await app.cleanupService.cleanupPasswordResets({
+      const result = await services.cleanupService.cleanupPasswordResets({
         dryRun: false,
       });
 
       expect(result.deletedCount).toBe(1);
 
-      const countAfter = await countEntities(app, 'passwordReset');
+      const countAfter = await countEntities(services, 'passwordReset');
       expect(countAfter).toBe(1);
     });
 
     test('should work in dry-run mode', async () => {
-      await createPasswordReset(app, {
+      await createPasswordReset(services, {
         userId,
         expiresAt: new Date(Date.now() - 10000),
         used: false,
       });
 
-      const result = await app.cleanupService.cleanupPasswordResets({
+      const result = await services.cleanupService.cleanupPasswordResets({
         dryRun: true,
       });
 
       expect(result.deletedCount).toBe(1);
       expect(result.message).toContain('Would delete');
 
-      const countAfter = await countEntities(app, 'passwordReset');
+      const countAfter = await countEntities(services, 'passwordReset');
       expect(countAfter).toBe(1);
     });
   });
 
   describe('cleanupDeletedUsers', () => {
-    let app: FastifyInstance;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: CLI_TEST_CONFIG,
         cliMode: true,
         skipListen: true,
       });
+      services = server.services;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     beforeEach(async () => {
-      await withMikroContext(app, async () => {
-        const em = app.mikro.em.fork();
+      await withMikroContext(services, async () => {
+        const em = services.mikro.em.fork();
         await em.nativeDelete(UserEntity, { managed_by: 'database' });
       });
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledApp = await createServer({
+      const disabledServer = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -1064,20 +1095,21 @@ describe('CleanupService', () => {
       });
 
       try {
-        const result = await disabledApp.cleanupService.cleanupDeletedUsers({
-          dryRun: false,
-        });
+        const result =
+          await disabledServer.services.cleanupService.cleanupDeletedUsers({
+            dryRun: false,
+          });
 
         expect(result.skipped).toBe(true);
         expect(result.deletedCount).toBe(0);
         expect(result.message).toBe('Disabled in config');
       } finally {
-        await disabledApp.close();
+        await disabledServer.cleanup();
       }
     });
 
     test('should skip when account_deletion feature is disabled', async () => {
-      const noAccountDeletionApp = await createServer({
+      const noAccountDeletionServer = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
@@ -1094,19 +1126,21 @@ describe('CleanupService', () => {
 
       try {
         const result =
-          await noAccountDeletionApp.cleanupService.cleanupDeletedUsers({
-            dryRun: false,
-          });
+          await noAccountDeletionServer.services.cleanupService.cleanupDeletedUsers(
+            {
+              dryRun: false,
+            },
+          );
 
         expect(result.skipped).toBe(true);
         expect(result.message).toBe('Account deletion feature is disabled');
       } finally {
-        await noAccountDeletionApp.close();
+        await noAccountDeletionServer.cleanup();
       }
     });
 
     test('should return message when no users ready for deletion', async () => {
-      const result = await app.cleanupService.cleanupDeletedUsers({
+      const result = await services.cleanupService.cleanupDeletedUsers({
         dryRun: false,
       });
 
@@ -1117,24 +1151,24 @@ describe('CleanupService', () => {
 
     test('should permanently delete users after retention period', async () => {
       // Create soft-deleted user (deleted 10 seconds ago, retention is 0)
-      await createTestUser(app, {
+      await createTestUser(services, {
         deletedAt: new Date(Date.now() - 10000),
         managedBy: 'database',
       });
 
-      const countBefore = await countEntities(app, 'user', {
+      const countBefore = await countEntities(services, 'user', {
         managed_by: 'database',
       });
       expect(countBefore).toBe(1);
 
-      const result = await app.cleanupService.cleanupDeletedUsers({
+      const result = await services.cleanupService.cleanupDeletedUsers({
         dryRun: false,
       });
 
       expect(result.skipped).toBe(false);
       expect(result.deletedCount).toBe(1);
 
-      const countAfter = await countEntities(app, 'user', {
+      const countAfter = await countEntities(services, 'user', {
         managed_by: 'database',
       });
       expect(countAfter).toBe(0);
@@ -1142,18 +1176,18 @@ describe('CleanupService', () => {
 
     test('should only delete database-managed users', async () => {
       // Create a database-managed soft-deleted user
-      await createTestUser(app, {
+      await createTestUser(services, {
         deletedAt: new Date(Date.now() - 10000),
         managedBy: 'database',
       });
 
       // Create a config-managed soft-deleted user (should not be deleted)
-      await createTestUser(app, {
+      await createTestUser(services, {
         deletedAt: new Date(Date.now() - 10000),
         managedBy: 'config',
       });
 
-      const result = await app.cleanupService.cleanupDeletedUsers({
+      const result = await services.cleanupService.cleanupDeletedUsers({
         dryRun: false,
       });
 
@@ -1161,32 +1195,32 @@ describe('CleanupService', () => {
       expect(result.deletedCount).toBe(1);
 
       // Config-managed user should remain
-      const configUserCount = await countEntities(app, 'user', {
+      const configUserCount = await countEntities(services, 'user', {
         managed_by: 'config',
       });
       expect(configUserCount).toBe(1);
 
       // Cleanup config-managed user for other tests
-      await withMikroContext(app, async () => {
-        const em = app.mikro.em.fork();
+      await withMikroContext(services, async () => {
+        const em = services.mikro.em.fork();
         await em.nativeDelete(UserEntity, { managed_by: 'config' });
       });
     });
 
     test('should work in dry-run mode', async () => {
-      await createTestUser(app, {
+      await createTestUser(services, {
         deletedAt: new Date(Date.now() - 10000),
         managedBy: 'database',
       });
 
-      const result = await app.cleanupService.cleanupDeletedUsers({
+      const result = await services.cleanupService.cleanupDeletedUsers({
         dryRun: true,
       });
 
       expect(result.deletedCount).toBe(1);
       expect(result.message).toContain('Would delete');
 
-      const countAfter = await countEntities(app, 'user', {
+      const countAfter = await countEntities(services, 'user', {
         managed_by: 'database',
       });
       expect(countAfter).toBe(1);

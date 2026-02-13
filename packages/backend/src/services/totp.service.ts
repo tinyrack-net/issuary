@@ -1,11 +1,10 @@
 import { hash, verify } from '@node-rs/argon2';
-import fastifyPlugin from 'fastify-plugin';
 import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
 import qrcode from 'qrcode';
 import type { UserEntity } from '@/entities/user.entity.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
-import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import type { MikroService } from '@/types.js';
 
 /**
  * TOTP setup data returned when initiating 2FA setup
@@ -18,12 +17,6 @@ export interface TotpSetupData {
   otpauthUrl: string;
   /** QR code as data URL (data:image/png;base64,...) */
   qrCodeDataUrl: string;
-}
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    totpService: TotpService;
-  }
 }
 
 /** Number of recovery codes to generate */
@@ -296,14 +289,3 @@ export class TotpService {
     throw new e.InvalidRecoveryCode.Error();
   }
 }
-
-export default fastifyPlugin(
-  async (fastify) => {
-    const totpService = new TotpService(fastify.mikro, fastify.config);
-    fastify.decorate('totpService', totpService);
-  },
-  {
-    name: 'totp-service-plugin',
-    dependencies: ['base-service-plugin'],
-  },
-);

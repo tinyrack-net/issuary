@@ -1,9 +1,8 @@
 import { createHash } from 'node:crypto';
-import fastifyPlugin from 'fastify-plugin';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import { validatePKCE } from '@/lib/pkce.js';
-import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
+import type { MikroService } from '@/types.js';
 import type {
   AccessTokenPayload,
   JwtService,
@@ -79,12 +78,6 @@ export interface TokenResponse {
   id_token?: string | undefined;
   /** Space-separated list of granted scopes */
   scope: string;
-}
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    oauthTokenService: OAuthTokenService;
-  }
 }
 
 /**
@@ -518,27 +511,3 @@ export class OAuthTokenService {
     return response;
   }
 }
-
-export default fastifyPlugin(
-  async (fastify) => {
-    fastify.decorate(
-      'oauthTokenService',
-      new OAuthTokenService(
-        fastify.config,
-        fastify.mikro,
-        fastify.userService,
-        fastify.oauthClientService,
-        fastify.jwtService,
-      ),
-    );
-  },
-  {
-    name: 'oauth-token-service-plugin',
-    dependencies: [
-      'mikro-orm-plugin',
-      'user-service-plugin',
-      'oauth-client-service-plugin',
-      'jwt-service-plugin',
-    ],
-  },
-);

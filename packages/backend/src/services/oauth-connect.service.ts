@@ -1,4 +1,3 @@
-import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import {
   type ResolvedAppConfig,
@@ -7,9 +6,9 @@ import {
 } from '@/lib/config/index.js';
 import { isEmailAllowed } from '@/lib/email-pattern.js';
 import { generatePKCE } from '@/lib/pkce.js';
-import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { f } from '@/schemas/field.js';
+import type { MikroService } from '@/types.js';
 import type { TermsService } from './terms.service.js';
 import type { UserService } from './user.service.js';
 
@@ -87,12 +86,6 @@ export interface OAuthAuthResult {
 
 // Note: This service uses fastify.config for identity_providers (OAuth providers config)
 // but user-related config lookups have been removed since users are now synced to DB.
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    oauthConnectService: OAuthConnectService;
-  }
-}
 
 export class OAuthConnectService {
   public constructor(
@@ -786,23 +779,3 @@ export class OAuthConnectService {
     }));
   }
 }
-
-export default fastifyPlugin(
-  async (fastify) => {
-    const oauthConnectService = new OAuthConnectService(
-      fastify.config,
-      fastify.userService,
-      fastify.mikro,
-      fastify.termsService,
-    );
-    fastify.decorate('oauthConnectService', oauthConnectService);
-  },
-  {
-    name: 'oauth-connect-service-plugin',
-    dependencies: [
-      'base-service-plugin',
-      'user-service-plugin',
-      'terms-service-plugin',
-    ],
-  },
-);

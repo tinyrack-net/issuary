@@ -1,9 +1,8 @@
-import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
-import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { f } from '@/schemas/field.js';
+import type { MikroService } from '@/types.js';
 import type { OAuthClientService } from './oauth-client.service.js';
 import type { UserConsentService } from './user-consent.service.js';
 
@@ -47,12 +46,6 @@ export interface AuthorizeResult {
   type: 'redirect';
   /** URL to redirect the user agent to */
   url: string;
-}
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    oauthAuthorizeService: OAuthAuthorizeService;
-  }
 }
 
 export class OAuthAuthorizeService {
@@ -379,23 +372,3 @@ export class OAuthAuthorizeService {
     return code;
   }
 }
-
-export default fastifyPlugin(
-  async (fastify) => {
-    const oauthAuthorizeService = new OAuthAuthorizeService(
-      fastify.config,
-      fastify.mikro,
-      fastify.oauthClientService,
-      fastify.userConsentService,
-    );
-    fastify.decorate('oauthAuthorizeService', oauthAuthorizeService);
-  },
-  {
-    name: 'oauth-authorize-service-plugin',
-    dependencies: [
-      'base-service-plugin',
-      'oauth-client-service-plugin',
-      'user-consent-service-plugin',
-    ],
-  },
-);

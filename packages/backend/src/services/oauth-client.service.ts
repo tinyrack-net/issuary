@@ -1,15 +1,8 @@
 import { verify } from '@node-rs/argon2';
-import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
-import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    oauthClientService: OAuthClientService;
-  }
-}
+import type { MikroService } from '@/types.js';
 
 export class OAuthClientService {
   public constructor(private readonly mikro: MikroService) {}
@@ -134,14 +127,3 @@ export class OAuthClientService {
     return client.clientSecretHash === null;
   }
 }
-
-export default fastifyPlugin(
-  async (fastify) => {
-    const oauthClientService = new OAuthClientService(fastify.mikro);
-    fastify.decorate('oauthClientService', oauthClientService);
-  },
-  {
-    name: 'oauth-client-service-plugin',
-    dependencies: ['base-service-plugin'],
-  },
-);

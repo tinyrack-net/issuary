@@ -1,28 +1,14 @@
 import type { Loaded } from '@mikro-orm/core';
-import fastifyPlugin from 'fastify-plugin';
 import type z from 'zod/v4';
 import type { UserEntity } from '@/entities/user.entity.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { Locale } from '@/lib/locale.js';
-import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
+import type { MikroService } from '@/types.js';
 import type { EmailService } from './email.service.js';
 import type { EmailVerificationService } from './email-verification.service.js';
 import type { TermsService } from './terms.service.js';
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    userService: UserService;
-  }
-  interface FastifyRequest {
-    auth: {
-      verify: () => Promise<z.infer<typeof r.UserSession>>;
-      verifyPending2FAUser: () => Promise<z.infer<typeof r.UserSession>>;
-      verifyPending2FASetupUser: () => Promise<z.infer<typeof r.UserSession>>;
-    };
-  }
-}
 
 export class UserService {
   public constructor(
@@ -223,53 +209,3 @@ export class UserService {
     return methods;
   }
 }
-
-export default fastifyPlugin(
-  async (fastify) => {
-    const userService = new UserService(
-      fastify.mikro,
-      fastify.config,
-      fastify.emailService,
-      fastify.emailVerificationService,
-      fastify.termsService,
-    );
-    fastify.decorate('userService', userService);
-
-    fastify.addHook('onRequest', async (req) => {
-      req.auth = {
-        verify: async () => {
-          const userId = req.session.get('user')?.id;
-          if (!userId) {
-            throw new e.Unauthorized.Error();
-          }
-          const userEntity = await fastify.mikro.user.verifyById(userId);
-          return userService.userEntityToSessionUser(userEntity);
-        },
-        verifyPending2FAUser: async () => {
-          const userId = req.session.get('pending2FAUser')?.id;
-          if (!userId) {
-            throw new e.Unauthorized.Error();
-          }
-          const userEntity = await fastify.mikro.user.verifyById(userId);
-          return userService.userEntityToSessionUser(userEntity);
-        },
-        verifyPending2FASetupUser: async () => {
-          const userId = req.session.get('pending2FASetup')?.id;
-          if (!userId) {
-            throw new e.Unauthorized.Error();
-          }
-          const userEntity = await fastify.mikro.user.verifyById(userId);
-          return userService.userEntityToSessionUser(userEntity);
-        },
-      };
-    });
-  },
-  {
-    name: 'user-service-plugin',
-    dependencies: [
-      'base-service-plugin',
-      'email-service-plugin',
-      'terms-service-plugin',
-    ],
-  },
-);

@@ -1,4 +1,3 @@
-import fastifyPlugin from 'fastify-plugin';
 import { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
 import { JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
 import { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
@@ -17,8 +16,8 @@ import {
   formatDuration,
   parseDurationToMs,
 } from '@/lib/duration.js';
-import type { MikroService } from '@/plugins/core/mikro-orm.js';
 import type { JwtKeyRepository } from '@/repositories/jwt-key.repository.js';
+import type { MikroService } from '@/types.js';
 import type { JwtService } from './jwt.service.js';
 import type { CleanupOptions, CleanupResult } from './types.js';
 
@@ -54,12 +53,6 @@ export interface CleanupSummary {
   totalSkipped: number;
   totalFailed: number;
   totalDurationMs: number;
-}
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    cleanupService: CleanupService;
-  }
 }
 
 /**
@@ -750,16 +743,3 @@ export class CleanupService {
     };
   }
 }
-
-export default fastifyPlugin(
-  async (fastify) => {
-    fastify.decorate(
-      'cleanupService',
-      new CleanupService(fastify.config, fastify.mikro, fastify.jwtService),
-    );
-  },
-  {
-    name: 'cleanup-service-plugin',
-    dependencies: ['mikro-orm-plugin', 'jwt-service-plugin'],
-  },
-);

@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import {
@@ -6,6 +5,7 @@ import {
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { ServiceContainer } from '@/types.js';
 
 /**
  * Tests for OAuthConnectService.authenticateWithOAuth()
@@ -36,10 +36,11 @@ async function expectApiError(
 }
 
 describe('OAuthConnectService - auto_link strategy', () => {
-  let app: FastifyInstance;
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    app = await createServer({
+    const server = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
@@ -59,22 +60,28 @@ describe('OAuthConnectService - auto_link strategy', () => {
         ],
       },
     });
+    services = server.services;
+    cleanup = server.cleanup;
   });
 
   afterAll(async () => {
-    await app.close();
+    await cleanup();
   });
 
   test('should reject when email_verified is false (existing user)', async () => {
     const email = generateUniqueEmail('oauth-unverified');
 
     await expectApiError(
-      withMikroContext(app, () =>
-        app.oauthConnectService.authenticateWithOAuth('google', MOCK_TOKENS, {
-          id: 'provider-user-1',
-          email,
-          email_verified: false,
-        }),
+      withMikroContext(services, () =>
+        services.oauthConnectService.authenticateWithOAuth(
+          'google',
+          MOCK_TOKENS,
+          {
+            id: 'provider-user-1',
+            email,
+            email_verified: false,
+          },
+        ),
       ),
       'OAUTH_EMAIL_NOT_VERIFIED',
     );
@@ -84,12 +91,16 @@ describe('OAuthConnectService - auto_link strategy', () => {
     const email = generateUniqueEmail('oauth-new-unverified');
 
     await expectApiError(
-      withMikroContext(app, () =>
-        app.oauthConnectService.authenticateWithOAuth('google', MOCK_TOKENS, {
-          id: 'provider-user-new',
-          email,
-          email_verified: false,
-        }),
+      withMikroContext(services, () =>
+        services.oauthConnectService.authenticateWithOAuth(
+          'google',
+          MOCK_TOKENS,
+          {
+            id: 'provider-user-new',
+            email,
+            email_verified: false,
+          },
+        ),
       ),
       'OAUTH_EMAIL_NOT_VERIFIED',
     );
@@ -99,30 +110,34 @@ describe('OAuthConnectService - auto_link strategy', () => {
     const email = generateUniqueEmail('oauth-autolink');
 
     // Create existing user in DB
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: 'test-password',
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
     });
 
     // Authenticate with OAuth using same email
-    const result = await withMikroContext(app, () =>
-      app.oauthConnectService.authenticateWithOAuth('google', MOCK_TOKENS, {
-        id: `provider-autolink-${Date.now()}`,
-        email,
-        email_verified: true,
-      }),
+    const result = await withMikroContext(services, () =>
+      services.oauthConnectService.authenticateWithOAuth(
+        'google',
+        MOCK_TOKENS,
+        {
+          id: `provider-autolink-${Date.now()}`,
+          email,
+          email_verified: true,
+        },
+      ),
     );
 
     expect(result.isNewUser).toBe(false);
     expect(result.user.email).toBe(email);
 
     // Verify OAuth account was linked
-    const linked = await withMikroContext(app, () =>
-      app.oauthConnectService.getLinkedAccounts(result.user.id),
+    const linked = await withMikroContext(services, () =>
+      services.oauthConnectService.getLinkedAccounts(result.user.id),
     );
     expect(linked).toHaveLength(1);
     expect(linked[0]?.provider_name).toBe('google');
@@ -131,12 +146,16 @@ describe('OAuthConnectService - auto_link strategy', () => {
   test('should create new user when email_verified is true and no existing user', async () => {
     const email = generateUniqueEmail('oauth-newuser');
 
-    const result = await withMikroContext(app, () =>
-      app.oauthConnectService.authenticateWithOAuth('google', MOCK_TOKENS, {
-        id: `provider-new-${Date.now()}`,
-        email,
-        email_verified: true,
-      }),
+    const result = await withMikroContext(services, () =>
+      services.oauthConnectService.authenticateWithOAuth(
+        'google',
+        MOCK_TOKENS,
+        {
+          id: `provider-new-${Date.now()}`,
+          email,
+          email_verified: true,
+        },
+      ),
     );
 
     expect(result.isNewUser).toBe(true);
@@ -147,10 +166,11 @@ describe('OAuthConnectService - auto_link strategy', () => {
 });
 
 describe('OAuthConnectService - require_link strategy', () => {
-  let app: FastifyInstance;
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    app = await createServer({
+    const server = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
@@ -170,32 +190,38 @@ describe('OAuthConnectService - require_link strategy', () => {
         ],
       },
     });
+    services = server.services;
+    cleanup = server.cleanup;
   });
 
   afterAll(async () => {
-    await app.close();
+    await cleanup();
   });
 
   test('should throw OAuthEmailConflict when email matches existing user', async () => {
     const email = generateUniqueEmail('oauth-requirelink');
 
     // Create existing user in DB
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: 'test-password',
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
     });
 
     await expectApiError(
-      withMikroContext(app, () =>
-        app.oauthConnectService.authenticateWithOAuth('google', MOCK_TOKENS, {
-          id: `provider-requirelink-${Date.now()}`,
-          email,
-          email_verified: true,
-        }),
+      withMikroContext(services, () =>
+        services.oauthConnectService.authenticateWithOAuth(
+          'google',
+          MOCK_TOKENS,
+          {
+            id: `provider-requirelink-${Date.now()}`,
+            email,
+            email_verified: true,
+          },
+        ),
       ),
       'OAUTH_EMAIL_CONFLICT',
     );
@@ -204,12 +230,16 @@ describe('OAuthConnectService - require_link strategy', () => {
   test('should still create new user when no email conflict', async () => {
     const email = generateUniqueEmail('oauth-requirelink-new');
 
-    const result = await withMikroContext(app, () =>
-      app.oauthConnectService.authenticateWithOAuth('google', MOCK_TOKENS, {
-        id: `provider-requirelink-new-${Date.now()}`,
-        email,
-        email_verified: true,
-      }),
+    const result = await withMikroContext(services, () =>
+      services.oauthConnectService.authenticateWithOAuth(
+        'google',
+        MOCK_TOKENS,
+        {
+          id: `provider-requirelink-new-${Date.now()}`,
+          email,
+          email_verified: true,
+        },
+      ),
     );
 
     expect(result.isNewUser).toBe(true);
@@ -218,10 +248,11 @@ describe('OAuthConnectService - require_link strategy', () => {
 });
 
 describe('OAuthConnectService - completeOAuthRegistration', () => {
-  let app: FastifyInstance;
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    app = await createServer({
+    const server = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
@@ -241,18 +272,20 @@ describe('OAuthConnectService - completeOAuthRegistration', () => {
         ],
       },
     });
+    services = server.services;
+    cleanup = server.cleanup;
   });
 
   afterAll(async () => {
-    await app.close();
+    await cleanup();
   });
 
   test('should reject when email_verified is false', async () => {
     const email = generateUniqueEmail('oauth-complete-unverified');
 
     await expectApiError(
-      withMikroContext(app, () =>
-        app.oauthConnectService.completeOAuthRegistration({
+      withMikroContext(services, () =>
+        services.oauthConnectService.completeOAuthRegistration({
           providerId: 'google',
           tokens: MOCK_TOKENS,
           userInfo: {
