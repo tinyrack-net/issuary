@@ -13,7 +13,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) => {
   return fastify.route({
     method: 'GET',
-    url: '',
+    url: '/terms',
     schema: {
       summary: 'Get terms of service',
       description:

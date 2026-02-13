@@ -18,7 +18,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) => {
   return fastify.route({
     method: 'POST',
-    url: '',
+    url: '/terms/consent',
     schema: {
       summary: 'Submit terms consent',
       description:

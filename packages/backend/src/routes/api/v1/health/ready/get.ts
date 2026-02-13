@@ -13,7 +13,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) => {
   return fastify.route({
     method: 'GET',
-    url: '',
+    url: '/health/ready',
     schema: {
       summary: 'Readiness probe',
       description:

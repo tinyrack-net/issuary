@@ -21,7 +21,7 @@ export default (fastify: FastifyWithZodInstance) => {
   }
   fastify.route({
     method: 'POST',
-    url: '',
+    url: '/auth/totp/recovery/verify',
     schema: {
       summary: 'Verify TOTP recovery code for login',
       description:

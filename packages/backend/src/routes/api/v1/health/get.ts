@@ -15,7 +15,7 @@ const startTime = Date.now();
 export default (fastify: FastifyWithZodInstance) => {
   return fastify.route({
     method: 'GET',
-    url: '',
+    url: '/health',
     schema: {
       summary: 'Health check',
       description:

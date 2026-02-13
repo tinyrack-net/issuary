@@ -7,7 +7,7 @@ type OAuthAuthenticationMethod = z.infer<typeof r.OAuthAuthenticationMethod>;
 export default (fastify: FastifyWithZodInstance) => {
   fastify.route({
     method: 'GET',
-    url: '',
+    url: '/config',
     schema: {
       summary: 'Get App Config',
       description: 'Get App Config',
