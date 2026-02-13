@@ -1,6 +1,7 @@
 import { MikroORM, type Options } from '@mikro-orm/core';
 import { Cron } from 'croner';
 import nodemailer from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 import { getDbConfigs } from '@/db/index.js';
 import { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
 import { JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
@@ -26,6 +27,7 @@ import { CleanupService } from '@/services/cleanup.service.js';
 import { EmailService } from '@/services/email.service.js';
 import { EmailVerificationService } from '@/services/email-verification.service.js';
 import { JwtService } from '@/services/jwt.service.js';
+import type { MikroService } from '@/services/mikro.types.js';
 import { OAuthAuthorizeService } from '@/services/oauth-authorize.service.js';
 import { OAuthClientService } from '@/services/oauth-client.service.js';
 import { OAuthConnectService } from '@/services/oauth-connect.service.js';
@@ -36,7 +38,40 @@ import { TermsService } from '@/services/terms.service.js';
 import { TotpService } from '@/services/totp.service.js';
 import { UserService } from '@/services/user.service.js';
 import { UserConsentService } from '@/services/user-consent.service.js';
-import type { MikroService, ServerOptions, ServiceContainer } from '@/types.js';
+
+export interface ServiceContainer {
+  config: ResolvedAppConfig;
+  mikro: MikroService;
+  mail: nodemailer.Transporter<
+    SMTPTransport.SentMessageInfo,
+    SMTPTransport.Options
+  > | null;
+  scheduler: {
+    cleanupJob: Cron | null;
+    start: () => void;
+    stop: () => void;
+  };
+  emailService: EmailService;
+  emailVerificationService: EmailVerificationService | undefined;
+  jwtService: JwtService;
+  passwordResetService: PasswordResetService;
+  termsService: TermsService;
+  userConsentService: UserConsentService;
+  oauthClientService: OAuthClientService;
+  totpService: TotpService;
+  passkeyService: PasskeyService;
+  userService: UserService;
+  oauthAuthorizeService: OAuthAuthorizeService;
+  oauthConnectService: OAuthConnectService;
+  oauthTokenService: OAuthTokenService;
+  cleanupService: CleanupService;
+}
+
+export interface ServerOptions {
+  skipListen: boolean;
+  cliMode: boolean;
+  silent: boolean;
+}
 
 export interface InitResult {
   services: ServiceContainer;
