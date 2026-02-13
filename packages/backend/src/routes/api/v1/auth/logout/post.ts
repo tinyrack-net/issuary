@@ -5,7 +5,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) => {
   fastify.route({
     method: 'POST',
-    url: '',
+    url: '/auth/logout',
     schema: {
       summary: 'Logout',
       description: 'Logout the current user and purge the session',

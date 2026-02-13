@@ -13,7 +13,7 @@ export default (fastify: FastifyWithZodInstance) => {
 
   fastify.route({
     method: 'POST',
-    url: '',
+    url: '/auth/password/forgot',
     schema: {
       summary: 'Request password reset',
       description:

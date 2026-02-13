@@ -11,7 +11,7 @@ export default (fastify: FastifyWithZodInstance) => {
   }
   fastify.route({
     method: 'POST',
-    url: '',
+    url: '/auth/email/resend',
     schema: {
       summary: 'Resend Verification Email',
       description: 'Resend email verification link to user',

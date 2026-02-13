@@ -11,7 +11,7 @@ export default (fastify: FastifyWithZodInstance) => {
   }
   fastify.route({
     method: 'POST',
-    url: '',
+    url: '/auth/email/verify',
     schema: {
       summary: 'Verify Email',
       description: 'Verify user email with verification token',

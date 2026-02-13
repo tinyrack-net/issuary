@@ -9,7 +9,7 @@ export default (fastify: FastifyWithZodInstance) => {
   }
   fastify.route({
     method: 'POST',
-    url: '',
+    url: '/auth/passkey/options',
     schema: {
       summary: 'Get Passkey Authentication Options',
       description:

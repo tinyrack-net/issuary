@@ -11,7 +11,7 @@ export default (fastify: FastifyWithZodInstance) => {
   }
   fastify.route({
     method: 'POST',
-    url: '',
+    url: '/auth/password/reset',
     schema: {
       summary: 'Reset password',
       description: 'Resets the user password using a valid reset token.',

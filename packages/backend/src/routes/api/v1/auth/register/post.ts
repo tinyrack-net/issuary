@@ -10,7 +10,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) => {
   fastify.route({
     method: 'POST',
-    url: '',
+    url: '/auth/register',
     schema: {
       summary: 'Register',
       description:
