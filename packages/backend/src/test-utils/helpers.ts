@@ -1,6 +1,7 @@
 import { RequestContext } from '@mikro-orm/core';
 import { expect } from 'vitest';
-import type { AppType, ServiceContainer } from '@/types.js';
+import type { AppType } from '@/lib/app.js';
+import type { ServiceContainer } from '@/services/container.js';
 import { generateUniqueEmail, TEST_CONSENTS, TEST_USER } from './fixtures.js';
 
 /**

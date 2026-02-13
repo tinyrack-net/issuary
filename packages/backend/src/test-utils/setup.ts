@@ -13,7 +13,8 @@ import type { AppConfigInput } from '@/lib/config/index.js';
  * ```typescript
  * import { createServer } from '@/server.js';
  * import { MINIMAL_TEST_CONFIG } from '@/test-utils/setup.js';
- * import type { AppType, ServiceContainer } from '@/types.js';
+ * import type { AppType } from '@/lib/app.js';
+ * import type { ServiceContainer } from '@/services/container.js';
  *
  * let app: AppType;
  * let services: ServiceContainer;
