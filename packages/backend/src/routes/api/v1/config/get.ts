@@ -1,6 +1,6 @@
 import { createRoute, type z } from '@hono/zod-openapi';
+import type { AppType } from '@/lib/app.js';
 import { r } from '@/schemas/response.js';
-import type { AppType } from '@/types.js';
 
 type OAuthAuthenticationMethod = z.infer<typeof r.OAuthAuthenticationMethod>;
 

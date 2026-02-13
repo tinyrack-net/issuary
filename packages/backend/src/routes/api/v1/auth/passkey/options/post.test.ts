@@ -1,12 +1,13 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import type { AppType } from '@/lib/app.js';
 import { createServer } from '@/server.js';
+import type { ServiceContainer } from '@/services/container.js';
 import {
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
-import type { AppType, ServiceContainer } from '@/types.js';
 
 describe('POST /api/v1/auth/passkey/options', () => {
   let app: AppType;

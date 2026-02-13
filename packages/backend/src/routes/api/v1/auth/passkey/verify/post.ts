@@ -1,9 +1,9 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
+import type { AppType } from '@/lib/app.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
-import type { AppType } from '@/types.js';
 
 const route = createRoute({
   method: 'post',

@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import type { AppType } from '@/lib/app.js';
 import { e } from '@/schemas/error.js';
 import { createServer } from '@/server.js';
+import type { ServiceContainer } from '@/services/container.js';
 import {
   createAuthenticatedSession,
   createDbUserWithSession,
@@ -11,7 +13,6 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
-import type { AppType, ServiceContainer } from '@/types.js';
 
 describe('POST /api/v1/terms/consent', () => {
   describe('Authentication', () => {

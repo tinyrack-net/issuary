@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import type { AppType } from '@/lib/app.js';
 import { createServer } from '@/server.js';
 import {
   MINIMAL_TEST_CONFIG,
   TEST_USER,
   TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
-import type { AppType } from '@/types.js';
 
 let app: AppType;
 let cleanup: () => Promise<void>;

@@ -1,8 +1,8 @@
 import { createRoute, z } from '@hono/zod-openapi';
+import type { AppType } from '@/lib/app.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { f } from '@/schemas/field.js';
 import { termsSchema } from '@/schemas/terms.js';
-import type { AppType } from '@/types.js';
 
 /**
  * GET /api/v1/terms

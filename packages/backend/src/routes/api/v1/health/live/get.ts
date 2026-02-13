@@ -1,7 +1,7 @@
 import { createRoute } from '@hono/zod-openapi';
+import type { AppType } from '@/lib/app.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { r } from '@/schemas/response.js';
-import type { AppType } from '@/types.js';
 
 /**
  * GET /health/live
