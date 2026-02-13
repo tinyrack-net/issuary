@@ -1,0 +1,179 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '@/server.js';
+import { MINIMAL_TEST_CONFIG } from '@/test-utils/index.js';
+import type { AppType } from '@/types.js';
+
+const __dirname = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
+
+// Matches the path resolved by the Hono static middleware at
+// src/middleware/static/index.ts: path.join(__dirname, '../../../public')
+// From src/middleware/static/ that resolves to <backend-root>/public/
+const publicPath = path.join(__dirname, '../../../public');
+
+const INDEX_HTML = [
+  '<!doctype html>',
+  '<html><head><title>{{APP_TITLE}}</title></head>',
+  '<body><div id="root"></div></body>',
+  '</html>',
+].join('\n');
+
+const TEST_HTML = [
+  '<!doctype html>',
+  '<html>',
+  '<head><title>{{PAGE_TITLE}}</title></head>',
+  '<body><p>Hello {{USER_NAME}}</p></body>',
+  '</html>',
+].join('\n');
+
+async function setupTestFiles(): Promise<void> {
+  await fs.promises.mkdir(path.join(publicPath, 'test-subdir'), {
+    recursive: true,
+  });
+  await fs.promises.writeFile(
+    path.join(publicPath, 'index.html'),
+    INDEX_HTML,
+    'utf-8',
+  );
+  await fs.promises.writeFile(
+    path.join(publicPath, 'test-interpolation.html'),
+    TEST_HTML,
+    'utf-8',
+  );
+  await fs.promises.writeFile(
+    path.join(publicPath, 'test-subdir', 'index.html'),
+    TEST_HTML,
+    'utf-8',
+  );
+  await fs.promises.writeFile(
+    path.join(publicPath, 'test.svg'),
+    '<svg></svg>',
+    'utf-8',
+  );
+}
+
+async function cleanupTestFiles(): Promise<void> {
+  await fs.promises.rm(publicPath, {
+    recursive: true,
+    force: true,
+  });
+}
+
+describe('static prod plugin - html_variables integration', () => {
+  describe('with html_variables configured', () => {
+    let app: AppType;
+    let cleanup: () => Promise<void>;
+
+    beforeAll(async () => {
+      await setupTestFiles();
+      ({ app, cleanup } = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          app: {
+            ...MINIMAL_TEST_CONFIG.app,
+            html_variables: {
+              PAGE_TITLE: 'Test App',
+              USER_NAME: 'Alice',
+              APP_TITLE: 'My App',
+            },
+          },
+        },
+      }));
+    });
+
+    afterAll(async () => {
+      await cleanup();
+      await cleanupTestFiles();
+    });
+
+    test('should interpolate variables in directly requested HTML', async () => {
+      const res = await app.request('/test-interpolation.html');
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('text/html');
+      const body = await res.text();
+      expect(body).toContain('<title>Test App</title>');
+      expect(body).toContain('Hello Alice');
+    });
+
+    test('should interpolate variables in SPA fallback', async () => {
+      const res = await app.request('/nonexistent-route');
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('text/html');
+      const body = await res.text();
+      expect(body).toContain('<title>My App</title>');
+    });
+
+    test('should interpolate variables in directory index.html', async () => {
+      const res = await app.request('/test-subdir');
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('text/html');
+      const body = await res.text();
+      expect(body).toContain('<title>Test App</title>');
+    });
+
+    test('should serve non-HTML files without modification', async () => {
+      const res = await app.request('/test.svg');
+
+      expect(res.status).toBe(200);
+      const contentType = res.headers.get('content-type');
+      // Content-type should either be null or not contain text/html
+      if (contentType !== null) {
+        expect(contentType).not.toContain('text/html');
+      }
+    });
+
+    test('should return 404 for API routes', async () => {
+      const res = await app.request('/api/nonexistent');
+
+      expect(res.status).toBe(404);
+    });
+
+    test('should cache HTML and return identical content', async () => {
+      const res1 = await app.request('/test-interpolation.html');
+      const res2 = await app.request('/test-interpolation.html');
+
+      const body1 = await res1.text();
+      const body2 = await res2.text();
+      expect(body1).toBe(body2);
+    });
+  });
+
+  describe('without html_variables (empty)', () => {
+    let app: AppType;
+    let cleanup: () => Promise<void>;
+
+    beforeAll(async () => {
+      await setupTestFiles();
+      ({ app, cleanup } = await createServer({
+        config: MINIMAL_TEST_CONFIG,
+      }));
+    });
+
+    afterAll(async () => {
+      await cleanup();
+      await cleanupTestFiles();
+    });
+
+    test('should serve HTML with placeholders intact', async () => {
+      const res = await app.request('/test-interpolation.html');
+
+      expect(res.status).toBe(200);
+      const body = await res.text();
+      expect(body).toContain('{{PAGE_TITLE}}');
+      expect(body).toContain('{{USER_NAME}}');
+    });
+
+    test('should serve SPA fallback normally', async () => {
+      const res = await app.request('/nonexistent-route');
+
+      expect(res.status).toBe(200);
+      const body = await res.text();
+      expect(body).toContain('<!doctype html>');
+    });
+  });
+});
