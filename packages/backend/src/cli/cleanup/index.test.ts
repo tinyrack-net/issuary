@@ -12,6 +12,7 @@ import { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
 import { PasswordResetEntity } from '@/entities/password-reset.entity.js';
 import { RevokedTokenEntity } from '@/entities/revoked-token.entity.js';
 import { createServer } from '@/server.js';
+import type { ServiceContainer } from '@/services/container.js';
 import {
   CLI_TEST_CONFIG,
   createEmailVerification,
@@ -22,7 +23,6 @@ import {
   createTestUser,
 } from '@/test-utils/cli.js';
 import { MINIMAL_TEST_CONFIG, withMikroContext } from '@/test-utils/index.js';
-import type { ServiceContainer } from '@/types.js';
 import { runCleanup } from './index.js';
 
 /**

@@ -1,5 +1,5 @@
+import type { ServiceContainer } from '@/services/container.js';
 import type { CleanupResult } from '@/services/types.js';
-import type { ServiceContainer } from '@/types.js';
 
 /**
  * Options for running cleanup tasks
