@@ -1,5 +1,5 @@
+import type { AppType } from '@/lib/app.js';
 import { createRouter } from '@/lib/create-router.js';
-import type { AppType } from '@/types.js';
 import authEmailResendPost from './auth/email/resend/post.js';
 import authEmailVerifyPost from './auth/email/verify/post.js';
 // Auth

@@ -5,9 +5,6 @@ import { cors } from 'hono/cors';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { AppType } from '@/lib/app.js';
 import { type AppConfigInput, resolveConfig } from '@/lib/config/index.js';
-// NOTE: registerRoutes will be rewritten for Hono
-// separately. Type mismatch is expected during
-// migration.
 import { createRouter } from '@/lib/create-router.js';
 import { env } from '@/lib/env.js';
 import { authMiddleware } from '@/middleware/auth.js';
