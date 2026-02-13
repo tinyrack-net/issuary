@@ -1,6 +1,3 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import fastifyAutoload from '@fastify/autoload';
 import Fastify from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
@@ -9,10 +6,11 @@ import {
   resolveConfig,
 } from '@/lib/config/index.js';
 import { env } from '@/lib/env.js';
+import { registerCorePlugins } from '@/plugins/core/index.js';
+import { registerHttpPlugins } from '@/plugins/http/index.js';
+import { registerRoutes } from '@/routes/index.js';
+import { registerServices } from '@/services/index.js';
 import 'reflect-metadata';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.resolve(path.dirname(__filename));
 
 export interface ServerOptions {
   skipListen: boolean;
@@ -84,37 +82,22 @@ export async function createServer(createOptions: CreateServerOptions) {
   appInstance.decorate('serverOptions', serverOptions);
 
   // Core plugins (always loaded - database, config seeding, validation, email)
-  await appInstance.register(fastifyAutoload, {
-    dir: path.join(__dirname, 'plugins/core'),
-    ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
-  });
+  await registerCorePlugins(appInstance);
 
   // HTTP plugins (skip in CLI mode - cors, session, static, swagger, etc.)
   if (!serverOptions.cliMode) {
-    await appInstance.register(fastifyAutoload, {
-      dir: path.join(__dirname, 'plugins/http'),
-      ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
-    });
+    await registerHttpPlugins(appInstance);
   }
 
   // Services (always loaded - some needed for CLI commands like cleanup)
-  await appInstance.register(fastifyAutoload, {
-    dir: path.join(__dirname, 'services'),
-    ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
-  });
+  await registerServices(appInstance);
 
   // Start scheduler after services are loaded (if enabled)
   appInstance.scheduler.start();
 
   // Routes (skip in CLI mode)
   if (!serverOptions.cliMode) {
-    await appInstance.register(fastifyAutoload, {
-      dir: path.join(__dirname, 'routes'),
-      routeParams: true,
-      autoHooks: true,
-      options: {},
-      ignorePattern: /(.+\.test|.spec)\.(ts|js)$/,
-    });
+    await registerRoutes(appInstance);
   }
 
   if (env.APP_ENV !== 'test' && !serverOptions.skipListen) {
