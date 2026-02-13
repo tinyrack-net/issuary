@@ -1,5 +1,4 @@
-import { createRoute } from '@hono/zod-openapi';
-import type z from 'zod';
+import { createRoute, type z } from '@hono/zod-openapi';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { h } from '@/schemas/header.js';
