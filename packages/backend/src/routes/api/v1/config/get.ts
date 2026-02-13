@@ -1,5 +1,5 @@
 import { createRoute } from '@hono/zod-openapi';
-import type z from 'zod/v4';
+import type z from 'zod';
 import { r } from '@/schemas/response.js';
 import type { AppType } from '@/types.js';
 

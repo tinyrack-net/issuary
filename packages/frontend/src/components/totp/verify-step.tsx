@@ -2,7 +2,7 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useCallback, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { SubmitButton } from '@/components/auth/submit-button.js';
 import { PinInput, type PinInputRef } from '@/components/ui/pin-input.js';
 

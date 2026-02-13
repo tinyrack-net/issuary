@@ -1,5 +1,5 @@
 import { createRoute } from '@hono/zod-openapi';
-import z from 'zod/v4';
+import z from 'zod';
 import { parseScopesWithDescriptions } from '@/lib/scopes.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';

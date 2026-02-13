@@ -10,7 +10,7 @@ import {
 } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { LoginMethodButton } from '@/components/auth/login-method-button.js';
 import { LoginMethodList } from '@/components/auth/login-method-list.js';
 import { PageHeader } from '@/components/auth/page-header.js';

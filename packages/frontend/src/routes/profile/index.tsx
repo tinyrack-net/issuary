@@ -7,7 +7,7 @@ import {
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { ChangePasswordModal } from '@/components/modals/profile/change-password-modal.js';
 import { DeleteAccountModal } from '@/components/modals/profile/delete-account-modal.js';
 import { DisableTotpModal } from '@/components/modals/profile/disable-totp-modal.js';

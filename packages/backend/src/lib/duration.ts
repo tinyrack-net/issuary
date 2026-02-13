@@ -1,4 +1,4 @@
-import z from 'zod/v4';
+import z from 'zod';
 
 /**
  * Duration string pattern supporting multiple time units:

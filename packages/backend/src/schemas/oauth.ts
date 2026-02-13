@@ -1,4 +1,4 @@
-import z from 'zod/v4';
+import z from 'zod';
 
 /**
  * Token introspection result (RFC 7662 §2.2)

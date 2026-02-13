@@ -1,4 +1,4 @@
-import type z from 'zod/v4';
+import type z from 'zod';
 import type { UserConsentEntity } from '@/entities/user-consent.entity.js';
 import type { f } from '@/schemas/field.js';
 import type { MikroService } from '@/types.js';

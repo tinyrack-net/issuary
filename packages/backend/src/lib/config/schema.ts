@@ -1,4 +1,4 @@
-import z from 'zod/v4';
+import z from 'zod';
 import { DurationString } from '@/lib/duration.js';
 import { AVAILABLE_LOCALES, DEFAULT_LOCALE } from '@/lib/locale.js';
 import { f } from '@/schemas/field.js';

@@ -1,5 +1,5 @@
 import { createRoute } from '@hono/zod-openapi';
-import z from 'zod/v4';
+import z from 'zod';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { f } from '@/schemas/field.js';
 import { termsSchema } from '@/schemas/terms.js';

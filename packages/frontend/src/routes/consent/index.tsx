@@ -2,7 +2,7 @@ import { ShieldCheckIcon, WarningIcon, XIcon } from '@phosphor-icons/react';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { Alert } from '@/components/ui/alert.js';
 import { PageLayout } from '@/components/ui/page-layout.js';

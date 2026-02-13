@@ -9,7 +9,7 @@ import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { FooterLink } from '@/components/auth/footer-link.js';
 import { IconInput } from '@/components/auth/icon-input.js';
 import { PageHeader } from '@/components/auth/page-header.js';

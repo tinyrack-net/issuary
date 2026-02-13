@@ -3,7 +3,7 @@ import type { MikroORM } from '@mikro-orm/core';
 import type { Cron } from 'croner';
 import type nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
-import type z from 'zod/v4';
+import type z from 'zod';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { EmailVerificationRepository } from '@/repositories/email-verification.repository.js';
 import type { JwtKeyRepository } from '@/repositories/jwt-key.repository.js';

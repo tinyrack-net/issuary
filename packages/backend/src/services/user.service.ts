@@ -1,5 +1,5 @@
 import type { Loaded } from '@mikro-orm/core';
-import type z from 'zod/v4';
+import type z from 'zod';
 import type { UserEntity } from '@/entities/user.entity.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { Locale } from '@/lib/locale.js';

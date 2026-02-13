@@ -1,4 +1,4 @@
-import type z from 'zod/v4';
+import type z from 'zod';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import { e } from '@/schemas/error.js';
 import type { f } from '@/schemas/field.js';

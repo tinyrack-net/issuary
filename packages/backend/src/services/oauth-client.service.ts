@@ -1,5 +1,5 @@
 import { verify } from '@node-rs/argon2';
-import type z from 'zod/v4';
+import type z from 'zod';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
 import type { MikroService } from '@/types.js';

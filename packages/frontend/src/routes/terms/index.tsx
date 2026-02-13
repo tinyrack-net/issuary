@@ -5,7 +5,7 @@ import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { PageHeader } from '@/components/auth/page-header.js';
 import { TermsCheckboxList } from '@/components/terms/terms-checkbox-list.js';
 import { Alert } from '@/components/ui/alert.js';

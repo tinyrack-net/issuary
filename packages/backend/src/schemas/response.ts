@@ -3,7 +3,7 @@ import type {
   RegistrationResponseJSON as SimpleWebAuthnRegistrationResponseJSON,
   PublicKeyCredentialRequestOptionsJSON as SimpleWebAuthnRequestOptionsJSON,
 } from '@simplewebauthn/server';
-import z from 'zod/v4';
+import z from 'zod';
 import {
   AppConfigPasskeyAuth,
   AppConfigPasswordAuth,

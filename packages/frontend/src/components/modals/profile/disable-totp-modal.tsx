@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import z from 'zod/v4';
+import z from 'zod';
 import { AlertBanner } from '@/components/ui/alert-banner.js';
 import { Modal, ModalActions } from '@/components/ui/modal.js';
 import { ApiError } from '@/libs/error.js';
