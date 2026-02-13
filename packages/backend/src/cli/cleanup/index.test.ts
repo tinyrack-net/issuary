@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import {
   afterAll,
   beforeAll,
@@ -12,7 +11,6 @@ import { JwtKeyEntity } from '@/entities/jwt-key.entity.js';
 import { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
 import { PasswordResetEntity } from '@/entities/password-reset.entity.js';
 import { RevokedTokenEntity } from '@/entities/revoked-token.entity.js';
-
 import { createServer } from '@/server.js';
 import {
   CLI_TEST_CONFIG,
@@ -24,6 +22,7 @@ import {
   createTestUser,
 } from '@/test-utils/cli.js';
 import { MINIMAL_TEST_CONFIG, withMikroContext } from '@/test-utils/index.js';
+import type { ServiceContainer } from '@/types.js';
 import { runCleanup } from './index.js';
 
 /**
@@ -39,29 +38,30 @@ const EXPECTED_TASK_NAMES = [
 ];
 
 describe('runCleanup', () => {
-  let app: FastifyInstance;
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
   let userId: string;
   let clientId: string;
 
   beforeAll(async () => {
-    app = await createServer({
+    ({ services, cleanup } = await createServer({
       config: CLI_TEST_CONFIG,
       cliMode: true,
       skipListen: true,
-    });
+    }));
 
-    userId = await createTestUser(app);
-    clientId = await createTestOAuthClient(app);
+    userId = await createTestUser(services);
+    clientId = await createTestOAuthClient(services);
   });
 
   afterAll(async () => {
-    await app.close();
+    await cleanup();
   });
 
   beforeEach(async () => {
     // Clean up all entities before each test
-    await withMikroContext(app, async () => {
-      const em = app.mikro.em.fork();
+    await withMikroContext(services, async () => {
+      const em = services.mikro.em.fork();
       await em.nativeDelete(RevokedTokenEntity, {});
       await em.nativeDelete(OAuthCodeEntity, {});
       await em.nativeDelete(EmailVerificationEntity, {});
@@ -71,7 +71,10 @@ describe('runCleanup', () => {
   });
 
   test('should execute all cleanup tasks in order', async () => {
-    const summary = await runCleanup(app, { dryRun: false, verbose: false });
+    const summary = await runCleanup(services, {
+      dryRun: false,
+      verbose: false,
+    });
 
     // Verify all tasks were executed
     expect(summary.tasks.length).toBe(EXPECTED_TASK_NAMES.length);
@@ -86,26 +89,29 @@ describe('runCleanup', () => {
 
   test('should aggregate results correctly', async () => {
     // Create test data for multiple tasks
-    await createRevokedToken(app, {
+    await createRevokedToken(services, {
       userId,
       clientId,
       expiresAt: new Date(Date.now() - 10000),
     });
-    await createOAuthCode(app, {
+    await createOAuthCode(services, {
       userId,
       clientId,
       expiredAt: new Date(Date.now() - 10000),
     });
-    await createEmailVerification(app, {
+    await createEmailVerification(services, {
       userId,
       expiresAt: new Date(Date.now() - 10000),
     });
-    await createPasswordReset(app, {
+    await createPasswordReset(services, {
       userId,
       expiresAt: new Date(Date.now() - 10000),
     });
 
-    const summary = await runCleanup(app, { dryRun: false, verbose: false });
+    const summary = await runCleanup(services, {
+      dryRun: false,
+      verbose: false,
+    });
 
     // Should have deleted items from multiple tasks
     expect(summary.totalDeleted).toBeGreaterThanOrEqual(4);
@@ -115,7 +121,7 @@ describe('runCleanup', () => {
 
   test('should count skipped tasks correctly', async () => {
     // Create app with some tasks disabled
-    const partialApp = await createServer({
+    const partialServer = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
         cleanup: {
@@ -132,7 +138,7 @@ describe('runCleanup', () => {
     });
 
     try {
-      const summary = await runCleanup(partialApp, {
+      const summary = await runCleanup(partialServer.services, {
         dryRun: false,
         verbose: false,
       });
@@ -140,14 +146,17 @@ describe('runCleanup', () => {
       // 4 tasks disabled (revoked_tokens, oauth_codes, deleted_users, jwt_keys)
       expect(summary.totalSkipped).toBeGreaterThanOrEqual(4);
     } finally {
-      await partialApp.close();
+      await partialServer.cleanup();
     }
   });
 
   test('should continue execution even if one task fails', async () => {
     // We can't easily make a task fail, but we can verify the structure
     // handles errors by checking the summary structure
-    const summary = await runCleanup(app, { dryRun: false, verbose: false });
+    const summary = await runCleanup(services, {
+      dryRun: false,
+      verbose: false,
+    });
 
     // All tasks should have completed (none failed in normal operation)
     expect(summary.totalFailed).toBe(0);
@@ -155,7 +164,7 @@ describe('runCleanup', () => {
   });
 
   test('should handle all tasks disabled scenario', async () => {
-    const allDisabledApp = await createServer({
+    const allDisabledServer = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
         cleanup: {
@@ -172,7 +181,7 @@ describe('runCleanup', () => {
     });
 
     try {
-      const summary = await runCleanup(allDisabledApp, {
+      const summary = await runCleanup(allDisabledServer.services, {
         dryRun: false,
         verbose: false,
       });
@@ -181,39 +190,42 @@ describe('runCleanup', () => {
       expect(summary.totalSkipped).toBe(EXPECTED_TASK_NAMES.length);
       expect(summary.totalFailed).toBe(0);
     } finally {
-      await allDisabledApp.close();
+      await allDisabledServer.cleanup();
     }
   });
 
   test('should respect dry-run mode for all tasks', async () => {
     // Create test data
-    await createRevokedToken(app, {
+    await createRevokedToken(services, {
       userId,
       clientId,
       expiresAt: new Date(Date.now() - 10000),
     });
-    await createOAuthCode(app, {
+    await createOAuthCode(services, {
       userId,
       clientId,
       expiredAt: new Date(Date.now() - 10000),
     });
-    await createEmailVerification(app, {
+    await createEmailVerification(services, {
       userId,
       expiresAt: new Date(Date.now() - 10000),
     });
-    await createPasswordReset(app, {
+    await createPasswordReset(services, {
       userId,
       expiresAt: new Date(Date.now() - 10000),
     });
 
-    const summary = await runCleanup(app, { dryRun: true, verbose: false });
+    const summary = await runCleanup(services, {
+      dryRun: true,
+      verbose: false,
+    });
 
     // Should report items that would be deleted
     expect(summary.totalDeleted).toBeGreaterThanOrEqual(4);
 
     // Verify data was NOT deleted
-    await withMikroContext(app, async () => {
-      const em = app.mikro.em.fork();
+    await withMikroContext(services, async () => {
+      const em = services.mikro.em.fork();
       const revokedCount = await em.count(RevokedTokenEntity, {});
       const codeCount = await em.count(OAuthCodeEntity, {});
       const verificationCount = await em.count(EmailVerificationEntity, {});
@@ -228,7 +240,10 @@ describe('runCleanup', () => {
 
   test('should measure total duration correctly', async () => {
     const startTime = Date.now();
-    const summary = await runCleanup(app, { dryRun: false, verbose: false });
+    const summary = await runCleanup(services, {
+      dryRun: false,
+      verbose: false,
+    });
     const elapsed = Date.now() - startTime;
 
     // Total duration should be close to actual elapsed time
@@ -242,7 +257,10 @@ describe('runCleanup', () => {
   });
 
   test('should include task results with correct structure', async () => {
-    const summary = await runCleanup(app, { dryRun: false, verbose: false });
+    const summary = await runCleanup(services, {
+      dryRun: false,
+      verbose: false,
+    });
 
     for (const taskResult of summary.tasks) {
       // Each result should have required properties
@@ -259,22 +277,26 @@ describe('runCleanup', () => {
 });
 
 describe('cleanup tasks registry', () => {
-  let app: FastifyInstance;
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    app = await createServer({
+    ({ services, cleanup } = await createServer({
       config: CLI_TEST_CONFIG,
       cliMode: true,
       skipListen: true,
-    });
+    }));
   });
 
   afterAll(async () => {
-    await app.close();
+    await cleanup();
   });
 
   test('should contain all expected tasks', async () => {
-    const summary = await runCleanup(app, { dryRun: true, verbose: false });
+    const summary = await runCleanup(services, {
+      dryRun: true,
+      verbose: false,
+    });
 
     expect(summary.tasks.length).toBe(EXPECTED_TASK_NAMES.length);
 
@@ -285,14 +307,20 @@ describe('cleanup tasks registry', () => {
   });
 
   test('should have unique task names', async () => {
-    const summary = await runCleanup(app, { dryRun: true, verbose: false });
+    const summary = await runCleanup(services, {
+      dryRun: true,
+      verbose: false,
+    });
     const names = summary.tasks.map((t) => t.name);
     const uniqueNames = new Set(names);
     expect(uniqueNames.size).toBe(names.length);
   });
 
   test('should have descriptions for all tasks', async () => {
-    const summary = await runCleanup(app, { dryRun: true, verbose: false });
+    const summary = await runCleanup(services, {
+      dryRun: true,
+      verbose: false,
+    });
 
     for (const task of summary.tasks) {
       expect(task.description).toBeDefined();

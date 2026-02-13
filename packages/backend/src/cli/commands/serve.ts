@@ -5,22 +5,31 @@ import { createServer } from '../../server.js';
 /**
  * Serve command
  *
- * Starts the TinyAuth server with all plugins, services, and routes.
+ * Starts the TinyAuth server with all middleware,
+ * services, and routes.
  *
- * For maintenance tasks like cleanup and key rotation, run:
- * `tinyauth cleanup` as a separate process or Kubernetes CronJob.
+ * For maintenance tasks like cleanup and key rotation,
+ * run: `tinyauth cleanup` as a separate process or
+ * Kubernetes CronJob.
  */
 export const serveCommand = new Command('serve')
   .description('Start the TinyAuth server')
   .option('-c, --config-path <path>', 'Path to config file')
   .action(async (options: { configPath?: string }) => {
-    const config = await loadConfig({ configPath: options.configPath });
-    const app = await createServer({ config });
+    const config = await loadConfig({
+      configPath: options.configPath,
+    });
+    const { cleanup, server } = await createServer({
+      config,
+    });
 
     // Handle graceful shutdown
     const shutdown = async (signal: string) => {
-      app.log.info({ signal }, 'Received shutdown signal');
-      await app.close();
+      console.info(`Received ${signal}, shutting down...`);
+      if (server) {
+        server.close();
+      }
+      await cleanup();
       process.exit(0);
     };
 

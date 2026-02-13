@@ -14,13 +14,21 @@ import { MINIMAL_TEST_CONFIG } from '@/test-utils/setup.js';
 async function main() {
   const outputPath = process.argv[2];
 
-  const app = await createServer({
+  const { app, cleanup } = await createServer({
     config: MINIMAL_TEST_CONFIG,
+    skipListen: true,
+    silent: true,
   });
 
-  await app.ready();
+  const spec = app.getOpenAPI31Document({
+    openapi: '3.1.0',
+    info: {
+      title: 'TinyAuth API',
+      version: '1.0.0',
+      description: 'OpenID Connect Provider API',
+    },
+  });
 
-  const spec = app.swagger();
   const json = JSON.stringify(spec, null, 2);
 
   if (outputPath) {
@@ -30,7 +38,7 @@ async function main() {
     process.stdout.write(json);
   }
 
-  await app.close();
+  await cleanup();
 }
 
 main().catch((err) => {

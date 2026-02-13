@@ -1,5 +1,5 @@
-import type { FastifyInstance } from 'fastify';
 import type { CleanupResult } from '@/services/types.js';
+import type { ServiceContainer } from '@/types.js';
 
 /**
  * Options for running cleanup tasks
@@ -36,15 +36,15 @@ export interface CleanupSummary {
 /**
  * Run all cleanup tasks via CleanupService.
  *
- * @param fastify - Fastify instance with all services
+ * @param services - Service container with all services
  * @param options - Cleanup options (dryRun, verbose)
  * @returns Summary of all task executions
  */
 export async function runCleanup(
-  fastify: FastifyInstance,
+  services: ServiceContainer,
   options: CleanupOptions,
 ): Promise<CleanupSummary> {
-  return fastify.cleanupService.runAll({
+  return services.cleanupService.runAll({
     dryRun: options.dryRun,
     verbose: options.verbose,
   });

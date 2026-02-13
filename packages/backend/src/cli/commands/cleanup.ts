@@ -1,7 +1,6 @@
 import { Command } from 'commander';
 import { loadConfig } from '../../lib/config/index.js';
-import { createServer, type FastifyWithZodInstance } from '../../server.js';
-import { runCleanup } from '../cleanup/index.js';
+import { createServer } from '../../server.js';
 
 /**
  * Cleanup command
@@ -10,9 +9,11 @@ import { runCleanup } from '../cleanup/index.js';
  * Designed for use with Kubernetes CronJobs.
  *
  * Usage:
- *   tinyauth cleanup              # Run all cleanup tasks
- *   tinyauth cleanup --dry-run    # Show what would be cleaned
- *   tinyauth cleanup --verbose    # Show detailed progress
+ *   tinyauth cleanup              # Run all tasks
+ *   tinyauth cleanup --dry-run    # Show what would
+ *                                   be cleaned
+ *   tinyauth cleanup --verbose    # Show detailed
+ *                                   progress
  */
 export const cleanupCommand = new Command('cleanup')
   .description('Run all cleanup and maintenance tasks')
@@ -33,29 +34,41 @@ export const cleanupCommand = new Command('cleanup')
         console.warn('[DRY RUN] No changes will be made');
       }
 
-      // Create server in CLI mode (skip HTTP plugins and routes for faster startup)
+      // Create server in CLI mode (skip HTTP
+      // middleware and routes for faster startup)
       if (verbose) {
         console.debug('Initializing server in CLI mode...');
       }
 
-      let app: FastifyWithZodInstance | undefined;
+      let services:
+        | Awaited<ReturnType<typeof createServer>>['services']
+        | undefined;
+      let cleanup:
+        | Awaited<ReturnType<typeof createServer>>['cleanup']
+        | undefined;
+
       try {
         const config = await loadConfig(
           configPath ? { configPath } : undefined,
         );
-        app = await createServer({
+        const result = await createServer({
           config,
           cliMode: true,
           skipListen: true,
           silent: true,
         });
+        services = result.services;
+        cleanup = result.cleanup;
       } catch (error) {
         console.error('Failed to initialize server:', error);
         process.exit(1);
       }
 
       try {
-        const summary = await runCleanup(app, { dryRun, verbose });
+        const summary = await services.cleanupService.runAll({
+          dryRun,
+          verbose,
+        });
 
         // Print results for each task
         const totalTasks = summary.tasks.length;
@@ -108,17 +121,17 @@ export const cleanupCommand = new Command('cleanup')
 
         // Exit with error code if any task failed
         if (summary.totalFailed > 0) {
-          await app.close();
+          await cleanup();
           process.exit(1);
         }
       } catch (error) {
         console.error('Cleanup failed:', error);
-        await app.close();
+        await cleanup();
         process.exit(1);
       }
 
       // Graceful shutdown
-      await app.close();
+      await cleanup();
       process.exit(0);
     },
   );
