@@ -1,5 +1,6 @@
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import type { AppType } from '@/lib/app.js';
 import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
@@ -16,7 +17,6 @@ import {
   TEST_USER,
   TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
-import type { AppType } from '@/types.js';
 
 const SECOND_OAUTH_CLIENT = {
   clientId: 'second-client-id',

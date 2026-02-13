@@ -1,10 +1,10 @@
 import { createRoute, z } from '@hono/zod-openapi';
+import type { AppType } from '@/lib/app.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
 import type { AuthorizeParams } from '@/services/oauth-authorize.service.js';
-import type { AppType } from '@/types.js';
 
 const route = createRoute({
   method: 'get',

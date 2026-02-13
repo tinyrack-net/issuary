@@ -1,5 +1,5 @@
+import type { AppType } from '@/lib/app.js';
 import { createRouter } from '@/lib/create-router.js';
-import type { AppType } from '@/types.js';
 import jwksGet from './.well-known/jwks/get.js';
 import oidcConfigGet from './.well-known/openid-configuration/get.js';
 import authorizeGet from './authorize/get.js';
