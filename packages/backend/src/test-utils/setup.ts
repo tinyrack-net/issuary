@@ -13,11 +13,14 @@ import type { AppConfigInput } from '@/lib/config/index.js';
  * ```typescript
  * import { createServer } from '@/server.js';
  * import { MINIMAL_TEST_CONFIG } from '@/test-utils/setup.js';
+ * import type { AppType, ServiceContainer } from '@/types.js';
  *
- * let app: FastifyInstance;
+ * let app: AppType;
+ * let services: ServiceContainer;
+ * let cleanup: () => Promise<void>;
  *
  * beforeAll(async () => {
- *   app = await createServer({
+ *   ({ app, services, cleanup } = await createServer({
  *     config: {
  *       ...MINIMAL_TEST_CONFIG,
  *       // Only add config this test actually needs:
@@ -27,11 +30,11 @@ import type { AppConfigInput } from '@/lib/config/index.js';
  *         },
  *       },
  *     },
- *   });
+ *   }));
  * });
  *
  * afterAll(async () => {
- *   await app.close();
+ *   await cleanup();
  * });
  * ```
  */

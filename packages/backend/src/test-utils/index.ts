@@ -39,9 +39,9 @@ export {
   expectError,
   extractCookie,
   grantConsent,
-  injectWithCookie,
-  injectWithSession,
   registerUser,
+  requestWithCookie,
+  requestWithSession,
   withMikroContext,
 } from './helpers.js';
 export type {

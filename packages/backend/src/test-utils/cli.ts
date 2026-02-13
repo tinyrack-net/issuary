@@ -3,7 +3,6 @@
  * Provides helper functions for creating test data with specific states.
  */
 
-import type { FastifyInstance } from 'fastify';
 import { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
 import { JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
 import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
@@ -15,6 +14,7 @@ import {
 } from '@/entities/revoked-token.entity.js';
 import { UserEntity } from '@/entities/user.entity.js';
 import type { AppConfigInput } from '@/lib/config/index.js';
+import type { ServiceContainer } from '@/types.js';
 import { withMikroContext } from './helpers.js';
 import { MINIMAL_TEST_CONFIG } from './setup.js';
 
@@ -29,11 +29,26 @@ export const CLI_TEST_CONFIG = {
     account_deletion: true,
   },
   cleanup: {
-    revoked_tokens: { enabled: true, retention: '0' },
-    oauth_codes: { enabled: true, consumed_retention: '0' },
-    email_verifications: { enabled: true, retention: '0' },
-    password_resets: { enabled: true, retention: '0' },
-    deleted_users: { enabled: true, retention: '0' },
+    revoked_tokens: {
+      enabled: true,
+      retention: '0',
+    },
+    oauth_codes: {
+      enabled: true,
+      consumed_retention: '0',
+    },
+    email_verifications: {
+      enabled: true,
+      retention: '0',
+    },
+    password_resets: {
+      enabled: true,
+      retention: '0',
+    },
+    deleted_users: {
+      enabled: true,
+      retention: '0',
+    },
     jwt_keys: { enabled: true },
   },
 } as const satisfies AppConfigInput;
@@ -41,12 +56,12 @@ export const CLI_TEST_CONFIG = {
 /**
  * Create a test user in the database.
  *
- * @param app - Fastify instance
+ * @param services - Service container
  * @param options - User creation options
  * @returns Created user ID
  */
 export async function createTestUser(
-  app: FastifyInstance,
+  services: ServiceContainer,
   options: {
     email?: string;
     password?: string;
@@ -65,15 +80,15 @@ export async function createTestUser(
 
   let userId = '';
 
-  await withMikroContext(app, async () => {
-    const user = app.mikro.user.create({
+  await withMikroContext(services, async () => {
+    const user = services.mikro.user.create({
       email,
       password_hash: password,
     });
     user.email_verified = emailVerified;
     user.deleted_at = deletedAt;
     user.managed_by = managedBy;
-    await app.mikro.em.persist(user).flush();
+    await services.mikro.em.persist(user).flush();
     userId = user.id;
   });
 
@@ -83,12 +98,12 @@ export async function createTestUser(
 /**
  * Create a test OAuth client in the database.
  *
- * @param app - Fastify instance
+ * @param services - Service container
  * @param options - Client creation options
  * @returns Created client ID
  */
 export async function createTestOAuthClient(
-  app: FastifyInstance,
+  services: ServiceContainer,
   options: {
     clientId?: string;
     name?: string;
@@ -103,8 +118,8 @@ export async function createTestOAuthClient(
 
   let id = '';
 
-  await withMikroContext(app, async () => {
-    const em = app.mikro.em;
+  await withMikroContext(services, async () => {
+    const em = services.mikro.em;
     const client = em.create(OAuthClientEntity, {
       clientId,
       clientSecretHash: 'test-secret-hash',
@@ -126,12 +141,12 @@ export async function createTestOAuthClient(
 /**
  * Create a revoked token for testing.
  *
- * @param app - Fastify instance
+ * @param services - Service container
  * @param options - Token creation options
  * @returns Created token ID
  */
 export async function createRevokedToken(
-  app: FastifyInstance,
+  services: ServiceContainer,
   options: {
     userId: string;
     clientId: string;
@@ -148,9 +163,9 @@ export async function createRevokedToken(
 
   let tokenId = '';
 
-  await withMikroContext(app, async () => {
+  await withMikroContext(services, async () => {
     // Use repository's revokeToken method for proper entity creation
-    const token = await app.mikro.revokedToken.revokeToken({
+    const token = await services.mikro.revokedToken.revokeToken({
       jti: `test-jti-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       token_type: tokenType,
       clientId,
@@ -166,12 +181,12 @@ export async function createRevokedToken(
 /**
  * Create an OAuth authorization code for testing.
  *
- * @param app - Fastify instance
+ * @param services - Service container
  * @param options - Code creation options
  * @returns Created code ID
  */
 export async function createOAuthCode(
-  app: FastifyInstance,
+  services: ServiceContainer,
   options: {
     userId: string;
     clientId: string;
@@ -188,24 +203,26 @@ export async function createOAuthCode(
 
   let codeId = '';
 
-  await withMikroContext(app, async () => {
+  await withMikroContext(services, async () => {
     // Use repository's generateAuthorizationCode method for proper entity creation
-    const { entity } = await app.mikro.oauthCode.generateAuthorizationCode({
-      clientId,
-      userId,
-      redirectUri: 'http://localhost/callback',
-      scope: ['openid'],
-      nonce: 'test-nonce',
-      codeChallenge: 'test-challenge',
-      codeChallengeMethod: 'S256',
-      expiresInSeconds: 600,
-    });
+    const { entity } = await services.mikro.oauthCode.generateAuthorizationCode(
+      {
+        clientId,
+        userId,
+        redirectUri: 'http://localhost/callback',
+        scope: ['openid'],
+        nonce: 'test-nonce',
+        codeChallenge: 'test-challenge',
+        codeChallengeMethod: 'S256',
+        expiresInSeconds: 600,
+      },
+    );
     // Override expiredAt for expired codes
     entity.expiredAt = expiredAt;
     if (consumedAt !== null) {
       entity.consumedAt = consumedAt;
     }
-    await app.mikro.em.flush();
+    await services.mikro.em.flush();
     codeId = entity.id;
   });
 
@@ -215,12 +232,12 @@ export async function createOAuthCode(
 /**
  * Create an email verification token for testing.
  *
- * @param app - Fastify instance
+ * @param services - Service container
  * @param options - Token creation options
  * @returns Created verification ID
  */
 export async function createEmailVerification(
-  app: FastifyInstance,
+  services: ServiceContainer,
   options: {
     userId: string;
     expiresAt?: Date;
@@ -235,16 +252,16 @@ export async function createEmailVerification(
 
   let verificationId = '';
 
-  await withMikroContext(app, async () => {
+  await withMikroContext(services, async () => {
     // Use repository's generateToken method for proper entity creation
-    const verification = await app.mikro.emailVerification.generateToken({
+    const verification = await services.mikro.emailVerification.generateToken({
       userId,
       expiresInHours: 1,
     });
     // Override the fields for test purposes
     verification.expiresAt = expiresAt;
     verification.verified = verified;
-    await app.mikro.em.flush();
+    await services.mikro.em.flush();
     verificationId = verification.id;
   });
 
@@ -254,12 +271,12 @@ export async function createEmailVerification(
 /**
  * Create a password reset token for testing.
  *
- * @param app - Fastify instance
+ * @param services - Service container
  * @param options - Token creation options
  * @returns Created reset ID
  */
 export async function createPasswordReset(
-  app: FastifyInstance,
+  services: ServiceContainer,
   options: {
     userId: string;
     expiresAt?: Date;
@@ -274,16 +291,16 @@ export async function createPasswordReset(
 
   let resetId = '';
 
-  await withMikroContext(app, async () => {
+  await withMikroContext(services, async () => {
     // Use repository's generateToken method for proper entity creation
-    const reset = await app.mikro.passwordReset.generateToken({
+    const reset = await services.mikro.passwordReset.generateToken({
       userId,
       expiresInHours: 1,
     });
     // Override the fields for test purposes
     reset.expiresAt = expiresAt;
     reset.used = used;
-    await app.mikro.em.flush();
+    await services.mikro.em.flush();
     resetId = reset.id;
   });
 
@@ -293,12 +310,12 @@ export async function createPasswordReset(
 /**
  * Create a JWT key for testing.
  *
- * @param app - Fastify instance
+ * @param services - Service container
  * @param options - Key creation options
  * @returns Created key ID (kid)
  */
 export async function createJwtKey(
-  app: FastifyInstance,
+  services: ServiceContainer,
   options: {
     status?: JwtKeyStatus;
     expiresAt?: Date | null;
@@ -315,11 +332,11 @@ export async function createJwtKey(
 
   let kid = '';
 
-  await withMikroContext(app, async () => {
+  await withMikroContext(services, async () => {
     // Generate a real key pair for testing
-    const keyPair = await app.jwtService.generateKeyPair();
+    const keyPair = await services.jwtService.generateKeyPair();
 
-    const key = app.mikro.jwtKey.create({
+    const key = services.mikro.jwtKey.create({
       kid: keyPair.kid,
       private_key: keyPair.privateKey,
       public_key: keyPair.publicKey,
@@ -330,7 +347,7 @@ export async function createJwtKey(
       deactivated_at: deactivatedAt,
     });
 
-    await app.mikro.em.persist(key).flush();
+    await services.mikro.em.persist(key).flush();
     kid = key.kid;
   });
 
@@ -340,13 +357,13 @@ export async function createJwtKey(
 /**
  * Count entities in the database.
  *
- * @param app - Fastify instance
+ * @param services - Service container
  * @param entityName - Name of the entity to count
  * @param filter - Optional filter criteria
  * @returns Count of entities
  */
 export async function countEntities(
-  app: FastifyInstance,
+  services: ServiceContainer,
   entityName:
     | 'revokedToken'
     | 'oauthCode'
@@ -358,8 +375,8 @@ export async function countEntities(
 ): Promise<number> {
   let count = 0;
 
-  await withMikroContext(app, async () => {
-    const em = app.mikro.em.fork();
+  await withMikroContext(services, async () => {
+    const em = services.mikro.em.fork();
 
     switch (entityName) {
       case 'revokedToken':
@@ -389,18 +406,18 @@ export async function countEntities(
 /**
  * Get a JWT key by kid.
  *
- * @param app - Fastify instance
+ * @param services - Service container
  * @param kid - Key ID
  * @returns JWT key entity or null
  */
 export async function getJwtKey(
-  app: FastifyInstance,
+  services: ServiceContainer,
   kid: string,
 ): Promise<JwtKeyEntity | null> {
   let key: JwtKeyEntity | null = null;
 
-  await withMikroContext(app, async () => {
-    const em = app.mikro.em.fork();
+  await withMikroContext(services, async () => {
+    const em = services.mikro.em.fork();
     key = await em.findOne(JwtKeyEntity, { kid });
   });
 
