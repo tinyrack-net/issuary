@@ -1,4 +1,4 @@
-import type { AppType } from '@/types.js';
+import type { AppType } from '@/lib/app.js';
 
 /**
  * Standard OIDC Discovery endpoint at /.well-known/openid-configuration
