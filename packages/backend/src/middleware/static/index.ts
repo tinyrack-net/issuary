@@ -8,12 +8,43 @@ import { env } from '@/lib/env.js';
 import { interpolateHtml } from '@/lib/interpolate-html.js';
 import type { AppType } from '@/types.js';
 
+/**
+ * HTTP status codes whose responses must NOT contain
+ * a body per the Fetch API / HTTP specification.
+ * Creating a `new Response(body, { status })` with a
+ * non-null body for these codes throws a TypeError in
+ * Node.js (undici).
+ */
+const NULL_BODY_STATUSES = new Set([101, 204, 205, 304]);
+
 const __dirname = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 
 /**
  * Default Vite dev server URL.
  */
 const VITE_DEV_SERVER_URL = 'http://localhost:8081';
+
+/**
+ * Overridable upstream URL used by the dev proxy.
+ * Exposed for testing so tests can point the proxy
+ * at a mock server on a random port.
+ */
+let devProxyUpstreamUrl = VITE_DEV_SERVER_URL;
+
+/**
+ * Override the upstream URL the dev proxy connects to.
+ * Only intended for test usage.
+ */
+export function setDevProxyUpstreamUrl(url: string): void {
+  devProxyUpstreamUrl = url;
+}
+
+/**
+ * Reset the upstream URL back to the default.
+ */
+export function resetDevProxyUpstreamUrl(): void {
+  devProxyUpstreamUrl = VITE_DEV_SERVER_URL;
+}
 
 /**
  * Parse URL string to hostname and port.
@@ -180,11 +211,11 @@ function registerDevProxy(
   if (!silent) {
     console.info(
       'Static handler registered (development mode, proxy: %s)',
-      VITE_DEV_SERVER_URL,
+      devProxyUpstreamUrl,
     );
   }
 
-  const upstream = parseUpstream(VITE_DEV_SERVER_URL);
+  const upstream = parseUpstream(devProxyUpstreamUrl);
   const variables = config.app.html_variables;
   const hasVariables = Object.keys(variables).length > 0;
 
@@ -231,6 +262,35 @@ function registerDevProxy(
           const contentType = proxyRes.headers['content-type'] ?? '';
           const isHtml = contentType.includes('text/html');
 
+          const statusCode = proxyRes.statusCode ?? 200;
+          const isNullBody = NULL_BODY_STATUSES.has(statusCode);
+
+          // Null-body responses (e.g. 304 Not Modified)
+          // must not carry a body per the Fetch API spec.
+          if (isNullBody) {
+            // Drain the upstream so the socket is freed
+            proxyRes.resume();
+            const responseHeaders = new Headers();
+            for (const [key, value] of Object.entries(proxyRes.headers)) {
+              if (key && value) {
+                responseHeaders.set(
+                  key,
+                  Array.isArray(value) ? value.join(', ') : value,
+                );
+              }
+            }
+            resolve(
+              new Response(null, {
+                status: statusCode,
+                ...(proxyRes.statusMessage
+                  ? { statusText: proxyRes.statusMessage }
+                  : {}),
+                headers: responseHeaders,
+              }),
+            );
+            return;
+          }
+
           // Buffer HTML for variable interpolation
           if (hasVariables && isHtml) {
             const chunks: Buffer[] = [];
@@ -255,7 +315,7 @@ function registerDevProxy(
               );
               resolve(
                 new Response(interpolated, {
-                  status: proxyRes.statusCode ?? 200,
+                  status: statusCode,
                   ...(proxyRes.statusMessage
                     ? { statusText: proxyRes.statusMessage }
                     : {}),
@@ -293,7 +353,7 @@ function registerDevProxy(
 
           resolve(
             new Response(readable, {
-              status: proxyRes.statusCode ?? 200,
+              status: statusCode,
               ...(proxyRes.statusMessage
                 ? { statusText: proxyRes.statusMessage }
                 : {}),
