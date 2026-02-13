@@ -15,7 +15,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) => {
   fastify.route({
     method: 'DELETE',
-    url: '',
+    url: '/user/password',
     schema: {
       summary: 'Remove Password',
       description:

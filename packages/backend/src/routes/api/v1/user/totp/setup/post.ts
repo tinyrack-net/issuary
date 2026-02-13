@@ -16,7 +16,7 @@ export default (fastify: FastifyWithZodInstance) => {
   }
   fastify.route({
     method: 'POST',
-    url: '',
+    url: '/user/totp/setup',
     schema: {
       summary: 'Start TOTP Setup',
       description:

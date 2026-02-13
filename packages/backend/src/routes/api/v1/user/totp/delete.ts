@@ -14,7 +14,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
     method: 'DELETE',
-    url: '',
+    url: '/user/totp',
     schema: {
       summary: 'Disable TOTP',
       description:

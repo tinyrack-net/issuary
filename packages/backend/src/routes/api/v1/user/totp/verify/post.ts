@@ -18,7 +18,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
     method: 'POST',
-    url: '',
+    url: '/user/totp/verify',
     schema: {
       summary: 'Verify TOTP Setup',
       description:

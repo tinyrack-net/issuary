@@ -14,7 +14,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
     method: 'PUT',
-    url: '',
+    url: '/user/password',
     schema: {
       summary: 'Change Password',
       description:
