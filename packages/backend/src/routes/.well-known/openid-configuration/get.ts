@@ -10,7 +10,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) => {
   return fastify.route({
     method: 'GET',
-    url: '',
+    url: '/openid-configuration',
     schema: {
       hide: true, // Hide from Swagger since it's a redirect
     },

@@ -5,7 +5,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) => {
   return fastify.route({
     method: 'GET',
-    url: '',
+    url: '/.well-known/jwks',
     schema: {
       summary: 'JWKS',
       description:

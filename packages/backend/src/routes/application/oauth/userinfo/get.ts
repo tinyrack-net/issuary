@@ -10,7 +10,7 @@ type UserInfoResponse = z.infer<typeof r.UserInfoResponse>;
 export default (fastify: FastifyWithZodInstance) => {
   return fastify.route({
     method: 'GET',
-    url: '',
+    url: '/userinfo',
     schema: {
       summary: 'User Info',
       description:

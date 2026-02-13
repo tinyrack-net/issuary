@@ -8,7 +8,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) => {
   return fastify.route({
     method: 'POST',
-    url: '',
+    url: '/token',
     schema: {
       summary: 'Token',
       description:

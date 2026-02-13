@@ -9,7 +9,7 @@ import type { AuthorizeParams } from '@/services/oauth-authorize.service.js';
 export default (fastify: FastifyWithZodInstance) => {
   return fastify.route({
     method: 'GET',
-    url: '',
+    url: '/authorize',
     schema: {
       summary: 'Authorize',
       description: 'OAuth2 Authorization Endpoint',
