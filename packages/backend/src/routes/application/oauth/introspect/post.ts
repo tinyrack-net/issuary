@@ -1,67 +1,90 @@
+import { createRoute } from '@hono/zod-openapi';
 import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
-export default (fastify: FastifyWithZodInstance) => {
-  return fastify.route({
-    method: 'POST',
-    url: '/introspect',
-    schema: {
-      summary: 'Token Introspection',
-      description:
-        'OAuth2 Token Introspection Endpoint - Returns metadata about tokens (RFC 7662)',
-      tags: [TAGS.OPENID],
-      body: z.object({
-        token: f.token,
-        token_type_hint: f.tokenTypeHint.optional(),
-        client_id: f.clientId.optional(),
-        client_secret: f.clientSecret.optional(),
-      }),
-      response: {
-        200: r.IntrospectionResponse,
-        400: z.union([
-          e.OAuthClientNotFound.Schema,
-          e.OAuthClientDisabled.Schema,
-        ]),
-        401: e.InvalidClientCredentials.Schema,
+const route = createRoute({
+  method: 'post',
+  path: '/introspect',
+  tags: [TAGS.OPENID],
+  summary: 'Token Introspection',
+  description:
+    'OAuth2 Token Introspection Endpoint - Returns metadata about tokens (RFC 7662)',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            token: f.token,
+            token_type_hint: f.tokenTypeHint.optional(),
+            client_id: f.clientId.optional(),
+            client_secret: f.clientSecret.optional(),
+          }),
+        },
       },
     },
-    handler: async (req, res) => {
-      const { body } = req;
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: r.IntrospectionResponse,
+        },
+      },
+      description: 'Success',
+    },
+    400: {
+      content: {
+        'application/json': {
+          schema: e.OAuthClientNotFound.Schema,
+        },
+      },
+      description: 'OAuth client not found or disabled',
+    },
+    401: {
+      content: {
+        'application/json': {
+          schema: e.InvalidClientCredentials.Schema,
+        },
+      },
+      description: 'Invalid client credentials',
+    },
+  },
+});
 
-      // 1. Validate client credentials if provided (RFC 7662 §2.1)
-      // Client authentication is optional but recommended
-      if (body.client_id) {
-        const client = await fastify.oauthClientService.findByClientId(
-          body.client_id,
-        );
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const body = c.req.valid('json');
+    const { oauthClientService, oauthTokenService } = c.get('services');
 
-        if (!client.enabled) {
-          throw new e.OAuthClientDisabled.Error();
-        }
+    // 1. Validate client credentials if provided
+    if (body.client_id) {
+      const client = await oauthClientService.findByClientId(body.client_id);
 
-        // 2. Validate client secret if provided
-        if (body.client_secret) {
-          const isValid = await fastify.oauthClientService.verifyClientSecret(
-            body.client_id,
-            body.client_secret,
-          );
-          if (!isValid) {
-            throw new e.InvalidClientCredentials.Error();
-          }
-        }
+      if (!client.enabled) {
+        throw new e.OAuthClientDisabled.Error();
       }
 
-      // 3. Introspect the token (RFC 7662 §2.2)
-      const result = await fastify.oauthTokenService.introspectToken(
-        body.token,
-        body.token_type_hint,
-      );
+      if (body.client_secret) {
+        const isValid = await oauthClientService.verifyClientSecret(
+          body.client_id,
+          body.client_secret,
+        );
+        if (!isValid) {
+          throw new e.InvalidClientCredentials.Error();
+        }
+      }
+    }
 
-      return res.status(200).send(result);
-    },
+    // 3. Introspect the token
+    const result = await oauthTokenService.introspectToken(
+      body.token,
+      body.token_type_hint,
+    );
+
+    return c.json(result, 200);
   });
 };

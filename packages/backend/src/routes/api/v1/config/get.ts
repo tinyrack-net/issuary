@@ -1,65 +1,76 @@
+import { createRoute } from '@hono/zod-openapi';
 import type z from 'zod/v4';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
 type OAuthAuthenticationMethod = z.infer<typeof r.OAuthAuthenticationMethod>;
 
-export default (fastify: FastifyWithZodInstance) => {
-  fastify.route({
-    method: 'GET',
-    url: '/config',
-    schema: {
-      summary: 'Get App Config',
-      description: 'Get App Config',
-      tags: ['Config'],
-      response: {
-        200: r.ConfigResponse,
+const route = createRoute({
+  method: 'get',
+  path: '/config',
+  tags: ['Config'],
+  summary: 'Get App Config',
+  description: 'Get App Config',
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: r.ConfigResponse,
+        },
       },
+      description: 'Success',
     },
-    handler: async (_req, res) => {
-      // Transform identity_providers array to response format
-      // Only include enabled providers
-      const identityProviders: OAuthAuthenticationMethod[] = [];
+  },
+});
 
-      for (const config of fastify.config.identity_providers) {
-        if (!config.enabled) {
-          continue;
-        }
-        const method: OAuthAuthenticationMethod = {
-          id: config.id,
-          type: config.type,
-          display_name: config.display_name ?? config.id,
-          icon_url: config.icon_url,
-        };
-        identityProviders.push(method);
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const { config } = c.get('services');
+
+    // Transform identity_providers array to response format
+    // Only include enabled providers
+    const identityProviders: OAuthAuthenticationMethod[] = [];
+
+    for (const providerConfig of config.identity_providers) {
+      if (!providerConfig.enabled) {
+        continue;
       }
+      const method: OAuthAuthenticationMethod = {
+        id: providerConfig.id,
+        type: providerConfig.type,
+        display_name: providerConfig.display_name ?? providerConfig.id,
+        icon_url: providerConfig.icon_url,
+      };
+      identityProviders.push(method);
+    }
 
-      res.status(200).send({
+    return c.json(
+      {
         app: {
-          public_registration:
-            fastify.config.app.allowed_signup_emails.length > 0,
-          supported_languages: fastify.config.app.supported_languages,
-          default_language: fastify.config.app.default_language,
-          fallback_language: fastify.config.app.fallback_language,
-          light_theme: fastify.config.app.light_theme,
-          dark_theme: fastify.config.app.dark_theme,
-          theme_mode: fastify.config.app.theme_mode,
-          background_url: fastify.config.app.background_url,
-          signup_implicit_terms: fastify.config.app.signup_implicit_terms,
-          icon_url: fastify.config.app.icon_url,
-          title: fastify.config.app.title,
-          subtitle: fastify.config.app.subtitle,
+          public_registration: config.app.allowed_signup_emails.length > 0,
+          supported_languages: config.app.supported_languages,
+          default_language: config.app.default_language,
+          fallback_language: config.app.fallback_language,
+          light_theme: config.app.light_theme,
+          dark_theme: config.app.dark_theme,
+          theme_mode: config.app.theme_mode,
+          background_url: config.app.background_url,
+          signup_implicit_terms: config.app.signup_implicit_terms,
+          icon_url: config.app.icon_url,
+          title: config.app.title,
+          subtitle: config.app.subtitle,
         },
         database: {
-          enabled: !!fastify.config.database?.type,
+          enabled: !!config.database?.type,
         },
-        auth: fastify.config.auth,
+        auth: config.auth,
         identity_providers: identityProviders,
         account_deletion: {
-          enabled: fastify.config.app.account_deletion,
-          retention_period: fastify.config.cleanup.deleted_users.retention,
+          enabled: config.app.account_deletion,
+          retention_period: config.cleanup.deleted_users.retention,
         },
-      });
-    },
+      },
+      200,
+    );
   });
 };

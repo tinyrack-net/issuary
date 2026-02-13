@@ -1,6 +1,7 @@
+import { createRoute } from '@hono/zod-openapi';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
 /**
  * GET /health/ready
@@ -8,54 +9,68 @@ import type { FastifyWithZodInstance } from '@/server.js';
  * Kubernetes readiness probe endpoint.
  * Returns 200 if the server is ready to accept traffic.
  * Checks database connectivity to ensure all dependencies are available.
- * Used by Kubernetes to determine if traffic should be routed to this pod.
  */
-export default (fastify: FastifyWithZodInstance) => {
-  return fastify.route({
-    method: 'GET',
-    url: '/health/ready',
-    schema: {
-      summary: 'Readiness probe',
-      description:
-        'Returns 200 if the server is ready to accept traffic. Checks database connectivity.',
-      tags: [TAGS.HEALTH],
-      response: {
-        200: r.ReadinessResponse,
-        503: r.ReadinessErrorResponse,
-      },
-    },
-    handler: async (_req, res) => {
-      // Check database connectivity
-      let databaseStatus: 'ok' | 'error' = 'error';
-      let errorMessage: string | undefined;
-
-      try {
-        // Execute a simple query to verify database connection
-        await fastify.mikro.em.getConnection().execute('SELECT 1');
-        databaseStatus = 'ok';
-      } catch (err) {
-        databaseStatus = 'error';
-        errorMessage =
-          err instanceof Error ? err.message : 'Database connection failed';
-      }
-
-      // Return appropriate response based on checks
-      if (databaseStatus === 'ok') {
-        return res.status(200).send({
-          status: 'ok',
-          checks: {
-            database: 'ok',
-          },
-        });
-      }
-
-      return res.status(503).send({
-        status: 'error',
-        checks: {
-          database: databaseStatus,
+const route = createRoute({
+  method: 'get',
+  path: '/health/ready',
+  tags: [TAGS.HEALTH],
+  summary: 'Readiness probe',
+  description:
+    'Returns 200 if the server is ready to accept traffic. Checks database connectivity.',
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: r.ReadinessResponse,
         },
-        error: errorMessage,
-      });
+      },
+      description: 'Ready',
     },
+    503: {
+      content: {
+        'application/json': {
+          schema: r.ReadinessErrorResponse,
+        },
+      },
+      description: 'Not ready',
+    },
+  },
+});
+
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const { mikro } = c.get('services');
+
+    // Check database connectivity
+    let databaseStatus: 'ok' | 'error' = 'error';
+    let errorMessage: string | undefined;
+
+    try {
+      await mikro.em.getConnection().execute('SELECT 1');
+      databaseStatus = 'ok';
+    } catch (err) {
+      databaseStatus = 'error';
+      errorMessage =
+        err instanceof Error ? err.message : 'Database connection failed';
+    }
+
+    if (databaseStatus === 'ok') {
+      return c.json(
+        {
+          status: 'ok' as const,
+          checks: { database: 'ok' as const },
+        },
+        200,
+      );
+    }
+
+    return c.json(
+      {
+        status: 'error' as const,
+        checks: { database: databaseStatus },
+        error: errorMessage,
+      },
+      503,
+    );
   });
 };

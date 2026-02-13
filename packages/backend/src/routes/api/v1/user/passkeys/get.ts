@@ -1,36 +1,51 @@
+import { createRoute } from '@hono/zod-openapi';
 import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
-export default (fastify: FastifyWithZodInstance) => {
-  if (!fastify.config.auth.passkey.enabled) {
-    return;
-  }
-  fastify.route({
-    method: 'GET',
-    url: '/user/passkeys',
-    schema: {
-      summary: 'Get Passkeys',
-      description: 'Get all passkeys for the current user',
-      tags: [TAGS.USER],
-      response: {
-        200: z.object({
-          passkeys: z.array(r.PasskeyInfo),
-        }),
-        401: e.Unauthorized.Schema,
+const route = createRoute({
+  method: 'get',
+  path: '/user/passkeys',
+  tags: [TAGS.USER],
+  summary: 'Get Passkeys',
+  description: 'Get all passkeys for the current user',
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            passkeys: z.array(r.PasskeyInfo),
+          }),
+        },
       },
+      description: 'Success',
     },
-    handler: async (req, res) => {
-      const userSession = await req.auth.verify();
-      const passkeys = await fastify.passkeyService.getUserPasskeys(
-        userSession.id,
-      );
+    401: {
+      content: {
+        'application/json': {
+          schema: e.Unauthorized.Schema,
+        },
+      },
+      description: 'Unauthorized',
+    },
+  },
+});
 
-      return res.status(200).send({
-        passkeys,
-      });
-    },
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const config = c.get('services').config;
+    if (!config.auth.passkey.enabled) {
+      throw new e.PasskeyNotEnabled.Error();
+    }
+
+    const auth = c.get('auth');
+    const { passkeyService } = c.get('services');
+
+    const userSession = await auth.verify();
+    const passkeys = await passkeyService.getUserPasskeys(userSession.id);
+
+    return c.json({ passkeys }, 200);
   });
 };

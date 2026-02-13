@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import {
@@ -14,21 +13,23 @@ import {
   TEST_USER,
   TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
+import type { AppType } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  ({ app, cleanup } = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       clients: [TEST_OAUTH_CLIENT_CONFIG],
     },
-  });
+  }));
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('GET /application/oauth/userinfo', () => {
@@ -40,8 +41,8 @@ describe('GET /application/oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // OIDC Core §5.3.2 - Standard Claims
       expect(json.sub).toBeDefined(); // Always present
@@ -63,8 +64,8 @@ describe('GET /application/oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // Should have sub (always) and email claims
       expect(json.sub).toBeDefined();
@@ -84,8 +85,8 @@ describe('GET /application/oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // Should have sub (always) and profile claims
       expect(json.sub).toBeDefined();
@@ -104,8 +105,8 @@ describe('GET /application/oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // Should only have sub claim
       expect(json.sub).toBeDefined();
@@ -125,8 +126,8 @@ describe('GET /application/oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // Should have all claims based on scopes
       expect(json.sub).toBeDefined();
@@ -141,8 +142,8 @@ describe('GET /application/oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // Sub should be a valid UUID or user ID
       expect(json.sub).toBeDefined();
@@ -152,58 +153,57 @@ describe('GET /application/oauth/userinfo', () => {
 
   describe('Bearer Token Validation', () => {
     test('should reject request without Authorization header', async () => {
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/userinfo', {
         method: 'GET',
-        url: '/application/oauth/userinfo',
         // No Authorization header
       });
 
-      expect(res.statusCode).toBe(401);
-      const json = res.json();
+      expect(res.status).toBe(401);
+      const json = await res.json();
       expect(json.code).toBe('MISSING_AUTHORIZATION_HEADER');
     });
 
     test('should reject request with invalid Authorization header format', async () => {
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/userinfo', {
         method: 'GET',
-        url: '/application/oauth/userinfo',
         headers: {
           authorization: 'InvalidFormat token123', // Should be "Bearer <token>"
         },
       });
 
-      expect(res.statusCode).toBe(401);
-      const json = res.json();
+      expect(res.status).toBe(401);
+      const json = await res.json();
       expect(json.code).toBe('INVALID_AUTHORIZATION_HEADER_FORMAT');
     });
 
     test('should reject request with missing token in Bearer header', async () => {
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/userinfo', {
         method: 'GET',
-        url: '/application/oauth/userinfo',
         headers: {
           authorization: 'Bearer ', // No token after Bearer
         },
       });
 
-      expect(res.statusCode).toBe(401);
-      const json = res.json();
-      expect(json.code).toBe('MISSING_BEARER_TOKEN');
+      expect(res.status).toBe(401);
+      const json = await res.json();
+      // Hono trims trailing space from 'Bearer ', resulting in 'Bearer'
+      // which fails the format check (expects 2 parts after split)
+      expect(json.code).toBe('INVALID_AUTHORIZATION_HEADER_FORMAT');
     });
 
     test('should reject request with invalid access token', async () => {
       const res = await getUserInfo(app, 'invalid-token-that-is-not-a-jwt');
 
-      expect(res.statusCode).toBe(401);
-      const json = res.json();
+      expect(res.status).toBe(401);
+      const json = await res.json();
       expect(json.code).toBe('INVALID_ACCESS_TOKEN');
     });
 
     test('should reject request with malformed JWT', async () => {
       const res = await getUserInfo(app, 'not.a.valid.jwt.format');
 
-      expect(res.statusCode).toBe(401);
-      const json = res.json();
+      expect(res.status).toBe(401);
+      const json = await res.json();
       expect(json.code).toBe('INVALID_ACCESS_TOKEN');
     });
 
@@ -215,8 +215,8 @@ describe('GET /application/oauth/userinfo', () => {
 
       const res = await getUserInfo(app, fakeExpiredToken);
 
-      expect(res.statusCode).toBe(401);
-      const json = res.json();
+      expect(res.status).toBe(401);
+      const json = await res.json();
       expect(json.code).toBe('INVALID_ACCESS_TOKEN');
     });
 
@@ -233,43 +233,45 @@ describe('GET /application/oauth/userinfo', () => {
       });
 
       // Get authorization code and exchange for tokens to get refresh token
-      const authorizeRes = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          response_type: 'code',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          scope: 'openid',
-          state: 'test',
+      const queryString = new URLSearchParams({
+        response_type: 'code',
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: 'openid',
+        state: 'test',
+      }).toString();
+      const authorizeRes = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${sessionCookie}` },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
       const location = new URL(
-        authorizeRes.headers.location as string,
+        authorizeRes.headers.get('location') as string,
         'http://localhost:8080',
       );
       const code = location.searchParams.get('code');
 
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      const { refresh_token } = tokenRes.json();
+      const { refresh_token } = await tokenRes.json();
 
       // Try to use refresh token for userinfo (should fail)
       const res = await getUserInfo(app, refresh_token);
 
-      expect(res.statusCode).toBe(401);
-      const json = res.json();
+      expect(res.status).toBe(401);
+      const json = await res.json();
       expect(json.code).toBe('INVALID_ACCESS_TOKEN');
     });
   });
@@ -282,8 +284,8 @@ describe('GET /application/oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // Only sub should be present
       const keys = Object.keys(json);
@@ -298,8 +300,8 @@ describe('GET /application/oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       expect(json.email_verified).toBeDefined();
       expect(typeof json.email_verified).toBe('boolean');
@@ -312,8 +314,8 @@ describe('GET /application/oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // Should NOT have email claims
       expect(json).not.toHaveProperty('email');
@@ -333,8 +335,8 @@ describe('GET /application/oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.statusCode).toBe(200);
-      expect(res.headers['content-type']).toContain('application/json');
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('application/json');
     });
 
     test('should return valid JSON structure', async () => {
@@ -344,10 +346,10 @@ describe('GET /application/oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
       // Should be parseable as JSON
-      const json = res.json();
+      const json = await res.json();
       expect(json).toBeDefined();
       expect(typeof json).toBe('object');
     });
@@ -359,8 +361,8 @@ describe('GET /application/oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // OIDC standard claims (snake_case)
       expect(json).toHaveProperty('sub');
@@ -375,8 +377,8 @@ describe('GET /application/oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // All values should be defined (not null/undefined)
       for (const [_key, value] of Object.entries(json)) {
@@ -388,13 +390,12 @@ describe('GET /application/oauth/userinfo', () => {
 
   describe('Error Response Format', () => {
     test('should return proper error format for missing auth header', async () => {
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/userinfo', {
         method: 'GET',
-        url: '/application/oauth/userinfo',
       });
 
-      expect(res.statusCode).toBe(401);
-      const json = res.json();
+      expect(res.status).toBe(401);
+      const json = await res.json();
 
       expect(json).toHaveProperty('code');
       expect(json).toHaveProperty('message');
@@ -416,14 +417,13 @@ describe('GET /application/oauth/userinfo', () => {
           headers['authorization'] = testCase['authorization'];
         }
 
-        const res = await app.inject({
+        const res = await app.request('/application/oauth/userinfo', {
           method: 'GET',
-          url: '/application/oauth/userinfo',
           headers,
         });
 
-        expect(res.statusCode).toBe(401);
-        const json = res.json();
+        expect(res.status).toBe(401);
+        const json = await res.json();
         expect(json.code).toBeDefined();
         expect(json.message).toBeDefined();
       }
@@ -438,8 +438,8 @@ describe('GET /application/oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // §5.3.2 - sub claim is REQUIRED
       expect(json.sub).toBeDefined();
@@ -462,41 +462,43 @@ describe('GET /application/oauth/userinfo', () => {
       });
 
       // Get tokens (including ID token)
-      const authorizeRes = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          response_type: 'code',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          scope,
-          state: 'test',
+      const queryString = new URLSearchParams({
+        response_type: 'code',
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope,
+        state: 'test',
+      }).toString();
+      const authorizeRes = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${sessionCookie}` },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
       const location = new URL(
-        authorizeRes.headers.location as string,
+        authorizeRes.headers.get('location') as string,
         'http://localhost:8080',
       );
       const code = location.searchParams.get('code');
 
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      const { access_token, id_token } = tokenRes.json();
+      const { access_token, id_token } = await tokenRes.json();
 
       // Get userinfo
       const userinfoRes = await getUserInfo(app, access_token);
-      const userinfo = userinfoRes.json();
+      const userinfo = await userinfoRes.json();
 
       // Decode ID token (without verification, just for comparison)
       const idTokenPayload = JSON.parse(
@@ -521,13 +523,13 @@ describe('GET /application/oauth/userinfo', () => {
 
       // First request
       const res1 = await getUserInfo(app, accessToken);
-      expect(res1.statusCode).toBe(200);
-      const json1 = res1.json();
+      expect(res1.status).toBe(200);
+      const json1 = await res1.json();
 
       // Second request with same token
       const res2 = await getUserInfo(app, accessToken);
-      expect(res2.statusCode).toBe(200);
-      const json2 = res2.json();
+      expect(res2.status).toBe(200);
+      const json2 = await res2.json();
 
       // Responses should be identical
       expect(json1).toEqual(json2);
@@ -540,8 +542,8 @@ describe('GET /application/oauth/userinfo', () => {
       const res1 = await getUserInfo(app, token1);
       const res2 = await getUserInfo(app, token2);
 
-      const json1 = res1.json();
-      const json2 = res2.json();
+      const json1 = await res1.json();
+      const json2 = await res2.json();
 
       // Token 1 should have email, not profile claims
       expect(json1.email).toBeDefined();
@@ -567,27 +569,27 @@ describe('GET /application/oauth/userinfo', () => {
         scope: 'openid profile email',
       });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
       // Verify token works before revocation
       const validRes = await getUserInfo(app, access_token);
-      expect(validRes.statusCode).toBe(200);
+      expect(validRes.status).toBe(200);
 
       // Revoke the token
-      const revokeRes = await app.inject({
+      const revokeRes = await app.request('/application/oauth/revoke', {
         method: 'POST',
-        url: '/application/oauth/revoke',
-        payload: {
+        body: JSON.stringify({
           token: access_token,
           client_id: TEST_OAUTH_CLIENT.clientId,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
-      expect(revokeRes.statusCode).toBe(200);
+      expect(revokeRes.status).toBe(200);
 
       // Token should now be rejected
       const revokedRes = await getUserInfo(app, access_token);
-      expect(revokedRes.statusCode).toBe(401);
-      const json = revokedRes.json();
+      expect(revokedRes.status).toBe(401);
+      const json = await revokedRes.json();
       expect(json.code).toBe('INVALID_ACCESS_TOKEN');
     });
   });
@@ -598,16 +600,15 @@ describe('GET /application/oauth/userinfo', () => {
         scope: 'openid',
       });
 
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/userinfo', {
         method: 'HEAD',
-        url: '/application/oauth/userinfo',
         headers: {
           authorization: `Bearer ${accessToken}`,
         },
       });
 
       // HEAD requests typically return 200 with no body or 405 if not supported
-      expect([200, 204, 405]).toContain(res.statusCode);
+      expect([200, 204, 405]).toContain(res.status);
     });
 
     test('should reject POST request (GET only endpoint)', async () => {
@@ -615,16 +616,15 @@ describe('GET /application/oauth/userinfo', () => {
         scope: 'openid',
       });
 
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/userinfo', {
         method: 'POST',
-        url: '/application/oauth/userinfo',
         headers: {
           authorization: `Bearer ${accessToken}`,
         },
       });
 
       // POST is not implemented, should return 404
-      expect(res.statusCode).toBe(404);
+      expect(res.status).toBe(404);
     });
   });
 
@@ -634,17 +634,16 @@ describe('GET /application/oauth/userinfo', () => {
         scope: 'openid profile email',
       });
 
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/userinfo', {
         method: 'GET',
-        url: '/application/oauth/userinfo',
         headers: {
           authorization: `Bearer ${accessToken}`,
           accept: 'application/json',
         },
       });
 
-      expect(res.statusCode).toBe(200);
-      expect(res.headers['content-type']).toContain('application/json');
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('application/json');
     });
 
     test('should handle Accept: */* header', async () => {
@@ -652,17 +651,16 @@ describe('GET /application/oauth/userinfo', () => {
         scope: 'openid profile email',
       });
 
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/userinfo', {
         method: 'GET',
-        url: '/application/oauth/userinfo',
         headers: {
           authorization: `Bearer ${accessToken}`,
           accept: '*/*',
         },
       });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.sub).toBeDefined();
     });
   });

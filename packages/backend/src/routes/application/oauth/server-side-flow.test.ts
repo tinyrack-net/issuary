@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
@@ -15,21 +14,23 @@ import {
   TEST_USER,
   TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
+import type { AppType } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  ({ app, cleanup } = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       clients: [TEST_OAUTH_CLIENT_CONFIG],
     },
-  });
+  }));
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 /**
@@ -44,12 +45,6 @@ function createBasicAuthHeader(clientId: string, clientSecret: string): string {
 
 /**
  * Server-Side (Confidential Client) Authentication Flow Tests
- *
- * These tests simulate a server-side application authentication flow where:
- * - client_secret is required (confidential client)
- * - Supports both client_secret_post and client_secret_basic auth methods
- * - Backend-to-backend communication (no browser)
- * - Higher security due to server-side secret storage
  */
 describe('Server-Side Confidential Client Authentication Flow', () => {
   describe('Client Secret Post Authentication', () => {
@@ -57,21 +52,20 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           client_secret: TEST_OAUTH_CLIENT.clientSecret,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(tokenRes.statusCode).toBe(200);
-      const tokens = tokenRes.json();
-
+      expect(tokenRes.status).toBe(200);
+      const tokens = await tokenRes.json();
       expect(tokens.access_token).toBeDefined();
       expect(tokens.refresh_token).toBeDefined();
       expect(tokens.id_token).toBeDefined();
@@ -82,40 +76,39 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           client_secret: 'wrong-secret',
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(tokenRes.statusCode).toBe(401);
-      expect(tokenRes.json().code).toBe('INVALID_CLIENT_CREDENTIALS');
+      expect(tokenRes.status).toBe(401);
+      expect((await tokenRes.json()).code).toBe('INVALID_CLIENT_CREDENTIALS');
     });
 
     test('should reject request with empty client_secret', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           client_secret: '',
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      // Empty secret should fail validation or be treated as incorrect
-      expect([400, 401]).toContain(tokenRes.statusCode);
+      expect([400, 401]).toContain(tokenRes.status);
     });
   });
 
@@ -124,27 +117,25 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      // Note: The current implementation requires client_id in the body
-      // Basic Auth provides an alternative authentication method
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
+        body: JSON.stringify({
+          grant_type: 'authorization_code',
+          code,
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        }),
         headers: {
+          'Content-Type': 'application/json',
           authorization: createBasicAuthHeader(
             TEST_OAUTH_CLIENT.clientId,
             TEST_OAUTH_CLIENT.clientSecret,
           ),
         },
-        payload: {
-          grant_type: 'authorization_code',
-          code,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        },
       });
 
-      expect(tokenRes.statusCode).toBe(200);
-      const tokens = tokenRes.json();
+      expect(tokenRes.status).toBe(200);
+      const tokens = await tokenRes.json();
       expect(tokens.access_token).toBeDefined();
     });
 
@@ -152,52 +143,48 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      // Current implementation requires client_id in body
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
+        body: JSON.stringify({
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        }),
         headers: {
+          'Content-Type': 'application/json',
           authorization: createBasicAuthHeader(
             TEST_OAUTH_CLIENT.clientId,
             'wrong-secret',
           ),
         },
-        payload: {
-          grant_type: 'authorization_code',
-          code,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        },
       });
 
-      // Missing client_id in body causes validation error
-      expect(tokenRes.statusCode).toBe(400);
+      expect(tokenRes.status).toBe(400);
     });
 
     test('should use body credentials regardless of Basic auth header', async () => {
-      // Current implementation only uses body client_secret
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      // Basic auth header is ignored, body credentials are used
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        headers: {
-          authorization: createBasicAuthHeader(
-            TEST_OAUTH_CLIENT.clientId,
-            'ignored-header-secret',
-          ),
-        },
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           client_secret: TEST_OAUTH_CLIENT.clientSecret,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+          authorization: createBasicAuthHeader(
+            TEST_OAUTH_CLIENT.clientId,
+            'ignored-header-secret',
+          ),
         },
       });
 
-      expect(tokenRes.statusCode).toBe(200);
+      expect(tokenRes.status).toBe(200);
     });
   });
 
@@ -206,27 +193,25 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      // Provide wrong secret in header, correct in body
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        headers: {
-          authorization: createBasicAuthHeader(
-            TEST_OAUTH_CLIENT.clientId,
-            'wrong-header-secret',
-          ),
-        },
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           client_secret: TEST_OAUTH_CLIENT.clientSecret,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+          authorization: createBasicAuthHeader(
+            TEST_OAUTH_CLIENT.clientId,
+            'wrong-header-secret',
+          ),
         },
       });
 
-      // Body credentials should take precedence
-      expect(tokenRes.statusCode).toBe(200);
+      expect(tokenRes.status).toBe(200);
     });
   });
 
@@ -239,21 +224,21 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
-      const { refresh_token } = tokenRes.json();
+      const { refresh_token } = await tokenRes.json();
 
-      const refreshRes = await app.inject({
+      const refreshRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'refresh_token',
           refresh_token,
           client_id: TEST_OAUTH_CLIENT.clientId,
           client_secret: TEST_OAUTH_CLIENT.clientSecret,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(refreshRes.statusCode).toBe(200);
-      expect(refreshRes.json().access_token).toBeDefined();
+      expect(refreshRes.status).toBe(200);
+      expect((await refreshRes.json()).access_token).toBeDefined();
     });
 
     test('should refresh token with client_secret_basic', async () => {
@@ -264,28 +249,26 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
-      const { refresh_token } = tokenRes.json();
+      const { refresh_token } = await tokenRes.json();
 
-      // Note: This test uses Basic Auth header for client authentication
-      // The server requires client_id in payload for refresh_token grant
-      const refreshRes = await app.inject({
+      const refreshRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
+        body: JSON.stringify({
+          grant_type: 'refresh_token',
+          refresh_token,
+          client_id: TEST_OAUTH_CLIENT.clientId,
+        }),
         headers: {
+          'Content-Type': 'application/json',
           authorization: createBasicAuthHeader(
             TEST_OAUTH_CLIENT.clientId,
             TEST_OAUTH_CLIENT.clientSecret,
           ),
         },
-        payload: {
-          grant_type: 'refresh_token',
-          refresh_token,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-        },
       });
 
-      expect(refreshRes.statusCode).toBe(200);
-      expect(refreshRes.json().access_token).toBeDefined();
+      expect(refreshRes.status).toBe(200);
+      expect((await refreshRes.json()).access_token).toBeDefined();
     });
 
     test('should reject refresh with wrong client_secret', async () => {
@@ -296,15 +279,15 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
-      const { refresh_token } = tokenRes.json();
+      const { refresh_token } = await tokenRes.json();
 
       const refreshRes = await refreshAccessToken(app, {
         refreshToken: refresh_token,
         clientSecret: 'wrong-secret',
       });
 
-      expect(refreshRes.statusCode).toBe(401);
-      expect(refreshRes.json().code).toBe('INVALID_CLIENT_CREDENTIALS');
+      expect(refreshRes.status).toBe(401);
+      expect((await refreshRes.json()).code).toBe('INVALID_CLIENT_CREDENTIALS');
     });
   });
 
@@ -317,15 +300,15 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
       const introspectRes = await introspectToken(app, {
         token: access_token,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
 
-      expect(introspectRes.statusCode).toBe(200);
-      expect(introspectRes.json().active).toBe(true);
+      expect(introspectRes.status).toBe(200);
+      expect((await introspectRes.json()).active).toBe(true);
     });
 
     test('should introspect with client_secret_basic', async () => {
@@ -336,24 +319,22 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
-      const introspectRes = await app.inject({
+      const introspectRes = await app.request('/application/oauth/introspect', {
         method: 'POST',
-        url: '/application/oauth/introspect',
+        body: JSON.stringify({ token: access_token }),
         headers: {
+          'Content-Type': 'application/json',
           authorization: createBasicAuthHeader(
             TEST_OAUTH_CLIENT.clientId,
             TEST_OAUTH_CLIENT.clientSecret,
           ),
         },
-        payload: {
-          token: access_token,
-        },
       });
 
-      expect(introspectRes.statusCode).toBe(200);
-      expect(introspectRes.json().active).toBe(true);
+      expect(introspectRes.status).toBe(200);
+      expect((await introspectRes.json()).active).toBe(true);
     });
 
     test('should reject introspection with wrong client_secret', async () => {
@@ -361,14 +342,14 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
       const introspectRes = await introspectToken(app, {
         token: access_token,
         clientSecret: 'wrong-secret',
       });
 
-      expect(introspectRes.statusCode).toBe(401);
+      expect(introspectRes.status).toBe(401);
     });
   });
 
@@ -381,23 +362,22 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
-      const revokeRes = await app.inject({
+      const revokeRes = await app.request('/application/oauth/revoke', {
         method: 'POST',
-        url: '/application/oauth/revoke',
-        payload: {
+        body: JSON.stringify({
           token: access_token,
           client_id: TEST_OAUTH_CLIENT.clientId,
           client_secret: TEST_OAUTH_CLIENT.clientSecret,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(revokeRes.statusCode).toBe(200);
+      expect(revokeRes.status).toBe(200);
 
-      // Verify token is revoked
       const introspectRes = await introspectToken(app, { token: access_token });
-      expect(introspectRes.json().active).toBe(false);
+      expect((await introspectRes.json()).active).toBe(false);
     });
 
     test('should revoke with client_secret_basic', async () => {
@@ -408,23 +388,21 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
-      const revokeRes = await app.inject({
+      const revokeRes = await app.request('/application/oauth/revoke', {
         method: 'POST',
-        url: '/application/oauth/revoke',
+        body: JSON.stringify({ token: access_token }),
         headers: {
+          'Content-Type': 'application/json',
           authorization: createBasicAuthHeader(
             TEST_OAUTH_CLIENT.clientId,
             TEST_OAUTH_CLIENT.clientSecret,
           ),
         },
-        payload: {
-          token: access_token,
-        },
       });
 
-      expect(revokeRes.statusCode).toBe(200);
+      expect(revokeRes.status).toBe(200);
     });
 
     test('should reject revocation with wrong client_secret', async () => {
@@ -432,28 +410,26 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
-      const revokeRes = await app.inject({
+      const revokeRes = await app.request('/application/oauth/revoke', {
         method: 'POST',
-        url: '/application/oauth/revoke',
-        payload: {
+        body: JSON.stringify({
           token: access_token,
           client_id: TEST_OAUTH_CLIENT.clientId,
           client_secret: 'wrong-secret',
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(revokeRes.statusCode).toBe(401);
+      expect(revokeRes.status).toBe(401);
     });
   });
 
   describe('Server-Side Complete Flow', () => {
     test('should complete full confidential client flow', async () => {
-      // Step 1: User authenticates (typically via redirect)
       const sessionCookie = await createAuthenticatedSession(app);
 
-      // Step 2: Get authorization code
       const { code, location } = await getAuthorizationCode(app, {
         sessionCookie,
         state: 'server-side-state',
@@ -462,43 +438,38 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       expect(code).toBeDefined();
       expect(location.searchParams.get('state')).toBe('server-side-state');
 
-      // Step 3: Server exchanges code for tokens (backend-to-backend)
       const tokenRes = await exchangeCodeForTokens(app, {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
 
-      expect(tokenRes.statusCode).toBe(200);
-      const tokens = tokenRes.json();
+      expect(tokenRes.status).toBe(200);
+      const tokens = await tokenRes.json();
 
       expect(tokens.access_token).toBeDefined();
       expect(tokens.refresh_token).toBeDefined();
       expect(tokens.id_token).toBeDefined();
 
-      // Step 4: Verify tokens
       const accessDecoded = jose.decodeJwt(tokens.access_token);
       const idDecoded = jose.decodeJwt(tokens.id_token);
 
       expect(accessDecoded['client_id']).toBe(TEST_OAUTH_CLIENT.clientId);
       expect(idDecoded.aud).toBe(TEST_OAUTH_CLIENT.clientId);
 
-      // Step 5: Use access token
       const userInfoRes = await getUserInfo(app, tokens.access_token);
-      expect(userInfoRes.statusCode).toBe(200);
-      expect(userInfoRes.json().email).toBe(TEST_USER.email);
+      expect(userInfoRes.status).toBe(200);
+      expect((await userInfoRes.json()).email).toBe(TEST_USER.email);
 
-      // Step 6: Refresh when needed
       const refreshRes = await refreshAccessToken(app, {
         refreshToken: tokens.refresh_token,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
-      expect(refreshRes.statusCode).toBe(200);
+      expect(refreshRes.status).toBe(200);
     });
   });
 
   describe('Confidential Client with PKCE', () => {
     test('should support PKCE even for confidential clients', async () => {
-      // Some security standards recommend PKCE for all clients
       const codeVerifier = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
       const codeChallenge = 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM';
 
@@ -509,22 +480,21 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         codeChallengeMethod: 'S256',
       });
 
-      // Exchange with both client_secret AND code_verifier
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           client_secret: TEST_OAUTH_CLIENT.clientSecret,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
           code_verifier: codeVerifier,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(tokenRes.statusCode).toBe(200);
-      expect(tokenRes.json().access_token).toBeDefined();
+      expect(tokenRes.status).toBe(200);
+      expect((await tokenRes.json()).access_token).toBeDefined();
     });
 
     test('should require code_verifier when challenge was provided, even with client_secret', async () => {
@@ -537,22 +507,20 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         codeChallengeMethod: 'S256',
       });
 
-      // Try without code_verifier (even with client_secret)
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           client_secret: TEST_OAUTH_CLIENT.clientSecret,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          // Missing code_verifier
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(tokenRes.statusCode).toBe(400);
-      expect(tokenRes.json().code).toBe('MISSING_CODE_VERIFIER');
+      expect(tokenRes.status).toBe(400);
+      expect((await tokenRes.json()).code).toBe('MISSING_CODE_VERIFIER');
     });
   });
 
@@ -561,43 +529,40 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: 'unknown-client-id',
           client_secret: 'some-secret',
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(tokenRes.statusCode).toBe(400);
-      expect(tokenRes.json().code).toBe('OAUTH_CLIENT_NOT_FOUND');
+      expect(tokenRes.status).toBe(400);
+      expect((await tokenRes.json()).code).toBe('OAUTH_CLIENT_NOT_FOUND');
     });
 
     test('should reject mismatched client_id in token request', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      // Try to use code with different client_id
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: 'different-client-id',
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(tokenRes.statusCode).toBe(400);
+      expect(tokenRes.status).toBe(400);
     });
   });
-
-  // Note: Redirect URI validation is tested in token/post.test.ts
 
   describe('ID Token Claims for Confidential Clients', () => {
     test('should include azp claim when client authenticates', async () => {
@@ -608,11 +573,9 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
-      const { id_token } = tokenRes.json();
+      const { id_token } = await tokenRes.json();
 
       const decoded = jose.decodeJwt(id_token);
-
-      // Authorized party should be present for confidential clients
       expect(decoded.aud).toBe(TEST_OAUTH_CLIENT.clientId);
     });
 
@@ -627,12 +590,9 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
-      const { id_token } = tokenRes.json();
+      const { id_token } = await tokenRes.json();
 
       const decoded = jose.decodeJwt(id_token);
-
-      // auth_time is optional in OIDC Core and implementation-specific
-      // Just verify the ID token is valid and has required claims
       expect(decoded.sub).toBeDefined();
       expect(decoded.iss).toBeDefined();
       expect(decoded.aud).toBe(TEST_OAUTH_CLIENT.clientId);
@@ -645,21 +605,20 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           client_secret: 'wrong-secret',
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(tokenRes.statusCode).toBe(401);
-      const error = tokenRes.json();
-
+      expect(tokenRes.status).toBe(401);
+      const error = await tokenRes.json();
       expect(error.code).toBeDefined();
       expect(error.message).toBeDefined();
       expect(typeof error.code).toBe('string');
@@ -667,19 +626,18 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
     });
 
     test('should return proper error for missing grant type', async () => {
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           code: 'some-code',
           client_id: TEST_OAUTH_CLIENT.clientId,
           client_secret: TEST_OAUTH_CLIENT.clientSecret,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          // Missing grant_type
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(tokenRes.statusCode).toBe(400);
+      expect(tokenRes.status).toBe(400);
     });
   });
 
@@ -696,12 +654,10 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
 
-      expect(tokenRes.statusCode).toBe(200);
-      const tokens = tokenRes.json();
-
+      expect(tokenRes.status).toBe(200);
+      const tokens = await tokenRes.json();
       expect(tokens.scope).toBe('openid profile');
 
-      // ID token should have profile claims but not email
       const decoded = jose.decodeJwt(tokens.id_token);
       expect(decoded['name']).toBeDefined();
       expect(decoded['email']).toBeUndefined();
@@ -719,9 +675,8 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
       const decoded = jose.decodeJwt(tokens.id_token);
-
       expect(decoded['name']).toBeDefined();
       expect(decoded['email']).toBeDefined();
       expect(decoded['email_verified']).toBeDefined();

@@ -14,26 +14,26 @@
  * - Otherwise => immediate login success
  */
 
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import {
   enableTotpForUser,
   extractCookie,
   generateUniqueEmail,
-  injectWithSession,
   MINIMAL_TEST_CONFIG,
+  requestWithSession,
   TEST_USER,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
 /**
  * Helper function to create a user in DB without triggering login flow.
  * Returns userId for further operations.
  */
 async function createUserInDb(
-  app: FastifyInstance,
+  services: ServiceContainer,
   email: string,
   password: string,
   options: { emailVerified?: boolean } = {},
@@ -41,13 +41,13 @@ async function createUserInDb(
   const { emailVerified = true } = options;
   let userId = '';
 
-  await withMikroContext(app, async () => {
-    const user = app.mikro.user.create({
+  await withMikroContext(services, async () => {
+    const user = services.mikro.user.create({
       email,
       password_hash: password,
     });
     user.email_verified = emailVerified;
-    await app.mikro.em.persist(user).flush();
+    await services.mikro.em.persist(user).flush();
     userId = user.id;
   });
 
@@ -61,10 +61,12 @@ async function createUserInDb(
  * =============================================================================
  */
 describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
-  let app: FastifyInstance;
+  let app: AppType;
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    app = await createServer({
+    const server = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
@@ -81,10 +83,13 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
         },
       },
     });
+    app = server.app;
+    services = server.services;
+    cleanup = server.cleanup;
   });
 
   afterAll(async () => {
-    await app.close();
+    await cleanup();
   });
 
   test('should require TOTP setup for user without TOTP registered', async () => {
@@ -92,24 +97,24 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     const password = 'password123';
 
     // Create user without TOTP
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
     });
 
     // Login should return second_factor_setup_required
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const body = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const body = await loginRes.json();
     expect(body.user.second_factor_required).toBe(true);
     expect(body.user).not.toBeNull();
   });
@@ -119,20 +124,20 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     const password = 'password123';
 
     // Create user in DB without login
-    const userId = await createUserInDb(app, email, password);
+    const userId = await createUserInDb(services, email, password);
 
     // Enable TOTP for user
-    await enableTotpForUser(app, userId);
+    await enableTotpForUser(services, userId);
 
     // Login should return second_factor_required
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const body = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const body = await loginRes.json();
     // User has TOTP registered, so verification is required
     expect(body.user.totp_registered).toBe(true);
     expect(body.user).not.toBeNull();
@@ -143,36 +148,39 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     const password = 'password123';
 
     // Create user without TOTP
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    expect(loginRes.json().user.second_factor_required).toBe(true);
+    expect(loginRes.status).toBe(200);
+    const loginBody = await loginRes.json();
+    expect(loginBody.user.second_factor_required).toBe(true);
 
     // Verify session cookie is issued
     const sessionCookie = extractCookie(loginRes, 'session');
     expect(sessionCookie).toBeDefined();
 
     // Verify user session endpoint returns unauthenticated (only pending2FASetup session exists)
-    const sessionRes = await injectWithSession(
+    const sessionRes = await requestWithSession(
       app,
-      { method: 'GET', url: '/api/v1/user/session' },
+      '/api/v1/user/session',
+      { method: 'GET' },
       sessionCookie,
     );
-    expect(sessionRes.statusCode).toBe(200);
-    expect(sessionRes.json().user).toBeUndefined();
+    expect(sessionRes.status).toBe(200);
+    const sessionBody = await sessionRes.json();
+    expect(sessionBody.user).toBeUndefined();
   });
 
   test('should issue pending2FAUser session when TOTP verification is required', async () => {
@@ -180,45 +188,48 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     const password = 'password123';
 
     // Create user with TOTP enabled
-    const userId = await createUserInDb(app, email, password);
-    await enableTotpForUser(app, userId);
+    const userId = await createUserInDb(services, email, password);
+    await enableTotpForUser(services, userId);
 
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    expect(loginRes.json().user.second_factor_required).toBe(true);
+    expect(loginRes.status).toBe(200);
+    const loginBody = await loginRes.json();
+    expect(loginBody.user.second_factor_required).toBe(true);
 
     // Verify session cookie is issued
     const sessionCookie = extractCookie(loginRes, 'session');
     expect(sessionCookie).toBeDefined();
 
     // Verify user session endpoint returns unauthenticated (only pending2FAUser session exists)
-    const sessionRes = await injectWithSession(
+    const sessionRes = await requestWithSession(
       app,
-      { method: 'GET', url: '/api/v1/user/session' },
+      '/api/v1/user/session',
+      { method: 'GET' },
       sessionCookie,
     );
-    expect(sessionRes.statusCode).toBe(200);
-    expect(sessionRes.json().user).toBeUndefined();
+    expect(sessionRes.status).toBe(200);
+    const sessionBody = await sessionRes.json();
+    expect(sessionBody.user).toBeUndefined();
   });
 
   test('should allow config user to login without TOTP (exempt from required)', async () => {
     // Config users are exempt from TOTP required check
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: {
+      body: JSON.stringify({
         email: TEST_USER.email,
         password: TEST_USER.password,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const body = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const body = await loginRes.json();
     expect(body.user.managed_by).toBe('config');
     expect(body.user.second_factor_required).toBe(false);
   });
@@ -231,10 +242,12 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
  * =============================================================================
  */
 describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
-  let app: FastifyInstance;
+  let app: AppType;
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    app = await createServer({
+    const server = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -250,10 +263,13 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
         },
       },
     });
+    app = server.app;
+    services = server.services;
+    cleanup = server.cleanup;
   });
 
   afterAll(async () => {
-    await app.close();
+    await cleanup();
   });
 
   test('should login immediately for user without TOTP registered', async () => {
@@ -261,24 +277,24 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
     const password = 'password123';
 
     // Create user without TOTP
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
     });
 
     // Login should succeed immediately
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const body = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const body = await loginRes.json();
     expect(body.user.email).toBe(email);
     expect(body.user.totp_registered).toBeFalsy();
     expect(body.user.second_factor_required).toBe(false);
@@ -289,18 +305,18 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
     const password = 'password123';
 
     // Create user in DB without login
-    const userId = await createUserInDb(app, email, password);
-    await enableTotpForUser(app, userId);
+    const userId = await createUserInDb(services, email, password);
+    await enableTotpForUser(services, userId);
 
     // Login should require TOTP verification
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const body = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const body = await loginRes.json();
     // User has TOTP registered, so verification is required
     expect(body.user.totp_registered).toBe(true);
     expect(body.user).not.toBeNull();
@@ -311,33 +327,35 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
     const password = 'password123';
 
     // Create user without TOTP
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
+    expect(loginRes.status).toBe(200);
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Verify user session endpoint returns actual user data
-    const sessionRes = await injectWithSession(
+    const sessionRes = await requestWithSession(
       app,
-      { method: 'GET', url: '/api/v1/user/session' },
+      '/api/v1/user/session',
+      { method: 'GET' },
       sessionCookie,
     );
-    expect(sessionRes.statusCode).toBe(200);
-    expect(sessionRes.json().user).not.toBeNull();
-    expect(sessionRes.json().user.email).toBe(email);
+    expect(sessionRes.status).toBe(200);
+    const sessionBody = await sessionRes.json();
+    expect(sessionBody.user).not.toBeNull();
+    expect(sessionBody.user.email).toBe(email);
   });
 });
 
@@ -348,10 +366,12 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
  * =============================================================================
  */
 describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
-  let app: FastifyInstance;
+  let app: AppType;
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    app = await createServer({
+    const server = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -367,10 +387,13 @@ describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
         },
       },
     });
+    app = server.app;
+    services = server.services;
+    cleanup = server.cleanup;
   });
 
   afterAll(async () => {
-    await app.close();
+    await cleanup();
   });
 
   test('should login immediately for user without TOTP', async () => {
@@ -378,23 +401,23 @@ describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
     const password = 'password123';
 
     // Create user without TOTP
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const body = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const body = await loginRes.json();
     expect(body.user.email).toBe(email);
     expect(body.user.second_factor_required).toBe(false);
   });
@@ -404,21 +427,21 @@ describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
     const password = 'password123';
 
     // Create user in DB
-    const userId = await createUserInDb(app, email, password);
+    const userId = await createUserInDb(services, email, password);
 
     // Enable TOTP for user (even though TOTP is disabled in config)
-    await enableTotpForUser(app, userId);
+    await enableTotpForUser(services, userId);
 
     // Login should still require TOTP verification because user has TOTP enabled
     // Note: The login logic checks user.totp_registered regardless of config.totp.enabled
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const body = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const body = await loginRes.json();
     // User has TOTP registered, so verification is required
     expect(body.user.totp_registered).toBe(true);
     expect(body.user).not.toBeNull();
@@ -432,10 +455,12 @@ describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
  * =============================================================================
  */
 describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
-  let app: FastifyInstance;
+  let app: AppType;
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    app = await createServer({
+    const server = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -451,10 +476,13 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
         },
       },
     });
+    app = server.app;
+    services = server.services;
+    cleanup = server.cleanup;
   });
 
   afterAll(async () => {
-    await app.close();
+    await cleanup();
   });
 
   test('should require email verification first for unverified user (before TOTP)', async () => {
@@ -462,23 +490,23 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
     const password = 'password123';
 
     // Create user with unverified email and no TOTP
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = false; // Email not verified
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const body = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const body = await loginRes.json();
     // Email verification should be required first
     expect(body.user.email_verification_required).toBe(true);
     expect(body.user).not.toBeNull();
@@ -489,23 +517,23 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
     const password = 'password123';
 
     // Create user with verified email but no TOTP
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = true; // Email verified
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const body = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const body = await loginRes.json();
     // TOTP setup should be required (email is already verified)
     expect(body.user.second_factor_required).toBe(true);
     expect(body.user).not.toBeNull();
@@ -516,19 +544,19 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
     const password = 'password123';
 
     // Create user in DB without login
-    const userId = await createUserInDb(app, email, password);
+    const userId = await createUserInDb(services, email, password);
 
     // Enable TOTP for user
-    await enableTotpForUser(app, userId);
+    await enableTotpForUser(services, userId);
 
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const body = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const body = await loginRes.json();
     // TOTP verification should be required
     expect(body.user.second_factor_required).toBe(true);
     expect(body.user).not.toBeNull();
@@ -541,10 +569,12 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
  * =============================================================================
  */
 describe('POST /api/v1/auth/login - Session State Verification', () => {
-  let app: FastifyInstance;
+  let app: AppType;
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    app = await createServer({
+    const server = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
@@ -561,10 +591,13 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
         },
       },
     });
+    app = server.app;
+    services = server.services;
+    cleanup = server.cleanup;
   });
 
   afterAll(async () => {
-    await app.close();
+    await cleanup();
   });
 
   test('should not allow protected API access with pending2FASetup session', async () => {
@@ -572,44 +605,45 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const password = 'password123';
 
     // Create user without TOTP
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const loginResBody = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const loginResBody = await loginRes.json();
     expect(loginResBody).toHaveProperty('user');
     expect(loginResBody.user.second_factor_required).toBe(true);
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to access protected password change endpoint
-    const changePasswordRes = await injectWithSession(
+    const changePasswordRes = await requestWithSession(
       app,
+      '/api/v1/user/password',
       {
         method: 'PUT',
-        url: '/api/v1/user/password',
-        payload: {
+        body: JSON.stringify({
           current_password: password,
           new_password: 'newpassword123',
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
     // Should be unauthorized since only pending2FASetup session exists
-    expect(changePasswordRes.statusCode).toBe(401);
+    expect(changePasswordRes.status).toBe(401);
   });
 
   test('should not allow protected API access with pending2FAUser session', async () => {
@@ -617,67 +651,70 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const password = 'password123';
 
     // Create user in DB without login
-    const userId = await createUserInDb(app, email, password);
-    await enableTotpForUser(app, userId);
+    const userId = await createUserInDb(services, email, password);
+    await enableTotpForUser(services, userId);
 
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const loginResBody = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const loginResBody = await loginRes.json();
     expect(loginResBody).toHaveProperty('user');
     expect(loginResBody.user.second_factor_required).toBe(true);
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to access protected password change endpoint
-    const changePasswordRes = await injectWithSession(
+    const changePasswordRes = await requestWithSession(
       app,
+      '/api/v1/user/password',
       {
         method: 'PUT',
-        url: '/api/v1/user/password',
-        payload: {
+        body: JSON.stringify({
           current_password: password,
           new_password: 'newpassword123',
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
     // Should be unauthorized since only pending2FAUser session exists
-    expect(changePasswordRes.statusCode).toBe(401);
+    expect(changePasswordRes.status).toBe(401);
   });
 
   test('should allow protected API access with full user session', async () => {
     // Use config user which is exempt from TOTP required
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: {
+      body: JSON.stringify({
         email: TEST_USER.email,
         password: TEST_USER.password,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const loginResBody = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const loginResBody = await loginRes.json();
     expect(loginResBody).toHaveProperty('user');
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Access user session endpoint should work
-    const sessionRes = await injectWithSession(
+    const sessionRes = await requestWithSession(
       app,
-      { method: 'GET', url: '/api/v1/user/session' },
+      '/api/v1/user/session',
+      { method: 'GET' },
       sessionCookie,
     );
 
-    expect(sessionRes.statusCode).toBe(200);
-    expect(sessionRes.json().user).not.toBeNull();
-    expect(sessionRes.json().user.email).toBe(TEST_USER.email);
+    expect(sessionRes.status).toBe(200);
+    const sessionBody = await sessionRes.json();
+    expect(sessionBody.user).not.toBeNull();
+    expect(sessionBody.user.email).toBe(TEST_USER.email);
   });
 
   test('should complete login flow: TOTP setup -> verify -> full session', async () => {
@@ -685,84 +722,92 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const password = 'password123';
 
     // Create user without TOTP
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
     });
 
     // Step 1: Login - should require TOTP setup
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const loginResBody = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const loginResBody = await loginRes.json();
     expect(loginResBody).toHaveProperty('user');
     expect(loginResBody.user.second_factor_required).toBe(true);
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Step 2: Setup TOTP
-    const setupRes = await injectWithSession(
+    const setupRes = await requestWithSession(
       app,
-      { method: 'POST', url: '/api/v1/user/totp/setup' },
+      '/api/v1/user/totp/setup',
+      { method: 'POST' },
       sessionCookie,
     );
 
-    expect(setupRes.statusCode).toBe(200);
-    const secret = setupRes.json().secret;
+    expect(setupRes.status).toBe(200);
+    const setupBody = await setupRes.json();
+    const secret = setupBody.secret;
 
     // Step 3: Verify TOTP code
-    const validCode = app.totpService.generateToken(secret);
-    const verifyRes = await injectWithSession(
+    const validCode = services.totpService.generateToken(secret);
+    const verifyRes = await requestWithSession(
       app,
+      '/api/v1/user/totp/verify',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/verify',
-        payload: { code: validCode },
+        body: JSON.stringify({ code: validCode }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
-    expect(verifyRes.statusCode).toBe(200);
-    expect(verifyRes.json()).toHaveProperty('recovery_codes');
-    expect(verifyRes.json().recovery_codes).toHaveLength(8);
+    expect(verifyRes.status).toBe(200);
+    const verifyBody = await verifyRes.json();
+    expect(verifyBody).toHaveProperty('recovery_codes');
+    expect(verifyBody.recovery_codes).toHaveLength(8);
 
     // Step 4: Confirm recovery codes saved
-    const confirmRes = await injectWithSession(
+    const confirmRes = await requestWithSession(
       app,
+      '/api/v1/user/totp/confirm',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/confirm',
-        payload: {},
+        body: JSON.stringify({}),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
-    expect(confirmRes.statusCode).toBe(200);
-    expect(confirmRes.json()).toHaveProperty('user');
-    expect(confirmRes.json().user.totp_registered).toBe(true);
+    expect(confirmRes.status).toBe(200);
+    const confirmBody = await confirmRes.json();
+    expect(confirmBody).toHaveProperty('user');
+    expect(confirmBody.user.totp_registered).toBe(true);
 
     // Get the updated session cookie from confirm response
     const updatedSessionCookie = extractCookie(confirmRes, 'session');
 
     // Step 5: Now should be able to access protected endpoints
-    const finalSessionRes = await injectWithSession(
+    const finalSessionRes = await requestWithSession(
       app,
-      { method: 'GET', url: '/api/v1/user/session' },
+      '/api/v1/user/session',
+      { method: 'GET' },
       updatedSessionCookie,
     );
 
-    expect(finalSessionRes.statusCode).toBe(200);
-    expect(finalSessionRes.json().user).not.toBeNull();
-    expect(finalSessionRes.json().user.email).toBe(email);
-    expect(finalSessionRes.json().user.totp_registered).toBe(true);
+    expect(finalSessionRes.status).toBe(200);
+    const finalBody = await finalSessionRes.json();
+    expect(finalBody.user).not.toBeNull();
+    expect(finalBody.user.email).toBe(email);
+    expect(finalBody.user.totp_registered).toBe(true);
   });
 
   test('should complete login flow: TOTP verification -> full session', async () => {
@@ -770,52 +815,56 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const password = 'password123';
 
     // Create user in DB without login
-    const userId = await createUserInDb(app, email, password);
-    const secret = await enableTotpForUser(app, userId);
+    const userId = await createUserInDb(services, email, password);
+    const secret = await enableTotpForUser(services, userId);
 
     // Step 1: Login - should require TOTP verification
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const loginResBody = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const loginResBody = await loginRes.json();
     expect(loginResBody).toHaveProperty('user');
     expect(loginResBody.user.second_factor_required).toBe(true);
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Step 2: Verify TOTP code
-    const validCode = app.totpService.generateToken(secret);
-    const verifyRes = await injectWithSession(
+    const validCode = services.totpService.generateToken(secret);
+    const verifyRes = await requestWithSession(
       app,
+      '/api/v1/auth/totp/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/totp/verify',
-        payload: { code: validCode },
+        body: JSON.stringify({ code: validCode }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
-    expect(verifyRes.statusCode).toBe(200);
-    expect(verifyRes.json()).toHaveProperty('user');
-    expect(verifyRes.json().user.email).toBe(email);
+    expect(verifyRes.status).toBe(200);
+    const verifyBody = await verifyRes.json();
+    expect(verifyBody).toHaveProperty('user');
+    expect(verifyBody.user.email).toBe(email);
 
     // Get the updated session cookie from verify response
     const updatedSessionCookie = extractCookie(verifyRes, 'session');
 
     // Step 3: Now should be able to access protected endpoints
-    const finalSessionRes = await injectWithSession(
+    const finalSessionRes = await requestWithSession(
       app,
-      { method: 'GET', url: '/api/v1/user/session' },
+      '/api/v1/user/session',
+      { method: 'GET' },
       updatedSessionCookie,
     );
 
-    expect(finalSessionRes.statusCode).toBe(200);
-    expect(finalSessionRes.json().user).not.toBeNull();
-    expect(finalSessionRes.json().user.email).toBe(email);
-    expect(finalSessionRes.json().user.totp_registered).toBe(true);
+    expect(finalSessionRes.status).toBe(200);
+    const finalBody = await finalSessionRes.json();
+    expect(finalBody.user).not.toBeNull();
+    expect(finalBody.user.email).toBe(email);
+    expect(finalBody.user.totp_registered).toBe(true);
   });
 });

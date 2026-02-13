@@ -1,65 +1,83 @@
-import z from 'zod/v4';
+import { createRoute } from '@hono/zod-openapi';
+import type z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { h } from '@/schemas/header.js';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
 type UserInfoResponse = z.infer<typeof r.UserInfoResponse>;
 
-export default (fastify: FastifyWithZodInstance) => {
-  return fastify.route({
-    method: 'GET',
-    url: '/userinfo',
-    schema: {
-      summary: 'User Info',
-      description:
-        'OIDC UserInfo Endpoint - Returns claims about the authenticated user (RFC OIDC Core §5.3)',
-      tags: [TAGS.OPENID],
-      headers: h.BearerAuth,
-      response: {
-        200: r.UserInfoResponse,
-        401: z.union([
-          e.MissingAuthorizationHeader.Schema,
-          e.InvalidAuthorizationHeaderFormat.Schema,
-          e.MissingBearerToken.Schema,
-          e.InvalidAccessToken.Schema,
-        ]),
-        404: e.UserNotFound.Schema,
+const route = createRoute({
+  method: 'get',
+  path: '/userinfo',
+  tags: [TAGS.OPENID],
+  summary: 'User Info',
+  description:
+    'OIDC UserInfo Endpoint - Returns claims about the authenticated user (RFC OIDC Core §5.3)',
+  request: {
+    headers: h.BearerAuth,
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: r.UserInfoResponse,
+        },
       },
+      description: 'Success',
     },
-    handler: async (req, res) => {
-      // Validate Bearer token
-      // Throws ApiError if invalid (handled by error handler)
-      const tokenPayload = await fastify.jwtService.validateBearerToken(req);
-
-      // Load user (supports both config and DB users)
-      const userEntity = await fastify.mikro.user.verifyById(tokenPayload.sub);
-      const userData =
-        await fastify.userService.userEntityToSessionUser(userEntity);
-
-      // Parse scopes from token
-      const scopes = tokenPayload.scope.split(' ');
-
-      // Build response based on granted scopes (OIDC Core §5.3.2)
-      const userInfo: UserInfoResponse = {
-        sub: userData.id,
-      };
-
-      // Add email claims if 'email' scope is present
-      if (scopes.includes('email')) {
-        userInfo.email = userData.email;
-        userInfo.email_verified = userData.email_verified;
-      }
-
-      // Add profile claims if 'profile' scope is present
-      if (scopes.includes('profile')) {
-        userInfo.name = userData.email; // Use email as name for now
-        userInfo.preferred_username = userData.email;
-        // userInfo.picture could be added when user profile pictures are implemented
-      }
-
-      return res.status(200).send(userInfo);
+    401: {
+      content: {
+        'application/json': {
+          schema: e.MissingAuthorizationHeader.Schema,
+        },
+      },
+      description: 'Missing or invalid authorization header',
     },
+    404: {
+      content: {
+        'application/json': {
+          schema: e.UserNotFound.Schema,
+        },
+      },
+      description: 'User not found',
+    },
+  },
+});
+
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const { jwtService, mikro, userService } = c.get('services');
+
+    // Validate Bearer token
+    const authorization = c.req.header('authorization');
+    const tokenPayload = await jwtService.validateBearerToken({
+      headers: authorization ? { authorization } : {},
+    });
+
+    // Load user
+    const userEntity = await mikro.user.verifyById(tokenPayload.sub);
+    const userData = await userService.userEntityToSessionUser(userEntity);
+
+    // Parse scopes from token
+    const scopes = tokenPayload.scope.split(' ');
+
+    // Build response based on granted scopes
+    const userInfo: UserInfoResponse = {
+      sub: userData.id,
+    };
+
+    if (scopes.includes('email')) {
+      userInfo.email = userData.email;
+      userInfo.email_verified = userData.email_verified;
+    }
+
+    if (scopes.includes('profile')) {
+      userInfo.name = userData.email;
+      userInfo.preferred_username = userData.email;
+    }
+
+    return c.json(userInfo, 200);
   });
 };

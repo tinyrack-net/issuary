@@ -1,12 +1,13 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import { MINIMAL_TEST_CONFIG } from '@/test-utils/index.js';
+import type { AppType } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       identity_providers: [
@@ -22,22 +23,23 @@ beforeAll(async () => {
       ],
     },
   });
+  app = server.app;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('GET /api/v1/config', () => {
   test('should return app configuration', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/config', {
       method: 'GET',
-      url: '/api/v1/config',
     });
 
-    expect(res.statusCode).toBe(200);
+    expect(res.status).toBe(200);
 
-    const json = res.json();
+    const json = await res.json();
 
     // Verify app config structure
     expect(json.app).toBeDefined();
@@ -60,14 +62,13 @@ describe('GET /api/v1/config', () => {
   });
 
   test('should include password authentication method in auth', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/config', {
       method: 'GET',
-      url: '/api/v1/config',
     });
 
-    expect(res.statusCode).toBe(200);
+    expect(res.status).toBe(200);
 
-    const json = res.json();
+    const json = await res.json();
 
     // Check password auth method exists
     expect(json.auth.password).toBeDefined();
@@ -85,14 +86,13 @@ describe('GET /api/v1/config', () => {
   });
 
   test('should include passkey authentication method in auth', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/config', {
       method: 'GET',
-      url: '/api/v1/config',
     });
 
-    expect(res.statusCode).toBe(200);
+    expect(res.status).toBe(200);
 
-    const json = res.json();
+    const json = await res.json();
 
     // Check passkey auth method exists
     expect(json.auth.passkey).toBeDefined();
@@ -101,14 +101,13 @@ describe('GET /api/v1/config', () => {
   });
 
   test('should include identity providers', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/config', {
       method: 'GET',
-      url: '/api/v1/config',
     });
 
-    expect(res.statusCode).toBe(200);
+    expect(res.status).toBe(200);
 
-    const json = res.json();
+    const json = await res.json();
 
     // Check identity providers - should be an array of only enabled providers
     expect(Array.isArray(json.identity_providers)).toBe(true);
@@ -127,12 +126,11 @@ describe('GET /api/v1/config', () => {
 
   test('should not require authentication', async () => {
     // This endpoint should be publicly accessible
-    const res = await app.inject({
+    const res = await app.request('/api/v1/config', {
       method: 'GET',
-      url: '/api/v1/config',
     });
 
     // Should not return 401
-    expect(res.statusCode).toBe(200);
+    expect(res.status).toBe(200);
   });
 });

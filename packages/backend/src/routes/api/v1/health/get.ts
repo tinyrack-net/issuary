@@ -1,6 +1,7 @@
+import { createRoute } from '@hono/zod-openapi';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
 // Track server start time for uptime calculation
 const startTime = Date.now();
@@ -10,60 +11,74 @@ const startTime = Date.now();
  *
  * Comprehensive health check endpoint.
  * Returns detailed status information including version, uptime, and dependency checks.
- * Useful for debugging and monitoring dashboards.
  */
-export default (fastify: FastifyWithZodInstance) => {
-  return fastify.route({
-    method: 'GET',
-    url: '/health',
-    schema: {
-      summary: 'Health check',
-      description:
-        'Returns comprehensive health status including version, uptime, and dependency checks.',
-      tags: [TAGS.HEALTH],
-      response: {
-        200: r.HealthResponse,
-        503: r.HealthErrorResponse,
+const route = createRoute({
+  method: 'get',
+  path: '/health',
+  tags: [TAGS.HEALTH],
+  summary: 'Health check',
+  description:
+    'Returns comprehensive health status including version, uptime, and dependency checks.',
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: r.HealthResponse,
+        },
       },
+      description: 'Healthy',
     },
-    handler: async (_req, res) => {
-      const uptime = Math.floor((Date.now() - startTime) / 1000);
-      const version = process.env['npm_package_version'] || '1.0.0';
+    503: {
+      content: {
+        'application/json': {
+          schema: r.HealthErrorResponse,
+        },
+      },
+      description: 'Unhealthy',
+    },
+  },
+});
 
-      // Check database connectivity
-      let databaseStatus: 'ok' | 'error' = 'error';
-      let errorMessage: string | undefined;
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const { mikro } = c.get('services');
+    const uptime = Math.floor((Date.now() - startTime) / 1000);
+    const version = process.env['npm_package_version'] || '1.0.0';
 
-      try {
-        await fastify.mikro.em.getConnection().execute('SELECT 1');
-        databaseStatus = 'ok';
-      } catch (err) {
-        databaseStatus = 'error';
-        errorMessage =
-          err instanceof Error ? err.message : 'Database connection failed';
-      }
+    // Check database connectivity
+    let databaseStatus: 'ok' | 'error' = 'error';
+    let errorMessage: string | undefined;
 
-      // Return appropriate response based on checks
-      if (databaseStatus === 'ok') {
-        return res.status(200).send({
-          status: 'ok',
+    try {
+      await mikro.em.getConnection().execute('SELECT 1');
+      databaseStatus = 'ok';
+    } catch (err) {
+      databaseStatus = 'error';
+      errorMessage =
+        err instanceof Error ? err.message : 'Database connection failed';
+    }
+
+    if (databaseStatus === 'ok') {
+      return c.json(
+        {
+          status: 'ok' as const,
           version,
           uptime,
-          checks: {
-            database: 'ok',
-          },
-        });
-      }
+          checks: { database: 'ok' as const },
+        },
+        200,
+      );
+    }
 
-      return res.status(503).send({
-        status: 'error',
+    return c.json(
+      {
+        status: 'error' as const,
         version,
         uptime,
-        checks: {
-          database: databaseStatus,
-        },
+        checks: { database: databaseStatus },
         error: errorMessage,
-      });
-    },
+      },
+      503,
+    );
   });
 };

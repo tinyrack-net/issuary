@@ -1,21 +1,23 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
   extractCookie,
   generateUniqueEmail,
-  injectWithSession,
   MINIMAL_TEST_CONFIG,
+  requestWithSession,
   TEST_USER,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let services: ServiceContainer;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
@@ -32,20 +34,22 @@ beforeAll(async () => {
       ],
     },
   });
+  app = server.app;
+  services = server.services;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('DELETE /api/v1/oauth/:provider', () => {
   test('should return 401 if not authenticated', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/oauth/google', {
       method: 'DELETE',
-      url: '/api/v1/oauth/google',
     });
 
-    expect(res.statusCode).toBe(401);
+    expect(res.status).toBe(401);
   });
 
   test('should return 404 if provider not found', async () => {
@@ -54,37 +58,37 @@ describe('DELETE /api/v1/oauth/:provider', () => {
     const password = 'TestPassword123!';
 
     // Create user with password and verified email
-    const sessionCookie = await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    const sessionCookie = await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
 
       // Login to get session
-      const loginRes = await app.inject({
+      const loginRes = await app.request('/api/v1/auth/login', {
         method: 'POST',
-        url: '/api/v1/auth/login',
-        payload: { email, password },
+        body: JSON.stringify({ email, password }),
+        headers: { 'Content-Type': 'application/json' },
       });
-      expect(loginRes.statusCode).toBe(200);
+      expect(loginRes.status).toBe(200);
 
       const cookie = extractCookie(loginRes, 'session');
       return cookie;
     });
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/oauth/nonexistent',
       {
         method: 'DELETE',
-        url: '/api/v1/oauth/nonexistent',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(404);
-    const json = res.json();
+    expect(res.status).toBe(404);
+    const json = await res.json();
     expect(json.code).toBe('OAUTH_PROVIDER_NOT_FOUND');
   });
 
@@ -93,35 +97,35 @@ describe('DELETE /api/v1/oauth/:provider', () => {
     const email = generateUniqueEmail('oauth-unlink');
     const password = 'TestPassword123!';
 
-    const sessionCookie = await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    const sessionCookie = await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
 
-      const loginRes = await app.inject({
+      const loginRes = await app.request('/api/v1/auth/login', {
         method: 'POST',
-        url: '/api/v1/auth/login',
-        payload: { email, password },
+        body: JSON.stringify({ email, password }),
+        headers: { 'Content-Type': 'application/json' },
       });
-      expect(loginRes.statusCode).toBe(200);
+      expect(loginRes.status).toBe(200);
 
       return extractCookie(loginRes, 'session');
     });
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/oauth/google',
       {
         method: 'DELETE',
-        url: '/api/v1/oauth/google',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(404);
-    const json = res.json();
+    expect(res.status).toBe(404);
+    const json = await res.json();
     expect(json.code).toBe('OAUTH_ACCOUNT_NOT_LINKED');
   });
 
@@ -129,17 +133,17 @@ describe('DELETE /api/v1/oauth/:provider', () => {
     // Create OAuth-only user (no password)
     const email = generateUniqueEmail('oauth-only');
 
-    const _sessionCookie = await withMikroContext(app, async () => {
+    const _sessionCookie = await withMikroContext(services, async () => {
       // Create user without password
-      const user = app.mikro.user.create({
+      const user = services.mikro.user.create({
         email,
         password_hash: null,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
 
       // Link OAuth account
-      await app.mikro.userOAuth.linkAccount({
+      await services.mikro.userOAuth.linkAccount({
         userId: user.id,
         providerName: 'google',
         providerUserId: `test-${Date.now()}`,
@@ -152,14 +156,14 @@ describe('DELETE /api/v1/oauth/:provider', () => {
     });
 
     // Verify the service logic works correctly
-    const res = await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail(
+    const res = await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail(
         { email },
         { populate: ['password_hash'] },
       );
       expect(user).toBeDefined();
 
-      const oauthCount = await app.mikro.userOAuth.countByUser(user.id);
+      const oauthCount = await services.mikro.userOAuth.countByUser(user.id);
       expect(oauthCount).toBe(1);
 
       const hasPassword = user.hasPassword();
@@ -168,7 +172,10 @@ describe('DELETE /api/v1/oauth/:provider', () => {
       // Test the service method directly
       // This should throw CannotUnlinkLastAuthMethod error
       try {
-        await app.oauthConnectService.unlinkOAuthAccount(user.id, 'google');
+        await services.oauthConnectService.unlinkOAuthAccount(
+          user.id,
+          'google',
+        );
         return { error: null };
       } catch (err) {
         return { error: (err as Error).message };
@@ -184,17 +191,17 @@ describe('DELETE /api/v1/oauth/:provider', () => {
     const email = generateUniqueEmail('oauth-with-password');
     const password = 'TestPassword123!';
 
-    const sessionCookie = await withMikroContext(app, async () => {
+    const sessionCookie = await withMikroContext(services, async () => {
       // Create user with password
-      const user = app.mikro.user.create({
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
 
       // Link OAuth account
-      await app.mikro.userOAuth.linkAccount({
+      await services.mikro.userOAuth.linkAccount({
         userId: user.id,
         providerName: 'google',
         providerUserId: `test-${Date.now()}`,
@@ -204,33 +211,33 @@ describe('DELETE /api/v1/oauth/:provider', () => {
       });
 
       // Login to get session
-      const loginRes = await app.inject({
+      const loginRes = await app.request('/api/v1/auth/login', {
         method: 'POST',
-        url: '/api/v1/auth/login',
-        payload: { email, password },
+        body: JSON.stringify({ email, password }),
+        headers: { 'Content-Type': 'application/json' },
       });
-      expect(loginRes.statusCode).toBe(200);
+      expect(loginRes.status).toBe(200);
 
       return extractCookie(loginRes, 'session');
     });
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/oauth/google',
       {
         method: 'DELETE',
-        url: '/api/v1/oauth/google',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const json = res.json();
+    expect(res.status).toBe(200);
+    const json = await res.json();
     expect(json.ok).toBe(true);
 
     // Verify OAuth account is unlinked
-    await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ email });
-      const oauthCount = await app.mikro.userOAuth.countByUser(user.id);
+    await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail({ email });
+      const oauthCount = await services.mikro.userOAuth.countByUser(user.id);
       expect(oauthCount).toBe(0);
     });
   });
@@ -243,18 +250,18 @@ describe('DELETE /api/v1/oauth/:provider', () => {
       TEST_USER.password,
     );
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/oauth/google',
       {
         method: 'DELETE',
-        url: '/api/v1/oauth/google',
       },
       sessionCookie,
     );
 
     // Config user cannot have OAuth linked accounts, so return OAuthAccountNotLinked
-    expect(res.statusCode).toBe(404);
-    const json = res.json();
+    expect(res.status).toBe(404);
+    const json = await res.json();
     expect(json.code).toBe('OAUTH_ACCOUNT_NOT_LINKED');
   });
 });

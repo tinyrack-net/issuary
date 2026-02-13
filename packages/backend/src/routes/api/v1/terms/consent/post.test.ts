@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import { createServer } from '@/server.js';
@@ -12,159 +11,180 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
 describe('POST /api/v1/terms/consent', () => {
   describe('Authentication', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
           users: [TEST_USER_CONFIG],
         },
       });
+      app = server.app;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should return 401 when not authenticated', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        payload: {
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           consents: [{ termsId: 'tos', agreed: true }],
-        },
+        }),
       });
 
-      expect(res.statusCode).toBe(401);
-      expectError(res, e.Unauthorized);
+      expect(res.status).toBe(401);
+      await expectError(res, e.Unauthorized);
     });
 
     test('should return 401 with invalid session', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: 'invalid-session' },
-        payload: {
-          consents: [{ termsId: 'tos', agreed: true }],
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: 'session=invalid-session',
         },
+        body: JSON.stringify({
+          consents: [{ termsId: 'tos', agreed: true }],
+        }),
       });
 
-      expect(res.statusCode).toBe(401);
+      expect(res.status).toBe(401);
     });
   });
 
   describe('Validation', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
           users: [TEST_USER_CONFIG],
         },
       });
+      app = server.app;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should return 400 when consents array is empty', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
-          consents: [],
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
         },
+        body: JSON.stringify({
+          consents: [],
+        }),
       });
 
-      expect(res.statusCode).toBe(400);
+      expect(res.status).toBe(400);
     });
 
     test('should return 400 when consents is missing', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {},
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({}),
       });
 
-      expect(res.statusCode).toBe(400);
+      expect(res.status).toBe(400);
     });
 
     test('should return 400 when termsId is missing', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
-          consents: [{ agreed: true }],
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
         },
+        body: JSON.stringify({
+          consents: [{ agreed: true }],
+        }),
       });
 
-      expect(res.statusCode).toBe(400);
+      expect(res.status).toBe(400);
     });
 
     test('should return 400 when agreed is missing', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
-          consents: [{ termsId: 'tos' }],
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
         },
+        body: JSON.stringify({
+          consents: [{ termsId: 'tos' }],
+        }),
       });
 
-      expect(res.statusCode).toBe(400);
+      expect(res.status).toBe(400);
     });
 
     test('should return 400 when agreed is not boolean', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
-          consents: [{ termsId: 'tos', agreed: 'yes' }],
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
         },
+        body: JSON.stringify({
+          consents: [{ termsId: 'tos', agreed: 'yes' }],
+        }),
       });
 
-      expect(res.statusCode).toBe(400);
+      expect(res.status).toBe(400);
     });
 
     test('should return 400 when required term is not agreed', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: false }, // Required term not agreed
             { termsId: 'privacy', agreed: true },
           ],
-        },
+        }),
       });
 
-      expect(res.statusCode).toBe(400);
-      const body = res.json();
+      expect(res.status).toBe(400);
+      const body = await res.json();
       expect(body.code).toBe('VALIDATION_ERROR');
       // ValidationError uses createErrorWithData, so the custom message is in 'data'
       expect(body.data).toMatch(/tos/i);
@@ -173,20 +193,22 @@ describe('POST /api/v1/terms/consent', () => {
     test('should return 400 when required term is missing from consents', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: true },
             // Missing 'privacy' which is also required
           ],
-        },
+        }),
       });
 
-      expect(res.statusCode).toBe(400);
-      const body = res.json();
+      expect(res.status).toBe(400);
+      const body = await res.json();
       expect(body.code).toBe('VALIDATION_ERROR');
       // ValidationError uses createErrorWithData, so the custom message is in 'data'
       expect(body.data).toMatch(/privacy/i);
@@ -194,44 +216,52 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Successful consent recording', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
         },
       });
+      app = server.app;
+      services = server.services;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should record consent and return success', async () => {
       const email = generateUniqueEmail('consent-success');
       const { sessionCookie } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: true },
             { termsId: 'privacy', agreed: true },
           ],
-        },
+        }),
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       expect(body.ok).toBe(true);
       expect(body.recorded).toBe(2);
     });
@@ -240,26 +270,29 @@ describe('POST /api/v1/terms/consent', () => {
       const email = generateUniqueEmail('consent-db');
       const { sessionCookie, userId } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
-      await app.inject({
+      await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: true },
             { termsId: 'privacy', agreed: true },
           ],
-        },
+        }),
       });
 
       // Verify in database
-      await withMikroContext(app, async () => {
+      await withMikroContext(services, async () => {
         const consents =
-          await app.mikro.userTermsConsent.findAllConsents(userId);
+          await services.mikro.userTermsConsent.findAllConsents(userId);
 
         expect(consents.length).toBe(2);
 
@@ -275,46 +308,51 @@ describe('POST /api/v1/terms/consent', () => {
       const email = generateUniqueEmail('consent-pending');
       const { sessionCookie } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
       // Check pending before consent
-      const beforeRes = await app.inject({
+      const beforeRes = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
-      expect(beforeRes.json().pendingTerms.length).toBeGreaterThan(0);
+      const beforeBody = await beforeRes.json();
+      expect(beforeBody.pendingTerms.length).toBeGreaterThan(0);
 
       // Give consent
-      await app.inject({
+      await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: true },
             { termsId: 'privacy', agreed: true },
           ],
-        },
+        }),
       });
 
       // Check pending after consent
-      const afterRes = await app.inject({
+      const afterRes = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
-      expect(afterRes.json().pendingTerms).toEqual([]);
+      const afterBody = await afterRes.json();
+      expect(afterBody.pendingTerms).toEqual([]);
     });
   });
 
   describe('Optional terms', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [
@@ -347,58 +385,68 @@ describe('POST /api/v1/terms/consent', () => {
           ],
         },
       });
+      app = server.app;
+      services = server.services;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should allow not agreeing to optional terms', async () => {
       const email = generateUniqueEmail('consent-optional');
       const { sessionCookie } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: true },
             { termsId: 'marketing', agreed: false }, // Optional, can decline
           ],
-        },
+        }),
       });
 
-      expect(res.statusCode).toBe(200);
-      expect(res.json().recorded).toBe(2);
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.recorded).toBe(2);
     });
 
     test('should record declined optional terms', async () => {
       const email = generateUniqueEmail('consent-decline');
       const { sessionCookie, userId } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
-      await app.inject({
+      await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: true },
             { termsId: 'marketing', agreed: false },
           ],
-        },
+        }),
       });
 
-      await withMikroContext(app, async () => {
-        const consent = await app.mikro.userTermsConsent.findLatestConsent(
+      await withMikroContext(services, async () => {
+        const consent = await services.mikro.userTermsConsent.findLatestConsent(
           userId,
           'marketing',
         );
@@ -412,73 +460,85 @@ describe('POST /api/v1/terms/consent', () => {
       const email = generateUniqueEmail('consent-omit');
       const { sessionCookie } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: true },
             // marketing term omitted - should be OK
           ],
-        },
+        }),
       });
 
-      expect(res.statusCode).toBe(200);
-      expect(res.json().recorded).toBe(1);
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.recorded).toBe(1);
     });
   });
 
   describe('Unknown terms handling', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
         },
       });
+      app = server.app;
+      services = server.services;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should ignore unknown term IDs', async () => {
       const email = generateUniqueEmail('consent-unknown');
       const { sessionCookie, userId } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: true },
             { termsId: 'privacy', agreed: true },
             { termsId: 'nonexistent-term', agreed: true }, // Unknown
           ],
-        },
+        }),
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       // Only 2 valid terms recorded
       expect(body.recorded).toBe(2);
 
       // Verify unknown term was not stored
-      await withMikroContext(app, async () => {
-        const consent = await app.mikro.userTermsConsent.findLatestConsent(
+      await withMikroContext(services, async () => {
+        const consent = await services.mikro.userTermsConsent.findLatestConsent(
           userId,
           'nonexistent-term',
         );
@@ -488,43 +548,51 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Version tracking', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
         },
       });
+      app = server.app;
+      services = server.services;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should record the current term version', async () => {
       const email = generateUniqueEmail('consent-version');
       const { sessionCookie, userId } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
-      await app.inject({
+      await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: true },
             { termsId: 'privacy', agreed: true },
           ],
-        },
+        }),
       });
 
-      await withMikroContext(app, async () => {
-        const consent = await app.mikro.userTermsConsent.findLatestConsent(
+      await withMikroContext(services, async () => {
+        const consent = await services.mikro.userTermsConsent.findLatestConsent(
           userId,
           'tos',
         );
@@ -535,32 +603,38 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Re-consent after version update', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
         },
       });
+      app = server.app;
+      services = server.services;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should create new consent record for new version', async () => {
       const email = generateUniqueEmail('consent-reconsent');
       const { sessionCookie, userId } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
       // Record old version consent directly in DB
-      await withMikroContext(app, async () => {
-        await app.mikro.userTermsConsent.recordConsent({
+      await withMikroContext(services, async () => {
+        await services.mikro.userTermsConsent.recordConsent({
           userId,
           termsId: 'tos',
           termsVersion: '0.9.0', // Old version
@@ -570,21 +644,23 @@ describe('POST /api/v1/terms/consent', () => {
       });
 
       // Record new consent
-      await app.inject({
+      await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: true },
             { termsId: 'privacy', agreed: true },
           ],
-        },
+        }),
       });
 
       // Verify we have 2 consent records for 'tos'
-      await withMikroContext(app, async () => {
-        const consents = await app.mikro.userTermsConsent.find(
+      await withMikroContext(services, async () => {
+        const consents = await services.mikro.userTermsConsent.find(
           { user: { id: userId }, terms: { id: 'tos' } },
           { orderBy: { agreedAt: 'DESC' } },
         );
@@ -599,13 +675,14 @@ describe('POST /api/v1/terms/consent', () => {
       const email = generateUniqueEmail('consent-pending-update');
       const { sessionCookie, userId } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
       // Record old version consent
-      await withMikroContext(app, async () => {
-        await app.mikro.userTermsConsent.recordConsents([
+      await withMikroContext(services, async () => {
+        await services.mikro.userTermsConsent.recordConsents([
           {
             userId,
             termsId: 'tos',
@@ -624,43 +701,47 @@ describe('POST /api/v1/terms/consent', () => {
       });
 
       // Check pending - should include 'tos' (version mismatch)
-      const beforeRes = await app.inject({
+      const beforeRes = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
-      expect(beforeRes.json().pendingTerms).toContain('tos');
-      expect(beforeRes.json().pendingTerms).not.toContain('privacy');
+      const beforeBody = await beforeRes.json();
+      expect(beforeBody.pendingTerms).toContain('tos');
+      expect(beforeBody.pendingTerms).not.toContain('privacy');
 
       // Re-consent to tos
-      await app.inject({
+      await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: true },
             { termsId: 'privacy', agreed: true },
           ],
-        },
+        }),
       });
 
       // Check pending - should be empty
-      const afterRes = await app.inject({
+      const afterRes = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
-      expect(afterRes.json().pendingTerms).toEqual([]);
+      const afterBody = await afterRes.json();
+      expect(afterBody.pendingTerms).toEqual([]);
     });
   });
 
   describe('Consent mode affects consentType field', () => {
     describe('explicit consent_mode term', () => {
-      let app: FastifyInstance;
+      let app: AppType;
+      let services: ServiceContainer;
+      let cleanup: () => Promise<void>;
 
       beforeAll(async () => {
-        app = await createServer({
+        const server = await createServer({
           config: {
             ...MINIMAL_TEST_CONFIG,
             terms: [
@@ -680,44 +761,53 @@ describe('POST /api/v1/terms/consent', () => {
             ],
           },
         });
+        app = server.app;
+        services = server.services;
+        cleanup = server.cleanup;
       });
 
       afterAll(async () => {
-        await app.close();
+        await cleanup();
       });
 
       test('should record consentType as explicit', async () => {
         const email = generateUniqueEmail('consent-explicit');
         const { sessionCookie, userId } = await createDbUserWithSession(
           app,
+          services,
           email,
           'password123!',
         );
 
-        await app.inject({
+        await app.request('/api/v1/terms/consent', {
           method: 'POST',
-          url: '/api/v1/terms/consent',
-          cookies: { session: sessionCookie },
-          payload: {
-            consents: [{ termsId: 'tos', agreed: true }],
+          headers: {
+            'Content-Type': 'application/json',
+            Cookie: `session=${sessionCookie}`,
           },
+          body: JSON.stringify({
+            consents: [{ termsId: 'tos', agreed: true }],
+          }),
         });
 
-        await withMikroContext(app, async () => {
-          const consent = await app.mikro.userTermsConsent.findLatestConsent(
-            userId,
-            'tos',
-          );
+        await withMikroContext(services, async () => {
+          const consent =
+            await services.mikro.userTermsConsent.findLatestConsent(
+              userId,
+              'tos',
+            );
           expect(consent?.consentType).toBe('explicit');
         });
       });
     });
 
     describe('implicit consent_mode term', () => {
-      let app: FastifyInstance;
+      let app: AppType;
+      let services: ServiceContainer;
+      let cleanup: () => Promise<void>;
 
       beforeAll(async () => {
-        app = await createServer({
+        const server = await createServer({
           config: {
             ...MINIMAL_TEST_CONFIG,
             terms: [
@@ -737,34 +827,41 @@ describe('POST /api/v1/terms/consent', () => {
             ],
           },
         });
+        app = server.app;
+        services = server.services;
+        cleanup = server.cleanup;
       });
 
       afterAll(async () => {
-        await app.close();
+        await cleanup();
       });
 
       test('should record consentType as implicit', async () => {
         const email = generateUniqueEmail('consent-implicit');
         const { sessionCookie, userId } = await createDbUserWithSession(
           app,
+          services,
           email,
           'password123!',
         );
 
-        await app.inject({
+        await app.request('/api/v1/terms/consent', {
           method: 'POST',
-          url: '/api/v1/terms/consent',
-          cookies: { session: sessionCookie },
-          payload: {
-            consents: [{ termsId: 'tos', agreed: true }],
+          headers: {
+            'Content-Type': 'application/json',
+            Cookie: `session=${sessionCookie}`,
           },
+          body: JSON.stringify({
+            consents: [{ termsId: 'tos', agreed: true }],
+          }),
         });
 
-        await withMikroContext(app, async () => {
-          const consent = await app.mikro.userTermsConsent.findLatestConsent(
-            userId,
-            'tos',
-          );
+        await withMikroContext(services, async () => {
+          const consent =
+            await services.mikro.userTermsConsent.findLatestConsent(
+              userId,
+              'tos',
+            );
           expect(consent?.consentType).toBe('implicit');
         });
       });
@@ -772,25 +869,31 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Concurrent consent submissions', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
         },
       });
+      app = server.app;
+      services = server.services;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should handle multiple rapid consent submissions', async () => {
       const email = generateUniqueEmail('consent-concurrent');
       const { sessionCookie, userId } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
@@ -799,16 +902,18 @@ describe('POST /api/v1/terms/consent', () => {
       const requests = Array(5)
         .fill(null)
         .map(() =>
-          app.inject({
+          app.request('/api/v1/terms/consent', {
             method: 'POST',
-            url: '/api/v1/terms/consent',
-            cookies: { session: sessionCookie },
-            payload: {
+            headers: {
+              'Content-Type': 'application/json',
+              Cookie: `session=${sessionCookie}`,
+            },
+            body: JSON.stringify({
               consents: [
                 { termsId: 'tos', agreed: true },
                 { termsId: 'privacy', agreed: true },
               ],
-            },
+            }),
           }),
         );
 
@@ -816,13 +921,13 @@ describe('POST /api/v1/terms/consent', () => {
 
       // All should succeed
       for (const res of responses) {
-        expect(res.statusCode).toBe(200);
+        expect(res.status).toBe(200);
       }
 
       // Verify multiple records exist
-      await withMikroContext(app, async () => {
+      await withMikroContext(services, async () => {
         const consents =
-          await app.mikro.userTermsConsent.findAllConsents(userId);
+          await services.mikro.userTermsConsent.findAllConsents(userId);
 
         // Each submission creates 2 records (tos + privacy)
         expect(consents.length).toBe(10);
@@ -831,77 +936,86 @@ describe('POST /api/v1/terms/consent', () => {
   });
 
   describe('Edge cases', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
           users: [TEST_USER_CONFIG],
         },
       });
+      app = server.app;
+      services = server.services;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should handle very long user agent', async () => {
       const email = generateUniqueEmail('consent-long-ua');
       const { sessionCookie } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
       const longUserAgent = 'A'.repeat(512);
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
         headers: {
-          'user-agent': longUserAgent,
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+          'User-Agent': longUserAgent,
         },
-        payload: {
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: true },
             { termsId: 'privacy', agreed: true },
           ],
-        },
+        }),
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
     });
 
     test('should handle duplicate term IDs in request', async () => {
       const email = generateUniqueEmail('consent-duplicate');
       const { sessionCookie, userId } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: true },
             { termsId: 'tos', agreed: true }, // Duplicate
             { termsId: 'privacy', agreed: true },
           ],
-        },
+        }),
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
       // Should create records for all including duplicates
       // (business logic decision - may want to dedupe in future)
-      await withMikroContext(app, async () => {
-        const tosConsents = await app.mikro.userTermsConsent.find({
+      await withMikroContext(services, async () => {
+        const tosConsents = await services.mikro.userTermsConsent.find({
           user: { id: userId },
           terms: { id: 'tos' },
         });
@@ -914,122 +1028,140 @@ describe('POST /api/v1/terms/consent', () => {
       // Config users should also be able to consent
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: true },
             { termsId: 'privacy', agreed: true },
           ],
-        },
+        }),
       });
 
-      expect(res.statusCode).toBe(200);
-      expect(res.json().ok).toBe(true);
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.ok).toBe(true);
     });
   });
 
   describe('Empty terms configuration', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [],
         },
       });
+      app = server.app;
+      services = server.services;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should succeed with empty consents when no terms configured', async () => {
       const email = generateUniqueEmail('consent-empty-config');
       const { sessionCookie } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
       // With no required terms, any consent array should work
       // But we need at least 1 item due to validation
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
-          consents: [{ termsId: 'any', agreed: true }],
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
         },
+        body: JSON.stringify({
+          consents: [{ termsId: 'any', agreed: true }],
+        }),
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
+      const body = await res.json();
       // Unknown term ignored
-      expect(res.json().recorded).toBe(0);
+      expect(body.recorded).toBe(0);
     });
   });
 
   describe('Integration with GET /api/v1/terms', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
         },
       });
+      app = server.app;
+      services = server.services;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should show consent in GET response after POST', async () => {
       const email = generateUniqueEmail('consent-integration');
       const { sessionCookie } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
       // Initial state - no consent
-      const beforeRes = await app.inject({
+      const beforeRes = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
 
-      const beforeBody = beforeRes.json();
+      const beforeBody = await beforeRes.json();
       const tosBefore = beforeBody.terms.find(
         (t: { id: string }) => t.id === 'tos',
       );
       expect(tosBefore?.userConsent).toBeNull();
 
       // Record consent
-      await app.inject({
+      await app.request('/api/v1/terms/consent', {
         method: 'POST',
-        url: '/api/v1/terms/consent',
-        cookies: { session: sessionCookie },
-        payload: {
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
           consents: [
             { termsId: 'tos', agreed: true },
             { termsId: 'privacy', agreed: true },
           ],
-        },
+        }),
       });
 
       // After state - consent recorded
-      const afterRes = await app.inject({
+      const afterRes = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
 
-      const afterBody = afterRes.json();
+      const afterBody = await afterRes.json();
       const tosAfter = afterBody.terms.find(
         (t: { id: string }) => t.id === 'tos',
       );

@@ -1,61 +1,97 @@
+import { createRoute } from '@hono/zod-openapi';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
 /**
  * POST /api/v1/user/totp/setup
  *
  * Start TOTP setup for the current user.
  * Generates a new secret and returns QR code for authenticator app.
- * Accepts both full user session and pending 2FA setup session.
  */
-export default (fastify: FastifyWithZodInstance) => {
-  if (!fastify.config.auth.password.totp?.enabled) {
-    return;
-  }
-  fastify.route({
-    method: 'POST',
-    url: '/user/totp/setup',
-    schema: {
-      summary: 'Start TOTP Setup',
-      description:
-        'Generate a new TOTP secret and QR code for authenticator app setup. ' +
-        'Call verify endpoint after user scans the QR code to complete setup.',
-      tags: [TAGS.USER],
-      response: {
-        200: r.TotpSetupResponse,
-        401: e.Unauthorized.Schema,
-        403: e.SecondFactorNotAllowedForConfigUser.Schema,
-        409: e.TotpAlreadyEnabled.Schema,
+const route = createRoute({
+  method: 'post',
+  path: '/user/totp/setup',
+  tags: [TAGS.USER],
+  summary: 'Start TOTP Setup',
+  description:
+    'Generate a new TOTP secret and QR code for authenticator app setup. ' +
+    'Call verify endpoint after user scans the QR code to complete setup.',
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: r.TotpSetupResponse,
+        },
       },
+      description: 'Success',
     },
-    handler: async (req, res) => {
-      const userSession = req.session.get('user');
-      const pending2FASetup = req.session.get('pending2FASetup');
-      const userId = userSession?.id ?? pending2FASetup?.id;
+    401: {
+      content: {
+        'application/json': {
+          schema: e.Unauthorized.Schema,
+        },
+      },
+      description: 'Unauthorized',
+    },
+    403: {
+      content: {
+        'application/json': {
+          schema: e.SecondFactorNotAllowedForConfigUser.Schema,
+        },
+      },
+      description: 'Second factor not allowed for config user',
+    },
+    409: {
+      content: {
+        'application/json': {
+          schema: e.TotpAlreadyEnabled.Schema,
+        },
+      },
+      description: 'TOTP already enabled',
+    },
+  },
+});
 
-      if (!userId) {
-        throw new e.Unauthorized.Error();
-      }
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const { config, mikro, totpService } = c.get('services');
+    const session = c.get('session');
 
-      const user = await fastify.mikro.user.findOneOrFail(
-        { id: userId },
-        { failHandler: () => new e.UserNotFound.Error() },
-      );
+    if (!config.auth.password.totp?.enabled) {
+      throw new e.ValidationError.Error('TOTP is disabled');
+    }
 
-      // Config users cannot setup 2FA
-      if (user.managed_by === 'config') {
-        throw new e.SecondFactorNotAllowedForConfigUser.Error();
-      }
+    const userSession = session.get('user');
+    const pending2FASetup = session.get('pending2FASetup');
+    const userId = userSession?.id ?? pending2FASetup?.id;
 
-      const setupData = await fastify.totpService.startSetup(user);
+    if (!userId) {
+      throw new e.Unauthorized.Error();
+    }
 
-      return res.status(200).send({
+    const user = await mikro.user.findOneOrFail(
+      { id: userId },
+      {
+        failHandler: () => new e.UserNotFound.Error(),
+      },
+    );
+
+    // Config users cannot setup 2FA
+    if (user.managed_by === 'config') {
+      throw new e.SecondFactorNotAllowedForConfigUser.Error();
+    }
+
+    const setupData = await totpService.startSetup(user);
+
+    return c.json(
+      {
         secret: setupData.secret,
         otpauth_url: setupData.otpauthUrl,
         qr_code: setupData.qrCodeDataUrl,
-      });
-    },
+      },
+      200,
+    );
   });
 };

@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
@@ -17,19 +16,14 @@ import {
   TEST_USER,
   TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
+import type { AppType } from '@/types.js';
 
-/**
- * Second OAuth client for multi-client testing
- */
 const SECOND_OAUTH_CLIENT = {
   clientId: 'second-client-id',
   clientSecret: 'second-client-secret',
   redirectUri: 'http://localhost:3001/callback',
 } as const;
 
-/**
- * Config for second OAuth client
- */
 const SECOND_OAUTH_CLIENT_CONFIG = {
   id: 'second-oauth-client',
   name: 'Second Client',
@@ -42,31 +36,23 @@ const SECOND_OAUTH_CLIENT_CONFIG = {
   scope: 'openid profile email',
 };
 
-let app: FastifyInstance;
+let app: AppType;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  ({ app, cleanup } = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       clients: [TEST_OAUTH_CLIENT_CONFIG, SECOND_OAUTH_CLIENT_CONFIG],
     },
-  });
+  }));
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
-/**
- * Multi-Client Isolation Tests
- *
- * These tests verify that OAuth tokens are properly isolated between clients:
- * - Tokens from one client cannot be used with another
- * - Same user can authorize multiple clients independently
- * - Token revocation is client-specific
- * - Client credentials are properly validated
- */
 describe('Multi-Client Isolation', () => {
   describe('Token Isolation Between Clients', () => {
     test(
@@ -79,7 +65,6 @@ describe('Multi-Client Isolation', () => {
           TEST_USER.password,
         );
 
-        // Get tokens for first client
         const { code: code1 } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -87,7 +72,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes1 = await exchangeCodeForTokens(app, {
           code: code1,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -95,11 +79,9 @@ describe('Multi-Client Isolation', () => {
           redirectUri: TEST_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
+        expect(tokenRes1.status).toBe(200);
+        const tokens1 = await tokenRes1.json();
 
-        expect(tokenRes1.statusCode).toBe(200);
-        const tokens1 = tokenRes1.json();
-
-        // Get tokens for second client
         const { code: code2 } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: SECOND_OAUTH_CLIENT.clientId,
@@ -107,7 +89,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes2 = await exchangeCodeForTokens(app, {
           code: code2,
           clientId: SECOND_OAUTH_CLIENT.clientId,
@@ -115,11 +96,9 @@ describe('Multi-Client Isolation', () => {
           redirectUri: SECOND_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
+        expect(tokenRes2.status).toBe(200);
+        const tokens2 = await tokenRes2.json();
 
-        expect(tokenRes2.statusCode).toBe(200);
-        const tokens2 = tokenRes2.json();
-
-        // Tokens should be different
         expect(tokens1.access_token).not.toBe(tokens2.access_token);
         expect(tokens1.refresh_token).not.toBe(tokens2.refresh_token);
         expect(tokens1.id_token).not.toBe(tokens2.id_token);
@@ -130,19 +109,16 @@ describe('Multi-Client Isolation', () => {
       'should have correct client_id in token claims',
       { timeout: 15000 },
       async () => {
-        const jwksRes = await app.inject({
-          method: 'GET',
-          url: '/application/oauth/.well-known/jwks',
-        });
-        const JWKS = jose.createLocalJWKSet(jwksRes.json());
-
+        const jwksRes = await app.request(
+          '/application/oauth/.well-known/jwks',
+        );
+        const JWKS = jose.createLocalJWKSet(await jwksRes.json());
         const sessionCookie = await createAuthenticatedSession(
           app,
           TEST_USER.email,
           TEST_USER.password,
         );
 
-        // Get tokens for first client
         const { code: code1 } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -150,7 +126,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes1 = await exchangeCodeForTokens(app, {
           code: code1,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -158,16 +133,13 @@ describe('Multi-Client Isolation', () => {
           redirectUri: TEST_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
-
-        const tokens1 = tokenRes1.json();
+        const tokens1 = await tokenRes1.json();
         const { payload: payload1 } = await jose.jwtVerify(
           tokens1.access_token,
           JWKS,
         );
-
         expect(payload1['client_id']).toBe(TEST_OAUTH_CLIENT.clientId);
 
-        // Get tokens for second client
         const { code: code2 } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: SECOND_OAUTH_CLIENT.clientId,
@@ -175,7 +147,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes2 = await exchangeCodeForTokens(app, {
           code: code2,
           clientId: SECOND_OAUTH_CLIENT.clientId,
@@ -183,13 +154,11 @@ describe('Multi-Client Isolation', () => {
           redirectUri: SECOND_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
-
-        const tokens2 = tokenRes2.json();
+        const tokens2 = await tokenRes2.json();
         const { payload: payload2 } = await jose.jwtVerify(
           tokens2.access_token,
           JWKS,
         );
-
         expect(payload2['client_id']).toBe(SECOND_OAUTH_CLIENT.clientId);
       },
     );
@@ -198,19 +167,16 @@ describe('Multi-Client Isolation', () => {
       'should have same subject for same user across clients',
       { timeout: 15000 },
       async () => {
-        const jwksRes = await app.inject({
-          method: 'GET',
-          url: '/application/oauth/.well-known/jwks',
-        });
-        const JWKS = jose.createLocalJWKSet(jwksRes.json());
-
+        const jwksRes = await app.request(
+          '/application/oauth/.well-known/jwks',
+        );
+        const JWKS = jose.createLocalJWKSet(await jwksRes.json());
         const sessionCookie = await createAuthenticatedSession(
           app,
           TEST_USER.email,
           TEST_USER.password,
         );
 
-        // Get tokens for first client
         const { code: code1 } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -218,7 +184,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes1 = await exchangeCodeForTokens(app, {
           code: code1,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -226,14 +191,12 @@ describe('Multi-Client Isolation', () => {
           redirectUri: TEST_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
-
-        const tokens1 = tokenRes1.json();
+        const tokens1 = await tokenRes1.json();
         const { payload: payload1 } = await jose.jwtVerify(
           tokens1.id_token,
           JWKS,
         );
 
-        // Get tokens for second client
         const { code: code2 } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: SECOND_OAUTH_CLIENT.clientId,
@@ -241,7 +204,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes2 = await exchangeCodeForTokens(app, {
           code: code2,
           clientId: SECOND_OAUTH_CLIENT.clientId,
@@ -249,17 +211,13 @@ describe('Multi-Client Isolation', () => {
           redirectUri: SECOND_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
-
-        const tokens2 = tokenRes2.json();
+        const tokens2 = await tokenRes2.json();
         const { payload: payload2 } = await jose.jwtVerify(
           tokens2.id_token,
           JWKS,
         );
 
-        // Subject should be the same (same user)
         expect(payload1.sub).toBe(payload2.sub);
-
-        // But audience should be different (different clients)
         expect(payload1.aud).toBe(TEST_OAUTH_CLIENT.clientId);
         expect(payload2.aud).toBe(SECOND_OAUTH_CLIENT.clientId);
       },
@@ -276,8 +234,6 @@ describe('Multi-Client Isolation', () => {
           TEST_USER.email,
           TEST_USER.password,
         );
-
-        // Get tokens for first client
         const { code } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -285,7 +241,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes = await exchangeCodeForTokens(app, {
           code,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -293,23 +248,19 @@ describe('Multi-Client Isolation', () => {
           redirectUri: TEST_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
+        const tokens = await tokenRes.json();
 
-        const tokens = tokenRes.json();
-
-        // Try to refresh with second client's credentials
-        const refreshRes = await app.inject({
+        const refreshRes = await app.request('/application/oauth/token', {
           method: 'POST',
-          url: '/application/oauth/token',
-          payload: {
+          body: JSON.stringify({
             grant_type: 'refresh_token',
             refresh_token: tokens.refresh_token,
             client_id: SECOND_OAUTH_CLIENT.clientId,
             client_secret: SECOND_OAUTH_CLIENT.clientSecret,
-          },
+          }),
+          headers: { 'Content-Type': 'application/json' },
         });
-
-        // Should fail - refresh token bound to first client
-        expect([400, 401]).toContain(refreshRes.statusCode);
+        expect([400, 401]).toContain(refreshRes.status);
       },
     );
 
@@ -322,8 +273,6 @@ describe('Multi-Client Isolation', () => {
           TEST_USER.email,
           TEST_USER.password,
         );
-
-        // Get authorization code for first client
         const { code } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -331,8 +280,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
-        // Try to exchange with second client
         const tokenRes = await exchangeCodeForTokens(app, {
           code,
           clientId: SECOND_OAUTH_CLIENT.clientId,
@@ -340,17 +287,12 @@ describe('Multi-Client Isolation', () => {
           redirectUri: SECOND_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
-
-        // Should fail - code was issued for first client
-        expect([400, 401]).toContain(tokenRes.statusCode);
+        expect([400, 401]).toContain(tokenRes.status);
       },
     );
   });
 
   describe('Client Credential Validation', () => {
-    // Note: Wrong client_secret and redirect_uri mismatch are tested in
-    // server-side-flow.test.ts and token/post.test.ts
-
     test(
       'should reject non-existent client_id',
       { timeout: 15000 },
@@ -360,30 +302,23 @@ describe('Multi-Client Isolation', () => {
           TEST_USER.email,
           TEST_USER.password,
         );
-
-        // Try authorize with non-existent client
-        const authRes = await app.inject({
-          method: 'GET',
-          url: '/application/oauth/authorize',
-          query: {
-            response_type: 'code',
-            client_id: 'non-existent-client',
-            redirect_uri: 'http://localhost:8080/callback',
-            scope: 'openid profile email',
-            state: 'test-state',
-          },
-          cookies: { session: sessionCookie },
-        });
-
-        // Should fail with invalid_client or redirect error
-        expect([400, 302]).toContain(authRes.statusCode);
-
-        if (authRes.statusCode === 302) {
+        const authRes = await app.request(
+          '/application/oauth/authorize?' +
+            new URLSearchParams({
+              response_type: 'code',
+              client_id: 'non-existent-client',
+              redirect_uri: 'http://localhost:8080/callback',
+              scope: 'openid profile email',
+              state: 'test-state',
+            }).toString(),
+          { headers: { Cookie: `session=${sessionCookie}` } },
+        );
+        expect([400, 302]).toContain(authRes.status);
+        if (authRes.status === 302) {
           const location = new URL(
-            authRes.headers.location as string,
+            authRes.headers.get('location') as string,
             'http://localhost:8080',
           );
-          // Should have error in redirect
           expect(location.searchParams.has('error')).toBe(true);
         }
       },
@@ -400,7 +335,6 @@ describe('Multi-Client Isolation', () => {
           TEST_USER.email,
           TEST_USER.password,
         );
-
         const { code } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -408,7 +342,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes = await exchangeCodeForTokens(app, {
           code,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -416,20 +349,16 @@ describe('Multi-Client Isolation', () => {
           redirectUri: TEST_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
+        const tokens = await tokenRes.json();
 
-        const tokens = tokenRes.json();
-
-        // Introspect with same client
         const introspectRes = await introspectToken(app, {
           token: tokens.access_token,
           tokenTypeHint: 'access_token',
           clientId: TEST_OAUTH_CLIENT.clientId,
           clientSecret: TEST_OAUTH_CLIENT.clientSecret,
         });
-
-        expect(introspectRes.statusCode).toBe(200);
-        const introspection = introspectRes.json();
-
+        expect(introspectRes.status).toBe(200);
+        const introspection = await introspectRes.json();
         expect(introspection.active).toBe(true);
         expect(introspection.client_id).toBe(TEST_OAUTH_CLIENT.clientId);
       },
@@ -445,7 +374,6 @@ describe('Multi-Client Isolation', () => {
           TEST_USER.password,
         );
 
-        // Get tokens for both clients
         const { code: code1 } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -453,7 +381,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes1 = await exchangeCodeForTokens(app, {
           code: code1,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -461,8 +388,7 @@ describe('Multi-Client Isolation', () => {
           redirectUri: TEST_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
-
-        const tokens1 = tokenRes1.json();
+        const tokens1 = await tokenRes1.json();
 
         const { code: code2 } = await getAuthorizationCode(app, {
           sessionCookie,
@@ -471,7 +397,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes2 = await exchangeCodeForTokens(app, {
           code: code2,
           clientId: SECOND_OAUTH_CLIENT.clientId,
@@ -479,24 +404,24 @@ describe('Multi-Client Isolation', () => {
           redirectUri: SECOND_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
+        const tokens2 = await tokenRes2.json();
 
-        const tokens2 = tokenRes2.json();
-
-        // Introspect both tokens and verify client_id
         const intro1 = await introspectToken(app, {
           token: tokens1.access_token,
           clientId: TEST_OAUTH_CLIENT.clientId,
           clientSecret: TEST_OAUTH_CLIENT.clientSecret,
         });
-
         const intro2 = await introspectToken(app, {
           token: tokens2.access_token,
           clientId: SECOND_OAUTH_CLIENT.clientId,
           clientSecret: SECOND_OAUTH_CLIENT.clientSecret,
         });
-
-        expect(intro1.json().client_id).toBe(TEST_OAUTH_CLIENT.clientId);
-        expect(intro2.json().client_id).toBe(SECOND_OAUTH_CLIENT.clientId);
+        expect((await intro1.json()).client_id).toBe(
+          TEST_OAUTH_CLIENT.clientId,
+        );
+        expect((await intro2.json()).client_id).toBe(
+          SECOND_OAUTH_CLIENT.clientId,
+        );
       },
     );
   });
@@ -512,7 +437,6 @@ describe('Multi-Client Isolation', () => {
           TEST_USER.password,
         );
 
-        // Get tokens for first client
         const { code: code1 } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -520,7 +444,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes1 = await exchangeCodeForTokens(app, {
           code: code1,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -528,10 +451,8 @@ describe('Multi-Client Isolation', () => {
           redirectUri: TEST_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
+        const tokens1 = await tokenRes1.json();
 
-        const tokens1 = tokenRes1.json();
-
-        // Get tokens for second client
         const { code: code2 } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: SECOND_OAUTH_CLIENT.clientId,
@@ -539,7 +460,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes2 = await exchangeCodeForTokens(app, {
           code: code2,
           clientId: SECOND_OAUTH_CLIENT.clientId,
@@ -547,26 +467,20 @@ describe('Multi-Client Isolation', () => {
           redirectUri: SECOND_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
+        const tokens2 = await tokenRes2.json();
 
-        const tokens2 = tokenRes2.json();
-
-        // Revoke first client's token
         const revokeRes = await revokeToken(app, {
           token: tokens1.access_token,
           tokenTypeHint: 'access_token',
           clientId: TEST_OAUTH_CLIENT.clientId,
           clientSecret: TEST_OAUTH_CLIENT.clientSecret,
         });
+        expect(revokeRes.status).toBe(200);
 
-        expect(revokeRes.statusCode).toBe(200);
-
-        // First client's token should be revoked
         const userInfo1Res = await getUserInfo(app, tokens1.access_token);
-        expect(userInfo1Res.statusCode).toBe(401);
-
-        // Second client's token should still work
+        expect(userInfo1Res.status).toBe(401);
         const userInfo2Res = await getUserInfo(app, tokens2.access_token);
-        expect(userInfo2Res.statusCode).toBe(200);
+        expect(userInfo2Res.status).toBe(200);
       },
     );
   });
@@ -582,7 +496,6 @@ describe('Multi-Client Isolation', () => {
           TEST_USER.password,
         );
 
-        // Get tokens for first client
         const { code: code1 } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -591,7 +504,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes1 = await exchangeCodeForTokens(app, {
           code: code1,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -599,10 +511,8 @@ describe('Multi-Client Isolation', () => {
           redirectUri: TEST_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
+        const tokens1 = await tokenRes1.json();
 
-        const tokens1 = tokenRes1.json();
-
-        // Get tokens for second client
         const { code: code2 } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: SECOND_OAUTH_CLIENT.clientId,
@@ -611,7 +521,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes2 = await exchangeCodeForTokens(app, {
           code: code2,
           clientId: SECOND_OAUTH_CLIENT.clientId,
@@ -619,20 +528,15 @@ describe('Multi-Client Isolation', () => {
           redirectUri: SECOND_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
+        const tokens2 = await tokenRes2.json();
 
-        const tokens2 = tokenRes2.json();
-
-        // Get user info with both tokens
         const userInfo1Res = await getUserInfo(app, tokens1.access_token);
         const userInfo2Res = await getUserInfo(app, tokens2.access_token);
+        expect(userInfo1Res.status).toBe(200);
+        expect(userInfo2Res.status).toBe(200);
 
-        expect(userInfo1Res.statusCode).toBe(200);
-        expect(userInfo2Res.statusCode).toBe(200);
-
-        const userInfo1 = userInfo1Res.json();
-        const userInfo2 = userInfo2Res.json();
-
-        // Same user should have same sub and email
+        const userInfo1 = await userInfo1Res.json();
+        const userInfo2 = await userInfo2Res.json();
         expect(userInfo1.sub).toBe(userInfo2.sub);
         expect(userInfo1.email).toBe(userInfo2.email);
         expect(userInfo1.email).toBe(TEST_USER.email);
@@ -651,7 +555,6 @@ describe('Multi-Client Isolation', () => {
           TEST_USER.password,
         );
 
-        // First client authorization should work after consent
         const { code: code1 } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -659,10 +562,8 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         expect(code1).toBeDefined();
 
-        // Second client authorization should also work (consent is granted in getAuthorizationCode)
         const { code: code2 } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: SECOND_OAUTH_CLIENT.clientId,
@@ -670,10 +571,7 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         expect(code2).toBeDefined();
-
-        // Codes should be different
         expect(code1).not.toBe(code2);
       },
     );
@@ -690,7 +588,6 @@ describe('Multi-Client Isolation', () => {
           TEST_USER.password,
         );
 
-        // Get tokens for both clients
         const { code: code1 } = await getAuthorizationCode(app, {
           sessionCookie,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -698,7 +595,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes1 = await exchangeCodeForTokens(app, {
           code: code1,
           clientId: TEST_OAUTH_CLIENT.clientId,
@@ -706,8 +602,7 @@ describe('Multi-Client Isolation', () => {
           redirectUri: TEST_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
-
-        const tokens1 = tokenRes1.json();
+        const tokens1 = await tokenRes1.json();
 
         const { code: code2 } = await getAuthorizationCode(app, {
           sessionCookie,
@@ -716,7 +611,6 @@ describe('Multi-Client Isolation', () => {
           codeChallenge: TEST_PKCE.codeChallenge,
           codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
         });
-
         const tokenRes2 = await exchangeCodeForTokens(app, {
           code: code2,
           clientId: SECOND_OAUTH_CLIENT.clientId,
@@ -724,30 +618,24 @@ describe('Multi-Client Isolation', () => {
           redirectUri: SECOND_OAUTH_CLIENT.redirectUri,
           codeVerifier: TEST_PKCE.codeVerifier,
         });
+        const tokens2 = await tokenRes2.json();
 
-        const tokens2 = tokenRes2.json();
-
-        // Both sets should be independently refreshable
         const refresh1Res = await refreshAccessToken(app, {
           refreshToken: tokens1.refresh_token,
           clientId: TEST_OAUTH_CLIENT.clientId,
           clientSecret: TEST_OAUTH_CLIENT.clientSecret,
         });
-
-        expect(refresh1Res.statusCode).toBe(200);
+        expect(refresh1Res.status).toBe(200);
 
         const refresh2Res = await refreshAccessToken(app, {
           refreshToken: tokens2.refresh_token,
           clientId: SECOND_OAUTH_CLIENT.clientId,
           clientSecret: SECOND_OAUTH_CLIENT.clientSecret,
         });
+        expect(refresh2Res.status).toBe(200);
 
-        expect(refresh2Res.statusCode).toBe(200);
-
-        // New tokens should be different from each other
-        const newTokens1 = refresh1Res.json();
-        const newTokens2 = refresh2Res.json();
-
+        const newTokens1 = await refresh1Res.json();
+        const newTokens2 = await refresh2Res.json();
         expect(newTokens1.access_token).not.toBe(newTokens2.access_token);
       },
     );

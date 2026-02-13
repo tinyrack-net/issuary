@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import { createServer } from '@/server.js';
@@ -9,11 +8,13 @@ import {
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
+import type { AppType } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
@@ -39,10 +40,12 @@ beforeAll(async () => {
       ],
     },
   });
+  app = server.app;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 /**
@@ -53,16 +56,20 @@ async function startOAuthFlow(
   mode: 'login' | 'register' | 'link' = 'login',
   sessionCookie?: string,
 ): Promise<{ sessionCookie: string; state: string }> {
-  const res = await app.inject({
+  const url =
+    `/api/v1/oauth/${provider}/authorize?` +
+    new URLSearchParams({ mode }).toString();
+
+  const res = await app.request(url, {
     method: 'GET',
-    url: `/api/v1/oauth/${provider}/authorize`,
-    query: { mode },
-    ...(sessionCookie && { cookies: { session: sessionCookie } }),
+    ...(sessionCookie && {
+      headers: { Cookie: `session=${sessionCookie}` },
+    }),
   });
 
-  expect(res.statusCode).toBe(302);
+  expect(res.status).toBe(302);
 
-  const location = new URL(res.headers.location as string);
+  const location = new URL(res.headers.get('location') as string);
   const state = location.searchParams.get('state');
   expect(state).toBeDefined();
 
@@ -77,18 +84,23 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
       // Start OAuth flow to get valid session
       const { sessionCookie } = await startOAuthFlow('google');
 
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/callback',
-        query: {
-          error: 'access_denied',
-          error_description: 'User denied access',
+      const res = await app.request(
+        '/api/v1/oauth/google/callback?' +
+          new URLSearchParams({
+            error: 'access_denied',
+            error_description: 'User denied access',
+          }).toString(),
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${sessionCookie}` },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
-      expect(res.statusCode).toBe(302);
-      const location = new URL(res.headers.location as string, 'http://test');
+      expect(res.status).toBe(302);
+      const location = new URL(
+        res.headers.get('location') as string,
+        'http://test',
+      );
       expect(location.pathname).toBe('/login');
       expect(location.searchParams.get('oauth_error')).toBe('access_denied');
       expect(location.searchParams.get('oauth_error_description')).toBe(
@@ -99,60 +111,69 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
     test('should handle OAuth error without description', async () => {
       const { sessionCookie } = await startOAuthFlow('google');
 
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/callback',
-        query: {
-          error: 'server_error',
+      const res = await app.request(
+        '/api/v1/oauth/google/callback?' +
+          new URLSearchParams({
+            error: 'server_error',
+          }).toString(),
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${sessionCookie}` },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
-      expect(res.statusCode).toBe(302);
-      const location = new URL(res.headers.location as string, 'http://test');
+      expect(res.status).toBe(302);
+      const location = new URL(
+        res.headers.get('location') as string,
+        'http://test',
+      );
       expect(location.searchParams.get('oauth_error')).toBe('server_error');
     });
   });
 
   describe('Session Validation', () => {
     test('should return error when OAuth session is missing', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/callback',
-        query: {
-          code: 'test-code',
-          state: 'test-state',
+      const res = await app.request(
+        '/api/v1/oauth/google/callback?' +
+          new URLSearchParams({
+            code: 'test-code',
+            state: 'test-state',
+          }).toString(),
+        {
+          method: 'GET',
+          // No session cookie
         },
-        // No session cookie
-      });
+      );
 
-      expectError(res, e.OAuthSessionExpired);
+      await expectError(res, e.OAuthSessionExpired);
     });
 
     test('should return error when OAuth session has expired', async () => {
       // Create a fresh session without OAuth data
-      const loginRes = await app.inject({
+      const loginRes = await app.request('/api/v1/auth/login', {
         method: 'POST',
-        url: '/api/v1/auth/login',
-        payload: {
+        body: JSON.stringify({
           email: 'test-config-user@example.com',
           password: 'changemelater',
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
       const sessionCookie = extractCookie(loginRes, 'session');
 
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/callback',
-        query: {
-          code: 'test-code',
-          state: 'test-state',
+      const res = await app.request(
+        '/api/v1/oauth/google/callback?' +
+          new URLSearchParams({
+            code: 'test-code',
+            state: 'test-state',
+          }).toString(),
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${sessionCookie}` },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
-      expectError(res, e.OAuthSessionExpired);
+      await expectError(res, e.OAuthSessionExpired);
     });
   });
 
@@ -160,34 +181,38 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
     test('should return error when state does not match', async () => {
       const { sessionCookie } = await startOAuthFlow('google');
 
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/callback',
-        query: {
-          code: 'test-code',
-          state: 'wrong-state-value',
+      const res = await app.request(
+        '/api/v1/oauth/google/callback?' +
+          new URLSearchParams({
+            code: 'test-code',
+            state: 'wrong-state-value',
+          }).toString(),
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${sessionCookie}` },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
-      expectError(res, e.OAuthStateMismatch);
+      await expectError(res, e.OAuthStateMismatch);
     });
 
     test('should return error when state is empty', async () => {
       const { sessionCookie } = await startOAuthFlow('google');
 
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/callback',
-        query: {
-          code: 'test-code',
-          state: '',
+      const res = await app.request(
+        '/api/v1/oauth/google/callback?' +
+          new URLSearchParams({
+            code: 'test-code',
+            state: '',
+          }).toString(),
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${sessionCookie}` },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
       // Zod validation should fail for empty state
-      expect(res.statusCode).toBe(400);
+      expect(res.status).toBe(400);
     });
   });
 
@@ -197,33 +222,37 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
       const { sessionCookie, state } = await startOAuthFlow('google');
 
       // Callback to github (different provider)
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/github/callback',
-        query: {
-          code: 'test-code',
-          state,
+      const res = await app.request(
+        '/api/v1/oauth/github/callback?' +
+          new URLSearchParams({
+            code: 'test-code',
+            state,
+          }).toString(),
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${sessionCookie}` },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
-      expectError(res, e.OAuthProviderNotFound);
+      await expectError(res, e.OAuthProviderNotFound);
     });
 
     test('should return 404 for non-existent provider', async () => {
       const { sessionCookie, state } = await startOAuthFlow('google');
 
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/nonexistent/callback',
-        query: {
-          code: 'test-code',
-          state,
+      const res = await app.request(
+        '/api/v1/oauth/nonexistent/callback?' +
+          new URLSearchParams({
+            code: 'test-code',
+            state,
+          }).toString(),
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${sessionCookie}` },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
-      expectError(res, e.OAuthProviderNotFound);
+      await expectError(res, e.OAuthProviderNotFound);
     });
   });
 
@@ -231,34 +260,38 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
     test('should return error when code is missing', async () => {
       const { sessionCookie, state } = await startOAuthFlow('google');
 
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/callback',
-        query: {
-          state,
-          // code is missing
+      const res = await app.request(
+        '/api/v1/oauth/google/callback?' +
+          new URLSearchParams({
+            state,
+            // code is missing
+          }).toString(),
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${sessionCookie}` },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
-      expectError(res, e.OAuthInvalidRequest);
+      await expectError(res, e.OAuthInvalidRequest);
     });
 
     test('should return error when code is empty', async () => {
       const { sessionCookie, state } = await startOAuthFlow('google');
 
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/callback',
-        query: {
-          code: '',
-          state,
+      const res = await app.request(
+        '/api/v1/oauth/google/callback?' +
+          new URLSearchParams({
+            code: '',
+            state,
+          }).toString(),
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${sessionCookie}` },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
       // Empty string fails min(1) validation via Zod
-      expect(res.statusCode).toBe(400);
+      expect(res.status).toBe(400);
     });
   });
 
@@ -272,20 +305,22 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
       );
 
       // Note: Token exchange will fail with test code, but we verify the flow starts correctly
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/callback',
-        query: {
-          code: 'invalid-test-code',
-          state,
+      const res = await app.request(
+        '/api/v1/oauth/google/callback?' +
+          new URLSearchParams({
+            code: 'invalid-test-code',
+            state,
+          }).toString(),
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${oauthSession}` },
         },
-        cookies: { session: oauthSession },
-      });
+      );
 
       // Will fail at token exchange, not at auth check
       // This means link mode flow is working
-      expect(res.statusCode).toBe(502); // Token exchange failed
-      expectError(res, e.OAuthTokenExchangeFailed);
+      expect(res.status).toBe(502); // Token exchange failed
+      await expectError(res, e.OAuthTokenExchangeFailed);
     });
   });
 
@@ -293,44 +328,47 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
     test('should return 502 when token exchange fails', async () => {
       const { sessionCookie, state } = await startOAuthFlow('google');
 
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/callback',
-        query: {
-          code: 'invalid-authorization-code',
-          state,
+      const res = await app.request(
+        '/api/v1/oauth/google/callback?' +
+          new URLSearchParams({
+            code: 'invalid-authorization-code',
+            state,
+          }).toString(),
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${sessionCookie}` },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
-      expect(res.statusCode).toBe(502);
-      expectError(res, e.OAuthTokenExchangeFailed);
+      expect(res.status).toBe(502);
+      await expectError(res, e.OAuthTokenExchangeFailed);
     });
   });
 
   describe('Request Schema Validation', () => {
     test('should return error when no query parameters provided', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/oauth/google/callback', {
         method: 'GET',
-        url: '/api/v1/oauth/google/callback',
         // No query params
       });
 
       // Should fail due to missing code and state
-      expectError(res, e.OAuthInvalidRequest);
+      await expectError(res, e.OAuthInvalidRequest);
     });
 
     test('should return error when state is missing', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/callback',
-        query: {
-          code: 'test-code',
-          // state missing
+      const res = await app.request(
+        '/api/v1/oauth/google/callback?' +
+          new URLSearchParams({
+            code: 'test-code',
+            // state missing
+          }).toString(),
+        {
+          method: 'GET',
         },
-      });
+      );
 
-      expectError(res, e.OAuthInvalidRequest);
+      await expectError(res, e.OAuthInvalidRequest);
     });
   });
 });

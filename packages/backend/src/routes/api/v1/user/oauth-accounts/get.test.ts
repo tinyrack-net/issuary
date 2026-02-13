@@ -1,21 +1,23 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import {
   createAuthenticatedSession,
   extractCookie,
   generateUniqueEmail,
-  injectWithSession,
   MINIMAL_TEST_CONFIG,
+  requestWithSession,
   TEST_USER,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let services: ServiceContainer;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
@@ -32,20 +34,22 @@ beforeAll(async () => {
       ],
     },
   });
+  app = server.app;
+  services = server.services;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('GET /api/v1/user/oauth-accounts', () => {
   test('should return 401 if not authenticated', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/user/oauth-accounts', {
       method: 'GET',
-      url: '/api/v1/user/oauth-accounts',
     });
 
-    expect(res.statusCode).toBe(401);
+    expect(res.status).toBe(401);
   });
 
   test('should return empty accounts for user with no linked OAuth', async () => {
@@ -55,18 +59,18 @@ describe('GET /api/v1/user/oauth-accounts', () => {
       TEST_USER.password,
     );
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/oauth-accounts',
       {
         method: 'GET',
-        url: '/api/v1/user/oauth-accounts',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
+    expect(res.status).toBe(200);
 
-    const json = res.json();
+    const json = await res.json();
 
     expect(json.accounts).toBeDefined();
     expect(json.accounts).toBeInstanceOf(Array);
@@ -83,18 +87,18 @@ describe('GET /api/v1/user/oauth-accounts', () => {
       TEST_USER.password,
     );
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/oauth-accounts',
       {
         method: 'GET',
-        url: '/api/v1/user/oauth-accounts',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
+    expect(res.status).toBe(200);
 
-    const json = res.json();
+    const json = await res.json();
 
     // Check available_providers structure
     if (json.available_providers.length > 0) {
@@ -111,17 +115,17 @@ describe('GET /api/v1/user/oauth-accounts', () => {
     const email = generateUniqueEmail('oauth-linked');
     const password = 'TestPassword123!';
 
-    const sessionCookie = await withMikroContext(app, async () => {
+    const sessionCookie = await withMikroContext(services, async () => {
       // Create user with password
-      const user = app.mikro.user.create({
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
 
       // Link OAuth account
-      await app.mikro.userOAuth.linkAccount({
+      await services.mikro.userOAuth.linkAccount({
         userId: user.id,
         providerName: 'google',
         providerUserId: `test-${Date.now()}`,
@@ -131,28 +135,28 @@ describe('GET /api/v1/user/oauth-accounts', () => {
       });
 
       // Login to get session
-      const loginRes = await app.inject({
+      const loginRes = await app.request('/api/v1/auth/login', {
         method: 'POST',
-        url: '/api/v1/auth/login',
-        payload: { email, password },
+        body: JSON.stringify({ email, password }),
+        headers: { 'Content-Type': 'application/json' },
       });
-      expect(loginRes.statusCode).toBe(200);
+      expect(loginRes.status).toBe(200);
 
       return extractCookie(loginRes, 'session');
     });
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/oauth-accounts',
       {
         method: 'GET',
-        url: '/api/v1/user/oauth-accounts',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
+    expect(res.status).toBe(200);
 
-    const json = res.json();
+    const json = await res.json();
 
     // Should have one linked account
     expect(json.accounts.length).toBe(1);

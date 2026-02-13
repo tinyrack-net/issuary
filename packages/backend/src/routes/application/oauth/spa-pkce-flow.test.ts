@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
@@ -15,21 +14,23 @@ import {
   TEST_PKCE,
   TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
+import type { AppType } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  ({ app, cleanup } = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       clients: [TEST_OAUTH_CLIENT_CONFIG],
     },
-  });
+  }));
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 /**
@@ -92,21 +93,23 @@ describe('SPA PKCE Authentication Flow', () => {
       expect(location.searchParams.get('state')).toBe(state);
 
       // Step 4: Exchange code for tokens (NO client_secret)
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
           code_verifier: codeVerifier,
           // No client_secret - this is a public client
+        }),
+        headers: {
+          'Content-Type': 'application/json',
         },
       });
 
-      expect(tokenRes.statusCode).toBe(200);
-      const tokens = tokenRes.json();
+      expect(tokenRes.status).toBe(200);
+      const tokens = await tokenRes.json();
 
       expect(tokens.access_token).toBeDefined();
       expect(tokens.refresh_token).toBeDefined();
@@ -115,8 +118,8 @@ describe('SPA PKCE Authentication Flow', () => {
 
       // Step 5: Use access token to get user info
       const userInfoRes = await getUserInfo(app, tokens.access_token);
-      expect(userInfoRes.statusCode).toBe(200);
-      expect(userInfoRes.json().sub).toBeDefined();
+      expect(userInfoRes.status).toBe(200);
+      expect((await userInfoRes.json()).sub).toBeDefined();
     });
 
     test('should work with dynamically generated PKCE values', async () => {
@@ -136,8 +139,8 @@ describe('SPA PKCE Authentication Flow', () => {
         codeVerifier,
       });
 
-      expect(tokenRes.statusCode).toBe(200);
-      expect(tokenRes.json().access_token).toBeDefined();
+      expect(tokenRes.status).toBe(200);
+      expect((await tokenRes.json()).access_token).toBeDefined();
     });
 
     test('should support minimum length code verifier (43 chars)', async () => {
@@ -156,7 +159,7 @@ describe('SPA PKCE Authentication Flow', () => {
         codeVerifier,
       });
 
-      expect(tokenRes.statusCode).toBe(200);
+      expect(tokenRes.status).toBe(200);
     });
 
     test('should support maximum length code verifier (128 chars)', async () => {
@@ -175,7 +178,7 @@ describe('SPA PKCE Authentication Flow', () => {
         codeVerifier,
       });
 
-      expect(tokenRes.statusCode).toBe(200);
+      expect(tokenRes.status).toBe(200);
     });
   });
 
@@ -191,19 +194,21 @@ describe('SPA PKCE Authentication Flow', () => {
         codeChallengeMethod: 'S256',
       });
 
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
           code_verifier: shortVerifier,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
         },
       });
 
-      expect(tokenRes.statusCode).toBe(400);
+      expect(tokenRes.status).toBe(400);
     });
 
     test('should reject code verifier longer than 128 characters', async () => {
@@ -217,19 +222,21 @@ describe('SPA PKCE Authentication Flow', () => {
         codeChallengeMethod: 'S256',
       });
 
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
           code_verifier: longVerifier,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
         },
       });
 
-      expect(tokenRes.statusCode).toBe(400);
+      expect(tokenRes.status).toBe(400);
     });
 
     test('should reject mismatched code verifier', async () => {
@@ -249,8 +256,8 @@ describe('SPA PKCE Authentication Flow', () => {
         codeVerifier: wrongVerifier,
       });
 
-      expect(tokenRes.statusCode).toBe(400);
-      expect(tokenRes.json().code).toBe('INVALID_PKCE_VERIFIER');
+      expect(tokenRes.status).toBe(400);
+      expect((await tokenRes.json()).code).toBe('INVALID_PKCE_VERIFIER');
     });
 
     test('should reject when code_verifier is missing but challenge was provided', async () => {
@@ -265,20 +272,22 @@ describe('SPA PKCE Authentication Flow', () => {
       });
 
       // Try to exchange without code_verifier
-      const tokenRes = await app.inject({
+      const tokenRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
           // Missing code_verifier
+        }),
+        headers: {
+          'Content-Type': 'application/json',
         },
       });
 
-      expect(tokenRes.statusCode).toBe(400);
-      expect(tokenRes.json().code).toBe('MISSING_CODE_VERIFIER');
+      expect(tokenRes.status).toBe(400);
+      expect((await tokenRes.json()).code).toBe('MISSING_CODE_VERIFIER');
     });
   });
 
@@ -296,7 +305,7 @@ describe('SPA PKCE Authentication Flow', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      expect(tokenRes.statusCode).toBe(200);
+      expect(tokenRes.status).toBe(200);
     });
 
     test('should work with plain challenge method', async () => {
@@ -314,7 +323,7 @@ describe('SPA PKCE Authentication Flow', () => {
         codeVerifier: plainVerifier,
       });
 
-      expect(tokenRes.statusCode).toBe(200);
+      expect(tokenRes.status).toBe(200);
     });
 
     test('should default to S256 when method not specified', async () => {
@@ -329,23 +338,27 @@ describe('SPA PKCE Authentication Flow', () => {
         // code_challenge_method not specified
       });
 
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          response_type: 'code',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          scope: 'openid profile email',
-          code_challenge: TEST_PKCE.codeChallenge,
-          // code_challenge_method defaults to S256
+      const res = await app.request(
+        '/application/oauth/authorize?' +
+          new URLSearchParams({
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: 'openid profile email',
+            code_challenge: TEST_PKCE.codeChallenge,
+            // code_challenge_method defaults to S256
+          }).toString(),
+        {
+          method: 'GET',
+          headers: {
+            Cookie: `session=${sessionCookie}`,
+          },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
       const code = location.searchParams.get('code');
@@ -356,7 +369,7 @@ describe('SPA PKCE Authentication Flow', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      expect(tokenRes.statusCode).toBe(200);
+      expect(tokenRes.status).toBe(200);
     });
   });
 
@@ -417,22 +430,26 @@ describe('SPA PKCE Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
       // Request with invalid scope should redirect with error AND state
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          response_type: 'code',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          scope: 'invalid_scope_xyz',
-          state,
+      const res = await app.request(
+        '/application/oauth/authorize?' +
+          new URLSearchParams({
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: 'invalid_scope_xyz',
+            state,
+          }).toString(),
+        {
+          method: 'GET',
+          headers: {
+            Cookie: `session=${sessionCookie}`,
+          },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -458,22 +475,24 @@ describe('SPA PKCE Authentication Flow', () => {
         code,
         codeVerifier,
       });
-      const { refresh_token } = tokenRes.json();
+      const { refresh_token } = await tokenRes.json();
 
       // Refresh without client_secret (public client)
-      const refreshRes = await app.inject({
+      const refreshRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'refresh_token',
           refresh_token,
           client_id: TEST_OAUTH_CLIENT.clientId,
           // No client_secret
+        }),
+        headers: {
+          'Content-Type': 'application/json',
         },
       });
 
-      expect(refreshRes.statusCode).toBe(200);
-      const newTokens = refreshRes.json();
+      expect(refreshRes.status).toBe(200);
+      const newTokens = await refreshRes.json();
       expect(newTokens.access_token).toBeDefined();
       expect(newTokens.refresh_token).toBeDefined();
     });
@@ -493,19 +512,19 @@ describe('SPA PKCE Authentication Flow', () => {
         code,
         codeVerifier,
       });
-      const { refresh_token: rt1 } = tokenRes.json();
+      const { refresh_token: rt1 } = await tokenRes.json();
 
       // First refresh
       const refreshRes1 = await refreshAccessToken(app, { refreshToken: rt1 });
-      expect(refreshRes1.statusCode).toBe(200);
-      const { refresh_token: rt2 } = refreshRes1.json();
+      expect(refreshRes1.status).toBe(200);
+      const { refresh_token: rt2 } = await refreshRes1.json();
 
       // New refresh token should be different (rotation)
       expect(rt2).toBeDefined();
 
       // Second refresh with new token
       const refreshRes2 = await refreshAccessToken(app, { refreshToken: rt2 });
-      expect(refreshRes2.statusCode).toBe(200);
+      expect(refreshRes2.status).toBe(200);
     });
   });
 
@@ -525,25 +544,29 @@ describe('SPA PKCE Authentication Flow', () => {
       });
 
       // Now try silent auth
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          response_type: 'code',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          scope: 'openid profile email',
-          prompt: 'none',
-          code_challenge: TEST_PKCE.codeChallenge,
-          code_challenge_method: 'S256',
-          state: 'silent-auth',
+      const res = await app.request(
+        '/application/oauth/authorize?' +
+          new URLSearchParams({
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: 'openid profile email',
+            prompt: 'none',
+            code_challenge: TEST_PKCE.codeChallenge,
+            code_challenge_method: 'S256',
+            state: 'silent-auth',
+          }).toString(),
+        {
+          method: 'GET',
+          headers: {
+            Cookie: `session=${sessionCookie}`,
+          },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -553,25 +576,26 @@ describe('SPA PKCE Authentication Flow', () => {
     });
 
     test('should return login_required when no session', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          response_type: 'code',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          scope: 'openid profile email',
-          prompt: 'none',
-          code_challenge: TEST_PKCE.codeChallenge,
-          code_challenge_method: 'S256',
-          state: 'silent-auth',
+      const res = await app.request(
+        '/application/oauth/authorize?' +
+          new URLSearchParams({
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: 'openid profile email',
+            prompt: 'none',
+            code_challenge: TEST_PKCE.codeChallenge,
+            code_challenge_method: 'S256',
+            state: 'silent-auth',
+          }).toString(),
+        {
+          method: 'GET',
         },
-        // No session cookie
-      });
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -598,7 +622,7 @@ describe('SPA PKCE Authentication Flow', () => {
         code,
         codeVerifier,
       });
-      const { id_token } = tokenRes.json();
+      const { id_token } = await tokenRes.json();
 
       // Verify nonce in ID token
       const decoded = jose.decodeJwt(id_token);
@@ -620,14 +644,13 @@ describe('SPA PKCE Authentication Flow', () => {
         code,
         codeVerifier,
       });
-      const { id_token, access_token } = tokenRes.json();
+      const { id_token, access_token } = await tokenRes.json();
 
       // Get JWKS (SPA would fetch this)
-      const jwksRes = await app.inject({
+      const jwksRes = await app.request('/application/oauth/.well-known/jwks', {
         method: 'GET',
-        url: '/application/oauth/.well-known/jwks',
       });
-      const jwks = jose.createLocalJWKSet(jwksRes.json());
+      const jwks = jose.createLocalJWKSet(await jwksRes.json());
 
       // Verify ID token signature
       const { payload } = await jose.jwtVerify(id_token, jwks, {
@@ -639,8 +662,8 @@ describe('SPA PKCE Authentication Flow', () => {
 
       // Verify access token is valid
       const userInfoRes = await getUserInfo(app, access_token);
-      expect(userInfoRes.statusCode).toBe(200);
-      expect(userInfoRes.json().sub).toBe(payload.sub);
+      expect(userInfoRes.status).toBe(200);
+      expect((await userInfoRes.json()).sub).toBe(payload.sub);
     });
   });
 
@@ -654,8 +677,8 @@ describe('SPA PKCE Authentication Flow', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      expect(res.statusCode).toBe(400);
-      expect(res.json().code).toBe('INVALID_AUTHORIZATION_CODE');
+      expect(res.status).toBe(400);
+      expect((await res.json()).code).toBe('INVALID_AUTHORIZATION_CODE');
     });
   });
 
@@ -675,20 +698,22 @@ describe('SPA PKCE Authentication Flow', () => {
         code,
         codeVerifier,
       });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
       // Introspect without client_secret
-      const introspectRes = await app.inject({
+      const introspectRes = await app.request('/application/oauth/introspect', {
         method: 'POST',
-        url: '/application/oauth/introspect',
-        payload: {
+        body: JSON.stringify({
           token: access_token,
           // No client_secret
+        }),
+        headers: {
+          'Content-Type': 'application/json',
         },
       });
 
-      expect(introspectRes.statusCode).toBe(200);
-      const result = introspectRes.json();
+      expect(introspectRes.status).toBe(200);
+      const result = await introspectRes.json();
       expect(result.active).toBe(true);
       expect(result.client_id).toBe(TEST_OAUTH_CLIENT.clientId);
     });
@@ -712,8 +737,8 @@ describe('SPA PKCE Authentication Flow', () => {
         codeVerifier,
       });
 
-      expect(tokenRes.statusCode).toBe(200);
-      const tokens = tokenRes.json();
+      expect(tokenRes.status).toBe(200);
+      const tokens = await tokenRes.json();
       expect(tokens.id_token).toBeDefined();
       expect(tokens.scope).toBe('openid');
     });
@@ -735,8 +760,8 @@ describe('SPA PKCE Authentication Flow', () => {
         codeVerifier,
       });
 
-      expect(tokenRes.statusCode).toBe(200);
-      const tokens = tokenRes.json();
+      expect(tokenRes.status).toBe(200);
+      const tokens = await tokenRes.json();
       expect(tokens.id_token).toBeUndefined(); // No OIDC without openid scope
       expect(tokens.access_token).toBeDefined();
     });

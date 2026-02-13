@@ -1,14 +1,14 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { createServer } from '@/server.js';
 import {
   createDbUserWithSession,
   extractCookie,
   generateUniqueEmail,
-  injectWithSession,
   MINIMAL_TEST_CONFIG,
+  requestWithSession,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
 /**
  * Create a mock WebAuthn authentication response
@@ -49,10 +49,12 @@ function createMockAuthenticationResponse(overrides?: {
 }
 
 describe('POST /api/v1/auth/passkey/verify', () => {
-  let app: FastifyInstance;
+  let app: AppType;
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    app = await createServer({
+    const server = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -63,58 +65,60 @@ describe('POST /api/v1/auth/passkey/verify', () => {
         },
       },
     });
+    app = server.app;
+    services = server.services;
+    cleanup = server.cleanup;
   });
 
   afterAll(async () => {
-    await app.close();
+    await cleanup();
   });
 
   test('should return 400 when no challenge in session', async () => {
     const email = generateUniqueEmail('passkey-verify-no-challenge');
     const password = 'testPassword123!';
 
-    await createDbUserWithSession(app, email, password);
+    await createDbUserWithSession(app, services, email, password);
 
     // Directly call verify without getting options first (no challenge in session)
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/passkey/verify', {
       method: 'POST',
-      url: '/api/v1/auth/passkey/verify',
-      payload: {
+      body: JSON.stringify({
         response: createMockAuthenticationResponse(),
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(400);
-    const body = res.json();
+    expect(res.status).toBe(400);
+    const body = await res.json();
     expect(body.code).toBe('PASSKEY_CHALLENGE_NOT_FOUND');
   });
 
   test('should return 400 when response body is empty', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/passkey/verify', {
       method: 'POST',
-      url: '/api/v1/auth/passkey/verify',
-      payload: {},
+      body: JSON.stringify({}),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(400);
+    expect(res.status).toBe(400);
   });
 
   test('should return 400 when response is missing required fields', async () => {
     // Get options first to set challenge in session
-    const optionsRes = await app.inject({
+    const optionsRes = await app.request('/api/v1/auth/passkey/options', {
       method: 'POST',
-      url: '/api/v1/auth/passkey/options',
     });
-    expect(optionsRes.statusCode).toBe(200);
+    expect(optionsRes.status).toBe(200);
 
     const sessionCookie = extractCookie(optionsRes, 'session');
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/auth/passkey/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/passkey/verify',
-        payload: {
+        body: JSON.stringify({
           response: {
             rawId: 'mock-id',
             response: {
@@ -122,42 +126,43 @@ describe('POST /api/v1/auth/passkey/verify', () => {
             },
             type: 'public-key',
           },
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(400);
+    expect(res.status).toBe(400);
   });
 
   test('should return 404 when passkey not found', async () => {
     // Get options first to set challenge in session
-    const optionsRes = await app.inject({
+    const optionsRes = await app.request('/api/v1/auth/passkey/options', {
       method: 'POST',
-      url: '/api/v1/auth/passkey/options',
     });
-    expect(optionsRes.statusCode).toBe(200);
+    expect(optionsRes.status).toBe(200);
 
     const sessionCookie = extractCookie(optionsRes, 'session');
 
     // Try to verify with a non-existent credential ID
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/auth/passkey/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/passkey/verify',
-        payload: {
+        body: JSON.stringify({
           response: createMockAuthenticationResponse({
             id: 'non-existent-credential-id',
           }),
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
     // PASSKEY_NOT_FOUND (404) when credential doesn't exist
-    expect(res.statusCode).toBe(404);
-    const body = res.json();
+    expect(res.status).toBe(404);
+    const body = await res.json();
     expect(body.code).toBe('PASSKEY_NOT_FOUND');
   });
 
@@ -166,11 +171,16 @@ describe('POST /api/v1/auth/passkey/verify', () => {
     const password = 'testPassword123!';
 
     // Create user and passkey
-    const { userId } = await createDbUserWithSession(app, email, password);
+    const { userId } = await createDbUserWithSession(
+      app,
+      services,
+      email,
+      password,
+    );
     const credentialId = `test-credential-${crypto.randomUUID()}`;
 
-    await withMikroContext(app, async () => {
-      const passkey = app.mikro.userPasskey.create({
+    await withMikroContext(services, async () => {
+      const passkey = services.mikro.userPasskey.create({
         user: userId,
         credential_id: credentialId,
         public_key: 'test-public-key-base64url',
@@ -181,127 +191,131 @@ describe('POST /api/v1/auth/passkey/verify', () => {
         name: 'Test Passkey',
         aaguid: 'test-aaguid',
       });
-      await app.mikro.em.persist(passkey).flush();
+      await services.mikro.em.persist(passkey).flush();
     });
 
     // Get options to set challenge in session
-    const optionsRes = await app.inject({
+    const optionsRes = await app.request('/api/v1/auth/passkey/options', {
       method: 'POST',
-      url: '/api/v1/auth/passkey/options',
     });
-    expect(optionsRes.statusCode).toBe(200);
+    expect(optionsRes.status).toBe(200);
 
     const sessionCookie = extractCookie(optionsRes, 'session');
 
     // Try to verify with invalid signature
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/auth/passkey/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/passkey/verify',
-        payload: {
+        body: JSON.stringify({
           response: createMockAuthenticationResponse({
             id: credentialId,
             rawId: credentialId,
           }),
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
     // Should fail at verification (400 or 500 depending on WebAuthn lib error handling)
-    expect([400, 500].includes(res.statusCode)).toBe(true);
+    expect([400, 500].includes(res.status)).toBe(true);
   });
 
   test('should clear challenge from session after attempt', async () => {
     // Get options first
-    const optionsRes = await app.inject({
+    const optionsRes = await app.request('/api/v1/auth/passkey/options', {
       method: 'POST',
-      url: '/api/v1/auth/passkey/options',
     });
     const sessionCookie = extractCookie(optionsRes, 'session');
 
     // First attempt (will fail)
-    await injectWithSession(
+    await requestWithSession(
       app,
+      '/api/v1/auth/passkey/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/passkey/verify',
-        payload: {
+        body: JSON.stringify({
           response: createMockAuthenticationResponse(),
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
     // Second attempt with same session should fail with challenge not found
-    const res2 = await injectWithSession(
+    const res2 = await requestWithSession(
       app,
+      '/api/v1/auth/passkey/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/passkey/verify',
-        payload: {
+        body: JSON.stringify({
           response: createMockAuthenticationResponse(),
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
     // Challenge should be cleared, so second attempt fails with challenge not found
     // or passkey not found (whichever check comes first)
-    expect([400, 404].includes(res2.statusCode)).toBe(true);
+    expect([400, 404].includes(res2.status)).toBe(true);
   });
 
   test('should return 400 when type is not public-key', async () => {
-    const optionsRes = await app.inject({
+    const optionsRes = await app.request('/api/v1/auth/passkey/options', {
       method: 'POST',
-      url: '/api/v1/auth/passkey/options',
     });
     const sessionCookie = extractCookie(optionsRes, 'session');
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/auth/passkey/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/passkey/verify',
-        payload: {
-          response: createMockAuthenticationResponse({ type: 'invalid-type' }),
-        },
+        body: JSON.stringify({
+          response: createMockAuthenticationResponse({
+            type: 'invalid-type',
+          }),
+        }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(400);
+    expect(res.status).toBe(400);
   });
 
   test('should handle concurrent verification attempts', async () => {
-    const optionsRes = await app.inject({
+    const optionsRes = await app.request('/api/v1/auth/passkey/options', {
       method: 'POST',
-      url: '/api/v1/auth/passkey/options',
     });
     const sessionCookie = extractCookie(optionsRes, 'session');
 
     // Send concurrent verification requests
     const results = await Promise.all([
-      injectWithSession(
+      requestWithSession(
         app,
+        '/api/v1/auth/passkey/verify',
         {
           method: 'POST',
-          url: '/api/v1/auth/passkey/verify',
-          payload: {
+          body: JSON.stringify({
             response: createMockAuthenticationResponse(),
-          },
+          }),
+          headers: { 'Content-Type': 'application/json' },
         },
         sessionCookie,
       ),
-      injectWithSession(
+      requestWithSession(
         app,
+        '/api/v1/auth/passkey/verify',
         {
           method: 'POST',
-          url: '/api/v1/auth/passkey/verify',
-          payload: {
+          body: JSON.stringify({
             response: createMockAuthenticationResponse(),
-          },
+          }),
+          headers: { 'Content-Type': 'application/json' },
         },
         sessionCookie,
       ),
@@ -309,16 +323,18 @@ describe('POST /api/v1/auth/passkey/verify', () => {
 
     // All should fail (challenge or passkey error)
     for (const res of results) {
-      expect([400, 404, 500].includes(res.statusCode)).toBe(true);
+      expect([400, 404, 500].includes(res.status)).toBe(true);
     }
   });
 });
 
 describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () => {
-  let app: FastifyInstance;
+  let app: AppType;
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    app = await createServer({
+    const server = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -329,10 +345,13 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
         },
       },
     });
+    app = server.app;
+    services = server.services;
+    cleanup = server.cleanup;
   });
 
   afterAll(async () => {
-    await app.close();
+    await cleanup();
   });
 
   test('should return 200 and create session on successful verification', async () => {
@@ -340,13 +359,20 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
     const password = 'testPassword123!';
 
     // Create user
-    const { userId } = await createDbUserWithSession(app, email, password);
+    const { userId } = await createDbUserWithSession(
+      app,
+      services,
+      email,
+      password,
+    );
     const credentialId = `success-credential-${crypto.randomUUID()}`;
 
     // Create passkey for user and get user reference
-    const user = await withMikroContext(app, async () => {
-      const userEntity = await app.mikro.user.findOneOrFail({ id: userId });
-      const passkey = app.mikro.userPasskey.create({
+    const user = await withMikroContext(services, async () => {
+      const userEntity = await services.mikro.user.findOneOrFail({
+        id: userId,
+      });
+      const passkey = services.mikro.userPasskey.create({
         user: userId,
         credential_id: credentialId,
         public_key: 'test-public-key-base64url',
@@ -357,41 +383,41 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
         name: 'Test Passkey',
         aaguid: 'test-aaguid',
       });
-      await app.mikro.em.persist(passkey).flush();
+      await services.mikro.em.persist(passkey).flush();
       return userEntity;
     });
 
     // Get options to set challenge in session
-    const optionsRes = await app.inject({
+    const optionsRes = await app.request('/api/v1/auth/passkey/options', {
       method: 'POST',
-      url: '/api/v1/auth/passkey/options',
     });
-    expect(optionsRes.statusCode).toBe(200);
+    expect(optionsRes.status).toBe(200);
     const sessionCookie = extractCookie(optionsRes, 'session');
 
     // Mock the verifyAuthentication method to return success
     const mockVerifyAuthentication = vi
-      .spyOn(app.passkeyService, 'verifyAuthentication')
+      .spyOn(services.passkeyService, 'verifyAuthentication')
       .mockResolvedValueOnce(user);
 
     // Verify with mocked service
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/auth/passkey/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/passkey/verify',
-        payload: {
+        body: JSON.stringify({
           response: createMockAuthenticationResponse({
             id: credentialId,
             rawId: credentialId,
           }),
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
 
     // Verify response structure
     expect(body.user).toBeDefined();
@@ -405,7 +431,7 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
     expect(typeof body.user.passkey_count).toBe('number');
 
     // Verify session was created
-    const newSessionCookie = res.cookies.find((c) => c.name === 'session');
+    const newSessionCookie = res.headers.get('set-cookie');
     expect(newSessionCookie).toBeDefined();
 
     // Cleanup
@@ -414,10 +440,12 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
 });
 
 describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
-  let app2FA: FastifyInstance;
+  let app2FA: AppType;
+  let services2FA: ServiceContainer;
+  let cleanup2FA: () => Promise<void>;
 
   beforeAll(async () => {
-    app2FA = await createServer({
+    const server = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -434,10 +462,13 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
         },
       },
     });
+    app2FA = server.app;
+    services2FA = server.services;
+    cleanup2FA = server.cleanup;
   });
 
   afterAll(async () => {
-    await app2FA.close();
+    await cleanup2FA();
   });
 
   test('should return 403 when passkey belongs to different user', async () => {
@@ -448,16 +479,16 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
     const credentialId1 = `credential-user1-${crypto.randomUUID()}`;
     const credentialId2 = `credential-user2-${crypto.randomUUID()}`;
 
-    const { user2 } = await withMikroContext(app2FA, async () => {
+    const { user2 } = await withMikroContext(services2FA, async () => {
       // Create user1 with passkey
-      const userEntity1 = app2FA.mikro.user.create({
+      const userEntity1 = services2FA.mikro.user.create({
         email: email1,
         password_hash: password,
       });
       userEntity1.email_verified = true;
-      await app2FA.mikro.em.persist(userEntity1).flush();
+      await services2FA.mikro.em.persist(userEntity1).flush();
 
-      const passkey1 = app2FA.mikro.userPasskey.create({
+      const passkey1 = services2FA.mikro.userPasskey.create({
         user: userEntity1.id,
         credential_id: credentialId1,
         public_key: 'test-public-key-1',
@@ -468,17 +499,17 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
         name: 'User1 Passkey',
         aaguid: 'test-aaguid-1',
       });
-      await app2FA.mikro.em.persist(passkey1).flush();
+      await services2FA.mikro.em.persist(passkey1).flush();
 
       // Create user2 with passkey
-      const userEntity2 = app2FA.mikro.user.create({
+      const userEntity2 = services2FA.mikro.user.create({
         email: email2,
         password_hash: password,
       });
       userEntity2.email_verified = true;
-      await app2FA.mikro.em.persist(userEntity2).flush();
+      await services2FA.mikro.em.persist(userEntity2).flush();
 
-      const passkey2 = app2FA.mikro.userPasskey.create({
+      const passkey2 = services2FA.mikro.userPasskey.create({
         user: userEntity2.id,
         credential_id: credentialId2,
         public_key: 'test-public-key-2',
@@ -489,51 +520,54 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
         name: 'User2 Passkey',
         aaguid: 'test-aaguid-2',
       });
-      await app2FA.mikro.em.persist(passkey2).flush();
+      await services2FA.mikro.em.persist(passkey2).flush();
 
       return { user2: userEntity2 };
     });
 
     // Login as user1 - should get pending2FAUser session
-    const loginRes = await app2FA.inject({
+    const loginRes = await app2FA.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email: email1, password },
+      body: JSON.stringify({ email: email1, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
-    expect(loginRes.statusCode).toBe(200);
+    expect(loginRes.status).toBe(200);
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Get passkey options (for user1's pending session)
-    const optionsRes = await app2FA.inject({
+    const optionsRes = await app2FA.request('/api/v1/auth/passkey/options', {
       method: 'POST',
-      url: '/api/v1/auth/passkey/options',
-      cookies: { session: sessionCookie },
+      headers: {
+        Cookie: `session=${sessionCookie}`,
+      },
     });
-    expect(optionsRes.statusCode).toBe(200);
+    expect(optionsRes.status).toBe(200);
 
     const optionsSessionCookie = extractCookie(optionsRes, 'session');
 
     // Mock verifyAuthentication to return user2 (passkey owner)
     const mockVerifyAuthentication = vi
-      .spyOn(app2FA.passkeyService, 'verifyAuthentication')
+      .spyOn(services2FA.passkeyService, 'verifyAuthentication')
       .mockResolvedValueOnce(user2);
 
     // Try to verify with user2's passkey while logged in as user1
-    const res = await app2FA.inject({
+    const res = await app2FA.request('/api/v1/auth/passkey/verify', {
       method: 'POST',
-      url: '/api/v1/auth/passkey/verify',
-      cookies: { session: optionsSessionCookie },
-      payload: {
+      body: JSON.stringify({
         response: createMockAuthenticationResponse({
           id: credentialId2,
           rawId: credentialId2,
         }),
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `session=${optionsSessionCookie}`,
       },
     });
 
-    expect(res.statusCode).toBe(403);
-    const body = res.json();
+    expect(res.status).toBe(403);
+    const body = await res.json();
     expect(body.code).toBe('PASSKEY_USER_MISMATCH');
 
     mockVerifyAuthentication.mockRestore();
@@ -544,15 +578,15 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
     const password = 'testPassword123!';
     const credentialId = `success-2fa-credential-${crypto.randomUUID()}`;
 
-    const { userId, user } = await withMikroContext(app2FA, async () => {
-      const userEntity = app2FA.mikro.user.create({
+    const { userId, user } = await withMikroContext(services2FA, async () => {
+      const userEntity = services2FA.mikro.user.create({
         email,
         password_hash: password,
       });
       userEntity.email_verified = true;
-      await app2FA.mikro.em.persist(userEntity).flush();
+      await services2FA.mikro.em.persist(userEntity).flush();
 
-      const passkey = app2FA.mikro.userPasskey.create({
+      const passkey = services2FA.mikro.userPasskey.create({
         user: userEntity.id,
         credential_id: credentialId,
         public_key: 'test-public-key-base64url',
@@ -563,51 +597,54 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
         name: 'Test Passkey',
         aaguid: 'test-aaguid',
       });
-      await app2FA.mikro.em.persist(passkey).flush();
+      await services2FA.mikro.em.persist(passkey).flush();
 
       return { userId: userEntity.id, user: userEntity };
     });
 
     // Login - should get pending2FAUser session
-    const loginRes = await app2FA.inject({
+    const loginRes = await app2FA.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
-    expect(loginRes.statusCode).toBe(200);
+    expect(loginRes.status).toBe(200);
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Get passkey options
-    const optionsRes = await app2FA.inject({
+    const optionsRes = await app2FA.request('/api/v1/auth/passkey/options', {
       method: 'POST',
-      url: '/api/v1/auth/passkey/options',
-      cookies: { session: sessionCookie },
+      headers: {
+        Cookie: `session=${sessionCookie}`,
+      },
     });
-    expect(optionsRes.statusCode).toBe(200);
+    expect(optionsRes.status).toBe(200);
 
     const optionsSessionCookie = extractCookie(optionsRes, 'session');
 
     // Mock verifyAuthentication to return success
     const mockVerifyAuthentication = vi
-      .spyOn(app2FA.passkeyService, 'verifyAuthentication')
+      .spyOn(services2FA.passkeyService, 'verifyAuthentication')
       .mockResolvedValueOnce(user);
 
     // Verify passkey as 2FA
-    const res = await app2FA.inject({
+    const res = await app2FA.request('/api/v1/auth/passkey/verify', {
       method: 'POST',
-      url: '/api/v1/auth/passkey/verify',
-      cookies: { session: optionsSessionCookie },
-      payload: {
+      body: JSON.stringify({
         response: createMockAuthenticationResponse({
           id: credentialId,
           rawId: credentialId,
         }),
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `session=${optionsSessionCookie}`,
       },
     });
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
 
     expect(body.user).toBeDefined();
     expect(body.user.id).toBe(userId);
@@ -615,24 +652,27 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
 
     // Verify we now have a full session (not just pending2FAUser)
     const newSessionCookie = extractCookie(res, 'session');
-    const sessionRes = await app2FA.inject({
+    const sessionRes = await app2FA.request('/api/v1/user/session', {
       method: 'GET',
-      url: '/api/v1/user/session',
-      cookies: { session: newSessionCookie },
+      headers: {
+        Cookie: `session=${newSessionCookie}`,
+      },
     });
-    expect(sessionRes.statusCode).toBe(200);
-    expect(sessionRes.json().user).toBeDefined();
-    expect(sessionRes.json().user.id).toBe(userId);
+    expect(sessionRes.status).toBe(200);
+    const sessionBody = await sessionRes.json();
+    expect(sessionBody.user).toBeDefined();
+    expect(sessionBody.user.id).toBe(userId);
 
     mockVerifyAuthentication.mockRestore();
   });
 });
 
 describe('POST /api/v1/auth/passkey/verify - Passkey disabled', () => {
-  let appDisabled: FastifyInstance;
+  let appDisabled: AppType;
+  let cleanupDisabled: () => Promise<void>;
 
   beforeAll(async () => {
-    appDisabled = await createServer({
+    const server = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -643,21 +683,24 @@ describe('POST /api/v1/auth/passkey/verify - Passkey disabled', () => {
         },
       },
     });
+    appDisabled = server.app;
+    cleanupDisabled = server.cleanup;
   });
 
   afterAll(async () => {
-    await appDisabled.close();
+    await cleanupDisabled();
   });
 
-  test('should return 404 when passkey is disabled (route not registered)', async () => {
-    const res = await appDisabled.inject({
+  test('should return 400 when passkey is disabled', async () => {
+    const res = await appDisabled.request('/api/v1/auth/passkey/verify', {
       method: 'POST',
-      url: '/api/v1/auth/passkey/verify',
-      payload: {
+      body: JSON.stringify({
         response: createMockAuthenticationResponse(),
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(404);
+    // Route is registered but handler rejects when passkey is disabled
+    expect(res.status).toBe(400);
   });
 });

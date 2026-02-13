@@ -1,18 +1,21 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import { MINIMAL_TEST_CONFIG } from '@/test-utils/index.js';
+import type { AppType } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: MINIMAL_TEST_CONFIG,
   });
+  app = server.app;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('GET /application/oauth/.well-known/openid-configuration', () => {
@@ -20,13 +23,10 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
 
   describe('Required Fields', () => {
     test('should return valid OpenID Configuration', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res = await app.request(url);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // Required fields per OpenID Connect Discovery 1.0
       expect(json.issuer).toBeDefined();
@@ -39,25 +39,19 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should have RS256 as signing algorithm', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res = await app.request(url);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       expect(json.id_token_signing_alg_values_supported).toContain('RS256');
     });
 
     test('should have correct JWKS URI', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res = await app.request(url);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       expect(json.jwks_uri).toContain('/.well-known/jwks');
     });
@@ -65,26 +59,20 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
 
   describe('Recommended Fields', () => {
     test('should include userinfo endpoint', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res = await app.request(url);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       expect(json.userinfo_endpoint).toBeDefined();
       expect(json.userinfo_endpoint).toContain('/userinfo');
     });
 
     test('should include supported scopes', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res = await app.request(url);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       expect(json.scopes_supported).toContain('openid');
       expect(json.scopes_supported).toContain('profile');
@@ -92,13 +80,10 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should include supported claims', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res = await app.request(url);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       expect(json.claims_supported).toContain('sub');
       expect(json.claims_supported).toContain('email');
@@ -107,39 +92,30 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should support authorization_code grant type', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res = await app.request(url);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       expect(json.grant_types_supported).toContain('authorization_code');
       expect(json.grant_types_supported).toContain('refresh_token');
     });
 
     test('should support PKCE code challenge methods', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res = await app.request(url);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       expect(json.code_challenge_methods_supported).toContain('S256');
       expect(json.code_challenge_methods_supported).toContain('plain');
     });
 
     test('should support client authentication methods', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res = await app.request(url);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       expect(json.token_endpoint_auth_methods_supported).toContain(
         'client_secret_basic',
@@ -152,13 +128,10 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
 
   describe('Optional Fields', () => {
     test('should include introspection endpoint', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res = await app.request(url);
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       expect(json.introspection_endpoint).toBeDefined();
       expect(json.introspection_endpoint).toContain('/introspect');
@@ -167,36 +140,27 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
 
   describe('Response Headers', () => {
     test('should have Cache-Control header', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res = await app.request(url);
 
-      expect(res.statusCode).toBe(200);
-      expect(res.headers['cache-control']).toBeDefined();
-      expect(res.headers['cache-control']).toContain('max-age');
+      expect(res.status).toBe(200);
+      expect(res.headers.get('cache-control')).toBeDefined();
+      expect(res.headers.get('cache-control')).toContain('max-age');
     });
   });
 
   describe('Endpoint URL Validation', () => {
     test('should have valid endpoint URLs that can be fetched', async () => {
-      const configRes = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const configRes = await app.request(url);
 
-      expect(configRes.statusCode).toBe(200);
-      const config = configRes.json();
+      expect(configRes.status).toBe(200);
+      const config = await configRes.json();
 
       // JWKS endpoint should be accessible
       const jwksUrl = new URL(config.jwks_uri);
-      const jwksRes = await app.inject({
-        method: 'GET',
-        url: jwksUrl.pathname,
-      });
+      const jwksRes = await app.request(jwksUrl.pathname);
 
-      expect(jwksRes.statusCode).toBe(200);
-      const jwks = jwksRes.json();
+      expect(jwksRes.status).toBe(200);
+      const jwks = await jwksRes.json();
       expect(jwks.keys).toBeDefined();
       expect(Array.isArray(jwks.keys)).toBe(true);
     });

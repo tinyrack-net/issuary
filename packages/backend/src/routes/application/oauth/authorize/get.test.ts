@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import {
@@ -12,21 +11,24 @@ import {
   TEST_PKCE,
   TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let services: ServiceContainer;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  ({ app, services, cleanup } = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       clients: [TEST_OAUTH_CLIENT_CONFIG],
     },
-  });
+  }));
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 /**
@@ -36,30 +38,26 @@ async function getAuthorizationCode(
   params: Record<string, string>,
   sessionCookie?: string,
 ): Promise<{ code: string | null; location: URL; statusCode: number }> {
-  const injectOptions: {
-    method: 'GET';
-    url: string;
-    query: Record<string, string>;
-    cookies?: { session: string };
-  } = {
-    method: 'GET',
-    url: '/application/oauth/authorize',
-    query: params,
-  };
+  const queryString = new URLSearchParams(params).toString();
+  const url = `/application/oauth/authorize?${queryString}`;
 
+  const headers: Record<string, string> = {};
   if (sessionCookie) {
-    injectOptions.cookies = { session: sessionCookie };
+    headers['Cookie'] = `session=${sessionCookie}`;
   }
 
-  const res = await app.inject(injectOptions);
+  const res = await app.request(url, {
+    method: 'GET',
+    headers,
+  });
 
-  const locationHeader = res.headers.location;
+  const locationHeader = res.headers.get('location');
   const location = new URL(locationHeader as string, 'http://localhost:8080');
 
   return {
     code: location.searchParams.get('code'),
     location,
-    statusCode: res.statusCode,
+    statusCode: res.status,
   };
 }
 
@@ -153,17 +151,17 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('Success Cases', () => {
     test('should redirect to login when user is not authenticated', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: validParams,
-      });
+      const queryString = new URLSearchParams(validParams).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
-      expect(res.statusCode).toBe(302);
-      expect(res.headers.location).toBeDefined();
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toBeDefined();
 
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -194,14 +192,14 @@ describe('GET /application/oauth/authorize', () => {
         prompt: 'login',
       };
 
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: paramsWithNonce,
-      });
+      const queryString = new URLSearchParams(paramsWithNonce).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -259,37 +257,37 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('Client Validation', () => {
     test('should return unauthorized_client for non-existent client_id', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          client_id: 'non-existent-client',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        client_id: 'non-existent-client',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
       // RFC 6749 §4.1.2.1: Invalid client_id must NOT redirect
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       expect(json.error).toBe('unauthorized_client');
       expect(json.error_description).toContain('OAuth client was not found');
     });
 
     test('should return error as JSON for invalid client (no redirect)', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          client_id: 'invalid-client',
-          state: 'my-unique-state',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        client_id: 'invalid-client',
+        state: 'my-unique-state',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
       // RFC 6749 §4.1.2.1: Invalid client_id must NOT redirect
       // State parameter cannot be preserved in JSON response (no redirect)
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       expect(json.error).toBe('unauthorized_client');
       expect(json.error_description).toBeDefined();
     });
@@ -297,35 +295,35 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('Redirect URI Validation', () => {
     test('should return 400 for unregistered redirect_uri', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          redirect_uri: 'https://evil.com/callback',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        redirect_uri: 'https://evil.com/callback',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
-      expect(res.statusCode).toBe(400);
-      const body = res.json();
+      expect(res.status).toBe(400);
+      const body = await res.json();
       expect(body.error).toBe('invalid_request');
       expect(body.error_description).toContain('redirect URI');
     });
 
     test('should not redirect errors to invalid redirect_uri', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          client_id: 'invalid',
-          redirect_uri: 'https://evil.com/callback',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        client_id: 'invalid',
+        redirect_uri: 'https://evil.com/callback',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
       // Should return JSON error, not redirect
-      expect(res.statusCode).toBe(400);
-      expect(res.headers.location).toBeUndefined();
+      expect(res.status).toBe(400);
+      expect(res.headers.get('location')).toBeNull();
     });
 
     test('should accept exact match of registered redirect_uri', async () => {
@@ -346,18 +344,18 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('Response Type Validation', () => {
     test('should return unsupported_response_type for "token"', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          response_type: 'token',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        response_type: 'token',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -365,18 +363,18 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should return unsupported_response_type for "id_token"', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          response_type: 'id_token',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        response_type: 'id_token',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -398,18 +396,18 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('Scope Validation', () => {
     test('should return invalid_scope for disallowed scope', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          scope: 'admin super_user',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        scope: 'admin super_user',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -525,35 +523,35 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should return JSON error for invalid client (state not preserved)', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          client_id: 'invalid',
-          state: 'error-state-456',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        client_id: 'invalid',
+        state: 'error-state-456',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
       // RFC 6749 §4.1.2.1: Invalid client_id must return error without redirect
       // State cannot be preserved since there's no valid redirect_uri to use
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       expect(json.error).toBe('unauthorized_client');
     });
 
     test('should preserve state in login redirect', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          state: 'login-state-789',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        state: 'login-state-789',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -597,54 +595,54 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should handle display parameter', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          display: 'popup',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        display: 'popup',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
       expect(location.searchParams.get('display')).toBe('popup');
     });
 
     test('should handle max_age parameter', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          max_age: '3600',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        max_age: '3600',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
       expect(location.searchParams.get('max_age')).toBe('3600');
     });
 
     test('should handle prompt parameter', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          prompt: 'consent',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        prompt: 'consent',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
       expect(location.searchParams.get('prompt')).toBe('consent');
@@ -653,19 +651,18 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('OIDC Prompt Parameter (prompt=none)', () => {
     test('should return login_required when prompt=none and user not authenticated', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          prompt: 'none',
-        },
-        // No session cookie - user not authenticated
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        prompt: 'none',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -682,25 +679,28 @@ describe('GET /application/oauth/authorize', () => {
       const uniqueEmail = generateUniqueEmail('prompt-none-consent');
       const { sessionCookie } = await createDbUserWithSession(
         app,
+        services,
         uniqueEmail,
         'TestPassword123!',
         { emailVerified: true },
       );
 
       // Request authorization with prompt=none but without prior consent
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          prompt: 'none',
+      const queryString = new URLSearchParams({
+        ...validParams,
+        prompt: 'none',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${sessionCookie}` },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -736,19 +736,18 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('OIDC Prompt Parameter (prompt=login)', () => {
     test('should redirect to login page when prompt=login and user not authenticated', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          prompt: 'login',
-        },
-        // No session cookie
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        prompt: 'login',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -757,17 +756,17 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should preserve prompt=login in login redirect params', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          prompt: 'login',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        prompt: 'login',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -791,19 +790,21 @@ describe('GET /application/oauth/authorize', () => {
       });
 
       // Request with prompt=consent should still show consent page
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          prompt: 'consent',
+      const queryString = new URLSearchParams({
+        ...validParams,
+        prompt: 'consent',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${sessionCookie}` },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -812,19 +813,18 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should redirect to login when prompt=consent and user not authenticated', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          prompt: 'consent',
-        },
-        // No session cookie
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        prompt: 'consent',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -835,18 +835,18 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('Error Handling', () => {
     test('should return proper OAuth error format in redirect', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          scope: 'invalid_scope',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        scope: 'invalid_scope',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 
@@ -857,17 +857,17 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should return proper OAuth error format as JSON when redirect_uri invalid', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          redirect_uri: 'https://evil.com',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        redirect_uri: 'https://evil.com',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
-      expect(res.statusCode).toBe(400);
-      const body = res.json();
+      expect(res.status).toBe(400);
+      const body = await res.json();
 
       expect(body.error).toBeDefined();
       expect(typeof body.error).toBe('string');
@@ -886,49 +886,49 @@ describe('GET /application/oauth/authorize', () => {
       ];
 
       for (const uri of maliciousUris) {
-        const res = await app.inject({
-          method: 'GET',
-          url: '/application/oauth/authorize',
-          query: {
-            ...validParams,
-            redirect_uri: uri,
-          },
-        });
+        const queryString = new URLSearchParams({
+          ...validParams,
+          redirect_uri: uri,
+        }).toString();
+        const res = await app.request(
+          `/application/oauth/authorize?${queryString}`,
+          { method: 'GET' },
+        );
 
         // Should return 400, not redirect
-        expect(res.statusCode).toBe(400);
-        expect(res.headers.location).toBeUndefined();
+        expect(res.status).toBe(400);
+        expect(res.headers.get('location')).toBeNull();
       }
     });
 
     test('should validate redirect_uri before redirecting errors', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          client_id: 'invalid',
-          redirect_uri: 'https://attacker.com',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        client_id: 'invalid',
+        redirect_uri: 'https://attacker.com',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
       // Should return JSON error, not redirect to attacker.com
-      expect(res.statusCode).toBe(400);
-      expect(res.headers.location).toBeUndefined();
+      expect(res.status).toBe(400);
+      expect(res.headers.get('location')).toBeNull();
     });
 
     test('should not expose authorization codes in error responses', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/application/oauth/authorize',
-        query: {
-          ...validParams,
-          scope: 'invalid',
-        },
-      });
+      const queryString = new URLSearchParams({
+        ...validParams,
+        scope: 'invalid',
+      }).toString();
+      const res = await app.request(
+        `/application/oauth/authorize?${queryString}`,
+        { method: 'GET' },
+      );
 
       const location = new URL(
-        res.headers.location as string,
+        res.headers.get('location') as string,
         'http://localhost:8080',
       );
 

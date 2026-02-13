@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import { createServer } from '@/server.js';
@@ -9,20 +8,26 @@ import {
   TEST_TERMS_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let services: ServiceContainer;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       terms: TEST_TERMS_CONFIG,
     },
   });
+  app = server.app;
+  services = server.services;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('POST /api/v1/auth/email/verify', () => {
@@ -34,58 +39,64 @@ describe('POST /api/v1/auth/email/verify', () => {
       password: 'password123',
     });
 
-    expect(registerRes.statusCode).toBe(200);
-    const registerBody = JSON.parse(registerRes.body);
+    expect(registerRes.status).toBe(200);
+    const registerBody = await registerRes.json();
     expect(registerBody).toHaveProperty('user');
     expect(registerBody.user.email_verified).toBe(false);
     expect(registerBody.user.email_verification_required).toBe(true);
 
     // 2. Get the verification token from database
-    const token = await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
-      const verification = await app.mikro.emailVerification.findOneOrFail({
-        user,
-        verified: false,
+    const token = await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail({
+        email: uniqueEmail,
       });
+      const verification = await services.mikro.emailVerification.findOneOrFail(
+        {
+          user,
+          verified: false,
+        },
+      );
       return verification.token;
     });
 
     // 3. Verify email with token
-    const verifyRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/email/verify',
-      payload: {
+    const verifyRes = await app.request('/api/v1/auth/email/verify', {
+      method: 'POST',
+      body: JSON.stringify({
         token,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(verifyRes.statusCode).toBe(200);
-    const verifyBody = JSON.parse(verifyRes.body);
+    expect(verifyRes.status).toBe(200);
+    const verifyBody = await verifyRes.json();
     expect(verifyBody).toHaveProperty('user');
     expect(verifyBody.user.email_verified).toBe(true);
 
     // 4. Check that user's email is marked as verified in database
-    const isVerified = await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
+    const isVerified = await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail({
+        email: uniqueEmail,
+      });
       return user.email_verified;
     });
     expect(isVerified).toBe(true);
 
     // 5. Check that session was created
-    expect(verifyRes.headers['set-cookie']).toBeDefined();
+    expect(verifyRes.headers.get('set-cookie')).toBeDefined();
   });
 
   test('should fail with invalid token', async () => {
-    const res = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/email/verify',
-      payload: {
+    const res = await app.request('/api/v1/auth/email/verify', {
+      method: 'POST',
+      body: JSON.stringify({
         token: 'invalid-token-12345',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(e.InvalidVerificationToken.Status);
-    const body = JSON.parse(res.body);
+    expect(res.status).toBe(e.InvalidVerificationToken.Status);
+    const body = await res.json();
     const expectedError = new e.InvalidVerificationToken.Error();
     expect(body).toHaveProperty('code', expectedError.code);
   });
@@ -99,37 +110,45 @@ describe('POST /api/v1/auth/email/verify', () => {
     });
 
     // 2. Get the verification token and expire it
-    await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
-      const verification = await app.mikro.emailVerification.findOneOrFail({
-        user,
-        verified: false,
+    await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail({
+        email: uniqueEmail,
       });
+      const verification = await services.mikro.emailVerification.findOneOrFail(
+        {
+          user,
+          verified: false,
+        },
+      );
 
       // Manually expire the token
       verification.expiresAt = new Date(Date.now() - 1000);
-      await app.mikro.em.flush();
+      await services.mikro.em.flush();
     });
 
     // 3. Get the expired token
-    const token = await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
-      const verification = await app.mikro.emailVerification.findOneOrFail({
-        user,
+    const token = await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail({
+        email: uniqueEmail,
       });
+      const verification = await services.mikro.emailVerification.findOneOrFail(
+        {
+          user,
+        },
+      );
       return verification.token;
     });
 
     // 4. Try to verify with expired token
-    const res = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/email/verify',
-      payload: {
+    const res = await app.request('/api/v1/auth/email/verify', {
+      method: 'POST',
+      body: JSON.stringify({
         token,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(e.InvalidVerificationToken.Status);
+    expect(res.status).toBe(e.InvalidVerificationToken.Status);
   });
 
   test('should fail with already used token', async () => {
@@ -141,31 +160,35 @@ describe('POST /api/v1/auth/email/verify', () => {
     });
 
     // 2. Get the token
-    const token = await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
-      const verification = await app.mikro.emailVerification.findOneOrFail({
-        user,
-        verified: false,
+    const token = await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail({
+        email: uniqueEmail,
       });
+      const verification = await services.mikro.emailVerification.findOneOrFail(
+        {
+          user,
+          verified: false,
+        },
+      );
       return verification.token;
     });
 
     // 3. First verification - should succeed
-    const firstRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/email/verify',
-      payload: { token },
+    const firstRes = await app.request('/api/v1/auth/email/verify', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+      headers: { 'Content-Type': 'application/json' },
     });
-    expect(firstRes.statusCode).toBe(200);
+    expect(firstRes.status).toBe(200);
 
     // 4. Second verification with same token - should fail
-    const secondRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/email/verify',
-      payload: { token },
+    const secondRes = await app.request('/api/v1/auth/email/verify', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(secondRes.statusCode).toBe(e.InvalidVerificationToken.Status);
+    expect(secondRes.status).toBe(e.InvalidVerificationToken.Status);
   });
 });
 

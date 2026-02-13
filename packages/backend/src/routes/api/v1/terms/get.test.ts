@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import {
@@ -8,33 +7,36 @@ import {
   TEST_TERMS_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
 describe('GET /api/v1/terms', () => {
   describe('Unauthenticated access', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
         },
       });
+      app = server.app;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should return terms list without authentication', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       expect(body).toHaveProperty('terms');
       expect(body).toHaveProperty('pendingTerms');
       expect(Array.isArray(body.terms)).toBe(true);
@@ -44,14 +46,13 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should include all required terms in pendingTerms for unauthenticated user', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       const requiredTermIds = body.terms
         .filter((t: { required: boolean }) => t.required)
         .map((t: { id: string }) => t.id);
@@ -64,28 +65,26 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should return null userConsent for unauthenticated user', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       for (const term of body.terms) {
         expect(term.userConsent).toBeNull();
       }
     });
 
     test('should return correct term structure', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       expect(body.terms.length).toBeGreaterThan(0);
 
       const term = body.terms[0];
@@ -99,105 +98,110 @@ describe('GET /api/v1/terms', () => {
   });
 
   describe('Language support', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
         },
       });
+      app = server.app;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should return Korean content with lang=ko', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms?lang=ko', {
         method: 'GET',
-        url: '/api/v1/terms?lang=ko',
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       const tosTerm = body.terms.find((t: { id: string }) => t.id === 'tos');
       expect(tosTerm?.title).toBe('이용약관');
     });
 
     test('should return English content with lang=en', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms?lang=en', {
         method: 'GET',
-        url: '/api/v1/terms?lang=en',
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       const tosTerm = body.terms.find((t: { id: string }) => t.id === 'tos');
       expect(tosTerm?.title).toBe('Terms of Service');
     });
 
     test('should fallback to English for unsupported language', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms?lang=fr', {
         method: 'GET',
-        url: '/api/v1/terms?lang=fr',
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       // Should fallback to English when French is not available
       const tosTerm = body.terms.find((t: { id: string }) => t.id === 'tos');
       expect(tosTerm?.title).toBe('Terms of Service');
     });
 
     test('should default to English when lang not provided', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       const tosTerm = body.terms.find((t: { id: string }) => t.id === 'tos');
       expect(tosTerm?.title).toBe('Terms of Service');
     });
   });
 
   describe('Authenticated access', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
         },
       });
+      app = server.app;
+      services = server.services;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should return empty pendingTerms after user consents', async () => {
       const email = generateUniqueEmail('terms-test');
       const { sessionCookie, userId } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
       // Record consent for all required terms
-      await withMikroContext(app, async () => {
-        const terms = await app.termsService.getGlobalTerms();
+      await withMikroContext(services, async () => {
+        const terms = await services.termsService.getGlobalTerms();
         const requiredTerms = terms.filter((t) => t.required);
 
-        await app.mikro.userTermsConsent.recordConsents(
+        await services.mikro.userTermsConsent.recordConsents(
           requiredTerms.map((term) => ({
             userId,
             termsId: term.id,
@@ -208,15 +212,14 @@ describe('GET /api/v1/terms', () => {
         );
       });
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       expect(body.pendingTerms).toEqual([]);
     });
 
@@ -224,13 +227,14 @@ describe('GET /api/v1/terms', () => {
       const email = generateUniqueEmail('terms-consent');
       const { sessionCookie, userId } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
       // Record consent
-      await withMikroContext(app, async () => {
-        await app.mikro.userTermsConsent.recordConsent({
+      await withMikroContext(services, async () => {
+        await services.mikro.userTermsConsent.recordConsent({
           userId,
           termsId: 'tos',
           termsVersion: '1.0.0',
@@ -239,15 +243,14 @@ describe('GET /api/v1/terms', () => {
         });
       });
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       const tosTerm = body.terms.find((t: { id: string }) => t.id === 'tos');
 
       expect(tosTerm?.userConsent).not.toBeNull();
@@ -262,13 +265,14 @@ describe('GET /api/v1/terms', () => {
       const email = generateUniqueEmail('terms-version');
       const { sessionCookie, userId } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
       // Record consent to OLD version
-      await withMikroContext(app, async () => {
-        await app.mikro.userTermsConsent.recordConsent({
+      await withMikroContext(services, async () => {
+        await services.mikro.userTermsConsent.recordConsent({
           userId,
           termsId: 'tos',
           termsVersion: '0.9.0', // Old version
@@ -277,15 +281,14 @@ describe('GET /api/v1/terms', () => {
         });
       });
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       const tosTerm = body.terms.find((t: { id: string }) => t.id === 'tos');
 
       expect(tosTerm?.userConsent?.requiresUpdate).toBe(true);
@@ -298,19 +301,19 @@ describe('GET /api/v1/terms', () => {
       const email = generateUniqueEmail('terms-pending');
       const { sessionCookie } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       // New user should have all required terms pending
       expect(body.pendingTerms.length).toBeGreaterThan(0);
       expect(body.pendingTerms).toContain('tos');
@@ -320,39 +323,42 @@ describe('GET /api/v1/terms', () => {
 
   describe('Consent mode', () => {
     describe('explicit mode (default)', () => {
-      let app: FastifyInstance;
+      let app: AppType;
+      let cleanup: () => Promise<void>;
 
       beforeAll(async () => {
-        app = await createServer({
+        const server = await createServer({
           config: {
             ...MINIMAL_TEST_CONFIG,
             terms: [...TEST_TERMS_CONFIG],
           },
         });
+        app = server.app;
+        cleanup = server.cleanup;
       });
 
       afterAll(async () => {
-        await app.close();
+        await cleanup();
       });
 
       test('should return explicit consent mode', async () => {
-        const res = await app.inject({
+        const res = await app.request('/api/v1/terms', {
           method: 'GET',
-          url: '/api/v1/terms',
         });
 
-        expect(res.statusCode).toBe(200);
+        expect(res.status).toBe(200);
 
-        const body = res.json();
+        const body = await res.json();
         expect(body.terms[0]?.consentMode).toBe('explicit');
       });
     });
 
     describe('implicit mode', () => {
-      let app: FastifyInstance;
+      let app: AppType;
+      let cleanup: () => Promise<void>;
 
       beforeAll(async () => {
-        app = await createServer({
+        const server = await createServer({
           config: {
             ...MINIMAL_TEST_CONFIG,
             app: {
@@ -379,31 +385,33 @@ describe('GET /api/v1/terms', () => {
             ],
           },
         });
+        app = server.app;
+        cleanup = server.cleanup;
       });
 
       afterAll(async () => {
-        await app.close();
+        await cleanup();
       });
 
       test('should return implicit consent mode on term', async () => {
-        const res = await app.inject({
+        const res = await app.request('/api/v1/terms', {
           method: 'GET',
-          url: '/api/v1/terms',
         });
 
-        expect(res.statusCode).toBe(200);
+        expect(res.status).toBe(200);
 
-        const body = res.json();
+        const body = await res.json();
         expect(body.terms[0]?.consentMode).toBe('implicit');
       });
     });
   });
 
   describe('Term flags', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [
@@ -449,21 +457,22 @@ describe('GET /api/v1/terms', () => {
           ],
         },
       });
+      app = server.app;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should correctly flag required vs optional terms', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       const tosTerm = body.terms.find((t: { id: string }) => t.id === 'tos');
       const marketingTerm = body.terms.find(
         (t: { id: string }) => t.id === 'marketing',
@@ -474,14 +483,13 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should correctly flag consentMode on terms', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       const marketingTerm = body.terms.find(
         (t: { id: string }) => t.id === 'marketing',
       );
@@ -490,14 +498,13 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should only include required terms in pendingTerms', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       // Marketing is optional, should not be in pending
       expect(body.pendingTerms).not.toContain('marketing');
       expect(body.pendingTerms).toContain('tos');
@@ -506,10 +513,11 @@ describe('GET /api/v1/terms', () => {
   });
 
   describe('Term content', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [
@@ -542,21 +550,22 @@ describe('GET /api/v1/terms', () => {
           ],
         },
       });
+      app = server.app;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should return link type with URL content', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       const termWithLink = body.terms.find(
         (t: { id: string }) => t.id === 'with-link',
       );
@@ -566,14 +575,13 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should return text type with text content', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       const termWithText = body.terms.find(
         (t: { id: string }) => t.id === 'with-text',
       );
@@ -587,62 +595,66 @@ describe('GET /api/v1/terms', () => {
 
   describe('Edge cases', () => {
     describe('empty terms config', () => {
-      let app: FastifyInstance;
+      let app: AppType;
+      let cleanup: () => Promise<void>;
 
       beforeAll(async () => {
-        app = await createServer({
+        const server = await createServer({
           config: {
             ...MINIMAL_TEST_CONFIG,
             terms: [],
           },
         });
+        app = server.app;
+        cleanup = server.cleanup;
       });
 
       afterAll(async () => {
-        await app.close();
+        await cleanup();
       });
 
       test('should return empty terms array', async () => {
-        const res = await app.inject({
+        const res = await app.request('/api/v1/terms', {
           method: 'GET',
-          url: '/api/v1/terms',
         });
 
-        expect(res.statusCode).toBe(200);
+        expect(res.status).toBe(200);
 
-        const body = res.json();
+        const body = await res.json();
         expect(body.terms).toEqual([]);
         expect(body.pendingTerms).toEqual([]);
       });
     });
 
     describe('invalid session handling', () => {
-      let app: FastifyInstance;
+      let app: AppType;
+      let cleanup: () => Promise<void>;
 
       beforeAll(async () => {
-        app = await createServer({
+        const server = await createServer({
           config: {
             ...MINIMAL_TEST_CONFIG,
             terms: [...TEST_TERMS_CONFIG],
           },
         });
+        app = server.app;
+        cleanup = server.cleanup;
       });
 
       afterAll(async () => {
-        await app.close();
+        await cleanup();
       });
 
       test('should handle invalid session gracefully', async () => {
-        const res = await app.inject({
+        const res = await app.request('/api/v1/terms', {
           method: 'GET',
-          url: '/api/v1/terms',
-          cookies: { session: 'invalid-session-token' },
+          headers: { Cookie: 'session=invalid-session-token' },
         });
 
         // Should not throw, should treat as unauthenticated
-        expect(res.statusCode).toBe(200);
+        expect(res.status).toBe(200);
 
-        const body = res.json();
+        const body = await res.json();
         for (const term of body.terms) {
           expect(term.userConsent).toBeNull();
         }
@@ -651,33 +663,39 @@ describe('GET /api/v1/terms', () => {
   });
 
   describe('Multiple consents history', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
         },
       });
+      app = server.app;
+      services = server.services;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should return latest consent when multiple exist', async () => {
       const email = generateUniqueEmail('terms-multi');
       const { sessionCookie, userId } = await createDbUserWithSession(
         app,
+        services,
         email,
         'password123!',
       );
 
       // Record multiple consents (simulating version upgrades)
-      await withMikroContext(app, async () => {
+      await withMikroContext(services, async () => {
         // Old consent
-        await app.mikro.userTermsConsent.recordConsent({
+        await services.mikro.userTermsConsent.recordConsent({
           userId,
           termsId: 'tos',
           termsVersion: '0.9.0',
@@ -686,7 +704,7 @@ describe('GET /api/v1/terms', () => {
         });
 
         // New consent
-        await app.mikro.userTermsConsent.recordConsent({
+        await services.mikro.userTermsConsent.recordConsent({
           userId,
           termsId: 'tos',
           termsVersion: '1.0.0',
@@ -695,15 +713,14 @@ describe('GET /api/v1/terms', () => {
         });
       });
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/terms', {
         method: 'GET',
-        url: '/api/v1/terms',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const body = res.json();
+      const body = await res.json();
       const tosTerm = body.terms.find((t: { id: string }) => t.id === 'tos');
 
       // Should return the latest consent

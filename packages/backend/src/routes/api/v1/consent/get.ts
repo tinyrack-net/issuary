@@ -1,10 +1,11 @@
+import { createRoute } from '@hono/zod-openapi';
 import z from 'zod/v4';
 import { parseScopesWithDescriptions } from '@/lib/scopes.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
 /**
  * GET /api/v1/oauth/consent
@@ -12,43 +13,69 @@ import type { FastifyWithZodInstance } from '@/server.js';
  * Returns consent page data including client information and requested scopes.
  * Used by the frontend consent page to display consent details.
  */
-export default (fastify: FastifyWithZodInstance) => {
-  return fastify.route({
-    method: 'GET',
-    url: '/consent',
-    schema: {
-      summary: 'Get consent information',
-      description:
-        'Returns OAuth client information and requested scopes for the consent page.',
-      tags: [TAGS.CONSENT],
-      querystring: z.object({
-        client_id: f.clientId,
-        scope: f.scope.optional(),
-      }),
-      response: {
-        200: r.ConsentInfoResponse,
-        400: e.OAuthClientNotFound.Schema,
-        401: e.Unauthorized.Schema,
+const route = createRoute({
+  method: 'get',
+  path: '/consent',
+  tags: [TAGS.CONSENT],
+  summary: 'Get consent information',
+  description:
+    'Returns OAuth client information and requested scopes for the consent page.',
+  request: {
+    query: z.object({
+      client_id: f.clientId,
+      scope: f.scope.optional(),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: r.ConsentInfoResponse,
+        },
       },
+      description: 'Success',
     },
-    handler: async (req, res) => {
-      const { client_id, scope } = req.query;
+    400: {
+      content: {
+        'application/json': {
+          schema: e.OAuthClientNotFound.Schema,
+        },
+      },
+      description: 'OAuth client not found',
+    },
+    401: {
+      content: {
+        'application/json': {
+          schema: e.Unauthorized.Schema,
+        },
+      },
+      description: 'Unauthorized',
+    },
+  },
+});
 
-      // Check if user is logged in
-      const userSession = await req.auth.verify();
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const query = c.req.valid('query');
+    const { client_id, scope } = query;
+    const auth = c.get('auth');
+    const { mikro, userService, oauthClientService } = c.get('services');
 
-      // Fetch user information
-      const userEntity = await fastify.mikro.user.verifyById(userSession.id);
-      const user =
-        await fastify.userService.userEntityToSessionUser(userEntity);
+    // Check if user is logged in
+    const userSession = await auth.verify();
 
-      // Fetch OAuth client information
-      const client = await fastify.oauthClientService.findByClientId(client_id);
+    // Fetch user information
+    const userEntity = await mikro.user.verifyById(userSession.id);
+    const user = await userService.userEntityToSessionUser(userEntity);
 
-      // Parse requested scopes with descriptions
-      const scopes = parseScopesWithDescriptions(scope);
+    // Fetch OAuth client information
+    const client = await oauthClientService.findByClientId(client_id);
 
-      return res.status(200).send({
+    // Parse requested scopes with descriptions
+    const scopes = parseScopesWithDescriptions(scope);
+
+    return c.json(
+      {
         client: {
           id: client.id,
           clientId: client.clientId,
@@ -59,7 +86,8 @@ export default (fastify: FastifyWithZodInstance) => {
           id: user.id,
           email: user.email,
         },
-      });
-    },
+      },
+      200,
+    );
   });
 };

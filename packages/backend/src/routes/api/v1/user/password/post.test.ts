@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import {
@@ -6,39 +5,45 @@ import {
   createDbUserWithSession,
   extractCookie,
   generateUniqueEmail,
-  injectWithSession,
   MINIMAL_TEST_CONFIG,
+  requestWithSession,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let services: ServiceContainer;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
     },
   });
+  app = server.app;
+  services = server.services;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('POST /api/v1/user/password', () => {
   test('should return 401 when not authenticated', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/user/password', {
       method: 'POST',
-      url: '/api/v1/user/password',
-      payload: {
+      body: JSON.stringify({
         password: 'newPassword123!',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(401);
-    const body = res.json();
+    expect(res.status).toBe(401);
+    const body = await res.json();
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
@@ -46,20 +51,21 @@ describe('POST /api/v1/user/password', () => {
     // Config users cannot modify their password
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/password',
       {
         method: 'POST',
-        url: '/api/v1/user/password',
-        payload: {
+        body: JSON.stringify({
           password: 'newPassword123!',
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(403);
-    const body = res.json();
+    expect(res.status).toBe(403);
+    const body = await res.json();
     expect(body.code).toBe('USER_NOT_EDITABLE');
   });
 
@@ -69,25 +75,27 @@ describe('POST /api/v1/user/password', () => {
 
     const { sessionCookie } = await createDbUserWithSession(
       app,
+      services,
       email,
       password,
     );
 
     // Try to set password again
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/password',
       {
         method: 'POST',
-        url: '/api/v1/user/password',
-        payload: {
+        body: JSON.stringify({
           password: 'anotherPassword123!',
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(409);
-    const body = res.json();
+    expect(res.status).toBe(409);
+    const body = await res.json();
     expect(body.code).toBe('PASSWORD_ALREADY_SET');
   });
 
@@ -96,122 +104,124 @@ describe('POST /api/v1/user/password', () => {
     const newPassword = 'newPassword123!';
 
     // Create OAuth-only user and get session
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: null,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
 
       // Create a temporary password for login
       user.password_hash = 'tempPassword123!';
-      await app.mikro.em.flush();
+      await services.mikro.em.flush();
     });
 
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: {
+      body: JSON.stringify({
         email,
         password: 'tempPassword123!',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
+    expect(loginRes.status).toBe(200);
 
     // Remove password after login to simulate OAuth-only user
-    await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail(
+    await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail(
         { email },
         { populate: ['password_hash'] },
       );
       user.password_hash = null;
-      await app.mikro.em.flush();
+      await services.mikro.em.flush();
     });
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Now set password for OAuth-only user
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/password',
       {
         method: 'POST',
-        url: '/api/v1/user/password',
-        payload: {
+        body: JSON.stringify({
           password: newPassword,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.ok).toBe(true);
 
     // Verify password was set by trying to login
-    const verifyLoginRes = await app.inject({
+    const verifyLoginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: {
+      body: JSON.stringify({
         email,
         password: newPassword,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(verifyLoginRes.statusCode).toBe(200);
+    expect(verifyLoginRes.status).toBe(200);
   });
 
   test('should validate password format', async () => {
     const email = generateUniqueEmail('password-post-validation');
 
     // Create OAuth-only user and get session
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: null,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
 
       user.password_hash = 'tempPassword123!';
-      await app.mikro.em.flush();
+      await services.mikro.em.flush();
     });
 
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: {
+      body: JSON.stringify({
         email,
         password: 'tempPassword123!',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
     // Remove password after login
-    await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail(
+    await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail(
         { email },
         { populate: ['password_hash'] },
       );
       user.password_hash = null;
-      await app.mikro.em.flush();
+      await services.mikro.em.flush();
     });
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to set a password that's too short
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/password',
       {
         method: 'POST',
-        url: '/api/v1/user/password',
-        payload: {
+        body: JSON.stringify({
           password: 'short',
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(400);
+    expect(res.status).toBe(400);
   });
 });

@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import {
@@ -8,34 +7,40 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let services: ServiceContainer;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
     },
   });
+  app = server.app;
+  services = server.services;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('POST /api/v1/auth/email/resend', () => {
   test('should return 404 for non-existent user', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/email/resend', {
       method: 'POST',
-      url: '/api/v1/auth/email/resend',
-      payload: {
+      body: JSON.stringify({
         email: 'nonexistent@example.com',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(404);
-    const json = res.json();
+    expect(res.status).toBe(404);
+    const json = await res.json();
     expect(json.code).toBe('USER_NOT_FOUND');
   });
 
@@ -44,23 +49,23 @@ describe('POST /api/v1/auth/email/resend', () => {
     const email = generateUniqueEmail('email-verified');
     const password = 'TestPassword123!';
 
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
     });
 
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/email/resend', {
       method: 'POST',
-      url: '/api/v1/auth/email/resend',
-      payload: { email },
+      body: JSON.stringify({ email }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(400);
-    const json = res.json();
+    expect(res.status).toBe(400);
+    const json = await res.json();
     expect(json.code).toBe('EMAIL_ALREADY_VERIFIED');
   });
 
@@ -69,23 +74,23 @@ describe('POST /api/v1/auth/email/resend', () => {
     const email = generateUniqueEmail('email-unverified');
     const password = 'TestPassword123!';
 
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = false;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
     });
 
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/email/resend', {
       method: 'POST',
-      url: '/api/v1/auth/email/resend',
-      payload: { email },
+      body: JSON.stringify({ email }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(200);
-    const json = res.json();
+    expect(res.status).toBe(200);
+    const json = await res.json();
     expect(json.message).toBeDefined();
     expect(json.message).toContain('Verification email has been resent');
   });
@@ -95,81 +100,85 @@ describe('POST /api/v1/auth/email/resend', () => {
     const password = 'TestPassword123!';
 
     // Create user and initial verification token
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = false;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
 
-      if (!app.emailVerificationService) {
+      if (!services.emailVerificationService) {
         throw new Error('EmailVerificationService not initialized');
       }
 
-      await app.emailVerificationService.generateToken({ userId: user.id });
+      await services.emailVerificationService.generateToken({
+        userId: user.id,
+      });
     });
 
     // Resend verification email
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/email/resend', {
       method: 'POST',
-      url: '/api/v1/auth/email/resend',
-      payload: { email },
+      body: JSON.stringify({ email }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(200);
+    expect(res.status).toBe(200);
 
     // Verify new token was created
-    await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ email });
+    await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail({ email });
       expect(user).toBeDefined();
 
       // Check that there is a valid pending verification
       const hasPending =
-        await app.emailVerificationService?.hasPendingVerification(user.id);
+        await services.emailVerificationService?.hasPendingVerification(
+          user.id,
+        );
       expect(hasPending).toBe(true);
     });
   });
 
   test('should validate email format', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/email/resend', {
       method: 'POST',
-      url: '/api/v1/auth/email/resend',
-      payload: {
+      body: JSON.stringify({
         email: 'invalid-email',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(400);
+    expect(res.status).toBe(400);
   });
 
   test('should not require authentication', async () => {
     // This endpoint should be publicly accessible (for password reset flow)
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/email/resend', {
       method: 'POST',
-      url: '/api/v1/auth/email/resend',
-      payload: {
+      body: JSON.stringify({
         email: 'test@example.com',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
     // Should not return 401 (will be 404 because user doesn't exist)
-    expect(res.statusCode).not.toBe(401);
+    expect(res.status).not.toBe(401);
   });
 
   test('should return 404 for config user', async () => {
     // Config users exist but cannot have email verification resent
     // The endpoint should find the user and check email_verified status
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/email/resend', {
       method: 'POST',
-      url: '/api/v1/auth/email/resend',
-      payload: {
+      body: JSON.stringify({
         email: TEST_USER.email,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
     // Config user is pre-verified, so should return EMAIL_ALREADY_VERIFIED or USER_NOT_FOUND
     // depending on implementation (config users may not be in email verification flow)
-    expect([400, 404]).toContain(res.statusCode);
+    expect([400, 404]).toContain(res.status);
   });
 });

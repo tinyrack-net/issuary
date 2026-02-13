@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import {
@@ -6,17 +5,20 @@ import {
   createPasskeyForUser,
   extractCookie,
   generateUniqueEmail,
-  injectWithSession,
   MINIMAL_TEST_CONFIG,
+  requestWithSession,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
 describe('GET /api/v1/user/passkeys', () => {
-  let app: FastifyInstance;
+  let app: AppType;
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    app = await createServer({
+    const server = await createServer({
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
@@ -28,10 +30,13 @@ describe('GET /api/v1/user/passkeys', () => {
         },
       },
     });
+    app = server.app;
+    services = server.services;
+    cleanup = server.cleanup;
   });
 
   afterAll(async () => {
-    await app.close();
+    await cleanup();
   });
 
   /**
@@ -41,37 +46,37 @@ describe('GET /api/v1/user/passkeys', () => {
     email: string,
     password: string,
   ): Promise<{ sessionCookie: string; userId: string }> {
-    await withMikroContext(app, async () => {
-      const user = app.mikro.user.create({
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
         email,
         password_hash: password,
       });
       user.email_verified = true;
-      await app.mikro.em.persist(user).flush();
+      await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
+    expect(loginRes.status).toBe(200);
 
     const sessionCookie = extractCookie(loginRes, 'session');
-    const userId = loginRes.json().user.id;
+    const body = await loginRes.json();
+    const userId = body.user.id;
 
     return { sessionCookie, userId };
   }
 
   test('should return 401 when not authenticated', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/user/passkeys', {
       method: 'GET',
-      url: '/api/v1/user/passkeys',
     });
 
-    expect(res.statusCode).toBe(401);
-    const body = res.json();
+    expect(res.status).toBe(401);
+    const body = await res.json();
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
@@ -81,17 +86,17 @@ describe('GET /api/v1/user/passkeys', () => {
 
     const { sessionCookie } = await createDbUserWithSession(email, password);
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/passkeys',
       {
         method: 'GET',
-        url: '/api/v1/user/passkeys',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.passkeys).toEqual([]);
   });
 
@@ -105,19 +110,19 @@ describe('GET /api/v1/user/passkeys', () => {
     );
 
     // Create a passkey
-    await createPasskeyForUser(app, userId, 'My MacBook');
+    await createPasskeyForUser(services, userId, 'My MacBook');
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/passkeys',
       {
         method: 'GET',
-        url: '/api/v1/user/passkeys',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.passkeys).toHaveLength(1);
     expect(body.passkeys[0].name).toBe('My MacBook');
     expect(body.passkeys[0].device_type).toBe('multiDevice');
@@ -137,21 +142,21 @@ describe('GET /api/v1/user/passkeys', () => {
     );
 
     // Create multiple passkeys
-    await createPasskeyForUser(app, userId, 'MacBook Pro');
-    await createPasskeyForUser(app, userId, 'iPhone');
-    await createPasskeyForUser(app, userId, null);
+    await createPasskeyForUser(services, userId, 'MacBook Pro');
+    await createPasskeyForUser(services, userId, 'iPhone');
+    await createPasskeyForUser(services, userId, null);
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/passkeys',
       {
         method: 'GET',
-        url: '/api/v1/user/passkeys',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.passkeys).toHaveLength(3);
 
     // Verify passkey names (order may vary due to DESC order by created_at)
@@ -170,19 +175,19 @@ describe('GET /api/v1/user/passkeys', () => {
       password,
     );
 
-    await createPasskeyForUser(app, userId, 'Test Device');
+    await createPasskeyForUser(services, userId, 'Test Device');
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/passkeys',
       {
         method: 'GET',
-        url: '/api/v1/user/passkeys',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.passkeys).toHaveLength(1);
 
     // Should NOT expose sensitive fields
@@ -202,23 +207,23 @@ describe('GET /api/v1/user/passkeys', () => {
     );
 
     // Create passkeys with slight delay to ensure different timestamps
-    await createPasskeyForUser(app, userId, 'First Device');
+    await createPasskeyForUser(services, userId, 'First Device');
     await new Promise((resolve) => setTimeout(resolve, 10));
-    await createPasskeyForUser(app, userId, 'Second Device');
+    await createPasskeyForUser(services, userId, 'Second Device');
     await new Promise((resolve) => setTimeout(resolve, 10));
-    await createPasskeyForUser(app, userId, 'Third Device');
+    await createPasskeyForUser(services, userId, 'Third Device');
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/passkeys',
       {
         method: 'GET',
-        url: '/api/v1/user/passkeys',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.passkeys).toHaveLength(3);
 
     // Most recent should be first (DESC order)
@@ -230,17 +235,17 @@ describe('GET /api/v1/user/passkeys', () => {
   test('should work for config-managed users', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/passkeys',
       {
         method: 'GET',
-        url: '/api/v1/user/passkeys',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(Array.isArray(body.passkeys)).toBe(true);
   });
 
@@ -254,21 +259,21 @@ describe('GET /api/v1/user/passkeys', () => {
     const { userId: userId2 } = await createDbUserWithSession(email2, password);
 
     // Create passkeys for both users
-    await createPasskeyForUser(app, userId1, 'User1 Device');
-    await createPasskeyForUser(app, userId2, 'User2 Device');
+    await createPasskeyForUser(services, userId1, 'User1 Device');
+    await createPasskeyForUser(services, userId2, 'User2 Device');
 
     // User 1 should only see their passkey
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/passkeys',
       {
         method: 'GET',
-        url: '/api/v1/user/passkeys',
       },
       session1,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.passkeys).toHaveLength(1);
     expect(body.passkeys[0].name).toBe('User1 Device');
   });
@@ -283,8 +288,8 @@ describe('GET /api/v1/user/passkeys', () => {
     );
 
     // Create passkeys with different device types
-    await withMikroContext(app, async () => {
-      const passkey1 = app.mikro.userPasskey.create({
+    await withMikroContext(services, async () => {
+      const passkey1 = services.mikro.userPasskey.create({
         user: userId,
         credential_id: `test-single-${crypto.randomUUID()}`,
         public_key: 'test-public-key-1',
@@ -294,7 +299,7 @@ describe('GET /api/v1/user/passkeys', () => {
         name: 'Single Device',
       });
 
-      const passkey2 = app.mikro.userPasskey.create({
+      const passkey2 = services.mikro.userPasskey.create({
         user: userId,
         credential_id: `test-multi-${crypto.randomUUID()}`,
         public_key: 'test-public-key-2',
@@ -304,20 +309,20 @@ describe('GET /api/v1/user/passkeys', () => {
         name: 'Multi Device',
       });
 
-      await app.mikro.em.persist([passkey1, passkey2]).flush();
+      await services.mikro.em.persist([passkey1, passkey2]).flush();
     });
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/passkeys',
       {
         method: 'GET',
-        url: '/api/v1/user/passkeys',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.passkeys).toHaveLength(2);
 
     const deviceTypes = body.passkeys.map(

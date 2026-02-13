@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import { createServer } from '@/server.js';
@@ -10,11 +9,14 @@ import {
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let services: ServiceContainer;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       auth: {
@@ -26,10 +28,13 @@ beforeAll(async () => {
       },
     },
   });
+  app = server.app;
+  services = server.services;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('POST /api/v1/auth/totp/verify', () => {
@@ -39,19 +44,24 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const password = 'password123';
 
     // Create user with verified email
-    const { userId } = await createDbUserWithSession(app, email, password);
+    const { userId } = await createDbUserWithSession(
+      app,
+      services,
+      email,
+      password,
+    );
 
     // Enable TOTP for user
-    const secret = await enableTotpForUser(app, userId);
+    const secret = await enableTotpForUser(services, userId);
 
     // Login with password - should get 2fa_required status
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
-    expect(loginRes.statusCode).toBe(200);
-    const loginBody = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const loginBody = await loginRes.json();
     expect(loginBody).toHaveProperty('user');
     expect(loginBody.user.totp_registered).toBe(true);
 
@@ -59,18 +69,20 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Generate valid TOTP code
-    const validCode = app.totpService.generateToken(secret);
+    const validCode = services.totpService.generateToken(secret);
 
     // Verify TOTP code
-    const verifyRes = await app.inject({
+    const verifyRes = await app.request('/api/v1/auth/totp/verify', {
       method: 'POST',
-      url: '/api/v1/auth/totp/verify',
-      cookies: { session: sessionCookie },
-      payload: { code: validCode },
+      body: JSON.stringify({ code: validCode }),
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `session=${sessionCookie}`,
+      },
     });
 
-    expect(verifyRes.statusCode).toBe(200);
-    const verifyBody = verifyRes.json();
+    expect(verifyRes.status).toBe(200);
+    const verifyBody = await verifyRes.json();
     expect(verifyBody).toHaveProperty('user');
     expect(verifyBody.user.id).toBe(userId);
     expect(verifyBody.user.email).toBe(email);
@@ -83,40 +95,47 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const password = 'password123';
 
     // Create user with verified email
-    const { userId } = await createDbUserWithSession(app, email, password);
+    const { userId } = await createDbUserWithSession(
+      app,
+      services,
+      email,
+      password,
+    );
 
     // Enable TOTP for user
-    await enableTotpForUser(app, userId);
+    await enableTotpForUser(services, userId);
 
     // Login with password
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
-    expect(loginRes.statusCode).toBe(200);
+    expect(loginRes.status).toBe(200);
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to verify with invalid code
-    const verifyRes = await app.inject({
+    const verifyRes = await app.request('/api/v1/auth/totp/verify', {
       method: 'POST',
-      url: '/api/v1/auth/totp/verify',
-      cookies: { session: sessionCookie },
-      payload: { code: '000000' },
+      body: JSON.stringify({ code: '000000' }),
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `session=${sessionCookie}`,
+      },
     });
 
-    expectError(verifyRes, e.InvalidTotpCode);
+    await expectError(verifyRes, e.InvalidTotpCode);
   });
 
   test('should fail without pending TOTP session', async () => {
     // Try to verify TOTP without logging in first
-    const verifyRes = await app.inject({
+    const verifyRes = await app.request('/api/v1/auth/totp/verify', {
       method: 'POST',
-      url: '/api/v1/auth/totp/verify',
-      payload: { code: '123456' },
+      body: JSON.stringify({ code: '123456' }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expectError(verifyRes, e.SecondFactorSessionExpired);
+    await expectError(verifyRes, e.SecondFactorSessionExpired);
   });
 
   test('should fail with malformed TOTP code', async () => {
@@ -125,29 +144,36 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const password = 'password123';
 
     // Create user with verified email
-    const { userId } = await createDbUserWithSession(app, email, password);
+    const { userId } = await createDbUserWithSession(
+      app,
+      services,
+      email,
+      password,
+    );
 
     // Enable TOTP for user
-    await enableTotpForUser(app, userId);
+    await enableTotpForUser(services, userId);
 
     // Login with password
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
-    expect(loginRes.statusCode).toBe(200);
+    expect(loginRes.status).toBe(200);
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to verify with malformed code (not 6 digits)
-    const verifyRes = await app.inject({
+    const verifyRes = await app.request('/api/v1/auth/totp/verify', {
       method: 'POST',
-      url: '/api/v1/auth/totp/verify',
-      cookies: { session: sessionCookie },
-      payload: { code: '12345' }, // Only 5 digits
+      body: JSON.stringify({ code: '12345' }), // Only 5 digits
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `session=${sessionCookie}`,
+      },
     });
 
-    expect(verifyRes.statusCode).toBe(400);
+    expect(verifyRes.status).toBe(400);
   });
 
   test('should not allow access to protected routes with pending TOTP session', async () => {
@@ -156,30 +182,36 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const password = 'password123';
 
     // Create user with verified email
-    const { userId } = await createDbUserWithSession(app, email, password);
+    const { userId } = await createDbUserWithSession(
+      app,
+      services,
+      email,
+      password,
+    );
 
     // Enable TOTP for user
-    await enableTotpForUser(app, userId);
+    await enableTotpForUser(services, userId);
 
     // Login with password (creates pending TOTP session)
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
-    expect(loginRes.statusCode).toBe(200);
+    expect(loginRes.status).toBe(200);
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to access a protected route (session endpoint) with pending TOTP
-    const sessionRes = await app.inject({
+    const sessionRes = await app.request('/api/v1/user/session', {
       method: 'GET',
-      url: '/api/v1/user/session',
-      cookies: { session: sessionCookie },
+      headers: {
+        Cookie: `session=${sessionCookie}`,
+      },
     });
 
     // Should return unauthenticated status since session is not complete
-    expect(sessionRes.statusCode).toBe(200);
-    const body = sessionRes.json();
+    expect(sessionRes.status).toBe(200);
+    const body = await sessionRes.json();
     expect(body).not.toHaveProperty('user');
   });
 
@@ -189,42 +221,50 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const password = 'password123';
 
     // Create user with verified email
-    const { userId } = await createDbUserWithSession(app, email, password);
+    const { userId } = await createDbUserWithSession(
+      app,
+      services,
+      email,
+      password,
+    );
 
     // Enable TOTP for user
-    const secret = await enableTotpForUser(app, userId);
+    const secret = await enableTotpForUser(services, userId);
 
     // Login with password (creates pending TOTP session)
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
-    expect(loginRes.statusCode).toBe(200);
+    expect(loginRes.status).toBe(200);
     const pendingSessionCookie = extractCookie(loginRes, 'session');
 
     // Verify TOTP code
-    const validCode = app.totpService.generateToken(secret);
-    const verifyRes = await app.inject({
+    const validCode = services.totpService.generateToken(secret);
+    const verifyRes = await app.request('/api/v1/auth/totp/verify', {
       method: 'POST',
-      url: '/api/v1/auth/totp/verify',
-      cookies: { session: pendingSessionCookie },
-      payload: { code: validCode },
+      body: JSON.stringify({ code: validCode }),
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `session=${pendingSessionCookie}`,
+      },
     });
-    expect(verifyRes.statusCode).toBe(200);
+    expect(verifyRes.status).toBe(200);
 
     // Get the new session cookie from verify response
     const authenticatedCookie = extractCookie(verifyRes, 'session');
 
     // Now access protected route (session endpoint) with authenticated session
-    const sessionRes = await app.inject({
+    const sessionRes = await app.request('/api/v1/user/session', {
       method: 'GET',
-      url: '/api/v1/user/session',
-      cookies: { session: authenticatedCookie },
+      headers: {
+        Cookie: `session=${authenticatedCookie}`,
+      },
     });
 
-    expect(sessionRes.statusCode).toBe(200);
-    const body = sessionRes.json();
+    expect(sessionRes.status).toBe(200);
+    const body = await sessionRes.json();
     expect(body).toHaveProperty('user');
     expect(body.user.id).toBe(userId);
     expect(body.user.email).toBe(email);
@@ -237,29 +277,36 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const password = 'password123';
 
     // Create user with verified email
-    const { userId } = await createDbUserWithSession(app, email, password);
+    const { userId } = await createDbUserWithSession(
+      app,
+      services,
+      email,
+      password,
+    );
 
     // Enable TOTP for user
-    await enableTotpForUser(app, userId);
+    await enableTotpForUser(services, userId);
 
     // Login with password
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
-    expect(loginRes.statusCode).toBe(200);
+    expect(loginRes.status).toBe(200);
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to verify with empty body
-    const verifyRes = await app.inject({
+    const verifyRes = await app.request('/api/v1/auth/totp/verify', {
       method: 'POST',
-      url: '/api/v1/auth/totp/verify',
-      cookies: { session: sessionCookie },
-      payload: {},
+      body: JSON.stringify({}),
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `session=${sessionCookie}`,
+      },
     });
 
-    expect(verifyRes.statusCode).toBe(400);
+    expect(verifyRes.status).toBe(400);
   });
 });
 

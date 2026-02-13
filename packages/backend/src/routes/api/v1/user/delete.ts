@@ -1,72 +1,110 @@
-import z from 'zod/v4';
+import { createRoute } from '@hono/zod-openapi';
 import { calculatePermanentDeletionDate } from '@/lib/config/index.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
 /**
  * DELETE /api/v1/user
  *
  * Request account deletion (soft delete).
- * The account will be marked for deletion and permanently deleted
- * after the configured retention period.
  */
-export default (fastify: FastifyWithZodInstance) => {
-  fastify.route({
-    method: 'DELETE',
-    url: '/user',
-    schema: {
-      summary: 'Delete Account',
-      description:
-        'Request account deletion. The account will be soft-deleted and ' +
-        'permanently removed after the configured retention period.',
-      tags: [TAGS.USER],
-      response: {
-        200: r.AccountDeletionResponse,
-        400: e.AccountAlreadyDeleted.Schema,
-        401: e.Unauthorized.Schema,
-        403: z.union([
-          e.AccountDeletionDisabled.Schema,
-          e.UserNotEditable.Schema,
-        ]),
-        404: e.UserNotFound.Schema,
+const route = createRoute({
+  method: 'delete',
+  path: '/user',
+  tags: [TAGS.USER],
+  summary: 'Delete Account',
+  description:
+    'Request account deletion. The account will be soft-deleted and ' +
+    'permanently removed after the configured retention period.',
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: r.AccountDeletionResponse,
+        },
       },
+      description: 'Success',
     },
-    handler: async (req, res) => {
-      if (!fastify.config.app.account_deletion) {
-        throw new e.AccountDeletionDisabled.Error();
-      }
-      const userSession = await req.auth.verify();
+    400: {
+      content: {
+        'application/json': {
+          schema: e.AccountAlreadyDeleted.Schema,
+        },
+      },
+      description: 'Account already deleted',
+    },
+    401: {
+      content: {
+        'application/json': {
+          schema: e.Unauthorized.Schema,
+        },
+      },
+      description: 'Unauthorized',
+    },
+    403: {
+      content: {
+        'application/json': {
+          schema: e.AccountDeletionDisabled.Schema,
+        },
+      },
+      description: 'Account deletion disabled or user not editable',
+    },
+    404: {
+      content: {
+        'application/json': {
+          schema: e.UserNotFound.Schema,
+        },
+      },
+      description: 'User not found',
+    },
+  },
+});
 
-      if (userSession.managed_by === 'config') {
-        throw new e.UserNotEditable.Error();
-      }
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const { config, mikro } = c.get('services');
+    const auth = c.get('auth');
+    const session = c.get('session');
 
-      const user = await fastify.mikro.user.findOneOrFail(
-        { id: userSession.id },
-        { failHandler: () => new e.UserNotFound.Error() },
-      );
+    if (!config.app.account_deletion) {
+      throw new e.AccountDeletionDisabled.Error();
+    }
+    const userSession = await auth.verify();
 
-      if (user.deleted_at !== null) {
-        throw new e.AccountAlreadyDeleted.Error();
-      }
+    if (userSession.managed_by === 'config') {
+      throw new e.UserNotEditable.Error();
+    }
 
-      user.deleted_at = new Date();
-      await fastify.mikro.em.flush();
+    const user = await mikro.user.findOneOrFail(
+      { id: userSession.id },
+      {
+        failHandler: () => new e.UserNotFound.Error(),
+      },
+    );
 
-      req.session.delete();
+    if (user.deleted_at !== null) {
+      throw new e.AccountAlreadyDeleted.Error();
+    }
 
-      const permanentDeletionDate = calculatePermanentDeletionDate(
-        user.deleted_at,
-        fastify.config.cleanup.deleted_users.retention,
-      );
+    user.deleted_at = new Date();
+    await mikro.em.flush();
 
-      return res.status(200).send({
-        ok: true,
+    session.delete();
+
+    const permanentDeletionDate = calculatePermanentDeletionDate(
+      user.deleted_at,
+      config.cleanup.deleted_users.retention,
+    );
+
+    return c.json(
+      {
+        ok: true as const,
         deleted_at: user.deleted_at.toISOString(),
         permanent_deletion_at: permanentDeletionDate.toISOString(),
-      });
-    },
+      },
+      200,
+    );
   });
 };

@@ -1,99 +1,143 @@
+import { createRoute } from '@hono/zod-openapi';
 import type { RegistrationResponseJSON } from '@simplewebauthn/server';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
 /**
  * POST /api/v1/user/passkeys/register/verify
  *
  * Verify and complete passkey registration.
- * Accepts both full user session and pending 2FA setup session.
- * If from pending setup session, converts to full user session.
  */
-export default (fastify: FastifyWithZodInstance) => {
-  if (!fastify.config.auth.passkey.enabled) {
-    return;
-  }
-  fastify.route({
-    method: 'POST',
-    url: '/user/passkeys/register/verify',
-    schema: {
-      summary: 'Verify Passkey Registration',
-      description:
-        'Verify and complete passkey registration. ' +
-        'Accepts both full user session and pending 2FA setup session.',
-      tags: [TAGS.USER],
-      body: r.PasskeyRegistrationBody,
-      response: {
-        200: r.PasskeySetupVerifyResponse,
-        400: e.PasskeyNotEnabled.Schema.or(
-          e.PasskeyChallengeNotFound.Schema,
-        ).or(e.PasskeyVerificationFailed.Schema),
-        401: e.Unauthorized.Schema,
-        409: e.PasskeyAlreadyExists.Schema,
+const route = createRoute({
+  method: 'post',
+  path: '/user/passkeys/register/verify',
+  tags: [TAGS.USER],
+  summary: 'Verify Passkey Registration',
+  description:
+    'Verify and complete passkey registration. ' +
+    'Accepts both full user session and pending 2FA setup session.',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: r.PasskeyRegistrationBody,
+        },
       },
     },
-    handler: async (req, res) => {
-      // Allow both full user session and pending 2FA setup session
-      const userSession = req.session.get('user');
-      const pending2FASetup = req.session.get('pending2FASetup');
-      const userId = userSession?.id ?? pending2FASetup?.id;
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: r.PasskeySetupVerifyResponse,
+        },
+      },
+      description: 'Success',
+    },
+    400: {
+      content: {
+        'application/json': {
+          schema: e.PasskeyNotEnabled.Schema,
+        },
+      },
+      description:
+        'Passkey not enabled, challenge not found, or verification failed',
+    },
+    401: {
+      content: {
+        'application/json': {
+          schema: e.Unauthorized.Schema,
+        },
+      },
+      description: 'Unauthorized',
+    },
+    409: {
+      content: {
+        'application/json': {
+          schema: e.PasskeyAlreadyExists.Schema,
+        },
+      },
+      description: 'Passkey already exists',
+    },
+  },
+});
 
-      if (!userId) {
-        throw new e.Unauthorized.Error();
-      }
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const config = c.get('services').config;
+    if (!config.auth.passkey.enabled) {
+      throw new e.PasskeyNotEnabled.Error();
+    }
 
-      // Get challenge from session
-      const challenge = req.session.get('passkey_challenge');
-      if (!challenge) {
-        throw new e.PasskeyChallengeNotFound.Error();
-      }
+    const body = c.req.valid('json');
+    const session = c.get('session');
+    const { mikro, passkeyService, userService } = c.get('services');
 
-      // Get user entity
-      const user = await fastify.mikro.user.findOneOrFail({
-        id: userId,
-      });
+    // Allow both full user session and pending 2FA setup session
+    const userSession = session.get('user');
+    const pending2FASetup = session.get('pending2FASetup');
+    const userId = userSession?.id ?? pending2FASetup?.id;
 
-      // The validated body already conforms to RegistrationResponseJSON structure
-      // Use type assertion since Zod validation guarantees the structure
-      const registrationResponse = req.body
-        .response as unknown as RegistrationResponseJSON;
+    if (!userId) {
+      throw new e.Unauthorized.Error();
+    }
 
-      // Verify registration
-      await fastify.passkeyService.verifyRegistration(
-        user,
-        registrationResponse,
-        challenge,
-        req.body.name,
-      );
+    // Get challenge from session
+    const challenge = session.get('passkey_challenge');
+    if (!challenge) {
+      throw new e.PasskeyChallengeNotFound.Error();
+    }
 
-      // Clear challenge from session
-      req.session.set('passkey_challenge', undefined);
+    // Get user entity
+    const user = await mikro.user.findOneOrFail({
+      id: userId,
+    });
 
-      // Check if this was from pending 2FA setup session
-      const wasPendingSetup = !!pending2FASetup;
+    // Cast for @simplewebauthn compatibility
+    const registrationResponse =
+      body.response as unknown as RegistrationResponseJSON;
 
-      if (wasPendingSetup) {
-        // Clear pending setup sessions and create full user session
-        req.setUserSession(userId);
+    // Verify registration
+    await passkeyService.verifyRegistration(
+      user,
+      registrationResponse,
+      challenge,
+      body.name,
+    );
 
-        // Get user data for response
-        const userEntity = await fastify.mikro.user.verifyById(userId);
-        const userSessionData =
-          await fastify.userService.userEntityToSessionUser(userEntity);
+    // Clear challenge from session
+    session.set('passkey_challenge', undefined);
 
-        return res.status(200).send({
-          ok: true,
+    // Check if this was from pending 2FA setup session
+    const wasPendingSetup = !!pending2FASetup;
+
+    if (wasPendingSetup) {
+      // Clear pending setup sessions and create full user session
+      session.setUserSession(userId);
+
+      // Get user data for response
+      const userEntity = await mikro.user.verifyById(userId);
+      const userSessionData =
+        await userService.userEntityToSessionUser(userEntity);
+
+      return c.json(
+        {
+          ok: true as const,
           user: userSessionData,
           second_factor_setup_completed: true,
-        });
-      }
+        },
+        200,
+      );
+    }
 
-      return res.status(200).send({
-        ok: true,
+    return c.json(
+      {
+        ok: true as const,
         second_factor_setup_completed: false,
-      });
-    },
+      },
+      200,
+    );
   });
 };

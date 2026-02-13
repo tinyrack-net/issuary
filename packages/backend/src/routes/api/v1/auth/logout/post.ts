@@ -1,24 +1,27 @@
+import { createRoute } from '@hono/zod-openapi';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
-export default (fastify: FastifyWithZodInstance) => {
-  fastify.route({
-    method: 'POST',
-    url: '/auth/logout',
-    schema: {
-      summary: 'Logout',
-      description: 'Logout the current user and purge the session',
-      tags: [TAGS.AUTH],
-      response: {
-        200: r.OkResponse,
+const route = createRoute({
+  method: 'post',
+  path: '/auth/logout',
+  tags: [TAGS.AUTH],
+  summary: 'Logout',
+  description: 'Logout the current user and purge the session',
+  responses: {
+    200: {
+      content: {
+        'application/json': { schema: r.OkResponse },
       },
+      description: 'Success',
     },
-    handler: async (req, res) => {
-      req.session.delete();
-      res.status(200).send({
-        ok: true,
-      });
-    },
+  },
+});
+
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    c.get('session').delete();
+    return c.json({ ok: true as const }, 200);
   });
 };

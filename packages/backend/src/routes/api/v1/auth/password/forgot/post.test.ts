@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import {
@@ -9,11 +8,14 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let services: ServiceContainer;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       app: {
@@ -24,10 +26,13 @@ beforeAll(async () => {
       terms: TEST_TERMS_CONFIG,
     },
   });
+  app = server.app;
+  services = server.services;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('POST /api/v1/auth/password/forgot', () => {
@@ -40,22 +45,24 @@ describe('POST /api/v1/auth/password/forgot', () => {
     });
 
     // 2. Request password reset
-    const res = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/password/forgot',
-      payload: {
+    const res = await app.request('/api/v1/auth/password/forgot', {
+      method: 'POST',
+      body: JSON.stringify({
         email: uniqueEmail,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(200);
-    const body = JSON.parse(res.body);
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body).toHaveProperty('ok');
 
     // 3. Check that a reset token was generated
-    const token = await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
-      const reset = await app.mikro.passwordReset.findOne({
+    const token = await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail({
+        email: uniqueEmail,
+      });
+      const reset = await services.mikro.passwordReset.findOne({
         user,
         used: false,
         expiresAt: { $gt: new Date() },
@@ -67,32 +74,32 @@ describe('POST /api/v1/auth/password/forgot', () => {
   });
 
   test('should return success for non-existent email (prevent enumeration)', async () => {
-    const res = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/password/forgot',
-      payload: {
+    const res = await app.request('/api/v1/auth/password/forgot', {
+      method: 'POST',
+      body: JSON.stringify({
         email: 'nonexistent-user@example.com',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
     // Should still return 200 to prevent email enumeration
-    expect(res.statusCode).toBe(200);
-    const body = JSON.parse(res.body);
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body).toHaveProperty('ok');
   });
 
   test('should fail for config user (config-managed)', async () => {
     // Use the config user email from config.test.yaml
-    const res = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/password/forgot',
-      payload: {
+    const res = await app.request('/api/v1/auth/password/forgot', {
+      method: 'POST',
+      body: JSON.stringify({
         email: 'test-config-user@example.com',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(200);
-    const body = JSON.parse(res.body);
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body).toHaveProperty('ok');
   });
 
@@ -105,18 +112,20 @@ describe('POST /api/v1/auth/password/forgot', () => {
     });
 
     // 2. Request first password reset
-    await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/password/forgot',
-      payload: {
+    await app.request('/api/v1/auth/password/forgot', {
+      method: 'POST',
+      body: JSON.stringify({
         email: uniqueEmail,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
     // 3. Get first token
-    const firstToken = await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
-      const reset = await app.mikro.passwordReset.findOneOrFail({
+    const firstToken = await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail({
+        email: uniqueEmail,
+      });
+      const reset = await services.mikro.passwordReset.findOneOrFail({
         user,
         used: false,
       });
@@ -124,17 +133,17 @@ describe('POST /api/v1/auth/password/forgot', () => {
     });
 
     // 4. Request second password reset
-    await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/password/forgot',
-      payload: {
+    await app.request('/api/v1/auth/password/forgot', {
+      method: 'POST',
+      body: JSON.stringify({
         email: uniqueEmail,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
     // 5. Check that first token is now expired
-    const isFirstTokenValid = await withMikroContext(app, async () => {
-      const reset = await app.mikro.passwordReset.findOne({
+    const isFirstTokenValid = await withMikroContext(services, async () => {
+      const reset = await services.mikro.passwordReset.findOne({
         token: firstToken,
         used: false,
         expiresAt: { $gt: new Date() },
@@ -145,9 +154,11 @@ describe('POST /api/v1/auth/password/forgot', () => {
     expect(isFirstTokenValid).toBe(false);
 
     // 6. Check that a new valid token exists
-    const hasNewToken = await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
-      const reset = await app.mikro.passwordReset.findOne({
+    const hasNewToken = await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail({
+        email: uniqueEmail,
+      });
+      const reset = await services.mikro.passwordReset.findOne({
         user,
         used: false,
         expiresAt: { $gt: new Date() },

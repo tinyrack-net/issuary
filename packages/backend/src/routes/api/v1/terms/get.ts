@@ -1,8 +1,9 @@
+import { createRoute } from '@hono/zod-openapi';
 import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { f } from '@/schemas/field.js';
 import { termsSchema } from '@/schemas/terms.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
 /**
  * GET /api/v1/terms
@@ -10,37 +11,46 @@ import type { FastifyWithZodInstance } from '@/server.js';
  * Returns list of terms with user consent status.
  * Can be called by both authenticated and unauthenticated users.
  */
-export default (fastify: FastifyWithZodInstance) => {
-  return fastify.route({
-    method: 'GET',
-    url: '/terms',
-    schema: {
-      summary: 'Get terms of service',
-      description:
-        'Returns list of terms with consent mode and user consent status. ' +
-        'If user is authenticated, includes their consent history.',
-      tags: [TAGS.TERMS],
-      querystring: z.object({
-        lang: f.languageCode,
-      }),
-      response: {
-        200: termsSchema.TermsResponse,
+const route = createRoute({
+  method: 'get',
+  path: '/terms',
+  tags: [TAGS.TERMS],
+  summary: 'Get terms of service',
+  description:
+    'Returns list of terms with consent mode and user consent status. ' +
+    'If user is authenticated, includes their consent history.',
+  request: {
+    query: z.object({
+      lang: f.languageCode,
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: termsSchema.TermsResponse,
+        },
       },
+      description: 'Success',
     },
-    handler: async (req, res) => {
-      const { lang } = req.query;
+  },
+});
 
-      const userId = req.session.get('user')?.id || null;
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const query = c.req.valid('query');
+    const { lang } = query;
+    const session = c.get('session');
+    const { termsService } = c.get('services');
 
-      const terms = await fastify.termsService.getGlobalTermsWithConsent(
-        userId,
-        lang,
-      );
+    const userId = session.get('user')?.id || null;
 
-      const pendingTerms =
-        fastify.termsService.getPendingFromLocalizedTerms(terms);
+    const terms = await termsService.getGlobalTermsWithConsent(userId, lang);
 
-      return res.status(200).send({
+    const pendingTerms = termsService.getPendingFromLocalizedTerms(terms);
+
+    return c.json(
+      {
         terms: terms.map((t) => ({
           ...t,
           userConsent: t.userConsent
@@ -51,7 +61,8 @@ export default (fastify: FastifyWithZodInstance) => {
             : null,
         })),
         pendingTerms,
-      });
-    },
+      },
+      200,
+    );
   });
 };

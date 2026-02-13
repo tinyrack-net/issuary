@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import {
@@ -8,40 +7,44 @@ import {
   TEST_OAUTH_CLIENT_CONFIG,
   TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
+import type { AppType } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       clients: [TEST_OAUTH_CLIENT_CONFIG],
     },
   });
+  app = server.app;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('GET /api/v1/consent', () => {
   test('should return consent information for authenticated user', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/v1/consent',
-      query: {
-        client_id: TEST_OAUTH_CLIENT.clientId,
-        scope: 'openid profile email',
-      },
-      cookies: { session: sessionCookie },
+    const params = new URLSearchParams({
+      client_id: TEST_OAUTH_CLIENT.clientId,
+      scope: 'openid profile email',
     });
 
-    expect(res.statusCode).toBe(200);
+    const res = await app.request(`/api/v1/consent?${params.toString()}`, {
+      method: 'GET',
+      headers: { Cookie: `session=${sessionCookie}` },
+    });
 
-    const body = res.json();
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
     expect(body).toHaveProperty('client');
     expect(body.client).toHaveProperty('clientId', TEST_OAUTH_CLIENT.clientId);
     expect(body.client).toHaveProperty('name');
@@ -73,19 +76,19 @@ describe('GET /api/v1/consent', () => {
   test('should return consent information with only openid scope', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/v1/consent',
-      query: {
-        client_id: TEST_OAUTH_CLIENT.clientId,
-        scope: 'openid',
-      },
-      cookies: { session: sessionCookie },
+    const params = new URLSearchParams({
+      client_id: TEST_OAUTH_CLIENT.clientId,
+      scope: 'openid',
     });
 
-    expect(res.statusCode).toBe(200);
+    const res = await app.request(`/api/v1/consent?${params.toString()}`, {
+      method: 'GET',
+      headers: { Cookie: `session=${sessionCookie}` },
+    });
 
-    const body = res.json();
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
     expect(body.scopes).toHaveLength(1);
     expect(body.scopes[0]).toHaveProperty('name', 'openid');
     expect(body.scopes[0]).toHaveProperty(
@@ -97,107 +100,107 @@ describe('GET /api/v1/consent', () => {
   test('should return empty scopes array when no scope provided', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/v1/consent',
-      query: {
-        client_id: TEST_OAUTH_CLIENT.clientId,
-      },
-      cookies: { session: sessionCookie },
+    const params = new URLSearchParams({
+      client_id: TEST_OAUTH_CLIENT.clientId,
     });
 
-    expect(res.statusCode).toBe(200);
+    const res = await app.request(`/api/v1/consent?${params.toString()}`, {
+      method: 'GET',
+      headers: { Cookie: `session=${sessionCookie}` },
+    });
 
-    const body = res.json();
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
     expect(body.scopes).toHaveLength(0);
   });
 
   test('should return 401 when user is not authenticated', async () => {
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/v1/consent',
-      query: {
-        client_id: TEST_OAUTH_CLIENT.clientId,
-        scope: 'openid',
-      },
+    const params = new URLSearchParams({
+      client_id: TEST_OAUTH_CLIENT.clientId,
+      scope: 'openid',
     });
 
-    expect(res.statusCode).toBe(401);
+    const res = await app.request(`/api/v1/consent?${params.toString()}`, {
+      method: 'GET',
+    });
 
-    const body = res.json();
+    expect(res.status).toBe(401);
+
+    const body = await res.json();
     expect(body).toHaveProperty('code', 'UNAUTHORIZED');
     expect(body).toHaveProperty('message');
   });
 
   test('should return 401 with invalid session cookie', async () => {
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/v1/consent',
-      query: {
-        client_id: TEST_OAUTH_CLIENT.clientId,
-        scope: 'openid',
-      },
-      cookies: { session: 'invalid-session-cookie' },
+    const params = new URLSearchParams({
+      client_id: TEST_OAUTH_CLIENT.clientId,
+      scope: 'openid',
     });
 
-    expect(res.statusCode).toBe(401);
+    const res = await app.request(`/api/v1/consent?${params.toString()}`, {
+      method: 'GET',
+      headers: { Cookie: 'session=invalid-session-cookie' },
+    });
 
-    const body = res.json();
+    expect(res.status).toBe(401);
+
+    const body = await res.json();
     expect(body).toHaveProperty('code', 'UNAUTHORIZED');
   });
 
   test('should return error when client_id is missing', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const res = await app.inject({
+    const params = new URLSearchParams({
+      scope: 'openid',
+    });
+
+    const res = await app.request(`/api/v1/consent?${params.toString()}`, {
       method: 'GET',
-      url: '/api/v1/consent',
-      query: {
-        scope: 'openid',
-      },
-      cookies: { session: sessionCookie },
+      headers: { Cookie: `session=${sessionCookie}` },
     });
 
     // Zod validation fails - either 400 or 500 (serialization error)
     // due to the response schema not matching validation error format
-    expect(res.statusCode).toBeGreaterThanOrEqual(400);
+    expect(res.status).toBeGreaterThanOrEqual(400);
   });
 
   test('should return error for invalid client_id', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/v1/consent',
-      query: {
-        client_id: 'non-existent-client-id',
-        scope: 'openid',
-      },
-      cookies: { session: sessionCookie },
+    const params = new URLSearchParams({
+      client_id: 'non-existent-client-id',
+      scope: 'openid',
     });
 
-    expect(res.statusCode).toBe(400);
+    const res = await app.request(`/api/v1/consent?${params.toString()}`, {
+      method: 'GET',
+      headers: { Cookie: `session=${sessionCookie}` },
+    });
 
-    const body = res.json();
+    expect(res.status).toBe(400);
+
+    const body = await res.json();
     expect(body).toHaveProperty('code');
   });
 
   test('should handle custom scopes with generic description', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/v1/consent',
-      query: {
-        client_id: TEST_OAUTH_CLIENT.clientId,
-        scope: 'openid custom_scope',
-      },
-      cookies: { session: sessionCookie },
+    const params = new URLSearchParams({
+      client_id: TEST_OAUTH_CLIENT.clientId,
+      scope: 'openid custom_scope',
     });
 
-    expect(res.statusCode).toBe(200);
+    const res = await app.request(`/api/v1/consent?${params.toString()}`, {
+      method: 'GET',
+      headers: { Cookie: `session=${sessionCookie}` },
+    });
 
-    const body = res.json();
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
     expect(body.scopes).toHaveLength(2);
 
     const customScope = body.scopes.find(
@@ -210,19 +213,19 @@ describe('GET /api/v1/consent', () => {
   test('should return all known scope descriptions', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/v1/consent',
-      query: {
-        client_id: TEST_OAUTH_CLIENT.clientId,
-        scope: 'openid profile email address phone offline_access',
-      },
-      cookies: { session: sessionCookie },
+    const params = new URLSearchParams({
+      client_id: TEST_OAUTH_CLIENT.clientId,
+      scope: 'openid profile email address phone offline_access',
     });
 
-    expect(res.statusCode).toBe(200);
+    const res = await app.request(`/api/v1/consent?${params.toString()}`, {
+      method: 'GET',
+      headers: { Cookie: `session=${sessionCookie}` },
+    });
 
-    const body = res.json();
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
     expect(body.scopes).toHaveLength(6);
 
     const scopeMap = new Map(

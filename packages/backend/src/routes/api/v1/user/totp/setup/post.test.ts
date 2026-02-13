@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import { createServer } from '@/server.js';
@@ -7,16 +6,19 @@ import {
   createDbUserWithSession,
   expectError,
   generateUniqueEmail,
-  injectWithSession,
   MINIMAL_TEST_CONFIG,
+  requestWithSession,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let services: ServiceContainer;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
@@ -29,20 +31,22 @@ beforeAll(async () => {
       },
     },
   });
+  app = server.app;
+  services = server.services;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('POST /api/v1/user/totp/setup', () => {
   test('should return 401 when not authenticated', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/user/totp/setup', {
       method: 'POST',
-      url: '/api/v1/user/totp/setup',
     });
 
-    expectError(res, e.Unauthorized);
+    await expectError(res, e.Unauthorized);
   });
 
   test('should return secret, otpauth_url, and qr_code on successful setup', async () => {
@@ -51,21 +55,22 @@ describe('POST /api/v1/user/totp/setup', () => {
 
     const { sessionCookie } = await createDbUserWithSession(
       app,
+      services,
       email,
       password,
     );
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/totp/setup',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/setup',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
 
     // Verify response structure
     expect(body.secret).toBeDefined();
@@ -87,25 +92,26 @@ describe('POST /api/v1/user/totp/setup', () => {
 
     const { sessionCookie, userId } = await createDbUserWithSession(
       app,
+      services,
       email,
       password,
     );
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/totp/setup',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/setup',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
 
     // Verify database record
-    await withMikroContext(app, async () => {
-      const totp = await app.mikro.userTotp.findByUserId(userId);
+    await withMikroContext(services, async () => {
+      const totp = await services.mikro.userTotp.findByUserId(userId);
       expect(totp).not.toBeNull();
       expect(totp?.secret).toBe(body.secret);
       expect(totp?.verified).toBe(false);
@@ -118,35 +124,36 @@ describe('POST /api/v1/user/totp/setup', () => {
 
     const { sessionCookie } = await createDbUserWithSession(
       app,
+      services,
       email,
       password,
     );
 
     // First setup call
-    const res1 = await injectWithSession(
+    const res1 = await requestWithSession(
       app,
+      '/api/v1/user/totp/setup',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/setup',
       },
       sessionCookie,
     );
 
-    expect(res1.statusCode).toBe(200);
-    const firstSecret = res1.json().secret;
+    expect(res1.status).toBe(200);
+    const firstSecret = (await res1.json()).secret;
 
     // Second setup call should regenerate secret
-    const res2 = await injectWithSession(
+    const res2 = await requestWithSession(
       app,
+      '/api/v1/user/totp/setup',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/setup',
       },
       sessionCookie,
     );
 
-    expect(res2.statusCode).toBe(200);
-    const secondSecret = res2.json().secret;
+    expect(res2.status).toBe(200);
+    const secondSecret = (await res2.json()).secret;
 
     // Secrets should be different
     expect(secondSecret).not.toBe(firstSecret);
@@ -158,31 +165,32 @@ describe('POST /api/v1/user/totp/setup', () => {
 
     const { sessionCookie, userId } = await createDbUserWithSession(
       app,
+      services,
       email,
       password,
     );
 
     // Enable TOTP fully in database (verified AND recovery_confirmed)
-    await withMikroContext(app, async () => {
-      const totp = app.mikro.userTotp.create({
+    await withMikroContext(services, async () => {
+      const totp = services.mikro.userTotp.create({
         user: userId,
-        secret: app.totpService.generateSecret(),
+        secret: services.totpService.generateSecret(),
       });
       totp.verified = true;
       totp.recovery_confirmed = true;
-      await app.mikro.em.persist(totp).flush();
+      await services.mikro.em.persist(totp).flush();
     });
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/totp/setup',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/setup',
       },
       sessionCookie,
     );
 
-    expectError(res, e.TotpAlreadyEnabled);
+    await expectError(res, e.TotpAlreadyEnabled);
   });
 
   test('should allow re-setup when TOTP is verified but not confirmed', async () => {
@@ -191,33 +199,34 @@ describe('POST /api/v1/user/totp/setup', () => {
 
     const { sessionCookie, userId } = await createDbUserWithSession(
       app,
+      services,
       email,
       password,
     );
 
     // Create TOTP with verified=true but recovery_confirmed=false
-    await withMikroContext(app, async () => {
-      const totp = app.mikro.userTotp.create({
+    await withMikroContext(services, async () => {
+      const totp = services.mikro.userTotp.create({
         user: userId,
-        secret: app.totpService.generateSecret(),
+        secret: services.totpService.generateSecret(),
       });
       totp.verified = true;
       totp.recovery_confirmed = false;
-      await app.mikro.em.persist(totp).flush();
+      await services.mikro.em.persist(totp).flush();
     });
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/totp/setup',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/setup',
       },
       sessionCookie,
     );
 
     // Should succeed and allow user to start fresh setup
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.secret).toBeDefined();
     expect(body.otpauth_url).toBeDefined();
     expect(body.qr_code).toBeDefined();
@@ -227,17 +236,17 @@ describe('POST /api/v1/user/totp/setup', () => {
     // Config users cannot setup 2FA
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/totp/setup',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/setup',
       },
       sessionCookie,
     );
 
     // Config users cannot setup 2FA
-    expectError(res, e.SecondFactorNotAllowedForConfigUser);
+    await expectError(res, e.SecondFactorNotAllowedForConfigUser);
   });
 
   test('should generate valid OTP auth URL that works with authenticator', async () => {
@@ -246,28 +255,29 @@ describe('POST /api/v1/user/totp/setup', () => {
 
     const { sessionCookie } = await createDbUserWithSession(
       app,
+      services,
       email,
       password,
     );
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/totp/setup',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/setup',
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
 
     // Generate a valid token using the secret via totpService
-    const validToken = app.totpService.generateToken(body.secret);
+    const validToken = services.totpService.generateToken(body.secret);
     expect(validToken).toMatch(/^\d{6}$/);
 
     // Verify the token is valid using totpService
-    const isValid = app.totpService.verifyToken(validToken, body.secret);
+    const isValid = services.totpService.verifyToken(validToken, body.secret);
     expect(isValid).toBe(true);
   });
 });

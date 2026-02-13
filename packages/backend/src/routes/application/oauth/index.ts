@@ -1,4 +1,5 @@
-import type { FastifyPluginAsync } from 'fastify';
+import { createRouter } from '@/lib/create-router.js';
+import type { AppType } from '@/types.js';
 import jwksGet from './.well-known/jwks/get.js';
 import oidcConfigGet from './.well-known/openid-configuration/get.js';
 import authorizeGet from './authorize/get.js';
@@ -7,12 +8,14 @@ import revokePost from './revoke/post.js';
 import tokenPost from './token/post.js';
 import userinfoGet from './userinfo/get.js';
 
-export const registerOAuthRoutes: FastifyPluginAsync = async (fastify) => {
-  await fastify.register(authorizeGet);
-  await fastify.register(tokenPost);
-  await fastify.register(introspectPost);
-  await fastify.register(revokePost);
-  await fastify.register(userinfoGet);
-  await fastify.register(jwksGet);
-  await fastify.register(oidcConfigGet);
-};
+export function registerOAuthRoutes(parentApp: AppType): void {
+  const app = createRouter();
+  authorizeGet(app);
+  tokenPost(app);
+  introspectPost(app);
+  revokePost(app);
+  userinfoGet(app);
+  jwksGet(app);
+  oidcConfigGet(app);
+  parentApp.route('/application/oauth', app);
+}

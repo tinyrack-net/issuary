@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import { createServer } from '@/server.js';
@@ -6,15 +5,18 @@ import {
   createDbUserWithSession,
   expectError,
   extractCookie,
-  injectWithSession,
   MINIMAL_TEST_CONFIG,
+  requestWithSession,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let services: ServiceContainer;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       auth: {
@@ -29,10 +31,13 @@ beforeAll(async () => {
       },
     },
   });
+  app = server.app;
+  services = server.services;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 /**
@@ -55,56 +60,59 @@ async function createUserWithTotpAndRecoveryCodes(
   // Create user and get session
   const { sessionCookie, userId } = await createDbUserWithSession(
     app,
+    services,
     email,
     password,
   );
 
   // Start TOTP setup
-  const setupRes = await injectWithSession(
+  const setupRes = await requestWithSession(
     app,
-    {
-      method: 'POST',
-      url: '/api/v1/user/totp/setup',
-    },
+    '/api/v1/user/totp/setup',
+    { method: 'POST' },
     sessionCookie,
   );
-  expect(setupRes.statusCode).toBe(200);
-  const totpSecret = setupRes.json().secret;
+  expect(setupRes.status).toBe(200);
+  const setupBody = await setupRes.json();
+  const totpSecret = setupBody.secret;
 
   // Verify TOTP setup (this generates recovery codes)
-  const validCode = app.totpService.generateToken(totpSecret);
-  const verifyRes = await injectWithSession(
+  const validCode = services.totpService.generateToken(totpSecret);
+  const verifyRes = await requestWithSession(
     app,
+    '/api/v1/user/totp/verify',
     {
       method: 'POST',
-      url: '/api/v1/user/totp/verify',
-      payload: { code: validCode },
+      body: JSON.stringify({ code: validCode }),
+      headers: { 'Content-Type': 'application/json' },
     },
     sessionCookie,
   );
-  expect(verifyRes.statusCode).toBe(200);
-  const recoveryCodes = verifyRes.json().recovery_codes;
+  expect(verifyRes.status).toBe(200);
+  const verifyBody = await verifyRes.json();
+  const recoveryCodes = verifyBody.recovery_codes;
   expect(recoveryCodes).toHaveLength(8);
 
   // Confirm TOTP setup (acknowledge recovery codes)
-  const confirmRes = await injectWithSession(
+  const confirmRes = await requestWithSession(
     app,
+    '/api/v1/user/totp/confirm',
     {
       method: 'POST',
-      url: '/api/v1/user/totp/confirm',
-      payload: {},
+      body: JSON.stringify({}),
+      headers: { 'Content-Type': 'application/json' },
     },
     sessionCookie,
   );
-  expect(confirmRes.statusCode).toBe(200);
+  expect(confirmRes.status).toBe(200);
 
   // Now login again to get a pending 2FA session
-  const loginRes = await app.inject({
+  const loginRes = await app.request('/api/v1/auth/login', {
     method: 'POST',
-    url: '/api/v1/auth/login',
-    payload: { email, password },
+    body: JSON.stringify({ email, password }),
+    headers: { 'Content-Type': 'application/json' },
   });
-  expect(loginRes.statusCode).toBe(200);
+  expect(loginRes.status).toBe(200);
   const pending2FACookie = extractCookie(loginRes, 'session');
 
   return {
@@ -122,18 +130,19 @@ describe('POST /api/v1/auth/totp/recovery/verify', () => {
     const { pending2FACookie, recoveryCodes } =
       await createUserWithTotpAndRecoveryCodes('recovery-success');
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/auth/totp/recovery/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/totp/recovery/verify',
-        payload: { code: recoveryCodes[0] },
+        body: JSON.stringify({ code: recoveryCodes[0] }),
+        headers: { 'Content-Type': 'application/json' },
       },
       pending2FACookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body).toHaveProperty('user');
     expect(body.user).toHaveProperty('id');
     expect(body.user).toHaveProperty('email');
@@ -149,37 +158,39 @@ describe('POST /api/v1/auth/totp/recovery/verify', () => {
       const code = recoveryCodes[0] ?? '';
 
       // First use should succeed
-      const res1 = await injectWithSession(
+      const res1 = await requestWithSession(
         app,
+        '/api/v1/auth/totp/recovery/verify',
         {
           method: 'POST',
-          url: '/api/v1/auth/totp/recovery/verify',
-          payload: { code },
+          body: JSON.stringify({ code }),
+          headers: { 'Content-Type': 'application/json' },
         },
         pending2FACookie,
       );
-      expect(res1.statusCode).toBe(200);
+      expect(res1.status).toBe(200);
 
       // Login again to get a new pending 2FA session
-      const loginRes = await app.inject({
+      const loginRes = await app.request('/api/v1/auth/login', {
         method: 'POST',
-        url: '/api/v1/auth/login',
-        payload: { email, password },
+        body: JSON.stringify({ email, password }),
+        headers: { 'Content-Type': 'application/json' },
       });
-      expect(loginRes.statusCode).toBe(200);
+      expect(loginRes.status).toBe(200);
       const newCookie = extractCookie(loginRes, 'session');
 
       // Second use of same code should fail
-      const res2 = await injectWithSession(
+      const res2 = await requestWithSession(
         app,
+        '/api/v1/auth/totp/recovery/verify',
         {
           method: 'POST',
-          url: '/api/v1/auth/totp/recovery/verify',
-          payload: { code },
+          body: JSON.stringify({ code }),
+          headers: { 'Content-Type': 'application/json' },
         },
         newCookie,
       );
-      expectError(res2, e.InvalidRecoveryCode);
+      await expectError(res2, e.InvalidRecoveryCode);
     },
   );
 
@@ -187,27 +198,28 @@ describe('POST /api/v1/auth/totp/recovery/verify', () => {
     const { pending2FACookie } =
       await createUserWithTotpAndRecoveryCodes('recovery-invalid');
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/auth/totp/recovery/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/totp/recovery/verify',
-        payload: { code: 'aaaa-zzzz' },
+        body: JSON.stringify({ code: 'aaaa-zzzz' }),
+        headers: { 'Content-Type': 'application/json' },
       },
       pending2FACookie,
     );
 
-    expectError(res, e.InvalidRecoveryCode);
+    await expectError(res, e.InvalidRecoveryCode);
   });
 
   test('should return 401 when no pending 2FA session', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/totp/recovery/verify', {
       method: 'POST',
-      url: '/api/v1/auth/totp/recovery/verify',
-      payload: { code: 'abcd-ef12' },
+      body: JSON.stringify({ code: 'abcd-ef12' }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expectError(res, e.SecondFactorSessionExpired);
+    await expectError(res, e.SecondFactorSessionExpired);
   });
 
   test('should validate code format', async () => {
@@ -215,40 +227,43 @@ describe('POST /api/v1/auth/totp/recovery/verify', () => {
       await createUserWithTotpAndRecoveryCodes('recovery-format');
 
     // Missing hyphen
-    const res1 = await injectWithSession(
+    const res1 = await requestWithSession(
       app,
+      '/api/v1/auth/totp/recovery/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/totp/recovery/verify',
-        payload: { code: 'abcdefgh' },
+        body: JSON.stringify({ code: 'abcdefgh' }),
+        headers: { 'Content-Type': 'application/json' },
       },
       pending2FACookie,
     );
-    expect(res1.statusCode).toBe(400);
+    expect(res1.status).toBe(400);
 
     // Too short
-    const res2 = await injectWithSession(
+    const res2 = await requestWithSession(
       app,
+      '/api/v1/auth/totp/recovery/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/totp/recovery/verify',
-        payload: { code: 'abc-def' },
+        body: JSON.stringify({ code: 'abc-def' }),
+        headers: { 'Content-Type': 'application/json' },
       },
       pending2FACookie,
     );
-    expect(res2.statusCode).toBe(400);
+    expect(res2.status).toBe(400);
 
     // Uppercase (should not match pattern)
-    const res3 = await injectWithSession(
+    const res3 = await requestWithSession(
       app,
+      '/api/v1/auth/totp/recovery/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/totp/recovery/verify',
-        payload: { code: 'ABCD-EF12' },
+        body: JSON.stringify({ code: 'ABCD-EF12' }),
+        headers: { 'Content-Type': 'application/json' },
       },
       pending2FACookie,
     );
-    expect(res3.statusCode).toBe(400);
+    expect(res3.status).toBe(400);
   });
 
   test('should allow using different recovery codes', async () => {
@@ -256,58 +271,61 @@ describe('POST /api/v1/auth/totp/recovery/verify', () => {
       await createUserWithTotpAndRecoveryCodes('recovery-multiple');
 
     // Use first code
-    const res1 = await injectWithSession(
+    const res1 = await requestWithSession(
       app,
+      '/api/v1/auth/totp/recovery/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/totp/recovery/verify',
-        payload: { code: recoveryCodes[0] },
+        body: JSON.stringify({ code: recoveryCodes[0] }),
+        headers: { 'Content-Type': 'application/json' },
       },
       pending2FACookie,
     );
-    expect(res1.statusCode).toBe(200);
+    expect(res1.status).toBe(200);
 
     // Login again and use second code
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
     const newCookie = extractCookie(loginRes, 'session');
 
-    const res2 = await injectWithSession(
+    const res2 = await requestWithSession(
       app,
+      '/api/v1/auth/totp/recovery/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/totp/recovery/verify',
-        payload: { code: recoveryCodes[1] },
+        body: JSON.stringify({ code: recoveryCodes[1] }),
+        headers: { 'Content-Type': 'application/json' },
       },
       newCookie,
     );
-    expect(res2.statusCode).toBe(200);
+    expect(res2.status).toBe(200);
   });
 
   test('should mark recovery code as used in database', async () => {
     const { pending2FACookie, recoveryCodes, userId } =
       await createUserWithTotpAndRecoveryCodes('recovery-db-mark');
 
-    await injectWithSession(
+    await requestWithSession(
       app,
+      '/api/v1/auth/totp/recovery/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/totp/recovery/verify',
-        payload: { code: recoveryCodes[0] },
+        body: JSON.stringify({ code: recoveryCodes[0] }),
+        headers: { 'Content-Type': 'application/json' },
       },
       pending2FACookie,
     );
 
     // Verify in database that one code is marked as used
-    await withMikroContext(app, async () => {
+    await withMikroContext(services, async () => {
       const unusedCodes =
-        await app.mikro.userTotpRecoveryCode.findUnusedByUserId(userId);
+        await services.mikro.userTotpRecoveryCode.findUnusedByUserId(userId);
       expect(unusedCodes).toHaveLength(7); // 8 - 1 = 7
 
-      const allCodes = await app.mikro.userTotpRecoveryCode.find({
+      const allCodes = await services.mikro.userTotpRecoveryCode.find({
         user: { id: userId },
       });
       const usedCodes = allCodes.filter((c) => c.used);
@@ -323,71 +341,75 @@ describe('POST /api/v1/auth/totp/recovery/verify', () => {
     // Create user with TOTP and recovery codes
     const { sessionCookie, userId } = await createDbUserWithSession(
       app,
+      services,
       email,
       password,
     );
 
     // Setup TOTP
-    const setupRes = await injectWithSession(
+    const setupRes = await requestWithSession(
       app,
-      {
-        method: 'POST',
-        url: '/api/v1/user/totp/setup',
-      },
+      '/api/v1/user/totp/setup',
+      { method: 'POST' },
       sessionCookie,
     );
-    const totpSecret = setupRes.json().secret;
+    const setupBody = await setupRes.json();
+    const totpSecret = setupBody.secret;
 
     // Verify setup
-    const validCode = app.totpService.generateToken(totpSecret);
-    const verifyRes = await injectWithSession(
+    const validCode = services.totpService.generateToken(totpSecret);
+    const verifyRes = await requestWithSession(
       app,
+      '/api/v1/user/totp/verify',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/verify',
-        payload: { code: validCode },
+        body: JSON.stringify({ code: validCode }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
-    expect(verifyRes.statusCode).toBe(200);
-    expect(verifyRes.json().recovery_codes).toHaveLength(8);
+    expect(verifyRes.status).toBe(200);
+    const verifyBody = await verifyRes.json();
+    expect(verifyBody.recovery_codes).toHaveLength(8);
 
     // Confirm recovery codes saved
-    const confirmRes = await injectWithSession(
+    const confirmRes = await requestWithSession(
       app,
+      '/api/v1/user/totp/confirm',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/confirm',
-        payload: {},
+        body: JSON.stringify({}),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
-    expect(confirmRes.statusCode).toBe(200);
+    expect(confirmRes.status).toBe(200);
 
     // Verify recovery codes exist
-    await withMikroContext(app, async () => {
+    await withMikroContext(services, async () => {
       const codes =
-        await app.mikro.userTotpRecoveryCode.findUnusedByUserId(userId);
+        await services.mikro.userTotpRecoveryCode.findUnusedByUserId(userId);
       expect(codes).toHaveLength(8);
     });
 
     // Disable TOTP
-    const disableCode = app.totpService.generateToken(totpSecret);
-    const disableRes = await injectWithSession(
+    const disableCode = services.totpService.generateToken(totpSecret);
+    const disableRes = await requestWithSession(
       app,
+      '/api/v1/user/totp',
       {
         method: 'DELETE',
-        url: '/api/v1/user/totp',
-        payload: { code: disableCode },
+        body: JSON.stringify({ code: disableCode }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
-    expect(disableRes.statusCode).toBe(200);
+    expect(disableRes.status).toBe(200);
 
     // Verify recovery codes are deleted
-    await withMikroContext(app, async () => {
+    await withMikroContext(services, async () => {
       const codes =
-        await app.mikro.userTotpRecoveryCode.findUnusedByUserId(userId);
+        await services.mikro.userTotpRecoveryCode.findUnusedByUserId(userId);
       expect(codes).toHaveLength(0);
     });
   });
@@ -399,50 +421,52 @@ describe('POST /api/v1/auth/totp/recovery/verify', () => {
     // Use all 8 recovery codes
     for (let i = 0; i < 8; i++) {
       // Login to get pending 2FA session
-      const loginRes = await app.inject({
+      const loginRes = await app.request('/api/v1/auth/login', {
         method: 'POST',
-        url: '/api/v1/auth/login',
-        payload: { email, password },
+        body: JSON.stringify({ email, password }),
+        headers: { 'Content-Type': 'application/json' },
       });
       const cookie = extractCookie(loginRes, 'session');
 
-      const res = await injectWithSession(
+      const res = await requestWithSession(
         app,
+        '/api/v1/auth/totp/recovery/verify',
         {
           method: 'POST',
-          url: '/api/v1/auth/totp/recovery/verify',
-          payload: { code: recoveryCodes[i] },
+          body: JSON.stringify({ code: recoveryCodes[i] }),
+          headers: { 'Content-Type': 'application/json' },
         },
         i === 0 ? pending2FACookie : cookie,
       );
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
     }
 
     // Verify all codes are used in database
-    await withMikroContext(app, async () => {
+    await withMikroContext(services, async () => {
       const unusedCodes =
-        await app.mikro.userTotpRecoveryCode.findUnusedByUserId(userId);
+        await services.mikro.userTotpRecoveryCode.findUnusedByUserId(userId);
       expect(unusedCodes).toHaveLength(0);
     });
 
     // Login again and try to use a recovery code
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
     const newCookie = extractCookie(loginRes, 'session');
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/auth/totp/recovery/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/totp/recovery/verify',
-        payload: { code: 'abcd-1234' },
+        body: JSON.stringify({ code: 'abcd-1234' }),
+        headers: { 'Content-Type': 'application/json' },
       },
       newCookie,
     );
-    expectError(res, e.NoRecoveryCodesAvailable);
+    await expectError(res, e.NoRecoveryCodesAvailable);
   });
 
   test('should fail recovery code login after TOTP is disabled', async () => {
@@ -450,48 +474,50 @@ describe('POST /api/v1/auth/totp/recovery/verify', () => {
       await createUserWithTotpAndRecoveryCodes('recovery-after-disable');
 
     // Get authenticated session (not pending 2FA)
-    const loginRes1 = await app.inject({
+    const loginRes1 = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
     const pending2FACookie = extractCookie(loginRes1, 'session');
 
     // Use TOTP to complete login
-    const totpCode = app.totpService.generateToken(totpSecret);
-    const totpVerifyRes = await injectWithSession(
+    const totpCode = services.totpService.generateToken(totpSecret);
+    const totpVerifyRes = await requestWithSession(
       app,
+      '/api/v1/auth/totp/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/totp/verify',
-        payload: { code: totpCode },
+        body: JSON.stringify({ code: totpCode }),
+        headers: { 'Content-Type': 'application/json' },
       },
       pending2FACookie,
     );
-    expect(totpVerifyRes.statusCode).toBe(200);
+    expect(totpVerifyRes.status).toBe(200);
     const authedCookie = extractCookie(totpVerifyRes, 'session');
 
     // Disable TOTP with authenticated session
-    const disableCode = app.totpService.generateToken(totpSecret);
-    const disableRes = await injectWithSession(
+    const disableCode = services.totpService.generateToken(totpSecret);
+    const disableRes = await requestWithSession(
       app,
+      '/api/v1/user/totp',
       {
         method: 'DELETE',
-        url: '/api/v1/user/totp',
-        payload: { code: disableCode },
+        body: JSON.stringify({ code: disableCode }),
+        headers: { 'Content-Type': 'application/json' },
       },
       authedCookie,
     );
-    expect(disableRes.statusCode).toBe(200);
+    expect(disableRes.status).toBe(200);
 
     // Now login again - should succeed immediately without TOTP
-    const loginRes2 = await app.inject({
+    const loginRes2 = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email, password },
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
     });
-    expect(loginRes2.statusCode).toBe(200);
-    const body = loginRes2.json();
+    expect(loginRes2.status).toBe(200);
+    const body = await loginRes2.json();
     // User should be logged in without needing 2FA
     expect(body.user.totp_registered).toBe(false);
   });
@@ -501,16 +527,17 @@ describe('POST /api/v1/auth/totp/recovery/verify', () => {
       'recovery-empty-body',
     );
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/auth/totp/recovery/verify',
       {
         method: 'POST',
-        url: '/api/v1/auth/totp/recovery/verify',
-        payload: {},
+        body: JSON.stringify({}),
+        headers: { 'Content-Type': 'application/json' },
       },
       pending2FACookie,
     );
 
-    expect(res.statusCode).toBe(400);
+    expect(res.status).toBe(400);
   });
 });

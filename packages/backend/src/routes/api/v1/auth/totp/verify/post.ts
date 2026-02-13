@@ -1,55 +1,84 @@
+import { createRoute } from '@hono/zod-openapi';
 import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
-export default (fastify: FastifyWithZodInstance) => {
-  if (
-    !fastify.config.auth.password.enabled ||
-    !fastify.config.auth.password.totp.enabled
-  ) {
-    return;
-  }
-  fastify.route({
-    method: 'POST',
-    url: '/auth/totp/verify',
-    schema: {
-      summary: 'Verify TOTP for login',
-      description:
-        'Complete login by verifying TOTP code. Requires pending 2FA session from password login.',
-      tags: [TAGS.AUTH],
-      body: z.object({
-        code: f.totpCode,
-      }),
-      response: {
-        200: r.UserSessionResponse,
-        400: z.union([e.ValidationError.Schema, e.InvalidTotpCode.Schema]),
-        401: e.SecondFactorSessionExpired.Schema,
+const route = createRoute({
+  method: 'post',
+  path: '/auth/totp/verify',
+  tags: [TAGS.AUTH],
+  summary: 'Verify TOTP for login',
+  description:
+    'Complete login by verifying TOTP code. Requires pending 2FA session from password login.',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            code: f.totpCode,
+          }),
+        },
       },
     },
-    handler: async (req, res) => {
-      const pending2FAUser = req.session.get('pending2FAUser');
-
-      if (!pending2FAUser) {
-        throw new e.SecondFactorSessionExpired.Error();
-      }
-
-      await fastify.totpService.verifyForAuth(pending2FAUser.id, req.body.code);
-
-      const userEntity = await fastify.mikro.user.verifyById(pending2FAUser.id);
-      const user =
-        await fastify.userService.userEntityToSessionUser(userEntity);
-
-      const authTime =
-        pending2FAUser.authenticated_at ?? Math.floor(Date.now() / 1000);
-
-      req.setUserSession(user.id, authTime);
-
-      return res.status(200).send({
-        user,
-      });
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: r.UserSessionResponse,
+        },
+      },
+      description: 'Success',
     },
+    400: {
+      content: {
+        'application/json': {
+          schema: e.ValidationError.Schema,
+        },
+      },
+      description: 'Validation error or invalid TOTP code',
+    },
+    401: {
+      content: {
+        'application/json': {
+          schema: e.SecondFactorSessionExpired.Schema,
+        },
+      },
+      description: 'Second factor session expired',
+    },
+  },
+});
+
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const config = c.get('services').config;
+    if (!config.auth.password.enabled || !config.auth.password.totp.enabled) {
+      throw new e.ValidationError.Error('TOTP authentication is disabled');
+    }
+
+    const body = c.req.valid('json');
+    const session = c.get('session');
+    const { mikro, totpService, userService } = c.get('services');
+
+    const pending2FAUser = session.get('pending2FAUser');
+
+    if (!pending2FAUser) {
+      throw new e.SecondFactorSessionExpired.Error();
+    }
+
+    await totpService.verifyForAuth(pending2FAUser.id, body.code);
+
+    const userEntity = await mikro.user.verifyById(pending2FAUser.id);
+    const user = await userService.userEntityToSessionUser(userEntity);
+
+    const authTime =
+      pending2FAUser.authenticated_at ?? Math.floor(Date.now() / 1000);
+
+    session.setUserSession(user.id, authTime);
+
+    return c.json({ user }, 200);
   });
 };

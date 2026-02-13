@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
@@ -16,21 +15,23 @@ import {
   TEST_PKCE,
   TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
+import type { AppType } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  ({ app, cleanup } = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       clients: [TEST_OAUTH_CLIENT_CONFIG],
     },
-  });
+  }));
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 /**
@@ -58,8 +59,8 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      expect(tokenRes.statusCode).toBe(200);
-      const tokens = tokenRes.json();
+      expect(tokenRes.status).toBe(200);
+      const tokens = await tokenRes.json();
 
       const originalRefreshToken = tokens.refresh_token;
 
@@ -68,8 +69,8 @@ describe('Token Lifecycle and Rotation', () => {
         refreshToken: originalRefreshToken,
       });
 
-      expect(refreshRes.statusCode).toBe(200);
-      const newTokens = refreshRes.json();
+      expect(refreshRes.status).toBe(200);
+      const newTokens = await refreshRes.json();
 
       // New refresh token should be issued (rotation)
       expect(newTokens.refresh_token).toBeDefined();
@@ -89,7 +90,7 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
       const originalRefreshToken = tokens.refresh_token;
 
       // First refresh - should succeed
@@ -97,7 +98,7 @@ describe('Token Lifecycle and Rotation', () => {
         refreshToken: originalRefreshToken,
       });
 
-      expect(refreshRes.statusCode).toBe(200);
+      expect(refreshRes.status).toBe(200);
 
       // Second refresh with same token - should fail because refresh token
       // rotation is implemented and the old token is revoked
@@ -106,8 +107,8 @@ describe('Token Lifecycle and Rotation', () => {
       });
 
       // Refresh token rotation: old token should be rejected
-      expect(replayRes.statusCode).toBe(400);
-      expect(replayRes.json().code).toBe('INVALID_REFRESH_TOKEN');
+      expect(replayRes.status).toBe(400);
+      expect((await replayRes.json()).code).toBe('INVALID_REFRESH_TOKEN');
     });
 
     test('should maintain token chain through multiple refreshes', async () => {
@@ -123,7 +124,7 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      let currentRefreshToken = tokenRes.json().refresh_token;
+      let currentRefreshToken = (await tokenRes.json()).refresh_token;
       const seenRefreshTokens = new Set([currentRefreshToken]);
 
       // Perform multiple refreshes
@@ -132,8 +133,8 @@ describe('Token Lifecycle and Rotation', () => {
           refreshToken: currentRefreshToken,
         });
 
-        expect(refreshRes.statusCode).toBe(200);
-        const newTokens = refreshRes.json();
+        expect(refreshRes.status).toBe(200);
+        const newTokens = await refreshRes.json();
 
         // Each refresh should give a new, unique refresh token
         expect(seenRefreshTokens.has(newTokens.refresh_token)).toBe(false);
@@ -158,11 +159,11 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
 
       // Access token should work before revocation
       const userInfoBeforeRes = await getUserInfo(app, tokens.access_token);
-      expect(userInfoBeforeRes.statusCode).toBe(200);
+      expect(userInfoBeforeRes.status).toBe(200);
 
       // Revoke the access token
       const revokeRes = await revokeToken(app, {
@@ -170,11 +171,11 @@ describe('Token Lifecycle and Rotation', () => {
         tokenTypeHint: 'access_token',
       });
 
-      expect(revokeRes.statusCode).toBe(200);
+      expect(revokeRes.status).toBe(200);
 
       // Access token should not work after revocation
       const userInfoAfterRes = await getUserInfo(app, tokens.access_token);
-      expect(userInfoAfterRes.statusCode).toBe(401);
+      expect(userInfoAfterRes.status).toBe(401);
     });
 
     test('should revoke refresh token successfully', async () => {
@@ -190,16 +191,16 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
 
       // Refresh token should work before revocation
       const refreshBeforeRes = await refreshAccessToken(app, {
         refreshToken: tokens.refresh_token,
       });
-      expect(refreshBeforeRes.statusCode).toBe(200);
+      expect(refreshBeforeRes.status).toBe(200);
 
       // Get new refresh token from that response
-      const newRefreshToken = refreshBeforeRes.json().refresh_token;
+      const newRefreshToken = (await refreshBeforeRes.json()).refresh_token;
 
       // Revoke the new refresh token
       const revokeRes = await revokeToken(app, {
@@ -207,14 +208,14 @@ describe('Token Lifecycle and Rotation', () => {
         tokenTypeHint: 'refresh_token',
       });
 
-      expect(revokeRes.statusCode).toBe(200);
+      expect(revokeRes.status).toBe(200);
 
       // Refresh token should not work after revocation
       const refreshAfterRes = await refreshAccessToken(app, {
         refreshToken: newRefreshToken,
       });
 
-      expect([400, 401]).toContain(refreshAfterRes.statusCode);
+      expect([400, 401]).toContain(refreshAfterRes.status);
     });
 
     test('should handle revocation of already revoked token gracefully', async () => {
@@ -230,7 +231,7 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
 
       // Revoke the access token
       const revokeRes1 = await revokeToken(app, {
@@ -238,7 +239,7 @@ describe('Token Lifecycle and Rotation', () => {
         tokenTypeHint: 'access_token',
       });
 
-      expect(revokeRes1.statusCode).toBe(200);
+      expect(revokeRes1.status).toBe(200);
 
       // Try to revoke again - should still return 200 (RFC 7009)
       const revokeRes2 = await revokeToken(app, {
@@ -247,7 +248,7 @@ describe('Token Lifecycle and Rotation', () => {
       });
 
       // Per RFC 7009, revoking an invalid/already revoked token should succeed
-      expect(revokeRes2.statusCode).toBe(200);
+      expect(revokeRes2.status).toBe(200);
     });
 
     test('should handle revocation of non-existent token gracefully', async () => {
@@ -259,7 +260,7 @@ describe('Token Lifecycle and Rotation', () => {
       });
 
       // Per RFC 7009, should return 200 even for non-existent tokens
-      expect(revokeRes.statusCode).toBe(200);
+      expect(revokeRes.status).toBe(200);
     });
   });
 
@@ -277,15 +278,15 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
 
       const introspectRes = await introspectToken(app, {
         token: tokens.access_token,
         tokenTypeHint: 'access_token',
       });
 
-      expect(introspectRes.statusCode).toBe(200);
-      const introspection = introspectRes.json();
+      expect(introspectRes.status).toBe(200);
+      const introspection = await introspectRes.json();
 
       expect(introspection.active).toBe(true);
       expect(introspection.client_id).toBe(TEST_OAUTH_CLIENT.clientId);
@@ -304,7 +305,7 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
 
       // Revoke the token
       await revokeToken(app, {
@@ -318,8 +319,8 @@ describe('Token Lifecycle and Rotation', () => {
         tokenTypeHint: 'access_token',
       });
 
-      expect(introspectRes.statusCode).toBe(200);
-      const introspection = introspectRes.json();
+      expect(introspectRes.status).toBe(200);
+      const introspection = await introspectRes.json();
 
       expect(introspection.active).toBe(false);
     });
@@ -337,7 +338,7 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
       const originalRefreshToken = tokens.refresh_token;
 
       // Use the refresh token
@@ -351,8 +352,8 @@ describe('Token Lifecycle and Rotation', () => {
         tokenTypeHint: 'refresh_token',
       });
 
-      expect(introspectRes.statusCode).toBe(200);
-      const introspection = introspectRes.json();
+      expect(introspectRes.status).toBe(200);
+      const introspection = await introspectRes.json();
 
       // With token rotation, used refresh token should be revoked and inactive
       expect(introspection.active).toBe(false);
@@ -373,7 +374,7 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
       const accessDecoded = jose.decodeJwt(tokens.access_token);
       const idDecoded = jose.decodeJwt(tokens.id_token);
       const now = Math.floor(Date.now() / 1000);
@@ -400,8 +401,8 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      expect(tokenRes.statusCode).toBe(200);
-      const tokens = tokenRes.json();
+      expect(tokenRes.status).toBe(200);
+      const tokens = await tokenRes.json();
 
       // expires_in should be a positive number
       expect(tokens.expires_in).toBeGreaterThan(0);
@@ -435,7 +436,7 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
       const originalAccessPayload = jose.decodeJwt(tokens.access_token);
 
       // Wait a moment to ensure different iat
@@ -446,8 +447,8 @@ describe('Token Lifecycle and Rotation', () => {
         refreshToken: tokens.refresh_token,
       });
 
-      expect(refreshRes.statusCode).toBe(200);
-      const newTokens = refreshRes.json();
+      expect(refreshRes.status).toBe(200);
+      const newTokens = await refreshRes.json();
       const newAccessPayload = jose.decodeJwt(newTokens.access_token);
 
       // New token should have fresh iat and exp
@@ -485,7 +486,7 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
 
       // Send multiple refresh requests concurrently
       // With token rotation, only one should succeed (first to revoke the token)
@@ -502,7 +503,7 @@ describe('Token Lifecycle and Rotation', () => {
 
       // With token rotation, only the first request to complete should succeed
       // The rest will fail because the token gets revoked
-      const successCount = results.filter((r) => r.statusCode === 200).length;
+      const successCount = results.filter((r) => r.status === 200).length;
       // At least one should succeed, but with race conditions in concurrent
       // requests, it's possible for 1 to succeed before revocation
       expect(successCount).toBeGreaterThanOrEqual(1);
@@ -521,22 +522,22 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
 
       // First refresh - should succeed
       const refresh1 = await refreshAccessToken(app, {
         refreshToken: tokens.refresh_token,
       });
 
-      expect(refresh1.statusCode).toBe(200);
+      expect(refresh1.status).toBe(200);
 
       // Second refresh with same token - should fail (token rotation revokes old token)
       const refresh2 = await refreshAccessToken(app, {
         refreshToken: tokens.refresh_token,
       });
 
-      expect(refresh2.statusCode).toBe(400);
-      expect(refresh2.json().code).toBe('INVALID_REFRESH_TOKEN');
+      expect(refresh2.status).toBe(400);
+      expect((await refresh2.json()).code).toBe('INVALID_REFRESH_TOKEN');
     });
 
     test('should allow chained refresh token usage', async () => {
@@ -552,20 +553,20 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
 
       // First refresh - should succeed and return new refresh token
       const refresh1 = await refreshAccessToken(app, {
         refreshToken: tokens.refresh_token,
       });
-      expect(refresh1.statusCode).toBe(200);
-      const tokens2 = refresh1.json();
+      expect(refresh1.status).toBe(200);
+      const tokens2 = await refresh1.json();
 
       // Second refresh with NEW token - should succeed
       const refresh2 = await refreshAccessToken(app, {
         refreshToken: tokens2.refresh_token,
       });
-      expect(refresh2.statusCode).toBe(200);
+      expect(refresh2.status).toBe(200);
     });
   });
 
@@ -586,15 +587,15 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
 
       // Refresh the token
       const refreshRes = await refreshAccessToken(app, {
         refreshToken: tokens.refresh_token,
       });
 
-      expect(refreshRes.statusCode).toBe(200);
-      const newTokens = refreshRes.json();
+      expect(refreshRes.status).toBe(200);
+      const newTokens = await refreshRes.json();
 
       // Introspect new access token to check scope
       const introspectRes = await introspectToken(app, {
@@ -602,7 +603,7 @@ describe('Token Lifecycle and Rotation', () => {
         tokenTypeHint: 'access_token',
       });
 
-      const introspection = introspectRes.json();
+      const introspection = await introspectRes.json();
       expect(introspection.active).toBe(true);
 
       // Scope should be preserved
@@ -616,11 +617,10 @@ describe('Token Lifecycle and Rotation', () => {
 
   describe('Token Subject Consistency', () => {
     test('should maintain same subject across all token operations', async () => {
-      const jwksRes = await app.inject({
+      const jwksRes = await app.request('/application/oauth/.well-known/jwks', {
         method: 'GET',
-        url: '/application/oauth/.well-known/jwks',
       });
-      const JWKS = jose.createLocalJWKSet(jwksRes.json());
+      const JWKS = jose.createLocalJWKSet(await jwksRes.json());
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -634,7 +634,7 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
 
       // Get subject from original access token
       const { payload: originalPayload } = await jose.jwtVerify(
@@ -648,7 +648,7 @@ describe('Token Lifecycle and Rotation', () => {
         refreshToken: tokens.refresh_token,
       });
 
-      const newTokens = refreshRes.json();
+      const newTokens = await refreshRes.json();
 
       // Get subject from new access token
       const { payload: newPayload } = await jose.jwtVerify(
@@ -661,7 +661,7 @@ describe('Token Lifecycle and Rotation', () => {
 
       // UserInfo should return same subject
       const userInfoRes = await getUserInfo(app, newTokens.access_token);
-      const userInfo = userInfoRes.json();
+      const userInfo = await userInfoRes.json();
 
       expect(userInfo.sub).toBe(originalSub);
     });
@@ -682,7 +682,7 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      expect(tokenRes1.statusCode).toBe(200);
+      expect(tokenRes1.status).toBe(200);
 
       // Second exchange with same code - should fail
       const tokenRes2 = await exchangeCodeForTokens(app, {
@@ -690,7 +690,7 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      expect([400, 401]).toContain(tokenRes2.statusCode);
+      expect([400, 401]).toContain(tokenRes2.status);
     });
 
     test('should revoke tokens if authorization code is reused', async () => {
@@ -707,8 +707,8 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      expect(tokenRes1.statusCode).toBe(200);
-      const _tokens = tokenRes1.json();
+      expect(tokenRes1.status).toBe(200);
+      const _tokens = await tokenRes1.json();
 
       // Attempt to reuse the code
       const tokenRes2 = await exchangeCodeForTokens(app, {
@@ -716,7 +716,7 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      expect([400, 401]).toContain(tokenRes2.statusCode);
+      expect([400, 401]).toContain(tokenRes2.status);
 
       // Original tokens might be revoked (security measure per RFC 6749)
       // This is implementation-dependent, so we just verify the code reuse fails
@@ -737,7 +737,7 @@ describe('Token Lifecycle and Rotation', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const tokens = tokenRes.json();
+      const tokens = await tokenRes.json();
       expect(tokens.id_token).toBeDefined();
 
       // Refresh the token
@@ -745,8 +745,8 @@ describe('Token Lifecycle and Rotation', () => {
         refreshToken: tokens.refresh_token,
       });
 
-      expect(refreshRes.statusCode).toBe(200);
-      const newTokens = refreshRes.json();
+      expect(refreshRes.status).toBe(200);
+      const newTokens = await refreshRes.json();
 
       // Per OIDC spec, ID token is optional in refresh response
       // Some implementations include it, some don't

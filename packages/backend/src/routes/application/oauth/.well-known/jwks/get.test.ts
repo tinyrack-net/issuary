@@ -1,18 +1,21 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import { MINIMAL_TEST_CONFIG } from '@/test-utils/index.js';
+import type { AppType } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: MINIMAL_TEST_CONFIG,
   });
+  app = server.app;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('GET /application/oauth/.well-known/jwks', () => {
@@ -20,14 +23,11 @@ describe('GET /application/oauth/.well-known/jwks', () => {
 
   describe('Success Cases', () => {
     test('should return JWKS with RSA public keys', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res = await app.request(url);
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const json = res.json();
+      const json = await res.json();
       expect(json).toHaveProperty('keys');
       expect(Array.isArray(json.keys)).toBe(true);
       expect(json.keys.length).toBeGreaterThanOrEqual(1);
@@ -43,24 +43,18 @@ describe('GET /application/oauth/.well-known/jwks', () => {
     });
 
     test('should return correct content-type header', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res = await app.request(url);
 
-      expect(res.statusCode).toBe(200);
-      expect(res.headers['content-type']).toContain('application/json');
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('application/json');
     });
 
     test('should return JWKS conforming to RFC 7517 structure', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res = await app.request(url);
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
 
-      const json = res.json();
+      const json = await res.json();
 
       // RFC 7517 §5: JWKS must have "keys" member
       expect(json).toHaveProperty('keys');
@@ -92,31 +86,21 @@ describe('GET /application/oauth/.well-known/jwks', () => {
     });
 
     test('should include Cache-Control header', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res = await app.request(url);
 
-      expect(res.statusCode).toBe(200);
-      expect(res.headers['cache-control']).toBe('public, max-age=3600');
+      expect(res.status).toBe(200);
+      expect(res.headers.get('cache-control')).toBe('public, max-age=3600');
     });
   });
 
   describe('Caching Behavior', () => {
     test('should be idempotent - multiple requests return same result', async () => {
-      const res1 = await app.inject({
-        method: 'GET',
-        url,
-      });
+      const res1 = await app.request(url);
+      const res2 = await app.request(url);
 
-      const res2 = await app.inject({
-        method: 'GET',
-        url,
-      });
-
-      expect(res1.statusCode).toBe(200);
-      expect(res2.statusCode).toBe(200);
-      expect(res1.json()).toEqual(res2.json());
+      expect(res1.status).toBe(200);
+      expect(res2.status).toBe(200);
+      expect(await res1.json()).toEqual(await res2.json());
     });
   });
 });

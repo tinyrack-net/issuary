@@ -1,46 +1,73 @@
+import { createRoute } from '@hono/zod-openapi';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
-export default (fastify: FastifyWithZodInstance) =>
-  fastify.route({
-    method: 'GET',
-    url: '/user/oauth-accounts',
-    schema: {
-      summary: 'List Linked OAuth Accounts',
-      description: 'Returns all OAuth accounts linked to the current user',
-      tags: [TAGS.USER],
-      response: {
-        200: r.LinkedAccountsResponse,
-        401: e.Unauthorized.Schema,
-        404: e.UserNotFound.Schema,
+const route = createRoute({
+  method: 'get',
+  path: '/user/oauth-accounts',
+  tags: [TAGS.USER],
+  summary: 'List Linked OAuth Accounts',
+  description: 'Returns all OAuth accounts linked to the current user',
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: r.LinkedAccountsResponse,
+        },
       },
+      description: 'Success',
     },
-    handler: async (req, res) => {
-      // Check if user is logged in
-      const userSession = await req.auth.verify();
+    401: {
+      content: {
+        'application/json': {
+          schema: e.Unauthorized.Schema,
+        },
+      },
+      description: 'Unauthorized',
+    },
+    404: {
+      content: {
+        'application/json': {
+          schema: e.UserNotFound.Schema,
+        },
+      },
+      description: 'User not found',
+    },
+  },
+});
 
-      // Get linked accounts
-      const accounts = await fastify.oauthConnectService.getLinkedAccounts(
-        userSession.id,
-      );
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const auth = c.get('auth');
+    const { oauthConnectService } = c.get('services');
 
-      // Get all available providers and mark linked ones
-      const enabledProviders =
-        fastify.oauthConnectService.getEnabledProviders();
-      const linkedProviderNames = new Set(accounts.map((a) => a.provider_name));
+    // Check if user is logged in
+    const userSession = await auth.verify();
 
-      const availableProviders = enabledProviders.map((provider) => ({
-        id: provider.id,
-        display_name: provider.display_name,
-        icon_url: provider.icon_url,
-        linked: linkedProviderNames.has(provider.id),
-      }));
+    // Get linked accounts
+    const accounts = await oauthConnectService.getLinkedAccounts(
+      userSession.id,
+    );
 
-      return res.status(200).send({
+    // Get all available providers and mark linked ones
+    const enabledProviders = oauthConnectService.getEnabledProviders();
+    const linkedProviderNames = new Set(accounts.map((a) => a.provider_name));
+
+    const availableProviders = enabledProviders.map((provider) => ({
+      id: provider.id,
+      display_name: provider.display_name,
+      icon_url: provider.icon_url,
+      linked: linkedProviderNames.has(provider.id),
+    }));
+
+    return c.json(
+      {
         accounts,
         available_providers: availableProviders,
-      });
-    },
+      },
+      200,
+    );
   });
+};

@@ -1,105 +1,88 @@
-import z from 'zod/v4';
+import { createRoute } from '@hono/zod-openapi';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { termsSchema } from '@/schemas/terms.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
 /**
  * POST /api/v1/terms/consent
  *
  * Record user consent for terms of service.
- *
- * This endpoint handles two scenarios:
- * 1. Authenticated user: Records consent for the logged-in user
- * 2. Pending OAuth registration: Completes OAuth signup by creating user
- *    in DB and recording consent (GDPR compliant - user created only after
- *    consent is given)
  */
-export default (fastify: FastifyWithZodInstance) => {
-  return fastify.route({
-    method: 'POST',
-    url: '/terms/consent',
-    schema: {
-      summary: 'Submit terms consent',
-      description:
-        'Record user consent decisions for terms of service. ' +
-        'Required terms must be agreed to. ' +
-        'For pending OAuth registration, this also completes user registration.',
-      tags: [TAGS.TERMS],
-      body: termsSchema.TermsConsentRequest,
-      response: {
-        200: termsSchema.TermsConsentResponse,
-        400: z.union([e.ValidationError.Schema, e.OAuthSessionExpired.Schema]),
-        401: e.Unauthorized.Schema,
-        403: e.RegistrationEmailNotAllowed.Schema,
+const route = createRoute({
+  method: 'post',
+  path: '/terms/consent',
+  tags: [TAGS.TERMS],
+  summary: 'Submit terms consent',
+  description:
+    'Record user consent decisions for terms of service. ' +
+    'Required terms must be agreed to. ' +
+    'For pending OAuth registration, this also completes user registration.',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: termsSchema.TermsConsentRequest,
+        },
       },
     },
-    handler: async (req, res) => {
-      const { consents } = req.body;
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: termsSchema.TermsConsentResponse,
+        },
+      },
+      description: 'Success',
+    },
+    400: {
+      content: {
+        'application/json': {
+          schema: e.ValidationError.Schema,
+        },
+      },
+      description: 'Validation error or OAuth session expired',
+    },
+    401: {
+      content: {
+        'application/json': {
+          schema: e.Unauthorized.Schema,
+        },
+      },
+      description: 'Unauthorized',
+    },
+    403: {
+      content: {
+        'application/json': {
+          schema: e.RegistrationEmailNotAllowed.Schema,
+        },
+      },
+      description: 'Registration email not allowed',
+    },
+  },
+});
 
-      // Check for pending OAuth registration session
-      const pendingRegistration = req.session.get('pendingOAuthRegistration');
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const body = c.req.valid('json');
+    const { consents } = body;
+    const session = c.get('session');
+    const auth = c.get('auth');
+    const { termsService, oauthConnectService } = c.get('services');
 
-      if (pendingRegistration) {
-        // Check if session has expired
-        if (Date.now() > pendingRegistration.expiresAt) {
-          req.session.set('pendingOAuthRegistration', undefined);
-          throw new e.OAuthSessionExpired.Error();
-        }
+    // Check for pending OAuth registration session
+    const pendingRegistration = session.get('pendingOAuthRegistration');
 
-        // Validate explicit terms consent
-        const validation =
-          await fastify.termsService.validateExplicitConsents(consents);
-
-        if (!validation.valid) {
-          throw new e.ValidationError.Error(
-            `Missing required terms: ${validation.missingTerms.join(', ')}`,
-          );
-        }
-
-        // Complete OAuth registration - creates user in DB with consent
-        const result =
-          await fastify.oauthConnectService.completeOAuthRegistration({
-            providerId: pendingRegistration.providerId,
-            tokens: {
-              access_token: pendingRegistration.tokens.access_token,
-              refresh_token: pendingRegistration.tokens.refresh_token,
-              expires_in: pendingRegistration.tokens.expires_in,
-              token_type: pendingRegistration.tokens.token_type,
-            },
-            userInfo: {
-              id: pendingRegistration.userInfo.id,
-              email: pendingRegistration.userInfo.email,
-              email_verified: pendingRegistration.userInfo.email_verified,
-              name: pendingRegistration.userInfo.name,
-              picture: pendingRegistration.userInfo.picture,
-            },
-            consents,
-          });
-
-        // Set user session
-        req.setUserSession(result.user.id);
-
-        // Clear pending registration session
-        req.session.set('pendingOAuthRegistration', undefined);
-
-        return res.status(200).send({
-          ok: true,
-          recorded: consents.length,
-          registered: true,
-        });
+    if (pendingRegistration) {
+      // Check if session has expired
+      if (Date.now() > pendingRegistration.expiresAt) {
+        session.set('pendingOAuthRegistration', undefined);
+        throw new e.OAuthSessionExpired.Error();
       }
 
-      // Standard flow: authenticated user recording consent
-      const userSession = await req.auth.verify();
-
-      // Validate and record consents in a single flow
-      // (loads terms only once)
-      const { validation, records } =
-        await fastify.termsService.validateAndRecordConsents({
-          userId: userSession.id,
-          consents,
-        });
+      // Validate explicit terms consent
+      const validation = await termsService.validateExplicitConsents(consents);
 
       if (!validation.valid) {
         throw new e.ValidationError.Error(
@@ -107,10 +90,63 @@ export default (fastify: FastifyWithZodInstance) => {
         );
       }
 
-      return res.status(200).send({
-        ok: true,
-        recorded: records.length,
+      // Complete OAuth registration
+      const result = await oauthConnectService.completeOAuthRegistration({
+        providerId: pendingRegistration.providerId,
+        tokens: {
+          access_token: pendingRegistration.tokens.access_token,
+          refresh_token: pendingRegistration.tokens.refresh_token,
+          expires_in: pendingRegistration.tokens.expires_in,
+          token_type: pendingRegistration.tokens.token_type,
+        },
+        userInfo: {
+          id: pendingRegistration.userInfo.id,
+          email: pendingRegistration.userInfo.email,
+          email_verified: pendingRegistration.userInfo.email_verified,
+          name: pendingRegistration.userInfo.name,
+          picture: pendingRegistration.userInfo.picture,
+        },
+        consents,
       });
-    },
+
+      // Set user session
+      session.setUserSession(result.user.id);
+
+      // Clear pending registration session
+      session.set('pendingOAuthRegistration', undefined);
+
+      return c.json(
+        {
+          ok: true as const,
+          recorded: consents.length,
+          registered: true,
+        },
+        200,
+      );
+    }
+
+    // Standard flow: authenticated user recording consent
+    const userSession = await auth.verify();
+
+    // Validate and record consents
+    const { validation, records } =
+      await termsService.validateAndRecordConsents({
+        userId: userSession.id,
+        consents,
+      });
+
+    if (!validation.valid) {
+      throw new e.ValidationError.Error(
+        `Missing required terms: ${validation.missingTerms.join(', ')}`,
+      );
+    }
+
+    return c.json(
+      {
+        ok: true as const,
+        recorded: records.length,
+      },
+      200,
+    );
   });
 };

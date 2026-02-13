@@ -1,4 +1,5 @@
-import type { FastifyPluginAsync } from 'fastify';
+import { createRouter } from '@/lib/create-router.js';
+import type { AppType } from '@/types.js';
 import authEmailResendPost from './auth/email/resend/post.js';
 import authEmailVerifyPost from './auth/email/verify/post.js';
 // Auth
@@ -44,49 +45,51 @@ import userTotpDelete from './user/totp/delete.js';
 import userTotpSetupPost from './user/totp/setup/post.js';
 import userTotpVerifyPost from './user/totp/verify/post.js';
 
-export const registerApiV1Routes: FastifyPluginAsync = async (fastify) => {
+export function registerApiV1Routes(parentApp: AppType): void {
+  const app = createRouter();
   // Auth
-  await fastify.register(authLoginPost);
-  await fastify.register(authLogoutPost);
-  await fastify.register(authRegisterPost);
-  await fastify.register(authPasswordForgotPost);
-  await fastify.register(authPasswordResetPost);
-  await fastify.register(authEmailVerifyPost);
-  await fastify.register(authEmailResendPost);
-  await fastify.register(authTotpVerifyPost);
-  await fastify.register(authTotpRecoveryVerifyPost);
-  await fastify.register(authPasskeyOptionsPost);
-  await fastify.register(authPasskeyVerifyPost);
+  authLoginPost(app);
+  authLogoutPost(app);
+  authRegisterPost(app);
+  authPasswordForgotPost(app);
+  authPasswordResetPost(app);
+  authEmailVerifyPost(app);
+  authEmailResendPost(app);
+  authTotpVerifyPost(app);
+  authTotpRecoveryVerifyPost(app);
+  authPasskeyOptionsPost(app);
+  authPasskeyVerifyPost(app);
   // Config
-  await fastify.register(configGet);
+  configGet(app);
   // Consent
-  await fastify.register(consentGet);
-  await fastify.register(consentPost);
+  consentGet(app);
+  consentPost(app);
   // Health
-  await fastify.register(healthGet);
-  await fastify.register(healthReadyGet);
-  await fastify.register(healthLiveGet);
+  healthGet(app);
+  healthReadyGet(app);
+  healthLiveGet(app);
   // Terms
-  await fastify.register(termsGet);
-  await fastify.register(termsConsentPost);
+  termsGet(app);
+  termsConsentPost(app);
   // User
-  await fastify.register(userDelete);
-  await fastify.register(userSessionGet);
-  await fastify.register(userPasswordPost);
-  await fastify.register(userPasswordPut);
-  await fastify.register(userPasswordDelete);
-  await fastify.register(userOauthAccountsGet);
-  await fastify.register(userTotpSetupPost);
-  await fastify.register(userTotpVerifyPost);
-  await fastify.register(userTotpConfirmPost);
-  await fastify.register(userTotpDelete);
-  await fastify.register(userPasskeysGet);
-  await fastify.register(userPasskeyIdDelete);
-  await fastify.register(userPasskeyIdPatch);
-  await fastify.register(userPasskeyRegisterOptionsPost);
-  await fastify.register(userPasskeyRegisterVerifyPost);
+  userDelete(app);
+  userSessionGet(app);
+  userPasswordPost(app);
+  userPasswordPut(app);
+  userPasswordDelete(app);
+  userOauthAccountsGet(app);
+  userTotpSetupPost(app);
+  userTotpVerifyPost(app);
+  userTotpConfirmPost(app);
+  userTotpDelete(app);
+  userPasskeysGet(app);
+  userPasskeyIdDelete(app);
+  userPasskeyIdPatch(app);
+  userPasskeyRegisterOptionsPost(app);
+  userPasskeyRegisterVerifyPost(app);
   // OAuth Connect
-  await fastify.register(oauthProviderAuthorizeGet);
-  await fastify.register(oauthProviderCallbackGet);
-  await fastify.register(oauthProviderDelete);
-};
+  oauthProviderAuthorizeGet(app);
+  oauthProviderCallbackGet(app);
+  oauthProviderDelete(app);
+  parentApp.route('/api/v1', app);
+}

@@ -1,77 +1,109 @@
+import { createRoute } from '@hono/zod-openapi';
 import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
 import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
-export default (fastify: FastifyWithZodInstance) => {
-  if (!fastify.config.auth.passkey.enabled) {
-    return;
-  }
-  fastify.route({
-    method: 'POST',
-    url: '/auth/passkey/verify',
-    schema: {
-      summary: 'Verify Passkey Authentication',
-      description:
-        'Verify WebAuthn authentication response and create session. ' +
-        'Supports both passwordless login and 2FA. ' +
-        'If a pending 2FA session exists, verifies the passkey belongs to ' +
-        'that user and completes the 2FA flow.',
-      tags: [TAGS.AUTH],
-      body: z.object({
-        response: r.AuthenticationResponseJSON,
-      }),
-      response: {
-        200: r.AuthResponse,
-        400: z.union([
-          e.PasskeyNotEnabled.Schema,
-          e.PasskeyChallengeNotFound.Schema,
-          e.PasskeyVerificationFailed.Schema,
-        ]),
-        403: e.PasskeyUserMismatch.Schema,
-        404: e.PasskeyNotFound.Schema,
+const route = createRoute({
+  method: 'post',
+  path: '/auth/passkey/verify',
+  tags: [TAGS.AUTH],
+  summary: 'Verify Passkey Authentication',
+  description:
+    'Verify WebAuthn authentication response and create session. ' +
+    'Supports both passwordless login and 2FA. ' +
+    'If a pending 2FA session exists, verifies the passkey belongs to ' +
+    'that user and completes the 2FA flow.',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            response: r.AuthenticationResponseJSON,
+          }),
+        },
       },
     },
-    handler: async (req, res) => {
-      const pending2FAUser = req.session.get('pending2FAUser');
-
-      // Get challenge from session
-      const challenge = req.session.get('passkey_challenge');
-
-      if (!challenge) {
-        throw new e.PasskeyChallengeNotFound.Error();
-      }
-
-      req.session.set('passkey_challenge', undefined);
-
-      // Extract and cast the validated response
-      // The Zod schema validates the structure, but we need to cast for
-      // @simplewebauthn compatibility since it expects its own interface type
-      const authResponse = req.body.response as AuthenticationResponseJSON;
-
-      const passkeyUser = await fastify.passkeyService.verifyAuthentication(
-        authResponse,
-        challenge,
-      );
-
-      if (pending2FAUser && passkeyUser.id !== pending2FAUser.id) {
-        throw new e.PasskeyUserMismatch.Error();
-      }
-
-      const userEntity = await fastify.mikro.user.verifyById(passkeyUser.id);
-      const sessionUser =
-        await fastify.userService.userEntityToSessionUser(userEntity);
-
-      const authTime =
-        pending2FAUser?.authenticated_at ?? Math.floor(Date.now() / 1000);
-
-      req.setUserSession(passkeyUser.id, authTime);
-
-      return res.status(200).send({
-        user: sessionUser,
-      });
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': { schema: r.AuthResponse },
+      },
+      description: 'Success',
     },
+    400: {
+      content: {
+        'application/json': {
+          schema: e.PasskeyNotEnabled.Schema,
+        },
+      },
+      description:
+        'Passkey not enabled, challenge not found, or verification failed',
+    },
+    403: {
+      content: {
+        'application/json': {
+          schema: e.PasskeyUserMismatch.Schema,
+        },
+      },
+      description: 'Passkey user mismatch',
+    },
+    404: {
+      content: {
+        'application/json': {
+          schema: e.PasskeyNotFound.Schema,
+        },
+      },
+      description: 'Passkey not found',
+    },
+  },
+});
+
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const config = c.get('services').config;
+    if (!config.auth.passkey.enabled) {
+      throw new e.PasskeyNotEnabled.Error();
+    }
+
+    const body = c.req.valid('json');
+    const session = c.get('session');
+    const { mikro, passkeyService, userService } = c.get('services');
+
+    const pending2FAUser = session.get('pending2FAUser');
+
+    // Get challenge from session
+    const challenge = session.get('passkey_challenge');
+
+    if (!challenge) {
+      throw new e.PasskeyChallengeNotFound.Error();
+    }
+
+    session.set('passkey_challenge', undefined);
+
+    // Extract and cast the validated response
+    const authResponse = body.response as AuthenticationResponseJSON;
+
+    const passkeyUser = await passkeyService.verifyAuthentication(
+      authResponse,
+      challenge,
+    );
+
+    if (pending2FAUser && passkeyUser.id !== pending2FAUser.id) {
+      throw new e.PasskeyUserMismatch.Error();
+    }
+
+    const userEntity = await mikro.user.verifyById(passkeyUser.id);
+    const sessionUser = await userService.userEntityToSessionUser(userEntity);
+
+    const authTime =
+      pending2FAUser?.authenticated_at ?? Math.floor(Date.now() / 1000);
+
+    session.setUserSession(passkeyUser.id, authTime);
+
+    return c.json({ user: sessionUser }, 200);
   });
 };

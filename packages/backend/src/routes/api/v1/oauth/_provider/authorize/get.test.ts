@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import { createServer } from '@/server.js';
@@ -8,11 +7,13 @@ import {
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
+import type { AppType } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
@@ -38,24 +39,25 @@ beforeAll(async () => {
       ],
     },
   });
+  app = server.app;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('GET /api/v1/oauth/:provider/authorize', () => {
   describe('Success Cases', () => {
     test('should redirect to OAuth provider with valid provider', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/oauth/google/authorize', {
         method: 'GET',
-        url: '/api/v1/oauth/google/authorize',
       });
 
-      expect(res.statusCode).toBe(302);
-      expect(res.headers.location).toBeDefined();
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toBeDefined();
 
-      const location = new URL(res.headers.location as string);
+      const location = new URL(res.headers.get('location') as string);
 
       // Should redirect to Google OAuth
       expect(location.origin).toBe('https://accounts.google.com');
@@ -82,89 +84,89 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     });
 
     test('should store session data with state and code verifier', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/oauth/google/authorize', {
         method: 'GET',
-        url: '/api/v1/oauth/google/authorize',
       });
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
 
       // Session cookie should be set
-      const sessionCookie = res.cookies.find((c) => c.name === 'session');
-      expect(sessionCookie).toBeDefined();
+      const setCookie = res.headers.get('set-cookie');
+      expect(setCookie).toBeDefined();
+      expect(setCookie).toContain('session=');
     });
 
     test('should support login mode (default)', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/authorize',
-        query: {
-          mode: 'login',
+      const res = await app.request(
+        '/api/v1/oauth/google/authorize?' +
+          new URLSearchParams({ mode: 'login' }).toString(),
+        {
+          method: 'GET',
         },
-      });
+      );
 
-      expect(res.statusCode).toBe(302);
-      expect(res.headers.location).toBeDefined();
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toBeDefined();
     });
 
     test('should support register mode', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/authorize',
-        query: {
-          mode: 'register',
+      const res = await app.request(
+        '/api/v1/oauth/google/authorize?' +
+          new URLSearchParams({ mode: 'register' }).toString(),
+        {
+          method: 'GET',
         },
-      });
+      );
 
-      expect(res.statusCode).toBe(302);
-      expect(res.headers.location).toBeDefined();
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toBeDefined();
     });
 
     test('should support link mode with authenticated session', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/authorize',
-        query: {
-          mode: 'link',
+      const res = await app.request(
+        '/api/v1/oauth/google/authorize?' +
+          new URLSearchParams({ mode: 'link' }).toString(),
+        {
+          method: 'GET',
+          headers: { Cookie: `session=${sessionCookie}` },
         },
-        cookies: { session: sessionCookie },
-      });
+      );
 
-      expect(res.statusCode).toBe(302);
-      expect(res.headers.location).toBeDefined();
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toBeDefined();
     });
 
     test('should preserve return_url parameter', async () => {
       const returnUrl = '/profile?tab=oauth';
 
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/authorize',
-        query: {
-          mode: 'login',
-          return_url: returnUrl,
+      const res = await app.request(
+        '/api/v1/oauth/google/authorize?' +
+          new URLSearchParams({
+            mode: 'login',
+            return_url: returnUrl,
+          }).toString(),
+        {
+          method: 'GET',
         },
-      });
+      );
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       // return_url is stored in session, not in redirect URL
     });
 
     test('should generate unique state for each request', async () => {
-      const res1 = await app.inject({
+      const res1 = await app.request('/api/v1/oauth/google/authorize', {
         method: 'GET',
-        url: '/api/v1/oauth/google/authorize',
       });
 
-      const res2 = await app.inject({
+      const res2 = await app.request('/api/v1/oauth/google/authorize', {
         method: 'GET',
-        url: '/api/v1/oauth/google/authorize',
       });
 
-      const location1 = new URL(res1.headers.location as string);
-      const location2 = new URL(res2.headers.location as string);
+      const location1 = new URL(res1.headers.get('location') as string);
+      const location2 = new URL(res2.headers.get('location') as string);
 
       const state1 = location1.searchParams.get('state');
       const state2 = location2.searchParams.get('state');
@@ -173,18 +175,16 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     });
 
     test('should generate unique code_challenge for each request', async () => {
-      const res1 = await app.inject({
+      const res1 = await app.request('/api/v1/oauth/google/authorize', {
         method: 'GET',
-        url: '/api/v1/oauth/google/authorize',
       });
 
-      const res2 = await app.inject({
+      const res2 = await app.request('/api/v1/oauth/google/authorize', {
         method: 'GET',
-        url: '/api/v1/oauth/google/authorize',
       });
 
-      const location1 = new URL(res1.headers.location as string);
-      const location2 = new URL(res2.headers.location as string);
+      const location1 = new URL(res1.headers.get('location') as string);
+      const location2 = new URL(res2.headers.get('location') as string);
 
       const challenge1 = location1.searchParams.get('code_challenge');
       const challenge2 = location2.searchParams.get('code_challenge');
@@ -195,82 +195,80 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
 
   describe('Provider Validation', () => {
     test('should return 404 for non-existent provider', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/oauth/nonexistent/authorize', {
         method: 'GET',
-        url: '/api/v1/oauth/nonexistent/authorize',
       });
 
-      expectError(res, e.OAuthProviderNotFound);
+      await expectError(res, e.OAuthProviderNotFound);
     });
 
     test('should return 404 for disabled provider', async () => {
       // GitHub is disabled in test config
-      const res = await app.inject({
+      const res = await app.request('/api/v1/oauth/github/authorize', {
         method: 'GET',
-        url: '/api/v1/oauth/github/authorize',
       });
 
-      expectError(res, e.OAuthProviderNotFound);
+      await expectError(res, e.OAuthProviderNotFound);
     });
 
     test('should return 404 for invalid provider id format', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/invalid-provider-123/authorize',
-      });
+      const res = await app.request(
+        '/api/v1/oauth/invalid-provider-123/authorize',
+        {
+          method: 'GET',
+        },
+      );
 
-      expectError(res, e.OAuthProviderNotFound);
+      await expectError(res, e.OAuthProviderNotFound);
     });
   });
 
   describe('Mode Validation', () => {
     test('should reject invalid mode parameter', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/authorize',
-        query: {
-          mode: 'invalid_mode',
+      const res = await app.request(
+        '/api/v1/oauth/google/authorize?' +
+          new URLSearchParams({ mode: 'invalid_mode' }).toString(),
+        {
+          method: 'GET',
         },
-      });
+      );
 
       // Zod validation should fail
-      expect(res.statusCode).toBe(400);
+      expect(res.status).toBe(400);
     });
 
     test('should use login as default mode when not specified', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/oauth/google/authorize', {
         method: 'GET',
-        url: '/api/v1/oauth/google/authorize',
       });
 
-      expect(res.statusCode).toBe(302);
+      expect(res.status).toBe(302);
       // Mode is stored in session, verify redirect happens
-      expect(res.headers.location).toBeDefined();
+      expect(res.headers.get('location')).toBeDefined();
     });
   });
 
   describe('Link Mode Authentication', () => {
     test('should return 401 for link mode without authentication', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/oauth/google/authorize',
-        query: {
-          mode: 'link',
+      const res = await app.request(
+        '/api/v1/oauth/google/authorize?' +
+          new URLSearchParams({ mode: 'link' }).toString(),
+        {
+          method: 'GET',
         },
-      });
+      );
 
-      expect(res.statusCode).toBe(401);
+      expect(res.status).toBe(401);
     });
   });
 
   describe('Security', () => {
     test('should use S256 for PKCE code challenge method', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/oauth/google/authorize', {
         method: 'GET',
-        url: '/api/v1/oauth/google/authorize',
       });
 
-      const location = new URL(res.headers.location as string);
+      const location = new URL(res.headers.get('location') as string);
       expect(location.searchParams.get('code_challenge_method')).toBe('S256');
     });
 
@@ -278,12 +276,11 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
       const states: string[] = [];
 
       for (let i = 0; i < 5; i++) {
-        const res = await app.inject({
+        const res = await app.request('/api/v1/oauth/google/authorize', {
           method: 'GET',
-          url: '/api/v1/oauth/google/authorize',
         });
 
-        const location = new URL(res.headers.location as string);
+        const location = new URL(res.headers.get('location') as string);
         const state = location.searchParams.get('state');
         expect(state).toBeDefined();
         states.push(state as string);

@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import { createServer } from '@/server.js';
@@ -6,15 +5,18 @@ import {
   createDbUserWithSession,
   expectError,
   generateUniqueEmail,
-  injectWithSession,
   MINIMAL_TEST_CONFIG,
+  requestWithSession,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let services: ServiceContainer;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       auth: {
@@ -26,27 +28,31 @@ beforeAll(async () => {
       },
     },
   });
+  app = server.app;
+  services = server.services;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 /**
  * Helper to start TOTP setup and return secret
  */
 async function startTotpSetup(sessionCookie: string): Promise<string> {
-  const res = await injectWithSession(
+  const res = await requestWithSession(
     app,
+    '/api/v1/user/totp/setup',
     {
       method: 'POST',
-      url: '/api/v1/user/totp/setup',
     },
     sessionCookie,
   );
 
-  expect(res.statusCode).toBe(200);
-  return res.json().secret;
+  expect(res.status).toBe(200);
+  const body = await res.json();
+  return body.secret;
 }
 
 /**
@@ -56,32 +62,34 @@ async function verifyTotpSetup(
   sessionCookie: string,
   secret: string,
 ): Promise<string[]> {
-  const validCode = app.totpService.generateToken(secret);
-  const res = await injectWithSession(
+  const validCode = services.totpService.generateToken(secret);
+  const res = await requestWithSession(
     app,
+    '/api/v1/user/totp/verify',
     {
       method: 'POST',
-      url: '/api/v1/user/totp/verify',
-      payload: {
+      body: JSON.stringify({
         code: validCode,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     },
     sessionCookie,
   );
 
-  expect(res.statusCode).toBe(200);
-  return res.json().recovery_codes;
+  expect(res.status).toBe(200);
+  const body = await res.json();
+  return body.recovery_codes;
 }
 
 describe('POST /api/v1/user/totp/confirm', () => {
   test('should return 401 when not authenticated', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/user/totp/confirm', {
       method: 'POST',
-      url: '/api/v1/user/totp/confirm',
-      payload: {},
+      body: JSON.stringify({}),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expectError(res, e.Unauthorized);
+    await expectError(res, e.Unauthorized);
   });
 
   test('should return 400 when TOTP setup was not started', async () => {
@@ -90,21 +98,23 @@ describe('POST /api/v1/user/totp/confirm', () => {
 
     const { sessionCookie } = await createDbUserWithSession(
       app,
+      services,
       email,
       password,
     );
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/totp/confirm',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/confirm',
-        payload: {},
+        body: JSON.stringify({}),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
-    expectError(res, e.TotpNotSetup);
+    await expectError(res, e.TotpNotSetup);
   });
 
   test('should return 400 when TOTP was not verified', async () => {
@@ -113,6 +123,7 @@ describe('POST /api/v1/user/totp/confirm', () => {
 
     const { sessionCookie } = await createDbUserWithSession(
       app,
+      services,
       email,
       password,
     );
@@ -120,17 +131,18 @@ describe('POST /api/v1/user/totp/confirm', () => {
     // Start setup but don't verify
     await startTotpSetup(sessionCookie);
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/totp/confirm',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/confirm',
-        payload: {},
+        body: JSON.stringify({}),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
-    expectError(res, e.TotpNotSetup);
+    await expectError(res, e.TotpNotSetup);
   });
 
   test('should successfully confirm TOTP setup', async () => {
@@ -139,6 +151,7 @@ describe('POST /api/v1/user/totp/confirm', () => {
 
     const { sessionCookie, userId } = await createDbUserWithSession(
       app,
+      services,
       email,
       password,
     );
@@ -147,24 +160,25 @@ describe('POST /api/v1/user/totp/confirm', () => {
     const secret = await startTotpSetup(sessionCookie);
     await verifyTotpSetup(sessionCookie, secret);
 
-    const res = await injectWithSession(
+    const res = await requestWithSession(
       app,
+      '/api/v1/user/totp/confirm',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/confirm',
-        payload: {},
+        body: JSON.stringify({}),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body).toHaveProperty('user');
     expect(body.user.totp_registered).toBe(true);
 
     // Verify TOTP is fully registered in database
-    await withMikroContext(app, async () => {
-      const totp = await app.mikro.userTotp.findByUserId(userId);
+    await withMikroContext(services, async () => {
+      const totp = await services.mikro.userTotp.findByUserId(userId);
       expect(totp).not.toBeNull();
       expect(totp?.verified).toBe(true);
       expect(totp?.recovery_confirmed).toBe(true);
@@ -177,6 +191,7 @@ describe('POST /api/v1/user/totp/confirm', () => {
 
     const { sessionCookie } = await createDbUserWithSession(
       app,
+      services,
       email,
       password,
     );
@@ -186,29 +201,31 @@ describe('POST /api/v1/user/totp/confirm', () => {
     await verifyTotpSetup(sessionCookie, secret);
 
     // First confirm
-    const res1 = await injectWithSession(
+    const res1 = await requestWithSession(
       app,
+      '/api/v1/user/totp/confirm',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/confirm',
-        payload: {},
+        body: JSON.stringify({}),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
-    expect(res1.statusCode).toBe(200);
+    expect(res1.status).toBe(200);
 
     // Second confirm should fail
-    const res2 = await injectWithSession(
+    const res2 = await requestWithSession(
       app,
+      '/api/v1/user/totp/confirm',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/confirm',
-        payload: {},
+        body: JSON.stringify({}),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
-    expectError(res2, e.TotpAlreadyEnabled);
+    await expectError(res2, e.TotpAlreadyEnabled);
   });
 
   test('should update session to reflect TOTP enabled status', async () => {
@@ -217,57 +234,62 @@ describe('POST /api/v1/user/totp/confirm', () => {
 
     const { sessionCookie } = await createDbUserWithSession(
       app,
+      services,
       email,
       password,
     );
 
     // Check initial session - TOTP should be disabled
-    const sessionBefore = await injectWithSession(
+    const sessionBefore = await requestWithSession(
       app,
+      '/api/v1/user/session',
       {
         method: 'GET',
-        url: '/api/v1/user/session',
       },
       sessionCookie,
     );
-    expect(sessionBefore.json().user.totp_registered).toBe(false);
+    const sessionBeforeBody = await sessionBefore.json();
+    expect(sessionBeforeBody.user.totp_registered).toBe(false);
 
     // Complete full setup
     const secret = await startTotpSetup(sessionCookie);
     await verifyTotpSetup(sessionCookie, secret);
 
     // Verify after verify - should still be false
-    const sessionAfterVerify = await injectWithSession(
+    const sessionAfterVerify = await requestWithSession(
       app,
+      '/api/v1/user/session',
       {
         method: 'GET',
-        url: '/api/v1/user/session',
       },
       sessionCookie,
     );
-    expect(sessionAfterVerify.json().user.totp_registered).toBe(false);
+    const sessionAfterVerifyBody = await sessionAfterVerify.json();
+    expect(sessionAfterVerifyBody.user.totp_registered).toBe(false);
 
     // Confirm
-    await injectWithSession(
+    await requestWithSession(
       app,
+      '/api/v1/user/totp/confirm',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/confirm',
-        payload: {},
+        body: JSON.stringify({}),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
 
     // Check session after confirm - TOTP should be enabled
-    const sessionAfterConfirm = await injectWithSession(
+    const sessionAfterConfirm = await requestWithSession(
       app,
+      '/api/v1/user/session',
       {
         method: 'GET',
-        url: '/api/v1/user/session',
       },
       sessionCookie,
     );
-    expect(sessionAfterConfirm.json().user.totp_registered).toBe(true);
+    const sessionAfterConfirmBody = await sessionAfterConfirm.json();
+    expect(sessionAfterConfirmBody.user.totp_registered).toBe(true);
   });
 
   test('full TOTP setup flow: setup -> verify -> confirm', async () => {
@@ -276,69 +298,74 @@ describe('POST /api/v1/user/totp/confirm', () => {
 
     const { sessionCookie, userId } = await createDbUserWithSession(
       app,
+      services,
       email,
       password,
     );
 
     // Step 1: Setup
-    const setupRes = await injectWithSession(
+    const setupRes = await requestWithSession(
       app,
+      '/api/v1/user/totp/setup',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/setup',
       },
       sessionCookie,
     );
-    expect(setupRes.statusCode).toBe(200);
-    const { secret } = setupRes.json();
+    expect(setupRes.status).toBe(200);
+    const { secret } = await setupRes.json();
 
     // Verify DB state after setup
-    await withMikroContext(app, async () => {
-      const totp = await app.mikro.userTotp.findByUserId(userId);
+    await withMikroContext(services, async () => {
+      const totp = await services.mikro.userTotp.findByUserId(userId);
       expect(totp?.verified).toBe(false);
       expect(totp?.recovery_confirmed).toBe(false);
     });
 
     // Step 2: Verify
-    const validCode = app.totpService.generateToken(secret);
-    const verifyRes = await injectWithSession(
+    const validCode = services.totpService.generateToken(secret);
+    const verifyRes = await requestWithSession(
       app,
+      '/api/v1/user/totp/verify',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/verify',
-        payload: {
+        body: JSON.stringify({
           code: validCode,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
-    expect(verifyRes.statusCode).toBe(200);
-    expect(verifyRes.json()).toHaveProperty('recovery_codes');
-    expect(verifyRes.json().recovery_codes.length).toBe(8);
+    expect(verifyRes.status).toBe(200);
+    const verifyBody = await verifyRes.json();
+    expect(verifyBody).toHaveProperty('recovery_codes');
+    expect(verifyBody.recovery_codes.length).toBe(8);
 
     // Verify DB state after verify
-    await withMikroContext(app, async () => {
-      const totp = await app.mikro.userTotp.findByUserId(userId);
+    await withMikroContext(services, async () => {
+      const totp = await services.mikro.userTotp.findByUserId(userId);
       expect(totp?.verified).toBe(true);
       expect(totp?.recovery_confirmed).toBe(false);
     });
 
     // Step 3: Confirm
-    const confirmRes = await injectWithSession(
+    const confirmRes = await requestWithSession(
       app,
+      '/api/v1/user/totp/confirm',
       {
         method: 'POST',
-        url: '/api/v1/user/totp/confirm',
-        payload: {},
+        body: JSON.stringify({}),
+        headers: { 'Content-Type': 'application/json' },
       },
       sessionCookie,
     );
-    expect(confirmRes.statusCode).toBe(200);
-    expect(confirmRes.json().user.totp_registered).toBe(true);
+    expect(confirmRes.status).toBe(200);
+    const confirmBody = await confirmRes.json();
+    expect(confirmBody.user.totp_registered).toBe(true);
 
     // Verify DB state after confirm
-    await withMikroContext(app, async () => {
-      const totp = await app.mikro.userTotp.findByUserId(userId);
+    await withMikroContext(services, async () => {
+      const totp = await services.mikro.userTotp.findByUserId(userId);
       expect(totp?.verified).toBe(true);
       expect(totp?.recovery_confirmed).toBe(true);
     });

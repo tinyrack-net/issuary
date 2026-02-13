@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import {
@@ -8,11 +7,14 @@ import {
   TEST_TERMS_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let services: ServiceContainer;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       app: {
@@ -22,25 +24,28 @@ beforeAll(async () => {
       terms: TEST_TERMS_CONFIG,
     },
   });
+  app = server.app;
+  services = server.services;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('POST /api/v1/auth/password/reset', () => {
   test('should return 400 for invalid token', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/password/reset', {
       method: 'POST',
-      url: '/api/v1/auth/password/reset',
-      payload: {
+      body: JSON.stringify({
         token: 'invalid-token',
         password: 'NewPassword123!',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(400);
-    const json = res.json();
+    expect(res.status).toBe(400);
+    const json = await res.json();
     expect(json.code).toBe('INVALID_PASSWORD_RESET_TOKEN');
   });
 
@@ -50,36 +55,36 @@ describe('POST /api/v1/auth/password/reset', () => {
 
     // Register user via HTTP
     const registerRes = await registerUser(app, { email, password });
-    expect(registerRes.statusCode).toBe(200);
+    expect(registerRes.status).toBe(200);
 
     // Generate token and then expire it
-    const expiredToken = await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ email });
+    const expiredToken = await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail({ email });
 
       // Generate token first
-      const resetEntity = await app.passwordResetService.generateToken({
+      const resetEntity = await services.passwordResetService.generateToken({
         userId: user.id,
         expiresInHours: 1,
       });
 
       // Manually set expiration to past
       resetEntity.expiresAt = new Date(Date.now() - 1000 * 60 * 60); // 1 hour ago
-      await app.mikro.em.flush();
+      await services.mikro.em.flush();
 
       return resetEntity.token;
     });
 
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/password/reset', {
       method: 'POST',
-      url: '/api/v1/auth/password/reset',
-      payload: {
+      body: JSON.stringify({
         token: expiredToken,
         password: 'NewPassword123!',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(400);
-    const json = res.json();
+    expect(res.status).toBe(400);
+    const json = await res.json();
     expect(json.code).toBe('INVALID_PASSWORD_RESET_TOKEN');
   });
 
@@ -93,58 +98,58 @@ describe('POST /api/v1/auth/password/reset', () => {
       email,
       password: oldPassword,
     });
-    expect(registerRes.statusCode).toBe(200);
+    expect(registerRes.status).toBe(200);
 
     // Generate valid token
-    const validToken = await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ email });
+    const validToken = await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail({ email });
 
-      const resetEntity = await app.passwordResetService.generateToken({
+      const resetEntity = await services.passwordResetService.generateToken({
         userId: user.id,
         expiresInHours: 1,
       });
-      await app.mikro.em.flush();
+      await services.mikro.em.flush();
 
       return resetEntity.token;
     });
 
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/password/reset', {
       method: 'POST',
-      url: '/api/v1/auth/password/reset',
-      payload: {
+      body: JSON.stringify({
         token: validToken,
         password: newPassword,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(200);
-    const json = res.json();
+    expect(res.status).toBe(200);
+    const json = await res.json();
     expect(json.message).toBeDefined();
     expect(json.message).toContain('Password has been reset');
 
     // Verify new password works
-    const loginRes = await app.inject({
+    const loginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: {
+      body: JSON.stringify({
         email,
         password: newPassword,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
+    expect(loginRes.status).toBe(200);
 
     // Verify old password no longer works
-    const oldLoginRes = await app.inject({
+    const oldLoginRes = await app.request('/api/v1/auth/login', {
       method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: {
+      body: JSON.stringify({
         email,
         password: oldPassword,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(oldLoginRes.statusCode).toBe(401);
+    expect(oldLoginRes.status).toBe(401);
   });
 
   test('should invalidate token after use', async () => {
@@ -153,45 +158,45 @@ describe('POST /api/v1/auth/password/reset', () => {
 
     // Register user via HTTP
     const registerRes = await registerUser(app, { email, password });
-    expect(registerRes.statusCode).toBe(200);
+    expect(registerRes.status).toBe(200);
 
     // Generate valid token
-    const validToken = await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ email });
+    const validToken = await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail({ email });
 
-      const resetEntity = await app.passwordResetService.generateToken({
+      const resetEntity = await services.passwordResetService.generateToken({
         userId: user.id,
         expiresInHours: 1,
       });
-      await app.mikro.em.flush();
+      await services.mikro.em.flush();
 
       return resetEntity.token;
     });
 
     // First reset should succeed
-    const res1 = await app.inject({
+    const res1 = await app.request('/api/v1/auth/password/reset', {
       method: 'POST',
-      url: '/api/v1/auth/password/reset',
-      payload: {
+      body: JSON.stringify({
         token: validToken,
         password: 'NewPassword123!',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res1.statusCode).toBe(200);
+    expect(res1.status).toBe(200);
 
     // Second reset with same token should fail
-    const res2 = await app.inject({
+    const res2 = await app.request('/api/v1/auth/password/reset', {
       method: 'POST',
-      url: '/api/v1/auth/password/reset',
-      payload: {
+      body: JSON.stringify({
         token: validToken,
         password: 'AnotherPassword123!',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res2.statusCode).toBe(400);
-    const json = res2.json();
+    expect(res2.status).toBe(400);
+    const json = await res2.json();
     expect(json.code).toBe('INVALID_PASSWORD_RESET_TOKEN');
   });
 
@@ -203,62 +208,62 @@ describe('POST /api/v1/auth/password/reset', () => {
       email,
       password: 'TestPassword123!',
     });
-    expect(registerRes.statusCode).toBe(200);
+    expect(registerRes.status).toBe(200);
 
     // Make user config-managed and generate token
-    const token = await withMikroContext(app, async () => {
-      const user = await app.mikro.user.findOneOrFail({ email });
+    const token = await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail({ email });
       user.managed_by = 'config';
-      await app.mikro.em.flush();
+      await services.mikro.em.flush();
 
-      const resetEntity = await app.passwordResetService.generateToken({
+      const resetEntity = await services.passwordResetService.generateToken({
         userId: user.id,
         expiresInHours: 1,
       });
-      await app.mikro.em.flush();
+      await services.mikro.em.flush();
 
       return resetEntity.token;
     });
 
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/password/reset', {
       method: 'POST',
-      url: '/api/v1/auth/password/reset',
-      payload: {
+      body: JSON.stringify({
         token,
         password: 'NewPassword123!',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(403);
-    const json = res.json();
+    expect(res.status).toBe(403);
+    const json = await res.json();
     expect(json.code).toBe('USER_NOT_EDITABLE');
   });
 
   test('should validate password format', async () => {
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/password/reset', {
       method: 'POST',
-      url: '/api/v1/auth/password/reset',
-      payload: {
+      body: JSON.stringify({
         token: 'some-token',
         password: '123', // Too short / invalid
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(400);
+    expect(res.status).toBe(400);
   });
 
   test('should not require authentication', async () => {
     // This endpoint should be publicly accessible
-    const res = await app.inject({
+    const res = await app.request('/api/v1/auth/password/reset', {
       method: 'POST',
-      url: '/api/v1/auth/password/reset',
-      payload: {
+      body: JSON.stringify({
         token: 'any-token',
         password: 'ValidPassword123!',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
     // Should not return 401 (will be 400 for invalid token)
-    expect(res.statusCode).not.toBe(401);
+    expect(res.status).not.toBe(401);
   });
 });

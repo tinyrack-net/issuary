@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import { createServer } from '@/server.js';
@@ -12,6 +11,7 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
 /**
  * Test suite for DELETE /api/v1/user endpoint.
@@ -22,10 +22,12 @@ import {
 
 describe('DELETE /api/v1/user', () => {
   describe('with account deletion enabled', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
@@ -41,10 +43,13 @@ describe('DELETE /api/v1/user', () => {
           },
         },
       });
+      app = server.app;
+      services = server.services;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should delete account successfully', async () => {
@@ -54,19 +59,19 @@ describe('DELETE /api/v1/user', () => {
 
       const { sessionCookie } = await createDbUserWithSession(
         app,
+        services,
         email,
         password,
       );
 
       // Delete the account
-      const deleteRes = await app.inject({
+      const deleteRes = await app.request('/api/v1/user', {
         method: 'DELETE',
-        url: '/api/v1/user',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
 
-      expect(deleteRes.statusCode).toBe(200);
-      const body = deleteRes.json();
+      expect(deleteRes.status).toBe(200);
+      const body = await deleteRes.json();
       expect(body.ok).toBe(true);
       expect(body.deleted_at).toBeDefined();
       expect(body.permanent_deletion_at).toBeDefined();
@@ -84,20 +89,19 @@ describe('DELETE /api/v1/user', () => {
       expect(diffDays).toBeCloseTo(30, 0);
 
       // Verify user is soft-deleted in database
-      await withMikroContext(app, async () => {
-        const user = await app.mikro.user.findOne({ email });
+      await withMikroContext(services, async () => {
+        const user = await services.mikro.user.findOne({ email });
         expect(user).not.toBeNull();
         expect(user?.deleted_at).not.toBeNull();
       });
     });
 
     test('should fail if not authenticated', async () => {
-      const res = await app.inject({
+      const res = await app.request('/api/v1/user', {
         method: 'DELETE',
-        url: '/api/v1/user',
       });
 
-      expectError(res, e.Unauthorized);
+      await expectError(res, e.Unauthorized);
     });
 
     test('should fail for config-managed users', async () => {
@@ -108,13 +112,12 @@ describe('DELETE /api/v1/user', () => {
         TEST_USER.password,
       );
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/user', {
         method: 'DELETE',
-        url: '/api/v1/user',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
 
-      expectError(res, e.UserNotEditable);
+      await expectError(res, e.UserNotEditable);
     });
 
     test('should fail if account already deleted', async () => {
@@ -124,25 +127,25 @@ describe('DELETE /api/v1/user', () => {
 
       const { sessionCookie } = await createDbUserWithSession(
         app,
+        services,
         email,
         password,
       );
 
       // Manually soft-delete the user in database
-      await withMikroContext(app, async () => {
-        const user = await app.mikro.user.findOneOrFail({ email });
+      await withMikroContext(services, async () => {
+        const user = await services.mikro.user.findOneOrFail({ email });
         user.deleted_at = new Date();
-        await app.mikro.em.flush();
+        await services.mikro.em.flush();
       });
 
       // Try to delete again
-      const res = await app.inject({
+      const res = await app.request('/api/v1/user', {
         method: 'DELETE',
-        url: '/api/v1/user',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
 
-      expectError(res, e.AccountAlreadyDeleted);
+      await expectError(res, e.AccountAlreadyDeleted);
     });
 
     test('should set deleted_at in database after deletion', async () => {
@@ -152,27 +155,27 @@ describe('DELETE /api/v1/user', () => {
 
       const { sessionCookie } = await createDbUserWithSession(
         app,
+        services,
         email,
         password,
       );
 
       // Verify user is not deleted initially
-      await withMikroContext(app, async () => {
-        const user = await app.mikro.user.findOneOrFail({ email });
+      await withMikroContext(services, async () => {
+        const user = await services.mikro.user.findOneOrFail({ email });
         expect(user.deleted_at).toBeNull();
       });
 
       // Delete the account
-      const deleteRes = await app.inject({
+      const deleteRes = await app.request('/api/v1/user', {
         method: 'DELETE',
-        url: '/api/v1/user',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
-      expect(deleteRes.statusCode).toBe(200);
+      expect(deleteRes.status).toBe(200);
 
       // Verify deleted_at is set in database
-      await withMikroContext(app, async () => {
-        const user = await app.mikro.user.findOneOrFail({ email });
+      await withMikroContext(services, async () => {
+        const user = await services.mikro.user.findOneOrFail({ email });
         expect(user.deleted_at).not.toBeNull();
         expect(user.deleted_at).toBeInstanceOf(Date);
       });
@@ -180,10 +183,12 @@ describe('DELETE /api/v1/user', () => {
   });
 
   describe('with account deletion disabled', () => {
-    let app: FastifyInstance;
+    let app: AppType;
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      app = await createServer({
+      const server = await createServer({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
@@ -192,10 +197,13 @@ describe('DELETE /api/v1/user', () => {
           },
         },
       });
+      app = server.app;
+      services = server.services;
+      cleanup = server.cleanup;
     });
 
     afterAll(async () => {
-      await app.close();
+      await cleanup();
     });
 
     test('should fail when account deletion is disabled', async () => {
@@ -205,17 +213,17 @@ describe('DELETE /api/v1/user', () => {
 
       const { sessionCookie } = await createDbUserWithSession(
         app,
+        services,
         email,
         password,
       );
 
-      const res = await app.inject({
+      const res = await app.request('/api/v1/user', {
         method: 'DELETE',
-        url: '/api/v1/user',
-        cookies: { session: sessionCookie },
+        headers: { Cookie: `session=${sessionCookie}` },
       });
 
-      expectError(res, e.AccountDeletionDisabled);
+      await expectError(res, e.AccountDeletionDisabled);
     });
   });
 });

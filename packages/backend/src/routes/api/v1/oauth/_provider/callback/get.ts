@@ -1,258 +1,287 @@
+import { createRoute } from '@hono/zod-openapi';
 import z from 'zod/v4';
 import { isEmailAllowed } from '@/lib/email-pattern.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { ApiError, e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
-export default (fastify: FastifyWithZodInstance) =>
-  fastify.route({
-    method: 'GET',
-    url: '/oauth/:provider/callback',
-    schema: {
-      summary: 'OAuth Callback',
-      description:
-        'Handles the callback from OAuth provider after user authorization',
-      tags: [TAGS.OAUTH_CONNECT],
-      params: z.object({
-        provider: f.providerName,
-      }),
-      querystring: z.object({
-        code: f.authorizationCode.optional(),
-        state: f.state.optional(),
-        error: z.string().optional(),
-        error_description: z.string().optional(),
-      }),
-      response: {
-        302: z.void(),
-        200: r.OAuthCallbackResponse,
-        400: z.union([
-          e.OAuthStateMismatch.Schema,
-          e.OAuthSessionExpired.Schema,
-          e.OAuthInvalidRequest.Schema,
-        ]),
-        403: z.union([
-          e.OAuthEmailNotVerified.Schema,
-          e.RegistrationEmailNotAllowed.Schema,
-        ]),
-        404: e.OAuthProviderNotFound.Schema,
-        409: z.union([
-          e.OAuthEmailConflict.Schema,
-          e.OAuthAccountAlreadyLinked.Schema,
-        ]),
-        502: z.union([
-          e.OAuthTokenExchangeFailed.Schema,
-          e.OAuthUserInfoFailed.Schema,
-        ]),
-      },
+const route = createRoute({
+  method: 'get',
+  path: '/oauth/{provider}/callback',
+  tags: [TAGS.OAUTH_CONNECT],
+  summary: 'OAuth Callback',
+  description:
+    'Handles the callback from OAuth provider after user authorization',
+  request: {
+    params: z.object({
+      provider: f.providerName,
+    }),
+    query: z.object({
+      code: f.authorizationCode.optional(),
+      state: f.state.optional(),
+      error: z.string().optional(),
+      error_description: z.string().optional(),
+    }),
+  },
+  responses: {
+    302: {
+      description: 'Redirect',
     },
-    handler: async (req, res) => {
-      const { provider } = req.params;
-      const { code, state, error, error_description } = req.query;
+    200: {
+      content: {
+        'application/json': {
+          schema: r.OAuthCallbackResponse,
+        },
+      },
+      description: 'Success',
+    },
+    400: {
+      content: {
+        'application/json': {
+          schema: e.OAuthStateMismatch.Schema,
+        },
+      },
+      description: 'State mismatch, session expired, or invalid request',
+    },
+    403: {
+      content: {
+        'application/json': {
+          schema: e.OAuthEmailNotVerified.Schema,
+        },
+      },
+      description: 'Email not verified or registration email not allowed',
+    },
+    404: {
+      content: {
+        'application/json': {
+          schema: e.OAuthProviderNotFound.Schema,
+        },
+      },
+      description: 'OAuth provider not found',
+    },
+    409: {
+      content: {
+        'application/json': {
+          schema: e.OAuthEmailConflict.Schema,
+        },
+      },
+      description: 'Email conflict or account already linked',
+    },
+    502: {
+      content: {
+        'application/json': {
+          schema: e.OAuthTokenExchangeFailed.Schema,
+        },
+      },
+      description: 'Token exchange failed or user info failed',
+    },
+  },
+});
 
-      // Handle OAuth error response
-      if (error) {
-        const errorUrl = new URL('/login', fastify.config.app.host);
-        errorUrl.searchParams.set('oauth_error', error);
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const params = c.req.valid('param');
+    const query = c.req.valid('query');
+    const { provider } = params;
+    const { code, state, error, error_description } = query;
+    const auth = c.get('auth');
+    const session = c.get('session');
+    const { config, oauthConnectService, termsService } = c.get('services');
 
-        if (error_description) {
-          errorUrl.searchParams.set(
-            'oauth_error_description',
-            error_description,
-          );
-        }
+    // Handle OAuth error response
+    if (error) {
+      const errorUrl = new URL('/login', config.app.host);
+      errorUrl.searchParams.set('oauth_error', error);
 
-        const oauthSession = req.session.get('oauth');
-        if (oauthSession?.returnUrl) {
-          errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
-        }
-
-        req.session.set('oauth', undefined);
-        return res.redirect(errorUrl.toString());
+      if (error_description) {
+        errorUrl.searchParams.set('oauth_error_description', error_description);
       }
 
-      // Validate required parameters for success flow
-      if (!code || !state) {
-        throw new e.OAuthInvalidRequest.Error();
+      const oauthSession = session.get('oauth');
+      if (oauthSession?.returnUrl) {
+        errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
       }
 
-      // Retrieve OAuth session data
-      const oauthSession = req.session.get('oauth');
+      session.set('oauth', undefined);
+      return c.redirect(errorUrl.toString());
+    }
 
-      if (!oauthSession) {
-        throw new e.OAuthSessionExpired.Error();
-      }
+    // Validate required parameters for success flow
+    if (!code || !state) {
+      throw new e.OAuthInvalidRequest.Error();
+    }
 
-      // Validate state parameter
-      if (oauthSession.state !== state) {
-        throw new e.OAuthStateMismatch.Error();
-      }
+    // Retrieve OAuth session data
+    const oauthSession = session.get('oauth');
 
-      // Validate provider matches
-      if (oauthSession.providerId !== provider) {
-        throw new e.OAuthProviderNotFound.Error();
-      }
+    if (!oauthSession) {
+      throw new e.OAuthSessionExpired.Error();
+    }
 
-      // Exchange code for tokens
-      const tokens = await fastify.oauthConnectService.exchangeCodeForTokens(
+    // Validate state parameter
+    if (oauthSession.state !== state) {
+      throw new e.OAuthStateMismatch.Error();
+    }
+
+    // Validate provider matches
+    if (oauthSession.providerId !== provider) {
+      throw new e.OAuthProviderNotFound.Error();
+    }
+
+    // Exchange code for tokens
+    const tokens = await oauthConnectService.exchangeCodeForTokens(
+      provider,
+      code,
+      oauthSession.codeVerifier,
+    );
+
+    // Fetch user info from provider
+    const userInfo = await oauthConnectService.fetchUserInfo(
+      provider,
+      tokens.access_token,
+    );
+
+    // Handle based on mode
+    if (oauthSession.mode === 'link') {
+      // Link mode: link OAuth account to existing user
+      const userSession = await auth.verify();
+
+      await oauthConnectService.linkOAuthAccount(
+        userSession.id,
         provider,
-        code,
-        oauthSession.codeVerifier,
-      );
-
-      // Fetch user info from provider
-      const userInfo = await fastify.oauthConnectService.fetchUserInfo(
-        provider,
-        tokens.access_token,
-      );
-
-      // Handle based on mode
-      if (oauthSession.mode === 'link') {
-        // Link mode: link OAuth account to existing user
-        const userSession = await req.auth.verify();
-
-        await fastify.oauthConnectService.linkOAuthAccount(
-          userSession.id,
-          provider,
-          tokens,
-          userInfo,
-        );
-
-        // Clear OAuth session
-        req.session.set('oauth', undefined);
-
-        // Redirect to return URL or profile
-        const returnUrl = oauthSession.returnUrl || '/profile';
-        return res.redirect(returnUrl);
-      }
-
-      // Check if this would be a new user and if explicit terms exist
-      // For GDPR compliance, we defer user creation until terms consent is given
-      const isNewUser = await fastify.oauthConnectService.isNewOAuthUser(
-        provider,
+        tokens,
         userInfo,
       );
 
-      // For new users, check email allowlist before proceeding
-      if (isNewUser) {
-        const { allowed_signup_emails } = fastify.config.app;
-        if (!isEmailAllowed(userInfo.email, allowed_signup_emails)) {
-          // Redirect to login page with error
-          const errorUrl = new URL('/login', fastify.config.app.host);
-          errorUrl.searchParams.set(
-            'oauth_error',
-            'registration_email_not_allowed',
-          );
-          if (oauthSession.returnUrl) {
-            errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
-          }
-          req.session.set('oauth', undefined);
-          return res.redirect(errorUrl.toString());
-        }
-      }
+      // Clear OAuth session
+      session.set('oauth', undefined);
 
-      // Load terms once and reuse for both new-user and
-      // existing-user checks
-      const allTerms = await fastify.termsService.getGlobalTerms();
-      const explicitTerms =
-        await fastify.termsService.getExplicitTerms(allTerms);
+      // Redirect to return URL or profile
+      const returnUrl = oauthSession.returnUrl || '/profile';
+      return c.redirect(returnUrl);
+    }
 
-      if (isNewUser && explicitTerms.length > 0) {
-        // New user with explicit terms: store in session, don't create in DB yet
-        // User will be created after terms consent on /terms page
-        req.session.set('pendingOAuthRegistration', {
-          providerId: provider,
-          tokens: {
-            access_token: tokens.access_token,
-            refresh_token: tokens.refresh_token,
-            expires_in: tokens.expires_in,
-            token_type: tokens.token_type,
-          },
-          userInfo: {
-            id: userInfo.id,
-            email: userInfo.email,
-            email_verified: userInfo.email_verified,
-            name: userInfo.name,
-            picture: userInfo.picture,
-          },
-          returnUrl: oauthSession.returnUrl,
-          expiresAt: Date.now() + 60 * 60 * 1000, // 1 hour
-        });
+    // Check if this would be a new user and if explicit terms exist
+    const isNewUser = await oauthConnectService.isNewOAuthUser(
+      provider,
+      userInfo,
+    );
 
-        // Clear OAuth flow session
-        req.session.set('oauth', undefined);
-
-        // Redirect to terms page with mode indicating registration completion
-        const termsUrl = new URL('/terms', `${fastify.config.app.host}`);
-        termsUrl.searchParams.set('mode', 'complete_registration');
+    // For new users, check email allowlist before proceeding
+    if (isNewUser) {
+      const { allowed_signup_emails } = config.app;
+      if (!isEmailAllowed(userInfo.email, allowed_signup_emails)) {
+        const errorUrl = new URL('/login', config.app.host);
+        errorUrl.searchParams.set(
+          'oauth_error',
+          'registration_email_not_allowed',
+        );
         if (oauthSession.returnUrl) {
-          termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
+          errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
         }
-        return res.redirect(termsUrl.toString());
+        session.set('oauth', undefined);
+        return c.redirect(errorUrl.toString());
       }
+    }
 
-      // Login/Register mode: authenticate with OAuth
-      // This handles: existing users, new users without explicit terms
-      try {
-        const result = await fastify.oauthConnectService.authenticateWithOAuth(
-          provider,
-          tokens,
-          userInfo,
+    // Load terms once and reuse
+    const allTerms = await termsService.getGlobalTerms();
+    const explicitTerms = await termsService.getExplicitTerms(allTerms);
+
+    if (isNewUser && explicitTerms.length > 0) {
+      // New user with explicit terms: store in session
+      session.set('pendingOAuthRegistration', {
+        providerId: provider,
+        tokens: {
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          expires_in: tokens.expires_in,
+          token_type: tokens.token_type,
+        },
+        userInfo: {
+          id: userInfo.id,
+          email: userInfo.email,
+          email_verified: userInfo.email_verified,
+          name: userInfo.name,
+          picture: userInfo.picture,
+        },
+        returnUrl: oauthSession.returnUrl,
+        expiresAt: Date.now() + 60 * 60 * 1000,
+      });
+
+      // Clear OAuth flow session
+      session.set('oauth', undefined);
+
+      // Redirect to terms page
+      const termsUrl = new URL('/terms', `${config.app.host}`);
+      termsUrl.searchParams.set('mode', 'complete_registration');
+      if (oauthSession.returnUrl) {
+        termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
+      }
+      return c.redirect(termsUrl.toString());
+    }
+
+    // Login/Register mode: authenticate with OAuth
+    try {
+      const result = await oauthConnectService.authenticateWithOAuth(
+        provider,
+        tokens,
+        userInfo,
+      );
+
+      // Set user session
+      session.setUserSession(result.user.id);
+
+      // Clear OAuth session
+      session.set('oauth', undefined);
+
+      // Check if existing user needs to see terms page
+      if (!result.isNewUser && explicitTerms.length > 0) {
+        const pendingTerms = await termsService.getPendingRequiredTerms(
+          result.user.id,
+        );
+        const explicitTermIds = new Set(explicitTerms.map((t) => t.id));
+        const shouldRedirectToTerms = pendingTerms.some((id) =>
+          explicitTermIds.has(id),
         );
 
-        // Set user session
-        req.setUserSession(result.user.id);
-
-        // Clear OAuth session
-        req.session.set('oauth', undefined);
-
-        // Check if existing user needs to see terms page for pending required terms
-        if (!result.isNewUser && explicitTerms.length > 0) {
-          const pendingTerms =
-            await fastify.termsService.getPendingRequiredTerms(result.user.id);
-          const explicitTermIds = new Set(explicitTerms.map((t) => t.id));
-          const shouldRedirectToTerms = pendingTerms.some((id) =>
-            explicitTermIds.has(id),
-          );
-
-          if (shouldRedirectToTerms) {
-            const termsUrl = new URL(
-              '/terms',
-              `${req.protocol}://${req.headers.host}`,
-            );
-            if (oauthSession.returnUrl) {
-              termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
-            }
-            return res.redirect(termsUrl.toString());
-          }
-        }
-
-        // If return URL is provided, redirect
-        if (oauthSession.returnUrl) {
-          return res.redirect(oauthSession.returnUrl);
-        }
-
-        // Default: redirect to profile page
-        return res.redirect('/profile');
-      } catch (err) {
-        // Catch RegistrationEmailNotAllowed and redirect to login
-        if (
-          err instanceof ApiError &&
-          err.code === 'REGISTRATION_EMAIL_NOT_ALLOWED'
-        ) {
-          const errorUrl = new URL('/login', fastify.config.app.host);
-          errorUrl.searchParams.set(
-            'oauth_error',
-            'registration_email_not_allowed',
-          );
+        if (shouldRedirectToTerms) {
+          const url = new URL(c.req.url);
+          const termsUrl = new URL('/terms', `${url.protocol}//${url.host}`);
           if (oauthSession.returnUrl) {
-            errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
+            termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
           }
-          req.session.set('oauth', undefined);
-          return res.redirect(errorUrl.toString());
+          return c.redirect(termsUrl.toString());
         }
-        throw err;
       }
-    },
+
+      // If return URL is provided, redirect
+      if (oauthSession.returnUrl) {
+        return c.redirect(oauthSession.returnUrl);
+      }
+
+      // Default: redirect to profile page
+      return c.redirect('/profile');
+    } catch (err) {
+      // Catch RegistrationEmailNotAllowed and redirect to login
+      if (
+        err instanceof ApiError &&
+        err.code === 'REGISTRATION_EMAIL_NOT_ALLOWED'
+      ) {
+        const errorUrl = new URL('/login', config.app.host);
+        errorUrl.searchParams.set(
+          'oauth_error',
+          'registration_email_not_allowed',
+        );
+        if (oauthSession.returnUrl) {
+          errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
+        }
+        session.set('oauth', undefined);
+        return c.redirect(errorUrl.toString());
+      }
+      throw err;
+    }
   });
+};

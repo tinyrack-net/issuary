@@ -1,59 +1,93 @@
+import { createRoute } from '@hono/zod-openapi';
 import z from 'zod/v4';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
-import type { FastifyWithZodInstance } from '@/server.js';
+import type { AppType } from '@/types.js';
 
 /**
  * POST /api/v1/user/totp/confirm
  *
  * Confirm TOTP setup after user acknowledges saving recovery codes.
- * This completes the TOTP setup process.
- * Accepts both full user session and pending 2FA setup session.
- * If from pending setup session, converts to full user session.
  */
-export default (fastify: FastifyWithZodInstance) =>
-  fastify.route({
-    method: 'POST',
-    url: '/user/totp/confirm',
-    schema: {
-      summary: 'Confirm TOTP Setup',
-      description:
-        'Confirm that recovery codes have been saved to complete TOTP setup. ' +
-        'Must call verify endpoint first to get recovery codes. ' +
-        'This endpoint completes the TOTP setup and enables 2FA.',
-      tags: [TAGS.USER],
-      body: z.object({}).optional().nullable(),
-      response: {
-        200: r.UserSessionResponse,
-        400: e.TotpNotSetup.Schema,
-        401: e.Unauthorized.Schema,
-        409: e.TotpAlreadyEnabled.Schema,
+const route = createRoute({
+  method: 'post',
+  path: '/user/totp/confirm',
+  tags: [TAGS.USER],
+  summary: 'Confirm TOTP Setup',
+  description:
+    'Confirm that recovery codes have been saved to complete TOTP setup. ' +
+    'Must call verify endpoint first to get recovery codes. ' +
+    'This endpoint completes the TOTP setup and enables 2FA.',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({}).optional().nullable(),
+        },
       },
     },
-    handler: async (req, res) => {
-      // Allow both full user session and pending 2FA setup session
-      const userSession = req.session.get('user');
-      const pending2FASetup = req.session.get('pending2FASetup');
-      const userId = userSession?.id ?? pending2FASetup?.id;
-
-      if (!userId) {
-        throw new e.Unauthorized.Error();
-      }
-
-      await fastify.totpService.confirmSetup(userId);
-
-      // Convert pending 2FA setup session to full user session
-      if (pending2FASetup) {
-        req.setUserSession(userId);
-      }
-
-      const userEntity = await fastify.mikro.user.verifyById(userId);
-      const user =
-        await fastify.userService.userEntityToSessionUser(userEntity);
-
-      return res.status(200).send({
-        user,
-      });
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: r.UserSessionResponse,
+        },
+      },
+      description: 'Success',
     },
+    400: {
+      content: {
+        'application/json': {
+          schema: e.TotpNotSetup.Schema,
+        },
+      },
+      description: 'TOTP not setup',
+    },
+    401: {
+      content: {
+        'application/json': {
+          schema: e.Unauthorized.Schema,
+        },
+      },
+      description: 'Unauthorized',
+    },
+    409: {
+      content: {
+        'application/json': {
+          schema: e.TotpAlreadyEnabled.Schema,
+        },
+      },
+      description: 'TOTP already enabled',
+    },
+  },
+});
+
+export default (app: AppType) => {
+  app.openapi(route, async (c) => {
+    const session = c.get('session');
+    const { mikro, totpService, userService } = c.get('services');
+
+    // Allow both full user session and pending 2FA setup session
+    const userSession = session.get('user');
+    const pending2FASetup = session.get('pending2FASetup');
+    const userId = userSession?.id ?? pending2FASetup?.id;
+
+    if (!userId) {
+      throw new e.Unauthorized.Error();
+    }
+
+    await totpService.confirmSetup(userId);
+
+    // Convert pending 2FA setup session to full user session
+    if (pending2FASetup) {
+      session.setUserSession(userId);
+    }
+
+    const userEntity = await mikro.user.verifyById(userId);
+    const user = await userService.userEntityToSessionUser(userEntity);
+
+    return c.json({ user }, 200);
   });
+};

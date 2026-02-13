@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
 import {
@@ -11,21 +10,23 @@ import {
   TEST_OAUTH_CLIENT_CONFIG,
   TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
+import type { AppType } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  ({ app, cleanup } = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       clients: [TEST_OAUTH_CLIENT_CONFIG],
     },
-  });
+  }));
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('POST /application/oauth/introspect', () => {
@@ -34,12 +35,12 @@ describe('POST /application/oauth/introspect', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
       const res = await introspectToken(app, { token: access_token });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       expect(json.active).toBe(true);
       expect(json.scope).toBe('openid profile email');
@@ -55,15 +56,15 @@ describe('POST /application/oauth/introspect', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
       const res = await introspectToken(app, {
         token: access_token,
         tokenTypeHint: 'access_token',
       });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.active).toBe(true);
     });
 
@@ -71,18 +72,18 @@ describe('POST /application/oauth/introspect', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/introspect', {
         method: 'POST',
-        url: '/application/oauth/introspect',
-        payload: {
+        body: JSON.stringify({
           token: access_token,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.active).toBe(true);
     });
 
@@ -90,15 +91,15 @@ describe('POST /application/oauth/introspect', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
       const res = await introspectToken(app, {
         token: access_token,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.active).toBe(true);
     });
   });
@@ -108,12 +109,12 @@ describe('POST /application/oauth/introspect', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { refresh_token } = tokenRes.json();
+      const { refresh_token } = await tokenRes.json();
 
       const res = await introspectToken(app, { token: refresh_token });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       expect(json.active).toBe(true);
       expect(json.scope).toBe('openid profile email');
@@ -129,15 +130,15 @@ describe('POST /application/oauth/introspect', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { refresh_token } = tokenRes.json();
+      const { refresh_token } = await tokenRes.json();
 
       const res = await introspectToken(app, {
         token: refresh_token,
         tokenTypeHint: 'refresh_token',
       });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.active).toBe(true);
     });
   });
@@ -148,8 +149,8 @@ describe('POST /application/oauth/introspect', () => {
         token: 'invalid-token-that-is-not-a-jwt',
       });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       expect(json.active).toBe(false);
       expect(json.scope).toBeUndefined();
@@ -166,8 +167,8 @@ describe('POST /application/oauth/introspect', () => {
         token: 'header.payload', // Only 2 parts instead of 3
       });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.active).toBe(false);
     });
 
@@ -178,22 +179,22 @@ describe('POST /application/oauth/introspect', () => {
 
       const res = await introspectToken(app, { token: fakeToken });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.active).toBe(false);
     });
 
     test('should return active=false for empty token', async () => {
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/introspect', {
         method: 'POST',
-        url: '/application/oauth/introspect',
-        payload: {
+        body: JSON.stringify({
           token: '',
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
       // Zod validation should fail for empty string
-      expect(res.statusCode).toBe(400);
+      expect(res.status).toBe(400);
     });
   });
 
@@ -202,7 +203,7 @@ describe('POST /application/oauth/introspect', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
       // Hint says refresh_token but it's actually access_token
       const res = await introspectToken(app, {
@@ -210,8 +211,8 @@ describe('POST /application/oauth/introspect', () => {
         tokenTypeHint: 'refresh_token',
       });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       // Should still verify correctly (fallback to trying both types)
       expect(json.active).toBe(true);
     });
@@ -222,15 +223,15 @@ describe('POST /application/oauth/introspect', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
       const res = await introspectToken(app, {
         token: access_token,
         clientId: 'invalid-client-id',
       });
 
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       expect(json.code).toBe('OAUTH_CLIENT_NOT_FOUND');
     });
 
@@ -238,15 +239,15 @@ describe('POST /application/oauth/introspect', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
       const res = await introspectToken(app, {
         token: access_token,
         clientSecret: 'wrong-secret',
       });
 
-      expect(res.statusCode).toBe(401);
-      const json = res.json();
+      expect(res.status).toBe(401);
+      const json = await res.json();
       expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
     });
 
@@ -254,7 +255,7 @@ describe('POST /application/oauth/introspect', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
       const res = await introspectToken(app, {
         token: access_token,
@@ -262,8 +263,8 @@ describe('POST /application/oauth/introspect', () => {
       });
 
       // Will fail at client lookup or disabled check
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       expect(['OAUTH_CLIENT_NOT_FOUND', 'OAUTH_CLIENT_DISABLED']).toContain(
         json.code,
       );
@@ -275,12 +276,12 @@ describe('POST /application/oauth/introspect', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
       const res = await introspectToken(app, { token: access_token });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // RFC 7662 §2.2 - Introspection Response (active)
       expect(json).toHaveProperty('active');
@@ -301,8 +302,8 @@ describe('POST /application/oauth/introspect', () => {
     test('should return proper inactive response format', async () => {
       const res = await introspectToken(app, { token: 'invalid' });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // RFC 7662 §2.2 - Introspection Response (inactive)
       expect(json).toHaveProperty('active');
@@ -321,12 +322,12 @@ describe('POST /application/oauth/introspect', () => {
         scope: 'openid profile', // Limited scopes
       });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
       const res = await introspectToken(app, { token: access_token });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.active).toBe(true);
       expect(json.scope).toBe('openid profile');
     });
@@ -338,12 +339,12 @@ describe('POST /application/oauth/introspect', () => {
         scope: 'profile email', // No openid
       });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
       const res = await introspectToken(app, { token: access_token });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.active).toBe(true);
       expect(json.scope).toBe('profile email');
     });
@@ -357,27 +358,27 @@ describe('POST /application/oauth/introspect', () => {
         scope: 'openid profile email',
       });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token } = tokenRes.json();
+      const { access_token } = await tokenRes.json();
 
       // Verify token is active before revocation
       const beforeRes = await introspectToken(app, { token: access_token });
-      expect(beforeRes.json().active).toBe(true);
+      expect((await beforeRes.json()).active).toBe(true);
 
       // Revoke the token
-      const revokeRes = await app.inject({
+      const revokeRes = await app.request('/application/oauth/revoke', {
         method: 'POST',
-        url: '/application/oauth/revoke',
-        payload: {
+        body: JSON.stringify({
           token: access_token,
           client_id: TEST_OAUTH_CLIENT.clientId,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
-      expect(revokeRes.statusCode).toBe(200);
+      expect(revokeRes.status).toBe(200);
 
       // Token should now be inactive
       const afterRes = await introspectToken(app, { token: access_token });
-      expect(afterRes.statusCode).toBe(200);
-      const json = afterRes.json();
+      expect(afterRes.status).toBe(200);
+      const json = await afterRes.json();
       expect(json.active).toBe(false);
     });
 
@@ -388,43 +389,43 @@ describe('POST /application/oauth/introspect', () => {
         scope: 'openid profile email',
       });
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { refresh_token } = tokenRes.json();
+      const { refresh_token } = await tokenRes.json();
 
       // Verify token is active before revocation
       const beforeRes = await introspectToken(app, { token: refresh_token });
-      expect(beforeRes.json().active).toBe(true);
+      expect((await beforeRes.json()).active).toBe(true);
 
       // Revoke the token
-      const revokeRes = await app.inject({
+      const revokeRes = await app.request('/application/oauth/revoke', {
         method: 'POST',
-        url: '/application/oauth/revoke',
-        payload: {
+        body: JSON.stringify({
           token: refresh_token,
           client_id: TEST_OAUTH_CLIENT.clientId,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
-      expect(revokeRes.statusCode).toBe(200);
+      expect(revokeRes.status).toBe(200);
 
       // Token should now be inactive
       const afterRes = await introspectToken(app, { token: refresh_token });
-      expect(afterRes.statusCode).toBe(200);
-      const json = afterRes.json();
+      expect(afterRes.status).toBe(200);
+      const json = await afterRes.json();
       expect(json.active).toBe(false);
     });
   });
 
   describe('Request Validation', () => {
     test('should reject request without token', async () => {
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/introspect', {
         method: 'POST',
-        url: '/application/oauth/introspect',
-        payload: {
+        body: JSON.stringify({
           // No token
           client_id: TEST_OAUTH_CLIENT.clientId,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(res.statusCode).toBe(400);
+      expect(res.status).toBe(400);
     });
 
     test('should handle very long token gracefully', async () => {
@@ -432,8 +433,8 @@ describe('POST /application/oauth/introspect', () => {
 
       const res = await introspectToken(app, { token: longToken });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.active).toBe(false);
     });
 
@@ -442,8 +443,8 @@ describe('POST /application/oauth/introspect', () => {
 
       const res = await introspectToken(app, { token: specialToken });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.active).toBe(false);
     });
   });

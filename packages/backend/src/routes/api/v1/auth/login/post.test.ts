@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { e } from '@/schemas/error.js';
 import { createServer } from '@/server.js';
@@ -11,36 +10,42 @@ import {
   TEST_USER,
   TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
+import type { AppType, ServiceContainer } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let services: ServiceContainer;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  const server = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       terms: TEST_TERMS_CONFIG,
     },
   });
+  app = server.app;
+  services = server.services;
+  cleanup = server.cleanup;
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 describe('POST /api/v1/auth/login', () => {
   test('should login successfully with correct credentials (app config user)', async () => {
-    const res = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/login',
-      payload: {
+    const res = await app.request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
         email: TEST_USER.email,
         password: TEST_USER.password,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.user).toHaveProperty('id');
     expect(body.user).toHaveProperty('second_factor_required');
   });
@@ -53,19 +58,19 @@ describe('POST /api/v1/auth/login', () => {
       password: 'password123',
     });
 
-    expect(registerRes.statusCode).toBe(200);
+    expect(registerRes.status).toBe(200);
 
-    const loginRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/login',
-      payload: {
+    const loginRes = await app.request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
         email: uniqueEmail,
         password: 'password123',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const body = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const body = await loginRes.json();
     expect(body).toHaveProperty('user');
     expect(body.user.email_verification_required).toBe(true);
   });
@@ -78,20 +83,20 @@ describe('POST /api/v1/auth/login', () => {
       password: 'password123',
     });
 
-    expect(registerRes.statusCode).toBe(200);
+    expect(registerRes.status).toBe(200);
 
     // Try to login - should require email verification
-    const loginRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/login',
-      payload: {
+    const loginRes = await app.request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
         email: uniqueEmail,
         password: 'password123',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const body = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const body = await loginRes.json();
     expect(body).toHaveProperty('user');
     expect(body.user.email_verification_required).toBe(true);
   });
@@ -104,128 +109,130 @@ describe('POST /api/v1/auth/login', () => {
       password: 'password123',
     });
 
-    expect(registerRes.statusCode).toBe(200);
+    expect(registerRes.status).toBe(200);
 
     // Manually verify the email in the database
-    await app.mikro.em.fork().transactional(async (em) => {
-      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
+    await services.mikro.em.fork().transactional(async (em) => {
+      const user = await services.mikro.user.findOneOrFail({
+        email: uniqueEmail,
+      });
       user.email_verified = true;
       await em.flush();
     });
 
     // Now login should succeed
-    const loginRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/login',
-      payload: {
+    const loginRes = await app.request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
         email: uniqueEmail,
         password: 'password123',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(loginRes.statusCode).toBe(200);
-    const body = loginRes.json();
+    expect(loginRes.status).toBe(200);
+    const body = await loginRes.json();
     expect(body.user.email).toBe(uniqueEmail);
     expect(body.user.email_verified).toBe(true);
   });
 
   test('should allow config user to login without email verification', async () => {
     // Config users should bypass email verification requirement
-    const res = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/login',
-      payload: {
+    const res = await app.request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
         email: TEST_USER.email,
         password: TEST_USER.password,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
+    expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.user.managed_by).toBe('config');
   });
 
   test('should fail with wrong password', async () => {
-    const res = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/login',
-      payload: {
+    const res = await app.request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
         email: 'admin@example.com',
         password: 'wrongpassword',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expectError(res, e.InvalidEmailOrPassword);
+    await expectError(res, e.InvalidEmailOrPassword);
   });
 
   test('should fail with non-existent email', async () => {
-    const res = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/login',
-      payload: {
+    const res = await app.request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
         email: 'nonexistent@example.com',
         password: 'anypassword',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expectError(res, e.InvalidEmailOrPassword);
+    await expectError(res, e.InvalidEmailOrPassword);
   });
 
   test('should fail with invalid email format', async () => {
-    const res = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/login',
-      payload: {
+    const res = await app.request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
         email: 'not-an-email',
         password: 'anypassword',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(400);
-    const body = res.json();
+    expect(res.status).toBe(400);
+    const body = await res.json();
     expect(body).toHaveProperty('message');
   });
 
   test('should fail with short password', async () => {
-    const res = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/login',
-      payload: {
+    const res = await app.request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
         email: 'admin@example.com',
         password: '12345',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(400);
-    const body = res.json();
+    expect(res.status).toBe(400);
+    const body = await res.json();
     expect(body).toHaveProperty('message');
   });
 
   test('should fail with missing email', async () => {
-    const res = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/login',
-      payload: {
+    const res = await app.request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
         password: 'changemelater',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(400);
-    const body = res.json();
+    expect(res.status).toBe(400);
+    const body = await res.json();
     expect(body).toHaveProperty('message');
   });
 
   test('should fail with missing password', async () => {
-    const res = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/login',
-      payload: {
+    const res = await app.request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
         email: 'admin@example.com',
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.statusCode).toBe(400);
-    const body = res.json();
+    expect(res.status).toBe(400);
+    const body = await res.json();
     expect(body).toHaveProperty('message');
   });
 
@@ -238,38 +245,40 @@ describe('POST /api/v1/auth/login', () => {
       email: uniqueEmail,
       password,
     });
-    expect(registerRes.statusCode).toBe(200);
+    expect(registerRes.status).toBe(200);
 
     // Verify user can login before deletion (will require email verification)
-    const loginBeforeRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/login',
-      payload: {
+    const loginBeforeRes = await app.request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
         email: uniqueEmail,
         password: password,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
-    expect(loginBeforeRes.statusCode).toBe(200);
+    expect(loginBeforeRes.status).toBe(200);
     // Unverified user will get email_verification_required
 
     // Soft delete the user by setting deleted_at
-    await app.mikro.em.fork().transactional(async (em) => {
-      const user = await app.mikro.user.findOneOrFail({ email: uniqueEmail });
+    await services.mikro.em.fork().transactional(async (em) => {
+      const user = await services.mikro.user.findOneOrFail({
+        email: uniqueEmail,
+      });
       user.deleted_at = new Date();
       await em.flush();
     });
 
     // Attempt to login with deleted user
-    const loginAfterRes = await app.inject({
-      method: 'post',
-      url: '/api/v1/auth/login',
-      payload: {
+    const loginAfterRes = await app.request('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
         email: uniqueEmail,
         password: password,
-      },
+      }),
+      headers: { 'Content-Type': 'application/json' },
     });
 
     // Should fail with InvalidEmailOrPassword error
-    expectError(loginAfterRes, e.InvalidEmailOrPassword);
+    await expectError(loginAfterRes, e.InvalidEmailOrPassword);
   });
 });

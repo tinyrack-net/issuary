@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
@@ -13,21 +12,23 @@ import {
   TEST_PKCE,
   TEST_USER_CONFIG,
 } from '@/test-utils/index.js';
+import type { AppType } from '@/types.js';
 
-let app: FastifyInstance;
+let app: AppType;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  app = await createServer({
+  ({ app, cleanup } = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       clients: [TEST_OAUTH_CLIENT_CONFIG],
     },
-  });
+  }));
 });
 
 afterAll(async () => {
-  await app.close();
+  await cleanup();
 });
 
 /**
@@ -62,8 +63,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       expect(json.access_token).toBeDefined();
       expect(json.token_type).toBe('Bearer');
@@ -82,8 +83,8 @@ describe('POST /application/oauth/token', () => {
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.access_token).toBeDefined();
     });
 
@@ -100,8 +101,8 @@ describe('POST /application/oauth/token', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.access_token).toBeDefined();
     });
 
@@ -119,8 +120,8 @@ describe('POST /application/oauth/token', () => {
         codeVerifier: plainVerifier,
       });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.access_token).toBeDefined();
     });
 
@@ -133,8 +134,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.access_token).toBeDefined();
       expect(json.refresh_token).toBeDefined();
       expect(json.id_token).toBeUndefined(); // No openid scope
@@ -150,8 +151,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.scope).toBe('openid profile');
     });
   });
@@ -166,8 +167,8 @@ describe('POST /application/oauth/token', () => {
         clientId: 'invalid-client-id',
       });
 
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       expect(json.code).toBe('OAUTH_CLIENT_NOT_FOUND');
     });
 
@@ -184,8 +185,8 @@ describe('POST /application/oauth/token', () => {
 
       // If client doesn't exist, it will return OAUTH_CLIENT_NOT_FOUND
       // If it exists but is disabled, it will return OAUTH_CLIENT_DISABLED
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       expect(['OAUTH_CLIENT_NOT_FOUND', 'OAUTH_CLIENT_DISABLED']).toContain(
         json.code,
       );
@@ -200,8 +201,8 @@ describe('POST /application/oauth/token', () => {
         clientSecret: 'wrong-secret',
       });
 
-      expect(res.statusCode).toBe(401);
-      const json = res.json();
+      expect(res.status).toBe(401);
+      const json = await res.json();
       expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
     });
   });
@@ -212,8 +213,8 @@ describe('POST /application/oauth/token', () => {
         code: 'invalid-code-123',
       });
 
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       expect(json.code).toBe('INVALID_AUTHORIZATION_CODE');
     });
 
@@ -223,29 +224,29 @@ describe('POST /application/oauth/token', () => {
 
       // Use the code once
       const res1 = await exchangeCode({ code });
-      expect(res1.statusCode).toBe(200);
+      expect(res1.status).toBe(200);
 
       // Try to use the same code again (should fail - codes are single-use)
       const res2 = await exchangeCode({ code });
-      expect(res2.statusCode).toBe(400);
-      const json = res2.json();
+      expect(res2.status).toBe(400);
+      const json = await res2.json();
       expect(json.code).toBe('INVALID_AUTHORIZATION_CODE');
     });
 
     test('should reject missing authorization code', async () => {
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           client_id: TEST_OAUTH_CLIENT.clientId,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
           // code missing
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       expect(json.code).toBe('MISSING_AUTHORIZATION_CODE');
     });
   });
@@ -255,19 +256,19 @@ describe('POST /application/oauth/token', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           // redirect_uri missing
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       expect(json.code).toBe('MISSING_REDIRECT_URI');
     });
 
@@ -280,8 +281,8 @@ describe('POST /application/oauth/token', () => {
         redirectUri: 'http://evil.com/callback', // Different from authorization request
       });
 
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       expect(json.code).toBe('REDIRECT_URI_MISMATCH');
     });
   });
@@ -299,8 +300,8 @@ describe('POST /application/oauth/token', () => {
         // code_verifier missing
       });
 
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       expect(json.code).toBe('MISSING_CODE_VERIFIER');
     });
 
@@ -316,8 +317,8 @@ describe('POST /application/oauth/token', () => {
         codeVerifier: 'wrong-verifier-that-does-not-match-the-challenge',
       });
 
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       expect(json.code).toBe('INVALID_PKCE_VERIFIER');
     });
 
@@ -333,7 +334,7 @@ describe('POST /application/oauth/token', () => {
         // No code_verifier
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
     });
   });
 
@@ -343,16 +344,16 @@ describe('POST /application/oauth/token', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCode({ code });
-      expect(tokenRes.statusCode).toBe(200);
+      expect(tokenRes.status).toBe(200);
 
-      const { refresh_token } = tokenRes.json();
+      const { refresh_token } = await tokenRes.json();
       expect(refresh_token).toBeDefined();
 
       // Now refresh the token
       const res = await refreshToken({ refreshToken: refresh_token });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.access_token).toBeDefined();
       expect(json.token_type).toBe('Bearer');
       expect(json.expires_in).toBe(3600);
@@ -371,14 +372,14 @@ describe('POST /application/oauth/token', () => {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
-      const { refresh_token } = tokenRes.json();
+      const { refresh_token } = await tokenRes.json();
 
       const res = await refreshToken({
         refreshToken: refresh_token,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
     });
 
     test('should preserve scopes from original grant', async () => {
@@ -388,30 +389,30 @@ describe('POST /application/oauth/token', () => {
         scope: 'openid profile', // Limited scopes
       });
       const tokenRes = await exchangeCode({ code });
-      const { refresh_token } = tokenRes.json();
+      const { refresh_token } = await tokenRes.json();
 
       const res = await refreshToken({ refreshToken: refresh_token });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.scope).toBe('openid profile');
     });
   });
 
   describe('Refresh Token Grant - Validation', () => {
     test('should reject missing refresh_token', async () => {
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'refresh_token',
           client_id: TEST_OAUTH_CLIENT.clientId,
           // refresh_token missing
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       expect(json.code).toBe('MISSING_REFRESH_TOKEN');
     });
 
@@ -420,8 +421,8 @@ describe('POST /application/oauth/token', () => {
         refreshToken: 'invalid-refresh-token',
       });
 
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       expect(json.code).toBe('INVALID_REFRESH_TOKEN');
     });
 
@@ -430,7 +431,7 @@ describe('POST /application/oauth/token', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCode({ code });
-      const { refresh_token } = tokenRes.json();
+      const { refresh_token } = await tokenRes.json();
 
       // Try to refresh with client B
       const res = await refreshToken({
@@ -438,8 +439,8 @@ describe('POST /application/oauth/token', () => {
         clientId: 'different-client-id',
       });
 
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
       // Will fail at client lookup first, or at client_id mismatch check
       expect(['OAUTH_CLIENT_NOT_FOUND', 'CLIENT_ID_MISMATCH']).toContain(
         json.code,
@@ -450,15 +451,15 @@ describe('POST /application/oauth/token', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCode({ code });
-      const { refresh_token } = tokenRes.json();
+      const { refresh_token } = await tokenRes.json();
 
       const res = await refreshToken({
         refreshToken: refresh_token,
         clientSecret: 'wrong-secret',
       });
 
-      expect(res.statusCode).toBe(401);
-      const json = res.json();
+      expect(res.status).toBe(401);
+      const json = await res.json();
       expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
     });
   });
@@ -469,18 +470,18 @@ describe('POST /application/oauth/token', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCode({ code });
-      expect(tokenRes.statusCode).toBe(200);
+      expect(tokenRes.status).toBe(200);
 
-      const { refresh_token: firstRefreshToken } = tokenRes.json();
+      const { refresh_token: firstRefreshToken } = await tokenRes.json();
       expect(firstRefreshToken).toBeDefined();
 
       // First refresh - should succeed and return new tokens
       const refreshRes1 = await refreshToken({
         refreshToken: firstRefreshToken,
       });
-      expect(refreshRes1.statusCode).toBe(200);
+      expect(refreshRes1.status).toBe(200);
 
-      const { refresh_token: secondRefreshToken } = refreshRes1.json();
+      const { refresh_token: secondRefreshToken } = await refreshRes1.json();
       expect(secondRefreshToken).toBeDefined();
       // New refresh token should be different from the old one
       expect(secondRefreshToken).not.toBe(firstRefreshToken);
@@ -489,8 +490,8 @@ describe('POST /application/oauth/token', () => {
       const refreshRes2 = await refreshToken({
         refreshToken: firstRefreshToken,
       });
-      expect(refreshRes2.statusCode).toBe(400);
-      const json = refreshRes2.json();
+      expect(refreshRes2.status).toBe(400);
+      const json = await refreshRes2.json();
       expect(json.code).toBe('INVALID_REFRESH_TOKEN');
     });
 
@@ -499,22 +500,22 @@ describe('POST /application/oauth/token', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCode({ code });
-      const { refresh_token: firstRefreshToken } = tokenRes.json();
+      const { refresh_token: firstRefreshToken } = await tokenRes.json();
 
       // First refresh
       const refreshRes1 = await refreshToken({
         refreshToken: firstRefreshToken,
       });
-      expect(refreshRes1.statusCode).toBe(200);
-      const { refresh_token: secondRefreshToken } = refreshRes1.json();
+      expect(refreshRes1.status).toBe(200);
+      const { refresh_token: secondRefreshToken } = await refreshRes1.json();
 
       // Use the new refresh token - should succeed
       const refreshRes2 = await refreshToken({
         refreshToken: secondRefreshToken,
       });
-      expect(refreshRes2.statusCode).toBe(200);
+      expect(refreshRes2.status).toBe(200);
 
-      const { refresh_token: thirdRefreshToken } = refreshRes2.json();
+      const { refresh_token: thirdRefreshToken } = await refreshRes2.json();
       expect(thirdRefreshToken).toBeDefined();
       expect(thirdRefreshToken).not.toBe(secondRefreshToken);
     });
@@ -527,13 +528,13 @@ describe('POST /application/oauth/token', () => {
         scope: 'openid profile', // Limited scopes
       });
       const tokenRes = await exchangeCode({ code });
-      const { refresh_token, scope: originalScope } = tokenRes.json();
+      const { refresh_token, scope: originalScope } = await tokenRes.json();
 
       // Refresh
       const refreshRes = await refreshToken({ refreshToken: refresh_token });
-      expect(refreshRes.statusCode).toBe(200);
+      expect(refreshRes.status).toBe(200);
 
-      const json = refreshRes.json();
+      const json = await refreshRes.json();
       // Scopes should be preserved after rotation
       expect(json.scope).toBe(originalScope);
     });
@@ -543,13 +544,14 @@ describe('POST /application/oauth/token', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCode({ code });
-      const { refresh_token, access_token: firstAccessToken } = tokenRes.json();
+      const { refresh_token, access_token: firstAccessToken } =
+        await tokenRes.json();
 
       const firstPayload = jose.decodeJwt(firstAccessToken);
 
       // Refresh to get new tokens
       const refreshRes = await refreshToken({ refreshToken: refresh_token });
-      const { access_token: secondAccessToken } = refreshRes.json();
+      const { access_token: secondAccessToken } = await refreshRes.json();
 
       const secondPayload = jose.decodeJwt(secondAccessToken);
 
@@ -570,17 +572,17 @@ describe('POST /application/oauth/token', () => {
       });
 
       // Try to exchange with wrong redirect_uri (will fail)
-      const failRes = await app.inject({
+      const failRes = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           code: code1,
           client_id: TEST_OAUTH_CLIENT.clientId,
           redirect_uri: 'http://wrong.com/callback',
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
-      expect(failRes.statusCode).toBe(400);
+      expect(failRes.status).toBe(400);
 
       // Get a new code (original is now consumed)
       const { code: code2 } = await getAuthorizationCode(app, {
@@ -589,36 +591,36 @@ describe('POST /application/oauth/token', () => {
 
       // Exchange should succeed with new code
       const successRes = await exchangeCode({ code: code2 });
-      expect(successRes.statusCode).toBe(200);
+      expect(successRes.status).toBe(200);
     });
   });
 
   describe('Grant Type Validation', () => {
     test('should reject unsupported grant_type', async () => {
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           grant_type: 'password', // Not supported
           client_id: TEST_OAUTH_CLIENT.clientId,
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
       // Zod validation should fail before reaching handler
-      expect(res.statusCode).toBe(400);
+      expect(res.status).toBe(400);
     });
 
     test('should reject missing grant_type', async () => {
-      const res = await app.inject({
+      const res = await app.request('/application/oauth/token', {
         method: 'POST',
-        url: '/application/oauth/token',
-        payload: {
+        body: JSON.stringify({
           client_id: TEST_OAUTH_CLIENT.clientId,
           // grant_type missing
-        },
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      expect(res.statusCode).toBe(400);
+      expect(res.status).toBe(400);
     });
   });
 
@@ -628,8 +630,8 @@ describe('POST /application/oauth/token', () => {
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // RFC 6749 §5.1 - Successful Response
       expect(json).toHaveProperty('access_token');
@@ -655,7 +657,7 @@ describe('POST /application/oauth/token', () => {
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const res = await exchangeCode({ code });
 
-      const json = res.json();
+      const json = await res.json();
 
       // JWT format: header.payload.signature (3 parts separated by dots)
       expect(json.access_token.split('.')).toHaveLength(3);
@@ -668,8 +670,8 @@ describe('POST /application/oauth/token', () => {
     test('should return proper error format for invalid code', async () => {
       const res = await exchangeCode({ code: 'invalid' });
 
-      expect(res.statusCode).toBe(400);
-      const json = res.json();
+      expect(res.status).toBe(400);
+      const json = await res.json();
 
       // Error response format
       expect(json).toHaveProperty('code');
@@ -687,15 +689,15 @@ describe('POST /application/oauth/token', () => {
         clientSecret: 'wrong',
       });
 
-      expect(res.statusCode).toBe(401);
-      const json = res.json();
+      expect(res.status).toBe(401);
+      const json = await res.json();
       expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
     });
 
     test('should return 400 for invalid grants', async () => {
       const res = await exchangeCode({ code: 'invalid' });
 
-      expect(res.statusCode).toBe(400);
+      expect(res.status).toBe(400);
     });
   });
 
@@ -710,8 +712,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
       expect(json.id_token).toBeDefined();
 
       // Decode and verify nonce claim
@@ -728,8 +730,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       const decoded = jose.decodeJwt(json.id_token);
       expect(decoded['nonce']).toBeUndefined();
@@ -741,8 +743,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       const decoded = jose.decodeJwt(json.id_token);
       expect(decoded.aud).toBe(TEST_OAUTH_CLIENT.clientId);
@@ -754,8 +756,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       const decoded = jose.decodeJwt(json.id_token);
       expect(decoded.sub).toBeDefined();
@@ -770,8 +772,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       const decoded = jose.decodeJwt(json.id_token);
       expect(decoded.iss).toBeDefined();
@@ -784,8 +786,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       const decoded = jose.decodeJwt(json.id_token);
       expect(decoded.iat).toBeDefined();
@@ -806,8 +808,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       const decoded = jose.decodeJwt(json.id_token);
       expect(decoded['email']).toBeDefined();
@@ -825,8 +827,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       const decoded = jose.decodeJwt(json.id_token);
       expect(decoded['email']).toBeUndefined();
@@ -842,8 +844,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       const decoded = jose.decodeJwt(json.id_token);
       expect(decoded['name']).toBeDefined();
@@ -859,8 +861,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       const decoded = jose.decodeJwt(json.id_token);
       expect(decoded['name']).toBeUndefined();
@@ -877,8 +879,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       const decoded = jose.decodeJwt(json.id_token);
 
@@ -908,8 +910,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       const decoded = jose.decodeJwt(json.access_token);
 
@@ -930,8 +932,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       // Decode header to check kid
       const [headerPart] = json.access_token.split('.');
@@ -952,8 +954,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       const decoded = jose.decodeJwt(json.refresh_token);
 
@@ -974,8 +976,8 @@ describe('POST /application/oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
+      expect(res.status).toBe(200);
+      const json = await res.json();
 
       const accessDecoded = jose.decodeJwt(json.access_token);
       const refreshDecoded = jose.decodeJwt(json.refresh_token);
