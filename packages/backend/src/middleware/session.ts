@@ -1,7 +1,57 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import { getCookie, setCookie } from 'hono/cookie';
 import { createMiddleware } from 'hono/factory';
-import type { AppEnv, SessionData, SessionHelper } from '@/types.js';
+import type { AppEnv } from '@/lib/app.js';
+
+export interface SessionData {
+  user?: {
+    id: string;
+    authenticated_at: number;
+  };
+  pending2FAUser?: {
+    id: string;
+    authenticated_at: number;
+  };
+  pending2FASetup?: {
+    id: string;
+  };
+  oauth?: {
+    state: string;
+    codeVerifier: string;
+    providerId: string;
+    mode: 'login' | 'register' | 'link';
+    returnUrl?: string | undefined;
+  };
+  pendingOAuthRegistration?: {
+    providerId: string;
+    tokens: {
+      access_token: string;
+      refresh_token?: string | undefined;
+      expires_in?: number | undefined;
+      token_type: string;
+    };
+    userInfo: {
+      id: string;
+      email: string;
+      email_verified: boolean;
+      name?: string | undefined;
+      picture?: string | undefined;
+    };
+    returnUrl?: string | undefined;
+    expiresAt: number;
+  };
+  passkey_challenge?: string;
+}
+
+export interface SessionHelper {
+  get<K extends keyof SessionData>(key: K): SessionData[K];
+  set<K extends keyof SessionData>(key: K, value: SessionData[K]): void;
+  delete(): void;
+  setUserSession(userId: string, authenticatedAt?: number): void;
+  setPending2FASession(userId: string, authenticatedAt?: number): void;
+  setPending2FASetupSession(userId: string): void;
+  clearAuthSessions(): void;
+}
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
