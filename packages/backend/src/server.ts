@@ -3,6 +3,7 @@ import { serve } from '@hono/node-server';
 import { apiReference } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
+import type { AppType } from '@/lib/app.js';
 import { type AppConfigInput, resolveConfig } from '@/lib/config/index.js';
 // NOTE: registerRoutes will be rewritten for Hono
 // separately. Type mismatch is expected during
@@ -16,11 +17,14 @@ import { registerStaticHandler } from '@/middleware/static/index.js';
 import { trustedProxyGuard } from '@/middleware/trusted-proxy-guard.js';
 import { registerRoutes } from '@/routes/index.js';
 import { ApiError, e } from '@/schemas/error.js';
-import { initializeServices } from '@/services/container.js';
-import type { AppType, ServerOptions } from '@/types.js';
+import {
+  initializeServices,
+  type ServerOptions,
+} from '@/services/container.js';
 import 'reflect-metadata';
 
-export type { AppType, ServerOptions };
+export type { AppType };
+export type { ServerOptions } from '@/services/container.js';
 
 export interface CreateServerOptions {
   /**
