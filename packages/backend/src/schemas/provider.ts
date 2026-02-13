@@ -1,4 +1,4 @@
-import z from 'zod';
+import { z } from '@hono/zod-openapi';
 
 /**
  * Coerce a string or boolean value to boolean.

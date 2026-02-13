@@ -1,4 +1,4 @@
-import z from 'zod';
+import { z } from '@hono/zod-openapi';
 
 /**
  * User consent status for a term

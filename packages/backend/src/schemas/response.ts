@@ -1,9 +1,9 @@
+import { z } from '@hono/zod-openapi';
 import type {
   PublicKeyCredentialCreationOptionsJSON as SimpleWebAuthnCreationOptionsJSON,
   RegistrationResponseJSON as SimpleWebAuthnRegistrationResponseJSON,
   PublicKeyCredentialRequestOptionsJSON as SimpleWebAuthnRequestOptionsJSON,
 } from '@simplewebauthn/server';
-import z from 'zod';
 import {
   AppConfigPasskeyAuth,
   AppConfigPasswordAuth,
@@ -469,27 +469,46 @@ export const r = {
   // Use z.custom to maintain type compatibility with @simplewebauthn types
   // Actual validation is done by @simplewebauthn library, not Zod
   PasskeyRegistrationOptionsResponse: z.object({
-    options: z.custom<SimpleWebAuthnCreationOptionsJSON>(() => true),
+    options: z
+      .custom<SimpleWebAuthnCreationOptionsJSON>(() => true)
+      .openapi({
+        type: 'object',
+        description: 'WebAuthn registration options',
+      }),
   }),
 
   PasskeyAuthenticationOptionsResponse: z.object({
-    options: z.custom<SimpleWebAuthnRequestOptionsJSON>(() => true),
+    options: z
+      .custom<SimpleWebAuthnRequestOptionsJSON>(() => true)
+      .openapi({
+        type: 'object',
+        description: 'WebAuthn authentication options',
+      }),
   }),
 
   // For request body validation, check basic structure
   // Actual WebAuthn validation is done by @simplewebauthn library
   PasskeyRegistrationBody: z.object({
-    response: z.custom<SimpleWebAuthnRegistrationResponseJSON>((val) => {
-      if (typeof val !== 'object' || val === null) return false;
-      if (!('id' in val) || !('rawId' in val) || !('type' in val)) return false;
-      if (val.type !== 'public-key') return false;
-      if (!('response' in val)) return false;
-      const response = val.response;
-      if (typeof response !== 'object' || response === null) return false;
-      if (!('clientDataJSON' in response) || !('attestationObject' in response))
-        return false;
-      return true;
-    }),
+    response: z
+      .custom<SimpleWebAuthnRegistrationResponseJSON>((val) => {
+        if (typeof val !== 'object' || val === null) return false;
+        if (!('id' in val) || !('rawId' in val) || !('type' in val))
+          return false;
+        if (val.type !== 'public-key') return false;
+        if (!('response' in val)) return false;
+        const response = val.response;
+        if (typeof response !== 'object' || response === null) return false;
+        if (
+          !('clientDataJSON' in response) ||
+          !('attestationObject' in response)
+        )
+          return false;
+        return true;
+      })
+      .openapi({
+        type: 'object',
+        description: 'WebAuthn registration response',
+      }),
     name: f.passkeyName.optional().describe('Optional name for the passkey'),
   }),
 

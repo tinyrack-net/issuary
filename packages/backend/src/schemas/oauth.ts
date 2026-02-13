@@ -1,4 +1,4 @@
-import z from 'zod';
+import { z } from '@hono/zod-openapi';
 
 /**
  * Token introspection result (RFC 7662 §2.2)
