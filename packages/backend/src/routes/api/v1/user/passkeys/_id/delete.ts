@@ -11,7 +11,7 @@ export default (fastify: FastifyWithZodInstance) => {
   }
   fastify.route({
     method: 'DELETE',
-    url: '',
+    url: '/user/passkeys/:id',
     schema: {
       summary: 'Delete Passkey',
       description: 'Delete a passkey by ID',

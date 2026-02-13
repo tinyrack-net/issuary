@@ -8,7 +8,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
     method: 'DELETE',
-    url: '',
+    url: '/oauth/:provider',
     schema: {
       summary: 'Unlink OAuth Account',
       description: 'Unlinks an OAuth provider from the current user',

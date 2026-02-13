@@ -9,7 +9,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
     method: 'GET',
-    url: '',
+    url: '/oauth/:provider/callback',
     schema: {
       summary: 'OAuth Callback',
       description:

@@ -10,7 +10,7 @@ export default (fastify: FastifyWithZodInstance) => {
   }
   fastify.route({
     method: 'GET',
-    url: '',
+    url: '/user/passkeys',
     schema: {
       summary: 'Get Passkeys',
       description: 'Get all passkeys for the current user',

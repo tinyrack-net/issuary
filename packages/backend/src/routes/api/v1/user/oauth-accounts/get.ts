@@ -6,7 +6,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
     method: 'GET',
-    url: '',
+    url: '/user/oauth-accounts',
     schema: {
       summary: 'List Linked OAuth Accounts',
       description: 'Returns all OAuth accounts linked to the current user',

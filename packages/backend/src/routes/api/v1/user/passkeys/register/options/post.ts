@@ -15,7 +15,7 @@ export default (fastify: FastifyWithZodInstance) => {
   }
   fastify.route({
     method: 'POST',
-    url: '',
+    url: '/user/passkeys/register/options',
     schema: {
       summary: 'Get Passkey Registration Options',
       description:

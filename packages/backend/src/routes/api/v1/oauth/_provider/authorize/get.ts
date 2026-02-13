@@ -7,7 +7,7 @@ import type { FastifyWithZodInstance } from '@/server.js';
 export default (fastify: FastifyWithZodInstance) =>
   fastify.route({
     method: 'GET',
-    url: '',
+    url: '/oauth/:provider/authorize',
     schema: {
       summary: 'Initiate OAuth Authorize Flow',
       description:

@@ -11,7 +11,7 @@ export default (fastify: FastifyWithZodInstance) => {
   }
   fastify.route({
     method: 'PATCH',
-    url: '',
+    url: '/user/passkeys/:id',
     schema: {
       summary: 'Rename Passkey',
       description: 'Rename a passkey',
