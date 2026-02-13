@@ -13,7 +13,7 @@ import {
 import { type JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import { e } from '@/schemas/error.js';
-import type { MikroService } from '@/types.js';
+import type { MikroService } from '@/services/mikro.types.js';
 
 // ---------------------------------------------------------------------------
 // Key Management Types

@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createServer } from '@/server.js';
+import type { ServiceContainer } from '@/services/container.js';
 import {
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '@/test-utils/index.js';
-import type { ServiceContainer } from '@/types.js';
 
 /**
  * Tests for OAuthConnectService.authenticateWithOAuth()

@@ -4,7 +4,7 @@ import qrcode from 'qrcode';
 import type { UserEntity } from '@/entities/user.entity.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import { e } from '@/schemas/error.js';
-import type { MikroService } from '@/types.js';
+import type { MikroService } from '@/services/mikro.types.js';
 
 /**
  * TOTP setup data returned when initiating 2FA setup

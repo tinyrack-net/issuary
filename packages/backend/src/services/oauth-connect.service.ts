@@ -8,7 +8,7 @@ import { isEmailAllowed } from '@/lib/email-pattern.js';
 import { generatePKCE } from '@/lib/pkce.js';
 import { e } from '@/schemas/error.js';
 import type { f } from '@/schemas/field.js';
-import type { MikroService } from '@/types.js';
+import type { MikroService } from '@/services/mikro.types.js';
 import type { TermsService } from './terms.service.js';
 import type { UserService } from './user.service.js';
 

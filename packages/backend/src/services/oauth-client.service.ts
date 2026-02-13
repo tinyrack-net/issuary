@@ -2,7 +2,7 @@ import { verify } from '@node-rs/argon2';
 import type z from 'zod';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
-import type { MikroService } from '@/types.js';
+import type { MikroService } from '@/services/mikro.types.js';
 
 export class OAuthClientService {
   public constructor(private readonly mikro: MikroService) {}

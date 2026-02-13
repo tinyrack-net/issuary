@@ -5,7 +5,7 @@ import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import type { Locale } from '@/lib/locale.js';
 import { e } from '@/schemas/error.js';
 import type { r } from '@/schemas/response.js';
-import type { MikroService } from '@/types.js';
+import type { MikroService } from '@/services/mikro.types.js';
 import type { EmailService } from './email.service.js';
 import type { EmailVerificationService } from './email-verification.service.js';
 import type { TermsService } from './terms.service.js';
