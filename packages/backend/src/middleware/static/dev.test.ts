@@ -1,12 +1,12 @@
 import http from 'node:http';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import type { AppType } from '@/lib/app.js';
 import {
   resetDevProxyUpstreamUrl,
   setDevProxyUpstreamUrl,
 } from '@/middleware/static/index.js';
 import { createServer } from '@/server.js';
 import { MINIMAL_TEST_CONFIG } from '@/test-utils/index.js';
-import type { AppType } from '@/types.js';
 
 /**
  * Spin up a tiny HTTP server that behaves like a Vite

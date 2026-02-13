@@ -1,6 +1,6 @@
 import { RequestContext } from '@mikro-orm/core';
 import { createMiddleware } from 'hono/factory';
-import type { AppEnv } from '@/types.js';
+import type { AppEnv } from '@/lib/app.js';
 
 export const mikroOrmMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   const services = c.get('services');

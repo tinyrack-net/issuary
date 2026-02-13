@@ -2,9 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import type { AppType } from '@/lib/app.js';
 import { createServer } from '@/server.js';
 import { MINIMAL_TEST_CONFIG } from '@/test-utils/index.js';
-import type { AppType } from '@/types.js';
 
 const __dirname = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 

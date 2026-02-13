@@ -3,10 +3,10 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveStatic } from '@hono/node-server/serve-static';
+import type { AppType } from '@/lib/app.js';
 import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import { env } from '@/lib/env.js';
 import { interpolateHtml } from '@/lib/interpolate-html.js';
-import type { AppType } from '@/types.js';
 
 /**
  * HTTP status codes whose responses must NOT contain
