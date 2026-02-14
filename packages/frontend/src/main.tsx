@@ -1,8 +1,8 @@
+import i18n, { initI18n } from '@frontend/i18n';
 import { QueryClientProvider, useSuspenseQueries } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { memo, StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import i18n, { initI18n } from '@/i18n';
 import './index.css';
 import { GlobalQueryClient } from './libs/query-client';
 import { AppRouter } from './libs/router';

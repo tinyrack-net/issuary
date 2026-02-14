@@ -1,6 +1,6 @@
+import { api, jsonOk } from '@frontend/libs/api';
 import { mutationOptions } from '@tanstack/react-query';
 import type { InferResponseType } from 'hono/client';
-import { api, jsonOk } from '@/libs/api';
 
 export type AccountDeletionResponse = InferResponseType<
   (typeof api.api.v1.user)['$delete'],

@@ -1,5 +1,5 @@
+import { api, jsonOk } from '@frontend/libs/api';
 import { mutationOptions } from '@tanstack/react-query';
-import { api, jsonOk } from '@/libs/api';
 
 export const logoutMutationOptions = mutationOptions({
   mutationFn: async () => {

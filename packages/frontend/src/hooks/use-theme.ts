@@ -1,10 +1,10 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import {
   appConfigQueryOptions,
   type Theme,
   type ThemeMode,
-} from '@/queries/config.js';
+} from '@frontend/queries/config.js';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 
 const THEME_MODE_STORAGE_KEY = 'tinyauth-theme-mode';
 

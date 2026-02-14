@@ -1,10 +1,10 @@
+import { api, jsonOk } from '@frontend/libs/api';
 import {
   startAuthentication,
   startRegistration,
 } from '@simplewebauthn/browser';
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import type { InferResponseType } from 'hono/client';
-import { api, jsonOk } from '@/libs/api';
 import { queryKeys } from './keys';
 import type { AuthResponse } from './session';
 

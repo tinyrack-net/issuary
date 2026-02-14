@@ -1,21 +1,21 @@
+import { FooterLink } from '@frontend/components/auth/footer-link.js';
+import { PageHeader } from '@frontend/components/auth/page-header.js';
+import { Alert } from '@frontend/components/ui/alert.js';
+import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { ApiError } from '@frontend/libs/error.js';
+import {
+  buildAuthorizeUrl,
+  isOAuthFlow,
+  OAuthSearchSchema,
+} from '@frontend/libs/oauth-search.js';
+import { tick } from '@frontend/libs/promise.js';
+import { authenticateWithPasskeyMutationOptions } from '@frontend/queries/passkey.js';
+import { getSessionQueryOptions } from '@frontend/queries/session.js';
 import { FingerprintIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FooterLink } from '@/components/auth/footer-link.js';
-import { PageHeader } from '@/components/auth/page-header.js';
-import { Alert } from '@/components/ui/alert.js';
-import { PageLayout } from '@/components/ui/page-layout.js';
-import { ApiError } from '@/libs/error.js';
-import {
-  buildAuthorizeUrl,
-  isOAuthFlow,
-  OAuthSearchSchema,
-} from '@/libs/oauth-search.js';
-import { tick } from '@/libs/promise.js';
-import { authenticateWithPasskeyMutationOptions } from '@/queries/passkey.js';
-import { getSessionQueryOptions } from '@/queries/session.js';
 
 export const SearchSchema = OAuthSearchSchema;
 

@@ -1,3 +1,14 @@
+import { PageHeader } from '@frontend/components/auth/page-header.js';
+import { TermsCheckboxList } from '@frontend/components/terms/terms-checkbox-list.js';
+import { Alert } from '@frontend/components/ui/alert.js';
+import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { OAuthSearchSchema } from '@frontend/libs/oauth-search';
+import { appConfigQueryOptions } from '@frontend/queries/config';
+import {
+  getTermsQueryOptions,
+  type TermsConsentItem,
+  termsConsentMutationOptions,
+} from '@frontend/queries/terms.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { CheckIcon, WarningIcon } from '@phosphor-icons/react';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
@@ -6,17 +17,6 @@ import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { PageHeader } from '@/components/auth/page-header.js';
-import { TermsCheckboxList } from '@/components/terms/terms-checkbox-list.js';
-import { Alert } from '@/components/ui/alert.js';
-import { PageLayout } from '@/components/ui/page-layout.js';
-import { OAuthSearchSchema } from '@/libs/oauth-search';
-import { appConfigQueryOptions } from '@/queries/config';
-import {
-  getTermsQueryOptions,
-  type TermsConsentItem,
-  termsConsentMutationOptions,
-} from '@/queries/terms.js';
 
 const TermsSearchSchema = OAuthSearchSchema.extend({
   redirect: z.string().optional(),

@@ -1,16 +1,16 @@
+import { PageHeader } from '@frontend/components/auth/page-header.js';
+import { Alert } from '@frontend/components/ui/alert.js';
+import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { OAuthSearchSchema } from '@frontend/libs/oauth-search';
+import {
+  consentDecisionMutationOptions,
+  getConsentInfoQueryOptions,
+} from '@frontend/queries/consent';
 import { ShieldCheckIcon, WarningIcon, XIcon } from '@phosphor-icons/react';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { PageHeader } from '@/components/auth/page-header.js';
-import { Alert } from '@/components/ui/alert.js';
-import { PageLayout } from '@/components/ui/page-layout.js';
-import { OAuthSearchSchema } from '@/libs/oauth-search';
-import {
-  consentDecisionMutationOptions,
-  getConsentInfoQueryOptions,
-} from '@/queries/consent';
 
 const ConsentSearchSchema = OAuthSearchSchema.extend({
   client_id: z.string(),

@@ -1,3 +1,14 @@
+import { AlertBanner } from '@frontend/components/ui/alert-banner.js';
+import { Modal, ModalActions } from '@frontend/components/ui/modal.js';
+import { ApiError } from '@frontend/libs/error.js';
+import { queryKeys } from '@frontend/queries/keys';
+import {
+  deletePasskeyMutationOptions,
+  getPasskeysQueryOptions,
+  type PasskeyInfo,
+  renamePasskeyMutationOptions,
+} from '@frontend/queries/passkey.js';
+import { getSessionQueryOptions } from '@frontend/queries/session.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import {
   CloudIcon,
@@ -11,17 +22,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod';
-import { AlertBanner } from '@/components/ui/alert-banner.js';
-import { Modal, ModalActions } from '@/components/ui/modal.js';
-import { ApiError } from '@/libs/error.js';
-import { queryKeys } from '@/queries/keys';
-import {
-  deletePasskeyMutationOptions,
-  getPasskeysQueryOptions,
-  type PasskeyInfo,
-  renamePasskeyMutationOptions,
-} from '@/queries/passkey.js';
-import { getSessionQueryOptions } from '@/queries/session.js';
 
 interface ManagePasskeysModalProps {
   isOpen: boolean;

@@ -1,3 +1,11 @@
+import { FooterLink } from '@frontend/components/auth/footer-link.js';
+import { IconInput } from '@frontend/components/auth/icon-input.js';
+import { PageHeader } from '@frontend/components/auth/page-header.js';
+import { SubmitButton } from '@frontend/components/auth/submit-button.js';
+import { Alert } from '@frontend/components/ui/alert.js';
+import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { appConfigQueryOptions } from '@frontend/queries/config.js';
+import { forgotPasswordMutationOptions } from '@frontend/queries/password-reset.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { CheckCircleIcon, EnvelopeSimpleIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
@@ -6,14 +14,6 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { FooterLink } from '@/components/auth/footer-link.js';
-import { IconInput } from '@/components/auth/icon-input.js';
-import { PageHeader } from '@/components/auth/page-header.js';
-import { SubmitButton } from '@/components/auth/submit-button.js';
-import { Alert } from '@/components/ui/alert.js';
-import { PageLayout } from '@/components/ui/page-layout.js';
-import { appConfigQueryOptions } from '@/queries/config.js';
-import { forgotPasswordMutationOptions } from '@/queries/password-reset.js';
 
 export const Route = createFileRoute('/password/forgot/')({
   component: ForgotPassword,

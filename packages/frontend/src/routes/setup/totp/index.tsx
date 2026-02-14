@@ -1,3 +1,24 @@
+import { FooterLink } from '@frontend/components/auth/footer-link.js';
+import { PageHeader } from '@frontend/components/auth/page-header.js';
+import { QrStep } from '@frontend/components/totp/qr-step.js';
+import { RecoveryCodesStep } from '@frontend/components/totp/recovery-codes-step.js';
+import { useTotpSetup } from '@frontend/components/totp/use-totp-setup.js';
+import { VerifyStep } from '@frontend/components/totp/verify-step.js';
+import { Alert } from '@frontend/components/ui/alert.js';
+import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { ApiError } from '@frontend/libs/error.js';
+import {
+  buildAuthorizeUrl,
+  extractOAuthParams,
+  isOAuthFlow,
+  OAuthSearchSchema,
+} from '@frontend/libs/oauth-search.js';
+import { tick } from '@frontend/libs/promise.js';
+import { getSessionQueryOptions } from '@frontend/queries/session.js';
+import type {
+  TotpConfirmResponse,
+  TotpSetupVerifyResponse,
+} from '@frontend/queries/totp.js';
 import {
   InfoIcon,
   ShieldCheckIcon,
@@ -8,27 +29,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FooterLink } from '@/components/auth/footer-link.js';
-import { PageHeader } from '@/components/auth/page-header.js';
-import { QrStep } from '@/components/totp/qr-step.js';
-import { RecoveryCodesStep } from '@/components/totp/recovery-codes-step.js';
-import { useTotpSetup } from '@/components/totp/use-totp-setup.js';
-import { VerifyStep } from '@/components/totp/verify-step.js';
-import { Alert } from '@/components/ui/alert.js';
-import { PageLayout } from '@/components/ui/page-layout.js';
-import { ApiError } from '@/libs/error.js';
-import {
-  buildAuthorizeUrl,
-  extractOAuthParams,
-  isOAuthFlow,
-  OAuthSearchSchema,
-} from '@/libs/oauth-search.js';
-import { tick } from '@/libs/promise.js';
-import { getSessionQueryOptions } from '@/queries/session.js';
-import type {
-  TotpConfirmResponse,
-  TotpSetupVerifyResponse,
-} from '@/queries/totp.js';
 
 /** Error codes from backend */
 const ERROR_CODES = {

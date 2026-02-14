@@ -1,6 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { getSessionQueryOptions } from '@/queries/session.js';
+import { getSessionQueryOptions } from '@frontend/queries/session.js';
 import {
   confirmTotpSetupMutationOptions,
   startTotpSetupMutationOptions,
@@ -8,7 +6,9 @@ import {
   type TotpSetupResponse,
   type TotpSetupVerifyResponse,
   verifyTotpMutationOptions,
-} from '@/queries/totp.js';
+} from '@frontend/queries/totp.js';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TotpSetupStep } from './types.js';
 
 export interface UseTotpSetupOptions {

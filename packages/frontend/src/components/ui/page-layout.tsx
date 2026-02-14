@@ -1,8 +1,8 @@
+import { LanguageSelector } from '@frontend/components/ui/language-selector.js';
+import { ThemeToggle } from '@frontend/components/ui/theme-toggle.js';
+import { useTheme } from '@frontend/hooks/use-theme.js';
+import { appConfigQueryOptions } from '@frontend/queries/config.js';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { LanguageSelector } from '@/components/ui/language-selector.js';
-import { ThemeToggle } from '@/components/ui/theme-toggle.js';
-import { useTheme } from '@/hooks/use-theme.js';
-import { appConfigQueryOptions } from '@/queries/config.js';
 
 type PageLayoutProps = {
   children: React.ReactNode;

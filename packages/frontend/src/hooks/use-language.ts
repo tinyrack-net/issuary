@@ -1,12 +1,12 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { useCallback, useSyncExternalStore } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
   detectBrowserLanguage,
   getAvailableLanguages,
   LANGUAGE_STORAGE_KEY,
-} from '@/i18n/index.js';
-import { appConfigQueryOptions } from '@/queries/config.js';
+} from '@frontend/i18n/index.js';
+import { appConfigQueryOptions } from '@frontend/queries/config.js';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useCallback, useSyncExternalStore } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Subscribe to localStorage changes for language preference

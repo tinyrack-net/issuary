@@ -1,3 +1,10 @@
+import { IconInput } from '@frontend/components/auth/icon-input.js';
+import { PageHeader } from '@frontend/components/auth/page-header.js';
+import { SubmitButton } from '@frontend/components/auth/submit-button.js';
+import { Alert } from '@frontend/components/ui/alert.js';
+import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { appConfigQueryOptions } from '@frontend/queries/config.js';
+import { resetPasswordMutationOptions } from '@frontend/queries/password-reset.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import {
   CheckCircleIcon,
@@ -16,13 +23,6 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { IconInput } from '@/components/auth/icon-input.js';
-import { PageHeader } from '@/components/auth/page-header.js';
-import { SubmitButton } from '@/components/auth/submit-button.js';
-import { Alert } from '@/components/ui/alert.js';
-import { PageLayout } from '@/components/ui/page-layout.js';
-import { appConfigQueryOptions } from '@/queries/config.js';
-import { resetPasswordMutationOptions } from '@/queries/password-reset.js';
 
 const SearchSchema = z.object({
   token: z.string().default(''),

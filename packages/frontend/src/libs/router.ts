@@ -1,7 +1,7 @@
+import i18n from '@frontend/i18n/index.js';
+import type { SessionUser } from '@frontend/queries/session';
 import { createRouter } from '@tanstack/react-router';
 import type { i18n as I18nInstance } from 'i18next';
-import i18n from '@/i18n/index.js';
-import type { SessionUser } from '@/queries/session';
 import { routeTree } from '../routeTree.gen';
 import { GlobalQueryClient } from './query-client';
 

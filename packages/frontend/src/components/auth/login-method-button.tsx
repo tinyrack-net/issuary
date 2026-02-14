@@ -1,3 +1,4 @@
+import type { OAuthProviderType } from '@frontend/queries/config.js';
 import {
   AppleLogoIcon,
   GithubLogoIcon,
@@ -6,7 +7,6 @@ import {
 } from '@phosphor-icons/react';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import type { OAuthProviderType } from '@/queries/config.js';
 
 type LoginMethodButtonProps = {
   icon?: string | ReactNode;

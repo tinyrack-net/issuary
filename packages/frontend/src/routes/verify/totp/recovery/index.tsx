@@ -1,3 +1,17 @@
+import { FooterLink } from '@frontend/components/auth/footer-link.js';
+import { PageHeader } from '@frontend/components/auth/page-header.js';
+import { SubmitButton } from '@frontend/components/auth/submit-button.js';
+import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { ApiError } from '@frontend/libs/error.js';
+import {
+  buildAuthorizeUrl,
+  extractOAuthParams,
+  isOAuthFlow,
+  OAuthSearchSchema,
+} from '@frontend/libs/oauth-search.js';
+import { tick } from '@frontend/libs/promise.js';
+import { getSessionQueryOptions } from '@frontend/queries/session.js';
+import { verifyRecoveryCodeMutationOptions } from '@frontend/queries/totp.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -6,20 +20,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { FooterLink } from '@/components/auth/footer-link.js';
-import { PageHeader } from '@/components/auth/page-header.js';
-import { SubmitButton } from '@/components/auth/submit-button.js';
-import { PageLayout } from '@/components/ui/page-layout.js';
-import { ApiError } from '@/libs/error.js';
-import {
-  buildAuthorizeUrl,
-  extractOAuthParams,
-  isOAuthFlow,
-  OAuthSearchSchema,
-} from '@/libs/oauth-search.js';
-import { tick } from '@/libs/promise.js';
-import { getSessionQueryOptions } from '@/queries/session.js';
-import { verifyRecoveryCodeMutationOptions } from '@/queries/totp.js';
 
 /** Error codes from backend */
 const ERROR_CODES = {

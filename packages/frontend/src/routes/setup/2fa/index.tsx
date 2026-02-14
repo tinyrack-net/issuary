@@ -1,13 +1,13 @@
+import { FooterLink } from '@frontend/components/auth/footer-link.js';
+import { PageHeader } from '@frontend/components/auth/page-header.js';
+import { Alert } from '@frontend/components/ui/alert.js';
+import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { extractOAuthParams } from '@frontend/libs/oauth-search.js';
+import { appConfigQueryOptions } from '@frontend/queries/config';
 import { FingerprintIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { FooterLink } from '@/components/auth/footer-link.js';
-import { PageHeader } from '@/components/auth/page-header.js';
-import { Alert } from '@/components/ui/alert.js';
-import { PageLayout } from '@/components/ui/page-layout.js';
-import { extractOAuthParams } from '@/libs/oauth-search.js';
-import { appConfigQueryOptions } from '@/queries/config';
 
 export const Route = createFileRoute('/setup/2fa/')({
   component: Setup2FA,

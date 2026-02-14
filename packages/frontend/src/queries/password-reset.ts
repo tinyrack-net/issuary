@@ -1,6 +1,6 @@
+import { api, jsonOk } from '@frontend/libs/api';
 import { mutationOptions } from '@tanstack/react-query';
 import type { InferRequestType, InferResponseType } from 'hono/client';
-import { api, jsonOk } from '@/libs/api';
 
 export type ForgotPasswordParams = InferRequestType<
   (typeof api.api.v1.auth.password.forgot)['$post']

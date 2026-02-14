@@ -1,8 +1,8 @@
+import i18n from '@frontend/i18n/index.js';
 import type { AppRouteType } from '@tinyauth/backend/rpc';
 import type { ClientResponse } from 'hono/client';
 import { hc } from 'hono/client';
 import type { StatusCode, SuccessStatusCode } from 'hono/utils/http-status';
-import i18n from '@/i18n/index.js';
 import { ApiError } from './error';
 
 /**

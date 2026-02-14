@@ -1,3 +1,4 @@
+import type { TermItem } from '@frontend/queries/terms.js';
 import { useState } from 'react';
 import {
   type Control,
@@ -10,7 +11,6 @@ import {
   useWatch,
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { TermItem } from '@/queries/terms.js';
 import { TermsContentModal } from './terms-content-modal.js';
 
 export type TermsConsentsField = {

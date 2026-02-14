@@ -1,3 +1,23 @@
+import { FooterLink } from '@frontend/components/auth/footer-link.js';
+import { IconInput } from '@frontend/components/auth/icon-input.js';
+import { PageHeader } from '@frontend/components/auth/page-header.js';
+import { SubmitButton } from '@frontend/components/auth/submit-button.js';
+import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import {
+  buildAuthorizeUrl,
+  extractOAuthParams,
+  isOAuthFlow,
+  OAuthSearchSchema,
+  type SecondFactorMethod,
+} from '@frontend/libs/oauth-search.js';
+import { tick } from '@frontend/libs/promise.js';
+import { appConfigQueryOptions } from '@frontend/queries/config.js';
+import { loginMutationOptions } from '@frontend/queries/login.js';
+import { startConditionalPasskeyAuth } from '@frontend/queries/passkey.js';
+import {
+  type AuthResponse,
+  getSessionQueryOptions,
+} from '@frontend/queries/session.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { EnvelopeSimpleIcon, LockIcon } from '@phosphor-icons/react';
 import {
@@ -10,26 +30,6 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { FooterLink } from '@/components/auth/footer-link.js';
-import { IconInput } from '@/components/auth/icon-input.js';
-import { PageHeader } from '@/components/auth/page-header.js';
-import { SubmitButton } from '@/components/auth/submit-button.js';
-import { PageLayout } from '@/components/ui/page-layout.js';
-import {
-  buildAuthorizeUrl,
-  extractOAuthParams,
-  isOAuthFlow,
-  OAuthSearchSchema,
-  type SecondFactorMethod,
-} from '@/libs/oauth-search.js';
-import { tick } from '@/libs/promise.js';
-import { appConfigQueryOptions } from '@/queries/config.js';
-import { loginMutationOptions } from '@/queries/login.js';
-import { startConditionalPasskeyAuth } from '@/queries/passkey.js';
-import {
-  type AuthResponse,
-  getSessionQueryOptions,
-} from '@/queries/session.js';
 
 export const SearchSchema = OAuthSearchSchema;
 

@@ -1,6 +1,6 @@
+import { useLanguage } from '@frontend/hooks/use-language.js';
+import { LANGUAGE_LABELS } from '@frontend/i18n/index.js';
 import { useTranslation } from 'react-i18next';
-import { useLanguage } from '@/hooks/use-language.js';
-import { LANGUAGE_LABELS } from '@/i18n/index.js';
 
 type LanguageSelectorProps = {
   className?: string;
