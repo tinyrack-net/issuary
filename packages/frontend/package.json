@@ -20,6 +20,7 @@
     "@tailwindcss/typography": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
+    "hono": "^4.11.9",
     "i18next": "^25.8.4",
     "react": "catalog:",
     "react-dom": "catalog:",
@@ -28,6 +29,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@tinyauth/backend": "workspace:*",
     "@biomejs/biome": "catalog:",
     "@playwright/test": "^1.58.1",
     "@tailwindcss/vite": "catalog:",
