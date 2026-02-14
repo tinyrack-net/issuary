@@ -1,6 +1,9 @@
 import { Command } from 'commander';
-import { loadConfig } from '../../lib/config/index.js';
-import { createServer } from '../../server.js';
+import { loadConfig, resolveConfig } from '../../lib/config/index.js';
+import {
+  initializeServices,
+  type ServiceContainer,
+} from '../../services/container.js';
 
 /**
  * Cleanup command
@@ -34,33 +37,27 @@ export const cleanupCommand = new Command('cleanup')
         console.warn('[DRY RUN] No changes will be made');
       }
 
-      // Create server in CLI mode (skip HTTP
-      // middleware and routes for faster startup)
+      // Initialize services directly (skip Hono app
+      // creation for faster startup)
       if (verbose) {
-        console.debug('Initializing server in CLI mode...');
+        console.debug('Initializing services...');
       }
 
-      let services:
-        | Awaited<ReturnType<typeof createServer>>['services']
-        | undefined;
-      let cleanup:
-        | Awaited<ReturnType<typeof createServer>>['cleanup']
-        | undefined;
+      let services: ServiceContainer | undefined;
+      let cleanup: (() => Promise<void>) | undefined;
 
       try {
-        const config = await loadConfig(
-          configPath ? { configPath } : undefined,
-        );
-        const result = await createServer({
-          config,
+        const config = loadConfig(configPath ? { configPath } : undefined);
+        const resolved = await resolveConfig(config);
+        const result = await initializeServices(resolved, {
+          skipListen: false,
           cliMode: true,
-          skipListen: true,
           silent: true,
         });
         services = result.services;
         cleanup = result.cleanup;
       } catch (error) {
-        console.error('Failed to initialize server:', error);
+        console.error('Failed to initialize:', error);
         process.exit(1);
       }
 

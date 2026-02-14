@@ -16,7 +16,7 @@ export const serveCommand = new Command('serve')
   .description('Start the TinyAuth server')
   .option('-c, --config-path <path>', 'Path to config file')
   .action(async (options: { configPath?: string }) => {
-    const config = await loadConfig({
+    const config = loadConfig({
       configPath: options.configPath,
     });
     const { cleanup, server } = await createServer({
