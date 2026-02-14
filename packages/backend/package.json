@@ -10,6 +10,10 @@
       "types": "./dist/server.d.ts",
       "default": "./dist/index.js"
     },
+    "./app": {
+      "types": "./dist/app.d.ts",
+      "default": "./dist/app.js"
+    },
     "./rpc": {
       "types": "./src/rpc.ts"
     }
