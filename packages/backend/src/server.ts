@@ -9,10 +9,11 @@ import { createRouter } from '@/lib/create-router.js';
 import { env } from '@/lib/env.js';
 import { authMiddleware } from '@/middleware/auth.js';
 import { mikroOrmMiddleware } from '@/middleware/mikro-orm.js';
+import { servicesMiddleware } from '@/middleware/services.js';
 import { sessionMiddleware } from '@/middleware/session.js';
 import { registerStaticHandler } from '@/middleware/static/index.js';
 import { trustedProxyGuard } from '@/middleware/trusted-proxy-guard.js';
-import { registerRoutes } from '@/routes/index.js';
+import routes from '@/routes/index.js';
 import { ApiError, e } from '@/schemas/error.js';
 import {
   initializeServices,
@@ -72,7 +73,7 @@ export async function createServer(createOptions: CreateServerOptions) {
   const { services, cleanup } = await initializeServices(config, serverOptions);
 
   // Create OpenAPIHono instance with shared validation hook
-  const app = createRouter();
+  const app: AppType = createRouter();
 
   // Register HTTP middleware (skip in CLI mode)
   if (!serverOptions.cliMode) {
@@ -101,11 +102,7 @@ export async function createServer(createOptions: CreateServerOptions) {
   }
 
   // Service injection middleware (always loaded)
-  app.use('*', async (c, next) => {
-    c.set('services', services);
-    c.set('serverOptions', serverOptions);
-    await next();
-  });
+  app.use('*', servicesMiddleware(services));
 
   // MikroORM RequestContext middleware (always loaded)
   app.use('*', mikroOrmMiddleware);
@@ -161,9 +158,9 @@ export async function createServer(createOptions: CreateServerOptions) {
     }),
   );
 
-  // Register routes (skip in CLI mode)
+  // Mount all routes (skip in CLI mode)
   if (!serverOptions.cliMode) {
-    registerRoutes(app);
+    app.route('/', routes);
   }
 
   // Register static file handler (skip in CLI mode)

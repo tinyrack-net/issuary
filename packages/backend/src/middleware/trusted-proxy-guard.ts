@@ -1,6 +1,5 @@
 import type { ConnInfo } from 'hono/conninfo';
 import { createMiddleware } from 'hono/factory';
-import type { AppEnv } from '@/lib/app.js';
 import { isTrustedProxy } from '@/lib/ip-utils.js';
 import { e } from '@/schemas/error.js';
 
@@ -17,12 +16,12 @@ export function trustedProxyGuard(
 
   if (!requiresFiltering) {
     // No filtering needed, pass through
-    return createMiddleware<AppEnv>(async (_c, next) => {
+    return createMiddleware(async (_c, next) => {
       await next();
     });
   }
 
-  return createMiddleware<AppEnv>(async (c, next) => {
+  return createMiddleware(async (c, next) => {
     // Access raw Node.js socket for remote address
     // @hono/node-server provides connInfo via env
     const connInfo = (c.env as { connInfo?: ConnInfo })?.connInfo;

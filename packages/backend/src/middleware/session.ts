@@ -1,7 +1,8 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import { getCookie, setCookie } from 'hono/cookie';
 import { createMiddleware } from 'hono/factory';
-import type { AppEnv } from '@/lib/app.js';
+
+export type SessionEnv = { Variables: { session: SessionHelper } };
 
 export interface SessionData {
   user?: {
@@ -145,7 +146,7 @@ function createSessionHelper(
 }
 
 export function sessionMiddleware(cookieSecret: string, isSecure: boolean) {
-  return createMiddleware<AppEnv>(async (c, next) => {
+  return createMiddleware<SessionEnv>(async (c, next) => {
     const cookieValue = getCookie(c, 'session');
 
     let sessionData: SessionData = {};
