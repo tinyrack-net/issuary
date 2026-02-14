@@ -53,41 +53,44 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
-  const config = c.get('services').config;
-  if (!config.auth.passkey.enabled) {
-    throw new e.PasskeyNotEnabled.Error();
-  }
+export const userPasskeyRegisterOptionsPost = createRouter().openapi(
+  route,
+  async (c) => {
+    const config = c.get('services').config;
+    if (!config.auth.passkey.enabled) {
+      throw new e.PasskeyNotEnabled.Error();
+    }
 
-  const session = c.get('session');
-  const { mikro, passkeyService } = c.get('services');
+    const session = c.get('session');
+    const { mikro, passkeyService } = c.get('services');
 
-  const userSession = session.get('user');
-  const pending2FASetup = session.get('pending2FASetup');
-  const userId = userSession?.id ?? pending2FASetup?.id;
+    const userSession = session.get('user');
+    const pending2FASetup = session.get('pending2FASetup');
+    const userId = userSession?.id ?? pending2FASetup?.id;
 
-  if (!userId) {
-    throw new e.Unauthorized.Error();
-  }
+    if (!userId) {
+      throw new e.Unauthorized.Error();
+    }
 
-  // Get user entity for registration
-  const user = await mikro.user.findOneOrFail(
-    { id: userId },
-    {
-      failHandler: () => new e.UserNotFound.Error(),
-    },
-  );
+    // Get user entity for registration
+    const user = await mikro.user.findOneOrFail(
+      { id: userId },
+      {
+        failHandler: () => new e.UserNotFound.Error(),
+      },
+    );
 
-  // Config users cannot setup 2FA
-  if (user.managed_by === 'config') {
-    throw new e.SecondFactorNotAllowedForConfigUser.Error();
-  }
+    // Config users cannot setup 2FA
+    if (user.managed_by === 'config') {
+      throw new e.SecondFactorNotAllowedForConfigUser.Error();
+    }
 
-  // Generate registration options
-  const options = await passkeyService.generateRegistrationOptions(user);
+    // Generate registration options
+    const options = await passkeyService.generateRegistrationOptions(user);
 
-  // Store challenge in session
-  session.set('passkey_challenge', options.challenge);
+    // Store challenge in session
+    session.set('passkey_challenge', options.challenge);
 
-  return c.json({ options }, 200);
-});
+    return c.json({ options }, 200);
+  },
+);

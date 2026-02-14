@@ -44,39 +44,42 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
-  const services = c.get('services');
+export const authPasswordForgotPost = createRouter().openapi(
+  route,
+  async (c) => {
+    const services = c.get('services');
 
-  // Only enable if email service is available
-  if (!services.mail) {
-    return c.json({ ok: true as const }, 200);
-  }
-
-  const body = c.req.valid('json');
-  const headers = c.req.valid('header');
-  const { email } = body;
-
-  try {
-    const resetEntity =
-      await services.passwordResetService.requestPasswordReset(email);
-
-    if (resetEntity) {
-      services.emailService.sendPasswordResetEmailAsync({
-        email,
-        token: resetEntity.token,
-        locale: headers['accept-language'],
-      });
-    }
-
-    return c.json({ ok: true as const }, 200);
-  } catch (error) {
-    // Always return success to prevent email enumeration
-    if (
-      error instanceof e.UserNotEditable.Error ||
-      error instanceof e.UserNotFound.Error
-    ) {
+    // Only enable if email service is available
+    if (!services.mail) {
       return c.json({ ok: true as const }, 200);
     }
-    throw error;
-  }
-});
+
+    const body = c.req.valid('json');
+    const headers = c.req.valid('header');
+    const { email } = body;
+
+    try {
+      const resetEntity =
+        await services.passwordResetService.requestPasswordReset(email);
+
+      if (resetEntity) {
+        services.emailService.sendPasswordResetEmailAsync({
+          email,
+          token: resetEntity.token,
+          locale: headers['accept-language'],
+        });
+      }
+
+      return c.json({ ok: true as const }, 200);
+    } catch (error) {
+      // Always return success to prevent email enumeration
+      if (
+        error instanceof e.UserNotEditable.Error ||
+        error instanceof e.UserNotFound.Error
+      ) {
+        return c.json({ ok: true as const }, 200);
+      }
+      throw error;
+    }
+  },
+);

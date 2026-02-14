@@ -51,25 +51,28 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
-  const services = c.get('services');
+export const authPasswordResetPost = createRouter().openapi(
+  route,
+  async (c) => {
+    const services = c.get('services');
 
-  if (!services.mail) {
-    throw new e.ValidationError.Error('Email service is not available');
-  }
+    if (!services.mail) {
+      throw new e.ValidationError.Error('Email service is not available');
+    }
 
-  const body = c.req.valid('json');
-  const { token, password } = body;
+    const body = c.req.valid('json');
+    const { token, password } = body;
 
-  await services.passwordResetService.resetPassword({
-    token,
-    password,
-  });
+    await services.passwordResetService.resetPassword({
+      token,
+      password,
+    });
 
-  return c.json(
-    {
-      message: 'Password has been reset successfully.',
-    },
-    200,
-  );
-});
+    return c.json(
+      {
+        message: 'Password has been reset successfully.',
+      },
+      200,
+    );
+  },
+);

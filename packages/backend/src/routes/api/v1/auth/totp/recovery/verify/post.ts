@@ -61,31 +61,34 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
-  const config = c.get('services').config;
-  if (!config.auth.password.enabled || !config.auth.password.totp.enabled) {
-    throw new e.ValidationError.Error('TOTP authentication is disabled');
-  }
+export const authTotpRecoveryVerifyPost = createRouter().openapi(
+  route,
+  async (c) => {
+    const config = c.get('services').config;
+    if (!config.auth.password.enabled || !config.auth.password.totp.enabled) {
+      throw new e.ValidationError.Error('TOTP authentication is disabled');
+    }
 
-  const body = c.req.valid('json');
-  const session = c.get('session');
-  const { mikro, totpService, userService } = c.get('services');
+    const body = c.req.valid('json');
+    const session = c.get('session');
+    const { mikro, totpService, userService } = c.get('services');
 
-  const pending2FAUser = session.get('pending2FAUser');
+    const pending2FAUser = session.get('pending2FAUser');
 
-  if (!pending2FAUser) {
-    throw new e.SecondFactorSessionExpired.Error();
-  }
+    if (!pending2FAUser) {
+      throw new e.SecondFactorSessionExpired.Error();
+    }
 
-  await totpService.verifyRecoveryCode(pending2FAUser.id, body.code);
+    await totpService.verifyRecoveryCode(pending2FAUser.id, body.code);
 
-  const userEntity = await mikro.user.verifyById(pending2FAUser.id);
-  const user = await userService.userEntityToSessionUser(userEntity);
+    const userEntity = await mikro.user.verifyById(pending2FAUser.id);
+    const user = await userService.userEntityToSessionUser(userEntity);
 
-  const authTime =
-    pending2FAUser.authenticated_at ?? Math.floor(Date.now() / 1000);
+    const authTime =
+      pending2FAUser.authenticated_at ?? Math.floor(Date.now() / 1000);
 
-  session.setUserSession(user.id, authTime);
+    session.setUserSession(user.id, authTime);
 
-  return c.json({ user }, 200);
-});
+    return c.json({ user }, 200);
+  },
+);

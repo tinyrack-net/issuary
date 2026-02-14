@@ -64,78 +64,81 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
-  const config = c.get('services').config;
-  if (!config.auth.passkey.enabled) {
-    throw new e.PasskeyNotEnabled.Error();
-  }
+export const userPasskeyRegisterVerifyPost = createRouter().openapi(
+  route,
+  async (c) => {
+    const config = c.get('services').config;
+    if (!config.auth.passkey.enabled) {
+      throw new e.PasskeyNotEnabled.Error();
+    }
 
-  const body = c.req.valid('json');
-  const session = c.get('session');
-  const { mikro, passkeyService, userService } = c.get('services');
+    const body = c.req.valid('json');
+    const session = c.get('session');
+    const { mikro, passkeyService, userService } = c.get('services');
 
-  // Allow both full user session and pending 2FA setup session
-  const userSession = session.get('user');
-  const pending2FASetup = session.get('pending2FASetup');
-  const userId = userSession?.id ?? pending2FASetup?.id;
+    // Allow both full user session and pending 2FA setup session
+    const userSession = session.get('user');
+    const pending2FASetup = session.get('pending2FASetup');
+    const userId = userSession?.id ?? pending2FASetup?.id;
 
-  if (!userId) {
-    throw new e.Unauthorized.Error();
-  }
+    if (!userId) {
+      throw new e.Unauthorized.Error();
+    }
 
-  // Get challenge from session
-  const challenge = session.get('passkey_challenge');
-  if (!challenge) {
-    throw new e.PasskeyChallengeNotFound.Error();
-  }
+    // Get challenge from session
+    const challenge = session.get('passkey_challenge');
+    if (!challenge) {
+      throw new e.PasskeyChallengeNotFound.Error();
+    }
 
-  // Get user entity
-  const user = await mikro.user.findOneOrFail({
-    id: userId,
-  });
+    // Get user entity
+    const user = await mikro.user.findOneOrFail({
+      id: userId,
+    });
 
-  // Cast for @simplewebauthn compatibility
-  const registrationResponse =
-    body.response as unknown as RegistrationResponseJSON;
+    // Cast for @simplewebauthn compatibility
+    const registrationResponse =
+      body.response as unknown as RegistrationResponseJSON;
 
-  // Verify registration
-  await passkeyService.verifyRegistration(
-    user,
-    registrationResponse,
-    challenge,
-    body.name,
-  );
+    // Verify registration
+    await passkeyService.verifyRegistration(
+      user,
+      registrationResponse,
+      challenge,
+      body.name,
+    );
 
-  // Clear challenge from session
-  session.set('passkey_challenge', undefined);
+    // Clear challenge from session
+    session.set('passkey_challenge', undefined);
 
-  // Check if this was from pending 2FA setup session
-  const wasPendingSetup = !!pending2FASetup;
+    // Check if this was from pending 2FA setup session
+    const wasPendingSetup = !!pending2FASetup;
 
-  if (wasPendingSetup) {
-    // Clear pending setup sessions and create full user session
-    session.setUserSession(userId);
+    if (wasPendingSetup) {
+      // Clear pending setup sessions and create full user session
+      session.setUserSession(userId);
 
-    // Get user data for response
-    const userEntity = await mikro.user.verifyById(userId);
-    const userSessionData =
-      await userService.userEntityToSessionUser(userEntity);
+      // Get user data for response
+      const userEntity = await mikro.user.verifyById(userId);
+      const userSessionData =
+        await userService.userEntityToSessionUser(userEntity);
+
+      return c.json(
+        {
+          ok: true as const,
+          user: userSessionData,
+          second_factor_setup_completed: true,
+        },
+        200,
+      );
+    }
 
     return c.json(
       {
         ok: true as const,
-        user: userSessionData,
-        second_factor_setup_completed: true,
+        second_factor_setup_completed: false,
       },
       200,
     );
-  }
-
-  return c.json(
-    {
-      ok: true as const,
-      second_factor_setup_completed: false,
-    },
-    200,
-  );
-});
+  },
+);
