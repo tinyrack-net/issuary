@@ -22,6 +22,8 @@ import {
 import 'reflect-metadata';
 
 export type { AppType };
+export type { ApiV1Type } from '@/routes/api/v1/index.js';
+export type { AppRouteType } from '@/routes/index.js';
 export type { ServerOptions } from '@/services/container.js';
 
 export interface CreateServerOptions {
@@ -73,7 +75,7 @@ export async function createServer(createOptions: CreateServerOptions) {
   const { services, cleanup } = await initializeServices(config, serverOptions);
 
   // Create OpenAPIHono instance with shared validation hook
-  const app: AppType = createRouter();
+  const app = createRouter();
 
   // Register HTTP middleware (skip in CLI mode)
   if (!serverOptions.cliMode) {

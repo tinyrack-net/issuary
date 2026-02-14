@@ -90,4 +90,6 @@ const app = createRouter()
   .route('/', oauthProviderCallbackGet)
   .route('/', oauthProviderDelete);
 
+export type ApiV1Type = typeof app;
+
 export default app;

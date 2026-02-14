@@ -5,6 +5,15 @@
   "description": "",
   "license": "AGPL-3.0-only",
   "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./rpc": {
+      "types": "./dist/rpc.d.ts"
+    }
+  },
   "bin": {
     "tinyauth": "./dist/index.js"
   },

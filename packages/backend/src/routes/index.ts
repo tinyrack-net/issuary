@@ -8,4 +8,6 @@ const routes = createRouter()
   .route('/application/oauth', oauth)
   .route('/.well-known', wellKnown);
 
+export type AppRouteType = typeof routes;
+
 export default routes;
