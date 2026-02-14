@@ -1,41 +1,40 @@
 import { mutationOptions } from '@tanstack/react-query';
-import { etch } from '@/libs/etch';
+import type { InferRequestType, InferResponseType } from 'hono/client';
+import { api, jsonOk } from '@/libs/api';
 
-export type ForgotPasswordParams = {
-  email: string;
-};
+export type ForgotPasswordParams = InferRequestType<
+  (typeof api.api.v1.auth.password.forgot)['$post']
+>['json'];
 
-export type ForgotPasswordResponse = {
-  message: string;
-};
+export type ForgotPasswordResponse = InferResponseType<
+  (typeof api.api.v1.auth.password.forgot)['$post'],
+  200
+>;
 
 export const forgotPasswordMutationOptions = mutationOptions({
   mutationFn: async (values: ForgotPasswordParams) => {
-    const res = await etch(`/api/v1/auth/password/forgot`, {
-      method: 'POST',
-      body: JSON.stringify(values),
+    const res = await api.api.v1.auth.password.forgot.$post({
+      json: values,
+      header: {},
     });
-    const data = await res.json();
-    return data as ForgotPasswordResponse;
+    return jsonOk(res);
   },
 });
 
-export type ResetPasswordParams = {
-  token: string;
-  password: string;
-};
+export type ResetPasswordParams = InferRequestType<
+  (typeof api.api.v1.auth.password.reset)['$post']
+>['json'];
 
-export type ResetPasswordResponse = {
-  message: string;
-};
+export type ResetPasswordResponse = InferResponseType<
+  (typeof api.api.v1.auth.password.reset)['$post'],
+  200
+>;
 
 export const resetPasswordMutationOptions = mutationOptions({
   mutationFn: async (values: ResetPasswordParams) => {
-    const res = await etch(`/api/v1/auth/password/reset`, {
-      method: 'POST',
-      body: JSON.stringify(values),
+    const res = await api.api.v1.auth.password.reset.$post({
+      json: values,
     });
-    const data = await res.json();
-    return data as ResetPasswordResponse;
+    return jsonOk(res);
   },
 });

@@ -1,7 +1,7 @@
 import { mutationOptions } from '@tanstack/react-query';
-import { etch } from '@/libs/etch.js';
-import type { SessionUser } from './session.js';
-import type { TermsConsentItem } from './terms.js';
+import type { InferResponseType } from 'hono/client';
+import { api, jsonOk } from '@/libs/api';
+import type { TermsConsentItem } from './terms';
 
 export type RegisterParams = {
   email: string;
@@ -9,17 +9,17 @@ export type RegisterParams = {
   consents?: TermsConsentItem[];
 };
 
-export type RegisterResponse = {
-  user: SessionUser;
-};
+export type RegisterResponse = InferResponseType<
+  (typeof api.api.v1.auth.register)['$post'],
+  200
+>;
 
 export const registerMutationOptions = mutationOptions({
   mutationFn: async (values: RegisterParams) => {
-    const res = await etch(`/api/v1/auth/register`, {
-      method: 'POST',
-      body: JSON.stringify(values),
+    const res = await api.api.v1.auth.register.$post({
+      json: values,
+      header: {},
     });
-    const data = await res.json();
-    return data as RegisterResponse;
+    return jsonOk(res);
   },
 });

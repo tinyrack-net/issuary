@@ -1,58 +1,52 @@
 import { mutationOptions } from '@tanstack/react-query';
-import { etch } from '@/libs/etch';
-import type { OkResponse } from './session.js';
+import type { InferRequestType } from 'hono/client';
+import { api, jsonOk } from '@/libs/api';
 
 /**
  * Set password for OAuth-only users
  */
-export type SetPasswordParams = {
-  password: string;
-};
+export type SetPasswordParams = InferRequestType<
+  (typeof api.api.v1.user.password)['$post']
+>['json'];
 
 export const setPasswordMutationOptions = mutationOptions({
   mutationFn: async (values: SetPasswordParams) => {
-    const res = await etch('/api/v1/user/password', {
-      method: 'POST',
-      body: JSON.stringify(values),
+    const res = await api.api.v1.user.password.$post({
+      json: values,
     });
-    const data = await res.json();
-    return data as OkResponse;
+    return jsonOk(res);
   },
 });
 
 /**
  * Change password for users who already have a password
  */
-export type ChangePasswordParams = {
-  current_password: string;
-  new_password: string;
-};
+export type ChangePasswordParams = InferRequestType<
+  (typeof api.api.v1.user.password)['$put']
+>['json'];
 
 export const changePasswordMutationOptions = mutationOptions({
   mutationFn: async (values: ChangePasswordParams) => {
-    const res = await etch('/api/v1/user/password', {
-      method: 'PUT',
-      body: JSON.stringify(values),
+    const res = await api.api.v1.user.password.$put({
+      json: values,
     });
-    const data = await res.json();
-    return data as OkResponse;
+    return jsonOk(res);
   },
 });
 
 /**
- * Remove password (only if user has at least one OAuth account linked)
+ * Remove password (only if user has at least one
+ * OAuth account linked)
  */
-export type RemovePasswordParams = {
-  current_password: string;
-};
+export type RemovePasswordParams = InferRequestType<
+  (typeof api.api.v1.user.password)['$delete']
+>['json'];
 
 export const removePasswordMutationOptions = mutationOptions({
   mutationFn: async (values: RemovePasswordParams) => {
-    const res = await etch('/api/v1/user/password', {
-      method: 'DELETE',
-      body: JSON.stringify(values),
+    const res = await api.api.v1.user.password.$delete({
+      json: values,
     });
-    const data = await res.json();
-    return data as OkResponse;
+    return jsonOk(res);
   },
 });
