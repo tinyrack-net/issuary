@@ -1,4 +1,4 @@
-import { createRouter } from '@/lib/create-router.js';
+import { createRouter } from '@backend/lib/create-router.js';
 
 /**
  * Standard OIDC Discovery endpoint at /.well-known/openid-configuration

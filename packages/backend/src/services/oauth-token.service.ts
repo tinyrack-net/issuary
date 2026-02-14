@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
-import type { ResolvedAppConfig } from '@/lib/config/index.js';
-import { validatePKCE } from '@/lib/pkce.js';
-import { e } from '@/schemas/error.js';
-import type { MikroService } from '@/services/mikro.types.js';
+import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
+import { validatePKCE } from '@backend/lib/pkce.js';
+import { e } from '@backend/schemas/error.js';
+import type { MikroService } from '@backend/services/mikro.types.js';
 import type {
   AccessTokenPayload,
   JwtService,

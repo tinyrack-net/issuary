@@ -1,12 +1,12 @@
-import nodemailer from 'nodemailer';
-import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 import {
   renderPasswordResetEmail,
   renderVerificationEmail,
-} from '@/emails/render.js';
-import type { ResolvedAppConfig } from '@/lib/config/index.js';
-import { DEFAULT_LOCALE, type Locale } from '@/lib/locale.js';
-import { e } from '@/schemas/error.js';
+} from '@backend/emails/render.js';
+import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
+import { DEFAULT_LOCALE, type Locale } from '@backend/lib/locale.js';
+import { e } from '@backend/schemas/error.js';
+import nodemailer from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 
 export class EmailService {
   public constructor(

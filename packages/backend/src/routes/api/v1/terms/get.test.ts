@@ -1,14 +1,14 @@
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '@/lib/app.js';
-import { createServer } from '@/server.js';
-import type { ServiceContainer } from '@/services/container.js';
+import type { AppType } from '@backend/lib/app.js';
+import { createServer } from '@backend/server.js';
+import type { ServiceContainer } from '@backend/services/container.js';
 import {
   createDbUserWithSession,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_TERMS_CONFIG,
   withMikroContext,
-} from '@/test-utils/index.js';
+} from '@backend/test-utils/index.js';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 describe('GET /api/v1/terms', () => {
   describe('Unauthenticated access', () => {

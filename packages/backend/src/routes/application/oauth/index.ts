@@ -1,4 +1,4 @@
-import { createRouter } from '@/lib/create-router.js';
+import { createRouter } from '@backend/lib/create-router.js';
 import jwksGet from './.well-known/jwks/get.js';
 import oidcConfigGet from './.well-known/openid-configuration/get.js';
 import authorizeGet from './authorize/get.js';

@@ -1,7 +1,7 @@
+import type { UserConsentEntity } from '@backend/entities/user-consent.entity.js';
+import type { f } from '@backend/schemas/field.js';
+import type { MikroService } from '@backend/services/mikro.types.js';
 import type z from 'zod';
-import type { UserConsentEntity } from '@/entities/user-consent.entity.js';
-import type { f } from '@/schemas/field.js';
-import type { MikroService } from '@/services/mikro.types.js';
 
 export class UserConsentService {
   public constructor(private readonly mikro: MikroService) {}

@@ -1,3 +1,4 @@
+import { EmailVerificationRepository } from '@backend/repositories/email-verification.repository.js';
 import {
   Entity,
   EntityRepositoryType,
@@ -10,7 +11,6 @@ import {
   ref,
   t,
 } from '@mikro-orm/core';
-import { EmailVerificationRepository } from '@/repositories/email-verification.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { UserEntity } from './user.entity.js';
 

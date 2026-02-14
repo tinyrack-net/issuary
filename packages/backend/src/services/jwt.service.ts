@@ -1,4 +1,11 @@
 import {
+  type JwtKeyEntity,
+  JwtKeyStatus,
+} from '@backend/entities/jwt-key.entity.js';
+import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
+import { e } from '@backend/schemas/error.js';
+import type { MikroService } from '@backend/services/mikro.types.js';
+import {
   decodeJwt,
   exportJWK,
   exportPKCS8,
@@ -10,10 +17,6 @@ import {
   jwtVerify,
   SignJWT,
 } from 'jose';
-import { type JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
-import type { ResolvedAppConfig } from '@/lib/config/index.js';
-import { e } from '@/schemas/error.js';
-import type { MikroService } from '@/services/mikro.types.js';
 
 // ---------------------------------------------------------------------------
 // Key Management Types
@@ -663,7 +666,6 @@ export class JwtService {
    */
   private async verifyToken(token: string): Promise<JWTPayload> {
     // Decode header to get kid
-    const _decoded = decodeJwt(token);
     const headerPart = token.split('.')[0];
     if (!headerPart) {
       throw new Error('Invalid token format');

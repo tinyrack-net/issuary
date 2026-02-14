@@ -1,7 +1,7 @@
+import type { AppType } from '@backend/lib/app.js';
+import type { ServiceContainer } from '@backend/services/container.js';
 import { RequestContext } from '@mikro-orm/core';
 import { expect } from 'vitest';
-import type { AppType } from '@/lib/app.js';
-import type { ServiceContainer } from '@/services/container.js';
 import { generateUniqueEmail, TEST_CONSENTS, TEST_USER } from './fixtures.js';
 
 /**
@@ -175,8 +175,8 @@ export interface ErrorDefinition {
  *
  * @example
  * ```typescript
- * import { e } from '@/schemas/error.js';
- * import { expectError } from '@/test-utils/index.js';
+ * import { e } from '@backend/schemas/error.js';
+ * import { expectError } from '@backend/test-utils/index.js';
  *
  * const res = await app.request('/api/v1/auth/login', {
  *   method: 'POST',

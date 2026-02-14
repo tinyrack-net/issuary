@@ -3,7 +3,7 @@ import {
   DEFAULT_LOCALE,
   type EmailTranslations,
   type Locale,
-} from '@/lib/locale.js';
+} from '@backend/lib/locale.js';
 import en from './en.json' with { type: 'json' };
 import ja from './ja.json' with { type: 'json' };
 import ko from './ko.json' with { type: 'json' };

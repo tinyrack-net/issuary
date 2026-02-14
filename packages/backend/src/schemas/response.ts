@@ -1,14 +1,14 @@
+import {
+  AppConfigPasskeyAuth,
+  AppConfigPasswordAuth,
+  AppTheme,
+} from '@backend/lib/config/index.js';
 import { z } from '@hono/zod-openapi';
 import type {
   PublicKeyCredentialCreationOptionsJSON as SimpleWebAuthnCreationOptionsJSON,
   RegistrationResponseJSON as SimpleWebAuthnRegistrationResponseJSON,
   PublicKeyCredentialRequestOptionsJSON as SimpleWebAuthnRequestOptionsJSON,
 } from '@simplewebauthn/server';
-import {
-  AppConfigPasskeyAuth,
-  AppConfigPasswordAuth,
-  AppTheme,
-} from '@/lib/config/index.js';
 import { f } from './field.js';
 import { oauthSchema } from './oauth.js';
 

@@ -1,5 +1,5 @@
-import type { ServiceContainer } from '@/services/container.js';
-import type { CleanupResult } from '@/services/types.js';
+import type { ServiceContainer } from '@backend/services/container.js';
+import type { CleanupResult } from '@backend/services/types.js';
 
 /**
  * Options for running cleanup tasks
@@ -50,4 +50,4 @@ export async function runCleanup(
   });
 }
 
-export type { CleanupResult } from '@/services/types.js';
+export type { CleanupResult } from '@backend/services/types.js';

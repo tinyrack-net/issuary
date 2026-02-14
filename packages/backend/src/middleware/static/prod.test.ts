@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { AppType } from '@backend/lib/app.js';
+import { createServer } from '@backend/server.js';
+import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/index.js';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '@/lib/app.js';
-import { createServer } from '@/server.js';
-import { MINIMAL_TEST_CONFIG } from '@/test-utils/index.js';
 
 const __dirname = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 

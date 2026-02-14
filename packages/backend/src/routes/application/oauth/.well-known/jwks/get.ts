@@ -1,6 +1,6 @@
+import { createRouter } from '@backend/lib/create-router.js';
+import { TAGS } from '@backend/lib/swagger-tags.js';
 import { createRoute, z } from '@hono/zod-openapi';
-import { createRouter } from '@/lib/create-router.js';
-import { TAGS } from '@/lib/swagger-tags.js';
 
 const route = createRoute({
   method: 'get',

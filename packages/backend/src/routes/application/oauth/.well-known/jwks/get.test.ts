@@ -1,7 +1,7 @@
+import type { AppType } from '@backend/lib/app.js';
+import { createServer } from '@backend/server.js';
+import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/index.js';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '@/lib/app.js';
-import { createServer } from '@/server.js';
-import { MINIMAL_TEST_CONFIG } from '@/test-utils/index.js';
 
 let app: AppType;
 let cleanup: () => Promise<void>;

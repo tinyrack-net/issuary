@@ -1,8 +1,8 @@
+import { createRouter } from '@backend/lib/create-router.js';
+import { TAGS } from '@backend/lib/swagger-tags.js';
+import { e } from '@backend/schemas/error.js';
+import { r } from '@backend/schemas/response.js';
 import { createRoute, z } from '@hono/zod-openapi';
-import { createRouter } from '@/lib/create-router.js';
-import { TAGS } from '@/lib/swagger-tags.js';
-import { e } from '@/schemas/error.js';
-import { r } from '@/schemas/response.js';
 
 /**
  * POST /api/v1/user/totp/confirm

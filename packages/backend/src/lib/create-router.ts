@@ -1,7 +1,7 @@
+import type { AppEnv } from '@backend/lib/app.js';
+import { e } from '@backend/schemas/error.js';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import type { AppEnv } from '@/lib/app.js';
-import { e } from '@/schemas/error.js';
 
 /**
  * Create an OpenAPIHono router with shared defaultHook

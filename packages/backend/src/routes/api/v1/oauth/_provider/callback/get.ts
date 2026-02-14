@@ -1,10 +1,10 @@
+import { createRouter } from '@backend/lib/create-router.js';
+import { isEmailAllowed } from '@backend/lib/email-pattern.js';
+import { TAGS } from '@backend/lib/swagger-tags.js';
+import { ApiError, e } from '@backend/schemas/error.js';
+import { f } from '@backend/schemas/field.js';
+import { r } from '@backend/schemas/response.js';
 import { createRoute, z } from '@hono/zod-openapi';
-import { createRouter } from '@/lib/create-router.js';
-import { isEmailAllowed } from '@/lib/email-pattern.js';
-import { TAGS } from '@/lib/swagger-tags.js';
-import { ApiError, e } from '@/schemas/error.js';
-import { f } from '@/schemas/field.js';
-import { r } from '@/schemas/response.js';
 
 const route = createRoute({
   method: 'get',

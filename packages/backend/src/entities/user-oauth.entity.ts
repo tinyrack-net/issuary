@@ -1,3 +1,4 @@
+import { UserOAuthRepository } from '@backend/repositories/user-oauth.repository.js';
 import {
   Entity,
   EntityRepositoryType,
@@ -11,7 +12,6 @@ import {
   t,
   Unique,
 } from '@mikro-orm/core';
-import { UserOAuthRepository } from '@/repositories/user-oauth.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { UserEntity } from './user.entity.js';
 

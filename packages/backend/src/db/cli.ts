@@ -1,4 +1,4 @@
-import { loadConfig, resolveConfig } from '@/lib/config/index.js';
+import { loadConfig, resolveConfig } from '@backend/lib/config/index.js';
 import { getDbConfigs } from './index.js';
 
 /**

@@ -1,12 +1,12 @@
 import http from 'node:http';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '@/lib/app.js';
+import type { AppType } from '@backend/lib/app.js';
 import {
   resetDevProxyUpstreamUrl,
   setDevProxyUpstreamUrl,
-} from '@/middleware/static/index.js';
-import { createServer } from '@/server.js';
-import { MINIMAL_TEST_CONFIG } from '@/test-utils/index.js';
+} from '@backend/middleware/static/index.js';
+import { createServer } from '@backend/server.js';
+import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/index.js';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 /**
  * Spin up a tiny HTTP server that behaves like a Vite
@@ -80,7 +80,7 @@ describe('static dev proxy', () => {
 
     // Temporarily set APP_ENV to development so the
     // proxy path is activated.
-    const envModule = await import('@/lib/env.js');
+    const envModule = await import('@backend/lib/env.js');
     (envModule.env as { APP_ENV: string }).APP_ENV = 'development';
 
     ({ app, cleanup } = await createServer({
@@ -92,7 +92,7 @@ describe('static dev proxy', () => {
 
   afterAll(async () => {
     // Restore APP_ENV
-    const envModule = await import('@/lib/env.js');
+    const envModule = await import('@backend/lib/env.js');
     (envModule.env as { APP_ENV: string }).APP_ENV = 'test';
 
     // Reset upstream URL

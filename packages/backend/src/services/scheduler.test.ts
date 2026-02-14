@@ -1,7 +1,7 @@
+import { createServer } from '@backend/server.js';
+import type { ServiceContainer } from '@backend/services/container.js';
+import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/setup.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createServer } from '@/server.js';
-import type { ServiceContainer } from '@/services/container.js';
-import { MINIMAL_TEST_CONFIG } from '@/test-utils/setup.js';
 
 describe('scheduler plugin', () => {
   let services: ServiceContainer;

@@ -1,7 +1,5 @@
-import * as jose from 'jose';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '@/lib/app.js';
-import { createServer } from '@/server.js';
+import type { AppType } from '@backend/lib/app.js';
+import { createServer } from '@backend/server.js';
 import {
   createAuthenticatedSession,
   exchangeCodeForTokens,
@@ -14,7 +12,9 @@ import {
   TEST_OAUTH_CLIENT_CONFIG,
   TEST_PKCE,
   TEST_USER_CONFIG,
-} from '@/test-utils/index.js';
+} from '@backend/test-utils/index.js';
+import * as jose from 'jose';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
 let cleanup: () => Promise<void>;

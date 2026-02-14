@@ -1,3 +1,4 @@
+import { UserTotpRecoveryCodeRepository } from '@backend/repositories/user-totp-recovery-code.repository.js';
 import {
   Entity,
   EntityRepositoryType,
@@ -9,7 +10,6 @@ import {
   ref,
   t,
 } from '@mikro-orm/core';
-import { UserTotpRecoveryCodeRepository } from '@/repositories/user-totp-recovery-code.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { UserEntity } from './user.entity.js';
 

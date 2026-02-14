@@ -1,7 +1,7 @@
+import { e } from '@backend/schemas/error.js';
+import type { r } from '@backend/schemas/response.js';
 import { createMiddleware } from 'hono/factory';
 import type z from 'zod';
-import { e } from '@/schemas/error.js';
-import type { r } from '@/schemas/response.js';
 import type { ServicesEnv } from './services.js';
 import type { SessionEnv } from './session.js';
 

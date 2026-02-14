@@ -1,3 +1,4 @@
+import { UserRepository } from '@backend/repositories/user.repository.js';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -13,7 +14,6 @@ import {
   t,
 } from '@mikro-orm/core';
 import { hash, verify } from '@node-rs/argon2';
-import { UserRepository } from '@/repositories/user.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { UserOAuthEntity } from './user-oauth.entity.js';
 import { UserPasskeyEntity } from './user-passkey.entity.js';

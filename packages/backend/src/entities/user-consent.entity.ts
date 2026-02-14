@@ -1,3 +1,4 @@
+import { UserConsentRepository } from '@backend/repositories/user-consent.repository.js';
 import {
   Entity,
   EntityRepositoryType,
@@ -10,7 +11,6 @@ import {
   t,
   Unique,
 } from '@mikro-orm/core';
-import { UserConsentRepository } from '@/repositories/user-consent.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { OAuthClientEntity } from './oauth-client.entity.js';
 import { UserEntity } from './user.entity.js';

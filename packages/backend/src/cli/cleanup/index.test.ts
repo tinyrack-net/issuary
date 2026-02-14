@@ -1,18 +1,10 @@
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  test,
-} from 'vitest';
-import { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
-import { JwtKeyEntity } from '@/entities/jwt-key.entity.js';
-import { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
-import { PasswordResetEntity } from '@/entities/password-reset.entity.js';
-import { RevokedTokenEntity } from '@/entities/revoked-token.entity.js';
-import { createServer } from '@/server.js';
-import type { ServiceContainer } from '@/services/container.js';
+import { EmailVerificationEntity } from '@backend/entities/email-verification.entity.js';
+import { JwtKeyEntity } from '@backend/entities/jwt-key.entity.js';
+import { OAuthCodeEntity } from '@backend/entities/oauth-code.entity.js';
+import { PasswordResetEntity } from '@backend/entities/password-reset.entity.js';
+import { RevokedTokenEntity } from '@backend/entities/revoked-token.entity.js';
+import { createServer } from '@backend/server.js';
+import type { ServiceContainer } from '@backend/services/container.js';
 import {
   CLI_TEST_CONFIG,
   createEmailVerification,
@@ -21,8 +13,19 @@ import {
   createRevokedToken,
   createTestOAuthClient,
   createTestUser,
-} from '@/test-utils/cli.js';
-import { MINIMAL_TEST_CONFIG, withMikroContext } from '@/test-utils/index.js';
+} from '@backend/test-utils/cli.js';
+import {
+  MINIMAL_TEST_CONFIG,
+  withMikroContext,
+} from '@backend/test-utils/index.js';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from 'vitest';
 import { runCleanup } from './index.js';
 
 /**

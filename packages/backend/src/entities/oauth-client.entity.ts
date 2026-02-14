@@ -1,3 +1,4 @@
+import { OAuthClientRepository } from '@backend/repositories/oauth-client.repository.js';
 import {
   Collection,
   Entity,
@@ -9,7 +10,6 @@ import {
   Property,
   t,
 } from '@mikro-orm/core';
-import { OAuthClientRepository } from '@/repositories/oauth-client.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { OAuthCodeEntity } from './oauth-code.entity.js';
 import { RevokedTokenEntity } from './revoked-token.entity.js';

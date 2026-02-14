@@ -1,5 +1,5 @@
+import type { Locale } from '@backend/lib/locale.js';
 import { Button, Heading, Link, Section, Text } from '@react-email/components';
-import type { Locale } from '@/lib/locale.js';
 import { EmailLayout } from '../components/email-layout.js';
 import { getTranslations } from '../i18n/index.js';
 

@@ -1,7 +1,7 @@
+import type { AuthEnv } from '@backend/middleware/auth.js';
+import type { ServicesEnv } from '@backend/middleware/services.js';
+import type { SessionEnv } from '@backend/middleware/session.js';
 import type { OpenAPIHono } from '@hono/zod-openapi';
-import type { AuthEnv } from '@/middleware/auth.js';
-import type { ServicesEnv } from '@/middleware/services.js';
-import type { SessionEnv } from '@/middleware/session.js';
 
 /**
  * AppEnv is derived from the intersection of

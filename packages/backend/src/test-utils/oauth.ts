@@ -1,5 +1,5 @@
+import type { AppType } from '@backend/lib/app.js';
 import { expect } from 'vitest';
-import type { AppType } from '@/lib/app.js';
 import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT } from './fixtures.js';
 import { createAuthenticatedSession, grantConsent } from './helpers.js';
 

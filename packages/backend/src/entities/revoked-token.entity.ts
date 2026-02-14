@@ -1,3 +1,4 @@
+import { RevokedTokenRepository } from '@backend/repositories/revoked-token.repository.js';
 import {
   Entity,
   EntityRepositoryType,
@@ -10,7 +11,6 @@ import {
   ref,
   t,
 } from '@mikro-orm/core';
-import { RevokedTokenRepository } from '@/repositories/revoked-token.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { OAuthClientEntity } from './oauth-client.entity.js';
 import { UserEntity } from './user.entity.js';

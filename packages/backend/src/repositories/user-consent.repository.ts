@@ -1,7 +1,7 @@
+import { OAuthClientEntity } from '@backend/entities/oauth-client.entity.js';
+import { UserEntity } from '@backend/entities/user.entity.js';
+import { UserConsentEntity } from '@backend/entities/user-consent.entity.js';
 import { EntityRepository, ref } from '@mikro-orm/core';
-import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
-import { UserEntity } from '@/entities/user.entity.js';
-import { UserConsentEntity } from '@/entities/user-consent.entity.js';
 
 export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
   /**

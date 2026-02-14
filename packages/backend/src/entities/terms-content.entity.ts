@@ -1,3 +1,4 @@
+import { TermsContentRepository } from '@backend/repositories/terms-content.repository.js';
 import {
   Entity,
   EntityRepositoryType,
@@ -9,7 +10,6 @@ import {
   t,
   Unique,
 } from '@mikro-orm/core';
-import { TermsContentRepository } from '@/repositories/terms-content.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { TermsEntity } from './terms.entity.js';
 

@@ -1,3 +1,4 @@
+import { UserTermsConsentRepository } from '@backend/repositories/user-terms-consent.repository.js';
 import {
   Entity,
   EntityRepositoryType,
@@ -10,7 +11,6 @@ import {
   ref,
   t,
 } from '@mikro-orm/core';
-import { UserTermsConsentRepository } from '@/repositories/user-terms-consent.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { TermsEntity } from './terms.entity.js';
 import { UserEntity } from './user.entity.js';

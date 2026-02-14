@@ -1,30 +1,34 @@
 // Must be first — extends Zod before any schema is created
+
+import type { AppType } from '@backend/lib/app.js';
+import {
+  type AppConfigInput,
+  resolveConfig,
+} from '@backend/lib/config/index.js';
+import { createRouter } from '@backend/lib/create-router.js';
+import { env } from '@backend/lib/env.js';
+import { authMiddleware } from '@backend/middleware/auth.js';
+import { mikroOrmMiddleware } from '@backend/middleware/mikro-orm.js';
+import { servicesMiddleware } from '@backend/middleware/services.js';
+import { sessionMiddleware } from '@backend/middleware/session.js';
+import { registerStaticHandler } from '@backend/middleware/static/index.js';
+import { trustedProxyGuard } from '@backend/middleware/trusted-proxy-guard.js';
+import routes from '@backend/routes/index.js';
+import { ApiError, e } from '@backend/schemas/error.js';
+import {
+  initializeServices,
+  type ServerOptions,
+} from '@backend/services/container.js';
 import { serve } from '@hono/node-server';
 import { apiReference } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import type { AppType } from '@/lib/app.js';
-import { type AppConfigInput, resolveConfig } from '@/lib/config/index.js';
-import { createRouter } from '@/lib/create-router.js';
-import { env } from '@/lib/env.js';
-import { authMiddleware } from '@/middleware/auth.js';
-import { mikroOrmMiddleware } from '@/middleware/mikro-orm.js';
-import { servicesMiddleware } from '@/middleware/services.js';
-import { sessionMiddleware } from '@/middleware/session.js';
-import { registerStaticHandler } from '@/middleware/static/index.js';
-import { trustedProxyGuard } from '@/middleware/trusted-proxy-guard.js';
-import routes from '@/routes/index.js';
-import { ApiError, e } from '@/schemas/error.js';
-import {
-  initializeServices,
-  type ServerOptions,
-} from '@/services/container.js';
 import 'reflect-metadata';
 
 export type { AppType };
-export type { ApiV1Type } from '@/routes/api/v1/index.js';
-export type { AppRouteType } from '@/routes/index.js';
-export type { ServerOptions } from '@/services/container.js';
+export type { ApiV1Type } from '@backend/routes/api/v1/index.js';
+export type { AppRouteType } from '@backend/routes/index.js';
+export type { ServerOptions } from '@backend/services/container.js';
 
 export interface CreateServerOptions {
   /**

@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs';
-import { createServer } from '@/server.js';
-import { MINIMAL_TEST_CONFIG } from '@/test-utils/setup.js';
+import { createServer } from '@backend/server.js';
+import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/setup.js';
 
 /**
  * Export the OpenAPI spec as JSON.

@@ -1,3 +1,8 @@
+import type { UserEntity } from '@backend/entities/user.entity.js';
+import { UserPasskeyEntity } from '@backend/entities/user-passkey.entity.js';
+import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
+import { e } from '@backend/schemas/error.js';
+import type { MikroService } from '@backend/services/mikro.types.js';
 import type {
   AuthenticationResponseJSON,
   AuthenticatorTransportFuture,
@@ -12,11 +17,6 @@ import {
   verifyRegistrationResponse,
 } from '@simplewebauthn/server';
 import { isoBase64URL } from '@simplewebauthn/server/helpers';
-import type { UserEntity } from '@/entities/user.entity.js';
-import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
-import type { ResolvedAppConfig } from '@/lib/config/index.js';
-import { e } from '@/schemas/error.js';
-import type { MikroService } from '@/services/mikro.types.js';
 
 /**
  * Passkey information for user passkey list

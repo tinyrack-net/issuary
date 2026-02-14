@@ -14,10 +14,9 @@
  * - Otherwise => immediate login success
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '@/lib/app.js';
-import { createServer } from '@/server.js';
-import type { ServiceContainer } from '@/services/container.js';
+import type { AppType } from '@backend/lib/app.js';
+import { createServer } from '@backend/server.js';
+import type { ServiceContainer } from '@backend/services/container.js';
 import {
   enableTotpForUser,
   extractCookie,
@@ -27,7 +26,8 @@ import {
   TEST_USER,
   TEST_USER_CONFIG,
   withMikroContext,
-} from '@/test-utils/index.js';
+} from '@backend/test-utils/index.js';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 /**
  * Helper function to create a user in DB without triggering login flow.

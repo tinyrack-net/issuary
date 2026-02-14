@@ -1,9 +1,9 @@
-import { z } from '@hono/zod-openapi';
 import {
   AVAILABLE_LOCALES,
   DEFAULT_LOCALE,
   type Locale,
-} from '@/lib/locale.js';
+} from '@backend/lib/locale.js';
+import { z } from '@hono/zod-openapi';
 
 export const f = {
   // Common fields

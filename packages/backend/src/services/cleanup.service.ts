@@ -1,23 +1,26 @@
-import { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
-import { JwtKeyEntity, JwtKeyStatus } from '@/entities/jwt-key.entity.js';
-import { OAuthCodeEntity } from '@/entities/oauth-code.entity.js';
-import { PasswordResetEntity } from '@/entities/password-reset.entity.js';
-import { RevokedTokenEntity } from '@/entities/revoked-token.entity.js';
-import { UserEntity } from '@/entities/user.entity.js';
-import { UserConsentEntity } from '@/entities/user-consent.entity.js';
-import { UserOAuthEntity } from '@/entities/user-oauth.entity.js';
-import { UserPasskeyEntity } from '@/entities/user-passkey.entity.js';
-import { UserTermsConsentEntity } from '@/entities/user-terms-consent.entity.js';
-import { UserTotpEntity } from '@/entities/user-totp.entity.js';
-import { UserTotpRecoveryCodeEntity } from '@/entities/user-totp-recovery-code.entity.js';
-import type { ResolvedAppConfig } from '@/lib/config/index.js';
+import { EmailVerificationEntity } from '@backend/entities/email-verification.entity.js';
+import {
+  JwtKeyEntity,
+  JwtKeyStatus,
+} from '@backend/entities/jwt-key.entity.js';
+import { OAuthCodeEntity } from '@backend/entities/oauth-code.entity.js';
+import { PasswordResetEntity } from '@backend/entities/password-reset.entity.js';
+import { RevokedTokenEntity } from '@backend/entities/revoked-token.entity.js';
+import { UserEntity } from '@backend/entities/user.entity.js';
+import { UserConsentEntity } from '@backend/entities/user-consent.entity.js';
+import { UserOAuthEntity } from '@backend/entities/user-oauth.entity.js';
+import { UserPasskeyEntity } from '@backend/entities/user-passkey.entity.js';
+import { UserTermsConsentEntity } from '@backend/entities/user-terms-consent.entity.js';
+import { UserTotpEntity } from '@backend/entities/user-totp.entity.js';
+import { UserTotpRecoveryCodeEntity } from '@backend/entities/user-totp-recovery-code.entity.js';
+import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import {
   calculateCutoffDate,
   formatDuration,
   parseDurationToMs,
-} from '@/lib/duration.js';
-import type { JwtKeyRepository } from '@/repositories/jwt-key.repository.js';
-import type { MikroService } from '@/services/mikro.types.js';
+} from '@backend/lib/duration.js';
+import type { JwtKeyRepository } from '@backend/repositories/jwt-key.repository.js';
+import type { MikroService } from '@backend/services/mikro.types.js';
 import type { JwtService } from './jwt.service.js';
 import type { CleanupOptions, CleanupResult } from './types.js';
 

@@ -1,5 +1,5 @@
+import type { UserTotpEntity } from '@backend/entities/user-totp.entity.js';
 import { EntityRepository } from '@mikro-orm/core';
-import type { UserTotpEntity } from '@/entities/user-totp.entity.js';
 
 export class UserTotpRepository extends EntityRepository<UserTotpEntity> {
   /**

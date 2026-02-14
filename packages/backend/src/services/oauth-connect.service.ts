@@ -1,14 +1,14 @@
-import type z from 'zod';
 import {
   type ResolvedAppConfig,
   type ResolvedOAuthConfig,
   resolveOAuthConfig,
-} from '@/lib/config/index.js';
-import { isEmailAllowed } from '@/lib/email-pattern.js';
-import { generatePKCE } from '@/lib/pkce.js';
-import { e } from '@/schemas/error.js';
-import type { f } from '@/schemas/field.js';
-import type { MikroService } from '@/services/mikro.types.js';
+} from '@backend/lib/config/index.js';
+import { isEmailAllowed } from '@backend/lib/email-pattern.js';
+import { generatePKCE } from '@backend/lib/pkce.js';
+import { e } from '@backend/schemas/error.js';
+import type { f } from '@backend/schemas/field.js';
+import type { MikroService } from '@backend/services/mikro.types.js';
+import type z from 'zod';
 import type { TermsService } from './terms.service.js';
 import type { UserService } from './user.service.js';
 

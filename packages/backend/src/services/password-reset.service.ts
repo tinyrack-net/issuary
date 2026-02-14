@@ -1,7 +1,7 @@
-import type { PasswordResetEntity } from '@/entities/password-reset.entity.js';
-import type { UserEntity } from '@/entities/user.entity.js';
-import { e } from '@/schemas/error.js';
-import type { MikroService } from '@/services/mikro.types.js';
+import type { PasswordResetEntity } from '@backend/entities/password-reset.entity.js';
+import type { UserEntity } from '@backend/entities/user.entity.js';
+import { e } from '@backend/schemas/error.js';
+import type { MikroService } from '@backend/services/mikro.types.js';
 
 export class PasswordResetService {
   public constructor(private readonly mikro: MikroService) {}

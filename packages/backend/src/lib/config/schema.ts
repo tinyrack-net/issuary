@@ -1,8 +1,8 @@
+import { DurationString } from '@backend/lib/duration.js';
+import { AVAILABLE_LOCALES, DEFAULT_LOCALE } from '@backend/lib/locale.js';
+import { f } from '@backend/schemas/field.js';
+import { zz } from '@backend/schemas/provider.js';
 import z from 'zod';
-import { DurationString } from '@/lib/duration.js';
-import { AVAILABLE_LOCALES, DEFAULT_LOCALE } from '@/lib/locale.js';
-import { f } from '@/schemas/field.js';
-import { zz } from '@/schemas/provider.js';
 
 /**
  * Zod schema for locale validation.

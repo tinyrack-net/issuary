@@ -1,7 +1,7 @@
-import type { EmailVerificationEntity } from '@/entities/email-verification.entity.js';
-import type { UserEntity } from '@/entities/user.entity.js';
-import { e } from '@/schemas/error.js';
-import type { MikroService } from '@/services/mikro.types.js';
+import type { EmailVerificationEntity } from '@backend/entities/email-verification.entity.js';
+import type { UserEntity } from '@backend/entities/user.entity.js';
+import { e } from '@backend/schemas/error.js';
+import type { MikroService } from '@backend/services/mikro.types.js';
 
 export class EmailVerificationService {
   public constructor(private readonly mikro: MikroService) {}

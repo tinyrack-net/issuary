@@ -2,11 +2,11 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { AppType } from '@backend/lib/app.js';
+import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
+import { env } from '@backend/lib/env.js';
+import { interpolateHtml } from '@backend/lib/interpolate-html.js';
 import { serveStatic } from '@hono/node-server/serve-static';
-import type { AppType } from '@/lib/app.js';
-import type { ResolvedAppConfig } from '@/lib/config/index.js';
-import { env } from '@/lib/env.js';
-import { interpolateHtml } from '@/lib/interpolate-html.js';
 
 /**
  * HTTP status codes whose responses must NOT contain

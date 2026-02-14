@@ -1,8 +1,8 @@
+import { createRouter } from '@backend/lib/create-router.js';
+import { TAGS } from '@backend/lib/swagger-tags.js';
+import { e } from '@backend/schemas/error.js';
+import { f } from '@backend/schemas/field.js';
 import { createRoute, z } from '@hono/zod-openapi';
-import { createRouter } from '@/lib/create-router.js';
-import { TAGS } from '@/lib/swagger-tags.js';
-import { e } from '@/schemas/error.js';
-import { f } from '@/schemas/field.js';
 
 /**
  * OAuth 2.0 Token Revocation Endpoint (RFC 7009)

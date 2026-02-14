@@ -1,4 +1,4 @@
-import { createRouter } from '@/lib/create-router.js';
+import { createRouter } from '@backend/lib/create-router.js';
 import openidConfigGet from './openid-configuration/get.js';
 
 const app = createRouter().route('/', openidConfigGet);

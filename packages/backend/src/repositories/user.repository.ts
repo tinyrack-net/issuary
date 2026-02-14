@@ -1,6 +1,6 @@
+import type { UserEntity } from '@backend/entities/user.entity.js';
+import { e } from '@backend/schemas/error.js';
 import { EntityRepository, type Loaded } from '@mikro-orm/core';
-import type { UserEntity } from '@/entities/user.entity.js';
-import { e } from '@/schemas/error.js';
 
 export class UserRepository extends EntityRepository<UserEntity> {
   public async verifyById(

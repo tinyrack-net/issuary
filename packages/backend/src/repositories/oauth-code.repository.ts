@@ -1,12 +1,12 @@
 import { randomBytes } from 'node:crypto';
-import { EntityRepository, ref } from '@mikro-orm/core';
-import { hash, verify } from '@node-rs/argon2';
-import { OAuthClientEntity } from '@/entities/oauth-client.entity.js';
+import { OAuthClientEntity } from '@backend/entities/oauth-client.entity.js';
 import {
   type OAuthCodeChallengeMethods,
   OAuthCodeEntity,
-} from '@/entities/oauth-code.entity.js';
-import { e } from '@/schemas/error.js';
+} from '@backend/entities/oauth-code.entity.js';
+import { e } from '@backend/schemas/error.js';
+import { EntityRepository, ref } from '@mikro-orm/core';
+import { hash, verify } from '@node-rs/argon2';
 
 export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
   /**

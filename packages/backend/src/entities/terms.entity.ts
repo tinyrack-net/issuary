@@ -1,3 +1,4 @@
+import { TermsRepository } from '@backend/repositories/terms.repository.js';
 import {
   Collection,
   Entity,
@@ -8,7 +9,6 @@ import {
   Property,
   t,
 } from '@mikro-orm/core';
-import { TermsRepository } from '@/repositories/terms.repository.js';
 import { BaseEntity } from './base.entity.js';
 import { TermsContentEntity } from './terms-content.entity.js';
 import { UserTermsConsentEntity } from './user-terms-consent.entity.js';

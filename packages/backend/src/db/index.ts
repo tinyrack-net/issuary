@@ -1,5 +1,5 @@
+import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import type { Options } from '@mikro-orm/core';
-import type { ResolvedAppConfig } from '@/lib/config/index.js';
 import { mikroormMemoryConfig } from './memory.js';
 import { mikroormPostgresConfig } from './postgres.js';
 import { mikroormSqliteConfig } from './sqlite.js';
