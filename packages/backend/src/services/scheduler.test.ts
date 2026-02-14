@@ -1,4 +1,4 @@
-import { createServer } from '@backend/server.js';
+import { createApp } from '@backend/app.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/setup.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,14 +16,13 @@ describe('scheduler plugin', () => {
 
   describe('when scheduler is disabled', () => {
     beforeEach(async () => {
-      ({ services, cleanup } = await createServer({
+      ({ services, cleanup } = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {
             enabled: false,
           },
         },
-        skipListen: true,
       }));
     });
 
@@ -39,7 +38,7 @@ describe('scheduler plugin', () => {
 
   describe('when scheduler is enabled', () => {
     beforeEach(async () => {
-      ({ services, cleanup } = await createServer({
+      ({ services, cleanup } = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {
@@ -47,7 +46,6 @@ describe('scheduler plugin', () => {
             cron: '0 2 * * *', // Daily at 2 AM
           },
         },
-        skipListen: true,
       }));
     });
 
@@ -78,9 +76,8 @@ describe('scheduler plugin', () => {
   describe('with default config', () => {
     beforeEach(async () => {
       // Default config should have scheduler enabled
-      ({ services, cleanup } = await createServer({
+      ({ services, cleanup } = await createApp({
         config: MINIMAL_TEST_CONFIG,
-        skipListen: true,
       }));
     });
 
@@ -99,7 +96,7 @@ describe('scheduler plugin', () => {
 
   describe('cron schedule validation', () => {
     it('should accept valid cron expression', async () => {
-      ({ services, cleanup } = await createServer({
+      ({ services, cleanup } = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {
@@ -107,7 +104,6 @@ describe('scheduler plugin', () => {
             cron: '*/30 * * * *', // Every 30 minutes
           },
         },
-        skipListen: true,
       }));
 
       expect(services.scheduler.cleanupJob).not.toBeNull();
@@ -115,7 +111,7 @@ describe('scheduler plugin', () => {
     });
 
     it('should accept hourly cron expression', async () => {
-      ({ services, cleanup } = await createServer({
+      ({ services, cleanup } = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {
@@ -123,7 +119,6 @@ describe('scheduler plugin', () => {
             cron: '0 */6 * * *', // Every 6 hours
           },
         },
-        skipListen: true,
       }));
 
       expect(services.scheduler.cleanupJob).not.toBeNull();
@@ -132,7 +127,7 @@ describe('scheduler plugin', () => {
 
   describe('CLI mode', () => {
     beforeEach(async () => {
-      ({ services, cleanup } = await createServer({
+      ({ services, cleanup } = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {
@@ -140,7 +135,6 @@ describe('scheduler plugin', () => {
           },
         },
         cliMode: true,
-        skipListen: true,
       }));
     });
 
