@@ -299,6 +299,9 @@ importers:
       '@tanstack/react-router':
         specifier: 'catalog:'
         version: 1.158.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      hono:
+        specifier: ^4.11.9
+        version: 4.11.9
       i18next:
         specifier: ^25.8.4
         version: 25.8.4(typescript@5.9.3)
@@ -330,6 +333,9 @@ importers:
       '@tanstack/router-plugin':
         specifier: 'catalog:'
         version: 1.158.1(@tanstack/react-router@1.158.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@24.10.11)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))
+      '@tinyauth/backend':
+        specifier: workspace:*
+        version: link:../backend
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.11
