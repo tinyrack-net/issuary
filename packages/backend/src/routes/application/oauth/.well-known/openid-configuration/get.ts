@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 
 const route = createRoute({
@@ -103,46 +103,44 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const { config } = c.get('services');
-    const baseUrl = config.app.host;
+export default createRouter().openapi(route, async (c) => {
+  const { config } = c.get('services');
+  const baseUrl = config.app.host;
 
-    const configuration = {
-      issuer: baseUrl,
-      authorization_endpoint: `${baseUrl}/application/oauth/authorize`,
-      token_endpoint: `${baseUrl}/application/oauth/token`,
-      jwks_uri: `${baseUrl}/application/oauth/.well-known/jwks`,
-      response_types_supported: ['code'],
-      subject_types_supported: ['public'],
-      id_token_signing_alg_values_supported: ['RS256'],
-      userinfo_endpoint: `${baseUrl}/application/oauth/userinfo`,
-      scopes_supported: ['openid', 'profile', 'email', 'offline_access'],
-      claims_supported: [
-        'sub',
-        'iss',
-        'aud',
-        'exp',
-        'iat',
-        'nonce',
-        'email',
-        'email_verified',
-        'name',
-      ],
-      grant_types_supported: ['authorization_code', 'refresh_token'],
-      token_endpoint_auth_methods_supported: [
-        'client_secret_basic',
-        'client_secret_post',
-      ],
-      code_challenge_methods_supported: ['S256', 'plain'],
-      introspection_endpoint: `${baseUrl}/application/oauth/introspect`,
-      revocation_endpoint: `${baseUrl}/application/oauth/revoke`,
-      ui_locales_supported: config.app.supported_languages,
-    };
+  const configuration = {
+    issuer: baseUrl,
+    authorization_endpoint: `${baseUrl}/application/oauth/authorize`,
+    token_endpoint: `${baseUrl}/application/oauth/token`,
+    jwks_uri: `${baseUrl}/application/oauth/.well-known/jwks`,
+    response_types_supported: ['code'],
+    subject_types_supported: ['public'],
+    id_token_signing_alg_values_supported: ['RS256'],
+    userinfo_endpoint: `${baseUrl}/application/oauth/userinfo`,
+    scopes_supported: ['openid', 'profile', 'email', 'offline_access'],
+    claims_supported: [
+      'sub',
+      'iss',
+      'aud',
+      'exp',
+      'iat',
+      'nonce',
+      'email',
+      'email_verified',
+      'name',
+    ],
+    grant_types_supported: ['authorization_code', 'refresh_token'],
+    token_endpoint_auth_methods_supported: [
+      'client_secret_basic',
+      'client_secret_post',
+    ],
+    code_challenge_methods_supported: ['S256', 'plain'],
+    introspection_endpoint: `${baseUrl}/application/oauth/introspect`,
+    revocation_endpoint: `${baseUrl}/application/oauth/revoke`,
+    ui_locales_supported: config.app.supported_languages,
+  };
 
-    // Set Cache-Control header
-    c.header('Cache-Control', 'public, max-age=3600');
+  // Set Cache-Control header
+  c.header('Cache-Control', 'public, max-age=3600');
 
-    return c.json(configuration, 200);
-  });
-};
+  return c.json(configuration, 200);
+});

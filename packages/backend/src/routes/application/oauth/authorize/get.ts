@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
@@ -42,116 +42,106 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const query = c.req.valid('query');
-    const session = c.get('session');
-    const { oauthAuthorizeService } = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const query = c.req.valid('query');
+  const session = c.get('session');
+  const { oauthAuthorizeService } = c.get('services');
 
-    // Helper function to redirect with error
-    const redirectWithError = (
-      error: string,
-      errorDescription: string,
-      redirectUri?: string,
-    ) => {
-      if (!redirectUri) {
-        return c.json(
-          {
-            error,
-            error_description: errorDescription,
-          },
-          400,
-        );
-      }
+  // Helper function to redirect with error
+  const redirectWithError = (
+    error: string,
+    errorDescription: string,
+    redirectUri?: string,
+  ) => {
+    if (!redirectUri) {
+      return c.json(
+        {
+          error,
+          error_description: errorDescription,
+        },
+        400,
+      );
+    }
 
-      const url = new URL(redirectUri);
-      url.searchParams.set('error', error);
-      url.searchParams.set('error_description', errorDescription);
-      if (query.state) {
-        url.searchParams.set('state', query.state);
-      }
+    const url = new URL(redirectUri);
+    url.searchParams.set('error', error);
+    url.searchParams.set('error_description', errorDescription);
+    if (query.state) {
+      url.searchParams.set('state', query.state);
+    }
 
-      return c.redirect(url.toString());
+    return c.redirect(url.toString());
+  };
+
+  try {
+    // Get user session
+    const userSession = session.get('user');
+
+    // Call authorize service
+    const authorizeParams: {
+      query: AuthorizeParams;
+      userSession?: {
+        id: string;
+        authenticated_at: number;
+      };
+    } = {
+      query: query,
     };
 
-    try {
-      // Get user session
-      const userSession = session.get('user');
+    if (userSession) {
+      authorizeParams.userSession = userSession;
+    }
 
-      // Call authorize service
-      const authorizeParams: {
-        query: AuthorizeParams;
-        userSession?: {
-          id: string;
-          authenticated_at: number;
-        };
-      } = {
-        query: query,
-      };
+    const result = await oauthAuthorizeService.authorize(authorizeParams);
 
-      if (userSession) {
-        authorizeParams.userSession = userSession;
-      }
+    // Redirect based on result
+    return c.redirect(result.url);
+  } catch (error) {
+    // RFC 6749 §4.1.2.1: If client_id is invalid or redirect_uri validation fails,
+    // do NOT redirect to the provided redirect_uri
+    if (error instanceof e.OAuthClientNotFound.Error) {
+      return redirectWithError('unauthorized_client', error.message, undefined);
+    }
 
-      const result = await oauthAuthorizeService.authorize(authorizeParams);
+    if (error instanceof e.OAuthClientDisabled.Error) {
+      return redirectWithError('unauthorized_client', error.message, undefined);
+    }
 
-      // Redirect based on result
-      return c.redirect(result.url);
-    } catch (error) {
-      // RFC 6749 §4.1.2.1: If client_id is invalid or redirect_uri validation fails,
-      // do NOT redirect to the provided redirect_uri
-      if (error instanceof e.OAuthClientNotFound.Error) {
-        return redirectWithError(
-          'unauthorized_client',
-          error.message,
-          undefined,
-        );
-      }
+    if (error instanceof e.InvalidRedirectUri.Error) {
+      return redirectWithError('invalid_request', error.message, undefined);
+    }
 
-      if (error instanceof e.OAuthClientDisabled.Error) {
-        return redirectWithError(
-          'unauthorized_client',
-          error.message,
-          undefined,
-        );
-      }
-
-      if (error instanceof e.InvalidRedirectUri.Error) {
-        return redirectWithError('invalid_request', error.message, undefined);
-      }
-
-      // Only redirect errors that occur AFTER successful client + redirect_uri validation
-      if (error instanceof e.UnsupportedResponseType.Error) {
-        return redirectWithError(
-          'unsupported_response_type',
-          error.message,
-          query.redirect_uri,
-        );
-      }
-
-      if (error instanceof e.InvalidScope.Error) {
-        return redirectWithError(
-          'invalid_scope',
-          error.message,
-          query.redirect_uri,
-        );
-      }
-
-      if (error instanceof e.InvalidCodeChallengeMethod.Error) {
-        return redirectWithError(
-          'invalid_request',
-          error.message,
-          query.redirect_uri,
-        );
-      }
-
-      // Log unexpected errors
-      console.error(error);
+    // Only redirect errors that occur AFTER successful client + redirect_uri validation
+    if (error instanceof e.UnsupportedResponseType.Error) {
       return redirectWithError(
-        'server_error',
-        'An unexpected error occurred',
+        'unsupported_response_type',
+        error.message,
         query.redirect_uri,
       );
     }
-  });
-};
+
+    if (error instanceof e.InvalidScope.Error) {
+      return redirectWithError(
+        'invalid_scope',
+        error.message,
+        query.redirect_uri,
+      );
+    }
+
+    if (error instanceof e.InvalidCodeChallengeMethod.Error) {
+      return redirectWithError(
+        'invalid_request',
+        error.message,
+        query.redirect_uri,
+      );
+    }
+
+    // Log unexpected errors
+    console.error(error);
+    return redirectWithError(
+      'server_error',
+      'An unexpected error occurred',
+      query.redirect_uri,
+    );
+  }
+});

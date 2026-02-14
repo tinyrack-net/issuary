@@ -1,5 +1,5 @@
 import { createRoute, type z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { h } from '@/schemas/header.js';
@@ -45,38 +45,36 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const { jwtService, mikro, userService } = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const { jwtService, mikro, userService } = c.get('services');
 
-    // Validate Bearer token
-    const authorization = c.req.header('authorization');
-    const tokenPayload = await jwtService.validateBearerToken({
-      headers: authorization ? { authorization } : {},
-    });
-
-    // Load user
-    const userEntity = await mikro.user.verifyById(tokenPayload.sub);
-    const userData = await userService.userEntityToSessionUser(userEntity);
-
-    // Parse scopes from token
-    const scopes = tokenPayload.scope.split(' ');
-
-    // Build response based on granted scopes
-    const userInfo: UserInfoResponse = {
-      sub: userData.id,
-    };
-
-    if (scopes.includes('email')) {
-      userInfo.email = userData.email;
-      userInfo.email_verified = userData.email_verified;
-    }
-
-    if (scopes.includes('profile')) {
-      userInfo.name = userData.email;
-      userInfo.preferred_username = userData.email;
-    }
-
-    return c.json(userInfo, 200);
+  // Validate Bearer token
+  const authorization = c.req.header('authorization');
+  const tokenPayload = await jwtService.validateBearerToken({
+    headers: authorization ? { authorization } : {},
   });
-};
+
+  // Load user
+  const userEntity = await mikro.user.verifyById(tokenPayload.sub);
+  const userData = await userService.userEntityToSessionUser(userEntity);
+
+  // Parse scopes from token
+  const scopes = tokenPayload.scope.split(' ');
+
+  // Build response based on granted scopes
+  const userInfo: UserInfoResponse = {
+    sub: userData.id,
+  };
+
+  if (scopes.includes('email')) {
+    userInfo.email = userData.email;
+    userInfo.email_verified = userData.email_verified;
+  }
+
+  if (scopes.includes('profile')) {
+    userInfo.name = userData.email;
+    userInfo.preferred_username = userData.email;
+  }
+
+  return c.json(userInfo, 200);
+});

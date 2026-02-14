@@ -1,10 +1,11 @@
-import type { AppType } from '@/lib/app.js';
-import { registerWellKnownRoutes } from './.well-known/index.js';
-import { registerApiV1Routes } from './api/v1/index.js';
-import { registerOAuthRoutes } from './application/oauth/index.js';
+import { createRouter } from '@/lib/create-router.js';
+import wellKnown from './.well-known/index.js';
+import apiV1 from './api/v1/index.js';
+import oauth from './application/oauth/index.js';
 
-export function registerRoutes(app: AppType): void {
-  registerApiV1Routes(app);
-  registerOAuthRoutes(app);
-  registerWellKnownRoutes(app);
-}
+const routes = createRouter()
+  .route('/api/v1', apiV1)
+  .route('/application/oauth', oauth)
+  .route('/.well-known', wellKnown);
+
+export default routes;

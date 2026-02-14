@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 
 const route = createRoute({
@@ -39,16 +39,14 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const { jwtService } = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const { jwtService } = c.get('services');
 
-    // Get JWKS from JwtService
-    const jwks = await jwtService.getJWKS();
+  // Get JWKS from JwtService
+  const jwks = await jwtService.getJWKS();
 
-    // Set cache headers
-    c.header('Cache-Control', 'public, max-age=3600');
+  // Set cache headers
+  c.header('Cache-Control', 'public, max-age=3600');
 
-    return c.json(jwks, 200);
-  });
-};
+  return c.json(jwks, 200);
+});

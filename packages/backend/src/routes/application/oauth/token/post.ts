@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
@@ -57,61 +57,59 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const body = c.req.valid('json');
-    const { oauthClientService, oauthTokenService } = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const body = c.req.valid('json');
+  const { oauthClientService, oauthTokenService } = c.get('services');
 
-    // 1. Validate client
-    const client = await oauthClientService.findByClientId(body.client_id);
+  // 1. Validate client
+  const client = await oauthClientService.findByClientId(body.client_id);
 
-    if (!client.enabled) {
-      throw new e.OAuthClientDisabled.Error();
+  if (!client.enabled) {
+    throw new e.OAuthClientDisabled.Error();
+  }
+
+  // 2. Validate client secret if provided
+  if (body.client_secret) {
+    const isValid = await oauthClientService.verifyClientSecret(
+      body.client_id,
+      body.client_secret,
+    );
+    if (!isValid) {
+      throw new e.InvalidClientCredentials.Error();
+    }
+  }
+
+  // 3. Handle grant type
+  if (body.grant_type === 'authorization_code') {
+    if (!body.code) {
+      throw new e.MissingAuthorizationCode.Error();
+    }
+    if (!body.redirect_uri) {
+      throw new e.MissingRedirectUri.Error();
     }
 
-    // 2. Validate client secret if provided
-    if (body.client_secret) {
-      const isValid = await oauthClientService.verifyClientSecret(
-        body.client_id,
-        body.client_secret,
-      );
-      if (!isValid) {
-        throw new e.InvalidClientCredentials.Error();
-      }
+    const tokens = await oauthTokenService.exchangeAuthorizationCode({
+      code: body.code,
+      redirectUri: body.redirect_uri,
+      clientId: body.client_id,
+      codeVerifier: body.code_verifier ?? undefined,
+    });
+
+    return c.json(tokens, 200);
+  }
+
+  if (body.grant_type === 'refresh_token') {
+    if (!body.refresh_token) {
+      throw new e.MissingRefreshToken.Error();
     }
 
-    // 3. Handle grant type
-    if (body.grant_type === 'authorization_code') {
-      if (!body.code) {
-        throw new e.MissingAuthorizationCode.Error();
-      }
-      if (!body.redirect_uri) {
-        throw new e.MissingRedirectUri.Error();
-      }
+    const tokens = await oauthTokenService.refreshAccessToken({
+      refreshToken: body.refresh_token,
+      clientId: body.client_id,
+    });
 
-      const tokens = await oauthTokenService.exchangeAuthorizationCode({
-        code: body.code,
-        redirectUri: body.redirect_uri,
-        clientId: body.client_id,
-        codeVerifier: body.code_verifier ?? undefined,
-      });
+    return c.json(tokens, 200);
+  }
 
-      return c.json(tokens, 200);
-    }
-
-    if (body.grant_type === 'refresh_token') {
-      if (!body.refresh_token) {
-        throw new e.MissingRefreshToken.Error();
-      }
-
-      const tokens = await oauthTokenService.refreshAccessToken({
-        refreshToken: body.refresh_token,
-        clientId: body.client_id,
-      });
-
-      return c.json(tokens, 200);
-    }
-
-    throw new e.UnsupportedGrantType.Error();
-  });
-};
+  throw new e.UnsupportedGrantType.Error();
+});

@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
@@ -60,33 +60,31 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const body = c.req.valid('json');
-    const { oauthClientService, oauthTokenService } = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const body = c.req.valid('json');
+  const { oauthClientService, oauthTokenService } = c.get('services');
 
-    // 1. Validate client credentials if provided
-    if (body.client_id) {
-      const client = await oauthClientService.findByClientId(body.client_id);
+  // 1. Validate client credentials if provided
+  if (body.client_id) {
+    const client = await oauthClientService.findByClientId(body.client_id);
 
-      if (!client.enabled) {
-        throw new e.OAuthClientDisabled.Error();
-      }
-
-      if (body.client_secret) {
-        const isValid = await oauthClientService.verifyClientSecret(
-          body.client_id,
-          body.client_secret,
-        );
-        if (!isValid) {
-          throw new e.InvalidClientCredentials.Error();
-        }
-      }
+    if (!client.enabled) {
+      throw new e.OAuthClientDisabled.Error();
     }
 
-    // 3. Revoke the token
-    await oauthTokenService.revokeToken(body.token, body.token_type_hint);
+    if (body.client_secret) {
+      const isValid = await oauthClientService.verifyClientSecret(
+        body.client_id,
+        body.client_secret,
+      );
+      if (!isValid) {
+        throw new e.InvalidClientCredentials.Error();
+      }
+    }
+  }
 
-    return c.json({}, 200);
-  });
-};
+  // 3. Revoke the token
+  await oauthTokenService.revokeToken(body.token, body.token_type_hint);
+
+  return c.json({}, 200);
+});
