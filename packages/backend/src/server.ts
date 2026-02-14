@@ -20,7 +20,6 @@ import {
   type ServerOptions,
 } from '@backend/services/container.js';
 import { serve } from '@hono/node-server';
-import { apiReference } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import 'reflect-metadata';
@@ -150,17 +149,6 @@ export async function createServer(createOptions: CreateServerOptions) {
       description: 'OpenID Connect Provider API',
     },
   });
-
-  // Scalar API reference UI
-  app.get(
-    '/api/docs',
-    apiReference({
-      pageTitle: 'TinyAuth API Reference',
-      spec: {
-        url: '/api/docs/json',
-      },
-    }),
-  );
 
   // Mount all routes (skip in CLI mode)
   if (!serverOptions.cliMode) {
