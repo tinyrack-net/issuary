@@ -1,6 +1,6 @@
 import { createRoute } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
 import { calculatePermanentDeletionDate } from '@/lib/config/index.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
@@ -62,49 +62,47 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const { config, mikro } = c.get('services');
-    const auth = c.get('auth');
-    const session = c.get('session');
+export default createRouter().openapi(route, async (c) => {
+  const { config, mikro } = c.get('services');
+  const auth = c.get('auth');
+  const session = c.get('session');
 
-    if (!config.app.account_deletion) {
-      throw new e.AccountDeletionDisabled.Error();
-    }
-    const userSession = await auth.verify();
+  if (!config.app.account_deletion) {
+    throw new e.AccountDeletionDisabled.Error();
+  }
+  const userSession = await auth.verify();
 
-    if (userSession.managed_by === 'config') {
-      throw new e.UserNotEditable.Error();
-    }
+  if (userSession.managed_by === 'config') {
+    throw new e.UserNotEditable.Error();
+  }
 
-    const user = await mikro.user.findOneOrFail(
-      { id: userSession.id },
-      {
-        failHandler: () => new e.UserNotFound.Error(),
-      },
-    );
+  const user = await mikro.user.findOneOrFail(
+    { id: userSession.id },
+    {
+      failHandler: () => new e.UserNotFound.Error(),
+    },
+  );
 
-    if (user.deleted_at !== null) {
-      throw new e.AccountAlreadyDeleted.Error();
-    }
+  if (user.deleted_at !== null) {
+    throw new e.AccountAlreadyDeleted.Error();
+  }
 
-    user.deleted_at = new Date();
-    await mikro.em.flush();
+  user.deleted_at = new Date();
+  await mikro.em.flush();
 
-    session.delete();
+  session.delete();
 
-    const permanentDeletionDate = calculatePermanentDeletionDate(
-      user.deleted_at,
-      config.cleanup.deleted_users.retention,
-    );
+  const permanentDeletionDate = calculatePermanentDeletionDate(
+    user.deleted_at,
+    config.cleanup.deleted_users.retention,
+  );
 
-    return c.json(
-      {
-        ok: true as const,
-        deleted_at: user.deleted_at.toISOString(),
-        permanent_deletion_at: permanentDeletionDate.toISOString(),
-      },
-      200,
-    );
-  });
-};
+  return c.json(
+    {
+      ok: true as const,
+      deleted_at: user.deleted_at.toISOString(),
+      permanent_deletion_at: permanentDeletionDate.toISOString(),
+    },
+    200,
+  );
+});

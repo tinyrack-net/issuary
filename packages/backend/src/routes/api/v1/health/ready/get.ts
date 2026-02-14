@@ -1,5 +1,5 @@
 import { createRoute } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { r } from '@/schemas/response.js';
 
@@ -37,40 +37,38 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const { mikro } = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const { mikro } = c.get('services');
 
-    // Check database connectivity
-    let databaseStatus: 'ok' | 'error' = 'error';
-    let errorMessage: string | undefined;
+  // Check database connectivity
+  let databaseStatus: 'ok' | 'error' = 'error';
+  let errorMessage: string | undefined;
 
-    try {
-      await mikro.em.getConnection().execute('SELECT 1');
-      databaseStatus = 'ok';
-    } catch (err) {
-      databaseStatus = 'error';
-      errorMessage =
-        err instanceof Error ? err.message : 'Database connection failed';
-    }
+  try {
+    await mikro.em.getConnection().execute('SELECT 1');
+    databaseStatus = 'ok';
+  } catch (err) {
+    databaseStatus = 'error';
+    errorMessage =
+      err instanceof Error ? err.message : 'Database connection failed';
+  }
 
-    if (databaseStatus === 'ok') {
-      return c.json(
-        {
-          status: 'ok' as const,
-          checks: { database: 'ok' as const },
-        },
-        200,
-      );
-    }
-
+  if (databaseStatus === 'ok') {
     return c.json(
       {
-        status: 'error' as const,
-        checks: { database: databaseStatus },
-        error: errorMessage,
+        status: 'ok' as const,
+        checks: { database: 'ok' as const },
       },
-      503,
+      200,
     );
-  });
-};
+  }
+
+  return c.json(
+    {
+      status: 'error' as const,
+      checks: { database: databaseStatus },
+      error: errorMessage,
+    },
+    503,
+  );
+});

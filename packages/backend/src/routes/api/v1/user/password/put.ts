@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
@@ -72,48 +72,46 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const body = c.req.valid('json');
-    const auth = c.get('auth');
-    const { mikro } = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const body = c.req.valid('json');
+  const auth = c.get('auth');
+  const { mikro } = c.get('services');
 
-    const userSession = await auth.verify();
+  const userSession = await auth.verify();
 
-    // Config users cannot change password
-    if (userSession.managed_by === 'config') {
-      throw new e.UserNotEditable.Error();
-    }
+  // Config users cannot change password
+  if (userSession.managed_by === 'config') {
+    throw new e.UserNotEditable.Error();
+  }
 
-    // Get user with password_hash
-    const user = await mikro.user.findOneOrFail(
-      { id: userSession.id },
-      {
-        populate: ['password_hash'],
-        failHandler: () => new e.UserNotFound.Error(),
-      },
-    );
+  // Get user with password_hash
+  const user = await mikro.user.findOneOrFail(
+    { id: userSession.id },
+    {
+      populate: ['password_hash'],
+      failHandler: () => new e.UserNotFound.Error(),
+    },
+  );
 
-    // Check if user is config-managed
-    if (user.managed_by === 'config') {
-      throw new e.UserNotEditable.Error();
-    }
+  // Check if user is config-managed
+  if (user.managed_by === 'config') {
+    throw new e.UserNotEditable.Error();
+  }
 
-    // Check if password is set
-    if (!user.hasPassword()) {
-      throw new e.PasswordNotSet.Error();
-    }
+  // Check if password is set
+  if (!user.hasPassword()) {
+    throw new e.PasswordNotSet.Error();
+  }
 
-    // Verify current password
-    const isValid = await user.verifyPassword(body.current_password);
-    if (!isValid) {
-      throw new e.InvalidCurrentPassword.Error();
-    }
+  // Verify current password
+  const isValid = await user.verifyPassword(body.current_password);
+  if (!isValid) {
+    throw new e.InvalidCurrentPassword.Error();
+  }
 
-    // Set new password
-    user.password_hash = body.new_password;
-    await mikro.em.flush();
+  // Set new password
+  user.password_hash = body.new_password;
+  await mikro.em.flush();
 
-    return c.json({ ok: true as const }, 200);
-  });
-};
+  return c.json({ ok: true as const }, 200);
+});

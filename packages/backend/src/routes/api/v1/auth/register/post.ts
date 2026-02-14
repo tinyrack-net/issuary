@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { isEmailAllowed } from '@/lib/email-pattern.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
@@ -67,43 +67,41 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const body = c.req.valid('json');
-    const headers = c.req.valid('header');
-    const { email, password, consents } = body;
-    const { config, userService } = c.get('services');
-    const session = c.get('session');
-    const { allowed_signup_emails } = config.app;
+export default createRouter().openapi(route, async (c) => {
+  const body = c.req.valid('json');
+  const headers = c.req.valid('header');
+  const { email, password, consents } = body;
+  const { config, userService } = c.get('services');
+  const session = c.get('session');
+  const { allowed_signup_emails } = config.app;
 
-    // Check if signup is disabled entirely
-    if (allowed_signup_emails.length === 0) {
-      throw new e.RegistrationDisabled.Error();
-    }
+  // Check if signup is disabled entirely
+  if (allowed_signup_emails.length === 0) {
+    throw new e.RegistrationDisabled.Error();
+  }
 
-    // Check if the email matches allowed patterns
-    if (!isEmailAllowed(email, allowed_signup_emails)) {
-      throw new e.RegistrationEmailNotAllowed.Error();
-    }
+  // Check if the email matches allowed patterns
+  if (!isEmailAllowed(email, allowed_signup_emails)) {
+    throw new e.RegistrationEmailNotAllowed.Error();
+  }
 
-    // Register the user (terms consent validation and recording handled inside)
-    const userSession = await userService.register({
-      email,
-      password,
-      locale: headers['accept-language'],
-      ...(consents && { consents }),
-    });
-
-    if (userSession.email_verification_required) {
-      return c.json({ user: userSession }, 200);
-    }
-
-    if (userSession.second_factor_required) {
-      session.setPending2FASetupSession(userSession.id);
-    } else {
-      session.setUserSession(userSession.id);
-    }
-
-    return c.json({ user: userSession }, 200);
+  // Register the user (terms consent validation and recording handled inside)
+  const userSession = await userService.register({
+    email,
+    password,
+    locale: headers['accept-language'],
+    ...(consents && { consents }),
   });
-};
+
+  if (userSession.email_verification_required) {
+    return c.json({ user: userSession }, 200);
+  }
+
+  if (userSession.second_factor_required) {
+    session.setPending2FASetupSession(userSession.id);
+  } else {
+    session.setUserSession(userSession.id);
+  }
+
+  return c.json({ user: userSession }, 200);
+});

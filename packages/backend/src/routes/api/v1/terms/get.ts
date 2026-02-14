@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { f } from '@/schemas/field.js';
 import { termsSchema } from '@/schemas/terms.js';
@@ -35,33 +35,31 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const query = c.req.valid('query');
-    const { lang } = query;
-    const session = c.get('session');
-    const { termsService } = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const query = c.req.valid('query');
+  const { lang } = query;
+  const session = c.get('session');
+  const { termsService } = c.get('services');
 
-    const userId = session.get('user')?.id || null;
+  const userId = session.get('user')?.id || null;
 
-    const terms = await termsService.getGlobalTermsWithConsent(userId, lang);
+  const terms = await termsService.getGlobalTermsWithConsent(userId, lang);
 
-    const pendingTerms = termsService.getPendingFromLocalizedTerms(terms);
+  const pendingTerms = termsService.getPendingFromLocalizedTerms(terms);
 
-    return c.json(
-      {
-        terms: terms.map((t) => ({
-          ...t,
-          userConsent: t.userConsent
-            ? {
-                ...t.userConsent,
-                agreedAt: t.userConsent.agreedAt?.toISOString() ?? null,
-              }
-            : null,
-        })),
-        pendingTerms,
-      },
-      200,
-    );
-  });
-};
+  return c.json(
+    {
+      terms: terms.map((t) => ({
+        ...t,
+        userConsent: t.userConsent
+          ? {
+              ...t.userConsent,
+              agreedAt: t.userConsent.agreedAt?.toISOString() ?? null,
+            }
+          : null,
+      })),
+      pendingTerms,
+    },
+    200,
+  );
+});

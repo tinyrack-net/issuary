@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
@@ -65,83 +65,81 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const body = c.req.valid('json');
-    const {
-      client_id,
-      redirect_uri,
-      response_type,
-      scope,
-      state,
-      nonce,
-      code_challenge,
-      code_challenge_method,
-      decision,
-    } = body;
+export default createRouter().openapi(route, async (c) => {
+  const body = c.req.valid('json');
+  const {
+    client_id,
+    redirect_uri,
+    response_type,
+    scope,
+    state,
+    nonce,
+    code_challenge,
+    code_challenge_method,
+    decision,
+  } = body;
 
-    const auth = c.get('auth');
-    const { oauthClientService, userConsentService } = c.get('services');
+  const auth = c.get('auth');
+  const { oauthClientService, userConsentService } = c.get('services');
 
-    // Check if user is logged in
-    const userSession = await auth.verify();
+  // Check if user is logged in
+  const userSession = await auth.verify();
 
-    // If user denied consent, redirect back with error
-    if (decision === 'deny') {
-      const errorUrl = new URL(redirect_uri);
-      errorUrl.searchParams.set('error', 'access_denied');
-      errorUrl.searchParams.set(
-        'error_description',
-        'The resource owner or authorization server denied the request.',
-      );
-      if (state) {
-        errorUrl.searchParams.set('state', state);
-      }
-
-      return c.json({ redirect_url: errorUrl.toString() }, 200);
-    }
-
-    // User allowed consent - store it
-    const requestedScopes = scope ? scope.split(' ') : [];
-
-    // Look up client to get primary key
-    const client = await oauthClientService.findByClientId(client_id);
-
-    await userConsentService.grantConsent({
-      userId: userSession.id,
-      clientId: client.id,
-      scopes: requestedScopes,
-    });
-
-    // Build authorize URL to continue the flow
-    const url = new URL(c.req.url);
-    const authorizeUrl = new URL(
-      '/application/oauth/authorize',
-      `${url.protocol}//${url.host}`,
+  // If user denied consent, redirect back with error
+  if (decision === 'deny') {
+    const errorUrl = new URL(redirect_uri);
+    errorUrl.searchParams.set('error', 'access_denied');
+    errorUrl.searchParams.set(
+      'error_description',
+      'The resource owner or authorization server denied the request.',
     );
-    authorizeUrl.searchParams.set('client_id', client_id);
-    authorizeUrl.searchParams.set('redirect_uri', redirect_uri);
-    authorizeUrl.searchParams.set('response_type', response_type);
-
-    if (scope) {
-      authorizeUrl.searchParams.set('scope', scope);
-    }
     if (state) {
-      authorizeUrl.searchParams.set('state', state);
-    }
-    if (nonce) {
-      authorizeUrl.searchParams.set('nonce', nonce);
-    }
-    if (code_challenge) {
-      authorizeUrl.searchParams.set('code_challenge', code_challenge);
-    }
-    if (code_challenge_method) {
-      authorizeUrl.searchParams.set(
-        'code_challenge_method',
-        code_challenge_method,
-      );
+      errorUrl.searchParams.set('state', state);
     }
 
-    return c.json({ redirect_url: authorizeUrl.toString() }, 200);
+    return c.json({ redirect_url: errorUrl.toString() }, 200);
+  }
+
+  // User allowed consent - store it
+  const requestedScopes = scope ? scope.split(' ') : [];
+
+  // Look up client to get primary key
+  const client = await oauthClientService.findByClientId(client_id);
+
+  await userConsentService.grantConsent({
+    userId: userSession.id,
+    clientId: client.id,
+    scopes: requestedScopes,
   });
-};
+
+  // Build authorize URL to continue the flow
+  const url = new URL(c.req.url);
+  const authorizeUrl = new URL(
+    '/application/oauth/authorize',
+    `${url.protocol}//${url.host}`,
+  );
+  authorizeUrl.searchParams.set('client_id', client_id);
+  authorizeUrl.searchParams.set('redirect_uri', redirect_uri);
+  authorizeUrl.searchParams.set('response_type', response_type);
+
+  if (scope) {
+    authorizeUrl.searchParams.set('scope', scope);
+  }
+  if (state) {
+    authorizeUrl.searchParams.set('state', state);
+  }
+  if (nonce) {
+    authorizeUrl.searchParams.set('nonce', nonce);
+  }
+  if (code_challenge) {
+    authorizeUrl.searchParams.set('code_challenge', code_challenge);
+  }
+  if (code_challenge_method) {
+    authorizeUrl.searchParams.set(
+      'code_challenge_method',
+      code_challenge_method,
+    );
+  }
+
+  return c.json({ redirect_url: authorizeUrl.toString() }, 200);
+});

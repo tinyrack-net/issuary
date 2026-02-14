@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
@@ -64,31 +64,29 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const body = c.req.valid('json');
-    const auth = c.get('auth');
-    const { config, mikro, totpService } = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const body = c.req.valid('json');
+  const auth = c.get('auth');
+  const { config, mikro, totpService } = c.get('services');
 
-    const userSession = await auth.verify();
+  const userSession = await auth.verify();
 
-    // Config users cannot manage 2FA
-    if (userSession.managed_by === 'config') {
-      throw new e.SecondFactorNotAllowedForConfigUser.Error();
-    }
+  // Config users cannot manage 2FA
+  if (userSession.managed_by === 'config') {
+    throw new e.SecondFactorNotAllowedForConfigUser.Error();
+  }
 
-    // Check if 2FA is required
-    const secondFactorRequired = config.auth.password.second_factor.required;
+  // Check if 2FA is required
+  const secondFactorRequired = config.auth.password.second_factor.required;
 
-    // Check if user has other 2FA method (passkey)
-    const passkeyCount = await mikro.userPasskey.countByUserId(userSession.id);
-    const hasOtherSecondFactor = passkeyCount > 0;
+  // Check if user has other 2FA method (passkey)
+  const passkeyCount = await mikro.userPasskey.countByUserId(userSession.id);
+  const hasOtherSecondFactor = passkeyCount > 0;
 
-    await totpService.disable(userSession.id, body.code, {
-      secondFactorRequired,
-      hasOtherSecondFactor,
-    });
-
-    return c.json({ ok: true as const }, 200);
+  await totpService.disable(userSession.id, body.code, {
+    secondFactorRequired,
+    hasOtherSecondFactor,
   });
-};
+
+  return c.json({ ok: true as const }, 200);
+});

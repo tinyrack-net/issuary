@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
@@ -53,31 +53,29 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const services = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const services = c.get('services');
 
-    if (!services.emailVerificationService) {
-      throw new e.EmailNotActivated.Error();
-    }
+  if (!services.emailVerificationService) {
+    throw new e.EmailNotActivated.Error();
+  }
 
-    const body = c.req.valid('json');
-    const headers = c.req.valid('header');
+  const body = c.req.valid('json');
+  const headers = c.req.valid('header');
 
-    const verification =
-      await services.emailVerificationService.resendVerification(body.email);
+  const verification =
+    await services.emailVerificationService.resendVerification(body.email);
 
-    services.emailService.sendVerificationEmailAsync({
-      email: body.email,
-      token: verification.token,
-      locale: headers['accept-language'],
-    });
-
-    return c.json(
-      {
-        message: 'Verification email has been resent. Please check your inbox.',
-      },
-      200,
-    );
+  services.emailService.sendVerificationEmailAsync({
+    email: body.email,
+    token: verification.token,
+    locale: headers['accept-language'],
   });
-};
+
+  return c.json(
+    {
+      message: 'Verification email has been resent. Please check your inbox.',
+    },
+    200,
+  );
+});

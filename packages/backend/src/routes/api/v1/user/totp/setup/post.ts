@@ -1,5 +1,5 @@
 import { createRoute } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
@@ -54,44 +54,42 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const { config, mikro, totpService } = c.get('services');
-    const session = c.get('session');
+export default createRouter().openapi(route, async (c) => {
+  const { config, mikro, totpService } = c.get('services');
+  const session = c.get('session');
 
-    if (!config.auth.password.totp?.enabled) {
-      throw new e.ValidationError.Error('TOTP is disabled');
-    }
+  if (!config.auth.password.totp?.enabled) {
+    throw new e.ValidationError.Error('TOTP is disabled');
+  }
 
-    const userSession = session.get('user');
-    const pending2FASetup = session.get('pending2FASetup');
-    const userId = userSession?.id ?? pending2FASetup?.id;
+  const userSession = session.get('user');
+  const pending2FASetup = session.get('pending2FASetup');
+  const userId = userSession?.id ?? pending2FASetup?.id;
 
-    if (!userId) {
-      throw new e.Unauthorized.Error();
-    }
+  if (!userId) {
+    throw new e.Unauthorized.Error();
+  }
 
-    const user = await mikro.user.findOneOrFail(
-      { id: userId },
-      {
-        failHandler: () => new e.UserNotFound.Error(),
-      },
-    );
+  const user = await mikro.user.findOneOrFail(
+    { id: userId },
+    {
+      failHandler: () => new e.UserNotFound.Error(),
+    },
+  );
 
-    // Config users cannot setup 2FA
-    if (user.managed_by === 'config') {
-      throw new e.SecondFactorNotAllowedForConfigUser.Error();
-    }
+  // Config users cannot setup 2FA
+  if (user.managed_by === 'config') {
+    throw new e.SecondFactorNotAllowedForConfigUser.Error();
+  }
 
-    const setupData = await totpService.startSetup(user);
+  const setupData = await totpService.startSetup(user);
 
-    return c.json(
-      {
-        secret: setupData.secret,
-        otpauth_url: setupData.otpauthUrl,
-        qr_code: setupData.qrCodeDataUrl,
-      },
-      200,
-    );
-  });
-};
+  return c.json(
+    {
+      secret: setupData.secret,
+      otpauth_url: setupData.otpauthUrl,
+      qr_code: setupData.qrCodeDataUrl,
+    },
+    200,
+  );
+});

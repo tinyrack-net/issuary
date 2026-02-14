@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
@@ -59,23 +59,21 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const config = c.get('services').config;
-    if (!config.auth.passkey.enabled) {
-      throw new e.PasskeyNotEnabled.Error();
-    }
+export default createRouter().openapi(route, async (c) => {
+  const config = c.get('services').config;
+  if (!config.auth.passkey.enabled) {
+    throw new e.PasskeyNotEnabled.Error();
+  }
 
-    const params = c.req.valid('param');
-    const body = c.req.valid('json');
-    const auth = c.get('auth');
-    const { passkeyService } = c.get('services');
+  const params = c.req.valid('param');
+  const body = c.req.valid('json');
+  const auth = c.get('auth');
+  const { passkeyService } = c.get('services');
 
-    const userSession = await auth.verify();
+  const userSession = await auth.verify();
 
-    // Rename passkey
-    await passkeyService.renamePasskey(userSession.id, params.id, body.name);
+  // Rename passkey
+  await passkeyService.renamePasskey(userSession.id, params.id, body.name);
 
-    return c.json({ ok: true as const }, 200);
-  });
-};
+  return c.json({ ok: true as const }, 200);
+});

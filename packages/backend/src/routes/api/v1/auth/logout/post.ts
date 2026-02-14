@@ -1,5 +1,5 @@
 import { createRoute } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { r } from '@/schemas/response.js';
 
@@ -19,9 +19,7 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    c.get('session').delete();
-    return c.json({ ok: true as const }, 200);
-  });
-};
+export default createRouter().openapi(route, async (c) => {
+  c.get('session').delete();
+  return c.json({ ok: true as const }, 200);
+});

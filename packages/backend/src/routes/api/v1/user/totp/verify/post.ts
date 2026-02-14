@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
@@ -67,23 +67,21 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const body = c.req.valid('json');
-    const session = c.get('session');
-    const { totpService } = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const body = c.req.valid('json');
+  const session = c.get('session');
+  const { totpService } = c.get('services');
 
-    // Allow both full user session and pending 2FA setup session
-    const userSession = session.get('user');
-    const pending2FASetup = session.get('pending2FASetup');
-    const userId = userSession?.id ?? pending2FASetup?.id;
+  // Allow both full user session and pending 2FA setup session
+  const userSession = session.get('user');
+  const pending2FASetup = session.get('pending2FASetup');
+  const userId = userSession?.id ?? pending2FASetup?.id;
 
-    if (!userId) {
-      throw new e.Unauthorized.Error();
-    }
+  if (!userId) {
+    throw new e.Unauthorized.Error();
+  }
 
-    const recoveryCodes = await totpService.verifySetup(userId, body.code);
+  const recoveryCodes = await totpService.verifySetup(userId, body.code);
 
-    return c.json({ recovery_codes: recoveryCodes }, 200);
-  });
-};
+  return c.json({ recovery_codes: recoveryCodes }, 200);
+});

@@ -1,5 +1,5 @@
 import { createRoute } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { r } from '@/schemas/response.js';
 
@@ -39,46 +39,44 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const { mikro } = c.get('services');
-    const uptime = Math.floor((Date.now() - startTime) / 1000);
-    const version = process.env['npm_package_version'] || '1.0.0';
+export default createRouter().openapi(route, async (c) => {
+  const { mikro } = c.get('services');
+  const uptime = Math.floor((Date.now() - startTime) / 1000);
+  const version = process.env['npm_package_version'] || '1.0.0';
 
-    // Check database connectivity
-    let databaseStatus: 'ok' | 'error' = 'error';
-    let errorMessage: string | undefined;
+  // Check database connectivity
+  let databaseStatus: 'ok' | 'error' = 'error';
+  let errorMessage: string | undefined;
 
-    try {
-      await mikro.em.getConnection().execute('SELECT 1');
-      databaseStatus = 'ok';
-    } catch (err) {
-      databaseStatus = 'error';
-      errorMessage =
-        err instanceof Error ? err.message : 'Database connection failed';
-    }
+  try {
+    await mikro.em.getConnection().execute('SELECT 1');
+    databaseStatus = 'ok';
+  } catch (err) {
+    databaseStatus = 'error';
+    errorMessage =
+      err instanceof Error ? err.message : 'Database connection failed';
+  }
 
-    if (databaseStatus === 'ok') {
-      return c.json(
-        {
-          status: 'ok' as const,
-          version,
-          uptime,
-          checks: { database: 'ok' as const },
-        },
-        200,
-      );
-    }
-
+  if (databaseStatus === 'ok') {
     return c.json(
       {
-        status: 'error' as const,
+        status: 'ok' as const,
         version,
         uptime,
-        checks: { database: databaseStatus },
-        error: errorMessage,
+        checks: { database: 'ok' as const },
       },
-      503,
+      200,
     );
-  });
-};
+  }
+
+  return c.json(
+    {
+      status: 'error' as const,
+      version,
+      uptime,
+      checks: { database: databaseStatus },
+      error: errorMessage,
+    },
+    503,
+  );
+});

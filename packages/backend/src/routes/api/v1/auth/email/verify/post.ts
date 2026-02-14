@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
@@ -40,56 +40,52 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const services = c.get('services');
-    const session = c.get('session');
+export default createRouter().openapi(route, async (c) => {
+  const services = c.get('services');
+  const session = c.get('session');
 
-    if (!services.emailVerificationService) {
-      throw new e.EmailNotActivated.Error();
-    }
+  if (!services.emailVerificationService) {
+    throw new e.EmailNotActivated.Error();
+  }
 
-    const body = c.req.valid('json');
+  const body = c.req.valid('json');
 
-    const user = await services.emailVerificationService.verifyEmail(
-      body.token,
-    );
+  const user = await services.emailVerificationService.verifyEmail(body.token);
 
-    await services.mikro.em.populate(user, ['password_hash']);
+  await services.mikro.em.populate(user, ['password_hash']);
 
-    const totpRegistered = await services.mikro.userTotp.isRegistered(user.id);
-    const registeredPassKeyCount =
-      await services.mikro.userPasskey.countByUserId(user.id);
+  const totpRegistered = await services.mikro.userTotp.isRegistered(user.id);
+  const registeredPassKeyCount = await services.mikro.userPasskey.countByUserId(
+    user.id,
+  );
 
-    const secondFactorRequired =
-      services.userService.user2FASetupRequired(user);
-    const available2FAMethods =
-      services.userService.getAvailable2FASetupMethods();
+  const secondFactorRequired = services.userService.user2FASetupRequired(user);
+  const available2FAMethods =
+    services.userService.getAvailable2FASetupMethods();
 
-    const userSession: z.infer<typeof r.AuthResponse>['user'] = {
-      id: user.id,
-      managed_by: 'database' as const,
-      email: user.email,
-      email_verified: user.email_verified,
-      email_verification_required:
-        services.userService.userEmailVerificationRequired(user),
-      has_password: user.hasPassword(),
-      totp_registered: totpRegistered,
-      second_factor_required: secondFactorRequired,
-      passkey_count: registeredPassKeyCount,
-    };
+  const userSession: z.infer<typeof r.AuthResponse>['user'] = {
+    id: user.id,
+    managed_by: 'database' as const,
+    email: user.email,
+    email_verified: user.email_verified,
+    email_verification_required:
+      services.userService.userEmailVerificationRequired(user),
+    has_password: user.hasPassword(),
+    totp_registered: totpRegistered,
+    second_factor_required: secondFactorRequired,
+    passkey_count: registeredPassKeyCount,
+  };
 
-    if (
-      secondFactorRequired &&
-      !totpRegistered &&
-      registeredPassKeyCount === 0 &&
-      available2FAMethods.length > 0
-    ) {
-      session.setPending2FASetupSession(user.id);
-      return c.json({ user: userSession }, 200);
-    }
-
-    session.setUserSession(user.id);
+  if (
+    secondFactorRequired &&
+    !totpRegistered &&
+    registeredPassKeyCount === 0 &&
+    available2FAMethods.length > 0
+  ) {
+    session.setPending2FASetupSession(user.id);
     return c.json({ user: userSession }, 200);
-  });
-};
+  }
+
+  session.setUserSession(user.id);
+  return c.json({ user: userSession }, 200);
+});

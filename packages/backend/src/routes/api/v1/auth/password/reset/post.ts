@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
@@ -51,27 +51,25 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const services = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const services = c.get('services');
 
-    if (!services.mail) {
-      throw new e.ValidationError.Error('Email service is not available');
-    }
+  if (!services.mail) {
+    throw new e.ValidationError.Error('Email service is not available');
+  }
 
-    const body = c.req.valid('json');
-    const { token, password } = body;
+  const body = c.req.valid('json');
+  const { token, password } = body;
 
-    await services.passwordResetService.resetPassword({
-      token,
-      password,
-    });
-
-    return c.json(
-      {
-        message: 'Password has been reset successfully.',
-      },
-      200,
-    );
+  await services.passwordResetService.resetPassword({
+    token,
+    password,
   });
-};
+
+  return c.json(
+    {
+      message: 'Password has been reset successfully.',
+    },
+    200,
+  );
+});

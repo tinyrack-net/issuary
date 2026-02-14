@@ -1,5 +1,5 @@
 import { createRoute } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
@@ -33,24 +33,22 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const config = c.get('services').config;
-    if (!config.auth.passkey.enabled) {
-      throw new e.PasskeyNotEnabled.Error();
-    }
+export default createRouter().openapi(route, async (c) => {
+  const config = c.get('services').config;
+  if (!config.auth.passkey.enabled) {
+    throw new e.PasskeyNotEnabled.Error();
+  }
 
-    const session = c.get('session');
-    const { passkeyService } = c.get('services');
+  const session = c.get('session');
+  const { passkeyService } = c.get('services');
 
-    const pending2FAUser = session.get('pending2FAUser');
+  const pending2FAUser = session.get('pending2FAUser');
 
-    const options = await passkeyService.generateAuthenticationOptions(
-      pending2FAUser?.id,
-    );
+  const options = await passkeyService.generateAuthenticationOptions(
+    pending2FAUser?.id,
+  );
 
-    session.set('passkey_challenge', options.challenge);
+  session.set('passkey_challenge', options.challenge);
 
-    return c.json({ options }, 200);
-  });
-};
+  return c.json({ options }, 200);
+});

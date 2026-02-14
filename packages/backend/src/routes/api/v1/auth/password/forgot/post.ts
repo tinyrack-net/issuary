@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
@@ -44,41 +44,39 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const services = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const services = c.get('services');
 
-    // Only enable if email service is available
-    if (!services.mail) {
-      return c.json({ ok: true as const }, 200);
+  // Only enable if email service is available
+  if (!services.mail) {
+    return c.json({ ok: true as const }, 200);
+  }
+
+  const body = c.req.valid('json');
+  const headers = c.req.valid('header');
+  const { email } = body;
+
+  try {
+    const resetEntity =
+      await services.passwordResetService.requestPasswordReset(email);
+
+    if (resetEntity) {
+      services.emailService.sendPasswordResetEmailAsync({
+        email,
+        token: resetEntity.token,
+        locale: headers['accept-language'],
+      });
     }
 
-    const body = c.req.valid('json');
-    const headers = c.req.valid('header');
-    const { email } = body;
-
-    try {
-      const resetEntity =
-        await services.passwordResetService.requestPasswordReset(email);
-
-      if (resetEntity) {
-        services.emailService.sendPasswordResetEmailAsync({
-          email,
-          token: resetEntity.token,
-          locale: headers['accept-language'],
-        });
-      }
-
+    return c.json({ ok: true as const }, 200);
+  } catch (error) {
+    // Always return success to prevent email enumeration
+    if (
+      error instanceof e.UserNotEditable.Error ||
+      error instanceof e.UserNotFound.Error
+    ) {
       return c.json({ ok: true as const }, 200);
-    } catch (error) {
-      // Always return success to prevent email enumeration
-      if (
-        error instanceof e.UserNotEditable.Error ||
-        error instanceof e.UserNotFound.Error
-      ) {
-        return c.json({ ok: true as const }, 200);
-      }
-      throw error;
     }
-  });
-};
+    throw error;
+  }
+});

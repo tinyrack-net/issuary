@@ -1,5 +1,5 @@
 import { createRoute } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { termsSchema } from '@/schemas/terms.js';
@@ -63,77 +63,25 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const body = c.req.valid('json');
-    const { consents } = body;
-    const session = c.get('session');
-    const auth = c.get('auth');
-    const { termsService, oauthConnectService } = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const body = c.req.valid('json');
+  const { consents } = body;
+  const session = c.get('session');
+  const auth = c.get('auth');
+  const { termsService, oauthConnectService } = c.get('services');
 
-    // Check for pending OAuth registration session
-    const pendingRegistration = session.get('pendingOAuthRegistration');
+  // Check for pending OAuth registration session
+  const pendingRegistration = session.get('pendingOAuthRegistration');
 
-    if (pendingRegistration) {
-      // Check if session has expired
-      if (Date.now() > pendingRegistration.expiresAt) {
-        session.set('pendingOAuthRegistration', undefined);
-        throw new e.OAuthSessionExpired.Error();
-      }
-
-      // Validate explicit terms consent
-      const validation = await termsService.validateExplicitConsents(consents);
-
-      if (!validation.valid) {
-        throw new e.ValidationError.Error(
-          `Missing required terms: ${validation.missingTerms.join(', ')}`,
-        );
-      }
-
-      // Complete OAuth registration
-      const result = await oauthConnectService.completeOAuthRegistration({
-        providerId: pendingRegistration.providerId,
-        tokens: {
-          access_token: pendingRegistration.tokens.access_token,
-          refresh_token: pendingRegistration.tokens.refresh_token,
-          expires_in: pendingRegistration.tokens.expires_in,
-          token_type: pendingRegistration.tokens.token_type,
-        },
-        userInfo: {
-          id: pendingRegistration.userInfo.id,
-          email: pendingRegistration.userInfo.email,
-          email_verified: pendingRegistration.userInfo.email_verified,
-          name: pendingRegistration.userInfo.name,
-          picture: pendingRegistration.userInfo.picture,
-        },
-        consents,
-      });
-
-      // Set user session
-      session.setUserSession(result.user.id);
-
-      // Clear pending registration session
+  if (pendingRegistration) {
+    // Check if session has expired
+    if (Date.now() > pendingRegistration.expiresAt) {
       session.set('pendingOAuthRegistration', undefined);
-
-      return c.json(
-        {
-          ok: true as const,
-          recorded: consents.length,
-          registered: true,
-        },
-        200,
-      );
+      throw new e.OAuthSessionExpired.Error();
     }
 
-    // Standard flow: authenticated user recording consent
-    const userSession = await auth.verify();
-
-    // Validate and record consents
-    const { validation, records } =
-      await termsService.validateAndRecordConsents({
-        userId: userSession.id,
-        consents,
-      });
+    // Validate explicit terms consent
+    const validation = await termsService.validateExplicitConsents(consents);
 
     if (!validation.valid) {
       throw new e.ValidationError.Error(
@@ -141,12 +89,61 @@ export default (app: AppType) => {
       );
     }
 
+    // Complete OAuth registration
+    const result = await oauthConnectService.completeOAuthRegistration({
+      providerId: pendingRegistration.providerId,
+      tokens: {
+        access_token: pendingRegistration.tokens.access_token,
+        refresh_token: pendingRegistration.tokens.refresh_token,
+        expires_in: pendingRegistration.tokens.expires_in,
+        token_type: pendingRegistration.tokens.token_type,
+      },
+      userInfo: {
+        id: pendingRegistration.userInfo.id,
+        email: pendingRegistration.userInfo.email,
+        email_verified: pendingRegistration.userInfo.email_verified,
+        name: pendingRegistration.userInfo.name,
+        picture: pendingRegistration.userInfo.picture,
+      },
+      consents,
+    });
+
+    // Set user session
+    session.setUserSession(result.user.id);
+
+    // Clear pending registration session
+    session.set('pendingOAuthRegistration', undefined);
+
     return c.json(
       {
         ok: true as const,
-        recorded: records.length,
+        recorded: consents.length,
+        registered: true,
       },
       200,
     );
+  }
+
+  // Standard flow: authenticated user recording consent
+  const userSession = await auth.verify();
+
+  // Validate and record consents
+  const { validation, records } = await termsService.validateAndRecordConsents({
+    userId: userSession.id,
+    consents,
   });
-};
+
+  if (!validation.valid) {
+    throw new e.ValidationError.Error(
+      `Missing required terms: ${validation.missingTerms.join(', ')}`,
+    );
+  }
+
+  return c.json(
+    {
+      ok: true as const,
+      recorded: records.length,
+    },
+    200,
+  );
+});

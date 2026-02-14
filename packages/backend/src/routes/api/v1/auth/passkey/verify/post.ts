@@ -1,6 +1,6 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { r } from '@/schemas/response.js';
@@ -61,48 +61,46 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const config = c.get('services').config;
-    if (!config.auth.passkey.enabled) {
-      throw new e.PasskeyNotEnabled.Error();
-    }
+export default createRouter().openapi(route, async (c) => {
+  const config = c.get('services').config;
+  if (!config.auth.passkey.enabled) {
+    throw new e.PasskeyNotEnabled.Error();
+  }
 
-    const body = c.req.valid('json');
-    const session = c.get('session');
-    const { mikro, passkeyService, userService } = c.get('services');
+  const body = c.req.valid('json');
+  const session = c.get('session');
+  const { mikro, passkeyService, userService } = c.get('services');
 
-    const pending2FAUser = session.get('pending2FAUser');
+  const pending2FAUser = session.get('pending2FAUser');
 
-    // Get challenge from session
-    const challenge = session.get('passkey_challenge');
+  // Get challenge from session
+  const challenge = session.get('passkey_challenge');
 
-    if (!challenge) {
-      throw new e.PasskeyChallengeNotFound.Error();
-    }
+  if (!challenge) {
+    throw new e.PasskeyChallengeNotFound.Error();
+  }
 
-    session.set('passkey_challenge', undefined);
+  session.set('passkey_challenge', undefined);
 
-    // Extract and cast the validated response
-    const authResponse = body.response as AuthenticationResponseJSON;
+  // Extract and cast the validated response
+  const authResponse = body.response as AuthenticationResponseJSON;
 
-    const passkeyUser = await passkeyService.verifyAuthentication(
-      authResponse,
-      challenge,
-    );
+  const passkeyUser = await passkeyService.verifyAuthentication(
+    authResponse,
+    challenge,
+  );
 
-    if (pending2FAUser && passkeyUser.id !== pending2FAUser.id) {
-      throw new e.PasskeyUserMismatch.Error();
-    }
+  if (pending2FAUser && passkeyUser.id !== pending2FAUser.id) {
+    throw new e.PasskeyUserMismatch.Error();
+  }
 
-    const userEntity = await mikro.user.verifyById(passkeyUser.id);
-    const sessionUser = await userService.userEntityToSessionUser(userEntity);
+  const userEntity = await mikro.user.verifyById(passkeyUser.id);
+  const sessionUser = await userService.userEntityToSessionUser(userEntity);
 
-    const authTime =
-      pending2FAUser?.authenticated_at ?? Math.floor(Date.now() / 1000);
+  const authTime =
+    pending2FAUser?.authenticated_at ?? Math.floor(Date.now() / 1000);
 
-    session.setUserSession(passkeyUser.id, authTime);
+  session.setUserSession(passkeyUser.id, authTime);
 
-    return c.json({ user: sessionUser }, 200);
-  });
-};
+  return c.json({ user: sessionUser }, 200);
+});
