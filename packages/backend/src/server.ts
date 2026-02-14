@@ -13,7 +13,7 @@ import { servicesMiddleware } from '@backend/middleware/services.js';
 import { sessionMiddleware } from '@backend/middleware/session.js';
 import { registerStaticHandler } from '@backend/middleware/static/index.js';
 import { trustedProxyGuard } from '@backend/middleware/trusted-proxy-guard.js';
-import routes from '@backend/routes/index.js';
+import { routes } from '@backend/routes/index.js';
 import { ApiError, e } from '@backend/schemas/error.js';
 import {
   initializeServices,
@@ -26,8 +26,6 @@ import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import 'reflect-metadata';
 
 export type { AppType };
-export type { ApiV1Type } from '@backend/routes/api/v1/index.js';
-export type { AppRouteType } from '@backend/routes/index.js';
 export type { ServerOptions } from '@backend/services/container.js';
 
 export interface CreateServerOptions {

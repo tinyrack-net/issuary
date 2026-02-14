@@ -7,5 +7,4 @@
  * external packages can resolve the types without
  * needing the backend's path alias configuration.
  */
-export type { ApiV1Type } from './routes/api/v1/index.js';
 export type { AppRouteType } from './routes/index.js';

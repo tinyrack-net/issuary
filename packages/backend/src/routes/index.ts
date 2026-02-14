@@ -1,13 +1,11 @@
 import { createRouter } from '@backend/lib/create-router.js';
-import wellKnown from './.well-known/index.js';
-import apiV1 from './api/v1/index.js';
-import oauth from './application/oauth/index.js';
+import { wellKnownRoutes } from './.well-known/index.js';
+import { apiV1 } from './api/v1/index.js';
+import { oauthApplicationRoutes } from './application/oauth/index.js';
 
-const routes = createRouter()
+export const routes = createRouter()
   .route('/api/v1', apiV1)
-  .route('/application/oauth', oauth)
-  .route('/.well-known', wellKnown);
+  .route('/application/oauth', oauthApplicationRoutes)
+  .route('/.well-known', wellKnownRoutes);
 
 export type AppRouteType = typeof routes;
-
-export default routes;
