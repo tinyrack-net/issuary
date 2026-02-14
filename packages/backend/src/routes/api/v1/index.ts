@@ -1,4 +1,3 @@
-import type { AppType } from '@/lib/app.js';
 import { createRouter } from '@/lib/create-router.js';
 import authEmailResendPost from './auth/email/resend/post.js';
 import authEmailVerifyPost from './auth/email/verify/post.js';
@@ -45,51 +44,50 @@ import userTotpDelete from './user/totp/delete.js';
 import userTotpSetupPost from './user/totp/setup/post.js';
 import userTotpVerifyPost from './user/totp/verify/post.js';
 
-export function registerApiV1Routes(parentApp: AppType): void {
-  const app = createRouter();
+const app = createRouter()
   // Auth
-  authLoginPost(app);
-  authLogoutPost(app);
-  authRegisterPost(app);
-  authPasswordForgotPost(app);
-  authPasswordResetPost(app);
-  authEmailVerifyPost(app);
-  authEmailResendPost(app);
-  authTotpVerifyPost(app);
-  authTotpRecoveryVerifyPost(app);
-  authPasskeyOptionsPost(app);
-  authPasskeyVerifyPost(app);
+  .route('/', authLoginPost)
+  .route('/', authLogoutPost)
+  .route('/', authRegisterPost)
+  .route('/', authPasswordForgotPost)
+  .route('/', authPasswordResetPost)
+  .route('/', authEmailVerifyPost)
+  .route('/', authEmailResendPost)
+  .route('/', authTotpVerifyPost)
+  .route('/', authTotpRecoveryVerifyPost)
+  .route('/', authPasskeyOptionsPost)
+  .route('/', authPasskeyVerifyPost)
   // Config
-  configGet(app);
+  .route('/', configGet)
   // Consent
-  consentGet(app);
-  consentPost(app);
+  .route('/', consentGet)
+  .route('/', consentPost)
   // Health
-  healthGet(app);
-  healthReadyGet(app);
-  healthLiveGet(app);
+  .route('/', healthGet)
+  .route('/', healthReadyGet)
+  .route('/', healthLiveGet)
   // Terms
-  termsGet(app);
-  termsConsentPost(app);
+  .route('/', termsGet)
+  .route('/', termsConsentPost)
   // User
-  userDelete(app);
-  userSessionGet(app);
-  userPasswordPost(app);
-  userPasswordPut(app);
-  userPasswordDelete(app);
-  userOauthAccountsGet(app);
-  userTotpSetupPost(app);
-  userTotpVerifyPost(app);
-  userTotpConfirmPost(app);
-  userTotpDelete(app);
-  userPasskeysGet(app);
-  userPasskeyIdDelete(app);
-  userPasskeyIdPatch(app);
-  userPasskeyRegisterOptionsPost(app);
-  userPasskeyRegisterVerifyPost(app);
+  .route('/', userDelete)
+  .route('/', userSessionGet)
+  .route('/', userPasswordPost)
+  .route('/', userPasswordPut)
+  .route('/', userPasswordDelete)
+  .route('/', userOauthAccountsGet)
+  .route('/', userTotpSetupPost)
+  .route('/', userTotpVerifyPost)
+  .route('/', userTotpConfirmPost)
+  .route('/', userTotpDelete)
+  .route('/', userPasskeysGet)
+  .route('/', userPasskeyIdDelete)
+  .route('/', userPasskeyIdPatch)
+  .route('/', userPasskeyRegisterOptionsPost)
+  .route('/', userPasskeyRegisterVerifyPost)
   // OAuth Connect
-  oauthProviderAuthorizeGet(app);
-  oauthProviderCallbackGet(app);
-  oauthProviderDelete(app);
-  parentApp.route('/api/v1', app);
-}
+  .route('/', oauthProviderAuthorizeGet)
+  .route('/', oauthProviderCallbackGet)
+  .route('/', oauthProviderDelete);
+
+export default app;
