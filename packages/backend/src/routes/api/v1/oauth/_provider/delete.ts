@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
@@ -51,23 +51,21 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const params = c.req.valid('param');
-    const auth = c.get('auth');
-    const { oauthConnectService } = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const params = c.req.valid('param');
+  const auth = c.get('auth');
+  const { oauthConnectService } = c.get('services');
 
-    // Check if user is logged in
-    const userSession = await auth.verify();
+  // Check if user is logged in
+  const userSession = await auth.verify();
 
-    const { provider } = params;
+  const { provider } = params;
 
-    // Verify provider exists
-    oauthConnectService.getProvider(provider);
+  // Verify provider exists
+  oauthConnectService.getProvider(provider);
 
-    // Unlink the OAuth account
-    await oauthConnectService.unlinkOAuthAccount(userSession.id, provider);
+  // Unlink the OAuth account
+  await oauthConnectService.unlinkOAuthAccount(userSession.id, provider);
 
-    return c.json({ ok: true as const }, 200);
-  });
-};
+  return c.json({ ok: true as const }, 200);
+});

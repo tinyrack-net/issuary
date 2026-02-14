@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import type { AppType } from '@/lib/app.js';
+import { createRouter } from '@/lib/create-router.js';
 import { TAGS } from '@/lib/swagger-tags.js';
 import { e } from '@/schemas/error.js';
 import { f } from '@/schemas/field.js';
@@ -42,33 +42,31 @@ const route = createRoute({
   },
 });
 
-export default (app: AppType) => {
-  app.openapi(route, async (c) => {
-    const params = c.req.valid('param');
-    const query = c.req.valid('query');
-    const { provider } = params;
-    const { mode, return_url } = query;
-    const auth = c.get('auth');
-    const session = c.get('session');
-    const { oauthConnectService } = c.get('services');
+export default createRouter().openapi(route, async (c) => {
+  const params = c.req.valid('param');
+  const query = c.req.valid('query');
+  const { provider } = params;
+  const { mode, return_url } = query;
+  const auth = c.get('auth');
+  const session = c.get('session');
+  const { oauthConnectService } = c.get('services');
 
-    // Link mode requires authenticated user
-    if (mode === 'link') {
-      await auth.verify();
-    }
+  // Link mode requires authenticated user
+  if (mode === 'link') {
+    await auth.verify();
+  }
 
-    // Generate authorization URL and session data
-    const { url, sessionData } =
-      await oauthConnectService.generateAuthorizationUrl(
-        provider,
-        mode,
-        return_url,
-      );
+  // Generate authorization URL and session data
+  const { url, sessionData } =
+    await oauthConnectService.generateAuthorizationUrl(
+      provider,
+      mode,
+      return_url,
+    );
 
-    // Store OAuth session data in secure session
-    session.set('oauth', sessionData);
+  // Store OAuth session data in secure session
+  session.set('oauth', sessionData);
 
-    // Redirect to OAuth provider
-    return c.redirect(url);
-  });
-};
+  // Redirect to OAuth provider
+  return c.redirect(url);
+});
