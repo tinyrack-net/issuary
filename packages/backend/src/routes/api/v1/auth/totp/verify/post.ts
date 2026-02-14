@@ -51,7 +51,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const authTotpVerifyPost = createRouter().openapi(route, async (c) => {
   const config = c.get('services').config;
   if (!config.auth.password.enabled || !config.auth.password.totp.enabled) {
     throw new e.ValidationError.Error('TOTP authentication is disabled');

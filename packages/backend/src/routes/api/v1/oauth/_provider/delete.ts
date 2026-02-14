@@ -51,7 +51,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const oauthProviderDelete = createRouter().openapi(route, async (c) => {
   const params = c.req.valid('param');
   const auth = c.get('auth');
   const { oauthConnectService } = c.get('services');

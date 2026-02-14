@@ -28,6 +28,6 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const healthLiveGet = createRouter().openapi(route, async (c) => {
   return c.json({ status: 'ok' as const }, 200);
 });

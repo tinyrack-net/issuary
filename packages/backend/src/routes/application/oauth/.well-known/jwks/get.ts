@@ -39,7 +39,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const jwksGet = createRouter().openapi(route, async (c) => {
   const { jwtService } = c.get('services');
 
   // Get JWKS from JwtService

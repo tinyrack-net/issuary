@@ -32,7 +32,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const userPasskeysGet = createRouter().openapi(route, async (c) => {
   const config = c.get('services').config;
   if (!config.auth.passkey.enabled) {
     throw new e.PasskeyNotEnabled.Error();

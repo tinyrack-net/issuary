@@ -57,7 +57,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const tokenPost = createRouter().openapi(route, async (c) => {
   const body = c.req.valid('json');
   const { oauthClientService, oauthTokenService } = c.get('services');
 

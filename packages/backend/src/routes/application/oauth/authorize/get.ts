@@ -42,7 +42,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const authorizeGet = createRouter().openapi(route, async (c) => {
   const query = c.req.valid('query');
   const session = c.get('session');
   const { oauthAuthorizeService } = c.get('services');

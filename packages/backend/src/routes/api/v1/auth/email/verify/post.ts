@@ -40,7 +40,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const authEmailVerifyPost = createRouter().openapi(route, async (c) => {
   const services = c.get('services');
   const session = c.get('session');
 

@@ -64,7 +64,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const userTotpDelete = createRouter().openapi(route, async (c) => {
   const body = c.req.valid('json');
   const auth = c.get('auth');
   const { config, mikro, totpService } = c.get('services');

@@ -37,7 +37,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const healthReadyGet = createRouter().openapi(route, async (c) => {
   const { mikro } = c.get('services');
 
   // Check database connectivity

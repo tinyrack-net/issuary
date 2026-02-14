@@ -67,7 +67,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const authRegisterPost = createRouter().openapi(route, async (c) => {
   const body = c.req.valid('json');
   const headers = c.req.valid('header');
   const { email, password, consents } = body;

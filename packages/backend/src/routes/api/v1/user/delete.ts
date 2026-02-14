@@ -62,7 +62,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const userDelete = createRouter().openapi(route, async (c) => {
   const { config, mikro } = c.get('services');
   const auth = c.get('auth');
   const session = c.get('session');

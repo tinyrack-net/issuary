@@ -67,7 +67,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const userTotpVerifyPost = createRouter().openapi(route, async (c) => {
   const body = c.req.valid('json');
   const session = c.get('session');
   const { totpService } = c.get('services');

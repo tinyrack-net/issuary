@@ -54,7 +54,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const userTotpSetupPost = createRouter().openapi(route, async (c) => {
   const { config, mikro, totpService } = c.get('services');
   const session = c.get('session');
 

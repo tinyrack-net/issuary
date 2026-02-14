@@ -65,7 +65,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const consentPost = createRouter().openapi(route, async (c) => {
   const body = c.req.valid('json');
   const {
     client_id,

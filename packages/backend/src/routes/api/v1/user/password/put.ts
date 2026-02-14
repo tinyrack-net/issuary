@@ -72,7 +72,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const userPasswordPut = createRouter().openapi(route, async (c) => {
   const body = c.req.valid('json');
   const auth = c.get('auth');
   const { mikro } = c.get('services');

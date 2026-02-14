@@ -53,7 +53,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const authEmailResendPost = createRouter().openapi(route, async (c) => {
   const services = c.get('services');
 
   if (!services.emailVerificationService) {

@@ -22,7 +22,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const configGet = createRouter().openapi(route, async (c) => {
   const { config } = c.get('services');
 
   // Transform identity_providers array to response format

@@ -103,7 +103,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const oidcConfigGet = createRouter().openapi(route, async (c) => {
   const { config } = c.get('services');
   const baseUrl = config.app.host;
 

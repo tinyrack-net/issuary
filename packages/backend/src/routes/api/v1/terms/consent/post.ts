@@ -63,7 +63,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const termsConsentPost = createRouter().openapi(route, async (c) => {
   const body = c.req.valid('json');
   const { consents } = body;
   const session = c.get('session');

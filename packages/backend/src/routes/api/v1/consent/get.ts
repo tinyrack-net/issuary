@@ -53,7 +53,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const consentGet = createRouter().openapi(route, async (c) => {
   const query = c.req.valid('query');
   const { client_id, scope } = query;
   const auth = c.get('auth');

@@ -7,6 +7,9 @@ import { createRouter } from '@backend/lib/create-router.js';
  * This provides compatibility with clients that expect the standard
  * OIDC Discovery URL at the root level.
  */
-export default createRouter().get('/openid-configuration', async (c) => {
-  return c.redirect('/application/oauth/.well-known/openid-configuration');
-});
+export const openidConfigGet = createRouter().get(
+  '/openid-configuration',
+  async (c) => {
+    return c.redirect('/application/oauth/.well-known/openid-configuration');
+  },
+);

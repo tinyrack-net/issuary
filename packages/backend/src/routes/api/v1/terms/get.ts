@@ -35,7 +35,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const termsGet = createRouter().openapi(route, async (c) => {
   const query = c.req.valid('query');
   const { lang } = query;
   const session = c.get('session');

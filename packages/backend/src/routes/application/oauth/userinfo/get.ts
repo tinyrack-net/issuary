@@ -45,7 +45,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const userinfoGet = createRouter().openapi(route, async (c) => {
   const { jwtService, mikro, userService } = c.get('services');
 
   // Validate Bearer token

@@ -19,7 +19,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const authLogoutPost = createRouter().openapi(route, async (c) => {
   c.get('session').delete();
   return c.json({ ok: true as const }, 200);
 });

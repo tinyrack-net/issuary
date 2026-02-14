@@ -57,7 +57,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const authLoginPost = createRouter().openapi(route, async (c) => {
   const config = c.get('services').config;
   if (!config.auth.password.enabled) {
     throw new e.ValidationError.Error('Password authentication is disabled');

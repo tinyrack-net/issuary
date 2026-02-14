@@ -39,7 +39,7 @@ const route = createRoute({
   },
 });
 
-export default createRouter().openapi(route, async (c) => {
+export const healthGet = createRouter().openapi(route, async (c) => {
   const { mikro } = c.get('services');
   const uptime = Math.floor((Date.now() - startTime) / 1000);
   const version = process.env['npm_package_version'] || '1.0.0';
