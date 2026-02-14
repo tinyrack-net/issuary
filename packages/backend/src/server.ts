@@ -1,27 +1,8 @@
-// Must be first — extends Zod before any schema is created
-
+import { createApp } from '@backend/app.js';
 import type { AppType } from '@backend/lib/app.js';
-import {
-  type AppConfigInput,
-  resolveConfig,
-} from '@backend/lib/config/index.js';
-import { createRouter } from '@backend/lib/create-router.js';
+import type { AppConfigInput } from '@backend/lib/config/index.js';
 import { env } from '@backend/lib/env.js';
-import { authMiddleware } from '@backend/middleware/auth.js';
-import { mikroOrmMiddleware } from '@backend/middleware/mikro-orm.js';
-import { servicesMiddleware } from '@backend/middleware/services.js';
-import { sessionMiddleware } from '@backend/middleware/session.js';
-import { registerStaticHandler } from '@backend/middleware/static/index.js';
-import { trustedProxyGuard } from '@backend/middleware/trusted-proxy-guard.js';
-import { routes } from '@backend/routes/index.js';
-import { ApiError, e } from '@backend/schemas/error.js';
-import {
-  initializeServices,
-  type ServerOptions,
-} from '@backend/services/container.js';
 import { serve } from '@hono/node-server';
-import { cors } from 'hono/cors';
-import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import 'reflect-metadata';
 
 export type { AppType };
@@ -59,121 +40,23 @@ export interface CreateServerOptions {
 }
 
 export async function createServer(createOptions: CreateServerOptions) {
-  const { config: externalConfig } = createOptions;
-
-  // Resolve external config to internal config
-  // with all defaults applied
-  const config = await resolveConfig(externalConfig);
-
-  // Resolve server options with defaults
-  const serverOptions: ServerOptions = {
-    skipListen: createOptions.skipListen ?? false,
-    cliMode: createOptions.cliMode ?? false,
-    silent: createOptions.silent ?? false,
-  };
-
-  // Initialize all services (DB, mail, scheduler, etc.)
-  const { services, cleanup } = await initializeServices(config, serverOptions);
-
-  // Create OpenAPIHono instance with shared validation hook
-  const app = createRouter();
-
-  // Register HTTP middleware (skip in CLI mode)
-  if (!serverOptions.cliMode) {
-    // CORS
-    const allowedOrigins =
-      env.APP_ENV === 'development' ? '*' : config.app.host;
-    app.use(
-      '*',
-      cors({
-        origin: allowedOrigins,
-        credentials: true,
-      }),
-    );
-
-    // Session
-    app.use(
-      '*',
-      sessionMiddleware(
-        config.app.cookie_secret,
-        config.app.host.startsWith('https'),
-      ),
-    );
-
-    // Trusted proxy guard
-    app.use('*', trustedProxyGuard(config.app.trust_proxy));
-  }
-
-  // Service injection middleware (always loaded)
-  app.use('*', servicesMiddleware(services));
-
-  // MikroORM RequestContext middleware (always loaded)
-  app.use('*', mikroOrmMiddleware);
-
-  // Auth middleware (skip in CLI mode)
-  if (!serverOptions.cliMode) {
-    app.use('*', authMiddleware);
-  }
-
-  // Error handler
-  app.onError((err, c) => {
-    if (err instanceof ApiError) {
-      return c.json(err.toJson(), err.status as ContentfulStatusCode);
-    }
-
-    // Zod validation errors from @hono/zod-openapi
-    if (
-      err &&
-      typeof err === 'object' &&
-      'name' in err &&
-      err.name === 'ZodError'
-    ) {
-      const zodErr = new e.ValidationError.Error(err.message);
-      return c.json(zodErr.toJson(), zodErr.status as ContentfulStatusCode);
-    }
-
-    console.error('Unhandled error:', err);
-    const internalErr = new e.InternalServerError.Error();
-    return c.json(
-      internalErr.toJson(),
-      internalErr.status as ContentfulStatusCode,
-    );
+  const { app, services, cleanup } = await createApp({
+    config: createOptions.config,
+    cliMode: createOptions.cliMode,
+    silent: createOptions.silent,
   });
-
-  // OpenAPI spec endpoint (OpenAPI 3.1.0)
-  app.doc31('/api/docs/json', {
-    openapi: '3.1.0',
-    info: {
-      title: 'TinyAuth API',
-      version: '1.0.0',
-      description: 'OpenID Connect Provider API',
-    },
-  });
-
-  // Mount all routes (skip in CLI mode)
-  if (!serverOptions.cliMode) {
-    app.route('/', routes);
-  }
-
-  // Register static file handler (skip in CLI mode)
-  if (!serverOptions.cliMode) {
-    registerStaticHandler(app, config, serverOptions.silent);
-  }
-
-  // Start scheduler
-  services.scheduler.start();
 
   // Start HTTP server if not test and not skipListen
   let server: ReturnType<typeof serve> | undefined;
-  if (env.APP_ENV !== 'test' && !serverOptions.skipListen) {
+  if (env.APP_ENV !== 'test' && !createOptions.skipListen) {
     server = serve(
       {
         fetch: app.fetch,
-        port: config.app.port,
+        port: services.config.app.port,
         hostname: '0.0.0.0',
       },
       (info) => {
-        if (!serverOptions.silent) {
+        if (!createOptions.silent) {
           console.info(`Server listening on port ${info.port}`);
         }
       },
