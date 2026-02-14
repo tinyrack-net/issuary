@@ -1,41 +1,40 @@
 import { mutationOptions } from '@tanstack/react-query';
-import { etch } from '@/libs/etch.js';
-import type { SessionUser } from './session.js';
+import type { InferRequestType, InferResponseType } from 'hono/client';
+import { api, jsonOk } from '@/libs/api';
 
-export type VerifyEmailParams = {
-  token: string;
-};
+export type VerifyEmailParams = InferRequestType<
+  (typeof api.api.v1.auth.email.verify)['$post']
+>['json'];
 
-export type VerifyEmailResponse = {
-  user: SessionUser;
-};
+export type VerifyEmailResponse = InferResponseType<
+  (typeof api.api.v1.auth.email.verify)['$post'],
+  200
+>;
 
 export const verifyEmailMutationOptions = mutationOptions({
   mutationFn: async (values: VerifyEmailParams) => {
-    const res = await etch('/api/v1/auth/email/verify', {
-      method: 'POST',
-      body: JSON.stringify(values),
+    const res = await api.api.v1.auth.email.verify.$post({
+      json: values,
     });
-    const data = await res.json();
-    return data as VerifyEmailResponse;
+    return jsonOk(res);
   },
 });
 
-export type ResendVerificationParams = {
-  email: string;
-};
+export type ResendVerificationParams = InferRequestType<
+  (typeof api.api.v1.auth.email.resend)['$post']
+>['json'];
 
-export type ResendVerificationResponse = {
-  message: string;
-};
+export type ResendVerificationResponse = InferResponseType<
+  (typeof api.api.v1.auth.email.resend)['$post'],
+  200
+>;
 
 export const resendVerificationMutationOptions = mutationOptions({
   mutationFn: async (values: ResendVerificationParams) => {
-    const res = await etch('/api/v1/auth/email/resend', {
-      method: 'POST',
-      body: JSON.stringify(values),
+    const res = await api.api.v1.auth.email.resend.$post({
+      json: values,
+      header: {},
     });
-    const data = await res.json();
-    return data as ResendVerificationResponse;
+    return jsonOk(res);
   },
 });

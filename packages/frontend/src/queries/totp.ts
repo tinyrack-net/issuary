@@ -1,117 +1,115 @@
 import { mutationOptions } from '@tanstack/react-query';
-import { etch } from '@/libs/etch.js';
-import type { OkResponse, SessionUser } from './session.js';
+import type { InferRequestType, InferResponseType } from 'hono/client';
+import { api, jsonOk } from '@/libs/api';
 
-export type TotpSetupResponse = {
-  secret: string;
-  otpauth_url: string;
-  qr_code: string;
-};
+export type TotpSetupResponse = InferResponseType<
+  (typeof api.api.v1.user.totp.setup)['$post'],
+  200
+>;
 
-export type TotpSetupVerifyResponse = {
-  recovery_codes: string[];
-};
+export type TotpSetupVerifyResponse = InferResponseType<
+  (typeof api.api.v1.user.totp.verify)['$post'],
+  200
+>;
 
-export type TotpConfirmResponse = {
-  user: SessionUser;
-};
+export type TotpConfirmResponse = InferResponseType<
+  (typeof api.api.v1.user.totp.confirm)['$post'],
+  200
+>;
 
-export type TotpLoginVerifyResponse = {
-  user: SessionUser;
-};
+export type TotpLoginVerifyResponse = InferResponseType<
+  (typeof api.api.v1.auth.totp.verify)['$post'],
+  200
+>;
 
 /**
  * Start TOTP setup - generates secret and QR code
  */
 export const startTotpSetupMutationOptions = mutationOptions({
   mutationFn: async () => {
-    const res = await etch('/api/v1/user/totp/setup', {
-      method: 'POST',
-    });
-    return res.json() as Promise<TotpSetupResponse>;
+    const res = await api.api.v1.user.totp.setup.$post();
+    return jsonOk(res);
   },
 });
 
 /**
  * Verify TOTP code during setup (returns recovery codes)
  */
-export type VerifyTotpParams = {
-  code: string;
-};
+export type VerifyTotpParams = InferRequestType<
+  (typeof api.api.v1.user.totp.verify)['$post']
+>['json'];
 
 export const verifyTotpMutationOptions = mutationOptions({
   mutationFn: async (values: VerifyTotpParams) => {
-    const res = await etch('/api/v1/user/totp/verify', {
-      method: 'POST',
-      body: JSON.stringify(values),
+    const res = await api.api.v1.user.totp.verify.$post({
+      json: values,
     });
-    return res.json() as Promise<TotpSetupVerifyResponse>;
+    return jsonOk(res);
   },
 });
 
 /**
- * Confirm TOTP setup after user acknowledges recovery codes
+ * Confirm TOTP setup after user acknowledges recovery
+ * codes
  */
 export const confirmTotpSetupMutationOptions = mutationOptions({
   mutationFn: async () => {
-    const res = await etch('/api/v1/user/totp/confirm', {
-      method: 'POST',
+    const res = await api.api.v1.user.totp.confirm.$post({
+      json: {},
     });
-    return res.json() as Promise<TotpConfirmResponse>;
+    return jsonOk(res);
   },
 });
 
 /**
  * Disable TOTP authentication
  */
-export type DisableTotpParams = {
-  code: string;
-};
+export type DisableTotpParams = InferRequestType<
+  (typeof api.api.v1.user.totp)['$delete']
+>['json'];
 
 export const disableTotpMutationOptions = mutationOptions({
   mutationFn: async (values: DisableTotpParams) => {
-    const res = await etch('/api/v1/user/totp', {
-      method: 'DELETE',
-      body: JSON.stringify(values),
+    const res = await api.api.v1.user.totp.$delete({
+      json: values,
     });
-    return res.json() as Promise<OkResponse>;
+    return jsonOk(res);
   },
 });
 
 /**
  * Verify TOTP code during login (complete 2FA login)
  */
-export type VerifyTotpLoginParams = {
-  code: string;
-};
+export type VerifyTotpLoginParams = InferRequestType<
+  (typeof api.api.v1.auth.totp.verify)['$post']
+>['json'];
 
 export const verifyTotpLoginMutationOptions = mutationOptions({
   mutationFn: async (values: VerifyTotpLoginParams) => {
-    const res = await etch('/api/v1/auth/totp/verify', {
-      method: 'POST',
-      body: JSON.stringify(values),
+    const res = await api.api.v1.auth.totp.verify.$post({
+      json: values,
     });
-    return res.json() as Promise<TotpLoginVerifyResponse>;
+    return jsonOk(res);
   },
 });
 
 /**
  * Verify recovery code during login (complete 2FA login)
  */
-export type VerifyRecoveryCodeParams = {
-  code: string;
-};
+export type VerifyRecoveryCodeParams = InferRequestType<
+  (typeof api.api.v1.auth.totp.recovery.verify)['$post']
+>['json'];
 
-export type VerifyRecoveryCodeResponse = {
-  user: SessionUser;
-};
+export type VerifyRecoveryCodeResponse = InferResponseType<
+  (typeof api.api.v1.auth.totp.recovery.verify)['$post'],
+  200
+>;
 
 export const verifyRecoveryCodeMutationOptions = mutationOptions({
   mutationFn: async (values: VerifyRecoveryCodeParams) => {
-    const res = await etch('/api/v1/auth/totp/recovery/verify', {
-      method: 'POST',
-      body: JSON.stringify(values),
+    const res = await api.api.v1.auth.totp.recovery.verify.$post({
+      json: values,
     });
-    return res.json() as Promise<VerifyRecoveryCodeResponse>;
+    return jsonOk(res);
   },
 });
