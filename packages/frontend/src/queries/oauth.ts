@@ -1,33 +1,17 @@
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
-import { etch } from '@/libs/etch';
+import type { InferResponseType } from 'hono/client';
+import { api, jsonOk } from '@/libs/api';
 import { queryKeys } from './keys';
-import type { OkResponse } from './session.js';
 
-/**
- * Linked OAuth account info
- */
-export type LinkedOAuthAccount = {
-  provider_name: string;
-  linked_at: string;
-};
+export type OAuthAccountsResponse = InferResponseType<
+  (typeof api.api.v1.user)['oauth-accounts']['$get'],
+  200
+>;
 
-/**
- * OAuth provider info with linked status for profile page
- */
-export type OAuthProviderWithStatus = {
-  id: string;
-  display_name: string;
-  icon_url?: string;
-  linked: boolean;
-};
+export type LinkedOAuthAccount = OAuthAccountsResponse['accounts'][number];
 
-/**
- * Response from GET /api/v1/user/oauth-accounts
- */
-export type OAuthAccountsResponse = {
-  accounts: LinkedOAuthAccount[];
-  available_providers: OAuthProviderWithStatus[];
-};
+export type OAuthProviderWithStatus =
+  OAuthAccountsResponse['available_providers'][number];
 
 /**
  * Query options for fetching user's linked OAuth accounts
@@ -35,8 +19,8 @@ export type OAuthAccountsResponse = {
 export const oauthAccountsQueryOptions = queryOptions({
   queryKey: queryKeys.oauth.accounts(),
   queryFn: async () => {
-    const res = await etch('/api/v1/user/oauth-accounts');
-    return (await res.json()) as OAuthAccountsResponse;
+    const res = await api.api.v1.user['oauth-accounts'].$get();
+    return jsonOk(res);
   },
 });
 
@@ -45,10 +29,10 @@ export const oauthAccountsQueryOptions = queryOptions({
  */
 export const unlinkOAuthMutationOptions = mutationOptions({
   mutationFn: async (providerId: string) => {
-    const res = await etch(`/api/v1/oauth/${providerId}`, {
-      method: 'DELETE',
+    const res = await api.api.v1.oauth[':provider'].$delete({
+      param: { provider: providerId },
     });
-    return (await res.json()) as OkResponse;
+    return jsonOk(res);
   },
 });
 

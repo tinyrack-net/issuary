@@ -1,44 +1,16 @@
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
-import { etch } from '@/libs/etch';
+import type { InferRequestType, InferResponseType } from 'hono/client';
+import { api, jsonOk } from '@/libs/api';
 import { queryKeys } from './keys';
 
-/**
- * User consent status for a term
- */
-export type TermsUserConsent = {
-  agreed: boolean;
-  agreedVersion: string | null;
-  agreedAt: string | null;
-  consentType: 'explicit' | 'implicit' | null;
-  requiresUpdate: boolean;
-};
+export type TermsResponse = InferResponseType<
+  (typeof api.api.v1.terms)['$get'],
+  200
+>;
 
-/**
- * Content type for terms content
- */
-export type TermsContentType = 'link' | 'text';
-
-/**
- * Term item with localized content
- */
-export type TermItem = {
-  id: string;
-  required: boolean;
-  consentMode: 'explicit' | 'implicit';
-  version: string;
-  title: string;
-  type: TermsContentType;
-  content: string;
-  userConsent: TermsUserConsent | null;
-};
-
-/**
- * Terms response from GET /api/v1/terms
- */
-export type TermsResponse = {
-  terms: TermItem[];
-  pendingTerms: string[];
-};
+export type TermItem = TermsResponse['terms'][number];
+export type TermsUserConsent = NonNullable<TermItem['userConsent']>;
+export type TermsContentType = TermItem['type'];
 
 /**
  * Get terms query options
@@ -47,52 +19,43 @@ export const getTermsQueryOptions = (lang?: string) =>
   queryOptions({
     queryKey: queryKeys.terms(lang),
     queryFn: async () => {
-      const url = new URL('/api/v1/terms', window.location.origin);
-      if (lang) {
-        url.searchParams.set('lang', lang);
-      }
-      const res = await etch(url.toString());
-      const data = await res.json();
-      return data as TermsResponse;
+      const res = await api.api.v1.terms.$get({
+        query: { lang: lang ?? 'en' },
+      });
+      return jsonOk(res);
     },
   });
 
 /**
  * Consent decision for a term
  */
-export type TermsConsentItem = {
-  termsId: string;
-  agreed: boolean;
-  consentType?: 'explicit' | 'implicit';
-};
+export type TermsConsentItem = InferRequestType<
+  (typeof api.api.v1.terms.consent)['$post']
+>['json']['consents'][number];
 
 /**
  * Terms consent request
  */
-export type TermsConsentRequest = {
-  consents: TermsConsentItem[];
-};
+export type TermsConsentRequest = InferRequestType<
+  (typeof api.api.v1.terms.consent)['$post']
+>['json'];
 
 /**
  * Terms consent response
  */
-export type TermsConsentResponse = {
-  ok: true;
-  recorded: number;
-  /** True if OAuth registration was completed with this consent submission */
-  registered?: boolean;
-};
+export type TermsConsentResponse = InferResponseType<
+  (typeof api.api.v1.terms.consent)['$post'],
+  200
+>;
 
 /**
  * Submit terms consent mutation
  */
 export const termsConsentMutationOptions = mutationOptions({
   mutationFn: async (params: TermsConsentRequest) => {
-    const res = await etch('/api/v1/terms/consent', {
-      method: 'POST',
-      body: JSON.stringify(params),
+    const res = await api.api.v1.terms.consent.$post({
+      json: params,
     });
-    const data = await res.json();
-    return data as TermsConsentResponse;
+    return jsonOk(res);
   },
 });
