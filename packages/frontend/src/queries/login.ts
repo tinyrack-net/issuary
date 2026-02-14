@@ -1,23 +1,21 @@
 import { mutationOptions } from '@tanstack/react-query';
-import { etch } from '@/libs/etch';
-import type { SessionUser } from './session.js';
+import type { InferRequestType, InferResponseType } from 'hono/client';
+import { api, jsonOk } from '@/libs/api';
 
-export type LoginParams = {
-  email: string;
-  password: string;
-};
+export type LoginParams = InferRequestType<
+  (typeof api.api.v1.auth.login)['$post']
+>['json'];
 
-export type LoginResponse = {
-  user: SessionUser;
-};
+export type LoginResponse = InferResponseType<
+  (typeof api.api.v1.auth.login)['$post'],
+  200
+>;
 
 export const loginMutationOptions = mutationOptions({
   mutationFn: async (values: LoginParams) => {
-    const res = await etch(`/api/v1/auth/login`, {
-      method: 'POST',
-      body: JSON.stringify(values),
+    const res = await api.api.v1.auth.login.$post({
+      json: values,
     });
-    const data = await res.json();
-    return data as LoginResponse;
+    return jsonOk(res);
   },
 });

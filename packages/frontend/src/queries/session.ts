@@ -1,31 +1,26 @@
 import { queryOptions } from '@tanstack/react-query';
-import { etch } from '@/libs/etch';
+import type { InferResponseType } from 'hono/client';
+import { api, jsonOk } from '@/libs/api';
 import { queryKeys } from './keys';
 
-export type SessionUser = {
-  id: string;
-  managed_by: 'config' | 'database';
-  email: string;
-  email_verified: boolean;
-  email_verification_required: boolean;
-  has_password: boolean;
-  totp_registered: boolean;
-  second_factor_required: boolean;
-  passkey_count: number;
-};
+type SessionGetResponse = InferResponseType<
+  (typeof api.api.v1.user.session)['$get'],
+  200
+>;
 
-export type AuthResponse = {
-  user?: SessionUser;
-};
+export type SessionUser = NonNullable<SessionGetResponse['user']>;
 
-export type OkResponse = {
-  ok: true;
-};
+export type AuthResponse = SessionGetResponse;
+
+export type OkResponse = InferResponseType<
+  (typeof api.api.v1.auth.logout)['$post'],
+  200
+>;
 
 export const getSessionQueryOptions = queryOptions({
   queryKey: queryKeys.session(),
   queryFn: async () => {
-    const response = await etch('/api/v1/user/session');
-    return response.json() as Promise<AuthResponse>;
+    const response = await api.api.v1.user.session.$get();
+    return jsonOk(response);
   },
 });
