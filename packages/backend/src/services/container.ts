@@ -97,9 +97,9 @@ export async function initializeServices(
   const orm = await MikroORM.init(ormOptions);
 
   if (config.database.type === 'memory') {
-    await orm.schema.refreshDatabase();
+    await orm.schema.refresh();
   } else if (env.APP_ENV === 'development') {
-    await orm.schema.updateSchema();
+    await orm.schema.update();
   } else {
     await orm.migrator.up();
   }
