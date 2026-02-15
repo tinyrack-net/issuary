@@ -1,12 +1,7 @@
 import { UserTermsConsentRepository } from '@backend/repositories/user-terms-consent.repository.js';
 import {
-  Entity,
   EntityRepositoryType,
-  Index,
-  ManyToOne,
   type Opt,
-  PrimaryKey,
-  Property,
   type Ref,
   ref,
   t,
@@ -14,6 +9,13 @@ import {
 import { BaseEntity } from './base.entity.js';
 import { TermsEntity } from './terms.entity.js';
 import { UserEntity } from './user.entity.js';
+import {
+  Entity,
+  Index,
+  ManyToOne,
+  PrimaryKey,
+  Property,
+} from '@mikro-orm/decorators/legacy';
 
 /**
  * UserTermsConsentEntity stores user consent records for terms of service.

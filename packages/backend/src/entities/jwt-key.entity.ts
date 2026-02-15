@@ -1,14 +1,12 @@
 import { JwtKeyRepository } from '@backend/repositories/jwt-key.repository.js';
+import { EntityRepositoryType, type Opt, t } from '@mikro-orm/core';
 import {
   Entity,
-  EntityRepositoryType,
   Enum,
   Index,
-  type Opt,
   PrimaryKey,
   Property,
-  t,
-} from '@mikro-orm/core';
+} from '@mikro-orm/decorators/legacy';
 import { BaseEntity } from './base.entity.js';
 
 /**

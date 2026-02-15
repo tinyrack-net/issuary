@@ -1,16 +1,18 @@
 import { EmailVerificationRepository } from '@backend/repositories/email-verification.repository.js';
 import {
-  Entity,
   EntityRepositoryType,
-  Index,
-  ManyToOne,
   type Opt,
-  PrimaryKey,
-  Property,
   type Ref,
   ref,
   t,
 } from '@mikro-orm/core';
+import {
+  Entity,
+  Index,
+  ManyToOne,
+  PrimaryKey,
+  Property,
+} from '@mikro-orm/decorators/legacy';
 import { BaseEntity } from './base.entity.js';
 import { UserEntity } from './user.entity.js';
 

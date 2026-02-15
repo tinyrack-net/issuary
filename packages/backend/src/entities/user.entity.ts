@@ -1,16 +1,9 @@
 import { UserRepository } from '@backend/repositories/user.repository.js';
 import {
-  BeforeCreate,
-  BeforeUpdate,
   Collection,
-  Entity,
   EntityRepositoryType,
   type EventArgs,
-  Index,
-  OneToMany,
   type Opt,
-  PrimaryKey,
-  Property,
   t,
 } from '@mikro-orm/core';
 import { hash, verify } from '@node-rs/argon2';
@@ -19,6 +12,15 @@ import { UserOAuthEntity } from './user-oauth.entity.js';
 import { UserPasskeyEntity } from './user-passkey.entity.js';
 import { UserTotpEntity } from './user-totp.entity.js';
 import { UserTotpRecoveryCodeEntity } from './user-totp-recovery-code.entity.js';
+import {
+  BeforeCreate,
+  BeforeUpdate,
+  Entity,
+  Index,
+  OneToMany,
+  PrimaryKey,
+  Property,
+} from '@mikro-orm/decorators/legacy';
 
 @Entity({
   tableName: 'user',
@@ -122,7 +124,7 @@ export class UserEntity extends BaseEntity {
     const password = args.changeSet?.payload.password_hash;
 
     if (password) {
-      this.password_hash = await hash(password);
+      this.password_hash = await hash(password as string);
     }
   }
 

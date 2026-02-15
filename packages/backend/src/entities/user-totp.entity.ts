@@ -1,18 +1,20 @@
 import { UserTotpRepository } from '@backend/repositories/user-totp.repository.js';
 import {
-  Entity,
   EntityRepositoryType,
-  ManyToOne,
   type Opt,
-  PrimaryKey,
-  Property,
   type Ref,
   ref,
   t,
-  Unique,
 } from '@mikro-orm/core';
 import { BaseEntity } from './base.entity.js';
 import { UserEntity } from './user.entity.js';
+import {
+  Entity,
+  ManyToOne,
+  PrimaryKey,
+  Property,
+  Unique,
+} from '@mikro-orm/decorators/legacy';
 
 @Entity({
   tableName: 'user_totp',

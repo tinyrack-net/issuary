@@ -1,17 +1,14 @@
 import { TermsRepository } from '@backend/repositories/terms.repository.js';
-import {
-  Collection,
-  Entity,
-  EntityRepositoryType,
-  OneToMany,
-  type Opt,
-  PrimaryKey,
-  Property,
-  t,
-} from '@mikro-orm/core';
+import { Collection, EntityRepositoryType, type Opt, t } from '@mikro-orm/core';
 import { BaseEntity } from './base.entity.js';
 import { TermsContentEntity } from './terms-content.entity.js';
 import { UserTermsConsentEntity } from './user-terms-consent.entity.js';
+import {
+  Entity,
+  OneToMany,
+  PrimaryKey,
+  Property,
+} from '@mikro-orm/decorators/legacy';
 
 /**
  * TermsEntity stores terms of service definitions.

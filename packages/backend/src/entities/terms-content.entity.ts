@@ -1,17 +1,14 @@
 import { TermsContentRepository } from '@backend/repositories/terms-content.repository.js';
+import { EntityRepositoryType, type Ref, ref, t } from '@mikro-orm/core';
+import { BaseEntity } from './base.entity.js';
+import { TermsEntity } from './terms.entity.js';
 import {
   Entity,
-  EntityRepositoryType,
   ManyToOne,
   PrimaryKey,
   Property,
-  type Ref,
-  ref,
-  t,
   Unique,
-} from '@mikro-orm/core';
-import { BaseEntity } from './base.entity.js';
-import { TermsEntity } from './terms.entity.js';
+} from '@mikro-orm/decorators/legacy';
 
 /**
  * Content type for terms content.
