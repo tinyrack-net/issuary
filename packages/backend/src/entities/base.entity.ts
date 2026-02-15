@@ -1,4 +1,5 @@
-import { Entity, type Opt, PrimaryKeyProp, Property, t } from '@mikro-orm/core';
+import { type Opt, PrimaryKeyProp, t } from '@mikro-orm/core';
+import { Entity, Property } from '@mikro-orm/decorators/legacy';
 
 @Entity({ abstract: true })
 export abstract class BaseEntity<PK extends string = 'id'> {

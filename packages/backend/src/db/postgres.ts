@@ -1,10 +1,11 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
-import { type Options, ReflectMetadataProvider } from '@mikro-orm/core';
 import { Migrator } from '@mikro-orm/migrations';
 import { defineConfig, PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { SeedManager } from '@mikro-orm/seeder';
+import { ReflectMetadataProvider } from '@mikro-orm/decorators/legacy';
+import type { Options } from '@mikro-orm/core';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

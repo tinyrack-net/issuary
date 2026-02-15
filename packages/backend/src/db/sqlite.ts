@@ -1,10 +1,11 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type Options, ReflectMetadataProvider } from '@mikro-orm/core';
 import { defineConfig, LibSqlDriver } from '@mikro-orm/libsql';
 import { Migrator } from '@mikro-orm/migrations';
 import { SeedManager } from '@mikro-orm/seeder';
 import type { ResolvedAppConfig } from '../lib/config/index.js';
+import { ReflectMetadataProvider } from '@mikro-orm/decorators/legacy';
+import type { Options } from '@mikro-orm/core';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
