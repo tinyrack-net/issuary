@@ -1,7 +1,3 @@
-import {
-  JwtKeyEntity,
-  JwtKeyStatus,
-} from '@backend/entities/jwt-key.entity.js';
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import { seedConfig } from '@backend/seeders/config.seeder.js';
 import { CleanupService } from '@backend/services/cleanup.service.js';
@@ -110,42 +106,7 @@ export async function initializeServices(
   );
   const cleanupService = new CleanupService(config, mikro, jwtService);
 
-  // 4. JWT key bootstrap (ensure active key)
-  {
-    const em = mikro.orm.em.fork();
-    const jwtKeyRepo = em.getRepository(JwtKeyEntity);
-    const activeKey = await jwtKeyRepo.findOne({
-      status: JwtKeyStatus.ACTIVE,
-    });
-    if (!activeKey) {
-      const nextKey = await jwtKeyRepo.findOne({
-        status: JwtKeyStatus.NEXT,
-      });
-      if (nextKey) {
-        nextKey.status = JwtKeyStatus.ACTIVE;
-        nextKey.activated_at = new Date();
-        await em.flush();
-      } else {
-        const keyPair = await jwtService.generateKeyPair();
-        const rotationDays = config.app.jwt_key_rotation_days ?? 30;
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + rotationDays);
-        const entity = em.create(JwtKeyEntity, {
-          kid: keyPair.kid,
-          private_key: keyPair.privateKey,
-          public_key: keyPair.publicKey,
-          algorithm: keyPair.algorithm,
-          status: JwtKeyStatus.ACTIVE,
-          activated_at: new Date(),
-          expires_at: expiresAt,
-        });
-        await em.persist(entity).flush();
-      }
-    }
-    jwtService.clearActiveKeyCache();
-  }
-
-  // 5. Scheduler
+  // 4. Scheduler
   const scheduler: ServiceContainer['scheduler'] = {
     cleanupJob: null,
     start: () => {

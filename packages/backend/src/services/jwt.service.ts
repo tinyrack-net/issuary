@@ -163,6 +163,9 @@ export class JwtService {
   private activeKeyCacheTime: number = 0;
   private readonly CACHE_TTL_MS = 60 * 1000; // 1 minute
 
+  /** Deduplication lock for concurrent ensureActiveKey calls */
+  private ensureActiveKeyPromise: Promise<JwtKeyEntity> | null = null;
+
   constructor(
     private readonly config: ResolvedAppConfig,
     private readonly mikro: MikroService,
@@ -392,10 +395,18 @@ export class JwtService {
       return this.activeKeyCache;
     }
 
-    const key = await this.mikro.jwtKey.getActiveKey();
+    let key = await this.mikro.jwtKey.getActiveKey();
 
     if (!key) {
-      throw new Error('No active JWT signing key found');
+      // Lazy initialization: create or promote a key on demand.
+      // Use promise-based deduplication to prevent concurrent
+      // key generation within the same process.
+      if (!this.ensureActiveKeyPromise) {
+        this.ensureActiveKeyPromise = this.ensureActiveKey().finally(() => {
+          this.ensureActiveKeyPromise = null;
+        });
+      }
+      key = await this.ensureActiveKeyPromise;
     }
 
     // Update cache
@@ -458,6 +469,9 @@ export class JwtService {
   async getJWKS(): Promise<{
     keys: PublicJWK[];
   }> {
+    // Ensure at least one active key exists (lazy initialization)
+    await this.getActiveKey();
+
     const keys = await this.mikro.jwtKey.getPublicKeys();
 
     const jwks = await Promise.all(keys.map((key) => this.convertToJWK(key)));
