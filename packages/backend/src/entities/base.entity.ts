@@ -1,24 +1,23 @@
-import { type Opt, PrimaryKeyProp, t } from '@mikro-orm/core';
-import { Entity, Property } from '@mikro-orm/decorators/legacy';
+import { defineEntity } from '@mikro-orm/core';
 
-@Entity({ abstract: true })
-export abstract class BaseEntity<PK extends string = 'id'> {
-  [PrimaryKeyProp]?: PK;
+const p = defineEntity.properties;
 
-  @Property({
-    type: t.datetime,
-    name: 'created_at',
-    comment: 'Timestamp when the entity was created',
-    nullable: false,
-  })
-  public created_at: Opt<Date> = new Date();
+export const BaseProperties = {
+  created_at: p
+    .datetime()
+    .comment('Timestamp when the entity was created')
+    .onCreate(() => new Date()),
+  updated_at: p
+    .datetime()
+    .comment('Timestamp when the entity was last updated')
+    .onCreate(() => new Date())
+    .onUpdate(() => new Date()),
+};
 
-  @Property({
-    type: t.datetime,
-    name: 'updated_at',
-    comment: 'Timestamp when the entity was last updated',
-    nullable: false,
-    onUpdate: () => new Date(),
-  })
-  public updated_at: Opt<Date> = new Date();
-}
+export const BaseSchema = defineEntity({
+  name: 'Base',
+  abstract: true,
+  properties: (_p) => ({
+    ...BaseProperties,
+  }),
+});
