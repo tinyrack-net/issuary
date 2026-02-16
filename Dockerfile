@@ -65,4 +65,4 @@ ENV CONFIG_PATH=/opt/config.yaml
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "fetch('http://localhost:8080/.well-known/openid-configuration').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/cli.js"]

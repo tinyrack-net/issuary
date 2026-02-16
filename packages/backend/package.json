@@ -4,11 +4,11 @@
   "type": "module",
   "description": "",
   "license": "AGPL-3.0-only",
-  "main": "dist/index.js",
+  "main": "dist/cli.js",
   "exports": {
     ".": {
       "types": "./dist/server.d.ts",
-      "default": "./dist/index.js"
+      "default": "./dist/cli.js"
     },
     "./app": {
       "types": "./dist/app.d.ts",
@@ -19,17 +19,17 @@
     }
   },
   "bin": {
-    "tinyauth": "./dist/index.js"
+    "tinyauth": "./dist/cli.js"
   },
   "scripts": {
-    "dev": "APP_ENV=development CONFIG_PATH=./config.dev.yaml tsx watch --include './src/**/*' --include ./config.dev.yaml src/index.ts serve",
-    "dev:cli": "APP_ENV=development CONFIG_PATH=./config.dev.yaml tsx src/index.ts",
+    "dev": "APP_ENV=development CONFIG_PATH=./config.dev.yaml tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve",
+    "dev:cli": "APP_ENV=development CONFIG_PATH=./config.dev.yaml tsx src/cli.ts",
     "test": "APP_ENV=test NODE_OPTIONS='--import tsx' vitest",
-    "start": "node dist/index.js serve",
+    "start": "node dist/cli.js serve",
     "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
     "build:watch": "tsc -w",
-    "serve": "APP_ENV=production node dist/index.js serve",
-    "job": "APP_ENV=production node dist/index.js job",
+    "serve": "APP_ENV=production node dist/cli.js serve",
+    "job": "APP_ENV=production node dist/cli.js job",
     "mikro-orm": "NODE_OPTIONS='--import tsx' mikro-orm-esm ",
     "mikro-orm:debug": "NODE_OPTIONS='--import tsx' mikro-orm-esm debug",
     "mikro-orm:schema:create": "NODE_OPTIONS='--import tsx' mikro-orm-esm migration:create --initial",
