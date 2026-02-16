@@ -1,7 +1,7 @@
-import type { UserPasskeyEntity } from '@backend/entities/user-passkey.entity.js';
+import type { IUserPasskeyEntity } from '@backend/entities/user-passkey.entity.js';
 import { EntityRepository } from '@mikro-orm/core';
 
-export class UserPasskeyRepository extends EntityRepository<UserPasskeyEntity> {
+export class UserPasskeyRepository extends EntityRepository<IUserPasskeyEntity> {
   /**
    * Find all passkeys for a user
    *

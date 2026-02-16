@@ -1,8 +1,8 @@
-import { EmailVerificationEntity } from '@backend/entities/email-verification.entity.js';
+import type { IEmailVerificationEntity } from '@backend/entities/email-verification.entity.js';
 import { UserEntity } from '@backend/entities/user.entity.js';
 import { EntityRepository, ref } from '@mikro-orm/core';
 
-export class EmailVerificationRepository extends EntityRepository<EmailVerificationEntity> {
+export class EmailVerificationRepository extends EntityRepository<IEmailVerificationEntity> {
   /**
    * Generate and store a new email verification token
    * @returns The created verification entity with token
@@ -10,7 +10,7 @@ export class EmailVerificationRepository extends EntityRepository<EmailVerificat
   async generateToken(params: {
     userId: string;
     expiresInHours?: number;
-  }): Promise<EmailVerificationEntity> {
+  }): Promise<IEmailVerificationEntity> {
     const token = crypto.randomUUID();
 
     const expiresInHours = params.expiresInHours || 24;
@@ -25,8 +25,8 @@ export class EmailVerificationRepository extends EntityRepository<EmailVerificat
       prevToken.expiresAt = new Date(); // Expire immediately
     }
 
-    const entity = new EmailVerificationEntity({
-      userId: params.userId,
+    const entity = this.create({
+      user: params.userId,
       token,
       expiresAt,
     });
@@ -40,7 +40,7 @@ export class EmailVerificationRepository extends EntityRepository<EmailVerificat
    * Verify a token and mark it as used
    * @returns The verified entity with user populated, or null if invalid
    */
-  async verifyToken(token: string): Promise<EmailVerificationEntity | null> {
+  async verifyToken(token: string): Promise<IEmailVerificationEntity | null> {
     const entity = await this.findOne(
       { token, verified: false },
       { populate: ['user'] },

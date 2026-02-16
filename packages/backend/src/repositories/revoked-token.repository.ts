@@ -1,6 +1,6 @@
-import {
-  RevokedTokenEntity,
-  type TokenType,
+import type {
+  IRevokedTokenEntity,
+  TokenType,
 } from '@backend/entities/revoked-token.entity.js';
 import { EntityRepository } from '@mikro-orm/core';
 
@@ -11,7 +11,7 @@ import { EntityRepository } from '@mikro-orm/core';
  * Supports both individual token revocation and bulk revocation
  * by user/client combination.
  */
-export class RevokedTokenRepository extends EntityRepository<RevokedTokenEntity> {
+export class RevokedTokenRepository extends EntityRepository<IRevokedTokenEntity> {
   /**
    * Revoke a single token by its JTI
    *
@@ -24,18 +24,18 @@ export class RevokedTokenRepository extends EntityRepository<RevokedTokenEntity>
     clientId: string;
     userId: string;
     expires_at: Date;
-  }): Promise<RevokedTokenEntity> {
+  }): Promise<IRevokedTokenEntity> {
     // Check if already revoked
     const existing = await this.findOne({ jti: params.jti });
     if (existing) {
       return existing;
     }
 
-    const entity = new RevokedTokenEntity({
+    const entity = this.create({
       jti: params.jti,
       token_type: params.token_type,
-      clientId: params.clientId,
-      userId: params.userId,
+      client: params.clientId,
+      user: params.userId,
       expires_at: params.expires_at,
     });
 
@@ -65,11 +65,11 @@ export class RevokedTokenRepository extends EntityRepository<RevokedTokenEntity>
     for (const token of tokens) {
       const existing = await this.findOne({ jti: token.jti });
       if (!existing) {
-        const entity = new RevokedTokenEntity({
+        const entity = this.create({
           jti: token.jti,
           token_type: token.token_type,
-          clientId,
-          userId,
+          client: clientId,
+          user: userId,
           expires_at: token.expires_at,
         });
         this.getEntityManager().persist(entity);
@@ -109,9 +109,7 @@ export class RevokedTokenRepository extends EntityRepository<RevokedTokenEntity>
     }
 
     const ids = expired.map((entity) => entity.id);
-    await this.getEntityManager().nativeDelete(RevokedTokenEntity, {
-      id: { $in: ids },
-    });
+    await this.nativeDelete({ id: { $in: ids } });
     return expired.length;
   }
 }

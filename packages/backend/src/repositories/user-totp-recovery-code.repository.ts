@@ -1,7 +1,7 @@
-import type { UserTotpRecoveryCodeEntity } from '@backend/entities/user-totp-recovery-code.entity.js';
+import type { IUserTotpRecoveryCodeEntity } from '@backend/entities/user-totp-recovery-code.entity.js';
 import { EntityRepository } from '@mikro-orm/core';
 
-export class UserTotpRecoveryCodeRepository extends EntityRepository<UserTotpRecoveryCodeEntity> {
+export class UserTotpRecoveryCodeRepository extends EntityRepository<IUserTotpRecoveryCodeEntity> {
   /**
    * Find all unused recovery codes for a user
    *

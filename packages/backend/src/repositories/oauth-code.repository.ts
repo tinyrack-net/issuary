@@ -1,14 +1,13 @@
 import { randomBytes } from 'node:crypto';
-import { OAuthClientEntity } from '@backend/entities/oauth-client.entity.js';
-import {
-  type OAuthCodeChallengeMethods,
-  OAuthCodeEntity,
+import type {
+  IOAuthCodeEntity,
+  OAuthCodeChallengeMethods,
 } from '@backend/entities/oauth-code.entity.js';
 import { e } from '@backend/schemas/error.js';
-import { EntityRepository, ref } from '@mikro-orm/core';
+import { EntityRepository } from '@mikro-orm/core';
 import { hash, verify } from '@node-rs/argon2';
 
-export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
+export class OAuthCodeRepository extends EntityRepository<IOAuthCodeEntity> {
   /**
    * Generate and store a new authorization code
    * @returns Object containing the plain code and the created entity
@@ -24,7 +23,7 @@ export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
     expiresInSeconds?: number;
     /** OIDC: Time when End-User authentication occurred (Unix timestamp) */
     authTime?: number;
-  }): Promise<{ code: string; entity: OAuthCodeEntity }> {
+  }): Promise<{ code: string; entity: IOAuthCodeEntity }> {
     // Generate a cryptographically secure random code
     const code = randomBytes(32).toString('base64url');
 
@@ -35,10 +34,10 @@ export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
     const expiresInSeconds = params.expiresInSeconds || 600;
     const expiredAt = new Date(Date.now() + expiresInSeconds * 1000);
 
-    // Create the entity using constructor
-    const entity = new OAuthCodeEntity({
-      clientId: params.clientId,
-      userId: params.userId,
+    // Create the entity
+    const entity = this.create({
+      client: params.clientId,
+      user: params.userId,
       codeHash,
       redirectUri: params.redirectUri,
       scope: params.scope,
@@ -47,7 +46,9 @@ export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
       codeChallengeMethod: params.codeChallengeMethod || 'S256',
       expiredAt,
       // Only include OIDC auth metadata when defined (exactOptionalPropertyTypes)
-      ...(params.authTime !== undefined && { authTime: params.authTime }),
+      ...(params.authTime !== undefined && {
+        authTime: params.authTime,
+      }),
     });
 
     // Persist to database
@@ -58,15 +59,15 @@ export class OAuthCodeRepository extends EntityRepository<OAuthCodeEntity> {
 
   /**
    * Verify and consume an authorization code
-   * @returns The OAuthCodeEntity if valid, null otherwise
+   * @returns The IOAuthCodeEntity if valid, null otherwise
    */
   async verifyAndConsumeCode(
     code: string,
     clientId: string,
-  ): Promise<OAuthCodeEntity | null> {
+  ): Promise<IOAuthCodeEntity | null> {
     // Find all unconsumed codes for this client
     const codes = await this.find({
-      client: ref(OAuthClientEntity, clientId),
+      client: clientId,
       consumedAt: null,
     });
 

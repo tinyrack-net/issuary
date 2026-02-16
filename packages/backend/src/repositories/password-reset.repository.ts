@@ -1,8 +1,8 @@
-import { PasswordResetEntity } from '@backend/entities/password-reset.entity.js';
+import type { IPasswordResetEntity } from '@backend/entities/password-reset.entity.js';
 import { UserEntity } from '@backend/entities/user.entity.js';
 import { EntityRepository, ref } from '@mikro-orm/core';
 
-export class PasswordResetRepository extends EntityRepository<PasswordResetEntity> {
+export class PasswordResetRepository extends EntityRepository<IPasswordResetEntity> {
   /**
    * Generate and store a new password reset token
    * Invalidates all previous unused tokens for the user
@@ -11,7 +11,7 @@ export class PasswordResetRepository extends EntityRepository<PasswordResetEntit
   async generateToken(params: {
     userId: string;
     expiresInHours?: number;
-  }): Promise<PasswordResetEntity> {
+  }): Promise<IPasswordResetEntity> {
     // Generate a UUID token for security
     const token = crypto.randomUUID();
 
@@ -29,9 +29,9 @@ export class PasswordResetRepository extends EntityRepository<PasswordResetEntit
       prevToken.expiresAt = new Date(); // Expire immediately
     }
 
-    // Create the entity using constructor
-    const entity = new PasswordResetEntity({
-      userId: params.userId,
+    // Create the entity
+    const entity = this.create({
+      user: params.userId,
       token,
       expiresAt,
     });
@@ -46,7 +46,7 @@ export class PasswordResetRepository extends EntityRepository<PasswordResetEntit
    * Verify a token and mark it as used
    * @returns The verified entity with user populated, or null if invalid
    */
-  async verifyToken(token: string): Promise<PasswordResetEntity | null> {
+  async verifyToken(token: string): Promise<IPasswordResetEntity | null> {
     const entity = await this.findOne(
       { token, used: false },
       { populate: ['user'] },
@@ -74,7 +74,7 @@ export class PasswordResetRepository extends EntityRepository<PasswordResetEntit
    * Find a valid (unexpired, unused) token
    * @returns The token entity with user populated, or null if not found
    */
-  async findValidToken(token: string): Promise<PasswordResetEntity | null> {
+  async findValidToken(token: string): Promise<IPasswordResetEntity | null> {
     const entity = await this.findOne(
       { token, used: false },
       { populate: ['user'] },

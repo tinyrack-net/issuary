@@ -1,8 +1,8 @@
 import { UserEntity } from '@backend/entities/user.entity.js';
-import { UserOAuthEntity } from '@backend/entities/user-oauth.entity.js';
+import type { IUserOAuthEntity } from '@backend/entities/user-oauth.entity.js';
 import { EntityRepository, ref } from '@mikro-orm/core';
 
-export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
+export class UserOAuthRepository extends EntityRepository<IUserOAuthEntity> {
   /**
    * Find OAuth account by provider name and provider user ID
    *
@@ -13,7 +13,7 @@ export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
   async findByProviderUserId(
     providerName: string,
     providerUserId: string,
-  ): Promise<UserOAuthEntity | null> {
+  ): Promise<IUserOAuthEntity | null> {
     return this.findOne({
       provider_name: providerName,
       provider_user_id: providerUserId,
@@ -30,7 +30,7 @@ export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
   async findByUserAndProvider(
     userId: string,
     providerName: string,
-  ): Promise<UserOAuthEntity | null> {
+  ): Promise<IUserOAuthEntity | null> {
     return this.findOne({
       user: ref(UserEntity, userId),
       provider_name: providerName,
@@ -43,7 +43,7 @@ export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
    * @param userId - User ID
    * @returns Array of OAuth account entities
    */
-  async findByUser(userId: string): Promise<UserOAuthEntity[]> {
+  async findByUser(userId: string): Promise<IUserOAuthEntity[]> {
     return this.find({ user: ref(UserEntity, userId) });
   }
 
@@ -78,9 +78,9 @@ export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
     accessToken: string;
     refreshToken: string;
     expiresAt: Date | null;
-  }): Promise<UserOAuthEntity> {
-    const oauthAccount = new UserOAuthEntity({
-      userId: params.userId,
+  }): Promise<IUserOAuthEntity> {
+    const oauthAccount = this.create({
+      user: params.userId,
       provider_name: params.providerName,
       provider_user_id: params.providerUserId,
       access_token: params.accessToken,
@@ -99,7 +99,7 @@ export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
    * @param tokens - New token values
    */
   async updateTokens(
-    oauthAccount: UserOAuthEntity,
+    oauthAccount: IUserOAuthEntity,
     tokens: {
       accessToken: string;
       refreshToken: string;
@@ -126,9 +126,7 @@ export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
       return false;
     }
 
-    await this.getEntityManager().nativeDelete(UserOAuthEntity, {
-      id: oauthAccount.id,
-    });
+    await this.nativeDelete({ id: oauthAccount.id });
     return true;
   }
 

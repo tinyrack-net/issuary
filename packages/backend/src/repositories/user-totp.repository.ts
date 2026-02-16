@@ -1,7 +1,7 @@
-import type { UserTotpEntity } from '@backend/entities/user-totp.entity.js';
+import type { IUserTotpEntity } from '@backend/entities/user-totp.entity.js';
 import { EntityRepository } from '@mikro-orm/core';
 
-export class UserTotpRepository extends EntityRepository<UserTotpEntity> {
+export class UserTotpRepository extends EntityRepository<IUserTotpEntity> {
   /**
    * Find TOTP configuration by user ID
    *

@@ -1,6 +1,5 @@
-import { OAuthClientEntity } from '@backend/entities/oauth-client.entity.js';
 import { UserEntity } from '@backend/entities/user.entity.js';
-import { UserConsentEntity } from '@backend/entities/user-consent.entity.js';
+import type { UserConsentEntity } from '@backend/entities/user-consent.entity.js';
 import { EntityRepository, ref } from '@mikro-orm/core';
 
 export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
@@ -13,7 +12,7 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
   ): Promise<UserConsentEntity | null> {
     return this.findOne({
       user: ref(UserEntity, userId),
-      client: ref(OAuthClientEntity, clientId),
+      client: clientId,
       revoked_at: null,
     });
   }
@@ -59,10 +58,10 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
       return existingConsent;
     }
 
-    // Create new consent using constructor
-    const consent = new UserConsentEntity({
-      userId: params.userId,
-      clientId: params.clientId,
+    // Create new consent
+    const consent = this.create({
+      user: params.userId,
+      client: params.clientId,
       scopes: params.scopes,
     });
 

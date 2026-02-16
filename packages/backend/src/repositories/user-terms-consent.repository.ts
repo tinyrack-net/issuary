@@ -1,6 +1,5 @@
-import { TermsEntity } from '@backend/entities/terms.entity.js';
 import { UserEntity } from '@backend/entities/user.entity.js';
-import { UserTermsConsentEntity } from '@backend/entities/user-terms-consent.entity.js';
+import type { UserTermsConsentEntity } from '@backend/entities/user-terms-consent.entity.js';
 import { EntityRepository, ref } from '@mikro-orm/core';
 
 export class UserTermsConsentRepository extends EntityRepository<UserTermsConsentEntity> {
@@ -14,7 +13,7 @@ export class UserTermsConsentRepository extends EntityRepository<UserTermsConsen
     return this.findOne(
       {
         user: ref(UserEntity, userId),
-        terms: ref(TermsEntity, termsId),
+        terms: termsId,
       },
       {
         orderBy: { agreedAt: 'DESC' },
@@ -66,8 +65,9 @@ export class UserTermsConsentRepository extends EntityRepository<UserTermsConsen
     agreed: boolean;
     consentType: 'explicit' | 'implicit';
   }): Promise<UserTermsConsentEntity> {
-    const consent = new UserTermsConsentEntity({
-      userId: params.userId,
+    const consent = this.create({
+      user: params.userId,
+      terms: params.termsId,
       termsId: params.termsId,
       termsVersion: params.termsVersion,
       agreed: params.agreed,
@@ -90,15 +90,15 @@ export class UserTermsConsentRepository extends EntityRepository<UserTermsConsen
       consentType: 'explicit' | 'implicit';
     }>,
   ): Promise<UserTermsConsentEntity[]> {
-    const consents = params.map(
-      (p) =>
-        new UserTermsConsentEntity({
-          userId: p.userId,
-          termsId: p.termsId,
-          termsVersion: p.termsVersion,
-          agreed: p.agreed,
-          consentType: p.consentType,
-        }),
+    const consents = params.map((p) =>
+      this.create({
+        user: p.userId,
+        terms: p.termsId,
+        termsId: p.termsId,
+        termsVersion: p.termsVersion,
+        agreed: p.agreed,
+        consentType: p.consentType,
+      }),
     );
 
     await this.getEntityManager().persist(consents).flush();
