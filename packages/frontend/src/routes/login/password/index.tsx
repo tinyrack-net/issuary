@@ -246,15 +246,17 @@ function LoginPassword() {
             type="password"
           />
 
-          <div className="flex items-center justify-end">
-            <Link
-              className="link text-sm"
-              data-testid="login-password-forgot-link"
-              to="/password/forgot"
-            >
-              {t('login.link.forgotPassword')}
-            </Link>
-          </div>
+          {configData.smtp.enabled && (
+            <div className="flex items-center justify-end">
+              <Link
+                className="link text-sm"
+                data-testid="login-password-forgot-link"
+                to="/password/forgot"
+              >
+                {t('login.link.forgotPassword')}
+              </Link>
+            </div>
+          )}
 
           <SubmitButton
             className="mt-2"
