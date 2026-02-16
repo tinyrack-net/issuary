@@ -478,7 +478,7 @@ export const AppConfigApp = z.object({
   supported_languages: z
     .array(LocaleSchema)
     .optional()
-    .default([DEFAULT_LOCALE])
+    .default([...AVAILABLE_LOCALES])
     .describe(
       `Supported languages. Must be a subset of available locales: ${AVAILABLE_LOCALES.join(', ')}`,
     ),
