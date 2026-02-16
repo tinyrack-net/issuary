@@ -108,11 +108,10 @@ export class RevokedTokenRepository extends EntityRepository<RevokedTokenEntity>
       return 0;
     }
 
-    for (const entity of expired) {
-      this.getEntityManager().remove(entity);
-    }
-
-    await this.getEntityManager().flush();
+    const ids = expired.map((entity) => entity.id);
+    await this.getEntityManager().nativeDelete(RevokedTokenEntity, {
+      id: { $in: ids },
+    });
     return expired.length;
   }
 }

@@ -126,7 +126,9 @@ export class UserOAuthRepository extends EntityRepository<UserOAuthEntity> {
       return false;
     }
 
-    await this.getEntityManager().remove(oauthAccount).flush();
+    await this.getEntityManager().nativeDelete(UserOAuthEntity, {
+      id: oauthAccount.id,
+    });
     return true;
   }
 
