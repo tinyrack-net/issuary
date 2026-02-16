@@ -1,30 +1,14 @@
-import { getDbConfigs } from '@backend/db/index.js';
-import { EmailVerificationEntitySchema } from '@backend/entities/email-verification.entity.js';
 import {
   JwtKeyEntity,
   JwtKeyStatus,
 } from '@backend/entities/jwt-key.entity.js';
-import { OAuthClientEntitySchema } from '@backend/entities/oauth-client.entity.js';
-import { OAuthCodeEntitySchema } from '@backend/entities/oauth-code.entity.js';
-import { PasswordResetEntitySchema } from '@backend/entities/password-reset.entity.js';
-import { RevokedTokenEntitySchema } from '@backend/entities/revoked-token.entity.js';
-import { TermsEntitySchema } from '@backend/entities/terms.entity.js';
-import { TermsContentEntitySchema } from '@backend/entities/terms-content.entity.js';
-import { UserEntity } from '@backend/entities/user.entity.js';
-import { UserConsentEntity } from '@backend/entities/user-consent.entity.js';
-import { UserOAuthEntitySchema } from '@backend/entities/user-oauth.entity.js';
-import { UserPasskeyEntitySchema } from '@backend/entities/user-passkey.entity.js';
-import { UserTermsConsentEntity } from '@backend/entities/user-terms-consent.entity.js';
-import { UserTotpEntitySchema } from '@backend/entities/user-totp.entity.js';
-import { UserTotpRecoveryCodeEntitySchema } from '@backend/entities/user-totp-recovery-code.entity.js';
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
-import { env } from '@backend/lib/env.js';
 import { seedConfig } from '@backend/seeders/config.seeder.js';
 import { CleanupService } from '@backend/services/cleanup.service.js';
 import { EmailService } from '@backend/services/email.service.js';
 import { EmailVerificationService } from '@backend/services/email-verification.service.js';
 import { JwtService } from '@backend/services/jwt.service.js';
-import type { MikroService } from '@backend/services/mikro.types.js';
+import { MikroService } from '@backend/services/mikro.service.js';
 import { OAuthAuthorizeService } from '@backend/services/oauth-authorize.service.js';
 import { OAuthClientService } from '@backend/services/oauth-client.service.js';
 import { OAuthConnectService } from '@backend/services/oauth-connect.service.js';
@@ -35,7 +19,6 @@ import { TermsService } from '@backend/services/terms.service.js';
 import { TotpService } from '@backend/services/totp.service.js';
 import { UserService } from '@backend/services/user.service.js';
 import { UserConsentService } from '@backend/services/user-consent.service.js';
-import { MikroORM, type Options } from '@mikro-orm/core';
 import { Cron } from 'croner';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
@@ -83,50 +66,9 @@ export async function initializeServices(
   serverOptions: ServerOptions,
 ): Promise<InitResult> {
   // 1. Initialize MikroORM
-  if (!serverOptions.silent) {
-    console.info('Initializing MikroORM...');
-  }
-  const dbConfigs = getDbConfigs(config);
-  const ormOptions: Options = {
-    ...dbConfigs,
-    debug: false,
-    dynamicImportProvider: (id) => import(id),
-  };
-  const orm = await MikroORM.init(ormOptions);
-
-  if (config.database.type === 'memory') {
-    await orm.schema.refresh();
-  } else if (env.APP_ENV === 'development') {
-    await orm.schema.update();
-  } else {
-    await orm.migrator.up();
-  }
-
-  if (!serverOptions.silent) {
-    console.info('MikroORM initialized (database: %s)', config.database.type);
-  }
-
-  const mikro: MikroService = {
-    orm,
-    em: orm.em,
-    user: orm.em.getRepository(UserEntity),
-    userOAuth: orm.em.getRepository(UserOAuthEntitySchema),
-    oauthCode: orm.em.getRepository(OAuthCodeEntitySchema),
-    oauthClient: orm.em.getRepository(OAuthClientEntitySchema),
-    emailVerification: orm.em.getRepository(EmailVerificationEntitySchema),
-    passwordReset: orm.em.getRepository(PasswordResetEntitySchema),
-    jwtKey: orm.em.getRepository(JwtKeyEntity),
-    revokedToken: orm.em.getRepository(RevokedTokenEntitySchema),
-    userConsent: orm.em.getRepository(UserConsentEntity),
-    userTermsConsent: orm.em.getRepository(UserTermsConsentEntity),
-    userTotp: orm.em.getRepository(UserTotpEntitySchema),
-    userTotpRecoveryCode: orm.em.getRepository(
-      UserTotpRecoveryCodeEntitySchema,
-    ),
-    userPasskey: orm.em.getRepository(UserPasskeyEntitySchema),
-    terms: orm.em.getRepository(TermsEntitySchema),
-    termsContent: orm.em.getRepository(TermsContentEntitySchema),
-  };
+  const mikro = await MikroService.initialize(config, {
+    silent: serverOptions.silent,
+  });
 
   // 2. Initialize Nodemailer
   let mail: ServiceContainer['mail'] = null;
@@ -154,7 +96,7 @@ export async function initializeServices(
   }
 
   // 3. Bootstrap: seed config users/clients
-  await seedConfig(orm.em.fork(), config);
+  await seedConfig(mikro.orm.em.fork(), config);
   if (!serverOptions.silent) {
     console.info(
       'Bootstrap complete (users: %d, clients: %d)',
@@ -205,7 +147,7 @@ export async function initializeServices(
 
   // 5. JWT key bootstrap (ensure active key)
   {
-    const em = orm.em.fork();
+    const em = mikro.orm.em.fork();
     const jwtKeyRepo = em.getRepository(JwtKeyEntity);
     const activeKey = await jwtKeyRepo.findOne({
       status: JwtKeyStatus.ACTIVE,
@@ -298,7 +240,7 @@ export async function initializeServices(
 
   const cleanup = async () => {
     scheduler.stop();
-    await orm.close();
+    await mikro.close();
   };
 
   return { services, cleanup };

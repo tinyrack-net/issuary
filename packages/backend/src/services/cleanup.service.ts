@@ -20,7 +20,7 @@ import {
   parseDurationToMs,
 } from '@backend/lib/duration.js';
 import type { JwtKeyRepository } from '@backend/repositories/jwt-key.repository.js';
-import type { MikroService } from '@backend/services/mikro.types.js';
+import type { MikroService } from '@backend/services/mikro.service.js';
 import type { JwtService } from './jwt.service.js';
 import type { CleanupOptions, CleanupResult } from './types.js';
 

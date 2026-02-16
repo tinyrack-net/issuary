@@ -5,7 +5,7 @@ import {
 } from '@backend/entities/user-passkey.entity.js';
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import { e } from '@backend/schemas/error.js';
-import type { MikroService } from '@backend/services/mikro.types.js';
+import type { MikroService } from '@backend/services/mikro.service.js';
 import type {
   AuthenticationResponseJSON,
   AuthenticatorTransportFuture,

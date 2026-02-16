@@ -1,7 +1,7 @@
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import { e } from '@backend/schemas/error.js';
 import type { f } from '@backend/schemas/field.js';
-import type { MikroService } from '@backend/services/mikro.types.js';
+import type { MikroService } from '@backend/services/mikro.service.js';
 import type z from 'zod';
 import type { OAuthClientService } from './oauth-client.service.js';
 import type { UserConsentService } from './user-consent.service.js';
