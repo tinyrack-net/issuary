@@ -1,18 +1,18 @@
-import { EmailVerificationEntity } from '@backend/entities/email-verification.entity.js';
+import { EmailVerificationEntitySchema } from '@backend/entities/email-verification.entity.js';
 import {
   JwtKeyEntity,
   JwtKeyStatus,
 } from '@backend/entities/jwt-key.entity.js';
-import { OAuthCodeEntity } from '@backend/entities/oauth-code.entity.js';
-import { PasswordResetEntity } from '@backend/entities/password-reset.entity.js';
-import { RevokedTokenEntity } from '@backend/entities/revoked-token.entity.js';
+import { OAuthCodeEntitySchema } from '@backend/entities/oauth-code.entity.js';
+import { PasswordResetEntitySchema } from '@backend/entities/password-reset.entity.js';
+import { RevokedTokenEntitySchema } from '@backend/entities/revoked-token.entity.js';
 import { UserEntity } from '@backend/entities/user.entity.js';
 import { UserConsentEntity } from '@backend/entities/user-consent.entity.js';
-import { UserOAuthEntity } from '@backend/entities/user-oauth.entity.js';
-import { UserPasskeyEntity } from '@backend/entities/user-passkey.entity.js';
+import { UserOAuthEntitySchema } from '@backend/entities/user-oauth.entity.js';
+import { UserPasskeyEntitySchema } from '@backend/entities/user-passkey.entity.js';
 import { UserTermsConsentEntity } from '@backend/entities/user-terms-consent.entity.js';
-import { UserTotpEntity } from '@backend/entities/user-totp.entity.js';
-import { UserTotpRecoveryCodeEntity } from '@backend/entities/user-totp-recovery-code.entity.js';
+import { UserTotpEntitySchema } from '@backend/entities/user-totp.entity.js';
+import { UserTotpRecoveryCodeEntitySchema } from '@backend/entities/user-totp-recovery-code.entity.js';
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import {
   calculateCutoffDate,
@@ -104,7 +104,7 @@ export class CleanupService {
     }
 
     const em = this.mikro.orm.em.fork();
-    const revokedTokenRepo = em.getRepository(RevokedTokenEntity);
+    const revokedTokenRepo = em.getRepository(RevokedTokenEntitySchema);
 
     const retentionMs = parseDurationToMs(config.retention);
     const cutoffDate = calculateCutoffDate(config.retention);
@@ -130,7 +130,7 @@ export class CleanupService {
 
     // Delete the tokens using nativeDelete for reliable removal
     const tokenIds = expiredTokens.map((token) => token.id);
-    await em.nativeDelete(RevokedTokenEntity, { id: { $in: tokenIds } });
+    await em.nativeDelete(RevokedTokenEntitySchema, { id: { $in: tokenIds } });
 
     if (retentionMs > 0) {
       return {
@@ -168,7 +168,7 @@ export class CleanupService {
     }
 
     const em = this.mikro.orm.em.fork();
-    const oauthCodeRepo = em.getRepository(OAuthCodeEntity);
+    const oauthCodeRepo = em.getRepository(OAuthCodeEntitySchema);
 
     const now = new Date();
     const consumedRetentionMs = parseDurationToMs(config.consumed_retention);
@@ -209,7 +209,7 @@ export class CleanupService {
     const consumedIds = consumedCodes.map((code) => code.id);
     const allIds = [...new Set([...expiredIds, ...consumedIds])];
     if (allIds.length > 0) {
-      await em.nativeDelete(OAuthCodeEntity, { id: { $in: allIds } });
+      await em.nativeDelete(OAuthCodeEntitySchema, { id: { $in: allIds } });
     }
 
     return {
@@ -243,7 +243,9 @@ export class CleanupService {
     }
 
     const em = this.mikro.orm.em.fork();
-    const emailVerificationRepo = em.getRepository(EmailVerificationEntity);
+    const emailVerificationRepo = em.getRepository(
+      EmailVerificationEntitySchema,
+    );
 
     const retentionMs = parseDurationToMs(config.retention);
     const cutoffDate = calculateCutoffDate(config.retention);
@@ -308,7 +310,7 @@ export class CleanupService {
     }
 
     const em = this.mikro.orm.em.fork();
-    const passwordResetRepo = em.getRepository(PasswordResetEntity);
+    const passwordResetRepo = em.getRepository(PasswordResetEntitySchema);
 
     const retentionMs = parseDurationToMs(config.retention);
     const cutoffDate = calculateCutoffDate(config.retention);
@@ -420,20 +422,20 @@ export class CleanupService {
       try {
         // Delete related entities first (cascading delete)
         // Use nativeDelete for reliable removal in MikroORM v7
-        await em.nativeDelete(UserOAuthEntity, { user: userId });
-        await em.nativeDelete(UserTotpRecoveryCodeEntity, {
+        await em.nativeDelete(UserOAuthEntitySchema, { user: userId });
+        await em.nativeDelete(UserTotpRecoveryCodeEntitySchema, {
           user: userId,
         });
-        await em.nativeDelete(UserTotpEntity, { user: userId });
-        await em.nativeDelete(UserPasskeyEntity, { user: userId });
+        await em.nativeDelete(UserTotpEntitySchema, { user: userId });
+        await em.nativeDelete(UserPasskeyEntitySchema, { user: userId });
         await em.nativeDelete(UserConsentEntity, { user: userId });
         await em.nativeDelete(UserTermsConsentEntity, {
           user: userId,
         });
-        await em.nativeDelete(EmailVerificationEntity, {
+        await em.nativeDelete(EmailVerificationEntitySchema, {
           user: userId,
         });
-        await em.nativeDelete(PasswordResetEntity, { user: userId });
+        await em.nativeDelete(PasswordResetEntitySchema, { user: userId });
 
         // Finally delete the user
         await em.nativeDelete(UserEntity, { id: userId });

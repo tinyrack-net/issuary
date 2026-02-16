@@ -1,4 +1,4 @@
-import type { PasswordResetEntity } from '@backend/entities/password-reset.entity.js';
+import type { IPasswordResetEntity } from '@backend/entities/password-reset.entity.js';
 import type { UserEntity } from '@backend/entities/user.entity.js';
 import { e } from '@backend/schemas/error.js';
 import type { MikroService } from '@backend/services/mikro.types.js';
@@ -13,7 +13,7 @@ export class PasswordResetService {
   async generateToken(params: {
     userId: string;
     expiresInHours?: number;
-  }): Promise<PasswordResetEntity> {
+  }): Promise<IPasswordResetEntity> {
     const token = await this.mikro.passwordReset.generateToken({
       userId: params.userId,
       expiresInHours: params.expiresInHours || 1,
@@ -28,7 +28,7 @@ export class PasswordResetService {
    */
   async requestPasswordReset(
     email: string,
-  ): Promise<PasswordResetEntity | null> {
+  ): Promise<IPasswordResetEntity | null> {
     const user = await this.mikro.user.findOneOrFail(
       { email },
       {

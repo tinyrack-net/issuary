@@ -1,5 +1,8 @@
 import type { UserEntity } from '@backend/entities/user.entity.js';
-import { UserPasskeyEntity } from '@backend/entities/user-passkey.entity.js';
+import {
+  type IUserPasskeyEntity,
+  UserPasskeyEntitySchema,
+} from '@backend/entities/user-passkey.entity.js';
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import { e } from '@backend/schemas/error.js';
 import type { MikroService } from '@backend/services/mikro.types.js';
@@ -107,7 +110,7 @@ export class PasskeyService {
     response: RegistrationResponseJSON,
     expectedChallenge: string,
     passkeyName?: string,
-  ): Promise<UserPasskeyEntity> {
+  ): Promise<IUserPasskeyEntity> {
     const verification = await verifyRegistrationResponse({
       response,
       expectedChallenge,
@@ -131,8 +134,8 @@ export class PasskeyService {
     }
 
     // Create and save passkey
-    const passkey = new UserPasskeyEntity({
-      userId: user.id,
+    const passkey = this.mikro.em.create(UserPasskeyEntitySchema, {
+      user: user.id,
       credential_id: credential.id,
       public_key: isoBase64URL.fromBuffer(credential.publicKey),
       counter: Number(credential.counter),

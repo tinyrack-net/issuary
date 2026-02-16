@@ -170,8 +170,8 @@ export class OAuthTokenService {
       scope: codeEntity.scope,
       nonce: codeEntity.nonce,
       // Pass OIDC authentication metadata from the authorization code
-      // Only include when defined (exactOptionalPropertyTypes)
-      ...(codeEntity.authTime !== undefined && {
+      // Only include when defined and non-null (exactOptionalPropertyTypes)
+      ...(codeEntity.authTime != null && {
         authTime: codeEntity.authTime,
       }),
     });

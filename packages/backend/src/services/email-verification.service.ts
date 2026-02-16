@@ -1,4 +1,4 @@
-import type { EmailVerificationEntity } from '@backend/entities/email-verification.entity.js';
+import type { IEmailVerificationEntity } from '@backend/entities/email-verification.entity.js';
 import type { UserEntity } from '@backend/entities/user.entity.js';
 import { e } from '@backend/schemas/error.js';
 import type { MikroService } from '@backend/services/mikro.types.js';
@@ -13,7 +13,7 @@ export class EmailVerificationService {
   public async generateToken(params: {
     userId: string;
     expiresInHours?: number;
-  }): Promise<EmailVerificationEntity> {
+  }): Promise<IEmailVerificationEntity> {
     const token = await this.mikro.emailVerification.generateToken({
       userId: params.userId,
       expiresInHours: params.expiresInHours || 24,
@@ -45,7 +45,7 @@ export class EmailVerificationService {
    */
   public async resendVerification(
     email: string,
-  ): Promise<EmailVerificationEntity> {
+  ): Promise<IEmailVerificationEntity> {
     const user = await this.mikro.user.findOneOrFail(
       { email },
       {

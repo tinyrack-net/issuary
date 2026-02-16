@@ -1,11 +1,11 @@
-import { EmailVerificationEntity } from '@backend/entities/email-verification.entity.js';
+import { EmailVerificationEntitySchema } from '@backend/entities/email-verification.entity.js';
 import {
   JwtKeyEntity,
   JwtKeyStatus,
 } from '@backend/entities/jwt-key.entity.js';
-import { OAuthCodeEntity } from '@backend/entities/oauth-code.entity.js';
-import { PasswordResetEntity } from '@backend/entities/password-reset.entity.js';
-import { RevokedTokenEntity } from '@backend/entities/revoked-token.entity.js';
+import { OAuthCodeEntitySchema } from '@backend/entities/oauth-code.entity.js';
+import { PasswordResetEntitySchema } from '@backend/entities/password-reset.entity.js';
+import { RevokedTokenEntitySchema } from '@backend/entities/revoked-token.entity.js';
 import { UserEntity } from '@backend/entities/user.entity.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
@@ -62,7 +62,7 @@ describe('CleanupService', () => {
       // Clean up revoked tokens before each test
       await withMikroContext(services, async () => {
         const em = services.mikro.em.fork();
-        await em.nativeDelete(RevokedTokenEntity, {});
+        await em.nativeDelete(RevokedTokenEntitySchema, {});
       });
     });
 
@@ -582,7 +582,7 @@ describe('CleanupService', () => {
       // Clean up OAuth codes before each test
       await withMikroContext(services, async () => {
         const em = services.mikro.em.fork();
-        await em.nativeDelete(OAuthCodeEntity, {});
+        await em.nativeDelete(OAuthCodeEntitySchema, {});
       });
     });
 
@@ -807,7 +807,7 @@ describe('CleanupService', () => {
     beforeEach(async () => {
       await withMikroContext(services, async () => {
         const em = services.mikro.em.fork();
-        await em.nativeDelete(EmailVerificationEntity, {});
+        await em.nativeDelete(EmailVerificationEntitySchema, {});
       });
     });
 
@@ -941,7 +941,7 @@ describe('CleanupService', () => {
     beforeEach(async () => {
       await withMikroContext(services, async () => {
         const em = services.mikro.em.fork();
-        await em.nativeDelete(PasswordResetEntity, {});
+        await em.nativeDelete(PasswordResetEntitySchema, {});
       });
     });
 

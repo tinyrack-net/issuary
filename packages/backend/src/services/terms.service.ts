@@ -1,4 +1,4 @@
-import type { TermsEntity } from '@backend/entities/terms.entity.js';
+import type { ITermsEntity } from '@backend/entities/terms.entity.js';
 import type { UserTermsConsentEntity } from '@backend/entities/user-terms-consent.entity.js';
 import type { MikroService } from '@backend/services/mikro.types.js';
 import type { Loaded } from '@mikro-orm/core';
@@ -6,7 +6,7 @@ import type { Loaded } from '@mikro-orm/core';
 /**
  * Loaded terms type alias for readability
  */
-type LoadedTerms = Loaded<TermsEntity, 'contents', '*', never>;
+type LoadedTerms = Loaded<ITermsEntity, 'contents', '*', never>;
 
 /**
  * User consent status for a specific term

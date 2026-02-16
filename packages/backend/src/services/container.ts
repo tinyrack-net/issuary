@@ -1,25 +1,24 @@
 import { getDbConfigs } from '@backend/db/index.js';
-import { EmailVerificationEntity } from '@backend/entities/email-verification.entity.js';
+import { EmailVerificationEntitySchema } from '@backend/entities/email-verification.entity.js';
 import {
   JwtKeyEntity,
   JwtKeyStatus,
 } from '@backend/entities/jwt-key.entity.js';
-import { OAuthClientEntity } from '@backend/entities/oauth-client.entity.js';
-import { OAuthCodeEntity } from '@backend/entities/oauth-code.entity.js';
-import { PasswordResetEntity } from '@backend/entities/password-reset.entity.js';
-import { RevokedTokenEntity } from '@backend/entities/revoked-token.entity.js';
-import { TermsEntity } from '@backend/entities/terms.entity.js';
-import { TermsContentEntity } from '@backend/entities/terms-content.entity.js';
+import { OAuthClientEntitySchema } from '@backend/entities/oauth-client.entity.js';
+import { OAuthCodeEntitySchema } from '@backend/entities/oauth-code.entity.js';
+import { PasswordResetEntitySchema } from '@backend/entities/password-reset.entity.js';
+import { RevokedTokenEntitySchema } from '@backend/entities/revoked-token.entity.js';
+import { TermsEntitySchema } from '@backend/entities/terms.entity.js';
+import { TermsContentEntitySchema } from '@backend/entities/terms-content.entity.js';
 import { UserEntity } from '@backend/entities/user.entity.js';
 import { UserConsentEntity } from '@backend/entities/user-consent.entity.js';
-import { UserOAuthEntity } from '@backend/entities/user-oauth.entity.js';
-import { UserPasskeyEntity } from '@backend/entities/user-passkey.entity.js';
+import { UserOAuthEntitySchema } from '@backend/entities/user-oauth.entity.js';
+import { UserPasskeyEntitySchema } from '@backend/entities/user-passkey.entity.js';
 import { UserTermsConsentEntity } from '@backend/entities/user-terms-consent.entity.js';
-import { UserTotpEntity } from '@backend/entities/user-totp.entity.js';
-import { UserTotpRecoveryCodeEntity } from '@backend/entities/user-totp-recovery-code.entity.js';
+import { UserTotpEntitySchema } from '@backend/entities/user-totp.entity.js';
+import { UserTotpRecoveryCodeEntitySchema } from '@backend/entities/user-totp-recovery-code.entity.js';
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import { env } from '@backend/lib/env.js';
-import type { UserOAuthRepository } from '@backend/repositories/user-oauth.repository.js';
 import { seedConfig } from '@backend/seeders/config.seeder.js';
 import { CleanupService } from '@backend/services/cleanup.service.js';
 import { EmailService } from '@backend/services/email.service.js';
@@ -111,22 +110,22 @@ export async function initializeServices(
     orm,
     em: orm.em,
     user: orm.em.getRepository(UserEntity),
-    userOAuth: orm.em.getRepository(
-      UserOAuthEntity,
-    ) as unknown as UserOAuthRepository,
-    oauthCode: orm.em.getRepository(OAuthCodeEntity),
-    oauthClient: orm.em.getRepository(OAuthClientEntity),
-    emailVerification: orm.em.getRepository(EmailVerificationEntity),
-    passwordReset: orm.em.getRepository(PasswordResetEntity),
+    userOAuth: orm.em.getRepository(UserOAuthEntitySchema),
+    oauthCode: orm.em.getRepository(OAuthCodeEntitySchema),
+    oauthClient: orm.em.getRepository(OAuthClientEntitySchema),
+    emailVerification: orm.em.getRepository(EmailVerificationEntitySchema),
+    passwordReset: orm.em.getRepository(PasswordResetEntitySchema),
     jwtKey: orm.em.getRepository(JwtKeyEntity),
-    revokedToken: orm.em.getRepository(RevokedTokenEntity),
+    revokedToken: orm.em.getRepository(RevokedTokenEntitySchema),
     userConsent: orm.em.getRepository(UserConsentEntity),
     userTermsConsent: orm.em.getRepository(UserTermsConsentEntity),
-    userTotp: orm.em.getRepository(UserTotpEntity),
-    userTotpRecoveryCode: orm.em.getRepository(UserTotpRecoveryCodeEntity),
-    userPasskey: orm.em.getRepository(UserPasskeyEntity),
-    terms: orm.em.getRepository(TermsEntity),
-    termsContent: orm.em.getRepository(TermsContentEntity),
+    userTotp: orm.em.getRepository(UserTotpEntitySchema),
+    userTotpRecoveryCode: orm.em.getRepository(
+      UserTotpRecoveryCodeEntitySchema,
+    ),
+    userPasskey: orm.em.getRepository(UserPasskeyEntitySchema),
+    terms: orm.em.getRepository(TermsEntitySchema),
+    termsContent: orm.em.getRepository(TermsContentEntitySchema),
   };
 
   // 2. Initialize Nodemailer
