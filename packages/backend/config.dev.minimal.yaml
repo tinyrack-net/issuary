@@ -1,0 +1,48 @@
+app:
+  cookie_secret: 3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b
+
+database:
+  type: sqlite
+  path: test.db
+
+auth:
+  password:
+    enabled: true
+    email_verification: false
+    second_factor:
+      required: false
+
+clients:
+  - id: test-config-oauth-client
+    name: OIDC Test Client
+    logo_uri: http://localhost:3000
+    client_id: sdlk3n3dkj2
+    client_secret: sdlk3n3dkj2
+    redirect_uris:
+      - http://localhost:3000/api/callback
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+      - refresh_token
+    scope: openid profile email
+
+  - id: react-spa-client
+    name: React SPA Test Client (Public)
+    logo_uri: http://localhost:3001
+    client_id: react-spa-client
+    # No client_secret - this is a Public Client using PKCE
+    redirect_uris:
+      - http://localhost:3001/callback
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+      - refresh_token
+    scope: openid profile email
+
+users:
+  - id: test-config-user
+    email: test-config-user@example.com
+    password: changemelater
+    role: admin
