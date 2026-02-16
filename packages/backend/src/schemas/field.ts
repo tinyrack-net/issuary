@@ -3,7 +3,7 @@ import {
   DEFAULT_LOCALE,
   type Locale,
 } from '@backend/lib/locale.js';
-import { z } from '@hono/zod-openapi';
+import { z } from 'zod';
 
 export const f = {
   // Common fields

@@ -3,12 +3,7 @@ import {
   AppConfigPasswordAuth,
   AppTheme,
 } from '@backend/lib/config/index.js';
-import { z } from '@hono/zod-openapi';
-import type {
-  PublicKeyCredentialCreationOptionsJSON as SimpleWebAuthnCreationOptionsJSON,
-  RegistrationResponseJSON as SimpleWebAuthnRegistrationResponseJSON,
-  PublicKeyCredentialRequestOptionsJSON as SimpleWebAuthnRequestOptionsJSON,
-} from '@simplewebauthn/server';
+import { z } from 'zod';
 import { f } from './field.js';
 import { oauthSchema } from './oauth.js';
 
@@ -77,7 +72,7 @@ const ConsentUser = z
 const LinkedOAuthAccount = z
   .object({
     provider_name: z.string(),
-    linked_at: z.date(),
+    linked_at: z.string().datetime(),
   })
   .describe('Linked OAuth Account');
 
@@ -461,54 +456,55 @@ export const r = {
       name: z.string().nullable(),
       device_type: f.passkeyDeviceType,
       backed_up: z.boolean(),
-      created_at: z.date(),
+      created_at: z.string().datetime(),
     })
     .describe('Passkey information'),
 
   // Passkey responses
-  // Use z.custom to maintain type compatibility with @simplewebauthn types
-  // Actual validation is done by @simplewebauthn library, not Zod
+  // WebAuthn option/response objects are opaque JSON blobs validated
+  // by @simplewebauthn at runtime, so we use z.record() to produce a
+  // valid JSON Schema while keeping the types via type assertions in
+  // route handlers.
   PasskeyRegistrationOptionsResponse: z.object({
     options: z
-      .custom<SimpleWebAuthnCreationOptionsJSON>(() => true)
-      .openapi({
-        type: 'object',
-        description: 'WebAuthn registration options',
-      }),
+      .record(z.string(), z.any())
+      .describe('WebAuthn registration options'),
   }),
 
   PasskeyAuthenticationOptionsResponse: z.object({
     options: z
-      .custom<SimpleWebAuthnRequestOptionsJSON>(() => true)
-      .openapi({
-        type: 'object',
-        description: 'WebAuthn authentication options',
-      }),
+      .record(z.string(), z.any())
+      .describe('WebAuthn authentication options'),
   }),
 
-  // For request body validation, check basic structure
-  // Actual WebAuthn validation is done by @simplewebauthn library
+  // For request body validation, check basic structure.
+  // Actual WebAuthn cryptographic validation is done by @simplewebauthn.
+  // We validate the minimal shape here so malformed payloads get a clean
+  // 400 instead of an unhandled 500 from the library.
+  // We use z.record() for JSON Schema compatibility, plus .refine() for
+  // runtime structural checks.
   PasskeyRegistrationBody: z.object({
     response: z
-      .custom<SimpleWebAuthnRegistrationResponseJSON>((val) => {
-        if (typeof val !== 'object' || val === null) return false;
-        if (!('id' in val) || !('rawId' in val) || !('type' in val))
-          return false;
-        if (val.type !== 'public-key') return false;
-        if (!('response' in val)) return false;
-        const response = val.response;
-        if (typeof response !== 'object' || response === null) return false;
-        if (
-          !('clientDataJSON' in response) ||
-          !('attestationObject' in response)
-        )
-          return false;
-        return true;
-      })
-      .openapi({
-        type: 'object',
-        description: 'WebAuthn registration response',
-      }),
+      .record(z.string(), z.any())
+      .refine(
+        (val): boolean => {
+          if (typeof val !== 'object' || val === null) return false;
+          if (!('id' in val) || !('rawId' in val) || !('type' in val))
+            return false;
+          if (val['type'] !== 'public-key') return false;
+          if (!('response' in val)) return false;
+          const response = val['response'];
+          if (typeof response !== 'object' || response === null) return false;
+          if (
+            !('clientDataJSON' in response) ||
+            !('attestationObject' in response)
+          )
+            return false;
+          return true;
+        },
+        { message: 'Invalid WebAuthn registration response structure' },
+      )
+      .describe('WebAuthn registration response'),
     name: f.passkeyName.optional().describe('Optional name for the passkey'),
   }),
 
