@@ -1,12 +1,7 @@
-import {
-  JwtKeyEntity,
-  JwtKeyStatus,
-} from '@backend/entities/jwt-key.entity.js';
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import { seedConfig } from '@backend/seeders/config.seeder.js';
 import { CleanupService } from '@backend/services/cleanup.service.js';
 import { EmailService } from '@backend/services/email.service.js';
-import { EmailVerificationService } from '@backend/services/email-verification.service.js';
 import { JwtService } from '@backend/services/jwt.service.js';
 import { MikroService } from '@backend/services/mikro.service.js';
 import { OAuthAuthorizeService } from '@backend/services/oauth-authorize.service.js';
@@ -20,23 +15,16 @@ import { TotpService } from '@backend/services/totp.service.js';
 import { UserService } from '@backend/services/user.service.js';
 import { UserConsentService } from '@backend/services/user-consent.service.js';
 import { Cron } from 'croner';
-import nodemailer from 'nodemailer';
-import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 
 export interface ServiceContainer {
   config: ResolvedAppConfig;
   mikro: MikroService;
-  mail: nodemailer.Transporter<
-    SMTPTransport.SentMessageInfo,
-    SMTPTransport.Options
-  > | null;
   scheduler: {
     cleanupJob: Cron | null;
     start: () => void;
     stop: () => void;
   };
   emailService: EmailService;
-  emailVerificationService: EmailVerificationService | undefined;
   jwtService: JwtService;
   passwordResetService: PasswordResetService;
   termsService: TermsService;
@@ -70,32 +58,7 @@ export async function initializeServices(
     silent: serverOptions.silent,
   });
 
-  // 2. Initialize Nodemailer
-  let mail: ServiceContainer['mail'] = null;
-  if (config.smtp) {
-    mail = nodemailer.createTransport({
-      host: config.smtp.host,
-      port: config.smtp.port,
-      secure: config.smtp.secure,
-      auth: {
-        user: config.smtp.user,
-        pass: config.smtp.password,
-      },
-    });
-    if (!serverOptions.silent) {
-      console.info(
-        'Nodemailer initialized (host: %s, port: %d)',
-        config.smtp.host,
-        config.smtp.port,
-      );
-    }
-  } else {
-    if (!serverOptions.silent) {
-      console.warn('Nodemailer: no SMTP config, emails disabled');
-    }
-  }
-
-  // 3. Bootstrap: seed config users/clients
+  // 2. Bootstrap: seed config users/clients
   await seedConfig(mikro.orm.em.fork(), config);
   if (!serverOptions.silent) {
     console.info(
@@ -105,11 +68,10 @@ export async function initializeServices(
     );
   }
 
-  // 4. Create services (respecting dependency order)
-  const emailService = new EmailService(config, mail);
-  const emailVerificationService = config.smtp
-    ? new EmailVerificationService(mikro)
-    : undefined;
+  // 3. Create services (respecting dependency order)
+  const emailService = new EmailService(config, mikro, {
+    silent: serverOptions.silent,
+  });
   const jwtService = new JwtService(config, mikro);
   const passwordResetService = new PasswordResetService(mikro);
   const termsService = new TermsService(mikro);
@@ -121,7 +83,6 @@ export async function initializeServices(
     mikro,
     config,
     emailService,
-    emailVerificationService,
     termsService,
   );
   const oauthAuthorizeService = new OAuthAuthorizeService(
@@ -145,42 +106,7 @@ export async function initializeServices(
   );
   const cleanupService = new CleanupService(config, mikro, jwtService);
 
-  // 5. JWT key bootstrap (ensure active key)
-  {
-    const em = mikro.orm.em.fork();
-    const jwtKeyRepo = em.getRepository(JwtKeyEntity);
-    const activeKey = await jwtKeyRepo.findOne({
-      status: JwtKeyStatus.ACTIVE,
-    });
-    if (!activeKey) {
-      const nextKey = await jwtKeyRepo.findOne({
-        status: JwtKeyStatus.NEXT,
-      });
-      if (nextKey) {
-        nextKey.status = JwtKeyStatus.ACTIVE;
-        nextKey.activated_at = new Date();
-        await em.flush();
-      } else {
-        const keyPair = await jwtService.generateKeyPair();
-        const rotationDays = config.app.jwt_key_rotation_days ?? 30;
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + rotationDays);
-        const entity = em.create(JwtKeyEntity, {
-          kid: keyPair.kid,
-          private_key: keyPair.privateKey,
-          public_key: keyPair.publicKey,
-          algorithm: keyPair.algorithm,
-          status: JwtKeyStatus.ACTIVE,
-          activated_at: new Date(),
-          expires_at: expiresAt,
-        });
-        await em.persist(entity).flush();
-      }
-    }
-    jwtService.clearActiveKeyCache();
-  }
-
-  // 6. Scheduler
+  // 4. Scheduler
   const scheduler: ServiceContainer['scheduler'] = {
     cleanupJob: null,
     start: () => {
@@ -220,10 +146,8 @@ export async function initializeServices(
   const services: ServiceContainer = {
     config,
     mikro,
-    mail,
     scheduler,
     emailService,
-    emailVerificationService,
     jwtService,
     passwordResetService,
     termsService,

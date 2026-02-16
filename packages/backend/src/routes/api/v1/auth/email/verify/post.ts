@@ -43,14 +43,9 @@ const route = createRoute({
 export const authEmailVerifyPost = createRouter().openapi(route, async (c) => {
   const services = c.get('services');
   const session = c.get('session');
-
-  if (!services.emailVerificationService) {
-    throw new e.EmailNotActivated.Error();
-  }
-
   const body = c.req.valid('json');
 
-  const user = await services.emailVerificationService.verifyEmail(body.token);
+  const user = await services.emailService.verifyEmail(body.token);
 
   await services.mikro.em.populate(user, ['password_hash']);
 

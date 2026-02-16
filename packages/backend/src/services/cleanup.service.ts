@@ -22,7 +22,26 @@ import {
 import type { JwtKeyRepository } from '@backend/repositories/jwt-key.repository.js';
 import type { MikroService } from '@backend/services/mikro.service.js';
 import type { JwtService } from './jwt.service.js';
-import type { CleanupOptions, CleanupResult } from './types.js';
+
+/**
+ * Result of a cleanup operation.
+ */
+export interface CleanupResult {
+  /** Number of items deleted (or would be deleted in dry-run mode) */
+  deletedCount: number;
+  /** If true, the cleanup was skipped (e.g., disabled in config) */
+  skipped: boolean;
+  /** Optional message with additional details */
+  message?: string;
+}
+
+/**
+ * Options for cleanup operations.
+ */
+export interface CleanupOptions {
+  /** If true, don't actually delete anything, just report what would be deleted */
+  dryRun: boolean;
+}
 
 /**
  * Cleanup task definition

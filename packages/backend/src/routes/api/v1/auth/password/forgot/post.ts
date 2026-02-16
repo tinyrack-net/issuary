@@ -50,7 +50,7 @@ export const authPasswordForgotPost = createRouter().openapi(
     const services = c.get('services');
 
     // Only enable if email service is available
-    if (!services.mail) {
+    if (!services.config.smtp) {
       return c.json({ ok: true as const }, 200);
     }
 

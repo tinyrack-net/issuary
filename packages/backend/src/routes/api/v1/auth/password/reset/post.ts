@@ -56,7 +56,7 @@ export const authPasswordResetPost = createRouter().openapi(
   async (c) => {
     const services = c.get('services');
 
-    if (!services.mail) {
+    if (!services.config.smtp) {
       throw new e.ValidationError.Error('Email service is not available');
     }
 
