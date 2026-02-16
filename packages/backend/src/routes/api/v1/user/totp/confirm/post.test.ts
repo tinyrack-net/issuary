@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createDbUserWithSession,
   createTestClient,
   createTestClientWithHeaders,
@@ -48,9 +49,7 @@ async function startTotpSetup(sessionCookie: string): Promise<string> {
   });
   const res = await client.api.v1.user.totp.setup.$post({});
 
-  expect(res.status).toBe(200);
-  // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-  const body: any = await res.json();
+  const body = await assertJsonBody(res);
   return body.secret;
 }
 
@@ -69,9 +68,7 @@ async function verifyTotpSetup(
     json: { code: validCode },
   });
 
-  expect(res.status).toBe(200);
-  // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-  const body: any = await res.json();
+  const body = await assertJsonBody(res);
   return body.recovery_codes;
 }
 
@@ -144,9 +141,7 @@ describe('POST /api/v1/user/totp/confirm', () => {
     });
     const res = await client.api.v1.user.totp.confirm.$post({ json: {} });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body).toHaveProperty('user');
     expect(body.user.totp_registered).toBe(true);
 
@@ -205,9 +200,9 @@ describe('POST /api/v1/user/totp/confirm', () => {
 
     // Check initial session - TOTP should be disabled
     const sessionBefore = await client.api.v1.user.session.$get();
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionBeforeBody: any = await sessionBefore.json();
-    expect(sessionBeforeBody.user.totp_registered).toBe(false);
+    const sessionBeforeBody = await assertJsonBody(sessionBefore);
+    expect(sessionBeforeBody.user).toBeDefined();
+    expect(sessionBeforeBody.user?.totp_registered).toBe(false);
 
     // Complete full setup
     const secret = await startTotpSetup(sessionCookie);
@@ -215,18 +210,18 @@ describe('POST /api/v1/user/totp/confirm', () => {
 
     // Verify after verify - should still be false
     const sessionAfterVerify = await client.api.v1.user.session.$get();
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionAfterVerifyBody: any = await sessionAfterVerify.json();
-    expect(sessionAfterVerifyBody.user.totp_registered).toBe(false);
+    const sessionAfterVerifyBody = await assertJsonBody(sessionAfterVerify);
+    expect(sessionAfterVerifyBody.user).toBeDefined();
+    expect(sessionAfterVerifyBody.user?.totp_registered).toBe(false);
 
     // Confirm
     await client.api.v1.user.totp.confirm.$post({ json: {} });
 
     // Check session after confirm - TOTP should be enabled
     const sessionAfterConfirm = await client.api.v1.user.session.$get();
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionAfterConfirmBody: any = await sessionAfterConfirm.json();
-    expect(sessionAfterConfirmBody.user.totp_registered).toBe(true);
+    const sessionAfterConfirmBody = await assertJsonBody(sessionAfterConfirm);
+    expect(sessionAfterConfirmBody.user).toBeDefined();
+    expect(sessionAfterConfirmBody.user?.totp_registered).toBe(true);
   });
 
   test('full TOTP setup flow: setup -> verify -> confirm', async () => {
@@ -246,9 +241,8 @@ describe('POST /api/v1/user/totp/confirm', () => {
 
     // Step 1: Setup
     const setupRes = await client.api.v1.user.totp.setup.$post({});
-    expect(setupRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const { secret } = (await setupRes.json()) as any;
+    const setupBody = await assertJsonBody(setupRes);
+    const { secret } = setupBody;
 
     // Verify DB state after setup
     await withMikroContext(services, async () => {
@@ -262,9 +256,7 @@ describe('POST /api/v1/user/totp/confirm', () => {
     const verifyRes = await client.api.v1.user.totp.verify.$post({
       json: { code: validCode },
     });
-    expect(verifyRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const verifyBody: any = await verifyRes.json();
+    const verifyBody = await assertJsonBody(verifyRes);
     expect(verifyBody).toHaveProperty('recovery_codes');
     expect(verifyBody.recovery_codes.length).toBe(8);
 
@@ -279,9 +271,7 @@ describe('POST /api/v1/user/totp/confirm', () => {
     const confirmRes = await client.api.v1.user.totp.confirm.$post({
       json: {},
     });
-    expect(confirmRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const confirmBody: any = await confirmRes.json();
+    const confirmBody = await assertJsonBody(confirmRes);
     expect(confirmBody.user.totp_registered).toBe(true);
 
     // Verify DB state after confirm

@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createDbUserWithSession,
   createPasskeyForUser,
@@ -46,9 +47,7 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     const client = createTestClient(app);
     const res = await client.api.v1.user.passkeys.register.options.$post();
 
-    expect(res.status).toBe(401);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 401);
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
@@ -68,9 +67,7 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     });
     const res = await client.api.v1.user.passkeys.register.options.$post();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
 
     // Verify response structure matches WebAuthn spec
     expect(body.options).toBeDefined();
@@ -126,13 +123,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
 
     const res2 = await client.api.v1.user.passkeys.register.options.$post();
 
-    expect(res1.status).toBe(200);
-    expect(res2.status).toBe(200);
+    const body1 = await assertJsonBody(res1);
+    const body2 = await assertJsonBody(res2);
 
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const challenge1 = ((await res1.json()) as any).options.challenge;
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const challenge2 = ((await res2.json()) as any).options.challenge;
+    const challenge1 = body1.options.challenge;
+    const challenge2 = body2.options.challenge;
 
     expect(challenge1).not.toBe(challenge2);
   });
@@ -157,17 +152,17 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     });
     const res = await client.api.v1.user.passkeys.register.options.$post();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
 
     // Should have excludeCredentials with the existing passkeys
-    expect(body.options.excludeCredentials).toBeDefined();
-    expect(Array.isArray(body.options.excludeCredentials)).toBe(true);
-    expect(body.options.excludeCredentials.length).toBe(2);
+    const excludeCredentials = body.options.excludeCredentials;
+    expect(excludeCredentials).toBeDefined();
+    if (!excludeCredentials) return;
+    expect(Array.isArray(excludeCredentials)).toBe(true);
+    expect(excludeCredentials.length).toBe(2);
 
     // Each excluded credential should have id and type
-    for (const cred of body.options.excludeCredentials) {
+    for (const cred of excludeCredentials) {
       expect(cred.id).toBeDefined();
       expect(cred.type).toBe('public-key');
     }
@@ -189,9 +184,7 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     });
     const res = await client.api.v1.user.passkeys.register.options.$post();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
 
     expect(body.options.excludeCredentials).toBeDefined();
     expect(body.options.excludeCredentials).toHaveLength(0);
@@ -213,11 +206,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     });
     const res = await client.api.v1.user.passkeys.register.options.$post();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
 
     const authSelection = body.options.authenticatorSelection;
+    expect(authSelection).toBeDefined();
+    if (!authSelection) return;
     expect(authSelection.residentKey).toBe('preferred');
     expect(authSelection.userVerification).toBe('preferred');
   });
@@ -238,9 +231,7 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     });
     const res = await client.api.v1.user.passkeys.register.options.$post();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
 
     // The challenge should be stored in session for later verification
     // We can't directly test session, but we verify through the verify endpoint
@@ -276,9 +267,7 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     });
     const res = await client.api.v1.user.passkeys.register.options.$post();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
 
     // Timeout should be present (simplewebauthn sets a default)
     expect(body.options.timeout).toBeDefined();
@@ -301,9 +290,7 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     });
     const res = await client.api.v1.user.passkeys.register.options.$post();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
 
     const algorithms = body.options.pubKeyCredParams.map(
       (p: { alg: number }) => p.alg,
@@ -330,9 +317,7 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     });
     const res = await client.api.v1.user.passkeys.register.options.$post();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
 
     // rp.id should be the hostname from config (localhost in test)
     expect(body.options.rp.id).toBe('localhost');

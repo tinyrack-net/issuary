@@ -2,6 +2,7 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createTestClient,
   createTestClientWithHeaders,
@@ -73,9 +74,7 @@ describe('DELETE /api/v1/user/password', () => {
       },
     });
 
-    expect(res.status).toBe(401);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 401);
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
@@ -91,9 +90,7 @@ describe('DELETE /api/v1/user/password', () => {
       },
     });
 
-    expect(res.status).toBe(403);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 403);
     expect(body.code).toBe('USER_NOT_EDITABLE');
   });
 
@@ -142,9 +139,7 @@ describe('DELETE /api/v1/user/password', () => {
       },
     });
 
-    expect(res.status).toBe(400);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('PASSWORD_NOT_SET');
   });
 
@@ -167,9 +162,7 @@ describe('DELETE /api/v1/user/password', () => {
       },
     });
 
-    expect(res.status).toBe(401);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 401);
     expect(body.code).toBe('INVALID_CURRENT_PASSWORD');
   });
 
@@ -190,9 +183,7 @@ describe('DELETE /api/v1/user/password', () => {
       json: { current_password: password },
     });
 
-    expect(res.status).toBe(400);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('CANNOT_REMOVE_LAST_AUTH_METHOD');
   });
 
@@ -225,9 +216,7 @@ describe('DELETE /api/v1/user/password', () => {
       json: { current_password: password },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     // Verify password login no longer works
@@ -241,10 +230,9 @@ describe('DELETE /api/v1/user/password', () => {
     // Verify session still returns has_password: false
     const sessionRes = await client.api.v1.user.session.$get();
 
-    expect(sessionRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionBody: any = await sessionRes.json();
-    expect(sessionBody.user.has_password).toBe(false);
+    const sessionBody = await assertJsonBody(sessionRes);
+    expect(sessionBody.user).toBeDefined();
+    expect(sessionBody.user?.has_password).toBe(false);
   });
 
   test('should work with multiple OAuth accounts linked', async () => {
@@ -285,9 +273,7 @@ describe('DELETE /api/v1/user/password', () => {
       json: { current_password: password },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
   });
 
@@ -320,9 +306,7 @@ describe('DELETE /api/v1/user/password', () => {
       json: { current_password: password },
     });
 
-    expect(res.status).toBe(400);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('CANNOT_REMOVE_PASSWORD_WITH_SECOND_FACTOR_ONLY');
   });
 
@@ -357,9 +341,7 @@ describe('DELETE /api/v1/user/password', () => {
       json: { current_password: password },
     });
 
-    expect(res.status).toBe(400);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('CANNOT_REMOVE_PASSWORD_WITH_SECOND_FACTOR_ONLY');
   });
 
@@ -401,9 +383,7 @@ describe('DELETE /api/v1/user/password', () => {
       json: { current_password: password },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
   });
 });

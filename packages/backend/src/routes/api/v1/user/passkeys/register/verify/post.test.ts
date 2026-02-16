@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createTestClient,
   createTestClientWithHeaders,
@@ -45,8 +46,7 @@ async function createDbUserWithSessionHelper(
   expect(loginRes.status).toBe(200);
 
   const sessionCookie = extractCookie(loginRes, 'session');
-  // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-  const body: any = await loginRes.json();
+  const body = await assertJsonBody(loginRes);
   const userId = body.user.id;
 
   return { sessionCookie, userId };
@@ -147,9 +147,7 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       },
     });
 
-    expect(res.status).toBe(401);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 401);
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
@@ -174,9 +172,7 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       },
     });
 
-    expect(res.status).toBe(400);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('PASSKEY_CHALLENGE_NOT_FOUND');
   });
 
@@ -257,6 +253,7 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     });
     const res = await updatedClient.api.v1.user.passkeys.register.verify.$post({
       json: {
+        // @ts-expect-error testing validation with invalid input
         response: {
           rawId: 'mock-id',
           response: {
@@ -266,8 +263,7 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
           type: 'public-key',
           clientExtensionResults: {},
         },
-        // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      } as any,
+      },
     });
 
     expect(res.status).toBe(400);
@@ -306,10 +302,10 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       json: {
         response: {
           ...createMockRegistrationResponse(),
+          // @ts-expect-error testing validation with invalid input
           type: 'invalid-type',
         },
-        // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      } as any,
+      },
     });
 
     expect(res.status).toBe(400);
@@ -394,8 +390,7 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       json: {
         response: createMockRegistrationResponse(),
         name: longName,
-        // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      } as any,
+      },
     });
 
     expect(res.status).toBe(400);
@@ -416,8 +411,8 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       Cookie: `session=${sessionCookie}`,
     });
     const res = await client.api.v1.user.passkeys.register.verify.$post({
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: {} as any,
+      // @ts-expect-error testing validation with invalid input
+      json: {},
     });
 
     expect(res.status).toBe(400);
@@ -439,6 +434,7 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     });
     const res = await client.api.v1.user.passkeys.register.verify.$post({
       json: {
+        // @ts-expect-error testing validation with invalid input
         response: {
           id: 'mock-id',
           rawId: 'mock-id',
@@ -446,8 +442,7 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
           clientExtensionResults: {},
           // missing response.clientDataJSON and attestationObject
         },
-        // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      } as any,
+      },
     });
 
     expect(res.status).toBe(400);
@@ -695,6 +690,7 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
         response: {
           id: 'mock-id',
           rawId: 'mock-id',
+          // @ts-expect-error testing validation with invalid input
           response: {
             clientDataJSON: 'mock-data',
             // missing attestationObject
@@ -702,8 +698,7 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
           type: 'public-key',
           clientExtensionResults: {},
         },
-        // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      } as any,
+      },
     });
 
     expect(res.status).toBe(400);

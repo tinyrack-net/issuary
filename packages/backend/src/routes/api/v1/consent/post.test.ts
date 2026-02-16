@@ -2,6 +2,7 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createTestClient,
   createTestClientWithHeaders,
@@ -53,10 +54,7 @@ describe('POST /api/v1/consent', () => {
         },
       });
 
-      expect(res.status).toBe(200);
-
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const body: any = await res.json();
+      const body = await assertJsonBody(res);
       expect(body).toHaveProperty('redirect_url');
 
       // Verify redirect URL contains correct parameters
@@ -93,10 +91,7 @@ describe('POST /api/v1/consent', () => {
         },
       });
 
-      expect(res.status).toBe(200);
-
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const body: any = await res.json();
+      const body = await assertJsonBody(res);
       const redirectUrl = new URL(body.redirect_url);
       expect(redirectUrl.searchParams.get('code_challenge')).toBe(
         'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
@@ -123,10 +118,7 @@ describe('POST /api/v1/consent', () => {
         },
       });
 
-      expect(res.status).toBe(200);
-
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const body: any = await res.json();
+      const body = await assertJsonBody(res);
       const redirectUrl = new URL(body.redirect_url);
       expect(redirectUrl.searchParams.get('nonce')).toBe('test-nonce-456');
     });
@@ -139,8 +131,10 @@ describe('POST /api/v1/consent', () => {
 
       // Get user ID from session
       const sessionRes = await client.api.v1.user.session.$get();
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const { user } = (await sessionRes.json()) as any;
+      const sessionBody = await assertJsonBody(sessionRes);
+      expect(sessionBody.user).toBeDefined();
+      const user = sessionBody.user;
+      if (!user) return;
 
       // Grant consent
       const res = await client.api.v1.consent.$post({
@@ -189,10 +183,7 @@ describe('POST /api/v1/consent', () => {
         },
       });
 
-      expect(res.status).toBe(200);
-
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const body: any = await res.json();
+      const body = await assertJsonBody(res);
       expect(body).toHaveProperty('redirect_url');
 
       const redirectUrl = new URL(body.redirect_url);
@@ -219,10 +210,7 @@ describe('POST /api/v1/consent', () => {
         },
       });
 
-      expect(res.status).toBe(200);
-
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const body: any = await res.json();
+      const body = await assertJsonBody(res);
       expect(body).toHaveProperty('redirect_url');
 
       // Verify error redirect URL
@@ -252,10 +240,7 @@ describe('POST /api/v1/consent', () => {
         },
       });
 
-      expect(res.status).toBe(200);
-
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const body: any = await res.json();
+      const body = await assertJsonBody(res);
       const redirectUrl = new URL(body.redirect_url);
       expect(redirectUrl.searchParams.has('state')).toBe(false);
       expect(redirectUrl.searchParams.get('error')).toBe('access_denied');
@@ -269,8 +254,10 @@ describe('POST /api/v1/consent', () => {
 
       // Get user ID from session
       const sessionRes = await client.api.v1.user.session.$get();
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const { user } = (await sessionRes.json()) as any;
+      const sessionBody = await assertJsonBody(sessionRes);
+      expect(sessionBody.user).toBeDefined();
+      const user = sessionBody.user;
+      if (!user) return;
 
       // Use a unique scope to verify no consent is stored
       const uniqueScope = `deny_test_${Date.now()}`;
@@ -361,13 +348,13 @@ describe('POST /api/v1/consent', () => {
       });
 
       const res = await client.api.v1.consent.$post({
+        // @ts-expect-error testing validation with invalid input
         json: {
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
           response_type: 'code',
           scope: 'openid',
           decision: 'allow',
-          // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-        } as any,
+        },
       });
 
       expect(res.status).toBe(400);
@@ -380,13 +367,13 @@ describe('POST /api/v1/consent', () => {
       });
 
       const res = await client.api.v1.consent.$post({
+        // @ts-expect-error testing validation with invalid input
         json: {
           client_id: TEST_OAUTH_CLIENT.clientId,
           response_type: 'code',
           scope: 'openid',
           decision: 'allow',
-          // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-        } as any,
+        },
       });
 
       expect(res.status).toBe(400);
@@ -399,13 +386,13 @@ describe('POST /api/v1/consent', () => {
       });
 
       const res = await client.api.v1.consent.$post({
+        // @ts-expect-error testing validation with invalid input
         json: {
           client_id: TEST_OAUTH_CLIENT.clientId,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
           scope: 'openid',
           decision: 'allow',
-          // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-        } as any,
+        },
       });
 
       expect(res.status).toBe(400);
@@ -418,13 +405,13 @@ describe('POST /api/v1/consent', () => {
       });
 
       const res = await client.api.v1.consent.$post({
+        // @ts-expect-error testing validation with invalid input
         json: {
           client_id: TEST_OAUTH_CLIENT.clientId,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
           response_type: 'code',
           scope: 'openid',
-          // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-        } as any,
+        },
       });
 
       expect(res.status).toBe(400);
@@ -442,9 +429,9 @@ describe('POST /api/v1/consent', () => {
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
           response_type: 'code',
           scope: 'openid',
+          // @ts-expect-error testing validation with invalid input
           decision: 'invalid',
-          // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-        } as any,
+        },
       });
 
       expect(res.status).toBe(400);
@@ -463,10 +450,10 @@ describe('POST /api/v1/consent', () => {
           response_type: 'code',
           scope: 'openid',
           code_challenge: 'some-challenge',
+          // @ts-expect-error testing validation with invalid input
           code_challenge_method: 'invalid',
           decision: 'allow',
-          // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-        } as any,
+        },
       });
 
       expect(res.status).toBe(400);

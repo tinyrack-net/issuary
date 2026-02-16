@@ -1,9 +1,13 @@
 import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
+  createTestClient,
   exchangeCodeForTokens,
   getAuthorizationCode,
+  getUserInfo,
+  introspectToken as introspectTokenHelper,
   MINIMAL_TEST_CONFIG,
   refreshAccessToken,
   TEST_OAUTH_CLIENT,
@@ -38,15 +42,14 @@ async function revokeToken(params: {
   clientId?: string;
   clientSecret?: string;
 }) {
-  return app.request('/application/oauth/revoke', {
-    method: 'POST',
-    body: JSON.stringify({
+  const client = createTestClient(app);
+  return client.application.oauth.revoke.$post({
+    json: {
       token: params.token,
-      ...(params.tokenTypeHint && { token_type_hint: params.tokenTypeHint }),
-      ...(params.clientId && { client_id: params.clientId }),
-      ...(params.clientSecret && { client_secret: params.clientSecret }),
-    }),
-    headers: { 'Content-Type': 'application/json' },
+      token_type_hint: params.tokenTypeHint,
+      client_id: params.clientId,
+      client_secret: params.clientSecret,
+    },
   });
 }
 
@@ -54,14 +57,7 @@ async function revokeToken(params: {
  * Helper: Introspect a token
  */
 async function introspectToken(token: string) {
-  return app.request('/application/oauth/introspect', {
-    method: 'POST',
-    body: JSON.stringify({
-      token,
-      client_id: TEST_OAUTH_CLIENT.clientId,
-    }),
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return introspectTokenHelper(app, { token });
 }
 
 describe('POST /application/oauth/revoke', () => {
@@ -209,12 +205,11 @@ describe('POST /application/oauth/revoke', () => {
     });
 
     test('should reject empty token', async () => {
-      const res = await app.request('/application/oauth/revoke', {
-        method: 'POST',
-        body: JSON.stringify({
+      const client = createTestClient(app);
+      const res = await client.application.oauth.revoke.$post({
+        json: {
           token: '',
-        }),
-        headers: { 'Content-Type': 'application/json' },
+        },
       });
 
       // Zod validation should fail for empty string
@@ -274,8 +269,8 @@ describe('POST /application/oauth/revoke', () => {
         clientId: 'invalid-client-id',
       });
 
-      expect(res.status).toBe(400);
-      expect((await res.json()).code).toBe('OAUTH_CLIENT_NOT_FOUND');
+      const json = await assertJsonBody(res, 400);
+      expect(json.code).toBe('OAUTH_CLIENT_NOT_FOUND');
     });
 
     test('should reject invalid client_secret', async () => {
@@ -290,8 +285,8 @@ describe('POST /application/oauth/revoke', () => {
         clientSecret: 'wrong-secret',
       });
 
-      expect(res.status).toBe(401);
-      expect((await res.json()).code).toBe('INVALID_CLIENT_CREDENTIALS');
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
     });
 
     test('should reject disabled client', async () => {
@@ -305,9 +300,9 @@ describe('POST /application/oauth/revoke', () => {
         clientId: 'disabled-client',
       });
 
-      expect(res.status).toBe(400);
+      const json = await assertJsonBody(res, 400);
       expect(['OAUTH_CLIENT_NOT_FOUND', 'OAUTH_CLIENT_DISABLED']).toContain(
-        (await res.json()).code,
+        json.code,
       );
     });
   });
@@ -371,8 +366,7 @@ describe('POST /application/oauth/revoke', () => {
         clientId: 'invalid-client',
       });
 
-      expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 400);
       expect(json).toHaveProperty('code');
       expect(json).toHaveProperty('message');
       expect(typeof json.code).toBe('string');
@@ -391,12 +385,7 @@ describe('POST /application/oauth/revoke', () => {
       await revokeToken({ token: access_token });
 
       // Try to use the revoked token for userinfo
-      const userinfoRes = await app.request('/application/oauth/userinfo', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
+      const userinfoRes = await getUserInfo(app, access_token);
 
       expect(userinfoRes.status).toBe(401);
     });
@@ -422,13 +411,13 @@ describe('POST /application/oauth/revoke', () => {
 
   describe('Request Validation', () => {
     test('should reject request without token field', async () => {
-      const res = await app.request('/application/oauth/revoke', {
-        method: 'POST',
-        body: JSON.stringify({
-          // No token field
+      const client = createTestClient(app);
+      const res = await client.application.oauth.revoke.$post({
+        json: {
+          // No token - send undefined to trigger validation
+          token: undefined as unknown as string,
           client_id: TEST_OAUTH_CLIENT.clientId,
-        }),
-        headers: { 'Content-Type': 'application/json' },
+        },
       });
 
       expect(res.status).toBe(400);

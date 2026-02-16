@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createDbUserWithSession,
   createTestClient,
   createTestClientWithHeaders,
@@ -48,9 +49,7 @@ async function startTotpSetup(sessionCookie: string): Promise<string> {
   });
   const res = await client.api.v1.user.totp.setup.$post();
 
-  expect(res.status).toBe(200);
-  // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-  const body: any = await res.json();
+  const body = await assertJsonBody(res);
   return body.secret;
 }
 
@@ -141,9 +140,7 @@ describe('POST /api/v1/user/totp/verify', () => {
       json: { code: validCode },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     // Should return recovery codes, not user session
     expect(body).toHaveProperty('recovery_codes');
     expect(body).not.toHaveProperty('user');
@@ -227,9 +224,7 @@ describe('POST /api/v1/user/totp/verify', () => {
     });
 
     // Should succeed and return recovery codes (allowing user to complete setup)
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.recovery_codes).toHaveLength(8);
   });
 
@@ -249,8 +244,7 @@ describe('POST /api/v1/user/totp/verify', () => {
       Cookie: `session=${sessionCookie}`,
     });
     const res = await client.api.v1.user.totp.verify.$post({
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: { code: 'abcdef' } as any,
+      json: { code: 'abcdef' },
     });
 
     expect(res.status).toBe(400);
@@ -274,15 +268,13 @@ describe('POST /api/v1/user/totp/verify', () => {
 
     // Too short
     const res1 = await client.api.v1.user.totp.verify.$post({
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: { code: '12345' } as any,
+      json: { code: '12345' },
     });
     expect(res1.status).toBe(400);
 
     // Too long
     const res2 = await client.api.v1.user.totp.verify.$post({
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: { code: '1234567' } as any,
+      json: { code: '1234567' },
     });
     expect(res2.status).toBe(400);
   });
@@ -333,9 +325,9 @@ describe('POST /api/v1/user/totp/verify', () => {
 
     // Check initial session - TOTP should be disabled
     const sessionBefore = await client.api.v1.user.session.$get();
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionBeforeBody: any = await sessionBefore.json();
-    expect(sessionBeforeBody.user.totp_registered).toBe(false);
+    const sessionBeforeBody = await assertJsonBody(sessionBefore);
+    expect(sessionBeforeBody.user).toBeDefined();
+    expect(sessionBeforeBody.user?.totp_registered).toBe(false);
 
     // Start setup and verify
     const secret = await startTotpSetup(sessionCookie);
@@ -348,9 +340,9 @@ describe('POST /api/v1/user/totp/verify', () => {
     // Check session after verify - TOTP should still NOT be enabled
     // (requires confirm step)
     const sessionAfter = await client.api.v1.user.session.$get();
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionAfterBody: any = await sessionAfter.json();
-    expect(sessionAfterBody.user.totp_registered).toBe(false);
+    const sessionAfterBody = await assertJsonBody(sessionAfter);
+    expect(sessionAfterBody.user).toBeDefined();
+    expect(sessionAfterBody.user?.totp_registered).toBe(false);
   });
 
   test('should handle concurrent setup/verify attempts correctly', async () => {
@@ -452,8 +444,8 @@ describe('POST /api/v1/user/totp/verify', () => {
       Cookie: `session=${sessionCookie}`,
     });
     const res = await client.api.v1.user.totp.verify.$post({
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: {} as any,
+      // @ts-expect-error testing validation with invalid input
+      json: {},
     });
 
     expect(res.status).toBe(400);

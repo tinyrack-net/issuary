@@ -2,6 +2,7 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createPasskeyForUser,
   createTestClient,
@@ -68,8 +69,7 @@ describe('GET /api/v1/user/passkeys', () => {
     expect(loginRes.status).toBe(200);
 
     const sessionCookie = extractCookie(loginRes, 'session');
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     const userId = body.user.id;
 
     return { sessionCookie, userId };
@@ -79,9 +79,7 @@ describe('GET /api/v1/user/passkeys', () => {
     const client = createTestClient(app);
     const res = await client.api.v1.user.passkeys.$get();
 
-    expect(res.status).toBe(401);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 401);
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
@@ -96,9 +94,7 @@ describe('GET /api/v1/user/passkeys', () => {
     });
     const res = await client.api.v1.user.passkeys.$get();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.passkeys).toEqual([]);
   });
 
@@ -119,16 +115,17 @@ describe('GET /api/v1/user/passkeys', () => {
     });
     const res = await client.api.v1.user.passkeys.$get();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.passkeys).toHaveLength(1);
-    expect(body.passkeys[0].name).toBe('My MacBook');
-    expect(body.passkeys[0].device_type).toBe('multiDevice');
-    expect(body.passkeys[0].backed_up).toBe(true);
-    expect(body.passkeys[0].id).toBeDefined();
-    expect(body.passkeys[0].credential_id).toBeDefined();
-    expect(body.passkeys[0].created_at).toBeDefined();
+    const passkey = body.passkeys[0];
+    expect(passkey).toBeDefined();
+    if (!passkey) return;
+    expect(passkey.name).toBe('My MacBook');
+    expect(passkey.device_type).toBe('multiDevice');
+    expect(passkey.backed_up).toBe(true);
+    expect(passkey.id).toBeDefined();
+    expect(passkey.credential_id).toBeDefined();
+    expect(passkey.created_at).toBeDefined();
   });
 
   test('should return multiple passkeys when user has many', async () => {
@@ -150,9 +147,7 @@ describe('GET /api/v1/user/passkeys', () => {
     });
     const res = await client.api.v1.user.passkeys.$get();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.passkeys).toHaveLength(3);
 
     // Verify passkey names (order may vary due to DESC order by created_at)
@@ -178,16 +173,17 @@ describe('GET /api/v1/user/passkeys', () => {
     });
     const res = await client.api.v1.user.passkeys.$get();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.passkeys).toHaveLength(1);
+    const passkey = body.passkeys[0];
+    expect(passkey).toBeDefined();
+    if (!passkey) return;
 
     // Should NOT expose sensitive fields
-    expect(body.passkeys[0].public_key).toBeUndefined();
-    expect(body.passkeys[0].counter).toBeUndefined();
-    expect(body.passkeys[0].transports).toBeUndefined();
-    expect(body.passkeys[0].aaguid).toBeUndefined();
+    expect('public_key' in passkey).toBe(false);
+    expect('counter' in passkey).toBe(false);
+    expect('transports' in passkey).toBe(false);
+    expect('aaguid' in passkey).toBe(false);
   });
 
   test('should return passkeys sorted by created_at descending', async () => {
@@ -211,15 +207,13 @@ describe('GET /api/v1/user/passkeys', () => {
     });
     const res = await client.api.v1.user.passkeys.$get();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.passkeys).toHaveLength(3);
 
     // Most recent should be first (DESC order)
-    expect(body.passkeys[0].name).toBe('Third Device');
-    expect(body.passkeys[1].name).toBe('Second Device');
-    expect(body.passkeys[2].name).toBe('First Device');
+    expect(body.passkeys[0]?.name).toBe('Third Device');
+    expect(body.passkeys[1]?.name).toBe('Second Device');
+    expect(body.passkeys[2]?.name).toBe('First Device');
   });
 
   test('should work for config-managed users', async () => {
@@ -230,9 +224,7 @@ describe('GET /api/v1/user/passkeys', () => {
     });
     const res = await client.api.v1.user.passkeys.$get();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(Array.isArray(body.passkeys)).toBe(true);
   });
 
@@ -255,11 +247,9 @@ describe('GET /api/v1/user/passkeys', () => {
     });
     const res = await client.api.v1.user.passkeys.$get();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.passkeys).toHaveLength(1);
-    expect(body.passkeys[0].name).toBe('User1 Device');
+    expect(body.passkeys[0]?.name).toBe('User1 Device');
   });
 
   test('should return correct device_type values', async () => {
@@ -301,9 +291,7 @@ describe('GET /api/v1/user/passkeys', () => {
     });
     const res = await client.api.v1.user.passkeys.$get();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.passkeys).toHaveLength(2);
 
     const deviceTypes = body.passkeys.map(

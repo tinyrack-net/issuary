@@ -65,6 +65,8 @@ function createMockUpstream(): Promise<{
   });
 }
 
+// All routes tested here are handled by the dev proxy notFound handler and
+// are NOT part of the typed OpenAPI route system, so we use app.request().
 describe('static dev proxy', () => {
   let app: AppType;
   let cleanup: () => Promise<void>;

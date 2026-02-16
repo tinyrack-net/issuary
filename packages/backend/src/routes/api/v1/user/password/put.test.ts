@@ -2,6 +2,7 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createTestClient,
   createTestClientWithHeaders,
@@ -71,9 +72,7 @@ describe('PUT /api/v1/user/password', () => {
       },
     });
 
-    expect(res.status).toBe(401);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 401);
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
@@ -90,9 +89,7 @@ describe('PUT /api/v1/user/password', () => {
       },
     });
 
-    expect(res.status).toBe(403);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 403);
     expect(body.code).toBe('USER_NOT_EDITABLE');
   });
 
@@ -142,9 +139,7 @@ describe('PUT /api/v1/user/password', () => {
       },
     });
 
-    expect(res.status).toBe(400);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('PASSWORD_NOT_SET');
   });
 
@@ -167,9 +162,7 @@ describe('PUT /api/v1/user/password', () => {
       },
     });
 
-    expect(res.status).toBe(401);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 401);
     expect(body.code).toBe('INVALID_CURRENT_PASSWORD');
   });
 
@@ -194,9 +187,7 @@ describe('PUT /api/v1/user/password', () => {
       },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     // Verify new password works
@@ -233,8 +224,7 @@ describe('PUT /api/v1/user/password', () => {
         current_password: password,
         new_password: 'short',
       },
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-    } as any);
+    });
 
     expect(res.status).toBe(400);
   });

@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createDbUserWithSession,
   createPasskeyForUser,
@@ -122,9 +123,7 @@ describe('DELETE /api/v1/user/totp', () => {
       json: { code: validCode },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     // Verify TOTP is removed from database
@@ -151,8 +150,7 @@ describe('DELETE /api/v1/user/totp', () => {
       Cookie: `session=${sessionCookie}`,
     });
     const res = await client.api.v1.user.totp.$delete({
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: { code: 'abcdef' } as any,
+      json: { code: 'abcdef' },
     });
 
     expect(res.status).toBe(400);
@@ -177,15 +175,13 @@ describe('DELETE /api/v1/user/totp', () => {
 
     // Too short
     const res1 = await client.api.v1.user.totp.$delete({
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: { code: '12345' } as any,
+      json: { code: '12345' },
     });
     expect(res1.status).toBe(400);
 
     // Too long
     const res2 = await client.api.v1.user.totp.$delete({
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: { code: '1234567' } as any,
+      json: { code: '1234567' },
     });
     expect(res2.status).toBe(400);
   });
@@ -210,9 +206,9 @@ describe('DELETE /api/v1/user/totp', () => {
 
     // Check initial session - TOTP should be enabled
     const sessionBefore = await client.api.v1.user.session.$get();
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionBeforeBody: any = await sessionBefore.json();
-    expect(sessionBeforeBody.user.totp_registered).toBe(true);
+    const sessionBeforeBody = await assertJsonBody(sessionBefore);
+    expect(sessionBeforeBody.user).toBeDefined();
+    expect(sessionBeforeBody.user?.totp_registered).toBe(true);
 
     // Disable TOTP
     const validCode = services.totpService.generateToken(secret);
@@ -222,9 +218,9 @@ describe('DELETE /api/v1/user/totp', () => {
 
     // Check session after - TOTP should be disabled
     const sessionAfter = await client.api.v1.user.session.$get();
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionAfterBody: any = await sessionAfter.json();
-    expect(sessionAfterBody.user.totp_registered).toBe(false);
+    const sessionAfterBody = await assertJsonBody(sessionAfter);
+    expect(sessionAfterBody.user).toBeDefined();
+    expect(sessionAfterBody.user?.totp_registered).toBe(false);
   });
 
   test('should not disable TOTP with unverified setup', async () => {
@@ -356,9 +352,8 @@ describe('DELETE /api/v1/user/totp', () => {
 
     // Start new setup
     const setupRes = await client.api.v1.user.totp.setup.$post({});
-    expect(setupRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const newSecret = ((await setupRes.json()) as any).secret;
+    const setupBody = await assertJsonBody(setupRes);
+    const newSecret = setupBody.secret;
 
     // Verify new setup
     const newCode = services.totpService.generateToken(newSecret);
@@ -399,8 +394,8 @@ describe('DELETE /api/v1/user/totp', () => {
       Cookie: `session=${sessionCookie}`,
     });
     const res = await client.api.v1.user.totp.$delete({
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: {} as any,
+      // @ts-expect-error testing validation with invalid input
+      json: {},
     });
 
     expect(res.status).toBe(400);
@@ -556,9 +551,7 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
       json: { code: validCode },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     // Verify TOTP was deleted
@@ -580,9 +573,10 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
       Cookie: `session=${sessionCookie}`,
     });
     const sessionRes = await sessionClient.api.v1.user.session.$get();
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionBody: any = await sessionRes.json();
-    const userId = sessionBody.user.id;
+    const sessionBody = await assertJsonBody(sessionRes);
+    expect(sessionBody.user).toBeDefined();
+    const userId = sessionBody.user?.id;
+    if (!userId) return;
 
     // Create TOTP directly in database for config user
     const secret = servicesWith2FA.totpService.generateSecret();

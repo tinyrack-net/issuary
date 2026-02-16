@@ -200,13 +200,11 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
         await client.application.oauth['.well-known'][
           'openid-configuration'
         ].$get();
-
       expect(configRes.status).toBe(200);
-      const config = await configRes.json();
+      await configRes.json();
 
       // JWKS endpoint should be accessible
-      const jwksUrl = new URL(config.jwks_uri);
-      const jwksRes = await app.request(jwksUrl.pathname);
+      const jwksRes = await client.application.oauth['.well-known'].jwks.$get();
 
       expect(jwksRes.status).toBe(200);
       const jwks = await jwksRes.json();

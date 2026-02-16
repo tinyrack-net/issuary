@@ -2,6 +2,7 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createTestClient,
   createTestClientWithHeaders,
@@ -89,9 +90,7 @@ describe('DELETE /api/v1/oauth/:provider', () => {
       param: { provider: 'nonexistent' },
     });
 
-    expect(res.status).toBe(404);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const json: any = await res.json();
+    const json = await assertJsonBody(res, 404);
     expect(json.code).toBe('OAUTH_PROVIDER_NOT_FOUND');
   });
 
@@ -125,9 +124,7 @@ describe('DELETE /api/v1/oauth/:provider', () => {
       param: { provider: 'google' },
     });
 
-    expect(res.status).toBe(404);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const json: any = await res.json();
+    const json = await assertJsonBody(res, 404);
     expect(json.code).toBe('OAUTH_ACCOUNT_NOT_LINKED');
   });
 
@@ -230,9 +227,7 @@ describe('DELETE /api/v1/oauth/:provider', () => {
       param: { provider: 'google' },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const json: any = await res.json();
+    const json = await assertJsonBody(res);
     expect(json.ok).toBe(true);
 
     // Verify OAuth account is unlinked
@@ -262,9 +257,7 @@ describe('DELETE /api/v1/oauth/:provider', () => {
     });
 
     // Config user cannot have OAuth linked accounts, so return OAuthAccountNotLinked
-    expect(res.status).toBe(404);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const json: any = await res.json();
+    const json = await assertJsonBody(res, 404);
     expect(json.code).toBe('OAUTH_ACCOUNT_NOT_LINKED');
   });
 });

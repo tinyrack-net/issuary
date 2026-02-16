@@ -1,7 +1,9 @@
 import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
+  createTestClient,
   exchangeCodeForTokens,
   getAuthorizationCode,
   getUserInfo,
@@ -50,9 +52,11 @@ describe('End-to-End OIDC Flow', () => {
   describe('Complete Discovery-Based Flow', () => {
     test('should complete full OIDC flow with signature verification', async () => {
       // Step 1: Discover OIDC configuration
-      const configRes = await app.request(
-        '/application/oauth/.well-known/openid-configuration',
-      );
+      const client = createTestClient(app);
+      const configRes =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
       expect(configRes.status).toBe(200);
       const config = await configRes.json();
@@ -64,11 +68,10 @@ describe('End-to-End OIDC Flow', () => {
       expect(config.userinfo_endpoint).toBeDefined();
 
       // Step 2: Fetch JWKS for token verification
-      const jwksUrl = new URL(config.jwks_uri);
-      const jwksRes = await app.request(jwksUrl.pathname);
+      const jwksRes = await client.application.oauth['.well-known'].jwks.$get();
 
       expect(jwksRes.status).toBe(200);
-      const jwks = await jwksRes.json();
+      const jwks = (await jwksRes.json()) as unknown as jose.JSONWebKeySet;
 
       expect(jwks.keys).toBeDefined();
       expect(Array.isArray(jwks.keys)).toBe(true);
@@ -148,7 +151,9 @@ describe('End-to-End OIDC Flow', () => {
 
     test('should have consistent kid between JWKS and tokens', async () => {
       // Get JWKS
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks');
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
 
       const jwks = await jwksRes.json();
       const availableKids = jwks.keys.map((key: { kid: string }) => key.kid);
@@ -180,8 +185,12 @@ describe('End-to-End OIDC Flow', () => {
 
   describe('ID Token Verification', () => {
     test('should verify ID token has required OIDC claims', async () => {
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks');
-      const JWKS = jose.createLocalJWKSet(await jwksRes.json());
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
+      const JWKS = jose.createLocalJWKSet(
+        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
+      );
 
       const sessionCookie = await createAuthenticatedSession(app);
       const nonce = crypto.randomUUID();
@@ -220,8 +229,12 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should include at_hash claim when access token is issued', async () => {
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks');
-      const JWKS = jose.createLocalJWKSet(await jwksRes.json());
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
+      const JWKS = jose.createLocalJWKSet(
+        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
+      );
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -244,8 +257,12 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should verify at_hash matches access token', async () => {
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks');
-      const JWKS = jose.createLocalJWKSet(await jwksRes.json());
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
+      const JWKS = jose.createLocalJWKSet(
+        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
+      );
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -273,8 +290,12 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should include user claims based on requested scopes', async () => {
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks');
-      const JWKS = jose.createLocalJWKSet(await jwksRes.json());
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
+      const JWKS = jose.createLocalJWKSet(
+        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
+      );
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -303,8 +324,12 @@ describe('End-to-End OIDC Flow', () => {
 
   describe('Access Token Verification', () => {
     test('should verify access token has required claims', async () => {
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks');
-      const JWKS = jose.createLocalJWKSet(await jwksRes.json());
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
+      const JWKS = jose.createLocalJWKSet(
+        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
+      );
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -333,8 +358,12 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should have reasonable expiration time', async () => {
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks');
-      const JWKS = jose.createLocalJWKSet(await jwksRes.json());
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
+      const JWKS = jose.createLocalJWKSet(
+        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
+      );
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -367,8 +396,12 @@ describe('End-to-End OIDC Flow', () => {
 
   describe('Refresh Token Flow with Verification', () => {
     test('should issue new valid tokens on refresh', async () => {
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks');
-      const JWKS = jose.createLocalJWKSet(await jwksRes.json());
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
+      const JWKS = jose.createLocalJWKSet(
+        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
+      );
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -385,18 +418,16 @@ describe('End-to-End OIDC Flow', () => {
       const tokens = await tokenRes.json();
 
       // Refresh the token
-      const refreshRes = await app.request('/application/oauth/token', {
-        method: 'POST',
-        body: JSON.stringify({
+      const tokenClient = createTestClient(app);
+      const refreshRes = await tokenClient.application.oauth.token.$post({
+        json: {
           grant_type: 'refresh_token',
           refresh_token: tokens.refresh_token,
           client_id: TEST_OAUTH_CLIENT.clientId,
-        }),
-        headers: { 'Content-Type': 'application/json' },
+        },
       });
 
-      expect(refreshRes.status).toBe(200);
-      const newTokens = await refreshRes.json();
+      const newTokens = await assertJsonBody(refreshRes);
 
       expect(newTokens.access_token).toBeDefined();
       expect(newTokens.refresh_token).toBeDefined();
@@ -412,8 +443,12 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should maintain same subject across token refresh', async () => {
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks');
-      const JWKS = jose.createLocalJWKSet(await jwksRes.json());
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
+      const JWKS = jose.createLocalJWKSet(
+        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
+      );
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -434,17 +469,16 @@ describe('End-to-End OIDC Flow', () => {
       );
 
       // Refresh the token
-      const refreshRes = await app.request('/application/oauth/token', {
-        method: 'POST',
-        body: JSON.stringify({
+      const tokenClient = createTestClient(app);
+      const refreshRes = await tokenClient.application.oauth.token.$post({
+        json: {
           grant_type: 'refresh_token',
           refresh_token: tokens.refresh_token,
           client_id: TEST_OAUTH_CLIENT.clientId,
-        }),
-        headers: { 'Content-Type': 'application/json' },
+        },
       });
 
-      const newTokens = await refreshRes.json();
+      const newTokens = await assertJsonBody(refreshRes);
       const { payload: newPayload } = await jose.jwtVerify(
         newTokens.access_token,
         JWKS,
@@ -457,8 +491,12 @@ describe('End-to-End OIDC Flow', () => {
 
   describe('UserInfo Endpoint Consistency', () => {
     test('should return consistent claims between ID token and UserInfo', async () => {
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks');
-      const JWKS = jose.createLocalJWKSet(await jwksRes.json());
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
+      const JWKS = jose.createLocalJWKSet(
+        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
+      );
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -528,9 +566,11 @@ describe('End-to-End OIDC Flow', () => {
 
   describe('JWKS Key Properties', () => {
     test('should have RSA key with proper structure', async () => {
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks');
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
 
-      const jwks = await jwksRes.json();
+      const jwks = await assertJsonBody(jwksRes);
 
       for (const key of jwks.keys) {
         // RFC 7517 JWK structure
@@ -544,23 +584,27 @@ describe('End-to-End OIDC Flow', () => {
         expect(key.e).toBeDefined(); // exponent
 
         // Should NOT contain private key components
-        expect(key.d).toBeUndefined(); // private exponent
-        expect(key.p).toBeUndefined(); // first prime factor
-        expect(key.q).toBeUndefined(); // second prime factor
-        expect(key.dp).toBeUndefined(); // first factor CRT exponent
-        expect(key.dq).toBeUndefined(); // second factor CRT exponent
-        expect(key.qi).toBeUndefined(); // first CRT coefficient
+        expect('d' in key).toBe(false); // private exponent
+        expect('p' in key).toBe(false); // first prime factor
+        expect('q' in key).toBe(false); // second prime factor
+        expect('dp' in key).toBe(false); // first factor CRT exponent
+        expect('dq' in key).toBe(false); // second factor CRT exponent
+        expect('qi' in key).toBe(false); // first CRT coefficient
       }
     });
 
     test('should be able to import JWKS key and verify token', async () => {
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks');
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
 
-      const jwks = await jwksRes.json();
+      const jwks = await assertJsonBody(jwksRes);
 
       // Import the first key
       const key = jwks.keys[0];
-      const publicKey = await jose.importJWK(key, 'RS256');
+      expect(key).toBeDefined();
+      if (!key) return;
+      const publicKey = await jose.importJWK(key as jose.JWK, 'RS256');
 
       // Get a token
       const sessionCookie = await createAuthenticatedSession(app);
@@ -590,39 +634,46 @@ describe('End-to-End OIDC Flow', () => {
 
   describe('OpenID Configuration Compliance', () => {
     test('should list all advertised endpoints as working', async () => {
-      const configRes = await app.request(
-        '/application/oauth/.well-known/openid-configuration',
-      );
+      const client = createTestClient(app);
+      const configRes =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
-      const config = await configRes.json();
+      const config = await assertJsonBody(configRes);
 
       // Test JWKS URI
-      const jwksUrl = new URL(config.jwks_uri);
-      const jwksRes = await app.request(jwksUrl.pathname);
+      const jwksRes = await client.application.oauth['.well-known'].jwks.$get();
       expect(jwksRes.status).toBe(200);
 
       // Authorization endpoint requires params, just verify path exists
-      const authUrl = new URL(config.authorization_endpoint);
+      expect(config.authorization_endpoint).toBeDefined();
+      const authUrl = new URL(config.authorization_endpoint ?? '');
       expect(authUrl.pathname).toContain('/authorize');
 
       // Token endpoint requires params
-      const tokenUrl = new URL(config.token_endpoint);
+      expect(config.token_endpoint).toBeDefined();
+      const tokenUrl = new URL(config.token_endpoint ?? '');
       expect(tokenUrl.pathname).toContain('/token');
 
       // UserInfo endpoint requires auth
-      const userinfoUrl = new URL(config.userinfo_endpoint);
+      expect(config.userinfo_endpoint).toBeDefined();
+      const userinfoUrl = new URL(config.userinfo_endpoint ?? '');
       expect(userinfoUrl.pathname).toContain('/userinfo');
     });
 
     test('should support advertised grant types', async () => {
-      const configRes = await app.request(
-        '/application/oauth/.well-known/openid-configuration',
-      );
+      const client = createTestClient(app);
+      const configRes =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
-      const config = await configRes.json();
+      const config = await assertJsonBody(configRes);
 
       // Test authorization_code grant
-      if (config.grant_types_supported.includes('authorization_code')) {
+      expect(config.grant_types_supported).toBeDefined();
+      if (config.grant_types_supported?.includes('authorization_code')) {
         const sessionCookie = await createAuthenticatedSession(app);
         const { code } = await getAuthorizationCode(app, {
           sessionCookie,
@@ -639,7 +690,7 @@ describe('End-to-End OIDC Flow', () => {
       }
 
       // Test refresh_token grant
-      if (config.grant_types_supported.includes('refresh_token')) {
+      if (config.grant_types_supported?.includes('refresh_token')) {
         const sessionCookie = await createAuthenticatedSession(app);
         const { code } = await getAuthorizationCode(app, {
           sessionCookie,
@@ -654,14 +705,13 @@ describe('End-to-End OIDC Flow', () => {
 
         const tokens = await tokenRes.json();
 
-        const refreshRes = await app.request('/application/oauth/token', {
-          method: 'POST',
-          body: JSON.stringify({
+        const tokenClient = createTestClient(app);
+        const refreshRes = await tokenClient.application.oauth.token.$post({
+          json: {
             grant_type: 'refresh_token',
             refresh_token: tokens.refresh_token,
             client_id: TEST_OAUTH_CLIENT.clientId,
-          }),
-          headers: { 'Content-Type': 'application/json' },
+          },
         });
 
         expect(refreshRes.status).toBe(200);
@@ -669,9 +719,11 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should support advertised response types', async () => {
-      const configRes = await app.request(
-        '/application/oauth/.well-known/openid-configuration',
-      );
+      const client = createTestClient(app);
+      const configRes =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
       const config = await configRes.json();
 
@@ -689,19 +741,22 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should support advertised scopes', async () => {
-      const configRes = await app.request(
-        '/application/oauth/.well-known/openid-configuration',
-      );
+      const client = createTestClient(app);
+      const configRes =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
-      const config = await configRes.json();
+      const config = await assertJsonBody(configRes);
 
       // Verify openid scope is supported and works
+      expect(config.scopes_supported).toBeDefined();
       expect(config.scopes_supported).toContain('openid');
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
         sessionCookie,
-        scope: config.scopes_supported.join(' '),
+        scope: config.scopes_supported?.join(' ') ?? '',
         codeChallenge: TEST_PKCE.codeChallenge,
         codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
       });
@@ -712,8 +767,12 @@ describe('End-to-End OIDC Flow', () => {
 
   describe('Error Scenarios with Valid JWKS', () => {
     test('should reject token with tampered signature', async () => {
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks');
-      const JWKS = jose.createLocalJWKSet(await jwksRes.json());
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
+      const JWKS = jose.createLocalJWKSet(
+        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
+      );
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -739,8 +798,12 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should reject token with wrong issuer', async () => {
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks');
-      const JWKS = jose.createLocalJWKSet(await jwksRes.json());
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
+      const JWKS = jose.createLocalJWKSet(
+        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
+      );
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -765,8 +828,12 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should reject token with wrong audience', async () => {
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks');
-      const JWKS = jose.createLocalJWKSet(await jwksRes.json());
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
+      const JWKS = jose.createLocalJWKSet(
+        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
+      );
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {

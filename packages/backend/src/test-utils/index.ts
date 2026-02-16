@@ -17,7 +17,11 @@ export {
   getJwtKey,
 } from './cli.js';
 // Type-safe test client
-export { createTestClient, createTestClientWithHeaders } from './client.js';
+export {
+  assertJsonBody,
+  createTestClient,
+  createTestClientWithHeaders,
+} from './client.js';
 // Test fixtures and constants
 export {
   DEFAULT_SCOPES,
@@ -42,8 +46,6 @@ export {
   extractCookie,
   grantConsent,
   registerUser,
-  requestWithCookie,
-  requestWithSession,
   withMikroContext,
 } from './helpers.js';
 export type {

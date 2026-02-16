@@ -1,6 +1,7 @@
 import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createTestClient,
   createTestClientWithHeaders,
@@ -59,17 +60,16 @@ describe('GET /api/v1/user/session', () => {
     });
     const sessionRes = await authedClient.api.v1.user.session.$get();
 
-    expect(sessionRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionBody: any = await sessionRes.json();
-    expect(sessionBody).toHaveProperty('user');
-    expect(sessionBody.user).toHaveProperty('id');
+    const sessionBody = await assertJsonBody(sessionRes);
+    expect(sessionBody.user).toBeDefined();
+    const sessionUser = sessionBody.user;
+    if (!sessionUser) return;
+    expect(sessionUser).toHaveProperty('id');
 
     // Verify user id matches = logged-in user
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const loginBody: any = await loginRes.json();
-    expect(sessionBody.user.id).toBe(loginBody.user.id);
-    expect(sessionBody.user).toHaveProperty('second_factor_required');
+    const loginBody = await assertJsonBody(loginRes);
+    expect(sessionUser.id).toBe(loginBody.user?.id);
+    expect(sessionUser).toHaveProperty('second_factor_required');
   });
 
   test('should return unauthenticated after logout', async () => {
@@ -82,9 +82,7 @@ describe('GET /api/v1/user/session', () => {
     // Verify session exists
     const maybeHasSessionRes = await authedClient.api.v1.user.session.$get();
 
-    expect(maybeHasSessionRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionBody: any = await maybeHasSessionRes.json();
+    const sessionBody = await assertJsonBody(maybeHasSessionRes);
     expect(sessionBody).toHaveProperty('user');
 
     const logoutRes = await authedClient.api.v1.auth.logout.$post();
@@ -127,9 +125,7 @@ describe('GET /api/v1/user/session', () => {
     for (let i = 0; i < 3; i++) {
       const sessionRes = await client.api.v1.user.session.$get();
 
-      expect(sessionRes.status).toBe(200);
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const sessionBody: any = await sessionRes.json();
+      const sessionBody = await assertJsonBody(sessionRes);
       expect(sessionBody.user).toHaveProperty('id');
     }
   });

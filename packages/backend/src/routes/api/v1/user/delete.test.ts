@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createDbUserWithSession,
   createTestClient,
@@ -73,9 +74,7 @@ describe('DELETE /api/v1/user', () => {
       });
       const deleteRes = await client.api.v1.user.$delete();
 
-      expect(deleteRes.status).toBe(200);
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const body: any = await deleteRes.json();
+      const body = await assertJsonBody(deleteRes);
       expect(body.ok).toBe(true);
       expect(body.deleted_at).toBeDefined();
       expect(body.permanent_deletion_at).toBeDefined();

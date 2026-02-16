@@ -2,6 +2,7 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createDbUserWithSession,
   createTestClient,
@@ -41,9 +42,7 @@ describe('POST /api/v1/user/password', () => {
       json: { password: 'newPassword123!' },
     });
 
-    expect(res.status).toBe(401);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 401);
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
@@ -58,9 +57,7 @@ describe('POST /api/v1/user/password', () => {
       json: { password: 'newPassword123!' },
     });
 
-    expect(res.status).toBe(403);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 403);
     expect(body.code).toBe('USER_NOT_EDITABLE');
   });
 
@@ -83,9 +80,7 @@ describe('POST /api/v1/user/password', () => {
       json: { password: 'anotherPassword123!' },
     });
 
-    expect(res.status).toBe(409);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 409);
     expect(body.code).toBe('PASSWORD_ALREADY_SET');
   });
 
@@ -137,9 +132,7 @@ describe('POST /api/v1/user/password', () => {
       json: { password: newPassword },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     // Verify password was set by trying to login
@@ -192,8 +185,7 @@ describe('POST /api/v1/user/password', () => {
       Cookie: `session=${sessionCookie}`,
     });
     const res = await client.api.v1.user.password.$post({
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: { password: 'short' } as any,
+      json: { password: 'short' },
     });
 
     expect(res.status).toBe(400);

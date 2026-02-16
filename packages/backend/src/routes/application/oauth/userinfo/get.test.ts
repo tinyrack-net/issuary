@@ -1,14 +1,16 @@
 import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
+  createTestClient,
+  createTestClientWithHeaders,
   exchangeCodeForTokens,
   getAccessToken,
   getAuthorizationCode,
   getUserInfo,
-  grantConsent,
   MINIMAL_TEST_CONFIG,
-  TEST_OAUTH_CLIENT,
+  revokeToken,
   TEST_OAUTH_CLIENT_CONFIG,
   TEST_USER,
   TEST_USER_CONFIG,
@@ -164,30 +166,28 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should reject request with invalid Authorization header format', async () => {
-      const res = await app.request('/application/oauth/userinfo', {
-        method: 'GET',
-        headers: {
+      const client = createTestClient(app);
+      const res = await client.application.oauth.userinfo.$get({
+        header: {
           authorization: 'InvalidFormat token123', // Should be "Bearer <token>"
         },
       });
 
-      expect(res.status).toBe(401);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_AUTHORIZATION_HEADER_FORMAT');
     });
 
     test('should reject request with missing token in Bearer header', async () => {
-      const res = await app.request('/application/oauth/userinfo', {
-        method: 'GET',
-        headers: {
+      const client = createTestClient(app);
+      const res = await client.application.oauth.userinfo.$get({
+        header: {
           authorization: 'Bearer ', // No token after Bearer
         },
       });
 
-      expect(res.status).toBe(401);
-      const json = await res.json();
       // Hono trims trailing space from 'Bearer ', resulting in 'Bearer'
       // which fails the format check (expects 2 parts after split)
+      const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_AUTHORIZATION_HEADER_FORMAT');
     });
 
@@ -223,48 +223,11 @@ describe('GET /application/oauth/userinfo', () => {
     test('should reject request with refresh token instead of access token', async () => {
       // Get tokens
       const sessionCookie = await createAuthenticatedSession(app);
-
-      // Grant consent first
-      await grantConsent(app, sessionCookie, {
-        client_id: TEST_OAUTH_CLIENT.clientId,
-        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
         scope: 'openid',
-        state: 'test',
       });
-
-      // Get authorization code and exchange for tokens to get refresh token
-      const queryString = new URLSearchParams({
-        response_type: 'code',
-        client_id: TEST_OAUTH_CLIENT.clientId,
-        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        scope: 'openid',
-        state: 'test',
-      }).toString();
-      const authorizeRes = await app.request(
-        `/application/oauth/authorize?${queryString}`,
-        {
-          method: 'GET',
-          headers: { Cookie: `session=${sessionCookie}` },
-        },
-      );
-
-      const location = new URL(
-        authorizeRes.headers.get('location') as string,
-        'http://localhost:8080',
-      );
-      const code = location.searchParams.get('code');
-
-      const tokenRes = await app.request('/application/oauth/token', {
-        method: 'POST',
-        body: JSON.stringify({
-          grant_type: 'authorization_code',
-          code,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      });
-
+      const tokenRes = await exchangeCodeForTokens(app, { code });
       const { refresh_token } = await tokenRes.json();
 
       // Try to use refresh token for userinfo (should fail)
@@ -390,12 +353,14 @@ describe('GET /application/oauth/userinfo', () => {
 
   describe('Error Response Format', () => {
     test('should return proper error format for missing auth header', async () => {
-      const res = await app.request('/application/oauth/userinfo', {
-        method: 'GET',
+      const client = createTestClient(app);
+      const res = await client.application.oauth.userinfo.$get({
+        header: {
+          authorization: undefined,
+        },
       });
 
-      expect(res.status).toBe(401);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 401);
 
       expect(json).toHaveProperty('code');
       expect(json).toHaveProperty('message');
@@ -404,6 +369,7 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should return 401 for all authentication errors', async () => {
+      const client = createTestClient(app);
       const testCases = [
         { authorization: undefined, desc: 'missing header' },
         { authorization: 'InvalidFormat', desc: 'invalid format' },
@@ -412,18 +378,13 @@ describe('GET /application/oauth/userinfo', () => {
       ];
 
       for (const testCase of testCases) {
-        const headers: Record<string, string> = {};
-        if (testCase['authorization']) {
-          headers['authorization'] = testCase['authorization'];
-        }
-
-        const res = await app.request('/application/oauth/userinfo', {
-          method: 'GET',
-          headers,
+        const res = await client.application.oauth.userinfo.$get({
+          header: {
+            authorization: testCase['authorization'],
+          },
         });
 
-        expect(res.status).toBe(401);
-        const json = await res.json();
+        const json = await assertJsonBody(res, 401);
         expect(json.code).toBeDefined();
         expect(json.message).toBeDefined();
       }
@@ -453,47 +414,14 @@ describe('GET /application/oauth/userinfo', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const scope = 'openid email';
 
-      // Grant consent first
-      await grantConsent(app, sessionCookie, {
-        client_id: TEST_OAUTH_CLIENT.clientId,
-        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+      // Get authorization code (this also grants consent)
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
         scope,
-        state: 'test',
       });
 
-      // Get tokens (including ID token)
-      const queryString = new URLSearchParams({
-        response_type: 'code',
-        client_id: TEST_OAUTH_CLIENT.clientId,
-        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        scope,
-        state: 'test',
-      }).toString();
-      const authorizeRes = await app.request(
-        `/application/oauth/authorize?${queryString}`,
-        {
-          method: 'GET',
-          headers: { Cookie: `session=${sessionCookie}` },
-        },
-      );
-
-      const location = new URL(
-        authorizeRes.headers.get('location') as string,
-        'http://localhost:8080',
-      );
-      const code = location.searchParams.get('code');
-
-      const tokenRes = await app.request('/application/oauth/token', {
-        method: 'POST',
-        body: JSON.stringify({
-          grant_type: 'authorization_code',
-          code,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      });
-
+      // Exchange code for tokens
+      const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token, id_token } = await tokenRes.json();
 
       // Get userinfo
@@ -576,13 +504,8 @@ describe('GET /application/oauth/userinfo', () => {
       expect(validRes.status).toBe(200);
 
       // Revoke the token
-      const revokeRes = await app.request('/application/oauth/revoke', {
-        method: 'POST',
-        body: JSON.stringify({
-          token: access_token,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-        }),
-        headers: { 'Content-Type': 'application/json' },
+      const revokeRes = await revokeToken(app, {
+        token: access_token,
       });
       expect(revokeRes.status).toBe(200);
 
@@ -634,11 +557,12 @@ describe('GET /application/oauth/userinfo', () => {
         scope: 'openid profile email',
       });
 
-      const res = await app.request('/application/oauth/userinfo', {
-        method: 'GET',
-        headers: {
+      const client = createTestClientWithHeaders(app, {
+        accept: 'application/json',
+      });
+      const res = await client.application.oauth.userinfo.$get({
+        header: {
           authorization: `Bearer ${accessToken}`,
-          accept: 'application/json',
         },
       });
 
@@ -651,16 +575,16 @@ describe('GET /application/oauth/userinfo', () => {
         scope: 'openid profile email',
       });
 
-      const res = await app.request('/application/oauth/userinfo', {
-        method: 'GET',
-        headers: {
+      const client = createTestClientWithHeaders(app, {
+        accept: '*/*',
+      });
+      const res = await client.application.oauth.userinfo.$get({
+        header: {
           authorization: `Bearer ${accessToken}`,
-          accept: '*/*',
         },
       });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res);
       expect(json.sub).toBeDefined();
     });
   });

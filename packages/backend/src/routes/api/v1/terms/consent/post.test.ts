@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createDbUserWithSession,
   createTestClient,
@@ -94,8 +95,7 @@ describe('POST /api/v1/terms/consent', () => {
       const res = await client.api.v1.terms.consent.$post({
         json: {
           consents: [],
-          // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-        } as any,
+        },
       });
 
       expect(res.status).toBe(400);
@@ -108,8 +108,8 @@ describe('POST /api/v1/terms/consent', () => {
       });
 
       const res = await client.api.v1.terms.consent.$post({
-        // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-        json: {} as any,
+        // @ts-expect-error testing validation with invalid input
+        json: {},
       });
 
       expect(res.status).toBe(400);
@@ -123,9 +123,9 @@ describe('POST /api/v1/terms/consent', () => {
 
       const res = await client.api.v1.terms.consent.$post({
         json: {
+          // @ts-expect-error testing validation with invalid input
           consents: [{ agreed: true }],
-          // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-        } as any,
+        },
       });
 
       expect(res.status).toBe(400);
@@ -139,9 +139,9 @@ describe('POST /api/v1/terms/consent', () => {
 
       const res = await client.api.v1.terms.consent.$post({
         json: {
+          // @ts-expect-error testing validation with invalid input
           consents: [{ termsId: 'tos' }],
-          // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-        } as any,
+        },
       });
 
       expect(res.status).toBe(400);
@@ -155,9 +155,9 @@ describe('POST /api/v1/terms/consent', () => {
 
       const res = await client.api.v1.terms.consent.$post({
         json: {
+          // @ts-expect-error testing validation with invalid input
           consents: [{ termsId: 'tos', agreed: 'yes' }],
-          // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-        } as any,
+        },
       });
 
       expect(res.status).toBe(400);
@@ -178,9 +178,7 @@ describe('POST /api/v1/terms/consent', () => {
         },
       });
 
-      expect(res.status).toBe(400);
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const body: any = await res.json();
+      const body = await assertJsonBody(res, 400);
       expect(body.code).toBe('VALIDATION_ERROR');
       // ValidationError uses createErrorWithData, so the custom message is in 'data'
       expect(body.data).toMatch(/tos/i);
@@ -201,9 +199,7 @@ describe('POST /api/v1/terms/consent', () => {
         },
       });
 
-      expect(res.status).toBe(400);
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const body: any = await res.json();
+      const body = await assertJsonBody(res, 400);
       expect(body.code).toBe('VALIDATION_ERROR');
       // ValidationError uses createErrorWithData, so the custom message is in 'data'
       expect(body.data).toMatch(/privacy/i);
@@ -252,10 +248,7 @@ describe('POST /api/v1/terms/consent', () => {
         },
       });
 
-      expect(res.status).toBe(200);
-
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const body: any = await res.json();
+      const body = await assertJsonBody(res);
       expect(body.ok).toBe(true);
       expect(body.recorded).toBe(2);
     });
@@ -399,9 +392,7 @@ describe('POST /api/v1/terms/consent', () => {
         },
       });
 
-      expect(res.status).toBe(200);
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const body: any = await res.json();
+      const body = await assertJsonBody(res);
       expect(body.recorded).toBe(2);
     });
 
@@ -458,9 +449,7 @@ describe('POST /api/v1/terms/consent', () => {
         },
       });
 
-      expect(res.status).toBe(200);
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const body: any = await res.json();
+      const body = await assertJsonBody(res);
       expect(body.recorded).toBe(1);
     });
   });
@@ -511,10 +500,7 @@ describe('POST /api/v1/terms/consent', () => {
         },
       });
 
-      expect(res.status).toBe(200);
-
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const body: any = await res.json();
+      const body = await assertJsonBody(res);
       // Only 2 valid terms recorded
       expect(body.recorded).toBe(2);
 
@@ -1004,9 +990,7 @@ describe('POST /api/v1/terms/consent', () => {
         },
       });
 
-      expect(res.status).toBe(200);
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const body: any = await res.json();
+      const body = await assertJsonBody(res);
       expect(body.ok).toBe(true);
     });
   });
@@ -1052,9 +1036,7 @@ describe('POST /api/v1/terms/consent', () => {
         },
       });
 
-      expect(res.status).toBe(200);
-      // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-      const body: any = await res.json();
+      const body = await assertJsonBody(res);
       // Unknown term ignored
       expect(body.recorded).toBe(0);
     });

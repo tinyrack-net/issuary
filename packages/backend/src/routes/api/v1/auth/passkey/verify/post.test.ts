@@ -2,6 +2,7 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createDbUserWithSession,
   createTestClient,
   createTestClientWithHeaders,
@@ -90,17 +91,15 @@ describe('POST /api/v1/auth/passkey/verify', () => {
       },
     });
 
-    expect(res.status).toBe(400);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('PASSKEY_CHALLENGE_NOT_FOUND');
   });
 
   test('should return 400 when response body is empty', async () => {
     const client = createTestClient(app);
     const res = await client.api.v1.auth.passkey.verify.$post({
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: {} as any,
+      // @ts-expect-error testing validation with invalid input
+      json: {},
     });
 
     expect(res.status).toBe(400);
@@ -121,13 +120,13 @@ describe('POST /api/v1/auth/passkey/verify', () => {
       json: {
         response: {
           rawId: 'mock-id',
+          // @ts-expect-error testing validation with invalid input
           response: {
             clientDataJSON: 'mock-data',
           },
           type: 'public-key',
         },
-        // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      } as any,
+      },
     });
 
     expect(res.status).toBe(400);
@@ -154,9 +153,7 @@ describe('POST /api/v1/auth/passkey/verify', () => {
     });
 
     // PASSKEY_NOT_FOUND (404) when credential doesn't exist
-    expect(res.status).toBe(404);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 404);
     expect(body.code).toBe('PASSKEY_NOT_FOUND');
   });
 
@@ -254,8 +251,7 @@ describe('POST /api/v1/auth/passkey/verify', () => {
         response: createMockAuthenticationResponse({
           type: 'invalid-type',
         }),
-        // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      } as any,
+      },
     });
 
     expect(res.status).toBe(400);
@@ -374,9 +370,7 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
       },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
 
     // Verify response structure
     expect(body.user).toBeDefined();
@@ -520,9 +514,7 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
       },
     });
 
-    expect(res.status).toBe(403);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 403);
     expect(body.code).toBe('PASSKEY_USER_MISMATCH');
 
     mockVerifyAuthentication.mockRestore();
@@ -593,9 +585,7 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
       },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
 
     expect(body.user).toBeDefined();
     expect(body.user.id).toBe(userId);
@@ -607,11 +597,9 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
       Cookie: `session=${newSessionCookie}`,
     });
     const sessionRes = await sessionClient.api.v1.user.session.$get();
-    expect(sessionRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionBody: any = await sessionRes.json();
+    const sessionBody = await assertJsonBody(sessionRes);
     expect(sessionBody.user).toBeDefined();
-    expect(sessionBody.user.id).toBe(userId);
+    expect(sessionBody).toHaveProperty('user.id', userId);
 
     mockVerifyAuthentication.mockRestore();
   });

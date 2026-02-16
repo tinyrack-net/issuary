@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createDbUserWithSession,
   createTestClient,
@@ -66,9 +67,7 @@ describe('POST /api/v1/user/totp/setup', () => {
     });
     const res = await client.api.v1.user.totp.setup.$post();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
 
     // Verify response structure
     expect(body.secret).toBeDefined();
@@ -100,9 +99,7 @@ describe('POST /api/v1/user/totp/setup', () => {
     });
     const res = await client.api.v1.user.totp.setup.$post();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
 
     // Verify database record
     await withMikroContext(services, async () => {
@@ -131,16 +128,14 @@ describe('POST /api/v1/user/totp/setup', () => {
     // First setup call
     const res1 = await client.api.v1.user.totp.setup.$post();
 
-    expect(res1.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const firstSecret = ((await res1.json()) as any).secret;
+    const firstBody = await assertJsonBody(res1);
+    const firstSecret = firstBody.secret;
 
     // Second setup call should regenerate secret
     const res2 = await client.api.v1.user.totp.setup.$post();
 
-    expect(res2.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const secondSecret = ((await res2.json()) as any).secret;
+    const secondBody = await assertJsonBody(res2);
+    const secondSecret = secondBody.secret;
 
     // Secrets should be different
     expect(secondSecret).not.toBe(firstSecret);
@@ -204,9 +199,7 @@ describe('POST /api/v1/user/totp/setup', () => {
     const res = await client.api.v1.user.totp.setup.$post();
 
     // Should succeed and allow user to start fresh setup
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.secret).toBeDefined();
     expect(body.otpauth_url).toBeDefined();
     expect(body.qr_code).toBeDefined();
@@ -241,9 +234,7 @@ describe('POST /api/v1/user/totp/setup', () => {
     });
     const res = await client.api.v1.user.totp.setup.$post();
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
 
     // Generate a valid token using the secret via totpService
     const validToken = services.totpService.generateToken(body.secret);

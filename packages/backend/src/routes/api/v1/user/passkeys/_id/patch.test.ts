@@ -2,6 +2,7 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createPasskeyForUser,
   createTestClient,
@@ -68,8 +69,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
     expect(loginRes.status).toBe(200);
 
     const sessionCookie = extractCookie(loginRes, 'session');
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     const userId = body.user.id;
 
     return { sessionCookie, userId };
@@ -84,9 +84,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       json: { name: 'New Name' },
     });
 
-    expect(res.status).toBe(401);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 401);
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
@@ -106,9 +104,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       json: { name: 'New Name' },
     });
 
-    expect(res.status).toBe(404);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 404);
     expect(body.code).toBe('PASSKEY_NOT_FOUND');
   });
 
@@ -131,9 +127,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       json: { name: 'New Name' },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     // Verify the name was updated in database
@@ -164,9 +158,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       json: { name: 'My New Passkey' },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     // Verify the name was updated
@@ -198,8 +190,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
     });
     const res = await client.api.v1.user.passkeys[':id'].$patch({
       param: { id: passkeyId },
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: { name: '' } as any,
+      json: { name: '' },
     });
 
     expect(res.status).toBe(400);
@@ -228,8 +219,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
     });
     const res = await client.api.v1.user.passkeys[':id'].$patch({
       param: { id: passkeyId },
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: { name: longName } as any,
+      json: { name: longName },
     });
 
     expect(res.status).toBe(400);
@@ -261,9 +251,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       json: { name: maxName },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     await withMikroContext(services, async () => {
@@ -301,9 +289,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       json: { name: 'Stolen Name' },
     });
 
-    expect(res.status).toBe(404);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 404);
     expect(body.code).toBe('PASSKEY_NOT_FOUND');
 
     // Verify the name was NOT changed
@@ -335,8 +321,8 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
     });
     const res = await client.api.v1.user.passkeys[':id'].$patch({
       param: { id: passkeyId },
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: {} as any,
+      // @ts-expect-error testing validation with invalid input
+      json: {},
     });
 
     expect(res.status).toBe(400);
@@ -380,9 +366,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       json: { name: specialName },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     await withMikroContext(services, async () => {
@@ -427,8 +411,9 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       Cookie: `session=${sessionCookie}`,
     });
     const sessionRes = await sessionClient.api.v1.user.session.$get();
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionBody: any = await sessionRes.json();
+    const sessionBody = await assertJsonBody(sessionRes);
+    expect(sessionBody.user).toBeDefined();
+    if (!sessionBody.user) return;
     const userId = sessionBody.user.id;
 
     // Create passkey for config user
@@ -446,9 +431,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       json: { name: 'Renamed Passkey' },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
   });
 });

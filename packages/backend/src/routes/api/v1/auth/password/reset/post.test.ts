@@ -2,6 +2,7 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createTestClient,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -45,9 +46,7 @@ describe('POST /api/v1/auth/password/reset', () => {
       },
     });
 
-    expect(res.status).toBe(400);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const json: any = await res.json();
+    const json = await assertJsonBody(res, 400);
     expect(json.code).toBe('INVALID_PASSWORD_RESET_TOKEN');
   });
 
@@ -89,9 +88,7 @@ describe('POST /api/v1/auth/password/reset', () => {
       },
     });
 
-    expect(res.status).toBe(400);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const json: any = await res.json();
+    const json = await assertJsonBody(res, 400);
     expect(json.code).toBe('INVALID_PASSWORD_RESET_TOKEN');
   });
 
@@ -202,9 +199,7 @@ describe('POST /api/v1/auth/password/reset', () => {
       },
     });
 
-    expect(res2.status).toBe(400);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const json: any = await res2.json();
+    const json = await assertJsonBody(res2, 400);
     expect(json.code).toBe('INVALID_PASSWORD_RESET_TOKEN');
   });
 
@@ -243,9 +238,7 @@ describe('POST /api/v1/auth/password/reset', () => {
       },
     });
 
-    expect(res.status).toBe(403);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const json: any = await res.json();
+    const json = await assertJsonBody(res, 403);
     expect(json.code).toBe('USER_NOT_EDITABLE');
   });
 
@@ -255,8 +248,7 @@ describe('POST /api/v1/auth/password/reset', () => {
       json: {
         token: 'some-token',
         password: '123', // Too short / invalid
-        // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      } as any,
+      },
     });
 
     expect(res.status).toBe(400);

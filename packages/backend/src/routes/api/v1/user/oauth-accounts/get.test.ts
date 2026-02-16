@@ -2,6 +2,7 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createTestClient,
   createTestClientWithHeaders,
@@ -65,10 +66,7 @@ describe('GET /api/v1/user/oauth-accounts', () => {
     });
     const res = await client.api.v1.user['oauth-accounts'].$get();
 
-    expect(res.status).toBe(200);
-
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const json: any = await res.json();
+    const json = await assertJsonBody(res);
 
     expect(json.accounts).toBeDefined();
     expect(json.accounts).toBeInstanceOf(Array);
@@ -90,19 +88,17 @@ describe('GET /api/v1/user/oauth-accounts', () => {
     });
     const res = await client.api.v1.user['oauth-accounts'].$get();
 
-    expect(res.status).toBe(200);
-
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const json: any = await res.json();
+    const json = await assertJsonBody(res);
 
     // Check available_providers structure
     if (json.available_providers.length > 0) {
       const provider = json.available_providers[0];
-      expect(provider.id).toBeTypeOf('string');
-      expect(provider.display_name).toBeTypeOf('string');
-      expect(provider.linked).toBeTypeOf('boolean');
+      expect(provider).toBeDefined();
+      expect(provider?.id).toBeTypeOf('string');
+      expect(provider?.display_name).toBeTypeOf('string');
+      expect(provider?.linked).toBeTypeOf('boolean');
       // For user with no linked accounts, all should be false
-      expect(provider.linked).toBe(false);
+      expect(provider?.linked).toBe(false);
     }
   });
 
@@ -144,21 +140,18 @@ describe('GET /api/v1/user/oauth-accounts', () => {
     });
     const res = await client.api.v1.user['oauth-accounts'].$get();
 
-    expect(res.status).toBe(200);
-
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const json: any = await res.json();
+    const json = await assertJsonBody(res);
 
     // Should have one linked account
     expect(json.accounts.length).toBe(1);
-    expect(json.accounts[0].provider_name).toBe('google');
-    expect(json.accounts[0].linked_at).toBeDefined();
+    expect(json.accounts[0]?.provider_name).toBe('google');
+    expect(json.accounts[0]?.linked_at).toBeDefined();
 
     // Google should be marked as linked in available_providers
     const googleProvider = json.available_providers.find(
       (p: { id: string }) => p.id === 'google',
     );
     expect(googleProvider).toBeDefined();
-    expect(googleProvider.linked).toBe(true);
+    expect(googleProvider?.linked).toBe(true);
   });
 });

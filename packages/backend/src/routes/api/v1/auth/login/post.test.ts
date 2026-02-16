@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createTestClient,
   expectError,
   generateUniqueEmail,
@@ -45,9 +46,7 @@ describe('POST /api/v1/auth/login', () => {
       },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.user).toHaveProperty('id');
     expect(body.user).toHaveProperty('second_factor_required');
   });
@@ -70,9 +69,7 @@ describe('POST /api/v1/auth/login', () => {
       },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     expect(body).toHaveProperty('user');
     expect(body.user.email_verification_required).toBe(true);
   });
@@ -96,9 +93,7 @@ describe('POST /api/v1/auth/login', () => {
       },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     expect(body).toHaveProperty('user');
     expect(body.user.email_verification_required).toBe(true);
   });
@@ -131,9 +126,7 @@ describe('POST /api/v1/auth/login', () => {
       },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     expect(body.user.email).toBe(uniqueEmail);
     expect(body.user.email_verified).toBe(true);
   });
@@ -148,9 +141,7 @@ describe('POST /api/v1/auth/login', () => {
       },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.user.managed_by).toBe('config');
   });
 
@@ -184,8 +175,7 @@ describe('POST /api/v1/auth/login', () => {
       json: {
         email: 'not-an-email',
         password: 'anypassword',
-        // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      } as any,
+      },
     });
 
     expect(res.status).toBe(400);
@@ -199,8 +189,7 @@ describe('POST /api/v1/auth/login', () => {
       json: {
         email: 'admin@example.com',
         password: '12345',
-        // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      } as any,
+      },
     });
 
     expect(res.status).toBe(400);
@@ -211,10 +200,10 @@ describe('POST /api/v1/auth/login', () => {
   test('should fail with missing email', async () => {
     const client = createTestClient(app);
     const res = await client.api.v1.auth.login.$post({
+      // @ts-expect-error testing validation with invalid input
       json: {
         password: 'changemelater',
-        // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      } as any,
+      },
     });
 
     expect(res.status).toBe(400);
@@ -225,10 +214,10 @@ describe('POST /api/v1/auth/login', () => {
   test('should fail with missing password', async () => {
     const client = createTestClient(app);
     const res = await client.api.v1.auth.login.$post({
+      // @ts-expect-error testing validation with invalid input
       json: {
         email: 'admin@example.com',
-        // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      } as any,
+      },
     });
 
     expect(res.status).toBe(400);

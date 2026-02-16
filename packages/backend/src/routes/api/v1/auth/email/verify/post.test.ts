@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createTestClient,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -69,9 +70,7 @@ describe('POST /api/v1/auth/email/verify', () => {
       },
     });
 
-    expect(verifyRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const verifyBody: any = await verifyRes.json();
+    const verifyBody = await assertJsonBody(verifyRes);
     expect(verifyBody).toHaveProperty('user');
     expect(verifyBody.user.email_verified).toBe(true);
 

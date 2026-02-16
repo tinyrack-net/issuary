@@ -2,6 +2,7 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import {
   createAuthenticatedSession,
+  createTestClient,
   exchangeCodeForTokens,
   getAuthorizationCode,
   getUserInfo,
@@ -617,10 +618,12 @@ describe('Token Lifecycle and Rotation', () => {
 
   describe('Token Subject Consistency', () => {
     test('should maintain same subject across all token operations', async () => {
-      const jwksRes = await app.request('/application/oauth/.well-known/jwks', {
-        method: 'GET',
-      });
-      const JWKS = jose.createLocalJWKSet(await jwksRes.json());
+      const jwksClient = createTestClient(app);
+      const jwksRes =
+        await jwksClient.application.oauth['.well-known'].jwks.$get();
+      const JWKS = jose.createLocalJWKSet(
+        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
+      );
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {

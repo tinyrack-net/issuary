@@ -1,11 +1,14 @@
 import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
+  createTestClient,
   exchangeCodeForTokens,
   getAuthorizationCode,
   introspectToken,
   MINIMAL_TEST_CONFIG,
+  revokeToken,
   TEST_OAUTH_CLIENT,
   TEST_OAUTH_CLIENT_CONFIG,
   TEST_USER_CONFIG,
@@ -74,16 +77,14 @@ describe('POST /application/oauth/introspect', () => {
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = await tokenRes.json();
 
-      const res = await app.request('/application/oauth/introspect', {
-        method: 'POST',
-        body: JSON.stringify({
+      const client = createTestClient(app);
+      const res = await client.application.oauth.introspect.$post({
+        json: {
           token: access_token,
-        }),
-        headers: { 'Content-Type': 'application/json' },
+        },
       });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res);
       expect(json.active).toBe(true);
     });
 
@@ -185,12 +186,11 @@ describe('POST /application/oauth/introspect', () => {
     });
 
     test('should return active=false for empty token', async () => {
-      const res = await app.request('/application/oauth/introspect', {
-        method: 'POST',
-        body: JSON.stringify({
+      const client = createTestClient(app);
+      const res = await client.application.oauth.introspect.$post({
+        json: {
           token: '',
-        }),
-        headers: { 'Content-Type': 'application/json' },
+        },
       });
 
       // Zod validation should fail for empty string
@@ -365,13 +365,8 @@ describe('POST /application/oauth/introspect', () => {
       expect((await beforeRes.json()).active).toBe(true);
 
       // Revoke the token
-      const revokeRes = await app.request('/application/oauth/revoke', {
-        method: 'POST',
-        body: JSON.stringify({
-          token: access_token,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-        }),
-        headers: { 'Content-Type': 'application/json' },
+      const revokeRes = await revokeToken(app, {
+        token: access_token,
       });
       expect(revokeRes.status).toBe(200);
 
@@ -396,13 +391,8 @@ describe('POST /application/oauth/introspect', () => {
       expect((await beforeRes.json()).active).toBe(true);
 
       // Revoke the token
-      const revokeRes = await app.request('/application/oauth/revoke', {
-        method: 'POST',
-        body: JSON.stringify({
-          token: refresh_token,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-        }),
-        headers: { 'Content-Type': 'application/json' },
+      const revokeRes = await revokeToken(app, {
+        token: refresh_token,
       });
       expect(revokeRes.status).toBe(200);
 
@@ -416,13 +406,13 @@ describe('POST /application/oauth/introspect', () => {
 
   describe('Request Validation', () => {
     test('should reject request without token', async () => {
-      const res = await app.request('/application/oauth/introspect', {
-        method: 'POST',
-        body: JSON.stringify({
-          // No token
+      const client = createTestClient(app);
+      const res = await client.application.oauth.introspect.$post({
+        json: {
+          // No token - send empty string to trigger validation
+          token: undefined as unknown as string,
           client_id: TEST_OAUTH_CLIENT.clientId,
-        }),
-        headers: { 'Content-Type': 'application/json' },
+        },
       });
 
       expect(res.status).toBe(400);

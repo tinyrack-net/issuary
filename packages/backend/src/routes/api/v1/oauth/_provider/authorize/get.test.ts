@@ -3,6 +3,8 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import {
   createAuthenticatedSession,
+  createTestClient,
+  createTestClientWithHeaders,
   expectError,
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
@@ -50,8 +52,10 @@ afterAll(async () => {
 describe('GET /api/v1/oauth/:provider/authorize', () => {
   describe('Success Cases', () => {
     test('should redirect to OAuth provider with valid provider', async () => {
-      const res = await app.request('/api/v1/oauth/google/authorize', {
-        method: 'GET',
+      const client = createTestClient(app);
+      const res = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: {},
       });
 
       expect(res.status).toBe(302);
@@ -84,8 +88,10 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     });
 
     test('should store session data with state and code verifier', async () => {
-      const res = await app.request('/api/v1/oauth/google/authorize', {
-        method: 'GET',
+      const client = createTestClient(app);
+      const res = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: {},
       });
 
       expect(res.status).toBe(302);
@@ -97,26 +103,22 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     });
 
     test('should support login mode (default)', async () => {
-      const res = await app.request(
-        '/api/v1/oauth/google/authorize?' +
-          new URLSearchParams({ mode: 'login' }).toString(),
-        {
-          method: 'GET',
-        },
-      );
+      const client = createTestClient(app);
+      const res = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: { mode: 'login' },
+      });
 
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).toBeDefined();
     });
 
     test('should support register mode', async () => {
-      const res = await app.request(
-        '/api/v1/oauth/google/authorize?' +
-          new URLSearchParams({ mode: 'register' }).toString(),
-        {
-          method: 'GET',
-        },
-      );
+      const client = createTestClient(app);
+      const res = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: { mode: 'register' },
+      });
 
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).toBeDefined();
@@ -125,14 +127,13 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     test('should support link mode with authenticated session', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const res = await app.request(
-        '/api/v1/oauth/google/authorize?' +
-          new URLSearchParams({ mode: 'link' }).toString(),
-        {
-          method: 'GET',
-          headers: { Cookie: `session=${sessionCookie}` },
-        },
-      );
+      const client = createTestClientWithHeaders(app, {
+        Cookie: `session=${sessionCookie}`,
+      });
+      const res = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: { mode: 'link' },
+      });
 
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).toBeDefined();
@@ -141,28 +142,30 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     test('should preserve return_url parameter', async () => {
       const returnUrl = '/profile?tab=oauth';
 
-      const res = await app.request(
-        '/api/v1/oauth/google/authorize?' +
-          new URLSearchParams({
-            mode: 'login',
-            return_url: returnUrl,
-          }).toString(),
-        {
-          method: 'GET',
+      const client = createTestClient(app);
+      const res = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: {
+          mode: 'login',
+          return_url: returnUrl,
         },
-      );
+      });
 
       expect(res.status).toBe(302);
       // return_url is stored in session, not in redirect URL
     });
 
     test('should generate unique state for each request', async () => {
-      const res1 = await app.request('/api/v1/oauth/google/authorize', {
-        method: 'GET',
+      const client = createTestClient(app);
+
+      const res1 = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: {},
       });
 
-      const res2 = await app.request('/api/v1/oauth/google/authorize', {
-        method: 'GET',
+      const res2 = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: {},
       });
 
       const location1 = new URL(res1.headers.get('location') as string);
@@ -175,12 +178,16 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     });
 
     test('should generate unique code_challenge for each request', async () => {
-      const res1 = await app.request('/api/v1/oauth/google/authorize', {
-        method: 'GET',
+      const client = createTestClient(app);
+
+      const res1 = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: {},
       });
 
-      const res2 = await app.request('/api/v1/oauth/google/authorize', {
-        method: 'GET',
+      const res2 = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: {},
       });
 
       const location1 = new URL(res1.headers.get('location') as string);
@@ -195,8 +202,10 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
 
   describe('Provider Validation', () => {
     test('should return 404 for non-existent provider', async () => {
-      const res = await app.request('/api/v1/oauth/nonexistent/authorize', {
-        method: 'GET',
+      const client = createTestClient(app);
+      const res = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'nonexistent' },
+        query: {},
       });
 
       await expectError(res, e.OAuthProviderNotFound);
@@ -204,20 +213,21 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
 
     test('should return 404 for disabled provider', async () => {
       // GitHub is disabled in test config
-      const res = await app.request('/api/v1/oauth/github/authorize', {
-        method: 'GET',
+      const client = createTestClient(app);
+      const res = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'github' },
+        query: {},
       });
 
       await expectError(res, e.OAuthProviderNotFound);
     });
 
     test('should return 404 for invalid provider id format', async () => {
-      const res = await app.request(
-        '/api/v1/oauth/invalid-provider-123/authorize',
-        {
-          method: 'GET',
-        },
-      );
+      const client = createTestClient(app);
+      const res = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'invalid-provider-123' },
+        query: {},
+      });
 
       await expectError(res, e.OAuthProviderNotFound);
     });
@@ -225,21 +235,22 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
 
   describe('Mode Validation', () => {
     test('should reject invalid mode parameter', async () => {
-      const res = await app.request(
-        '/api/v1/oauth/google/authorize?' +
-          new URLSearchParams({ mode: 'invalid_mode' }).toString(),
-        {
-          method: 'GET',
-        },
-      );
+      const client = createTestClient(app);
+      const res = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        // @ts-expect-error testing validation with invalid input
+        query: { mode: 'invalid_mode' },
+      });
 
       // Zod validation should fail
       expect(res.status).toBe(400);
     });
 
     test('should use login as default mode when not specified', async () => {
-      const res = await app.request('/api/v1/oauth/google/authorize', {
-        method: 'GET',
+      const client = createTestClient(app);
+      const res = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: {},
       });
 
       expect(res.status).toBe(302);
@@ -250,13 +261,11 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
 
   describe('Link Mode Authentication', () => {
     test('should return 401 for link mode without authentication', async () => {
-      const res = await app.request(
-        '/api/v1/oauth/google/authorize?' +
-          new URLSearchParams({ mode: 'link' }).toString(),
-        {
-          method: 'GET',
-        },
-      );
+      const client = createTestClient(app);
+      const res = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: { mode: 'link' },
+      });
 
       expect(res.status).toBe(401);
     });
@@ -264,8 +273,10 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
 
   describe('Security', () => {
     test('should use S256 for PKCE code challenge method', async () => {
-      const res = await app.request('/api/v1/oauth/google/authorize', {
-        method: 'GET',
+      const client = createTestClient(app);
+      const res = await client.api.v1.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: {},
       });
 
       const location = new URL(res.headers.get('location') as string);
@@ -273,11 +284,13 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     });
 
     test('should generate cryptographically random state', async () => {
+      const client = createTestClient(app);
       const states: string[] = [];
 
       for (let i = 0; i < 5; i++) {
-        const res = await app.request('/api/v1/oauth/google/authorize', {
-          method: 'GET',
+        const res = await client.api.v1.oauth[':provider'].authorize.$get({
+          param: { provider: 'google' },
+          query: {},
         });
 
         const location = new URL(res.headers.get('location') as string);

@@ -112,15 +112,14 @@ describe('GET /api/v1/config', () => {
     expect(Array.isArray(json.identity_providers)).toBe(true);
 
     // Find Google provider in the array (should be enabled in test config)
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const googleProvider: any = json.identity_providers.find(
-      (m: { id: string }) => m.id === 'google',
+    const googleProvider = json.identity_providers.find(
+      (m) => m.id === 'google',
     );
     if (googleProvider) {
       expect(googleProvider.type).toBe('google');
       expect(googleProvider.display_name).toBeTypeOf('string');
       // enabled field should not exist (only enabled providers are returned)
-      expect(googleProvider.enabled).toBeUndefined();
+      expect('enabled' in googleProvider).toBe(false);
     }
   });
 

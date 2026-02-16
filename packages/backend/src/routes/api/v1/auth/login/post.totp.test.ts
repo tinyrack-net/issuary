@@ -18,6 +18,7 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createTestClient,
   createTestClientWithHeaders,
   enableTotpForUser,
@@ -114,9 +115,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
       json: { email, password },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     expect(body.user.second_factor_required).toBe(true);
     expect(body.user).not.toBeNull();
   });
@@ -137,9 +136,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
       json: { email, password },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     // User has TOTP registered, so verification is required
     expect(body.user.totp_registered).toBe(true);
     expect(body.user).not.toBeNull();
@@ -164,9 +161,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
       json: { email, password },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const loginBody: any = await loginRes.json();
+    const loginBody = await assertJsonBody(loginRes);
     expect(loginBody.user.second_factor_required).toBe(true);
 
     // Verify session cookie is issued
@@ -196,9 +191,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
       json: { email, password },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const loginBody: any = await loginRes.json();
+    const loginBody = await assertJsonBody(loginRes);
     expect(loginBody.user.second_factor_required).toBe(true);
 
     // Verify session cookie is issued
@@ -225,9 +218,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
       },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     expect(body.user.managed_by).toBe('config');
     expect(body.user.second_factor_required).toBe(false);
   });
@@ -290,9 +281,7 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
       json: { email, password },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     expect(body.user.email).toBe(email);
     expect(body.user.totp_registered).toBeFalsy();
     expect(body.user.second_factor_required).toBe(false);
@@ -312,9 +301,7 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
       json: { email, password },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     // User has TOTP registered, so verification is required
     expect(body.user.totp_registered).toBe(true);
     expect(body.user).not.toBeNull();
@@ -347,11 +334,9 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
       Cookie: `session=${sessionCookie}`,
     });
     const sessionRes = await sessionClient.api.v1.user.session.$get();
-    expect(sessionRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionBody: any = await sessionRes.json();
+    const sessionBody = await assertJsonBody(sessionRes);
     expect(sessionBody.user).not.toBeNull();
-    expect(sessionBody.user.email).toBe(email);
+    expect(sessionBody).toHaveProperty('user.email', email);
   });
 });
 
@@ -411,9 +396,7 @@ describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
       json: { email, password },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     expect(body.user.email).toBe(email);
     expect(body.user.second_factor_required).toBe(false);
   });
@@ -435,9 +418,7 @@ describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
       json: { email, password },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     // User has TOTP registered, so verification is required
     expect(body.user.totp_registered).toBe(true);
     expect(body.user).not.toBeNull();
@@ -500,9 +481,7 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
       json: { email, password },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     // Email verification should be required first
     expect(body.user.email_verification_required).toBe(true);
     expect(body.user).not.toBeNull();
@@ -527,9 +506,7 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
       json: { email, password },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     // TOTP setup should be required (email is already verified)
     expect(body.user.second_factor_required).toBe(true);
     expect(body.user).not.toBeNull();
@@ -550,9 +527,7 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
       json: { email, password },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     // TOTP verification should be required
     expect(body.user.second_factor_required).toBe(true);
     expect(body.user).not.toBeNull();
@@ -615,9 +590,7 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
       json: { email, password },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const loginResBody: any = await loginRes.json();
+    const loginResBody = await assertJsonBody(loginRes);
     expect(loginResBody).toHaveProperty('user');
     expect(loginResBody.user.second_factor_required).toBe(true);
 
@@ -651,9 +624,7 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
       json: { email, password },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const loginResBody: any = await loginRes.json();
+    const loginResBody = await assertJsonBody(loginRes);
     expect(loginResBody).toHaveProperty('user');
     expect(loginResBody.user.second_factor_required).toBe(true);
 
@@ -696,11 +667,9 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     });
     const sessionRes = await sessionClient.api.v1.user.session.$get();
 
-    expect(sessionRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionBody: any = await sessionRes.json();
+    const sessionBody = await assertJsonBody(sessionRes);
     expect(sessionBody.user).not.toBeNull();
-    expect(sessionBody.user.email).toBe(TEST_USER.email);
+    expect(sessionBody).toHaveProperty('user.email', TEST_USER.email);
   });
 
   test('should complete login flow: TOTP setup -> verify -> full session', async () => {
@@ -723,9 +692,7 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
       json: { email, password },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const loginResBody: any = await loginRes.json();
+    const loginResBody = await assertJsonBody(loginRes);
     expect(loginResBody).toHaveProperty('user');
     expect(loginResBody.user.second_factor_required).toBe(true);
 
@@ -737,9 +704,7 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     });
     const setupRes = await sessionClient.api.v1.user.totp.setup.$post();
 
-    expect(setupRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const setupBody: any = await setupRes.json();
+    const setupBody = await assertJsonBody(setupRes);
     const secret = setupBody.secret;
 
     // Step 3: Verify TOTP code
@@ -748,9 +713,7 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
       json: { code: validCode },
     });
 
-    expect(verifyRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const verifyBody: any = await verifyRes.json();
+    const verifyBody = await assertJsonBody(verifyRes);
     expect(verifyBody).toHaveProperty('recovery_codes');
     expect(verifyBody.recovery_codes).toHaveLength(8);
 
@@ -759,9 +722,7 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
       json: {},
     });
 
-    expect(confirmRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const confirmBody: any = await confirmRes.json();
+    const confirmBody = await assertJsonBody(confirmRes);
     expect(confirmBody).toHaveProperty('user');
     expect(confirmBody.user.totp_registered).toBe(true);
 
@@ -774,12 +735,10 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     });
     const finalSessionRes = await updatedClient.api.v1.user.session.$get();
 
-    expect(finalSessionRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const finalBody: any = await finalSessionRes.json();
+    const finalBody = await assertJsonBody(finalSessionRes);
     expect(finalBody.user).not.toBeNull();
-    expect(finalBody.user.email).toBe(email);
-    expect(finalBody.user.totp_registered).toBe(true);
+    expect(finalBody).toHaveProperty('user.email', email);
+    expect(finalBody).toHaveProperty('user.totp_registered', true);
   });
 
   test('should complete login flow: TOTP verification -> full session', async () => {
@@ -796,9 +755,7 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
       json: { email, password },
     });
 
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const loginResBody: any = await loginRes.json();
+    const loginResBody = await assertJsonBody(loginRes);
     expect(loginResBody).toHaveProperty('user');
     expect(loginResBody.user.second_factor_required).toBe(true);
 
@@ -813,9 +770,7 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
       json: { code: validCode },
     });
 
-    expect(verifyRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const verifyBody: any = await verifyRes.json();
+    const verifyBody = await assertJsonBody(verifyRes);
     expect(verifyBody).toHaveProperty('user');
     expect(verifyBody.user.email).toBe(email);
 
@@ -828,11 +783,9 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     });
     const finalSessionRes = await updatedClient.api.v1.user.session.$get();
 
-    expect(finalSessionRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const finalBody: any = await finalSessionRes.json();
+    const finalBody = await assertJsonBody(finalSessionRes);
     expect(finalBody.user).not.toBeNull();
-    expect(finalBody.user.email).toBe(email);
-    expect(finalBody.user.totp_registered).toBe(true);
+    expect(finalBody).toHaveProperty('user.email', email);
+    expect(finalBody).toHaveProperty('user.totp_registered', true);
   });
 });

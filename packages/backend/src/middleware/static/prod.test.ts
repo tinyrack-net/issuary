@@ -61,6 +61,8 @@ async function cleanupTestFiles(): Promise<void> {
   });
 }
 
+// All routes tested here are handled by the prod static/notFound handler and
+// are NOT part of the typed OpenAPI route system, so we use app.request().
 describe('static prod plugin - html_variables integration', () => {
   describe('with html_variables configured', () => {
     let app: AppType;

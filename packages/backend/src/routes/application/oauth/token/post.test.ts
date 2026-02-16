@@ -1,7 +1,9 @@
 import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
+  createTestClient,
   exchangeCodeForTokens,
   getAuthorizationCode,
   MINIMAL_TEST_CONFIG,
@@ -234,19 +236,17 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should reject missing authorization code', async () => {
-      const res = await app.request('/application/oauth/token', {
-        method: 'POST',
-        body: JSON.stringify({
+      const client = createTestClient(app);
+      const res = await client.application.oauth.token.$post({
+        json: {
           grant_type: 'authorization_code',
           client_id: TEST_OAUTH_CLIENT.clientId,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
           // code missing
-        }),
-        headers: { 'Content-Type': 'application/json' },
+        },
       });
 
-      expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 400);
       expect(json.code).toBe('MISSING_AUTHORIZATION_CODE');
     });
   });
@@ -256,19 +256,17 @@ describe('POST /application/oauth/token', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const res = await app.request('/application/oauth/token', {
-        method: 'POST',
-        body: JSON.stringify({
+      const client = createTestClient(app);
+      const res = await client.application.oauth.token.$post({
+        json: {
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
           // redirect_uri missing
-        }),
-        headers: { 'Content-Type': 'application/json' },
+        },
       });
 
-      expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 400);
       expect(json.code).toBe('MISSING_REDIRECT_URI');
     });
 
@@ -401,18 +399,16 @@ describe('POST /application/oauth/token', () => {
 
   describe('Refresh Token Grant - Validation', () => {
     test('should reject missing refresh_token', async () => {
-      const res = await app.request('/application/oauth/token', {
-        method: 'POST',
-        body: JSON.stringify({
+      const client = createTestClient(app);
+      const res = await client.application.oauth.token.$post({
+        json: {
           grant_type: 'refresh_token',
           client_id: TEST_OAUTH_CLIENT.clientId,
           // refresh_token missing
-        }),
-        headers: { 'Content-Type': 'application/json' },
+        },
       });
 
-      expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 400);
       expect(json.code).toBe('MISSING_REFRESH_TOKEN');
     });
 
@@ -572,15 +568,14 @@ describe('POST /application/oauth/token', () => {
       });
 
       // Try to exchange with wrong redirect_uri (will fail)
-      const failRes = await app.request('/application/oauth/token', {
-        method: 'POST',
-        body: JSON.stringify({
+      const client = createTestClient(app);
+      const failRes = await client.application.oauth.token.$post({
+        json: {
           grant_type: 'authorization_code',
           code: code1,
           client_id: TEST_OAUTH_CLIENT.clientId,
           redirect_uri: 'http://wrong.com/callback',
-        }),
-        headers: { 'Content-Type': 'application/json' },
+        },
       });
       expect(failRes.status).toBe(400);
 
@@ -597,13 +592,12 @@ describe('POST /application/oauth/token', () => {
 
   describe('Grant Type Validation', () => {
     test('should reject unsupported grant_type', async () => {
-      const res = await app.request('/application/oauth/token', {
-        method: 'POST',
-        body: JSON.stringify({
-          grant_type: 'password', // Not supported
+      const client = createTestClient(app);
+      const res = await client.application.oauth.token.$post({
+        json: {
+          grant_type: 'password' as 'authorization_code', // Not supported
           client_id: TEST_OAUTH_CLIENT.clientId,
-        }),
-        headers: { 'Content-Type': 'application/json' },
+        },
       });
 
       // Zod validation should fail before reaching handler
@@ -611,13 +605,12 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should reject missing grant_type', async () => {
-      const res = await app.request('/application/oauth/token', {
-        method: 'POST',
-        body: JSON.stringify({
+      const client = createTestClient(app);
+      const res = await client.application.oauth.token.$post({
+        json: {
           client_id: TEST_OAUTH_CLIENT.clientId,
           // grant_type missing
-        }),
-        headers: { 'Content-Type': 'application/json' },
+        } as { grant_type: 'authorization_code'; client_id: string },
       });
 
       expect(res.status).toBe(400);

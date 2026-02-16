@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createDbUserWithSession,
   createTestClient,
   createTestClientWithHeaders,
@@ -72,9 +73,7 @@ async function createUserWithTotpAndRecoveryCodes(
     Cookie: `session=${sessionCookie}`,
   });
   const setupRes = await setupClient.api.v1.user.totp.setup.$post();
-  expect(setupRes.status).toBe(200);
-  // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-  const setupBody: any = await setupRes.json();
+  const setupBody = await assertJsonBody(setupRes);
   const totpSecret = setupBody.secret;
 
   // Verify TOTP setup (this generates recovery codes)
@@ -82,9 +81,7 @@ async function createUserWithTotpAndRecoveryCodes(
   const verifyRes = await setupClient.api.v1.user.totp.verify.$post({
     json: { code: validCode },
   });
-  expect(verifyRes.status).toBe(200);
-  // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-  const verifyBody: any = await verifyRes.json();
+  const verifyBody = await assertJsonBody(verifyRes);
   const recoveryCodes = verifyBody.recovery_codes;
   expect(recoveryCodes).toHaveLength(8);
 
@@ -124,9 +121,7 @@ describe('POST /api/v1/auth/totp/recovery/verify', () => {
       json: { code: recoveryCodes[0] ?? '' },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body).toHaveProperty('user');
     expect(body.user).toHaveProperty('id');
     expect(body.user).toHaveProperty('email');
@@ -292,8 +287,7 @@ describe('POST /api/v1/auth/totp/recovery/verify', () => {
 
     // Setup TOTP
     const setupRes = await authedClient.api.v1.user.totp.setup.$post();
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const setupBody: any = await setupRes.json();
+    const setupBody = await assertJsonBody(setupRes);
     const totpSecret = setupBody.secret;
 
     // Verify setup
@@ -301,9 +295,7 @@ describe('POST /api/v1/auth/totp/recovery/verify', () => {
     const verifyRes = await authedClient.api.v1.user.totp.verify.$post({
       json: { code: validCode },
     });
-    expect(verifyRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const verifyBody: any = await verifyRes.json();
+    const verifyBody = await assertJsonBody(verifyRes);
     expect(verifyBody.recovery_codes).toHaveLength(8);
 
     // Confirm recovery codes saved
@@ -415,9 +407,7 @@ describe('POST /api/v1/auth/totp/recovery/verify', () => {
     const loginRes2 = await loginClient.api.v1.auth.login.$post({
       json: { email, password },
     });
-    expect(loginRes2.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes2.json();
+    const body = await assertJsonBody(loginRes2);
     // User should be logged in without needing 2FA
     expect(body.user.totp_registered).toBe(false);
   });
@@ -431,8 +421,8 @@ describe('POST /api/v1/auth/totp/recovery/verify', () => {
       Cookie: `session=${pending2FACookie}`,
     });
     const res = await client.api.v1.auth.totp.recovery.verify.$post({
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: {} as any,
+      // @ts-expect-error testing validation with invalid input
+      json: {},
     });
 
     expect(res.status).toBe(400);

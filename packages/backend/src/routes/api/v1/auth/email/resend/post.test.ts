@@ -2,6 +2,7 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createTestClient,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -41,9 +42,7 @@ describe('POST /api/v1/auth/email/resend', () => {
       },
     });
 
-    expect(res.status).toBe(404);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const json: any = await res.json();
+    const json = await assertJsonBody(res, 404);
     expect(json.code).toBe('USER_NOT_FOUND');
   });
 
@@ -67,9 +66,7 @@ describe('POST /api/v1/auth/email/resend', () => {
       json: { email },
     });
 
-    expect(res.status).toBe(400);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const json: any = await res.json();
+    const json = await assertJsonBody(res, 400);
     expect(json.code).toBe('EMAIL_ALREADY_VERIFIED');
   });
 
@@ -143,12 +140,12 @@ describe('POST /api/v1/auth/email/resend', () => {
 
   test('should validate email format', async () => {
     const client = createTestClient(app);
+    // @ts-expect-error testing validation with invalid input
     const res = await client.api.v1.auth.email.resend.$post({
       json: {
         email: 'invalid-email',
       },
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-    } as any);
+    });
 
     expect(res.status).toBe(400);
   });

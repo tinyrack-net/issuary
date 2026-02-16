@@ -1,5 +1,6 @@
 import type { AppType } from '@backend/lib/app.js';
 import { expect } from 'vitest';
+import { createTestClient, createTestClientWithHeaders } from './client.js';
 import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT } from './fixtures.js';
 import { createAuthenticatedSession, grantConsent } from './helpers.js';
 
@@ -152,28 +153,22 @@ export async function getAuthorizationCode(
 
   await grantConsent(app, sessionCookie, consentParams);
 
-  const queryParams = new URLSearchParams({
-    response_type: 'code',
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    scope,
-    state,
+  const client = createTestClientWithHeaders(app, {
+    Cookie: `session=${sessionCookie}`,
   });
 
-  if (codeChallenge) {
-    queryParams.set('code_challenge', codeChallenge);
-    queryParams.set('code_challenge_method', codeChallengeMethod || 'S256');
-  }
-
-  if (nonce) {
-    queryParams.set('nonce', nonce);
-  }
-
-  const url = `/application/oauth/authorize?${queryParams.toString()}`;
-  const res = await app.request(url, {
-    method: 'GET',
-    headers: {
-      Cookie: `session=${sessionCookie}`,
+  const res = await client.application.oauth.authorize.$get({
+    query: {
+      response_type: 'code',
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      scope,
+      state,
+      code_challenge: codeChallenge,
+      code_challenge_method: codeChallenge
+        ? codeChallengeMethod || 'S256'
+        : undefined,
+      nonce,
     },
   });
 
@@ -225,26 +220,15 @@ export async function exchangeCodeForTokens(
     codeVerifier,
   } = params;
 
-  const payload: Record<string, string> = {
-    grant_type: 'authorization_code',
-    code,
-    client_id: clientId,
-    redirect_uri: redirectUri,
-  };
-
-  if (clientSecret) {
-    payload['client_secret'] = clientSecret;
-  }
-
-  if (codeVerifier) {
-    payload['code_verifier'] = codeVerifier;
-  }
-
-  return app.request('/application/oauth/token', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-    headers: {
-      'Content-Type': 'application/json',
+  const client = createTestClient(app);
+  return client.application.oauth.token.$post({
+    json: {
+      grant_type: 'authorization_code',
+      code,
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      client_secret: clientSecret,
+      code_verifier: codeVerifier,
     },
   });
 }
@@ -275,21 +259,13 @@ export async function refreshAccessToken(
     clientSecret,
   } = params;
 
-  const payload: Record<string, string> = {
-    grant_type: 'refresh_token',
-    refresh_token: refreshToken,
-    client_id: clientId,
-  };
-
-  if (clientSecret) {
-    payload['client_secret'] = clientSecret;
-  }
-
-  return app.request('/application/oauth/token', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-    headers: {
-      'Content-Type': 'application/json',
+  const client = createTestClient(app);
+  return client.application.oauth.token.$post({
+    json: {
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: clientId,
+      client_secret: clientSecret,
     },
   });
 }
@@ -361,9 +337,9 @@ export async function getUserInfo(
   app: AppType,
   accessToken: string,
 ): Promise<Response> {
-  return app.request('/application/oauth/userinfo', {
-    method: 'GET',
-    headers: {
+  const client = createTestClient(app);
+  return client.application.oauth.userinfo.$get({
+    header: {
       authorization: `Bearer ${accessToken}`,
     },
   });
@@ -404,24 +380,13 @@ export async function introspectToken(
     clientSecret,
   } = params;
 
-  const payload: Record<string, string> = {
-    token,
-    client_id: clientId,
-  };
-
-  if (tokenTypeHint) {
-    payload['token_type_hint'] = tokenTypeHint;
-  }
-
-  if (clientSecret) {
-    payload['client_secret'] = clientSecret;
-  }
-
-  return app.request('/application/oauth/introspect', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-    headers: {
-      'Content-Type': 'application/json',
+  const client = createTestClient(app);
+  return client.application.oauth.introspect.$post({
+    json: {
+      token,
+      token_type_hint: tokenTypeHint,
+      client_id: clientId,
+      client_secret: clientSecret,
     },
   });
 }
@@ -460,24 +425,13 @@ export async function revokeToken(
     clientSecret,
   } = params;
 
-  const payload: Record<string, string> = {
-    token,
-    client_id: clientId,
-  };
-
-  if (tokenTypeHint) {
-    payload['token_type_hint'] = tokenTypeHint;
-  }
-
-  if (clientSecret) {
-    payload['client_secret'] = clientSecret;
-  }
-
-  return app.request('/application/oauth/revoke', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-    headers: {
-      'Content-Type': 'application/json',
+  const client = createTestClient(app);
+  return client.application.oauth.revoke.$post({
+    json: {
+      token,
+      token_type_hint: tokenTypeHint,
+      client_id: clientId,
+      client_secret: clientSecret,
     },
   });
 }

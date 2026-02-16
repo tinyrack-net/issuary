@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createPasskeyForUser,
   createTestClient,
@@ -72,8 +73,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
     expect(loginRes.status).toBe(200);
 
     const sessionCookie = extractCookie(loginRes, 'session');
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     const userId = body.user.id;
 
     return { sessionCookie, userId };
@@ -107,9 +107,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       },
     });
 
-    expect(res.status).toBe(401);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 401);
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
@@ -128,9 +126,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       },
     });
 
-    expect(res.status).toBe(404);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 404);
     expect(body.code).toBe('PASSKEY_NOT_FOUND');
   });
 
@@ -156,9 +152,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       param: { id: passkeyId },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     // Verify passkey was deleted
@@ -197,9 +191,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       param: { id: passkeyId1 },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     // Verify first passkey was deleted
@@ -243,9 +235,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       param: { id: passkeyId },
     });
 
-    expect(res.status).toBe(404);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 404);
     expect(body.code).toBe('PASSKEY_NOT_FOUND');
 
     // Verify the passkey was NOT deleted
@@ -299,9 +289,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       param: { id: passkeyId },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     // Verify passkey was deleted
@@ -349,9 +337,11 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       Cookie: `session=${sessionCookie}`,
     });
     const sessionRes = await sessionClient.api.v1.user.session.$get();
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionBody: any = await sessionRes.json();
-    const userId = sessionBody.user.id;
+    const sessionBody = await assertJsonBody(sessionRes);
+    expect(sessionBody.user).toBeDefined();
+    const user = sessionBody.user;
+    if (!user) return;
+    const userId = user.id;
 
     // Create passkey for config user directly in DB
     const passkeyId = await createPasskeyForUser(
@@ -472,8 +462,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
 
     // Get initial list
     const listBefore = await client.api.v1.user.passkeys.$get();
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const listBeforeBody: any = await listBefore.json();
+    const listBeforeBody = await assertJsonBody(listBefore);
     expect(listBeforeBody.passkeys).toHaveLength(2);
 
     // Delete one passkey
@@ -483,10 +472,9 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
 
     // Get updated list
     const listAfter = await client.api.v1.user.passkeys.$get();
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const listAfterBody: any = await listAfter.json();
+    const listAfterBody = await assertJsonBody(listAfter);
     expect(listAfterBody.passkeys).toHaveLength(1);
-    expect(listAfterBody.passkeys[0].name).toBe('Passkey 2');
+    expect(listAfterBody.passkeys[0]?.name).toBe('Passkey 2');
   });
 });
 
@@ -543,8 +531,7 @@ describe('DELETE /api/v1/user/passkeys/:id - Last auth method protection', () =>
     expect(loginRes.status).toBe(200);
 
     const sessionCookie = extractCookie(loginRes, 'session');
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await loginRes.json();
+    const body = await assertJsonBody(loginRes);
     const userId = body.user.id;
 
     return { sessionCookie, userId };
@@ -584,9 +571,7 @@ describe('DELETE /api/v1/user/passkeys/:id - Last auth method protection', () =>
       param: { id: passkeyId },
     });
 
-    expect(res.status).toBe(400);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('CANNOT_REMOVE_LAST_PASSKEY');
 
     // Verify passkey was NOT deleted
@@ -633,9 +618,7 @@ describe('DELETE /api/v1/user/passkeys/:id - Last auth method protection', () =>
       param: { id: passkeyId1 },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
   });
 });
@@ -854,9 +837,7 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
       param: { id: passkeyId },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     // Verify passkey was deleted
@@ -893,9 +874,7 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
     });
 
     // Should succeed because user still has another passkey
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
   });
 
@@ -907,9 +886,11 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
       Cookie: `session=${sessionCookie}`,
     });
     const sessionRes = await sessionClient.api.v1.user.session.$get();
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const sessionBody: any = await sessionRes.json();
-    const userId = sessionBody.user.id;
+    const sessionBody = await assertJsonBody(sessionRes);
+    expect(sessionBody.user).toBeDefined();
+    const user = sessionBody.user;
+    if (!user) return;
+    const userId = user.id;
 
     // Create passkey directly in database for config user
     let passkeyId = '';

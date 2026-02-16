@@ -2,6 +2,7 @@ import type { AppType } from '@backend/lib/app.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import { RequestContext } from '@mikro-orm/core';
 import { expect } from 'vitest';
+import { createTestClient, createTestClientWithHeaders } from './client.js';
 import { generateUniqueEmail, TEST_CONSENTS, TEST_USER } from './fixtures.js';
 
 /**
@@ -45,10 +46,9 @@ export async function createAuthenticatedSession(
   email: string = TEST_USER.email,
   password: string = TEST_USER.password,
 ): Promise<string> {
-  const res = await app.request('/api/v1/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-    headers: { 'Content-Type': 'application/json' },
+  const client = createTestClient(app);
+  const res = await client.api.v1.auth.login.$post({
+    json: { email, password },
   });
 
   if (res.status !== 200) {
@@ -76,89 +76,6 @@ export async function withMikroContext<T>(
 }
 
 /**
- * Helper to make requests with cookies
- */
-export async function requestWithCookie(
-  app: AppType,
-  url: string,
-  options: RequestInit,
-  cookieName: string,
-  cookieValue: string,
-): Promise<Response> {
-  const headers = new Headers(options.headers);
-  const existingCookie = headers.get('Cookie');
-  const cookiePair = `${cookieName}=${cookieValue}`;
-  headers.set(
-    'Cookie',
-    existingCookie ? `${existingCookie}; ${cookiePair}` : cookiePair,
-  );
-  return app.request(url, { ...options, headers });
-}
-
-/**
- * Helper to make requests with session cookie
- */
-export function requestWithSession(
-  app: AppType,
-  url: string,
-  options: RequestInit,
-  sessionCookie: string,
-): Promise<Response> {
-  return requestWithCookie(app, url, options, 'session', sessionCookie);
-}
-
-/**
- * Grant consent for a user to an OAuth client.
- * This should be called after authentication and before authorization.
- *
- * @param app - Hono app instance
- * @param sessionCookie - Session cookie from authenticated user
- * @param params - Consent parameters
- * @returns The redirect URL returned by the consent API
- */
-export async function grantConsent(
-  app: AppType,
-  sessionCookie: string,
-  params: {
-    client_id: string;
-    redirect_uri: string;
-    response_type?: string;
-    scope?: string;
-    state?: string;
-    nonce?: string;
-    code_challenge?: string;
-    code_challenge_method?: 'S256' | 'plain';
-  },
-): Promise<string> {
-  const res = await app.request('/api/v1/consent', {
-    method: 'POST',
-    body: JSON.stringify({
-      client_id: params.client_id,
-      redirect_uri: params.redirect_uri,
-      response_type: params.response_type || 'code',
-      scope: params.scope || '',
-      state: params.state,
-      nonce: params.nonce,
-      code_challenge: params.code_challenge,
-      code_challenge_method: params.code_challenge_method,
-      decision: 'allow',
-    }),
-    headers: {
-      'Content-Type': 'application/json',
-      Cookie: `session=${sessionCookie}`,
-    },
-  });
-
-  if (res.status !== 200) {
-    const body = await res.text();
-    throw new Error(`Failed to grant consent: ${res.status} - ${body}`);
-  }
-
-  const json = await res.json();
-  return json.redirect_url;
-}
-
-/**
  * Error definition type for expectError helper.
  */
 export interface ErrorDefinition {
@@ -170,7 +87,7 @@ export interface ErrorDefinition {
  * Assert that a response matches an expected error definition.
  * This standardizes error assertions across all test files.
  *
- * @param res - Response from app.request()
+ * @param res - Response from app.request() or testClient
  * @param errorDef - Error definition from schemas/error.ts (e.g., e.InvalidEmailOrPassword)
  *
  * @example
@@ -178,10 +95,9 @@ export interface ErrorDefinition {
  * import { e } from '@backend/schemas/error.js';
  * import { expectError } from '@backend/test-utils/index.js';
  *
- * const res = await app.request('/api/v1/auth/login', {
- *   method: 'POST',
- *   body: JSON.stringify({...}),
- *   headers: { 'Content-Type': 'application/json' },
+ * const client = createTestClient(app);
+ * const res = await client.api.v1.auth.login.$post({
+ *   json: { email: 'wrong@example.com', password: 'wrong' },
  * });
  * await expectError(res, e.InvalidEmailOrPassword);
  * ```
@@ -236,12 +152,9 @@ export async function createDbUserWithSession(
     await services.mikro.em.persist(user).flush();
   });
 
-  const loginRes = await app.request('/api/v1/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-    headers: {
-      'Content-Type': 'application/json',
-    },
+  const client = createTestClient(app);
+  const loginRes = await client.api.v1.auth.login.$post({
+    json: { email, password },
   });
 
   if (loginRes.status !== 200) {
@@ -343,6 +256,56 @@ export async function enableTotpForUser(
 }
 
 /**
+ * Grant consent for a user to an OAuth client.
+ * This should be called after authentication and before authorization.
+ *
+ * @param app - Hono app instance
+ * @param sessionCookie - Session cookie from authenticated user
+ * @param params - Consent parameters
+ * @returns The redirect URL returned by the consent API
+ */
+export async function grantConsent(
+  app: AppType,
+  sessionCookie: string,
+  params: {
+    client_id: string;
+    redirect_uri: string;
+    response_type?: string;
+    scope?: string;
+    state?: string;
+    nonce?: string;
+    code_challenge?: string;
+    code_challenge_method?: 'S256' | 'plain';
+  },
+): Promise<string> {
+  const client = createTestClientWithHeaders(app, {
+    Cookie: `session=${sessionCookie}`,
+  });
+
+  const res = await client.api.v1.consent.$post({
+    json: {
+      client_id: params.client_id,
+      redirect_uri: params.redirect_uri,
+      response_type: params.response_type || 'code',
+      scope: params.scope || '',
+      state: params.state,
+      nonce: params.nonce,
+      code_challenge: params.code_challenge,
+      code_challenge_method: params.code_challenge_method,
+      decision: 'allow',
+    },
+  });
+
+  if (res.status !== 200) {
+    const body = await res.text();
+    throw new Error(`Failed to grant consent: ${res.status} - ${body}`);
+  }
+
+  const json = await res.json();
+  return json.redirect_url;
+}
+
+/**
  * Register a new user with default terms consents.
  * Automatically includes required terms consents for explicit consent mode.
  *
@@ -373,13 +336,16 @@ export async function registerUser(
     consents = TEST_CONSENTS,
   } = options;
 
-  return app.request('/api/v1/auth/register', {
-    method: 'POST',
-    body: JSON.stringify({
+  const client = createTestClient(app);
+  return client.api.v1.auth.register.$post({
+    header: {},
+    json: {
       email,
       password,
-      consents,
-    }),
-    headers: { 'Content-Type': 'application/json' },
+      consents: consents as {
+        termsId: string;
+        agreed: boolean;
+      }[],
+    },
   });
 }

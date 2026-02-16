@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createTestClient,
   expectError,
   generateUniqueEmail,
@@ -60,9 +61,7 @@ describe('POST /api/v1/auth/register', () => {
       },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body).toHaveProperty('user');
     expect(body.user.email_verification_required).toBe(true);
   });
@@ -71,18 +70,16 @@ describe('POST /api/v1/auth/register', () => {
     const uniqueEmail = generateUniqueEmail();
     const client = createTestClient(app);
 
+    // @ts-expect-error testing validation with invalid input
     const res = await client.api.v1.auth.register.$post({
       json: {
         email: uniqueEmail,
         password: 'password123',
         // No consents provided
       },
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-    } as any);
+    });
 
-    expect(res.status).toBe(400);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('VALIDATION_ERROR');
   });
 
@@ -90,6 +87,7 @@ describe('POST /api/v1/auth/register', () => {
     const uniqueEmail = generateUniqueEmail();
     const client = createTestClient(app);
 
+    // @ts-expect-error testing validation with invalid input
     const res = await client.api.v1.auth.register.$post({
       json: {
         email: uniqueEmail,
@@ -99,12 +97,9 @@ describe('POST /api/v1/auth/register', () => {
           { termsId: 'privacy', agreed: false },
         ],
       },
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-    } as any);
+    });
 
-    expect(res.status).toBe(400);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('VALIDATION_ERROR');
     expect(body.data).toMatch(/privacy/i);
   });
@@ -154,13 +149,13 @@ describe('POST /api/v1/auth/register', () => {
   test('should fail with invalid email format', async () => {
     const client = createTestClient(app);
 
+    // @ts-expect-error testing validation with invalid input
     const res = await client.api.v1.auth.register.$post({
       json: {
         email: 'not-an-email',
         password: 'password123',
       },
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-    } as any);
+    });
 
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -170,13 +165,13 @@ describe('POST /api/v1/auth/register', () => {
   test('should fail with short password', async () => {
     const client = createTestClient(app);
 
+    // @ts-expect-error testing validation with invalid input
     const res = await client.api.v1.auth.register.$post({
       json: {
         email: 'test@example.com',
         password: '12345',
       },
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-    } as any);
+    });
 
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -186,13 +181,13 @@ describe('POST /api/v1/auth/register', () => {
   test('should fail with long password', async () => {
     const client = createTestClient(app);
 
+    // @ts-expect-error testing validation with invalid input
     const res = await client.api.v1.auth.register.$post({
       json: {
         email: 'test@example.com',
         password: 'a'.repeat(101),
       },
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-    } as any);
+    });
 
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -203,11 +198,11 @@ describe('POST /api/v1/auth/register', () => {
     const client = createTestClient(app);
 
     const res = await client.api.v1.auth.register.$post({
+      // @ts-expect-error testing validation with invalid input
       json: {
         password: 'password123',
       },
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-    } as any);
+    });
 
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -218,11 +213,11 @@ describe('POST /api/v1/auth/register', () => {
     const client = createTestClient(app);
 
     const res = await client.api.v1.auth.register.$post({
+      // @ts-expect-error testing validation with invalid input
       json: {
         email: 'test@example.com',
       },
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-    } as any);
+    });
 
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -258,9 +253,7 @@ describe('POST /api/v1/auth/register', () => {
       },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
     expect(body).toHaveProperty('user');
     expect(body.user.email_verification_required).toBe(true);
 
@@ -296,9 +289,7 @@ describe('POST /api/v1/auth/register', () => {
       },
     });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
 
     // Check that terms consent was recorded
     await withMikroContext(services, async () => {
@@ -586,14 +577,14 @@ describe('POST /api/v1/auth/register (implicit consent mode)', () => {
     const uniqueEmail = generateUniqueEmail('implicit');
     const client = createTestClient(app);
 
+    // @ts-expect-error testing validation with invalid input
     const res = await client.api.v1.auth.register.$post({
       json: {
         email: uniqueEmail,
         password: 'password123',
         // No consents provided - should work in implicit mode
       },
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-    } as any);
+    });
 
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -604,17 +595,15 @@ describe('POST /api/v1/auth/register (implicit consent mode)', () => {
     const uniqueEmail = generateUniqueEmail('implicit-record');
     const client = createTestClient(app);
 
+    // @ts-expect-error testing validation with invalid input
     const res = await client.api.v1.auth.register.$post({
       json: {
         email: uniqueEmail,
         password: 'password123',
       },
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-    } as any);
+    });
 
-    expect(res.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await res.json();
+    const body = await assertJsonBody(res);
 
     // Check that implicit consent was recorded
     await withMikroContext(services, async () => {
@@ -659,14 +648,14 @@ describe('POST /api/v1/auth/register (no terms configured)', () => {
     const uniqueEmail = generateUniqueEmail('no-terms');
     const client = createTestClient(app);
 
+    // @ts-expect-error testing validation with invalid input
     const res = await client.api.v1.auth.register.$post({
       json: {
         email: uniqueEmail,
         password: 'password123',
         // No consents needed
       },
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-    } as any);
+    });
 
     expect(res.status).toBe(200);
     const body = await res.json();

@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createDbUserWithSession,
   createTestClient,
   createTestClientWithHeaders,
@@ -62,9 +63,7 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
-    expect(loginRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const loginBody: any = await loginRes.json();
+    const loginBody = await assertJsonBody(loginRes);
     expect(loginBody).toHaveProperty('user');
     expect(loginBody.user.totp_registered).toBe(true);
 
@@ -82,9 +81,7 @@ describe('POST /api/v1/auth/totp/verify', () => {
       json: { code: validCode },
     });
 
-    expect(verifyRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const verifyBody: any = await verifyRes.json();
+    const verifyBody = await assertJsonBody(verifyRes);
     expect(verifyBody).toHaveProperty('user');
     expect(verifyBody.user.id).toBe(userId);
     expect(verifyBody.user.email).toBe(email);
@@ -165,8 +162,7 @@ describe('POST /api/v1/auth/totp/verify', () => {
       Cookie: `session=${sessionCookie}`,
     });
     const verifyRes = await authedClient.api.v1.auth.totp.verify.$post({
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: { code: '12345' } as any,
+      json: { code: '12345' },
     });
 
     expect(verifyRes.status).toBe(400);
@@ -251,13 +247,11 @@ describe('POST /api/v1/auth/totp/verify', () => {
     });
     const sessionRes = await authedClient.api.v1.user.session.$get();
 
-    expect(sessionRes.status).toBe(200);
-    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
-    const body: any = await sessionRes.json();
+    const body = await assertJsonBody(sessionRes);
     expect(body).toHaveProperty('user');
-    expect(body.user.id).toBe(userId);
-    expect(body.user.email).toBe(email);
-    expect(body.user.totp_registered).toBe(true);
+    expect(body).toHaveProperty('user.id', userId);
+    expect(body).toHaveProperty('user.email', email);
+    expect(body).toHaveProperty('user.totp_registered', true);
   });
 
   test('should return 400 when body is empty', async () => {
@@ -289,8 +283,8 @@ describe('POST /api/v1/auth/totp/verify', () => {
       Cookie: `session=${sessionCookie}`,
     });
     const verifyRes = await authedClient.api.v1.auth.totp.verify.$post({
-      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
-      json: {} as any,
+      // @ts-expect-error testing validation with invalid input
+      json: {},
     });
 
     expect(verifyRes.status).toBe(400);

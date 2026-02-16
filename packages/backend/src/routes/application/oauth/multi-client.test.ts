@@ -2,6 +2,8 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import {
   createAuthenticatedSession,
+  createTestClient,
+  createTestClientWithHeaders,
   exchangeCodeForTokens,
   getAuthorizationCode,
   getUserInfo,
@@ -109,10 +111,12 @@ describe('Multi-Client Isolation', () => {
       'should have correct client_id in token claims',
       { timeout: 15000 },
       async () => {
-        const jwksRes = await app.request(
-          '/application/oauth/.well-known/jwks',
+        const jwksClient = createTestClient(app);
+        const jwksRes =
+          await jwksClient.application.oauth['.well-known'].jwks.$get();
+        const JWKS = jose.createLocalJWKSet(
+          (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
         );
-        const JWKS = jose.createLocalJWKSet(await jwksRes.json());
         const sessionCookie = await createAuthenticatedSession(
           app,
           TEST_USER.email,
@@ -167,10 +171,12 @@ describe('Multi-Client Isolation', () => {
       'should have same subject for same user across clients',
       { timeout: 15000 },
       async () => {
-        const jwksRes = await app.request(
-          '/application/oauth/.well-known/jwks',
+        const jwksClient = createTestClient(app);
+        const jwksRes =
+          await jwksClient.application.oauth['.well-known'].jwks.$get();
+        const JWKS = jose.createLocalJWKSet(
+          (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
         );
-        const JWKS = jose.createLocalJWKSet(await jwksRes.json());
         const sessionCookie = await createAuthenticatedSession(
           app,
           TEST_USER.email,
@@ -250,15 +256,14 @@ describe('Multi-Client Isolation', () => {
         });
         const tokens = await tokenRes.json();
 
-        const refreshRes = await app.request('/application/oauth/token', {
-          method: 'POST',
-          body: JSON.stringify({
+        const refreshClient = createTestClient(app);
+        const refreshRes = await refreshClient.application.oauth.token.$post({
+          json: {
             grant_type: 'refresh_token',
             refresh_token: tokens.refresh_token,
             client_id: SECOND_OAUTH_CLIENT.clientId,
             client_secret: SECOND_OAUTH_CLIENT.clientSecret,
-          }),
-          headers: { 'Content-Type': 'application/json' },
+          },
         });
         expect([400, 401]).toContain(refreshRes.status);
       },
@@ -302,17 +307,18 @@ describe('Multi-Client Isolation', () => {
           TEST_USER.email,
           TEST_USER.password,
         );
-        const authRes = await app.request(
-          '/application/oauth/authorize?' +
-            new URLSearchParams({
-              response_type: 'code',
-              client_id: 'non-existent-client',
-              redirect_uri: 'http://localhost:8080/callback',
-              scope: 'openid profile email',
-              state: 'test-state',
-            }).toString(),
-          { headers: { Cookie: `session=${sessionCookie}` } },
-        );
+        const authClient = createTestClientWithHeaders(app, {
+          Cookie: `session=${sessionCookie}`,
+        });
+        const authRes = await authClient.application.oauth.authorize.$get({
+          query: {
+            response_type: 'code',
+            client_id: 'non-existent-client',
+            redirect_uri: 'http://localhost:8080/callback',
+            scope: 'openid profile email',
+            state: 'test-state',
+          },
+        });
         expect([400, 302]).toContain(authRes.status);
         if (authRes.status === 302) {
           const location = new URL(
