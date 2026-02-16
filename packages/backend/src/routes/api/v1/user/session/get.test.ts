@@ -37,7 +37,7 @@ describe('GET /api/v1/user/session', () => {
 
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).not.toHaveProperty('user');
+    expect(body.user).toBeNull();
   });
 
   test('should return authenticated status when user is logged in', async () => {
@@ -100,7 +100,7 @@ describe('GET /api/v1/user/session', () => {
 
     expect(maybeNoSessionRes.status).toBe(200);
     const sessionBody2 = await maybeNoSessionRes.json();
-    expect(sessionBody2).not.toHaveProperty('user');
+    expect(sessionBody2.user).toBeNull();
   });
 
   test('should return unauthenticated with invalid cookie', async () => {
@@ -111,7 +111,7 @@ describe('GET /api/v1/user/session', () => {
 
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).not.toHaveProperty('user');
+    expect(body.user).toBeNull();
   });
 
   test('should handle multiple session requests with same cookie', async () => {

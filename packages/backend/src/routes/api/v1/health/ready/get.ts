@@ -1,7 +1,8 @@
-import { createRouter } from '@backend/lib/create-router.js';
+import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { r } from '@backend/schemas/response.js';
-import { createRoute } from '@hono/zod-openapi';
+import { Hono } from 'hono';
+import { describeRoute, resolver } from 'hono-openapi';
 
 /**
  * GET /health/ready
@@ -10,65 +11,65 @@ import { createRoute } from '@hono/zod-openapi';
  * Returns 200 if the server is ready to accept traffic.
  * Checks database connectivity to ensure all dependencies are available.
  */
-const route = createRoute({
-  method: 'get',
-  path: '/health/ready',
-  tags: [TAGS.HEALTH],
-  summary: 'Readiness probe',
-  description:
-    'Returns 200 if the server is ready to accept traffic. Checks database connectivity.',
-  responses: {
-    200: {
-      content: {
-        'application/json': {
-          schema: r.ReadinessResponse,
+export const healthReadyGet = new Hono<AppEnv>().get(
+  '/health/ready',
+  describeRoute({
+    tags: [TAGS.HEALTH],
+    summary: 'Readiness probe',
+    description:
+      'Returns 200 if the server is ready to accept traffic. Checks database connectivity.',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: resolver(r.ReadinessResponse),
+          },
         },
+        description: 'Ready',
       },
-      description: 'Ready',
-    },
-    503: {
-      content: {
-        'application/json': {
-          schema: r.ReadinessErrorResponse,
+      503: {
+        content: {
+          'application/json': {
+            schema: resolver(r.ReadinessErrorResponse),
+          },
         },
+        description: 'Not ready',
       },
-      description: 'Not ready',
     },
-  },
-});
+  }),
+  async (c) => {
+    const { mikro } = c.get('services');
 
-export const healthReadyGet = createRouter().openapi(route, async (c) => {
-  const { mikro } = c.get('services');
+    // Check database connectivity
+    let databaseStatus: 'ok' | 'error' = 'error';
+    let errorMessage: string | undefined;
 
-  // Check database connectivity
-  let databaseStatus: 'ok' | 'error' = 'error';
-  let errorMessage: string | undefined;
+    try {
+      await mikro.em.getConnection().execute('SELECT 1');
+      databaseStatus = 'ok';
+    } catch (err) {
+      databaseStatus = 'error';
+      errorMessage =
+        err instanceof Error ? err.message : 'Database connection failed';
+    }
 
-  try {
-    await mikro.em.getConnection().execute('SELECT 1');
-    databaseStatus = 'ok';
-  } catch (err) {
-    databaseStatus = 'error';
-    errorMessage =
-      err instanceof Error ? err.message : 'Database connection failed';
-  }
+    if (databaseStatus === 'ok') {
+      return c.json(
+        {
+          status: 'ok' as const,
+          checks: { database: 'ok' as const },
+        },
+        200,
+      );
+    }
 
-  if (databaseStatus === 'ok') {
     return c.json(
       {
-        status: 'ok' as const,
-        checks: { database: 'ok' as const },
+        status: 'error' as const,
+        checks: { database: databaseStatus },
+        error: errorMessage,
       },
-      200,
+      503,
     );
-  }
-
-  return c.json(
-    {
-      status: 'error' as const,
-      checks: { database: databaseStatus },
-      error: errorMessage,
-    },
-    503,
-  );
-});
+  },
+);

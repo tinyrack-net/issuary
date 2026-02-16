@@ -214,10 +214,13 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       },
     });
 
-    // WebAuthn library may throw unhandled error (500) or handled error (400)
-    expect([400, 500].includes(res.status)).toBe(true);
-    if (res.status === 400) {
-      const body = await res.json();
+    // WebAuthn library may throw unhandled error (500) or handled error (400).
+    // Status codes from the error handler aren't part of the route's type,
+    // so we compare via Number() to avoid TS2367.
+    const status = Number(res.status);
+    expect(status === 400 || status === 500).toBe(true);
+    if (status === 400) {
+      const body = await assertJsonBody(res, 400);
       expect(body.code).toBe('PASSKEY_VERIFICATION_FAILED');
     }
   });
@@ -253,7 +256,6 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     });
     const res = await updatedClient.api.v1.user.passkeys.register.verify.$post({
       json: {
-        // @ts-expect-error testing validation with invalid input
         response: {
           rawId: 'mock-id',
           response: {
@@ -302,7 +304,6 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       json: {
         response: {
           ...createMockRegistrationResponse(),
-          // @ts-expect-error testing validation with invalid input
           type: 'invalid-type',
         },
       },
@@ -347,11 +348,13 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       },
     });
 
-    // Should fail at verification step, not at validation
-    // WebAuthn library may throw unhandled error (500) or handled error (400)
-    expect([400, 500].includes(res.status)).toBe(true);
-    if (res.status === 400) {
-      const body = await res.json();
+    // Should fail at verification step, not at validation.
+    // Status codes from the error handler aren't part of the route's type,
+    // so we compare via Number() to avoid TS2367.
+    const status = Number(res.status);
+    expect(status === 400 || status === 500).toBe(true);
+    if (status === 400) {
+      const body = await assertJsonBody(res, 400);
       expect(body.code).toBe('PASSKEY_VERIFICATION_FAILED');
     }
   });
@@ -434,7 +437,6 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     });
     const res = await client.api.v1.user.passkeys.register.verify.$post({
       json: {
-        // @ts-expect-error testing validation with invalid input
         response: {
           id: 'mock-id',
           rawId: 'mock-id',
@@ -690,7 +692,6 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
         response: {
           id: 'mock-id',
           rawId: 'mock-id',
-          // @ts-expect-error testing validation with invalid input
           response: {
             clientDataJSON: 'mock-data',
             // missing attestationObject

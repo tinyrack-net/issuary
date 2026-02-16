@@ -1,9 +1,11 @@
-import { createRouter } from '@backend/lib/create-router.js';
+import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
-import { createRoute, z } from '@hono/zod-openapi';
+import { Hono } from 'hono';
+import { describeRoute, resolver, validator } from 'hono-openapi';
+import { z } from 'zod';
 
 /**
  * POST /api/v1/auth/totp/recovery/verify
@@ -12,57 +14,49 @@ import { createRoute, z } from '@hono/zod-openapi';
  * Requires pending 2FA session from password login.
  * Each recovery code is single-use and invalidated upon use.
  */
-const route = createRoute({
-  method: 'post',
-  path: '/auth/totp/recovery/verify',
-  tags: [TAGS.AUTH],
-  summary: 'Verify TOTP recovery code for login',
-  description:
-    'Complete login by verifying a one-time TOTP recovery code. ' +
-    'Requires pending 2FA session from password login. ' +
-    'Each recovery code can only be used once.',
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: z.object({
-            code: f.recoveryCode,
-          }),
+export const authTotpRecoveryVerifyPost = new Hono<AppEnv>().post(
+  '/auth/totp/recovery/verify',
+  describeRoute({
+    tags: [TAGS.AUTH],
+    summary: 'Verify TOTP recovery code for login',
+    description:
+      'Complete login by verifying a one-time TOTP recovery code. ' +
+      'Requires pending 2FA session from password login. ' +
+      'Each recovery code can only be used once.',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: resolver(r.UserSessionResponse),
+          },
         },
+        description: 'Success',
+      },
+      400: {
+        content: {
+          'application/json': {
+            schema: resolver(e.ValidationError.Schema),
+          },
+        },
+        description:
+          'Validation error, invalid recovery code, no recovery codes available, or TOTP not enabled',
+      },
+      401: {
+        content: {
+          'application/json': {
+            schema: resolver(e.SecondFactorSessionExpired.Schema),
+          },
+        },
+        description: 'Second factor session expired',
       },
     },
-  },
-  responses: {
-    200: {
-      content: {
-        'application/json': {
-          schema: r.UserSessionResponse,
-        },
-      },
-      description: 'Success',
-    },
-    400: {
-      content: {
-        'application/json': {
-          schema: e.ValidationError.Schema,
-        },
-      },
-      description:
-        'Validation error, invalid recovery code, no recovery codes available, or TOTP not enabled',
-    },
-    401: {
-      content: {
-        'application/json': {
-          schema: e.SecondFactorSessionExpired.Schema,
-        },
-      },
-      description: 'Second factor session expired',
-    },
-  },
-});
-
-export const authTotpRecoveryVerifyPost = createRouter().openapi(
-  route,
+  }),
+  validator(
+    'json',
+    z.object({
+      code: f.recoveryCode,
+    }),
+  ),
   async (c) => {
     const config = c.get('services').config;
     if (!config.auth.password.enabled || !config.auth.password.totp.enabled) {

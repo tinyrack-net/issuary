@@ -1,6 +1,7 @@
 import type { AppType } from '@backend/app.js';
 import { createServer } from '@backend/server.js';
 import {
+  assertJsonBody,
   createTestClient,
   createTestClientWithHeaders,
   MINIMAL_TEST_CONFIG,
@@ -105,7 +106,7 @@ describe('POST /api/v1/auth/logout', () => {
     const sessionRes1 = await authedClient.api.v1.user.session.$get();
 
     expect(sessionRes1.status).toBe(200);
-    const sessionBody1 = await sessionRes1.json();
+    const sessionBody1 = await assertJsonBody(sessionRes1);
     expect(sessionBody1.user).not.toBeNull();
 
     // Logout
@@ -125,7 +126,7 @@ describe('POST /api/v1/auth/logout', () => {
 
     expect(sessionRes2.status).toBe(200);
     const sessionBody2 = await sessionRes2.json();
-    expect(sessionBody2).not.toHaveProperty('user');
+    expect(sessionBody2.user).toBeNull();
   });
 
   test('should handle multiple logout calls', async () => {

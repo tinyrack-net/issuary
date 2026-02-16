@@ -1,86 +1,89 @@
-import { createRouter } from '@backend/lib/create-router.js';
+import type { AppEnv } from '@backend/lib/app-env.js';
 import { isEmailAllowed } from '@backend/lib/email-pattern.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { ApiError, e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
-import { createRoute, z } from '@hono/zod-openapi';
+import { Hono } from 'hono';
+import { describeRoute, resolver, validator } from 'hono-openapi';
+import { z } from 'zod';
 
-const route = createRoute({
-  method: 'get',
-  path: '/oauth/{provider}/callback',
-  tags: [TAGS.OAUTH_CONNECT],
-  summary: 'OAuth Callback',
-  description:
-    'Handles the callback from OAuth provider after user authorization',
-  request: {
-    params: z.object({
+export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
+  '/oauth/:provider/callback',
+  describeRoute({
+    tags: [TAGS.OAUTH_CONNECT],
+    summary: 'OAuth Callback',
+    description:
+      'Handles the callback from OAuth provider after user authorization',
+    responses: {
+      302: {
+        description: 'Redirect',
+      },
+      200: {
+        content: {
+          'application/json': {
+            schema: resolver(r.OAuthCallbackResponse),
+          },
+        },
+        description: 'Success',
+      },
+      400: {
+        content: {
+          'application/json': {
+            schema: resolver(e.OAuthStateMismatch.Schema),
+          },
+        },
+        description: 'State mismatch, session expired, or invalid request',
+      },
+      403: {
+        content: {
+          'application/json': {
+            schema: resolver(e.OAuthEmailNotVerified.Schema),
+          },
+        },
+        description: 'Email not verified or registration email not allowed',
+      },
+      404: {
+        content: {
+          'application/json': {
+            schema: resolver(e.OAuthProviderNotFound.Schema),
+          },
+        },
+        description: 'OAuth provider not found',
+      },
+      409: {
+        content: {
+          'application/json': {
+            schema: resolver(e.OAuthEmailConflict.Schema),
+          },
+        },
+        description: 'Email conflict or account already linked',
+      },
+      502: {
+        content: {
+          'application/json': {
+            schema: resolver(e.OAuthTokenExchangeFailed.Schema),
+          },
+        },
+        description: 'Token exchange failed or user info failed',
+      },
+    },
+  }),
+  validator(
+    'param',
+    z.object({
       provider: f.providerName,
     }),
-    query: z.object({
+  ),
+  validator(
+    'query',
+    z.object({
       code: f.authorizationCode.optional(),
       state: f.state.optional(),
       error: z.string().optional(),
       error_description: z.string().optional(),
     }),
-  },
-  responses: {
-    302: {
-      description: 'Redirect',
-    },
-    200: {
-      content: {
-        'application/json': {
-          schema: r.OAuthCallbackResponse,
-        },
-      },
-      description: 'Success',
-    },
-    400: {
-      content: {
-        'application/json': {
-          schema: e.OAuthStateMismatch.Schema,
-        },
-      },
-      description: 'State mismatch, session expired, or invalid request',
-    },
-    403: {
-      content: {
-        'application/json': {
-          schema: e.OAuthEmailNotVerified.Schema,
-        },
-      },
-      description: 'Email not verified or registration email not allowed',
-    },
-    404: {
-      content: {
-        'application/json': {
-          schema: e.OAuthProviderNotFound.Schema,
-        },
-      },
-      description: 'OAuth provider not found',
-    },
-    409: {
-      content: {
-        'application/json': {
-          schema: e.OAuthEmailConflict.Schema,
-        },
-      },
-      description: 'Email conflict or account already linked',
-    },
-    502: {
-      content: {
-        'application/json': {
-          schema: e.OAuthTokenExchangeFailed.Schema,
-        },
-      },
-      description: 'Token exchange failed or user info failed',
-    },
-  },
-});
-
-export const oauthProviderCallbackGet = createRouter().openapi(
-  route,
+  ),
   async (c) => {
     const params = c.req.valid('param');
     const query = c.req.valid('query');

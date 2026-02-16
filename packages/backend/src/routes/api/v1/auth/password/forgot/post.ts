@@ -1,51 +1,48 @@
-import { createRouter } from '@backend/lib/create-router.js';
+import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
-import { createRoute, z } from '@hono/zod-openapi';
+import { Hono } from 'hono';
+import { describeRoute, resolver, validator } from 'hono-openapi';
+import { z } from 'zod';
 
-const route = createRoute({
-  method: 'post',
-  path: '/auth/password/forgot',
-  tags: [TAGS.AUTH],
-  summary: 'Request password reset',
-  description:
-    'Sends a password reset email to the user. Always returns success to prevent email enumeration.',
-  request: {
-    headers: z.object({
+export const authPasswordForgotPost = new Hono<AppEnv>().post(
+  '/auth/password/forgot',
+  describeRoute({
+    tags: [TAGS.AUTH],
+    summary: 'Request password reset',
+    description:
+      'Sends a password reset email to the user. Always returns success to prevent email enumeration.',
+    responses: {
+      200: {
+        content: {
+          'application/json': { schema: resolver(r.OkResponse) },
+        },
+        description: 'Success',
+      },
+      403: {
+        content: {
+          'application/json': {
+            schema: resolver(e.UserNotEditable.Schema),
+          },
+        },
+        description: 'User not editable',
+      },
+    },
+  }),
+  validator(
+    'header',
+    z.object({
       'accept-language': f.acceptLanguage,
     }),
-    body: {
-      content: {
-        'application/json': {
-          schema: z.object({
-            email: f.userEmail,
-          }),
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      content: {
-        'application/json': { schema: r.OkResponse },
-      },
-      description: 'Success',
-    },
-    403: {
-      content: {
-        'application/json': {
-          schema: e.UserNotEditable.Schema,
-        },
-      },
-      description: 'User not editable',
-    },
-  },
-});
-
-export const authPasswordForgotPost = createRouter().openapi(
-  route,
+  ),
+  validator(
+    'json',
+    z.object({
+      email: f.userEmail,
+    }),
+  ),
   async (c) => {
     const services = c.get('services');
 

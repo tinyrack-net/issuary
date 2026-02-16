@@ -1,4 +1,5 @@
-import { createRouter } from '@backend/lib/create-router.js';
+import type { AppEnv } from '@backend/lib/app-env.js';
+import { Hono } from 'hono';
 import { docsGet } from './get.js';
 
-export const docsRoutes = createRouter().route('/', docsGet);
+export const docsRoutes = new Hono<AppEnv>().route('/', docsGet);

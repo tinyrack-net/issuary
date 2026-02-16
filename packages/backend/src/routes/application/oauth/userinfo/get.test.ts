@@ -355,9 +355,7 @@ describe('GET /application/oauth/userinfo', () => {
     test('should return proper error format for missing auth header', async () => {
       const client = createTestClient(app);
       const res = await client.application.oauth.userinfo.$get({
-        header: {
-          authorization: undefined,
-        },
+        header: {},
       });
 
       const json = await assertJsonBody(res, 401);
@@ -378,10 +376,13 @@ describe('GET /application/oauth/userinfo', () => {
       ];
 
       for (const testCase of testCases) {
+        const header = {
+          ...(testCase['authorization'] != null
+            ? { authorization: testCase['authorization'] }
+            : {}),
+        };
         const res = await client.application.oauth.userinfo.$get({
-          header: {
-            authorization: testCase['authorization'],
-          },
+          header,
         });
 
         const json = await assertJsonBody(res, 401);

@@ -174,8 +174,8 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     });
     const sessionRes = await sessionClient.api.v1.user.session.$get();
     expect(sessionRes.status).toBe(200);
-    const sessionBody = await sessionRes.json();
-    expect(sessionBody.user).toBeUndefined();
+    const sessionBody = await assertJsonBody(sessionRes);
+    expect(sessionBody.user).toBeNull();
   });
 
   test('should issue pending2FAUser session when TOTP verification is required', async () => {
@@ -204,8 +204,8 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     });
     const sessionRes = await sessionClient.api.v1.user.session.$get();
     expect(sessionRes.status).toBe(200);
-    const sessionBody = await sessionRes.json();
-    expect(sessionBody.user).toBeUndefined();
+    const sessionBody = await assertJsonBody(sessionRes);
+    expect(sessionBody.user).toBeNull();
   });
 
   test('should allow config user to login without TOTP (exempt from required)', async () => {

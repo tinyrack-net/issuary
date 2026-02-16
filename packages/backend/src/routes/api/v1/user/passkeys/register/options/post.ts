@@ -1,60 +1,58 @@
-import { createRouter } from '@backend/lib/create-router.js';
+import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { e } from '@backend/schemas/error.js';
 import { r } from '@backend/schemas/response.js';
-import { createRoute } from '@hono/zod-openapi';
+import { Hono } from 'hono';
+import { describeRoute, resolver } from 'hono-openapi';
 
 /**
  * POST /api/v1/user/passkeys/register/options
  *
  * Generate WebAuthn registration options for registering a new passkey.
  */
-const route = createRoute({
-  method: 'post',
-  path: '/user/passkeys/register/options',
-  tags: [TAGS.USER],
-  summary: 'Get Passkey Registration Options',
-  description:
-    'Generate WebAuthn registration options for registering a new passkey. ' +
-    'Accepts both full user session and pending 2FA setup session.',
-  responses: {
-    200: {
-      content: {
-        'application/json': {
-          schema: r.PasskeyRegistrationOptionsResponse,
+export const userPasskeyRegisterOptionsPost = new Hono<AppEnv>().post(
+  '/user/passkeys/register/options',
+  describeRoute({
+    tags: [TAGS.USER],
+    summary: 'Get Passkey Registration Options',
+    description:
+      'Generate WebAuthn registration options for registering a new passkey. ' +
+      'Accepts both full user session and pending 2FA setup session.',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: resolver(r.PasskeyRegistrationOptionsResponse),
+          },
         },
+        description: 'Success',
       },
-      description: 'Success',
-    },
-    400: {
-      content: {
-        'application/json': {
-          schema: e.PasskeyNotEnabled.Schema,
+      400: {
+        content: {
+          'application/json': {
+            schema: resolver(e.PasskeyNotEnabled.Schema),
+          },
         },
+        description: 'Passkey not enabled',
       },
-      description: 'Passkey not enabled',
-    },
-    401: {
-      content: {
-        'application/json': {
-          schema: e.Unauthorized.Schema,
+      401: {
+        content: {
+          'application/json': {
+            schema: resolver(e.Unauthorized.Schema),
+          },
         },
+        description: 'Unauthorized',
       },
-      description: 'Unauthorized',
-    },
-    403: {
-      content: {
-        'application/json': {
-          schema: e.SecondFactorNotAllowedForConfigUser.Schema,
+      403: {
+        content: {
+          'application/json': {
+            schema: resolver(e.SecondFactorNotAllowedForConfigUser.Schema),
+          },
         },
+        description: 'Second factor not allowed for config user',
       },
-      description: 'Second factor not allowed for config user',
     },
-  },
-});
-
-export const userPasskeyRegisterOptionsPost = createRouter().openapi(
-  route,
+  }),
   async (c) => {
     const config = c.get('services').config;
     if (!config.auth.passkey.enabled) {

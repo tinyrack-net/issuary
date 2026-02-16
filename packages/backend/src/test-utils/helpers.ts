@@ -2,7 +2,11 @@ import type { AppType } from '@backend/app.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import { RequestContext } from '@mikro-orm/core';
 import { expect } from 'vitest';
-import { createTestClient, createTestClientWithHeaders } from './client.js';
+import {
+  assertJsonBody,
+  createTestClient,
+  createTestClientWithHeaders,
+} from './client.js';
 import { generateUniqueEmail, TEST_CONSENTS, TEST_USER } from './fixtures.js';
 
 /**
@@ -165,7 +169,7 @@ export async function createDbUserWithSession(
   }
 
   const sessionCookie = extractCookie(loginRes, 'session');
-  const body = await loginRes.json();
+  const body = await assertJsonBody(loginRes);
   const userId = body.user.id;
 
   return { sessionCookie, userId };
@@ -301,7 +305,7 @@ export async function grantConsent(
     throw new Error(`Failed to grant consent: ${res.status} - ${body}`);
   }
 
-  const json = await res.json();
+  const json = await assertJsonBody(res);
   return json.redirect_url;
 }
 

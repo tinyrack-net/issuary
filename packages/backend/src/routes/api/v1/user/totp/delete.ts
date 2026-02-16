@@ -1,92 +1,89 @@
-import { createRouter } from '@backend/lib/create-router.js';
+import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
-import { createRoute, z } from '@hono/zod-openapi';
+import { Hono } from 'hono';
+import { describeRoute, resolver, validator } from 'hono-openapi';
+import { z } from 'zod';
 
 /**
  * DELETE /api/v1/user/totp
  *
  * Disable TOTP two-factor authentication.
  */
-const route = createRoute({
-  method: 'delete',
-  path: '/user/totp',
-  tags: [TAGS.USER],
-  summary: 'Disable TOTP',
-  description:
-    'Disable TOTP two-factor authentication for the current user. ' +
-    'Requires a valid TOTP code from the authenticator app.',
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: z.object({
-            code: f.totpCode,
-          }),
+export const userTotpDelete = new Hono<AppEnv>().delete(
+  '/user/totp',
+  describeRoute({
+    tags: [TAGS.USER],
+    summary: 'Disable TOTP',
+    description:
+      'Disable TOTP two-factor authentication for the current user. ' +
+      'Requires a valid TOTP code from the authenticator app.',
+    responses: {
+      200: {
+        content: {
+          'application/json': { schema: resolver(r.OkResponse) },
         },
+        description: 'Success',
+      },
+      400: {
+        content: {
+          'application/json': {
+            schema: resolver(e.TotpNotEnabled.Schema),
+          },
+        },
+        description:
+          'TOTP not enabled, invalid code, or cannot remove last second factor',
+      },
+      401: {
+        content: {
+          'application/json': {
+            schema: resolver(e.Unauthorized.Schema),
+          },
+        },
+        description: 'Unauthorized',
+      },
+      403: {
+        content: {
+          'application/json': {
+            schema: resolver(e.SecondFactorNotAllowedForConfigUser.Schema),
+          },
+        },
+        description: 'Second factor not allowed for config user',
       },
     },
+  }),
+  validator(
+    'json',
+    z.object({
+      code: f.totpCode,
+    }),
+  ),
+  async (c) => {
+    const body = c.req.valid('json');
+    const auth = c.get('auth');
+    const { config, mikro, totpService } = c.get('services');
+
+    const userSession = await auth.verify();
+
+    // Config users cannot manage 2FA
+    if (userSession.managed_by === 'config') {
+      throw new e.SecondFactorNotAllowedForConfigUser.Error();
+    }
+
+    // Check if 2FA is required
+    const secondFactorRequired = config.auth.password.second_factor.required;
+
+    // Check if user has other 2FA method (passkey)
+    const passkeyCount = await mikro.userPasskey.countByUserId(userSession.id);
+    const hasOtherSecondFactor = passkeyCount > 0;
+
+    await totpService.disable(userSession.id, body.code, {
+      secondFactorRequired,
+      hasOtherSecondFactor,
+    });
+
+    return c.json({ ok: true as const }, 200);
   },
-  responses: {
-    200: {
-      content: {
-        'application/json': { schema: r.OkResponse },
-      },
-      description: 'Success',
-    },
-    400: {
-      content: {
-        'application/json': {
-          schema: e.TotpNotEnabled.Schema,
-        },
-      },
-      description:
-        'TOTP not enabled, invalid code, or cannot remove last second factor',
-    },
-    401: {
-      content: {
-        'application/json': {
-          schema: e.Unauthorized.Schema,
-        },
-      },
-      description: 'Unauthorized',
-    },
-    403: {
-      content: {
-        'application/json': {
-          schema: e.SecondFactorNotAllowedForConfigUser.Schema,
-        },
-      },
-      description: 'Second factor not allowed for config user',
-    },
-  },
-});
-
-export const userTotpDelete = createRouter().openapi(route, async (c) => {
-  const body = c.req.valid('json');
-  const auth = c.get('auth');
-  const { config, mikro, totpService } = c.get('services');
-
-  const userSession = await auth.verify();
-
-  // Config users cannot manage 2FA
-  if (userSession.managed_by === 'config') {
-    throw new e.SecondFactorNotAllowedForConfigUser.Error();
-  }
-
-  // Check if 2FA is required
-  const secondFactorRequired = config.auth.password.second_factor.required;
-
-  // Check if user has other 2FA method (passkey)
-  const passkeyCount = await mikro.userPasskey.countByUserId(userSession.id);
-  const hasOtherSecondFactor = passkeyCount > 0;
-
-  await totpService.disable(userSession.id, body.code, {
-    secondFactorRequired,
-    hasOtherSecondFactor,
-  });
-
-  return c.json({ ok: true as const }, 200);
-});
+);

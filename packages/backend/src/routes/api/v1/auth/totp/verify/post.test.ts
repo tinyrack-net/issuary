@@ -201,7 +201,7 @@ describe('POST /api/v1/auth/totp/verify', () => {
     // Should return unauthenticated status since session is not complete
     expect(sessionRes.status).toBe(200);
     const body = await sessionRes.json();
-    expect(body).not.toHaveProperty('user');
+    expect(body.user).toBeNull();
   });
 
   test('should allow access to protected routes after successful TOTP verification', async () => {

@@ -157,19 +157,25 @@ export async function getAuthorizationCode(
     Cookie: `session=${sessionCookie}`,
   });
 
+  const authorizeQuery = {
+    response_type: 'code' as const,
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    scope,
+    state,
+    ...(codeChallenge != null
+      ? {
+          code_challenge: codeChallenge,
+          code_challenge_method: (codeChallengeMethod || 'S256') as
+            | 'S256'
+            | 'plain',
+        }
+      : {}),
+    ...(nonce != null ? { nonce } : {}),
+  };
+
   const res = await client.application.oauth.authorize.$get({
-    query: {
-      response_type: 'code',
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      scope,
-      state,
-      code_challenge: codeChallenge,
-      code_challenge_method: codeChallenge
-        ? codeChallengeMethod || 'S256'
-        : undefined,
-      nonce,
-    },
+    query: authorizeQuery,
   });
 
   expect(res.status).toBe(302);

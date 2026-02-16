@@ -238,7 +238,6 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
       const client = createTestClient(app);
       const res = await client.api.v1.oauth[':provider'].authorize.$get({
         param: { provider: 'google' },
-        // @ts-expect-error testing validation with invalid input
         query: { mode: 'invalid_mode' },
       });
 

@@ -1,4 +1,5 @@
-import { createRouter } from '@backend/lib/create-router.js';
+import type { AppEnv } from '@backend/lib/app-env.js';
+import { Hono } from 'hono';
 import { authRoutes } from './auth/index.js';
 import { configRoutes } from './config/index.js';
 import { consentRoutes } from './consent/index.js';
@@ -7,7 +8,7 @@ import { oauthRoutes } from './oauth/index.js';
 import { termsRoutes } from './terms/index.js';
 import { userRoutes } from './user/index.js';
 
-export const apiV1 = createRouter()
+export const apiV1 = new Hono<AppEnv>()
   .route('/', authRoutes)
   .route('/', configRoutes)
   .route('/', consentRoutes)

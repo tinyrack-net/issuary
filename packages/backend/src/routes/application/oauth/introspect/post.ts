@@ -1,87 +1,84 @@
-import { createRouter } from '@backend/lib/create-router.js';
+import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
-import { createRoute, z } from '@hono/zod-openapi';
+import { Hono } from 'hono';
+import { describeRoute, resolver, validator } from 'hono-openapi';
+import { z } from 'zod';
 
-const route = createRoute({
-  method: 'post',
-  path: '/introspect',
-  tags: [TAGS.OPENID],
-  summary: 'Token Introspection',
-  description:
-    'OAuth2 Token Introspection Endpoint - Returns metadata about tokens (RFC 7662)',
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: z.object({
-            token: f.token,
-            token_type_hint: f.tokenTypeHint.optional(),
-            client_id: f.clientId.optional(),
-            client_secret: f.clientSecret.optional(),
-          }),
+export const introspectPost = new Hono<AppEnv>().post(
+  '/introspect',
+  describeRoute({
+    tags: [TAGS.OPENID],
+    summary: 'Token Introspection',
+    description:
+      'OAuth2 Token Introspection Endpoint - Returns metadata about tokens (RFC 7662)',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: resolver(r.IntrospectionResponse),
+          },
         },
+        description: 'Success',
+      },
+      400: {
+        content: {
+          'application/json': {
+            schema: resolver(e.OAuthClientNotFound.Schema),
+          },
+        },
+        description: 'OAuth client not found or disabled',
+      },
+      401: {
+        content: {
+          'application/json': {
+            schema: resolver(e.InvalidClientCredentials.Schema),
+          },
+        },
+        description: 'Invalid client credentials',
       },
     },
-  },
-  responses: {
-    200: {
-      content: {
-        'application/json': {
-          schema: r.IntrospectionResponse,
-        },
-      },
-      description: 'Success',
-    },
-    400: {
-      content: {
-        'application/json': {
-          schema: e.OAuthClientNotFound.Schema,
-        },
-      },
-      description: 'OAuth client not found or disabled',
-    },
-    401: {
-      content: {
-        'application/json': {
-          schema: e.InvalidClientCredentials.Schema,
-        },
-      },
-      description: 'Invalid client credentials',
-    },
-  },
-});
+  }),
+  validator(
+    'json',
+    z.object({
+      token: f.token,
+      token_type_hint: f.tokenTypeHint.optional(),
+      client_id: f.clientId.optional(),
+      client_secret: f.clientSecret.optional(),
+    }),
+  ),
+  async (c) => {
+    const body = c.req.valid('json');
+    const { oauthClientService, oauthTokenService } = c.get('services');
 
-export const introspectPost = createRouter().openapi(route, async (c) => {
-  const body = c.req.valid('json');
-  const { oauthClientService, oauthTokenService } = c.get('services');
+    // 1. Validate client credentials if provided
+    if (body.client_id) {
+      const client = await oauthClientService.findByClientId(body.client_id);
 
-  // 1. Validate client credentials if provided
-  if (body.client_id) {
-    const client = await oauthClientService.findByClientId(body.client_id);
+      if (!client.enabled) {
+        throw new e.OAuthClientDisabled.Error();
+      }
 
-    if (!client.enabled) {
-      throw new e.OAuthClientDisabled.Error();
-    }
-
-    if (body.client_secret) {
-      const isValid = await oauthClientService.verifyClientSecret(
-        body.client_id,
-        body.client_secret,
-      );
-      if (!isValid) {
-        throw new e.InvalidClientCredentials.Error();
+      if (body.client_secret) {
+        const isValid = await oauthClientService.verifyClientSecret(
+          body.client_id,
+          body.client_secret,
+        );
+        if (!isValid) {
+          throw new e.InvalidClientCredentials.Error();
+        }
       }
     }
-  }
 
-  // 3. Introspect the token
-  const result = await oauthTokenService.introspectToken(
-    body.token,
-    body.token_type_hint,
-  );
+    // 3. Introspect the token
+    const result = await oauthTokenService.introspectToken(
+      body.token,
+      body.token_type_hint,
+    );
 
-  return c.json(result, 200);
-});
+    return c.json(result, 200);
+  },
+);

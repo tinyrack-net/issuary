@@ -1,4 +1,5 @@
-import { createRouter } from '@backend/lib/create-router.js';
+import type { AppEnv } from '@backend/lib/app-env.js';
+import { Hono } from 'hono';
 import { userDelete } from './delete.js';
 import { userOauthAccountsGet } from './oauth-accounts/get.js';
 import { userPasskeyIdDelete } from './passkeys/_id/delete.js';
@@ -15,7 +16,7 @@ import { userTotpDelete } from './totp/delete.js';
 import { userTotpSetupPost } from './totp/setup/post.js';
 import { userTotpVerifyPost } from './totp/verify/post.js';
 
-export const userRoutes = createRouter()
+export const userRoutes = new Hono<AppEnv>()
   .route('/', userDelete)
   .route('/', userSessionGet)
   .route('/', userPasswordPost)

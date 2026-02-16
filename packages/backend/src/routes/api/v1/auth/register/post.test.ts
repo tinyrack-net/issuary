@@ -157,9 +157,9 @@ describe('POST /api/v1/auth/register', () => {
       },
     });
 
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body).toHaveProperty('message');
+    const body = await assertJsonBody(res, 400);
+    expect(body).toHaveProperty('error');
+    expect(body.success).toBe(false);
   });
 
   test('should fail with short password', async () => {
@@ -173,9 +173,9 @@ describe('POST /api/v1/auth/register', () => {
       },
     });
 
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body).toHaveProperty('message');
+    const body = await assertJsonBody(res, 400);
+    expect(body).toHaveProperty('error');
+    expect(body.success).toBe(false);
   });
 
   test('should fail with long password', async () => {
@@ -189,9 +189,9 @@ describe('POST /api/v1/auth/register', () => {
       },
     });
 
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body).toHaveProperty('message');
+    const body = await assertJsonBody(res, 400);
+    expect(body).toHaveProperty('error');
+    expect(body.success).toBe(false);
   });
 
   test('should fail with missing email', async () => {
@@ -204,9 +204,9 @@ describe('POST /api/v1/auth/register', () => {
       },
     });
 
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body).toHaveProperty('message');
+    const body = await assertJsonBody(res, 400);
+    expect(body).toHaveProperty('error');
+    expect(body.success).toBe(false);
   });
 
   test('should fail with missing password', async () => {
@@ -219,9 +219,9 @@ describe('POST /api/v1/auth/register', () => {
       },
     });
 
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body).toHaveProperty('message');
+    const body = await assertJsonBody(res, 400);
+    expect(body).toHaveProperty('error');
+    expect(body.success).toBe(false);
   });
 
   test('should NOT create session after registration (requires email verification)', async () => {

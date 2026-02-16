@@ -1,71 +1,61 @@
-import { createRouter } from '@backend/lib/create-router.js';
+import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { e } from '@backend/schemas/error.js';
 import { r } from '@backend/schemas/response.js';
-import { createRoute } from '@hono/zod-openapi';
 import type { RegistrationResponseJSON } from '@simplewebauthn/server';
+import { Hono } from 'hono';
+import { describeRoute, resolver, validator } from 'hono-openapi';
 
 /**
  * POST /api/v1/user/passkeys/register/verify
  *
  * Verify and complete passkey registration.
  */
-const route = createRoute({
-  method: 'post',
-  path: '/user/passkeys/register/verify',
-  tags: [TAGS.USER],
-  summary: 'Verify Passkey Registration',
-  description:
-    'Verify and complete passkey registration. ' +
-    'Accepts both full user session and pending 2FA setup session.',
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: r.PasskeyRegistrationBody,
+export const userPasskeyRegisterVerifyPost = new Hono<AppEnv>().post(
+  '/user/passkeys/register/verify',
+  describeRoute({
+    tags: [TAGS.USER],
+    summary: 'Verify Passkey Registration',
+    description:
+      'Verify and complete passkey registration. ' +
+      'Accepts both full user session and pending 2FA setup session.',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: resolver(r.PasskeySetupVerifyResponse),
+          },
         },
+        description: 'Success',
+      },
+      400: {
+        content: {
+          'application/json': {
+            schema: resolver(e.PasskeyNotEnabled.Schema),
+          },
+        },
+        description:
+          'Passkey not enabled, challenge not found, or verification failed',
+      },
+      401: {
+        content: {
+          'application/json': {
+            schema: resolver(e.Unauthorized.Schema),
+          },
+        },
+        description: 'Unauthorized',
+      },
+      409: {
+        content: {
+          'application/json': {
+            schema: resolver(e.PasskeyAlreadyExists.Schema),
+          },
+        },
+        description: 'Passkey already exists',
       },
     },
-  },
-  responses: {
-    200: {
-      content: {
-        'application/json': {
-          schema: r.PasskeySetupVerifyResponse,
-        },
-      },
-      description: 'Success',
-    },
-    400: {
-      content: {
-        'application/json': {
-          schema: e.PasskeyNotEnabled.Schema,
-        },
-      },
-      description:
-        'Passkey not enabled, challenge not found, or verification failed',
-    },
-    401: {
-      content: {
-        'application/json': {
-          schema: e.Unauthorized.Schema,
-        },
-      },
-      description: 'Unauthorized',
-    },
-    409: {
-      content: {
-        'application/json': {
-          schema: e.PasskeyAlreadyExists.Schema,
-        },
-      },
-      description: 'Passkey already exists',
-    },
-  },
-});
-
-export const userPasskeyRegisterVerifyPost = createRouter().openapi(
-  route,
+  }),
+  validator('json', r.PasskeyRegistrationBody),
   async (c) => {
     const config = c.get('services').config;
     if (!config.auth.passkey.enabled) {

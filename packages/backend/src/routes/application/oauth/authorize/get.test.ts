@@ -48,33 +48,42 @@ async function getAuthorizationCode(
       })
     : createTestClient(app);
 
+  const query = {
+    response_type: params['response_type'] || 'code',
+    client_id: params['client_id'] || '',
+    redirect_uri: params['redirect_uri'] || '',
+    ...(params['scope'] != null ? { scope: params['scope'] } : {}),
+    ...(params['state'] != null ? { state: params['state'] } : {}),
+    ...(params['nonce'] != null ? { nonce: params['nonce'] } : {}),
+    ...(params['code_challenge'] != null
+      ? { code_challenge: params['code_challenge'] }
+      : {}),
+    ...(params['code_challenge_method'] != null
+      ? {
+          code_challenge_method: params['code_challenge_method'] as
+            | 'S256'
+            | 'plain',
+        }
+      : {}),
+    ...(params['prompt'] != null
+      ? {
+          prompt: params['prompt'] as
+            | 'none'
+            | 'login'
+            | 'consent'
+            | 'select_account',
+        }
+      : {}),
+    ...(params['max_age'] != null ? { max_age: params['max_age'] } : {}),
+    ...(params['display'] != null
+      ? {
+          display: params['display'] as 'page' | 'popup' | 'touch' | 'wap',
+        }
+      : {}),
+  };
+
   const res = await client.application.oauth.authorize.$get({
-    query: {
-      response_type: params['response_type'] || 'code',
-      client_id: params['client_id'] || '',
-      redirect_uri: params['redirect_uri'] || '',
-      scope: params['scope'],
-      state: params['state'],
-      nonce: params['nonce'],
-      code_challenge: params['code_challenge'],
-      code_challenge_method: params['code_challenge_method'] as
-        | 'S256'
-        | 'plain'
-        | undefined,
-      prompt: params['prompt'] as
-        | 'none'
-        | 'login'
-        | 'consent'
-        | 'select_account'
-        | undefined,
-      max_age: params['max_age'],
-      display: params['display'] as
-        | 'page'
-        | 'popup'
-        | 'touch'
-        | 'wap'
-        | undefined,
-    },
+    query,
   });
 
   const locationHeader = res.headers.get('location');

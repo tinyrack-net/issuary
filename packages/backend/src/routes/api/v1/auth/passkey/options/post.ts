@@ -1,40 +1,38 @@
-import { createRouter } from '@backend/lib/create-router.js';
+import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { e } from '@backend/schemas/error.js';
 import { r } from '@backend/schemas/response.js';
-import { createRoute } from '@hono/zod-openapi';
+import { Hono } from 'hono';
+import { describeRoute, resolver } from 'hono-openapi';
 
-const route = createRoute({
-  method: 'post',
-  path: '/auth/passkey/options',
-  tags: [TAGS.AUTH],
-  summary: 'Get Passkey Authentication Options',
-  description:
-    'Generate WebAuthn authentication options for passkey login. ' +
-    'Supports both passwordless login and 2FA. ' +
-    'If a pending 2FA session exists, returns options for that user only.',
-  responses: {
-    200: {
-      content: {
-        'application/json': {
-          schema: r.PasskeyAuthenticationOptionsResponse,
+export const authPasskeyOptionsPost = new Hono<AppEnv>().post(
+  '/auth/passkey/options',
+  describeRoute({
+    tags: [TAGS.AUTH],
+    summary: 'Get Passkey Authentication Options',
+    description:
+      'Generate WebAuthn authentication options for passkey login. ' +
+      'Supports both passwordless login and 2FA. ' +
+      'If a pending 2FA session exists, returns options for that user only.',
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: resolver(r.PasskeyAuthenticationOptionsResponse),
+          },
         },
+        description: 'Success',
       },
-      description: 'Success',
-    },
-    400: {
-      content: {
-        'application/json': {
-          schema: e.PasskeyNotEnabled.Schema,
+      400: {
+        content: {
+          'application/json': {
+            schema: resolver(e.PasskeyNotEnabled.Schema),
+          },
         },
+        description: 'Passkey not enabled',
       },
-      description: 'Passkey not enabled',
     },
-  },
-});
-
-export const authPasskeyOptionsPost = createRouter().openapi(
-  route,
+  }),
   async (c) => {
     const config = c.get('services').config;
     if (!config.auth.passkey.enabled) {
