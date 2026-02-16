@@ -55,16 +55,12 @@ const route = createRoute({
 
 export const authEmailResendPost = createRouter().openapi(route, async (c) => {
   const services = c.get('services');
-
-  if (!services.emailVerificationService) {
-    throw new e.EmailNotActivated.Error();
-  }
-
   const body = c.req.valid('json');
   const headers = c.req.valid('header');
 
-  const verification =
-    await services.emailVerificationService.resendVerification(body.email);
+  const verification = await services.emailService.resendVerification(
+    body.email,
+  );
 
   services.emailService.sendVerificationEmailAsync({
     email: body.email,
