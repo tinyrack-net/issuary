@@ -10,20 +10,16 @@ import { OAuthConnectService } from '@backend/services/oauth-connect.service.js'
 import { OAuthTokenService } from '@backend/services/oauth-token.service.js';
 import { PasskeyService } from '@backend/services/passkey.service.js';
 import { PasswordResetService } from '@backend/services/password-reset.service.js';
+import { SchedulerService } from '@backend/services/scheduler.service.js';
 import { TermsService } from '@backend/services/terms.service.js';
 import { TotpService } from '@backend/services/totp.service.js';
 import { UserService } from '@backend/services/user.service.js';
 import { UserConsentService } from '@backend/services/user-consent.service.js';
-import { Cron } from 'croner';
 
 export interface ServiceContainer {
   config: ResolvedAppConfig;
   mikro: MikroService;
-  scheduler: {
-    cleanupJob: Cron | null;
-    start: () => void;
-    stop: () => void;
-  };
+  scheduler: SchedulerService;
   emailService: EmailService;
   jwtService: JwtService;
   passwordResetService: PasswordResetService;
@@ -107,41 +103,9 @@ export async function initializeServices(
   const cleanupService = new CleanupService(config, mikro, jwtService);
 
   // 4. Scheduler
-  const scheduler: ServiceContainer['scheduler'] = {
-    cleanupJob: null,
-    start: () => {
-      const { enabled, cron } = config.scheduler;
-      if (!enabled || scheduler.cleanupJob) return;
-      const job = new Cron(cron, async () => {
-        try {
-          await cleanupService.runAll({
-            dryRun: false,
-            verbose: false,
-          });
-        } catch (error) {
-          console.error(
-            'Scheduled cleanup failed:',
-            error instanceof Error ? error.message : String(error),
-          );
-        }
-      });
-      scheduler.cleanupJob = job;
-    },
-    stop: () => {
-      if (scheduler.cleanupJob) {
-        scheduler.cleanupJob.stop();
-        scheduler.cleanupJob = null;
-      }
-    },
-  };
-
-  if (!serverOptions.silent) {
-    console.info(
-      'Scheduler initialized (enabled: %s, cron: %s)',
-      config.scheduler.enabled,
-      config.scheduler.cron,
-    );
-  }
+  const scheduler = new SchedulerService(config, cleanupService, {
+    silent: serverOptions.silent,
+  });
 
   const services: ServiceContainer = {
     config,
