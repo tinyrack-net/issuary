@@ -15,7 +15,6 @@ import { routes } from '@backend/routes/index.js';
 import { ApiError, e } from '@backend/schemas/error.js';
 import {
   initializeServices,
-  type ServerOptions,
   type ServiceContainer,
 } from '@backend/services/container.js';
 import { cors } from 'hono/cors';
@@ -56,14 +55,11 @@ export async function createApp(
   // with all defaults applied
   const config = await resolveConfig(options.config);
 
-  // Resolve server options with defaults
-  const serverOptions: ServerOptions = {
-    skipListen: false,
-    silent,
-  };
-
   // Initialize all services (DB, mail, scheduler, etc.)
-  const { services, cleanup } = await initializeServices(config, serverOptions);
+  const { services, cleanup } = await initializeServices(config, {
+    skipListen: false,
+    silent: silent,
+  });
 
   // Create OpenAPIHono instance with shared validation hook
   const app = createRouter();
