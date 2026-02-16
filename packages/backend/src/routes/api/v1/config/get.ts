@@ -61,6 +61,9 @@ export const configGet = createRouter().openapi(route, async (c) => {
       database: {
         enabled: !!config.database?.type,
       },
+      smtp: {
+        enabled: !!config.smtp
+      },
       auth: config.auth,
       identity_providers: identityProviders,
       account_deletion: {

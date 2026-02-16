@@ -544,6 +544,9 @@ export const r = {
     database: z.object({
       enabled: z.boolean(),
     }),
+    smtp: z.object({
+      enabled: z.boolean(),
+    }),
     auth: BasicAuthenticationMethods,
     identity_providers: z.array(OAuthAuthenticationMethod),
     account_deletion: z.object({
