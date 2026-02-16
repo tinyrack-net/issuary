@@ -109,11 +109,7 @@ describe('POST /api/v1/auth/email/resend', () => {
       user.email_verified = false;
       await services.mikro.em.persist(user).flush();
 
-      if (!services.emailVerificationService) {
-        throw new Error('EmailVerificationService not initialized');
-      }
-
-      await services.emailVerificationService.generateToken({
+      await services.emailService.generateToken({
         userId: user.id,
       });
     });
@@ -133,10 +129,9 @@ describe('POST /api/v1/auth/email/resend', () => {
       expect(user).toBeDefined();
 
       // Check that there is a valid pending verification
-      const hasPending =
-        await services.emailVerificationService?.hasPendingVerification(
-          user.id,
-        );
+      const hasPending = await services.emailService.hasPendingVerification(
+        user.id,
+      );
       expect(hasPending).toBe(true);
     });
   });
