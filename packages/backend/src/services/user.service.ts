@@ -7,7 +7,6 @@ import type { MikroService } from '@backend/services/mikro.service.js';
 import type { Loaded } from '@mikro-orm/core';
 import type z from 'zod';
 import type { EmailService } from './email.service.js';
-import type { EmailVerificationService } from './email-verification.service.js';
 import type { TermsService } from './terms.service.js';
 
 export class UserService {
@@ -15,7 +14,6 @@ export class UserService {
     private readonly mikro: MikroService,
     private readonly config: ResolvedAppConfig,
     private readonly emailService: EmailService,
-    private readonly emailVerificationService?: EmailVerificationService,
     private readonly termsService?: TermsService,
   ) {}
 
@@ -86,9 +84,9 @@ export class UserService {
       password: params.password,
     });
 
-    // 3. Generate email verification token
-    if (this.emailVerificationService) {
-      const verification = await this.emailVerificationService.generateToken({
+    // 3. Generate email verification token and send email
+    if (this.config.smtp) {
+      const verification = await this.emailService.generateToken({
         userId: user.id,
       });
       await this.mikro.em.flush();
