@@ -128,11 +128,9 @@ export class CleanupService {
       };
     }
 
-    // Delete the tokens
-    for (const token of expiredTokens) {
-      em.remove(token);
-    }
-    await em.flush();
+    // Delete the tokens using nativeDelete for reliable removal
+    const tokenIds = expiredTokens.map((token) => token.id);
+    await em.nativeDelete(RevokedTokenEntity, { id: { $in: tokenIds } });
 
     if (retentionMs > 0) {
       return {
@@ -206,14 +204,13 @@ export class CleanupService {
       };
     }
 
-    // Delete the codes
-    for (const code of expiredCodes) {
-      em.remove(code);
+    // Delete the codes using nativeDelete for reliable removal
+    const expiredIds = expiredCodes.map((code) => code.id);
+    const consumedIds = consumedCodes.map((code) => code.id);
+    const allIds = [...new Set([...expiredIds, ...consumedIds])];
+    if (allIds.length > 0) {
+      await em.nativeDelete(OAuthCodeEntity, { id: { $in: allIds } });
     }
-    for (const code of consumedCodes) {
-      em.remove(code);
-    }
-    await em.flush();
 
     return {
       deletedCount: totalCount,
@@ -390,16 +387,6 @@ export class CleanupService {
 
     const em = this.mikro.orm.em.fork();
     const userRepo = em.getRepository(UserEntity);
-    const userOAuthRepo = em.getRepository(UserOAuthEntity);
-    const userTotpRepo = em.getRepository(UserTotpEntity);
-    const userTotpRecoveryCodeRepo = em.getRepository(
-      UserTotpRecoveryCodeEntity,
-    );
-    const userPasskeyRepo = em.getRepository(UserPasskeyEntity);
-    const userConsentRepo = em.getRepository(UserConsentEntity);
-    const userTermsConsentRepo = em.getRepository(UserTermsConsentEntity);
-    const emailVerificationRepo = em.getRepository(EmailVerificationEntity);
-    const passwordResetRepo = em.getRepository(PasswordResetEntity);
 
     const retentionMs = parseDurationToMs(config.retention);
     const cutoffDate = calculateCutoffDate(config.retention);
@@ -427,82 +414,35 @@ export class CleanupService {
     }
 
     let deletedCount = 0;
+    const userIds = usersToDelete.map((user) => user.id);
 
-    for (const user of usersToDelete) {
+    for (const userId of userIds) {
       try {
         // Delete related entities first (cascading delete)
-        // OAuth accounts
-        const oauthAccounts = await userOAuthRepo.find({
-          user: user.id,
+        // Use nativeDelete for reliable removal in MikroORM v7
+        await em.nativeDelete(UserOAuthEntity, { user: userId });
+        await em.nativeDelete(UserTotpRecoveryCodeEntity, {
+          user: userId,
         });
-        for (const account of oauthAccounts) {
-          em.remove(account);
-        }
-
-        // TOTP
-        const totps = await userTotpRepo.find({ user: user.id });
-        for (const totp of totps) {
-          em.remove(totp);
-        }
-
-        // TOTP recovery codes
-        const recoveryCodes = await userTotpRecoveryCodeRepo.find({
-          user: user.id,
+        await em.nativeDelete(UserTotpEntity, { user: userId });
+        await em.nativeDelete(UserPasskeyEntity, { user: userId });
+        await em.nativeDelete(UserConsentEntity, { user: userId });
+        await em.nativeDelete(UserTermsConsentEntity, {
+          user: userId,
         });
-        for (const code of recoveryCodes) {
-          em.remove(code);
-        }
-
-        // Passkeys
-        const passkeys = await userPasskeyRepo.find({
-          user: user.id,
+        await em.nativeDelete(EmailVerificationEntity, {
+          user: userId,
         });
-        for (const passkey of passkeys) {
-          em.remove(passkey);
-        }
-
-        // User consents
-        const consents = await userConsentRepo.find({
-          user: user.id,
-        });
-        for (const consent of consents) {
-          em.remove(consent);
-        }
-
-        // User terms consents
-        const termsConsents = await userTermsConsentRepo.find({
-          user: user.id,
-        });
-        for (const consent of termsConsents) {
-          em.remove(consent);
-        }
-
-        // Email verifications
-        const verifications = await emailVerificationRepo.find({
-          user: user.id,
-        });
-        for (const verification of verifications) {
-          em.remove(verification);
-        }
-
-        // Password resets
-        const passwordResets = await passwordResetRepo.find({
-          user: user.id,
-        });
-        for (const reset of passwordResets) {
-          em.remove(reset);
-        }
+        await em.nativeDelete(PasswordResetEntity, { user: userId });
 
         // Finally delete the user
-        em.remove(user);
+        await em.nativeDelete(UserEntity, { id: userId });
         deletedCount++;
       } catch {
         // Log error but continue with other users
         // Note: In production, consider adding a logger parameter
       }
     }
-
-    await em.flush();
 
     return {
       deletedCount,
