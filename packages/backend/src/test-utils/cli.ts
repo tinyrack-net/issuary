@@ -3,16 +3,16 @@
  * Provides helper functions for creating test data with specific states.
  */
 
-import { EmailVerificationEntity } from '@backend/entities/email-verification.entity.js';
+import { EmailVerificationEntitySchema } from '@backend/entities/email-verification.entity.js';
 import {
   JwtKeyEntity,
   JwtKeyStatus,
 } from '@backend/entities/jwt-key.entity.js';
-import { OAuthClientEntity } from '@backend/entities/oauth-client.entity.js';
-import { OAuthCodeEntity } from '@backend/entities/oauth-code.entity.js';
-import { PasswordResetEntity } from '@backend/entities/password-reset.entity.js';
+import { OAuthClientEntitySchema } from '@backend/entities/oauth-client.entity.js';
+import { OAuthCodeEntitySchema } from '@backend/entities/oauth-code.entity.js';
+import { PasswordResetEntitySchema } from '@backend/entities/password-reset.entity.js';
 import {
-  RevokedTokenEntity,
+  RevokedTokenEntitySchema,
   type TokenType,
 } from '@backend/entities/revoked-token.entity.js';
 import { UserEntity } from '@backend/entities/user.entity.js';
@@ -123,7 +123,7 @@ export async function createTestOAuthClient(
 
   await withMikroContext(services, async () => {
     const em = services.mikro.em;
-    const client = em.create(OAuthClientEntity, {
+    const client = em.create(OAuthClientEntitySchema, {
       clientId,
       clientSecretHash: 'test-secret-hash',
       name,
@@ -383,16 +383,16 @@ export async function countEntities(
 
     switch (entityName) {
       case 'revokedToken':
-        count = await em.count(RevokedTokenEntity, filter);
+        count = await em.count(RevokedTokenEntitySchema, filter);
         break;
       case 'oauthCode':
-        count = await em.count(OAuthCodeEntity, filter);
+        count = await em.count(OAuthCodeEntitySchema, filter);
         break;
       case 'emailVerification':
-        count = await em.count(EmailVerificationEntity, filter);
+        count = await em.count(EmailVerificationEntitySchema, filter);
         break;
       case 'passwordReset':
-        count = await em.count(PasswordResetEntity, filter);
+        count = await em.count(PasswordResetEntitySchema, filter);
         break;
       case 'jwtKey':
         count = await em.count(JwtKeyEntity, filter);

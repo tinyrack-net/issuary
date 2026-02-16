@@ -1,6 +1,6 @@
-import { OAuthClientEntity } from '@backend/entities/oauth-client.entity.js';
-import { TermsEntity } from '@backend/entities/terms.entity.js';
-import { TermsContentEntity } from '@backend/entities/terms-content.entity.js';
+import { OAuthClientEntitySchema } from '@backend/entities/oauth-client.entity.js';
+import { TermsEntitySchema } from '@backend/entities/terms.entity.js';
+import { TermsContentEntitySchema } from '@backend/entities/terms-content.entity.js';
 import { UserEntity } from '@backend/entities/user.entity.js';
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import type { EntityManager } from '@mikro-orm/core';
@@ -46,7 +46,7 @@ async function syncTerms(
   for (const term of configTerms) {
     // Upsert term entity
     await em.upsert(
-      TermsEntity,
+      TermsEntitySchema,
       {
         id: term.id,
         required: term.required,
@@ -64,14 +64,14 @@ async function syncTerms(
     );
 
     // Delete existing content for this term (to handle language changes)
-    await em.nativeDelete(TermsContentEntity, {
+    await em.nativeDelete(TermsContentEntitySchema, {
       terms: term.id,
     });
 
     // Insert new content for each language
     for (const [lang, content] of Object.entries(term.content)) {
-      const contentEntity = new TermsContentEntity({
-        termsId: term.id,
+      const contentEntity = em.create(TermsContentEntitySchema, {
+        terms: term.id,
         lang,
         title: content.title,
         type: content.type,
@@ -86,13 +86,13 @@ async function syncTerms(
   // Remove config-managed terms that are no longer in config
   const configTermIds = configTerms.map((t) => t.id);
   if (configTermIds.length > 0) {
-    await em.nativeDelete(TermsEntity, {
+    await em.nativeDelete(TermsEntitySchema, {
       managed_by: 'config',
       id: { $nin: configTermIds },
     });
   } else {
     // If no config terms, remove all config-managed terms
-    await em.nativeDelete(TermsEntity, { managed_by: 'config' });
+    await em.nativeDelete(TermsEntitySchema, { managed_by: 'config' });
   }
 }
 
@@ -164,7 +164,7 @@ async function syncOAuthClients(
     // Use upsert for atomic INSERT ON CONFLICT DO UPDATE
     // This is cluster-safe: concurrent instances won't cause race conditions
     await em.upsert(
-      OAuthClientEntity,
+      OAuthClientEntitySchema,
       {
         id: client.id,
         clientId: client.client_id,
@@ -192,12 +192,12 @@ async function syncOAuthClients(
   // Remove config-managed clients that are no longer in config
   const configClientIds = config.clients.map((c) => c.id);
   if (configClientIds.length > 0) {
-    await em.nativeDelete(OAuthClientEntity, {
+    await em.nativeDelete(OAuthClientEntitySchema, {
       managed_by: 'config',
       id: { $nin: configClientIds },
     });
   } else {
     // If no config providers, remove all config-managed clients
-    await em.nativeDelete(OAuthClientEntity, { managed_by: 'config' });
+    await em.nativeDelete(OAuthClientEntitySchema, { managed_by: 'config' });
   }
 }
