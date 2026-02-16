@@ -16,5 +16,10 @@
   "description": "",
   "devDependencies": {
     "@biomejs/biome": "catalog:"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
   }
 }
