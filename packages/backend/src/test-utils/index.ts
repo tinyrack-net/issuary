@@ -16,6 +16,8 @@ export {
   createTestUser,
   getJwtKey,
 } from './cli.js';
+// Type-safe test client
+export { createTestClient, createTestClientWithHeaders } from './client.js';
 // Test fixtures and constants
 export {
   DEFAULT_SCOPES,
