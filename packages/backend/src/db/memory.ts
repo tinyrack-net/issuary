@@ -1,11 +1,11 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { defineConfig, LibSqlDriver } from '@mikro-orm/libsql';
+import type { Options } from '@mikro-orm/core';
+import { ReflectMetadataProvider } from '@mikro-orm/decorators/legacy';
 import { Migrator } from '@mikro-orm/migrations';
 import { SeedManager } from '@mikro-orm/seeder';
+import { defineConfig, SqliteDriver } from '@mikro-orm/sqlite';
 import type { ResolvedAppConfig } from '../lib/config/index.js';
-import { ReflectMetadataProvider } from '@mikro-orm/decorators/legacy';
-import type { Options } from '@mikro-orm/core';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,7 +16,7 @@ export const mikroormMemoryConfig = (config: ResolvedAppConfig): Options => {
   }
   return defineConfig({
     metadataProvider: ReflectMetadataProvider,
-    driver: LibSqlDriver,
+    driver: SqliteDriver,
     dbName: ':memory:',
     entities: [path.join(__dirname, '../**/*.entity.js')],
     entitiesTs: [path.join(__dirname, '../**/*.entity.ts')],
