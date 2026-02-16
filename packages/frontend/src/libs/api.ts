@@ -1,4 +1,4 @@
-import type { AppRouteType } from '@backend/rpc.ts';
+import type { AppType } from '@backend/rpc.ts';
 import i18n from '@frontend/i18n/index.js';
 import type { ClientResponse } from 'hono/client';
 import { hc } from 'hono/client';
@@ -36,7 +36,7 @@ const customFetch: typeof fetch = async (input, init) => {
  * All API calls should use this client instead of
  * raw fetch or the old etch() wrapper.
  */
-export const api = hc<AppRouteType>('/', {
+export const api = hc<AppType>('/', {
   fetch: customFetch,
 });
 
