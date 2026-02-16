@@ -1,4 +1,3 @@
-import type { AppType } from '@backend/lib/app.js';
 import {
   type AppConfigInput,
   resolveConfig,
@@ -13,14 +12,10 @@ import { registerStaticHandler } from '@backend/middleware/static/index.js';
 import { trustedProxyGuard } from '@backend/middleware/trusted-proxy-guard.js';
 import { routes } from '@backend/routes/index.js';
 import { ApiError, e } from '@backend/schemas/error.js';
-import {
-  initializeServices,
-  type ServiceContainer,
-} from '@backend/services/container.js';
+import { initializeServices } from '@backend/services/container.js';
+import { $ } from '@hono/zod-openapi';
 import { cors } from 'hono/cors';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-
-export type { AppType };
 
 export interface CreateAppOptions {
   /**
@@ -40,15 +35,7 @@ export interface CreateAppOptions {
   silent?: boolean | undefined;
 }
 
-export interface CreateAppResult {
-  app: AppType;
-  services: ServiceContainer;
-  cleanup: () => Promise<void>;
-}
-
-export async function createApp(
-  options: CreateAppOptions,
-): Promise<CreateAppResult> {
+export async function createApp(options: CreateAppOptions) {
   const silent = options.silent ?? false;
 
   // Resolve external config to internal config
@@ -61,74 +48,59 @@ export async function createApp(
     silent: silent,
   });
 
-  // Create OpenAPIHono instance with shared validation hook
-  const app = createRouter();
+  const honoApp = createRouter()
+    .onError((err, c) => {
+      if (err instanceof ApiError) {
+        return c.json(err.toJson(), err.status as ContentfulStatusCode);
+      }
 
-  app.use(
-    '*',
-    cors({
-      origin: env.APP_ENV === 'development' ? '*' : config.app.host,
-      credentials: true,
-    }),
-  );
+      // Zod validation errors from @hono/zod-openapi
+      if (
+        err &&
+        typeof err === 'object' &&
+        'name' in err &&
+        err.name === 'ZodError'
+      ) {
+        const zodErr = new e.ValidationError.Error(err.message);
+        return c.json(zodErr.toJson(), zodErr.status as ContentfulStatusCode);
+      }
 
-  app.use(
-    '*',
-    sessionMiddleware(
-      config.app.cookie_secret,
-      config.app.host.startsWith('https'),
-    ),
-  );
+      console.error('Unhandled error:', err);
+      const internalErr = new e.InternalServerError.Error();
+      return c.json(
+        internalErr.toJson(),
+        internalErr.status as ContentfulStatusCode,
+      );
+    })
+    .use(
+      '*',
+      cors({
+        origin: env.APP_ENV === 'development' ? '*' : config.app.host,
+        credentials: true,
+      }),
+    )
+    .use(
+      '*',
+      sessionMiddleware(
+        config.app.cookie_secret,
+        config.app.host.startsWith('https'),
+      ),
+    )
+    .use('*', trustedProxyGuard(config.app.trust_proxy))
+    .use('*', servicesMiddleware(services))
+    .use('*', mikroOrmMiddleware)
+    .use('*', authMiddleware);
 
-  // Trusted proxy guard
-  app.use('*', trustedProxyGuard(config.app.trust_proxy));
-
-  // Service injection middleware (always loaded)
-  app.use('*', servicesMiddleware(services));
-
-  // MikroORM RequestContext middleware (always loaded)
-  app.use('*', mikroOrmMiddleware);
-
-  // Auth middleware (skip in CLI mode)
-  app.use('*', authMiddleware);
-
-  // Error handler
-  app.onError((err, c) => {
-    if (err instanceof ApiError) {
-      return c.json(err.toJson(), err.status as ContentfulStatusCode);
-    }
-
-    // Zod validation errors from @hono/zod-openapi
-    if (
-      err &&
-      typeof err === 'object' &&
-      'name' in err &&
-      err.name === 'ZodError'
-    ) {
-      const zodErr = new e.ValidationError.Error(err.message);
-      return c.json(zodErr.toJson(), zodErr.status as ContentfulStatusCode);
-    }
-
-    console.error('Unhandled error:', err);
-    const internalErr = new e.InternalServerError.Error();
-    return c.json(
-      internalErr.toJson(),
-      internalErr.status as ContentfulStatusCode,
-    );
-  });
-
-  // OpenAPI spec endpoint (OpenAPI 3.1.0)
-  app.doc31('/api/docs/json', {
-    openapi: '3.1.0',
-    info: {
-      title: 'TinyAuth API',
-      version: '1.0.0',
-      description: 'OpenID Connect Provider API',
-    },
-  });
-
-  // Mount all routes (skip in CLI mode)
-  app.route('/', routes);
+  const app = $(honoApp)
+    .route('/', routes)
+    .doc31('/api/docs/json', {
+      openapi: '3.1.0',
+      info: {
+        title: 'TinyAuth API',
+        version: '1.0.0',
+        description: 'OpenID Connect Provider API',
+      },
+    });
 
   // Register static file handler (skip in CLI mode)
   registerStaticHandler(app, config, silent);
@@ -138,3 +110,5 @@ export async function createApp(
 
   return { app, services, cleanup };
 }
+
+export type AppType = Awaited<ReturnType<typeof createApp>>['app'];
