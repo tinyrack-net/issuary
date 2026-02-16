@@ -1,4 +1,4 @@
-import type { AppType } from '@backend/lib/app.js';
+import type { AppType } from '@backend/app.js';
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import { env } from '@backend/lib/env.js';
 import { registerDevProxy } from './dev.js';

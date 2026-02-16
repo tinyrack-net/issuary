@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AppType } from '@backend/lib/app.js';
+import type { AppType } from '@backend/app.js';
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import { interpolateHtml } from '@backend/lib/interpolate-html.js';
 import { serveStatic } from '@hono/node-server/serve-static';

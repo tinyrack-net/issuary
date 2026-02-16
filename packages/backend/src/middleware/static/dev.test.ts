@@ -1,5 +1,5 @@
 import http from 'node:http';
-import type { AppType } from '@backend/lib/app.js';
+import type { AppType } from '@backend/app.js';
 import {
   resetDevProxyUpstreamUrl,
   setDevProxyUpstreamUrl,
