@@ -1,4 +1,4 @@
-import type { AppType } from '@backend/lib/app.js';
+import type { AppType } from '@backend/app.js';
 import { expect } from 'vitest';
 import { createTestClient, createTestClientWithHeaders } from './client.js';
 import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT } from './fixtures.js';

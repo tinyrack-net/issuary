@@ -1,4 +1,4 @@
-import type { AppType } from '@backend/lib/app.js';
+import type { AppType } from '@backend/app.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import { RequestContext } from '@mikro-orm/core';
 import { expect } from 'vitest';

@@ -13,7 +13,7 @@ import type { AppConfigInput } from '@backend/lib/config/index.js';
  * ```typescript
  * import { createServer } from '@backend/server.js';
  * import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/setup.js';
- * import type { AppType } from '@backend/lib/app.js';
+ * import type { AppType } from '@backend/app.js';
  * import type { ServiceContainer } from '@backend/services/container.js';
  *
  * let app: AppType;

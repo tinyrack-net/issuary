@@ -1,4 +1,4 @@
-import type { AppType } from '@backend/lib/app.js';
+import type { AppType } from '@backend/app.js';
 import type { AppRouteType } from '@backend/routes/index.js';
 import { testClient } from 'hono/testing';
 import type { StatusCode } from 'hono/utils/http-status';
