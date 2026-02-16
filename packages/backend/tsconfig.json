@@ -21,9 +21,6 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
 
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-
     "noImplicitReturns": true,
     "noImplicitOverride": true,
     "noUnusedLocals": false,

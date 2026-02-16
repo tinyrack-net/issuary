@@ -18,10 +18,6 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Decorators (needed to type-check backend sources via @backend/* paths) */
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,

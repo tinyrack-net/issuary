@@ -3,7 +3,6 @@ import type { AppType } from '@backend/lib/app.js';
 import type { AppConfigInput } from '@backend/lib/config/index.js';
 import { env } from '@backend/lib/env.js';
 import { serve } from '@hono/node-server';
-import 'reflect-metadata';
 
 export type { AppType };
 export type { ServerOptions } from '@backend/services/container.js';
