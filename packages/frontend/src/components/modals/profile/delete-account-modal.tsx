@@ -51,7 +51,7 @@ export function DeleteAccountModal({
     ...deleteAccountMutationOptions,
     onSuccess: async () => {
       queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-        user: undefined,
+        user: null,
       });
       await tick();
       router.navigate({ to: '/login' });

@@ -102,7 +102,7 @@ function Profile() {
     ...logoutMutationOptions,
     onSuccess: async () => {
       queryClient.setQueryData(getSessionQueryOptions.queryKey, {
-        user: undefined,
+        user: null,
       });
       await tick();
       router.navigate({
