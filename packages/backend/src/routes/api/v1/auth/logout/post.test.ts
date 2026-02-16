@@ -1,4 +1,4 @@
-import type { AppType } from '@backend/lib/app.js';
+import type { AppType } from '@backend/app.js';
 import { createServer } from '@backend/server.js';
 import {
   createTestClient,
