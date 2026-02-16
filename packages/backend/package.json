@@ -23,7 +23,7 @@
     "tinyauth": "./dist/cli.js"
   },
   "scripts": {
-    "dev": "APP_ENV=development CONFIG_PATH=./config.dev.minimal.yaml tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve",
+    "dev": "APP_ENV=development CONFIG_PATH=./config.dev.minimal.yaml tsx watch --include './src/**/*' --include ./config.dev.minimal.yaml src/cli.ts serve",
     "dev:maximal": "APP_ENV=development CONFIG_PATH=./config.dev.yaml tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve",
     "dev:cli": "APP_ENV=development CONFIG_PATH=./config.dev.yaml tsx src/cli.ts",
     "test": "APP_ENV=test NODE_OPTIONS='--import tsx' vitest",
