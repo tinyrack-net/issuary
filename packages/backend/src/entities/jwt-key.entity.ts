@@ -1,13 +1,6 @@
 import { JwtKeyRepository } from '@backend/repositories/jwt-key.repository.js';
-import { EntityRepositoryType, type Opt, t } from '@mikro-orm/core';
-import {
-  Entity,
-  Enum,
-  Index,
-  PrimaryKey,
-  Property,
-} from '@mikro-orm/decorators/legacy';
-import { BaseEntity } from './base.entity.js';
+import { defineEntity, type InferEntity } from '@mikro-orm/core';
+import { BaseSchema } from './base.entity.js';
 
 /**
  * JWT Key status for rotation lifecycle
@@ -41,147 +34,98 @@ export enum JwtKeyStatus {
  * - 'active' and 'previous' keys are used for verification
  * - 'previous' keys are exposed in JWKS for token verification
  */
-@Entity({
+export const JwtKeyEntitySchema = defineEntity({
+  name: 'JwtKeyEntity',
   tableName: 'jwt_key',
   comment: 'RSA key pairs for JWT signing (RS256)',
+  extends: BaseSchema,
   repository: () => JwtKeyRepository,
-})
-export class JwtKeyEntity extends BaseEntity<'kid'> {
-  [EntityRepositoryType]?: JwtKeyRepository;
+  properties: (p) => ({
+    /**
+     * Key ID (kid) - unique identifier for JWT header
+     * Format: "key-{timestamp}-{random}"
+     */
+    kid: p.string().primary().comment('Key ID for JWT header (kid claim)'),
 
-  /**
-   * Key ID (kid) - unique identifier for JWT header
-   * Format: "key-{timestamp}-{random}"
-   */
-  @PrimaryKey({
-    type: t.string,
-    name: 'kid',
-    comment: 'Key ID for JWT header (kid claim)',
-    nullable: false,
-  })
-  public kid: string;
+    /**
+     * RSA Private Key in PEM format
+     * Used for signing tokens (only when status is 'active')
+     */
+    private_key: p
+      .text()
+      .comment('RSA private key in PEM format')
+      .lazy(true, false)
+      .hidden(),
 
-  /**
-   * RSA Private Key in PEM format
-   * Used for signing tokens (only when status is 'active')
-   */
-  @Property({
-    type: t.text,
-    name: 'private_key',
-    comment: 'RSA private key in PEM format',
-    nullable: false,
-    lazy: true,
-    hidden: true,
-  })
-  public private_key: string;
+    /**
+     * RSA Public Key in PEM format
+     * Used for token verification and exposed via JWKS endpoint
+     */
+    public_key: p.text().comment('RSA public key in PEM format'),
 
-  /**
-   * RSA Public Key in PEM format
-   * Used for token verification and exposed via JWKS endpoint
-   */
-  @Property({
-    type: t.text,
-    name: 'public_key',
-    comment: 'RSA public key in PEM format',
-    nullable: false,
-  })
-  public public_key: string;
+    /**
+     * JWT signing algorithm
+     */
+    algorithm: p
+      .string()
+      .comment('JWT signing algorithm (RS256)')
+      .default('RS256'),
 
-  /**
-   * JWT signing algorithm
-   */
-  @Property({
-    type: t.string,
-    name: 'algorithm',
-    comment: 'JWT signing algorithm (RS256)',
-    nullable: false,
-    default: 'RS256',
-  })
-  public algorithm: Opt<string> = 'RS256';
+    /**
+     * Key status in rotation lifecycle
+     */
+    status: p
+      .enum(() => JwtKeyStatus)
+      .comment('Key status: next, active, previous, retired')
+      .default(JwtKeyStatus.NEXT),
 
-  /**
-   * Key status in rotation lifecycle
-   */
-  @Index({
-    name: 'jwt_key_status_idx',
-    properties: ['status'],
-  })
-  @Enum({
-    items: () => JwtKeyStatus,
-    name: 'status',
-    comment: 'Key status: next, active, previous, retired',
-    nullable: false,
-    default: JwtKeyStatus.NEXT,
-  })
-  public status: Opt<JwtKeyStatus> = JwtKeyStatus.NEXT;
+    /**
+     * Timestamp when key was activated (started signing)
+     */
+    activated_at: p
+      .datetime()
+      .comment('When the key was activated for signing')
+      .nullable()
+      .default(null),
 
-  /**
-   * Timestamp when key was activated (started signing)
-   */
-  @Property({
-    type: t.datetime,
-    name: 'activated_at',
-    comment: 'When the key was activated for signing',
-    nullable: true,
-  })
-  public activated_at?: Date | null = null;
+    /**
+     * Timestamp when key was deactivated (stopped signing)
+     */
+    deactivated_at: p
+      .datetime()
+      .comment('When the key was deactivated from signing')
+      .nullable()
+      .default(null),
 
-  /**
-   * Timestamp when key was deactivated (stopped signing)
-   */
-  @Property({
-    type: t.datetime,
-    name: 'deactivated_at',
-    comment: 'When the key was deactivated from signing',
-    nullable: true,
-  })
-  public deactivated_at?: Date | null = null;
+    /**
+     * Timestamp when key was retired (no longer valid)
+     */
+    retired_at: p
+      .datetime()
+      .comment('When the key was fully retired')
+      .nullable()
+      .default(null),
 
-  /**
-   * Timestamp when key was retired (no longer valid)
-   */
-  @Property({
-    type: t.datetime,
-    name: 'retired_at',
-    comment: 'When the key was fully retired',
-    nullable: true,
-  })
-  public retired_at?: Date | null = null;
+    /**
+     * Scheduled expiration date for automatic rotation
+     */
+    expires_at: p
+      .datetime()
+      .comment('Scheduled expiration for automatic rotation')
+      .nullable()
+      .default(null),
+  }),
+  indexes: [
+    {
+      name: 'jwt_key_status_idx',
+      properties: ['status'],
+    },
+  ],
+});
 
-  /**
-   * Scheduled expiration date for automatic rotation
-   */
-  @Property({
-    type: t.datetime,
-    name: 'expires_at',
-    comment: 'Scheduled expiration for automatic rotation',
-    nullable: true,
-  })
-  public expires_at?: Date | null = null;
+export type IJwtKeyEntity = InferEntity<typeof JwtKeyEntitySchema>;
 
-  public constructor(params: {
-    kid: string;
-    private_key: string;
-    public_key: string;
-    algorithm?: string;
-    status?: JwtKeyStatus;
-    expires_at?: Date;
-  }) {
-    super();
-    this.kid = params.kid;
-    this.private_key = params.private_key;
-    this.public_key = params.public_key;
-    if (params.algorithm) {
-      this.algorithm = params.algorithm;
-    }
-    if (params.status) {
-      this.status = params.status;
-    }
-    if (params.expires_at) {
-      this.expires_at = params.expires_at;
-    }
-  }
-
+export class JwtKeyEntity extends JwtKeyEntitySchema.class {
   /**
    * Check if key can be used for verification
    */
@@ -192,3 +136,5 @@ export class JwtKeyEntity extends BaseEntity<'kid'> {
     );
   }
 }
+
+JwtKeyEntitySchema.setClass(JwtKeyEntity);

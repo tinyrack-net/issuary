@@ -1,154 +1,71 @@
 import { OAuthClientRepository } from '@backend/repositories/oauth-client.repository.js';
-import { Collection, EntityRepositoryType, type Opt, t } from '@mikro-orm/core';
-import {
-  Entity,
-  Index,
-  OneToMany,
-  PrimaryKey,
-  Property,
-} from '@mikro-orm/decorators/legacy';
-import { BaseEntity } from './base.entity.js';
-import { OAuthCodeEntity } from './oauth-code.entity.js';
-import { RevokedTokenEntity } from './revoked-token.entity.js';
-import { UserConsentEntity } from './user-consent.entity.js';
+import { defineEntity, type InferEntity } from '@mikro-orm/core';
+import { BaseSchema } from './base.entity.js';
+import { OAuthCodeEntitySchema } from './oauth-code.entity.js';
+import { RevokedTokenEntitySchema } from './revoked-token.entity.js';
+import { UserConsentEntitySchema } from './user-consent.entity.js';
 
-@Entity({
+export const OAuthClientEntitySchema = defineEntity({
+  name: 'OAuthClientEntity',
   tableName: 'oauth_client',
   comment: 'Registered OAuth clients',
+  extends: BaseSchema,
   repository: () => OAuthClientRepository,
-})
-export class OAuthClientEntity extends BaseEntity {
-  [EntityRepositoryType]?: OAuthClientRepository;
+  properties: (p) => ({
+    id: p
+      .uuid()
+      .primary()
+      .comment('Primary key as UUID')
+      .onCreate(() => crypto.randomUUID()),
+    clientId: p.string().comment('Public client identifier'),
+    clientSecretHash: p
+      .string()
+      .comment('Hash of the client secret (null for public clients using PKCE)')
+      .nullable()
+      .lazy(true, false),
+    name: p.string().comment('Human-readable name of the OAuth client'),
+    grantTypes: p
+      .json<string[]>()
+      .comment('Allowed OAuth grant types for the client')
+      .default([]),
+    responseTypes: p
+      .json<string[]>()
+      .comment('Allowed OAuth response types for the client')
+      .default([]),
+    scopes: p
+      .json<string[]>()
+      .comment('Allowed OAuth scopes for the client')
+      .default([]),
+    redirectUris: p
+      .json<string[]>()
+      .comment('Registered redirect URIs for the client')
+      .default([]),
+    enabled: p
+      .boolean()
+      .comment('Whether the OAuth client is enabled')
+      .default(true),
+    managed_by: p
+      .string()
+      .$type<'database' | 'config'>()
+      .comment('Data source: config (from YAML) or database (runtime created)')
+      .default('database'),
+    logoUri: p
+      .string()
+      .comment('Logo URI for the OAuth client')
+      .nullable()
+      .default(null),
+    codes: () => p.oneToMany(OAuthCodeEntitySchema).mappedBy('client'),
+    consents: () => p.oneToMany(UserConsentEntitySchema).mappedBy('client'),
+    revokedTokens: () =>
+      p.oneToMany(RevokedTokenEntitySchema).mappedBy('client'),
+  }),
+  indexes: [
+    {
+      name: 'client_client_id_unique',
+      properties: ['clientId'],
+      options: { unique: true },
+    },
+  ],
+});
 
-  @PrimaryKey({
-    type: t.uuid,
-    name: 'id',
-    comment: 'Primary key as UUID',
-    nullable: false,
-  })
-  public id: string;
-
-  @Index({
-    name: 'client_client_id_unique',
-    properties: ['clientId'],
-    options: { unique: true },
-  })
-  @Property({
-    type: t.string,
-    name: 'client_id',
-    comment: 'Public client identifier',
-    nullable: false,
-  })
-  public clientId: string;
-
-  @Property({
-    type: t.string,
-    name: 'client_secret_hash',
-    comment: 'Hash of the client secret (null for public clients using PKCE)',
-    nullable: true,
-    lazy: true,
-    hidden: true,
-  })
-  public clientSecretHash: string | null = null;
-
-  @Property({
-    type: t.string,
-    name: 'name',
-    comment: 'Human-readable name of the OAuth client',
-    nullable: false,
-  })
-  public name: string;
-
-  @Property({
-    type: t.json,
-    name: 'grant_types',
-    comment: 'Allowed OAuth grant types for the client',
-    nullable: false,
-    default: [],
-  })
-  public grantTypes: string[] = [];
-
-  @Property({
-    type: t.json,
-    name: 'response_types',
-    comment: 'Allowed OAuth response types for the client',
-    nullable: false,
-    default: [],
-  })
-  public responseTypes: string[] = [];
-
-  @Property({
-    type: t.json,
-    name: 'scopes',
-    comment: 'Allowed OAuth scopes for the client',
-    nullable: false,
-    default: [],
-  })
-  public scopes: string[] = [];
-
-  @Property({
-    type: t.json,
-    name: 'redirect_uris',
-    comment: 'Registered redirect URIs for the client',
-    nullable: false,
-    default: [],
-  })
-  public redirectUris: string[] = [];
-
-  @Property({
-    type: t.boolean,
-    name: 'enabled',
-    comment: 'Whether the OAuth client is enabled',
-    default: true,
-  })
-  public enabled = true;
-
-  @Property({
-    type: t.string,
-    name: 'managed_by',
-    comment: 'Data source: config (from YAML) or database (runtime created)',
-    nullable: false,
-    default: 'database',
-  })
-  public managed_by: Opt<'config' | 'database'> = 'database';
-
-  @Property({
-    type: t.string,
-    name: 'logo_uri',
-    comment: 'Logo URI for the OAuth client',
-    nullable: true,
-    default: null,
-  })
-  public logoUri: string | null = null;
-
-  @OneToMany(
-    () => OAuthCodeEntity,
-    (code) => code.client,
-  )
-  public codes = new Collection<OAuthCodeEntity>(this);
-
-  @OneToMany(
-    () => UserConsentEntity,
-    (consent) => consent.client,
-  )
-  public consents = new Collection<UserConsentEntity>(this);
-
-  @OneToMany(
-    () => RevokedTokenEntity,
-    (token) => token.client,
-  )
-  public revokedTokens = new Collection<RevokedTokenEntity>(this);
-
-  public constructor(params: {
-    id?: string;
-    clientId: string;
-    clientSecretHash?: string | null;
-    name: string;
-  }) {
-    super();
-    this.id = params.id ?? crypto.randomUUID();
-    this.clientId = params.clientId;
-    this.clientSecretHash = params.clientSecretHash ?? null;
-    this.name = params.name;
-  }
-}
+export type IOAuthClientEntity = InferEntity<typeof OAuthClientEntitySchema>;
