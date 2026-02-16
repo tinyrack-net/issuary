@@ -1,6 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import { createServer } from '@backend/server.js';
 import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/setup.js';
+import { generateSpecs } from 'hono-openapi';
 
 /**
  * Export the OpenAPI spec as JSON.
@@ -20,12 +21,13 @@ async function main() {
     silent: true,
   });
 
-  const spec = app.getOpenAPI31Document({
-    openapi: '3.1.0',
-    info: {
-      title: 'TinyAuth API',
-      version: '1.0.0',
-      description: 'OpenID Connect Provider API',
+  const spec = await generateSpecs(app, {
+    documentation: {
+      info: {
+        title: 'TinyAuth API',
+        version: '1.0.0',
+        description: 'OpenID Connect Provider API',
+      },
     },
   });
 

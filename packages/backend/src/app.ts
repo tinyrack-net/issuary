@@ -1,8 +1,8 @@
+import type { AppEnv } from '@backend/lib/app-env.js';
 import {
   type AppConfigInput,
   resolveConfig,
 } from '@backend/lib/config/index.js';
-import { createRouter } from '@backend/lib/create-router.js';
 import { env } from '@backend/lib/env.js';
 import { authMiddleware } from '@backend/middleware/auth.js';
 import { mikroOrmMiddleware } from '@backend/middleware/mikro-orm.js';
@@ -13,9 +13,10 @@ import { trustedProxyGuard } from '@backend/middleware/trusted-proxy-guard.js';
 import { routes } from '@backend/routes/index.js';
 import { ApiError, e } from '@backend/schemas/error.js';
 import { initializeServices } from '@backend/services/container.js';
-import { $ } from '@hono/zod-openapi';
+import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
+import { openAPIRouteHandler } from 'hono-openapi';
 
 export interface CreateAppOptions {
   /**
@@ -48,21 +49,10 @@ export async function createApp(options: CreateAppOptions) {
     silent: silent,
   });
 
-  const honoApp = createRouter()
+  const honoApp = new Hono<AppEnv>()
     .onError((err, c) => {
       if (err instanceof ApiError) {
         return c.json(err.toJson(), err.status as ContentfulStatusCode);
-      }
-
-      // Zod validation errors from @hono/zod-openapi
-      if (
-        err &&
-        typeof err === 'object' &&
-        'name' in err &&
-        err.name === 'ZodError'
-      ) {
-        const zodErr = new e.ValidationError.Error(err.message);
-        return c.json(zodErr.toJson(), zodErr.status as ContentfulStatusCode);
       }
 
       console.error('Unhandled error:', err);
@@ -91,16 +81,20 @@ export async function createApp(options: CreateAppOptions) {
     .use('*', mikroOrmMiddleware)
     .use('*', authMiddleware);
 
-  const app = $(honoApp)
-    .route('/', routes)
-    .doc31('/api/docs/json', {
-      openapi: '3.1.0',
-      info: {
-        title: 'TinyAuth API',
-        version: '1.0.0',
-        description: 'OpenID Connect Provider API',
+  const app = honoApp.route('/', routes);
+
+  app.get(
+    '/api/docs/json',
+    openAPIRouteHandler(app, {
+      documentation: {
+        info: {
+          title: 'TinyAuth API',
+          version: '1.0.0',
+          description: 'OpenID Connect Provider API',
+        },
       },
-    });
+    }),
+  );
 
   // Register static file handler (skip in CLI mode)
   registerStaticHandler(app, config, silent);
