@@ -1,76 +1,39 @@
 import { UserTotpRecoveryCodeRepository } from '@backend/repositories/user-totp-recovery-code.repository.js';
-import {
-  EntityRepositoryType,
-  type Opt,
-  type Ref,
-  ref,
-  t,
-} from '@mikro-orm/core';
-import { BaseEntity } from './base.entity.js';
-import { UserEntity } from './user.entity.js';
-import {
-  Entity,
-  ManyToOne,
-  PrimaryKey,
-  Property,
-} from '@mikro-orm/decorators/legacy';
+import { defineEntity, type InferEntity } from '@mikro-orm/core';
+import { BaseSchema } from './base.entity.js';
+import { UserEntitySchema } from './user.entity.js';
 
-@Entity({
+export const UserTotpRecoveryCodeEntitySchema = defineEntity({
+  name: 'UserTotpRecoveryCodeEntity',
   tableName: 'user_totp_recovery_code',
   comment: 'One-time recovery codes for TOTP two-factor authentication',
+  extends: BaseSchema,
   repository: () => UserTotpRecoveryCodeRepository,
-})
-export class UserTotpRecoveryCodeEntity extends BaseEntity {
-  [EntityRepositoryType]?: UserTotpRecoveryCodeRepository;
+  properties: (p) => ({
+    id: p
+      .uuid()
+      .primary()
+      .comment('Primary key as UUID')
+      .onCreate(() => crypto.randomUUID()),
+    user: () =>
+      p
+        .manyToOne(UserEntitySchema)
+        .comment('Reference to the user')
+        .deleteRule('cascade')
+        .index('user_totp_recovery_code_user_id_idx'),
+    code_hash: p.string().comment('Argon2 hashed recovery code'),
+    used: p
+      .boolean()
+      .comment('Whether this recovery code has been used')
+      .default(false),
+    used_at: p
+      .datetime()
+      .comment('Timestamp when this recovery code was used')
+      .nullable()
+      .default(null),
+  }),
+});
 
-  @PrimaryKey({
-    type: t.uuid,
-    name: 'id',
-    comment: 'Primary key as UUID',
-    nullable: false,
-  })
-  public id: string = crypto.randomUUID();
-
-  @ManyToOne({
-    entity: () => UserEntity,
-    name: 'user_id',
-    comment: 'Reference to the user',
-    nullable: false,
-    deleteRule: 'cascade',
-    ref: true,
-    index: 'user_totp_recovery_code_user_id_idx',
-  })
-  public user: Ref<UserEntity>;
-
-  @Property({
-    type: t.string,
-    name: 'code_hash',
-    comment: 'Argon2 hashed recovery code',
-    nullable: false,
-  })
-  public code_hash: string;
-
-  @Property({
-    type: t.boolean,
-    name: 'used',
-    comment: 'Whether this recovery code has been used',
-    nullable: false,
-    default: false,
-  })
-  public used: Opt<boolean> = false;
-
-  @Property({
-    type: t.datetime,
-    name: 'used_at',
-    comment: 'Timestamp when this recovery code was used',
-    nullable: true,
-    default: null,
-  })
-  public used_at: Date | null = null;
-
-  public constructor(params: { userId: string; code_hash: string }) {
-    super();
-    this.user = ref(UserEntity, params.userId);
-    this.code_hash = params.code_hash;
-  }
-}
+export type IUserTotpRecoveryCodeEntity = InferEntity<
+  typeof UserTotpRecoveryCodeEntitySchema
+>;

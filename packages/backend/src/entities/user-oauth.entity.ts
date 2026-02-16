@@ -1,111 +1,52 @@
 import { UserOAuthRepository } from '@backend/repositories/user-oauth.repository.js';
 import {
-  EntityRepositoryType,
-  type Ref,
+  defineEntity,
+  type InferEntity,
   type RequiredNullable,
-  ref,
-  t,
 } from '@mikro-orm/core';
-import { BaseEntity } from './base.entity.js';
+import { BaseSchema } from './base.entity.js';
 import { UserEntity } from './user.entity.js';
-import {
-  Entity,
-  Index,
-  ManyToOne,
-  PrimaryKey,
-  Property,
-  Unique,
-} from '@mikro-orm/decorators/legacy';
 
-@Entity({
+export const UserOAuthEntitySchema = defineEntity({
+  name: 'UserOAuthEntity',
   tableName: 'user_oauth',
   comment: 'OAuth accounts linked to users',
+  extends: BaseSchema,
   repository: () => UserOAuthRepository,
-})
-@Unique({
-  properties: ['provider_name', 'provider_user_id'],
-  name: 'user_oauth_provider_unique',
-})
-@Index({
-  properties: ['user', 'provider_name'],
-  name: 'user_oauth_user_provider_idx',
-})
-export class UserOAuthEntity extends BaseEntity {
-  [EntityRepositoryType]?: UserOAuthRepository;
+  properties: (p) => ({
+    id: p.bigint().primary().comment('Primary key as auto-incrementing bigint'),
+    user: () =>
+      p
+        .manyToOne(UserEntity)
+        .ref()
+        .comment('Reference to the user')
+        .index('user_oauth_user_id_idx'),
+    provider_name: p
+      .string()
+      .comment('Name of the OAuth provider (e.g., google, facebook)'),
+    provider_user_id: p
+      .string()
+      .comment('Unique user ID from the OAuth provider'),
+    access_token: p.string().comment('OAuth access token'),
+    refresh_token: p.string().comment('OAuth refresh token'),
+    expires_at: p
+      .datetime()
+      .comment('Access token expiry timestamp')
+      .nullable()
+      .$type<RequiredNullable<Date>>(),
+  }),
+  uniques: [
+    {
+      name: 'user_oauth_provider_unique',
+      properties: ['provider_name', 'provider_user_id'],
+    },
+  ],
+  indexes: [
+    {
+      name: 'user_oauth_user_provider_idx',
+      properties: ['user', 'provider_name'],
+    },
+  ],
+});
 
-  @PrimaryKey({
-    type: t.bigint,
-    name: 'id',
-    comment: 'Primary key as auto-incrementing bigint',
-    nullable: false,
-    autoincrement: true,
-  })
-  public id!: string;
-
-  @ManyToOne({
-    entity: () => UserEntity,
-    nullable: false,
-    name: 'user_id',
-    comment: 'Reference to the user',
-    ref: true,
-    index: 'user_oauth_user_id_idx',
-  })
-  public user: Ref<UserEntity>;
-
-  @Property({
-    type: t.string,
-    name: 'provider_name',
-    comment: 'Name of the OAuth provider (e.g., google, facebook)',
-    nullable: false,
-  })
-  public provider_name: string;
-
-  @Property({
-    type: t.string,
-    name: 'provider_user_id',
-    comment: 'Unique user ID from the OAuth provider',
-    nullable: false,
-  })
-  public provider_user_id: string;
-
-  @Property({
-    type: t.string,
-    name: 'access_token',
-    comment: 'OAuth access token',
-    nullable: false,
-  })
-  public access_token: string;
-
-  @Property({
-    type: t.string,
-    name: 'refresh_token',
-    comment: 'OAuth refresh token',
-    nullable: false,
-  })
-  public refresh_token: string;
-
-  @Property({
-    type: t.datetime,
-    name: 'expires_at',
-    comment: 'Access token expiry timestamp',
-    nullable: true,
-  })
-  public expires_at: RequiredNullable<Date> = null;
-
-  public constructor(params: {
-    userId: string;
-    provider_name: string;
-    provider_user_id: string;
-    access_token: string;
-    refresh_token: string;
-    expires_at?: Date | null;
-  }) {
-    super();
-    this.user = ref(UserEntity, params.userId);
-    this.provider_name = params.provider_name;
-    this.provider_user_id = params.provider_user_id;
-    this.access_token = params.access_token;
-    this.refresh_token = params.refresh_token;
-    this.expires_at = params.expires_at ?? null;
-  }
-}
+export type IUserOAuthEntity = InferEntity<typeof UserOAuthEntitySchema>;

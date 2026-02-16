@@ -1,21 +1,8 @@
 import { UserConsentRepository } from '@backend/repositories/user-consent.repository.js';
-import {
-  EntityRepositoryType,
-  type Opt,
-  type Ref,
-  ref,
-  t,
-} from '@mikro-orm/core';
-import { BaseEntity } from './base.entity.js';
-import { OAuthClientEntity } from './oauth-client.entity.js';
-import { UserEntity } from './user.entity.js';
-import {
-  Entity,
-  ManyToOne,
-  PrimaryKey,
-  Property,
-  Unique,
-} from '@mikro-orm/decorators/legacy';
+import { defineEntity, type InferEntity } from '@mikro-orm/core';
+import { BaseSchema } from './base.entity.js';
+import { OAuthClientEntitySchema } from './oauth-client.entity.js';
+import { UserEntitySchema } from './user.entity.js';
 
 /**
  * UserConsentEntity stores user consent decisions for OAuth clients.
@@ -25,79 +12,52 @@ import {
  * from the same client with the same or subset of scopes can skip
  * the consent screen (unless prompt=consent is specified).
  */
-@Entity({
+export const UserConsentEntitySchema = defineEntity({
+  name: 'UserConsentEntity',
   tableName: 'user_consent',
   comment: 'User consent decisions for OAuth clients',
+  extends: BaseSchema,
   repository: () => UserConsentRepository,
-})
-@Unique({ properties: ['user', 'client'], name: 'user_consent_unique' })
-export class UserConsentEntity extends BaseEntity {
-  [EntityRepositoryType]?: UserConsentRepository;
+  properties: (p) => ({
+    id: p
+      .uuid()
+      .primary()
+      .comment('Primary key as UUID')
+      .onCreate(() => crypto.randomUUID()),
+    user: () =>
+      p
+        .manyToOne(UserEntitySchema)
+        .comment('Reference to the user who granted consent')
+        .index('user_consent_user_id_index'),
+    client: () =>
+      p
+        .manyToOne(OAuthClientEntitySchema)
+        .comment('Reference to the OAuth client that received consent')
+        .index('user_consent_client_id_index'),
+    scopes: p
+      .json<string[]>()
+      .comment('List of scopes the user has consented to')
+      .default([]),
+    granted_at: p
+      .datetime()
+      .comment('Timestamp when consent was first granted')
+      .onCreate(() => new Date()),
+    revoked_at: p
+      .datetime()
+      .comment('Timestamp when consent was revoked (null if active)')
+      .nullable(),
+  }),
+  uniques: [
+    {
+      name: 'user_consent_unique',
+      properties: ['user', 'client'],
+    },
+  ],
+});
 
-  @PrimaryKey({
-    type: t.uuid,
-    name: 'id',
-    comment: 'Primary key as UUID',
-    nullable: false,
-  })
-  public id: string = crypto.randomUUID();
+export type IUserConsentEntity = InferEntity<typeof UserConsentEntitySchema>;
 
-  @ManyToOne({
-    entity: () => UserEntity,
-    name: 'user_id',
-    comment: 'Reference to the user who granted consent',
-    nullable: false,
-    ref: true,
-    index: 'user_consent_user_id_index',
-  })
-  public user: Ref<UserEntity>;
-
-  @ManyToOne({
-    entity: () => OAuthClientEntity,
-    name: 'client_id',
-    comment: 'Reference to the OAuth client that received consent',
-    nullable: false,
-    ref: true,
-    index: 'user_consent_client_id_index',
-  })
-  public client: Ref<OAuthClientEntity>;
-
-  @Property({
-    type: t.json,
-    name: 'scopes',
-    comment: 'List of scopes the user has consented to',
-    nullable: false,
-    default: [],
-  })
-  public scopes: string[] = [];
-
-  @Property({
-    type: t.datetime,
-    name: 'granted_at',
-    comment: 'Timestamp when consent was first granted',
-    nullable: false,
-  })
-  public granted_at: Opt<Date> = new Date();
-
-  @Property({
-    type: t.datetime,
-    name: 'revoked_at',
-    comment: 'Timestamp when consent was revoked (null if active)',
-    nullable: true,
-  })
-  public revoked_at?: Date | null = null;
-
-  public constructor(params: {
-    userId: string;
-    clientId: string;
-    scopes: string[];
-  }) {
-    super();
-    this.user = ref(UserEntity, params.userId);
-    this.client = ref(OAuthClientEntity, params.clientId);
-    this.scopes = params.scopes;
-  }
-
+export class UserConsentEntity extends UserConsentEntitySchema.class {
   /**
    * Check if consent covers all requested scopes
    */
@@ -108,3 +68,5 @@ export class UserConsentEntity extends BaseEntity {
     return requestedScopes.every((scope) => this.scopes.includes(scope));
   }
 }
+
+UserConsentEntitySchema.setClass(UserConsentEntity);

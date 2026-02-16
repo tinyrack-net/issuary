@@ -1,133 +1,89 @@
 import { UserRepository } from '@backend/repositories/user.repository.js';
 import {
-  Collection,
-  EntityRepositoryType,
+  defineEntity,
   type EventArgs,
-  type Opt,
-  t,
+  type InferEntity,
+  p,
 } from '@mikro-orm/core';
 import { hash, verify } from '@node-rs/argon2';
-import { BaseEntity } from './base.entity.js';
-import { UserOAuthEntity } from './user-oauth.entity.js';
-import { UserPasskeyEntity } from './user-passkey.entity.js';
-import { UserTotpEntity } from './user-totp.entity.js';
-import { UserTotpRecoveryCodeEntity } from './user-totp-recovery-code.entity.js';
-import {
-  BeforeCreate,
-  BeforeUpdate,
-  Entity,
-  Index,
-  OneToMany,
-  PrimaryKey,
-  Property,
-} from '@mikro-orm/decorators/legacy';
+import { BaseSchema } from './base.entity.js';
+import { UserOAuthEntitySchema } from './user-oauth.entity.js';
+import { UserPasskeyEntitySchema } from './user-passkey.entity.js';
+import { UserTotpEntitySchema } from './user-totp.entity.js';
+import { UserTotpRecoveryCodeEntitySchema } from './user-totp-recovery-code.entity.js';
 
-@Entity({
+// biome-ignore lint/suspicious/noExplicitAny: avoid circular type reference between hashPassword → UserEntity → UserEntitySchema → hashPassword
+async function hashPassword(args: EventArgs<any>) {
+  const password = args.changeSet?.payload['password_hash'];
+  if (typeof password === 'string') {
+    args.entity.password_hash = await hash(password);
+  }
+}
+
+export const UserEntitySchema = defineEntity({
+  name: 'UserEntity',
   tableName: 'user',
   comment: 'Registered users',
+  extends: BaseSchema,
   repository: () => UserRepository,
-})
-export class UserEntity extends BaseEntity {
-  [EntityRepositoryType]?: UserRepository;
+  properties: {
+    id: p
+      .uuid()
+      .primary()
+      .comment('Primary key as UUID')
+      .onCreate(() => crypto.randomUUID()),
+    email: p.string().comment('User email address'),
+    email_verified: p
+      .boolean()
+      .comment("Whether the user's email has been verified")
+      .default(false),
+    password_hash: p
+      .string()
+      .comment('Hashed password for local authentication')
+      .nullable()
+      .lazy(true, false),
+    managed_by: p
+      .string()
+      .$type<'database' | 'config'>()
+      .comment('Data source: config (from YAML) or database (runtime created)')
+      .default('database'),
+    role: p
+      .string()
+      .$type<'user' | 'admin'>()
+      .comment('User role: user or admin')
+      .default('user'),
+    deleted_at: p
+      .datetime()
+      .comment(
+        'Timestamp when the user requested account deletion (soft delete)',
+      )
+      .nullable(),
+    oauthAccounts: () => p.oneToMany(UserOAuthEntitySchema).mappedBy('user'),
+    passkeys: () => p.oneToMany(UserPasskeyEntitySchema).mappedBy('user'),
+    totps: () => p.oneToMany(UserTotpEntitySchema).mappedBy('user'),
+    totpRecoveryCodes: () =>
+      p.oneToMany(UserTotpRecoveryCodeEntitySchema).mappedBy('user'),
+  },
+  indexes: [
+    {
+      name: 'user_email_unique',
+      properties: ['email'],
+      options: { unique: true },
+    },
+    {
+      name: 'user_deleted_at_idx',
+      properties: ['deleted_at'],
+    },
+  ],
+  hooks: {
+    beforeCreate: [hashPassword],
+    beforeUpdate: [hashPassword],
+  },
+});
 
-  @PrimaryKey({
-    type: t.uuid,
-    name: 'id',
-    comment: 'Primary key as UUID',
-    nullable: false,
-  })
-  public id: string = crypto.randomUUID();
+export type IUserEntity = InferEntity<typeof UserEntitySchema>;
 
-  @Index({
-    name: 'user_email_unique',
-    properties: ['email'],
-    options: { unique: true },
-  })
-  @Property({
-    type: t.string,
-    name: 'email',
-    comment: 'User email address',
-    nullable: false,
-  })
-  public email: string;
-
-  @Property({
-    type: t.boolean,
-    name: 'email_verified',
-    comment: "Whether the user's email has been verified",
-    nullable: false,
-    default: false,
-  })
-  public email_verified: Opt<boolean> = false;
-
-  @Property({
-    type: t.string,
-    name: 'password_hash',
-    comment: 'Hashed password for local authentication',
-    nullable: true,
-    lazy: true,
-    hidden: true,
-    default: null,
-  })
-  public password_hash: string | null = null;
-
-  @Property({
-    type: t.string,
-    name: 'managed_by',
-    comment: 'Data source: config (from YAML) or database (runtime created)',
-    nullable: false,
-    default: 'database',
-  })
-  public managed_by: Opt<'config' | 'database'> = 'database';
-
-  @Property({
-    type: t.string,
-    name: 'role',
-    comment: 'User role: user or admin',
-    nullable: false,
-    default: 'user',
-  })
-  public role: Opt<'user' | 'admin'> = 'user';
-
-  @Index({
-    name: 'user_deleted_at_idx',
-    properties: ['deleted_at'],
-  })
-  @Property({
-    type: t.datetime,
-    name: 'deleted_at',
-    comment: 'Timestamp when the user requested account deletion (soft delete)',
-    nullable: true,
-    default: null,
-  })
-  public deleted_at: Date | null = null;
-
-  public constructor(params: {
-    id?: string;
-    email: string;
-    password_hash?: string | null;
-  }) {
-    super();
-    if (params.id) {
-      this.id = params.id;
-    }
-    this.email = params.email;
-    if (params.password_hash !== undefined) {
-      this.password_hash = params.password_hash;
-    }
-  }
-
-  @BeforeCreate()
-  @BeforeUpdate()
-  async hashPassword(args: EventArgs<UserEntity>) {
-    // hash only if the password was changed
-    const password = args.changeSet?.payload.password_hash;
-
-    if (password) {
-      this.password_hash = await hash(password as string);
-    }
-  }
-
+export class UserEntity extends UserEntitySchema.class {
   async verifyPassword(password: string) {
     if (!this.password_hash) {
       return false;
@@ -139,30 +95,8 @@ export class UserEntity extends BaseEntity {
    * Check if user has a password set
    */
   hasPassword(): boolean {
-    return this.password_hash !== null;
+    return this.password_hash !== null && this.password_hash !== undefined;
   }
-
-  @OneToMany(
-    () => UserOAuthEntity,
-    (userOAuth) => userOAuth.user,
-  )
-  public oauthAccounts = new Collection<UserOAuthEntity>(this);
-
-  @OneToMany(
-    () => UserPasskeyEntity,
-    (passkey) => passkey.user,
-  )
-  public passkeys = new Collection<UserPasskeyEntity>(this);
-
-  @OneToMany(
-    () => UserTotpEntity,
-    (totp) => totp.user,
-  )
-  public totps = new Collection<UserTotpEntity>(this);
-
-  @OneToMany(
-    () => UserTotpRecoveryCodeEntity,
-    (recoveryCode) => recoveryCode.user,
-  )
-  public totpRecoveryCodes = new Collection<UserTotpRecoveryCodeEntity>(this);
 }
+
+UserEntitySchema.setClass(UserEntity);

@@ -1,21 +1,8 @@
 import { UserTermsConsentRepository } from '@backend/repositories/user-terms-consent.repository.js';
-import {
-  EntityRepositoryType,
-  type Opt,
-  type Ref,
-  ref,
-  t,
-} from '@mikro-orm/core';
-import { BaseEntity } from './base.entity.js';
-import { TermsEntity } from './terms.entity.js';
-import { UserEntity } from './user.entity.js';
-import {
-  Entity,
-  Index,
-  ManyToOne,
-  PrimaryKey,
-  Property,
-} from '@mikro-orm/decorators/legacy';
+import { defineEntity, type InferEntity } from '@mikro-orm/core';
+import { BaseSchema } from './base.entity.js';
+import { TermsEntitySchema } from './terms.entity.js';
+import { UserEntitySchema } from './user.entity.js';
 
 /**
  * UserTermsConsentEntity stores user consent records for terms of service.
@@ -24,95 +11,54 @@ import {
  * to a specific version of a term. When terms are updated to a new version,
  * users need to consent to the new version.
  */
-@Entity({
+export const UserTermsConsentEntitySchema = defineEntity({
+  name: 'UserTermsConsentEntity',
   tableName: 'user_terms_consent',
   comment: 'User consent records for terms of service',
+  extends: BaseSchema,
   repository: () => UserTermsConsentRepository,
-})
-@Index({
-  properties: ['user', 'terms'],
-  name: 'user_terms_consent_user_terms_index',
-})
-export class UserTermsConsentEntity extends BaseEntity {
-  [EntityRepositoryType]?: UserTermsConsentRepository;
+  properties: (p) => ({
+    id: p
+      .uuid()
+      .primary()
+      .comment('Primary key as UUID')
+      .onCreate(() => crypto.randomUUID()),
+    user: () =>
+      p
+        .manyToOne(UserEntitySchema)
+        .comment('Reference to the user who gave consent')
+        .index('user_terms_consent_user_id_index')
+        .deleteRule('cascade'),
+    terms: () =>
+      p
+        .manyToOne(TermsEntitySchema)
+        .comment('Reference to the terms')
+        .index('user_terms_consent_terms_id_index')
+        .deleteRule('cascade'),
+    termsVersion: p.string().comment('Version of the term that was agreed to'),
+    agreed: p.boolean().comment('Whether the user agreed to the term'),
+    consentType: p
+      .string()
+      .$type<'explicit' | 'implicit'>()
+      .comment('How consent was obtained: explicit (checkbox) or implicit'),
+    agreedAt: p
+      .datetime()
+      .comment('Timestamp when consent was given')
+      .onCreate(() => new Date()),
+  }),
+  indexes: [
+    {
+      name: 'user_terms_consent_user_terms_index',
+      properties: ['user', 'terms'],
+    },
+  ],
+});
 
-  @PrimaryKey({
-    type: t.uuid,
-    name: 'id',
-    comment: 'Primary key as UUID',
-    nullable: false,
-  })
-  public id: string = crypto.randomUUID();
+export type IUserTermsConsentEntity = InferEntity<
+  typeof UserTermsConsentEntitySchema
+>;
 
-  @ManyToOne({
-    entity: () => UserEntity,
-    name: 'user_id',
-    comment: 'Reference to the user who gave consent',
-    nullable: false,
-    ref: true,
-    index: 'user_terms_consent_user_id_index',
-    deleteRule: 'cascade',
-  })
-  public user: Ref<UserEntity>;
-
-  @ManyToOne({
-    entity: () => TermsEntity,
-    name: 'terms_id',
-    comment: 'Reference to the terms',
-    nullable: false,
-    ref: true,
-    index: 'user_terms_consent_terms_id_index',
-    deleteRule: 'cascade',
-  })
-  public terms: Ref<TermsEntity>;
-
-  @Property({
-    type: t.string,
-    name: 'terms_version',
-    comment: 'Version of the term that was agreed to',
-    nullable: false,
-  })
-  public termsVersion: string;
-
-  @Property({
-    type: t.boolean,
-    name: 'agreed',
-    comment: 'Whether the user agreed to the term',
-    nullable: false,
-  })
-  public agreed: boolean;
-
-  @Property({
-    type: t.string,
-    name: 'consent_type',
-    comment: 'How consent was obtained: explicit (checkbox) or implicit',
-    nullable: false,
-  })
-  public consentType: 'explicit' | 'implicit';
-
-  @Property({
-    type: t.datetime,
-    name: 'agreed_at',
-    comment: 'Timestamp when consent was given',
-    nullable: false,
-  })
-  public agreedAt: Opt<Date> = new Date();
-
-  public constructor(params: {
-    userId: string;
-    termsId: string;
-    termsVersion: string;
-    agreed: boolean;
-    consentType: 'explicit' | 'implicit';
-  }) {
-    super();
-    this.user = ref(UserEntity, params.userId);
-    this.terms = ref(TermsEntity, params.termsId);
-    this.termsVersion = params.termsVersion;
-    this.agreed = params.agreed;
-    this.consentType = params.consentType;
-  }
-
+export class UserTermsConsentEntity extends UserTermsConsentEntitySchema.class {
   /**
    * Get the terms ID (for backward compatibility)
    */
@@ -120,3 +66,5 @@ export class UserTermsConsentEntity extends BaseEntity {
     return this.terms.id;
   }
 }
+
+UserTermsConsentEntitySchema.setClass(UserTermsConsentEntity);

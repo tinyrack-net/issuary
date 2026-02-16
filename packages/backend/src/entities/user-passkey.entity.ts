@@ -1,158 +1,70 @@
 import { UserPasskeyRepository } from '@backend/repositories/user-passkey.repository.js';
-import {
-  EntityRepositoryType,
-  type Opt,
-  type Ref,
-  ref,
-  t,
-} from '@mikro-orm/core';
+import { defineEntity, type InferEntity } from '@mikro-orm/core';
 import type { AuthenticatorTransportFuture } from '@simplewebauthn/server';
-import { BaseEntity } from './base.entity.js';
+import { BaseSchema } from './base.entity.js';
 import { UserEntity } from './user.entity.js';
-import {
-  Entity,
-  Index,
-  ManyToOne,
-  PrimaryKey,
-  Property,
-} from '@mikro-orm/decorators/legacy';
 
-@Entity({
+export const UserPasskeyEntitySchema = defineEntity({
+  name: 'UserPasskeyEntity',
   tableName: 'user_passkey',
   comment: 'User passkeys for WebAuthn authentication',
+  extends: BaseSchema,
   repository: () => UserPasskeyRepository,
-})
-export class UserPasskeyEntity extends BaseEntity {
-  [EntityRepositoryType]?: UserPasskeyRepository;
+  properties: (p) => ({
+    id: p
+      .uuid()
+      .primary()
+      .comment('Primary key as UUID')
+      .onCreate(() => crypto.randomUUID()),
+    user: () =>
+      p
+        .manyToOne(UserEntity)
+        .ref()
+        .comment('Reference to the user')
+        .deleteRule('cascade')
+        .index('user_passkey_user_id_idx'),
+    credential_id: p
+      .string()
+      .comment('WebAuthn credential ID (base64url encoded)'),
+    public_key: p.text().comment('Public key (base64url encoded)').hidden(),
+    counter: p
+      .integer()
+      .comment('Signature counter for replay attack prevention')
+      .default(0),
+    device_type: p
+      .string()
+      .$type<'singleDevice' | 'multiDevice'>()
+      .comment('Credential device type: singleDevice or multiDevice')
+      .default('singleDevice'),
+    backed_up: p
+      .boolean()
+      .comment('Whether the credential is backed up (synced passkey)')
+      .default(false),
+    transports: p
+      .json<AuthenticatorTransportFuture[] | null>()
+      .comment(
+        'Supported authenticator transports (usb, ble, nfc, internal, etc)',
+      )
+      .nullable()
+      .default(null),
+    name: p
+      .string()
+      .comment('User-defined name for the passkey')
+      .nullable()
+      .default(null),
+    aaguid: p
+      .string()
+      .comment('Authenticator Attestation GUID for device identification')
+      .nullable()
+      .default(null),
+  }),
+  indexes: [
+    {
+      name: 'user_passkey_credential_id_unique',
+      properties: ['credential_id'],
+      options: { unique: true },
+    },
+  ],
+});
 
-  @PrimaryKey({
-    type: t.uuid,
-    name: 'id',
-    comment: 'Primary key as UUID',
-    nullable: false,
-  })
-  public id: string = crypto.randomUUID();
-
-  @ManyToOne({
-    entity: () => UserEntity,
-    name: 'user_id',
-    comment: 'Reference to the user',
-    nullable: false,
-    deleteRule: 'cascade',
-    ref: true,
-    index: 'user_passkey_user_id_idx',
-  })
-  public user: Ref<UserEntity>;
-
-  @Index({
-    name: 'user_passkey_credential_id_unique',
-    properties: ['credential_id'],
-    options: { unique: true },
-  })
-  @Property({
-    type: t.string,
-    name: 'credential_id',
-    comment: 'WebAuthn credential ID (base64url encoded)',
-    nullable: false,
-  })
-  public credential_id: string;
-
-  @Property({
-    type: t.text,
-    name: 'public_key',
-    comment: 'Public key (base64url encoded)',
-    nullable: false,
-    hidden: true,
-  })
-  public public_key: string;
-
-  @Property({
-    type: t.bigint,
-    name: 'counter',
-    comment: 'Signature counter for replay attack prevention',
-    nullable: false,
-    default: 0,
-  })
-  public counter: Opt<number> = 0;
-
-  @Property({
-    type: t.string,
-    name: 'device_type',
-    comment: 'Credential device type: singleDevice or multiDevice',
-    nullable: false,
-    default: 'singleDevice',
-  })
-  public device_type: Opt<'singleDevice' | 'multiDevice'> = 'singleDevice';
-
-  @Property({
-    type: t.boolean,
-    name: 'backed_up',
-    comment: 'Whether the credential is backed up (synced passkey)',
-    nullable: false,
-    default: false,
-  })
-  public backed_up: Opt<boolean> = false;
-
-  @Property({
-    type: t.json,
-    name: 'transports',
-    comment:
-      'Supported authenticator transports (usb, ble, nfc, internal, etc)',
-    nullable: true,
-    default: null,
-  })
-  public transports: AuthenticatorTransportFuture[] | null = null;
-
-  @Property({
-    type: t.string,
-    name: 'name',
-    comment: 'User-defined name for the passkey',
-    nullable: true,
-    default: null,
-  })
-  public name: string | null = null;
-
-  @Property({
-    type: t.string,
-    name: 'aaguid',
-    comment: 'Authenticator Attestation GUID for device identification',
-    nullable: true,
-    default: null,
-  })
-  public aaguid: string | null = null;
-
-  public constructor(params: {
-    userId: string;
-    credential_id: string;
-    public_key: string;
-    counter?: number;
-    device_type?: 'singleDevice' | 'multiDevice';
-    backed_up?: boolean;
-    transports?: AuthenticatorTransportFuture[] | null;
-    name?: string | null;
-    aaguid?: string | null;
-  }) {
-    super();
-    this.user = ref(UserEntity, params.userId);
-    this.credential_id = params.credential_id;
-    this.public_key = params.public_key;
-    if (params.counter !== undefined) {
-      this.counter = params.counter;
-    }
-    if (params.device_type !== undefined) {
-      this.device_type = params.device_type;
-    }
-    if (params.backed_up !== undefined) {
-      this.backed_up = params.backed_up;
-    }
-    if (params.transports !== undefined) {
-      this.transports = params.transports;
-    }
-    if (params.name !== undefined) {
-      this.name = params.name;
-    }
-    if (params.aaguid !== undefined) {
-      this.aaguid = params.aaguid;
-    }
-  }
-}
+export type IUserPasskeyEntity = InferEntity<typeof UserPasskeyEntitySchema>;
