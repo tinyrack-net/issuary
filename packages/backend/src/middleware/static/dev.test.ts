@@ -3,7 +3,7 @@ import type { AppType } from '@backend/lib/app.js';
 import {
   resetDevProxyUpstreamUrl,
   setDevProxyUpstreamUrl,
-} from '@backend/middleware/static/index.js';
+} from '@backend/middleware/static/dev.js';
 import { createServer } from '@backend/server.js';
 import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/index.js';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
