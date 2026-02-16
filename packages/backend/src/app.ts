@@ -33,13 +33,6 @@ export interface CreateAppOptions {
    */
   config: AppConfigInput;
   /**
-   * CLI mode - only load middleware required for CLI
-   * commands. Skips HTTP-related middleware (cors,
-   * session, static, swagger, etc.) and routes for
-   * faster startup and reduced memory usage.
-   */
-  cliMode?: boolean | undefined;
-  /**
    * Suppress logger output.
    * When true, console output is suppressed.
    * Useful for CLI commands where server logs are
@@ -57,7 +50,6 @@ export interface CreateAppResult {
 export async function createApp(
   options: CreateAppOptions,
 ): Promise<CreateAppResult> {
-  const cliMode = options.cliMode ?? false;
   const silent = options.silent ?? false;
 
   // Resolve external config to internal config
@@ -67,7 +59,6 @@ export async function createApp(
   // Resolve server options with defaults
   const serverOptions: ServerOptions = {
     skipListen: false,
-    cliMode,
     silent,
   };
 
@@ -77,31 +68,24 @@ export async function createApp(
   // Create OpenAPIHono instance with shared validation hook
   const app = createRouter();
 
-  // Register HTTP middleware (skip in CLI mode)
-  if (!cliMode) {
-    // CORS
-    const allowedOrigins =
-      env.APP_ENV === 'development' ? '*' : config.app.host;
-    app.use(
-      '*',
-      cors({
-        origin: allowedOrigins,
-        credentials: true,
-      }),
-    );
+  app.use(
+    '*',
+    cors({
+      origin: env.APP_ENV === 'development' ? '*' : config.app.host,
+      credentials: true,
+    }),
+  );
 
-    // Session
-    app.use(
-      '*',
-      sessionMiddleware(
-        config.app.cookie_secret,
-        config.app.host.startsWith('https'),
-      ),
-    );
+  app.use(
+    '*',
+    sessionMiddleware(
+      config.app.cookie_secret,
+      config.app.host.startsWith('https'),
+    ),
+  );
 
-    // Trusted proxy guard
-    app.use('*', trustedProxyGuard(config.app.trust_proxy));
-  }
+  // Trusted proxy guard
+  app.use('*', trustedProxyGuard(config.app.trust_proxy));
 
   // Service injection middleware (always loaded)
   app.use('*', servicesMiddleware(services));
@@ -110,9 +94,7 @@ export async function createApp(
   app.use('*', mikroOrmMiddleware);
 
   // Auth middleware (skip in CLI mode)
-  if (!cliMode) {
-    app.use('*', authMiddleware);
-  }
+  app.use('*', authMiddleware);
 
   // Error handler
   app.onError((err, c) => {
@@ -150,14 +132,10 @@ export async function createApp(
   });
 
   // Mount all routes (skip in CLI mode)
-  if (!cliMode) {
-    app.route('/', routes);
-  }
+  app.route('/', routes);
 
   // Register static file handler (skip in CLI mode)
-  if (!cliMode) {
-    registerStaticHandler(app, config, silent);
-  }
+  registerStaticHandler(app, config, silent);
 
   // Start scheduler
   services.scheduler.start();

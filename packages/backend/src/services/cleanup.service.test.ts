@@ -44,7 +44,6 @@ describe('CleanupService', () => {
     beforeAll(async () => {
       const server = await createServer({
         config: CLI_TEST_CONFIG,
-        cliMode: true,
         skipListen: true,
       });
       services = server.services;
@@ -75,7 +74,6 @@ describe('CleanupService', () => {
             revoked_tokens: { enabled: false },
           },
         },
-        cliMode: true,
         skipListen: true,
       });
 
@@ -191,7 +189,6 @@ describe('CleanupService', () => {
             revoked_tokens: { enabled: true, retention: '1h' },
           },
         },
-        cliMode: true,
         skipListen: true,
       });
 
@@ -265,7 +262,6 @@ describe('CleanupService', () => {
             jwt_key_overlap_days: 7,
           },
         },
-        cliMode: true,
         skipListen: true,
       });
       services = server.services;
@@ -294,7 +290,6 @@ describe('CleanupService', () => {
             jwt_keys: { enabled: false },
           },
         },
-        cliMode: true,
         skipListen: true,
       });
 
@@ -324,7 +319,6 @@ describe('CleanupService', () => {
             jwt_keys: { enabled: true },
           },
         },
-        cliMode: true,
         skipListen: true,
       });
 
@@ -571,7 +565,6 @@ describe('CleanupService', () => {
     beforeAll(async () => {
       const server = await createServer({
         config: CLI_TEST_CONFIG,
-        cliMode: true,
         skipListen: true,
       });
       services = server.services;
@@ -601,7 +594,6 @@ describe('CleanupService', () => {
             oauth_codes: { enabled: false },
           },
         },
-        cliMode: true,
         skipListen: true,
       });
 
@@ -685,7 +677,6 @@ describe('CleanupService', () => {
             oauth_codes: { enabled: true, consumed_retention: '1h' },
           },
         },
-        cliMode: true,
         skipListen: true,
       });
 
@@ -801,7 +792,6 @@ describe('CleanupService', () => {
     beforeAll(async () => {
       const server = await createServer({
         config: CLI_TEST_CONFIG,
-        cliMode: true,
         skipListen: true,
       });
       services = server.services;
@@ -829,7 +819,6 @@ describe('CleanupService', () => {
             email_verifications: { enabled: false },
           },
         },
-        cliMode: true,
         skipListen: true,
       });
 
@@ -937,7 +926,6 @@ describe('CleanupService', () => {
     beforeAll(async () => {
       const server = await createServer({
         config: CLI_TEST_CONFIG,
-        cliMode: true,
         skipListen: true,
       });
       services = server.services;
@@ -965,7 +953,6 @@ describe('CleanupService', () => {
             password_resets: { enabled: false },
           },
         },
-        cliMode: true,
         skipListen: true,
       });
 
@@ -1070,7 +1057,6 @@ describe('CleanupService', () => {
     beforeAll(async () => {
       const server = await createServer({
         config: CLI_TEST_CONFIG,
-        cliMode: true,
         skipListen: true,
       });
       services = server.services;
@@ -1096,7 +1082,6 @@ describe('CleanupService', () => {
             deleted_users: { enabled: false },
           },
         },
-        cliMode: true,
         skipListen: true,
       });
 
@@ -1126,7 +1111,6 @@ describe('CleanupService', () => {
             deleted_users: { enabled: true, retention: '0' },
           },
         },
-        cliMode: true,
         skipListen: true,
       });
 

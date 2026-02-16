@@ -71,7 +71,6 @@ export interface ServiceContainer {
 
 export interface ServerOptions {
   skipListen: boolean;
-  cliMode: boolean;
   silent: boolean;
 }
 

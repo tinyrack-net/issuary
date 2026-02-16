@@ -24,13 +24,6 @@ export interface CreateServerOptions {
    */
   skipListen?: boolean;
   /**
-   * CLI mode - only load middleware required for CLI
-   * commands. Skips HTTP-related middleware (cors,
-   * session, static, swagger, etc.) and routes for
-   * faster startup and reduced memory usage.
-   */
-  cliMode?: boolean;
-  /**
    * Suppress logger output.
    * When true, console output is suppressed.
    * Useful for CLI commands where server logs are
@@ -42,7 +35,6 @@ export interface CreateServerOptions {
 export async function createServer(createOptions: CreateServerOptions) {
   const { app, services, cleanup } = await createApp({
     config: createOptions.config,
-    cliMode: createOptions.cliMode,
     silent: createOptions.silent,
   });
 

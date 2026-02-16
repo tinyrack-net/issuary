@@ -51,7 +51,6 @@ export const cleanupCommand = new Command('cleanup')
         const resolved = await resolveConfig(config);
         const result = await initializeServices(resolved, {
           skipListen: false,
-          cliMode: true,
           silent: true,
         });
         services = result.services;

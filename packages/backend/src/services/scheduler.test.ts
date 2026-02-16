@@ -134,7 +134,6 @@ describe('scheduler plugin', () => {
             enabled: true,
           },
         },
-        cliMode: true,
       }));
     });
 
