@@ -4,10 +4,11 @@ import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
   createDbUserWithSession,
+  createTestClient,
+  createTestClientWithHeaders,
   expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
-  requestWithSession,
   withMikroContext,
 } from '@backend/test-utils/index.js';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
@@ -42,17 +43,14 @@ afterAll(async () => {
  * Helper to start TOTP setup and return secret
  */
 async function startTotpSetup(sessionCookie: string): Promise<string> {
-  const res = await requestWithSession(
-    app,
-    '/api/v1/user/totp/setup',
-    {
-      method: 'POST',
-    },
-    sessionCookie,
-  );
+  const client = createTestClientWithHeaders(app, {
+    Cookie: `session=${sessionCookie}`,
+  });
+  const res = await client.api.v1.user.totp.setup.$post({});
 
   expect(res.status).toBe(200);
-  const body = await res.json();
+  // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+  const body: any = await res.json();
   return body.secret;
 }
 
@@ -64,31 +62,23 @@ async function verifyTotpSetup(
   secret: string,
 ): Promise<string[]> {
   const validCode = services.totpService.generateToken(secret);
-  const res = await requestWithSession(
-    app,
-    '/api/v1/user/totp/verify',
-    {
-      method: 'POST',
-      body: JSON.stringify({
-        code: validCode,
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    },
-    sessionCookie,
-  );
+  const client = createTestClientWithHeaders(app, {
+    Cookie: `session=${sessionCookie}`,
+  });
+  const res = await client.api.v1.user.totp.verify.$post({
+    json: { code: validCode },
+  });
 
   expect(res.status).toBe(200);
-  const body = await res.json();
+  // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+  const body: any = await res.json();
   return body.recovery_codes;
 }
 
 describe('POST /api/v1/user/totp/confirm', () => {
   test('should return 401 when not authenticated', async () => {
-    const res = await app.request('/api/v1/user/totp/confirm', {
-      method: 'POST',
-      body: JSON.stringify({}),
-      headers: { 'Content-Type': 'application/json' },
-    });
+    const client = createTestClient(app);
+    const res = await client.api.v1.user.totp.confirm.$post({ json: {} });
 
     await expectError(res, e.Unauthorized);
   });
@@ -104,16 +94,10 @@ describe('POST /api/v1/user/totp/confirm', () => {
       password,
     );
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp/confirm',
-      {
-        method: 'POST',
-        body: JSON.stringify({}),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.confirm.$post({ json: {} });
 
     await expectError(res, e.TotpNotSetup);
   });
@@ -132,16 +116,10 @@ describe('POST /api/v1/user/totp/confirm', () => {
     // Start setup but don't verify
     await startTotpSetup(sessionCookie);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp/confirm',
-      {
-        method: 'POST',
-        body: JSON.stringify({}),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.confirm.$post({ json: {} });
 
     await expectError(res, e.TotpNotSetup);
   });
@@ -161,19 +139,14 @@ describe('POST /api/v1/user/totp/confirm', () => {
     const secret = await startTotpSetup(sessionCookie);
     await verifyTotpSetup(sessionCookie, secret);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp/confirm',
-      {
-        method: 'POST',
-        body: JSON.stringify({}),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.confirm.$post({ json: {} });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body).toHaveProperty('user');
     expect(body.user.totp_registered).toBe(true);
 
@@ -201,30 +174,16 @@ describe('POST /api/v1/user/totp/confirm', () => {
     const secret = await startTotpSetup(sessionCookie);
     await verifyTotpSetup(sessionCookie, secret);
 
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
     // First confirm
-    const res1 = await requestWithSession(
-      app,
-      '/api/v1/user/totp/confirm',
-      {
-        method: 'POST',
-        body: JSON.stringify({}),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const res1 = await client.api.v1.user.totp.confirm.$post({ json: {} });
     expect(res1.status).toBe(200);
 
     // Second confirm should fail
-    const res2 = await requestWithSession(
-      app,
-      '/api/v1/user/totp/confirm',
-      {
-        method: 'POST',
-        body: JSON.stringify({}),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const res2 = await client.api.v1.user.totp.confirm.$post({ json: {} });
 
     await expectError(res2, e.TotpAlreadyEnabled);
   });
@@ -240,16 +199,14 @@ describe('POST /api/v1/user/totp/confirm', () => {
       password,
     );
 
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
     // Check initial session - TOTP should be disabled
-    const sessionBefore = await requestWithSession(
-      app,
-      '/api/v1/user/session',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
-    const sessionBeforeBody = await sessionBefore.json();
+    const sessionBefore = await client.api.v1.user.session.$get();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const sessionBeforeBody: any = await sessionBefore.json();
     expect(sessionBeforeBody.user.totp_registered).toBe(false);
 
     // Complete full setup
@@ -257,39 +214,18 @@ describe('POST /api/v1/user/totp/confirm', () => {
     await verifyTotpSetup(sessionCookie, secret);
 
     // Verify after verify - should still be false
-    const sessionAfterVerify = await requestWithSession(
-      app,
-      '/api/v1/user/session',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
-    const sessionAfterVerifyBody = await sessionAfterVerify.json();
+    const sessionAfterVerify = await client.api.v1.user.session.$get();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const sessionAfterVerifyBody: any = await sessionAfterVerify.json();
     expect(sessionAfterVerifyBody.user.totp_registered).toBe(false);
 
     // Confirm
-    await requestWithSession(
-      app,
-      '/api/v1/user/totp/confirm',
-      {
-        method: 'POST',
-        body: JSON.stringify({}),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    await client.api.v1.user.totp.confirm.$post({ json: {} });
 
     // Check session after confirm - TOTP should be enabled
-    const sessionAfterConfirm = await requestWithSession(
-      app,
-      '/api/v1/user/session',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
-    const sessionAfterConfirmBody = await sessionAfterConfirm.json();
+    const sessionAfterConfirm = await client.api.v1.user.session.$get();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const sessionAfterConfirmBody: any = await sessionAfterConfirm.json();
     expect(sessionAfterConfirmBody.user.totp_registered).toBe(true);
   });
 
@@ -304,17 +240,15 @@ describe('POST /api/v1/user/totp/confirm', () => {
       password,
     );
 
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
     // Step 1: Setup
-    const setupRes = await requestWithSession(
-      app,
-      '/api/v1/user/totp/setup',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const setupRes = await client.api.v1.user.totp.setup.$post({});
     expect(setupRes.status).toBe(200);
-    const { secret } = await setupRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const { secret } = (await setupRes.json()) as any;
 
     // Verify DB state after setup
     await withMikroContext(services, async () => {
@@ -325,20 +259,12 @@ describe('POST /api/v1/user/totp/confirm', () => {
 
     // Step 2: Verify
     const validCode = services.totpService.generateToken(secret);
-    const verifyRes = await requestWithSession(
-      app,
-      '/api/v1/user/totp/verify',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          code: validCode,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const verifyRes = await client.api.v1.user.totp.verify.$post({
+      json: { code: validCode },
+    });
     expect(verifyRes.status).toBe(200);
-    const verifyBody = await verifyRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const verifyBody: any = await verifyRes.json();
     expect(verifyBody).toHaveProperty('recovery_codes');
     expect(verifyBody.recovery_codes.length).toBe(8);
 
@@ -350,18 +276,12 @@ describe('POST /api/v1/user/totp/confirm', () => {
     });
 
     // Step 3: Confirm
-    const confirmRes = await requestWithSession(
-      app,
-      '/api/v1/user/totp/confirm',
-      {
-        method: 'POST',
-        body: JSON.stringify({}),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const confirmRes = await client.api.v1.user.totp.confirm.$post({
+      json: {},
+    });
     expect(confirmRes.status).toBe(200);
-    const confirmBody = await confirmRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const confirmBody: any = await confirmRes.json();
     expect(confirmBody.user.totp_registered).toBe(true);
 
     // Verify DB state after confirm

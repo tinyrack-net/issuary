@@ -2,6 +2,7 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  createTestClient,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_USER,
@@ -32,16 +33,17 @@ afterAll(async () => {
 
 describe('POST /api/v1/auth/email/resend', () => {
   test('should return 404 for non-existent user', async () => {
-    const res = await app.request('/api/v1/auth/email/resend', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const res = await client.api.v1.auth.email.resend.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: 'nonexistent@example.com',
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(res.status).toBe(404);
-    const json = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const json: any = await res.json();
     expect(json.code).toBe('USER_NOT_FOUND');
   });
 
@@ -59,14 +61,15 @@ describe('POST /api/v1/auth/email/resend', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const res = await app.request('/api/v1/auth/email/resend', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const res = await client.api.v1.auth.email.resend.$post({
+      header: { 'accept-language': 'en' },
+      json: { email },
     });
 
     expect(res.status).toBe(400);
-    const json = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const json: any = await res.json();
     expect(json.code).toBe('EMAIL_ALREADY_VERIFIED');
   });
 
@@ -84,10 +87,10 @@ describe('POST /api/v1/auth/email/resend', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const res = await app.request('/api/v1/auth/email/resend', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const res = await client.api.v1.auth.email.resend.$post({
+      header: { 'accept-language': 'en' },
+      json: { email },
     });
 
     expect(res.status).toBe(200);
@@ -119,17 +122,19 @@ describe('POST /api/v1/auth/email/resend', () => {
     });
 
     // Resend verification email
-    const res = await app.request('/api/v1/auth/email/resend', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const res = await client.api.v1.auth.email.resend.$post({
+      header: { 'accept-language': 'en' },
+      json: { email },
     });
 
     expect(res.status).toBe(200);
 
     // Verify new token was created
     await withMikroContext(services, async () => {
-      const user = await services.mikro.user.findOneOrFail({ email });
+      const user = await services.mikro.user.findOneOrFail({
+        email,
+      });
       expect(user).toBeDefined();
 
       // Check that there is a valid pending verification
@@ -142,25 +147,25 @@ describe('POST /api/v1/auth/email/resend', () => {
   });
 
   test('should validate email format', async () => {
-    const res = await app.request('/api/v1/auth/email/resend', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const res = await client.api.v1.auth.email.resend.$post({
+      json: {
         email: 'invalid-email',
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    });
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+    } as any);
 
     expect(res.status).toBe(400);
   });
 
   test('should not require authentication', async () => {
     // This endpoint should be publicly accessible (for password reset flow)
-    const res = await app.request('/api/v1/auth/email/resend', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const res = await client.api.v1.auth.email.resend.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: 'test@example.com',
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     // Should not return 401 (will be 404 because user doesn't exist)
@@ -170,12 +175,12 @@ describe('POST /api/v1/auth/email/resend', () => {
   test('should return 404 for config user', async () => {
     // Config users exist but cannot have email verification resent
     // The endpoint should find the user and check email_verified status
-    const res = await app.request('/api/v1/auth/email/resend', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const res = await client.api.v1.auth.email.resend.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: TEST_USER.email,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     // Config user is pre-verified, so should return EMAIL_ALREADY_VERIFIED or USER_NOT_FOUND

@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  createTestClient,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   registerUser,
@@ -61,16 +62,16 @@ describe('POST /api/v1/auth/email/verify', () => {
     });
 
     // 3. Verify email with token
-    const verifyRes = await app.request('/api/v1/auth/email/verify', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const verifyRes = await client.api.v1.auth.email.verify.$post({
+      json: {
         token,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(verifyRes.status).toBe(200);
-    const verifyBody = await verifyRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const verifyBody: any = await verifyRes.json();
     expect(verifyBody).toHaveProperty('user');
     expect(verifyBody.user.email_verified).toBe(true);
 
@@ -88,12 +89,11 @@ describe('POST /api/v1/auth/email/verify', () => {
   });
 
   test('should fail with invalid token', async () => {
-    const res = await app.request('/api/v1/auth/email/verify', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const res = await client.api.v1.auth.email.verify.$post({
+      json: {
         token: 'invalid-token-12345',
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(res.status).toBe(e.InvalidVerificationToken.Status);
@@ -141,12 +141,11 @@ describe('POST /api/v1/auth/email/verify', () => {
     });
 
     // 4. Try to verify with expired token
-    const res = await app.request('/api/v1/auth/email/verify', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const res = await client.api.v1.auth.email.verify.$post({
+      json: {
         token,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(res.status).toBe(e.InvalidVerificationToken.Status);
@@ -175,18 +174,15 @@ describe('POST /api/v1/auth/email/verify', () => {
     });
 
     // 3. First verification - should succeed
-    const firstRes = await app.request('/api/v1/auth/email/verify', {
-      method: 'POST',
-      body: JSON.stringify({ token }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const firstRes = await client.api.v1.auth.email.verify.$post({
+      json: { token },
     });
     expect(firstRes.status).toBe(200);
 
     // 4. Second verification with same token - should fail
-    const secondRes = await app.request('/api/v1/auth/email/verify', {
-      method: 'POST',
-      body: JSON.stringify({ token }),
-      headers: { 'Content-Type': 'application/json' },
+    const secondRes = await client.api.v1.auth.email.verify.$post({
+      json: { token },
     });
 
     expect(secondRes.status).toBe(e.InvalidVerificationToken.Status);

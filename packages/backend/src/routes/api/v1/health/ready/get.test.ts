@@ -1,6 +1,9 @@
 import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
-import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/index.js';
+import {
+  createTestClient,
+  MINIMAL_TEST_CONFIG,
+} from '@backend/test-utils/index.js';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -22,9 +25,8 @@ afterAll(async () => {
 
 describe('GET /api/v1/health/ready', () => {
   test('should return 200 with database ok when healthy', async () => {
-    const res = await app.request('/api/v1/health/ready', {
-      method: 'GET',
-    });
+    const client = createTestClient(app);
+    const res = await client.api.v1.health.ready.$get();
 
     expect(res.status).toBe(200);
 
@@ -38,9 +40,8 @@ describe('GET /api/v1/health/ready', () => {
   });
 
   test('should have proper response structure', async () => {
-    const res = await app.request('/api/v1/health/ready', {
-      method: 'GET',
-    });
+    const client = createTestClient(app);
+    const res = await client.api.v1.health.ready.$get();
 
     expect(res.status).toBe(200);
 

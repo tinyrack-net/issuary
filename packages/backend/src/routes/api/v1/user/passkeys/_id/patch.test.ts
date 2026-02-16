@@ -4,10 +4,11 @@ import type { ServiceContainer } from '@backend/services/container.js';
 import {
   createAuthenticatedSession,
   createPasskeyForUser,
+  createTestClient,
+  createTestClientWithHeaders,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
-  requestWithSession,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
@@ -46,7 +47,10 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
   async function createDbUserWithSession(
     email: string,
     password: string,
-  ): Promise<{ sessionCookie: string; userId: string }> {
+  ): Promise<{
+    sessionCookie: string;
+    userId: string;
+  }> {
     await withMikroContext(services, async () => {
       const user = services.mikro.user.create({
         email,
@@ -56,33 +60,33 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
 
     const sessionCookie = extractCookie(loginRes, 'session');
-    const body = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await loginRes.json();
     const userId = body.user.id;
 
     return { sessionCookie, userId };
   }
 
   test('should return 401 when not authenticated', async () => {
-    const res = await app.request(
-      '/api/v1/user/passkeys/00000000-0000-0000-0000-000000000000',
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: 'New Name' }),
-        headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$patch({
+      param: {
+        id: '00000000-0000-0000-0000-000000000000',
       },
-    );
+      json: { name: 'New Name' },
+    });
 
     expect(res.status).toBe(401);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
@@ -92,19 +96,19 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     const { sessionCookie } = await createDbUserWithSession(email, password);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys/00000000-0000-0000-0000-000000000000',
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: 'New Name' }),
-        headers: { 'Content-Type': 'application/json' },
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$patch({
+      param: {
+        id: '00000000-0000-0000-0000-000000000000',
       },
-      sessionCookie,
-    );
+      json: { name: 'New Name' },
+    });
 
     expect(res.status).toBe(404);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('PASSKEY_NOT_FOUND');
   });
 
@@ -119,19 +123,17 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     const passkeyId = await createPasskeyForUser(services, userId, 'Old Name');
 
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: 'New Name' }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$patch({
+      param: { id: passkeyId },
+      json: { name: 'New Name' },
+    });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.ok).toBe(true);
 
     // Verify the name was updated in database
@@ -154,19 +156,17 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     const passkeyId = await createPasskeyForUser(services, userId, null);
 
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: 'My New Passkey' }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$patch({
+      param: { id: passkeyId },
+      json: { name: 'My New Passkey' },
+    });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.ok).toBe(true);
 
     // Verify the name was updated
@@ -193,16 +193,14 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       'Original Name',
     );
 
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: '' }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$patch({
+      param: { id: passkeyId },
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+      json: { name: '' } as any,
+    });
 
     expect(res.status).toBe(400);
   });
@@ -225,16 +223,14 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
     // Create a name longer than 100 characters
     const longName = 'a'.repeat(101);
 
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: longName }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$patch({
+      param: { id: passkeyId },
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+      json: { name: longName } as any,
+    });
 
     expect(res.status).toBe(400);
   });
@@ -257,19 +253,17 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
     // Create a name exactly 100 characters
     const maxName = 'a'.repeat(100);
 
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: maxName }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$patch({
+      param: { id: passkeyId },
+      json: { name: maxName },
+    });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.ok).toBe(true);
 
     await withMikroContext(services, async () => {
@@ -299,19 +293,17 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
     );
 
     // User1 tries to rename user2's passkey
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: 'Stolen Name' }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      session1,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${session1}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$patch({
+      param: { id: passkeyId },
+      json: { name: 'Stolen Name' },
+    });
 
     expect(res.status).toBe(404);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('PASSKEY_NOT_FOUND');
 
     // Verify the name was NOT changed
@@ -338,16 +330,14 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       'Original Name',
     );
 
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({}),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$patch({
+      param: { id: passkeyId },
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+      json: {} as any,
+    });
 
     expect(res.status).toBe(400);
   });
@@ -358,16 +348,13 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     const { sessionCookie } = await createDbUserWithSession(email, password);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys/not-a-uuid',
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: 'New Name' }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$patch({
+      param: { id: 'not-a-uuid' },
+      json: { name: 'New Name' },
+    });
 
     expect(res.status).toBe(400);
   });
@@ -385,19 +372,17 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     const specialName = "My iPhone 📱 - John's Device (2024)";
 
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: specialName }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$patch({
+      param: { id: passkeyId },
+      json: { name: specialName },
+    });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.ok).toBe(true);
 
     await withMikroContext(services, async () => {
@@ -421,16 +406,13 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     // Whitespace-only name should be accepted as the schema doesn't
     // explicitly trim
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: '   ' }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$patch({
+      param: { id: passkeyId },
+      json: { name: '   ' },
+    });
 
     // This depends on schema definition - if .min(1) is before any trim,
     // whitespace passes
@@ -441,15 +423,12 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
     // Get user ID from session
-    const sessionRes = await requestWithSession(
-      app,
-      '/api/v1/user/session',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
-    const sessionBody = await sessionRes.json();
+    const sessionClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const sessionRes = await sessionClient.api.v1.user.session.$get();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const sessionBody: any = await sessionRes.json();
     const userId = sessionBody.user.id;
 
     // Create passkey for config user
@@ -459,19 +438,17 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       'Config User Passkey',
     );
 
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: 'Renamed Passkey' }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$patch({
+      param: { id: passkeyId },
+      json: { name: 'Renamed Passkey' },
+    });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.ok).toBe(true);
   });
 });
@@ -504,16 +481,15 @@ describe('PATCH /api/v1/user/passkeys/:id - Passkey disabled', () => {
   test('should return 404 when passkey is disabled in config (route not registered)', async () => {
     const sessionCookie = await createAuthenticatedSession(appDisabled);
 
-    const res = await requestWithSession(
-      appDisabled,
-      '/api/v1/user/passkeys/00000000-0000-0000-0000-000000000000',
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ name: 'New Name' }),
-        headers: { 'Content-Type': 'application/json' },
+    const client = createTestClientWithHeaders(appDisabled, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$patch({
+      param: {
+        id: '00000000-0000-0000-0000-000000000000',
       },
-      sessionCookie,
-    );
+      json: { name: 'New Name' },
+    });
 
     // Route is registered but handler rejects when passkey is disabled
     expect(res.status).toBe(400);

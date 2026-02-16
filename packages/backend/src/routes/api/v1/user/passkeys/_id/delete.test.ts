@@ -5,12 +5,13 @@ import type { ServiceContainer } from '@backend/services/container.js';
 import {
   createAuthenticatedSession,
   createPasskeyForUser,
+  createTestClient,
+  createTestClientWithHeaders,
   enableTotpForUser,
   expectError,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
-  requestWithSession,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
@@ -50,7 +51,10 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
     email: string,
     password: string,
     options?: { hasPassword?: boolean },
-  ): Promise<{ sessionCookie: string; userId: string }> {
+  ): Promise<{
+    sessionCookie: string;
+    userId: string;
+  }> {
     await withMikroContext(services, async () => {
       const user = services.mikro.user.create({
         email,
@@ -60,16 +64,16 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
 
     const sessionCookie = extractCookie(loginRes, 'session');
-    const body = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await loginRes.json();
     const userId = body.user.id;
 
     return { sessionCookie, userId };
@@ -80,7 +84,9 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
    */
   async function linkOAuthAccount(userId: string): Promise<void> {
     await withMikroContext(services, async () => {
-      const user = await services.mikro.user.findOneOrFail({ id: userId });
+      const user = await services.mikro.user.findOneOrFail({
+        id: userId,
+      });
       const oauthAccount = services.mikro.userOAuth.create({
         user,
         provider_name: 'google',
@@ -94,15 +100,16 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
   }
 
   test('should return 401 when not authenticated', async () => {
-    const res = await app.request(
-      '/api/v1/user/passkeys/00000000-0000-0000-0000-000000000000',
-      {
-        method: 'DELETE',
+    const client = createTestClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: {
+        id: '00000000-0000-0000-0000-000000000000',
       },
-    );
+    });
 
     expect(res.status).toBe(401);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
@@ -112,17 +119,18 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
 
     const { sessionCookie } = await createDbUserWithSession(email, password);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys/00000000-0000-0000-0000-000000000000',
-      {
-        method: 'DELETE',
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: {
+        id: '00000000-0000-0000-0000-000000000000',
       },
-      sessionCookie,
-    );
+    });
 
     expect(res.status).toBe(404);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('PASSKEY_NOT_FOUND');
   });
 
@@ -141,17 +149,16 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       'Test Passkey',
     );
 
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: { id: passkeyId },
+    });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.ok).toBe(true);
 
     // Verify passkey was deleted
@@ -183,17 +190,16 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       'Passkey 2',
     );
 
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId1}`,
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: { id: passkeyId1 },
+    });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.ok).toBe(true);
 
     // Verify first passkey was deleted
@@ -230,17 +236,16 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
     );
 
     // User1 tries to delete user2's passkey
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'DELETE',
-      },
-      session1,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${session1}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: { id: passkeyId },
+    });
 
     expect(res.status).toBe(404);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('PASSKEY_NOT_FOUND');
 
     // Verify the passkey was NOT deleted
@@ -258,14 +263,12 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
 
     const { sessionCookie } = await createDbUserWithSession(email, password);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys/not-a-uuid',
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: { id: 'not-a-uuid' },
+    });
 
     expect(res.status).toBe(400);
   });
@@ -289,17 +292,16 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       'Only Passkey',
     );
 
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: { id: passkeyId },
+    });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.ok).toBe(true);
 
     // Verify passkey was deleted
@@ -329,14 +331,12 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
     );
 
     // Delete second passkey (not the last one)
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId2}`,
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: { id: passkeyId2 },
+    });
 
     expect(res.status).toBe(200);
   });
@@ -345,15 +345,12 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
     // Get user ID from session
-    const sessionRes = await requestWithSession(
-      app,
-      '/api/v1/user/session',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
-    const sessionBody = await sessionRes.json();
+    const sessionClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const sessionRes = await sessionClient.api.v1.user.session.$get();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const sessionBody: any = await sessionRes.json();
     const userId = sessionBody.user.id;
 
     // Create passkey for config user directly in DB
@@ -363,14 +360,12 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       'Config User Passkey',
     );
 
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: { id: passkeyId },
+    });
 
     // Config users cannot manage 2FA
     await expectError(res, e.SecondFactorNotAllowedForConfigUser);
@@ -401,16 +396,15 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       'Passkey 3',
     );
 
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
     // Delete all passkeys one by one
     for (const passkeyId of [passkeyId1, passkeyId2, passkeyId3]) {
-      const res = await requestWithSession(
-        app,
-        `/api/v1/user/passkeys/${passkeyId}`,
-        {
-          method: 'DELETE',
-        },
-        sessionCookie,
-      );
+      const res = await client.api.v1.user.passkeys[':id'].$delete({
+        param: { id: passkeyId },
+      });
       expect(res.status).toBe(200);
     }
 
@@ -436,24 +430,18 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       'Test Passkey',
     );
 
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
     // Send two concurrent delete requests
     const [res1, res2] = await Promise.all([
-      requestWithSession(
-        app,
-        `/api/v1/user/passkeys/${passkeyId}`,
-        {
-          method: 'DELETE',
-        },
-        sessionCookie,
-      ),
-      requestWithSession(
-        app,
-        `/api/v1/user/passkeys/${passkeyId}`,
-        {
-          method: 'DELETE',
-        },
-        sessionCookie,
-      ),
+      client.api.v1.user.passkeys[':id'].$delete({
+        param: { id: passkeyId },
+      }),
+      client.api.v1.user.passkeys[':id'].$delete({
+        param: { id: passkeyId },
+      }),
     ]);
 
     // One should succeed, one should fail with 404
@@ -478,38 +466,25 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
     );
     await createPasskeyForUser(services, userId, 'Passkey 2');
 
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
     // Get initial list
-    const listBefore = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
-    const listBeforeBody = await listBefore.json();
+    const listBefore = await client.api.v1.user.passkeys.$get();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const listBeforeBody: any = await listBefore.json();
     expect(listBeforeBody.passkeys).toHaveLength(2);
 
     // Delete one passkey
-    await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId1}`,
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    await client.api.v1.user.passkeys[':id'].$delete({
+      param: { id: passkeyId1 },
+    });
 
     // Get updated list
-    const listAfter = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
-    const listAfterBody = await listAfter.json();
+    const listAfter = await client.api.v1.user.passkeys.$get();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const listAfterBody: any = await listAfter.json();
     expect(listAfterBody.passkeys).toHaveLength(1);
     expect(listAfterBody.passkeys[0].name).toBe('Passkey 2');
   });
@@ -547,7 +522,10 @@ describe('DELETE /api/v1/user/passkeys/:id - Last auth method protection', () =>
   async function createDbUserWithSession(
     email: string,
     password: string,
-  ): Promise<{ sessionCookie: string; userId: string }> {
+  ): Promise<{
+    sessionCookie: string;
+    userId: string;
+  }> {
     await withMikroContext(services, async () => {
       const user = services.mikro.user.create({
         email,
@@ -557,16 +535,16 @@ describe('DELETE /api/v1/user/passkeys/:id - Last auth method protection', () =>
       await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
 
     const sessionCookie = extractCookie(loginRes, 'session');
-    const body = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await loginRes.json();
     const userId = body.user.id;
 
     return { sessionCookie, userId };
@@ -599,17 +577,16 @@ describe('DELETE /api/v1/user/passkeys/:id - Last auth method protection', () =>
       'Only Auth Method Passkey',
     );
 
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: { id: passkeyId },
+    });
 
     expect(res.status).toBe(400);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('CANNOT_REMOVE_LAST_PASSKEY');
 
     // Verify passkey was NOT deleted
@@ -649,17 +626,16 @@ describe('DELETE /api/v1/user/passkeys/:id - Last auth method protection', () =>
     await createPasskeyForUser(services, userId, 'Passkey 2');
 
     // Should be able to delete one (still has another)
-    const res = await requestWithSession(
-      app,
-      `/api/v1/user/passkeys/${passkeyId1}`,
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: { id: passkeyId1 },
+    });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.ok).toBe(true);
   });
 });
@@ -692,14 +668,14 @@ describe('DELETE /api/v1/user/passkeys/:id - Passkey disabled', () => {
   test('should return 400 when passkey is disabled in config', async () => {
     const sessionCookie = await createAuthenticatedSession(appDisabled);
 
-    const res = await requestWithSession(
-      appDisabled,
-      '/api/v1/user/passkeys/00000000-0000-0000-0000-000000000000',
-      {
-        method: 'DELETE',
+    const client = createTestClientWithHeaders(appDisabled, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: {
+        id: '00000000-0000-0000-0000-000000000000',
       },
-      sessionCookie,
-    );
+    });
 
     // Route is registered but handler rejects when passkey is disabled
     expect(res.status).toBe(400);
@@ -777,7 +753,10 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
   async function createUserWithPasskeySession(
     emailPrefix: string,
     password: string,
-  ): Promise<{ sessionCookie: string; userId: string }> {
+  ): Promise<{
+    sessionCookie: string;
+    userId: string;
+  }> {
     const email = generateUniqueEmail(emailPrefix);
 
     // Create user directly in DB
@@ -796,10 +775,9 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
     const totpSecret = await enableTotpForUser(servicesWith2FA, userId);
 
     // Login - will require 2FA verification
-    const loginRes = await appWith2FARequired.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const loginClient = createTestClient(appWith2FARequired);
+    const loginRes = await loginClient.api.v1.auth.login.$post({
+      json: { email, password },
     });
     expect(loginRes.status).toBe(200);
 
@@ -809,17 +787,12 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
 
     // Verify TOTP to get full session
     const validCode = servicesWith2FA.totpService.generateToken(totpSecret);
-    const verifyRes = await appWith2FARequired.request(
-      '/api/v1/auth/totp/verify',
-      {
-        method: 'POST',
-        body: JSON.stringify({ code: validCode }),
-        headers: {
-          'Content-Type': 'application/json',
-          Cookie: `session=${pending2FACookie}`,
-        },
-      },
-    );
+    const pendingClient = createTestClientWithHeaders(appWith2FARequired, {
+      Cookie: `session=${pending2FACookie}`,
+    });
+    const verifyRes = await pendingClient.api.v1.auth.totp.verify.$post({
+      json: { code: validCode },
+    });
     expect(verifyRes.status).toBe(200);
 
     const verifySetCookie = verifyRes.headers.get('set-cookie');
@@ -845,14 +818,12 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
     // Create only one passkey
     const passkeyId = await createPasskeyFor2FATest(userId, 'Only Passkey');
 
-    const res = await requestWithSession(
-      appWith2FARequired,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(appWith2FARequired, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: { id: passkeyId },
+    });
 
     await expectError(res, e.CannotRemoveLastSecondFactor);
 
@@ -876,17 +847,16 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
     // Create passkey (user already has TOTP from session setup)
     const passkeyId = await createPasskeyFor2FATest(userId, 'Test Passkey');
 
-    const res = await requestWithSession(
-      appWith2FARequired,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(appWith2FARequired, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: { id: passkeyId },
+    });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.ok).toBe(true);
 
     // Verify passkey was deleted
@@ -915,18 +885,17 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
     const passkeyId1 = await createPasskeyFor2FATest(userId, 'Passkey 1');
     await createPasskeyFor2FATest(userId, 'Passkey 2');
 
-    const res = await requestWithSession(
-      appWith2FARequired,
-      `/api/v1/user/passkeys/${passkeyId1}`,
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(appWith2FARequired, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: { id: passkeyId1 },
+    });
 
     // Should succeed because user still has another passkey
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.ok).toBe(true);
   });
 
@@ -934,15 +903,12 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
     const sessionCookie = await createAuthenticatedSession(appWith2FARequired);
 
     // Get user ID from session
-    const sessionRes = await requestWithSession(
-      appWith2FARequired,
-      '/api/v1/user/session',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
-    const sessionBody = await sessionRes.json();
+    const sessionClient = createTestClientWithHeaders(appWith2FARequired, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const sessionRes = await sessionClient.api.v1.user.session.$get();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const sessionBody: any = await sessionRes.json();
     const userId = sessionBody.user.id;
 
     // Create passkey directly in database for config user
@@ -963,14 +929,12 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
       passkeyId = passkey.id;
     });
 
-    const res = await requestWithSession(
-      appWith2FARequired,
-      `/api/v1/user/passkeys/${passkeyId}`,
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(appWith2FARequired, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys[':id'].$delete({
+      param: { id: passkeyId },
+    });
 
     await expectError(res, e.SecondFactorNotAllowedForConfigUser);
   });

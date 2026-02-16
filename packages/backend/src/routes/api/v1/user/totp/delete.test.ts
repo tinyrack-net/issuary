@@ -6,11 +6,12 @@ import {
   createAuthenticatedSession,
   createDbUserWithSession,
   createPasskeyForUser,
+  createTestClient,
+  createTestClientWithHeaders,
   enableTotpForUser,
   expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
-  requestWithSession,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
@@ -44,12 +45,9 @@ describe('DELETE /api/v1/user/totp', () => {
   });
 
   test('should return 401 when not authenticated', async () => {
-    const res = await app.request('/api/v1/user/totp', {
-      method: 'DELETE',
-      body: JSON.stringify({
-        code: '123456',
-      }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const res = await client.api.v1.user.totp.$delete({
+      json: { code: '123456' },
     });
 
     await expectError(res, e.Unauthorized);
@@ -66,18 +64,12 @@ describe('DELETE /api/v1/user/totp', () => {
       password,
     );
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          code: '123456',
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.$delete({
+      json: { code: '123456' },
+    });
 
     await expectError(res, e.TotpNotEnabled);
   });
@@ -96,18 +88,12 @@ describe('DELETE /api/v1/user/totp', () => {
     // Enable TOTP
     await enableTotpForUser(services, userId);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          code: '000000',
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.$delete({
+      json: { code: '000000' },
+    });
 
     await expectError(res, e.InvalidTotpCode);
   });
@@ -129,21 +115,16 @@ describe('DELETE /api/v1/user/totp', () => {
     // Generate valid code
     const validCode = services.totpService.generateToken(secret);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          code: validCode,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.$delete({
+      json: { code: validCode },
+    });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.ok).toBe(true);
 
     // Verify TOTP is removed from database
@@ -166,18 +147,13 @@ describe('DELETE /api/v1/user/totp', () => {
 
     await enableTotpForUser(services, userId);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          code: 'abcdef',
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.$delete({
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+      json: { code: 'abcdef' } as any,
+    });
 
     expect(res.status).toBe(400);
   });
@@ -195,34 +171,22 @@ describe('DELETE /api/v1/user/totp', () => {
 
     await enableTotpForUser(services, userId);
 
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
     // Too short
-    const res1 = await requestWithSession(
-      app,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          code: '12345',
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const res1 = await client.api.v1.user.totp.$delete({
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+      json: { code: '12345' } as any,
+    });
     expect(res1.status).toBe(400);
 
     // Too long
-    const res2 = await requestWithSession(
-      app,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          code: '1234567',
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const res2 = await client.api.v1.user.totp.$delete({
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+      json: { code: '1234567' } as any,
+    });
     expect(res2.status).toBe(400);
   });
 
@@ -240,43 +204,26 @@ describe('DELETE /api/v1/user/totp', () => {
     // Enable TOTP
     const secret = await enableTotpForUser(services, userId);
 
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
     // Check initial session - TOTP should be enabled
-    const sessionBefore = await requestWithSession(
-      app,
-      '/api/v1/user/session',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
-    const sessionBeforeBody = await sessionBefore.json();
+    const sessionBefore = await client.api.v1.user.session.$get();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const sessionBeforeBody: any = await sessionBefore.json();
     expect(sessionBeforeBody.user.totp_registered).toBe(true);
 
     // Disable TOTP
     const validCode = services.totpService.generateToken(secret);
-    await requestWithSession(
-      app,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          code: validCode,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    await client.api.v1.user.totp.$delete({
+      json: { code: validCode },
+    });
 
     // Check session after - TOTP should be disabled
-    const sessionAfter = await requestWithSession(
-      app,
-      '/api/v1/user/session',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
-    const sessionAfterBody = await sessionAfter.json();
+    const sessionAfter = await client.api.v1.user.session.$get();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const sessionAfterBody: any = await sessionAfter.json();
     expect(sessionAfterBody.user.totp_registered).toBe(false);
   });
 
@@ -305,18 +252,12 @@ describe('DELETE /api/v1/user/totp', () => {
 
     const validCode = services.totpService.generateToken(secret);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          code: validCode,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.$delete({
+      json: { code: validCode },
+    });
 
     await expectError(res, e.TotpNotEnabled);
   });
@@ -346,18 +287,12 @@ describe('DELETE /api/v1/user/totp', () => {
 
     const validCode = services.totpService.generateToken(secret);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          code: validCode,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.$delete({
+      json: { code: validCode },
+    });
 
     await expectError(res, e.TotpNotEnabled);
   });
@@ -377,34 +312,20 @@ describe('DELETE /api/v1/user/totp', () => {
     const secret = await enableTotpForUser(services, userId);
     const validCode = services.totpService.generateToken(secret);
 
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
     // First deletion should succeed
-    const res1 = await requestWithSession(
-      app,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          code: validCode,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const res1 = await client.api.v1.user.totp.$delete({
+      json: { code: validCode },
+    });
     expect(res1.status).toBe(200);
 
     // Second deletion with same code should fail (TOTP no longer enabled)
-    const res2 = await requestWithSession(
-      app,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          code: validCode,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const res2 = await client.api.v1.user.totp.$delete({
+      json: { code: validCode },
+    });
     await expectError(res2, e.TotpNotEnabled);
   });
 
@@ -423,60 +344,33 @@ describe('DELETE /api/v1/user/totp', () => {
     const secret1 = await enableTotpForUser(services, userId);
     const validCode1 = services.totpService.generateToken(secret1);
 
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
     // Disable TOTP
-    const disableRes = await requestWithSession(
-      app,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          code: validCode1,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const disableRes = await client.api.v1.user.totp.$delete({
+      json: { code: validCode1 },
+    });
     expect(disableRes.status).toBe(200);
 
     // Start new setup
-    const setupRes = await requestWithSession(
-      app,
-      '/api/v1/user/totp/setup',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const setupRes = await client.api.v1.user.totp.setup.$post({});
     expect(setupRes.status).toBe(200);
-    const newSecret = (await setupRes.json()).secret;
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const newSecret = ((await setupRes.json()) as any).secret;
 
     // Verify new setup
     const newCode = services.totpService.generateToken(newSecret);
-    const verifyRes = await requestWithSession(
-      app,
-      '/api/v1/user/totp/verify',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          code: newCode,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const verifyRes = await client.api.v1.user.totp.verify.$post({
+      json: { code: newCode },
+    });
     expect(verifyRes.status).toBe(200);
 
     // Confirm new setup
-    const confirmRes = await requestWithSession(
-      app,
-      '/api/v1/user/totp/confirm',
-      {
-        method: 'POST',
-        body: JSON.stringify({}),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const confirmRes = await client.api.v1.user.totp.confirm.$post({
+      json: {},
+    });
     expect(confirmRes.status).toBe(200);
 
     // Verify TOTP is fully enabled again
@@ -501,16 +395,13 @@ describe('DELETE /api/v1/user/totp', () => {
 
     await enableTotpForUser(services, userId);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({}),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.$delete({
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+      json: {} as any,
+    });
 
     expect(res.status).toBe(400);
   });
@@ -557,7 +448,11 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
   async function createUserWithTotpSession(
     emailPrefix: string,
     password: string,
-  ): Promise<{ sessionCookie: string; userId: string; totpSecret: string }> {
+  ): Promise<{
+    sessionCookie: string;
+    userId: string;
+    totpSecret: string;
+  }> {
     const email = generateUniqueEmail(emailPrefix);
 
     // Create user directly in DB
@@ -576,10 +471,9 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
     const totpSecret = await enableTotpForUser(servicesWith2FA, userId);
 
     // Login - will require 2FA verification
-    const loginRes = await appWith2FARequired.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const loginClient = createTestClient(appWith2FARequired);
+    const loginRes = await loginClient.api.v1.auth.login.$post({
+      json: { email, password },
     });
     expect(loginRes.status).toBe(200);
 
@@ -587,17 +481,12 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
 
     // Verify TOTP to get full session
     const validCode = servicesWith2FA.totpService.generateToken(totpSecret);
-    const verifyRes = await appWith2FARequired.request(
-      '/api/v1/auth/totp/verify',
-      {
-        method: 'POST',
-        body: JSON.stringify({ code: validCode }),
-        headers: {
-          'Content-Type': 'application/json',
-          Cookie: `session=${pending2FACookie}`,
-        },
-      },
-    );
+    const pendingClient = createTestClientWithHeaders(appWith2FARequired, {
+      Cookie: `session=${pending2FACookie}`,
+    });
+    const verifyRes = await pendingClient.api.v1.auth.totp.verify.$post({
+      json: { code: validCode },
+    });
     expect(verifyRes.status).toBe(200);
 
     const sessionCookie = extractSessionCookie(verifyRes);
@@ -627,18 +516,12 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
     // User has only TOTP as 2FA, try to disable it
     const validCode = servicesWith2FA.totpService.generateToken(totpSecret);
 
-    const res = await requestWithSession(
-      appWith2FARequired,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          code: validCode,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(appWith2FARequired, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.$delete({
+      json: { code: validCode },
+    });
 
     await expectError(res, e.CannotRemoveLastSecondFactor);
 
@@ -666,21 +549,16 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
 
     const validCode = servicesWith2FA.totpService.generateToken(totpSecret);
 
-    const res = await requestWithSession(
-      appWith2FARequired,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          code: validCode,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(appWith2FARequired, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.$delete({
+      json: { code: validCode },
+    });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.ok).toBe(true);
 
     // Verify TOTP was deleted
@@ -698,15 +576,12 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
     const sessionCookie = await createAuthenticatedSession(appWith2FARequired);
 
     // Get user ID from session
-    const sessionRes = await requestWithSession(
-      appWith2FARequired,
-      '/api/v1/user/session',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
-    const sessionBody = await sessionRes.json();
+    const sessionClient = createTestClientWithHeaders(appWith2FARequired, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const sessionRes = await sessionClient.api.v1.user.session.$get();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const sessionBody: any = await sessionRes.json();
     const userId = sessionBody.user.id;
 
     // Create TOTP directly in database for config user
@@ -723,18 +598,12 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
 
     const validCode = servicesWith2FA.totpService.generateToken(secret);
 
-    const res = await requestWithSession(
-      appWith2FARequired,
-      '/api/v1/user/totp',
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          code: validCode,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(appWith2FARequired, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.$delete({
+      json: { code: validCode },
+    });
 
     await expectError(res, e.SecondFactorNotAllowedForConfigUser);
   });

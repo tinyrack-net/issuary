@@ -5,10 +5,11 @@ import type { ServiceContainer } from '@backend/services/container.js';
 import {
   createAuthenticatedSession,
   createDbUserWithSession,
+  createTestClient,
+  createTestClientWithHeaders,
   expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
-  requestWithSession,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
@@ -43,9 +44,8 @@ afterAll(async () => {
 
 describe('POST /api/v1/user/totp/setup', () => {
   test('should return 401 when not authenticated', async () => {
-    const res = await app.request('/api/v1/user/totp/setup', {
-      method: 'POST',
-    });
+    const client = createTestClient(app);
+    const res = await client.api.v1.user.totp.setup.$post();
 
     await expectError(res, e.Unauthorized);
   });
@@ -61,17 +61,14 @@ describe('POST /api/v1/user/totp/setup', () => {
       password,
     );
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp/setup',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.setup.$post();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
 
     // Verify response structure
     expect(body.secret).toBeDefined();
@@ -98,17 +95,14 @@ describe('POST /api/v1/user/totp/setup', () => {
       password,
     );
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp/setup',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.setup.$post();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
 
     // Verify database record
     await withMikroContext(services, async () => {
@@ -130,31 +124,23 @@ describe('POST /api/v1/user/totp/setup', () => {
       password,
     );
 
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
     // First setup call
-    const res1 = await requestWithSession(
-      app,
-      '/api/v1/user/totp/setup',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const res1 = await client.api.v1.user.totp.setup.$post();
 
     expect(res1.status).toBe(200);
-    const firstSecret = (await res1.json()).secret;
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const firstSecret = ((await res1.json()) as any).secret;
 
     // Second setup call should regenerate secret
-    const res2 = await requestWithSession(
-      app,
-      '/api/v1/user/totp/setup',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const res2 = await client.api.v1.user.totp.setup.$post();
 
     expect(res2.status).toBe(200);
-    const secondSecret = (await res2.json()).secret;
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const secondSecret = ((await res2.json()) as any).secret;
 
     // Secrets should be different
     expect(secondSecret).not.toBe(firstSecret);
@@ -182,14 +168,10 @@ describe('POST /api/v1/user/totp/setup', () => {
       await services.mikro.em.persist(totp).flush();
     });
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp/setup',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.setup.$post();
 
     await expectError(res, e.TotpAlreadyEnabled);
   });
@@ -216,18 +198,15 @@ describe('POST /api/v1/user/totp/setup', () => {
       await services.mikro.em.persist(totp).flush();
     });
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp/setup',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.setup.$post();
 
     // Should succeed and allow user to start fresh setup
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.secret).toBeDefined();
     expect(body.otpauth_url).toBeDefined();
     expect(body.qr_code).toBeDefined();
@@ -237,14 +216,10 @@ describe('POST /api/v1/user/totp/setup', () => {
     // Config users cannot setup 2FA
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp/setup',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.setup.$post();
 
     // Config users cannot setup 2FA
     await expectError(res, e.SecondFactorNotAllowedForConfigUser);
@@ -261,17 +236,14 @@ describe('POST /api/v1/user/totp/setup', () => {
       password,
     );
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/totp/setup',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.totp.setup.$post();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
 
     // Generate a valid token using the secret via totpService
     const validToken = services.totpService.generateToken(body.secret);

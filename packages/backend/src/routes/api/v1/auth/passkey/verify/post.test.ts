@@ -3,10 +3,11 @@ import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
   createDbUserWithSession,
+  createTestClient,
+  createTestClientWithHeaders,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
-  requestWithSession,
   withMikroContext,
 } from '@backend/test-utils/index.js';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
@@ -82,24 +83,24 @@ describe('POST /api/v1/auth/passkey/verify', () => {
     await createDbUserWithSession(app, services, email, password);
 
     // Directly call verify without getting options first (no challenge in session)
-    const res = await app.request('/api/v1/auth/passkey/verify', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const res = await client.api.v1.auth.passkey.verify.$post({
+      json: {
         response: createMockAuthenticationResponse(),
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(res.status).toBe(400);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('PASSKEY_CHALLENGE_NOT_FOUND');
   });
 
   test('should return 400 when response body is empty', async () => {
-    const res = await app.request('/api/v1/auth/passkey/verify', {
-      method: 'POST',
-      body: JSON.stringify({}),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const res = await client.api.v1.auth.passkey.verify.$post({
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+      json: {} as any,
     });
 
     expect(res.status).toBe(400);
@@ -107,63 +108,55 @@ describe('POST /api/v1/auth/passkey/verify', () => {
 
   test('should return 400 when response is missing required fields', async () => {
     // Get options first to set challenge in session
-    const optionsRes = await app.request('/api/v1/auth/passkey/options', {
-      method: 'POST',
-    });
+    const client = createTestClient(app);
+    const optionsRes = await client.api.v1.auth.passkey.options.$post();
     expect(optionsRes.status).toBe(200);
 
     const sessionCookie = extractCookie(optionsRes, 'session');
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/auth/passkey/verify',
-      {
-        method: 'POST',
-        body: JSON.stringify({
+    const authedClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await authedClient.api.v1.auth.passkey.verify.$post({
+      json: {
+        response: {
+          rawId: 'mock-id',
           response: {
-            rawId: 'mock-id',
-            response: {
-              clientDataJSON: 'mock-data',
-            },
-            type: 'public-key',
+            clientDataJSON: 'mock-data',
           },
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+          type: 'public-key',
+        },
+        // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+      } as any,
+    });
 
     expect(res.status).toBe(400);
   });
 
   test('should return 404 when passkey not found', async () => {
     // Get options first to set challenge in session
-    const optionsRes = await app.request('/api/v1/auth/passkey/options', {
-      method: 'POST',
-    });
+    const client = createTestClient(app);
+    const optionsRes = await client.api.v1.auth.passkey.options.$post();
     expect(optionsRes.status).toBe(200);
 
     const sessionCookie = extractCookie(optionsRes, 'session');
 
     // Try to verify with a non-existent credential ID
-    const res = await requestWithSession(
-      app,
-      '/api/v1/auth/passkey/verify',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          response: createMockAuthenticationResponse({
-            id: 'non-existent-credential-id',
-          }),
+    const authedClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await authedClient.api.v1.auth.passkey.verify.$post({
+      json: {
+        response: createMockAuthenticationResponse({
+          id: 'non-existent-credential-id',
         }),
-        headers: { 'Content-Type': 'application/json' },
       },
-      sessionCookie,
-    );
+    });
 
     // PASSKEY_NOT_FOUND (404) when credential doesn't exist
     expect(res.status).toBe(404);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('PASSKEY_NOT_FOUND');
   });
 
@@ -196,29 +189,24 @@ describe('POST /api/v1/auth/passkey/verify', () => {
     });
 
     // Get options to set challenge in session
-    const optionsRes = await app.request('/api/v1/auth/passkey/options', {
-      method: 'POST',
-    });
+    const client = createTestClient(app);
+    const optionsRes = await client.api.v1.auth.passkey.options.$post();
     expect(optionsRes.status).toBe(200);
 
     const sessionCookie = extractCookie(optionsRes, 'session');
 
     // Try to verify with invalid signature
-    const res = await requestWithSession(
-      app,
-      '/api/v1/auth/passkey/verify',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          response: createMockAuthenticationResponse({
-            id: credentialId,
-            rawId: credentialId,
-          }),
+    const authedClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await authedClient.api.v1.auth.passkey.verify.$post({
+      json: {
+        response: createMockAuthenticationResponse({
+          id: credentialId,
+          rawId: credentialId,
         }),
-        headers: { 'Content-Type': 'application/json' },
       },
-      sessionCookie,
-    );
+    });
 
     // Should fail at verification (400 or 500 depending on WebAuthn lib error handling)
     expect([400, 500].includes(res.status)).toBe(true);
@@ -226,38 +214,27 @@ describe('POST /api/v1/auth/passkey/verify', () => {
 
   test('should clear challenge from session after attempt', async () => {
     // Get options first
-    const optionsRes = await app.request('/api/v1/auth/passkey/options', {
-      method: 'POST',
-    });
+    const client = createTestClient(app);
+    const optionsRes = await client.api.v1.auth.passkey.options.$post();
     const sessionCookie = extractCookie(optionsRes, 'session');
 
+    const authedClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
     // First attempt (will fail)
-    await requestWithSession(
-      app,
-      '/api/v1/auth/passkey/verify',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          response: createMockAuthenticationResponse(),
-        }),
-        headers: { 'Content-Type': 'application/json' },
+    await authedClient.api.v1.auth.passkey.verify.$post({
+      json: {
+        response: createMockAuthenticationResponse(),
       },
-      sessionCookie,
-    );
+    });
 
     // Second attempt with same session should fail with challenge not found
-    const res2 = await requestWithSession(
-      app,
-      '/api/v1/auth/passkey/verify',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          response: createMockAuthenticationResponse(),
-        }),
-        headers: { 'Content-Type': 'application/json' },
+    const res2 = await authedClient.api.v1.auth.passkey.verify.$post({
+      json: {
+        response: createMockAuthenticationResponse(),
       },
-      sessionCookie,
-    );
+    });
 
     // Challenge should be cleared, so second attempt fails with challenge not found
     // or passkey not found (whichever check comes first)
@@ -265,61 +242,46 @@ describe('POST /api/v1/auth/passkey/verify', () => {
   });
 
   test('should return 400 when type is not public-key', async () => {
-    const optionsRes = await app.request('/api/v1/auth/passkey/options', {
-      method: 'POST',
-    });
+    const client = createTestClient(app);
+    const optionsRes = await client.api.v1.auth.passkey.options.$post();
     const sessionCookie = extractCookie(optionsRes, 'session');
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/auth/passkey/verify',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          response: createMockAuthenticationResponse({
-            type: 'invalid-type',
-          }),
+    const authedClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await authedClient.api.v1.auth.passkey.verify.$post({
+      json: {
+        response: createMockAuthenticationResponse({
+          type: 'invalid-type',
         }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+        // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+      } as any,
+    });
 
     expect(res.status).toBe(400);
   });
 
   test('should handle concurrent verification attempts', async () => {
-    const optionsRes = await app.request('/api/v1/auth/passkey/options', {
-      method: 'POST',
-    });
+    const client = createTestClient(app);
+    const optionsRes = await client.api.v1.auth.passkey.options.$post();
     const sessionCookie = extractCookie(optionsRes, 'session');
+
+    const authedClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
 
     // Send concurrent verification requests
     const results = await Promise.all([
-      requestWithSession(
-        app,
-        '/api/v1/auth/passkey/verify',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            response: createMockAuthenticationResponse(),
-          }),
-          headers: { 'Content-Type': 'application/json' },
+      authedClient.api.v1.auth.passkey.verify.$post({
+        json: {
+          response: createMockAuthenticationResponse(),
         },
-        sessionCookie,
-      ),
-      requestWithSession(
-        app,
-        '/api/v1/auth/passkey/verify',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            response: createMockAuthenticationResponse(),
-          }),
-          headers: { 'Content-Type': 'application/json' },
+      }),
+      authedClient.api.v1.auth.passkey.verify.$post({
+        json: {
+          response: createMockAuthenticationResponse(),
         },
-        sessionCookie,
-      ),
+      }),
     ]);
 
     // All should fail (challenge or passkey error)
@@ -389,9 +351,8 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
     });
 
     // Get options to set challenge in session
-    const optionsRes = await app.request('/api/v1/auth/passkey/options', {
-      method: 'POST',
-    });
+    const client = createTestClient(app);
+    const optionsRes = await client.api.v1.auth.passkey.options.$post();
     expect(optionsRes.status).toBe(200);
     const sessionCookie = extractCookie(optionsRes, 'session');
 
@@ -401,24 +362,21 @@ describe('POST /api/v1/auth/passkey/verify - Success with mocked service', () =>
       .mockResolvedValueOnce(user);
 
     // Verify with mocked service
-    const res = await requestWithSession(
-      app,
-      '/api/v1/auth/passkey/verify',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          response: createMockAuthenticationResponse({
-            id: credentialId,
-            rawId: credentialId,
-          }),
+    const authedClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await authedClient.api.v1.auth.passkey.verify.$post({
+      json: {
+        response: createMockAuthenticationResponse({
+          id: credentialId,
+          rawId: credentialId,
         }),
-        headers: { 'Content-Type': 'application/json' },
       },
-      sessionCookie,
-    );
+    });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
 
     // Verify response structure
     expect(body.user).toBeDefined();
@@ -527,22 +485,19 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
     });
 
     // Login as user1 - should get pending2FAUser session
-    const loginRes = await app2FA.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email: email1, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app2FA);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email: email1, password },
     });
     expect(loginRes.status).toBe(200);
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Get passkey options (for user1's pending session)
-    const optionsRes = await app2FA.request('/api/v1/auth/passkey/options', {
-      method: 'POST',
-      headers: {
-        Cookie: `session=${sessionCookie}`,
-      },
+    const authedClient = createTestClientWithHeaders(app2FA, {
+      Cookie: `session=${sessionCookie}`,
     });
+    const optionsRes = await authedClient.api.v1.auth.passkey.options.$post();
     expect(optionsRes.status).toBe(200);
 
     const optionsSessionCookie = extractCookie(optionsRes, 'session');
@@ -553,22 +508,21 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
       .mockResolvedValueOnce(user2);
 
     // Try to verify with user2's passkey while logged in as user1
-    const res = await app2FA.request('/api/v1/auth/passkey/verify', {
-      method: 'POST',
-      body: JSON.stringify({
+    const optionsClient = createTestClientWithHeaders(app2FA, {
+      Cookie: `session=${optionsSessionCookie}`,
+    });
+    const res = await optionsClient.api.v1.auth.passkey.verify.$post({
+      json: {
         response: createMockAuthenticationResponse({
           id: credentialId2,
           rawId: credentialId2,
         }),
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-        Cookie: `session=${optionsSessionCookie}`,
       },
     });
 
     expect(res.status).toBe(403);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('PASSKEY_USER_MISMATCH');
 
     mockVerifyAuthentication.mockRestore();
@@ -604,22 +558,19 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
     });
 
     // Login - should get pending2FAUser session
-    const loginRes = await app2FA.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app2FA);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
     expect(loginRes.status).toBe(200);
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Get passkey options
-    const optionsRes = await app2FA.request('/api/v1/auth/passkey/options', {
-      method: 'POST',
-      headers: {
-        Cookie: `session=${sessionCookie}`,
-      },
+    const authedClient = createTestClientWithHeaders(app2FA, {
+      Cookie: `session=${sessionCookie}`,
     });
+    const optionsRes = await authedClient.api.v1.auth.passkey.options.$post();
     expect(optionsRes.status).toBe(200);
 
     const optionsSessionCookie = extractCookie(optionsRes, 'session');
@@ -630,22 +581,21 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
       .mockResolvedValueOnce(user);
 
     // Verify passkey as 2FA
-    const res = await app2FA.request('/api/v1/auth/passkey/verify', {
-      method: 'POST',
-      body: JSON.stringify({
+    const optionsClient = createTestClientWithHeaders(app2FA, {
+      Cookie: `session=${optionsSessionCookie}`,
+    });
+    const res = await optionsClient.api.v1.auth.passkey.verify.$post({
+      json: {
         response: createMockAuthenticationResponse({
           id: credentialId,
           rawId: credentialId,
         }),
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-        Cookie: `session=${optionsSessionCookie}`,
       },
     });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
 
     expect(body.user).toBeDefined();
     expect(body.user.id).toBe(userId);
@@ -653,14 +603,13 @@ describe('POST /api/v1/auth/passkey/verify - 2FA mode', () => {
 
     // Verify we now have a full session (not just pending2FAUser)
     const newSessionCookie = extractCookie(res, 'session');
-    const sessionRes = await app2FA.request('/api/v1/user/session', {
-      method: 'GET',
-      headers: {
-        Cookie: `session=${newSessionCookie}`,
-      },
+    const sessionClient = createTestClientWithHeaders(app2FA, {
+      Cookie: `session=${newSessionCookie}`,
     });
+    const sessionRes = await sessionClient.api.v1.user.session.$get();
     expect(sessionRes.status).toBe(200);
-    const sessionBody = await sessionRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const sessionBody: any = await sessionRes.json();
     expect(sessionBody.user).toBeDefined();
     expect(sessionBody.user.id).toBe(userId);
 
@@ -693,12 +642,11 @@ describe('POST /api/v1/auth/passkey/verify - Passkey disabled', () => {
   });
 
   test('should return 400 when passkey is disabled', async () => {
-    const res = await appDisabled.request('/api/v1/auth/passkey/verify', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(appDisabled);
+    const res = await client.api.v1.auth.passkey.verify.$post({
+      json: {
         response: createMockAuthenticationResponse(),
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     // Route is registered but handler rejects when passkey is disabled

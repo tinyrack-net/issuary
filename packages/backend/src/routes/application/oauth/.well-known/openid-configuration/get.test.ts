@@ -1,6 +1,9 @@
 import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
-import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/index.js';
+import {
+  createTestClient,
+  MINIMAL_TEST_CONFIG,
+} from '@backend/test-utils/index.js';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -19,11 +22,13 @@ afterAll(async () => {
 });
 
 describe('GET /application/oauth/.well-known/openid-configuration', () => {
-  const url = '/application/oauth/.well-known/openid-configuration';
-
   describe('Required Fields', () => {
     test('should return valid OpenID Configuration', async () => {
-      const res = await app.request(url);
+      const client = createTestClient(app);
+      const res =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
       expect(res.status).toBe(200);
       const json = await res.json();
@@ -39,7 +44,11 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should have RS256 as signing algorithm', async () => {
-      const res = await app.request(url);
+      const client = createTestClient(app);
+      const res =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
       expect(res.status).toBe(200);
       const json = await res.json();
@@ -48,7 +57,11 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should have correct JWKS URI', async () => {
-      const res = await app.request(url);
+      const client = createTestClient(app);
+      const res =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
       expect(res.status).toBe(200);
       const json = await res.json();
@@ -59,7 +72,11 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
 
   describe('Recommended Fields', () => {
     test('should include userinfo endpoint', async () => {
-      const res = await app.request(url);
+      const client = createTestClient(app);
+      const res =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
       expect(res.status).toBe(200);
       const json = await res.json();
@@ -69,7 +86,11 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should include supported scopes', async () => {
-      const res = await app.request(url);
+      const client = createTestClient(app);
+      const res =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
       expect(res.status).toBe(200);
       const json = await res.json();
@@ -80,7 +101,11 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should include supported claims', async () => {
-      const res = await app.request(url);
+      const client = createTestClient(app);
+      const res =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
       expect(res.status).toBe(200);
       const json = await res.json();
@@ -92,7 +117,11 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should support authorization_code grant type', async () => {
-      const res = await app.request(url);
+      const client = createTestClient(app);
+      const res =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
       expect(res.status).toBe(200);
       const json = await res.json();
@@ -102,7 +131,11 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should support PKCE code challenge methods', async () => {
-      const res = await app.request(url);
+      const client = createTestClient(app);
+      const res =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
       expect(res.status).toBe(200);
       const json = await res.json();
@@ -112,7 +145,11 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should support client authentication methods', async () => {
-      const res = await app.request(url);
+      const client = createTestClient(app);
+      const res =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
       expect(res.status).toBe(200);
       const json = await res.json();
@@ -128,7 +165,11 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
 
   describe('Optional Fields', () => {
     test('should include introspection endpoint', async () => {
-      const res = await app.request(url);
+      const client = createTestClient(app);
+      const res =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
       expect(res.status).toBe(200);
       const json = await res.json();
@@ -140,7 +181,11 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
 
   describe('Response Headers', () => {
     test('should have Cache-Control header', async () => {
-      const res = await app.request(url);
+      const client = createTestClient(app);
+      const res =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
       expect(res.status).toBe(200);
       expect(res.headers.get('cache-control')).toBeDefined();
@@ -150,7 +195,11 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
 
   describe('Endpoint URL Validation', () => {
     test('should have valid endpoint URLs that can be fetched', async () => {
-      const configRes = await app.request(url);
+      const client = createTestClient(app);
+      const configRes =
+        await client.application.oauth['.well-known'][
+          'openid-configuration'
+        ].$get();
 
       expect(configRes.status).toBe(200);
       const config = await configRes.json();

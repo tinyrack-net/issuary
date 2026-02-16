@@ -1,6 +1,9 @@
 import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
-import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/index.js';
+import {
+  createTestClient,
+  MINIMAL_TEST_CONFIG,
+} from '@backend/test-utils/index.js';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -22,9 +25,8 @@ afterAll(async () => {
 
 describe('GET /api/v1/health', () => {
   test('should return 200 with full health status when healthy', async () => {
-    const res = await app.request('/api/v1/health', {
-      method: 'GET',
-    });
+    const client = createTestClient(app);
+    const res = await client.api.v1.health.$get();
 
     expect(res.status).toBe(200);
 
@@ -37,9 +39,8 @@ describe('GET /api/v1/health', () => {
   });
 
   test('should return version as string', async () => {
-    const res = await app.request('/api/v1/health', {
-      method: 'GET',
-    });
+    const client = createTestClient(app);
+    const res = await client.api.v1.health.$get();
 
     expect(res.status).toBe(200);
 
@@ -49,9 +50,8 @@ describe('GET /api/v1/health', () => {
   });
 
   test('should return uptime as number', async () => {
-    const res = await app.request('/api/v1/health', {
-      method: 'GET',
-    });
+    const client = createTestClient(app);
+    const res = await client.api.v1.health.$get();
 
     expect(res.status).toBe(200);
 
@@ -61,9 +61,8 @@ describe('GET /api/v1/health', () => {
   });
 
   test('should have consistent response structure', async () => {
-    const res = await app.request('/api/v1/health', {
-      method: 'GET',
-    });
+    const client = createTestClient(app);
+    const res = await client.api.v1.health.$get();
 
     expect(res.status).toBe(200);
 

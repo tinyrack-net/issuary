@@ -2,6 +2,7 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  createTestClient,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   registerUser,
@@ -46,12 +47,12 @@ describe('POST /api/v1/auth/password/forgot', () => {
     });
 
     // 2. Request password reset
-    const res = await app.request('/api/v1/auth/password/forgot', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const res = await client.api.v1.auth.password.forgot.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: uniqueEmail,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(res.status).toBe(200);
@@ -75,12 +76,12 @@ describe('POST /api/v1/auth/password/forgot', () => {
   });
 
   test('should return success for non-existent email (prevent enumeration)', async () => {
-    const res = await app.request('/api/v1/auth/password/forgot', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const res = await client.api.v1.auth.password.forgot.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: 'nonexistent-user@example.com',
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     // Should still return 200 to prevent email enumeration
@@ -91,12 +92,12 @@ describe('POST /api/v1/auth/password/forgot', () => {
 
   test('should fail for config user (config-managed)', async () => {
     // Use the config user email from config.test.yaml
-    const res = await app.request('/api/v1/auth/password/forgot', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const res = await client.api.v1.auth.password.forgot.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: 'test-config-user@example.com',
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(res.status).toBe(200);
@@ -113,12 +114,12 @@ describe('POST /api/v1/auth/password/forgot', () => {
     });
 
     // 2. Request first password reset
-    await app.request('/api/v1/auth/password/forgot', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    await client.api.v1.auth.password.forgot.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: uniqueEmail,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     // 3. Get first token
@@ -134,12 +135,11 @@ describe('POST /api/v1/auth/password/forgot', () => {
     });
 
     // 4. Request second password reset
-    await app.request('/api/v1/auth/password/forgot', {
-      method: 'POST',
-      body: JSON.stringify({
+    await client.api.v1.auth.password.forgot.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: uniqueEmail,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     // 5. Check that first token is now expired

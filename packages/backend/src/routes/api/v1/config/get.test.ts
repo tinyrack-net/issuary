@@ -1,6 +1,9 @@
 import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
-import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/index.js';
+import {
+  createTestClient,
+  MINIMAL_TEST_CONFIG,
+} from '@backend/test-utils/index.js';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -33,9 +36,8 @@ afterAll(async () => {
 
 describe('GET /api/v1/config', () => {
   test('should return app configuration', async () => {
-    const res = await app.request('/api/v1/config', {
-      method: 'GET',
-    });
+    const client = createTestClient(app);
+    const res = await client.api.v1.config.$get();
 
     expect(res.status).toBe(200);
 
@@ -62,9 +64,8 @@ describe('GET /api/v1/config', () => {
   });
 
   test('should include password authentication method in auth', async () => {
-    const res = await app.request('/api/v1/config', {
-      method: 'GET',
-    });
+    const client = createTestClient(app);
+    const res = await client.api.v1.config.$get();
 
     expect(res.status).toBe(200);
 
@@ -86,9 +87,8 @@ describe('GET /api/v1/config', () => {
   });
 
   test('should include passkey authentication method in auth', async () => {
-    const res = await app.request('/api/v1/config', {
-      method: 'GET',
-    });
+    const client = createTestClient(app);
+    const res = await client.api.v1.config.$get();
 
     expect(res.status).toBe(200);
 
@@ -101,9 +101,8 @@ describe('GET /api/v1/config', () => {
   });
 
   test('should include identity providers', async () => {
-    const res = await app.request('/api/v1/config', {
-      method: 'GET',
-    });
+    const client = createTestClient(app);
+    const res = await client.api.v1.config.$get();
 
     expect(res.status).toBe(200);
 
@@ -113,7 +112,8 @@ describe('GET /api/v1/config', () => {
     expect(Array.isArray(json.identity_providers)).toBe(true);
 
     // Find Google provider in the array (should be enabled in test config)
-    const googleProvider = json.identity_providers.find(
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const googleProvider: any = json.identity_providers.find(
       (m: { id: string }) => m.id === 'google',
     );
     if (googleProvider) {
@@ -125,10 +125,9 @@ describe('GET /api/v1/config', () => {
   });
 
   test('should not require authentication', async () => {
+    const client = createTestClient(app);
     // This endpoint should be publicly accessible
-    const res = await app.request('/api/v1/config', {
-      method: 'GET',
-    });
+    const res = await client.api.v1.config.$get();
 
     // Should not return 401
     expect(res.status).toBe(200);

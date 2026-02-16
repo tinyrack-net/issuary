@@ -18,11 +18,12 @@ import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  createTestClient,
+  createTestClientWithHeaders,
   enableTotpForUser,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
-  requestWithSession,
   TEST_USER,
   TEST_USER_CONFIG,
   withMikroContext,
@@ -108,14 +109,14 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     });
 
     // Login should return second_factor_setup_required
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
-    const body = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await loginRes.json();
     expect(body.user.second_factor_required).toBe(true);
     expect(body.user).not.toBeNull();
   });
@@ -131,14 +132,14 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     await enableTotpForUser(services, userId);
 
     // Login should return second_factor_required
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
-    const body = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await loginRes.json();
     // User has TOTP registered, so verification is required
     expect(body.user.totp_registered).toBe(true);
     expect(body.user).not.toBeNull();
@@ -158,14 +159,14 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
-    const loginBody = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const loginBody: any = await loginRes.json();
     expect(loginBody.user.second_factor_required).toBe(true);
 
     // Verify session cookie is issued
@@ -173,12 +174,10 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     expect(sessionCookie).toBeDefined();
 
     // Verify user session endpoint returns unauthenticated (only pending2FASetup session exists)
-    const sessionRes = await requestWithSession(
-      app,
-      '/api/v1/user/session',
-      { method: 'GET' },
-      sessionCookie,
-    );
+    const sessionClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const sessionRes = await sessionClient.api.v1.user.session.$get();
     expect(sessionRes.status).toBe(200);
     const sessionBody = await sessionRes.json();
     expect(sessionBody.user).toBeUndefined();
@@ -192,14 +191,14 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     const userId = await createUserInDb(services, email, password);
     await enableTotpForUser(services, userId);
 
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
-    const loginBody = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const loginBody: any = await loginRes.json();
     expect(loginBody.user.second_factor_required).toBe(true);
 
     // Verify session cookie is issued
@@ -207,12 +206,10 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     expect(sessionCookie).toBeDefined();
 
     // Verify user session endpoint returns unauthenticated (only pending2FAUser session exists)
-    const sessionRes = await requestWithSession(
-      app,
-      '/api/v1/user/session',
-      { method: 'GET' },
-      sessionCookie,
-    );
+    const sessionClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const sessionRes = await sessionClient.api.v1.user.session.$get();
     expect(sessionRes.status).toBe(200);
     const sessionBody = await sessionRes.json();
     expect(sessionBody.user).toBeUndefined();
@@ -220,17 +217,17 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
 
   test('should allow config user to login without TOTP (exempt from required)', async () => {
     // Config users are exempt from TOTP required check
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: {
         email: TEST_USER.email,
         password: TEST_USER.password,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(loginRes.status).toBe(200);
-    const body = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await loginRes.json();
     expect(body.user.managed_by).toBe('config');
     expect(body.user.second_factor_required).toBe(false);
   });
@@ -288,14 +285,14 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
     });
 
     // Login should succeed immediately
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
-    const body = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await loginRes.json();
     expect(body.user.email).toBe(email);
     expect(body.user.totp_registered).toBeFalsy();
     expect(body.user.second_factor_required).toBe(false);
@@ -310,14 +307,14 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
     await enableTotpForUser(services, userId);
 
     // Login should require TOTP verification
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
-    const body = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await loginRes.json();
     // User has TOTP registered, so verification is required
     expect(body.user.totp_registered).toBe(true);
     expect(body.user).not.toBeNull();
@@ -337,24 +334,22 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Verify user session endpoint returns actual user data
-    const sessionRes = await requestWithSession(
-      app,
-      '/api/v1/user/session',
-      { method: 'GET' },
-      sessionCookie,
-    );
+    const sessionClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const sessionRes = await sessionClient.api.v1.user.session.$get();
     expect(sessionRes.status).toBe(200);
-    const sessionBody = await sessionRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const sessionBody: any = await sessionRes.json();
     expect(sessionBody.user).not.toBeNull();
     expect(sessionBody.user.email).toBe(email);
   });
@@ -411,14 +406,14 @@ describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
-    const body = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await loginRes.json();
     expect(body.user.email).toBe(email);
     expect(body.user.second_factor_required).toBe(false);
   });
@@ -435,14 +430,14 @@ describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
 
     // Login should still require TOTP verification because user has TOTP enabled
     // Note: The login logic checks user.totp_registered regardless of config.totp.enabled
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
-    const body = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await loginRes.json();
     // User has TOTP registered, so verification is required
     expect(body.user.totp_registered).toBe(true);
     expect(body.user).not.toBeNull();
@@ -500,14 +495,14 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
-    const body = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await loginRes.json();
     // Email verification should be required first
     expect(body.user.email_verification_required).toBe(true);
     expect(body.user).not.toBeNull();
@@ -527,14 +522,14 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
-    const body = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await loginRes.json();
     // TOTP setup should be required (email is already verified)
     expect(body.user.second_factor_required).toBe(true);
     expect(body.user).not.toBeNull();
@@ -550,14 +545,14 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
     // Enable TOTP for user
     await enableTotpForUser(services, userId);
 
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
-    const body = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await loginRes.json();
     // TOTP verification should be required
     expect(body.user.second_factor_required).toBe(true);
     expect(body.user).not.toBeNull();
@@ -615,33 +610,29 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
-    const loginResBody = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const loginResBody: any = await loginRes.json();
     expect(loginResBody).toHaveProperty('user');
     expect(loginResBody.user.second_factor_required).toBe(true);
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to access protected password change endpoint
-    const changePasswordRes = await requestWithSession(
-      app,
-      '/api/v1/user/password',
-      {
-        method: 'PUT',
-        body: JSON.stringify({
-          current_password: password,
-          new_password: 'newpassword123',
-        }),
-        headers: { 'Content-Type': 'application/json' },
+    const sessionClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const changePasswordRes = await sessionClient.api.v1.user.password.$put({
+      json: {
+        current_password: password,
+        new_password: 'newpassword123',
       },
-      sessionCookie,
-    );
+    });
 
     // Should be unauthorized since only pending2FASetup session exists
     expect(changePasswordRes.status).toBe(401);
@@ -655,33 +646,29 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const userId = await createUserInDb(services, email, password);
     await enableTotpForUser(services, userId);
 
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
-    const loginResBody = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const loginResBody: any = await loginRes.json();
     expect(loginResBody).toHaveProperty('user');
     expect(loginResBody.user.second_factor_required).toBe(true);
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to access protected password change endpoint
-    const changePasswordRes = await requestWithSession(
-      app,
-      '/api/v1/user/password',
-      {
-        method: 'PUT',
-        body: JSON.stringify({
-          current_password: password,
-          new_password: 'newpassword123',
-        }),
-        headers: { 'Content-Type': 'application/json' },
+    const sessionClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const changePasswordRes = await sessionClient.api.v1.user.password.$put({
+      json: {
+        current_password: password,
+        new_password: 'newpassword123',
       },
-      sessionCookie,
-    );
+    });
 
     // Should be unauthorized since only pending2FAUser session exists
     expect(changePasswordRes.status).toBe(401);
@@ -689,13 +676,12 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
 
   test('should allow protected API access with full user session', async () => {
     // Use config user which is exempt from TOTP required
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: {
         email: TEST_USER.email,
         password: TEST_USER.password,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(loginRes.status).toBe(200);
@@ -705,15 +691,14 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Access user session endpoint should work
-    const sessionRes = await requestWithSession(
-      app,
-      '/api/v1/user/session',
-      { method: 'GET' },
-      sessionCookie,
-    );
+    const sessionClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const sessionRes = await sessionClient.api.v1.user.session.$get();
 
     expect(sessionRes.status).toBe(200);
-    const sessionBody = await sessionRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const sessionBody: any = await sessionRes.json();
     expect(sessionBody.user).not.toBeNull();
     expect(sessionBody.user.email).toBe(TEST_USER.email);
   });
@@ -733,63 +718,50 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     });
 
     // Step 1: Login - should require TOTP setup
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
-    const loginResBody = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const loginResBody: any = await loginRes.json();
     expect(loginResBody).toHaveProperty('user');
     expect(loginResBody.user.second_factor_required).toBe(true);
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Step 2: Setup TOTP
-    const setupRes = await requestWithSession(
-      app,
-      '/api/v1/user/totp/setup',
-      { method: 'POST' },
-      sessionCookie,
-    );
+    const sessionClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const setupRes = await sessionClient.api.v1.user.totp.setup.$post();
 
     expect(setupRes.status).toBe(200);
-    const setupBody = await setupRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const setupBody: any = await setupRes.json();
     const secret = setupBody.secret;
 
     // Step 3: Verify TOTP code
     const validCode = services.totpService.generateToken(secret);
-    const verifyRes = await requestWithSession(
-      app,
-      '/api/v1/user/totp/verify',
-      {
-        method: 'POST',
-        body: JSON.stringify({ code: validCode }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const verifyRes = await sessionClient.api.v1.user.totp.verify.$post({
+      json: { code: validCode },
+    });
 
     expect(verifyRes.status).toBe(200);
-    const verifyBody = await verifyRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const verifyBody: any = await verifyRes.json();
     expect(verifyBody).toHaveProperty('recovery_codes');
     expect(verifyBody.recovery_codes).toHaveLength(8);
 
     // Step 4: Confirm recovery codes saved
-    const confirmRes = await requestWithSession(
-      app,
-      '/api/v1/user/totp/confirm',
-      {
-        method: 'POST',
-        body: JSON.stringify({}),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const confirmRes = await sessionClient.api.v1.user.totp.confirm.$post({
+      json: {},
+    });
 
     expect(confirmRes.status).toBe(200);
-    const confirmBody = await confirmRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const confirmBody: any = await confirmRes.json();
     expect(confirmBody).toHaveProperty('user');
     expect(confirmBody.user.totp_registered).toBe(true);
 
@@ -797,15 +769,14 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const updatedSessionCookie = extractCookie(confirmRes, 'session');
 
     // Step 5: Now should be able to access protected endpoints
-    const finalSessionRes = await requestWithSession(
-      app,
-      '/api/v1/user/session',
-      { method: 'GET' },
-      updatedSessionCookie,
-    );
+    const updatedClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${updatedSessionCookie}`,
+    });
+    const finalSessionRes = await updatedClient.api.v1.user.session.$get();
 
     expect(finalSessionRes.status).toBe(200);
-    const finalBody = await finalSessionRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const finalBody: any = await finalSessionRes.json();
     expect(finalBody.user).not.toBeNull();
     expect(finalBody.user.email).toBe(email);
     expect(finalBody.user.totp_registered).toBe(true);
@@ -820,14 +791,14 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const secret = await enableTotpForUser(services, userId);
 
     // Step 1: Login - should require TOTP verification
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
-    const loginResBody = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const loginResBody: any = await loginRes.json();
     expect(loginResBody).toHaveProperty('user');
     expect(loginResBody.user.second_factor_required).toBe(true);
 
@@ -835,19 +806,16 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
 
     // Step 2: Verify TOTP code
     const validCode = services.totpService.generateToken(secret);
-    const verifyRes = await requestWithSession(
-      app,
-      '/api/v1/auth/totp/verify',
-      {
-        method: 'POST',
-        body: JSON.stringify({ code: validCode }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const authedClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const verifyRes = await authedClient.api.v1.auth.totp.verify.$post({
+      json: { code: validCode },
+    });
 
     expect(verifyRes.status).toBe(200);
-    const verifyBody = await verifyRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const verifyBody: any = await verifyRes.json();
     expect(verifyBody).toHaveProperty('user');
     expect(verifyBody.user.email).toBe(email);
 
@@ -855,15 +823,14 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const updatedSessionCookie = extractCookie(verifyRes, 'session');
 
     // Step 3: Now should be able to access protected endpoints
-    const finalSessionRes = await requestWithSession(
-      app,
-      '/api/v1/user/session',
-      { method: 'GET' },
-      updatedSessionCookie,
-    );
+    const updatedClient = createTestClientWithHeaders(app, {
+      Cookie: `session=${updatedSessionCookie}`,
+    });
+    const finalSessionRes = await updatedClient.api.v1.user.session.$get();
 
     expect(finalSessionRes.status).toBe(200);
-    const finalBody = await finalSessionRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const finalBody: any = await finalSessionRes.json();
     expect(finalBody.user).not.toBeNull();
     expect(finalBody.user.email).toBe(email);
     expect(finalBody.user.totp_registered).toBe(true);

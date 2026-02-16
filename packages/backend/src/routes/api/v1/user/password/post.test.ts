@@ -4,10 +4,11 @@ import type { ServiceContainer } from '@backend/services/container.js';
 import {
   createAuthenticatedSession,
   createDbUserWithSession,
+  createTestClient,
+  createTestClientWithHeaders,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
-  requestWithSession,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
@@ -35,16 +36,14 @@ afterAll(async () => {
 
 describe('POST /api/v1/user/password', () => {
   test('should return 401 when not authenticated', async () => {
-    const res = await app.request('/api/v1/user/password', {
-      method: 'POST',
-      body: JSON.stringify({
-        password: 'newPassword123!',
-      }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const res = await client.api.v1.user.password.$post({
+      json: { password: 'newPassword123!' },
     });
 
     expect(res.status).toBe(401);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
@@ -52,21 +51,16 @@ describe('POST /api/v1/user/password', () => {
     // Config users cannot modify their password
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/password',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          password: 'newPassword123!',
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.password.$post({
+      json: { password: 'newPassword123!' },
+    });
 
     expect(res.status).toBe(403);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('USER_NOT_EDITABLE');
   });
 
@@ -82,21 +76,16 @@ describe('POST /api/v1/user/password', () => {
     );
 
     // Try to set password again
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/password',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          password: 'anotherPassword123!',
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.password.$post({
+      json: { password: 'anotherPassword123!' },
+    });
 
     expect(res.status).toBe(409);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('PASSWORD_ALREADY_SET');
   });
 
@@ -118,13 +107,12 @@ describe('POST /api/v1/user/password', () => {
       await services.mikro.em.flush();
     });
 
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({
+    const loginClient = createTestClient(app);
+    const loginRes = await loginClient.api.v1.auth.login.$post({
+      json: {
         email,
         password: 'tempPassword123!',
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(loginRes.status).toBe(200);
@@ -142,31 +130,22 @@ describe('POST /api/v1/user/password', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Now set password for OAuth-only user
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/password',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          password: newPassword,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.password.$post({
+      json: { password: newPassword },
+    });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.ok).toBe(true);
 
     // Verify password was set by trying to login
-    const verifyLoginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({
-        email,
-        password: newPassword,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+    const verifyClient = createTestClient(app);
+    const verifyLoginRes = await verifyClient.api.v1.auth.login.$post({
+      json: { email, password: newPassword },
     });
 
     expect(verifyLoginRes.status).toBe(200);
@@ -188,13 +167,12 @@ describe('POST /api/v1/user/password', () => {
       await services.mikro.em.flush();
     });
 
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({
+    const loginClient = createTestClient(app);
+    const loginRes = await loginClient.api.v1.auth.login.$post({
+      json: {
         email,
         password: 'tempPassword123!',
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     // Remove password after login
@@ -210,18 +188,13 @@ describe('POST /api/v1/user/password', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to set a password that's too short
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/password',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          password: 'short',
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.password.$post({
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+      json: { password: 'short' } as any,
+    });
 
     expect(res.status).toBe(400);
   });

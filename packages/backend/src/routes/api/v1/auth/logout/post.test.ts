@@ -1,6 +1,8 @@
 import type { AppType } from '@backend/lib/app.js';
 import { createServer } from '@backend/server.js';
 import {
+  createTestClient,
+  createTestClientWithHeaders,
   MINIMAL_TEST_CONFIG,
   TEST_USER,
   TEST_USER_CONFIG,
@@ -28,13 +30,12 @@ afterAll(async () => {
 describe('POST /api/v1/auth/logout', () => {
   test('should logout successfully with valid session', async () => {
     // First, login to create a session
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: {
         email: TEST_USER.email,
         password: TEST_USER.password,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(loginRes.status).toBe(200);
@@ -47,12 +48,10 @@ describe('POST /api/v1/auth/logout', () => {
     const sessionCookie = setCookieHeader?.split(';')[0];
 
     // Logout with the session cookie
-    const logoutRes = await app.request('/api/v1/auth/logout', {
-      method: 'POST',
-      headers: {
-        Cookie: sessionCookie ?? '',
-      },
+    const authedClient = createTestClientWithHeaders(app, {
+      Cookie: sessionCookie ?? '',
     });
+    const logoutRes = await authedClient.api.v1.auth.logout.$post();
 
     expect(logoutRes.status).toBe(200);
     const body = await logoutRes.json();
@@ -62,9 +61,8 @@ describe('POST /api/v1/auth/logout', () => {
 
   test('should logout successfully even without valid session', async () => {
     // Logout without any session
-    const logoutRes = await app.request('/api/v1/auth/logout', {
-      method: 'POST',
-    });
+    const client = createTestClient(app);
+    const logoutRes = await client.api.v1.auth.logout.$post();
 
     expect(logoutRes.status).toBe(200);
     const body = await logoutRes.json();
@@ -74,12 +72,10 @@ describe('POST /api/v1/auth/logout', () => {
 
   test('should logout successfully with invalid session cookie', async () => {
     // Logout with invalid cookie
-    const logoutRes = await app.request('/api/v1/auth/logout', {
-      method: 'POST',
-      headers: {
-        Cookie: 'invalid-cookie=invalid-value',
-      },
+    const client = createTestClientWithHeaders(app, {
+      Cookie: 'invalid-cookie=invalid-value',
     });
+    const logoutRes = await client.api.v1.auth.logout.$post();
 
     expect(logoutRes.status).toBe(200);
     const body = await logoutRes.json();
@@ -89,13 +85,12 @@ describe('POST /api/v1/auth/logout', () => {
 
   test('should purge session after logout', async () => {
     // Login to create a session
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: {
         email: TEST_USER.email,
         password: TEST_USER.password,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(loginRes.status).toBe(200);
@@ -104,24 +99,17 @@ describe('POST /api/v1/auth/logout', () => {
     const sessionCookie = setCookieHeader?.split(';')[0];
 
     // Verify session exists
-    const sessionRes1 = await app.request('/api/v1/user/session', {
-      method: 'GET',
-      headers: {
-        Cookie: sessionCookie ?? '',
-      },
+    const authedClient = createTestClientWithHeaders(app, {
+      Cookie: sessionCookie ?? '',
     });
+    const sessionRes1 = await authedClient.api.v1.user.session.$get();
 
     expect(sessionRes1.status).toBe(200);
     const sessionBody1 = await sessionRes1.json();
     expect(sessionBody1.user).not.toBeNull();
 
     // Logout
-    const logoutRes = await app.request('/api/v1/auth/logout', {
-      method: 'POST',
-      headers: {
-        Cookie: sessionCookie ?? '',
-      },
-    });
+    const logoutRes = await authedClient.api.v1.auth.logout.$post();
 
     expect(logoutRes.status).toBe(200);
 
@@ -130,12 +118,10 @@ describe('POST /api/v1/auth/logout', () => {
     const logoutSessionCookie = logoutSetCookieHeader?.split(';')[0];
 
     // Verify session is purged after logout
-    const sessionRes2 = await app.request('/api/v1/user/session', {
-      method: 'GET',
-      headers: {
-        Cookie: logoutSessionCookie ?? '',
-      },
+    const logoutClient = createTestClientWithHeaders(app, {
+      Cookie: logoutSessionCookie ?? '',
     });
+    const sessionRes2 = await logoutClient.api.v1.user.session.$get();
 
     expect(sessionRes2.status).toBe(200);
     const sessionBody2 = await sessionRes2.json();
@@ -144,13 +130,12 @@ describe('POST /api/v1/auth/logout', () => {
 
   test('should handle multiple logout calls', async () => {
     // Login
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: {
         email: TEST_USER.email,
         password: TEST_USER.password,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(loginRes.status).toBe(200);
@@ -158,25 +143,19 @@ describe('POST /api/v1/auth/logout', () => {
     const setCookieHeader = loginRes.headers.get('set-cookie');
     const sessionCookie = setCookieHeader?.split(';')[0];
 
-    // First logout
-    const logoutRes1 = await app.request('/api/v1/auth/logout', {
-      method: 'POST',
-      headers: {
-        Cookie: sessionCookie ?? '',
-      },
+    const authedClient = createTestClientWithHeaders(app, {
+      Cookie: sessionCookie ?? '',
     });
+
+    // First logout
+    const logoutRes1 = await authedClient.api.v1.auth.logout.$post();
 
     expect(logoutRes1.status).toBe(200);
     const body1 = await logoutRes1.json();
     expect(body1.ok).toBe(true);
 
     // Second logout with same cookie (should still succeed)
-    const logoutRes2 = await app.request('/api/v1/auth/logout', {
-      method: 'POST',
-      headers: {
-        Cookie: sessionCookie ?? '',
-      },
-    });
+    const logoutRes2 = await authedClient.api.v1.auth.logout.$post();
 
     expect(logoutRes2.status).toBe(200);
     const body2 = await logoutRes2.json();

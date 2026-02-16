@@ -3,6 +3,7 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  createTestClient,
   expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -48,72 +49,76 @@ describe('POST /api/v1/auth/register', () => {
 
   test('should register successfully with valid credentials and consents', async () => {
     const uniqueEmail = generateUniqueEmail();
+    const client = createTestClient(app);
 
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const res = await client.api.v1.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: uniqueEmail,
         password: 'password123',
         consents: REQUIRED_CONSENTS,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body).toHaveProperty('user');
     expect(body.user.email_verification_required).toBe(true);
   });
 
   test('should fail registration without required terms consent', async () => {
     const uniqueEmail = generateUniqueEmail();
+    const client = createTestClient(app);
 
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const res = await client.api.v1.auth.register.$post({
+      json: {
         email: uniqueEmail,
         password: 'password123',
         // No consents provided
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    });
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+    } as any);
 
     expect(res.status).toBe(400);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('VALIDATION_ERROR');
   });
 
   test('should fail registration when required term is not agreed', async () => {
     const uniqueEmail = generateUniqueEmail();
+    const client = createTestClient(app);
 
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const res = await client.api.v1.auth.register.$post({
+      json: {
         email: uniqueEmail,
         password: 'password123',
         consents: [
           { termsId: 'tos', agreed: true },
-          { termsId: 'privacy', agreed: false }, // Not agreed
+          { termsId: 'privacy', agreed: false },
         ],
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    });
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+    } as any);
 
     expect(res.status).toBe(400);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('VALIDATION_ERROR');
     expect(body.data).toMatch(/privacy/i);
   });
 
   test('should fail with app config user email', async () => {
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: 'test-config-user@example.com',
         password: 'password123',
         consents: REQUIRED_CONSENTS,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     await expectError(res, e.EmailAlreadyExists);
@@ -121,41 +126,41 @@ describe('POST /api/v1/auth/register', () => {
 
   test('should fail with duplicate email', async () => {
     const uniqueEmail = generateUniqueEmail('duplicate');
+    const client = createTestClient(app);
 
     // First registration
-    await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    await client.api.v1.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: uniqueEmail,
         password: 'password123',
         consents: REQUIRED_CONSENTS,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     // Second registration with same email
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const res = await client.api.v1.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: uniqueEmail,
         password: 'password123',
         consents: REQUIRED_CONSENTS,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     await expectError(res, e.EmailAlreadyExists);
   });
 
   test('should fail with invalid email format', async () => {
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      json: {
         email: 'not-an-email',
         password: 'password123',
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    });
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+    } as any);
 
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -163,14 +168,15 @@ describe('POST /api/v1/auth/register', () => {
   });
 
   test('should fail with short password', async () => {
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      json: {
         email: 'test@example.com',
         password: '12345',
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    });
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+    } as any);
 
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -178,14 +184,15 @@ describe('POST /api/v1/auth/register', () => {
   });
 
   test('should fail with long password', async () => {
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      json: {
         email: 'test@example.com',
         password: 'a'.repeat(101),
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    });
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+    } as any);
 
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -193,13 +200,14 @@ describe('POST /api/v1/auth/register', () => {
   });
 
   test('should fail with missing email', async () => {
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      json: {
         password: 'password123',
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    });
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+    } as any);
 
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -207,13 +215,14 @@ describe('POST /api/v1/auth/register', () => {
   });
 
   test('should fail with missing password', async () => {
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      json: {
         email: 'test@example.com',
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    });
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+    } as any);
 
     expect(res.status).toBe(400);
     const body = await res.json();
@@ -222,14 +231,15 @@ describe('POST /api/v1/auth/register', () => {
 
   test('should NOT create session after registration (requires email verification)', async () => {
     const uniqueEmail = generateUniqueEmail('session');
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: uniqueEmail,
         password: 'password123',
         consents: REQUIRED_CONSENTS,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(res.status).toBe(200);
@@ -237,18 +247,20 @@ describe('POST /api/v1/auth/register', () => {
 
   test('should generate verification token after registration', async () => {
     const uniqueEmail = generateUniqueEmail('verify');
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: uniqueEmail,
         password: 'password123',
         consents: REQUIRED_CONSENTS,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body).toHaveProperty('user');
     expect(body.user.email_verification_required).toBe(true);
 
@@ -273,18 +285,20 @@ describe('POST /api/v1/auth/register', () => {
 
   test('should record terms consent in database after registration', async () => {
     const uniqueEmail = generateUniqueEmail('terms');
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: uniqueEmail,
         password: 'password123',
         consents: REQUIRED_CONSENTS,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
 
     // Check that terms consent was recorded
     await withMikroContext(services, async () => {
@@ -330,14 +344,15 @@ describe('POST /api/v1/auth/register (signup disabled)', () => {
   });
 
   test('should return 403 when signup is disabled (empty allowed_signup_emails)', async () => {
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: 'test@example.com',
         password: 'password123',
         consents: REQUIRED_CONSENTS,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     await expectError(res, e.RegistrationDisabled);
@@ -368,14 +383,15 @@ describe('POST /api/v1/auth/register (domain wildcard pattern)', () => {
   });
 
   test('should return 403 when email is not in allowed patterns', async () => {
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: 'user@notallowed.com',
         password: 'password123',
         consents: REQUIRED_CONSENTS,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     await expectError(res, e.RegistrationEmailNotAllowed);
@@ -383,14 +399,15 @@ describe('POST /api/v1/auth/register (domain wildcard pattern)', () => {
 
   test('should allow registration with domain wildcard pattern', async () => {
     const uniqueEmail = `user${Date.now()}@allowed.com`;
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: uniqueEmail,
         password: 'password123',
         consents: REQUIRED_CONSENTS,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(res.status).toBe(200);
@@ -424,14 +441,15 @@ describe('POST /api/v1/auth/register (exact email pattern)', () => {
   });
 
   test('should allow registration with exact email pattern', async () => {
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: exactEmail,
         password: 'password123',
         consents: REQUIRED_CONSENTS,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     expect(res.status).toBe(200);
@@ -440,14 +458,15 @@ describe('POST /api/v1/auth/register (exact email pattern)', () => {
   });
 
   test('should reject non-matching email with exact email pattern', async () => {
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: 'other@specific.com',
         password: 'password123',
         consents: REQUIRED_CONSENTS,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
 
     await expectError(res, e.RegistrationEmailNotAllowed);
@@ -479,40 +498,43 @@ describe('POST /api/v1/auth/register (multiple patterns)', () => {
 
   test('should allow registration with domain wildcard from multiple patterns', async () => {
     const email = `user${Date.now()}@company.com`;
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email,
         password: 'password123',
         consents: REQUIRED_CONSENTS,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
     expect(res.status).toBe(200);
   });
 
   test('should allow registration with exact match from multiple patterns', async () => {
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: 'special@other.com',
         password: 'password123',
         consents: REQUIRED_CONSENTS,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
     expect(res.status).toBe(200);
   });
 
   test('should reject email not matching any pattern', async () => {
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
         email: 'nobody@rejected.com',
         password: 'password123',
         consents: REQUIRED_CONSENTS,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+      },
     });
     await expectError(res, e.RegistrationEmailNotAllowed);
   });
@@ -562,16 +584,16 @@ describe('POST /api/v1/auth/register (implicit consent mode)', () => {
 
   test('should register without explicit consents in implicit mode', async () => {
     const uniqueEmail = generateUniqueEmail('implicit');
+    const client = createTestClient(app);
 
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const res = await client.api.v1.auth.register.$post({
+      json: {
         email: uniqueEmail,
         password: 'password123',
         // No consents provided - should work in implicit mode
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    });
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+    } as any);
 
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -580,18 +602,19 @@ describe('POST /api/v1/auth/register (implicit consent mode)', () => {
 
   test('should record implicit consent automatically', async () => {
     const uniqueEmail = generateUniqueEmail('implicit-record');
+    const client = createTestClient(app);
 
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const res = await client.api.v1.auth.register.$post({
+      json: {
         email: uniqueEmail,
         password: 'password123',
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    });
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+    } as any);
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
 
     // Check that implicit consent was recorded
     await withMikroContext(services, async () => {
@@ -634,16 +657,16 @@ describe('POST /api/v1/auth/register (no terms configured)', () => {
 
   test('should register without consents when no terms configured', async () => {
     const uniqueEmail = generateUniqueEmail('no-terms');
+    const client = createTestClient(app);
 
-    const res = await app.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
+    const res = await client.api.v1.auth.register.$post({
+      json: {
         email: uniqueEmail,
         password: 'password123',
         // No consents needed
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    });
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: test requires invalid input
+    } as any);
 
     expect(res.status).toBe(200);
     const body = await res.json();

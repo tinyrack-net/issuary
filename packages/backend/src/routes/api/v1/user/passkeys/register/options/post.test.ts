@@ -6,10 +6,11 @@ import {
   createAuthenticatedSession,
   createDbUserWithSession,
   createPasskeyForUser,
+  createTestClient,
+  createTestClientWithHeaders,
   expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
-  requestWithSession,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
@@ -42,12 +43,12 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
   });
 
   test('should return 401 when not authenticated', async () => {
-    const res = await app.request('/api/v1/user/passkeys/register/options', {
-      method: 'POST',
-    });
+    const client = createTestClient(app);
+    const res = await client.api.v1.user.passkeys.register.options.$post();
 
     expect(res.status).toBe(401);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
@@ -62,17 +63,14 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys/register/options',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.register.options.$post();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
 
     // Verify response structure matches WebAuthn spec
     expect(body.options).toBeDefined();
@@ -120,29 +118,21 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const res1 = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys/register/options',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
 
-    const res2 = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys/register/options',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const res1 = await client.api.v1.user.passkeys.register.options.$post();
+
+    const res2 = await client.api.v1.user.passkeys.register.options.$post();
 
     expect(res1.status).toBe(200);
     expect(res2.status).toBe(200);
 
-    const challenge1 = (await res1.json()).options.challenge;
-    const challenge2 = (await res2.json()).options.challenge;
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const challenge1 = ((await res1.json()) as any).options.challenge;
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const challenge2 = ((await res2.json()) as any).options.challenge;
 
     expect(challenge1).not.toBe(challenge2);
   });
@@ -162,17 +152,14 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     await createPasskeyForUser(services, userId, 'Existing Passkey 1');
     await createPasskeyForUser(services, userId, 'Existing Passkey 2');
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys/register/options',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.register.options.$post();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
 
     // Should have excludeCredentials with the existing passkeys
     expect(body.options.excludeCredentials).toBeDefined();
@@ -197,17 +184,14 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys/register/options',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.register.options.$post();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
 
     expect(body.options.excludeCredentials).toBeDefined();
     expect(body.options.excludeCredentials).toHaveLength(0);
@@ -224,17 +208,14 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys/register/options',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.register.options.$post();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
 
     const authSelection = body.options.authenticatorSelection;
     expect(authSelection.residentKey).toBe('preferred');
@@ -252,17 +233,14 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys/register/options',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.register.options.$post();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
 
     // The challenge should be stored in session for later verification
     // We can't directly test session, but we verify through the verify endpoint
@@ -273,14 +251,10 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
   test('should return 403 for config-managed users', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys/register/options',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.register.options.$post();
 
     // Config users cannot setup 2FA
     await expectError(res, e.SecondFactorNotAllowedForConfigUser);
@@ -297,17 +271,14 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys/register/options',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.register.options.$post();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
 
     // Timeout should be present (simplewebauthn sets a default)
     expect(body.options.timeout).toBeDefined();
@@ -325,17 +296,14 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys/register/options',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.register.options.$post();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
 
     const algorithms = body.options.pubKeyCredParams.map(
       (p: { alg: number }) => p.alg,
@@ -357,17 +325,14 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys/register/options',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.register.options.$post();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
 
     // rp.id should be the hostname from config (localhost in test)
     expect(body.options.rp.id).toBe('localhost');
@@ -384,32 +349,15 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
     // Send multiple concurrent requests
     const results = await Promise.all([
-      requestWithSession(
-        app,
-        '/api/v1/user/passkeys/register/options',
-        {
-          method: 'POST',
-        },
-        sessionCookie,
-      ),
-      requestWithSession(
-        app,
-        '/api/v1/user/passkeys/register/options',
-        {
-          method: 'POST',
-        },
-        sessionCookie,
-      ),
-      requestWithSession(
-        app,
-        '/api/v1/user/passkeys/register/options',
-        {
-          method: 'POST',
-        },
-        sessionCookie,
-      ),
+      client.api.v1.user.passkeys.register.options.$post(),
+      client.api.v1.user.passkeys.register.options.$post(),
+      client.api.v1.user.passkeys.register.options.$post(),
     ]);
 
     // All should succeed
@@ -448,14 +396,10 @@ describe('POST /api/v1/user/passkeys/register/options - Passkey disabled', () =>
   test('should return 404 when passkey is disabled in config (route not registered)', async () => {
     const sessionCookie = await createAuthenticatedSession(appDisabled);
 
-    const res = await requestWithSession(
-      appDisabled,
-      '/api/v1/user/passkeys/register/options',
-      {
-        method: 'POST',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(appDisabled, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.register.options.$post();
 
     // When passkey is disabled, the route returns 400
     expect(res.status).toBe(400);

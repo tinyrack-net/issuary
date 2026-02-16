@@ -3,10 +3,11 @@ import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
   createAuthenticatedSession,
+  createTestClient,
+  createTestClientWithHeaders,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
-  requestWithSession,
   TEST_USER,
   TEST_USER_CONFIG,
   withMikroContext,
@@ -46,9 +47,8 @@ afterAll(async () => {
 
 describe('GET /api/v1/user/oauth-accounts', () => {
   test('should return 401 if not authenticated', async () => {
-    const res = await app.request('/api/v1/user/oauth-accounts', {
-      method: 'GET',
-    });
+    const client = createTestClient(app);
+    const res = await client.api.v1.user['oauth-accounts'].$get();
 
     expect(res.status).toBe(401);
   });
@@ -60,18 +60,15 @@ describe('GET /api/v1/user/oauth-accounts', () => {
       TEST_USER.password,
     );
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/oauth-accounts',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user['oauth-accounts'].$get();
 
     expect(res.status).toBe(200);
 
-    const json = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const json: any = await res.json();
 
     expect(json.accounts).toBeDefined();
     expect(json.accounts).toBeInstanceOf(Array);
@@ -88,18 +85,15 @@ describe('GET /api/v1/user/oauth-accounts', () => {
       TEST_USER.password,
     );
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/oauth-accounts',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user['oauth-accounts'].$get();
 
     expect(res.status).toBe(200);
 
-    const json = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const json: any = await res.json();
 
     // Check available_providers structure
     if (json.available_providers.length > 0) {
@@ -136,28 +130,24 @@ describe('GET /api/v1/user/oauth-accounts', () => {
       });
 
       // Login to get session
-      const loginRes = await app.request('/api/v1/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-        headers: { 'Content-Type': 'application/json' },
+      const loginClient = createTestClient(app);
+      const loginRes = await loginClient.api.v1.auth.login.$post({
+        json: { email, password },
       });
       expect(loginRes.status).toBe(200);
 
       return extractCookie(loginRes, 'session');
     });
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/oauth-accounts',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user['oauth-accounts'].$get();
 
     expect(res.status).toBe(200);
 
-    const json = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const json: any = await res.json();
 
     // Should have one linked account
     expect(json.accounts.length).toBe(1);

@@ -3,10 +3,11 @@ import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
   createAuthenticatedSession,
+  createTestClient,
+  createTestClientWithHeaders,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
-  requestWithSession,
   TEST_USER,
   TEST_USER_CONFIG,
   withMikroContext,
@@ -46,8 +47,10 @@ afterAll(async () => {
 
 describe('DELETE /api/v1/oauth/:provider', () => {
   test('should return 401 if not authenticated', async () => {
-    const res = await app.request('/api/v1/oauth/google', {
-      method: 'DELETE',
+    const client = createTestClient(app);
+
+    const res = await client.api.v1.oauth[':provider'].$delete({
+      param: { provider: 'google' },
     });
 
     expect(res.status).toBe(401);
@@ -68,10 +71,9 @@ describe('DELETE /api/v1/oauth/:provider', () => {
       await services.mikro.em.persist(user).flush();
 
       // Login to get session
-      const loginRes = await app.request('/api/v1/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-        headers: { 'Content-Type': 'application/json' },
+      const loginClient = createTestClient(app);
+      const loginRes = await loginClient.api.v1.auth.login.$post({
+        json: { email, password },
       });
       expect(loginRes.status).toBe(200);
 
@@ -79,17 +81,17 @@ describe('DELETE /api/v1/oauth/:provider', () => {
       return cookie;
     });
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/oauth/nonexistent',
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
+    const res = await client.api.v1.oauth[':provider'].$delete({
+      param: { provider: 'nonexistent' },
+    });
 
     expect(res.status).toBe(404);
-    const json = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const json: any = await res.json();
     expect(json.code).toBe('OAUTH_PROVIDER_NOT_FOUND');
   });
 
@@ -106,27 +108,26 @@ describe('DELETE /api/v1/oauth/:provider', () => {
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
 
-      const loginRes = await app.request('/api/v1/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-        headers: { 'Content-Type': 'application/json' },
+      const loginClient = createTestClient(app);
+      const loginRes = await loginClient.api.v1.auth.login.$post({
+        json: { email, password },
       });
       expect(loginRes.status).toBe(200);
 
       return extractCookie(loginRes, 'session');
     });
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/oauth/google',
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
+    const res = await client.api.v1.oauth[':provider'].$delete({
+      param: { provider: 'google' },
+    });
 
     expect(res.status).toBe(404);
-    const json = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const json: any = await res.json();
     expect(json.code).toBe('OAUTH_ACCOUNT_NOT_LINKED');
   });
 
@@ -212,32 +213,33 @@ describe('DELETE /api/v1/oauth/:provider', () => {
       });
 
       // Login to get session
-      const loginRes = await app.request('/api/v1/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-        headers: { 'Content-Type': 'application/json' },
+      const loginClient = createTestClient(app);
+      const loginRes = await loginClient.api.v1.auth.login.$post({
+        json: { email, password },
       });
       expect(loginRes.status).toBe(200);
 
       return extractCookie(loginRes, 'session');
     });
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/oauth/google',
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
+    const res = await client.api.v1.oauth[':provider'].$delete({
+      param: { provider: 'google' },
+    });
 
     expect(res.status).toBe(200);
-    const json = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const json: any = await res.json();
     expect(json.ok).toBe(true);
 
     // Verify OAuth account is unlinked
     await withMikroContext(services, async () => {
-      const user = await services.mikro.user.findOneOrFail({ email });
+      const user = await services.mikro.user.findOneOrFail({
+        email,
+      });
       const oauthCount = await services.mikro.userOAuth.countByUser(user.id);
       expect(oauthCount).toBe(0);
     });
@@ -251,18 +253,18 @@ describe('DELETE /api/v1/oauth/:provider', () => {
       TEST_USER.password,
     );
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/oauth/google',
-      {
-        method: 'DELETE',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+
+    const res = await client.api.v1.oauth[':provider'].$delete({
+      param: { provider: 'google' },
+    });
 
     // Config user cannot have OAuth linked accounts, so return OAuthAccountNotLinked
     expect(res.status).toBe(404);
-    const json = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const json: any = await res.json();
     expect(json.code).toBe('OAUTH_ACCOUNT_NOT_LINKED');
   });
 });

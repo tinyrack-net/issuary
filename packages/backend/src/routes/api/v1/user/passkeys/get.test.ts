@@ -4,10 +4,11 @@ import type { ServiceContainer } from '@backend/services/container.js';
 import {
   createAuthenticatedSession,
   createPasskeyForUser,
+  createTestClient,
+  createTestClientWithHeaders,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
-  requestWithSession,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
@@ -46,7 +47,10 @@ describe('GET /api/v1/user/passkeys', () => {
   async function createDbUserWithSession(
     email: string,
     password: string,
-  ): Promise<{ sessionCookie: string; userId: string }> {
+  ): Promise<{
+    sessionCookie: string;
+    userId: string;
+  }> {
     await withMikroContext(services, async () => {
       const user = services.mikro.user.create({
         email,
@@ -56,28 +60,28 @@ describe('GET /api/v1/user/passkeys', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const loginRes = await app.request('/api/v1/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: { 'Content-Type': 'application/json' },
+    const client = createTestClient(app);
+    const loginRes = await client.api.v1.auth.login.$post({
+      json: { email, password },
     });
 
     expect(loginRes.status).toBe(200);
 
     const sessionCookie = extractCookie(loginRes, 'session');
-    const body = await loginRes.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await loginRes.json();
     const userId = body.user.id;
 
     return { sessionCookie, userId };
   }
 
   test('should return 401 when not authenticated', async () => {
-    const res = await app.request('/api/v1/user/passkeys', {
-      method: 'GET',
-    });
+    const client = createTestClient(app);
+    const res = await client.api.v1.user.passkeys.$get();
 
     expect(res.status).toBe(401);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.code).toBe('UNAUTHORIZED');
   });
 
@@ -87,17 +91,14 @@ describe('GET /api/v1/user/passkeys', () => {
 
     const { sessionCookie } = await createDbUserWithSession(email, password);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.$get();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.passkeys).toEqual([]);
   });
 
@@ -113,17 +114,14 @@ describe('GET /api/v1/user/passkeys', () => {
     // Create a passkey
     await createPasskeyForUser(services, userId, 'My MacBook');
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.$get();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.passkeys).toHaveLength(1);
     expect(body.passkeys[0].name).toBe('My MacBook');
     expect(body.passkeys[0].device_type).toBe('multiDevice');
@@ -147,17 +145,14 @@ describe('GET /api/v1/user/passkeys', () => {
     await createPasskeyForUser(services, userId, 'iPhone');
     await createPasskeyForUser(services, userId, null);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.$get();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.passkeys).toHaveLength(3);
 
     // Verify passkey names (order may vary due to DESC order by created_at)
@@ -178,17 +173,14 @@ describe('GET /api/v1/user/passkeys', () => {
 
     await createPasskeyForUser(services, userId, 'Test Device');
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.$get();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.passkeys).toHaveLength(1);
 
     // Should NOT expose sensitive fields
@@ -214,17 +206,14 @@ describe('GET /api/v1/user/passkeys', () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
     await createPasskeyForUser(services, userId, 'Third Device');
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.$get();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.passkeys).toHaveLength(3);
 
     // Most recent should be first (DESC order)
@@ -236,17 +225,14 @@ describe('GET /api/v1/user/passkeys', () => {
   test('should work for config-managed users', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.$get();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(Array.isArray(body.passkeys)).toBe(true);
   });
 
@@ -264,17 +250,14 @@ describe('GET /api/v1/user/passkeys', () => {
     await createPasskeyForUser(services, userId2, 'User2 Device');
 
     // User 1 should only see their passkey
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys',
-      {
-        method: 'GET',
-      },
-      session1,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${session1}`,
+    });
+    const res = await client.api.v1.user.passkeys.$get();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.passkeys).toHaveLength(1);
     expect(body.passkeys[0].name).toBe('User1 Device');
   });
@@ -313,17 +296,14 @@ describe('GET /api/v1/user/passkeys', () => {
       await services.mikro.em.persist([passkey1, passkey2]).flush();
     });
 
-    const res = await requestWithSession(
-      app,
-      '/api/v1/user/passkeys',
-      {
-        method: 'GET',
-      },
-      sessionCookie,
-    );
+    const client = createTestClientWithHeaders(app, {
+      Cookie: `session=${sessionCookie}`,
+    });
+    const res = await client.api.v1.user.passkeys.$get();
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    // biome-ignore lint/suspicious/noExplicitAny: test assertion uses dynamic property access
+    const body: any = await res.json();
     expect(body.passkeys).toHaveLength(2);
 
     const deviceTypes = body.passkeys.map(
