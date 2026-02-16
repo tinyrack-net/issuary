@@ -111,21 +111,17 @@ app:
   # Variables are replaced at runtime when the HTML file is first requested
   # and cached for subsequent requests.
   #
-  # Use cases:
-  #   - Inject analytics tracking IDs
-  #   - Set dynamic page titles or metadata
-  #   - Pass runtime configuration to the frontend
+  # Built-in variables (with defaults):
+  #   TITLE       - Page title (default: "Tinyauth")
+  #   DESCRIPTION - Meta description for SEO (default: empty)
+  #   FAVICON_URL - Favicon URL (default: "/vite.svg")
   #
-  # Example HTML usage:
-  #   <title>{{APP_TITLE}}</title>
-  #   <script>
-  #     window.__CONFIG__ = { analyticsId: "{{ANALYTICS_ID}}" };
-  #   </script>
+  # You can also define custom variables and use {{KEY}} in HTML.
   #
   # html_variables:
-  #   APP_TITLE: My Auth Service
-  #   ANALYTICS_ID: ${ANALYTICS_ID:-}
-  #   CDN_URL: https://cdn.example.com
+  #   TITLE: My Auth Service
+  #   DESCRIPTION: Authentication portal for My Company
+  #   FAVICON_URL: /custom-favicon.ico
 
   # --------------------------------------------------------------------------
   # Internationalization (i18n) Settings

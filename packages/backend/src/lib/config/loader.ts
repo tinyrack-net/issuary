@@ -45,6 +45,11 @@ const DEFAULT_CONFIG = {
     theme_mode: '${THEME_MODE:-system}',
     trust_proxy: '${TRUST_PROXY:-false}',
     account_deletion: '${ACCOUNT_DELETION:-false}',
+    html_variables: {
+      TITLE: '${HTML_TITLE:-Tinyauth}',
+      DESCRIPTION: '${HTML_DESCRIPTION:-OIDC for everyone}',
+      FAVICON_URL: '${HTML_FAVICON_URL:-/vite.svg}',
+    },
   },
   database: {
     type: '${DB_TYPE:-sqlite}',
