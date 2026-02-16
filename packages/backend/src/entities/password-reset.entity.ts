@@ -1,94 +1,44 @@
 import { PasswordResetRepository } from '@backend/repositories/password-reset.repository.js';
-import {
-  EntityRepositoryType,
-  type Opt,
-  type Ref,
-  ref,
-  t,
-} from '@mikro-orm/core';
-import {
-  Entity,
-  Index,
-  ManyToOne,
-  PrimaryKey,
-  Property,
-} from '@mikro-orm/decorators/legacy';
-import { BaseEntity } from './base.entity.js';
+import { defineEntity, type InferEntity } from '@mikro-orm/core';
+import { BaseSchema } from './base.entity.js';
 import { UserEntity } from './user.entity.js';
 
-@Entity({
+export const PasswordResetEntitySchema = defineEntity({
+  name: 'PasswordResetEntity',
   tableName: 'password_reset',
   comment: 'Password reset tokens for user password recovery',
+  extends: BaseSchema,
   repository: () => PasswordResetRepository,
-})
-export class PasswordResetEntity extends BaseEntity {
-  [EntityRepositoryType]?: PasswordResetRepository;
+  properties: (p) => ({
+    id: p
+      .uuid()
+      .primary()
+      .comment('Primary key as UUID')
+      .onCreate(() => crypto.randomUUID()),
+    user: () =>
+      p
+        .manyToOne(UserEntity)
+        .ref()
+        .comment('Reference to the user')
+        .index('password_reset_user_id_idx'),
+    token: p.string().comment('Unique password reset token'),
+    expiresAt: p.datetime().comment('Token expiration timestamp'),
+    used: p.boolean().comment('Whether the token has been used').default(false),
+    usedAt: p
+      .datetime()
+      .comment('Timestamp when the token was used')
+      .nullable()
+      .default(null),
+  }),
+  indexes: [
+    {
+      name: 'password_reset_token_idx',
+      properties: ['token'],
+      options: { unique: true },
+    },
+  ],
+});
 
-  @PrimaryKey({
-    type: t.uuid,
-    name: 'id',
-    comment: 'Primary key as UUID',
-    nullable: false,
-  })
-  public id: string = crypto.randomUUID();
-
-  @ManyToOne({
-    entity: () => UserEntity,
-    name: 'user_id',
-    comment: 'Reference to the user',
-    nullable: false,
-    ref: true,
-    index: 'password_reset_user_id_idx',
-  })
-  public user: Ref<UserEntity>;
-
-  @Index({
-    name: 'password_reset_token_idx',
-    properties: ['token'],
-    options: { unique: true },
-  })
-  @Property({
-    type: t.string,
-    name: 'token',
-    comment: 'Unique password reset token',
-    nullable: false,
-  })
-  public token: string;
-
-  @Property({
-    type: t.datetime,
-    name: 'expires_at',
-    comment: 'Token expiration timestamp',
-    nullable: false,
-  })
-  public expiresAt: Date;
-
-  @Property({
-    type: t.boolean,
-    name: 'used',
-    comment: 'Whether the token has been used',
-    nullable: false,
-    default: false,
-  })
-  public used: Opt<boolean> = false;
-
-  @Property({
-    type: t.datetime,
-    name: 'used_at',
-    comment: 'Timestamp when the token was used',
-    nullable: true,
-    default: null,
-  })
-  public usedAt?: Date | null = null;
-
-  public constructor(params: {
-    userId: string;
-    token: string;
-    expiresAt: Date;
-  }) {
-    super();
-    this.user = ref(UserEntity, params.userId);
-    this.token = params.token;
-    this.expiresAt = params.expiresAt;
-  }
-}
+export type IPasswordResetEntity = InferEntity<
+  typeof PasswordResetEntitySchema
+>;

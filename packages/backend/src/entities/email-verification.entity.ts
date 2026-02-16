@@ -1,94 +1,47 @@
 import { EmailVerificationRepository } from '@backend/repositories/email-verification.repository.js';
-import {
-  EntityRepositoryType,
-  type Opt,
-  type Ref,
-  ref,
-  t,
-} from '@mikro-orm/core';
-import {
-  Entity,
-  Index,
-  ManyToOne,
-  PrimaryKey,
-  Property,
-} from '@mikro-orm/decorators/legacy';
-import { BaseEntity } from './base.entity.js';
+import { defineEntity, type InferEntity } from '@mikro-orm/core';
+import { BaseSchema } from './base.entity.js';
 import { UserEntity } from './user.entity.js';
 
-@Entity({
+export const EmailVerificationEntitySchema = defineEntity({
+  name: 'EmailVerificationEntity',
   tableName: 'email_verification',
   comment: 'Email verification tokens for user registration',
+  extends: BaseSchema,
   repository: () => EmailVerificationRepository,
-})
-export class EmailVerificationEntity extends BaseEntity {
-  [EntityRepositoryType]?: EmailVerificationRepository;
+  properties: (p) => ({
+    id: p
+      .uuid()
+      .primary()
+      .comment('Primary key as UUID')
+      .onCreate(() => crypto.randomUUID()),
+    user: () =>
+      p
+        .manyToOne(UserEntity)
+        .ref()
+        .comment('Reference to the user')
+        .index('email_verification_user_id_idx'),
+    token: p.string().comment('Unique verification token'),
+    expiresAt: p.datetime().comment('Token expiration timestamp'),
+    verified: p
+      .boolean()
+      .comment('Whether the token has been used')
+      .default(false),
+    verifiedAt: p
+      .datetime()
+      .comment('Timestamp when the email was verified')
+      .nullable()
+      .default(null),
+  }),
+  indexes: [
+    {
+      name: 'email_verification_token_idx',
+      properties: ['token'],
+      options: { unique: true },
+    },
+  ],
+});
 
-  @PrimaryKey({
-    type: t.uuid,
-    name: 'id',
-    comment: 'Primary key as UUID',
-    nullable: false,
-  })
-  public id: string = crypto.randomUUID();
-
-  @ManyToOne({
-    entity: () => UserEntity,
-    name: 'user_id',
-    comment: 'Reference to the user',
-    nullable: false,
-    ref: true,
-    index: 'email_verification_user_id_idx',
-  })
-  public user: Ref<UserEntity>;
-
-  @Index({
-    name: 'email_verification_token_idx',
-    properties: ['token'],
-    options: { unique: true },
-  })
-  @Property({
-    type: t.string,
-    name: 'token',
-    comment: 'Unique verification token',
-    nullable: false,
-  })
-  public token: string;
-
-  @Property({
-    type: t.datetime,
-    name: 'expires_at',
-    comment: 'Token expiration timestamp',
-    nullable: false,
-  })
-  public expiresAt: Date;
-
-  @Property({
-    type: t.boolean,
-    name: 'verified',
-    comment: 'Whether the token has been used',
-    nullable: false,
-    default: false,
-  })
-  public verified: Opt<boolean> = false;
-
-  @Property({
-    type: t.datetime,
-    name: 'verified_at',
-    comment: 'Timestamp when the email was verified',
-    nullable: true,
-    default: null,
-  })
-  public verifiedAt?: Date | null = null;
-
-  public constructor(params: {
-    userId: string;
-    token: string;
-    expiresAt: Date;
-  }) {
-    super();
-    this.user = ref(UserEntity, params.userId);
-    this.token = params.token;
-    this.expiresAt = params.expiresAt;
-  }
-}
+export type IEmailVerificationEntity = InferEntity<
+  typeof EmailVerificationEntitySchema
+>;
