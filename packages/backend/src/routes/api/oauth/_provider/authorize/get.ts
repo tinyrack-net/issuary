@@ -1,5 +1,6 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { Hono } from 'hono';
@@ -47,18 +48,21 @@ export const oauthProviderAuthorizeGet = new Hono<AppEnv>().get(
       return_url: f.returnUrl.optional(),
     }),
   ),
+  verifyAuth({ optional: true }),
   async (c) => {
     const params = c.req.valid('param');
     const query = c.req.valid('query');
     const { provider } = params;
     const { mode, return_url } = query;
-    const auth = c.get('auth');
     const session = c.get('session');
     const { oauthConnectService } = c.get('services');
 
     // Link mode requires authenticated user
     if (mode === 'link') {
-      await auth.verify();
+      const verifiedUser = c.get('verifiedUser');
+      if (!verifiedUser) {
+        throw new e.Unauthorized.Error();
+      }
     }
 
     // Generate authorization URL and session data

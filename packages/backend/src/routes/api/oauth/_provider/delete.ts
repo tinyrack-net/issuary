@@ -1,5 +1,6 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
@@ -55,13 +56,11 @@ export const oauthProviderDelete = new Hono<AppEnv>().delete(
       provider: f.providerName,
     }),
   ),
+  verifyAuth(),
   async (c) => {
     const params = c.req.valid('param');
-    const auth = c.get('auth');
+    const userSession = c.get('verifiedUser');
     const { oauthConnectService } = c.get('services');
-
-    // Check if user is logged in
-    const userSession = await auth.verify();
 
     const { provider } = params;
 

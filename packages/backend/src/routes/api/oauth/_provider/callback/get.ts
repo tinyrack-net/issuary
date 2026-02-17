@@ -1,6 +1,7 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { isEmailAllowed } from '@backend/lib/email-pattern.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyAuth } from '@backend/middleware/auth.js';
 import { ApiError, e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
@@ -84,12 +85,12 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
       error_description: z.string().optional(),
     }),
   ),
+  verifyAuth({ optional: true }),
   async (c) => {
     const params = c.req.valid('param');
     const query = c.req.valid('query');
     const { provider } = params;
     const { code, state, error, error_description } = query;
-    const auth = c.get('auth');
     const session = c.get('session');
     const { config, oauthConnectService, termsService } = c.get('services');
 
@@ -149,7 +150,10 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
     // Handle based on mode
     if (oauthSession.mode === 'link') {
       // Link mode: link OAuth account to existing user
-      const userSession = await auth.verify();
+      const userSession = c.get('verifiedUser');
+      if (!userSession) {
+        throw new e.Unauthorized.Error();
+      }
 
       await oauthConnectService.linkOAuthAccount(
         userSession.id,
