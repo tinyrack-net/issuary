@@ -4,6 +4,7 @@ import { JwtKeyEntity } from '@backend/entities/jwt-key.entity.js';
 import { OAuthClientEntitySchema } from '@backend/entities/oauth-client.entity.js';
 import { OAuthCodeEntitySchema } from '@backend/entities/oauth-code.entity.js';
 import { PasswordResetEntitySchema } from '@backend/entities/password-reset.entity.js';
+import { PendingOAuthRegistrationEntitySchema } from '@backend/entities/pending-oauth-registration.entity.js';
 import { RevokedTokenEntitySchema } from '@backend/entities/revoked-token.entity.js';
 import { TermsEntitySchema } from '@backend/entities/terms.entity.js';
 import { TermsContentEntitySchema } from '@backend/entities/terms-content.entity.js';
@@ -21,6 +22,7 @@ import type { JwtKeyRepository } from '@backend/repositories/jwt-key.repository.
 import type { OAuthClientRepository } from '@backend/repositories/oauth-client.repository.js';
 import type { OAuthCodeRepository } from '@backend/repositories/oauth-code.repository.js';
 import type { PasswordResetRepository } from '@backend/repositories/password-reset.repository.js';
+import type { PendingOAuthRegistrationRepository } from '@backend/repositories/pending-oauth-registration.repository.js';
 import type { RevokedTokenRepository } from '@backend/repositories/revoked-token.repository.js';
 import type { TermsRepository } from '@backend/repositories/terms.repository.js';
 import type { TermsContentRepository } from '@backend/repositories/terms-content.repository.js';
@@ -46,6 +48,7 @@ export class MikroService {
   public readonly oauthClient: OAuthClientRepository;
   public readonly emailVerification: EmailVerificationRepository;
   public readonly passwordReset: PasswordResetRepository;
+  public readonly pendingOAuthRegistration: PendingOAuthRegistrationRepository;
   public readonly jwtKey: JwtKeyRepository;
   public readonly revokedToken: RevokedTokenRepository;
   public readonly userConsent: UserConsentRepository;
@@ -67,6 +70,9 @@ export class MikroService {
       EmailVerificationEntitySchema,
     );
     this.passwordReset = orm.em.getRepository(PasswordResetEntitySchema);
+    this.pendingOAuthRegistration = orm.em.getRepository(
+      PendingOAuthRegistrationEntitySchema,
+    );
     this.jwtKey = orm.em.getRepository(JwtKeyEntity);
     this.revokedToken = orm.em.getRepository(RevokedTokenEntitySchema);
     this.userConsent = orm.em.getRepository(UserConsentEntity);
