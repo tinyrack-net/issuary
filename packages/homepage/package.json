@@ -12,9 +12,12 @@
   },
   "dependencies": {
     "@astrojs/starlight": "^0.37.6",
+    "@astrojs/starlight-tailwind": "^4.0.2",
     "@scalar/astro": "^0.1.16",
+    "@tailwindcss/vite": "catalog:",
     "astro": "^5.17.1",
-    "sharp": "^0.34.5"
+    "sharp": "^0.34.5",
+    "tailwindcss": "catalog:"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

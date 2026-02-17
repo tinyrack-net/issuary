@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   server: {
@@ -7,12 +8,15 @@ export default defineConfig({
     port: 8082,
     allowedHosts: ['desktop.server.lan'],
   },
+  vite: {
+    plugins: [tailwindcss()],
+  },
   integrations: [
     starlight({
       title: 'Tinyauth',
       description: 'OpenID Connect (OIDC) Provider Documentation',
       plugins: [],
-      // customCss: ['./src/styles/custom.css'],
+      customCss: ['./src/styles/global.css'],
       defaultLocale: 'root',
       locales: {
         root: {
