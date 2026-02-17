@@ -65,13 +65,13 @@ export const userDelete = new Hono<AppEnv>().delete(
   }),
   verifyAuth(),
   async (c) => {
-    const { config, mikro } = c.get('services');
-    const session = c.get('session');
+    const { config, mikro } = c.var.services;
+    const session = c.var.session;
 
     if (!config.app.account_deletion) {
       throw new e.AccountDeletionDisabled.Error();
     }
-    const userSession = c.get('verifiedUser');
+    const userSession = c.var.verifiedUser;
 
     if (userSession.managed_by === 'config') {
       throw new e.UserNotEditable.Error();

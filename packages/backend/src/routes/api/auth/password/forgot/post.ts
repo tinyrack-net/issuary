@@ -44,7 +44,7 @@ export const authPasswordForgotPost = new Hono<AppEnv>().post(
     }),
   ),
   async (c) => {
-    const services = c.get('services');
+    const services = c.var.services;
 
     // Only enable if email service is available
     if (!services.config.smtp) {

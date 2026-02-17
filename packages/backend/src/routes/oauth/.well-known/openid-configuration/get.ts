@@ -111,7 +111,7 @@ export const oidcConfigGet = new Hono<AppEnv>().get(
     },
   }),
   async (c) => {
-    const { config } = c.get('services');
+    const { config } = c.var.services;
     const baseUrl = config.app.host;
 
     const configuration = {

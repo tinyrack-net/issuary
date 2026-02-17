@@ -40,8 +40,8 @@ export const termsGet = new Hono<AppEnv>().get(
   async (c) => {
     const query = c.req.valid('query');
     const { lang } = query;
-    const session = c.get('session');
-    const { termsService } = c.get('services');
+    const session = c.var.session;
+    const { termsService } = c.var.services;
 
     const userId = session.get('user')?.id || null;
 

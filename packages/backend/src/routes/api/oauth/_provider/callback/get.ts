@@ -91,9 +91,8 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
     const query = c.req.valid('query');
     const { provider } = params;
     const { code, state, error, error_description } = query;
-    const session = c.get('session');
-    const { config, mikro, oauthConnectService, termsService } =
-      c.get('services');
+    const session = c.var.session;
+    const { config, mikro, oauthConnectService, termsService } = c.var.services;
 
     // Handle OAuth error response
     if (error) {
@@ -151,7 +150,7 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
     // Handle based on mode
     if (oauthSession.mode === 'link') {
       // Link mode: link OAuth account to existing user
-      const userSession = c.get('verifiedUser');
+      const userSession = c.var.verifiedUser;
       if (!userSession) {
         throw new e.Unauthorized.Error();
       }

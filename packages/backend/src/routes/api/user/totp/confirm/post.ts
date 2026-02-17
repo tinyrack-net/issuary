@@ -63,12 +63,12 @@ export const userTotpConfirmPost = new Hono<AppEnv>().post(
   verifyAuth({ optional: true }),
   verifyPending2FASetupUser({ optional: true }),
   async (c) => {
-    const session = c.get('session');
-    const { mikro, totpService, userService } = c.get('services');
+    const session = c.var.session;
+    const { mikro, totpService, userService } = c.var.services;
 
     // Allow both full user session and pending 2FA setup session
-    const verifiedUser = c.get('verifiedUser');
-    const verifiedPending2FASetupUser = c.get('verifiedPending2FASetupUser');
+    const verifiedUser = c.var.verifiedUser;
+    const verifiedPending2FASetupUser = c.var.verifiedPending2FASetupUser;
     const userId = verifiedUser?.id ?? verifiedPending2FASetupUser?.id;
 
     if (!userId) {

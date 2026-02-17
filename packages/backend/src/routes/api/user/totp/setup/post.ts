@@ -61,14 +61,14 @@ export const userTotpSetupPost = new Hono<AppEnv>().post(
   verifyAuth({ optional: true }),
   verifyPending2FASetupUser({ optional: true }),
   async (c) => {
-    const { config, mikro, totpService } = c.get('services');
+    const { config, mikro, totpService } = c.var.services;
 
     if (!config.auth.password.totp?.enabled) {
       throw new e.ValidationError.Error('TOTP is disabled');
     }
 
-    const verifiedUser = c.get('verifiedUser');
-    const verifiedPending2FASetupUser = c.get('verifiedPending2FASetupUser');
+    const verifiedUser = c.var.verifiedUser;
+    const verifiedPending2FASetupUser = c.var.verifiedPending2FASetupUser;
     const userId = verifiedUser?.id ?? verifiedPending2FASetupUser?.id;
 
     if (!userId) {

@@ -45,7 +45,7 @@ export const userinfoGet = new Hono<AppEnv>().get(
   }),
   validator('header', h.BearerAuth),
   async (c) => {
-    const { jwtService, mikro, userService } = c.get('services');
+    const { jwtService, mikro, userService } = c.var.services;
 
     // Validate Bearer token
     const authorization = c.req.header('authorization');

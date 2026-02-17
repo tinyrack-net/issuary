@@ -38,7 +38,7 @@ export const healthReadyGet = new Hono<AppEnv>().get(
     },
   }),
   async (c) => {
-    const { mikro } = c.get('services');
+    const { mikro } = c.var.services;
 
     // Check database connectivity
     let databaseStatus: 'ok' | 'error' = 'error';

@@ -77,8 +77,8 @@ export const consentPost = new Hono<AppEnv>().post(
       decision,
     } = body;
 
-    const userSession = c.get('verifiedUser');
-    const { oauthClientService, userConsentService } = c.get('services');
+    const userSession = c.var.verifiedUser;
+    const { oauthClientService, userConsentService } = c.var.services;
 
     // If user denied consent, redirect back with error
     if (decision === 'deny') {

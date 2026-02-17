@@ -50,15 +50,15 @@ export const authTotpVerifyPost = new Hono<AppEnv>().post(
   ),
   verifyPending2FAUser(),
   async (c) => {
-    const config = c.get('services').config;
+    const config = c.var.services.config;
     if (!config.auth.password.enabled || !config.auth.password.totp.enabled) {
       throw new e.ValidationError.Error('TOTP authentication is disabled');
     }
 
     const body = c.req.valid('json');
-    const session = c.get('session');
-    const pending2FAUser = c.get('verifiedPending2FAUser');
-    const { totpService } = c.get('services');
+    const session = c.var.session;
+    const pending2FAUser = c.var.verifiedPending2FAUser;
+    const { totpService } = c.var.services;
 
     await totpService.verifyForAuth(pending2FAUser.id, body.code);
 

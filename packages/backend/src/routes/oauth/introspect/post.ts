@@ -52,7 +52,7 @@ export const introspectPost = new Hono<AppEnv>().post(
   ),
   async (c) => {
     const body = c.req.valid('form');
-    const { oauthClientService, oauthTokenService } = c.get('services');
+    const { oauthClientService, oauthTokenService } = c.var.services;
 
     // 1. Validate client credentials if provided
     if (body.client_id) {

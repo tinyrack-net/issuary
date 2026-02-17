@@ -60,8 +60,8 @@ export const termsConsentPost = new Hono<AppEnv>().post(
   async (c) => {
     const body = c.req.valid('json');
     const { consents, registrationToken } = body;
-    const session = c.get('session');
-    const { mikro, termsService, oauthConnectService } = c.get('services');
+    const session = c.var.session;
+    const { mikro, termsService, oauthConnectService } = c.var.services;
 
     // Check for pending OAuth registration (stored in DB, referenced by token)
     if (registrationToken) {
@@ -113,7 +113,7 @@ export const termsConsentPost = new Hono<AppEnv>().post(
     }
 
     // Standard flow: authenticated user recording consent
-    const userSession = c.get('verifiedUser');
+    const userSession = c.var.verifiedUser;
     if (!userSession) {
       throw new e.Unauthorized.Error();
     }

@@ -38,13 +38,13 @@ export const userPasskeysGet = new Hono<AppEnv>().get(
   }),
   verifyAuth(),
   async (c) => {
-    const config = c.get('services').config;
+    const config = c.var.services.config;
     if (!config.auth.passkey.enabled) {
       throw new e.PasskeyNotEnabled.Error();
     }
 
-    const userSession = c.get('verifiedUser');
-    const { passkeyService } = c.get('services');
+    const userSession = c.var.verifiedUser;
+    const { passkeyService } = c.var.services;
     const passkeys = await passkeyService.getUserPasskeys(userSession.id);
 
     return c.json({ passkeys }, 200);

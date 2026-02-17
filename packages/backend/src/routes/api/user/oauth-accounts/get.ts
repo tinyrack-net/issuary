@@ -41,8 +41,8 @@ export const userOauthAccountsGet = new Hono<AppEnv>().get(
   }),
   verifyAuth(),
   async (c) => {
-    const userSession = c.get('verifiedUser');
-    const { oauthConnectService } = c.get('services');
+    const userSession = c.var.verifiedUser;
+    const { oauthConnectService } = c.var.services;
 
     // Get linked accounts
     const accounts = await oauthConnectService.getLinkedAccounts(

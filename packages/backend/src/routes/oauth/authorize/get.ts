@@ -46,8 +46,8 @@ export const authorizeGet = new Hono<AppEnv>().get(
   ),
   async (c) => {
     const query = c.req.valid('query');
-    const session = c.get('session');
-    const { oauthAuthorizeService } = c.get('services');
+    const session = c.var.session;
+    const { oauthAuthorizeService } = c.var.services;
 
     // Helper function to redirect with error
     const redirectWithError = (

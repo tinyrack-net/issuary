@@ -70,8 +70,8 @@ export const authRegisterPost = new Hono<AppEnv>().post(
     const body = c.req.valid('json');
     const headers = c.req.valid('header');
     const { email, password, consents } = body;
-    const { config, userService } = c.get('services');
-    const session = c.get('session');
+    const { config, userService } = c.var.services;
+    const session = c.var.session;
     const { allowed_signup_emails } = config.app;
 
     // Check if signup is disabled entirely

@@ -20,7 +20,7 @@ export const authLogoutPost = new Hono<AppEnv>().post(
     },
   }),
   async (c) => {
-    c.get('session').delete();
+    c.var.session.delete();
     return c.json({ ok: true as const }, 200);
   },
 );

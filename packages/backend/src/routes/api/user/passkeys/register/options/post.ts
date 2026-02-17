@@ -60,16 +60,16 @@ export const userPasskeyRegisterOptionsPost = new Hono<AppEnv>().post(
   verifyAuth({ optional: true }),
   verifyPending2FASetupUser({ optional: true }),
   async (c) => {
-    const config = c.get('services').config;
+    const config = c.var.services.config;
     if (!config.auth.passkey.enabled) {
       throw new e.PasskeyNotEnabled.Error();
     }
 
-    const session = c.get('session');
-    const { mikro, passkeyService } = c.get('services');
+    const session = c.var.session;
+    const { mikro, passkeyService } = c.var.services;
 
-    const verifiedUser = c.get('verifiedUser');
-    const verifiedPending2FASetupUser = c.get('verifiedPending2FASetupUser');
+    const verifiedUser = c.var.verifiedUser;
+    const verifiedPending2FASetupUser = c.var.verifiedPending2FASetupUser;
     const userId = verifiedUser?.id ?? verifiedPending2FASetupUser?.id;
 
     if (!userId) {

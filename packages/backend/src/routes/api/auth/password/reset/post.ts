@@ -48,7 +48,7 @@ export const authPasswordResetPost = new Hono<AppEnv>().post(
     }),
   ),
   async (c) => {
-    const services = c.get('services');
+    const services = c.var.services;
 
     if (!services.config.smtp) {
       throw new e.ValidationError.Error('Email service is not available');

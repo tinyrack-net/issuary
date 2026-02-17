@@ -64,8 +64,8 @@ export const userTotpDelete = new Hono<AppEnv>().delete(
   verifyAuth(),
   async (c) => {
     const body = c.req.valid('json');
-    const userSession = c.get('verifiedUser');
-    const { config, mikro, totpService } = c.get('services');
+    const userSession = c.var.verifiedUser;
+    const { config, mikro, totpService } = c.var.services;
 
     // Config users cannot manage 2FA
     if (userSession.managed_by === 'config') {

@@ -72,8 +72,8 @@ export const userPasswordDelete = new Hono<AppEnv>().delete(
   verifyAuth(),
   async (c) => {
     const body = c.req.valid('json');
-    const userSession = c.get('verifiedUser');
-    const { mikro } = c.get('services');
+    const userSession = c.var.verifiedUser;
+    const { mikro } = c.var.services;
 
     // Config users cannot remove password
     if (userSession.managed_by === 'config') {

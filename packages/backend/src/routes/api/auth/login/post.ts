@@ -54,14 +54,14 @@ export const authLoginPost = new Hono<AppEnv>().post(
     }),
   ),
   async (c) => {
-    const config = c.get('services').config;
+    const config = c.var.services.config;
     if (!config.auth.password.enabled) {
       throw new e.ValidationError.Error('Password authentication is disabled');
     }
 
     const body = c.req.valid('json');
-    const { mikro, userService } = c.get('services');
-    const session = c.get('session');
+    const { mikro, userService } = c.var.services;
+    const session = c.var.session;
 
     const userEntity = await mikro.user.verifyByEmailAndPassword({
       email: body.email,

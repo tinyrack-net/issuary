@@ -24,7 +24,7 @@ export const configGet = new Hono<AppEnv>().get(
     },
   }),
   async (c) => {
-    const { config } = c.get('services');
+    const { config } = c.var.services;
 
     // Transform identity_providers array to response format
     // Only include enabled providers

@@ -36,15 +36,15 @@ export const authPasskeyOptionsPost = new Hono<AppEnv>().post(
   }),
   verifyPending2FAUser({ optional: true }),
   async (c) => {
-    const config = c.get('services').config;
+    const config = c.var.services.config;
     if (!config.auth.passkey.enabled) {
       throw new e.PasskeyNotEnabled.Error();
     }
 
-    const session = c.get('session');
-    const { passkeyService } = c.get('services');
+    const session = c.var.session;
+    const { passkeyService } = c.var.services;
 
-    const pending2FAUser = c.get('verifiedPending2FAUser');
+    const pending2FAUser = c.var.verifiedPending2FAUser;
 
     const options = await passkeyService.generateAuthenticationOptions(
       pending2FAUser?.id,

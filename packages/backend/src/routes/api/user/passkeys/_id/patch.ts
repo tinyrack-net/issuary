@@ -61,15 +61,15 @@ export const userPasskeyIdPatch = new Hono<AppEnv>().patch(
   ),
   verifyAuth(),
   async (c) => {
-    const config = c.get('services').config;
+    const config = c.var.services.config;
     if (!config.auth.passkey.enabled) {
       throw new e.PasskeyNotEnabled.Error();
     }
 
     const params = c.req.valid('param');
     const body = c.req.valid('json');
-    const userSession = c.get('verifiedUser');
-    const { passkeyService } = c.get('services');
+    const userSession = c.var.verifiedUser;
+    const { passkeyService } = c.var.services;
 
     // Rename passkey
     await passkeyService.renamePasskey(userSession.id, params.id, body.name);

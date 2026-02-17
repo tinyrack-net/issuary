@@ -64,14 +64,14 @@ export const userPasskeyIdDelete = new Hono<AppEnv>().delete(
   ),
   verifyAuth(),
   async (c) => {
-    const config = c.get('services').config;
+    const config = c.var.services.config;
     if (!config.auth.passkey.enabled) {
       throw new e.PasskeyNotEnabled.Error();
     }
 
     const params = c.req.valid('param');
-    const userSession = c.get('verifiedUser');
-    const { mikro, passkeyService } = c.get('services');
+    const userSession = c.var.verifiedUser;
+    const { mikro, passkeyService } = c.var.services;
 
     // Config users cannot manage 2FA
     if (userSession.managed_by === 'config') {

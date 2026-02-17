@@ -37,8 +37,8 @@ export const authEmailVerifyPost = new Hono<AppEnv>().post(
     }),
   ),
   async (c) => {
-    const services = c.get('services');
-    const session = c.get('session');
+    const services = c.var.services;
+    const session = c.var.session;
     const body = c.req.valid('json');
 
     const user = await services.emailService.verifyEmail(body.token);

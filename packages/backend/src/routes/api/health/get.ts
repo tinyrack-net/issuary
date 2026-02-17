@@ -40,7 +40,7 @@ export const healthGet = new Hono<AppEnv>().get(
     },
   }),
   async (c) => {
-    const { mikro } = c.get('services');
+    const { mikro } = c.var.services;
     const uptime = Math.floor((Date.now() - startTime) / 1000);
     const version = process.env['npm_package_version'] || '1.0.0';
 

@@ -29,8 +29,8 @@ export const userSessionGet = new Hono<AppEnv>().get(
   }),
   verifyAuth({ optional: true }),
   async (c) => {
-    const user = c.get('verifiedUser');
-    const { userService } = c.get('services');
+    const user = c.var.verifiedUser;
+    const { userService } = c.var.services;
 
     if (!user) {
       return c.json({ user: null }, 200);

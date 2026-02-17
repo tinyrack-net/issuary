@@ -54,12 +54,12 @@ export const oauthProviderAuthorizeGet = new Hono<AppEnv>().get(
     const query = c.req.valid('query');
     const { provider } = params;
     const { mode, return_url } = query;
-    const session = c.get('session');
-    const { oauthConnectService } = c.get('services');
+    const session = c.var.session;
+    const { oauthConnectService } = c.var.services;
 
     // Link mode requires authenticated user
     if (mode === 'link') {
-      const verifiedUser = c.get('verifiedUser');
+      const verifiedUser = c.var.verifiedUser;
       if (!verifiedUser) {
         throw new e.Unauthorized.Error();
       }

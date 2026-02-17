@@ -53,7 +53,7 @@ export const authEmailResendPost = new Hono<AppEnv>().post(
     }),
   ),
   async (c) => {
-    const services = c.get('services');
+    const services = c.var.services;
     const body = c.req.valid('json');
     const headers = c.req.valid('header');
 

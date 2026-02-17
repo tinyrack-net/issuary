@@ -43,7 +43,7 @@ export const jwksGet = new Hono<AppEnv>().get(
     },
   }),
   async (c) => {
-    const { jwtService } = c.get('services');
+    const { jwtService } = c.var.services;
 
     // Get JWKS from JwtService
     const jwks = await jwtService.getJWKS();
