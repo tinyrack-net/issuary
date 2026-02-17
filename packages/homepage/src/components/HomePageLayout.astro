@@ -1,9 +1,9 @@
 ---
-import type { StarlightPageFrontmatter } from '@astrojs/starlight/types';
+import type { StarlightPageProps } from '@astrojs/starlight/components/StarlightPage.astro';
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 
 interface Props {
-  frontmatter: StarlightPageFrontmatter;
+  frontmatter: StarlightPageProps['frontmatter'];
   centered?: boolean;
 }
 
