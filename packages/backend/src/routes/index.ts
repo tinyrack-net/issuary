@@ -10,5 +10,3 @@ export const routes = new Hono<AppEnv>()
   .route('/api/v1', apiV1)
   .route('/application/oauth', oauthApplicationRoutes)
   .route('/.well-known', wellKnownRoutes);
-
-export type AppRouteType = typeof routes;

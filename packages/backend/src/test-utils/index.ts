@@ -17,11 +17,7 @@ export {
   getJwtKey,
 } from './cli.js';
 // Type-safe test client
-export {
-  assertJsonBody,
-  createTestClient,
-  createTestClientWithHeaders,
-} from './client.js';
+export { assertJsonBody } from './client.js';
 // Test fixtures and constants
 export {
   DEFAULT_SCOPES,
