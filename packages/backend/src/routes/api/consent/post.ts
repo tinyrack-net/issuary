@@ -1,5 +1,6 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
@@ -61,6 +62,7 @@ export const consentPost = new Hono<AppEnv>().post(
       decision: f.consentDecision,
     }),
   ),
+  verifyAuth(),
   async (c) => {
     const body = c.req.valid('json');
     const {
@@ -75,11 +77,8 @@ export const consentPost = new Hono<AppEnv>().post(
       decision,
     } = body;
 
-    const auth = c.get('auth');
+    const userSession = c.get('verifiedUser');
     const { oauthClientService, userConsentService } = c.get('services');
-
-    // Check if user is logged in
-    const userSession = await auth.verify();
 
     // If user denied consent, redirect back with error
     if (decision === 'deny') {

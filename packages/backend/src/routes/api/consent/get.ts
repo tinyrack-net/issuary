@@ -1,6 +1,7 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { parseScopesWithDescriptions } from '@backend/lib/scopes.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
@@ -55,14 +56,12 @@ export const consentGet = new Hono<AppEnv>().get(
       scope: f.scope.optional(),
     }),
   ),
+  verifyAuth(),
   async (c) => {
     const query = c.req.valid('query');
     const { client_id, scope } = query;
-    const auth = c.get('auth');
+    const userSession = c.get('verifiedUser');
     const { mikro, userService, oauthClientService } = c.get('services');
-
-    // Check if user is logged in
-    const userSession = await auth.verify();
 
     // Fetch user information
     const userEntity = await mikro.user.verifyById(userSession.id);
