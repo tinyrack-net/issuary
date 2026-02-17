@@ -1,5 +1,9 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import {
+  verifyAuth,
+  verifyPending2FASetupUser,
+} from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
@@ -63,15 +67,16 @@ export const userTotpVerifyPost = new Hono<AppEnv>().post(
       code: f.totpCode,
     }),
   ),
+  verifyAuth({ optional: true }),
+  verifyPending2FASetupUser({ optional: true }),
   async (c) => {
     const body = c.req.valid('json');
-    const session = c.get('session');
     const { totpService } = c.get('services');
 
     // Allow both full user session and pending 2FA setup session
-    const userSession = session.get('user');
-    const pending2FASetup = session.get('pending2FASetup');
-    const userId = userSession?.id ?? pending2FASetup?.id;
+    const verifiedUser = c.get('verifiedUser');
+    const verifiedPending2FASetupUser = c.get('verifiedPending2FASetupUser');
+    const userId = verifiedUser?.id ?? verifiedPending2FASetupUser?.id;
 
     if (!userId) {
       throw new e.Unauthorized.Error();

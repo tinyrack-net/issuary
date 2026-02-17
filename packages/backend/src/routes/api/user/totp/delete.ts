@@ -1,5 +1,6 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
@@ -60,12 +61,11 @@ export const userTotpDelete = new Hono<AppEnv>().delete(
       code: f.totpCode,
     }),
   ),
+  verifyAuth(),
   async (c) => {
     const body = c.req.valid('json');
-    const auth = c.get('auth');
+    const userSession = c.get('verifiedUser');
     const { config, mikro, totpService } = c.get('services');
-
-    const userSession = await auth.verify();
 
     // Config users cannot manage 2FA
     if (userSession.managed_by === 'config') {

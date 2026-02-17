@@ -1,5 +1,9 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import {
+  verifyAuth,
+  verifyPending2FASetupUser,
+} from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { r } from '@backend/schemas/response.js';
 import { Hono } from 'hono';
@@ -56,14 +60,16 @@ export const userTotpConfirmPost = new Hono<AppEnv>().post(
     },
   }),
   validator('json', z.object({}).optional().nullable()),
+  verifyAuth({ optional: true }),
+  verifyPending2FASetupUser({ optional: true }),
   async (c) => {
     const session = c.get('session');
     const { mikro, totpService, userService } = c.get('services');
 
     // Allow both full user session and pending 2FA setup session
-    const userSession = session.get('user');
-    const pending2FASetup = session.get('pending2FASetup');
-    const userId = userSession?.id ?? pending2FASetup?.id;
+    const verifiedUser = c.get('verifiedUser');
+    const verifiedPending2FASetupUser = c.get('verifiedPending2FASetupUser');
+    const userId = verifiedUser?.id ?? verifiedPending2FASetupUser?.id;
 
     if (!userId) {
       throw new e.Unauthorized.Error();
@@ -72,7 +78,7 @@ export const userTotpConfirmPost = new Hono<AppEnv>().post(
     await totpService.confirmSetup(userId);
 
     // Convert pending 2FA setup session to full user session
-    if (pending2FASetup) {
+    if (verifiedPending2FASetupUser) {
       session.setUserSession(userId);
     }
 
