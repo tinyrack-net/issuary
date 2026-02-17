@@ -9,6 +9,7 @@ import { JwtKeyEntitySchema } from '../entities/jwt-key.entity.js';
 import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.js';
 import { OAuthCodeEntitySchema } from '../entities/oauth-code.entity.js';
 import { PasswordResetEntitySchema } from '../entities/password-reset.entity.js';
+import { PendingOAuthRegistrationEntitySchema } from '../entities/pending-oauth-registration.entity.js';
 import { RevokedTokenEntitySchema } from '../entities/revoked-token.entity.js';
 import { TermsEntitySchema } from '../entities/terms.entity.js';
 import { TermsContentEntitySchema } from '../entities/terms-content.entity.js';
@@ -38,6 +39,7 @@ export const mikroormMemoryConfig = (config: ResolvedAppConfig): Options => {
       JwtKeyEntitySchema,
       EmailVerificationEntitySchema,
       PasswordResetEntitySchema,
+      PendingOAuthRegistrationEntitySchema,
       RevokedTokenEntitySchema,
       TermsEntitySchema,
       TermsContentEntitySchema,
