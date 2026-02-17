@@ -1,0 +1,29 @@
+---
+import type { StarlightPageFrontmatter } from '@astrojs/starlight/types';
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+
+interface Props {
+  frontmatter: StarlightPageFrontmatter;
+}
+
+const { frontmatter } = Astro.props;
+---
+
+<StarlightPage
+  frontmatter={{
+    ...frontmatter,
+    template: 'splash',
+    head: [
+      ...(frontmatter.head ?? []),
+      {
+        tag: 'style',
+        content: `
+          .content-panel:has(#_top) { display: none; }
+          .content-panel { border-top: none !important; }
+        `,
+      },
+    ],
+  }}
+>
+  <slot />
+</StarlightPage>
