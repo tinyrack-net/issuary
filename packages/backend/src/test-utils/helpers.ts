@@ -321,6 +321,22 @@ export async function grantConsent(
  * expect(res.status).toBe(200);
  * ```
  */
+/**
+ * Extract Location header from redirect response.
+ * Throws if the header is not present.
+ *
+ * @param res - Response from app.request() or testClient
+ * @returns Location header value
+ * @throws Error if Location header is missing
+ */
+export function getLocationHeader(res: Response): string {
+  const location = res.headers.get('location');
+  if (!location) {
+    throw new Error('Expected Location header in response');
+  }
+  return location;
+}
+
 export async function registerUser(
   app: AppType,
   options: {

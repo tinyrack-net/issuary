@@ -40,6 +40,7 @@ export {
   enableTotpForUser,
   expectError,
   extractCookie,
+  getLocationHeader,
   grantConsent,
   registerUser,
   withMikroContext,
@@ -60,6 +61,7 @@ export {
   getAuthorizationCode,
   getUserInfo,
   introspectToken,
+  parseJwks,
   refreshAccessToken,
   revokeToken,
 } from './oauth.js';

@@ -1,5 +1,6 @@
 import type { AppType } from '@backend/app.js';
 import { testClient } from 'hono/testing';
+import type * as jose from 'jose';
 import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT } from './fixtures.js';
 import { createAuthenticatedSession, grantConsent } from './helpers.js';
 
@@ -376,4 +377,25 @@ export async function revokeToken(
       client_secret: clientSecret,
     },
   });
+}
+
+/**
+ * Parse response body as JWKS.
+ * Validates the basic structure at runtime.
+ *
+ * @param res - Response from the JWKS endpoint
+ * @returns Typed JWKS object
+ * @throws Error if the response is not a valid JWKS structure
+ */
+export async function parseJwks(res: Response): Promise<jose.JSONWebKeySet> {
+  const json: unknown = await res.json();
+  if (
+    typeof json === 'object' &&
+    json !== null &&
+    'keys' in json &&
+    Array.isArray((json as Record<string, unknown>)['keys'])
+  ) {
+    return json as jose.JSONWebKeySet;
+  }
+  throw new Error('Invalid JWKS response');
 }
