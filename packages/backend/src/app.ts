@@ -1,4 +1,3 @@
-import type { AppEnv } from '@backend/lib/app-env.js';
 import {
   type AppConfigInput,
   resolveConfig,
@@ -51,7 +50,7 @@ export async function createApp(options: CreateAppOptions) {
     silent: silent,
   });
 
-  const honoApp = new Hono<AppEnv>()
+  const app = new Hono()
     .onError((err, c) => {
       if (err instanceof ApiError) {
         return c.json(err.toJson(), err.status);
@@ -80,9 +79,9 @@ export async function createApp(options: CreateAppOptions) {
     .use('*', mikroOrmMiddleware)
     .route('/', routes);
 
-  honoApp.get(
+  app.get(
     '/api/docs/json',
-    openAPIRouteHandler(honoApp, {
+    openAPIRouteHandler(app, {
       documentation: {
         info: {
           title: 'TinyAuth API',
@@ -129,7 +128,7 @@ export async function createApp(options: CreateAppOptions) {
       );
     }
 
-    honoApp.notFound(async (c) => {
+    app.notFound(async (c) => {
       const reqUrl = new URL(c.req.url);
       if (isBackendRoute(reqUrl.pathname)) {
         return c.json({ error: 'Not Found' }, 404);
@@ -140,7 +139,7 @@ export async function createApp(options: CreateAppOptions) {
     if (!silent) {
       console.info('Static handler registered (production mode)');
     }
-    registerProdStatic(honoApp, {
+    registerProdStatic(app, {
       htmlVariables: config.app.html_variables,
     });
   }
@@ -148,7 +147,7 @@ export async function createApp(options: CreateAppOptions) {
   // Start scheduler
   services.scheduler.start();
 
-  return { app: honoApp, services, cleanup };
+  return { app, services, cleanup };
 }
 
 export type AppType = Awaited<ReturnType<typeof createApp>>['app'];
