@@ -1,4 +1,5 @@
 import type { AuthState, TokenResponse } from '@/types/oidc';
+import { assertAuthState, assertTokenResponse } from './validators';
 
 const TOKEN_STORAGE_KEY = 'oidc_tokens';
 const AUTH_STATE_KEY = 'oidc_auth_state';
@@ -20,7 +21,9 @@ export function getTokens(): TokenResponse | null {
   }
 
   try {
-    return JSON.parse(stored) as TokenResponse;
+    const parsed: unknown = JSON.parse(stored);
+    assertTokenResponse(parsed);
+    return parsed;
   } catch {
     return null;
   }
@@ -51,7 +54,9 @@ export function getAuthState(): AuthState | null {
   }
 
   try {
-    return JSON.parse(stored) as AuthState;
+    const parsed: unknown = JSON.parse(stored);
+    assertAuthState(parsed);
+    return parsed;
   } catch {
     return null;
   }

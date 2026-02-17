@@ -13,7 +13,7 @@ import {
   revokeToken,
 } from '@/libs/oidc-client';
 import { clearTokens, getTokens } from '@/libs/token-storage';
-import type { IntrospectionResponse, TokenResponse } from '@/types/oidc';
+import type { IntrospectionResponse } from '@/types/oidc';
 
 export const Route = createFileRoute('/profile')({
   component: ProfilePage,
@@ -26,7 +26,10 @@ export const Route = createFileRoute('/profile')({
 
 function ProfilePage() {
   const navigate = useNavigate();
-  const tokens = getTokens() as TokenResponse;
+  const tokens = getTokens();
+  if (!tokens) {
+    throw redirect({ to: '/' });
+  }
   const idTokenPayload = tokens.id_token
     ? decodeIDToken(tokens.id_token)
     : null;

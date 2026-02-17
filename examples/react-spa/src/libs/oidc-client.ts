@@ -9,6 +9,14 @@ import type {
   UserInfo,
 } from '@/types/oidc';
 import { env } from './env';
+import {
+  assertIDTokenPayload,
+  assertIntrospectionResponse,
+  assertJWKS,
+  assertOpenIDConfiguration,
+  assertTokenResponse,
+  assertUserInfo,
+} from './validators';
 
 /**
  * Cached OIDC configuration
@@ -30,7 +38,9 @@ export async function fetchOpenIDConfiguration(
     );
   }
 
-  return (await response.json()) as OpenIDConfiguration;
+  const json: unknown = await response.json();
+  assertOpenIDConfiguration(json);
+  return json;
 }
 
 /**
@@ -137,7 +147,9 @@ export async function exchangeCodeForTokens(
     throw new Error(`Token exchange failed: ${error}`);
   }
 
-  return (await response.json()) as TokenResponse;
+  const json: unknown = await response.json();
+  assertTokenResponse(json);
+  return json;
 }
 
 /**
@@ -167,7 +179,9 @@ export async function refreshAccessToken(
     throw new Error(`Token refresh failed: ${error}`);
   }
 
-  return (await response.json()) as TokenResponse;
+  const json: unknown = await response.json();
+  assertTokenResponse(json);
+  return json;
 }
 
 /**
@@ -186,7 +200,9 @@ export async function fetchUserInfo(accessToken: string): Promise<UserInfo> {
     throw new Error(`UserInfo fetch failed: ${error}`);
   }
 
-  return (await response.json()) as UserInfo;
+  const json: unknown = await response.json();
+  assertUserInfo(json);
+  return json;
 }
 
 /**
@@ -194,7 +210,9 @@ export async function fetchUserInfo(accessToken: string): Promise<UserInfo> {
  * For production, use jose's jwtVerify with proper key
  */
 export function decodeIDToken(idToken: string): IDTokenPayload {
-  return decodeJwt(idToken) as IDTokenPayload;
+  const payload: unknown = decodeJwt(idToken);
+  assertIDTokenPayload(payload);
+  return payload;
 }
 
 /**
@@ -241,7 +259,9 @@ export async function introspectToken(
     throw new Error(`Token introspection failed: ${error}`);
   }
 
-  return (await response.json()) as IntrospectionResponse;
+  const json: unknown = await response.json();
+  assertIntrospectionResponse(json);
+  return json;
 }
 
 /**
@@ -289,5 +309,7 @@ export async function fetchJWKS(): Promise<JWKS> {
     throw new Error(`Failed to fetch JWKS: ${response.statusText}`);
   }
 
-  return (await response.json()) as JWKS;
+  const json: unknown = await response.json();
+  assertJWKS(json);
+  return json;
 }
