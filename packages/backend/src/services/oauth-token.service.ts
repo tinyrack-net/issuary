@@ -347,11 +347,15 @@ export class OAuthTokenService {
       return;
     }
 
-    const jti = decoded.jti as string;
-    const userId = decoded.sub as string;
-    const clientId = decoded['client_id'] as string | undefined;
+    const jti = decoded.jti;
+    const userId = decoded.sub;
+    const rawClientId = decoded['client_id'];
+    const clientId = typeof rawClientId === 'string' ? rawClientId : undefined;
+    const rawTyp = decoded['typ'];
     const tokenType =
-      (decoded['typ'] as 'access_token' | 'refresh_token') ||
+      (rawTyp === 'access_token' || rawTyp === 'refresh_token'
+        ? rawTyp
+        : undefined) ||
       tokenTypeHint ||
       'access_token';
     const expiresAt = new Date(decoded.exp * 1000);
