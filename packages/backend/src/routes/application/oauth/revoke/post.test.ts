@@ -414,8 +414,8 @@ describe('POST /application/oauth/revoke', () => {
       const client = testClient(app);
       const res = await client.application.oauth.revoke.$post({
         json: {
-          // No token - send undefined to trigger validation
-          token: undefined as unknown as string,
+          // @ts-expect-error testing validation with missing required field
+          token: undefined,
           client_id: TEST_OAUTH_CLIENT.clientId,
         },
       });

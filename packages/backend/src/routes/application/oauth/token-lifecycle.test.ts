@@ -7,6 +7,7 @@ import {
   getUserInfo,
   introspectToken,
   MINIMAL_TEST_CONFIG,
+  parseJwks,
   refreshAccessToken,
   revokeToken,
   TEST_OAUTH_CLIENT,
@@ -621,9 +622,7 @@ describe('Token Lifecycle and Rotation', () => {
       const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
-      const JWKS = jose.createLocalJWKSet(
-        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-      );
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {

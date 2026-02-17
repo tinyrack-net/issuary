@@ -409,8 +409,8 @@ describe('POST /application/oauth/introspect', () => {
       const client = testClient(app);
       const res = await client.application.oauth.introspect.$post({
         json: {
-          // No token - send empty string to trigger validation
-          token: undefined as unknown as string,
+          // @ts-expect-error testing validation with missing required field
+          token: undefined,
           client_id: TEST_OAUTH_CLIENT.clientId,
         },
       });

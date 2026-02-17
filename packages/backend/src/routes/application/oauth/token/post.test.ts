@@ -756,7 +756,9 @@ describe('POST /application/oauth/token', () => {
       expect(decoded.sub).toBeDefined();
       expect(typeof decoded.sub).toBe('string');
       // sub should be a non-empty string (can be UUID or config-based ID)
-      expect((decoded.sub as string).length).toBeGreaterThan(0);
+      expect(typeof decoded.sub === 'string' && decoded.sub.length > 0).toBe(
+        true,
+      );
     });
 
     test('should include iss claim with issuer URL', async () => {
@@ -789,7 +791,10 @@ describe('POST /application/oauth/token', () => {
       expect(typeof decoded.exp).toBe('number');
 
       // exp should be after iat
-      expect(decoded.exp).toBeGreaterThan(decoded.iat as number);
+      if (typeof decoded.iat !== 'number') {
+        throw new Error('Expected iat claim to be a number');
+      }
+      expect(decoded.exp).toBeGreaterThan(decoded.iat);
     });
 
     test('should include email claims when email scope requested', async () => {

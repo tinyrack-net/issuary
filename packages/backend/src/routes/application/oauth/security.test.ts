@@ -5,6 +5,7 @@ import {
   createAuthenticatedSession,
   exchangeCodeForTokens,
   getAuthorizationCode,
+  getLocationHeader,
   MINIMAL_TEST_CONFIG,
   TEST_OAUTH_CLIENT,
   TEST_OAUTH_CLIENT_CONFIG,
@@ -78,7 +79,7 @@ describe('OAuth Security Tests', () => {
 
       // Should redirect with URL-encoded state
       expect(res.status).toBe(302);
-      const location = res.headers.get('location') as string;
+      const location = getLocationHeader(res);
       expect(location).not.toContain('<script>');
       // State should be URL-encoded (note: Fastify URL-encodes parentheses)
       expect(location).toContain('%3Cscript%3Ealert');
@@ -104,7 +105,7 @@ describe('OAuth Security Tests', () => {
       // Invalid scope should be rejected
       expect([302, 400]).toContain(res.status);
       if (res.status === 302) {
-        const location = res.headers.get('location') as string;
+        const location = getLocationHeader(res);
         expect(location).not.toContain('<script>');
       }
     });
@@ -234,7 +235,7 @@ describe('OAuth Security Tests', () => {
 
       // State with CRLF should be URL-encoded
       expect(res.status).toBe(302);
-      const location = res.headers.get('location') as string;
+      const location = getLocationHeader(res);
       expect(location).not.toMatch(/\r\n/);
     });
   });
@@ -438,7 +439,7 @@ describe('OAuth Security Tests', () => {
       // Should redirect to login, not issue code
       expect([302, 401]).toContain(res.status);
       if (res.status === 302) {
-        const location = res.headers.get('location') as string;
+        const location = getLocationHeader(res);
         // Should not contain authorization code
         expect(location).not.toContain('code=');
       }

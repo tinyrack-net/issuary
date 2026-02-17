@@ -4,9 +4,11 @@ import {
   createAuthenticatedSession,
   exchangeCodeForTokens,
   getAuthorizationCode,
+  getLocationHeader,
   getUserInfo,
   introspectToken,
   MINIMAL_TEST_CONFIG,
+  parseJwks,
   refreshAccessToken,
   revokeToken,
   TEST_OAUTH_CLIENT,
@@ -113,9 +115,7 @@ describe('Multi-Client Isolation', () => {
         const jwksClient = testClient(app);
         const jwksRes =
           await jwksClient.application.oauth['.well-known'].jwks.$get();
-        const JWKS = jose.createLocalJWKSet(
-          (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-        );
+        const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
         const sessionCookie = await createAuthenticatedSession(
           app,
           TEST_USER.email,
@@ -173,9 +173,7 @@ describe('Multi-Client Isolation', () => {
         const jwksClient = testClient(app);
         const jwksRes =
           await jwksClient.application.oauth['.well-known'].jwks.$get();
-        const JWKS = jose.createLocalJWKSet(
-          (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-        );
+        const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
         const sessionCookie = await createAuthenticatedSession(
           app,
           TEST_USER.email,
@@ -322,7 +320,7 @@ describe('Multi-Client Isolation', () => {
         expect([400, 302]).toContain(authRes.status);
         if (authRes.status === 302) {
           const location = new URL(
-            authRes.headers.get('location') as string,
+            getLocationHeader(authRes),
             'http://localhost:8080',
           );
           expect(location.searchParams.has('error')).toBe(true);
