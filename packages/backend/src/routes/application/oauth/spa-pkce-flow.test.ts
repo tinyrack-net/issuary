@@ -5,9 +5,11 @@ import {
   createAuthenticatedSession,
   exchangeCodeForTokens,
   getAuthorizationCode,
+  getLocationHeader,
   getUserInfo,
   grantConsent,
   MINIMAL_TEST_CONFIG,
+  parseJwks,
   refreshAccessToken,
   TEST_OAUTH_CLIENT,
   TEST_OAUTH_CLIENT_CONFIG,
@@ -343,15 +345,15 @@ describe('SPA PKCE Authentication Flow', () => {
       );
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
       const code = location.searchParams.get('code');
+      if (!code) {
+        throw new Error('Expected authorization code in redirect');
+      }
 
       // Should work with S256 verifier
       const tokenRes = await exchangeCodeForTokens(app, {
-        code: code as string,
+        code,
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
@@ -404,9 +406,13 @@ describe('SPA PKCE Authentication Flow', () => {
       const returnedState = location.searchParams.get('state');
       expect(returnedState).toBe(state);
 
+      if (!returnedState) {
+        throw new Error('Expected state parameter in redirect');
+      }
+
       // Verify we can decode it back
       const decoded = JSON.parse(
-        Buffer.from(returnedState as string, 'base64url').toString(),
+        Buffer.from(returnedState, 'base64url').toString(),
       );
       expect(decoded.returnUrl).toBe('/dashboard');
     });
@@ -431,10 +437,7 @@ describe('SPA PKCE Authentication Flow', () => {
       );
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       expect(location.searchParams.get('error')).toBe('invalid_scope');
       expect(location.searchParams.get('state')).toBe(state);
@@ -541,10 +544,7 @@ describe('SPA PKCE Authentication Flow', () => {
       );
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       // Should get code without user interaction
       expect(location.searchParams.get('code')).toBeDefined();
@@ -567,10 +567,7 @@ describe('SPA PKCE Authentication Flow', () => {
       });
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       expect(location.searchParams.get('error')).toBe('login_required');
       expect(location.searchParams.get('state')).toBe('silent-auth');
@@ -623,9 +620,7 @@ describe('SPA PKCE Authentication Flow', () => {
       const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
-      const jwks = jose.createLocalJWKSet(
-        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-      );
+      const jwks = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
       // Verify ID token signature
       const { payload } = await jose.jwtVerify(id_token, jwks, {

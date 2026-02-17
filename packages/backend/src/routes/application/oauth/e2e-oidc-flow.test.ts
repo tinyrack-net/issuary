@@ -7,6 +7,7 @@ import {
   getAuthorizationCode,
   getUserInfo,
   MINIMAL_TEST_CONFIG,
+  parseJwks,
   TEST_OAUTH_CLIENT,
   TEST_OAUTH_CLIENT_CONFIG,
   TEST_PKCE,
@@ -71,7 +72,7 @@ describe('End-to-End OIDC Flow', () => {
       const jwksRes = await client.application.oauth['.well-known'].jwks.$get();
 
       expect(jwksRes.status).toBe(200);
-      const jwks = (await jwksRes.json()) as unknown as jose.JSONWebKeySet;
+      const jwks = await parseJwks(jwksRes);
 
       expect(jwks.keys).toBeDefined();
       expect(Array.isArray(jwks.keys)).toBe(true);
@@ -188,9 +189,7 @@ describe('End-to-End OIDC Flow', () => {
       const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
-      const JWKS = jose.createLocalJWKSet(
-        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-      );
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
       const sessionCookie = await createAuthenticatedSession(app);
       const nonce = crypto.randomUUID();
@@ -232,9 +231,7 @@ describe('End-to-End OIDC Flow', () => {
       const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
-      const JWKS = jose.createLocalJWKSet(
-        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-      );
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -260,9 +257,7 @@ describe('End-to-End OIDC Flow', () => {
       const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
-      const JWKS = jose.createLocalJWKSet(
-        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-      );
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -293,9 +288,7 @@ describe('End-to-End OIDC Flow', () => {
       const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
-      const JWKS = jose.createLocalJWKSet(
-        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-      );
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -327,9 +320,7 @@ describe('End-to-End OIDC Flow', () => {
       const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
-      const JWKS = jose.createLocalJWKSet(
-        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-      );
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -361,9 +352,7 @@ describe('End-to-End OIDC Flow', () => {
       const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
-      const JWKS = jose.createLocalJWKSet(
-        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-      );
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -399,9 +388,7 @@ describe('End-to-End OIDC Flow', () => {
       const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
-      const JWKS = jose.createLocalJWKSet(
-        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-      );
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -446,9 +433,7 @@ describe('End-to-End OIDC Flow', () => {
       const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
-      const JWKS = jose.createLocalJWKSet(
-        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-      );
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -494,9 +479,7 @@ describe('End-to-End OIDC Flow', () => {
       const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
-      const JWKS = jose.createLocalJWKSet(
-        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-      );
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -754,7 +737,7 @@ describe('End-to-End OIDC Flow', () => {
       expect(config.scopes_supported).toContain('openid');
 
       // Filter to scopes the test client is allowed to use
-      const clientScopes = new Set(TEST_OAUTH_CLIENT.allowedScopes);
+      const clientScopes = new Set<string>(TEST_OAUTH_CLIENT.allowedScopes);
       const requestScopes = (config.scopes_supported ?? []).filter(
         (s: string) => clientScopes.has(s),
       );
@@ -776,9 +759,7 @@ describe('End-to-End OIDC Flow', () => {
       const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
-      const JWKS = jose.createLocalJWKSet(
-        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-      );
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -807,9 +788,7 @@ describe('End-to-End OIDC Flow', () => {
       const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
-      const JWKS = jose.createLocalJWKSet(
-        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-      );
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -837,9 +816,7 @@ describe('End-to-End OIDC Flow', () => {
       const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
-      const JWKS = jose.createLocalJWKSet(
-        (await jwksRes.json()) as unknown as jose.JSONWebKeySet,
-      );
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
