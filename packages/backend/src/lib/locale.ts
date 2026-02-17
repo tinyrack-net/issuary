@@ -28,7 +28,7 @@ export const DEFAULT_LOCALE: Locale = 'en';
  * Check if a string is a valid available locale.
  */
 export const isAvailableLocale = (code: string): code is Locale => {
-  return AVAILABLE_LOCALES.includes(code as Locale);
+  return (AVAILABLE_LOCALES as ReadonlyArray<string>).includes(code);
 };
 
 /**

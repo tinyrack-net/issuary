@@ -50,13 +50,12 @@ export function detectBrowserLanguage(
   const browserLang = navigator.language.split('-')[0];
   if (
     browserLang &&
-    availableLanguages.includes(browserLang as AvailableLanguage)
+    isAvailableLanguage(browserLang) &&
+    availableLanguages.includes(browserLang)
   ) {
-    return browserLang as AvailableLanguage;
+    return browserLang;
   }
-  return (
-    isAvailableLanguage(fallbackLanguage) ? fallbackLanguage : 'en'
-  ) as AvailableLanguage;
+  return isAvailableLanguage(fallbackLanguage) ? fallbackLanguage : 'en';
 }
 
 /**
@@ -72,7 +71,11 @@ function getInitialLanguage(
 ): string {
   // 1. Check localStorage
   const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-  if (stored && availableLanguages.includes(stored as AvailableLanguage)) {
+  if (
+    stored &&
+    isAvailableLanguage(stored) &&
+    availableLanguages.includes(stored)
+  ) {
     return stored;
   }
 
@@ -81,7 +84,10 @@ function getInitialLanguage(
     return detectBrowserLanguage(availableLanguages, fallbackLanguage);
   }
 
-  if (availableLanguages.includes(defaultLanguage as AvailableLanguage)) {
+  if (
+    isAvailableLanguage(defaultLanguage) &&
+    availableLanguages.includes(defaultLanguage)
+  ) {
     return defaultLanguage;
   }
 
