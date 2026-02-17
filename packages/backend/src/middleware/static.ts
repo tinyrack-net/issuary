@@ -2,12 +2,24 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AppType } from '@backend/app.js';
-import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import { interpolateHtml } from '@backend/lib/interpolate-html.js';
 import { isBackendRoute } from '@backend/lib/is-backend-route.js';
 import { serveStatic } from '@hono/node-server/serve-static';
+import { getMimeType } from 'hono/utils/mime';
 
 const __dirname = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
+
+export interface ProdStaticOptions {
+  /**
+   * Key-value pairs for HTML template variable
+   * interpolation using {{KEY}} syntax.
+   * When non-empty, HTML files are interpolated and
+   * all static files are served by the notFound handler
+   * (bypassing serveStatic) so that HTML responses can
+   * be rewritten.
+   */
+  htmlVariables: Record<string, string>;
+}
 
 /**
  * Register production static file handling.
@@ -17,16 +29,12 @@ const __dirname = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
  */
 export function registerProdStatic(
   app: AppType,
-  config: ResolvedAppConfig,
-  silent: boolean,
+  options: ProdStaticOptions,
 ): void {
-  if (!silent) {
-    console.info('Static handler registered (production mode)');
-  }
-
   const publicPath = path.join(__dirname, '../../public');
-  const variables = config.app.html_variables;
-  const hasVariables = Object.keys(variables).length > 0;
+  const rootIndexPath = path.join(publicPath, 'index.html');
+  const { htmlVariables } = options;
+  const hasVariables = Object.keys(htmlVariables).length > 0;
 
   /**
    * Lazy cache for interpolated HTML content.
@@ -34,6 +42,13 @@ export function registerProdStatic(
    * Only used when html_variables is configured.
    */
   const htmlCache = new Map<string, string>();
+
+  /**
+   * Lazy cache for the root index.html content.
+   * Used in the !hasVariables SPA fallback path so
+   * we only read from disk once.
+   */
+  let cachedRootIndex: string | undefined;
 
   /**
    * Read an HTML file, apply variable interpolation,
@@ -45,9 +60,31 @@ export function registerProdStatic(
       return cached;
     }
     const raw = await fs.promises.readFile(absolutePath, 'utf-8');
-    const result = interpolateHtml(raw, variables);
+    const result = interpolateHtml(raw, htmlVariables);
     htmlCache.set(absolutePath, result);
     return result;
+  }
+
+  /**
+   * Return the root index.html content, reading from
+   * disk only on the first call.
+   */
+  async function getRootIndex(): Promise<string> {
+    if (cachedRootIndex !== undefined) {
+      return cachedRootIndex;
+    }
+    cachedRootIndex = await fs.promises.readFile(rootIndexPath, 'utf-8');
+    return cachedRootIndex;
+  }
+
+  /**
+   * Check that a resolved path is still inside
+   * publicPath to prevent path-traversal attacks.
+   */
+  function isSafePath(resolved: string): boolean {
+    return (
+      resolved === publicPath || resolved.startsWith(`${publicPath}${path.sep}`)
+    );
   }
 
   // Serve static files when no html_variables
@@ -62,40 +99,45 @@ export function registerProdStatic(
 
   // Not-found handler: SPA fallback with SSG support
   app.notFound(async (c) => {
-    const url = c.req.path;
+    const urlPath = c.req.path;
 
     // API routes should return 404 errors
-    if (isBackendRoute(url)) {
+    if (isBackendRoute(urlPath)) {
       return c.json({ error: 'Not Found' }, 404);
     }
 
-    // Remove query string from URL
-    const urlPath = url.split('?')[0] ?? '/';
-    const filePath = path.join(publicPath, urlPath);
+    // Resolve and validate the filesystem path
+    const resolved = path.resolve(publicPath, `.${urlPath}`);
+    if (!isSafePath(resolved)) {
+      return c.json({ error: 'Not Found' }, 404);
+    }
 
     // Try to serve the requested file (SSG support)
     try {
-      const stats = await fs.promises.stat(filePath);
+      const stats = await fs.promises.stat(resolved);
+
       if (stats.isFile()) {
-        if (hasVariables && filePath.endsWith('.html')) {
-          const html = await getInterpolatedHtml(filePath);
+        if (hasVariables && resolved.endsWith('.html')) {
+          const html = await getInterpolatedHtml(resolved);
           return c.html(html);
         }
-        const content = await fs.promises.readFile(filePath);
-        return new Response(content);
+        const content = await fs.promises.readFile(resolved);
+        const mimeType = getMimeType(resolved) ?? 'application/octet-stream';
+        return new Response(content, {
+          headers: { 'Content-Type': mimeType },
+        });
       }
 
       // If it's a directory, try index.html
       if (stats.isDirectory()) {
-        const indexPath = path.join(filePath, 'index.html');
+        const indexPath = path.join(resolved, 'index.html');
         try {
-          await fs.promises.access(indexPath, fs.constants.F_OK);
           if (hasVariables) {
             const html = await getInterpolatedHtml(indexPath);
             return c.html(html);
           }
-          const content = await fs.promises.readFile(indexPath);
-          return c.html(content.toString('utf-8'));
+          const content = await fs.promises.readFile(indexPath, 'utf-8');
+          return c.html(content);
         } catch {
           // No index.html in directory, fall through
         }
@@ -105,13 +147,12 @@ export function registerProdStatic(
     }
 
     // SPA fallback: serve root index.html
-    const rootIndex = path.join(publicPath, 'index.html');
     if (hasVariables) {
-      const html = await getInterpolatedHtml(rootIndex);
+      const html = await getInterpolatedHtml(rootIndexPath);
       return c.html(html);
     }
     try {
-      const content = await fs.promises.readFile(rootIndex, 'utf-8');
+      const content = await getRootIndex();
       return c.html(content);
     } catch {
       return c.json({ error: 'Not Found' }, 404);

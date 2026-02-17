@@ -118,21 +118,33 @@ describe('static prod plugin - html_variables integration', () => {
       expect(body).toContain('<title>Test App</title>');
     });
 
-    test('should serve non-HTML files without modification', async () => {
+    test('should serve non-HTML files with correct Content-Type', async () => {
       const res = await app.request('/test.svg');
 
       expect(res.status).toBe(200);
       const contentType = res.headers.get('content-type');
-      // Content-type should either be null or not contain text/html
-      if (contentType !== null) {
-        expect(contentType).not.toContain('text/html');
-      }
+      expect(contentType).toContain('image/svg+xml');
     });
 
     test('should return 404 for API routes', async () => {
       const res = await app.request('/api/nonexistent');
 
       expect(res.status).toBe(404);
+    });
+
+    test('should not serve files outside public directory', async () => {
+      // URL parsers normalize /../ to /, so the request
+      // becomes /package.json which does not exist in
+      // public/. The SPA fallback serves index.html
+      // instead of leaking files outside public/.
+      const res = await app.request('/../package.json');
+
+      expect(res.status).toBe(200);
+      const body = await res.text();
+      // Should get the SPA fallback (index.html), not
+      // the actual package.json from the parent dir
+      expect(body).toContain('<title>My App</title>');
+      expect(body).not.toContain('"name"');
     });
 
     test('should cache HTML and return identical content', async () => {
@@ -176,6 +188,17 @@ describe('static prod plugin - html_variables integration', () => {
       expect(res.status).toBe(200);
       const body = await res.text();
       expect(body).toContain('<!doctype html>');
+    });
+
+    test('should not serve files outside public directory', async () => {
+      const res = await app.request('/../package.json');
+
+      expect(res.status).toBe(200);
+      const body = await res.text();
+      // Should get the SPA fallback, not the real
+      // package.json from the parent directory
+      expect(body).toContain('<!doctype html>');
+      expect(body).not.toContain('"name"');
     });
   });
 });
