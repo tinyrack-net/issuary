@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeForTokens } from '@/lib/oidc-client';
+import { assertAuthState } from '@/lib/validators';
 import type { AuthState } from '@/types/oidc';
 
 const STATE_COOKIE_NAME = 'oidc_state';
@@ -49,7 +50,9 @@ export async function GET(request: NextRequest) {
 
   let authState: AuthState;
   try {
-    authState = JSON.parse(stateCookie.value) as AuthState;
+    const parsed: unknown = JSON.parse(stateCookie.value);
+    assertAuthState(parsed);
+    authState = parsed;
   } catch {
     return NextResponse.redirect(
       new URL(

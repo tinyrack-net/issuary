@@ -6,6 +6,12 @@ import type {
   UserInfo,
 } from '@/types/oidc';
 import { getOIDCConfig } from './oidc-config';
+import {
+  assertIDTokenPayload,
+  assertIntrospectionResponse,
+  assertTokenResponse,
+  assertUserInfo,
+} from './validators';
 
 /**
  * Build authorization URL for OAuth/OIDC flow
@@ -60,7 +66,9 @@ export async function exchangeCodeForTokens(
     throw new Error(`Token exchange failed: ${error}`);
   }
 
-  return (await response.json()) as TokenResponse;
+  const json: unknown = await response.json();
+  assertTokenResponse(json);
+  return json;
 }
 
 /**
@@ -90,7 +98,9 @@ export async function refreshAccessToken(
     throw new Error(`Token refresh failed: ${error}`);
   }
 
-  return (await response.json()) as TokenResponse;
+  const json: unknown = await response.json();
+  assertTokenResponse(json);
+  return json;
 }
 
 /**
@@ -109,7 +119,9 @@ export async function fetchUserInfo(accessToken: string): Promise<UserInfo> {
     throw new Error(`UserInfo fetch failed: ${error}`);
   }
 
-  return (await response.json()) as UserInfo;
+  const json: unknown = await response.json();
+  assertUserInfo(json);
+  return json;
 }
 
 /**
@@ -117,7 +129,9 @@ export async function fetchUserInfo(accessToken: string): Promise<UserInfo> {
  * For production, use jose's jwtVerify with proper key
  */
 export function decodeIDToken(idToken: string): IDTokenPayload {
-  return decodeJwt(idToken) as IDTokenPayload;
+  const payload: unknown = decodeJwt(idToken);
+  assertIDTokenPayload(payload);
+  return payload;
 }
 
 /**
@@ -164,7 +178,9 @@ export async function introspectToken(
     throw new Error(`Token introspection failed: ${error}`);
   }
 
-  return (await response.json()) as IntrospectionResponse;
+  const json: unknown = await response.json();
+  assertIntrospectionResponse(json);
+  return json;
 }
 
 /**

@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import type { AuthState, TokenResponse } from '@/types/oidc';
+import { assertAuthState, assertTokenResponse } from './validators';
 
 const TOKEN_COOKIE_NAME = 'oidc_tokens';
 const STATE_COOKIE_NAME = 'oidc_state';
@@ -31,7 +32,9 @@ export async function getTokens(): Promise<TokenResponse | null> {
   }
 
   try {
-    return JSON.parse(tokenCookie.value) as TokenResponse;
+    const parsed: unknown = JSON.parse(tokenCookie.value);
+    assertTokenResponse(parsed);
+    return parsed;
   } catch {
     return null;
   }
@@ -74,7 +77,9 @@ export async function getAndClearAuthState(): Promise<AuthState | null> {
   cookieStore.delete(STATE_COOKIE_NAME);
 
   try {
-    return JSON.parse(stateCookie.value) as AuthState;
+    const parsed: unknown = JSON.parse(stateCookie.value);
+    assertAuthState(parsed);
+    return parsed;
   } catch {
     return null;
   }

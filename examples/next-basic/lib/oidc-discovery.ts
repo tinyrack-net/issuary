@@ -1,4 +1,5 @@
 import type { OpenIDConfiguration } from '@/types/oidc';
+import { assertOpenIDConfiguration } from './validators';
 
 /**
  * Fetch OpenID Provider Configuration using OIDC Discovery
@@ -31,7 +32,9 @@ export async function fetchOpenIDConfiguration(
       );
     }
 
-    const config = (await response.json()) as OpenIDConfiguration;
+    const json: unknown = await response.json();
+    assertOpenIDConfiguration(json);
+    const config = json;
 
     // Validate required fields
     if (!config.issuer || !config.authorization_endpoint) {
