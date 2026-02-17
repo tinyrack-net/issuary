@@ -623,7 +623,7 @@ export class JwtService {
         }
       }
 
-      return payload as unknown as AccessTokenPayload;
+      return payload;
     } catch {
       throw new e.InvalidAccessToken.Error();
     }
@@ -650,7 +650,7 @@ export class JwtService {
         }
       }
 
-      return payload as unknown as RefreshTokenPayload;
+      return payload;
     } catch {
       throw new e.InvalidRefreshToken.Error();
     }
@@ -669,7 +669,7 @@ export class JwtService {
         throw new Error('Invalid ID token payload structure');
       }
 
-      return payload as unknown as IdTokenPayload;
+      return payload;
     } catch {
       throw new e.InvalidIdToken.Error();
     }
@@ -684,8 +684,10 @@ export class JwtService {
     if (!headerPart) {
       throw new Error('Invalid token format');
     }
-    const header = JSON.parse(Buffer.from(headerPart, 'base64url').toString());
-    const kid = header.kid as string | undefined;
+    const header: Record<string, unknown> = JSON.parse(
+      Buffer.from(headerPart, 'base64url').toString(),
+    );
+    const kid = typeof header['kid'] === 'string' ? header['kid'] : undefined;
 
     // If kid is present, find specific key
     if (kid) {
@@ -715,7 +717,9 @@ export class JwtService {
   /**
    * Type guard to validate access token payload structure
    */
-  private isAccessTokenPayload(payload: JWTPayload): boolean {
+  private isAccessTokenPayload(
+    payload: JWTPayload,
+  ): payload is JWTPayload & AccessTokenPayload {
     return (
       payload['typ'] === 'access_token' &&
       typeof payload.sub === 'string' &&
@@ -727,7 +731,9 @@ export class JwtService {
   /**
    * Type guard to validate refresh token payload structure
    */
-  private isRefreshTokenPayload(payload: JWTPayload): boolean {
+  private isRefreshTokenPayload(
+    payload: JWTPayload,
+  ): payload is JWTPayload & RefreshTokenPayload {
     return (
       payload['typ'] === 'refresh_token' &&
       typeof payload.sub === 'string' &&
@@ -739,7 +745,9 @@ export class JwtService {
   /**
    * Type guard to validate ID token payload structure
    */
-  private isIdTokenPayload(payload: JWTPayload): boolean {
+  private isIdTokenPayload(
+    payload: JWTPayload,
+  ): payload is JWTPayload & IdTokenPayload {
     return typeof payload.sub === 'string' && typeof payload.aud === 'string';
   }
 

@@ -511,6 +511,8 @@ export class CleanupService {
 
     // Fork EntityManager for isolation
     const em = this.mikro.orm.em.fork();
+    // MikroORM's getRepository return type doesn't reflect custom
+    // repository classes registered via entity metadata.
     const jwtKeyRepo = em.getRepository(JwtKeyEntity) as JwtKeyRepository;
 
     // Check for expired active keys
