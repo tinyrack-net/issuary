@@ -5,6 +5,7 @@ import {
 } from '@backend/entities/jwt-key.entity.js';
 import { OAuthCodeEntitySchema } from '@backend/entities/oauth-code.entity.js';
 import { PasswordResetEntitySchema } from '@backend/entities/password-reset.entity.js';
+import { PendingOAuthRegistrationEntitySchema } from '@backend/entities/pending-oauth-registration.entity.js';
 import { RevokedTokenEntitySchema } from '@backend/entities/revoked-token.entity.js';
 import { UserEntity } from '@backend/entities/user.entity.js';
 import { UserConsentEntity } from '@backend/entities/user-consent.entity.js';
@@ -473,6 +474,74 @@ export class CleanupService {
   }
 
   // ---------------------------------------------------------------------------
+  // Pending OAuth Registrations Cleanup
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Remove expired pending OAuth registration records.
+   *
+   * When a new OAuth user needs to accept terms before completing
+   * registration, the OAuth tokens and user info are stored in the
+   * database. These records expire after 1 hour and can be safely
+   * cleaned up afterwards.
+   *
+   * @param options - Cleanup options (dryRun)
+   * @returns Cleanup result with deleted count and details
+   */
+  async cleanupPendingOAuthRegistrations(
+    options: CleanupOptions,
+  ): Promise<CleanupResult> {
+    const config = this.config.cleanup.pending_oauth_registrations;
+
+    if (!config.enabled) {
+      return { deletedCount: 0, skipped: true, message: 'Disabled in config' };
+    }
+
+    const em = this.mikro.orm.em.fork();
+    const repo = em.getRepository(PendingOAuthRegistrationEntitySchema);
+
+    const retentionMs = parseDurationToMs(config.retention);
+    const cutoffDate = calculateCutoffDate(config.retention);
+
+    const count = await repo.count({
+      expiresAt: { $lt: cutoffDate },
+    });
+
+    if (count === 0) {
+      return {
+        deletedCount: 0,
+        skipped: false,
+        message: 'No expired pending registrations',
+      };
+    }
+
+    if (options.dryRun) {
+      return {
+        deletedCount: count,
+        skipped: false,
+        message: `Would delete ${count} pending registrations (retention: ${formatDuration(retentionMs)})`,
+      };
+    }
+
+    const deletedCount = await repo.nativeDelete({
+      expiresAt: { $lt: cutoffDate },
+    });
+
+    if (retentionMs > 0) {
+      return {
+        deletedCount,
+        skipped: false,
+        message: `Retention: ${formatDuration(retentionMs)}`,
+      };
+    }
+
+    return {
+      deletedCount,
+      skipped: false,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
   // JWT Keys Rotation
   // ---------------------------------------------------------------------------
 
@@ -639,6 +708,11 @@ export class CleanupService {
         name: 'deleted-users',
         description: 'Permanently delete users after retention period',
         run: () => this.cleanupDeletedUsers({ dryRun }),
+      },
+      {
+        name: 'pending-oauth-registrations',
+        description: 'Remove expired pending OAuth registrations',
+        run: () => this.cleanupPendingOAuthRegistrations({ dryRun }),
       },
       {
         name: 'jwt-keys',

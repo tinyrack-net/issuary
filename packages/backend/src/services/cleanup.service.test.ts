@@ -5,6 +5,7 @@ import {
 } from '@backend/entities/jwt-key.entity.js';
 import { OAuthCodeEntitySchema } from '@backend/entities/oauth-code.entity.js';
 import { PasswordResetEntitySchema } from '@backend/entities/password-reset.entity.js';
+import { PendingOAuthRegistrationEntitySchema } from '@backend/entities/pending-oauth-registration.entity.js';
 import { RevokedTokenEntitySchema } from '@backend/entities/revoked-token.entity.js';
 import { UserEntity } from '@backend/entities/user.entity.js';
 import { createServer } from '@backend/server.js';
@@ -16,6 +17,7 @@ import {
   createJwtKey,
   createOAuthCode,
   createPasswordReset,
+  createPendingOAuthRegistration,
   createRevokedToken,
   createTestOAuthClient,
   createTestUser,
@@ -1214,6 +1216,204 @@ describe('CleanupService', () => {
         managed_by: 'database',
       });
       expect(countAfter).toBe(1);
+    });
+  });
+
+  describe('cleanupPendingOAuthRegistrations', () => {
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
+
+    beforeAll(async () => {
+      const server = await createServer({
+        config: CLI_TEST_CONFIG,
+        skipListen: true,
+      });
+      services = server.services;
+      cleanup = server.cleanup;
+    });
+
+    afterAll(async () => {
+      await cleanup();
+    });
+
+    beforeEach(async () => {
+      await withMikroContext(services, async () => {
+        const em = services.mikro.em.fork();
+        await em.nativeDelete(PendingOAuthRegistrationEntitySchema, {});
+      });
+    });
+
+    test('should skip when disabled in config', async () => {
+      const disabledServer = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          cleanup: {
+            pending_oauth_registrations: { enabled: false },
+          },
+        },
+        skipListen: true,
+      });
+
+      try {
+        const result =
+          await disabledServer.services.cleanupService.cleanupPendingOAuthRegistrations(
+            { dryRun: false },
+          );
+
+        expect(result.skipped).toBe(true);
+        expect(result.deletedCount).toBe(0);
+        expect(result.message).toBe('Disabled in config');
+      } finally {
+        await disabledServer.cleanup();
+      }
+    });
+
+    test('should return no-op message when nothing to clean', async () => {
+      const result =
+        await services.cleanupService.cleanupPendingOAuthRegistrations({
+          dryRun: false,
+        });
+
+      expect(result.skipped).toBe(false);
+      expect(result.deletedCount).toBe(0);
+      expect(result.message).toBe('No expired pending registrations');
+    });
+
+    test('should delete expired pending registrations', async () => {
+      await createPendingOAuthRegistration(services, {
+        expiresAt: new Date(Date.now() - 10000),
+      });
+      await createPendingOAuthRegistration(services, {
+        expiresAt: new Date(Date.now() - 20000),
+      });
+
+      const countBefore = await countEntities(
+        services,
+        'pendingOAuthRegistration',
+      );
+      expect(countBefore).toBe(2);
+
+      const result =
+        await services.cleanupService.cleanupPendingOAuthRegistrations({
+          dryRun: false,
+        });
+
+      expect(result.skipped).toBe(false);
+      expect(result.deletedCount).toBe(2);
+
+      const countAfter = await countEntities(
+        services,
+        'pendingOAuthRegistration',
+      );
+      expect(countAfter).toBe(0);
+    });
+
+    test('should not delete non-expired pending registrations', async () => {
+      await createPendingOAuthRegistration(services, {
+        expiresAt: new Date(Date.now() - 10000),
+      });
+      await createPendingOAuthRegistration(services, {
+        expiresAt: new Date(Date.now() + 60000),
+      });
+
+      const result =
+        await services.cleanupService.cleanupPendingOAuthRegistrations({
+          dryRun: false,
+        });
+
+      expect(result.deletedCount).toBe(1);
+
+      const countAfter = await countEntities(
+        services,
+        'pendingOAuthRegistration',
+      );
+      expect(countAfter).toBe(1);
+    });
+
+    test('should work in dry-run mode', async () => {
+      await createPendingOAuthRegistration(services, {
+        expiresAt: new Date(Date.now() - 10000),
+      });
+      await createPendingOAuthRegistration(services, {
+        expiresAt: new Date(Date.now() - 20000),
+      });
+
+      const result =
+        await services.cleanupService.cleanupPendingOAuthRegistrations({
+          dryRun: true,
+        });
+
+      expect(result.skipped).toBe(false);
+      expect(result.deletedCount).toBe(2);
+      expect(result.message).toContain('Would delete');
+
+      const countAfter = await countEntities(
+        services,
+        'pendingOAuthRegistration',
+      );
+      expect(countAfter).toBe(2);
+    });
+
+    test('should respect retention period configuration', async () => {
+      const retentionServer = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          cleanup: {
+            pending_oauth_registrations: {
+              enabled: true,
+              retention: '1h',
+            },
+          },
+        },
+        skipListen: true,
+      });
+
+      try {
+        // Create a registration expired 30 minutes ago (within 1h retention)
+        await withMikroContext(retentionServer.services, async () => {
+          await retentionServer.services.mikro.pendingOAuthRegistration.createPendingRegistration(
+            {
+              providerId: 'google',
+              accessToken: 'test-access-token',
+              tokenType: 'Bearer',
+              userInfo: {
+                id: 'provider-user-1',
+                email: 'recent@example.com',
+                email_verified: true,
+              },
+              expiresAt: new Date(Date.now() - 30 * 60 * 1000),
+            },
+          );
+        });
+
+        // Create a registration expired 2 hours ago (beyond 1h retention)
+        await withMikroContext(retentionServer.services, async () => {
+          await retentionServer.services.mikro.pendingOAuthRegistration.createPendingRegistration(
+            {
+              providerId: 'google',
+              accessToken: 'test-access-token-2',
+              tokenType: 'Bearer',
+              userInfo: {
+                id: 'provider-user-2',
+                email: 'old@example.com',
+                email_verified: true,
+              },
+              expiresAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+            },
+          );
+        });
+
+        const result =
+          await retentionServer.services.cleanupService.cleanupPendingOAuthRegistrations(
+            { dryRun: false },
+          );
+
+        // Only the 2-hour-old registration should be deleted
+        expect(result.deletedCount).toBe(1);
+        expect(result.message).toContain('Retention');
+      } finally {
+        await retentionServer.cleanup();
+      }
     });
   });
 });
