@@ -58,7 +58,7 @@ describe('GET /api/docs/json', () => {
     expect(res.status).toBe(200);
 
     const body = await res.json();
-    expect(body.paths).toHaveProperty('/api/v1/health');
+    expect(body.paths).toHaveProperty('/api/health');
   });
 });
 

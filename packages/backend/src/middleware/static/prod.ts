@@ -15,7 +15,7 @@ const __dirname = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 function isBackendRoute(urlPath: string): boolean {
   return (
     urlPath.startsWith('/api') ||
-    urlPath.startsWith('/application') ||
+    urlPath.startsWith('/oauth') ||
     urlPath.startsWith('/.well-known')
   );
 }
