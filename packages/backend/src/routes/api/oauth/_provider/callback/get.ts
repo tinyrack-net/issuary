@@ -218,15 +218,12 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
           expiresAt: new Date(Date.now() + 60 * 60 * 1000),
         });
 
-      // Store only a lightweight lookup token in the session cookie
-      session.set('pendingOAuthRegistrationToken', pendingToken);
-
       // Clear OAuth flow session
       session.set('oauth', undefined);
 
-      // Redirect to terms page
       const termsUrl = new URL('/terms', `${config.app.host}`);
       termsUrl.searchParams.set('mode', 'complete_registration');
+      termsUrl.searchParams.set('registration_token', pendingToken);
       if (oauthSession.returnUrl) {
         termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
       }

@@ -59,20 +59,18 @@ export const termsConsentPost = new Hono<AppEnv>().post(
   verifyAuth({ optional: true }),
   async (c) => {
     const body = c.req.valid('json');
-    const { consents } = body;
+    const { consents, registrationToken } = body;
     const session = c.get('session');
     const { mikro, termsService, oauthConnectService } = c.get('services');
 
     // Check for pending OAuth registration (stored in DB, referenced by token)
-    const pendingToken = session.get('pendingOAuthRegistrationToken');
-
-    if (pendingToken) {
+    if (registrationToken) {
       const pendingRegistration =
-        await mikro.pendingOAuthRegistration.findValidByToken(pendingToken);
+        await mikro.pendingOAuthRegistration.findValidByToken(
+          registrationToken,
+        );
 
       if (!pendingRegistration) {
-        // Record expired or missing — clean up the session reference
-        session.set('pendingOAuthRegistrationToken', undefined);
         throw new e.OAuthSessionExpired.Error();
       }
 
@@ -101,9 +99,8 @@ export const termsConsentPost = new Hono<AppEnv>().post(
       // Set user session
       session.setUserSession(result.user.id);
 
-      // Clean up: remove DB record and session reference
-      await mikro.pendingOAuthRegistration.consumeByToken(pendingToken);
-      session.set('pendingOAuthRegistrationToken', undefined);
+      // Clean up: remove DB record
+      await mikro.pendingOAuthRegistration.consumeByToken(registrationToken);
 
       return c.json(
         {

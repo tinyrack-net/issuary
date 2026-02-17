@@ -23,12 +23,6 @@ export interface SessionData {
     mode: 'login' | 'register' | 'link';
     returnUrl?: string | undefined;
   };
-  /**
-   * Lookup token referencing a pending_oauth_registration DB record.
-   * The actual OAuth tokens and user info are stored server-side
-   * to avoid cookie size limits (~4 KB).
-   */
-  pendingOAuthRegistrationToken?: string;
   passkey_challenge?: string;
 }
 
