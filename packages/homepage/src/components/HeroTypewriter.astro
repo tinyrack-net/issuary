@@ -74,8 +74,9 @@ const { prefix, suffix, words, docsLink, docsLabel } = Astro.props;
     if (!raw) return;
 
     const words: string[] = JSON.parse(raw);
-    const el = container.querySelector<HTMLElement>('.typewriter');
-    if (!el || words.length === 0) return;
+    const typewriterEl = container.querySelector<HTMLElement>('.typewriter');
+    if (!typewriterEl || words.length === 0) return;
+    const el = typewriterEl;
 
     let wordIndex = 0;
     let charIndex = 0;
