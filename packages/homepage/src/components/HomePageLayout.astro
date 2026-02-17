@@ -4,9 +4,27 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 
 interface Props {
   frontmatter: StarlightPageFrontmatter;
+  centered?: boolean;
 }
 
-const { frontmatter } = Astro.props;
+const { frontmatter, centered = false } = Astro.props;
+
+const centeredStyles = centered
+  ? [
+      {
+        tag: 'style' as const,
+        content: `
+          main footer { display: none !important; }
+          .main-frame { display: flex !important; flex-direction: column; flex: 1; }
+          .main-frame > .lg\\:sl-flex { flex: 1; display: flex !important; }
+          .main-pane { flex: 1; display: flex !important; }
+          main { flex: 1; display: flex !important; flex-direction: column; justify-content: center; }
+          .content-panel:not(:has(#_top)) { display: flex !important; flex-direction: column; justify-content: center; flex: 1; }
+          .content-panel:not(:has(#_top)) .sl-container { display: flex; flex-direction: column; justify-content: center; flex: 1; }
+        `,
+      },
+    ]
+  : [];
 ---
 
 <StarlightPage
@@ -22,6 +40,7 @@ const { frontmatter } = Astro.props;
           .content-panel { border-top: none !important; }
         `,
       },
+      ...centeredStyles,
     ],
   }}
 >
