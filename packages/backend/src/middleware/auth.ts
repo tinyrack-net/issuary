@@ -21,8 +21,8 @@ export const verifyAuth = <Optional extends boolean = false>(options?: {
       ServicesEnv['Variables'] &
       VerifiedAuthEnv<Optional>['Variables'];
   }>(async (c, next) => {
-    const services = c.get('services');
-    const session = c.get('session');
+    const services = c.var.services;
+    const session = c.var.session;
     const userId = session.get('user')?.id;
     if (!userId) {
       if (options?.optional) {
@@ -57,8 +57,8 @@ export const verifyPending2FAUser = <
       ServicesEnv['Variables'] &
       VerifiedPending2FAUserEnv<Optional>['Variables'];
   }>(async (c, next) => {
-    const services = c.get('services');
-    const session = c.get('session');
+    const services = c.var.services;
+    const session = c.var.session;
     const userId = session.get('pending2FAUser')?.id;
     if (!userId) {
       if (options?.optional) {
@@ -93,8 +93,8 @@ export const verifyPending2FASetupUser = <
       ServicesEnv['Variables'] &
       VerifiedPending2FASetupUserEnv<Optional>['Variables'];
   }>(async (c, next) => {
-    const services = c.get('services');
-    const session = c.get('session');
+    const services = c.var.services;
+    const session = c.var.session;
     const userId = session.get('pending2FASetup')?.id;
     if (!userId) {
       if (options?.optional) {
