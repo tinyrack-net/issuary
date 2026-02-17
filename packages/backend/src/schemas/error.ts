@@ -1,7 +1,8 @@
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { z } from 'zod';
 
 export class ApiError<
-  STATUS extends number = number,
+  STATUS extends ContentfulStatusCode = ContentfulStatusCode,
   CODE extends string = string,
   MESSAGE extends string = string,
 > extends Error {
@@ -25,7 +26,7 @@ export class ApiError<
 }
 
 const createError = <
-  STATUS extends number = number,
+  STATUS extends ContentfulStatusCode = ContentfulStatusCode,
   CODE extends string = string,
   MESSAGE extends string = string,
 >(
@@ -48,7 +49,7 @@ const createError = <
 };
 
 const createErrorWithData = <
-  STATUS extends number = number,
+  STATUS extends ContentfulStatusCode = ContentfulStatusCode,
   CODE extends string = string,
   MESSAGE extends string = string,
   DATA_SCHEMA extends z.ZodTypeAny = z.ZodTypeAny,

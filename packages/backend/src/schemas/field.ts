@@ -1,6 +1,6 @@
 import {
-  AVAILABLE_LOCALES,
   DEFAULT_LOCALE,
+  isAvailableLocale,
   type Locale,
 } from '@backend/lib/locale.js';
 import { z } from 'zod';
@@ -122,8 +122,8 @@ export const f = {
         .sort((a, b) => b.q - a.q);
 
       for (const lang of languages) {
-        if (lang.code && AVAILABLE_LOCALES.includes(lang.code as Locale)) {
-          return lang.code as Locale;
+        if (lang.code && isAvailableLocale(lang.code)) {
+          return lang.code;
         }
       }
 

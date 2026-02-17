@@ -483,6 +483,12 @@ export const r = {
   // 400 instead of an unhandled 500 from the library.
   // We use z.record() for JSON Schema compatibility, plus .refine() for
   // runtime structural checks.
+  // For request body validation, check basic structure.
+  // Actual WebAuthn cryptographic validation is done by @simplewebauthn.
+  // We validate the minimal shape here so malformed payloads get a clean
+  // 400 instead of an unhandled 500 from the library.
+  // We use z.record() for JSON Schema compatibility, plus .refine() for
+  // runtime structural checks.
   PasskeyRegistrationBody: z.object({
     response: z
       .record(z.string(), z.any())
