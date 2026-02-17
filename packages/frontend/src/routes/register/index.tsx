@@ -4,6 +4,7 @@ import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { SubmitButton } from '@frontend/components/auth/submit-button.js';
 import { TermsCheckboxList } from '@frontend/components/terms/terms-checkbox-list.js';
 import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { ApiError } from '@frontend/libs/error.js';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
@@ -170,17 +171,23 @@ function Register() {
       }
     },
     onError: (error) => {
-      const apiError = error as { code?: string };
-      if (apiError.code === 'REGISTRATION_EMAIL_NOT_ALLOWED') {
-        setError('email', {
-          type: 'manual',
-          message: t('register.error.emailNotAllowed'),
-        });
-      } else if (apiError.code === 'REGISTRATION_DISABLED') {
-        setError('email', {
-          type: 'manual',
-          message: t('register.error.registrationDisabled'),
-        });
+      if (error instanceof ApiError) {
+        if (error.code === 'REGISTRATION_EMAIL_NOT_ALLOWED') {
+          setError('email', {
+            type: 'manual',
+            message: t('register.error.emailNotAllowed'),
+          });
+        } else if (error.code === 'REGISTRATION_DISABLED') {
+          setError('email', {
+            type: 'manual',
+            message: t('register.error.registrationDisabled'),
+          });
+        } else {
+          setError('email', {
+            type: 'manual',
+            message: t('register.error.emailExists'),
+          });
+        }
       } else {
         setError('email', {
           type: 'manual',

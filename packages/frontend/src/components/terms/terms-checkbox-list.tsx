@@ -35,6 +35,9 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
   const { t } = useTranslation();
   const [modalTerm, setModalTerm] = useState<TermItem | null>(null);
 
+  // react-hook-form's Path<T> cannot be narrowed from template literal
+  // strings when T is generic, so these casts are necessary to bridge
+  // the generic constraint with the known 'termsConsents' field shape.
   const termsConsents = useWatch({
     control,
     name: 'termsConsents' as Path<T>,

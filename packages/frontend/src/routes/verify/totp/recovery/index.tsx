@@ -48,7 +48,7 @@ function VerifyRecovery() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const search = Route.useSearch();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [sessionExpired, setSessionExpired] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState(
@@ -219,9 +219,7 @@ function VerifyRecovery() {
             placeholder={t('verifyRecovery.placeholder')}
             ref={(el) => {
               formRef(el);
-              (
-                inputRef as React.MutableRefObject<HTMLInputElement | null>
-              ).current = el;
+              inputRef.current = el;
             }}
             type="text"
           />
