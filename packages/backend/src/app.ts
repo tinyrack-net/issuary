@@ -4,10 +4,13 @@ import {
   resolveConfig,
 } from '@backend/lib/config/index.js';
 import { env } from '@backend/lib/env.js';
+import { interpolateHtml } from '@backend/lib/interpolate-html.js';
+import { isBackendRoute } from '@backend/lib/is-backend-route.js';
 import { mikroOrmMiddleware } from '@backend/middleware/mikro-orm.js';
+import { createProxyHandler } from '@backend/middleware/proxy.js';
 import { servicesMiddleware } from '@backend/middleware/services.js';
 import { sessionMiddleware } from '@backend/middleware/session.js';
-import { registerStaticHandler } from '@backend/middleware/static/index.js';
+import { registerProdStatic } from '@backend/middleware/static.js';
 import { trustedProxyGuard } from '@backend/middleware/trusted-proxy-guard.js';
 import { routes } from '@backend/routes/index.js';
 import { ApiError, e } from '@backend/schemas/error.js';
@@ -90,8 +93,52 @@ export async function createApp(options: CreateAppOptions) {
     }),
   );
 
-  // Register static file handler (skip in CLI mode)
-  registerStaticHandler(honoApp, config, silent);
+  // Register static file / proxy handler
+  if (env.APP_ENV === 'development') {
+    const variables = config.app.html_variables;
+    const hasVariables = Object.keys(variables).length > 0;
+
+    const proxyHandler = createProxyHandler({
+      upstream: 'http://localhost:8081',
+      onResponse: hasVariables
+        ? async (res) => {
+            const ct = res.headers.get('content-type') ?? '';
+            if (!ct.includes('text/html')) {
+              return res;
+            }
+            const raw = await res.text();
+            const interpolated = interpolateHtml(raw, variables);
+            const headers = new Headers(res.headers);
+            headers.set(
+              'content-length',
+              String(Buffer.byteLength(interpolated)),
+            );
+            return new Response(interpolated, {
+              status: res.status,
+              statusText: res.statusText,
+              headers,
+            });
+          }
+        : undefined,
+    });
+
+    if (!silent) {
+      console.info(
+        'Static handler registered (development mode, proxy: %s)',
+        'http://localhost:8081',
+      );
+    }
+
+    honoApp.notFound(async (c) => {
+      const reqUrl = new URL(c.req.url);
+      if (isBackendRoute(reqUrl.pathname)) {
+        return c.json({ error: 'Not Found' }, 404);
+      }
+      return proxyHandler(c);
+    });
+  } else {
+    registerProdStatic(honoApp, config, silent);
+  }
 
   // Start scheduler
   services.scheduler.start();
