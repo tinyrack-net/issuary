@@ -21,7 +21,7 @@ export default defineConfig({
     {
       command: 'pnpm dev',
       cwd: '../backend',
-      url: 'http://localhost:8080/api/v1/config',
+      url: 'http://localhost:8080/api/config',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
       stdout: 'pipe',

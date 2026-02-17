@@ -68,7 +68,7 @@ export class ApiHelpers {
    */
   async getTerms(lang = 'en'): Promise<TermsResponse> {
     const response = await this.request.get(
-      `${API_BASE_URL}/api/v1/terms?lang=${lang}`,
+      `${API_BASE_URL}/api/terms?lang=${lang}`,
     );
 
     if (!response.ok()) {
@@ -107,7 +107,7 @@ export class ApiHelpers {
     const finalConsents = consents ?? (await this.generateRequiredConsents());
 
     const response = await this.request.post(
-      `${API_BASE_URL}/api/v1/auth/register`,
+      `${API_BASE_URL}/api/auth/register`,
       {
         data: { email, password, consents: finalConsents },
       },
@@ -125,12 +125,9 @@ export class ApiHelpers {
    * Login a user via API
    */
   async login(email: string, password: string): Promise<LoginResponse> {
-    const response = await this.request.post(
-      `${API_BASE_URL}/api/v1/auth/login`,
-      {
-        data: { email, password },
-      },
-    );
+    const response = await this.request.post(`${API_BASE_URL}/api/auth/login`, {
+      data: { email, password },
+    });
 
     if (!response.ok()) {
       const error = await response.text();
@@ -144,9 +141,7 @@ export class ApiHelpers {
    * Logout the current user via API
    */
   async logout(): Promise<void> {
-    const response = await this.request.post(
-      `${API_BASE_URL}/api/v1/auth/logout`,
-    );
+    const response = await this.request.post(`${API_BASE_URL}/api/auth/logout`);
 
     if (!response.ok()) {
       const error = await response.text();
@@ -158,9 +153,7 @@ export class ApiHelpers {
    * Get the current session
    */
   async getSession(): Promise<AuthResponse> {
-    const response = await this.request.get(
-      `${API_BASE_URL}/api/v1/user/session`,
-    );
+    const response = await this.request.get(`${API_BASE_URL}/api/user/session`);
 
     if (!response.ok()) {
       const error = await response.text();
@@ -175,7 +168,7 @@ export class ApiHelpers {
    */
   async forgotPassword(email: string): Promise<void> {
     const response = await this.request.post(
-      `${API_BASE_URL}/api/v1/auth/password/forgot`,
+      `${API_BASE_URL}/api/auth/password/forgot`,
       {
         data: { email },
       },
@@ -194,7 +187,7 @@ export class ApiHelpers {
    */
   async resetPassword(token: string, password: string): Promise<void> {
     const response = await this.request.post(
-      `${API_BASE_URL}/api/v1/auth/password/reset`,
+      `${API_BASE_URL}/api/auth/password/reset`,
       {
         data: { token, password },
       },
@@ -211,7 +204,7 @@ export class ApiHelpers {
    */
   async verifyEmail(token: string): Promise<{ user: SessionUser }> {
     const response = await this.request.post(
-      `${API_BASE_URL}/api/v1/auth/verify-email`,
+      `${API_BASE_URL}/api/auth/verify-email`,
       {
         data: { token },
       },
@@ -232,7 +225,7 @@ export class ApiHelpers {
    */
   async resendVerificationEmail(email: string): Promise<void> {
     const response = await this.request.post(
-      `${API_BASE_URL}/api/v1/auth/verify-email/resend`,
+      `${API_BASE_URL}/api/auth/verify-email/resend`,
       {
         data: { email },
       },
@@ -251,7 +244,7 @@ export class ApiHelpers {
    */
   async verifyTotpLogin(code: string): Promise<{ user: SessionUser }> {
     const response = await this.request.post(
-      `${API_BASE_URL}/api/v1/auth/totp/verify-login`,
+      `${API_BASE_URL}/api/auth/totp/verify-login`,
       {
         data: { code },
       },
@@ -272,7 +265,7 @@ export class ApiHelpers {
    */
   async setupTotp(): Promise<{ secret: string; qr_code: string }> {
     const response = await this.request.post(
-      `${API_BASE_URL}/api/v1/user/totp/setup`,
+      `${API_BASE_URL}/api/user/totp/setup`,
     );
 
     if (!response.ok()) {
@@ -288,7 +281,7 @@ export class ApiHelpers {
    */
   async verifyTotpSetup(code: string): Promise<{ recovery_codes: string[] }> {
     const response = await this.request.post(
-      `${API_BASE_URL}/api/v1/user/totp/verify`,
+      `${API_BASE_URL}/api/user/totp/verify`,
       {
         data: { code },
       },
@@ -309,7 +302,7 @@ export class ApiHelpers {
    */
   async confirmTotpSetup(): Promise<{ user: SessionUser }> {
     const response = await this.request.post(
-      `${API_BASE_URL}/api/v1/user/totp/confirm`,
+      `${API_BASE_URL}/api/user/totp/confirm`,
     );
 
     if (!response.ok()) {
@@ -325,7 +318,7 @@ export class ApiHelpers {
    */
   async disableTotp(password: string): Promise<{ user: SessionUser }> {
     const response = await this.request.post(
-      `${API_BASE_URL}/api/v1/user/totp/disable`,
+      `${API_BASE_URL}/api/user/totp/disable`,
       {
         data: { password },
       },
@@ -347,7 +340,7 @@ export class ApiHelpers {
     newPassword: string,
   ): Promise<void> {
     const response = await this.request.post(
-      `${API_BASE_URL}/api/v1/user/password/change`,
+      `${API_BASE_URL}/api/user/password/change`,
       {
         data: { current_password: currentPassword, new_password: newPassword },
       },
@@ -366,7 +359,7 @@ export class ApiHelpers {
    */
   async setPassword(password: string): Promise<{ user: SessionUser }> {
     const response = await this.request.post(
-      `${API_BASE_URL}/api/v1/user/password/set`,
+      `${API_BASE_URL}/api/user/password/set`,
       {
         data: { password },
       },
@@ -385,7 +378,7 @@ export class ApiHelpers {
    */
   async removePassword(password: string): Promise<{ user: SessionUser }> {
     const response = await this.request.post(
-      `${API_BASE_URL}/api/v1/user/password/remove`,
+      `${API_BASE_URL}/api/user/password/remove`,
       {
         data: { password },
       },
@@ -406,7 +399,7 @@ export class ApiHelpers {
    */
   async deleteAccount(password?: string): Promise<void> {
     const response = await this.request.delete(
-      `${API_BASE_URL}/api/v1/user/account`,
+      `${API_BASE_URL}/api/user/account`,
       {
         data: password ? { password } : undefined,
       },

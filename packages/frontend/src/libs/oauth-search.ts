@@ -37,10 +37,7 @@ export function isOAuthFlow(search: OAuthSearch): boolean {
  * 로그인/회원가입 성공 후 OAuth 플로우를 재개할 때 사용
  */
 export function buildAuthorizeUrl(search: OAuthSearch): string {
-  const authUrl = new URL(
-    '/application/oauth/authorize',
-    window.location.origin,
-  );
+  const authUrl = new URL('/oauth/authorize', window.location.origin);
 
   if (search.client_id) authUrl.searchParams.set('client_id', search.client_id);
   if (search.redirect_uri)
