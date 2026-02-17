@@ -316,6 +316,24 @@ export const CleanupDeletedUsersConfig = z
   .describe('Deleted users cleanup settings');
 
 /**
+ * Configuration for pending OAuth registrations cleanup
+ */
+export const CleanupPendingOAuthRegistrationsConfig = z
+  .object({
+    enabled: z
+      .boolean()
+      .optional()
+      .default(true)
+      .describe('Enable pending OAuth registrations cleanup'),
+    retention: DurationString.optional()
+      .default('0')
+      .describe(
+        'How long to keep expired pending OAuth registrations. "0" means delete immediately after expiry.',
+      ),
+  })
+  .describe('Pending OAuth registrations cleanup settings');
+
+/**
  * Configuration for JWT key rotation
  */
 export const CleanupJwtKeysConfig = z
@@ -352,6 +370,10 @@ export const DEFAULT_CLEANUP_CONFIG = {
     enabled: true,
     retention: '30d',
   },
+  pending_oauth_registrations: {
+    enabled: true,
+    retention: '0',
+  },
   jwt_keys: {
     enabled: true,
   },
@@ -383,6 +405,10 @@ export const AppConfigCleanup = z
     deleted_users: CleanupDeletedUsersConfig.optional().default(
       DEFAULT_CLEANUP_CONFIG.deleted_users,
     ),
+    pending_oauth_registrations:
+      CleanupPendingOAuthRegistrationsConfig.optional().default(
+        DEFAULT_CLEANUP_CONFIG.pending_oauth_registrations,
+      ),
     jwt_keys: CleanupJwtKeysConfig.optional().default(
       DEFAULT_CLEANUP_CONFIG.jwt_keys,
     ),
