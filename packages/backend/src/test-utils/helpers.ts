@@ -1,12 +1,9 @@
 import type { AppType } from '@backend/app.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import { RequestContext } from '@mikro-orm/core';
+import { testClient } from 'hono/testing';
 import { expect } from 'vitest';
-import {
-  assertJsonBody,
-  createTestClient,
-  createTestClientWithHeaders,
-} from './client.js';
+import { assertJsonBody } from './client.js';
 import { generateUniqueEmail, TEST_CONSENTS, TEST_USER } from './fixtures.js';
 
 /**
@@ -50,7 +47,7 @@ export async function createAuthenticatedSession(
   email: string = TEST_USER.email,
   password: string = TEST_USER.password,
 ): Promise<string> {
-  const client = createTestClient(app);
+  const client = testClient(app);
   const res = await client.api.v1.auth.login.$post({
     json: { email, password },
   });
@@ -99,7 +96,7 @@ export interface ErrorDefinition {
  * import { e } from '@backend/schemas/error.js';
  * import { expectError } from '@backend/test-utils/index.js';
  *
- * const client = createTestClient(app);
+ * const client = testClient(app);
  * const res = await client.api.v1.auth.login.$post({
  *   json: { email: 'wrong@example.com', password: 'wrong' },
  * });
@@ -156,7 +153,7 @@ export async function createDbUserWithSession(
     await services.mikro.em.persist(user).flush();
   });
 
-  const client = createTestClient(app);
+  const client = testClient(app);
   const loginRes = await client.api.v1.auth.login.$post({
     json: { email, password },
   });
@@ -282,23 +279,24 @@ export async function grantConsent(
     code_challenge_method?: 'S256' | 'plain';
   },
 ): Promise<string> {
-  const client = createTestClientWithHeaders(app, {
-    Cookie: `session=${sessionCookie}`,
-  });
+  const client = testClient(app);
 
-  const res = await client.api.v1.consent.$post({
-    json: {
-      client_id: params.client_id,
-      redirect_uri: params.redirect_uri,
-      response_type: params.response_type || 'code',
-      scope: params.scope || '',
-      state: params.state,
-      nonce: params.nonce,
-      code_challenge: params.code_challenge,
-      code_challenge_method: params.code_challenge_method,
-      decision: 'allow',
+  const res = await client.api.v1.consent.$post(
+    {
+      json: {
+        client_id: params.client_id,
+        redirect_uri: params.redirect_uri,
+        response_type: params.response_type || 'code',
+        scope: params.scope || '',
+        state: params.state,
+        nonce: params.nonce,
+        code_challenge: params.code_challenge,
+        code_challenge_method: params.code_challenge_method,
+        decision: 'allow',
+      },
     },
-  });
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
 
   if (res.status !== 200) {
     const body = await res.text();
@@ -340,7 +338,7 @@ export async function registerUser(
     consents = TEST_CONSENTS,
   } = options;
 
-  const client = createTestClient(app);
+  const client = testClient(app);
   return client.api.v1.auth.register.$post({
     header: {},
     json: {

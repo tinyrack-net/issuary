@@ -1,6 +1,6 @@
 import type { AppType } from '@backend/app.js';
+import { testClient } from 'hono/testing';
 import { expect } from 'vitest';
-import { createTestClient, createTestClientWithHeaders } from './client.js';
 import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT } from './fixtures.js';
 import { createAuthenticatedSession, grantConsent } from './helpers.js';
 
@@ -153,9 +153,7 @@ export async function getAuthorizationCode(
 
   await grantConsent(app, sessionCookie, consentParams);
 
-  const client = createTestClientWithHeaders(app, {
-    Cookie: `session=${sessionCookie}`,
-  });
+  const client = testClient(app);
 
   const authorizeQuery = {
     response_type: 'code' as const,
@@ -174,9 +172,10 @@ export async function getAuthorizationCode(
     ...(nonce != null ? { nonce } : {}),
   };
 
-  const res = await client.application.oauth.authorize.$get({
-    query: authorizeQuery,
-  });
+  const res = await client.application.oauth.authorize.$get(
+    { query: authorizeQuery },
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
 
   expect(res.status).toBe(302);
 
@@ -226,7 +225,7 @@ export async function exchangeCodeForTokens(
     codeVerifier,
   } = params;
 
-  const client = createTestClient(app);
+  const client = testClient(app);
   return client.application.oauth.token.$post({
     json: {
       grant_type: 'authorization_code',
@@ -265,7 +264,7 @@ export async function refreshAccessToken(
     clientSecret,
   } = params;
 
-  const client = createTestClient(app);
+  const client = testClient(app);
   return client.application.oauth.token.$post({
     json: {
       grant_type: 'refresh_token',
@@ -343,7 +342,7 @@ export async function getUserInfo(
   app: AppType,
   accessToken: string,
 ): Promise<Response> {
-  const client = createTestClient(app);
+  const client = testClient(app);
   return client.application.oauth.userinfo.$get({
     header: {
       authorization: `Bearer ${accessToken}`,
@@ -386,7 +385,7 @@ export async function introspectToken(
     clientSecret,
   } = params;
 
-  const client = createTestClient(app);
+  const client = testClient(app);
   return client.application.oauth.introspect.$post({
     json: {
       token,
@@ -431,7 +430,7 @@ export async function revokeToken(
     clientSecret,
   } = params;
 
-  const client = createTestClient(app);
+  const client = testClient(app);
   return client.application.oauth.revoke.$post({
     json: {
       token,
