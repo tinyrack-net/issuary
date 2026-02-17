@@ -22,15 +22,16 @@ const TermsSearchSchema = OAuthSearchSchema.extend({
   redirect: z.string().optional(),
   lang: z.string().optional(),
   mode: z.enum(['normal', 'complete_registration']).optional(),
+  registration_token: z.string().optional(),
 });
 
 export const Route = createFileRoute('/terms/')({
   component: Terms,
   validateSearch: TermsSearchSchema,
   beforeLoad: async ({ context, search }) => {
-    // When mode=complete_registration, user is completing OAuth signup
-    // They have a pendingOAuthRegistrationToken session but are not logged in yet
-    // Skip auth check in this case - backend will validate the session
+    // When mode=complete_registration, user is completing OAuth signup.
+    // The registration_token in the URL references a DB record with OAuth data.
+    // Skip auth check — backend will validate the token on consent submission.
     if (search.mode === 'complete_registration') {
       return;
     }
@@ -151,6 +152,9 @@ function Terms() {
 
     consentMutation.mutate({
       consents: [...explicitConsents, ...implicitConsents],
+      ...(search.registration_token && {
+        registrationToken: search.registration_token,
+      }),
     });
   };
 
