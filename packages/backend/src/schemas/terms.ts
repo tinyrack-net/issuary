@@ -90,6 +90,13 @@ const ConsentItem = z.object({
 const TermsConsentRequest = z
   .object({
     consents: z.array(ConsentItem).min(1).describe('List of consent decisions'),
+    registrationToken: z
+      .string()
+      .uuid()
+      .optional()
+      .describe(
+        'Pending OAuth registration token. Required when completing registration after terms consent.',
+      ),
   })
   .describe('Terms consent request');
 
