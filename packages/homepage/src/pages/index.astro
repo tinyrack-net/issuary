@@ -1,11 +1,19 @@
 ---
 import HomePageLayout from '../components/HomePageLayout.astro';
+import HeroTypewriter from '../components/HeroTypewriter.astro';
 ---
 
 <HomePageLayout
+  centered
   frontmatter={{
     title: 'Tinyrack Auth',
     description: 'A lightweight OpenID Connect (OIDC) Provider for modern applications',
   }}
 >
+  <HeroTypewriter
+    prefix="OIDC Provider for "
+    words={['Homelab', 'Startup', 'SaaS']}
+    docsLink="/getting-started/introduction/"
+    docsLabel="Get Started"
+  />
 </HomePageLayout>

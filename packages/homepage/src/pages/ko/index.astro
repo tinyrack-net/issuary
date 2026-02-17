@@ -1,12 +1,19 @@
 ---
 import HomePageLayout from '../../components/HomePageLayout.astro';
+import HeroTypewriter from '../../components/HeroTypewriter.astro';
 ---
 
 <HomePageLayout
+  centered
   frontmatter={{
     title: 'Tinyrack Auth',
     description: '모던 애플리케이션을 위한 경량 OpenID Connect (OIDC) 프로바이더',
   }}
 >
-  <div>content</div>
+  <HeroTypewriter
+    suffix=" 을 위한 OIDC 프로바이더"
+    words={['홈랩', '스타트업', 'SaaS']}
+    docsLink="/ko/getting-started/introduction/"
+    docsLabel="시작하기"
+  />
 </HomePageLayout>

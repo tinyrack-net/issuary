@@ -1,35 +1,19 @@
 ---
-import { Card, CardGrid } from '@astrojs/starlight/components';
 import HomePageLayout from '../../components/HomePageLayout.astro';
+import HeroTypewriter from '../../components/HeroTypewriter.astro';
 ---
 
 <HomePageLayout
+  centered
   frontmatter={{
     title: 'Tinyrack Auth',
     description: 'モダンアプリケーション向けの軽量OpenID Connect (OIDC) プロバイダー',
-    hero: {
-      tagline: 'シンプルで安全な認証。アプリケーションのための完全なOAuth2/OIDCソリューション。',
-      actions: [
-        { text: 'はじめる', link: '/ja/getting-started/introduction/', icon: 'right-arrow' },
-        { text: 'GitHubで見る', link: 'https://github.com/tinyrack/auth', icon: 'external', variant: 'minimal' },
-      ],
-    },
   }}
 >
-  <h2>主な機能</h2>
-
-  <CardGrid stagger>
-    <Card title="OAuth2 & OIDC" icon="approve-check">
-      PKCEをサポートするAuthorization Code FlowでOAuth2およびOpenID Connectプロトコルを完全に実装しています。
-    </Card>
-    <Card title="多様な認証方式" icon="setting">
-      パスワード認証、WebAuthn/パスキー、TOTP 2FA、ソーシャルログイン（Google、GitHub、Apple）をサポートしています。
-    </Card>
-    <Card title="多言語サポート" icon="translate">
-      韓国語、英語、日本語をネイティブサポートする国際化機能を内蔵しています。
-    </Card>
-    <Card title="モダンな技術スタック" icon="rocket">
-      最適なパフォーマンスのためにFastify、React、TanStack Router、Tailwind CSSで構築されています。
-    </Card>
-  </CardGrid>
+  <HeroTypewriter
+    suffix=" のための OIDC プロバイダー"
+    words={['ホームラボ', 'スタートアップ', 'SaaS']}
+    docsLink="/ja/getting-started/introduction/"
+    docsLabel="はじめる"
+  />
 </HomePageLayout>
