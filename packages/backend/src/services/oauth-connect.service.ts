@@ -8,7 +8,7 @@ import { generatePKCE } from '@backend/lib/pkce.js';
 import { e } from '@backend/schemas/error.js';
 import type { f } from '@backend/schemas/field.js';
 import type { MikroService } from '@backend/services/mikro.service.js';
-import type z from 'zod';
+import z from 'zod';
 import type { TermsService } from './terms.service.js';
 import type { UserService } from './user.service.js';
 
@@ -33,18 +33,15 @@ export interface OAuthUserInfo {
  * Token response from OAuth provider
  * Standard OAuth 2.0 token response structure
  */
-export interface OAuthTokens {
-  /** OAuth access token */
-  access_token: string;
-  /** OAuth refresh token (if provided) */
-  refresh_token?: string | undefined;
-  /** Token expiration time in seconds */
-  expires_in?: number | undefined;
-  /** Token type (usually "Bearer") */
-  token_type: string;
-  /** OIDC ID token (if openid scope was requested) */
-  id_token?: string | undefined;
-}
+const OAuthTokensSchema = z.object({
+  access_token: z.string(),
+  refresh_token: z.string().optional(),
+  expires_in: z.number().optional(),
+  token_type: z.string(),
+  id_token: z.string().optional(),
+});
+
+export type OAuthTokens = z.infer<typeof OAuthTokensSchema>;
 
 /**
  * OAuth session data stored in secure session
@@ -211,7 +208,8 @@ export class OAuthConnectService {
       throw new e.OAuthTokenExchangeFailed.Error();
     }
 
-    const tokens = (await response.json()) as OAuthTokens;
+    const json: unknown = await response.json();
+    const tokens = OAuthTokensSchema.parse(json);
     return tokens;
   }
 
@@ -240,7 +238,7 @@ export class OAuthConnectService {
       throw new e.OAuthUserInfoFailed.Error();
     }
 
-    const data = (await response.json()) as Record<string, unknown>;
+    const data = z.record(z.string(), z.unknown()).parse(await response.json());
     const mapping = provider.userinfo_mapping;
 
     // Extract user ID
