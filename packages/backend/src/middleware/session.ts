@@ -5,17 +5,38 @@ import { createMiddleware } from 'hono/factory';
 export type SessionEnv = { Variables: { session: SessionHelper } };
 
 export interface SessionData {
+  /**
+   * Fully authenticated user session.
+   * Set after successful login (password, OAuth, passkey) and 2FA verification.
+   * Cleared when entering pending 2FA states or on logout.
+   */
   user?: {
     id: string;
     authenticated_at: number;
   };
+  /**
+   * Intermediate session for users who have passed primary authentication
+   * (e.g., password) but still need to complete 2FA (TOTP) verification.
+   * Promoted to `user` session after successful 2FA, or cleared on failure.
+   */
   pending2FAUser?: {
     id: string;
     authenticated_at: number;
   };
+  /**
+   * Intermediate session for users who have registered but need to set up
+   * 2FA (TOTP) before their account is fully activated.
+   * Promoted to `user` session after successful TOTP setup.
+   */
   pending2FASetup?: {
     id: string;
   };
+  /**
+   * Temporary state for external OAuth provider flows (social login/register/link).
+   * Stored when redirecting to the OAuth provider (authorize endpoint) and
+   * consumed when the provider redirects back (callback endpoint).
+   * Contains CSRF state, PKCE verifier, provider ID, flow mode, and return URL.
+   */
   oauth?: {
     state: string;
     codeVerifier: string;
@@ -23,6 +44,11 @@ export interface SessionData {
     mode: 'login' | 'register' | 'link';
     returnUrl?: string | undefined;
   };
+  /**
+   * WebAuthn/passkey challenge string for passkey registration and authentication.
+   * Set when generating passkey options and validated during passkey verification.
+   * Cleared after successful verification.
+   */
   passkey_challenge?: string;
 }
 
