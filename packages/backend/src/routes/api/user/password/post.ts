@@ -1,5 +1,6 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
@@ -67,12 +68,11 @@ export const userPasswordPost = new Hono<AppEnv>().post(
       password: f.userPassword,
     }),
   ),
+  verifyAuth(),
   async (c) => {
     const body = c.req.valid('json');
-    const auth = c.get('auth');
+    const userSession = c.get('verifiedUser');
     const { mikro } = c.get('services');
-
-    const userSession = await auth.verify();
 
     // Config users cannot set password
     if (userSession.managed_by === 'config') {
