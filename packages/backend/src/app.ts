@@ -137,7 +137,12 @@ export async function createApp(options: CreateAppOptions) {
       return proxyHandler(c);
     });
   } else {
-    registerProdStatic(honoApp, config, silent);
+    if (!silent) {
+      console.info('Static handler registered (production mode)');
+    }
+    registerProdStatic(honoApp, {
+      htmlVariables: config.app.html_variables,
+    });
   }
 
   // Start scheduler
