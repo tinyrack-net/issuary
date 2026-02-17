@@ -78,10 +78,10 @@ Alternatively, you can manually configure endpoints in `lib/oidc-config.ts` (not
 ```typescript
 export const oidcConfig: OIDCConfig = {
   issuer: 'http://localhost:8080',
-  authorization_endpoint: 'http://localhost:8080/application/oauth/authorize',
-  token_endpoint: 'http://localhost:8080/application/oauth/token',
-  userinfo_endpoint: 'http://localhost:8080/application/oauth/userinfo',
-  introspection_endpoint: 'http://localhost:8080/application/oauth/introspect',
+  authorization_endpoint: 'http://localhost:8080/oauth/authorize',
+  token_endpoint: 'http://localhost:8080/oauth/token',
+  userinfo_endpoint: 'http://localhost:8080/oauth/userinfo',
+  introspection_endpoint: 'http://localhost:8080/oauth/introspect',
   
   client_id: 'sdlk3n3dkj2',
   client_secret: 'sdlk3n3dkj2',
@@ -182,14 +182,14 @@ pnpm start
 4. Generate PKCE code_verifier, code_challenge, state, nonce
    ↓
 5. Redirect to authorization endpoint
-   (/application/oauth/authorize?client_id=...&redirect_uri=...&code_challenge=...)
+   (/oauth/authorize?client_id=...&redirect_uri=...&code_challenge=...)
    ↓
 6. User authenticates on OIDC Provider
    ↓
 7. Redirect to /api/callback with authorization code
    ↓
 8. Exchange authorization code for tokens using code verifier
-   (POST /application/oauth/token)
+   (POST /oauth/token)
    ↓
 9. Store tokens in httpOnly cookies
    ↓

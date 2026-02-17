@@ -29,7 +29,7 @@ let cachedConfig: OIDCConfig | null = null;
 export async function fetchOpenIDConfiguration(
   issuer: string,
 ): Promise<OpenIDConfiguration> {
-  const discoveryUrl = `${issuer}/application/oauth/.well-known/openid-configuration`;
+  const discoveryUrl = `${issuer}/oauth/.well-known/openid-configuration`;
   const response = await fetch(discoveryUrl);
 
   if (!response.ok) {
