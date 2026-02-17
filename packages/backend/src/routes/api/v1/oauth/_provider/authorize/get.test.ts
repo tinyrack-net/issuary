@@ -4,6 +4,7 @@ import { createServer } from '@backend/server.js';
 import {
   createAuthenticatedSession,
   expectError,
+  getLocationHeader,
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
@@ -60,7 +61,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).toBeDefined();
 
-      const location = new URL(res.headers.get('location') as string);
+      const location = new URL(getLocationHeader(res));
 
       // Should redirect to Google OAuth
       expect(location.origin).toBe('https://accounts.google.com');
@@ -168,8 +169,8 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
         query: {},
       });
 
-      const location1 = new URL(res1.headers.get('location') as string);
-      const location2 = new URL(res2.headers.get('location') as string);
+      const location1 = new URL(getLocationHeader(res1));
+      const location2 = new URL(getLocationHeader(res2));
 
       const state1 = location1.searchParams.get('state');
       const state2 = location2.searchParams.get('state');
@@ -190,8 +191,8 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
         query: {},
       });
 
-      const location1 = new URL(res1.headers.get('location') as string);
-      const location2 = new URL(res2.headers.get('location') as string);
+      const location1 = new URL(getLocationHeader(res1));
+      const location2 = new URL(getLocationHeader(res2));
 
       const challenge1 = location1.searchParams.get('code_challenge');
       const challenge2 = location2.searchParams.get('code_challenge');
@@ -278,7 +279,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
         query: {},
       });
 
-      const location = new URL(res.headers.get('location') as string);
+      const location = new URL(getLocationHeader(res));
       expect(location.searchParams.get('code_challenge_method')).toBe('S256');
     });
 
@@ -292,10 +293,12 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
           query: {},
         });
 
-        const location = new URL(res.headers.get('location') as string);
+        const location = new URL(getLocationHeader(res));
         const state = location.searchParams.get('state');
-        expect(state).toBeDefined();
-        states.push(state as string);
+        if (!state) {
+          throw new Error('Expected state parameter in redirect');
+        }
+        states.push(state);
       }
 
       // All states should be unique

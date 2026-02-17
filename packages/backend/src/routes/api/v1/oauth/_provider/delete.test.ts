@@ -178,7 +178,9 @@ describe('DELETE /api/v1/oauth/:provider', () => {
         );
         return { error: null };
       } catch (err) {
-        return { error: (err as Error).message };
+        return {
+          error: err instanceof Error ? err.message : String(err),
+        };
       }
     });
 

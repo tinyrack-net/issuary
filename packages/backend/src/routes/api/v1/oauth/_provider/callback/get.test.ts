@@ -5,6 +5,7 @@ import {
   createAuthenticatedSession,
   expectError,
   extractCookie,
+  getLocationHeader,
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
@@ -71,13 +72,15 @@ async function startOAuthFlow(
 
   expect(res.status).toBe(302);
 
-  const location = new URL(res.headers.get('location') as string);
+  const location = new URL(getLocationHeader(res));
   const state = location.searchParams.get('state');
-  expect(state).toBeDefined();
+  if (!state) {
+    throw new Error('Expected state parameter in OAuth redirect');
+  }
 
   const cookie = extractCookie(res, 'session');
 
-  return { sessionCookie: cookie, state: state as string };
+  return { sessionCookie: cookie, state };
 }
 
 describe('GET /api/v1/oauth/:provider/callback', () => {
@@ -99,10 +102,7 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
       );
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://test',
-      );
+      const location = new URL(getLocationHeader(res), 'http://test');
       expect(location.pathname).toBe('/login');
       expect(location.searchParams.get('oauth_error')).toBe('access_denied');
       expect(location.searchParams.get('oauth_error_description')).toBe(
@@ -125,10 +125,7 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
       );
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://test',
-      );
+      const location = new URL(getLocationHeader(res), 'http://test');
       expect(location.searchParams.get('oauth_error')).toBe('server_error');
     });
   });
