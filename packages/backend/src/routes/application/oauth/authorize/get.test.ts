@@ -6,6 +6,7 @@ import {
   createAuthenticatedSession,
   createDbUserWithSession,
   generateUniqueEmail,
+  getLocationHeader,
   grantConsent,
   MINIMAL_TEST_CONFIG,
   TEST_OAUTH_CLIENT,
@@ -86,8 +87,7 @@ async function getAuthorizationCode(
       : undefined,
   );
 
-  const locationHeader = res.headers.get('location');
-  const location = new URL(locationHeader as string, 'http://localhost:8080');
+  const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
   return {
     code: location.searchParams.get('code'),
@@ -194,10 +194,7 @@ describe('GET /application/oauth/authorize', () => {
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).toBeDefined();
 
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       expectLoginRedirect(location, validParams);
     });
@@ -231,10 +228,7 @@ describe('GET /application/oauth/authorize', () => {
         query: paramsWithNonce,
       });
 
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       expectLoginRedirect(location, paramsWithNonce);
     });
@@ -379,10 +373,7 @@ describe('GET /application/oauth/authorize', () => {
       });
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       expectRedirectError(location, 'unsupported_response_type');
     });
@@ -397,10 +388,7 @@ describe('GET /application/oauth/authorize', () => {
       });
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       expectRedirectError(location, 'unsupported_response_type');
     });
@@ -429,10 +417,7 @@ describe('GET /application/oauth/authorize', () => {
       });
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       expectRedirectError(location, 'invalid_scope');
     });
@@ -570,10 +555,7 @@ describe('GET /application/oauth/authorize', () => {
         },
       });
 
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       expect(location.pathname).toBe('/login');
       expect(location.searchParams.get('state')).toBe('login-state-789');
@@ -624,10 +606,7 @@ describe('GET /application/oauth/authorize', () => {
       });
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
       expect(location.searchParams.get('display')).toBe('popup');
     });
 
@@ -641,10 +620,7 @@ describe('GET /application/oauth/authorize', () => {
       });
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
       expect(location.searchParams.get('max_age')).toBe('3600');
     });
 
@@ -658,10 +634,7 @@ describe('GET /application/oauth/authorize', () => {
       });
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
       expect(location.searchParams.get('prompt')).toBe('consent');
     });
   });
@@ -677,10 +650,7 @@ describe('GET /application/oauth/authorize', () => {
       });
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       expectRedirectError(
         location,
@@ -714,10 +684,7 @@ describe('GET /application/oauth/authorize', () => {
       );
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       expectRedirectError(location, 'consent_required', 'End-User consent');
       expect(location.searchParams.get('state')).toBe(validParams.state);
@@ -760,10 +727,7 @@ describe('GET /application/oauth/authorize', () => {
       });
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       expect(location.pathname).toBe('/login');
       expect(location.searchParams.get('prompt')).toBe('login');
@@ -778,10 +742,7 @@ describe('GET /application/oauth/authorize', () => {
         },
       });
 
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       expect(location.searchParams.get('prompt')).toBe('login');
       expect(location.searchParams.get('client_id')).toBe(
@@ -815,10 +776,7 @@ describe('GET /application/oauth/authorize', () => {
       );
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       // Should redirect to consent page
       expect(location.pathname).toBe('/consent');
@@ -834,10 +792,7 @@ describe('GET /application/oauth/authorize', () => {
       });
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       // Should redirect to login first
       expect(location.pathname).toBe('/login');
@@ -855,10 +810,7 @@ describe('GET /application/oauth/authorize', () => {
       });
 
       expect(res.status).toBe(302);
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       expect(location.searchParams.has('error')).toBe(true);
       expect(location.searchParams.has('error_description')).toBe(true);
@@ -932,10 +884,7 @@ describe('GET /application/oauth/authorize', () => {
         },
       });
 
-      const location = new URL(
-        res.headers.get('location') as string,
-        'http://localhost:8080',
-      );
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
 
       expect(location.searchParams.has('code')).toBe(false);
       expect(location.searchParams.get('error')).toBe('invalid_scope');
