@@ -23,24 +23,12 @@ export interface SessionData {
     mode: 'login' | 'register' | 'link';
     returnUrl?: string | undefined;
   };
-  pendingOAuthRegistration?: {
-    providerId: string;
-    tokens: {
-      access_token: string;
-      refresh_token?: string | undefined;
-      expires_in?: number | undefined;
-      token_type: string;
-    };
-    userInfo: {
-      id: string;
-      email: string;
-      email_verified: boolean;
-      name?: string | undefined;
-      picture?: string | undefined;
-    };
-    returnUrl?: string | undefined;
-    expiresAt: number;
-  };
+  /**
+   * Lookup token referencing a pending_oauth_registration DB record.
+   * The actual OAuth tokens and user info are stored server-side
+   * to avoid cookie size limits (~4 KB).
+   */
+  pendingOAuthRegistrationToken?: string;
   passkey_challenge?: string;
 }
 
