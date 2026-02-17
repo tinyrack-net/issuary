@@ -29,7 +29,7 @@ export const Route = createFileRoute('/terms/')({
   validateSearch: TermsSearchSchema,
   beforeLoad: async ({ context, search }) => {
     // When mode=complete_registration, user is completing OAuth signup
-    // They have pendingOAuthRegistration session but are not logged in yet
+    // They have a pendingOAuthRegistrationToken session but are not logged in yet
     // Skip auth check in this case - backend will validate the session
     if (search.mode === 'complete_registration') {
       return;
