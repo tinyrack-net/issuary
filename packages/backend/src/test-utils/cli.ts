@@ -11,6 +11,7 @@ import {
 import { OAuthClientEntitySchema } from '@backend/entities/oauth-client.entity.js';
 import { OAuthCodeEntitySchema } from '@backend/entities/oauth-code.entity.js';
 import { PasswordResetEntitySchema } from '@backend/entities/password-reset.entity.js';
+import { PendingOAuthRegistrationEntitySchema } from '@backend/entities/pending-oauth-registration.entity.js';
 import {
   RevokedTokenEntitySchema,
   type TokenType,
@@ -49,6 +50,10 @@ export const CLI_TEST_CONFIG = {
       retention: '0',
     },
     deleted_users: {
+      enabled: true,
+      retention: '0',
+    },
+    pending_oauth_registrations: {
       enabled: true,
       retention: '0',
     },
@@ -311,6 +316,44 @@ export async function createPasswordReset(
 }
 
 /**
+ * Create a pending OAuth registration for testing.
+ *
+ * @param services - Service container
+ * @param options - Registration creation options
+ * @returns Created registration token
+ */
+export async function createPendingOAuthRegistration(
+  services: ServiceContainer,
+  options: {
+    expiresAt?: Date;
+  } = {},
+): Promise<string> {
+  const { expiresAt = new Date(Date.now() - 1000) } = options;
+
+  let token = '';
+
+  await withMikroContext(services, async () => {
+    token =
+      await services.mikro.pendingOAuthRegistration.createPendingRegistration({
+        providerId: 'google',
+        accessToken: `test-access-token-${Date.now()}`,
+        refreshToken: `test-refresh-token-${Date.now()}`,
+        expiresIn: 3600,
+        tokenType: 'Bearer',
+        userInfo: {
+          id: `provider-user-${Date.now()}`,
+          email: `test-${Date.now()}@example.com`,
+          email_verified: true,
+          name: 'Test User',
+        },
+        expiresAt,
+      });
+  });
+
+  return token;
+}
+
+/**
  * Create a JWT key for testing.
  *
  * @param services - Service container
@@ -372,6 +415,7 @@ export async function countEntities(
     | 'oauthCode'
     | 'emailVerification'
     | 'passwordReset'
+    | 'pendingOAuthRegistration'
     | 'jwtKey'
     | 'user',
   filter: Record<string, unknown> = {},
@@ -393,6 +437,9 @@ export async function countEntities(
         break;
       case 'passwordReset':
         count = await em.count(PasswordResetEntitySchema, filter);
+        break;
+      case 'pendingOAuthRegistration':
+        count = await em.count(PendingOAuthRegistrationEntitySchema, filter);
         break;
       case 'jwtKey':
         count = await em.count(JwtKeyEntity, filter);
