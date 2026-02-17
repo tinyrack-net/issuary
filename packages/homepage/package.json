@@ -7,7 +7,7 @@
   "scripts": {
     "generate:openapi": "pnpm --filter @tinyauth/backend export:openapi ../homepage/public/openapi.json",
     "dev": "pnpm generate:openapi && astro dev",
-    "build": "pnpm generate:openapi && astro build",
+    "build": "pnpm generate:openapi && astro check && astro build",
     "preview": "astro preview"
   },
   "dependencies": {
@@ -20,6 +20,7 @@
     "tailwindcss": "catalog:"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.6",
     "@biomejs/biome": "catalog:",
     "typescript": "catalog:"
   }
