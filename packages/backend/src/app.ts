@@ -16,7 +16,6 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
 import { openAPIRouteHandler } from 'hono-openapi';
-import { authMiddleware } from './middleware/auth.js';
 
 export interface CreateAppOptions {
   /**
@@ -76,7 +75,6 @@ export async function createApp(options: CreateAppOptions) {
     .use('*', trustedProxyGuard(config.app.trust_proxy))
     .use('*', servicesMiddleware(services))
     .use('*', mikroOrmMiddleware)
-    .use('*', authMiddleware)
     .route('/', routes);
 
   honoApp.get(

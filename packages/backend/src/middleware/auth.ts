@@ -5,52 +5,108 @@ import type z from 'zod';
 import type { ServicesEnv } from './services.js';
 import type { SessionEnv } from './session.js';
 
-export type AuthEnv = { Variables: { auth: AuthHelper } };
-
-type AuthMiddlewareEnv = {
-  Variables: ServicesEnv['Variables'] &
-    SessionEnv['Variables'] &
-    AuthEnv['Variables'];
+type VerifiedAuthEnv<Optional extends boolean> = {
+  Variables: {
+    verifiedUser: Optional extends true
+      ? z.infer<typeof r.UserSession> | undefined
+      : z.infer<typeof r.UserSession>;
+  };
 };
 
-export interface AuthHelper {
-  verify: () => Promise<z.infer<typeof r.UserSession>>;
-  verifyPending2FAUser: () => Promise<z.infer<typeof r.UserSession>>;
-  verifyPending2FASetupUser: () => Promise<z.infer<typeof r.UserSession>>;
-}
-
-export const authMiddleware = createMiddleware<AuthMiddlewareEnv>(
-  async (c, next) => {
+export const verifyAuth = <Optional extends boolean = false>(options?: {
+  optional?: Optional;
+}) =>
+  createMiddleware<{
+    Variables: SessionEnv['Variables'] &
+      ServicesEnv['Variables'] &
+      VerifiedAuthEnv<Optional>['Variables'];
+  }>(async (c, next) => {
     const services = c.get('services');
     const session = c.get('session');
-
-    c.set('auth', {
-      verify: async () => {
-        const userId = session.get('user')?.id;
-        if (!userId) {
-          throw new e.Unauthorized.Error();
-        }
-        const userEntity = await services.mikro.user.verifyById(userId);
-        return services.userService.userEntityToSessionUser(userEntity);
-      },
-      verifyPending2FAUser: async () => {
-        const userId = session.get('pending2FAUser')?.id;
-        if (!userId) {
-          throw new e.Unauthorized.Error();
-        }
-        const userEntity = await services.mikro.user.verifyById(userId);
-        return services.userService.userEntityToSessionUser(userEntity);
-      },
-      verifyPending2FASetupUser: async () => {
-        const userId = session.get('pending2FASetup')?.id;
-        if (!userId) {
-          throw new e.Unauthorized.Error();
-        }
-        const userEntity = await services.mikro.user.verifyById(userId);
-        return services.userService.userEntityToSessionUser(userEntity);
-      },
-    });
-
+    const userId = session.get('user')?.id;
+    if (!userId) {
+      if (options?.optional) {
+        c.set('verifiedUser', undefined as never);
+        await next();
+        return;
+      }
+      throw new e.Unauthorized.Error();
+    }
+    const userEntity = await services.mikro.user.verifyById(userId);
+    const sessionUser =
+      await services.userService.userEntityToSessionUser(userEntity);
+    c.set('verifiedUser', sessionUser);
     await next();
-  },
-);
+  });
+
+type VerifiedPending2FAUserEnv<Optional extends boolean> = {
+  Variables: {
+    verifiedPending2FAUser: Optional extends true
+      ? z.infer<typeof r.UserSession> | undefined
+      : z.infer<typeof r.UserSession>;
+  };
+};
+
+export const verifyPending2FAUser = <
+  Optional extends boolean = false,
+>(options?: {
+  optional?: Optional;
+}) =>
+  createMiddleware<{
+    Variables: SessionEnv['Variables'] &
+      ServicesEnv['Variables'] &
+      VerifiedPending2FAUserEnv<Optional>['Variables'];
+  }>(async (c, next) => {
+    const services = c.get('services');
+    const session = c.get('session');
+    const userId = session.get('pending2FAUser')?.id;
+    if (!userId) {
+      if (options?.optional) {
+        c.set('verifiedPending2FAUser', undefined as never);
+        await next();
+        return;
+      }
+      throw new e.Unauthorized.Error();
+    }
+    const userEntity = await services.mikro.user.verifyById(userId);
+    const sessionUser =
+      await services.userService.userEntityToSessionUser(userEntity);
+    c.set('verifiedPending2FAUser', sessionUser);
+    await next();
+  });
+
+type VerifiedPending2FASetupUserEnv<Optional extends boolean> = {
+  Variables: {
+    verifiedPending2FASetupUser: Optional extends true
+      ? z.infer<typeof r.UserSession> | undefined
+      : z.infer<typeof r.UserSession>;
+  };
+};
+
+export const verifyPending2FASetupUser = <
+  Optional extends boolean = false,
+>(options?: {
+  optional?: Optional;
+}) =>
+  createMiddleware<{
+    Variables: SessionEnv['Variables'] &
+      ServicesEnv['Variables'] &
+      VerifiedPending2FASetupUserEnv<Optional>['Variables'];
+  }>(async (c, next) => {
+    const services = c.get('services');
+    const session = c.get('session');
+    const userId = session.get('pending2FASetup')?.id;
+    if (!userId) {
+      if (options?.optional) {
+        c.set('verifiedPending2FASetupUser', undefined as never);
+        await next();
+        return;
+      }
+      throw new e.Unauthorized.Error();
+    }
+    const userEntity = await services.mikro.user.verifyById(userId);
+    const sessionUser =
+      await services.userService.userEntityToSessionUser(userEntity);
+    c.set('verifiedPending2FASetupUser', sessionUser);
+    await next();
+  });
