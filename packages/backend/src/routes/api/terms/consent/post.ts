@@ -1,5 +1,6 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { termsSchema } from '@backend/schemas/terms.js';
 import { Hono } from 'hono';
@@ -55,11 +56,11 @@ export const termsConsentPost = new Hono<AppEnv>().post(
     },
   }),
   validator('json', termsSchema.TermsConsentRequest),
+  verifyAuth({ optional: true }),
   async (c) => {
     const body = c.req.valid('json');
     const { consents } = body;
     const session = c.get('session');
-    const auth = c.get('auth');
     const { termsService, oauthConnectService } = c.get('services');
 
     // Check for pending OAuth registration session
@@ -117,7 +118,10 @@ export const termsConsentPost = new Hono<AppEnv>().post(
     }
 
     // Standard flow: authenticated user recording consent
-    const userSession = await auth.verify();
+    const userSession = c.get('verifiedUser');
+    if (!userSession) {
+      throw new e.Unauthorized.Error();
+    }
 
     // Validate and record consents
     const { validation, records } =
