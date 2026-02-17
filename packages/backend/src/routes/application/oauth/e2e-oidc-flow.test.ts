@@ -753,10 +753,16 @@ describe('End-to-End OIDC Flow', () => {
       expect(config.scopes_supported).toBeDefined();
       expect(config.scopes_supported).toContain('openid');
 
+      // Filter to scopes the test client is allowed to use
+      const clientScopes = new Set(TEST_OAUTH_CLIENT.allowedScopes);
+      const requestScopes = (config.scopes_supported ?? []).filter(
+        (s: string) => clientScopes.has(s),
+      );
+
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
         sessionCookie,
-        scope: config.scopes_supported?.join(' ') ?? '',
+        scope: requestScopes.join(' '),
         codeChallenge: TEST_PKCE.codeChallenge,
         codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
       });
