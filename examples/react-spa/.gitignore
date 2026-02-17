@@ -24,5 +24,3 @@ npm-debug.log*
 # TypeScript
 *.tsbuildinfo
 
-# Generated files
-src/routeTree.gen.ts
