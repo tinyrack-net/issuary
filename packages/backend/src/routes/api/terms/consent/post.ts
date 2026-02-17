@@ -61,15 +61,18 @@ export const termsConsentPost = new Hono<AppEnv>().post(
     const body = c.req.valid('json');
     const { consents } = body;
     const session = c.get('session');
-    const { termsService, oauthConnectService } = c.get('services');
+    const { mikro, termsService, oauthConnectService } = c.get('services');
 
-    // Check for pending OAuth registration session
-    const pendingRegistration = session.get('pendingOAuthRegistration');
+    // Check for pending OAuth registration (stored in DB, referenced by token)
+    const pendingToken = session.get('pendingOAuthRegistrationToken');
 
-    if (pendingRegistration) {
-      // Check if session has expired
-      if (Date.now() > pendingRegistration.expiresAt) {
-        session.set('pendingOAuthRegistration', undefined);
+    if (pendingToken) {
+      const pendingRegistration =
+        await mikro.pendingOAuthRegistration.findValidByToken(pendingToken);
+
+      if (!pendingRegistration) {
+        // Record expired or missing — clean up the session reference
+        session.set('pendingOAuthRegistrationToken', undefined);
         throw new e.OAuthSessionExpired.Error();
       }
 
@@ -86,26 +89,21 @@ export const termsConsentPost = new Hono<AppEnv>().post(
       const result = await oauthConnectService.completeOAuthRegistration({
         providerId: pendingRegistration.providerId,
         tokens: {
-          access_token: pendingRegistration.tokens.access_token,
-          refresh_token: pendingRegistration.tokens.refresh_token,
-          expires_in: pendingRegistration.tokens.expires_in,
-          token_type: pendingRegistration.tokens.token_type,
+          access_token: pendingRegistration.accessToken,
+          refresh_token: pendingRegistration.refreshToken ?? undefined,
+          expires_in: pendingRegistration.expiresIn ?? undefined,
+          token_type: pendingRegistration.tokenType,
         },
-        userInfo: {
-          id: pendingRegistration.userInfo.id,
-          email: pendingRegistration.userInfo.email,
-          email_verified: pendingRegistration.userInfo.email_verified,
-          name: pendingRegistration.userInfo.name,
-          picture: pendingRegistration.userInfo.picture,
-        },
+        userInfo: pendingRegistration.userInfo,
         consents,
       });
 
       // Set user session
       session.setUserSession(result.user.id);
 
-      // Clear pending registration session
-      session.set('pendingOAuthRegistration', undefined);
+      // Clean up: remove DB record and session reference
+      await mikro.pendingOAuthRegistration.consumeByToken(pendingToken);
+      session.set('pendingOAuthRegistrationToken', undefined);
 
       return c.json(
         {
