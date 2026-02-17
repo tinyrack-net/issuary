@@ -1,5 +1,6 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyPending2FAUser } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
@@ -47,6 +48,7 @@ export const authTotpVerifyPost = new Hono<AppEnv>().post(
       code: f.totpCode,
     }),
   ),
+  verifyPending2FAUser(),
   async (c) => {
     const config = c.get('services').config;
     if (!config.auth.password.enabled || !config.auth.password.totp.enabled) {
@@ -55,24 +57,17 @@ export const authTotpVerifyPost = new Hono<AppEnv>().post(
 
     const body = c.req.valid('json');
     const session = c.get('session');
-    const { mikro, totpService, userService } = c.get('services');
-
-    const pending2FAUser = session.get('pending2FAUser');
-
-    if (!pending2FAUser) {
-      throw new e.SecondFactorSessionExpired.Error();
-    }
+    const pending2FAUser = c.get('verifiedPending2FAUser');
+    const { totpService } = c.get('services');
 
     await totpService.verifyForAuth(pending2FAUser.id, body.code);
 
-    const userEntity = await mikro.user.verifyById(pending2FAUser.id);
-    const user = await userService.userEntityToSessionUser(userEntity);
-
     const authTime =
-      pending2FAUser.authenticated_at ?? Math.floor(Date.now() / 1000);
+      session.get('pending2FAUser')?.authenticated_at ??
+      Math.floor(Date.now() / 1000);
 
-    session.setUserSession(user.id, authTime);
+    session.setUserSession(pending2FAUser.id, authTime);
 
-    return c.json({ user }, 200);
+    return c.json({ user: pending2FAUser }, 200);
   },
 );

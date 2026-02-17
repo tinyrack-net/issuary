@@ -131,7 +131,7 @@ describe('POST /api/auth/totp/verify', () => {
       json: { code: '123456' },
     });
 
-    await expectError(verifyRes, e.SecondFactorSessionExpired);
+    await expectError(verifyRes, e.Unauthorized);
   });
 
   test('should fail with malformed TOTP code', async () => {

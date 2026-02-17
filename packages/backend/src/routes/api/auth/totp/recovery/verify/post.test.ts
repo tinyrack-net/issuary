@@ -194,7 +194,7 @@ describe('POST /api/auth/totp/recovery/verify', () => {
       json: { code: 'abcd-ef12' },
     });
 
-    await expectError(res, e.SecondFactorSessionExpired);
+    await expectError(res, e.Unauthorized);
   });
 
   test('should validate code format', async () => {

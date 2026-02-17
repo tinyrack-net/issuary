@@ -1,5 +1,6 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyPending2FAUser } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { r } from '@backend/schemas/response.js';
 import { Hono } from 'hono';
@@ -33,6 +34,7 @@ export const authPasskeyOptionsPost = new Hono<AppEnv>().post(
       },
     },
   }),
+  verifyPending2FAUser({ optional: true }),
   async (c) => {
     const config = c.get('services').config;
     if (!config.auth.passkey.enabled) {
@@ -42,7 +44,7 @@ export const authPasskeyOptionsPost = new Hono<AppEnv>().post(
     const session = c.get('session');
     const { passkeyService } = c.get('services');
 
-    const pending2FAUser = session.get('pending2FAUser');
+    const pending2FAUser = c.get('verifiedPending2FAUser');
 
     const options = await passkeyService.generateAuthenticationOptions(
       pending2FAUser?.id,

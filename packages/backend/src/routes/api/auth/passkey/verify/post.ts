@@ -1,5 +1,6 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyPending2FAUser } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { r } from '@backend/schemas/response.js';
 import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
@@ -57,6 +58,7 @@ export const authPasskeyVerifyPost = new Hono<AppEnv>().post(
       response: r.AuthenticationResponseJSON,
     }),
   ),
+  verifyPending2FAUser({ optional: true }),
   async (c) => {
     const config = c.get('services').config;
     if (!config.auth.passkey.enabled) {
@@ -67,7 +69,7 @@ export const authPasskeyVerifyPost = new Hono<AppEnv>().post(
     const session = c.get('session');
     const { mikro, passkeyService, userService } = c.get('services');
 
-    const pending2FAUser = session.get('pending2FAUser');
+    const pending2FAUser = c.get('verifiedPending2FAUser');
 
     // Get challenge from session
     const challenge = session.get('passkey_challenge');
@@ -96,7 +98,8 @@ export const authPasskeyVerifyPost = new Hono<AppEnv>().post(
     const sessionUser = await userService.userEntityToSessionUser(userEntity);
 
     const authTime =
-      pending2FAUser?.authenticated_at ?? Math.floor(Date.now() / 1000);
+      session.get('pending2FAUser')?.authenticated_at ??
+      Math.floor(Date.now() / 1000);
 
     session.setUserSession(passkeyUser.id, authTime);
 
