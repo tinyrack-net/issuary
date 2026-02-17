@@ -3,8 +3,6 @@ import { createServer } from '@backend/server.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
-  createTestClient,
-  createTestClientWithHeaders,
   exchangeCodeForTokens,
   getAuthorizationCode,
   MINIMAL_TEST_CONFIG,
@@ -12,6 +10,7 @@ import {
   TEST_OAUTH_CLIENT_CONFIG,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -45,30 +44,37 @@ describe('OAuth Security Tests', () => {
   describe('XSS Prevention', () => {
     test('should escape special characters in error redirect URI', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const authClient = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      await authClient.api.v1.consent.$post({
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          decision: 'allow',
-          scope: 'openid',
-          state: 'test-state',
+      const authClient = testClient(app);
+      const sessionHeaders = {
+        headers: { Cookie: `session=${sessionCookie}` },
+      };
+      await authClient.api.v1.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            decision: 'allow',
+            scope: 'openid',
+            state: 'test-state',
+          },
         },
-      });
+        sessionHeaders,
+      );
 
       // Try XSS in state parameter
-      const res = await authClient.application.oauth.authorize.$get({
-        query: {
-          response_type: 'code',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          scope: 'openid',
-          state: '<script>alert(1)</script>',
+      const res = await authClient.application.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: 'openid',
+            state: '<script>alert(1)</script>',
+          },
         },
-      });
+        sessionHeaders,
+      );
 
       // Should redirect with URL-encoded state
       expect(res.status).toBe(302);
@@ -81,18 +87,19 @@ describe('OAuth Security Tests', () => {
     test('should handle XSS attempt in scope parameter', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const authClient = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await authClient.application.oauth.authorize.$get({
-        query: {
-          response_type: 'code',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          scope: 'openid<script>alert(1)</script>',
-          state: 'test',
+      const authClient = testClient(app);
+      const res = await authClient.application.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: 'openid<script>alert(1)</script>',
+            state: 'test',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       // Invalid scope should be rejected
       expect([302, 400]).toContain(res.status);
@@ -104,30 +111,37 @@ describe('OAuth Security Tests', () => {
 
     test('should handle XSS attempt in nonce parameter', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const authClient = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      await authClient.api.v1.consent.$post({
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          decision: 'allow',
-          scope: 'openid',
-          state: 'test-state',
+      const authClient = testClient(app);
+      const sessionHeaders = {
+        headers: { Cookie: `session=${sessionCookie}` },
+      };
+      await authClient.api.v1.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            decision: 'allow',
+            scope: 'openid',
+            state: 'test-state',
+          },
         },
-      });
+        sessionHeaders,
+      );
 
-      const res = await authClient.application.oauth.authorize.$get({
-        query: {
-          response_type: 'code',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          scope: 'openid',
-          state: 'test',
-          nonce: '<img src=x onerror=alert(1)>',
+      const res = await authClient.application.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: 'openid',
+            state: 'test',
+            nonce: '<img src=x onerror=alert(1)>',
+          },
         },
-      });
+        sessionHeaders,
+      );
 
       // Nonce is stored and returned in ID token, ensure it's properly handled
       expect(res.status).toBe(302);
@@ -136,7 +150,7 @@ describe('OAuth Security Tests', () => {
 
   describe('SQL Injection Prevention', () => {
     test('should handle SQL injection attempt in client_id', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           response_type: 'code',
@@ -155,7 +169,7 @@ describe('OAuth Security Tests', () => {
     });
 
     test('should handle SQL injection attempt in redirect_uri', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           response_type: 'code',
@@ -171,7 +185,7 @@ describe('OAuth Security Tests', () => {
     });
 
     test('should handle SQL injection in token introspection', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.introspect.$post({
         json: {
           token: "'; DROP TABLE tokens; --",
@@ -187,29 +201,36 @@ describe('OAuth Security Tests', () => {
   describe('CRLF Injection Prevention', () => {
     test('should prevent CRLF injection in redirect URI', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const authClient = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      await authClient.api.v1.consent.$post({
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          decision: 'allow',
-          scope: 'openid',
-          state: 'test-state',
+      const authClient = testClient(app);
+      const sessionHeaders = {
+        headers: { Cookie: `session=${sessionCookie}` },
+      };
+      await authClient.api.v1.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            decision: 'allow',
+            scope: 'openid',
+            state: 'test-state',
+          },
         },
-      });
+        sessionHeaders,
+      );
 
-      const res = await authClient.application.oauth.authorize.$get({
-        query: {
-          response_type: 'code',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          scope: 'openid',
-          state: 'test\r\nSet-Cookie: malicious=value',
+      const res = await authClient.application.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: 'openid',
+            state: 'test\r\nSet-Cookie: malicious=value',
+          },
         },
-      });
+        sessionHeaders,
+      );
 
       // State with CRLF should be URL-encoded
       expect(res.status).toBe(302);
@@ -220,7 +241,7 @@ describe('OAuth Security Tests', () => {
 
   describe('Open Redirect Prevention', () => {
     test('should reject unauthorized redirect_uri', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           response_type: 'code',
@@ -238,7 +259,7 @@ describe('OAuth Security Tests', () => {
     });
 
     test('should reject redirect_uri with path traversal', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           response_type: 'code',
@@ -253,7 +274,7 @@ describe('OAuth Security Tests', () => {
     });
 
     test('should reject redirect_uri with protocol change', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           response_type: 'code',
@@ -278,7 +299,7 @@ describe('OAuth Security Tests', () => {
       });
 
       // Try to use code with different client_id
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -303,12 +324,13 @@ describe('OAuth Security Tests', () => {
       const expiredToken =
         'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0IiwiZXhwIjoxfQ.fake';
 
-      const client = createTestClientWithHeaders(app, {
-        authorization: `Bearer ${expiredToken}`,
-      });
-      const res = await client.application.oauth.userinfo.$get({
-        header: {},
-      });
+      const client = testClient(app);
+      const res = await client.application.oauth.userinfo.$get(
+        {
+          header: {},
+        },
+        { headers: { authorization: `Bearer ${expiredToken}` } },
+      );
 
       expect(res.status).toBe(401);
     });
@@ -318,12 +340,13 @@ describe('OAuth Security Tests', () => {
       const invalidToken =
         'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0IiwiZXhwIjoxOTk5OTk5OTk5fQ.invalid-signature';
 
-      const client = createTestClientWithHeaders(app, {
-        authorization: `Bearer ${invalidToken}`,
-      });
-      const res = await client.application.oauth.userinfo.$get({
-        header: {},
-      });
+      const client = testClient(app);
+      const res = await client.application.oauth.userinfo.$get(
+        {
+          header: {},
+        },
+        { headers: { authorization: `Bearer ${invalidToken}` } },
+      );
 
       expect(res.status).toBe(401);
     });
@@ -337,12 +360,13 @@ describe('OAuth Security Tests', () => {
       const { refresh_token } = await tokenRes.json();
 
       // Try to use refresh token for userinfo
-      const client = createTestClientWithHeaders(app, {
-        authorization: `Bearer ${refresh_token}`,
-      });
-      const res = await client.application.oauth.userinfo.$get({
-        header: {},
-      });
+      const client = testClient(app);
+      const res = await client.application.oauth.userinfo.$get(
+        {
+          header: {},
+        },
+        { headers: { authorization: `Bearer ${refresh_token}` } },
+      );
 
       const tokenBody = await assertJsonBody(res, 401);
       expect(tokenBody.code).toBe('INVALID_ACCESS_TOKEN');
@@ -367,7 +391,7 @@ describe('OAuth Security Tests', () => {
         manyParams[`extra_param_${i}`] = `value_${i}`;
       }
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: manyParams as Parameters<
           typeof client.application.oauth.authorize.$get
@@ -381,7 +405,7 @@ describe('OAuth Security Tests', () => {
     test('should handle very long parameter values', async () => {
       const longValue = 'a'.repeat(10000);
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           response_type: 'code',
@@ -399,7 +423,7 @@ describe('OAuth Security Tests', () => {
 
   describe('Session Security', () => {
     test('should not allow authorization without session', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           response_type: 'code',
@@ -424,18 +448,19 @@ describe('OAuth Security Tests', () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
       // Try authorize without consent
-      const authClient = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await authClient.application.oauth.authorize.$get({
-        query: {
-          response_type: 'code',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          scope: 'openid',
-          state: 'test',
+      const authClient = testClient(app);
+      const res = await authClient.application.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: 'openid',
+            state: 'test',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       // Should redirect to consent page, not issue code
       expect([302]).toContain(res.status);

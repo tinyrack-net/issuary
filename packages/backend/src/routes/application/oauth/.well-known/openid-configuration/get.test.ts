@@ -1,9 +1,7 @@
 import type { AppType } from '@backend/app.js';
 import { createServer } from '@backend/server.js';
-import {
-  createTestClient,
-  MINIMAL_TEST_CONFIG,
-} from '@backend/test-utils/index.js';
+import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -24,7 +22,7 @@ afterAll(async () => {
 describe('GET /application/oauth/.well-known/openid-configuration', () => {
   describe('Required Fields', () => {
     test('should return valid OpenID Configuration', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -44,7 +42,7 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should have RS256 as signing algorithm', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -57,7 +55,7 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should have correct JWKS URI', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -72,7 +70,7 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
 
   describe('Recommended Fields', () => {
     test('should include userinfo endpoint', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -86,7 +84,7 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should include supported scopes', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -101,7 +99,7 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should include supported claims', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -117,7 +115,7 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should support authorization_code grant type', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -131,7 +129,7 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should support PKCE code challenge methods', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -145,7 +143,7 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
     });
 
     test('should support client authentication methods', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -165,7 +163,7 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
 
   describe('Optional Fields', () => {
     test('should include introspection endpoint', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -181,7 +179,7 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
 
   describe('Response Headers', () => {
     test('should have Cache-Control header', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -195,7 +193,7 @@ describe('GET /application/oauth/.well-known/openid-configuration', () => {
 
   describe('Endpoint URL Validation', () => {
     test('should have valid endpoint URLs that can be fetched', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const configRes =
         await client.application.oauth['.well-known'][
           'openid-configuration'

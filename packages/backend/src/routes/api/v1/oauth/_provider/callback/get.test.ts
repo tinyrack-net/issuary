@@ -3,13 +3,12 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import {
   createAuthenticatedSession,
-  createTestClient,
-  createTestClientWithHeaders,
   expectError,
   extractCookie,
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -58,16 +57,17 @@ async function startOAuthFlow(
   mode: 'login' | 'register' | 'link' = 'login',
   sessionCookie?: string,
 ): Promise<{ sessionCookie: string; state: string }> {
-  const client = sessionCookie
-    ? createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      })
-    : createTestClient(app);
+  const client = testClient(app);
 
-  const res = await client.api.v1.oauth[':provider'].authorize.$get({
-    param: { provider },
-    query: { mode },
-  });
+  const res = await client.api.v1.oauth[':provider'].authorize.$get(
+    {
+      param: { provider },
+      query: { mode },
+    },
+    sessionCookie
+      ? { headers: { Cookie: `session=${sessionCookie}` } }
+      : undefined,
+  );
 
   expect(res.status).toBe(302);
 
@@ -86,16 +86,17 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
       // Start OAuth flow to get valid session
       const { sessionCookie } = await startOAuthFlow('google');
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.oauth[':provider'].callback.$get({
-        param: { provider: 'google' },
-        query: {
-          error: 'access_denied',
-          error_description: 'User denied access',
+      const client = testClient(app);
+      const res = await client.api.v1.oauth[':provider'].callback.$get(
+        {
+          param: { provider: 'google' },
+          query: {
+            error: 'access_denied',
+            error_description: 'User denied access',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(302);
       const location = new URL(
@@ -112,15 +113,16 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
     test('should handle OAuth error without description', async () => {
       const { sessionCookie } = await startOAuthFlow('google');
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.oauth[':provider'].callback.$get({
-        param: { provider: 'google' },
-        query: {
-          error: 'server_error',
+      const client = testClient(app);
+      const res = await client.api.v1.oauth[':provider'].callback.$get(
+        {
+          param: { provider: 'google' },
+          query: {
+            error: 'server_error',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(302);
       const location = new URL(
@@ -133,7 +135,7 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
 
   describe('Session Validation', () => {
     test('should return error when OAuth session is missing', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.oauth[':provider'].callback.$get({
         param: { provider: 'google' },
         query: {
@@ -147,7 +149,7 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
 
     test('should return error when OAuth session has expired', async () => {
       // Create a fresh session without OAuth data
-      const loginClient = createTestClient(app);
+      const loginClient = testClient(app);
       const loginRes = await loginClient.api.v1.auth.login.$post({
         json: {
           email: 'test-config-user@example.com',
@@ -157,16 +159,17 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
 
       const sessionCookie = extractCookie(loginRes, 'session');
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.oauth[':provider'].callback.$get({
-        param: { provider: 'google' },
-        query: {
-          code: 'test-code',
-          state: 'test-state',
+      const client = testClient(app);
+      const res = await client.api.v1.oauth[':provider'].callback.$get(
+        {
+          param: { provider: 'google' },
+          query: {
+            code: 'test-code',
+            state: 'test-state',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       await expectError(res, e.OAuthSessionExpired);
     });
@@ -176,16 +179,17 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
     test('should return error when state does not match', async () => {
       const { sessionCookie } = await startOAuthFlow('google');
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.oauth[':provider'].callback.$get({
-        param: { provider: 'google' },
-        query: {
-          code: 'test-code',
-          state: 'wrong-state-value',
+      const client = testClient(app);
+      const res = await client.api.v1.oauth[':provider'].callback.$get(
+        {
+          param: { provider: 'google' },
+          query: {
+            code: 'test-code',
+            state: 'wrong-state-value',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       await expectError(res, e.OAuthStateMismatch);
     });
@@ -193,16 +197,17 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
     test('should return error when state is empty', async () => {
       const { sessionCookie } = await startOAuthFlow('google');
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.oauth[':provider'].callback.$get({
-        param: { provider: 'google' },
-        query: {
-          code: 'test-code',
-          state: '',
+      const client = testClient(app);
+      const res = await client.api.v1.oauth[':provider'].callback.$get(
+        {
+          param: { provider: 'google' },
+          query: {
+            code: 'test-code',
+            state: '',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       // Zod validation should fail for empty state
       expect(res.status).toBe(400);
@@ -215,16 +220,17 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
       const { sessionCookie, state } = await startOAuthFlow('google');
 
       // Callback to github (different provider)
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.oauth[':provider'].callback.$get({
-        param: { provider: 'github' },
-        query: {
-          code: 'test-code',
-          state,
+      const client = testClient(app);
+      const res = await client.api.v1.oauth[':provider'].callback.$get(
+        {
+          param: { provider: 'github' },
+          query: {
+            code: 'test-code',
+            state,
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       await expectError(res, e.OAuthProviderNotFound);
     });
@@ -232,16 +238,17 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
     test('should return 404 for non-existent provider', async () => {
       const { sessionCookie, state } = await startOAuthFlow('google');
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.oauth[':provider'].callback.$get({
-        param: { provider: 'nonexistent' },
-        query: {
-          code: 'test-code',
-          state,
+      const client = testClient(app);
+      const res = await client.api.v1.oauth[':provider'].callback.$get(
+        {
+          param: { provider: 'nonexistent' },
+          query: {
+            code: 'test-code',
+            state,
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       await expectError(res, e.OAuthProviderNotFound);
     });
@@ -251,16 +258,17 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
     test('should return error when code is missing', async () => {
       const { sessionCookie, state } = await startOAuthFlow('google');
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.oauth[':provider'].callback.$get({
-        param: { provider: 'google' },
-        query: {
-          state,
-          // code is missing
+      const client = testClient(app);
+      const res = await client.api.v1.oauth[':provider'].callback.$get(
+        {
+          param: { provider: 'google' },
+          query: {
+            state,
+            // code is missing
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       await expectError(res, e.OAuthInvalidRequest);
     });
@@ -268,16 +276,17 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
     test('should return error when code is empty', async () => {
       const { sessionCookie, state } = await startOAuthFlow('google');
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.oauth[':provider'].callback.$get({
-        param: { provider: 'google' },
-        query: {
-          code: '',
-          state,
+      const client = testClient(app);
+      const res = await client.api.v1.oauth[':provider'].callback.$get(
+        {
+          param: { provider: 'google' },
+          query: {
+            code: '',
+            state,
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       // Empty string fails min(1) validation via Zod
       expect(res.status).toBe(400);
@@ -294,16 +303,17 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
       );
 
       // Note: Token exchange will fail with test code, but we verify the flow starts correctly
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${oauthSession}`,
-      });
-      const res = await client.api.v1.oauth[':provider'].callback.$get({
-        param: { provider: 'google' },
-        query: {
-          code: 'invalid-test-code',
-          state,
+      const client = testClient(app);
+      const res = await client.api.v1.oauth[':provider'].callback.$get(
+        {
+          param: { provider: 'google' },
+          query: {
+            code: 'invalid-test-code',
+            state,
+          },
         },
-      });
+        { headers: { Cookie: `session=${oauthSession}` } },
+      );
 
       // Will fail at token exchange, not at auth check
       // This means link mode flow is working
@@ -316,16 +326,17 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
     test('should return 502 when token exchange fails', async () => {
       const { sessionCookie, state } = await startOAuthFlow('google');
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.oauth[':provider'].callback.$get({
-        param: { provider: 'google' },
-        query: {
-          code: 'invalid-authorization-code',
-          state,
+      const client = testClient(app);
+      const res = await client.api.v1.oauth[':provider'].callback.$get(
+        {
+          param: { provider: 'google' },
+          query: {
+            code: 'invalid-authorization-code',
+            state,
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(502);
       await expectError(res, e.OAuthTokenExchangeFailed);
@@ -334,7 +345,7 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
 
   describe('Request Schema Validation', () => {
     test('should return error when no query parameters provided', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.oauth[':provider'].callback.$get({
         param: { provider: 'google' },
         query: {},
@@ -345,7 +356,7 @@ describe('GET /api/v1/oauth/:provider/callback', () => {
     });
 
     test('should return error when state is missing', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.oauth[':provider'].callback.$get({
         param: { provider: 'google' },
         query: {

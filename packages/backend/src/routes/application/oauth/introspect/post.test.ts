@@ -3,7 +3,6 @@ import { createServer } from '@backend/server.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
-  createTestClient,
   exchangeCodeForTokens,
   getAuthorizationCode,
   introspectToken,
@@ -13,6 +12,7 @@ import {
   TEST_OAUTH_CLIENT_CONFIG,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -77,7 +77,7 @@ describe('POST /application/oauth/introspect', () => {
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = await tokenRes.json();
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.introspect.$post({
         json: {
           token: access_token,
@@ -186,7 +186,7 @@ describe('POST /application/oauth/introspect', () => {
     });
 
     test('should return active=false for empty token', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.introspect.$post({
         json: {
           token: '',
@@ -406,7 +406,7 @@ describe('POST /application/oauth/introspect', () => {
 
   describe('Request Validation', () => {
     test('should reject request without token', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.introspect.$post({
         json: {
           // No token - send empty string to trigger validation

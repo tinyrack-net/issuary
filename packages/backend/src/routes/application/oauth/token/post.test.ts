@@ -3,7 +3,6 @@ import { createServer } from '@backend/server.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
-  createTestClient,
   exchangeCodeForTokens,
   getAuthorizationCode,
   MINIMAL_TEST_CONFIG,
@@ -13,6 +12,7 @@ import {
   TEST_PKCE,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
@@ -236,7 +236,7 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should reject missing authorization code', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -256,7 +256,7 @@ describe('POST /application/oauth/token', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -399,7 +399,7 @@ describe('POST /application/oauth/token', () => {
 
   describe('Refresh Token Grant - Validation', () => {
     test('should reject missing refresh_token', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.token.$post({
         json: {
           grant_type: 'refresh_token',
@@ -568,7 +568,7 @@ describe('POST /application/oauth/token', () => {
       });
 
       // Try to exchange with wrong redirect_uri (will fail)
-      const client = createTestClient(app);
+      const client = testClient(app);
       const failRes = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -592,7 +592,7 @@ describe('POST /application/oauth/token', () => {
 
   describe('Grant Type Validation', () => {
     test('should reject unsupported grant_type', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.token.$post({
         json: {
           grant_type: 'password' as 'authorization_code', // Not supported
@@ -605,7 +605,7 @@ describe('POST /application/oauth/token', () => {
     });
 
     test('should reject missing grant_type', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.token.$post({
         json: {
           client_id: TEST_OAUTH_CLIENT.clientId,

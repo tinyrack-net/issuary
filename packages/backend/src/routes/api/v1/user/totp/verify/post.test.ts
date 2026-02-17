@@ -5,13 +5,12 @@ import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
   createDbUserWithSession,
-  createTestClient,
-  createTestClientWithHeaders,
   expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -44,10 +43,11 @@ afterAll(async () => {
  * Helper to start TOTP setup and return secret
  */
 async function startTotpSetup(sessionCookie: string): Promise<string> {
-  const client = createTestClientWithHeaders(app, {
-    Cookie: `session=${sessionCookie}`,
-  });
-  const res = await client.api.v1.user.totp.setup.$post();
+  const client = testClient(app);
+  const res = await client.api.v1.user.totp.setup.$post(
+    {},
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
 
   const body = await assertJsonBody(res);
   return body.secret;
@@ -55,7 +55,7 @@ async function startTotpSetup(sessionCookie: string): Promise<string> {
 
 describe('POST /api/v1/user/totp/verify', () => {
   test('should return 401 when not authenticated', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.user.totp.verify.$post({
       json: { code: '123456' },
     });
@@ -74,12 +74,11 @@ describe('POST /api/v1/user/totp/verify', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.verify.$post({
-      json: { code: '123456' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.verify.$post(
+      { json: { code: '123456' } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(res, e.TotpNotSetup);
   });
@@ -106,12 +105,11 @@ describe('POST /api/v1/user/totp/verify', () => {
     const validCode = services.totpService.generateToken(secret);
     const codeToUse = invalidCode === validCode ? '999999' : invalidCode;
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.verify.$post({
-      json: { code: codeToUse },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.verify.$post(
+      { json: { code: codeToUse } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(res, e.InvalidTotpCode);
   });
@@ -133,12 +131,11 @@ describe('POST /api/v1/user/totp/verify', () => {
     // Generate valid code
     const validCode = services.totpService.generateToken(secret);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.verify.$post({
-      json: { code: validCode },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.verify.$post(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     // Should return recovery codes, not user session
@@ -181,12 +178,11 @@ describe('POST /api/v1/user/totp/verify', () => {
 
     const validCode = services.totpService.generateToken(secret);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.verify.$post({
-      json: { code: validCode },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.verify.$post(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(res, e.TotpAlreadyEnabled);
   });
@@ -216,12 +212,11 @@ describe('POST /api/v1/user/totp/verify', () => {
 
     const validCode = services.totpService.generateToken(secret);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.verify.$post({
-      json: { code: validCode },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.verify.$post(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     // Should succeed and return recovery codes (allowing user to complete setup)
     const body = await assertJsonBody(res);
@@ -240,12 +235,11 @@ describe('POST /api/v1/user/totp/verify', () => {
     );
     await startTotpSetup(sessionCookie);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.verify.$post({
-      json: { code: 'abcdef' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.verify.$post(
+      { json: { code: 'abcdef' } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });
@@ -262,20 +256,20 @@ describe('POST /api/v1/user/totp/verify', () => {
     );
     await startTotpSetup(sessionCookie);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
 
     // Too short
-    const res1 = await client.api.v1.user.totp.verify.$post({
-      json: { code: '12345' },
-    });
+    const res1 = await client.api.v1.user.totp.verify.$post(
+      { json: { code: '12345' } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     expect(res1.status).toBe(400);
 
     // Too long
-    const res2 = await client.api.v1.user.totp.verify.$post({
-      json: { code: '1234567' },
-    });
+    const res2 = await client.api.v1.user.totp.verify.$post(
+      { json: { code: '1234567' } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     expect(res2.status).toBe(400);
   });
 
@@ -298,12 +292,11 @@ describe('POST /api/v1/user/totp/verify', () => {
     const differentSecret = services.totpService.generateSecret();
     const invalidCode = services.totpService.generateToken(differentSecret);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.verify.$post({
-      json: { code: invalidCode },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.verify.$post(
+      { json: { code: invalidCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(res, e.InvalidTotpCode);
   });
@@ -319,12 +312,13 @@ describe('POST /api/v1/user/totp/verify', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
 
     // Check initial session - TOTP should be disabled
-    const sessionBefore = await client.api.v1.user.session.$get();
+    const sessionBefore = await client.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const sessionBeforeBody = await assertJsonBody(sessionBefore);
     expect(sessionBeforeBody.user).toBeDefined();
     expect(sessionBeforeBody.user?.totp_registered).toBe(false);
@@ -333,13 +327,17 @@ describe('POST /api/v1/user/totp/verify', () => {
     const secret = await startTotpSetup(sessionCookie);
     const validCode = services.totpService.generateToken(secret);
 
-    await client.api.v1.user.totp.verify.$post({
-      json: { code: validCode },
-    });
+    await client.api.v1.user.totp.verify.$post(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     // Check session after verify - TOTP should still NOT be enabled
     // (requires confirm step)
-    const sessionAfter = await client.api.v1.user.session.$get();
+    const sessionAfter = await client.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const sessionAfterBody = await assertJsonBody(sessionAfter);
     expect(sessionAfterBody.user).toBeDefined();
     expect(sessionAfterBody.user?.totp_registered).toBe(false);
@@ -369,12 +367,11 @@ describe('POST /api/v1/user/totp/verify', () => {
     const code2 = services.totpService.generateToken(secret2);
 
     // Verify with second secret - should succeed
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res2 = await client.api.v1.user.totp.verify.$post({
-      json: { code: code2 },
-    });
+    const client = testClient(app);
+    const res2 = await client.api.v1.user.totp.verify.$post(
+      { json: { code: code2 } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     expect(res2.status).toBe(200);
   });
 
@@ -408,23 +405,23 @@ describe('POST /api/v1/user/totp/verify', () => {
     // Generate code from second (current) secret
     const code2 = services.totpService.generateToken(secret2);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
 
     // Only test if codes are different (to avoid false positive)
     if (code1 !== code2) {
       // Try to verify with first secret's code - should fail
-      const res1 = await client.api.v1.user.totp.verify.$post({
-        json: { code: code1 },
-      });
+      const res1 = await client.api.v1.user.totp.verify.$post(
+        { json: { code: code1 } },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
       await expectError(res1, e.InvalidTotpCode);
     }
 
     // Verify with second secret - should succeed
-    const res2 = await client.api.v1.user.totp.verify.$post({
-      json: { code: code2 },
-    });
+    const res2 = await client.api.v1.user.totp.verify.$post(
+      { json: { code: code2 } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     expect(res2.status).toBe(200);
   });
 
@@ -440,13 +437,14 @@ describe('POST /api/v1/user/totp/verify', () => {
     );
     await startTotpSetup(sessionCookie);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.verify.$post({
-      // @ts-expect-error testing validation with invalid input
-      json: {},
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.verify.$post(
+      {
+        // @ts-expect-error testing validation with invalid input
+        json: {},
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });

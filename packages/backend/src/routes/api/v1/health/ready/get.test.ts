@@ -1,9 +1,7 @@
 import type { AppType } from '@backend/app.js';
 import { createServer } from '@backend/server.js';
-import {
-  createTestClient,
-  MINIMAL_TEST_CONFIG,
-} from '@backend/test-utils/index.js';
+import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -25,7 +23,7 @@ afterAll(async () => {
 
 describe('GET /api/v1/health/ready', () => {
   test('should return 200 with database ok when healthy', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.health.ready.$get();
 
     expect(res.status).toBe(200);
@@ -40,7 +38,7 @@ describe('GET /api/v1/health/ready', () => {
   });
 
   test('should have proper response structure', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.health.ready.$get();
 
     expect(res.status).toBe(200);

@@ -1,9 +1,7 @@
 import type { AppType } from '@backend/app.js';
 import { createServer } from '@backend/server.js';
-import {
-  createTestClient,
-  MINIMAL_TEST_CONFIG,
-} from '@backend/test-utils/index.js';
+import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -36,7 +34,7 @@ afterAll(async () => {
 
 describe('GET /api/v1/config', () => {
   test('should return app configuration', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.config.$get();
 
     expect(res.status).toBe(200);
@@ -64,7 +62,7 @@ describe('GET /api/v1/config', () => {
   });
 
   test('should include password authentication method in auth', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.config.$get();
 
     expect(res.status).toBe(200);
@@ -87,7 +85,7 @@ describe('GET /api/v1/config', () => {
   });
 
   test('should include passkey authentication method in auth', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.config.$get();
 
     expect(res.status).toBe(200);
@@ -101,7 +99,7 @@ describe('GET /api/v1/config', () => {
   });
 
   test('should include identity providers', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.config.$get();
 
     expect(res.status).toBe(200);
@@ -124,7 +122,7 @@ describe('GET /api/v1/config', () => {
   });
 
   test('should not require authentication', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     // This endpoint should be publicly accessible
     const res = await client.api.v1.config.$get();
 

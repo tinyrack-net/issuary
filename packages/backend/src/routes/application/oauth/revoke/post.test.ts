@@ -3,7 +3,6 @@ import { createServer } from '@backend/server.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
-  createTestClient,
   exchangeCodeForTokens,
   getAuthorizationCode,
   getUserInfo,
@@ -14,6 +13,7 @@ import {
   TEST_OAUTH_CLIENT_CONFIG,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -42,7 +42,7 @@ async function revokeToken(params: {
   clientId?: string;
   clientSecret?: string;
 }) {
-  const client = createTestClient(app);
+  const client = testClient(app);
   return client.application.oauth.revoke.$post({
     json: {
       token: params.token,
@@ -205,7 +205,7 @@ describe('POST /application/oauth/revoke', () => {
     });
 
     test('should reject empty token', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.revoke.$post({
         json: {
           token: '',
@@ -411,7 +411,7 @@ describe('POST /application/oauth/revoke', () => {
 
   describe('Request Validation', () => {
     test('should reject request without token field', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.revoke.$post({
         json: {
           // No token - send undefined to trigger validation

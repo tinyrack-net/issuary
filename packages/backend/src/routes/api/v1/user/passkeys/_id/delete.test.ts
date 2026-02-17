@@ -6,8 +6,6 @@ import {
   assertJsonBody,
   createAuthenticatedSession,
   createPasskeyForUser,
-  createTestClient,
-  createTestClientWithHeaders,
   enableTotpForUser,
   expectError,
   extractCookie,
@@ -16,6 +14,7 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 describe('DELETE /api/v1/user/passkeys/:id', () => {
@@ -65,7 +64,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -100,7 +99,7 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
   }
 
   test('should return 401 when not authenticated', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.user.passkeys[':id'].$delete({
       param: {
         id: '00000000-0000-0000-0000-000000000000',
@@ -117,14 +116,15 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
 
     const { sessionCookie } = await createDbUserWithSession(email, password);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$delete({
-      param: {
-        id: '00000000-0000-0000-0000-000000000000',
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: {
+          id: '00000000-0000-0000-0000-000000000000',
+        },
       },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res, 404);
     expect(body.code).toBe('PASSKEY_NOT_FOUND');
@@ -145,12 +145,13 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       'Test Passkey',
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$delete({
-      param: { id: passkeyId },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: { id: passkeyId },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
@@ -184,12 +185,13 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       'Passkey 2',
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$delete({
-      param: { id: passkeyId1 },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: { id: passkeyId1 },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
@@ -228,12 +230,13 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
     );
 
     // User1 tries to delete user2's passkey
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${session1}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$delete({
-      param: { id: passkeyId },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: { id: passkeyId },
+      },
+      { headers: { Cookie: `session=${session1}` } },
+    );
 
     const body = await assertJsonBody(res, 404);
     expect(body.code).toBe('PASSKEY_NOT_FOUND');
@@ -253,12 +256,13 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
 
     const { sessionCookie } = await createDbUserWithSession(email, password);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$delete({
-      param: { id: 'not-a-uuid' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: { id: 'not-a-uuid' },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });
@@ -282,12 +286,13 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       'Only Passkey',
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$delete({
-      param: { id: passkeyId },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: { id: passkeyId },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
@@ -319,12 +324,13 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
     );
 
     // Delete second passkey (not the last one)
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$delete({
-      param: { id: passkeyId2 },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: { id: passkeyId2 },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(res.status).toBe(200);
   });
@@ -333,10 +339,11 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
     // Get user ID from session
-    const sessionClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const sessionRes = await sessionClient.api.v1.user.session.$get();
+    const sessionClient = testClient(app);
+    const sessionRes = await sessionClient.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const sessionBody = await assertJsonBody(sessionRes);
     expect(sessionBody.user).toBeDefined();
     const user = sessionBody.user;
@@ -350,12 +357,13 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       'Config User Passkey',
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$delete({
-      param: { id: passkeyId },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: { id: passkeyId },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     // Config users cannot manage 2FA
     await expectError(res, e.SecondFactorNotAllowedForConfigUser);
@@ -386,15 +394,16 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       'Passkey 3',
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
 
     // Delete all passkeys one by one
     for (const passkeyId of [passkeyId1, passkeyId2, passkeyId3]) {
-      const res = await client.api.v1.user.passkeys[':id'].$delete({
-        param: { id: passkeyId },
-      });
+      const res = await client.api.v1.user.passkeys[':id'].$delete(
+        {
+          param: { id: passkeyId },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
       expect(res.status).toBe(200);
     }
 
@@ -420,18 +429,22 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
       'Test Passkey',
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
 
     // Send two concurrent delete requests
     const [res1, res2] = await Promise.all([
-      client.api.v1.user.passkeys[':id'].$delete({
-        param: { id: passkeyId },
-      }),
-      client.api.v1.user.passkeys[':id'].$delete({
-        param: { id: passkeyId },
-      }),
+      client.api.v1.user.passkeys[':id'].$delete(
+        {
+          param: { id: passkeyId },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      ),
+      client.api.v1.user.passkeys[':id'].$delete(
+        {
+          param: { id: passkeyId },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      ),
     ]);
 
     // One should succeed, one should fail with 404
@@ -456,22 +469,24 @@ describe('DELETE /api/v1/user/passkeys/:id', () => {
     );
     await createPasskeyForUser(services, userId, 'Passkey 2');
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
+    const headers = { Cookie: `session=${sessionCookie}` };
 
     // Get initial list
-    const listBefore = await client.api.v1.user.passkeys.$get();
+    const listBefore = await client.api.v1.user.passkeys.$get({}, { headers });
     const listBeforeBody = await assertJsonBody(listBefore);
     expect(listBeforeBody.passkeys).toHaveLength(2);
 
     // Delete one passkey
-    await client.api.v1.user.passkeys[':id'].$delete({
-      param: { id: passkeyId1 },
-    });
+    await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: { id: passkeyId1 },
+      },
+      { headers },
+    );
 
     // Get updated list
-    const listAfter = await client.api.v1.user.passkeys.$get();
+    const listAfter = await client.api.v1.user.passkeys.$get({}, { headers });
     const listAfterBody = await assertJsonBody(listAfter);
     expect(listAfterBody.passkeys).toHaveLength(1);
     expect(listAfterBody.passkeys[0]?.name).toBe('Passkey 2');
@@ -523,7 +538,7 @@ describe('DELETE /api/v1/user/passkeys/:id - Last auth method protection', () =>
       await services.mikro.em.persist(user).flush();
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -564,12 +579,13 @@ describe('DELETE /api/v1/user/passkeys/:id - Last auth method protection', () =>
       'Only Auth Method Passkey',
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$delete({
-      param: { id: passkeyId },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: { id: passkeyId },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('CANNOT_REMOVE_LAST_PASSKEY');
@@ -611,12 +627,13 @@ describe('DELETE /api/v1/user/passkeys/:id - Last auth method protection', () =>
     await createPasskeyForUser(services, userId, 'Passkey 2');
 
     // Should be able to delete one (still has another)
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$delete({
-      param: { id: passkeyId1 },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: { id: passkeyId1 },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
@@ -651,14 +668,15 @@ describe('DELETE /api/v1/user/passkeys/:id - Passkey disabled', () => {
   test('should return 400 when passkey is disabled in config', async () => {
     const sessionCookie = await createAuthenticatedSession(appDisabled);
 
-    const client = createTestClientWithHeaders(appDisabled, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$delete({
-      param: {
-        id: '00000000-0000-0000-0000-000000000000',
+    const client = testClient(appDisabled);
+    const res = await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: {
+          id: '00000000-0000-0000-0000-000000000000',
+        },
       },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     // Route is registered but handler rejects when passkey is disabled
     expect(res.status).toBe(400);
@@ -758,7 +776,7 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
     const totpSecret = await enableTotpForUser(servicesWith2FA, userId);
 
     // Login - will require 2FA verification
-    const loginClient = createTestClient(appWith2FARequired);
+    const loginClient = testClient(appWith2FARequired);
     const loginRes = await loginClient.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -770,12 +788,13 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
 
     // Verify TOTP to get full session
     const validCode = servicesWith2FA.totpService.generateToken(totpSecret);
-    const pendingClient = createTestClientWithHeaders(appWith2FARequired, {
-      Cookie: `session=${pending2FACookie}`,
-    });
-    const verifyRes = await pendingClient.api.v1.auth.totp.verify.$post({
-      json: { code: validCode },
-    });
+    const pendingClient = testClient(appWith2FARequired);
+    const verifyRes = await pendingClient.api.v1.auth.totp.verify.$post(
+      {
+        json: { code: validCode },
+      },
+      { headers: { Cookie: `session=${pending2FACookie}` } },
+    );
     expect(verifyRes.status).toBe(200);
 
     const verifySetCookie = verifyRes.headers.get('set-cookie');
@@ -801,12 +820,13 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
     // Create only one passkey
     const passkeyId = await createPasskeyFor2FATest(userId, 'Only Passkey');
 
-    const client = createTestClientWithHeaders(appWith2FARequired, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$delete({
-      param: { id: passkeyId },
-    });
+    const client = testClient(appWith2FARequired);
+    const res = await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: { id: passkeyId },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(res, e.CannotRemoveLastSecondFactor);
 
@@ -830,12 +850,13 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
     // Create passkey (user already has TOTP from session setup)
     const passkeyId = await createPasskeyFor2FATest(userId, 'Test Passkey');
 
-    const client = createTestClientWithHeaders(appWith2FARequired, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$delete({
-      param: { id: passkeyId },
-    });
+    const client = testClient(appWith2FARequired);
+    const res = await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: { id: passkeyId },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
@@ -866,12 +887,13 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
     const passkeyId1 = await createPasskeyFor2FATest(userId, 'Passkey 1');
     await createPasskeyFor2FATest(userId, 'Passkey 2');
 
-    const client = createTestClientWithHeaders(appWith2FARequired, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$delete({
-      param: { id: passkeyId1 },
-    });
+    const client = testClient(appWith2FARequired);
+    const res = await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: { id: passkeyId1 },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     // Should succeed because user still has another passkey
     const body = await assertJsonBody(res);
@@ -882,10 +904,11 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
     const sessionCookie = await createAuthenticatedSession(appWith2FARequired);
 
     // Get user ID from session
-    const sessionClient = createTestClientWithHeaders(appWith2FARequired, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const sessionRes = await sessionClient.api.v1.user.session.$get();
+    const sessionClient = testClient(appWith2FARequired);
+    const sessionRes = await sessionClient.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const sessionBody = await assertJsonBody(sessionRes);
     expect(sessionBody.user).toBeDefined();
     const user = sessionBody.user;
@@ -910,12 +933,13 @@ describe('DELETE /api/v1/user/passkeys/:id - second_factor.required: true', () =
       passkeyId = passkey.id;
     });
 
-    const client = createTestClientWithHeaders(appWith2FARequired, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$delete({
-      param: { id: passkeyId },
-    });
+    const client = testClient(appWith2FARequired);
+    const res = await client.api.v1.user.passkeys[':id'].$delete(
+      {
+        param: { id: passkeyId },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(res, e.SecondFactorNotAllowedForConfigUser);
   });

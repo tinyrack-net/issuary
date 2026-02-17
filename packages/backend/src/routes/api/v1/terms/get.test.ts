@@ -3,13 +3,12 @@ import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
   createDbUserWithSession,
-  createTestClient,
-  createTestClientWithHeaders,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_TERMS_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 describe('GET /api/v1/terms', () => {
@@ -33,7 +32,7 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should return terms list without authentication', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.terms.$get({ query: {} });
 
       expect(res.status).toBe(200);
@@ -48,7 +47,7 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should include all required terms in pendingTerms for unauthenticated user', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.terms.$get({ query: {} });
 
       expect(res.status).toBe(200);
@@ -66,7 +65,7 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should return null userConsent for unauthenticated user', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.terms.$get({ query: {} });
 
       expect(res.status).toBe(200);
@@ -78,7 +77,7 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should return correct term structure', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.terms.$get({ query: {} });
 
       expect(res.status).toBe(200);
@@ -116,7 +115,7 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should return Korean content with lang=ko', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.terms.$get({
         query: { lang: 'ko' },
       });
@@ -129,7 +128,7 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should return English content with lang=en', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.terms.$get({
         query: { lang: 'en' },
       });
@@ -142,7 +141,7 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should fallback to English for unsupported language', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.terms.$get({
         query: { lang: 'fr' },
       });
@@ -156,7 +155,7 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should default to English when lang not provided', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.terms.$get({ query: {} });
 
       expect(res.status).toBe(200);
@@ -213,10 +212,11 @@ describe('GET /api/v1/terms', () => {
         );
       });
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.terms.$get({ query: {} });
+      const client = testClient(app);
+      const res = await client.api.v1.terms.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(200);
 
@@ -244,10 +244,11 @@ describe('GET /api/v1/terms', () => {
         });
       });
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.terms.$get({ query: {} });
+      const client = testClient(app);
+      const res = await client.api.v1.terms.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(200);
 
@@ -282,10 +283,11 @@ describe('GET /api/v1/terms', () => {
         });
       });
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.terms.$get({ query: {} });
+      const client = testClient(app);
+      const res = await client.api.v1.terms.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(200);
 
@@ -307,10 +309,11 @@ describe('GET /api/v1/terms', () => {
         'password123!',
       );
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.terms.$get({ query: {} });
+      const client = testClient(app);
+      const res = await client.api.v1.terms.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(200);
 
@@ -343,7 +346,7 @@ describe('GET /api/v1/terms', () => {
       });
 
       test('should return explicit consent mode', async () => {
-        const client = createTestClient(app);
+        const client = testClient(app);
         const res = await client.api.v1.terms.$get({ query: {} });
 
         expect(res.status).toBe(200);
@@ -394,7 +397,7 @@ describe('GET /api/v1/terms', () => {
       });
 
       test('should return implicit consent mode on term', async () => {
-        const client = createTestClient(app);
+        const client = testClient(app);
         const res = await client.api.v1.terms.$get({ query: {} });
 
         expect(res.status).toBe(200);
@@ -465,7 +468,7 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should correctly flag required vs optional terms', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.terms.$get({ query: {} });
 
       expect(res.status).toBe(200);
@@ -481,7 +484,7 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should correctly flag consentMode on terms', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.terms.$get({ query: {} });
 
       expect(res.status).toBe(200);
@@ -495,7 +498,7 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should only include required terms in pendingTerms', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.terms.$get({ query: {} });
 
       expect(res.status).toBe(200);
@@ -555,7 +558,7 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should return link type with URL content', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.terms.$get({ query: {} });
 
       expect(res.status).toBe(200);
@@ -570,7 +573,7 @@ describe('GET /api/v1/terms', () => {
     });
 
     test('should return text type with text content', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.terms.$get({ query: {} });
 
       expect(res.status).toBe(200);
@@ -608,7 +611,7 @@ describe('GET /api/v1/terms', () => {
       });
 
       test('should return empty terms array', async () => {
-        const client = createTestClient(app);
+        const client = testClient(app);
         const res = await client.api.v1.terms.$get({ query: {} });
 
         expect(res.status).toBe(200);
@@ -639,10 +642,11 @@ describe('GET /api/v1/terms', () => {
       });
 
       test('should handle invalid session gracefully', async () => {
-        const client = createTestClientWithHeaders(app, {
-          Cookie: 'session=invalid-session-token',
-        });
-        const res = await client.api.v1.terms.$get({ query: {} });
+        const client = testClient(app);
+        const res = await client.api.v1.terms.$get(
+          { query: {} },
+          { headers: { Cookie: 'session=invalid-session-token' } },
+        );
 
         // Should not throw, should treat as unauthenticated
         expect(res.status).toBe(200);
@@ -706,10 +710,11 @@ describe('GET /api/v1/terms', () => {
         });
       });
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.terms.$get({ query: {} });
+      const client = testClient(app);
+      const res = await client.api.v1.terms.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(200);
 

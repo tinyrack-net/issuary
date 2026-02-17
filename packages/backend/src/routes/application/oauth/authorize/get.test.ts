@@ -5,8 +5,6 @@ import {
   assertJsonBody,
   createAuthenticatedSession,
   createDbUserWithSession,
-  createTestClient,
-  createTestClientWithHeaders,
   generateUniqueEmail,
   grantConsent,
   MINIMAL_TEST_CONFIG,
@@ -15,6 +13,7 @@ import {
   TEST_PKCE,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -42,11 +41,7 @@ async function getAuthorizationCode(
   params: Record<string, string>,
   sessionCookie?: string,
 ): Promise<{ code: string | null; location: URL; statusCode: number }> {
-  const client = sessionCookie
-    ? createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      })
-    : createTestClient(app);
+  const client = testClient(app);
 
   const query = {
     response_type: params['response_type'] || 'code',
@@ -82,9 +77,14 @@ async function getAuthorizationCode(
       : {}),
   };
 
-  const res = await client.application.oauth.authorize.$get({
-    query,
-  });
+  const res = await client.application.oauth.authorize.$get(
+    {
+      query,
+    },
+    sessionCookie
+      ? { headers: { Cookie: `session=${sessionCookie}` } }
+      : undefined,
+  );
 
   const locationHeader = res.headers.get('location');
   const location = new URL(locationHeader as string, 'http://localhost:8080');
@@ -186,7 +186,7 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('Success Cases', () => {
     test('should redirect to login when user is not authenticated', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: validParams,
       });
@@ -226,7 +226,7 @@ describe('GET /application/oauth/authorize', () => {
         prompt: 'login' as const,
       };
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: paramsWithNonce,
       });
@@ -290,7 +290,7 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('Client Validation', () => {
     test('should return unauthorized_client for non-existent client_id', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -305,7 +305,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should return error as JSON for invalid client (no redirect)', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -324,7 +324,7 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('Redirect URI Validation', () => {
     test('should return 400 for unregistered redirect_uri', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -338,7 +338,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should not redirect errors to invalid redirect_uri', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -370,7 +370,7 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('Response Type Validation', () => {
     test('should return unsupported_response_type for "token"', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -388,7 +388,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should return unsupported_response_type for "id_token"', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -420,7 +420,7 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('Scope Validation', () => {
     test('should return invalid_scope for disallowed scope', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -546,7 +546,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should return JSON error for invalid client (state not preserved)', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -562,7 +562,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should preserve state in login redirect', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -615,7 +615,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should handle display parameter', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -632,7 +632,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should handle max_age parameter', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -649,7 +649,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should handle prompt parameter', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -668,7 +668,7 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('OIDC Prompt Parameter (prompt=none)', () => {
     test('should return login_required when prompt=none and user not authenticated', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -702,15 +702,16 @@ describe('GET /application/oauth/authorize', () => {
       );
 
       // Request authorization with prompt=none but without prior consent
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.application.oauth.authorize.$get({
-        query: {
-          ...validParams,
-          prompt: 'none',
+      const client = testClient(app);
+      const res = await client.application.oauth.authorize.$get(
+        {
+          query: {
+            ...validParams,
+            prompt: 'none',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(302);
       const location = new URL(
@@ -750,7 +751,7 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('OIDC Prompt Parameter (prompt=login)', () => {
     test('should redirect to login page when prompt=login and user not authenticated', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -769,7 +770,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should preserve prompt=login in login redirect params', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -802,15 +803,16 @@ describe('GET /application/oauth/authorize', () => {
       });
 
       // Request with prompt=consent should still show consent page
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.application.oauth.authorize.$get({
-        query: {
-          ...validParams,
-          prompt: 'consent',
+      const client = testClient(app);
+      const res = await client.application.oauth.authorize.$get(
+        {
+          query: {
+            ...validParams,
+            prompt: 'consent',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(302);
       const location = new URL(
@@ -823,7 +825,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should redirect to login when prompt=consent and user not authenticated', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -844,7 +846,7 @@ describe('GET /application/oauth/authorize', () => {
 
   describe('Error Handling', () => {
     test('should return proper OAuth error format in redirect', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -865,7 +867,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should return proper OAuth error format as JSON when redirect_uri invalid', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -891,7 +893,7 @@ describe('GET /application/oauth/authorize', () => {
         'data:text/html,<script>alert(1)</script>',
       ];
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       for (const uri of maliciousUris) {
         const res = await client.application.oauth.authorize.$get({
           query: {
@@ -907,7 +909,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should validate redirect_uri before redirecting errors', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,
@@ -922,7 +924,7 @@ describe('GET /application/oauth/authorize', () => {
     });
 
     test('should not expose authorization codes in error responses', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           ...validParams,

@@ -7,8 +7,6 @@ import {
   createAuthenticatedSession,
   createDbUserWithSession,
   createPasskeyForUser,
-  createTestClient,
-  createTestClientWithHeaders,
   enableTotpForUser,
   expectError,
   generateUniqueEmail,
@@ -16,6 +14,7 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 describe('DELETE /api/v1/user/totp', () => {
@@ -46,7 +45,7 @@ describe('DELETE /api/v1/user/totp', () => {
   });
 
   test('should return 401 when not authenticated', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.user.totp.$delete({
       json: { code: '123456' },
     });
@@ -65,12 +64,11 @@ describe('DELETE /api/v1/user/totp', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.$delete({
-      json: { code: '123456' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.$delete(
+      { json: { code: '123456' } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(res, e.TotpNotEnabled);
   });
@@ -89,12 +87,11 @@ describe('DELETE /api/v1/user/totp', () => {
     // Enable TOTP
     await enableTotpForUser(services, userId);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.$delete({
-      json: { code: '000000' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.$delete(
+      { json: { code: '000000' } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(res, e.InvalidTotpCode);
   });
@@ -116,12 +113,11 @@ describe('DELETE /api/v1/user/totp', () => {
     // Generate valid code
     const validCode = services.totpService.generateToken(secret);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.$delete({
-      json: { code: validCode },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.$delete(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
@@ -146,12 +142,11 @@ describe('DELETE /api/v1/user/totp', () => {
 
     await enableTotpForUser(services, userId);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.$delete({
-      json: { code: 'abcdef' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.$delete(
+      { json: { code: 'abcdef' } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });
@@ -169,20 +164,20 @@ describe('DELETE /api/v1/user/totp', () => {
 
     await enableTotpForUser(services, userId);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
 
     // Too short
-    const res1 = await client.api.v1.user.totp.$delete({
-      json: { code: '12345' },
-    });
+    const res1 = await client.api.v1.user.totp.$delete(
+      { json: { code: '12345' } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     expect(res1.status).toBe(400);
 
     // Too long
-    const res2 = await client.api.v1.user.totp.$delete({
-      json: { code: '1234567' },
-    });
+    const res2 = await client.api.v1.user.totp.$delete(
+      { json: { code: '1234567' } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     expect(res2.status).toBe(400);
   });
 
@@ -200,24 +195,29 @@ describe('DELETE /api/v1/user/totp', () => {
     // Enable TOTP
     const secret = await enableTotpForUser(services, userId);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
 
     // Check initial session - TOTP should be enabled
-    const sessionBefore = await client.api.v1.user.session.$get();
+    const sessionBefore = await client.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const sessionBeforeBody = await assertJsonBody(sessionBefore);
     expect(sessionBeforeBody.user).toBeDefined();
     expect(sessionBeforeBody.user?.totp_registered).toBe(true);
 
     // Disable TOTP
     const validCode = services.totpService.generateToken(secret);
-    await client.api.v1.user.totp.$delete({
-      json: { code: validCode },
-    });
+    await client.api.v1.user.totp.$delete(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     // Check session after - TOTP should be disabled
-    const sessionAfter = await client.api.v1.user.session.$get();
+    const sessionAfter = await client.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const sessionAfterBody = await assertJsonBody(sessionAfter);
     expect(sessionAfterBody.user).toBeDefined();
     expect(sessionAfterBody.user?.totp_registered).toBe(false);
@@ -248,12 +248,11 @@ describe('DELETE /api/v1/user/totp', () => {
 
     const validCode = services.totpService.generateToken(secret);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.$delete({
-      json: { code: validCode },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.$delete(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(res, e.TotpNotEnabled);
   });
@@ -283,12 +282,11 @@ describe('DELETE /api/v1/user/totp', () => {
 
     const validCode = services.totpService.generateToken(secret);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.$delete({
-      json: { code: validCode },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.$delete(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(res, e.TotpNotEnabled);
   });
@@ -308,20 +306,20 @@ describe('DELETE /api/v1/user/totp', () => {
     const secret = await enableTotpForUser(services, userId);
     const validCode = services.totpService.generateToken(secret);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
 
     // First deletion should succeed
-    const res1 = await client.api.v1.user.totp.$delete({
-      json: { code: validCode },
-    });
+    const res1 = await client.api.v1.user.totp.$delete(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     expect(res1.status).toBe(200);
 
     // Second deletion with same code should fail (TOTP no longer enabled)
-    const res2 = await client.api.v1.user.totp.$delete({
-      json: { code: validCode },
-    });
+    const res2 = await client.api.v1.user.totp.$delete(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     await expectError(res2, e.TotpNotEnabled);
   });
 
@@ -340,32 +338,36 @@ describe('DELETE /api/v1/user/totp', () => {
     const secret1 = await enableTotpForUser(services, userId);
     const validCode1 = services.totpService.generateToken(secret1);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
 
     // Disable TOTP
-    const disableRes = await client.api.v1.user.totp.$delete({
-      json: { code: validCode1 },
-    });
+    const disableRes = await client.api.v1.user.totp.$delete(
+      { json: { code: validCode1 } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     expect(disableRes.status).toBe(200);
 
     // Start new setup
-    const setupRes = await client.api.v1.user.totp.setup.$post({});
+    const setupRes = await client.api.v1.user.totp.setup.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const setupBody = await assertJsonBody(setupRes);
     const newSecret = setupBody.secret;
 
     // Verify new setup
     const newCode = services.totpService.generateToken(newSecret);
-    const verifyRes = await client.api.v1.user.totp.verify.$post({
-      json: { code: newCode },
-    });
+    const verifyRes = await client.api.v1.user.totp.verify.$post(
+      { json: { code: newCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     expect(verifyRes.status).toBe(200);
 
     // Confirm new setup
-    const confirmRes = await client.api.v1.user.totp.confirm.$post({
-      json: {},
-    });
+    const confirmRes = await client.api.v1.user.totp.confirm.$post(
+      { json: {} },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     expect(confirmRes.status).toBe(200);
 
     // Verify TOTP is fully enabled again
@@ -390,13 +392,14 @@ describe('DELETE /api/v1/user/totp', () => {
 
     await enableTotpForUser(services, userId);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.$delete({
-      // @ts-expect-error testing validation with invalid input
-      json: {},
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.$delete(
+      {
+        // @ts-expect-error testing validation with invalid input
+        json: {},
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });
@@ -466,7 +469,7 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
     const totpSecret = await enableTotpForUser(servicesWith2FA, userId);
 
     // Login - will require 2FA verification
-    const loginClient = createTestClient(appWith2FARequired);
+    const loginClient = testClient(appWith2FARequired);
     const loginRes = await loginClient.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -476,12 +479,11 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
 
     // Verify TOTP to get full session
     const validCode = servicesWith2FA.totpService.generateToken(totpSecret);
-    const pendingClient = createTestClientWithHeaders(appWith2FARequired, {
-      Cookie: `session=${pending2FACookie}`,
-    });
-    const verifyRes = await pendingClient.api.v1.auth.totp.verify.$post({
-      json: { code: validCode },
-    });
+    const pendingClient = testClient(appWith2FARequired);
+    const verifyRes = await pendingClient.api.v1.auth.totp.verify.$post(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${pending2FACookie}` } },
+    );
     expect(verifyRes.status).toBe(200);
 
     const sessionCookie = extractSessionCookie(verifyRes);
@@ -511,12 +513,11 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
     // User has only TOTP as 2FA, try to disable it
     const validCode = servicesWith2FA.totpService.generateToken(totpSecret);
 
-    const client = createTestClientWithHeaders(appWith2FARequired, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.$delete({
-      json: { code: validCode },
-    });
+    const client = testClient(appWith2FARequired);
+    const res = await client.api.v1.user.totp.$delete(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(res, e.CannotRemoveLastSecondFactor);
 
@@ -544,12 +545,11 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
 
     const validCode = servicesWith2FA.totpService.generateToken(totpSecret);
 
-    const client = createTestClientWithHeaders(appWith2FARequired, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.$delete({
-      json: { code: validCode },
-    });
+    const client = testClient(appWith2FARequired);
+    const res = await client.api.v1.user.totp.$delete(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
@@ -569,10 +569,11 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
     const sessionCookie = await createAuthenticatedSession(appWith2FARequired);
 
     // Get user ID from session
-    const sessionClient = createTestClientWithHeaders(appWith2FARequired, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const sessionRes = await sessionClient.api.v1.user.session.$get();
+    const sessionClient = testClient(appWith2FARequired);
+    const sessionRes = await sessionClient.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const sessionBody = await assertJsonBody(sessionRes);
     expect(sessionBody.user).toBeDefined();
     const userId = sessionBody.user?.id;
@@ -592,12 +593,11 @@ describe('DELETE /api/v1/user/totp - second_factor.required: true', () => {
 
     const validCode = servicesWith2FA.totpService.generateToken(secret);
 
-    const client = createTestClientWithHeaders(appWith2FARequired, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.$delete({
-      json: { code: validCode },
-    });
+    const client = testClient(appWith2FARequired);
+    const res = await client.api.v1.user.totp.$delete(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(res, e.SecondFactorNotAllowedForConfigUser);
   });

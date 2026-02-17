@@ -3,8 +3,6 @@ import { createServer } from '@backend/server.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
-  createTestClient,
-  createTestClientWithHeaders,
   exchangeCodeForTokens,
   getAuthorizationCode,
   getUserInfo,
@@ -16,6 +14,7 @@ import {
   TEST_PKCE,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
@@ -96,7 +95,7 @@ describe('SPA PKCE Authentication Flow', () => {
       expect(location.searchParams.get('state')).toBe(state);
 
       // Step 4: Exchange code for tokens (NO client_secret)
-      const client = createTestClient(app);
+      const client = testClient(app);
       const tokenRes = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -193,7 +192,7 @@ describe('SPA PKCE Authentication Flow', () => {
         codeChallengeMethod: 'S256',
       });
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const tokenRes = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -218,7 +217,7 @@ describe('SPA PKCE Authentication Flow', () => {
         codeChallengeMethod: 'S256',
       });
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const tokenRes = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -265,7 +264,7 @@ describe('SPA PKCE Authentication Flow', () => {
       });
 
       // Try to exchange without code_verifier
-      const client = createTestClient(app);
+      const client = testClient(app);
       const tokenRes = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -328,19 +327,20 @@ describe('SPA PKCE Authentication Flow', () => {
         // code_challenge_method not specified
       });
 
-      const authClient = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await authClient.application.oauth.authorize.$get({
-        query: {
-          response_type: 'code',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          scope: 'openid profile email',
-          code_challenge: TEST_PKCE.codeChallenge,
-          // code_challenge_method defaults to S256
+      const authClient = testClient(app);
+      const res = await authClient.application.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: 'openid profile email',
+            code_challenge: TEST_PKCE.codeChallenge,
+            // code_challenge_method defaults to S256
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(302);
       const location = new URL(
@@ -416,18 +416,19 @@ describe('SPA PKCE Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
       // Request with invalid scope should redirect with error AND state
-      const authClient = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await authClient.application.oauth.authorize.$get({
-        query: {
-          response_type: 'code',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          scope: 'invalid_scope_xyz',
-          state,
+      const authClient = testClient(app);
+      const res = await authClient.application.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: 'invalid_scope_xyz',
+            state,
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(302);
       const location = new URL(
@@ -460,7 +461,7 @@ describe('SPA PKCE Authentication Flow', () => {
       const { refresh_token } = await tokenRes.json();
 
       // Refresh without client_secret (public client)
-      const refreshClient = createTestClient(app);
+      const refreshClient = testClient(app);
       const refreshRes = await refreshClient.application.oauth.token.$post({
         json: {
           grant_type: 'refresh_token',
@@ -522,21 +523,22 @@ describe('SPA PKCE Authentication Flow', () => {
       });
 
       // Now try silent auth
-      const authClient = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await authClient.application.oauth.authorize.$get({
-        query: {
-          response_type: 'code',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          scope: 'openid profile email',
-          prompt: 'none',
-          code_challenge: TEST_PKCE.codeChallenge,
-          code_challenge_method: 'S256',
-          state: 'silent-auth',
+      const authClient = testClient(app);
+      const res = await authClient.application.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: 'openid profile email',
+            prompt: 'none',
+            code_challenge: TEST_PKCE.codeChallenge,
+            code_challenge_method: 'S256',
+            state: 'silent-auth',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(302);
       const location = new URL(
@@ -550,7 +552,7 @@ describe('SPA PKCE Authentication Flow', () => {
     });
 
     test('should return login_required when no session', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.authorize.$get({
         query: {
           response_type: 'code',
@@ -618,7 +620,7 @@ describe('SPA PKCE Authentication Flow', () => {
       const { id_token, access_token } = await tokenRes.json();
 
       // Get JWKS (SPA would fetch this)
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
       const jwks = jose.createLocalJWKSet(
@@ -674,7 +676,7 @@ describe('SPA PKCE Authentication Flow', () => {
       const { access_token } = await tokenRes.json();
 
       // Introspect without client_secret
-      const introspectClient = createTestClient(app);
+      const introspectClient = testClient(app);
       const introspectRes =
         await introspectClient.application.oauth.introspect.$post({
           json: {

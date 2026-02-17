@@ -3,8 +3,6 @@ import { createServer } from '@backend/server.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
-  createTestClient,
-  createTestClientWithHeaders,
   exchangeCodeForTokens,
   getAccessToken,
   getAuthorizationCode,
@@ -15,6 +13,7 @@ import {
   TEST_USER,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -166,7 +165,7 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should reject request with invalid Authorization header format', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.userinfo.$get({
         header: {
           authorization: 'InvalidFormat token123', // Should be "Bearer <token>"
@@ -178,7 +177,7 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should reject request with missing token in Bearer header', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.userinfo.$get({
         header: {
           authorization: 'Bearer ', // No token after Bearer
@@ -353,7 +352,7 @@ describe('GET /application/oauth/userinfo', () => {
 
   describe('Error Response Format', () => {
     test('should return proper error format for missing auth header', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.application.oauth.userinfo.$get({
         header: {},
       });
@@ -367,7 +366,7 @@ describe('GET /application/oauth/userinfo', () => {
     });
 
     test('should return 401 for all authentication errors', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const testCases = [
         { authorization: undefined, desc: 'missing header' },
         { authorization: 'InvalidFormat', desc: 'invalid format' },
@@ -558,14 +557,15 @@ describe('GET /application/oauth/userinfo', () => {
         scope: 'openid profile email',
       });
 
-      const client = createTestClientWithHeaders(app, {
-        accept: 'application/json',
-      });
-      const res = await client.application.oauth.userinfo.$get({
-        header: {
-          authorization: `Bearer ${accessToken}`,
+      const client = testClient(app);
+      const res = await client.application.oauth.userinfo.$get(
+        {
+          header: {
+            authorization: `Bearer ${accessToken}`,
+          },
         },
-      });
+        { headers: { accept: 'application/json' } },
+      );
 
       expect(res.status).toBe(200);
       expect(res.headers.get('content-type')).toContain('application/json');
@@ -576,14 +576,15 @@ describe('GET /application/oauth/userinfo', () => {
         scope: 'openid profile email',
       });
 
-      const client = createTestClientWithHeaders(app, {
-        accept: '*/*',
-      });
-      const res = await client.application.oauth.userinfo.$get({
-        header: {
-          authorization: `Bearer ${accessToken}`,
+      const client = testClient(app);
+      const res = await client.application.oauth.userinfo.$get(
+        {
+          header: {
+            authorization: `Bearer ${accessToken}`,
+          },
         },
-      });
+        { headers: { accept: '*/*' } },
+      );
 
       const json = await assertJsonBody(res);
       expect(json.sub).toBeDefined();

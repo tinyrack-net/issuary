@@ -3,7 +3,6 @@ import { createServer } from '@backend/server.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
-  createTestClient,
   exchangeCodeForTokens,
   getAuthorizationCode,
   getUserInfo,
@@ -14,6 +13,7 @@ import {
   TEST_USER,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
@@ -52,7 +52,7 @@ describe('End-to-End OIDC Flow', () => {
   describe('Complete Discovery-Based Flow', () => {
     test('should complete full OIDC flow with signature verification', async () => {
       // Step 1: Discover OIDC configuration
-      const client = createTestClient(app);
+      const client = testClient(app);
       const configRes =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -151,7 +151,7 @@ describe('End-to-End OIDC Flow', () => {
 
     test('should have consistent kid between JWKS and tokens', async () => {
       // Get JWKS
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
 
@@ -185,7 +185,7 @@ describe('End-to-End OIDC Flow', () => {
 
   describe('ID Token Verification', () => {
     test('should verify ID token has required OIDC claims', async () => {
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
       const JWKS = jose.createLocalJWKSet(
@@ -229,7 +229,7 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should include at_hash claim when access token is issued', async () => {
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
       const JWKS = jose.createLocalJWKSet(
@@ -257,7 +257,7 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should verify at_hash matches access token', async () => {
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
       const JWKS = jose.createLocalJWKSet(
@@ -290,7 +290,7 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should include user claims based on requested scopes', async () => {
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
       const JWKS = jose.createLocalJWKSet(
@@ -324,7 +324,7 @@ describe('End-to-End OIDC Flow', () => {
 
   describe('Access Token Verification', () => {
     test('should verify access token has required claims', async () => {
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
       const JWKS = jose.createLocalJWKSet(
@@ -358,7 +358,7 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should have reasonable expiration time', async () => {
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
       const JWKS = jose.createLocalJWKSet(
@@ -396,7 +396,7 @@ describe('End-to-End OIDC Flow', () => {
 
   describe('Refresh Token Flow with Verification', () => {
     test('should issue new valid tokens on refresh', async () => {
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
       const JWKS = jose.createLocalJWKSet(
@@ -418,7 +418,7 @@ describe('End-to-End OIDC Flow', () => {
       const tokens = await tokenRes.json();
 
       // Refresh the token
-      const tokenClient = createTestClient(app);
+      const tokenClient = testClient(app);
       const refreshRes = await tokenClient.application.oauth.token.$post({
         json: {
           grant_type: 'refresh_token',
@@ -443,7 +443,7 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should maintain same subject across token refresh', async () => {
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
       const JWKS = jose.createLocalJWKSet(
@@ -469,7 +469,7 @@ describe('End-to-End OIDC Flow', () => {
       );
 
       // Refresh the token
-      const tokenClient = createTestClient(app);
+      const tokenClient = testClient(app);
       const refreshRes = await tokenClient.application.oauth.token.$post({
         json: {
           grant_type: 'refresh_token',
@@ -491,7 +491,7 @@ describe('End-to-End OIDC Flow', () => {
 
   describe('UserInfo Endpoint Consistency', () => {
     test('should return consistent claims between ID token and UserInfo', async () => {
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
       const JWKS = jose.createLocalJWKSet(
@@ -566,7 +566,7 @@ describe('End-to-End OIDC Flow', () => {
 
   describe('JWKS Key Properties', () => {
     test('should have RSA key with proper structure', async () => {
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
 
@@ -594,7 +594,7 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should be able to import JWKS key and verify token', async () => {
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
 
@@ -634,7 +634,7 @@ describe('End-to-End OIDC Flow', () => {
 
   describe('OpenID Configuration Compliance', () => {
     test('should list all advertised endpoints as working', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const configRes =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -663,7 +663,7 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should support advertised grant types', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const configRes =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -705,7 +705,7 @@ describe('End-to-End OIDC Flow', () => {
 
         const tokens = await tokenRes.json();
 
-        const tokenClient = createTestClient(app);
+        const tokenClient = testClient(app);
         const refreshRes = await tokenClient.application.oauth.token.$post({
           json: {
             grant_type: 'refresh_token',
@@ -719,7 +719,7 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should support advertised response types', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const configRes =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -741,7 +741,7 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should support advertised scopes', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const configRes =
         await client.application.oauth['.well-known'][
           'openid-configuration'
@@ -767,7 +767,7 @@ describe('End-to-End OIDC Flow', () => {
 
   describe('Error Scenarios with Valid JWKS', () => {
     test('should reject token with tampered signature', async () => {
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
       const JWKS = jose.createLocalJWKSet(
@@ -798,7 +798,7 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should reject token with wrong issuer', async () => {
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
       const JWKS = jose.createLocalJWKSet(
@@ -828,7 +828,7 @@ describe('End-to-End OIDC Flow', () => {
     });
 
     test('should reject token with wrong audience', async () => {
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
       const JWKS = jose.createLocalJWKSet(

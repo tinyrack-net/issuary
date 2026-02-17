@@ -5,8 +5,6 @@ import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
-  createTestClient,
-  createTestClientWithHeaders,
   expectError,
   extractCookie,
   generateUniqueEmail,
@@ -15,6 +13,7 @@ import {
   withMikroContext,
 } from '@backend/test-utils/index.js';
 import type { RegistrationResponseJSON } from '@simplewebauthn/server';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 /**
@@ -38,7 +37,7 @@ async function createDbUserWithSessionHelper(
     await services.mikro.em.persist(user).flush();
   });
 
-  const client = createTestClient(app);
+  const client = testClient(app);
   const loginRes = await client.api.v1.auth.login.$post({
     json: { email, password },
   });
@@ -140,7 +139,7 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
   });
 
   test('should return 401 when not authenticated', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.user.passkeys.register.verify.$post({
       json: {
         response: createMockRegistrationResponse(),
@@ -163,14 +162,15 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     );
 
     // Directly call verify without getting options first
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.register.verify.$post({
-      json: {
-        response: createMockRegistrationResponse(),
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.register.verify.$post(
+      {
+        json: {
+          response: createMockRegistrationResponse(),
+        },
       },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('PASSKEY_CHALLENGE_NOT_FOUND');
@@ -187,13 +187,14 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
+    const headers = { Cookie: `session=${sessionCookie}` };
 
     // First get registration options to set challenge in session
-    const optionsRes =
-      await client.api.v1.user.passkeys.register.options.$post();
+    const optionsRes = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers },
+    );
     expect(optionsRes.status).toBe(200);
 
     // Get the updated session cookie if present, otherwise use original
@@ -205,14 +206,15 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     }
 
     // Try to verify with an invalid response
-    const updatedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${updatedSessionCookie}`,
-    });
-    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post({
-      json: {
-        response: createMockRegistrationResponse(),
+    const updatedClient = testClient(app);
+    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post(
+      {
+        json: {
+          response: createMockRegistrationResponse(),
+        },
       },
-    });
+      { headers: { Cookie: `session=${updatedSessionCookie}` } },
+    );
 
     // WebAuthn library may throw unhandled error (500) or handled error (400).
     // Status codes from the error handler aren't part of the route's type,
@@ -236,13 +238,14 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
+    const headers = { Cookie: `session=${sessionCookie}` };
 
     // Get registration options first
-    const optionsRes =
-      await client.api.v1.user.passkeys.register.options.$post();
+    const optionsRes = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers },
+    );
     let updatedSessionCookie: string;
     try {
       updatedSessionCookie = extractCookie(optionsRes, 'session');
@@ -251,22 +254,23 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     }
 
     // Try to verify with incomplete response (missing id)
-    const updatedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${updatedSessionCookie}`,
-    });
-    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post({
-      json: {
-        response: {
-          rawId: 'mock-id',
+    const updatedClient = testClient(app);
+    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post(
+      {
+        json: {
           response: {
-            clientDataJSON: 'mock-data',
-            attestationObject: 'mock-attestation',
+            rawId: 'mock-id',
+            response: {
+              clientDataJSON: 'mock-data',
+              attestationObject: 'mock-attestation',
+            },
+            type: 'public-key',
+            clientExtensionResults: {},
           },
-          type: 'public-key',
-          clientExtensionResults: {},
         },
       },
-    });
+      { headers: { Cookie: `session=${updatedSessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });
@@ -282,13 +286,14 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
+    const headers = { Cookie: `session=${sessionCookie}` };
 
     // Get registration options first
-    const optionsRes =
-      await client.api.v1.user.passkeys.register.options.$post();
+    const optionsRes = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers },
+    );
     let updatedSessionCookie: string;
     try {
       updatedSessionCookie = extractCookie(optionsRes, 'session');
@@ -297,17 +302,18 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     }
 
     // Try to verify with wrong type
-    const updatedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${updatedSessionCookie}`,
-    });
-    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post({
-      json: {
-        response: {
-          ...createMockRegistrationResponse(),
-          type: 'invalid-type',
+    const updatedClient = testClient(app);
+    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post(
+      {
+        json: {
+          response: {
+            ...createMockRegistrationResponse(),
+            type: 'invalid-type',
+          },
         },
       },
-    });
+      { headers: { Cookie: `session=${updatedSessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });
@@ -323,13 +329,14 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
+    const headers = { Cookie: `session=${sessionCookie}` };
 
     // Get registration options first
-    const optionsRes =
-      await client.api.v1.user.passkeys.register.options.$post();
+    const optionsRes = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers },
+    );
     let updatedSessionCookie: string;
     try {
       updatedSessionCookie = extractCookie(optionsRes, 'session');
@@ -338,15 +345,16 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     }
 
     // Verify with name (will fail due to invalid response, but name should be accepted)
-    const updatedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${updatedSessionCookie}`,
-    });
-    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post({
-      json: {
-        response: createMockRegistrationResponse(),
-        name: 'My MacBook Pro',
+    const updatedClient = testClient(app);
+    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post(
+      {
+        json: {
+          response: createMockRegistrationResponse(),
+          name: 'My MacBook Pro',
+        },
       },
-    });
+      { headers: { Cookie: `session=${updatedSessionCookie}` } },
+    );
 
     // Should fail at verification step, not at validation.
     // Status codes from the error handler aren't part of the route's type,
@@ -370,13 +378,14 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
+    const headers = { Cookie: `session=${sessionCookie}` };
 
     // Get registration options first
-    const optionsRes =
-      await client.api.v1.user.passkeys.register.options.$post();
+    const optionsRes = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers },
+    );
     let updatedSessionCookie: string;
     try {
       updatedSessionCookie = extractCookie(optionsRes, 'session');
@@ -386,15 +395,16 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
 
     // Try to verify with name over 100 characters
     const longName = 'a'.repeat(101);
-    const updatedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${updatedSessionCookie}`,
-    });
-    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post({
-      json: {
-        response: createMockRegistrationResponse(),
-        name: longName,
+    const updatedClient = testClient(app);
+    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post(
+      {
+        json: {
+          response: createMockRegistrationResponse(),
+          name: longName,
+        },
       },
-    });
+      { headers: { Cookie: `session=${updatedSessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });
@@ -410,13 +420,14 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.register.verify.$post({
-      // @ts-expect-error testing validation with invalid input
-      json: {},
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.register.verify.$post(
+      {
+        // @ts-expect-error testing validation with invalid input
+        json: {},
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });
@@ -432,20 +443,21 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.register.verify.$post({
-      json: {
-        response: {
-          id: 'mock-id',
-          rawId: 'mock-id',
-          type: 'public-key',
-          clientExtensionResults: {},
-          // missing response.clientDataJSON and attestationObject
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.register.verify.$post(
+      {
+        json: {
+          response: {
+            id: 'mock-id',
+            rawId: 'mock-id',
+            type: 'public-key',
+            clientExtensionResults: {},
+            // missing response.clientDataJSON and attestationObject
+          },
         },
       },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });
@@ -465,13 +477,14 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     const existingCredentialId = 'existing-credential-id-123';
     await createPasskeyForUserHelper(services, userId, existingCredentialId);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
+    const headers = { Cookie: `session=${sessionCookie}` };
 
     // Get registration options
-    const optionsRes =
-      await client.api.v1.user.passkeys.register.options.$post();
+    const optionsRes = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers },
+    );
     let updatedSessionCookie: string;
     try {
       updatedSessionCookie = extractCookie(optionsRes, 'session');
@@ -482,17 +495,18 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     // Try to register a passkey with same credential ID
     // Note: In reality, the attestation would need to be valid,
     // but we test that duplicate check happens
-    const updatedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${updatedSessionCookie}`,
-    });
-    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post({
-      json: {
-        response: createMockRegistrationResponse({
-          id: existingCredentialId,
-          rawId: existingCredentialId,
-        }),
+    const updatedClient = testClient(app);
+    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post(
+      {
+        json: {
+          response: createMockRegistrationResponse({
+            id: existingCredentialId,
+            rawId: existingCredentialId,
+          }),
+        },
       },
-    });
+      { headers: { Cookie: `session=${updatedSessionCookie}` } },
+    );
 
     // Will fail at verification since the attestation is invalid
     // In a real scenario with valid attestation, it would return 409
@@ -503,13 +517,14 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
   test('should return 403 for config-managed users', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
+    const headers = { Cookie: `session=${sessionCookie}` };
 
     // Try to get registration options first - should fail for config users
-    const optionsRes =
-      await client.api.v1.user.passkeys.register.options.$post();
+    const optionsRes = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers },
+    );
 
     // Config users cannot setup 2FA
     await expectError(optionsRes, e.SecondFactorNotAllowedForConfigUser);
@@ -526,13 +541,14 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
+    const headers = { Cookie: `session=${sessionCookie}` };
 
     // Get registration options
-    const optionsRes =
-      await client.api.v1.user.passkeys.register.options.$post();
+    const optionsRes = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers },
+    );
     let updatedSessionCookie: string;
     try {
       updatedSessionCookie = extractCookie(optionsRes, 'session');
@@ -541,16 +557,17 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     }
 
     // Try with malformed clientDataJSON
-    const updatedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${updatedSessionCookie}`,
-    });
-    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post({
-      json: {
-        response: createMockRegistrationResponse({
-          clientDataJSON: 'not-valid-base64',
-        }),
+    const updatedClient = testClient(app);
+    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post(
+      {
+        json: {
+          response: createMockRegistrationResponse({
+            clientDataJSON: 'not-valid-base64',
+          }),
+        },
       },
-    });
+      { headers: { Cookie: `session=${updatedSessionCookie}` } },
+    );
 
     // Should fail - either 400 (handled error) or 500 (unhandled in WebAuthn lib)
     expect([400, 500].includes(res.status)).toBe(true);
@@ -567,13 +584,14 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
+    const headers = { Cookie: `session=${sessionCookie}` };
 
     // Get registration options
-    const optionsRes =
-      await client.api.v1.user.passkeys.register.options.$post();
+    const optionsRes = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers },
+    );
     let updatedSessionCookie: string;
     try {
       updatedSessionCookie = extractCookie(optionsRes, 'session');
@@ -581,16 +599,18 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       updatedSessionCookie = sessionCookie;
     }
 
-    const updatedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${updatedSessionCookie}`,
-    });
+    const updatedClient = testClient(app);
+    const updatedHeaders = { Cookie: `session=${updatedSessionCookie}` };
 
     // First verification attempt (will fail)
-    await updatedClient.api.v1.user.passkeys.register.verify.$post({
-      json: {
-        response: createMockRegistrationResponse(),
+    await updatedClient.api.v1.user.passkeys.register.verify.$post(
+      {
+        json: {
+          response: createMockRegistrationResponse(),
+        },
       },
-    });
+      { headers: updatedHeaders },
+    );
 
     // Try again with the same session
     // The challenge may or may not be cleared depending on implementation
@@ -601,6 +621,7 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
           response: createMockRegistrationResponse(),
         },
       },
+      { headers: updatedHeaders },
     );
 
     // Either challenge not found or verification failed again
@@ -619,13 +640,14 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
+    const headers = { Cookie: `session=${sessionCookie}` };
 
     // Get registration options
-    const optionsRes =
-      await client.api.v1.user.passkeys.register.options.$post();
+    const optionsRes = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers },
+    );
     let updatedSessionCookie: string;
     try {
       updatedSessionCookie = extractCookie(optionsRes, 'session');
@@ -633,22 +655,27 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       updatedSessionCookie = sessionCookie;
     }
 
-    const updatedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${updatedSessionCookie}`,
-    });
+    const updatedClient = testClient(app);
+    const updatedHeaders = { Cookie: `session=${updatedSessionCookie}` };
 
     // Send concurrent verification requests
     const results = await Promise.all([
-      updatedClient.api.v1.user.passkeys.register.verify.$post({
-        json: {
-          response: createMockRegistrationResponse(),
+      updatedClient.api.v1.user.passkeys.register.verify.$post(
+        {
+          json: {
+            response: createMockRegistrationResponse(),
+          },
         },
-      }),
-      updatedClient.api.v1.user.passkeys.register.verify.$post({
-        json: {
-          response: createMockRegistrationResponse(),
+        { headers: updatedHeaders },
+      ),
+      updatedClient.api.v1.user.passkeys.register.verify.$post(
+        {
+          json: {
+            response: createMockRegistrationResponse(),
+          },
         },
-      }),
+        { headers: updatedHeaders },
+      ),
     ]);
 
     // All should fail (verification or challenge error)
@@ -669,13 +696,14 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
+    const headers = { Cookie: `session=${sessionCookie}` };
 
     // Get registration options
-    const optionsRes =
-      await client.api.v1.user.passkeys.register.options.$post();
+    const optionsRes = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers },
+    );
     let updatedSessionCookie: string;
     try {
       updatedSessionCookie = extractCookie(optionsRes, 'session');
@@ -684,23 +712,24 @@ describe('POST /api/v1/user/passkeys/register/verify', () => {
     }
 
     // Missing attestationObject
-    const updatedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${updatedSessionCookie}`,
-    });
-    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post({
-      json: {
-        response: {
-          id: 'mock-id',
-          rawId: 'mock-id',
+    const updatedClient = testClient(app);
+    const res = await updatedClient.api.v1.user.passkeys.register.verify.$post(
+      {
+        json: {
           response: {
-            clientDataJSON: 'mock-data',
-            // missing attestationObject
+            id: 'mock-id',
+            rawId: 'mock-id',
+            response: {
+              clientDataJSON: 'mock-data',
+              // missing attestationObject
+            },
+            type: 'public-key',
+            clientExtensionResults: {},
           },
-          type: 'public-key',
-          clientExtensionResults: {},
         },
       },
-    });
+      { headers: { Cookie: `session=${updatedSessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });
@@ -734,14 +763,15 @@ describe('POST /api/v1/user/passkeys/register/verify - Passkey disabled', () => 
   test('should return 404 when passkey is disabled in config (route not registered)', async () => {
     const sessionCookie = await createAuthenticatedSession(appDisabled);
 
-    const client = createTestClientWithHeaders(appDisabled, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.register.verify.$post({
-      json: {
-        response: createMockRegistrationResponse(),
+    const client = testClient(appDisabled);
+    const res = await client.api.v1.user.passkeys.register.verify.$post(
+      {
+        json: {
+          response: createMockRegistrationResponse(),
+        },
       },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     // When passkey is disabled, the route returns 400
     expect(res.status).toBe(400);

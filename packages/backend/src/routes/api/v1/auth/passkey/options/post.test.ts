@@ -3,13 +3,12 @@ import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
-  createTestClient,
-  createTestClientWithHeaders,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 describe('POST /api/v1/auth/passkey/options', () => {
@@ -37,7 +36,7 @@ describe('POST /api/v1/auth/passkey/options', () => {
   });
 
   test('should return WebAuthn authentication options', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.passkey.options.$post();
 
     const body = await assertJsonBody(res);
@@ -66,7 +65,7 @@ describe('POST /api/v1/auth/passkey/options', () => {
   });
 
   test('should return unique challenge each time', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
 
     const res1 = await client.api.v1.auth.passkey.options.$post();
     const res2 = await client.api.v1.auth.passkey.options.$post();
@@ -80,7 +79,7 @@ describe('POST /api/v1/auth/passkey/options', () => {
   });
 
   test('should store challenge in session for later verification', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const optionsRes = await client.api.v1.auth.passkey.options.$post();
 
     expect(optionsRes.status).toBe(200);
@@ -92,7 +91,7 @@ describe('POST /api/v1/auth/passkey/options', () => {
   });
 
   test('should handle concurrent requests with unique challenges', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
 
     const results = await Promise.all([
       client.api.v1.auth.passkey.options.$post(),
@@ -115,7 +114,7 @@ describe('POST /api/v1/auth/passkey/options', () => {
   });
 
   test('should set correct rpId based on host config', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.passkey.options.$post();
 
     const body = await assertJsonBody(res);
@@ -187,7 +186,7 @@ describe('POST /api/v1/auth/passkey/options - 2FA mode', () => {
     });
 
     // Login with password - should get pending2FAUser session (2FA required)
-    const client = createTestClient(app2FA);
+    const client = testClient(app2FA);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -199,10 +198,11 @@ describe('POST /api/v1/auth/passkey/options - 2FA mode', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Now call passkey options - should return allowCredentials for this user
-    const authedClient = createTestClientWithHeaders(app2FA, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const optionsRes = await authedClient.api.v1.auth.passkey.options.$post();
+    const authedClient = testClient(app2FA);
+    const optionsRes = await authedClient.api.v1.auth.passkey.options.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(optionsRes);
 
@@ -233,7 +233,7 @@ describe('POST /api/v1/auth/passkey/options - 2FA mode', () => {
     const appForTest = server.app;
 
     try {
-      const client = createTestClient(appForTest);
+      const client = testClient(appForTest);
       const res = await client.api.v1.auth.passkey.options.$post();
 
       const body = await assertJsonBody(res);
@@ -272,7 +272,7 @@ describe('POST /api/v1/auth/passkey/options - Passkey disabled', () => {
   });
 
   test('should return 404 when passkey is disabled (route not registered)', async () => {
-    const client = createTestClient(appDisabled);
+    const client = testClient(appDisabled);
     const res = await client.api.v1.auth.passkey.options.$post();
 
     // Route is registered but validation rejects missing body (400)
@@ -307,7 +307,7 @@ describe('POST /api/v1/auth/passkey/options - Custom rpId', () => {
   });
 
   test('should use custom rp_id from config', async () => {
-    const client = createTestClient(appCustomRpId);
+    const client = testClient(appCustomRpId);
     const res = await client.api.v1.auth.passkey.options.$post();
 
     const body = await assertJsonBody(res);

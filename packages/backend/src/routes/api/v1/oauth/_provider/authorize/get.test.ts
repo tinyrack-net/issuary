@@ -3,12 +3,11 @@ import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import {
   createAuthenticatedSession,
-  createTestClient,
-  createTestClientWithHeaders,
   expectError,
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -52,7 +51,7 @@ afterAll(async () => {
 describe('GET /api/v1/oauth/:provider/authorize', () => {
   describe('Success Cases', () => {
     test('should redirect to OAuth provider with valid provider', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.oauth[':provider'].authorize.$get({
         param: { provider: 'google' },
         query: {},
@@ -88,7 +87,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     });
 
     test('should store session data with state and code verifier', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.oauth[':provider'].authorize.$get({
         param: { provider: 'google' },
         query: {},
@@ -103,7 +102,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     });
 
     test('should support login mode (default)', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.oauth[':provider'].authorize.$get({
         param: { provider: 'google' },
         query: { mode: 'login' },
@@ -114,7 +113,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     });
 
     test('should support register mode', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.oauth[':provider'].authorize.$get({
         param: { provider: 'google' },
         query: { mode: 'register' },
@@ -127,13 +126,14 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     test('should support link mode with authenticated session', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.oauth[':provider'].authorize.$get({
-        param: { provider: 'google' },
-        query: { mode: 'link' },
-      });
+      const client = testClient(app);
+      const res = await client.api.v1.oauth[':provider'].authorize.$get(
+        {
+          param: { provider: 'google' },
+          query: { mode: 'link' },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).toBeDefined();
@@ -142,7 +142,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     test('should preserve return_url parameter', async () => {
       const returnUrl = '/profile?tab=oauth';
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.oauth[':provider'].authorize.$get({
         param: { provider: 'google' },
         query: {
@@ -156,7 +156,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     });
 
     test('should generate unique state for each request', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
 
       const res1 = await client.api.v1.oauth[':provider'].authorize.$get({
         param: { provider: 'google' },
@@ -178,7 +178,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     });
 
     test('should generate unique code_challenge for each request', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
 
       const res1 = await client.api.v1.oauth[':provider'].authorize.$get({
         param: { provider: 'google' },
@@ -202,7 +202,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
 
   describe('Provider Validation', () => {
     test('should return 404 for non-existent provider', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.oauth[':provider'].authorize.$get({
         param: { provider: 'nonexistent' },
         query: {},
@@ -213,7 +213,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
 
     test('should return 404 for disabled provider', async () => {
       // GitHub is disabled in test config
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.oauth[':provider'].authorize.$get({
         param: { provider: 'github' },
         query: {},
@@ -223,7 +223,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     });
 
     test('should return 404 for invalid provider id format', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.oauth[':provider'].authorize.$get({
         param: { provider: 'invalid-provider-123' },
         query: {},
@@ -235,7 +235,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
 
   describe('Mode Validation', () => {
     test('should reject invalid mode parameter', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.oauth[':provider'].authorize.$get({
         param: { provider: 'google' },
         query: { mode: 'invalid_mode' },
@@ -246,7 +246,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     });
 
     test('should use login as default mode when not specified', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.oauth[':provider'].authorize.$get({
         param: { provider: 'google' },
         query: {},
@@ -260,7 +260,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
 
   describe('Link Mode Authentication', () => {
     test('should return 401 for link mode without authentication', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.oauth[':provider'].authorize.$get({
         param: { provider: 'google' },
         query: { mode: 'link' },
@@ -272,7 +272,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
 
   describe('Security', () => {
     test('should use S256 for PKCE code challenge method', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.oauth[':provider'].authorize.$get({
         param: { provider: 'google' },
         query: {},
@@ -283,7 +283,7 @@ describe('GET /api/v1/oauth/:provider/authorize', () => {
     });
 
     test('should generate cryptographically random state', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const states: string[] = [];
 
       for (let i = 0; i < 5; i++) {

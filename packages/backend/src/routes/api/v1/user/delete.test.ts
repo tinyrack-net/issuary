@@ -6,8 +6,6 @@ import {
   assertJsonBody,
   createAuthenticatedSession,
   createDbUserWithSession,
-  createTestClient,
-  createTestClientWithHeaders,
   expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -15,6 +13,7 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 /**
@@ -69,10 +68,11 @@ describe('DELETE /api/v1/user', () => {
       );
 
       // Delete the account
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const deleteRes = await client.api.v1.user.$delete();
+      const client = testClient(app);
+      const deleteRes = await client.api.v1.user.$delete(
+        {},
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const body = await assertJsonBody(deleteRes);
       expect(body.ok).toBe(true);
@@ -100,7 +100,7 @@ describe('DELETE /api/v1/user', () => {
     });
 
     test('should fail if not authenticated', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const res = await client.api.v1.user.$delete();
 
       await expectError(res, e.Unauthorized);
@@ -114,10 +114,11 @@ describe('DELETE /api/v1/user', () => {
         TEST_USER.password,
       );
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.user.$delete();
+      const client = testClient(app);
+      const res = await client.api.v1.user.$delete(
+        {},
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       await expectError(res, e.UserNotEditable);
     });
@@ -144,10 +145,11 @@ describe('DELETE /api/v1/user', () => {
       });
 
       // Try to delete again
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.user.$delete();
+      const client = testClient(app);
+      const res = await client.api.v1.user.$delete(
+        {},
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       await expectError(res, e.AccountAlreadyDeleted);
     });
@@ -173,10 +175,11 @@ describe('DELETE /api/v1/user', () => {
       });
 
       // Delete the account
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const deleteRes = await client.api.v1.user.$delete();
+      const client = testClient(app);
+      const deleteRes = await client.api.v1.user.$delete(
+        {},
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
       expect(deleteRes.status).toBe(200);
 
       // Verify deleted_at is set in database
@@ -226,10 +229,11 @@ describe('DELETE /api/v1/user', () => {
         password,
       );
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
-      const res = await client.api.v1.user.$delete();
+      const client = testClient(app);
+      const res = await client.api.v1.user.$delete(
+        {},
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       await expectError(res, e.AccountDeletionDisabled);
     });

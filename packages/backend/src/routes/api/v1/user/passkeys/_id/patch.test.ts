@@ -5,14 +5,13 @@ import {
   assertJsonBody,
   createAuthenticatedSession,
   createPasskeyForUser,
-  createTestClient,
-  createTestClientWithHeaders,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 describe('PATCH /api/v1/user/passkeys/:id', () => {
@@ -61,7 +60,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -76,7 +75,7 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
   }
 
   test('should return 401 when not authenticated', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.user.passkeys[':id'].$patch({
       param: {
         id: '00000000-0000-0000-0000-000000000000',
@@ -94,15 +93,16 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     const { sessionCookie } = await createDbUserWithSession(email, password);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$patch({
-      param: {
-        id: '00000000-0000-0000-0000-000000000000',
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$patch(
+      {
+        param: {
+          id: '00000000-0000-0000-0000-000000000000',
+        },
+        json: { name: 'New Name' },
       },
-      json: { name: 'New Name' },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res, 404);
     expect(body.code).toBe('PASSKEY_NOT_FOUND');
@@ -119,13 +119,14 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     const passkeyId = await createPasskeyForUser(services, userId, 'Old Name');
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$patch({
-      param: { id: passkeyId },
-      json: { name: 'New Name' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$patch(
+      {
+        param: { id: passkeyId },
+        json: { name: 'New Name' },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
@@ -150,13 +151,14 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     const passkeyId = await createPasskeyForUser(services, userId, null);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$patch({
-      param: { id: passkeyId },
-      json: { name: 'My New Passkey' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$patch(
+      {
+        param: { id: passkeyId },
+        json: { name: 'My New Passkey' },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
@@ -185,13 +187,14 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       'Original Name',
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$patch({
-      param: { id: passkeyId },
-      json: { name: '' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$patch(
+      {
+        param: { id: passkeyId },
+        json: { name: '' },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });
@@ -214,13 +217,14 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
     // Create a name longer than 100 characters
     const longName = 'a'.repeat(101);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$patch({
-      param: { id: passkeyId },
-      json: { name: longName },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$patch(
+      {
+        param: { id: passkeyId },
+        json: { name: longName },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });
@@ -243,13 +247,14 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
     // Create a name exactly 100 characters
     const maxName = 'a'.repeat(100);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$patch({
-      param: { id: passkeyId },
-      json: { name: maxName },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$patch(
+      {
+        param: { id: passkeyId },
+        json: { name: maxName },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
@@ -281,13 +286,14 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
     );
 
     // User1 tries to rename user2's passkey
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${session1}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$patch({
-      param: { id: passkeyId },
-      json: { name: 'Stolen Name' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$patch(
+      {
+        param: { id: passkeyId },
+        json: { name: 'Stolen Name' },
+      },
+      { headers: { Cookie: `session=${session1}` } },
+    );
 
     const body = await assertJsonBody(res, 404);
     expect(body.code).toBe('PASSKEY_NOT_FOUND');
@@ -316,14 +322,15 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       'Original Name',
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$patch({
-      param: { id: passkeyId },
-      // @ts-expect-error testing validation with invalid input
-      json: {},
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$patch(
+      {
+        param: { id: passkeyId },
+        // @ts-expect-error testing validation with invalid input
+        json: {},
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });
@@ -334,13 +341,14 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     const { sessionCookie } = await createDbUserWithSession(email, password);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$patch({
-      param: { id: 'not-a-uuid' },
-      json: { name: 'New Name' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$patch(
+      {
+        param: { id: 'not-a-uuid' },
+        json: { name: 'New Name' },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });
@@ -358,13 +366,14 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     const specialName = "My iPhone 📱 - John's Device (2024)";
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$patch({
-      param: { id: passkeyId },
-      json: { name: specialName },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$patch(
+      {
+        param: { id: passkeyId },
+        json: { name: specialName },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
@@ -390,13 +399,14 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
 
     // Whitespace-only name should be accepted as the schema doesn't
     // explicitly trim
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$patch({
-      param: { id: passkeyId },
-      json: { name: '   ' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$patch(
+      {
+        param: { id: passkeyId },
+        json: { name: '   ' },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     // This depends on schema definition - if .min(1) is before any trim,
     // whitespace passes
@@ -407,10 +417,11 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
     // Get user ID from session
-    const sessionClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const sessionRes = await sessionClient.api.v1.user.session.$get();
+    const sessionClient = testClient(app);
+    const sessionRes = await sessionClient.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const sessionBody = await assertJsonBody(sessionRes);
     expect(sessionBody.user).toBeDefined();
     if (!sessionBody.user) return;
@@ -423,13 +434,14 @@ describe('PATCH /api/v1/user/passkeys/:id', () => {
       'Config User Passkey',
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$patch({
-      param: { id: passkeyId },
-      json: { name: 'Renamed Passkey' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys[':id'].$patch(
+      {
+        param: { id: passkeyId },
+        json: { name: 'Renamed Passkey' },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
@@ -464,15 +476,16 @@ describe('PATCH /api/v1/user/passkeys/:id - Passkey disabled', () => {
   test('should return 404 when passkey is disabled in config (route not registered)', async () => {
     const sessionCookie = await createAuthenticatedSession(appDisabled);
 
-    const client = createTestClientWithHeaders(appDisabled, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys[':id'].$patch({
-      param: {
-        id: '00000000-0000-0000-0000-000000000000',
+    const client = testClient(appDisabled);
+    const res = await client.api.v1.user.passkeys[':id'].$patch(
+      {
+        param: {
+          id: '00000000-0000-0000-0000-000000000000',
+        },
+        json: { name: 'New Name' },
       },
-      json: { name: 'New Name' },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     // Route is registered but handler rejects when passkey is disabled
     expect(res.status).toBe(400);

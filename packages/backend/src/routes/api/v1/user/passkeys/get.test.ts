@@ -5,14 +5,13 @@ import {
   assertJsonBody,
   createAuthenticatedSession,
   createPasskeyForUser,
-  createTestClient,
-  createTestClientWithHeaders,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 describe('GET /api/v1/user/passkeys', () => {
@@ -61,7 +60,7 @@ describe('GET /api/v1/user/passkeys', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -76,7 +75,7 @@ describe('GET /api/v1/user/passkeys', () => {
   }
 
   test('should return 401 when not authenticated', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.user.passkeys.$get();
 
     const body = await assertJsonBody(res, 401);
@@ -89,10 +88,11 @@ describe('GET /api/v1/user/passkeys', () => {
 
     const { sessionCookie } = await createDbUserWithSession(email, password);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.$get();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.passkeys).toEqual([]);
@@ -110,10 +110,11 @@ describe('GET /api/v1/user/passkeys', () => {
     // Create a passkey
     await createPasskeyForUser(services, userId, 'My MacBook');
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.$get();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.passkeys).toHaveLength(1);
@@ -142,10 +143,11 @@ describe('GET /api/v1/user/passkeys', () => {
     await createPasskeyForUser(services, userId, 'iPhone');
     await createPasskeyForUser(services, userId, null);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.$get();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.passkeys).toHaveLength(3);
@@ -168,10 +170,11 @@ describe('GET /api/v1/user/passkeys', () => {
 
     await createPasskeyForUser(services, userId, 'Test Device');
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.$get();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.passkeys).toHaveLength(1);
@@ -202,10 +205,11 @@ describe('GET /api/v1/user/passkeys', () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
     await createPasskeyForUser(services, userId, 'Third Device');
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.$get();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.passkeys).toHaveLength(3);
@@ -219,10 +223,11 @@ describe('GET /api/v1/user/passkeys', () => {
   test('should work for config-managed users', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.$get();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(Array.isArray(body.passkeys)).toBe(true);
@@ -242,10 +247,11 @@ describe('GET /api/v1/user/passkeys', () => {
     await createPasskeyForUser(services, userId2, 'User2 Device');
 
     // User 1 should only see their passkey
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${session1}`,
-    });
-    const res = await client.api.v1.user.passkeys.$get();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.$get(
+      {},
+      { headers: { Cookie: `session=${session1}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.passkeys).toHaveLength(1);
@@ -286,10 +292,11 @@ describe('GET /api/v1/user/passkeys', () => {
       await services.mikro.em.persist([passkey1, passkey2]).flush();
     });
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.$get();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.passkeys).toHaveLength(2);

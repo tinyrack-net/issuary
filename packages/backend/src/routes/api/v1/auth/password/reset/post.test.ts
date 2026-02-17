@@ -3,13 +3,13 @@ import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
-  createTestClient,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   registerUser,
   TEST_TERMS_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -38,7 +38,7 @@ afterAll(async () => {
 
 describe('POST /api/v1/auth/password/reset', () => {
   test('should return 400 for invalid token', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.password.reset.$post({
       json: {
         token: 'invalid-token',
@@ -80,7 +80,7 @@ describe('POST /api/v1/auth/password/reset', () => {
       return resetEntity.token;
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.password.reset.$post({
       json: {
         token: expiredToken,
@@ -119,7 +119,7 @@ describe('POST /api/v1/auth/password/reset', () => {
       return resetEntity.token;
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.password.reset.$post({
       json: {
         token: validToken,
@@ -179,7 +179,7 @@ describe('POST /api/v1/auth/password/reset', () => {
       return resetEntity.token;
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
 
     // First reset should succeed
     const res1 = await client.api.v1.auth.password.reset.$post({
@@ -230,7 +230,7 @@ describe('POST /api/v1/auth/password/reset', () => {
       return resetEntity.token;
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.password.reset.$post({
       json: {
         token,
@@ -243,7 +243,7 @@ describe('POST /api/v1/auth/password/reset', () => {
   });
 
   test('should validate password format', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.password.reset.$post({
       json: {
         token: 'some-token',
@@ -256,7 +256,7 @@ describe('POST /api/v1/auth/password/reset', () => {
 
   test('should not require authentication', async () => {
     // This endpoint should be publicly accessible
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.password.reset.$post({
       json: {
         token: 'any-token',

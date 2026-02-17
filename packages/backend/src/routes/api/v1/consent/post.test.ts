@@ -4,14 +4,13 @@ import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
-  createTestClient,
-  createTestClientWithHeaders,
   MINIMAL_TEST_CONFIG,
   TEST_OAUTH_CLIENT,
   TEST_OAUTH_CLIENT_CONFIG,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -39,20 +38,21 @@ describe('POST /api/v1/consent', () => {
   describe('Allow decision', () => {
     test('should grant consent and return redirect URL', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.consent.$post({
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          scope: 'openid profile email',
-          state: 'test-state-123',
-          decision: 'allow',
+      const res = await client.api.v1.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            scope: 'openid profile email',
+            state: 'test-state-123',
+            decision: 'allow',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const body = await assertJsonBody(res);
       expect(body).toHaveProperty('redirect_url');
@@ -75,21 +75,22 @@ describe('POST /api/v1/consent', () => {
 
     test('should include PKCE parameters in redirect URL', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.consent.$post({
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          scope: 'openid',
-          code_challenge: 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
-          code_challenge_method: 'S256',
-          decision: 'allow',
+      const res = await client.api.v1.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            scope: 'openid',
+            code_challenge: 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
+            code_challenge_method: 'S256',
+            decision: 'allow',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const body = await assertJsonBody(res);
       const redirectUrl = new URL(body.redirect_url);
@@ -103,20 +104,21 @@ describe('POST /api/v1/consent', () => {
 
     test('should include nonce parameter in redirect URL', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.consent.$post({
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          scope: 'openid',
-          nonce: 'test-nonce-456',
-          decision: 'allow',
+      const res = await client.api.v1.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            scope: 'openid',
+            nonce: 'test-nonce-456',
+            decision: 'allow',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const body = await assertJsonBody(res);
       const redirectUrl = new URL(body.redirect_url);
@@ -125,27 +127,31 @@ describe('POST /api/v1/consent', () => {
 
     test('should store consent in database', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
       // Get user ID from session
-      const sessionRes = await client.api.v1.user.session.$get();
+      const sessionRes = await client.api.v1.user.session.$get(
+        {},
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
       const sessionBody = await assertJsonBody(sessionRes);
       expect(sessionBody.user).toBeDefined();
       const user = sessionBody.user;
       if (!user) return;
 
       // Grant consent
-      const res = await client.api.v1.consent.$post({
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          scope: 'openid profile',
-          decision: 'allow',
+      const res = await client.api.v1.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            scope: 'openid profile',
+            decision: 'allow',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(200);
 
@@ -170,18 +176,19 @@ describe('POST /api/v1/consent', () => {
 
     test('should handle empty scope', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.consent.$post({
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          decision: 'allow',
+      const res = await client.api.v1.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            decision: 'allow',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const body = await assertJsonBody(res);
       expect(body).toHaveProperty('redirect_url');
@@ -195,20 +202,21 @@ describe('POST /api/v1/consent', () => {
   describe('Deny decision', () => {
     test('should return error redirect URL when consent is denied', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.consent.$post({
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          scope: 'openid profile',
-          state: 'test-state-789',
-          decision: 'deny',
+      const res = await client.api.v1.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            scope: 'openid profile',
+            state: 'test-state-789',
+            decision: 'deny',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const body = await assertJsonBody(res);
       expect(body).toHaveProperty('redirect_url');
@@ -226,19 +234,20 @@ describe('POST /api/v1/consent', () => {
 
     test('should not include state when not provided in deny response', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.consent.$post({
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          scope: 'openid',
-          decision: 'deny',
+      const res = await client.api.v1.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            scope: 'openid',
+            decision: 'deny',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const body = await assertJsonBody(res);
       const redirectUrl = new URL(body.redirect_url);
@@ -248,12 +257,13 @@ describe('POST /api/v1/consent', () => {
 
     test('should not store consent when denied', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
       // Get user ID from session
-      const sessionRes = await client.api.v1.user.session.$get();
+      const sessionRes = await client.api.v1.user.session.$get(
+        {},
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
       const sessionBody = await assertJsonBody(sessionRes);
       expect(sessionBody.user).toBeDefined();
       const user = sessionBody.user;
@@ -262,15 +272,18 @@ describe('POST /api/v1/consent', () => {
       // Use a unique scope to verify no consent is stored
       const uniqueScope = `deny_test_${Date.now()}`;
 
-      const res = await client.api.v1.consent.$post({
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          scope: uniqueScope,
-          decision: 'deny',
+      const res = await client.api.v1.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            scope: uniqueScope,
+            decision: 'deny',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(200);
 
@@ -299,7 +312,7 @@ describe('POST /api/v1/consent', () => {
 
   describe('Authentication', () => {
     test('should return 401 when user is not authenticated', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
 
       const res = await client.api.v1.consent.$post({
         json: {
@@ -319,19 +332,20 @@ describe('POST /api/v1/consent', () => {
     });
 
     test('should return 401 with invalid session cookie', async () => {
-      const client = createTestClientWithHeaders(app, {
-        Cookie: 'session=invalid-session-cookie',
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.consent.$post({
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          scope: 'openid',
-          decision: 'allow',
+      const res = await client.api.v1.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            scope: 'openid',
+            decision: 'allow',
+          },
         },
-      });
+        { headers: { Cookie: 'session=invalid-session-cookie' } },
+      );
 
       expect(res.status).toBe(401);
 
@@ -343,118 +357,124 @@ describe('POST /api/v1/consent', () => {
   describe('Validation', () => {
     test('should return 400 when client_id is missing', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.consent.$post({
-        // @ts-expect-error testing validation with invalid input
-        json: {
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          scope: 'openid',
-          decision: 'allow',
+      const res = await client.api.v1.consent.$post(
+        {
+          // @ts-expect-error testing validation with invalid input
+          json: {
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            scope: 'openid',
+            decision: 'allow',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(400);
     });
 
     test('should return 400 when redirect_uri is missing', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.consent.$post({
-        // @ts-expect-error testing validation with invalid input
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          response_type: 'code',
-          scope: 'openid',
-          decision: 'allow',
+      const res = await client.api.v1.consent.$post(
+        {
+          // @ts-expect-error testing validation with invalid input
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            response_type: 'code',
+            scope: 'openid',
+            decision: 'allow',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(400);
     });
 
     test('should return 400 when response_type is missing', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.consent.$post({
-        // @ts-expect-error testing validation with invalid input
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          scope: 'openid',
-          decision: 'allow',
+      const res = await client.api.v1.consent.$post(
+        {
+          // @ts-expect-error testing validation with invalid input
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: 'openid',
+            decision: 'allow',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(400);
     });
 
     test('should return 400 when decision is missing', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.consent.$post({
-        // @ts-expect-error testing validation with invalid input
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          scope: 'openid',
+      const res = await client.api.v1.consent.$post(
+        {
+          // @ts-expect-error testing validation with invalid input
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            scope: 'openid',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(400);
     });
 
     test('should return 400 when decision is invalid', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.consent.$post({
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          scope: 'openid',
-          // @ts-expect-error testing validation with invalid input
-          decision: 'invalid',
+      const res = await client.api.v1.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            scope: 'openid',
+            // @ts-expect-error testing validation with invalid input
+            decision: 'invalid',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(400);
     });
 
     test('should return 400 when code_challenge_method is invalid', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.consent.$post({
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          scope: 'openid',
-          code_challenge: 'some-challenge',
-          // @ts-expect-error testing validation with invalid input
-          code_challenge_method: 'invalid',
-          decision: 'allow',
+      const res = await client.api.v1.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            scope: 'openid',
+            code_challenge: 'some-challenge',
+            // @ts-expect-error testing validation with invalid input
+            code_challenge_method: 'invalid',
+            decision: 'allow',
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(400);
     });

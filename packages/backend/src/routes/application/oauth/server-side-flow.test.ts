@@ -3,8 +3,6 @@ import { createServer } from '@backend/server.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
-  createTestClient,
-  createTestClientWithHeaders,
   exchangeCodeForTokens,
   getAuthorizationCode,
   getUserInfo,
@@ -16,6 +14,7 @@ import {
   TEST_USER,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
@@ -55,7 +54,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const tokenRes = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -77,7 +76,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const tokenRes = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -96,7 +95,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const tokenRes = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -116,20 +115,25 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const client = createTestClientWithHeaders(app, {
-        authorization: createBasicAuthHeader(
-          TEST_OAUTH_CLIENT.clientId,
-          TEST_OAUTH_CLIENT.clientSecret,
-        ),
-      });
-      const tokenRes = await client.application.oauth.token.$post({
-        json: {
-          grant_type: 'authorization_code',
-          code,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+      const client = testClient(app);
+      const tokenRes = await client.application.oauth.token.$post(
+        {
+          json: {
+            grant_type: 'authorization_code',
+            code,
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          },
         },
-      });
+        {
+          headers: {
+            authorization: createBasicAuthHeader(
+              TEST_OAUTH_CLIENT.clientId,
+              TEST_OAUTH_CLIENT.clientSecret,
+            ),
+          },
+        },
+      );
 
       const tokens = await assertJsonBody(tokenRes);
       expect(tokens.access_token).toBeDefined();
@@ -139,20 +143,25 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const client = createTestClientWithHeaders(app, {
-        authorization: createBasicAuthHeader(
-          TEST_OAUTH_CLIENT.clientId,
-          'wrong-secret',
-        ),
-      });
-      const tokenRes = await client.application.oauth.token.$post({
-        // @ts-expect-error testing validation with invalid input
-        json: {
-          grant_type: 'authorization_code',
-          code,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+      const client = testClient(app);
+      const tokenRes = await client.application.oauth.token.$post(
+        {
+          // @ts-expect-error testing validation with invalid input
+          json: {
+            grant_type: 'authorization_code',
+            code,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          },
         },
-      });
+        {
+          headers: {
+            authorization: createBasicAuthHeader(
+              TEST_OAUTH_CLIENT.clientId,
+              'wrong-secret',
+            ),
+          },
+        },
+      );
 
       expect(tokenRes.status).toBe(400);
     });
@@ -161,21 +170,26 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const client = createTestClientWithHeaders(app, {
-        authorization: createBasicAuthHeader(
-          TEST_OAUTH_CLIENT.clientId,
-          'ignored-header-secret',
-        ),
-      });
-      const tokenRes = await client.application.oauth.token.$post({
-        json: {
-          grant_type: 'authorization_code',
-          code,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          client_secret: TEST_OAUTH_CLIENT.clientSecret,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+      const client = testClient(app);
+      const tokenRes = await client.application.oauth.token.$post(
+        {
+          json: {
+            grant_type: 'authorization_code',
+            code,
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            client_secret: TEST_OAUTH_CLIENT.clientSecret,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          },
         },
-      });
+        {
+          headers: {
+            authorization: createBasicAuthHeader(
+              TEST_OAUTH_CLIENT.clientId,
+              'ignored-header-secret',
+            ),
+          },
+        },
+      );
 
       expect(tokenRes.status).toBe(200);
     });
@@ -186,21 +200,26 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const client = createTestClientWithHeaders(app, {
-        authorization: createBasicAuthHeader(
-          TEST_OAUTH_CLIENT.clientId,
-          'wrong-header-secret',
-        ),
-      });
-      const tokenRes = await client.application.oauth.token.$post({
-        json: {
-          grant_type: 'authorization_code',
-          code,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          client_secret: TEST_OAUTH_CLIENT.clientSecret,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+      const client = testClient(app);
+      const tokenRes = await client.application.oauth.token.$post(
+        {
+          json: {
+            grant_type: 'authorization_code',
+            code,
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            client_secret: TEST_OAUTH_CLIENT.clientSecret,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          },
         },
-      });
+        {
+          headers: {
+            authorization: createBasicAuthHeader(
+              TEST_OAUTH_CLIENT.clientId,
+              'wrong-header-secret',
+            ),
+          },
+        },
+      );
 
       expect(tokenRes.status).toBe(200);
     });
@@ -217,7 +236,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       });
       const { refresh_token } = await tokenRes.json();
 
-      const refreshClient = createTestClient(app);
+      const refreshClient = testClient(app);
       const refreshRes = await refreshClient.application.oauth.token.$post({
         json: {
           grant_type: 'refresh_token',
@@ -241,19 +260,24 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       });
       const { refresh_token } = await tokenRes.json();
 
-      const refreshClient = createTestClientWithHeaders(app, {
-        authorization: createBasicAuthHeader(
-          TEST_OAUTH_CLIENT.clientId,
-          TEST_OAUTH_CLIENT.clientSecret,
-        ),
-      });
-      const refreshRes = await refreshClient.application.oauth.token.$post({
-        json: {
-          grant_type: 'refresh_token',
-          refresh_token,
-          client_id: TEST_OAUTH_CLIENT.clientId,
+      const refreshClient = testClient(app);
+      const refreshRes = await refreshClient.application.oauth.token.$post(
+        {
+          json: {
+            grant_type: 'refresh_token',
+            refresh_token,
+            client_id: TEST_OAUTH_CLIENT.clientId,
+          },
         },
-      });
+        {
+          headers: {
+            authorization: createBasicAuthHeader(
+              TEST_OAUTH_CLIENT.clientId,
+              TEST_OAUTH_CLIENT.clientSecret,
+            ),
+          },
+        },
+      );
 
       const refreshBasicBody = await assertJsonBody(refreshRes);
       expect(refreshBasicBody.access_token).toBeDefined();
@@ -309,16 +333,21 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       });
       const { access_token } = await tokenRes.json();
 
-      const introspectClient = createTestClientWithHeaders(app, {
-        authorization: createBasicAuthHeader(
-          TEST_OAUTH_CLIENT.clientId,
-          TEST_OAUTH_CLIENT.clientSecret,
-        ),
-      });
+      const introspectClient = testClient(app);
       const introspectRes =
-        await introspectClient.application.oauth.introspect.$post({
-          json: { token: access_token },
-        });
+        await introspectClient.application.oauth.introspect.$post(
+          {
+            json: { token: access_token },
+          },
+          {
+            headers: {
+              authorization: createBasicAuthHeader(
+                TEST_OAUTH_CLIENT.clientId,
+                TEST_OAUTH_CLIENT.clientSecret,
+              ),
+            },
+          },
+        );
 
       const introspectBody = await assertJsonBody(introspectRes);
       expect(introspectBody.active).toBe(true);
@@ -351,7 +380,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       });
       const { access_token } = await tokenRes.json();
 
-      const revokeClient = createTestClient(app);
+      const revokeClient = testClient(app);
       const revokeRes = await revokeClient.application.oauth.revoke.$post({
         json: {
           token: access_token,
@@ -376,15 +405,20 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       });
       const { access_token } = await tokenRes.json();
 
-      const revokeClient = createTestClientWithHeaders(app, {
-        authorization: createBasicAuthHeader(
-          TEST_OAUTH_CLIENT.clientId,
-          TEST_OAUTH_CLIENT.clientSecret,
-        ),
-      });
-      const revokeRes = await revokeClient.application.oauth.revoke.$post({
-        json: { token: access_token },
-      });
+      const revokeClient = testClient(app);
+      const revokeRes = await revokeClient.application.oauth.revoke.$post(
+        {
+          json: { token: access_token },
+        },
+        {
+          headers: {
+            authorization: createBasicAuthHeader(
+              TEST_OAUTH_CLIENT.clientId,
+              TEST_OAUTH_CLIENT.clientSecret,
+            ),
+          },
+        },
+      );
 
       expect(revokeRes.status).toBe(200);
     });
@@ -396,7 +430,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = await tokenRes.json();
 
-      const revokeClient = createTestClient(app);
+      const revokeClient = testClient(app);
       const revokeRes = await revokeClient.application.oauth.revoke.$post({
         json: {
           token: access_token,
@@ -463,7 +497,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         codeChallengeMethod: 'S256',
       });
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const tokenRes = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -489,7 +523,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         codeChallengeMethod: 'S256',
       });
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const tokenRes = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -510,7 +544,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const tokenRes = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -529,7 +563,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const tokenRes = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -584,7 +618,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const client = createTestClient(app);
+      const client = testClient(app);
       const tokenRes = await client.application.oauth.token.$post({
         json: {
           grant_type: 'authorization_code',
@@ -603,7 +637,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
     });
 
     test('should return proper error for missing grant type', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
       const tokenRes = await client.application.oauth.token.$post({
         // @ts-expect-error testing validation with invalid input
         json: {

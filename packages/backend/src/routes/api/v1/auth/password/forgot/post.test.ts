@@ -2,7 +2,6 @@ import type { AppType } from '@backend/app.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
-  createTestClient,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   registerUser,
@@ -10,6 +9,7 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -47,7 +47,7 @@ describe('POST /api/v1/auth/password/forgot', () => {
     });
 
     // 2. Request password reset
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.password.forgot.$post({
       header: { 'accept-language': 'en' },
       json: {
@@ -76,7 +76,7 @@ describe('POST /api/v1/auth/password/forgot', () => {
   });
 
   test('should return success for non-existent email (prevent enumeration)', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.password.forgot.$post({
       header: { 'accept-language': 'en' },
       json: {
@@ -92,7 +92,7 @@ describe('POST /api/v1/auth/password/forgot', () => {
 
   test('should fail for config user (config-managed)', async () => {
     // Use the config user email from config.test.yaml
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.password.forgot.$post({
       header: { 'accept-language': 'en' },
       json: {
@@ -114,7 +114,7 @@ describe('POST /api/v1/auth/password/forgot', () => {
     });
 
     // 2. Request first password reset
-    const client = createTestClient(app);
+    const client = testClient(app);
     await client.api.v1.auth.password.forgot.$post({
       header: { 'accept-language': 'en' },
       json: {

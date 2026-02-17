@@ -2,7 +2,6 @@ import type { AppType } from '@backend/app.js';
 import { createServer } from '@backend/server.js';
 import {
   createAuthenticatedSession,
-  createTestClient,
   exchangeCodeForTokens,
   getAuthorizationCode,
   getUserInfo,
@@ -15,6 +14,7 @@ import {
   TEST_PKCE,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
@@ -618,7 +618,7 @@ describe('Token Lifecycle and Rotation', () => {
 
   describe('Token Subject Consistency', () => {
     test('should maintain same subject across all token operations', async () => {
-      const jwksClient = createTestClient(app);
+      const jwksClient = testClient(app);
       const jwksRes =
         await jwksClient.application.oauth['.well-known'].jwks.$get();
       const JWKS = jose.createLocalJWKSet(

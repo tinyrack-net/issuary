@@ -5,13 +5,12 @@ import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
   createDbUserWithSession,
-  createTestClient,
-  createTestClientWithHeaders,
   expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -44,10 +43,11 @@ afterAll(async () => {
  * Helper to start TOTP setup and return secret
  */
 async function startTotpSetup(sessionCookie: string): Promise<string> {
-  const client = createTestClientWithHeaders(app, {
-    Cookie: `session=${sessionCookie}`,
-  });
-  const res = await client.api.v1.user.totp.setup.$post({});
+  const client = testClient(app);
+  const res = await client.api.v1.user.totp.setup.$post(
+    {},
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
 
   const body = await assertJsonBody(res);
   return body.secret;
@@ -61,12 +61,11 @@ async function verifyTotpSetup(
   secret: string,
 ): Promise<string[]> {
   const validCode = services.totpService.generateToken(secret);
-  const client = createTestClientWithHeaders(app, {
-    Cookie: `session=${sessionCookie}`,
-  });
-  const res = await client.api.v1.user.totp.verify.$post({
-    json: { code: validCode },
-  });
+  const client = testClient(app);
+  const res = await client.api.v1.user.totp.verify.$post(
+    { json: { code: validCode } },
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
 
   const body = await assertJsonBody(res);
   return body.recovery_codes;
@@ -74,7 +73,7 @@ async function verifyTotpSetup(
 
 describe('POST /api/v1/user/totp/confirm', () => {
   test('should return 401 when not authenticated', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.user.totp.confirm.$post({ json: {} });
 
     await expectError(res, e.Unauthorized);
@@ -91,10 +90,11 @@ describe('POST /api/v1/user/totp/confirm', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.confirm.$post({ json: {} });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.confirm.$post(
+      { json: {} },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(res, e.TotpNotSetup);
   });
@@ -113,10 +113,11 @@ describe('POST /api/v1/user/totp/confirm', () => {
     // Start setup but don't verify
     await startTotpSetup(sessionCookie);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.confirm.$post({ json: {} });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.confirm.$post(
+      { json: {} },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(res, e.TotpNotSetup);
   });
@@ -136,10 +137,11 @@ describe('POST /api/v1/user/totp/confirm', () => {
     const secret = await startTotpSetup(sessionCookie);
     await verifyTotpSetup(sessionCookie, secret);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.totp.confirm.$post({ json: {} });
+    const client = testClient(app);
+    const res = await client.api.v1.user.totp.confirm.$post(
+      { json: {} },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body).toHaveProperty('user');
@@ -169,16 +171,20 @@ describe('POST /api/v1/user/totp/confirm', () => {
     const secret = await startTotpSetup(sessionCookie);
     await verifyTotpSetup(sessionCookie, secret);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
 
     // First confirm
-    const res1 = await client.api.v1.user.totp.confirm.$post({ json: {} });
+    const res1 = await client.api.v1.user.totp.confirm.$post(
+      { json: {} },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     expect(res1.status).toBe(200);
 
     // Second confirm should fail
-    const res2 = await client.api.v1.user.totp.confirm.$post({ json: {} });
+    const res2 = await client.api.v1.user.totp.confirm.$post(
+      { json: {} },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(res2, e.TotpAlreadyEnabled);
   });
@@ -194,12 +200,13 @@ describe('POST /api/v1/user/totp/confirm', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
 
     // Check initial session - TOTP should be disabled
-    const sessionBefore = await client.api.v1.user.session.$get();
+    const sessionBefore = await client.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const sessionBeforeBody = await assertJsonBody(sessionBefore);
     expect(sessionBeforeBody.user).toBeDefined();
     expect(sessionBeforeBody.user?.totp_registered).toBe(false);
@@ -209,16 +216,25 @@ describe('POST /api/v1/user/totp/confirm', () => {
     await verifyTotpSetup(sessionCookie, secret);
 
     // Verify after verify - should still be false
-    const sessionAfterVerify = await client.api.v1.user.session.$get();
+    const sessionAfterVerify = await client.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const sessionAfterVerifyBody = await assertJsonBody(sessionAfterVerify);
     expect(sessionAfterVerifyBody.user).toBeDefined();
     expect(sessionAfterVerifyBody.user?.totp_registered).toBe(false);
 
     // Confirm
-    await client.api.v1.user.totp.confirm.$post({ json: {} });
+    await client.api.v1.user.totp.confirm.$post(
+      { json: {} },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     // Check session after confirm - TOTP should be enabled
-    const sessionAfterConfirm = await client.api.v1.user.session.$get();
+    const sessionAfterConfirm = await client.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const sessionAfterConfirmBody = await assertJsonBody(sessionAfterConfirm);
     expect(sessionAfterConfirmBody.user).toBeDefined();
     expect(sessionAfterConfirmBody.user?.totp_registered).toBe(true);
@@ -235,12 +251,13 @@ describe('POST /api/v1/user/totp/confirm', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
 
     // Step 1: Setup
-    const setupRes = await client.api.v1.user.totp.setup.$post({});
+    const setupRes = await client.api.v1.user.totp.setup.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const setupBody = await assertJsonBody(setupRes);
     const { secret } = setupBody;
 
@@ -253,9 +270,10 @@ describe('POST /api/v1/user/totp/confirm', () => {
 
     // Step 2: Verify
     const validCode = services.totpService.generateToken(secret);
-    const verifyRes = await client.api.v1.user.totp.verify.$post({
-      json: { code: validCode },
-    });
+    const verifyRes = await client.api.v1.user.totp.verify.$post(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const verifyBody = await assertJsonBody(verifyRes);
     expect(verifyBody).toHaveProperty('recovery_codes');
     expect(verifyBody.recovery_codes.length).toBe(8);
@@ -268,9 +286,10 @@ describe('POST /api/v1/user/totp/confirm', () => {
     });
 
     // Step 3: Confirm
-    const confirmRes = await client.api.v1.user.totp.confirm.$post({
-      json: {},
-    });
+    const confirmRes = await client.api.v1.user.totp.confirm.$post(
+      { json: {} },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const confirmBody = await assertJsonBody(confirmRes);
     expect(confirmBody.user.totp_registered).toBe(true);
 

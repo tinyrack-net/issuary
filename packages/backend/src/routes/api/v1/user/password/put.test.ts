@@ -4,14 +4,13 @@ import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
-  createTestClient,
-  createTestClientWithHeaders,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -50,7 +49,7 @@ async function createUserWithPasswordAndSession(
     await services.mikro.em.persist(user).flush();
   });
 
-  const client = createTestClient(app);
+  const client = testClient(app);
   const loginRes = await client.api.v1.auth.login.$post({
     json: { email, password },
   });
@@ -64,7 +63,7 @@ async function createUserWithPasswordAndSession(
 
 describe('PUT /api/v1/user/password', () => {
   test('should return 401 when not authenticated', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.user.password.$put({
       json: {
         current_password: 'oldPassword123!',
@@ -79,15 +78,16 @@ describe('PUT /api/v1/user/password', () => {
   test('should return 403 for config users', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$put({
-      json: {
-        current_password: 'changemelater',
-        new_password: 'newPassword123!',
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$put(
+      {
+        json: {
+          current_password: 'changemelater',
+          new_password: 'newPassword123!',
+        },
       },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res, 403);
     expect(body.code).toBe('USER_NOT_EDITABLE');
@@ -109,7 +109,7 @@ describe('PUT /api/v1/user/password', () => {
       await services.mikro.em.flush();
     });
 
-    const loginClient = createTestClient(app);
+    const loginClient = testClient(app);
     const loginRes = await loginClient.api.v1.auth.login.$post({
       json: {
         email,
@@ -129,15 +129,16 @@ describe('PUT /api/v1/user/password', () => {
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$put({
-      json: {
-        current_password: 'somePassword123!',
-        new_password: 'newPassword123!',
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$put(
+      {
+        json: {
+          current_password: 'somePassword123!',
+          new_password: 'newPassword123!',
+        },
       },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('PASSWORD_NOT_SET');
@@ -152,15 +153,16 @@ describe('PUT /api/v1/user/password', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$put({
-      json: {
-        current_password: 'wrongPassword123!',
-        new_password: 'newPassword123!',
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$put(
+      {
+        json: {
+          current_password: 'wrongPassword123!',
+          new_password: 'newPassword123!',
+        },
       },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res, 401);
     expect(body.code).toBe('INVALID_CURRENT_PASSWORD');
@@ -177,21 +179,22 @@ describe('PUT /api/v1/user/password', () => {
     );
 
     // Change password
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$put({
-      json: {
-        current_password: currentPassword,
-        new_password: newPassword,
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$put(
+      {
+        json: {
+          current_password: currentPassword,
+          new_password: newPassword,
+        },
       },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     // Verify new password works
-    const verifyClient = createTestClient(app);
+    const verifyClient = testClient(app);
     const verifyLoginRes = await verifyClient.api.v1.auth.login.$post({
       json: { email, password: newPassword },
     });
@@ -216,15 +219,16 @@ describe('PUT /api/v1/user/password', () => {
     );
 
     // Try to change to a password that's too short
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$put({
-      json: {
-        current_password: password,
-        new_password: 'short',
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$put(
+      {
+        json: {
+          current_password: password,
+          new_password: 'short',
+        },
       },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });

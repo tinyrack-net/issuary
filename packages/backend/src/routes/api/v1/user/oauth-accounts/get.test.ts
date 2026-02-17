@@ -4,8 +4,6 @@ import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
-  createTestClient,
-  createTestClientWithHeaders,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -13,6 +11,7 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -48,7 +47,7 @@ afterAll(async () => {
 
 describe('GET /api/v1/user/oauth-accounts', () => {
   test('should return 401 if not authenticated', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.user['oauth-accounts'].$get();
 
     expect(res.status).toBe(401);
@@ -61,10 +60,11 @@ describe('GET /api/v1/user/oauth-accounts', () => {
       TEST_USER.password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user['oauth-accounts'].$get();
+    const client = testClient(app);
+    const res = await client.api.v1.user['oauth-accounts'].$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const json = await assertJsonBody(res);
 
@@ -83,10 +83,11 @@ describe('GET /api/v1/user/oauth-accounts', () => {
       TEST_USER.password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user['oauth-accounts'].$get();
+    const client = testClient(app);
+    const res = await client.api.v1.user['oauth-accounts'].$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const json = await assertJsonBody(res);
 
@@ -126,7 +127,7 @@ describe('GET /api/v1/user/oauth-accounts', () => {
       });
 
       // Login to get session
-      const loginClient = createTestClient(app);
+      const loginClient = testClient(app);
       const loginRes = await loginClient.api.v1.auth.login.$post({
         json: { email, password },
       });
@@ -135,10 +136,11 @@ describe('GET /api/v1/user/oauth-accounts', () => {
       return extractCookie(loginRes, 'session');
     });
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user['oauth-accounts'].$get();
+    const client = testClient(app);
+    const res = await client.api.v1.user['oauth-accounts'].$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const json = await assertJsonBody(res);
 

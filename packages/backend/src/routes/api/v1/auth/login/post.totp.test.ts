@@ -19,8 +19,6 @@ import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
-  createTestClient,
-  createTestClientWithHeaders,
   enableTotpForUser,
   extractCookie,
   generateUniqueEmail,
@@ -29,6 +27,7 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 /**
@@ -110,7 +109,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     });
 
     // Login should return second_factor_setup_required
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -131,7 +130,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     await enableTotpForUser(services, userId);
 
     // Login should return second_factor_required
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -156,7 +155,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -169,10 +168,11 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     expect(sessionCookie).toBeDefined();
 
     // Verify user session endpoint returns unauthenticated (only pending2FASetup session exists)
-    const sessionClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const sessionRes = await sessionClient.api.v1.user.session.$get();
+    const sessionClient = testClient(app);
+    const sessionRes = await sessionClient.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     expect(sessionRes.status).toBe(200);
     const sessionBody = await assertJsonBody(sessionRes);
     expect(sessionBody.user).toBeNull();
@@ -186,7 +186,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     const userId = await createUserInDb(services, email, password);
     await enableTotpForUser(services, userId);
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -199,10 +199,11 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
     expect(sessionCookie).toBeDefined();
 
     // Verify user session endpoint returns unauthenticated (only pending2FAUser session exists)
-    const sessionClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const sessionRes = await sessionClient.api.v1.user.session.$get();
+    const sessionClient = testClient(app);
+    const sessionRes = await sessionClient.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     expect(sessionRes.status).toBe(200);
     const sessionBody = await assertJsonBody(sessionRes);
     expect(sessionBody.user).toBeNull();
@@ -210,7 +211,7 @@ describe('POST /api/v1/auth/login - TOTP Required Mode', () => {
 
   test('should allow config user to login without TOTP (exempt from required)', async () => {
     // Config users are exempt from TOTP required check
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: {
         email: TEST_USER.email,
@@ -276,7 +277,7 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
     });
 
     // Login should succeed immediately
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -296,7 +297,7 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
     await enableTotpForUser(services, userId);
 
     // Login should require TOTP verification
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -321,7 +322,7 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -330,10 +331,11 @@ describe('POST /api/v1/auth/login - TOTP Optional Mode', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Verify user session endpoint returns actual user data
-    const sessionClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const sessionRes = await sessionClient.api.v1.user.session.$get();
+    const sessionClient = testClient(app);
+    const sessionRes = await sessionClient.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
     const sessionBody = await assertJsonBody(sessionRes);
     expect(sessionBody.user).not.toBeNull();
     expect(sessionBody).toHaveProperty('user.email', email);
@@ -391,7 +393,7 @@ describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -413,7 +415,7 @@ describe('POST /api/v1/auth/login - TOTP Disabled Mode', () => {
 
     // Login should still require TOTP verification because user has TOTP enabled
     // Note: The login logic checks user.totp_registered regardless of config.totp.enabled
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -476,7 +478,7 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -501,7 +503,7 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -522,7 +524,7 @@ describe('POST /api/v1/auth/login - Email Verification + TOTP', () => {
     // Enable TOTP for user
     await enableTotpForUser(services, userId);
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -585,7 +587,7 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -597,15 +599,16 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to access protected password change endpoint
-    const sessionClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const changePasswordRes = await sessionClient.api.v1.user.password.$put({
-      json: {
-        current_password: password,
-        new_password: 'newpassword123',
+    const sessionClient = testClient(app);
+    const changePasswordRes = await sessionClient.api.v1.user.password.$put(
+      {
+        json: {
+          current_password: password,
+          new_password: 'newpassword123',
+        },
       },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     // Should be unauthorized since only pending2FASetup session exists
     expect(changePasswordRes.status).toBe(401);
@@ -619,7 +622,7 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const userId = await createUserInDb(services, email, password);
     await enableTotpForUser(services, userId);
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -631,15 +634,16 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to access protected password change endpoint
-    const sessionClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const changePasswordRes = await sessionClient.api.v1.user.password.$put({
-      json: {
-        current_password: password,
-        new_password: 'newpassword123',
+    const sessionClient = testClient(app);
+    const changePasswordRes = await sessionClient.api.v1.user.password.$put(
+      {
+        json: {
+          current_password: password,
+          new_password: 'newpassword123',
+        },
       },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     // Should be unauthorized since only pending2FAUser session exists
     expect(changePasswordRes.status).toBe(401);
@@ -647,7 +651,7 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
 
   test('should allow protected API access with full user session', async () => {
     // Use config user which is exempt from TOTP required
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: {
         email: TEST_USER.email,
@@ -662,10 +666,11 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Access user session endpoint should work
-    const sessionClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const sessionRes = await sessionClient.api.v1.user.session.$get();
+    const sessionClient = testClient(app);
+    const sessionRes = await sessionClient.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const sessionBody = await assertJsonBody(sessionRes);
     expect(sessionBody.user).not.toBeNull();
@@ -687,7 +692,7 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     });
 
     // Step 1: Login - should require TOTP setup
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -699,28 +704,35 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Step 2: Setup TOTP
-    const sessionClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const setupRes = await sessionClient.api.v1.user.totp.setup.$post();
+    const sessionClient = testClient(app);
+    const setupRes = await sessionClient.api.v1.user.totp.setup.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const setupBody = await assertJsonBody(setupRes);
     const secret = setupBody.secret;
 
     // Step 3: Verify TOTP code
     const validCode = services.totpService.generateToken(secret);
-    const verifyRes = await sessionClient.api.v1.user.totp.verify.$post({
-      json: { code: validCode },
-    });
+    const verifyRes = await sessionClient.api.v1.user.totp.verify.$post(
+      {
+        json: { code: validCode },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const verifyBody = await assertJsonBody(verifyRes);
     expect(verifyBody).toHaveProperty('recovery_codes');
     expect(verifyBody.recovery_codes).toHaveLength(8);
 
     // Step 4: Confirm recovery codes saved
-    const confirmRes = await sessionClient.api.v1.user.totp.confirm.$post({
-      json: {},
-    });
+    const confirmRes = await sessionClient.api.v1.user.totp.confirm.$post(
+      {
+        json: {},
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const confirmBody = await assertJsonBody(confirmRes);
     expect(confirmBody).toHaveProperty('user');
@@ -730,10 +742,11 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const updatedSessionCookie = extractCookie(confirmRes, 'session');
 
     // Step 5: Now should be able to access protected endpoints
-    const updatedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${updatedSessionCookie}`,
-    });
-    const finalSessionRes = await updatedClient.api.v1.user.session.$get();
+    const updatedClient = testClient(app);
+    const finalSessionRes = await updatedClient.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${updatedSessionCookie}` } },
+    );
 
     const finalBody = await assertJsonBody(finalSessionRes);
     expect(finalBody.user).not.toBeNull();
@@ -750,7 +763,7 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const secret = await enableTotpForUser(services, userId);
 
     // Step 1: Login - should require TOTP verification
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -763,12 +776,13 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
 
     // Step 2: Verify TOTP code
     const validCode = services.totpService.generateToken(secret);
-    const authedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const verifyRes = await authedClient.api.v1.auth.totp.verify.$post({
-      json: { code: validCode },
-    });
+    const authedClient = testClient(app);
+    const verifyRes = await authedClient.api.v1.auth.totp.verify.$post(
+      {
+        json: { code: validCode },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const verifyBody = await assertJsonBody(verifyRes);
     expect(verifyBody).toHaveProperty('user');
@@ -778,10 +792,11 @@ describe('POST /api/v1/auth/login - Session State Verification', () => {
     const updatedSessionCookie = extractCookie(verifyRes, 'session');
 
     // Step 3: Now should be able to access protected endpoints
-    const updatedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${updatedSessionCookie}`,
-    });
-    const finalSessionRes = await updatedClient.api.v1.user.session.$get();
+    const updatedClient = testClient(app);
+    const finalSessionRes = await updatedClient.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${updatedSessionCookie}` } },
+    );
 
     const finalBody = await assertJsonBody(finalSessionRes);
     expect(finalBody.user).not.toBeNull();

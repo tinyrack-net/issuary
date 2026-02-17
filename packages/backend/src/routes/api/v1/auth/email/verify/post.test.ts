@@ -4,13 +4,13 @@ import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
-  createTestClient,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   registerUser,
   TEST_TERMS_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -63,7 +63,7 @@ describe('POST /api/v1/auth/email/verify', () => {
     });
 
     // 3. Verify email with token
-    const client = createTestClient(app);
+    const client = testClient(app);
     const verifyRes = await client.api.v1.auth.email.verify.$post({
       json: {
         token,
@@ -88,7 +88,7 @@ describe('POST /api/v1/auth/email/verify', () => {
   });
 
   test('should fail with invalid token', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.email.verify.$post({
       json: {
         token: 'invalid-token-12345',
@@ -140,7 +140,7 @@ describe('POST /api/v1/auth/email/verify', () => {
     });
 
     // 4. Try to verify with expired token
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.email.verify.$post({
       json: {
         token,
@@ -173,7 +173,7 @@ describe('POST /api/v1/auth/email/verify', () => {
     });
 
     // 3. First verification - should succeed
-    const client = createTestClient(app);
+    const client = testClient(app);
     const firstRes = await client.api.v1.auth.email.verify.$post({
       json: { token },
     });

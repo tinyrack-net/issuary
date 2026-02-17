@@ -5,14 +5,13 @@ import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
   createDbUserWithSession,
-  createTestClient,
-  createTestClientWithHeaders,
   enableTotpForUser,
   expectError,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -59,7 +58,7 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const secret = await enableTotpForUser(services, userId);
 
     // Login with password - should get 2fa_required status
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -74,12 +73,13 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const validCode = services.totpService.generateToken(secret);
 
     // Verify TOTP code
-    const authedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const verifyRes = await authedClient.api.v1.auth.totp.verify.$post({
-      json: { code: validCode },
-    });
+    const authedClient = testClient(app);
+    const verifyRes = await authedClient.api.v1.auth.totp.verify.$post(
+      {
+        json: { code: validCode },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const verifyBody = await assertJsonBody(verifyRes);
     expect(verifyBody).toHaveProperty('user');
@@ -105,7 +105,7 @@ describe('POST /api/v1/auth/totp/verify', () => {
     await enableTotpForUser(services, userId);
 
     // Login with password
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -113,19 +113,20 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to verify with invalid code
-    const authedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const verifyRes = await authedClient.api.v1.auth.totp.verify.$post({
-      json: { code: '000000' },
-    });
+    const authedClient = testClient(app);
+    const verifyRes = await authedClient.api.v1.auth.totp.verify.$post(
+      {
+        json: { code: '000000' },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     await expectError(verifyRes, e.InvalidTotpCode);
   });
 
   test('should fail without pending TOTP session', async () => {
     // Try to verify TOTP without logging in first
-    const client = createTestClient(app);
+    const client = testClient(app);
     const verifyRes = await client.api.v1.auth.totp.verify.$post({
       json: { code: '123456' },
     });
@@ -150,7 +151,7 @@ describe('POST /api/v1/auth/totp/verify', () => {
     await enableTotpForUser(services, userId);
 
     // Login with password
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -158,12 +159,13 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to verify with malformed code (not 6 digits)
-    const authedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const verifyRes = await authedClient.api.v1.auth.totp.verify.$post({
-      json: { code: '12345' },
-    });
+    const authedClient = testClient(app);
+    const verifyRes = await authedClient.api.v1.auth.totp.verify.$post(
+      {
+        json: { code: '12345' },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(verifyRes.status).toBe(400);
   });
@@ -185,7 +187,7 @@ describe('POST /api/v1/auth/totp/verify', () => {
     await enableTotpForUser(services, userId);
 
     // Login with password (creates pending TOTP session)
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -193,10 +195,11 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to access a protected route (session endpoint) with pending TOTP
-    const authedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const sessionRes = await authedClient.api.v1.user.session.$get();
+    const authedClient = testClient(app);
+    const sessionRes = await authedClient.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     // Should return unauthenticated status since session is not complete
     expect(sessionRes.status).toBe(200);
@@ -221,7 +224,7 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const secret = await enableTotpForUser(services, userId);
 
     // Login with password (creates pending TOTP session)
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -230,22 +233,24 @@ describe('POST /api/v1/auth/totp/verify', () => {
 
     // Verify TOTP code
     const validCode = services.totpService.generateToken(secret);
-    const pendingClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${pendingSessionCookie}`,
-    });
-    const verifyRes = await pendingClient.api.v1.auth.totp.verify.$post({
-      json: { code: validCode },
-    });
+    const pendingClient = testClient(app);
+    const verifyRes = await pendingClient.api.v1.auth.totp.verify.$post(
+      {
+        json: { code: validCode },
+      },
+      { headers: { Cookie: `session=${pendingSessionCookie}` } },
+    );
     expect(verifyRes.status).toBe(200);
 
     // Get the new session cookie from verify response
     const authenticatedCookie = extractCookie(verifyRes, 'session');
 
     // Now access protected route (session endpoint) with authenticated session
-    const authedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${authenticatedCookie}`,
-    });
-    const sessionRes = await authedClient.api.v1.user.session.$get();
+    const authedClient = testClient(app);
+    const sessionRes = await authedClient.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${authenticatedCookie}` } },
+    );
 
     const body = await assertJsonBody(sessionRes);
     expect(body).toHaveProperty('user');
@@ -271,7 +276,7 @@ describe('POST /api/v1/auth/totp/verify', () => {
     await enableTotpForUser(services, userId);
 
     // Login with password
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -279,13 +284,14 @@ describe('POST /api/v1/auth/totp/verify', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to verify with empty body
-    const authedClient = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const verifyRes = await authedClient.api.v1.auth.totp.verify.$post({
-      // @ts-expect-error testing validation with invalid input
-      json: {},
-    });
+    const authedClient = testClient(app);
+    const verifyRes = await authedClient.api.v1.auth.totp.verify.$post(
+      {
+        // @ts-expect-error testing validation with invalid input
+        json: {},
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(verifyRes.status).toBe(400);
   });

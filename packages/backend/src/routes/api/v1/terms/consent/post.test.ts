@@ -6,8 +6,6 @@ import {
   assertJsonBody,
   createAuthenticatedSession,
   createDbUserWithSession,
-  createTestClient,
-  createTestClientWithHeaders,
   expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -15,6 +13,7 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 describe('POST /api/v1/terms/consent', () => {
@@ -39,7 +38,7 @@ describe('POST /api/v1/terms/consent', () => {
     });
 
     test('should return 401 when not authenticated', async () => {
-      const client = createTestClient(app);
+      const client = testClient(app);
 
       const res = await client.api.v1.terms.consent.$post({
         json: {
@@ -52,15 +51,16 @@ describe('POST /api/v1/terms/consent', () => {
     });
 
     test('should return 401 with invalid session', async () => {
-      const client = createTestClientWithHeaders(app, {
-        Cookie: 'session=invalid-session',
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [{ termsId: 'tos', agreed: true }],
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [{ termsId: 'tos', agreed: true }],
+          },
         },
-      });
+        { headers: { Cookie: 'session=invalid-session' } },
+      );
 
       expect(res.status).toBe(401);
     });
@@ -88,95 +88,101 @@ describe('POST /api/v1/terms/consent', () => {
 
     test('should return 400 when consents array is empty', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [],
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(400);
     });
 
     test('should return 400 when consents is missing', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.terms.consent.$post({
-        // @ts-expect-error testing validation with invalid input
-        json: {},
-      });
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          // @ts-expect-error testing validation with invalid input
+          json: {},
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(400);
     });
 
     test('should return 400 when termsId is missing', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.terms.consent.$post({
-        json: {
-          // @ts-expect-error testing validation with invalid input
-          consents: [{ agreed: true }],
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            // @ts-expect-error testing validation with invalid input
+            consents: [{ agreed: true }],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(400);
     });
 
     test('should return 400 when agreed is missing', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.terms.consent.$post({
-        json: {
-          // @ts-expect-error testing validation with invalid input
-          consents: [{ termsId: 'tos' }],
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            // @ts-expect-error testing validation with invalid input
+            consents: [{ termsId: 'tos' }],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(400);
     });
 
     test('should return 400 when agreed is not boolean', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.terms.consent.$post({
-        json: {
-          // @ts-expect-error testing validation with invalid input
-          consents: [{ termsId: 'tos', agreed: 'yes' }],
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            // @ts-expect-error testing validation with invalid input
+            consents: [{ termsId: 'tos', agreed: 'yes' }],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(400);
     });
 
     test('should return 400 when required term is not agreed', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: false }, // Required term not agreed
-            { termsId: 'privacy', agreed: true },
-          ],
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: false }, // Required term not agreed
+              { termsId: 'privacy', agreed: true },
+            ],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const body = await assertJsonBody(res, 400);
       expect(body.code).toBe('VALIDATION_ERROR');
@@ -186,18 +192,19 @@ describe('POST /api/v1/terms/consent', () => {
 
     test('should return 400 when required term is missing from consents', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: true },
-            // Missing 'privacy' which is also required
-          ],
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: true },
+              // Missing 'privacy' which is also required
+            ],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const body = await assertJsonBody(res, 400);
       expect(body.code).toBe('VALIDATION_ERROR');
@@ -235,18 +242,19 @@ describe('POST /api/v1/terms/consent', () => {
         email,
         'password123!',
       );
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: true },
-            { termsId: 'privacy', agreed: true },
-          ],
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: true },
+              { termsId: 'privacy', agreed: true },
+            ],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const body = await assertJsonBody(res);
       expect(body.ok).toBe(true);
@@ -261,18 +269,19 @@ describe('POST /api/v1/terms/consent', () => {
         email,
         'password123!',
       );
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: true },
-            { termsId: 'privacy', agreed: true },
-          ],
+      await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: true },
+              { termsId: 'privacy', agreed: true },
+            ],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       // Verify in database
       await withMikroContext(services, async () => {
@@ -297,27 +306,34 @@ describe('POST /api/v1/terms/consent', () => {
         email,
         'password123!',
       );
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
       // Check pending before consent
-      const beforeRes = await client.api.v1.terms.$get({ query: {} });
+      const beforeRes = await client.api.v1.terms.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
       const beforeBody = await beforeRes.json();
       expect(beforeBody.pendingTerms.length).toBeGreaterThan(0);
 
       // Give consent
-      await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: true },
-            { termsId: 'privacy', agreed: true },
-          ],
+      await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: true },
+              { termsId: 'privacy', agreed: true },
+            ],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       // Check pending after consent
-      const afterRes = await client.api.v1.terms.$get({ query: {} });
+      const afterRes = await client.api.v1.terms.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
       const afterBody = await afterRes.json();
       expect(afterBody.pendingTerms).toEqual([]);
     });
@@ -379,18 +395,19 @@ describe('POST /api/v1/terms/consent', () => {
         email,
         'password123!',
       );
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: true },
-            { termsId: 'marketing', agreed: false }, // Optional, can decline
-          ],
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: true },
+              { termsId: 'marketing', agreed: false }, // Optional, can decline
+            ],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const body = await assertJsonBody(res);
       expect(body.recorded).toBe(2);
@@ -404,18 +421,19 @@ describe('POST /api/v1/terms/consent', () => {
         email,
         'password123!',
       );
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: true },
-            { termsId: 'marketing', agreed: false },
-          ],
+      await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: true },
+              { termsId: 'marketing', agreed: false },
+            ],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       await withMikroContext(services, async () => {
         const consent = await services.mikro.userTermsConsent.findLatestConsent(
@@ -436,18 +454,19 @@ describe('POST /api/v1/terms/consent', () => {
         email,
         'password123!',
       );
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: true },
-            // marketing term omitted - should be OK
-          ],
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: true },
+              // marketing term omitted - should be OK
+            ],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const body = await assertJsonBody(res);
       expect(body.recorded).toBe(1);
@@ -483,22 +502,23 @@ describe('POST /api/v1/terms/consent', () => {
         email,
         'password123!',
       );
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: true },
-            { termsId: 'privacy', agreed: true },
-            {
-              termsId: 'nonexistent-term',
-              agreed: true,
-            }, // Unknown
-          ],
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: true },
+              { termsId: 'privacy', agreed: true },
+              {
+                termsId: 'nonexistent-term',
+                agreed: true,
+              }, // Unknown
+            ],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const body = await assertJsonBody(res);
       // Only 2 valid terms recorded
@@ -544,18 +564,19 @@ describe('POST /api/v1/terms/consent', () => {
         email,
         'password123!',
       );
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: true },
-            { termsId: 'privacy', agreed: true },
-          ],
+      await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: true },
+              { termsId: 'privacy', agreed: true },
+            ],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       await withMikroContext(services, async () => {
         const consent = await services.mikro.userTermsConsent.findLatestConsent(
@@ -597,9 +618,7 @@ describe('POST /api/v1/terms/consent', () => {
         email,
         'password123!',
       );
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
       // Record old version consent directly in DB
       await withMikroContext(services, async () => {
@@ -613,14 +632,17 @@ describe('POST /api/v1/terms/consent', () => {
       });
 
       // Record new consent
-      await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: true },
-            { termsId: 'privacy', agreed: true },
-          ],
+      await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: true },
+              { termsId: 'privacy', agreed: true },
+            ],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       // Verify we have 2 consent records for 'tos'
       await withMikroContext(services, async () => {
@@ -646,9 +668,7 @@ describe('POST /api/v1/terms/consent', () => {
         email,
         'password123!',
       );
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
       // Record old version consent
       await withMikroContext(services, async () => {
@@ -671,23 +691,32 @@ describe('POST /api/v1/terms/consent', () => {
       });
 
       // Check pending - should include 'tos' (version mismatch)
-      const beforeRes = await client.api.v1.terms.$get({ query: {} });
+      const beforeRes = await client.api.v1.terms.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
       const beforeBody = await beforeRes.json();
       expect(beforeBody.pendingTerms).toContain('tos');
       expect(beforeBody.pendingTerms).not.toContain('privacy');
 
       // Re-consent to tos
-      await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: true },
-            { termsId: 'privacy', agreed: true },
-          ],
+      await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: true },
+              { termsId: 'privacy', agreed: true },
+            ],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       // Check pending - should be empty
-      const afterRes = await client.api.v1.terms.$get({ query: {} });
+      const afterRes = await client.api.v1.terms.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
       const afterBody = await afterRes.json();
       expect(afterBody.pendingTerms).toEqual([]);
     });
@@ -737,15 +766,16 @@ describe('POST /api/v1/terms/consent', () => {
           email,
           'password123!',
         );
-        const client = createTestClientWithHeaders(app, {
-          Cookie: `session=${sessionCookie}`,
-        });
+        const client = testClient(app);
 
-        await client.api.v1.terms.consent.$post({
-          json: {
-            consents: [{ termsId: 'tos', agreed: true }],
+        await client.api.v1.terms.consent.$post(
+          {
+            json: {
+              consents: [{ termsId: 'tos', agreed: true }],
+            },
           },
-        });
+          { headers: { Cookie: `session=${sessionCookie}` } },
+        );
 
         await withMikroContext(services, async () => {
           const consent =
@@ -801,15 +831,16 @@ describe('POST /api/v1/terms/consent', () => {
           email,
           'password123!',
         );
-        const client = createTestClientWithHeaders(app, {
-          Cookie: `session=${sessionCookie}`,
-        });
+        const client = testClient(app);
 
-        await client.api.v1.terms.consent.$post({
-          json: {
-            consents: [{ termsId: 'tos', agreed: true }],
+        await client.api.v1.terms.consent.$post(
+          {
+            json: {
+              consents: [{ termsId: 'tos', agreed: true }],
+            },
           },
-        });
+          { headers: { Cookie: `session=${sessionCookie}` } },
+        );
 
         await withMikroContext(services, async () => {
           const consent =
@@ -852,22 +883,23 @@ describe('POST /api/v1/terms/consent', () => {
         email,
         'password123!',
       );
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
       // Submit consent multiple times rapidly
       const requests = Array(5)
         .fill(null)
         .map(() =>
-          client.api.v1.terms.consent.$post({
-            json: {
-              consents: [
-                { termsId: 'tos', agreed: true },
-                { termsId: 'privacy', agreed: true },
-              ],
+          client.api.v1.terms.consent.$post(
+            {
+              json: {
+                consents: [
+                  { termsId: 'tos', agreed: true },
+                  { termsId: 'privacy', agreed: true },
+                ],
+              },
             },
-          }),
+            { headers: { Cookie: `session=${sessionCookie}` } },
+          ),
         );
 
       const responses = await Promise.all(requests);
@@ -921,19 +953,24 @@ describe('POST /api/v1/terms/consent', () => {
 
       const longUserAgent = 'A'.repeat(512);
 
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-        'User-Agent': longUserAgent,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: true },
-            { termsId: 'privacy', agreed: true },
-          ],
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: true },
+              { termsId: 'privacy', agreed: true },
+            ],
+          },
         },
-      });
+        {
+          headers: {
+            Cookie: `session=${sessionCookie}`,
+            'User-Agent': longUserAgent,
+          },
+        },
+      );
 
       expect(res.status).toBe(200);
     });
@@ -946,19 +983,20 @@ describe('POST /api/v1/terms/consent', () => {
         email,
         'password123!',
       );
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: true },
-            { termsId: 'tos', agreed: true }, // Duplicate
-            { termsId: 'privacy', agreed: true },
-          ],
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: true },
+              { termsId: 'tos', agreed: true }, // Duplicate
+              { termsId: 'privacy', agreed: true },
+            ],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       expect(res.status).toBe(200);
 
@@ -977,18 +1015,19 @@ describe('POST /api/v1/terms/consent', () => {
     test('should handle config user consent', async () => {
       // Config users should also be able to consent
       const sessionCookie = await createAuthenticatedSession(app);
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
-      const res = await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: true },
-            { termsId: 'privacy', agreed: true },
-          ],
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: true },
+              { termsId: 'privacy', agreed: true },
+            ],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const body = await assertJsonBody(res);
       expect(body.ok).toBe(true);
@@ -1024,17 +1063,18 @@ describe('POST /api/v1/terms/consent', () => {
         email,
         'password123!',
       );
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
       // With no required terms, any consent array should work
       // But we need at least 1 item due to validation
-      const res = await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [{ termsId: 'any', agreed: true }],
+      const res = await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [{ termsId: 'any', agreed: true }],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const body = await assertJsonBody(res);
       // Unknown term ignored
@@ -1071,12 +1111,13 @@ describe('POST /api/v1/terms/consent', () => {
         email,
         'password123!',
       );
-      const client = createTestClientWithHeaders(app, {
-        Cookie: `session=${sessionCookie}`,
-      });
+      const client = testClient(app);
 
       // Initial state - no consent
-      const beforeRes = await client.api.v1.terms.$get({ query: {} });
+      const beforeRes = await client.api.v1.terms.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const beforeBody = await beforeRes.json();
       const tosBefore = beforeBody.terms.find(
@@ -1085,17 +1126,23 @@ describe('POST /api/v1/terms/consent', () => {
       expect(tosBefore?.userConsent).toBeNull();
 
       // Record consent
-      await client.api.v1.terms.consent.$post({
-        json: {
-          consents: [
-            { termsId: 'tos', agreed: true },
-            { termsId: 'privacy', agreed: true },
-          ],
+      await client.api.v1.terms.consent.$post(
+        {
+          json: {
+            consents: [
+              { termsId: 'tos', agreed: true },
+              { termsId: 'privacy', agreed: true },
+            ],
+          },
         },
-      });
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       // After state - consent recorded
-      const afterRes = await client.api.v1.terms.$get({ query: {} });
+      const afterRes = await client.api.v1.terms.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
       const afterBody = await afterRes.json();
       const tosAfter = afterBody.terms.find(

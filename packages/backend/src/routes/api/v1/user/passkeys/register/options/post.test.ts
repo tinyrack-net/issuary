@@ -7,13 +7,12 @@ import {
   createAuthenticatedSession,
   createDbUserWithSession,
   createPasskeyForUser,
-  createTestClient,
-  createTestClientWithHeaders,
   expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 describe('POST /api/v1/user/passkeys/register/options', () => {
@@ -44,7 +43,7 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
   });
 
   test('should return 401 when not authenticated', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.user.passkeys.register.options.$post();
 
     const body = await assertJsonBody(res, 401);
@@ -62,10 +61,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.register.options.$post();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
 
@@ -115,13 +115,18 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
+    const headers = { Cookie: `session=${sessionCookie}` };
 
-    const res1 = await client.api.v1.user.passkeys.register.options.$post();
+    const res1 = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers },
+    );
 
-    const res2 = await client.api.v1.user.passkeys.register.options.$post();
+    const res2 = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers },
+    );
 
     const body1 = await assertJsonBody(res1);
     const body2 = await assertJsonBody(res2);
@@ -147,10 +152,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
     await createPasskeyForUser(services, userId, 'Existing Passkey 1');
     await createPasskeyForUser(services, userId, 'Existing Passkey 2');
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.register.options.$post();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
 
@@ -179,10 +185,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.register.options.$post();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
 
@@ -201,10 +208,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.register.options.$post();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
 
@@ -226,10 +234,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.register.options.$post();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
 
@@ -242,10 +251,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
   test('should return 403 for config-managed users', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.register.options.$post();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     // Config users cannot setup 2FA
     await expectError(res, e.SecondFactorNotAllowedForConfigUser);
@@ -262,10 +272,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.register.options.$post();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
 
@@ -285,10 +296,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.register.options.$post();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
 
@@ -312,10 +324,11 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.register.options.$post();
+    const client = testClient(app);
+    const res = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
 
@@ -334,15 +347,14 @@ describe('POST /api/v1/user/passkeys/register/options', () => {
       password,
     );
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
+    const client = testClient(app);
+    const headers = { Cookie: `session=${sessionCookie}` };
 
     // Send multiple concurrent requests
     const results = await Promise.all([
-      client.api.v1.user.passkeys.register.options.$post(),
-      client.api.v1.user.passkeys.register.options.$post(),
-      client.api.v1.user.passkeys.register.options.$post(),
+      client.api.v1.user.passkeys.register.options.$post({}, { headers }),
+      client.api.v1.user.passkeys.register.options.$post({}, { headers }),
+      client.api.v1.user.passkeys.register.options.$post({}, { headers }),
     ]);
 
     // All should succeed
@@ -381,10 +393,11 @@ describe('POST /api/v1/user/passkeys/register/options - Passkey disabled', () =>
   test('should return 404 when passkey is disabled in config (route not registered)', async () => {
     const sessionCookie = await createAuthenticatedSession(appDisabled);
 
-    const client = createTestClientWithHeaders(appDisabled, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.passkeys.register.options.$post();
+    const client = testClient(appDisabled);
+    const res = await client.api.v1.user.passkeys.register.options.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     // When passkey is disabled, the route returns 400
     expect(res.status).toBe(400);

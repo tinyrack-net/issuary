@@ -4,14 +4,13 @@ import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
-  createTestClient,
-  createTestClientWithHeaders,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -53,7 +52,7 @@ async function createUserWithPasswordAndSession(
     userId = user.id;
   });
 
-  const client = createTestClient(app);
+  const client = testClient(app);
   const loginRes = await client.api.v1.auth.login.$post({
     json: { email, password },
   });
@@ -67,7 +66,7 @@ async function createUserWithPasswordAndSession(
 
 describe('DELETE /api/v1/user/password', () => {
   test('should return 401 when not authenticated', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.user.password.$delete({
       json: {
         current_password: 'somePassword123!',
@@ -81,14 +80,15 @@ describe('DELETE /api/v1/user/password', () => {
   test('should return 403 for config users', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$delete({
-      json: {
-        current_password: 'changemelater',
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$delete(
+      {
+        json: {
+          current_password: 'changemelater',
+        },
       },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res, 403);
     expect(body.code).toBe('USER_NOT_EDITABLE');
@@ -110,7 +110,7 @@ describe('DELETE /api/v1/user/password', () => {
       await services.mikro.em.flush();
     });
 
-    const loginClient = createTestClient(app);
+    const loginClient = testClient(app);
     const loginRes = await loginClient.api.v1.auth.login.$post({
       json: {
         email,
@@ -130,14 +130,15 @@ describe('DELETE /api/v1/user/password', () => {
 
     const sessionCookie = extractCookie(loginRes, 'session');
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$delete({
-      json: {
-        current_password: 'somePassword123!',
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$delete(
+      {
+        json: {
+          current_password: 'somePassword123!',
+        },
       },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('PASSWORD_NOT_SET');
@@ -153,14 +154,15 @@ describe('DELETE /api/v1/user/password', () => {
     );
 
     // Try to delete with wrong password
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$delete({
-      json: {
-        current_password: 'wrongPassword123!',
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$delete(
+      {
+        json: {
+          current_password: 'wrongPassword123!',
+        },
       },
-    });
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res, 401);
     expect(body.code).toBe('INVALID_CURRENT_PASSWORD');
@@ -176,12 +178,13 @@ describe('DELETE /api/v1/user/password', () => {
     );
 
     // Try to delete password without any OAuth accounts
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$delete({
-      json: { current_password: password },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$delete(
+      {
+        json: { current_password: password },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('CANNOT_REMOVE_LAST_AUTH_METHOD');
@@ -209,18 +212,19 @@ describe('DELETE /api/v1/user/password', () => {
     });
 
     // Now delete password
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$delete({
-      json: { current_password: password },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$delete(
+      {
+        json: { current_password: password },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     // Verify password login no longer works
-    const verifyClient = createTestClient(app);
+    const verifyClient = testClient(app);
     const verifyLoginRes = await verifyClient.api.v1.auth.login.$post({
       json: { email, password },
     });
@@ -228,7 +232,10 @@ describe('DELETE /api/v1/user/password', () => {
     expect(verifyLoginRes.status).toBe(401);
 
     // Verify session still returns has_password: false
-    const sessionRes = await client.api.v1.user.session.$get();
+    const sessionRes = await client.api.v1.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const sessionBody = await assertJsonBody(sessionRes);
     expect(sessionBody.user).toBeDefined();
@@ -266,12 +273,13 @@ describe('DELETE /api/v1/user/password', () => {
     });
 
     // Delete password should succeed
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$delete({
-      json: { current_password: password },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$delete(
+      {
+        json: { current_password: password },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
@@ -299,12 +307,13 @@ describe('DELETE /api/v1/user/password', () => {
     });
 
     // Try to delete password without OAuth account
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$delete({
-      json: { current_password: password },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$delete(
+      {
+        json: { current_password: password },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('CANNOT_REMOVE_PASSWORD_WITH_SECOND_FACTOR_ONLY');
@@ -334,12 +343,13 @@ describe('DELETE /api/v1/user/password', () => {
     });
 
     // Try to delete password without OAuth account
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$delete({
-      json: { current_password: password },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$delete(
+      {
+        json: { current_password: password },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('CANNOT_REMOVE_PASSWORD_WITH_SECOND_FACTOR_ONLY');
@@ -376,12 +386,13 @@ describe('DELETE /api/v1/user/password', () => {
     });
 
     // Delete password should succeed
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$delete({
-      json: { current_password: password },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$delete(
+      {
+        json: { current_password: password },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);

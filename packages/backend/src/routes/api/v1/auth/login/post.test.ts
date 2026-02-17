@@ -4,7 +4,6 @@ import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
-  createTestClient,
   expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -13,6 +12,7 @@ import {
   TEST_USER,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -38,7 +38,7 @@ afterAll(async () => {
 
 describe('POST /api/v1/auth/login', () => {
   test('should login successfully with correct credentials (app config user)', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.login.$post({
       json: {
         email: TEST_USER.email,
@@ -61,7 +61,7 @@ describe('POST /api/v1/auth/login', () => {
 
     expect(registerRes.status).toBe(200);
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: {
         email: uniqueEmail,
@@ -85,7 +85,7 @@ describe('POST /api/v1/auth/login', () => {
     expect(registerRes.status).toBe(200);
 
     // Try to login - should require email verification
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: {
         email: uniqueEmail,
@@ -118,7 +118,7 @@ describe('POST /api/v1/auth/login', () => {
     });
 
     // Now login should succeed
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginRes = await client.api.v1.auth.login.$post({
       json: {
         email: uniqueEmail,
@@ -133,7 +133,7 @@ describe('POST /api/v1/auth/login', () => {
 
   test('should allow config user to login without email verification', async () => {
     // Config users should bypass email verification requirement
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.login.$post({
       json: {
         email: TEST_USER.email,
@@ -146,7 +146,7 @@ describe('POST /api/v1/auth/login', () => {
   });
 
   test('should fail with wrong password', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.login.$post({
       json: {
         email: 'admin@example.com',
@@ -158,7 +158,7 @@ describe('POST /api/v1/auth/login', () => {
   });
 
   test('should fail with non-existent email', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.login.$post({
       json: {
         email: 'nonexistent@example.com',
@@ -170,7 +170,7 @@ describe('POST /api/v1/auth/login', () => {
   });
 
   test('should fail with invalid email format', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.login.$post({
       json: {
         email: 'not-an-email',
@@ -184,7 +184,7 @@ describe('POST /api/v1/auth/login', () => {
   });
 
   test('should fail with short password', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.login.$post({
       json: {
         email: 'admin@example.com',
@@ -198,7 +198,7 @@ describe('POST /api/v1/auth/login', () => {
   });
 
   test('should fail with missing email', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.login.$post({
       // @ts-expect-error testing validation with invalid input
       json: {
@@ -212,7 +212,7 @@ describe('POST /api/v1/auth/login', () => {
   });
 
   test('should fail with missing password', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.login.$post({
       // @ts-expect-error testing validation with invalid input
       json: {
@@ -237,7 +237,7 @@ describe('POST /api/v1/auth/login', () => {
     expect(registerRes.status).toBe(200);
 
     // Verify user can login before deletion (will require email verification)
-    const client = createTestClient(app);
+    const client = testClient(app);
     const loginBeforeRes = await client.api.v1.auth.login.$post({
       json: {
         email: uniqueEmail,

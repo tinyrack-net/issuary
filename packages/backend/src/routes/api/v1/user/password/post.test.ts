@@ -5,14 +5,13 @@ import {
   assertJsonBody,
   createAuthenticatedSession,
   createDbUserWithSession,
-  createTestClient,
-  createTestClientWithHeaders,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -37,7 +36,7 @@ afterAll(async () => {
 
 describe('POST /api/v1/user/password', () => {
   test('should return 401 when not authenticated', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.user.password.$post({
       json: { password: 'newPassword123!' },
     });
@@ -50,12 +49,13 @@ describe('POST /api/v1/user/password', () => {
     // Config users cannot modify their password
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$post({
-      json: { password: 'newPassword123!' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$post(
+      {
+        json: { password: 'newPassword123!' },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res, 403);
     expect(body.code).toBe('USER_NOT_EDITABLE');
@@ -73,12 +73,13 @@ describe('POST /api/v1/user/password', () => {
     );
 
     // Try to set password again
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$post({
-      json: { password: 'anotherPassword123!' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$post(
+      {
+        json: { password: 'anotherPassword123!' },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res, 409);
     expect(body.code).toBe('PASSWORD_ALREADY_SET');
@@ -102,7 +103,7 @@ describe('POST /api/v1/user/password', () => {
       await services.mikro.em.flush();
     });
 
-    const loginClient = createTestClient(app);
+    const loginClient = testClient(app);
     const loginRes = await loginClient.api.v1.auth.login.$post({
       json: {
         email,
@@ -125,18 +126,19 @@ describe('POST /api/v1/user/password', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Now set password for OAuth-only user
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$post({
-      json: { password: newPassword },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$post(
+      {
+        json: { password: newPassword },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     const body = await assertJsonBody(res);
     expect(body.ok).toBe(true);
 
     // Verify password was set by trying to login
-    const verifyClient = createTestClient(app);
+    const verifyClient = testClient(app);
     const verifyLoginRes = await verifyClient.api.v1.auth.login.$post({
       json: { email, password: newPassword },
     });
@@ -160,7 +162,7 @@ describe('POST /api/v1/user/password', () => {
       await services.mikro.em.flush();
     });
 
-    const loginClient = createTestClient(app);
+    const loginClient = testClient(app);
     const loginRes = await loginClient.api.v1.auth.login.$post({
       json: {
         email,
@@ -181,12 +183,13 @@ describe('POST /api/v1/user/password', () => {
     const sessionCookie = extractCookie(loginRes, 'session');
 
     // Try to set a password that's too short
-    const client = createTestClientWithHeaders(app, {
-      Cookie: `session=${sessionCookie}`,
-    });
-    const res = await client.api.v1.user.password.$post({
-      json: { password: 'short' },
-    });
+    const client = testClient(app);
+    const res = await client.api.v1.user.password.$post(
+      {
+        json: { password: 'short' },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
 
     expect(res.status).toBe(400);
   });

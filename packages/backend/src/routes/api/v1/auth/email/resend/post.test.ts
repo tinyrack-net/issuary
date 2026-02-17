@@ -3,13 +3,13 @@ import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
-  createTestClient,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_USER,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
@@ -34,7 +34,7 @@ afterAll(async () => {
 
 describe('POST /api/v1/auth/email/resend', () => {
   test('should return 404 for non-existent user', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.email.resend.$post({
       header: { 'accept-language': 'en' },
       json: {
@@ -60,7 +60,7 @@ describe('POST /api/v1/auth/email/resend', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.email.resend.$post({
       header: { 'accept-language': 'en' },
       json: { email },
@@ -84,7 +84,7 @@ describe('POST /api/v1/auth/email/resend', () => {
       await services.mikro.em.persist(user).flush();
     });
 
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.email.resend.$post({
       header: { 'accept-language': 'en' },
       json: { email },
@@ -115,7 +115,7 @@ describe('POST /api/v1/auth/email/resend', () => {
     });
 
     // Resend verification email
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.email.resend.$post({
       header: { 'accept-language': 'en' },
       json: { email },
@@ -139,7 +139,7 @@ describe('POST /api/v1/auth/email/resend', () => {
   });
 
   test('should validate email format', async () => {
-    const client = createTestClient(app);
+    const client = testClient(app);
     // @ts-expect-error testing validation with invalid input
     const res = await client.api.v1.auth.email.resend.$post({
       json: {
@@ -152,7 +152,7 @@ describe('POST /api/v1/auth/email/resend', () => {
 
   test('should not require authentication', async () => {
     // This endpoint should be publicly accessible (for password reset flow)
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.email.resend.$post({
       header: { 'accept-language': 'en' },
       json: {
@@ -167,7 +167,7 @@ describe('POST /api/v1/auth/email/resend', () => {
   test('should return 404 for config user', async () => {
     // Config users exist but cannot have email verification resent
     // The endpoint should find the user and check email_verified status
-    const client = createTestClient(app);
+    const client = testClient(app);
     const res = await client.api.v1.auth.email.resend.$post({
       header: { 'accept-language': 'en' },
       json: {
