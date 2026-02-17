@@ -66,13 +66,13 @@ identity_providers:
 OAuth 제공자에 애플리케이션을 등록할 때 콜백(리다이렉트) URL을 지정해야 해요. `tinyauth`의 콜백 URL은 다음 형식이에요.
 
 ```
-{app.host}/application/oauth/{id}/callback
+{app.host}/api/oauth/{id}/callback
 ```
 
 예를 들어, `app.host`가 `https://auth.example.com`이고 `id`가 `google`인 경우:
 
 ```
-https://auth.example.com/application/oauth/google/callback
+https://auth.example.com/api/oauth/google/callback
 ```
 
 각 제공자별 상세 설정 방법은 해당 가이드를 참고해 주세요.

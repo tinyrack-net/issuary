@@ -18,7 +18,7 @@ Apple 로그인(Sign in with Apple)을 사용하면 사용자가 Apple ID로 `ti
    - **Domains and Subdomains**에 도메인을 추가해요 (예: `auth.example.com`).
    - **Return URLs**에 콜백 URL을 추가해요:
      ```
-     https://내_도메인.com/application/oauth/apple/callback
+     https://내_도메인.com/api/oauth/apple/callback
      ```
 5. **Keys**에서 새로운 키를 만들고 **Sign in with Apple**을 활성화해요. 다운로드한 `.p8` 파일과 **Key ID**를 안전하게 보관해요.
 
@@ -73,5 +73,5 @@ identity_providers:
 이 경우 Apple Developer의 Return URL은 다음과 같이 설정해야 해요.
 
 ```
-https://auth.example.com/application/oauth/apple/callback
+https://auth.example.com/api/oauth/apple/callback
 ```
