@@ -15,7 +15,7 @@ import { ApiError, e } from '@backend/schemas/error.js';
 import { initializeServices } from '@backend/services/container.js';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import type { ContentfulStatusCode } from 'hono/utils/http-status';
+
 import { openAPIRouteHandler } from 'hono-openapi';
 
 export interface CreateAppOptions {
@@ -52,15 +52,12 @@ export async function createApp(options: CreateAppOptions) {
   const honoApp = new Hono<AppEnv>()
     .onError((err, c) => {
       if (err instanceof ApiError) {
-        return c.json(err.toJson(), err.status as ContentfulStatusCode);
+        return c.json(err.toJson(), err.status);
       }
 
       console.error('Unhandled error:', err);
       const internalErr = new e.InternalServerError.Error();
-      return c.json(
-        internalErr.toJson(),
-        internalErr.status as ContentfulStatusCode,
-      );
+      return c.json(internalErr.toJson(), internalErr.status);
     })
     .use(
       '*',

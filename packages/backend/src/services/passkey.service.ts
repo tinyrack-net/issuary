@@ -90,7 +90,7 @@ export class PasskeyService {
       // Prevent re-registering existing credentials
       excludeCredentials: existingPasskeys.map((passkey) => ({
         id: passkey.credential_id,
-        transports: passkey.transports as AuthenticatorTransportFuture[],
+        transports: passkey.transports ?? undefined,
       })),
       authenticatorSelection: {
         // Prefer resident keys for passwordless authentication
@@ -141,10 +141,7 @@ export class PasskeyService {
       counter: Number(credential.counter),
       device_type: credentialDeviceType,
       backed_up: credentialBackedUp,
-      transports:
-        (response.response.transports as
-          | AuthenticatorTransportFuture[]
-          | undefined) ?? null,
+      transports: response.response.transports ?? null,
       name: passkeyName ?? null,
       aaguid: verification.registrationInfo.aaguid ?? null,
     });
@@ -172,7 +169,7 @@ export class PasskeyService {
       allowCredentials = userPasskeys.map((passkey) => ({
         id: passkey.credential_id,
         ...(passkey.transports && {
-          transports: passkey.transports as AuthenticatorTransportFuture[],
+          transports: passkey.transports,
         }),
       }));
     }
@@ -214,7 +211,7 @@ export class PasskeyService {
         publicKey: isoBase64URL.toBuffer(passkey.public_key),
         counter: passkey.counter,
         ...(passkey.transports && {
-          transports: passkey.transports as AuthenticatorTransportFuture[],
+          transports: passkey.transports,
         }),
       },
     });

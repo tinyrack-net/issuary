@@ -67,8 +67,8 @@ function createSessionHelper(
       changed.value = true;
     },
     delete(): void {
-      for (const key of Object.keys(data) as (keyof SessionData)[]) {
-        delete data[key];
+      for (const key of Object.keys(data)) {
+        Reflect.deleteProperty(data, key);
       }
       changed.value = true;
     },
@@ -114,6 +114,8 @@ export function sessionMiddleware(cookieSecret: string, isSecure: boolean) {
       const decrypted = decrypt(cookieValue, cookieSecret);
       if (decrypted) {
         try {
+          // Cast is acceptable: we encrypt/decrypt our own
+          // SessionData, so the parsed shape is trusted.
           sessionData = JSON.parse(decrypted) as SessionData;
         } catch {
           sessionData = {};
