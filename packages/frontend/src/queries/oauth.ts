@@ -4,7 +4,7 @@ import type { InferResponseType } from 'hono/client';
 import { queryKeys } from './keys';
 
 export type OAuthAccountsResponse = InferResponseType<
-  (typeof api.api.v1.user)['oauth-accounts']['$get'],
+  (typeof api.api.user)['oauth-accounts']['$get'],
   200
 >;
 
@@ -19,7 +19,7 @@ export type OAuthProviderWithStatus =
 export const oauthAccountsQueryOptions = queryOptions({
   queryKey: queryKeys.oauth.accounts(),
   queryFn: async () => {
-    const res = await api.api.v1.user['oauth-accounts'].$get();
+    const res = await api.api.user['oauth-accounts'].$get();
     return jsonOk(res);
   },
 });
@@ -29,7 +29,7 @@ export const oauthAccountsQueryOptions = queryOptions({
  */
 export const unlinkOAuthMutationOptions = mutationOptions({
   mutationFn: async (providerId: string) => {
-    const res = await api.api.v1.oauth[':provider'].$delete({
+    const res = await api.api.oauth[':provider'].$delete({
       param: { provider: providerId },
     });
     return jsonOk(res);
@@ -45,7 +45,7 @@ export function getOAuthAuthorizeUrl(
   returnUrl?: string,
 ): string {
   const url = new URL(
-    `/api/v1/oauth/${providerId}/authorize`,
+    `/api/oauth/${providerId}/authorize`,
     window.location.origin,
   );
   url.searchParams.set('mode', mode);

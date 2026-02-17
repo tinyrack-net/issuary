@@ -9,14 +9,14 @@ import { queryKeys } from './keys';
 import type { AuthResponse } from './session';
 
 export type PasskeysResponse = InferResponseType<
-  (typeof api.api.v1.user.passkeys)['$get'],
+  (typeof api.api.user.passkeys)['$get'],
   200
 >;
 
 export type PasskeyInfo = PasskeysResponse['passkeys'][number];
 
 export type PasskeySetupVerifyResponse = InferResponseType<
-  (typeof api.api.v1.user.passkeys.register.verify)['$post'],
+  (typeof api.api.user.passkeys.register.verify)['$post'],
   200
 >;
 
@@ -26,7 +26,7 @@ export type PasskeySetupVerifyResponse = InferResponseType<
 export const getPasskeysQueryOptions = queryOptions({
   queryKey: queryKeys.passkeys(),
   queryFn: async () => {
-    const res = await api.api.v1.user.passkeys.$get();
+    const res = await api.api.user.passkeys.$get();
     return jsonOk(res);
   },
 });
@@ -41,7 +41,7 @@ export type RegisterPasskeyParams = {
 export const registerPasskeyMutationOptions = mutationOptions({
   mutationFn: async (params: RegisterPasskeyParams) => {
     // Step 1: Get registration options from server
-    const optionsRes = await api.api.v1.user.passkeys.register.options.$post();
+    const optionsRes = await api.api.user.passkeys.register.options.$post();
     const { options } = await jsonOk(optionsRes);
 
     // Step 2: Start WebAuthn registration in browser
@@ -50,7 +50,7 @@ export const registerPasskeyMutationOptions = mutationOptions({
     });
 
     // Step 3: Send registration response to server
-    const verifyRes = await api.api.v1.user.passkeys.register.verify.$post({
+    const verifyRes = await api.api.user.passkeys.register.verify.$post({
       json: {
         response: registrationResponse,
         name: params.name,
@@ -69,7 +69,7 @@ export type DeletePasskeyParams = {
 
 export const deletePasskeyMutationOptions = mutationOptions({
   mutationFn: async (params: DeletePasskeyParams) => {
-    const res = await api.api.v1.user.passkeys[':id'].$delete({
+    const res = await api.api.user.passkeys[':id'].$delete({
       param: { id: params.id },
     });
     return jsonOk(res);
@@ -86,7 +86,7 @@ export type RenamePasskeyParams = {
 
 export const renamePasskeyMutationOptions = mutationOptions({
   mutationFn: async (params: RenamePasskeyParams) => {
-    const res = await api.api.v1.user.passkeys[':id'].$patch({
+    const res = await api.api.user.passkeys[':id'].$patch({
       param: { id: params.id },
       json: { name: params.name },
     });
@@ -107,7 +107,7 @@ export const renamePasskeyMutationOptions = mutationOptions({
 export const authenticateWithPasskeyMutationOptions = mutationOptions({
   mutationFn: async () => {
     // Step 1: Get authentication options from server
-    const optionsRes = await api.api.v1.auth.passkey.options.$post();
+    const optionsRes = await api.api.auth.passkey.options.$post();
     const { options } = await jsonOk(optionsRes);
 
     // Step 2: Start WebAuthn authentication in browser
@@ -116,7 +116,7 @@ export const authenticateWithPasskeyMutationOptions = mutationOptions({
     });
 
     // Step 3: Send authentication response to server
-    const verifyRes = await api.api.v1.auth.passkey.verify.$post({
+    const verifyRes = await api.api.auth.passkey.verify.$post({
       json: {
         response: {
           ...authenticationResponse,
@@ -155,7 +155,7 @@ export const startConditionalPasskeyAuth = async (
 ): Promise<void> => {
   try {
     // Step 1: Get authentication options from server
-    const optionsRes = await api.api.v1.auth.passkey.options.$post(
+    const optionsRes = await api.api.auth.passkey.options.$post(
       {},
       { init: { signal: abortSignal } },
     );
@@ -168,7 +168,7 @@ export const startConditionalPasskeyAuth = async (
     });
 
     // Step 3: Send authentication response to server
-    const verifyRes = await api.api.v1.auth.passkey.verify.$post(
+    const verifyRes = await api.api.auth.passkey.verify.$post(
       {
         json: {
           response: {

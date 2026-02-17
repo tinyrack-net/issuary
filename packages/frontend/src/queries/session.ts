@@ -4,7 +4,7 @@ import type { InferResponseType } from 'hono/client';
 import { queryKeys } from './keys';
 
 type SessionGetResponse = InferResponseType<
-  (typeof api.api.v1.user.session)['$get'],
+  (typeof api.api.user.session)['$get'],
   200
 >;
 
@@ -13,14 +13,14 @@ export type SessionUser = NonNullable<SessionGetResponse['user']>;
 export type AuthResponse = SessionGetResponse;
 
 export type OkResponse = InferResponseType<
-  (typeof api.api.v1.auth.logout)['$post'],
+  (typeof api.api.auth.logout)['$post'],
   200
 >;
 
 export const getSessionQueryOptions = queryOptions({
   queryKey: queryKeys.session(),
   queryFn: async () => {
-    const response = await api.api.v1.user.session.$get();
+    const response = await api.api.user.session.$get();
     return jsonOk(response);
   },
 });

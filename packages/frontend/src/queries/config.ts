@@ -5,7 +5,7 @@ import type { InferResponseType } from 'hono/client';
 import { queryKeys } from './keys';
 
 export type AppConfigs = InferResponseType<
-  (typeof api.api.v1.config)['$get'],
+  (typeof api.api.config)['$get'],
   200
 >;
 
@@ -18,7 +18,7 @@ export type OAuthProviderType = OAuthAuthenticationMethod['type'];
 export const appConfigQueryOptions = queryOptions({
   queryKey: queryKeys.config(),
   queryFn: async () => {
-    const response = await api.api.v1.config.$get();
+    const response = await api.api.config.$get();
     return jsonOk(response);
   },
   select: (data) => {

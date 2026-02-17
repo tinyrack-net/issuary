@@ -6,23 +6,23 @@
  */
 export const queryKeys = {
   // 세션
-  session: () => ['/api/v1/user/session'] as const,
+  session: () => ['/api/user/session'] as const,
 
   // 앱 설정
-  config: () => ['/api/v1/config'] as const,
+  config: () => ['/api/config'] as const,
 
   // OAuth
   oauth: {
-    accounts: () => ['/api/v1/user/oauth-accounts'] as const,
+    accounts: () => ['/api/user/oauth-accounts'] as const,
   },
 
   // 동의 (Consent)
   consent: (clientId: string, scope?: string) =>
-    ['/api/v1/consent', clientId, scope] as const,
+    ['/api/consent', clientId, scope] as const,
 
   // Passkeys
-  passkeys: () => ['/api/v1/user/passkeys'] as const,
+  passkeys: () => ['/api/user/passkeys'] as const,
 
   // Terms
-  terms: (lang?: string) => ['/api/v1/terms', lang] as const,
+  terms: (lang?: string) => ['/api/terms', lang] as const,
 } as const;

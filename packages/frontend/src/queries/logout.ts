@@ -3,7 +3,7 @@ import { mutationOptions } from '@tanstack/react-query';
 
 export const logoutMutationOptions = mutationOptions({
   mutationFn: async () => {
-    const res = await api.api.v1.auth.logout.$post();
+    const res = await api.api.auth.logout.$post();
     return jsonOk(res);
   },
 });

@@ -4,7 +4,7 @@ import type { InferRequestType, InferResponseType } from 'hono/client';
 import { queryKeys } from './keys';
 
 export type TermsResponse = InferResponseType<
-  (typeof api.api.v1.terms)['$get'],
+  (typeof api.api.terms)['$get'],
   200
 >;
 
@@ -19,7 +19,7 @@ export const getTermsQueryOptions = (lang?: string) =>
   queryOptions({
     queryKey: queryKeys.terms(lang),
     queryFn: async () => {
-      const res = await api.api.v1.terms.$get({
+      const res = await api.api.terms.$get({
         query: { lang: lang ?? 'en' },
       });
       return jsonOk(res);
@@ -30,21 +30,21 @@ export const getTermsQueryOptions = (lang?: string) =>
  * Consent decision for a term
  */
 export type TermsConsentItem = InferRequestType<
-  (typeof api.api.v1.terms.consent)['$post']
+  (typeof api.api.terms.consent)['$post']
 >['json']['consents'][number];
 
 /**
  * Terms consent request
  */
 export type TermsConsentRequest = InferRequestType<
-  (typeof api.api.v1.terms.consent)['$post']
+  (typeof api.api.terms.consent)['$post']
 >['json'];
 
 /**
  * Terms consent response
  */
 export type TermsConsentResponse = InferResponseType<
-  (typeof api.api.v1.terms.consent)['$post'],
+  (typeof api.api.terms.consent)['$post'],
   200
 >;
 
@@ -53,7 +53,7 @@ export type TermsConsentResponse = InferResponseType<
  */
 export const termsConsentMutationOptions = mutationOptions({
   mutationFn: async (params: TermsConsentRequest) => {
-    const res = await api.api.v1.terms.consent.$post({
+    const res = await api.api.terms.consent.$post({
       json: params,
     });
     return jsonOk(res);

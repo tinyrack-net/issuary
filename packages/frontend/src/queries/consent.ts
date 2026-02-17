@@ -9,7 +9,7 @@ export type ConsentInfoParams = {
 };
 
 export type ConsentInfoResponse = InferResponseType<
-  (typeof api.api.v1.consent)['$get'],
+  (typeof api.api.consent)['$get'],
   200
 >;
 
@@ -19,7 +19,7 @@ export const getConsentInfoQueryOptions = (params: ConsentInfoParams) =>
   queryOptions({
     queryKey: queryKeys.consent(params.client_id, params.scope),
     queryFn: async () => {
-      const res = await api.api.v1.consent.$get({
+      const res = await api.api.consent.$get({
         query: {
           client_id: params.client_id,
           scope: params.scope,
@@ -30,17 +30,17 @@ export const getConsentInfoQueryOptions = (params: ConsentInfoParams) =>
   });
 
 export type ConsentDecisionParams = InferRequestType<
-  (typeof api.api.v1.consent)['$post']
+  (typeof api.api.consent)['$post']
 >['json'];
 
 export type ConsentDecisionResponse = InferResponseType<
-  (typeof api.api.v1.consent)['$post'],
+  (typeof api.api.consent)['$post'],
   200
 >;
 
 export const consentDecisionMutationOptions = mutationOptions({
   mutationFn: async (params: ConsentDecisionParams) => {
-    const res = await api.api.v1.consent.$post({
+    const res = await api.api.consent.$post({
       json: params,
     });
     return jsonOk(res);

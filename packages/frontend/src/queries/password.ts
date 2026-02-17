@@ -6,12 +6,12 @@ import type { InferRequestType } from 'hono/client';
  * Set password for OAuth-only users
  */
 export type SetPasswordParams = InferRequestType<
-  (typeof api.api.v1.user.password)['$post']
+  (typeof api.api.user.password)['$post']
 >['json'];
 
 export const setPasswordMutationOptions = mutationOptions({
   mutationFn: async (values: SetPasswordParams) => {
-    const res = await api.api.v1.user.password.$post({
+    const res = await api.api.user.password.$post({
       json: values,
     });
     return jsonOk(res);
@@ -22,12 +22,12 @@ export const setPasswordMutationOptions = mutationOptions({
  * Change password for users who already have a password
  */
 export type ChangePasswordParams = InferRequestType<
-  (typeof api.api.v1.user.password)['$put']
+  (typeof api.api.user.password)['$put']
 >['json'];
 
 export const changePasswordMutationOptions = mutationOptions({
   mutationFn: async (values: ChangePasswordParams) => {
-    const res = await api.api.v1.user.password.$put({
+    const res = await api.api.user.password.$put({
       json: values,
     });
     return jsonOk(res);
@@ -39,12 +39,12 @@ export const changePasswordMutationOptions = mutationOptions({
  * OAuth account linked)
  */
 export type RemovePasswordParams = InferRequestType<
-  (typeof api.api.v1.user.password)['$delete']
+  (typeof api.api.user.password)['$delete']
 >['json'];
 
 export const removePasswordMutationOptions = mutationOptions({
   mutationFn: async (values: RemovePasswordParams) => {
-    const res = await api.api.v1.user.password.$delete({
+    const res = await api.api.user.password.$delete({
       json: values,
     });
     return jsonOk(res);
