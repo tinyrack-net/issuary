@@ -1,5 +1,6 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { r } from '@backend/schemas/response.js';
 import { Hono } from 'hono';
@@ -38,12 +39,10 @@ export const userOauthAccountsGet = new Hono<AppEnv>().get(
       },
     },
   }),
+  verifyAuth(),
   async (c) => {
-    const auth = c.get('auth');
+    const userSession = c.get('verifiedUser');
     const { oauthConnectService } = c.get('services');
-
-    // Check if user is logged in
-    const userSession = await auth.verify();
 
     // Get linked accounts
     const accounts = await oauthConnectService.getLinkedAccounts(

@@ -1,6 +1,7 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { calculatePermanentDeletionDate } from '@backend/lib/config/index.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { r } from '@backend/schemas/response.js';
 import { Hono } from 'hono';
@@ -62,15 +63,15 @@ export const userDelete = new Hono<AppEnv>().delete(
       },
     },
   }),
+  verifyAuth(),
   async (c) => {
     const { config, mikro } = c.get('services');
-    const auth = c.get('auth');
     const session = c.get('session');
 
     if (!config.app.account_deletion) {
       throw new e.AccountDeletionDisabled.Error();
     }
-    const userSession = await auth.verify();
+    const userSession = c.get('verifiedUser');
 
     if (userSession.managed_by === 'config') {
       throw new e.UserNotEditable.Error();
@@ -99,7 +100,7 @@ export const userDelete = new Hono<AppEnv>().delete(
 
     return c.json(
       {
-        ok: true as const,
+        ok: true,
         deleted_at: user.deleted_at.toISOString(),
         permanent_deletion_at: permanentDeletionDate.toISOString(),
       },
