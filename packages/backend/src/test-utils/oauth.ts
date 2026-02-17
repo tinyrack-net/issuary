@@ -98,7 +98,7 @@ export async function getAuthorizationCode(
     ...(nonce != null ? { nonce } : {}),
   };
 
-  const res = await client.application.oauth.authorize.$get(
+  const res = await client.oauth.authorize.$get(
     { query: authorizeQuery },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
@@ -158,14 +158,14 @@ export async function exchangeCodeForTokens(
   } = params;
 
   const client = testClient(app);
-  return client.application.oauth.token.$post({
-    json: {
+  return client.oauth.token.$post({
+    form: {
       grant_type: 'authorization_code',
       code,
       client_id: clientId,
       redirect_uri: redirectUri,
-      client_secret: clientSecret,
-      code_verifier: codeVerifier,
+      ...(clientSecret != null ? { client_secret: clientSecret } : {}),
+      ...(codeVerifier != null ? { code_verifier: codeVerifier } : {}),
     },
   });
 }
@@ -197,12 +197,12 @@ export async function refreshAccessToken(
   } = params;
 
   const client = testClient(app);
-  return client.application.oauth.token.$post({
-    json: {
+  return client.oauth.token.$post({
+    form: {
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
       client_id: clientId,
-      client_secret: clientSecret,
+      ...(clientSecret != null ? { client_secret: clientSecret } : {}),
     },
   });
 }
@@ -281,7 +281,7 @@ export async function getUserInfo(
   accessToken: string,
 ): Promise<Response> {
   const client = testClient(app);
-  return client.application.oauth.userinfo.$get({
+  return client.oauth.userinfo.$get({
     header: {
       authorization: `Bearer ${accessToken}`,
     },
@@ -324,12 +324,12 @@ export async function introspectToken(
   } = params;
 
   const client = testClient(app);
-  return client.application.oauth.introspect.$post({
-    json: {
+  return client.oauth.introspect.$post({
+    form: {
       token,
-      token_type_hint: tokenTypeHint,
-      client_id: clientId,
-      client_secret: clientSecret,
+      ...(tokenTypeHint != null ? { token_type_hint: tokenTypeHint } : {}),
+      ...(clientId != null ? { client_id: clientId } : {}),
+      ...(clientSecret != null ? { client_secret: clientSecret } : {}),
     },
   });
 }
@@ -369,12 +369,12 @@ export async function revokeToken(
   } = params;
 
   const client = testClient(app);
-  return client.application.oauth.revoke.$post({
-    json: {
+  return client.oauth.revoke.$post({
+    form: {
       token,
-      token_type_hint: tokenTypeHint,
-      client_id: clientId,
-      client_secret: clientSecret,
+      ...(tokenTypeHint != null ? { token_type_hint: tokenTypeHint } : {}),
+      ...(clientId != null ? { client_id: clientId } : {}),
+      ...(clientSecret != null ? { client_secret: clientSecret } : {}),
     },
   });
 }

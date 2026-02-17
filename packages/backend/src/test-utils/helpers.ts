@@ -48,7 +48,7 @@ export async function createAuthenticatedSession(
   password: string = TEST_USER.password,
 ): Promise<string> {
   const client = testClient(app);
-  const res = await client.api.v1.auth.login.$post({
+  const res = await client.api.auth.login.$post({
     json: { email, password },
   });
 
@@ -97,7 +97,7 @@ export interface ErrorDefinition {
  * import { expectError } from '@backend/test-utils/index.js';
  *
  * const client = testClient(app);
- * const res = await client.api.v1.auth.login.$post({
+ * const res = await client.api.auth.login.$post({
  *   json: { email: 'wrong@example.com', password: 'wrong' },
  * });
  * await expectError(res, e.InvalidEmailOrPassword);
@@ -154,7 +154,7 @@ export async function createDbUserWithSession(
   });
 
   const client = testClient(app);
-  const loginRes = await client.api.v1.auth.login.$post({
+  const loginRes = await client.api.auth.login.$post({
     json: { email, password },
   });
 
@@ -281,7 +281,7 @@ export async function grantConsent(
 ): Promise<string> {
   const client = testClient(app);
 
-  const res = await client.api.v1.consent.$post(
+  const res = await client.api.consent.$post(
     {
       json: {
         client_id: params.client_id,
@@ -355,7 +355,7 @@ export async function registerUser(
   } = options;
 
   const client = testClient(app);
-  return client.api.v1.auth.register.$post({
+  return client.api.auth.register.$post({
     header: {},
     json: {
       email,

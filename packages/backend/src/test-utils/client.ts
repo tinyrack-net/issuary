@@ -72,7 +72,7 @@ type JsonResponseBody<
  *
  * @example
  * ```typescript
- * const res = await client.api.v1.auth.login.$post({
+ * const res = await client.api.auth.login.$post({
  *   json: { email: 'user@example.com', password: 'pass' },
  * });
  * // body is typed as the 200 response schema (AuthResponse)

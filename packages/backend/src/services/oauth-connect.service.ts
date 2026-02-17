@@ -150,7 +150,7 @@ export class OAuthConnectService {
 
     const params = new URLSearchParams({
       client_id: provider.client_id,
-      redirect_uri: `${this.config.app.host}/api/v1/oauth/${providerId}/callback`,
+      redirect_uri: `${this.config.app.host}/api/oauth/${providerId}/callback`,
       response_type: 'code',
       scope: provider.scopes.join(' '),
       state,
@@ -189,7 +189,7 @@ export class OAuthConnectService {
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: `${this.config.app.host}/api/v1/oauth/${providerId}/callback`,
+      redirect_uri: `${this.config.app.host}/api/oauth/${providerId}/callback`,
       client_id: provider.client_id,
       client_secret: provider.client_secret,
       code_verifier: codeVerifier,

@@ -61,7 +61,7 @@ const TermItem = z
   .describe('Term item with user consent');
 
 /**
- * GET /api/v1/terms response
+ * GET /api/terms response
  */
 const TermsResponse = z
   .object({
@@ -85,7 +85,7 @@ const ConsentItem = z.object({
 });
 
 /**
- * POST /api/v1/terms/consent request body
+ * POST /api/terms/consent request body
  */
 const TermsConsentRequest = z
   .object({
@@ -94,7 +94,7 @@ const TermsConsentRequest = z
   .describe('Terms consent request');
 
 /**
- * POST /api/v1/terms/consent response
+ * POST /api/terms/consent response
  */
 const TermsConsentResponse = z
   .object({
