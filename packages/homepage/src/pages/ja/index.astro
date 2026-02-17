@@ -1,13 +1,12 @@
 ---
 import { Card, CardGrid } from '@astrojs/starlight/components';
-import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import HomePageLayout from '../../components/HomePageLayout.astro';
 ---
 
-<StarlightPage
+<HomePageLayout
   frontmatter={{
     title: 'Tinyrack Auth',
     description: 'モダンアプリケーション向けの軽量OpenID Connect (OIDC) プロバイダー',
-    template: 'splash',
     hero: {
       tagline: 'シンプルで安全な認証。アプリケーションのための完全なOAuth2/OIDCソリューション。',
       actions: [
@@ -33,4 +32,4 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
       最適なパフォーマンスのためにFastify、React、TanStack Router、Tailwind CSSで構築されています。
     </Card>
   </CardGrid>
-</StarlightPage>
+</HomePageLayout>

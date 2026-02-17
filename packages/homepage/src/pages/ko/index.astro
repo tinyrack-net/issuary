@@ -1,36 +1,12 @@
 ---
-import { Card, CardGrid } from '@astrojs/starlight/components';
-import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import HomePageLayout from '../../components/HomePageLayout.astro';
 ---
 
-<StarlightPage
+<HomePageLayout
   frontmatter={{
     title: 'Tinyrack Auth',
     description: '모던 애플리케이션을 위한 경량 OpenID Connect (OIDC) 프로바이더',
-    template: 'splash',
-    hero: {
-      tagline: '간편하고 안전한 인증. 애플리케이션을 위한 완전한 OAuth2/OIDC 솔루션.',
-      actions: [
-        { text: '시작하기', link: '/ko/getting-started/introduction/', icon: 'right-arrow' },
-        { text: 'GitHub에서 보기', link: 'https://github.com/tinyrack/auth', icon: 'external', variant: 'minimal' },
-      ],
-    },
   }}
 >
-  <h2>주요 기능</h2>
-
-  <CardGrid stagger>
-    <Card title="OAuth2 & OIDC" icon="approve-check">
-      PKCE를 지원하는 Authorization Code Flow와 함께 OAuth2 및 OpenID Connect 프로토콜을 완벽하게 구현합니다.
-    </Card>
-    <Card title="다양한 인증 방식" icon="setting">
-      비밀번호 기반 인증, WebAuthn/패스키, TOTP 2FA, 소셜 로그인(Google, GitHub, Apple)을 지원합니다.
-    </Card>
-    <Card title="다국어 지원" icon="translate">
-      한국어, 영어, 일본어를 기본 지원하는 내장 국제화 기능을 제공합니다.
-    </Card>
-    <Card title="최신 기술 스택" icon="rocket">
-      최적의 성능을 위해 Fastify, React, TanStack Router, Tailwind CSS로 구축되었습니다.
-    </Card>
-  </CardGrid>
-</StarlightPage>
+  <div>content</div>
+</HomePageLayout>
