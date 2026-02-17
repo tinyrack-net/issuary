@@ -1,5 +1,5 @@
 import { decrypt, encrypt } from '@backend/lib/crypto.js';
-import { getCookie, setCookie } from 'hono/cookie';
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { createMiddleware } from 'hono/factory';
 
 export type SessionEnv = { Variables: { session: SessionHelper } };
@@ -62,57 +62,6 @@ export interface SessionHelper {
   clearAuthSessions(): void;
 }
 
-function createSessionHelper(
-  data: SessionData,
-  changed: { value: boolean },
-): SessionHelper {
-  return {
-    get<K extends keyof SessionData>(key: K): SessionData[K] {
-      return data[key];
-    },
-    set<K extends keyof SessionData>(key: K, value: SessionData[K]): void {
-      data[key] = value;
-      changed.value = true;
-    },
-    delete(): void {
-      for (const key of Object.keys(data)) {
-        Reflect.deleteProperty(data, key);
-      }
-      changed.value = true;
-    },
-    setUserSession(userId: string, authenticatedAt?: number): void {
-      delete data.pending2FAUser;
-      delete data.pending2FASetup;
-      data.user = {
-        id: userId,
-        authenticated_at: authenticatedAt ?? Math.floor(Date.now() / 1000),
-      };
-      changed.value = true;
-    },
-    setPending2FASession(userId: string, authenticatedAt?: number): void {
-      delete data.user;
-      delete data.pending2FASetup;
-      data.pending2FAUser = {
-        id: userId,
-        authenticated_at: authenticatedAt ?? Math.floor(Date.now() / 1000),
-      };
-      changed.value = true;
-    },
-    setPending2FASetupSession(userId: string): void {
-      delete data.user;
-      delete data.pending2FAUser;
-      data.pending2FASetup = { id: userId };
-      changed.value = true;
-    },
-    clearAuthSessions(): void {
-      delete data.user;
-      delete data.pending2FAUser;
-      delete data.pending2FASetup;
-      changed.value = true;
-    },
-  };
-}
-
 export function sessionMiddleware(cookieSecret: string, isSecure: boolean) {
   return createMiddleware<SessionEnv>(async (c, next) => {
     const cookieValue = getCookie(c, 'session');
@@ -131,14 +80,61 @@ export function sessionMiddleware(cookieSecret: string, isSecure: boolean) {
       }
     }
 
-    const changed = { value: false };
-    const session = createSessionHelper(sessionData, changed);
-    c.set('session', session);
+    let changed = false;
+    const data: SessionData = new Proxy(sessionData, {
+      set(target, prop, value) {
+        changed = true;
+        return Reflect.set(target, prop, value);
+      },
+      deleteProperty(target, prop) {
+        changed = true;
+        return Reflect.deleteProperty(target, prop);
+      },
+    });
+
+    c.set('session', {
+      get<K extends keyof SessionData>(key: K): SessionData[K] {
+        return data[key];
+      },
+      set<K extends keyof SessionData>(key: K, value: SessionData[K]): void {
+        data[key] = value;
+      },
+      delete(): void {
+        for (const key of Object.keys(data)) {
+          Reflect.deleteProperty(data, key);
+        }
+      },
+      setUserSession(userId: string, authenticatedAt?: number): void {
+        delete data.pending2FAUser;
+        delete data.pending2FASetup;
+        data.user = {
+          id: userId,
+          authenticated_at: authenticatedAt ?? Math.floor(Date.now() / 1000),
+        };
+      },
+      setPending2FASession(userId: string, authenticatedAt?: number): void {
+        delete data.user;
+        delete data.pending2FASetup;
+        data.pending2FAUser = {
+          id: userId,
+          authenticated_at: authenticatedAt ?? Math.floor(Date.now() / 1000),
+        };
+      },
+      setPending2FASetupSession(userId: string): void {
+        delete data.user;
+        delete data.pending2FAUser;
+        data.pending2FASetup = { id: userId };
+      },
+      clearAuthSessions(): void {
+        delete data.user;
+        delete data.pending2FAUser;
+        delete data.pending2FASetup;
+      },
+    });
 
     await next();
 
-    // Only set cookie if session was modified
-    if (changed.value) {
+    if (changed) {
       const hasData = Object.values(sessionData).some((v) => v !== undefined);
       if (hasData) {
         const encrypted = encrypt(JSON.stringify(sessionData), cookieSecret);
@@ -149,14 +145,7 @@ export function sessionMiddleware(cookieSecret: string, isSecure: boolean) {
           sameSite: 'Lax',
         });
       } else {
-        // Clear the cookie if session is empty
-        setCookie(c, 'session', '', {
-          path: '/',
-          httpOnly: true,
-          secure: isSecure,
-          sameSite: 'Lax',
-          maxAge: 0,
-        });
+        deleteCookie(c, 'session', { path: '/' });
       }
     }
   });
