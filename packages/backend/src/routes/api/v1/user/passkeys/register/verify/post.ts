@@ -86,7 +86,10 @@ export const userPasskeyRegisterVerifyPost = new Hono<AppEnv>().post(
       id: userId,
     });
 
-    // Cast for @simplewebauthn compatibility
+    // Cast for @simplewebauthn compatibility - Zod's inferred type
+    // (Record<string, any>) is not structurally assignable to
+    // @simplewebauthn's RegistrationResponseJSON due to index signature
+    // differences. The refine() above validates the structure at runtime.
     const registrationResponse =
       body.response as unknown as RegistrationResponseJSON;
 

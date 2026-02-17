@@ -78,7 +78,9 @@ export const authPasskeyVerifyPost = new Hono<AppEnv>().post(
 
     session.set('passkey_challenge', undefined);
 
-    // Extract and cast the validated response
+    // Cast for @simplewebauthn compatibility - Zod's inferred type
+    // differs from @simplewebauthn's AuthenticationResponseJSON due to
+    // exactOptionalPropertyTypes (userHandle?: string | undefined vs string).
     const authResponse = body.response as AuthenticationResponseJSON;
 
     const passkeyUser = await passkeyService.verifyAuthentication(
