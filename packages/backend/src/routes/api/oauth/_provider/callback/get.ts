@@ -92,7 +92,8 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
     const { provider } = params;
     const { code, state, error, error_description } = query;
     const session = c.get('session');
-    const { config, oauthConnectService, termsService } = c.get('services');
+    const { config, mikro, oauthConnectService, termsService } =
+      c.get('services');
 
     // Handle OAuth error response
     if (error) {
@@ -198,25 +199,27 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
     const explicitTerms = await termsService.getExplicitTerms(allTerms);
 
     if (isNewUser && explicitTerms.length > 0) {
-      // New user with explicit terms: store in session
-      session.set('pendingOAuthRegistration', {
-        providerId: provider,
-        tokens: {
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token,
-          expires_in: tokens.expires_in,
-          token_type: tokens.token_type,
-        },
-        userInfo: {
-          id: userInfo.id,
-          email: userInfo.email,
-          email_verified: userInfo.email_verified,
-          name: userInfo.name,
-          picture: userInfo.picture,
-        },
-        returnUrl: oauthSession.returnUrl,
-        expiresAt: Date.now() + 60 * 60 * 1000,
-      });
+      // New user with explicit terms: persist to DB (avoids cookie size limits)
+      const pendingToken =
+        await mikro.pendingOAuthRegistration.createPendingRegistration({
+          providerId: provider,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+          expiresIn: tokens.expires_in,
+          tokenType: tokens.token_type,
+          userInfo: {
+            id: userInfo.id,
+            email: userInfo.email,
+            email_verified: userInfo.email_verified,
+            name: userInfo.name,
+            picture: userInfo.picture,
+          },
+          returnUrl: oauthSession.returnUrl,
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        });
+
+      // Store only a lightweight lookup token in the session cookie
+      session.set('pendingOAuthRegistrationToken', pendingToken);
 
       // Clear OAuth flow session
       session.set('oauth', undefined);
