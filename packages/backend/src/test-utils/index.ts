@@ -56,13 +56,10 @@ export type {
 // OAuth-specific helpers
 export {
   exchangeCodeForTokens,
-  expectLoginRedirect,
-  expectRedirectError,
   getAccessToken,
   getAuthorizationCode,
   getUserInfo,
   introspectToken,
-  parseRedirectLocation,
   refreshAccessToken,
   revokeToken,
 } from './oauth.js';

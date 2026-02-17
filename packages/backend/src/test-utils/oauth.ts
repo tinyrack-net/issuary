@@ -1,82 +1,7 @@
 import type { AppType } from '@backend/app.js';
 import { testClient } from 'hono/testing';
-import { expect } from 'vitest';
 import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT } from './fixtures.js';
 import { createAuthenticatedSession, grantConsent } from './helpers.js';
-
-/**
- * Parse redirect location from response headers.
- * Handles the common pattern of extracting and parsing the Location header.
- *
- * @param res - Response from app.request()
- * @param baseUrl - Base URL for relative redirects (default: 'http://localhost:8080')
- * @returns Parsed URL object
- *
- * @example
- * ```typescript
- * const location = parseRedirectLocation(res);
- * expect(location.searchParams.get('code')).toBeDefined();
- * ```
- */
-export function parseRedirectLocation(
-  res: Response,
-  baseUrl = 'http://localhost:8080',
-): URL {
-  const locationHeader = res.headers.get('location');
-  if (!locationHeader) {
-    throw new Error('No Location header in response');
-  }
-  return new URL(locationHeader, baseUrl);
-}
-
-/**
- * Assert that a redirect response contains an OAuth error.
- *
- * @param location - Parsed redirect URL
- * @param expectedError - Expected OAuth error code
- * @param expectedDescriptionContains - Optional substring that error_description should contain
- *
- * @example
- * ```typescript
- * const location = parseRedirectLocation(res);
- * expectRedirectError(location, 'invalid_scope');
- * ```
- */
-export function expectRedirectError(
-  location: URL,
-  expectedError: string,
-  expectedDescriptionContains?: string,
-): void {
-  expect(location.searchParams.get('error')).toBe(expectedError);
-  if (expectedDescriptionContains) {
-    expect(location.searchParams.get('error_description')).toContain(
-      expectedDescriptionContains,
-    );
-  }
-  expect(location.searchParams.has('code')).toBe(false);
-}
-
-/**
- * Assert that a response redirects to the login page with preserved parameters.
- *
- * @param location - Parsed redirect URL
- * @param originalParams - Original OAuth parameters that should be preserved
- *
- * @example
- * ```typescript
- * const location = parseRedirectLocation(res);
- * expectLoginRedirect(location, validParams);
- * ```
- */
-export function expectLoginRedirect(
-  location: URL,
-  originalParams: Record<string, string>,
-): void {
-  expect(location.pathname).toBe('/login');
-  for (const [key, value] of Object.entries(originalParams)) {
-    expect(location.searchParams.get(key)).toBe(value);
-  }
-}
 
 /**
  * Parameters for getting authorization code
@@ -177,19 +102,25 @@ export async function getAuthorizationCode(
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
 
-  expect(res.status).toBe(302);
+  if (res.status !== 302) {
+    const body = await res.text();
+    throw new Error(`Expected 302 redirect but got ${res.status}: ${body}`);
+  }
 
   const locationHeader = res.headers.get('location');
-  expect(locationHeader).toBeDefined();
+  if (!locationHeader) {
+    throw new Error('No Location header in authorize response');
+  }
 
-  const location = new URL(locationHeader as string, 'http://localhost:8080');
+  const location = new URL(locationHeader, 'http://localhost:8080');
   const code = location.searchParams.get('code');
 
-  expect(code).toBeDefined();
-  expect(code).not.toBe('');
+  if (!code) {
+    throw new Error(`No authorization code in redirect: ${locationHeader}`);
+  }
 
   return {
-    code: code as string,
+    code,
     location,
     status: res.status,
   };
@@ -324,9 +255,15 @@ export async function getAccessToken(
     codeVerifier,
   });
 
-  expect(tokenRes.status).toBe(200);
+  if (tokenRes.status !== 200) {
+    const body = await tokenRes.text();
+    throw new Error(`Token exchange failed: ${tokenRes.status} - ${body}`);
+  }
+
   const { access_token } = await tokenRes.json();
-  expect(access_token).toBeDefined();
+  if (!access_token) {
+    throw new Error('No access_token in token response');
+  }
 
   return access_token;
 }
