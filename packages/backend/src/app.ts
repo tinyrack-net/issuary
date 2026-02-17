@@ -4,7 +4,6 @@ import {
   resolveConfig,
 } from '@backend/lib/config/index.js';
 import { env } from '@backend/lib/env.js';
-import { authMiddleware } from '@backend/middleware/auth.js';
 import { mikroOrmMiddleware } from '@backend/middleware/mikro-orm.js';
 import { servicesMiddleware } from '@backend/middleware/services.js';
 import { sessionMiddleware } from '@backend/middleware/session.js';
@@ -17,6 +16,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
 import { openAPIRouteHandler } from 'hono-openapi';
+import { authMiddleware } from './middleware/auth.js';
 
 export interface CreateAppOptions {
   /**
@@ -76,13 +76,12 @@ export async function createApp(options: CreateAppOptions) {
     .use('*', trustedProxyGuard(config.app.trust_proxy))
     .use('*', servicesMiddleware(services))
     .use('*', mikroOrmMiddleware)
-    .use('*', authMiddleware);
+    .use('*', authMiddleware)
+    .route('/', routes);
 
-  const app = honoApp.route('/', routes);
-
-  app.get(
+  honoApp.get(
     '/api/docs/json',
-    openAPIRouteHandler(app, {
+    openAPIRouteHandler(honoApp, {
       documentation: {
         info: {
           title: 'TinyAuth API',
@@ -94,12 +93,12 @@ export async function createApp(options: CreateAppOptions) {
   );
 
   // Register static file handler (skip in CLI mode)
-  registerStaticHandler(app, config, silent);
+  registerStaticHandler(honoApp, config, silent);
 
   // Start scheduler
   services.scheduler.start();
 
-  return { app, services, cleanup };
+  return { app: honoApp, services, cleanup };
 }
 
 export type AppType = Awaited<ReturnType<typeof createApp>>['app'];
