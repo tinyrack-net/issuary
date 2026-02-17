@@ -1,5 +1,9 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import {
+  verifyAuth,
+  verifyPending2FASetupUser,
+} from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { r } from '@backend/schemas/response.js';
 import { Hono } from 'hono';
@@ -53,6 +57,8 @@ export const userPasskeyRegisterOptionsPost = new Hono<AppEnv>().post(
       },
     },
   }),
+  verifyAuth({ optional: true }),
+  verifyPending2FASetupUser({ optional: true }),
   async (c) => {
     const config = c.get('services').config;
     if (!config.auth.passkey.enabled) {
@@ -62,9 +68,9 @@ export const userPasskeyRegisterOptionsPost = new Hono<AppEnv>().post(
     const session = c.get('session');
     const { mikro, passkeyService } = c.get('services');
 
-    const userSession = session.get('user');
-    const pending2FASetup = session.get('pending2FASetup');
-    const userId = userSession?.id ?? pending2FASetup?.id;
+    const verifiedUser = c.get('verifiedUser');
+    const verifiedPending2FASetupUser = c.get('verifiedPending2FASetupUser');
+    const userId = verifiedUser?.id ?? verifiedPending2FASetupUser?.id;
 
     if (!userId) {
       throw new e.Unauthorized.Error();

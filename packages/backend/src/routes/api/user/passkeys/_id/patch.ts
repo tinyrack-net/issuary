@@ -1,5 +1,6 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
@@ -58,6 +59,7 @@ export const userPasskeyIdPatch = new Hono<AppEnv>().patch(
       name: f.passkeyName,
     }),
   ),
+  verifyAuth(),
   async (c) => {
     const config = c.get('services').config;
     if (!config.auth.passkey.enabled) {
@@ -66,10 +68,8 @@ export const userPasskeyIdPatch = new Hono<AppEnv>().patch(
 
     const params = c.req.valid('param');
     const body = c.req.valid('json');
-    const auth = c.get('auth');
+    const userSession = c.get('verifiedUser');
     const { passkeyService } = c.get('services');
-
-    const userSession = await auth.verify();
 
     // Rename passkey
     await passkeyService.renamePasskey(userSession.id, params.id, body.name);

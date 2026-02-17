@@ -1,5 +1,6 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { r } from '@backend/schemas/response.js';
 import { Hono } from 'hono';
@@ -35,16 +36,15 @@ export const userPasskeysGet = new Hono<AppEnv>().get(
       },
     },
   }),
+  verifyAuth(),
   async (c) => {
     const config = c.get('services').config;
     if (!config.auth.passkey.enabled) {
       throw new e.PasskeyNotEnabled.Error();
     }
 
-    const auth = c.get('auth');
+    const userSession = c.get('verifiedUser');
     const { passkeyService } = c.get('services');
-
-    const userSession = await auth.verify();
     const passkeys = await passkeyService.getUserPasskeys(userSession.id);
 
     return c.json({ passkeys }, 200);
