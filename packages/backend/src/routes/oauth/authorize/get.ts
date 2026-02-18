@@ -147,7 +147,7 @@ export const authorizeGet = new Hono<AppEnv>().get(
       }
 
       // Log unexpected errors
-      console.error(error);
+      c.var.logger.error({ err: error }, 'Unexpected authorize error');
       return redirectWithError(
         'server_error',
         'An unexpected error occurred',
