@@ -1,3 +1,4 @@
+import type { LoggerEnv } from '@backend/middleware/logger.js';
 import type { ServicesEnv } from '@backend/middleware/services.js';
 import type { SessionEnv } from '@backend/middleware/session.js';
 
@@ -12,5 +13,7 @@ import type { SessionEnv } from '@backend/middleware/session.js';
  *   2. Add it to the intersection below
  */
 export type AppEnv = {
-  Variables: ServicesEnv['Variables'] & SessionEnv['Variables'];
+  Variables: LoggerEnv['Variables'] &
+    ServicesEnv['Variables'] &
+    SessionEnv['Variables'];
 };

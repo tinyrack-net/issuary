@@ -15,10 +15,9 @@ import { generateSpecs } from 'hono-openapi';
 async function main() {
   const outputPath = process.argv[2];
 
-  const { app, cleanup } = await createServer({
+  const { app, cleanup, logger } = await createServer({
     config: MINIMAL_TEST_CONFIG,
     skipListen: true,
-    silent: true,
   });
 
   const spec = await generateSpecs(app, {
@@ -35,7 +34,7 @@ async function main() {
 
   if (outputPath) {
     writeFileSync(outputPath, json, 'utf-8');
-    console.info(`OpenAPI spec written to ${outputPath}`);
+    logger.info({ outputPath }, 'OpenAPI spec written');
   } else {
     process.stdout.write(json);
   }
@@ -43,7 +42,7 @@ async function main() {
   await cleanup();
 }
 
-main().catch((err) => {
+main().catch((err: unknown) => {
   console.error('Failed to export OpenAPI spec:', err);
   process.exit(1);
 });
