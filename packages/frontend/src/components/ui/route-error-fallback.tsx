@@ -26,7 +26,7 @@ function MinimalLayout({ children }: { children: React.ReactNode }) {
  * Check whether an error represents a 401 Unauthorized
  * response from the backend.
  */
-export function isUnauthorizedError(error: Error): boolean {
+function isUnauthorizedError(error: Error): boolean {
   return error instanceof ApiError && error.status === 401;
 }
 

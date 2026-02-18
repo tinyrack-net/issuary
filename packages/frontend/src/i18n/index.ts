@@ -27,7 +27,7 @@ export const LANGUAGE_LABELS: Record<AvailableLanguage, string> = {
 /**
  * Check if a language code is available in translations
  */
-export function isAvailableLanguage(lang: string): lang is AvailableLanguage {
+function isAvailableLanguage(lang: string): lang is AvailableLanguage {
   return lang in ALL_TRANSLATIONS;
 }
 
