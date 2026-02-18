@@ -1,7 +1,8 @@
 import i18n, { initI18n } from '@frontend/i18n';
 import { QueryClientProvider, useSuspenseQueries } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
-import { memo, StrictMode, useEffect, useState } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
+import { Component, memo, StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import { GlobalQueryClient } from './libs/query-client';
@@ -13,6 +14,64 @@ const RootElement = document.getElementById('root');
 
 if (!RootElement) {
   throw new Error('Root element not found');
+}
+
+/**
+ * Top-level error boundary that catches failures during
+ * bootstrap (e.g. network errors when fetching the initial
+ * session or app config).
+ *
+ * Because this renders *outside* the router, it cannot use
+ * TanStack Router's `errorComponent`. A plain React class
+ * component is used instead.
+ */
+type AppErrorBoundaryProps = { children: ReactNode };
+type AppErrorBoundaryState = { error: Error | null };
+
+class AppErrorBoundary extends Component<
+  AppErrorBoundaryProps,
+  AppErrorBoundaryState
+> {
+  constructor(props: AppErrorBoundaryProps) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): AppErrorBoundaryState {
+    return { error };
+  }
+
+  override componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('App bootstrap error:', error, info);
+  }
+
+  override render() {
+    if (this.state.error) {
+      return (
+        <div className="flex min-h-screen flex-col bg-base-200 p-4">
+          <div className="flex flex-1 items-center justify-center">
+            <div className="card w-full max-w-100 border border-base-200 bg-base-100 p-12 shadow-lg">
+              <h1 className="mb-2 text-center font-bold text-2xl">
+                Service Unavailable
+              </h1>
+              <p className="mb-6 text-center text-base-content/60">
+                Unable to load the application. Please try again later.
+              </p>
+              <button
+                className="btn btn-primary btn-block h-10 font-semibold text-[14px]"
+                onClick={() => window.location.reload()}
+                type="button"
+              >
+                Reload
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
 }
 
 const Loader = memo(() => {
@@ -53,8 +112,10 @@ const Loader = memo(() => {
 
 createRoot(RootElement).render(
   <StrictMode>
-    <QueryClientProvider client={GlobalQueryClient}>
-      <Loader />
-    </QueryClientProvider>
+    <AppErrorBoundary>
+      <QueryClientProvider client={GlobalQueryClient}>
+        <Loader />
+      </QueryClientProvider>
+    </AppErrorBoundary>
   </StrictMode>,
 );
