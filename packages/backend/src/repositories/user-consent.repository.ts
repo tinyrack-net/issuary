@@ -68,46 +68,4 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
     await this.getEntityManager().persist(consent).flush();
     return consent;
   }
-
-  /**
-   * Revoke consent for a user to a client
-   */
-  async revokeConsent(userId: string, clientId: string): Promise<boolean> {
-    const consent = await this.findConsent(userId, clientId);
-    if (!consent) {
-      return false;
-    }
-
-    consent.revoked_at = new Date();
-    await this.getEntityManager().flush();
-    return true;
-  }
-
-  /**
-   * Revoke all consents for a user
-   */
-  async revokeAllConsents(userId: string): Promise<number> {
-    const consents = await this.find({
-      user: ref(UserEntity, userId),
-      revoked_at: null,
-    });
-
-    const now = new Date();
-    for (const consent of consents) {
-      consent.revoked_at = now;
-    }
-
-    await this.getEntityManager().flush();
-    return consents.length;
-  }
-
-  /**
-   * Get all active consents for a user
-   */
-  async findAllConsents(userId: string): Promise<UserConsentEntity[]> {
-    return this.find({
-      user: ref(UserEntity, userId),
-      revoked_at: null,
-    });
-  }
 }

@@ -69,38 +69,4 @@ export class PasswordResetRepository extends EntityRepository<IPasswordResetEnti
 
     return entity;
   }
-
-  /**
-   * Find a valid (unexpired, unused) token
-   * @returns The token entity with user populated, or null if not found
-   */
-  async findValidToken(token: string): Promise<IPasswordResetEntity | null> {
-    const entity = await this.findOne(
-      { token, used: false },
-      { populate: ['user'] },
-    );
-
-    if (!entity) {
-      return null;
-    }
-
-    // Check if expired
-    if (entity.expiresAt < new Date()) {
-      return null;
-    }
-
-    return entity;
-  }
-
-  /**
-   * Clean up expired tokens (for maintenance/cron jobs)
-   */
-  async cleanExpiredTokens(): Promise<number> {
-    const result = await this.nativeDelete({
-      expiresAt: { $lt: new Date() },
-      used: false,
-    });
-
-    return result;
-  }
 }

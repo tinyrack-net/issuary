@@ -63,16 +63,4 @@ export class EmailVerificationRepository extends EntityRepository<IEmailVerifica
 
     return entity;
   }
-
-  /**
-   * Clean up expired tokens (for maintenance/cron jobs)
-   */
-  async cleanExpiredTokens(): Promise<number> {
-    const result = await this.nativeDelete({
-      expiresAt: { $lt: new Date() },
-      verified: false,
-    });
-
-    return result;
-  }
 }

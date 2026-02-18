@@ -80,32 +80,4 @@ export class UserRepository extends EntityRepository<UserEntity> {
     await this.getEntityManager().persist(user).flush();
     return user;
   }
-
-  /**
-   * Check if user is deleted
-   *
-   * @param userId - User ID to check
-   * @returns True if user is deleted
-   */
-  public async isDeleted(userId: string): Promise<boolean> {
-    const user = await this.findOne({ id: userId });
-    return user?.deleted_at !== null;
-  }
-
-  /**
-   * Soft delete a user by setting deleted_at
-   *
-   * @param userId - User ID to delete
-   * @returns The updated user entity
-   * @throws {UserNotFound} When user is not found
-   */
-  public async softDelete(userId: string): Promise<UserEntity> {
-    const user = await this.findOneOrFail(
-      { id: userId, deleted_at: null },
-      { failHandler: () => new e.UserNotFound.Error() },
-    );
-    user.deleted_at = new Date();
-    await this.getEntityManager().flush();
-    return user;
-  }
 }

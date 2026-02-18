@@ -61,16 +61,6 @@ export class JwtKeyRepository extends EntityRepository<JwtKeyEntity> {
   }
 
   /**
-   * Get key by kid with private key for signing
-   *
-   * @param kid - Key ID
-   * @returns Key entity with private_key populated, or null
-   */
-  async getByKidWithPrivateKey(kid: string): Promise<JwtKeyEntity | null> {
-    return this.findOne({ kid }, { populate: ['private_key'] });
-  }
-
-  /**
    * Get the next key waiting to be activated
    *
    * @returns Next key or null
@@ -80,15 +70,6 @@ export class JwtKeyRepository extends EntityRepository<JwtKeyEntity> {
       { status: JwtKeyStatus.NEXT },
       { populate: ['private_key'] },
     );
-  }
-
-  /**
-   * Get all previous (recently rotated) keys
-   *
-   * @returns Array of previous keys
-   */
-  async getPreviousKeys(): Promise<JwtKeyEntity[]> {
-    return this.find({ status: JwtKeyStatus.PREVIOUS });
   }
 
   /**
@@ -105,39 +86,5 @@ export class JwtKeyRepository extends EntityRepository<JwtKeyEntity> {
       status: JwtKeyStatus.PREVIOUS,
       deactivated_at: { $lt: cutoffDate },
     });
-  }
-
-  /**
-   * Get expired active keys that need rotation
-   *
-   * @returns Active keys past their expiration date
-   */
-  async getExpiredActiveKeys(): Promise<JwtKeyEntity[]> {
-    const now = new Date();
-
-    return this.find({
-      status: JwtKeyStatus.ACTIVE,
-      expires_at: { $lt: now },
-    });
-  }
-
-  /**
-   * Count keys by status
-   *
-   * @param status - Key status to count
-   * @returns Number of keys with given status
-   */
-  async countByStatus(status: JwtKeyStatus): Promise<number> {
-    return this.count({ status });
-  }
-
-  /**
-   * Check if any active key exists
-   *
-   * @returns True if at least one active key exists
-   */
-  async hasActiveKey(): Promise<boolean> {
-    const count = await this.countByStatus(JwtKeyStatus.ACTIVE);
-    return count > 0;
   }
 }

@@ -48,24 +48,6 @@ export class UserOAuthRepository extends EntityRepository<IUserOAuthEntity> {
   }
 
   /**
-   * Check if an OAuth account is already linked to any user
-   *
-   * @param providerName - Name of the OAuth provider
-   * @param providerUserId - Unique user ID from the OAuth provider
-   * @returns True if OAuth account is linked to a user
-   */
-  async isLinked(
-    providerName: string,
-    providerUserId: string,
-  ): Promise<boolean> {
-    const count = await this.count({
-      provider_name: providerName,
-      provider_user_id: providerUserId,
-    });
-    return count > 0;
-  }
-
-  /**
    * Link an OAuth account to a user
    *
    * @param params - OAuth account data
