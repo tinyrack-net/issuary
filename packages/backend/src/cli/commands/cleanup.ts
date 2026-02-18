@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { loadConfig, resolveConfig } from '../../lib/config/index.js';
+import { createLogger } from '../../lib/logger.js';
 import {
   initializeServices,
   type ServiceContainer,
@@ -31,36 +32,31 @@ export const cleanupCommand = new Command('cleanup')
     }) => {
       const { configPath, dryRun, verbose } = options;
 
-      // Print header
-      console.info('TinyAuth Cleanup');
-      if (dryRun) {
-        console.warn('[DRY RUN] No changes will be made');
-      }
-
-      // Initialize services directly (skip Hono app
-      // creation for faster startup)
-      if (verbose) {
-        console.debug('Initializing services...');
-      }
-
       let services: ServiceContainer | undefined;
       let cleanup: (() => Promise<void>) | undefined;
 
       try {
         const config = loadConfig(configPath ? { configPath } : undefined);
         const resolved = await resolveConfig(config);
-        const result = await initializeServices(resolved, {
-          skipListen: false,
-          silent: true,
+        const logger = createLogger({
+          logging: {
+            ...resolved.logging,
+            level: verbose ? 'debug' : 'info',
+          },
         });
+
+        logger.info('TinyAuth Cleanup');
+        if (dryRun) {
+          logger.warn('[DRY RUN] No changes will be made');
+        }
+        if (verbose) {
+          logger.debug('Initializing services...');
+        }
+
+        const result = await initializeServices(resolved, logger);
         services = result.services;
         cleanup = result.cleanup;
-      } catch (error) {
-        console.error('Failed to initialize:', error);
-        process.exit(1);
-      }
 
-      try {
         const summary = await services.cleanupService.runAll({
           dryRun,
           verbose,
@@ -71,58 +67,67 @@ export const cleanupCommand = new Command('cleanup')
         for (let i = 0; i < summary.tasks.length; i++) {
           const taskResult = summary.tasks[i];
           if (!taskResult) continue;
-          const { description, result, error, durationMs } = taskResult;
+          const {
+            description,
+            result: taskRes,
+            error,
+            durationMs,
+          } = taskResult;
           const index = i + 1;
           const prefix = `[${index}/${totalTasks}]`;
 
           if (error) {
-            console.error(`${prefix} ${description}: ${error.message}`);
-          } else if (result.skipped) {
+            logger.error(`${prefix} ${description}: ${error.message}`);
+          } else if (taskRes.skipped) {
             if (verbose) {
-              console.debug(
-                `${prefix} ${description}: Skipped - ${result.message || 'Disabled'}`,
+              logger.debug(
+                `${prefix} ${description}: Skipped - ${taskRes.message || 'Disabled'}`,
               );
             }
           } else {
-            if (result.deletedCount > 0) {
+            if (taskRes.deletedCount > 0) {
               const action = dryRun ? 'Would delete' : 'Deleted';
-              const suffix = result.message ? ` (${result.message})` : '';
-              console.info(
-                `${prefix} ${description}: ${action} ${result.deletedCount}${suffix}`,
+              const suffix = taskRes.message ? ` (${taskRes.message})` : '';
+              logger.info(
+                `${prefix} ${description}: ${action} ${taskRes.deletedCount}${suffix}`,
               );
             } else {
-              console.info(
-                `${prefix} ${description}: ${result.message || 'Nothing to clean'}`,
+              logger.info(
+                `${prefix} ${description}: ${taskRes.message || 'Nothing to clean'}`,
               );
             }
             if (verbose) {
-              console.debug(`  Duration: ${durationMs}ms`);
+              logger.debug(`  Duration: ${durationMs}ms`);
             }
           }
         }
 
         // Print summary
         const verb = dryRun ? 'would be cleaned' : 'cleaned';
-        console.info(`Summary: ${summary.totalDeleted} items ${verb}`);
+        logger.info(`Summary: ${summary.totalDeleted} items ${verb}`);
 
         if (summary.totalSkipped > 0 && verbose) {
-          console.debug(`         ${summary.totalSkipped} tasks skipped`);
+          logger.debug(`         ${summary.totalSkipped} tasks skipped`);
         }
 
         if (summary.totalFailed > 0) {
-          console.error(`         ${summary.totalFailed} tasks failed`);
+          logger.error(`         ${summary.totalFailed} tasks failed`);
         }
 
-        console.info(`Duration: ${summary.totalDurationMs}ms`);
+        logger.info(`Duration: ${summary.totalDurationMs}ms`);
 
         // Exit with error code if any task failed
         if (summary.totalFailed > 0) {
           await cleanup();
           process.exit(1);
         }
-      } catch (error) {
-        console.error('Cleanup failed:', error);
-        await cleanup();
+      } catch (err) {
+        // Use console.error as fallback since logger
+        // may not be initialized
+        console.error('Cleanup failed:', err);
+        if (cleanup) {
+          await cleanup();
+        }
         process.exit(1);
       }
 
