@@ -2,6 +2,7 @@ import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { TermsCheckboxList } from '@frontend/components/terms/terms-checkbox-list.js';
 import { Alert } from '@frontend/components/ui/alert.js';
 import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
 import { OAuthSearchSchema } from '@frontend/libs/oauth-search';
 import { appConfigQueryOptions } from '@frontend/queries/config';
 import {
@@ -12,7 +13,12 @@ import {
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { CheckIcon, WarningIcon } from '@phosphor-icons/react';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
-import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  type ErrorComponentProps,
+  redirect,
+  useRouter,
+} from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -25,8 +31,20 @@ const TermsSearchSchema = OAuthSearchSchema.extend({
   registration_token: z.string().optional(),
 });
 
+function TermsError(props: ErrorComponentProps) {
+  return (
+    <RouteErrorFallback
+      {...props}
+      onUnauthorized={() => {
+        window.location.href = '/login';
+      }}
+    />
+  );
+}
+
 export const Route = createFileRoute('/terms/')({
   component: Terms,
+  errorComponent: TermsError,
   validateSearch: TermsSearchSchema,
   beforeLoad: async ({ context, search }) => {
     // When mode=complete_registration, user is completing OAuth signup.
@@ -157,26 +175,6 @@ function Terms() {
       }),
     });
   };
-
-  if (termsQuery.isError) {
-    return (
-      <PageLayout cardPadding maxWidth="100">
-        <Alert className="mb-4" icon={WarningIcon} type="error">
-          {t('terms.error.title')}
-        </Alert>
-        <p className="mb-6 text-center text-base-content/70 text-sm">
-          {t('terms.error.message')}
-        </p>
-        <button
-          className="btn btn-block h-10 font-semibold text-[14px]"
-          onClick={() => router.navigate({ to: '/' })}
-          type="button"
-        >
-          {t('terms.error.back')}
-        </button>
-      </PageLayout>
-    );
-  }
 
   return (
     <PageLayout cardPadding maxWidth="100">

@@ -1,14 +1,20 @@
 import { PageHeader } from '@frontend/components/auth/page-header.js';
-import { Alert } from '@frontend/components/ui/alert.js';
 import { PageLayout } from '@frontend/components/ui/page-layout.js';
-import { OAuthSearchSchema } from '@frontend/libs/oauth-search';
+import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
+import {
+  buildAuthorizeUrl,
+  OAuthSearchSchema,
+} from '@frontend/libs/oauth-search';
 import {
   consentDecisionMutationOptions,
   getConsentInfoQueryOptions,
 } from '@frontend/queries/consent';
-import { ShieldCheckIcon, WarningIcon, XIcon } from '@phosphor-icons/react';
+import { ShieldCheckIcon, XIcon } from '@phosphor-icons/react';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
-import { createFileRoute, useRouter } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  type ErrorComponentProps,
+} from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
@@ -20,6 +26,7 @@ const ConsentSearchSchema = OAuthSearchSchema.extend({
 
 export const Route = createFileRoute('/consent/')({
   component: Consent,
+  errorComponent: ConsentError,
   validateSearch: ConsentSearchSchema,
   loaderDeps: ({ search }) => ({
     client_id: search.client_id,
@@ -35,9 +42,24 @@ export const Route = createFileRoute('/consent/')({
   },
 });
 
+function ConsentError(props: ErrorComponentProps) {
+  return (
+    <RouteErrorFallback
+      {...props}
+      onUnauthorized={() => {
+        // Re-enter the OAuth flow from the beginning so the
+        // user can log in and be redirected back through
+        // /oauth/authorize -> /consent/.
+        const params = new URLSearchParams(window.location.search);
+        const search = Object.fromEntries(params.entries());
+        window.location.href = buildAuthorizeUrl(search);
+      }}
+    />
+  );
+}
+
 function Consent() {
   const { t } = useTranslation();
-  const router = useRouter();
   const search = Route.useSearch();
 
   const consentInfoQuery = useSuspenseQuery(
@@ -81,26 +103,6 @@ function Consent() {
       decision: 'deny',
     });
   };
-
-  if (consentInfoQuery.isError) {
-    return (
-      <PageLayout cardPadding maxWidth="100">
-        <Alert className="mb-4" icon={WarningIcon} type="error">
-          {t('consent.error.title')}
-        </Alert>
-        <p className="mb-6 text-center text-base-content/70 text-sm">
-          {t('consent.error.message')}
-        </p>
-        <button
-          className="btn btn-block h-10 font-semibold text-[14px]"
-          onClick={() => router.navigate({ to: '/' })}
-          type="button"
-        >
-          {t('consent.error.back')}
-        </button>
-      </PageLayout>
-    );
-  }
 
   const { client, scopes, user } = consentInfoQuery.data;
 

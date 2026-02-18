@@ -16,6 +16,7 @@ import { UserInfoSection } from '@frontend/components/profile/user-info-section.
 import { Alert } from '@frontend/components/ui/alert.js';
 import { InitialAvatar } from '@frontend/components/ui/initial-avatar.js';
 import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
 import { tick } from '@frontend/libs/promise.js';
 import { appConfigQueryOptions } from '@frontend/queries/config.js';
 import { logoutMutationOptions } from '@frontend/queries/logout.js';
@@ -31,7 +32,12 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  type ErrorComponentProps,
+  redirect,
+  useRouter,
+} from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -51,8 +57,20 @@ const OAUTH_ERROR_I18N_MAP: Record<string, string> = {
   server_error: 'oauth.error.serverError',
 };
 
+function ProfileError(props: ErrorComponentProps) {
+  return (
+    <RouteErrorFallback
+      {...props}
+      onUnauthorized={() => {
+        window.location.href = '/login';
+      }}
+    />
+  );
+}
+
 export const Route = createFileRoute('/profile/')({
   component: Profile,
+  errorComponent: ProfileError,
   validateSearch: SearchSchema,
   beforeLoad: async ({ context }) => {
     if (!context.user) {
