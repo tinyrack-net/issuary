@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import type { Logger } from '@backend/lib/logger.js';
 import nodemailer from 'nodemailer';
 import YAML from 'yaml';
 import { type DeepPartial, deepMerge } from '../deep-merge.js';
@@ -142,32 +143,39 @@ const loadConfigFromPath = (configPath: string): AppConfig => {
  *
  * @param options - Optional configuration options
  * @param options.configPath - Custom config file path
+ * @param options.logger - Logger instance for config loading messages
  */
 export function loadConfig(options?: {
   configPath?: string | undefined;
+  logger?: Logger | undefined;
 }): AppConfig {
+  const logger = options?.logger;
+
   // 1. Explicit path provided by caller (e.g., CLI --config-path)
   if (options?.configPath) {
     const configPath = resolveAbsolutePath(options.configPath);
-    console.info(`Loading config from: ${configPath}`);
+    logger?.info({ configPath }, 'Loading config from file');
     return loadConfigFromPath(configPath);
   }
 
   // 2. CONFIG_PATH env var is set — error if file missing
   if (env.CONFIG_PATH) {
     const configPath = resolveAbsolutePath(env.CONFIG_PATH);
-    console.info(`Loading config from: ${configPath}`);
+    logger?.info({ configPath }, 'Loading config from file');
     return loadConfigFromPath(configPath);
   }
 
   // 3. Default path exists — use it
   if (existsSync(DEFAULT_CONFIG_PATH)) {
-    console.info(`Loading config from: ${DEFAULT_CONFIG_PATH}`);
+    logger?.info(
+      { configPath: DEFAULT_CONFIG_PATH },
+      'Loading config from file',
+    );
     return loadConfigFromPath(DEFAULT_CONFIG_PATH);
   }
 
   // 4. Fall back to environment variables with defaults
-  console.info(
+  logger?.info(
     'No config file found, using environment variables with defaults',
   );
   const resolved = resolveEnvVariables(DEFAULT_CONFIG);
