@@ -19,13 +19,13 @@ export const serveCommand = new Command('serve')
     const config = loadConfig({
       configPath: options.configPath,
     });
-    const { cleanup, server } = await createServer({
+    const { cleanup, server, logger } = await createServer({
       config,
     });
 
     // Handle graceful shutdown
     const shutdown = async (signal: string) => {
-      console.info(`Received ${signal}, shutting down...`);
+      logger.info({ signal }, `Received ${signal}, shutting down...`);
       if (server) {
         server.close();
       }

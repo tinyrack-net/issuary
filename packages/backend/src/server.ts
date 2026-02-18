@@ -5,7 +5,6 @@ import { env } from '@backend/lib/env.js';
 import { serve } from '@hono/node-server';
 
 export type { AppType };
-export type { ServerOptions } from '@backend/services/container.js';
 
 export interface CreateServerOptions {
   /**
@@ -22,19 +21,11 @@ export interface CreateServerOptions {
    * but does not bind to a port.
    */
   skipListen?: boolean;
-  /**
-   * Suppress logger output.
-   * When true, console output is suppressed.
-   * Useful for CLI commands where server logs are
-   * noise. Defaults to false.
-   */
-  silent?: boolean;
 }
 
 export async function createServer(createOptions: CreateServerOptions) {
-  const { app, services, cleanup } = await createApp({
+  const { app, services, cleanup, logger } = await createApp({
     config: createOptions.config,
-    silent: createOptions.silent,
   });
 
   // Start HTTP server if not test and not skipListen
@@ -47,12 +38,13 @@ export async function createServer(createOptions: CreateServerOptions) {
         hostname: '0.0.0.0',
       },
       (info) => {
-        if (!createOptions.silent) {
-          console.info(`Server listening on port ${info.port}`);
-        }
+        logger.info(
+          { port: info.port },
+          `Server listening on port ${info.port}`,
+        );
       },
     );
   }
 
-  return { app, services, cleanup, server };
+  return { app, services, cleanup, server, logger };
 }
