@@ -100,7 +100,7 @@ export class TotpService {
     }
 
     // Create new TOTP record
-    const totp = await this.mikro.userTotp.create({
+    const totp = this.mikro.userTotp.create({
       user: user.id,
       secret: secret,
     });
@@ -204,7 +204,7 @@ export class TotpService {
     if (!totp) {
       throw new e.TotpNotEnabled.Error();
     }
-    await this.verifyToken(token, totp.secret);
+    this.verifyToken(token, totp.secret);
   }
 
   /**
