@@ -6,6 +6,7 @@ import type { IEmailVerificationEntity } from '@backend/entities/email-verificat
 import type { UserEntity } from '@backend/entities/user.entity.js';
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import { DEFAULT_LOCALE, type Locale } from '@backend/lib/locale.js';
+import type { Logger } from '@backend/lib/logger.js';
 import { e } from '@backend/schemas/error.js';
 import type { MikroService } from '@backend/services/mikro.service.js';
 import nodemailer from 'nodemailer';
@@ -20,9 +21,8 @@ export class EmailService {
   public constructor(
     private readonly config: ResolvedAppConfig,
     private readonly mikro: MikroService,
-    options?: { silent?: boolean },
+    private readonly logger: Logger,
   ) {
-    const silent = options?.silent ?? false;
     if (config.smtp) {
       this.transporter = nodemailer.createTransport({
         host: config.smtp.host,
@@ -33,18 +33,13 @@ export class EmailService {
           pass: config.smtp.password,
         },
       });
-      if (!silent) {
-        console.info(
-          'Nodemailer initialized (host: %s, port: %d)',
-          config.smtp.host,
-          config.smtp.port,
-        );
-      }
+      this.logger.info(
+        { host: config.smtp.host, port: config.smtp.port },
+        'Nodemailer initialized',
+      );
     } else {
       this.transporter = null;
-      if (!silent) {
-        console.warn('Nodemailer: no SMTP config, emails disabled');
-      }
+      this.logger.warn('Nodemailer: no SMTP config, emails disabled');
     }
   }
 
@@ -93,12 +88,12 @@ export class EmailService {
       html,
     });
 
-    console.info('Email sent: %s', info.messageId);
+    this.logger.info({ messageId: info.messageId }, 'Email sent');
 
     if (this.config.smtp.test) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
-        console.info('Preview URL: %s', previewUrl);
+        this.logger.info({ previewUrl }, 'Preview URL');
       }
     }
 
@@ -110,8 +105,8 @@ export class EmailService {
     token: string;
     locale?: Locale | undefined;
   }): void {
-    this.sendVerificationEmail(params).catch((err) => {
-      console.error('Failed to send verification email:', err);
+    this.sendVerificationEmail(params).catch((err: unknown) => {
+      this.logger.error({ err }, 'Failed to send verification email');
     });
   }
 
@@ -141,12 +136,15 @@ export class EmailService {
       html,
     });
 
-    console.info('Password reset email sent: %s', info.messageId);
+    this.logger.info(
+      { messageId: info.messageId },
+      'Password reset email sent',
+    );
 
     if (this.config.smtp.test) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
-        console.info('Preview URL: %s', previewUrl);
+        this.logger.info({ previewUrl }, 'Preview URL');
       }
     }
 
@@ -162,8 +160,8 @@ export class EmailService {
     token: string;
     locale?: Locale | undefined;
   }): void {
-    this.sendPasswordResetEmail(params).catch((err) => {
-      console.error('Failed to send password reset email:', err);
+    this.sendPasswordResetEmail(params).catch((err: unknown) => {
+      this.logger.error({ err }, 'Failed to send password reset email');
     });
   }
 

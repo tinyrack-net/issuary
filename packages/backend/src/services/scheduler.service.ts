@@ -1,4 +1,5 @@
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
+import type { Logger } from '@backend/lib/logger.js';
 import type { CleanupService } from '@backend/services/cleanup.service.js';
 import { Cron } from 'croner';
 
@@ -8,16 +9,15 @@ export class SchedulerService {
   public constructor(
     private readonly config: ResolvedAppConfig,
     private readonly cleanupService: CleanupService,
-    private readonly options?: { silent?: boolean },
+    private readonly logger: Logger,
   ) {
-    const silent = this.options?.silent ?? false;
-    if (!silent) {
-      console.info(
-        'Scheduler initialized (enabled: %s, cron: %s)',
-        this.config.scheduler.enabled,
-        this.config.scheduler.cron,
-      );
-    }
+    this.logger.info(
+      {
+        enabled: this.config.scheduler.enabled,
+        cron: this.config.scheduler.cron,
+      },
+      'Scheduler initialized',
+    );
   }
 
   public start(): void {
@@ -29,11 +29,8 @@ export class SchedulerService {
           dryRun: false,
           verbose: false,
         });
-      } catch (error) {
-        console.error(
-          'Scheduled cleanup failed:',
-          error instanceof Error ? error.message : String(error),
-        );
+      } catch (err) {
+        this.logger.error({ err }, 'Scheduled cleanup failed');
       }
     });
     this.cleanupJob = job;

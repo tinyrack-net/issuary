@@ -17,6 +17,7 @@ import { UserTotpEntitySchema } from '@backend/entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '@backend/entities/user-totp-recovery-code.entity.js';
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import { env } from '@backend/lib/env.js';
+import type { Logger } from '@backend/lib/logger.js';
 import type { EmailVerificationRepository } from '@backend/repositories/email-verification.repository.js';
 import type { JwtKeyRepository } from '@backend/repositories/jwt-key.repository.js';
 import type { OAuthClientRepository } from '@backend/repositories/oauth-client.repository.js';
@@ -34,10 +35,6 @@ import type { UserTermsConsentRepository } from '@backend/repositories/user-term
 import type { UserTotpRepository } from '@backend/repositories/user-totp.repository.js';
 import type { UserTotpRecoveryCodeRepository } from '@backend/repositories/user-totp-recovery-code.repository.js';
 import { MikroORM, type Options } from '@mikro-orm/core';
-
-export interface MikroServiceOptions {
-  silent?: boolean;
-}
 
 export class MikroService {
   public readonly orm: MikroORM;
@@ -88,13 +85,9 @@ export class MikroService {
 
   public static async initialize(
     config: ResolvedAppConfig,
-    options?: MikroServiceOptions,
+    logger: Logger,
   ): Promise<MikroService> {
-    const silent = options?.silent ?? false;
-
-    if (!silent) {
-      console.info('Initializing MikroORM...');
-    }
+    logger.info('Initializing MikroORM...');
 
     const dbConfigs = getDbConfigs(config);
     const ormOptions: Options = {
@@ -112,9 +105,7 @@ export class MikroService {
       await orm.migrator.up();
     }
 
-    if (!silent) {
-      console.info('MikroORM initialized (database: %s)', config.database.type);
-    }
+    logger.info({ database: config.database.type }, 'MikroORM initialized');
 
     return new MikroService(orm);
   }
