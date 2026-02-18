@@ -127,6 +127,8 @@
   "error.goBack": "Go back",
   "error.footer.needHelp": "Need help?",
   "error.footer.contactSupport": "Contact support",
+  "error.sessionExpired": "Your session has expired. Please log in again.",
+  "error.retry": "Retry",
   "profile.password.title": "Password",
   "profile.password.status.set": "Password is set",
   "profile.password.status.notSet": "No password set",

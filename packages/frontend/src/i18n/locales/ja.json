@@ -127,6 +127,8 @@
   "error.goBack": "戻る",
   "error.footer.needHelp": "ヘルプが必要ですか？",
   "error.footer.contactSupport": "サポートに連絡",
+  "error.sessionExpired": "セッションが期限切れです。再度ログインしてください。",
+  "error.retry": "再試行",
   "profile.password.title": "パスワード",
   "profile.password.status.set": "パスワードが設定されています",
   "profile.password.status.notSet": "パスワードが設定されていません",
