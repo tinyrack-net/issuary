@@ -1,3 +1,4 @@
+import type { Logger } from '@backend/lib/logger.js';
 import type { Context } from 'hono';
 import { proxy } from 'hono/proxy';
 
@@ -7,6 +8,10 @@ export interface ProxyHandlerOptions {
    * Example: 'http://localhost:8081'
    */
   upstream: string;
+  /**
+   * Logger instance for proxy error reporting.
+   */
+  logger: Logger;
   /**
    * Optional response interceptor.
    * Called with the proxied Response before it is
@@ -30,6 +35,7 @@ export interface ProxyHandlerOptions {
  * ```ts
  * const handler = createProxyHandler({
  *   upstream: 'http://localhost:8081',
+ *   logger,
  * });
  * app.notFound((c) => handler(c));
  * ```
@@ -50,7 +56,7 @@ export function createProxyHandler(options: ProxyHandlerOptions) {
 
       return res;
     } catch (err) {
-      console.error('Proxy error:', err);
+      options.logger.error({ err }, 'Proxy error');
       return c.json({ error: 'Proxy error' }, 502);
     }
   };
