@@ -418,6 +418,81 @@ export const AppConfigCleanup = z
 export type AppConfigCleanup = z.infer<typeof AppConfigCleanup>;
 
 // ---------------------------------------------------------------------------
+// Logging
+// ---------------------------------------------------------------------------
+
+/**
+ * Log level values.
+ * Maps to pino log levels.
+ */
+export const LOG_LEVELS = [
+  'trace',
+  'debug',
+  'info',
+  'warn',
+  'error',
+  'fatal',
+  'silent',
+] as const;
+
+export type LogLevel = (typeof LOG_LEVELS)[number];
+
+/**
+ * Log format values.
+ * - 'json': Structured JSON output (default)
+ * - 'pretty': Human-readable pretty-printed output
+ */
+export const LOG_FORMATS = ['json', 'pretty'] as const;
+
+export type LogFormat = (typeof LOG_FORMATS)[number];
+
+/**
+ * Default logging configuration.
+ */
+export const DEFAULT_LOGGING_CONFIG = {
+  level: 'info',
+  format: 'json',
+  http_log_proxy: false,
+} as const;
+
+/**
+ * Logging configuration schema.
+ *
+ * Controls the log level and output format.
+ * Configured via config file only (no environment variable override).
+ */
+export const AppConfigLogging = z
+  .object({
+    level: z
+      .enum(LOG_LEVELS)
+      .optional()
+      .default(DEFAULT_LOGGING_CONFIG.level)
+      .describe('Log level.'),
+    format: z
+      .enum(LOG_FORMATS)
+      .optional()
+      .default(DEFAULT_LOGGING_CONFIG.format)
+      .describe(
+        'Log output format. ' +
+          '"json" outputs structured JSON (default). ' +
+          '"pretty" outputs human-readable format.',
+      ),
+    http_log_proxy: z
+      .boolean()
+      .optional()
+      .default(DEFAULT_LOGGING_CONFIG.http_log_proxy)
+      .describe(
+        'Whether to log HTTP access logs for proxied frontend requests ' +
+          'in development mode. When false (default), proxy requests ' +
+          'are completely suppressed, keeping the terminal clean. ' +
+          'Set to true to see them.',
+      ),
+  })
+  .describe('Logging configuration');
+
+export type AppConfigLogging = z.infer<typeof AppConfigLogging>;
+
+// ---------------------------------------------------------------------------
 // App
 // ---------------------------------------------------------------------------
 
@@ -533,6 +608,9 @@ export const AppConfigApp = z.object({
   background_url: z
     .url()
     .optional()
+    .default(
+      'https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071',
+    )
     .describe('Background image URL for authentication pages'),
   trust_proxy: z
     .union([
@@ -560,6 +638,7 @@ export const AppConfigApp = z.object({
   signup_implicit_terms: z
     .record(z.string(), z.string())
     .optional()
+    .default({})
     .describe(
       'Localized notice text for implicit consent terms during signup. ' +
         'Keyed by language code (e.g., "en", "ko"). ' +
@@ -573,6 +652,11 @@ export const AppConfigApp = z.object({
   title: z
     .record(z.string(), z.string())
     .optional()
+    .default({
+      ko: 'Tinyauth',
+      en: 'Tinyauth',
+      ja: 'Tinyauth',
+    })
     .describe(
       'Localized title text for login page. ' +
         'Keyed by language code (e.g., "en", "ko"). ' +
@@ -581,6 +665,11 @@ export const AppConfigApp = z.object({
   subtitle: z
     .record(z.string(), z.string())
     .optional()
+    .default({
+      ko: '가볍고 빠른 인증 솔루션',
+      en: 'Lightweight identity provider for your apps',
+      ja: '軽量でシンプルな認証ソリューション',
+    })
     .describe(
       'Localized subtitle text for login page. ' +
         'Keyed by language code (e.g., "en", "ko"). ' +
@@ -885,6 +974,7 @@ export const AppConfigSchema = z.object({
     type: 'sqlite',
     path: 'test.db',
   }),
+  logging: AppConfigLogging.optional().default(DEFAULT_LOGGING_CONFIG),
   auth: AppConfigAuth.optional().default({
     password: {
       enabled: true,
@@ -894,7 +984,7 @@ export const AppConfigSchema = z.object({
       },
       totp: {
         enabled: false,
-        issuer: 'Tinyrack',
+        issuer: '',
       },
     },
     passkey: {
