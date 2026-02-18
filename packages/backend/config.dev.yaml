@@ -5,7 +5,7 @@ app:
   jwt_access_token_ttl: 3600
   jwt_refresh_token_ttl: 2592000
   allowed_signup_emails:
-    - "*" # Allow all emails (equivalent to public_registration: true)
+    - "*" # Allow all emails
     # - "me@winetree94.com" # Allow specific email
     # - '*@winetree94.com'     # Allow all emails at domain
     # - '*@vivident.xyz'       # Allow all emails at domain
@@ -61,6 +61,14 @@ app:
     TITLE: tinyauth
     DESCRIPTION: Tinyauth development server
     FAVICON_URL: /vite.svg
+
+# Logging configuration
+logging:
+  level: info
+  format: pretty
+  # Suppress proxied frontend asset logs (JS, CSS, HMR, etc.)
+  # Set to true to see them
+  http_log_proxy: false
 
 # Scheduler configuration
 # Controls the in-process scheduler for automated cleanup tasks.

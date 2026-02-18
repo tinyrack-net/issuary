@@ -1,5 +1,12 @@
 app:
   cookie_secret: 3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b
+  allowed_signup_emails:
+    - "*"
+
+logging:
+  level: info
+  format: pretty
+  http_log_proxy: false
 
 database:
   type: sqlite

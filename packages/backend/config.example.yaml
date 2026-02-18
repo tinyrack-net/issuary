@@ -227,6 +227,34 @@ app:
   #   ja: 続行することで、<a href="https://example.com/terms/ja" class="link">利用規約</a>および<a href="https://example.com/privacy/ja" class="link">プライバシーポリシー</a>に同意したものとみなされます。
 
 # -----------------------------------------------------------------------------
+# Logging Configuration
+# -----------------------------------------------------------------------------
+# Controls log output level, format, and filtering.
+# -----------------------------------------------------------------------------
+logging:
+  # level: Log verbosity level.
+  # Options: trace, debug, info, warn, error, fatal, silent
+  # Configured via config file only (no environment variable override).
+  # Default: 'info'
+  level: info
+
+  # format: Log output format.
+  # Options:
+  #   - 'json': Structured JSON output (default)
+  #   - 'pretty': Human-readable output
+  format: json
+
+  # http_log_proxy: Whether to log HTTP access logs for proxied frontend
+  # requests in development mode.
+  # When false (default), proxy requests (JS, CSS, images, HMR, etc.)
+  # are completely suppressed, keeping the terminal clean.
+  # Set to true to see them.
+  # Only relevant in development mode where a frontend dev server proxy
+  # is active; has no effect in production.
+  # Default: false
+  http_log_proxy: false
+
+# -----------------------------------------------------------------------------
 # Scheduler Configuration
 # -----------------------------------------------------------------------------
 # Controls the in-process scheduler for automated cleanup tasks.
