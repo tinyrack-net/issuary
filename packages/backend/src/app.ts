@@ -5,6 +5,8 @@ import {
 import { env } from '@backend/lib/env.js';
 import { interpolateHtml } from '@backend/lib/interpolate-html.js';
 import { isBackendRoute } from '@backend/lib/is-backend-route.js';
+import { createLogger } from '@backend/lib/logger.js';
+import { loggerMiddleware } from '@backend/middleware/logger.js';
 import { mikroOrmMiddleware } from '@backend/middleware/mikro-orm.js';
 import { createProxyHandler } from '@backend/middleware/proxy.js';
 import { servicesMiddleware } from '@backend/middleware/services.js';
@@ -28,27 +30,18 @@ export interface CreateAppOptions {
    * fields have defaults.
    */
   config: AppConfigInput;
-  /**
-   * Suppress logger output.
-   * When true, console output is suppressed.
-   * Useful for CLI commands where server logs are
-   * noise. Defaults to false.
-   */
-  silent?: boolean | undefined;
 }
 
 export async function createApp(options: CreateAppOptions) {
-  const silent = options.silent ?? false;
-
   // Resolve external config to internal config
   // with all defaults applied
   const config = await resolveConfig(options.config);
 
+  // Create root logger (use config.logging.level: 'silent' to suppress)
+  const logger = createLogger({ logging: config.logging });
+
   // Initialize all services (DB, mail, scheduler, etc.)
-  const { services, cleanup } = await initializeServices(config, {
-    skipListen: false,
-    silent: silent,
-  });
+  const { services, cleanup } = await initializeServices(config, logger);
 
   const app = new Hono()
     .onError((err, c) => {
@@ -56,10 +49,16 @@ export async function createApp(options: CreateAppOptions) {
         return c.json(err.toJson(), err.status);
       }
 
-      console.error('Unhandled error:', err);
+      logger.error({ err }, 'Unhandled error');
       const internalErr = new e.InternalServerError.Error();
       return c.json(internalErr.toJson(), internalErr.status);
     })
+    .use(
+      '*',
+      loggerMiddleware(logger, {
+        httpLogProxy: config.logging.http_log_proxy,
+      }),
+    )
     .use(
       '*',
       cors({
@@ -99,6 +98,7 @@ export async function createApp(options: CreateAppOptions) {
 
     const proxyHandler = createProxyHandler({
       upstream: 'http://localhost:8081',
+      logger,
       onResponse: hasVariables
         ? async (res) => {
             const ct = res.headers.get('content-type') ?? '';
@@ -121,12 +121,10 @@ export async function createApp(options: CreateAppOptions) {
         : undefined,
     });
 
-    if (!silent) {
-      console.info(
-        'Static handler registered (development mode, proxy: %s)',
-        'http://localhost:8081',
-      );
-    }
+    logger.info(
+      { proxy: 'http://localhost:8081' },
+      'Static handler registered (development mode)',
+    );
 
     app.notFound(async (c) => {
       const reqUrl = new URL(c.req.url);
@@ -136,9 +134,7 @@ export async function createApp(options: CreateAppOptions) {
       return proxyHandler(c);
     });
   } else {
-    if (!silent) {
-      console.info('Static handler registered (production mode)');
-    }
+    logger.info('Static handler registered (production mode)');
     registerProdStatic(app, {
       htmlVariables: config.app.html_variables,
     });
@@ -147,7 +143,7 @@ export async function createApp(options: CreateAppOptions) {
   // Start scheduler
   services.scheduler.start();
 
-  return { app, services, cleanup };
+  return { app, services, cleanup, logger };
 }
 
 export type AppType = Awaited<ReturnType<typeof createApp>>['app'];
