@@ -205,7 +205,12 @@ const TermsItem = z
       .describe('Version string for tracking changes (e.g., "1.0.0")'),
     content: z
       .record(z.string(), TermsLocalizedContent)
-      .describe('Localized content keyed by language code (e.g., "en", "ko")'),
+      .optional()
+      .default({})
+      .describe(
+        'Localized content keyed by language code (e.g., "en", "ko"). ' +
+          'Can be omitted for implicit consent terms where content is not displayed.',
+      ),
   })
   .describe('Individual term configuration');
 

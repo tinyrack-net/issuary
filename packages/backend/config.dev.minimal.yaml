@@ -2,6 +2,10 @@ app:
   cookie_secret: 3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b
   allowed_signup_emails:
     - "*"
+  signup_implicit_terms:
+    ko: 계속하면 <a href="https://example.com/terms/ko" class="link">이용약관</a> 및 <a href="https://example.com/privacy/ko" class="link">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
+    en: By continuing, you agree to our <a href="https://example.com/terms/en" class="link">Terms of Service</a> and <a href="https://example.com/privacy/en" class="link">Privacy Policy</a>.
+    ja: 続行することで、<a href="https://example.com/terms/ja" class="link">利用規約</a>および<a href="https://example.com/privacy/ja" class="link">プライバシーポリシー</a>に同意したものとみなされます。
 
 logging:
   level: info
@@ -18,6 +22,22 @@ auth:
     email_verification: false
     second_factor:
       required: false
+
+terms:
+  - id: tos
+    required: true
+    consent_mode: implicit
+    version: "1.0.0"
+
+  - id: privacy
+    required: true
+    consent_mode: implicit
+    version: "1.0.0"
+
+  - id: marketing2
+    required: false
+    consent_mode: explicit
+    version: "1.0.0"
 
 clients:
   - id: test-config-oauth-client
