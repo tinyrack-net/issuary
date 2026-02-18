@@ -3,6 +3,7 @@ import { LoginMethodList } from '@frontend/components/auth/login-method-list.js'
 import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { Alert } from '@frontend/components/ui/alert.js';
 import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
@@ -44,6 +45,7 @@ const OAUTH_ERROR_I18N_MAP: Record<string, string> = {
 
 export const Route = createFileRoute('/login/')({
   component: Login,
+  errorComponent: RouteErrorFallback,
   validateSearch: SearchSchema,
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData(appConfigQueryOptions);

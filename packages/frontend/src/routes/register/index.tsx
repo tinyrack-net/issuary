@@ -4,6 +4,7 @@ import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { SubmitButton } from '@frontend/components/auth/submit-button.js';
 import { TermsCheckboxList } from '@frontend/components/terms/terms-checkbox-list.js';
 import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
 import { ApiError } from '@frontend/libs/error.js';
 import {
   buildAuthorizeUrl,
@@ -32,6 +33,7 @@ import { z } from 'zod';
 
 export const Route = createFileRoute('/register/')({
   component: Register,
+  errorComponent: RouteErrorFallback,
   validateSearch: OAuthSearchSchema,
   beforeLoad: async ({ context }) => {
     const config = await context.queryClient.ensureQueryData(
