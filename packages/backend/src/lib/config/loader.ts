@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { Logger } from '@backend/lib/logger.js';
 import nodemailer from 'nodemailer';
 import YAML from 'yaml';
-import { type DeepPartial, deepMerge } from '../deep-merge.js';
+import { deepMerge } from '../deep-merge.js';
 import { env } from '../env.js';
 import { resolveEnvVariables } from '../interpolate-env.js';
 import {
@@ -13,9 +13,6 @@ import {
   type AppConfigSmtp,
   type ResolvedAppConfig,
 } from './schema.js';
-
-// Re-export deepMerge and DeepPartial for backward compatibility
-export { deepMerge, type DeepPartial };
 
 const DEFAULT_CONFIG_PATH = '/opt/config.yaml';
 

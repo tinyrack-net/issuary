@@ -14,7 +14,7 @@ const LocaleSchema = z.enum(AVAILABLE_LOCALES);
 // SMTP
 // ---------------------------------------------------------------------------
 
-export const AppConfigSmtp = z.object({
+const AppConfigSmtp = z.object({
   host: z.string().default('localhost'),
   port: zz.PORT.default(465),
   secure: z.boolean().default(true),
@@ -30,7 +30,7 @@ export type AppConfigSmtp = z.infer<typeof AppConfigSmtp>;
 // User
 // ---------------------------------------------------------------------------
 
-export const AppConfigUser = z.object({
+const AppConfigUser = z.object({
   id: z.string().min(1),
   email: f.userEmail,
   password: f.userPassword,
@@ -47,7 +47,7 @@ export type AppConfigUser = z.infer<typeof AppConfigUser>;
  * OAuth/OIDC client configuration.
  * Defines applications that can authenticate through TinyAuth.
  */
-export const AppConfigClient = z.object({
+const AppConfigClient = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   logo_uri: z.string().optional(),
@@ -65,20 +65,20 @@ export type AppConfigClient = z.infer<typeof AppConfigClient>;
 // Database
 // ---------------------------------------------------------------------------
 
-export const AppConfigDatabaseMemory = z.object({
+const AppConfigDatabaseMemory = z.object({
   type: z.literal('memory'),
 });
 
 export type AppConfigDatabaseMemory = z.infer<typeof AppConfigDatabaseMemory>;
 
-export const AppConfigDatabaseSqlite = z.object({
+const AppConfigDatabaseSqlite = z.object({
   type: z.literal('sqlite'),
   path: z.string().optional().default('test.db'),
 });
 
 export type AppConfigDatabaseSqlite = z.infer<typeof AppConfigDatabaseSqlite>;
 
-export const AppConfigDatabasePostgres = z.object({
+const AppConfigDatabasePostgres = z.object({
   type: z.literal('postgres'),
   host: z.string().optional().default('localhost'),
   port: zz.PORT.optional().default(5432),
@@ -91,7 +91,7 @@ export type AppConfigDatabasePostgres = z.infer<
   typeof AppConfigDatabasePostgres
 >;
 
-export const AppConfigDatabase = z.discriminatedUnion('type', [
+const AppConfigDatabase = z.discriminatedUnion('type', [
   AppConfigDatabaseMemory,
   AppConfigDatabaseSqlite,
   AppConfigDatabasePostgres,
@@ -119,7 +119,7 @@ const CronExpression = z
 /**
  * Default scheduler configuration
  */
-export const DEFAULT_SCHEDULER_CONFIG = {
+const DEFAULT_SCHEDULER_CONFIG = {
   enabled: true,
   cron: '0 2 * * *', // Daily at 2 AM
 } as const;
@@ -133,7 +133,7 @@ export const DEFAULT_SCHEDULER_CONFIG = {
  * For Kubernetes deployments, disable the scheduler and use CronJobs
  * to run `tinyauth cleanup` externally.
  */
-export const AppConfigScheduler = z
+const AppConfigScheduler = z
   .object({
     enabled: zz.COERCE_BOOLEAN.optional()
       .default(DEFAULT_SCHEDULER_CONFIG.enabled)
@@ -219,7 +219,7 @@ export type TermsItem = z.infer<typeof TermsItem>;
 /**
  * Terms configuration schema.
  */
-export const AppConfigTerms = z
+const AppConfigTerms = z
   .array(TermsItem)
   .default([])
   .describe('Terms of service configuration');
@@ -233,7 +233,7 @@ export type AppConfigTerms = z.infer<typeof AppConfigTerms>;
 /**
  * Configuration for revoked tokens cleanup
  */
-export const CleanupRevokedTokensConfig = z
+const CleanupRevokedTokensConfig = z
   .object({
     enabled: z
       .boolean()
@@ -251,7 +251,7 @@ export const CleanupRevokedTokensConfig = z
 /**
  * Configuration for OAuth authorization codes cleanup
  */
-export const CleanupOAuthCodesConfig = z
+const CleanupOAuthCodesConfig = z
   .object({
     enabled: z
       .boolean()
@@ -269,7 +269,7 @@ export const CleanupOAuthCodesConfig = z
 /**
  * Configuration for email verification tokens cleanup
  */
-export const CleanupEmailVerificationsConfig = z
+const CleanupEmailVerificationsConfig = z
   .object({
     enabled: z
       .boolean()
@@ -287,7 +287,7 @@ export const CleanupEmailVerificationsConfig = z
 /**
  * Configuration for password reset tokens cleanup
  */
-export const CleanupPasswordResetsConfig = z
+const CleanupPasswordResetsConfig = z
   .object({
     enabled: z
       .boolean()
@@ -305,7 +305,7 @@ export const CleanupPasswordResetsConfig = z
 /**
  * Configuration for deleted users cleanup (permanent deletion)
  */
-export const CleanupDeletedUsersConfig = z
+const CleanupDeletedUsersConfig = z
   .object({
     enabled: z
       .boolean()
@@ -323,7 +323,7 @@ export const CleanupDeletedUsersConfig = z
 /**
  * Configuration for pending OAuth registrations cleanup
  */
-export const CleanupPendingOAuthRegistrationsConfig = z
+const CleanupPendingOAuthRegistrationsConfig = z
   .object({
     enabled: z
       .boolean()
@@ -341,7 +341,7 @@ export const CleanupPendingOAuthRegistrationsConfig = z
 /**
  * Configuration for JWT key rotation
  */
-export const CleanupJwtKeysConfig = z
+const CleanupJwtKeysConfig = z
   .object({
     enabled: z
       .boolean()
@@ -354,7 +354,7 @@ export const CleanupJwtKeysConfig = z
 /**
  * Default cleanup configuration
  */
-export const DEFAULT_CLEANUP_CONFIG = {
+const DEFAULT_CLEANUP_CONFIG = {
   revoked_tokens: {
     enabled: true,
     retention: '0',
@@ -393,7 +393,7 @@ export const DEFAULT_CLEANUP_CONFIG = {
  * For Kubernetes deployments, create a CronJob that runs:
  * `tinyauth cleanup` on a regular schedule (e.g., daily at 2 AM).
  */
-export const AppConfigCleanup = z
+const AppConfigCleanup = z
   .object({
     revoked_tokens: CleanupRevokedTokensConfig.optional().default(
       DEFAULT_CLEANUP_CONFIG.revoked_tokens,
@@ -430,7 +430,7 @@ export type AppConfigCleanup = z.infer<typeof AppConfigCleanup>;
  * Log level values.
  * Maps to pino log levels.
  */
-export const LOG_LEVELS = [
+const LOG_LEVELS = [
   'trace',
   'debug',
   'info',
@@ -447,7 +447,7 @@ export type LogLevel = (typeof LOG_LEVELS)[number];
  * - 'json': Structured JSON output (default)
  * - 'pretty': Human-readable pretty-printed output
  */
-export const LOG_FORMATS = ['json', 'pretty'] as const;
+const LOG_FORMATS = ['json', 'pretty'] as const;
 
 export type LogFormat = (typeof LOG_FORMATS)[number];
 
@@ -541,7 +541,7 @@ export const AppTheme = z.enum([
 
 export type AppTheme = z.infer<typeof AppTheme>;
 
-export const AppConfigApp = z.object({
+const AppConfigApp = z.object({
   host: z.string().optional().default('http://localhost:8080'),
   port: zz.PORT.optional().default(8080),
   cookie_secret: z.string().min(16),
@@ -704,7 +704,7 @@ export type AppConfigApp = z.infer<typeof AppConfigApp>;
  * Second factor configuration for password authentication.
  * Determines if users must set up 2FA after registration.
  */
-export const AppConfigSecondFactor = z.object({
+const AppConfigSecondFactor = z.object({
   /**
    * Whether a second factor is required for password authentication.
    * If true, users must set up at least one 2FA method (TOTP or passkey).
@@ -788,7 +788,7 @@ export type AppConfigPasskeyAuth = z.infer<typeof AppConfigPasskeyAuth>;
  * Authentication methods configuration (fixed structure).
  * Contains password and passkey authentication settings.
  */
-export const AppConfigAuth = z.object({
+const AppConfigAuth = z.object({
   password: AppConfigPasswordAuth.optional().default({
     enabled: true,
     email_verification: true,
@@ -816,7 +816,7 @@ export type AppConfigAuth = z.infer<typeof AppConfigAuth>;
  * GitHub OAuth provider schema.
  * Uses pre-configured endpoints from WELL_KNOWN_OAUTH_PROVIDERS.
  */
-export const GithubOAuthSchema = z.object({
+const GithubOAuthSchema = z.object({
   id: z.string().min(1).describe('Unique identifier for this OAuth provider'),
   type: z.literal('github'),
   enabled: z.boolean().default(false),
@@ -840,7 +840,7 @@ export type GithubOAuthSchema = z.infer<typeof GithubOAuthSchema>;
  * Google OAuth provider schema.
  * Uses pre-configured endpoints from WELL_KNOWN_OAUTH_PROVIDERS.
  */
-export const GoogleOAuthSchema = z.object({
+const GoogleOAuthSchema = z.object({
   id: z.string().min(1).describe('Unique identifier for this OAuth provider'),
   type: z.literal('google'),
   enabled: z.boolean().default(false),
@@ -865,7 +865,7 @@ export type GoogleOAuthSchema = z.infer<typeof GoogleOAuthSchema>;
  * Uses pre-configured endpoints from WELL_KNOWN_OAUTH_PROVIDERS.
  * Apple uses form_post response mode by default.
  */
-export const AppleOAuthSchema = z.object({
+const AppleOAuthSchema = z.object({
   id: z.string().min(1).describe('Unique identifier for this OAuth provider'),
   type: z.literal('apple'),
   enabled: z.boolean().default(false),
@@ -893,7 +893,7 @@ export type AppleOAuthSchema = z.infer<typeof AppleOAuthSchema>;
  * Generic OAuth provider schema for custom OAuth providers.
  * Requires all endpoint URLs and userinfo mapping to be specified.
  */
-export const GenericOAuthSchema = z.object({
+const GenericOAuthSchema = z.object({
   id: z.string().min(1).describe('Unique identifier for this OAuth provider'),
   type: z.literal('generic_oauth'),
   enabled: z.boolean().default(false),
@@ -939,7 +939,7 @@ export type GenericOAuthSchema = z.infer<typeof GenericOAuthSchema>;
  * Well-known providers (github, google, apple) use pre-configured endpoints.
  * Generic OAuth requires all endpoints to be specified.
  */
-export const AppConfigIdentityProvider = z.discriminatedUnion('type', [
+const AppConfigIdentityProvider = z.discriminatedUnion('type', [
   GithubOAuthSchema,
   GoogleOAuthSchema,
   AppleOAuthSchema,
@@ -954,7 +954,7 @@ export type AppConfigIdentityProvider = z.infer<
  * Identity providers configuration.
  * Array of external OAuth/OIDC provider configurations for social login.
  */
-export const AppConfigIdentityProviders = z
+const AppConfigIdentityProviders = z
   .array(AppConfigIdentityProvider)
   .default([]);
 

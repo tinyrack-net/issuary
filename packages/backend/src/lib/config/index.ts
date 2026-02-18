@@ -12,20 +12,14 @@ export { loadConfig, resolveConfig } from './loader.js';
 export {
   type ResolvedOAuthConfig,
   resolveOAuthConfig,
-  WELL_KNOWN_OAUTH_PROVIDERS,
   type WellKnownOAuthProvider,
 } from './oauth-resolver.js';
 // Config schemas and types
 export {
   type AppConfig,
-  AppConfigApp,
   type AppConfigInput,
-  AppConfigLogging,
   AppConfigPasskeyAuth,
   AppConfigPasswordAuth,
-  AppConfigSchema,
-  AppConfigSmtp,
-  AppConfigTerms,
   AppTheme,
   type LogFormat,
   type LogLevel,
