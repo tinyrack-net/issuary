@@ -6,7 +6,6 @@ import type {
   OIDCConfig,
   OpenIDConfiguration,
   TokenResponse,
-  UserInfo,
 } from '@/types/oidc';
 import { env } from './env';
 import {
@@ -15,7 +14,6 @@ import {
   assertJWKS,
   assertOpenIDConfiguration,
   assertTokenResponse,
-  assertUserInfo,
 } from './validators';
 
 /**
@@ -153,59 +151,6 @@ export async function exchangeCodeForTokens(
 }
 
 /**
- * Refresh access token using refresh token
- * Public Client: No client_secret required
- */
-export async function refreshAccessToken(
-  refreshToken: string,
-): Promise<TokenResponse> {
-  const config = getOIDCConfig();
-  const params = new URLSearchParams({
-    grant_type: 'refresh_token',
-    refresh_token: refreshToken,
-    client_id: config.client_id,
-  });
-
-  const response = await fetch(config.token_endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: params.toString(),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Token refresh failed: ${error}`);
-  }
-
-  const json: unknown = await response.json();
-  assertTokenResponse(json);
-  return json;
-}
-
-/**
- * Fetch user info from userinfo endpoint
- */
-export async function fetchUserInfo(accessToken: string): Promise<UserInfo> {
-  const config = getOIDCConfig();
-  const response = await fetch(config.userinfo_endpoint, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`UserInfo fetch failed: ${error}`);
-  }
-
-  const json: unknown = await response.json();
-  assertUserInfo(json);
-  return json;
-}
-
-/**
  * Decode ID token (without verification - for display purposes)
  * For production, use jose's jwtVerify with proper key
  */
@@ -213,21 +158,6 @@ export function decodeIDToken(idToken: string): IDTokenPayload {
   const payload: unknown = decodeJwt(idToken);
   assertIDTokenPayload(payload);
   return payload;
-}
-
-/**
- * Check if token is expired
- */
-export function isTokenExpired(token: string): boolean {
-  try {
-    const payload = decodeJwt(token);
-    if (!payload.exp) {
-      return false;
-    }
-    return Date.now() >= payload.exp * 1000;
-  } catch {
-    return true;
-  }
 }
 
 /**

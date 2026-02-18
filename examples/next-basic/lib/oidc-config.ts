@@ -111,16 +111,3 @@ export async function getOIDCConfig(): Promise<OIDCConfig> {
   }
   return oidcConfig;
 }
-
-/**
- * Check if OIDC configuration is initialized
- */
-export function isOIDCConfigInitialized(): boolean {
-  return oidcConfig !== null;
-}
-
-/**
- * Export for backward compatibility
- * @deprecated Use getOIDCConfig() instead
- */
-export { getOIDCConfig as oidcConfig };

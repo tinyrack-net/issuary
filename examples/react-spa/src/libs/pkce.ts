@@ -12,7 +12,7 @@ function base64URLEncode(buffer: Uint8Array): string {
  * Generate a random code verifier for PKCE
  * Following RFC 7636 specifications
  */
-export function generateCodeVerifier(): string {
+function generateCodeVerifier(): string {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
   return base64URLEncode(array);
@@ -21,9 +21,7 @@ export function generateCodeVerifier(): string {
 /**
  * Generate code challenge from code verifier using SHA-256
  */
-export async function generateCodeChallenge(
-  codeVerifier: string,
-): Promise<string> {
+async function generateCodeChallenge(codeVerifier: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(codeVerifier);
   const hash = await crypto.subtle.digest('SHA-256', data);

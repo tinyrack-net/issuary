@@ -1,24 +1,9 @@
 import { cookies } from 'next/headers';
 import type { AuthState, TokenResponse } from '@/types/oidc';
-import { assertAuthState, assertTokenResponse } from './validators';
+import { assertTokenResponse } from './validators';
 
 const TOKEN_COOKIE_NAME = 'oidc_tokens';
 const STATE_COOKIE_NAME = 'oidc_state';
-const MAX_AGE = 60 * 60 * 24 * 30; // 30 days
-
-/**
- * Save tokens to httpOnly cookie
- */
-export async function saveTokens(tokens: TokenResponse): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(TOKEN_COOKIE_NAME, JSON.stringify(tokens), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: MAX_AGE,
-    path: '/',
-  });
-}
 
 /**
  * Get tokens from cookie
@@ -60,27 +45,4 @@ export async function saveAuthState(authState: AuthState): Promise<void> {
     maxAge: 60 * 10, // 10 minutes
     path: '/',
   });
-}
-
-/**
- * Get and clear auth state
- */
-export async function getAndClearAuthState(): Promise<AuthState | null> {
-  const cookieStore = await cookies();
-  const stateCookie = cookieStore.get(STATE_COOKIE_NAME);
-
-  if (!stateCookie) {
-    return null;
-  }
-
-  // Clear immediately after reading
-  cookieStore.delete(STATE_COOKIE_NAME);
-
-  try {
-    const parsed: unknown = JSON.parse(stateCookie.value);
-    assertAuthState(parsed);
-    return parsed;
-  } catch {
-    return null;
-  }
 }
