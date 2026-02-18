@@ -29,7 +29,7 @@ const ERROR_CODES = {
   TOTP_NOT_ENABLED: 'TOTP_NOT_ENABLED',
 } as const;
 
-export const SearchSchema = OAuthSearchSchema;
+const SearchSchema = OAuthSearchSchema;
 
 export const Route = createFileRoute('/verify/totp/recovery/')({
   component: VerifyRecovery,

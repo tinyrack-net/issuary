@@ -17,7 +17,7 @@ import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export const SearchSchema = OAuthSearchSchema;
+const SearchSchema = OAuthSearchSchema;
 
 export const Route = createFileRoute('/verify/passkey/')({
   component: VerifyPasskey,

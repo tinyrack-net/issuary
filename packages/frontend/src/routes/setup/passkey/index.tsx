@@ -25,7 +25,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-export const SearchSchema = OAuthSearchSchema.extend({
+const SearchSchema = OAuthSearchSchema.extend({
   passkey_name: z.string().optional(),
 });
 

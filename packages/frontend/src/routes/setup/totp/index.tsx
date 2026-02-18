@@ -39,7 +39,7 @@ const ERROR_CODES = {
   SECOND_FACTOR_SESSION_EXPIRED: 'SECOND_FACTOR_SESSION_EXPIRED',
 } as const;
 
-export const SearchSchema = OAuthSearchSchema;
+const SearchSchema = OAuthSearchSchema;
 
 export const Route = createFileRoute('/setup/totp/')({
   component: SetupTotp,

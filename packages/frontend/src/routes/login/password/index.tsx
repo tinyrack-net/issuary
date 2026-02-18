@@ -32,7 +32,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-export const SearchSchema = OAuthSearchSchema;
+const SearchSchema = OAuthSearchSchema;
 
 export const Route = createFileRoute('/login/password/')({
   component: LoginPassword,
