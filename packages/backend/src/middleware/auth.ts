@@ -1,4 +1,4 @@
-import { e } from '@backend/schemas/error.js';
+import { ApiError, e } from '@backend/schemas/error.js';
 import type { r } from '@backend/schemas/response.js';
 import { createMiddleware } from 'hono/factory';
 import type z from 'zod';
@@ -32,10 +32,23 @@ export const verifyAuth = <Optional extends boolean = false>(options?: {
       }
       throw new e.Unauthorized.Error();
     }
-    const userEntity = await services.mikro.user.verifyById(userId);
-    const sessionUser =
-      await services.userService.userEntityToSessionUser(userEntity);
-    c.set('verifiedUser', sessionUser);
+    try {
+      const userEntity = await services.mikro.user.verifyById(userId);
+      const sessionUser =
+        await services.userService.userEntityToSessionUser(userEntity);
+      c.set('verifiedUser', sessionUser);
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'USER_NOT_FOUND') {
+        session.clearAuthSessions();
+        if (options?.optional) {
+          c.set('verifiedUser', undefined as never);
+          await next();
+          return;
+        }
+        throw new e.Unauthorized.Error();
+      }
+      throw err;
+    }
     await next();
   });
 
@@ -68,10 +81,23 @@ export const verifyPending2FAUser = <
       }
       throw new e.Unauthorized.Error();
     }
-    const userEntity = await services.mikro.user.verifyById(userId);
-    const sessionUser =
-      await services.userService.userEntityToSessionUser(userEntity);
-    c.set('verifiedPending2FAUser', sessionUser);
+    try {
+      const userEntity = await services.mikro.user.verifyById(userId);
+      const sessionUser =
+        await services.userService.userEntityToSessionUser(userEntity);
+      c.set('verifiedPending2FAUser', sessionUser);
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'USER_NOT_FOUND') {
+        session.clearAuthSessions();
+        if (options?.optional) {
+          c.set('verifiedPending2FAUser', undefined as never);
+          await next();
+          return;
+        }
+        throw new e.Unauthorized.Error();
+      }
+      throw err;
+    }
     await next();
   });
 
@@ -104,9 +130,22 @@ export const verifyPending2FASetupUser = <
       }
       throw new e.Unauthorized.Error();
     }
-    const userEntity = await services.mikro.user.verifyById(userId);
-    const sessionUser =
-      await services.userService.userEntityToSessionUser(userEntity);
-    c.set('verifiedPending2FASetupUser', sessionUser);
+    try {
+      const userEntity = await services.mikro.user.verifyById(userId);
+      const sessionUser =
+        await services.userService.userEntityToSessionUser(userEntity);
+      c.set('verifiedPending2FASetupUser', sessionUser);
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'USER_NOT_FOUND') {
+        session.clearAuthSessions();
+        if (options?.optional) {
+          c.set('verifiedPending2FASetupUser', undefined as never);
+          await next();
+          return;
+        }
+        throw new e.Unauthorized.Error();
+      }
+      throw err;
+    }
     await next();
   });
