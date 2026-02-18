@@ -1,4 +1,5 @@
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
+import type { Logger } from '@backend/lib/logger.js';
 import { seedConfig } from '@backend/seeders/config.seeder.js';
 import { CleanupService } from '@backend/services/cleanup.service.js';
 import { EmailService } from '@backend/services/email.service.js';
@@ -35,11 +36,6 @@ export interface ServiceContainer {
   cleanupService: CleanupService;
 }
 
-export interface ServerOptions {
-  skipListen: boolean;
-  silent: boolean;
-}
-
 export interface InitResult {
   services: ServiceContainer;
   cleanup: () => Promise<void>;
@@ -47,27 +43,25 @@ export interface InitResult {
 
 export async function initializeServices(
   config: ResolvedAppConfig,
-  serverOptions: ServerOptions,
+  logger: Logger,
 ): Promise<InitResult> {
   // 1. Initialize MikroORM
-  const mikro = await MikroService.initialize(config, {
-    silent: serverOptions.silent,
-  });
+  const mikroLogger = logger.child({ service: 'mikro' });
+  const mikro = await MikroService.initialize(config, mikroLogger);
 
   // 2. Bootstrap: seed config users/clients
   await seedConfig(mikro.orm.em.fork(), config);
-  if (!serverOptions.silent) {
-    console.info(
-      'Bootstrap complete (users: %d, clients: %d)',
-      config.users.length,
-      config.clients.length,
-    );
-  }
+  logger.info(
+    {
+      users: config.users.length,
+      clients: config.clients.length,
+    },
+    'Bootstrap complete',
+  );
 
   // 3. Create services (respecting dependency order)
-  const emailService = new EmailService(config, mikro, {
-    silent: serverOptions.silent,
-  });
+  const emailLogger = logger.child({ service: 'email' });
+  const emailService = new EmailService(config, mikro, emailLogger);
   const jwtService = new JwtService(config, mikro);
   const passwordResetService = new PasswordResetService(mikro);
   const termsService = new TermsService(mikro);
@@ -103,9 +97,12 @@ export async function initializeServices(
   const cleanupService = new CleanupService(config, mikro, jwtService);
 
   // 4. Scheduler
-  const scheduler = new SchedulerService(config, cleanupService, {
-    silent: serverOptions.silent,
-  });
+  const schedulerLogger = logger.child({ service: 'scheduler' });
+  const scheduler = new SchedulerService(
+    config,
+    cleanupService,
+    schedulerLogger,
+  );
 
   const services: ServiceContainer = {
     config,
