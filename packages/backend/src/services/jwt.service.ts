@@ -361,24 +361,6 @@ export class JwtService {
   }
 
   /**
-   * Check and perform rotation if needed
-   *
-   * Called by `tinyauth cleanup` command.
-   * Rotates if active key is past expiration date.
-   */
-  async checkAndRotate(): Promise<boolean> {
-    const expiredKeys = await this.mikro.jwtKey.getExpiredActiveKeys();
-
-    if (expiredKeys.length > 0) {
-      await this.rotateKeys();
-      await this.retireOldKeys();
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
    * Get the active signing key (with caching)
    *
    * @returns Active key with private_key loaded
@@ -477,28 +459,6 @@ export class JwtService {
     const jwks = await Promise.all(keys.map((key) => this.convertToJWK(key)));
 
     return { keys: jwks };
-  }
-
-  /**
-   * Import private key from PEM for signing
-   *
-   * @param pem - PEM-encoded private key
-   * @param algorithm - Algorithm (RS256)
-   * @returns KeyLike for jose signing
-   */
-  async importPrivateKey(pem: string, algorithm: string) {
-    return importPKCS8(pem, algorithm);
-  }
-
-  /**
-   * Import public key from PEM for verification
-   *
-   * @param pem - PEM-encoded public key
-   * @param algorithm - Algorithm (RS256)
-   * @returns KeyLike for jose verification
-   */
-  async importPublicKey(pem: string, algorithm: string) {
-    return importSPKI(pem, algorithm);
   }
 
   /**
@@ -657,25 +617,6 @@ export class JwtService {
   }
 
   /**
-   * Verify and decode an ID token
-   *
-   * @throws {InvalidIdToken} When token is invalid or expired
-   */
-  async verifyIdToken(token: string): Promise<IdTokenPayload> {
-    try {
-      const payload = await this.verifyToken(token);
-
-      if (!this.isIdTokenPayload(payload)) {
-        throw new Error('Invalid ID token payload structure');
-      }
-
-      return payload;
-    } catch {
-      throw new e.InvalidIdToken.Error();
-    }
-  }
-
-  /**
    * Internal: Verify token with appropriate key based on kid
    */
   private async verifyToken(token: string): Promise<JWTPayload> {
@@ -740,15 +681,6 @@ export class JwtService {
       typeof payload['client_id'] === 'string' &&
       typeof payload['scope'] === 'string'
     );
-  }
-
-  /**
-   * Type guard to validate ID token payload structure
-   */
-  private isIdTokenPayload(
-    payload: JWTPayload,
-  ): payload is JWTPayload & IdTokenPayload {
-    return typeof payload.sub === 'string' && typeof payload.aud === 'string';
   }
 
   /**

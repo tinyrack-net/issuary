@@ -243,13 +243,6 @@ export class PasskeyService {
   }
 
   /**
-   * Get passkey count for a user
-   */
-  public async getPasskeyCount(userId: string): Promise<number> {
-    return this.mikro.userPasskey.countByUserId(userId);
-  }
-
-  /**
    * Delete a passkey
    */
   public async deletePasskey(

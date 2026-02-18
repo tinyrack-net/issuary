@@ -64,38 +64,4 @@ export class UserConsentService {
       scopes,
     });
   }
-
-  /**
-   * Revoke consent for a user to a specific client.
-   */
-  public async revokeConsent(
-    userId: string,
-    clientId: string,
-  ): Promise<boolean> {
-    return this.mikro.userConsent.revokeConsent(userId, clientId);
-  }
-
-  /**
-   * Revoke all consents for a user.
-   */
-  public async revokeAllConsents(userId: string): Promise<number> {
-    return this.mikro.userConsent.revokeAllConsents(userId);
-  }
-
-  /**
-   * Get all active consents for a user.
-   */
-  public async findAllConsents(userId: string): Promise<UserConsentEntity[]> {
-    return this.mikro.userConsent.findAllConsents(userId);
-  }
-
-  /**
-   * Find consent for a specific user and client.
-   */
-  public async findConsent(
-    userId: string,
-    clientId: string,
-  ): Promise<UserConsentEntity | null> {
-    return this.mikro.userConsent.findConsent(userId, clientId);
-  }
 }

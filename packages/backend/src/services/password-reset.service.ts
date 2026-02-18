@@ -75,12 +75,4 @@ export class PasswordResetService {
 
     return user;
   }
-
-  /**
-   * Validate a password reset token without using it
-   */
-  async validateToken(token: string): Promise<boolean> {
-    const entity = await this.mikro.passwordReset.findValidToken(token);
-    return entity !== null;
-  }
 }
