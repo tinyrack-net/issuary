@@ -222,9 +222,9 @@ app:
   # Supports HTML for links (use class="link" for consistent styling).
   #
   # signup_implicit_terms:
-  #   en: By continuing, you agree to our <a href="https://example.com/terms" class="link">Terms of Service</a> and <a href="https://example.com/privacy" class="link">Privacy Policy</a>.
-  #   ko: 계속하면 <a href="https://example.com/terms/ko" class="link">이용약관</a> 및 <a href="https://example.com/privacy/ko" class="link">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
-  #   ja: 続行することで、<a href="https://example.com/terms/ja" class="link">利用規約</a>および<a href="https://example.com/privacy/ja" class="link">プライバシーポリシー</a>に同意したものとみなされます。
+  #   ko: 계속하면 <a href="https://example.com/terms/ko" target="_blank">이용약관</a> 및 <a href="https://example.com/privacy/ko" target="_blank">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
+  #   en: By continuing, you agree to our <a href="https://example.com/terms/en" target="_blank">Terms of Service</a> and <a href="https://example.com/privacy/en" target="_blank">Privacy Policy</a>.
+  #   ja: 続行することで、<a href="https://example.com/terms/ja" target="_blank">利用規約</a>および<a href="https://example.com/privacy/ja" target="_blank">プライバシーポリシー</a>に同意したものとみなされます。
 
 # -----------------------------------------------------------------------------
 # Logging Configuration
