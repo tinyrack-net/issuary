@@ -1,17 +1,23 @@
 import type { AppType } from '@backend/app.js';
+import { UserEntity } from '@backend/entities/user.entity.js';
 import { createServer } from '@backend/server.js';
+import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
+  createDbUserWithSession,
   extractCookie,
+  generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_USER,
   TEST_USER_CONFIG,
+  withMikroContext,
 } from '@backend/test-utils/index.js';
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
+let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
@@ -22,6 +28,7 @@ beforeAll(async () => {
     },
   });
   app = server.app;
+  services = server.services;
   cleanup = server.cleanup;
 });
 
@@ -118,6 +125,46 @@ describe('GET /api/user/session', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.user).toBeNull();
+  });
+
+  test('should return unauthenticated and clear session when user is deleted from database', async () => {
+    const email = generateUniqueEmail('deleted-session');
+    const password = 'testPassword123';
+
+    const { sessionCookie, userId } = await createDbUserWithSession(
+      app,
+      services,
+      email,
+      password,
+    );
+
+    // Verify session works before deletion
+    const client = testClient(app);
+    const beforeRes = await client.api.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+    const beforeBody = await assertJsonBody(beforeRes);
+    expect(beforeBody.user).not.toBeNull();
+    expect(beforeBody.user?.id).toBe(userId);
+
+    // Hard-delete the user from the database
+    await withMikroContext(services, async () => {
+      await services.mikro.em.nativeDelete(UserEntity, { id: userId });
+    });
+
+    // Request session with stale cookie - should return user: null
+    const afterRes = await client.api.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+    expect(afterRes.status).toBe(200);
+    const afterBody = await afterRes.json();
+    expect(afterBody.user).toBeNull();
+
+    // Verify the session cookie is cleared (Set-Cookie header should delete it)
+    const setCookieHeader = afterRes.headers.get('set-cookie');
+    expect(setCookieHeader).toBeDefined();
   });
 
   test('should handle multiple session requests with same cookie', async () => {
