@@ -4,6 +4,7 @@ import { SubmitButton } from '@frontend/components/auth/submit-button.js';
 import { Alert } from '@frontend/components/ui/alert.js';
 import { Divider } from '@frontend/components/ui/divider.js';
 import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
@@ -44,6 +45,7 @@ const SearchSchema = z
 
 export const Route = createFileRoute('/verify/email/')({
   component: VerifyEmail,
+  errorComponent: RouteErrorFallback,
   validateSearch: SearchSchema,
   beforeLoad: async ({ context }) => {
     const config = await context.queryClient.ensureQueryData(

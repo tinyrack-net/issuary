@@ -2,6 +2,7 @@ import { FooterLink } from '@frontend/components/auth/footer-link.js';
 import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { Alert } from '@frontend/components/ui/alert.js';
 import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
 import { extractOAuthParams } from '@frontend/libs/oauth-search.js';
 import { appConfigQueryOptions } from '@frontend/queries/config';
 import { FingerprintIcon, ShieldCheckIcon } from '@phosphor-icons/react';
@@ -11,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/setup/2fa/')({
   component: Setup2FA,
+  errorComponent: RouteErrorFallback,
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData(appConfigQueryOptions);
   },

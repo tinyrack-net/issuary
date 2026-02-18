@@ -4,6 +4,7 @@ import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { SubmitButton } from '@frontend/components/auth/submit-button.js';
 import { Alert } from '@frontend/components/ui/alert.js';
 import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
 import { appConfigQueryOptions } from '@frontend/queries/config.js';
 import { forgotPasswordMutationOptions } from '@frontend/queries/password-reset.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
@@ -17,6 +18,7 @@ import { z } from 'zod';
 
 export const Route = createFileRoute('/password/forgot/')({
   component: ForgotPassword,
+  errorComponent: RouteErrorFallback,
   beforeLoad: async ({ context }) => {
     const config = await context.queryClient.ensureQueryData(
       appConfigQueryOptions,

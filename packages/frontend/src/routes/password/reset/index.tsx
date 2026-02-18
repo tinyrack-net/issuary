@@ -3,6 +3,7 @@ import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { SubmitButton } from '@frontend/components/auth/submit-button.js';
 import { Alert } from '@frontend/components/ui/alert.js';
 import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
 import { appConfigQueryOptions } from '@frontend/queries/config.js';
 import { resetPasswordMutationOptions } from '@frontend/queries/password-reset.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
@@ -30,6 +31,7 @@ const SearchSchema = z.object({
 
 export const Route = createFileRoute('/password/reset/')({
   component: ResetPassword,
+  errorComponent: RouteErrorFallback,
   validateSearch: SearchSchema,
   beforeLoad: async ({ context }) => {
     const config = await context.queryClient.ensureQueryData(
