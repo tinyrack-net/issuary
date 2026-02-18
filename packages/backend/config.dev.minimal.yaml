@@ -8,7 +8,7 @@ app:
     ja: 続行することで、<a href="https://example.com/terms/ja" class="link">利用規約</a>および<a href="https://example.com/privacy/ja" class="link">プライバシーポリシー</a>に同意したものとみなされます。
 
 logging:
-  level: info
+  level: trace
   format: pretty
   http_log_proxy: false
 
