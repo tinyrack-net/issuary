@@ -410,7 +410,7 @@ export class OAuthConnectService {
     });
     newUser.email_verified = true; // OAuth provider verified the email
 
-    await this.mikro.em.persist(newUser);
+    this.mikro.em.persist(newUser);
 
     // Link OAuth account
     await this.mikro.userOAuth.linkAccount({
@@ -617,7 +617,7 @@ export class OAuthConnectService {
     });
     newUser.email_verified = true;
 
-    await this.mikro.em.persist(newUser);
+    this.mikro.em.persist(newUser);
 
     // Link OAuth account
     await this.mikro.userOAuth.linkAccount({
