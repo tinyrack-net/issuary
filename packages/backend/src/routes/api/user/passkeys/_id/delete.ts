@@ -70,33 +70,30 @@ export const userPasskeyIdDelete = new Hono<AppEnv>().delete(
     }
 
     const params = c.req.valid('param');
-    const userSession = c.var.verifiedUser;
+    const userEntity = c.var.verifiedUser;
     const { mikro, passkeyService } = c.var.services;
 
     // Config users cannot manage 2FA
-    if (userSession.managed_by === 'config') {
+    if (userEntity.managed_by === 'config') {
       throw new e.SecondFactorNotAllowedForConfigUser.Error();
     }
 
-    // Check if user has other auth methods
-    const user = await mikro.user.findOneOrFail(
-      { id: userSession.id },
-      { populate: ['password_hash'] },
-    );
+    // Load password_hash to check auth methods
+    await mikro.em.populate(userEntity, ['password_hash']);
     const hasLinkedOAuth =
       (await mikro.userOAuth.count({
-        user: { id: user.id },
+        user: { id: userEntity.id },
       })) > 0;
-    const hasOtherAuthMethods = user.hasPassword() || hasLinkedOAuth;
+    const hasOtherAuthMethods = userEntity.hasPassword() || hasLinkedOAuth;
 
     // Check if 2FA is required
     const secondFactorRequired = config.auth.password.second_factor.required;
 
     // Check if user has other 2FA method (TOTP)
-    const totpEnabled = await mikro.userTotp.isRegistered(userSession.id);
+    const totpEnabled = await mikro.userTotp.isRegistered(userEntity.id);
 
     // Delete passkey
-    await passkeyService.deletePasskey(userSession.id, params.id, {
+    await passkeyService.deletePasskey(userEntity.id, params.id, {
       hasOtherAuthMethods,
       secondFactorRequired,
       hasOtherSecondFactor: totpEnabled,

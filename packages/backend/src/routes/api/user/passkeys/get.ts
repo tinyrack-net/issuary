@@ -43,9 +43,9 @@ export const userPasskeysGet = new Hono<AppEnv>().get(
       throw new e.PasskeyNotEnabled.Error();
     }
 
-    const userSession = c.var.verifiedUser;
+    const userEntity = c.var.verifiedUser;
     const { passkeyService } = c.var.services;
-    const passkeys = await passkeyService.getUserPasskeys(userSession.id);
+    const passkeys = await passkeyService.getUserPasskeys(userEntity.id);
 
     return c.json({ passkeys }, 200);
   },
