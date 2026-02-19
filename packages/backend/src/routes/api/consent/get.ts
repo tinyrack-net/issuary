@@ -60,12 +60,8 @@ export const consentGet = new Hono<AppEnv>().get(
   async (c) => {
     const query = c.req.valid('query');
     const { client_id, scope } = query;
-    const userSession = c.var.verifiedUser;
-    const { mikro, userService, oauthClientService } = c.var.services;
-
-    // Fetch user information
-    const userEntity = await mikro.user.verifyById(userSession.id);
-    const user = await userService.userEntityToSessionUser(userEntity);
+    const userEntity = c.var.verifiedUser;
+    const { oauthClientService } = c.var.services;
 
     // Fetch OAuth client information
     const client = await oauthClientService.findByClientId(client_id);
@@ -82,8 +78,8 @@ export const consentGet = new Hono<AppEnv>().get(
         },
         scopes,
         user: {
-          id: user.id,
-          email: user.email,
+          id: userEntity.id,
+          email: userEntity.email,
         },
       },
       200,
