@@ -1,5 +1,5 @@
 import type { UserEntity } from '@backend/entities/user.entity.js';
-import { ApiError, e } from '@backend/schemas/error.js';
+import { TinyAuthError, e } from '@backend/schemas/error.js';
 import { createMiddleware } from 'hono/factory';
 import type { ServicesEnv } from './services.js';
 import type { SessionEnv } from './session.js';
@@ -33,7 +33,7 @@ export const verifyAuth = <Optional extends boolean = false>(options?: {
       const userEntity = await services.mikro.user.findById(userId);
       c.set('verifiedUser', userEntity);
     } catch (err) {
-      if (err instanceof ApiError && err.code === 'USER_NOT_FOUND') {
+      if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
         session.clearAuthSessions();
         if (options?.optional) {
           c.set('verifiedUser', undefined as never);
@@ -80,7 +80,7 @@ export const verifyPending2FAUser = <
       const userEntity = await services.mikro.user.findById(userId);
       c.set('verifiedPending2FAUser', userEntity);
     } catch (err) {
-      if (err instanceof ApiError && err.code === 'USER_NOT_FOUND') {
+      if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
         session.clearAuthSessions();
         if (options?.optional) {
           c.set('verifiedPending2FAUser', undefined as never);
@@ -127,7 +127,7 @@ export const verifyPending2FASetupUser = <
       const userEntity = await services.mikro.user.findById(userId);
       c.set('verifiedPending2FASetupUser', userEntity);
     } catch (err) {
-      if (err instanceof ApiError && err.code === 'USER_NOT_FOUND') {
+      if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
         session.clearAuthSessions();
         if (options?.optional) {
           c.set('verifiedPending2FASetupUser', undefined as never);
