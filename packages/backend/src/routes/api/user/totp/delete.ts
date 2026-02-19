@@ -64,11 +64,11 @@ export const userTotpDelete = new Hono<AppEnv>().delete(
   verifyAuth(),
   async (c) => {
     const body = c.req.valid('json');
-    const userSession = c.var.verifiedUser;
+    const userEntity = c.var.verifiedUser;
     const { config, mikro, totpService } = c.var.services;
 
     // Config users cannot manage 2FA
-    if (userSession.managed_by === 'config') {
+    if (userEntity.managed_by === 'config') {
       throw new e.SecondFactorNotAllowedForConfigUser.Error();
     }
 
@@ -76,10 +76,10 @@ export const userTotpDelete = new Hono<AppEnv>().delete(
     const secondFactorRequired = config.auth.password.second_factor.required;
 
     // Check if user has other 2FA method (passkey)
-    const passkeyCount = await mikro.userPasskey.countByUserId(userSession.id);
+    const passkeyCount = await mikro.userPasskey.countByUserId(userEntity.id);
     const hasOtherSecondFactor = passkeyCount > 0;
 
-    await totpService.disable(userSession.id, body.code, {
+    await totpService.disable(userEntity.id, body.code, {
       secondFactorRequired,
       hasOtherSecondFactor,
     });

@@ -61,26 +61,17 @@ export const userTotpSetupPost = new Hono<AppEnv>().post(
   verifyAuth({ optional: true }),
   verifyPending2FASetupUser({ optional: true }),
   async (c) => {
-    const { config, mikro, totpService } = c.var.services;
+    const { config, totpService } = c.var.services;
 
     if (!config.auth.password.totp?.enabled) {
       throw new e.ValidationError.Error('TOTP is disabled');
     }
 
-    const verifiedUser = c.var.verifiedUser;
-    const verifiedPending2FASetupUser = c.var.verifiedPending2FASetupUser;
-    const userId = verifiedUser?.id ?? verifiedPending2FASetupUser?.id;
+    const user = c.var.verifiedUser ?? c.var.verifiedPending2FASetupUser;
 
-    if (!userId) {
+    if (!user) {
       throw new e.Unauthorized.Error();
     }
-
-    const user = await mikro.user.findOneOrFail(
-      { id: userId },
-      {
-        failHandler: () => new e.UserNotFound.Error(),
-      },
-    );
 
     // Config users cannot setup 2FA
     if (user.managed_by === 'config') {
