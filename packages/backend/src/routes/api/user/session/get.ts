@@ -29,38 +29,16 @@ export const userSessionGet = new Hono<AppEnv>().get(
   }),
   verifyAuth({ optional: true }),
   async (c) => {
-    const user = c.var.verifiedUser;
-    const { userService } = c.var.services;
+    const userEntity = c.var.verifiedUser;
+    const { mikro, userService } = c.var.services;
 
-    if (!user) {
+    if (!userEntity) {
       return c.json({ user: null }, 200);
     }
 
-    const secondFactorRequired = userService.user2FASetupRequired(user);
-    const available2FAMethods = userService.getAvailable2FASetupMethods();
-
-    const needsSecondFactorSetup =
-      secondFactorRequired &&
-      available2FAMethods.length > 0 &&
-      !user.totp_registered &&
-      user.passkey_count === 0;
-
-    const userSession = {
-      id: user.id,
-      managed_by: user.managed_by,
-      email: user.email,
-      email_verified: user.email_verified,
-      email_verification_required:
-        userService.userEmailVerificationRequired(user),
-      has_password: user.has_password,
-      totp_registered: user.totp_registered,
-      second_factor_required: user.second_factor_required,
-      passkey_count: user.passkey_count,
-    };
-
-    if (needsSecondFactorSetup) {
-      return c.json({ user: userSession }, 200);
-    }
+    // Load full user data with relations for complete session response
+    const fullUser = await mikro.user.verifyById(userEntity.id);
+    const userSession = await userService.userEntityToSessionUser(fullUser);
 
     return c.json({ user: userSession }, 200);
   },
