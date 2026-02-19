@@ -71,37 +71,30 @@ export const userDelete = new Hono<AppEnv>().delete(
     if (!config.app.account_deletion) {
       throw new e.AccountDeletionDisabled.Error();
     }
-    const userSession = c.var.verifiedUser;
+    const userEntity = c.var.verifiedUser;
 
-    if (userSession.managed_by === 'config') {
+    if (userEntity.managed_by === 'config') {
       throw new e.UserNotEditable.Error();
     }
 
-    const user = await mikro.user.findOneOrFail(
-      { id: userSession.id },
-      {
-        failHandler: () => new e.UserNotFound.Error(),
-      },
-    );
-
-    if (user.deleted_at !== null) {
+    if (userEntity.deleted_at !== null) {
       throw new e.AccountAlreadyDeleted.Error();
     }
 
-    user.deleted_at = new Date();
+    userEntity.deleted_at = new Date();
     await mikro.em.flush();
 
     session.delete();
 
     const permanentDeletionDate = calculatePermanentDeletionDate(
-      user.deleted_at,
+      userEntity.deleted_at,
       config.cleanup.deleted_users.retention,
     );
 
     return c.json(
       {
         ok: true,
-        deleted_at: user.deleted_at.toISOString(),
+        deleted_at: userEntity.deleted_at.toISOString(),
         permanent_deletion_at: permanentDeletionDate.toISOString(),
       },
       200,

@@ -72,27 +72,16 @@ export const userPasswordDelete = new Hono<AppEnv>().delete(
   verifyAuth(),
   async (c) => {
     const body = c.req.valid('json');
-    const userSession = c.var.verifiedUser;
+    const user = c.var.verifiedUser;
     const { mikro } = c.var.services;
 
     // Config users cannot remove password
-    if (userSession.managed_by === 'config') {
-      throw new e.UserNotEditable.Error();
-    }
-
-    // Get user with password_hash
-    const user = await mikro.user.findOneOrFail(
-      { id: userSession.id },
-      {
-        populate: ['password_hash'],
-        failHandler: () => new e.UserNotFound.Error(),
-      },
-    );
-
-    // Check if user is config-managed
     if (user.managed_by === 'config') {
       throw new e.UserNotEditable.Error();
     }
+
+    // Load password_hash for password operations
+    await mikro.em.populate(user, ['password_hash']);
 
     // Check if password is set
     if (!user.hasPassword()) {
