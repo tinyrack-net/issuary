@@ -1,8 +1,8 @@
-import { randomBytes } from 'node:crypto';
 import type {
   IOAuthCodeEntity,
   OAuthCodeChallengeMethods,
 } from '@backend/entities/oauth-code.entity.js';
+import { getRandomBytes, toBase64Url } from '@backend/lib/base64url.js';
 import { e } from '@backend/schemas/error.js';
 import { EntityRepository } from '@mikro-orm/core';
 import { hash, verify } from '@node-rs/argon2';
@@ -25,7 +25,7 @@ export class OAuthCodeRepository extends EntityRepository<IOAuthCodeEntity> {
     authTime?: number;
   }): Promise<{ code: string; entity: IOAuthCodeEntity }> {
     // Generate a cryptographically secure random code
-    const code = randomBytes(32).toString('base64url');
+    const code = toBase64Url(getRandomBytes(32));
 
     // Hash the code before storing
     const codeHash = await hash(code);
