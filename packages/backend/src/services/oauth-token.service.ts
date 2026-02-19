@@ -1,4 +1,8 @@
-import { createHash } from 'node:crypto';
+import {
+  stringToBytes,
+  toArrayBuffer,
+  toBase64Url,
+} from '@backend/lib/base64url.js';
 import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import { validatePKCE } from '@backend/lib/pkce.js';
 import { e } from '@backend/schemas/error.js';
@@ -409,13 +413,18 @@ export class OAuthTokenService {
    * @param accessToken - The access token to hash
    * @returns Base64URL-encoded left half of the SHA-256 hash
    */
-  private computeAtHash(accessToken: string): string {
+  private async computeAtHash(accessToken: string): Promise<string> {
     // SHA-256 hash of the access token
-    const hash = createHash('sha256').update(accessToken).digest();
+    const hash = new Uint8Array(
+      await crypto.subtle.digest(
+        'SHA-256',
+        toArrayBuffer(stringToBytes(accessToken)),
+      ),
+    );
     // Take the left-most half (128 bits = 16 bytes for SHA-256)
-    const leftHalf = hash.subarray(0, hash.length / 2);
+    const leftHalf = hash.slice(0, hash.byteLength / 2);
     // Base64URL encode
-    return leftHalf.toString('base64url');
+    return toBase64Url(leftHalf);
   }
 
   /**
@@ -498,7 +507,7 @@ export class OAuthTokenService {
       // Compute at_hash (OIDC Core 1.0 §3.1.3.6)
       // Required when ID Token is issued from Authorization Endpoint with
       // access token in the same response, optional otherwise but recommended
-      idTokenPayload.at_hash = this.computeAtHash(accessToken);
+      idTokenPayload.at_hash = await this.computeAtHash(accessToken);
 
       if (scope.includes('email')) {
         idTokenPayload.email = userEmail;
