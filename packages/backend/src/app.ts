@@ -110,7 +110,7 @@ export async function createApp(options: CreateAppOptions) {
             const headers = new Headers(res.headers);
             headers.set(
               'content-length',
-              String(Buffer.byteLength(interpolated)),
+              String(new TextEncoder().encode(interpolated).byteLength),
             );
             return new Response(interpolated, {
               status: res.status,
