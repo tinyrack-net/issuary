@@ -75,22 +75,19 @@ export const userPasskeyRegisterVerifyPost = new Hono<AppEnv>().post(
     // Allow both full user session and pending 2FA setup session
     const verifiedUser = c.var.verifiedUser;
     const verifiedPending2FASetupUser = c.var.verifiedPending2FASetupUser;
-    const userId = verifiedUser?.id ?? verifiedPending2FASetupUser?.id;
+    const user = verifiedUser ?? verifiedPending2FASetupUser;
 
-    if (!userId) {
+    if (!user) {
       throw new e.Unauthorized.Error();
     }
+
+    const userId = user.id;
 
     // Get challenge from session
     const challenge = session.get('passkey_challenge');
     if (!challenge) {
       throw new e.PasskeyChallengeNotFound.Error();
     }
-
-    // Get user entity
-    const user = await mikro.user.findOneOrFail({
-      id: userId,
-    });
 
     // Cast for @simplewebauthn compatibility - Zod's inferred type
     // (Record<string, any>) is not structurally assignable to

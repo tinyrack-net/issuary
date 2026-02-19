@@ -66,23 +66,13 @@ export const userPasskeyRegisterOptionsPost = new Hono<AppEnv>().post(
     }
 
     const session = c.var.session;
-    const { mikro, passkeyService } = c.var.services;
+    const { passkeyService } = c.var.services;
 
-    const verifiedUser = c.var.verifiedUser;
-    const verifiedPending2FASetupUser = c.var.verifiedPending2FASetupUser;
-    const userId = verifiedUser?.id ?? verifiedPending2FASetupUser?.id;
+    const user = c.var.verifiedUser ?? c.var.verifiedPending2FASetupUser;
 
-    if (!userId) {
+    if (!user) {
       throw new e.Unauthorized.Error();
     }
-
-    // Get user entity for registration
-    const user = await mikro.user.findOneOrFail(
-      { id: userId },
-      {
-        failHandler: () => new e.UserNotFound.Error(),
-      },
-    );
 
     // Config users cannot setup 2FA
     if (user.managed_by === 'config') {
