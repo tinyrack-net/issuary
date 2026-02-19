@@ -59,7 +59,7 @@ export const oauthProviderDelete = new Hono<AppEnv>().delete(
   verifyAuth(),
   async (c) => {
     const params = c.req.valid('param');
-    const userSession = c.var.verifiedUser;
+    const userEntity = c.var.verifiedUser;
     const { oauthConnectService } = c.var.services;
 
     const { provider } = params;
@@ -68,7 +68,7 @@ export const oauthProviderDelete = new Hono<AppEnv>().delete(
     oauthConnectService.getProvider(provider);
 
     // Unlink the OAuth account
-    await oauthConnectService.unlinkOAuthAccount(userSession.id, provider);
+    await oauthConnectService.unlinkOAuthAccount(userEntity.id, provider);
 
     return c.json({ ok: true as const }, 200);
   },

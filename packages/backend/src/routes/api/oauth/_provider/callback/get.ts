@@ -150,13 +150,13 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
     // Handle based on mode
     if (oauthSession.mode === 'link') {
       // Link mode: link OAuth account to existing user
-      const userSession = c.var.verifiedUser;
-      if (!userSession) {
+      const userEntity = c.var.verifiedUser;
+      if (!userEntity) {
         throw new e.Unauthorized.Error();
       }
 
       await oauthConnectService.linkOAuthAccount(
-        userSession.id,
+        userEntity.id,
         provider,
         tokens,
         userInfo,
