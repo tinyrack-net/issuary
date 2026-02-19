@@ -3,6 +3,20 @@ import { e } from '@backend/schemas/error.js';
 import { EntityRepository, type Loaded } from '@mikro-orm/core';
 
 export class UserRepository extends EntityRepository<UserEntity> {
+  /**
+   * Find user by ID with no relation populate.
+   * Use this for lightweight verification (e.g., middleware).
+   * If you need related data (totps, passkeys, password_hash),
+   * use verifyById() or populate the entity yourself.
+   */
+  public async findById(id: string): Promise<UserEntity> {
+    const user = await this.findOneOrFail(
+      { id },
+      { failHandler: () => new e.UserNotFound.Error() },
+    );
+    return user;
+  }
+
   public async verifyById(
     id: string,
   ): Promise<
