@@ -68,7 +68,7 @@ export function sessionMiddleware(cookieSecret: string, isSecure: boolean) {
 
     let sessionData: SessionData = {};
     if (cookieValue) {
-      const decrypted = decrypt(cookieValue, cookieSecret);
+      const decrypted = await decrypt(cookieValue, cookieSecret);
       if (decrypted) {
         try {
           // Cast is acceptable: we encrypt/decrypt our own
@@ -137,7 +137,10 @@ export function sessionMiddleware(cookieSecret: string, isSecure: boolean) {
     if (changed) {
       const hasData = Object.values(sessionData).some((v) => v !== undefined);
       if (hasData) {
-        const encrypted = encrypt(JSON.stringify(sessionData), cookieSecret);
+        const encrypted = await encrypt(
+          JSON.stringify(sessionData),
+          cookieSecret,
+        );
         setCookie(c, 'session', encrypted, {
           path: '/',
           httpOnly: true,
