@@ -1,9 +1,9 @@
 import { UserRepository } from '@backend/repositories/user.repository.js';
 import {
   defineEntity,
-  type EventArgs,
   type InferEntity,
   p,
+  type EventArgs,
 } from '@mikro-orm/core';
 import { hash, verify } from '@node-rs/argon2';
 import { BaseSchema } from './base.entity.js';
@@ -11,14 +11,6 @@ import { UserOAuthEntitySchema } from './user-oauth.entity.js';
 import { UserPasskeyEntitySchema } from './user-passkey.entity.js';
 import { UserTotpEntitySchema } from './user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from './user-totp-recovery-code.entity.js';
-
-// biome-ignore lint/suspicious/noExplicitAny: avoid circular type reference between hashPassword → UserEntity → UserEntitySchema → hashPassword
-async function hashPassword(args: EventArgs<any>) {
-  const password = args.changeSet?.payload['password_hash'];
-  if (typeof password === 'string') {
-    args.entity.password_hash = await hash(password);
-  }
-}
 
 export const UserEntitySchema = defineEntity({
   name: 'UserEntity',
@@ -76,14 +68,21 @@ export const UserEntitySchema = defineEntity({
     },
   ],
   hooks: {
-    beforeCreate: [hashPassword],
-    beforeUpdate: [hashPassword],
+    beforeCreate: ['hashPassword'],
+    beforeUpdate: ['hashPassword'],
   },
 });
 
 export type IUserEntity = InferEntity<typeof UserEntitySchema>;
 
 export class UserEntity extends UserEntitySchema.class {
+  async hashPassword(args: EventArgs<UserEntity>) {
+    const changed_password = args.changeSet?.payload.password_hash;
+    if (typeof changed_password === 'string') {
+      args.entity.password_hash = await hash(changed_password);
+    }
+  }
+
   async verifyPassword(password: string) {
     if (!this.password_hash) {
       return false;
