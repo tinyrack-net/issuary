@@ -14,7 +14,7 @@ import { sessionMiddleware } from '@backend/middleware/session.js';
 import { registerProdStatic } from '@backend/middleware/static.js';
 import { trustedProxyGuard } from '@backend/middleware/trusted-proxy-guard.js';
 import { routes } from '@backend/routes/index.js';
-import { ApiError, e } from '@backend/schemas/error.js';
+import { e, TinyAuthError } from '@backend/schemas/error.js';
 import { initializeServices } from '@backend/services/container.js';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
@@ -45,7 +45,7 @@ export async function createApp(options: CreateAppOptions) {
 
   const app = new Hono()
     .onError((err, c) => {
-      if (err instanceof ApiError) {
+      if (err instanceof TinyAuthError) {
         return c.json(err.toJson(), err.status);
       }
 

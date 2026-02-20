@@ -3,11 +3,11 @@ import i18n from '@frontend/i18n/index.js';
 import type { ClientResponse } from 'hono/client';
 import { hc } from 'hono/client';
 import type { StatusCode, SuccessStatusCode } from 'hono/utils/http-status';
-import { ApiError } from './error';
+import { TinyAuthError } from './error';
 
 /**
  * Custom fetch that adds Accept-Language header
- * and converts error responses to ApiError.
+ * and converts error responses to TinyAuthError.
  *
  * This replaces the old `etch()` wrapper, preserving
  * the same behavior within the Hono RPC client.
@@ -22,7 +22,7 @@ const customFetch: typeof fetch = async (input, init) => {
   const res = await fetch(input, { ...init, headers });
 
   if (!res.ok) {
-    throw await ApiError.fromResponse(res);
+    throw await TinyAuthError.fromResponse(res);
   }
 
   return res;
@@ -59,7 +59,7 @@ type ExtractSuccessBody<T> =
 /**
  * Narrow a Hono ClientResponse to its success body type.
  *
- * Because our custom fetch already throws `ApiError` for
+ * Because our custom fetch already throws `TinyAuthError` for
  * non-2xx responses, this is a safe cast that eliminates
  * error response types from the union.
  */

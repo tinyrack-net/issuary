@@ -1,6 +1,6 @@
 import { AlertBanner } from '@frontend/components/ui/alert-banner.js';
 import { Modal, ModalActions } from '@frontend/components/ui/modal.js';
-import { ApiError } from '@frontend/libs/error.js';
+import { TinyAuthError } from '@frontend/libs/error.js';
 import { getSessionQueryOptions } from '@frontend/queries/session.js';
 import { disableTotpMutationOptions } from '@frontend/queries/totp.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
@@ -55,7 +55,7 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
     try {
       await mutation.mutateAsync({ code: data.code });
     } catch (error) {
-      if (error instanceof ApiError) {
+      if (error instanceof TinyAuthError) {
         if (error.code === 'CANNOT_REMOVE_LAST_SECOND_FACTOR') {
           form.setError('code', {
             message: t(

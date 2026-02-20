@@ -2,7 +2,7 @@ import { FooterLink } from '@frontend/components/auth/footer-link.js';
 import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { SubmitButton } from '@frontend/components/auth/submit-button.js';
 import { PageLayout } from '@frontend/components/ui/page-layout.js';
-import { ApiError } from '@frontend/libs/error.js';
+import { TinyAuthError } from '@frontend/libs/error.js';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
@@ -131,7 +131,7 @@ function VerifyRecovery() {
     try {
       await verifyMutation.mutateAsync(values);
     } catch (error) {
-      if (error instanceof ApiError) {
+      if (error instanceof TinyAuthError) {
         switch (error.code) {
           case ERROR_CODES.SECOND_FACTOR_SESSION_EXPIRED:
             setSessionExpired(true);

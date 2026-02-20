@@ -1,4 +1,4 @@
-import { ApiError } from '@frontend/libs/error.js';
+import { TinyAuthError } from '@frontend/libs/error.js';
 import { WarningCircleIcon } from '@phosphor-icons/react';
 import type { ErrorComponentProps } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -27,7 +27,7 @@ function MinimalLayout({ children }: { children: React.ReactNode }) {
  * response from the backend.
  */
 function isUnauthorizedError(error: Error): boolean {
-  return error instanceof ApiError && error.status === 401;
+  return error instanceof TinyAuthError && error.status === 401;
 }
 
 type RouteErrorFallbackProps = ErrorComponentProps & {
@@ -91,9 +91,10 @@ export function RouteErrorFallback({
   }
 
   // --- Generic error ---
-  const errorCode = error instanceof ApiError ? error.code : 'UNKNOWN_ERROR';
+  const errorCode =
+    error instanceof TinyAuthError ? error.code : 'UNKNOWN_ERROR';
   const errorMessage =
-    error instanceof ApiError ? error.message : t('error.defaultMessage');
+    error instanceof TinyAuthError ? error.message : t('error.defaultMessage');
 
   return (
     <MinimalLayout>

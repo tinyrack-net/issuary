@@ -5,7 +5,7 @@ import { SubmitButton } from '@frontend/components/auth/submit-button.js';
 import { TermsCheckboxList } from '@frontend/components/terms/terms-checkbox-list.js';
 import { PageLayout } from '@frontend/components/ui/page-layout.js';
 import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
-import { ApiError } from '@frontend/libs/error.js';
+import { TinyAuthError } from '@frontend/libs/error.js';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
@@ -173,7 +173,7 @@ function Register() {
       }
     },
     onError: (error) => {
-      if (error instanceof ApiError) {
+      if (error instanceof TinyAuthError) {
         if (error.code === 'REGISTRATION_EMAIL_NOT_ALLOWED') {
           setError('email', {
             type: 'manual',

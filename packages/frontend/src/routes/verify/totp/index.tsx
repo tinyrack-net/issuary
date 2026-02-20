@@ -6,7 +6,7 @@ import {
   PinInput,
   type PinInputRef,
 } from '@frontend/components/ui/pin-input.js';
-import { ApiError } from '@frontend/libs/error.js';
+import { TinyAuthError } from '@frontend/libs/error.js';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
@@ -134,7 +134,7 @@ function VerifyTotp() {
     try {
       await verifyMutation.mutateAsync(values);
     } catch (error) {
-      if (error instanceof ApiError) {
+      if (error instanceof TinyAuthError) {
         switch (error.code) {
           case ERROR_CODES.SECOND_FACTOR_SESSION_EXPIRED:
             // Session expired - show alert and start auto redirect

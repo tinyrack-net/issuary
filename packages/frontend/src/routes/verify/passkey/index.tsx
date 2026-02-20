@@ -2,7 +2,7 @@ import { FooterLink } from '@frontend/components/auth/footer-link.js';
 import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { Alert } from '@frontend/components/ui/alert.js';
 import { PageLayout } from '@frontend/components/ui/page-layout.js';
-import { ApiError } from '@frontend/libs/error.js';
+import { TinyAuthError } from '@frontend/libs/error.js';
 import {
   buildAuthorizeUrl,
   isOAuthFlow,
@@ -49,7 +49,7 @@ function VerifyPasskey() {
       }
     },
     onError: async (err) => {
-      if (err instanceof ApiError) {
+      if (err instanceof TinyAuthError) {
         if (err.code === 'SECOND_FACTOR_SESSION_EXPIRED') {
           setError(t('verifyPasskey.error.expired'));
           return;

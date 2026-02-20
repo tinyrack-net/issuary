@@ -9,7 +9,7 @@
  * try {
  *   await etch('/api/endpoint');
  * } catch (error) {
- *   if (error instanceof ApiError) {
+ *   if (error instanceof TinyAuthError) {
  *     if (error.code === 'INVALID_CREDENTIALS') {
  *       // 인증 오류 처리
  *     }
@@ -19,7 +19,7 @@
  * }
  * ```
  */
-export class ApiError extends Error {
+export class TinyAuthError extends Error {
   /** 에러 코드 (서버에서 정의한 코드) */
   readonly code: string;
   /** HTTP 상태 코드 */
@@ -27,18 +27,18 @@ export class ApiError extends Error {
 
   constructor(code: string, status: number, message: string) {
     super(message);
-    this.name = 'ApiError';
+    this.name = 'TinyAuthError';
     this.code = code;
     this.status = status;
   }
 
   /**
-   * Response 객체로부터 ApiError 생성
+   * Response 객체로부터 TinyAuthError 생성
    *
    * @param res - fetch Response 객체
-   * @returns ApiError 인스턴스
+   * @returns TinyAuthError 인스턴스
    */
-  static async fromResponse(res: Response): Promise<ApiError> {
+  static async fromResponse(res: Response): Promise<TinyAuthError> {
     let code = 'UNKNOWN_ERROR';
     let message = res.statusText || 'An unknown error occurred';
 
@@ -54,6 +54,6 @@ export class ApiError extends Error {
       // JSON 파싱 실패 시 기본값 사용
     }
 
-    return new ApiError(code, res.status, message);
+    return new TinyAuthError(code, res.status, message);
   }
 }

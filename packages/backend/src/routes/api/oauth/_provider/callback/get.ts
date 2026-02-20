@@ -2,7 +2,7 @@ import type { AppEnv } from '@backend/lib/app-env.js';
 import { isEmailAllowed } from '@backend/lib/email-pattern.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { verifyAuth } from '@backend/middleware/auth.js';
-import { ApiError, e } from '@backend/schemas/error.js';
+import { e, TinyAuthError } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
 import { Hono } from 'hono';
@@ -273,7 +273,7 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
     } catch (err) {
       // Catch RegistrationEmailNotAllowed and redirect to login
       if (
-        err instanceof ApiError &&
+        err instanceof TinyAuthError &&
         err.code === 'REGISTRATION_EMAIL_NOT_ALLOWED'
       ) {
         const errorUrl = new URL('/login', config.app.host);

@@ -6,7 +6,7 @@ import { useTotpSetup } from '@frontend/components/totp/use-totp-setup.js';
 import { VerifyStep } from '@frontend/components/totp/verify-step.js';
 import { Alert } from '@frontend/components/ui/alert.js';
 import { PageLayout } from '@frontend/components/ui/page-layout.js';
-import { ApiError } from '@frontend/libs/error.js';
+import { TinyAuthError } from '@frontend/libs/error.js';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
@@ -74,7 +74,7 @@ function SetupTotp() {
   }, [router]);
 
   const handleSetupError = useCallback((error: Error) => {
-    if (error instanceof ApiError) {
+    if (error instanceof TinyAuthError) {
       switch (error.code) {
         case ERROR_CODES.TOTP_ALREADY_ENABLED:
           setErrorType('already_enabled');
@@ -136,7 +136,7 @@ function SetupTotp() {
     onVerifySuccess: handleVerifySuccess,
     onConfirmSuccess: handleConfirmSuccess,
     onVerifyError: (error) => {
-      if (error instanceof ApiError) {
+      if (error instanceof TinyAuthError) {
         switch (error.code) {
           case ERROR_CODES.TOTP_ALREADY_ENABLED:
             redirectToProfile();

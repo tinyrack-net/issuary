@@ -1,6 +1,6 @@
 import { AlertBanner } from '@frontend/components/ui/alert-banner.js';
 import { Modal, ModalActions } from '@frontend/components/ui/modal.js';
-import { ApiError } from '@frontend/libs/error.js';
+import { TinyAuthError } from '@frontend/libs/error.js';
 import { removePasswordMutationOptions } from '@frontend/queries/password.js';
 import { getSessionQueryOptions } from '@frontend/queries/session.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
@@ -57,7 +57,7 @@ export function RemovePasswordModal({
         current_password: data.currentPassword,
       });
     } catch (err) {
-      if (err instanceof ApiError) {
+      if (err instanceof TinyAuthError) {
         if (err.code === 'INVALID_CURRENT_PASSWORD') {
           form.setError('currentPassword', {
             message: t('profile.password.removeModal.invalidCurrent'),

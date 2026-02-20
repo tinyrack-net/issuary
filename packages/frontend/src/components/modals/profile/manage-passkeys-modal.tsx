@@ -1,6 +1,6 @@
 import { AlertBanner } from '@frontend/components/ui/alert-banner.js';
 import { Modal, ModalActions } from '@frontend/components/ui/modal.js';
-import { ApiError } from '@frontend/libs/error.js';
+import { TinyAuthError } from '@frontend/libs/error.js';
 import { queryKeys } from '@frontend/queries/keys';
 import {
   deletePasskeyMutationOptions,
@@ -87,7 +87,7 @@ export function ManagePasskeysModal({
     try {
       await deleteMutation.mutateAsync({ id: passkey.id });
     } catch (error) {
-      if (error instanceof ApiError) {
+      if (error instanceof TinyAuthError) {
         if (error.code === 'CANNOT_REMOVE_LAST_SECOND_FACTOR') {
           setDeleteError(
             t('profile.passkey.manageModal.cannotRemoveLastSecondFactor'),
