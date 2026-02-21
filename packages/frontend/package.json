@@ -8,10 +8,7 @@
     "dev": "vite",
     "dev:build": "vite build --watch",
     "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:debug": "playwright test --debug"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -31,7 +28,6 @@
   "devDependencies": {
     "@tinyauth/backend": "workspace:*",
     "@biomejs/biome": "catalog:",
-    "@playwright/test": "^1.58.1",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/router-plugin": "catalog:",
     "@types/node": "catalog:",
