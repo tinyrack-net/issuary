@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Logger } from '@backend/lib/logger.js';
 import nodemailer from 'nodemailer';
 import YAML from 'yaml';
@@ -12,7 +13,10 @@ import {
   AppConfigSchema,
   type AppConfigSmtp,
   type ResolvedAppConfig,
+  type ResolvedAppConfigFrontend,
 } from './schema.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const DEFAULT_CONFIG_PATH = '/opt/config.yaml';
 
@@ -93,6 +97,39 @@ const resolveSmtpConfig = async (
 };
 
 /**
+ * Default path for the built-in public/ directory.
+ * Resolved relative to this file: lib/config/ → ../../public
+ * (works for both src/ and dist/ layouts).
+ */
+const DEFAULT_STATIC_PATH = path.resolve(__dirname, '../../public');
+
+/**
+ * Default upstream URL for proxy mode.
+ */
+const DEFAULT_PROXY_UPSTREAM = 'http://localhost:8081';
+
+/**
+ * Resolve the frontend configuration, filling in defaults
+ * for `path` based on the chosen mode.
+ */
+function resolveFrontendConfig(
+  frontend: AppConfig['app']['frontend'],
+): ResolvedAppConfigFrontend {
+  const { enabled, mode } = frontend;
+  let resolvedPath: string;
+
+  if (frontend.path !== undefined) {
+    resolvedPath = frontend.path;
+  } else if (mode === 'proxy') {
+    resolvedPath = DEFAULT_PROXY_UPSTREAM;
+  } else {
+    resolvedPath = DEFAULT_STATIC_PATH;
+  }
+
+  return { enabled, mode, path: resolvedPath };
+}
+
+/**
  * Transform AppConfigInput to ResolvedAppConfig.
  * This parses the input through the schema (applying defaults),
  * resolves test SMTP accounts, and returns the fully resolved config.
@@ -109,8 +146,15 @@ export async function resolveConfig(
   // Resolve SMTP config (handle test: true case)
   const smtpConfig = await resolveSmtpConfig(parsed.smtp);
 
+  // Resolve frontend config (fill in path defaults)
+  const resolvedFrontend = resolveFrontendConfig(parsed.app.frontend);
+
   return {
     ...parsed,
+    app: {
+      ...parsed.app,
+      frontend: resolvedFrontend,
+    },
     smtp: smtpConfig,
   };
 }
