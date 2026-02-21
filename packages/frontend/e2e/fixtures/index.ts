@@ -1,5 +1,3 @@
-import type { AppConfigInput } from '@tinyauth/backend/app';
-
 /**
  * Test user credentials for e2e tests.
  */
@@ -40,43 +38,3 @@ export const E2E_TEST_CLIENT_CONFIG = {
   grant_types: ['authorization_code'],
   scope: 'openid profile email',
 } as const;
-
-/**
- * Port configuration for e2e test servers.
- */
-export const E2E_PORTS = {
-  backend: 18080,
-  vite: 19080,
-} as const;
-
-/**
- * Minimal backend configuration for e2e tests.
- * Uses in-memory SQLite, silent logging, and proxy mode
- * to forward frontend requests to the Vite dev server.
- */
-export const E2E_BACKEND_CONFIG = {
-  app: {
-    host: `http://localhost:${E2E_PORTS.backend}`,
-    port: E2E_PORTS.backend,
-    cookie_secret:
-      '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
-    allowed_signup_emails: ['*'],
-    frontend: {
-      enabled: true,
-      mode: 'proxy',
-      path: `http://localhost:${E2E_PORTS.vite}`,
-    },
-  },
-  logging: {
-    level: 'silent',
-    format: 'json',
-  },
-  database: {
-    type: 'memory',
-  },
-  smtp: {
-    test: true,
-  },
-  users: [E2E_TEST_USER_CONFIG],
-  clients: [E2E_TEST_CLIENT_CONFIG],
-} as const satisfies AppConfigInput;
