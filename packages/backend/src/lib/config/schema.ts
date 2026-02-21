@@ -34,7 +34,7 @@ const AppConfigUser = z.object({
   sub: z.string().min(1),
   email: f.userEmail,
   password: f.userPassword,
-  role: z.enum(['user', 'admin']).optional().default('user'),
+  role: z.enum(['user', 'admin']).default('user'),
 });
 
 export type AppConfigUser = z.infer<typeof AppConfigUser>;
@@ -73,18 +73,18 @@ export type AppConfigDatabaseMemory = z.infer<typeof AppConfigDatabaseMemory>;
 
 const AppConfigDatabaseSqlite = z.object({
   type: z.literal('sqlite'),
-  path: z.string().optional().default('test.db'),
+  path: z.string().default('test.db'),
 });
 
 export type AppConfigDatabaseSqlite = z.infer<typeof AppConfigDatabaseSqlite>;
 
 const AppConfigDatabasePostgres = z.object({
   type: z.literal('postgres'),
-  host: z.string().optional().default('localhost'),
-  port: zz.PORT.optional().default(5432),
-  user: z.string().min(1).optional().default('test'),
-  password: z.string().min(1).optional().default('test'),
-  name: z.string().min(1).optional().default('test'),
+  host: z.string().default('localhost'),
+  port: zz.PORT.default(5432),
+  user: z.string().min(1).default('test'),
+  password: z.string().min(1).default('test'),
+  name: z.string().min(1).default('test'),
 });
 
 export type AppConfigDatabasePostgres = z.infer<
@@ -135,16 +135,14 @@ const DEFAULT_SCHEDULER_CONFIG = {
  */
 const AppConfigScheduler = z
   .object({
-    enabled: zz.COERCE_BOOLEAN.optional()
-      .default(DEFAULT_SCHEDULER_CONFIG.enabled)
-      .describe(
-        'Enable in-process cleanup scheduler. Disable when using external schedulers (K8s CronJob).',
-      ),
-    cron: CronExpression.optional()
-      .default(DEFAULT_SCHEDULER_CONFIG.cron)
-      .describe(
-        'Cron schedule for running all cleanup tasks. Default: daily at 2 AM.',
-      ),
+    enabled: zz.COERCE_BOOLEAN.default(
+      DEFAULT_SCHEDULER_CONFIG.enabled,
+    ).describe(
+      'Enable in-process cleanup scheduler. Disable when using external schedulers (K8s CronJob).',
+    ),
+    cron: CronExpression.default(DEFAULT_SCHEDULER_CONFIG.cron).describe(
+      'Cron schedule for running all cleanup tasks. Default: daily at 2 AM.',
+    ),
   })
   .describe('In-process scheduler configuration for automated cleanup tasks');
 
@@ -187,12 +185,10 @@ const TermsItem = z
       .describe('Unique identifier for the term'),
     required: z
       .boolean()
-      .optional()
       .default(true)
       .describe('Whether agreement to this term is mandatory'),
     consent_mode: z
       .enum(['explicit', 'implicit'])
-      .optional()
       .default('explicit')
       .describe(
         'Consent mode for this term: ' +
@@ -205,7 +201,6 @@ const TermsItem = z
       .describe('Version string for tracking changes (e.g., "1.0.0")'),
     content: z
       .record(z.string(), TermsLocalizedContent)
-      .optional()
       .default({})
       .describe(
         'Localized content keyed by language code (e.g., "en", "ko"). ' +
@@ -237,14 +232,11 @@ const CleanupRevokedTokensConfig = z
   .object({
     enabled: z
       .boolean()
-      .optional()
       .default(true)
       .describe('Enable revoked tokens cleanup'),
-    retention: DurationString.optional()
-      .default('0')
-      .describe(
-        'How long to keep expired revoked tokens. "0" means delete immediately after expiry.',
-      ),
+    retention: DurationString.default('0').describe(
+      'How long to keep expired revoked tokens. "0" means delete immediately after expiry.',
+    ),
   })
   .describe('Revoked tokens cleanup settings');
 
@@ -253,16 +245,10 @@ const CleanupRevokedTokensConfig = z
  */
 const CleanupOAuthCodesConfig = z
   .object({
-    enabled: z
-      .boolean()
-      .optional()
-      .default(true)
-      .describe('Enable OAuth codes cleanup'),
-    consumed_retention: DurationString.optional()
-      .default('24h')
-      .describe(
-        'How long to keep consumed authorization codes for debugging/audit.',
-      ),
+    enabled: z.boolean().default(true).describe('Enable OAuth codes cleanup'),
+    consumed_retention: DurationString.default('24h').describe(
+      'How long to keep consumed authorization codes for debugging/audit.',
+    ),
   })
   .describe('OAuth authorization codes cleanup settings');
 
@@ -273,14 +259,11 @@ const CleanupEmailVerificationsConfig = z
   .object({
     enabled: z
       .boolean()
-      .optional()
       .default(true)
       .describe('Enable email verification tokens cleanup'),
-    retention: DurationString.optional()
-      .default('0')
-      .describe(
-        'How long to keep expired email verification tokens. "0" means delete immediately after expiry.',
-      ),
+    retention: DurationString.default('0').describe(
+      'How long to keep expired email verification tokens. "0" means delete immediately after expiry.',
+    ),
   })
   .describe('Email verification tokens cleanup settings');
 
@@ -291,14 +274,11 @@ const CleanupPasswordResetsConfig = z
   .object({
     enabled: z
       .boolean()
-      .optional()
       .default(true)
       .describe('Enable password reset tokens cleanup'),
-    retention: DurationString.optional()
-      .default('0')
-      .describe(
-        'How long to keep expired password reset tokens. "0" means delete immediately after expiry.',
-      ),
+    retention: DurationString.default('0').describe(
+      'How long to keep expired password reset tokens. "0" means delete immediately after expiry.',
+    ),
   })
   .describe('Password reset tokens cleanup settings');
 
@@ -307,16 +287,10 @@ const CleanupPasswordResetsConfig = z
  */
 const CleanupDeletedUsersConfig = z
   .object({
-    enabled: z
-      .boolean()
-      .optional()
-      .default(true)
-      .describe('Enable deleted users cleanup'),
-    retention: DurationString.optional()
-      .default('30d')
-      .describe(
-        'How long to retain soft-deleted users before permanent deletion.',
-      ),
+    enabled: z.boolean().default(true).describe('Enable deleted users cleanup'),
+    retention: DurationString.default('30d').describe(
+      'How long to retain soft-deleted users before permanent deletion.',
+    ),
   })
   .describe('Deleted users cleanup settings');
 
@@ -327,14 +301,11 @@ const CleanupPendingOAuthRegistrationsConfig = z
   .object({
     enabled: z
       .boolean()
-      .optional()
       .default(true)
       .describe('Enable pending OAuth registrations cleanup'),
-    retention: DurationString.optional()
-      .default('0')
-      .describe(
-        'How long to keep expired pending OAuth registrations. "0" means delete immediately after expiry.',
-      ),
+    retention: DurationString.default('0').describe(
+      'How long to keep expired pending OAuth registrations. "0" means delete immediately after expiry.',
+    ),
   })
   .describe('Pending OAuth registrations cleanup settings');
 
@@ -343,11 +314,7 @@ const CleanupPendingOAuthRegistrationsConfig = z
  */
 const CleanupJwtKeysConfig = z
   .object({
-    enabled: z
-      .boolean()
-      .optional()
-      .default(true)
-      .describe('Enable JWT key rotation'),
+    enabled: z.boolean().default(true).describe('Enable JWT key rotation'),
   })
   .describe('JWT key rotation settings');
 
@@ -395,28 +362,25 @@ const DEFAULT_CLEANUP_CONFIG = {
  */
 const AppConfigCleanup = z
   .object({
-    revoked_tokens: CleanupRevokedTokensConfig.optional().default(
+    revoked_tokens: CleanupRevokedTokensConfig.default(
       DEFAULT_CLEANUP_CONFIG.revoked_tokens,
     ),
-    oauth_codes: CleanupOAuthCodesConfig.optional().default(
+    oauth_codes: CleanupOAuthCodesConfig.default(
       DEFAULT_CLEANUP_CONFIG.oauth_codes,
     ),
-    email_verifications: CleanupEmailVerificationsConfig.optional().default(
+    email_verifications: CleanupEmailVerificationsConfig.default(
       DEFAULT_CLEANUP_CONFIG.email_verifications,
     ),
-    password_resets: CleanupPasswordResetsConfig.optional().default(
+    password_resets: CleanupPasswordResetsConfig.default(
       DEFAULT_CLEANUP_CONFIG.password_resets,
     ),
-    deleted_users: CleanupDeletedUsersConfig.optional().default(
+    deleted_users: CleanupDeletedUsersConfig.default(
       DEFAULT_CLEANUP_CONFIG.deleted_users,
     ),
-    pending_oauth_registrations:
-      CleanupPendingOAuthRegistrationsConfig.optional().default(
-        DEFAULT_CLEANUP_CONFIG.pending_oauth_registrations,
-      ),
-    jwt_keys: CleanupJwtKeysConfig.optional().default(
-      DEFAULT_CLEANUP_CONFIG.jwt_keys,
+    pending_oauth_registrations: CleanupPendingOAuthRegistrationsConfig.default(
+      DEFAULT_CLEANUP_CONFIG.pending_oauth_registrations,
     ),
+    jwt_keys: CleanupJwtKeysConfig.default(DEFAULT_CLEANUP_CONFIG.jwt_keys),
   })
   .describe('Cleanup configuration for maintenance tasks');
 
@@ -470,12 +434,10 @@ export const AppConfigLogging = z
   .object({
     level: z
       .enum(LOG_LEVELS)
-      .optional()
       .default(DEFAULT_LOGGING_CONFIG.level)
       .describe('Log level.'),
     format: z
       .enum(LOG_FORMATS)
-      .optional()
       .default(DEFAULT_LOGGING_CONFIG.format)
       .describe(
         'Log output format. ' +
@@ -484,7 +446,6 @@ export const AppConfigLogging = z
       ),
     http_log_proxy: z
       .boolean()
-      .optional()
       .default(DEFAULT_LOGGING_CONFIG.http_log_proxy)
       .describe(
         'Whether to log HTTP access logs for proxied frontend requests ' +
@@ -542,38 +503,33 @@ export const AppTheme = z.enum([
 export type AppTheme = z.infer<typeof AppTheme>;
 
 const AppConfigApp = z.object({
-  host: z.string().optional().default('http://localhost:8080'),
-  port: zz.PORT.optional().default(8080),
+  host: z.string().default('http://localhost:8080'),
+  port: zz.PORT.default(8080),
   cookie_secret: z.string().min(16),
   jwt_access_token_ttl: zz
     .coerceInt()
     .pipe(z.number().int().min(60))
-    .optional()
     .default(3600), // 1 hour
   jwt_refresh_token_ttl: zz
     .coerceInt()
     .pipe(z.number().int().min(3600))
-    .optional()
     .default(2592000), // 30 days
   // JWT Key Rotation Settings (RS256)
-  jwt_key_rotation_enabled: zz.COERCE_BOOLEAN.optional()
-    .default(true)
-    .describe('Enable automatic JWT key rotation'),
+  jwt_key_rotation_enabled: zz.COERCE_BOOLEAN.default(true).describe(
+    'Enable automatic JWT key rotation',
+  ),
   jwt_key_rotation_days: zz
     .coerceInt()
     .pipe(z.number().int().min(1))
-    .optional()
     .default(30)
     .describe('Days between key rotations'),
   jwt_key_overlap_days: zz
     .coerceInt()
     .pipe(z.number().int().min(1))
-    .optional()
     .default(7)
     .describe('Days to keep previous keys valid after rotation'),
   allowed_signup_emails: z
     .array(z.string())
-    .optional()
     .default([])
     .describe(
       'Email patterns allowed for signup. ' +
@@ -583,36 +539,28 @@ const AppConfigApp = z.object({
     ),
   supported_languages: z
     .array(LocaleSchema)
-    .optional()
     .default([...AVAILABLE_LOCALES])
     .describe(
       `Supported languages. Must be a subset of available locales: ${AVAILABLE_LOCALES.join(', ')}`,
     ),
   default_language: z
     .union([z.literal('auto'), LocaleSchema])
-    .optional()
     .default('auto')
     .describe(
       `Default language. Use 'auto' to detect from browser, or specify a locale: ${AVAILABLE_LOCALES.join(', ')}`,
     ),
-  fallback_language: LocaleSchema.optional()
-    .default(DEFAULT_LOCALE)
-    .describe(
-      `Fallback language when requested locale is unavailable. Must be one of: ${AVAILABLE_LOCALES.join(', ')}`,
-    ),
+  fallback_language: LocaleSchema.default(DEFAULT_LOCALE).describe(
+    `Fallback language when requested locale is unavailable. Must be one of: ${AVAILABLE_LOCALES.join(', ')}`,
+  ),
 
-  light_theme: AppTheme.optional()
-    .default('light')
-    .describe('Light theme name'),
-  dark_theme: AppTheme.optional().default('dark').describe('Dark theme name'),
+  light_theme: AppTheme.default('light').describe('Light theme name'),
+  dark_theme: AppTheme.default('dark').describe('Dark theme name'),
   theme_mode: z
     .enum(['light', 'dark', 'system'])
-    .optional()
     .default('system')
     .describe('Default theme mode'),
   background_url: z
     .url()
-    .optional()
     .default(
       'https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071',
     )
@@ -624,7 +572,6 @@ const AppConfigApp = z.object({
       z.array(z.string()),
       z.number().int().min(0),
     ])
-    .optional()
     .default(false)
     .transform((val) => {
       if (typeof val === 'string') {
@@ -642,7 +589,6 @@ const AppConfigApp = z.object({
     ),
   signup_implicit_terms: z
     .record(z.string(), z.string())
-    .optional()
     .default({})
     .describe(
       'Localized notice text for implicit consent terms during signup. ' +
@@ -656,7 +602,6 @@ const AppConfigApp = z.object({
     .describe('Icon/logo URL displayed on authentication pages'),
   title: z
     .record(z.string(), z.string())
-    .optional()
     .default({
       ko: 'Tinyauth',
       en: 'Tinyauth',
@@ -669,7 +614,6 @@ const AppConfigApp = z.object({
     ),
   subtitle: z
     .record(z.string(), z.string())
-    .optional()
     .default({
       ko: '가볍고 빠른 인증 솔루션',
       en: 'Lightweight identity provider for your apps',
@@ -680,12 +624,11 @@ const AppConfigApp = z.object({
         'Keyed by language code (e.g., "en", "ko"). ' +
         'Overrides the default i18n login subtitle.',
     ),
-  account_deletion: zz.COERCE_BOOLEAN.optional()
-    .default(false)
-    .describe('Whether users can delete their own accounts'),
+  account_deletion: zz.COERCE_BOOLEAN.default(false).describe(
+    'Whether users can delete their own accounts',
+  ),
   html_variables: z
     .record(z.string(), z.string())
-    .optional()
     .default({})
     .describe(
       'Key-value pairs for HTML template variable interpolation. ' +
@@ -695,7 +638,6 @@ const AppConfigApp = z.object({
   dev_proxy_upstream: z
     .string()
     .url()
-    .optional()
     .default('http://localhost:8081')
     .describe(
       'Upstream URL for the frontend dev server proxy in development mode. ' +
@@ -719,7 +661,7 @@ const AppConfigSecondFactor = z.object({
    * Whether a second factor is required for password authentication.
    * If true, users must set up at least one 2FA method (TOTP or passkey).
    */
-  required: z.boolean().optional().default(false),
+  required: z.boolean().default(false),
 });
 
 export type AppConfigSecondFactor = z.infer<typeof AppConfigSecondFactor>;
@@ -728,21 +670,20 @@ export type AppConfigSecondFactor = z.infer<typeof AppConfigSecondFactor>;
  * Password authentication configuration (fixed type).
  */
 export const AppConfigPasswordAuth = z.object({
-  enabled: z.boolean().optional().default(true),
-  email_verification: z.boolean().optional().default(true),
+  enabled: z.boolean().default(true),
+  email_verification: z.boolean().default(true),
   /**
    * Second factor requirement configuration.
    * Controls whether users must set up 2FA after registration.
    */
-  second_factor: AppConfigSecondFactor.optional().default({
+  second_factor: AppConfigSecondFactor.default({
     required: false,
   }),
   totp: z
     .object({
-      enabled: z.boolean().optional().default(false),
-      issuer: z.string().optional().default('Tinyrack'),
+      enabled: z.boolean().default(false),
+      issuer: z.string().default('Tinyrack'),
     })
-    .optional()
     .default({
       enabled: false,
       issuer: 'Tinyrack',
@@ -767,8 +708,8 @@ const rpIdDomainRegex =
  * Passkey (WebAuthn) authentication configuration (fixed type).
  */
 export const AppConfigPasskeyAuth = z.object({
-  enabled: z.boolean().optional().default(false),
-  email_verification: z.boolean().optional().default(true),
+  enabled: z.boolean().default(false),
+  email_verification: z.boolean().default(true),
   /**
    * WebAuthn Relying Party ID (domain only, no protocol or port).
    * Must be current domain or a registrable parent domain.
@@ -789,7 +730,7 @@ export const AppConfigPasskeyAuth = z.object({
    * If not specified, uses app.host.
    * Example: ["https://auth.example.com", "https://app.example.com"]
    */
-  origins: z.array(z.string().url()).optional(),
+  origins: z.array(z.url()).optional(),
 });
 
 export type AppConfigPasskeyAuth = z.infer<typeof AppConfigPasskeyAuth>;
@@ -799,7 +740,7 @@ export type AppConfigPasskeyAuth = z.infer<typeof AppConfigPasskeyAuth>;
  * Contains password and passkey authentication settings.
  */
 const AppConfigAuth = z.object({
-  password: AppConfigPasswordAuth.optional().default({
+  password: AppConfigPasswordAuth.default({
     enabled: true,
     email_verification: true,
     second_factor: {
@@ -810,7 +751,7 @@ const AppConfigAuth = z.object({
       issuer: 'Tinyrack',
     },
   }),
-  passkey: AppConfigPasskeyAuth.optional().default({
+  passkey: AppConfigPasskeyAuth.default({
     enabled: false,
     email_verification: true,
   }),
@@ -985,12 +926,12 @@ export type AppConfigIdentityProviders = z.infer<
  */
 export const AppConfigSchema = z.object({
   app: AppConfigApp,
-  database: AppConfigDatabase.optional().default({
+  database: AppConfigDatabase.default({
     type: 'sqlite',
     path: 'test.db',
   }),
-  logging: AppConfigLogging.optional().default(DEFAULT_LOGGING_CONFIG),
-  auth: AppConfigAuth.optional().default({
+  logging: AppConfigLogging.default(DEFAULT_LOGGING_CONFIG),
+  auth: AppConfigAuth.default({
     password: {
       enabled: true,
       email_verification: true,
@@ -1007,7 +948,7 @@ export const AppConfigSchema = z.object({
       email_verification: true,
     },
   }),
-  identity_providers: AppConfigIdentityProviders.optional().default([]),
+  identity_providers: AppConfigIdentityProviders.default([]),
   smtp: z
     .discriminatedUnion('test', [
       AppConfigSmtp.extend({
@@ -1018,11 +959,11 @@ export const AppConfigSchema = z.object({
       }),
     ])
     .optional(),
-  cleanup: AppConfigCleanup.optional().default(DEFAULT_CLEANUP_CONFIG),
-  scheduler: AppConfigScheduler.optional().default(DEFAULT_SCHEDULER_CONFIG),
-  terms: AppConfigTerms.optional().default([]),
-  clients: z.array(AppConfigClient).optional().default([]),
-  users: z.array(AppConfigUser).optional().default([]),
+  cleanup: AppConfigCleanup.default(DEFAULT_CLEANUP_CONFIG),
+  scheduler: AppConfigScheduler.default(DEFAULT_SCHEDULER_CONFIG),
+  terms: AppConfigTerms.default([]),
+  clients: z.array(AppConfigClient).default([]),
+  users: z.array(AppConfigUser).default([]),
 });
 
 /**
