@@ -55,17 +55,17 @@ export default defineConfig({
       },
 
       // ---------------------------------------------------------
-      // E2E: default config
+      // E2E: minimal config
       // Backend on port 18080, Vite on port 19080.
-      // Default auth settings (password enabled, no TOTP).
+      // Minimal auth settings (password enabled, no TOTP).
       // ---------------------------------------------------------
       {
         plugins: sharedPlugins,
         resolve: sharedResolve,
         test: {
-          name: 'e2e:default',
-          include: ['e2e/tests/default/**/*.test.{ts,tsx}'],
-          globalSetup: ['./e2e/setups/default.setup.ts'],
+          name: 'e2e:minimal',
+          include: ['e2e/tests/minimal/**/*.test.{ts,tsx}'],
+          globalSetup: ['./e2e/setups/minimal.setup.ts'],
           browser: {
             enabled: true,
             provider: playwright(),
