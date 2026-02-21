@@ -10,6 +10,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest",
+    "test:unit": "vitest --project unit",
+    "test:e2e": "vitest --project 'e2e:*'",
     "test:ui": "vitest --ui"
   },
   "dependencies": {
@@ -29,6 +31,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
+    "@hono/node-server": "^1.19.9",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/router-plugin": "catalog:",
     "@tinyauth/backend": "workspace:*",
