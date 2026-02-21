@@ -667,7 +667,7 @@ clients:
 users:
   # Each user is defined with the following properties:
   #
-  # - id: Unique identifier for the user
+  # - sub: Subject identifier for the user (unique)
   # - email: User's email address (must be unique)
   # - password: Initial password (user should change after first login)
   # - role: User's role
@@ -675,13 +675,13 @@ users:
   #     - 'user': Standard user (default if not specified)
 
   # Example: Admin user
-  - id: admin-user
+  - sub: admin-user
     email: admin@example.com
     password: $ADMIN_INITIAL_PASSWORD
     role: admin
 
   # Example: Test user (for development/testing)
-  # - id: test-user
+  # - sub: test-user
   #   email: test@example.com
   #   password: testpassword123
   #   role: user
