@@ -22,7 +22,6 @@ type LoginMethodButtonProps = {
   onClick?: () => void;
   isLoading?: boolean;
   disabled?: boolean;
-  'data-testid'?: string;
 };
 
 const PROVIDER_ICONS: Record<
@@ -44,7 +43,6 @@ export function LoginMethodButton({
   onClick,
   isLoading,
   disabled,
-  'data-testid': testId,
 }: LoginMethodButtonProps) {
   // Determine icon: providerType icon > custom icon > fallback
   let iconElement: ReactNode;
@@ -73,7 +71,7 @@ export function LoginMethodButton({
   // External link
   if (href) {
     return (
-      <a className={className} data-testid={testId} href={href}>
+      <a className={className} href={href}>
         {content}
       </a>
     );
@@ -82,7 +80,7 @@ export function LoginMethodButton({
   // Internal route
   if (to) {
     return (
-      <Link className={className} data-testid={testId} search={search} to={to}>
+      <Link className={className} search={search} to={to}>
         {content}
       </Link>
     );
@@ -92,7 +90,6 @@ export function LoginMethodButton({
   return (
     <button
       className={className}
-      data-testid={testId}
       disabled={disabled || isLoading}
       onClick={onClick}
       type="button"

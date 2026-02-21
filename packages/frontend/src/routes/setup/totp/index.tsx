@@ -297,7 +297,6 @@ function SetupTotp() {
           title={t('setupTotp.recoveryCodes.title')}
         />
         <RecoveryCodesStep
-          data-testid="setup-totp-recovery"
           isLoading={isConfirmPending}
           onConfirm={confirmRecoveryCodes}
           recoveryCodes={recoveryCodes}
@@ -320,14 +319,9 @@ function SetupTotp() {
           <span>{t('setupTotp.required')}</span>
         </div>
 
-        <QrStep
-          data-testid="setup-totp-qr"
-          onNext={goToVerify}
-          setupData={setupData}
-        />
+        <QrStep onNext={goToVerify} setupData={setupData} />
 
         <FooterLink
-          data-testid="setup-totp-login-link"
           linkText={t('setupTotp.backToLogin')}
           search={extractOAuthParams(search)}
           text=""
@@ -346,7 +340,6 @@ function SetupTotp() {
       />
 
       <VerifyStep
-        data-testid="setup-totp-verify"
         isPending={isVerifyPending}
         onBack={goToQr}
         onSubmit={handleVerify}

@@ -39,7 +39,6 @@ export function TotpSection({ totpEnabled, onOpenModal }: TotpSectionProps) {
         {totpEnabled ? (
           <button
             className="btn btn-ghost btn-xs text-error"
-            data-testid="profile-totp-disable-btn"
             onClick={() => onOpenModal('disable')}
             type="button"
           >
@@ -48,7 +47,6 @@ export function TotpSection({ totpEnabled, onOpenModal }: TotpSectionProps) {
         ) : (
           <button
             className="btn btn-ghost btn-xs text-primary"
-            data-testid="profile-totp-enable-btn"
             onClick={() => onOpenModal('setup')}
             type="button"
           >

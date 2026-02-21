@@ -234,7 +234,6 @@ function LoginPassword() {
             icon={EnvelopeSimpleIcon}
             placeholder={t('login.email.placeholder')}
             {...register('email')}
-            data-testid="login-password-email-input"
             type="email"
           />
 
@@ -244,17 +243,12 @@ function LoginPassword() {
             icon={LockIcon}
             placeholder={t('login.password.placeholder')}
             {...register('password')}
-            data-testid="login-password-password-input"
             type="password"
           />
 
           {configData.smtp.enabled && (
             <div className="flex items-center justify-end">
-              <Link
-                className="link text-sm"
-                data-testid="login-password-forgot-link"
-                to="/password/forgot"
-              >
+              <Link className="link text-sm" to="/password/forgot">
                 {t('login.link.forgotPassword')}
               </Link>
             </div>
@@ -262,7 +256,6 @@ function LoginPassword() {
 
           <SubmitButton
             className="mt-2"
-            data-testid="login-password-submit-btn"
             isPending={loginMutation.isPending}
             pendingText={t('login.submitting')}
           >
@@ -273,7 +266,6 @@ function LoginPassword() {
 
       {configData.app.public_registration && (
         <FooterLink
-          data-testid="login-password-register-link"
           linkText={t('login.link.register')}
           search={extractOAuthParams(search)}
           text={t('login.footer.noAccount')}

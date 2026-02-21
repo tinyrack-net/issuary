@@ -255,7 +255,6 @@ function Register() {
             icon={EnvelopeSimpleIcon}
             placeholder={t('register.email.placeholder')}
             {...register('email')}
-            data-testid="register-email-input"
             type="email"
           />
 
@@ -265,7 +264,6 @@ function Register() {
             icon={LockIcon}
             placeholder={t('register.password.placeholder')}
             {...register('password')}
-            data-testid="register-password-input"
             type="password"
           />
 
@@ -298,7 +296,6 @@ function Register() {
 
           <SubmitButton
             className="mt-6"
-            data-testid="register-submit-btn"
             isPending={registerMutation.isPending}
             pendingText={t('register.submitting')}
           >
@@ -308,7 +305,6 @@ function Register() {
       )}
 
       <FooterLink
-        data-testid="register-login-link"
         linkText={t('register.link.login')}
         search={extractOAuthParams(search)}
         text={t('register.footer.haveAccount')}

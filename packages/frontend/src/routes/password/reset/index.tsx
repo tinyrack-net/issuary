@@ -132,12 +132,7 @@ function ResetPassword() {
   if (resetSuccess) {
     return (
       <PageLayout cardPadding maxWidth="100">
-        <Alert
-          className="mb-4"
-          data-testid="password-reset-success-alert"
-          icon={CheckCircleIcon}
-          type="success"
-        >
+        <Alert className="mb-4" icon={CheckCircleIcon} type="success">
           {t('resetPassword.success.title')}
         </Alert>
 
@@ -148,7 +143,6 @@ function ResetPassword() {
 
         <button
           className="btn btn-block h-10 font-semibold text-[14px]"
-          data-testid="password-reset-login-btn"
           onClick={() => navigate({ to: '/login' })}
           type="button"
         >
@@ -172,16 +166,12 @@ function ResetPassword() {
             icon={KeyIcon}
             placeholder={t('resetPassword.token.placeholder')}
             {...register('token')}
-            data-testid="password-reset-token-input"
             type="text"
           />
         )}
 
         {queryToken && errors.token && (
-          <div
-            className="alert alert-error"
-            data-testid="password-reset-token-error-alert"
-          >
+          <div className="alert alert-error">
             <span className="text-sm">{errors.token.message}</span>
           </div>
         )}
@@ -192,7 +182,6 @@ function ResetPassword() {
           icon={LockIcon}
           placeholder={t('resetPassword.password.placeholder')}
           {...register('password')}
-          data-testid="password-reset-password-input"
           type="password"
         />
 
@@ -202,13 +191,11 @@ function ResetPassword() {
           icon={LockKeyIcon}
           placeholder={t('resetPassword.confirmPassword.placeholder')}
           {...register('confirmPassword')}
-          data-testid="password-reset-confirm-input"
           type="password"
         />
 
         <SubmitButton
           className="mt-2"
-          data-testid="password-reset-submit-btn"
           isPending={resetPasswordMutation.isPending}
           pendingText={t('resetPassword.submitting')}
         >
@@ -217,11 +204,7 @@ function ResetPassword() {
       </form>
 
       <div className="mt-6 text-center text-base-content/70 text-xs">
-        <Link
-          className="link link-info font-medium"
-          data-testid="password-reset-login-link"
-          to="/login"
-        >
+        <Link className="link link-info font-medium" to="/login">
           {t('resetPassword.backToLogin')}
         </Link>
       </div>

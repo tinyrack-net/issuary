@@ -6,7 +6,6 @@ type FooterLinkProps = {
   to: string;
   search?: Record<string, unknown>;
   className?: string;
-  'data-testid'?: string;
 };
 
 export function FooterLink({
@@ -15,19 +14,13 @@ export function FooterLink({
   to,
   search,
   className = '',
-  'data-testid': testId,
 }: FooterLinkProps) {
   return (
     <div
       className={`mt-6 text-center text-base-content/70 text-xs ${className}`}
     >
       {text}{' '}
-      <Link
-        className="link link-info font-medium"
-        data-testid={testId}
-        search={search}
-        to={to}
-      >
+      <Link className="link link-info font-medium" search={search} to={to}>
         {linkText}
       </Link>
     </div>

@@ -179,12 +179,7 @@ function VerifyEmail() {
   if (verified) {
     return (
       <PageLayout cardPadding maxWidth="100">
-        <Alert
-          className="mb-4"
-          data-testid="verify-email-success-alert"
-          icon={CheckCircleIcon}
-          type="success"
-        >
+        <Alert className="mb-4" icon={CheckCircleIcon} type="success">
           {t('verifyEmail.success.title')}
         </Alert>
 
@@ -195,7 +190,6 @@ function VerifyEmail() {
 
         <button
           className="btn btn-block h-10 font-semibold text-[14px]"
-          data-testid="verify-email-profile-btn"
           onClick={() => navigate({ to: '/profile' })}
           type="button"
         >
@@ -213,12 +207,7 @@ function VerifyEmail() {
       />
 
       {email && (
-        <Alert
-          className="mb-4"
-          data-testid="verify-email-info-alert"
-          icon={EnvelopeSimpleIcon}
-          type="info"
-        >
+        <Alert className="mb-4" icon={EnvelopeSimpleIcon} type="info">
           <div className="text-left">
             <p className="font-semibold">{t('register.success.subtitle')}</p>
             <p className="text-xs">
@@ -234,13 +223,11 @@ function VerifyEmail() {
           icon={KeyIcon}
           placeholder={t('verifyEmail.token.placeholder')}
           {...register('token')}
-          data-testid="verify-email-token-input"
           type="text"
         />
 
         <SubmitButton
           className="mt-2"
-          data-testid="verify-email-submit-btn"
           isPending={verifyEmailMutation.isPending}
           pendingText={t('verifyEmail.submitting')}
         >
@@ -253,19 +240,13 @@ function VerifyEmail() {
           <Divider />
 
           {resendSuccess && (
-            <Alert
-              className="mb-2"
-              data-testid="verify-email-resend-success-alert"
-              icon={CheckCircleIcon}
-              type="success"
-            >
+            <Alert className="mb-2" icon={CheckCircleIcon} type="success">
               {t('verifyEmail.resendSuccess')}
             </Alert>
           )}
 
           <button
             className="btn btn-ghost btn-sm w-full"
-            data-testid="verify-email-resend-btn"
             disabled={resendVerificationMutation.isPending || resendSuccess}
             onClick={handleResend}
             type="button"

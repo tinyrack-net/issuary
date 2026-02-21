@@ -182,10 +182,7 @@ function VerifyRecovery() {
       />
 
       {sessionExpired && (
-        <div
-          className="alert alert-warning mb-4"
-          data-testid="verify-totp-recovery-expired-alert"
-        >
+        <div className="alert alert-warning mb-4">
           <WarningCircleIcon className="size-5" weight="fill" />
           <div className="flex flex-col gap-1">
             <span>{t('verifyRecovery.error.expired')}</span>
@@ -196,7 +193,6 @@ function VerifyRecovery() {
             </span>
             <button
               className="btn btn-sm btn-ghost mt-2 w-fit"
-              data-testid="verify-totp-recovery-redirect-btn"
               onClick={redirectToLogin}
               type="button"
             >
@@ -214,7 +210,6 @@ function VerifyRecovery() {
             className={`input input-bordered w-full text-center font-mono ${
               errors.code ? 'input-error' : ''
             }`}
-            data-testid="verify-totp-recovery-code-input"
             disabled={sessionExpired}
             placeholder={t('verifyRecovery.placeholder')}
             ref={(el) => {
@@ -224,12 +219,7 @@ function VerifyRecovery() {
             type="text"
           />
           {errors.code && (
-            <p
-              className="fieldset-label text-error"
-              data-testid="verify-totp-recovery-code-error"
-            >
-              {errors.code.message}
-            </p>
+            <p className="fieldset-label text-error">{errors.code.message}</p>
           )}
         </fieldset>
 
@@ -244,7 +234,6 @@ function VerifyRecovery() {
         ) : (
           <SubmitButton
             className="mt-2"
-            data-testid="verify-totp-recovery-submit-btn"
             isPending={verifyMutation.isPending}
             pendingText={t('verifyRecovery.submitting')}
           >
@@ -256,7 +245,6 @@ function VerifyRecovery() {
       <div className="mt-4 text-center">
         <button
           className="link link-info font-medium text-xs"
-          data-testid="verify-totp-recovery-back-link"
           onClick={() =>
             router.navigate({
               to: '/verify/totp',
@@ -270,7 +258,6 @@ function VerifyRecovery() {
       </div>
 
       <FooterLink
-        data-testid="verify-totp-recovery-login-link"
         linkText={t('verifyRecovery.backToLogin')}
         search={extractOAuthParams(search)}
         text=""

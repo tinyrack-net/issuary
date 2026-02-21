@@ -129,12 +129,7 @@ function Login() {
       />
 
       {oauthErrorMessage && (
-        <Alert
-          className="mb-4"
-          data-testid="login-oauth-error-alert"
-          icon={WarningCircleIcon}
-          type="error"
-        >
+        <Alert className="mb-4" icon={WarningCircleIcon} type="error">
           {oauthErrorMessage}
         </Alert>
       )}
@@ -143,7 +138,6 @@ function Login() {
         {/* OAuth Providers */}
         {oauthProviders.map((provider) => (
           <LoginMethodButton
-            data-testid={`login-oauth-${provider.id}-btn`}
             href={buildOAuthUrl(provider.id)}
             icon={provider.icon_url}
             key={provider.id}
@@ -155,7 +149,6 @@ function Login() {
         {/* Password Login */}
         {isPasswordAuthEnabled && (
           <LoginMethodButton
-            data-testid="login-password-method-btn"
             icon={<EnvelopeSimpleIcon className="size-6" weight="regular" />}
             label={t('login.method.password')}
             search={extractOAuthParams(search)}
@@ -166,7 +159,6 @@ function Login() {
         {/* Passkey Login */}
         {isPasskeyEnabled && (
           <LoginMethodButton
-            data-testid="login-passkey-method-btn"
             icon={<FingerprintIcon className="size-6" weight="regular" />}
             isLoading={passkeyLoginMutation.isPending}
             label={t('login.method.passkey')}

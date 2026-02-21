@@ -152,7 +152,6 @@ function Consent() {
       <div className="flex gap-3">
         <button
           className="btn btn-outline h-10 flex-1 font-semibold text-[14px]"
-          data-testid="consent-deny-btn"
           disabled={consentMutation.isPending}
           onClick={handleDeny}
           type="button"
@@ -168,7 +167,6 @@ function Consent() {
         </button>
         <button
           className="btn btn-primary h-10 flex-1 font-semibold text-[14px]"
-          data-testid="consent-allow-btn"
           disabled={consentMutation.isPending}
           onClick={handleAllow}
           type="button"

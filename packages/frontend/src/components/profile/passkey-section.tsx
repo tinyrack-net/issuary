@@ -44,7 +44,6 @@ export function PasskeySection({
         {passkeyCount > 0 ? (
           <button
             className="btn btn-ghost btn-xs text-primary"
-            data-testid="profile-passkey-manage-btn"
             onClick={() => onOpenModal('manage')}
             type="button"
           >
@@ -53,7 +52,6 @@ export function PasskeySection({
         ) : (
           <button
             className="btn btn-ghost btn-xs text-primary"
-            data-testid="profile-passkey-add-btn"
             onClick={() => onOpenModal('setup')}
             type="button"
           >

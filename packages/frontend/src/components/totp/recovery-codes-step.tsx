@@ -7,7 +7,6 @@ export interface RecoveryCodesStepProps {
   onConfirm: () => void;
   isLoading?: boolean;
   className?: string;
-  'data-testid'?: string;
 }
 
 export function RecoveryCodesStep({
@@ -15,7 +14,6 @@ export function RecoveryCodesStep({
   onConfirm,
   isLoading = false,
   className = '',
-  'data-testid': testId,
 }: RecoveryCodesStepProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
@@ -34,14 +32,10 @@ export function RecoveryCodesStep({
         {t('setupTotp.recoveryCodes.description')}
       </p>
 
-      <div
-        className="grid grid-cols-2 gap-2 rounded-lg bg-base-200 p-3"
-        data-testid={testId ? `${testId}-codes` : undefined}
-      >
-        {recoveryCodes.map((code, index) => (
+      <div className="grid grid-cols-2 gap-2 rounded-lg bg-base-200 p-3">
+        {recoveryCodes.map((code) => (
           <code
             className="rounded bg-base-300 px-2 py-1 text-center font-mono text-sm"
-            data-testid={testId ? `${testId}-code-${index}` : undefined}
             key={code}
           >
             {code}
@@ -56,7 +50,6 @@ export function RecoveryCodesStep({
 
       <button
         className="btn btn-sm btn-outline btn-block gap-2"
-        data-testid={testId ? `${testId}-copy-btn` : undefined}
         onClick={handleCopy}
         type="button"
       >
@@ -77,7 +70,6 @@ export function RecoveryCodesStep({
         <input
           checked={confirmed}
           className="checkbox checkbox-sm"
-          data-testid={testId ? `${testId}-confirm-checkbox` : undefined}
           disabled={isLoading}
           onChange={(event) => setConfirmed(event.target.checked)}
           type="checkbox"
@@ -89,7 +81,6 @@ export function RecoveryCodesStep({
 
       <button
         className="btn btn-sm btn-primary btn-block"
-        data-testid={testId ? `${testId}-confirm-btn` : undefined}
         disabled={!confirmed || isLoading}
         onClick={onConfirm}
         type="button"

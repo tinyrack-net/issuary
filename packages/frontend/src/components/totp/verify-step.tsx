@@ -14,7 +14,6 @@ export interface VerifyStepProps {
   onBack: () => void;
   isPending: boolean;
   className?: string;
-  'data-testid'?: string;
 }
 
 type VerifyFormValues = {
@@ -26,7 +25,6 @@ export function VerifyStep({
   onBack,
   isPending,
   className = '',
-  'data-testid': testId,
 }: VerifyStepProps) {
   const { t } = useTranslation();
   const pinInputRef = useRef<PinInputRef>(null);
@@ -79,7 +77,6 @@ export function VerifyStep({
       >
         <PinInput
           autoFocus
-          data-testid={testId ? `${testId}-pin` : undefined}
           error={errors.code}
           length={6}
           onChange={(value) => setValue('code', value)}
@@ -90,7 +87,6 @@ export function VerifyStep({
 
         <SubmitButton
           className="btn-sm mt-1"
-          data-testid={testId ? `${testId}-submit-btn` : undefined}
           isPending={isPending}
           pendingText={t('setupTotp.verifying')}
         >
@@ -101,7 +97,6 @@ export function VerifyStep({
       <div className="mt-3 text-center">
         <button
           className="btn btn-ghost btn-xs"
-          data-testid={testId ? `${testId}-back-btn` : undefined}
           disabled={isPending}
           onClick={onBack}
           type="button"

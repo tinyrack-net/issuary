@@ -58,7 +58,6 @@ export function PasswordSection({
             <>
               <button
                 className="btn btn-ghost btn-xs text-primary"
-                data-testid="profile-password-change-btn"
                 onClick={() => onOpenModal('change')}
                 type="button"
               >
@@ -67,7 +66,6 @@ export function PasswordSection({
               {hasLinkedOAuth ? (
                 <button
                   className="btn btn-ghost btn-xs text-error"
-                  data-testid="profile-password-remove-btn"
                   onClick={() => onOpenModal('remove')}
                   type="button"
                 >
@@ -96,7 +94,6 @@ export function PasswordSection({
           ) : (
             <button
               className="btn btn-ghost btn-xs text-primary"
-              data-testid="profile-password-set-btn"
               onClick={() => onOpenModal('set')}
               type="button"
             >

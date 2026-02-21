@@ -7,7 +7,6 @@ export interface QrStepProps {
   onNext: () => void;
   additionalActions?: ReactNode;
   className?: string;
-  'data-testid'?: string;
 }
 
 export function QrStep({
@@ -15,7 +14,6 @@ export function QrStep({
   onNext,
   additionalActions,
   className = '',
-  'data-testid': testId,
 }: QrStepProps) {
   const { t } = useTranslation();
 
@@ -29,7 +27,6 @@ export function QrStep({
         <img
           alt="TOTP QR Code"
           className="h-40 w-40 rounded-lg border"
-          data-testid={testId ? `${testId}-qr-code` : undefined}
           src={setupData.qr_code}
         />
       </div>
@@ -40,10 +37,7 @@ export function QrStep({
           {t('setupTotp.manualEntry')}
         </div>
         <div className="collapse-content">
-          <code
-            className="block break-all rounded bg-base-300 p-1.5 text-xs"
-            data-testid={testId ? `${testId}-secret` : undefined}
-          >
+          <code className="block break-all rounded bg-base-300 p-1.5 text-xs">
             {setupData.secret}
           </code>
         </div>
@@ -51,7 +45,6 @@ export function QrStep({
 
       <button
         className="btn btn-sm btn-primary btn-block"
-        data-testid={testId ? `${testId}-next-btn` : undefined}
         onClick={onNext}
         type="button"
       >

@@ -85,7 +85,6 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
             className={`input input-bordered input-sm w-full ${
               form.formState.errors.password ? 'input-error' : ''
             }`}
-            data-testid="modal-set-password-password-input"
             id="new-password"
             placeholder={t('profile.password.setModal.newPasswordPlaceholder')}
             type="password"
@@ -107,7 +106,6 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
             className={`input input-bordered input-sm w-full ${
               form.formState.errors.confirmPassword ? 'input-error' : ''
             }`}
-            data-testid="modal-set-password-confirm-input"
             id="confirm-password"
             placeholder={t(
               'profile.password.setModal.confirmPasswordPlaceholder',
@@ -129,7 +127,6 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
         <ModalActions>
           <button
             className="btn btn-sm"
-            data-testid="modal-set-password-cancel-btn"
             disabled={mutation.isPending}
             onClick={handleClose}
             type="button"
@@ -138,7 +135,6 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
           </button>
           <button
             className="btn btn-sm btn-primary"
-            data-testid="modal-set-password-submit-btn"
             disabled={mutation.isPending}
             type="submit"
           >

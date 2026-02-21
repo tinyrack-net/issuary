@@ -177,10 +177,7 @@ function VerifyTotp() {
       />
 
       {sessionExpired && (
-        <div
-          className="alert alert-warning mb-4"
-          data-testid="verify-totp-expired-alert"
-        >
+        <div className="alert alert-warning mb-4">
           <WarningCircleIcon className="size-5" weight="fill" />
           <div className="flex flex-col gap-1">
             <span>{t('verifyTotp.error.expired')}</span>
@@ -189,7 +186,6 @@ function VerifyTotp() {
             </span>
             <button
               className="btn btn-sm btn-ghost mt-2 w-fit"
-              data-testid="verify-totp-redirect-btn"
               onClick={redirectToLogin}
               type="button"
             >
@@ -202,7 +198,6 @@ function VerifyTotp() {
       <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
         <PinInput
           autoFocus
-          data-testid="verify-totp-pin"
           disabled={sessionExpired}
           error={errors.code}
           length={6}
@@ -223,7 +218,6 @@ function VerifyTotp() {
         ) : (
           <SubmitButton
             className="mt-2"
-            data-testid="verify-totp-submit-btn"
             isPending={verifyMutation.isPending}
             pendingText={t('verifyTotp.submitting')}
           >
@@ -235,7 +229,6 @@ function VerifyTotp() {
       <div className="mt-4 text-center">
         <button
           className="link link-info font-medium text-xs"
-          data-testid="verify-totp-recovery-link"
           onClick={() =>
             router.navigate({
               to: '/verify/totp/recovery',
@@ -249,7 +242,6 @@ function VerifyTotp() {
       </div>
 
       <FooterLink
-        data-testid="verify-totp-login-link"
         linkText={t('verifyTotp.backToLogin')}
         search={extractOAuthParams(search)}
         text=""
