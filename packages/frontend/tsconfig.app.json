@@ -8,7 +8,6 @@
     "skipLibCheck": true,
     "strictNullChecks": true,
     "sourceMap": true,
-
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -16,20 +15,20 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
-
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.app.tsbuildinfo",
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
       "@frontend/*": ["./src/*"],
+      "@frontend-e2e/*": ["./e2e/*"],
       "@backend/*": ["../backend/src/*"]
     }
   },
-  "include": ["src", "e2e/tests", "e2e/provided-context.d.ts"]
+  "include": ["src", "e2e/tests", "e2e/utils", "e2e/provided-context.d.ts"]
 }

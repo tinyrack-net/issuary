@@ -6,21 +6,24 @@
     "types": ["node"],
     "skipLibCheck": true,
     "strictNullChecks": true,
-
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
-
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.node.tsbuildinfo",
+    "baseUrl": ".",
+    "paths": {
+      "@frontend-e2e/*": ["./e2e/*"],
+      "@backend/*": ["../backend/src/*"]
+    }
   },
   "include": [
     "vite.config.ts",

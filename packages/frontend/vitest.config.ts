@@ -22,6 +22,8 @@ const sharedPlugins = [
 const sharedResolve = {
   alias: {
     '@frontend': path.resolve(__dirname, './src'),
+    '@frontend-e2e': path.resolve(__dirname, './e2e'),
+    '@backend': path.resolve(__dirname, '../backend/src'),
   },
 };
 
