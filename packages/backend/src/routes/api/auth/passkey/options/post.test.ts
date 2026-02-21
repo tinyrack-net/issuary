@@ -172,7 +172,7 @@ describe('POST /api/auth/passkey/options - 2FA mode', () => {
 
       // Add passkey to user
       const passkey = services2FA.mikro.userPasskey.create({
-        user: user.id,
+        user: user.sub,
         credential_id: credentialId,
         public_key: 'test-public-key-base64url',
         counter: 0,

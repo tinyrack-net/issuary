@@ -71,11 +71,11 @@ describe('GET /api/user/session', () => {
     expect(sessionBody.user).toBeDefined();
     const sessionUser = sessionBody.user;
     if (!sessionUser) return;
-    expect(sessionUser).toHaveProperty('id');
+    expect(sessionUser).toHaveProperty('sub');
 
-    // Verify user id matches = logged-in user
+    // Verify user sub matches = logged-in user
     const loginBody = await assertJsonBody(loginRes);
-    expect(sessionUser.id).toBe(loginBody.user?.id);
+    expect(sessionUser.sub).toBe(loginBody.user?.sub);
     expect(sessionUser).toHaveProperty('second_factor_required');
   });
 
@@ -131,7 +131,7 @@ describe('GET /api/user/session', () => {
     const email = generateUniqueEmail('deleted-session');
     const password = 'testPassword123';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -146,11 +146,11 @@ describe('GET /api/user/session', () => {
     );
     const beforeBody = await assertJsonBody(beforeRes);
     expect(beforeBody.user).not.toBeNull();
-    expect(beforeBody.user?.id).toBe(userId);
+    expect(beforeBody.user?.sub).toBe(userSub);
 
     // Hard-delete the user from the database
     await withMikroContext(services, async () => {
-      await services.mikro.em.nativeDelete(UserEntity, { id: userId });
+      await services.mikro.em.nativeDelete(UserEntity, { sub: userSub });
     });
 
     // Request session with stale cookie - should return user: null
@@ -180,7 +180,7 @@ describe('GET /api/user/session', () => {
       );
 
       const sessionBody = await assertJsonBody(sessionRes);
-      expect(sessionBody.user).toHaveProperty('id');
+      expect(sessionBody.user).toHaveProperty('sub');
     }
   });
 });

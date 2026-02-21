@@ -49,7 +49,7 @@ describe('GET /api/user/passkeys', () => {
     password: string,
   ): Promise<{
     sessionCookie: string;
-    userId: string;
+    userSub: string;
   }> {
     await withMikroContext(services, async () => {
       const user = services.mikro.user.create({
@@ -69,9 +69,9 @@ describe('GET /api/user/passkeys', () => {
 
     const sessionCookie = extractCookie(loginRes, 'session');
     const body = await assertJsonBody(loginRes);
-    const userId = body.user.id;
+    const userSub = body.user.sub;
 
-    return { sessionCookie, userId };
+    return { sessionCookie, userSub };
   }
 
   test('should return 401 when not authenticated', async () => {
@@ -102,13 +102,13 @@ describe('GET /api/user/passkeys', () => {
     const email = generateUniqueEmail('passkey-get-single');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
     // Create a passkey
-    await createPasskeyForUser(services, userId, 'My MacBook');
+    await createPasskeyForUser(services, userSub, 'My MacBook');
 
     const client = testClient(app);
     const res = await client.api.user.passkeys.$get(
@@ -133,15 +133,15 @@ describe('GET /api/user/passkeys', () => {
     const email = generateUniqueEmail('passkey-get-multiple');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
     // Create multiple passkeys
-    await createPasskeyForUser(services, userId, 'MacBook Pro');
-    await createPasskeyForUser(services, userId, 'iPhone');
-    await createPasskeyForUser(services, userId, null);
+    await createPasskeyForUser(services, userSub, 'MacBook Pro');
+    await createPasskeyForUser(services, userSub, 'iPhone');
+    await createPasskeyForUser(services, userSub, null);
 
     const client = testClient(app);
     const res = await client.api.user.passkeys.$get(
@@ -163,12 +163,12 @@ describe('GET /api/user/passkeys', () => {
     const email = generateUniqueEmail('passkey-get-no-sensitive');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
-    await createPasskeyForUser(services, userId, 'Test Device');
+    await createPasskeyForUser(services, userSub, 'Test Device');
 
     const client = testClient(app);
     const res = await client.api.user.passkeys.$get(
@@ -193,17 +193,17 @@ describe('GET /api/user/passkeys', () => {
     const email = generateUniqueEmail('passkey-get-sorted');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
     // Create passkeys with slight delay to ensure different timestamps
-    await createPasskeyForUser(services, userId, 'First Device');
+    await createPasskeyForUser(services, userSub, 'First Device');
     await new Promise((resolve) => setTimeout(resolve, 10));
-    await createPasskeyForUser(services, userId, 'Second Device');
+    await createPasskeyForUser(services, userSub, 'Second Device');
     await new Promise((resolve) => setTimeout(resolve, 10));
-    await createPasskeyForUser(services, userId, 'Third Device');
+    await createPasskeyForUser(services, userSub, 'Third Device');
 
     const client = testClient(app);
     const res = await client.api.user.passkeys.$get(
@@ -238,13 +238,16 @@ describe('GET /api/user/passkeys', () => {
     const email2 = generateUniqueEmail('passkey-get-user2');
     const password = 'testPassword123!';
 
-    const { sessionCookie: session1, userId: userId1 } =
+    const { sessionCookie: session1, userSub: userSub1 } =
       await createDbUserWithSession(email1, password);
-    const { userId: userId2 } = await createDbUserWithSession(email2, password);
+    const { userSub: userSub2 } = await createDbUserWithSession(
+      email2,
+      password,
+    );
 
     // Create passkeys for both users
-    await createPasskeyForUser(services, userId1, 'User1 Device');
-    await createPasskeyForUser(services, userId2, 'User2 Device');
+    await createPasskeyForUser(services, userSub1, 'User1 Device');
+    await createPasskeyForUser(services, userSub2, 'User2 Device');
 
     // User 1 should only see their passkey
     const client = testClient(app);
@@ -262,7 +265,7 @@ describe('GET /api/user/passkeys', () => {
     const email = generateUniqueEmail('passkey-get-device-types');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
@@ -270,7 +273,7 @@ describe('GET /api/user/passkeys', () => {
     // Create passkeys with different device types
     await withMikroContext(services, async () => {
       const passkey1 = services.mikro.userPasskey.create({
-        user: userId,
+        user: userSub,
         credential_id: `test-single-${crypto.randomUUID()}`,
         public_key: 'test-public-key-1',
         counter: 0,
@@ -280,7 +283,7 @@ describe('GET /api/user/passkeys', () => {
       });
 
       const passkey2 = services.mikro.userPasskey.create({
-        user: userId,
+        user: userSub,
         credential_id: `test-multi-${crypto.randomUUID()}`,
         public_key: 'test-public-key-2',
         counter: 0,

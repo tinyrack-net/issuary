@@ -294,7 +294,7 @@ describe('POST /api/auth/register', () => {
     // Check that terms consent was recorded
     await withMikroContext(services, async () => {
       const consents = await services.mikro.userTermsConsent.findAllConsents(
-        body.user.id,
+        body.user.sub,
       );
 
       expect(consents.length).toBe(2);
@@ -608,7 +608,7 @@ describe('POST /api/auth/register (implicit consent mode)', () => {
     // Check that implicit consent was recorded
     await withMikroContext(services, async () => {
       const consents = await services.mikro.userTermsConsent.findAllConsents(
-        body.user.id,
+        body.user.sub,
       );
 
       expect(consents.length).toBe(1);

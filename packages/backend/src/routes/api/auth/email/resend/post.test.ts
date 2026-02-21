@@ -110,7 +110,7 @@ describe('POST /api/auth/email/resend', () => {
       await services.mikro.em.persist(user).flush();
 
       await services.emailService.generateToken({
-        userId: user.id,
+        userSub: user.sub,
       });
     });
 
@@ -132,7 +132,7 @@ describe('POST /api/auth/email/resend', () => {
 
       // Check that there is a valid pending verification
       const hasPending = await services.emailService.hasPendingVerification(
-        user.id,
+        user.sub,
       );
       expect(hasPending).toBe(true);
     });

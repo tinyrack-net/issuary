@@ -263,7 +263,7 @@ describe('POST /api/terms/consent', () => {
 
     test('should store consent in database', async () => {
       const email = generateUniqueEmail('consent-db');
-      const { sessionCookie, userId } = await createDbUserWithSession(
+      const { sessionCookie, userSub } = await createDbUserWithSession(
         app,
         services,
         email,
@@ -286,7 +286,7 @@ describe('POST /api/terms/consent', () => {
       // Verify in database
       await withMikroContext(services, async () => {
         const consents =
-          await services.mikro.userTermsConsent.findAllConsents(userId);
+          await services.mikro.userTermsConsent.findAllConsents(userSub);
 
         expect(consents.length).toBe(2);
 
@@ -415,7 +415,7 @@ describe('POST /api/terms/consent', () => {
 
     test('should record declined optional terms', async () => {
       const email = generateUniqueEmail('consent-decline');
-      const { sessionCookie, userId } = await createDbUserWithSession(
+      const { sessionCookie, userSub } = await createDbUserWithSession(
         app,
         services,
         email,
@@ -437,7 +437,7 @@ describe('POST /api/terms/consent', () => {
 
       await withMikroContext(services, async () => {
         const consent = await services.mikro.userTermsConsent.findLatestConsent(
-          userId,
+          userSub,
           'marketing',
         );
 
@@ -496,7 +496,7 @@ describe('POST /api/terms/consent', () => {
 
     test('should ignore unknown term IDs', async () => {
       const email = generateUniqueEmail('consent-unknown');
-      const { sessionCookie, userId } = await createDbUserWithSession(
+      const { sessionCookie, userSub } = await createDbUserWithSession(
         app,
         services,
         email,
@@ -527,7 +527,7 @@ describe('POST /api/terms/consent', () => {
       // Verify unknown term was not stored
       await withMikroContext(services, async () => {
         const consent = await services.mikro.userTermsConsent.findLatestConsent(
-          userId,
+          userSub,
           'nonexistent-term',
         );
         expect(consent).toBeNull();
@@ -558,7 +558,7 @@ describe('POST /api/terms/consent', () => {
 
     test('should record the current term version', async () => {
       const email = generateUniqueEmail('consent-version');
-      const { sessionCookie, userId } = await createDbUserWithSession(
+      const { sessionCookie, userSub } = await createDbUserWithSession(
         app,
         services,
         email,
@@ -580,7 +580,7 @@ describe('POST /api/terms/consent', () => {
 
       await withMikroContext(services, async () => {
         const consent = await services.mikro.userTermsConsent.findLatestConsent(
-          userId,
+          userSub,
           'tos',
         );
 
@@ -612,7 +612,7 @@ describe('POST /api/terms/consent', () => {
 
     test('should create new consent record for new version', async () => {
       const email = generateUniqueEmail('consent-reconsent');
-      const { sessionCookie, userId } = await createDbUserWithSession(
+      const { sessionCookie, userSub } = await createDbUserWithSession(
         app,
         services,
         email,
@@ -623,7 +623,7 @@ describe('POST /api/terms/consent', () => {
       // Record old version consent directly in DB
       await withMikroContext(services, async () => {
         await services.mikro.userTermsConsent.recordConsent({
-          userId,
+          userSub,
           termsId: 'tos',
           termsVersion: '0.9.0', // Old version
           agreed: true,
@@ -648,7 +648,7 @@ describe('POST /api/terms/consent', () => {
       await withMikroContext(services, async () => {
         const consents = await services.mikro.userTermsConsent.find(
           {
-            user: { id: userId },
+            user: { sub: userSub },
             terms: { id: 'tos' },
           },
           { orderBy: { agreedAt: 'DESC' } },
@@ -662,7 +662,7 @@ describe('POST /api/terms/consent', () => {
 
     test('should update pending terms after re-consent', async () => {
       const email = generateUniqueEmail('consent-pending-update');
-      const { sessionCookie, userId } = await createDbUserWithSession(
+      const { sessionCookie, userSub } = await createDbUserWithSession(
         app,
         services,
         email,
@@ -674,14 +674,14 @@ describe('POST /api/terms/consent', () => {
       await withMikroContext(services, async () => {
         await services.mikro.userTermsConsent.recordConsents([
           {
-            userId,
+            userSub,
             termsId: 'tos',
             termsVersion: '0.9.0',
             agreed: true,
             consentType: 'explicit',
           },
           {
-            userId,
+            userSub,
             termsId: 'privacy',
             termsVersion: '1.0.0', // Already current
             agreed: true,
@@ -760,7 +760,7 @@ describe('POST /api/terms/consent', () => {
 
       test('should record consentType as explicit', async () => {
         const email = generateUniqueEmail('consent-explicit');
-        const { sessionCookie, userId } = await createDbUserWithSession(
+        const { sessionCookie, userSub } = await createDbUserWithSession(
           app,
           services,
           email,
@@ -780,7 +780,7 @@ describe('POST /api/terms/consent', () => {
         await withMikroContext(services, async () => {
           const consent =
             await services.mikro.userTermsConsent.findLatestConsent(
-              userId,
+              userSub,
               'tos',
             );
           expect(consent?.consentType).toBe('explicit');
@@ -825,7 +825,7 @@ describe('POST /api/terms/consent', () => {
 
       test('should record consentType as implicit', async () => {
         const email = generateUniqueEmail('consent-implicit');
-        const { sessionCookie, userId } = await createDbUserWithSession(
+        const { sessionCookie, userSub } = await createDbUserWithSession(
           app,
           services,
           email,
@@ -845,7 +845,7 @@ describe('POST /api/terms/consent', () => {
         await withMikroContext(services, async () => {
           const consent =
             await services.mikro.userTermsConsent.findLatestConsent(
-              userId,
+              userSub,
               'tos',
             );
           expect(consent?.consentType).toBe('implicit');
@@ -877,7 +877,7 @@ describe('POST /api/terms/consent', () => {
 
     test('should handle multiple rapid consent submissions', async () => {
       const email = generateUniqueEmail('consent-concurrent');
-      const { sessionCookie, userId } = await createDbUserWithSession(
+      const { sessionCookie, userSub } = await createDbUserWithSession(
         app,
         services,
         email,
@@ -912,7 +912,7 @@ describe('POST /api/terms/consent', () => {
       // Verify multiple records exist
       await withMikroContext(services, async () => {
         const consents =
-          await services.mikro.userTermsConsent.findAllConsents(userId);
+          await services.mikro.userTermsConsent.findAllConsents(userSub);
 
         // Each submission creates 2 records (tos + privacy)
         expect(consents.length).toBe(10);
@@ -977,7 +977,7 @@ describe('POST /api/terms/consent', () => {
 
     test('should handle duplicate term IDs in request', async () => {
       const email = generateUniqueEmail('consent-duplicate');
-      const { sessionCookie, userId } = await createDbUserWithSession(
+      const { sessionCookie, userSub } = await createDbUserWithSession(
         app,
         services,
         email,
@@ -1004,7 +1004,7 @@ describe('POST /api/terms/consent', () => {
       // (business logic decision - may want to dedupe in future)
       await withMikroContext(services, async () => {
         const tosConsents = await services.mikro.userTermsConsent.find({
-          user: { id: userId },
+          user: { sub: userSub },
           terms: { id: 'tos' },
         });
         // 2 records for tos (duplicates allowed)

@@ -26,7 +26,7 @@ async function createDbUserWithSessionHelper(
   password: string,
 ): Promise<{
   sessionCookie: string;
-  userId: string;
+  userSub: string;
 }> {
   await withMikroContext(services, async () => {
     const user = services.mikro.user.create({
@@ -46,9 +46,9 @@ async function createDbUserWithSessionHelper(
 
   const sessionCookie = extractCookie(loginRes, 'session');
   const body = await assertJsonBody(loginRes);
-  const userId = body.user.id;
+  const userSub = body.user.sub;
 
-  return { sessionCookie, userId };
+  return { sessionCookie, userSub };
 }
 
 /**
@@ -56,14 +56,14 @@ async function createDbUserWithSessionHelper(
  */
 async function createPasskeyForUserHelper(
   services: ServiceContainer,
-  userId: string,
+  userSub: string,
   credentialId: string,
 ): Promise<string> {
   let passkeyId = '';
 
   await withMikroContext(services, async () => {
     const passkey = services.mikro.userPasskey.create({
-      user: userId,
+      user: userSub,
       credential_id: credentialId,
       public_key: 'test-public-key-base64url',
       counter: 0,
@@ -466,7 +466,7 @@ describe('POST /api/user/passkeys/register/verify', () => {
     const email = generateUniqueEmail('passkey-verify-duplicate');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSessionHelper(
+    const { sessionCookie, userSub } = await createDbUserWithSessionHelper(
       app,
       services,
       email,
@@ -475,7 +475,7 @@ describe('POST /api/user/passkeys/register/verify', () => {
 
     // Create a passkey with specific credential ID
     const existingCredentialId = 'existing-credential-id-123';
-    await createPasskeyForUserHelper(services, userId, existingCredentialId);
+    await createPasskeyForUserHelper(services, userSub, existingCredentialId);
 
     const client = testClient(app);
     const headers = { Cookie: `session=${sessionCookie}` };

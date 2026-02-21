@@ -163,7 +163,7 @@ describe('POST /api/auth/passkey/verify', () => {
     const password = 'testPassword123!';
 
     // Create user and passkey
-    const { userId } = await createDbUserWithSession(
+    const { userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -173,7 +173,7 @@ describe('POST /api/auth/passkey/verify', () => {
 
     await withMikroContext(services, async () => {
       const passkey = services.mikro.userPasskey.create({
-        user: userId,
+        user: userSub,
         credential_id: credentialId,
         public_key: 'test-public-key-base64url',
         counter: 0,
@@ -329,7 +329,7 @@ describe('POST /api/auth/passkey/verify - Success with mocked service', () => {
     const password = 'testPassword123!';
 
     // Create user
-    const { userId } = await createDbUserWithSession(
+    const { userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -340,10 +340,10 @@ describe('POST /api/auth/passkey/verify - Success with mocked service', () => {
     // Create passkey for user and get user reference
     const user = await withMikroContext(services, async () => {
       const userEntity = await services.mikro.user.findOneOrFail({
-        id: userId,
+        sub: userSub,
       });
       const passkey = services.mikro.userPasskey.create({
-        user: userId,
+        user: userSub,
         credential_id: credentialId,
         public_key: 'test-public-key-base64url',
         counter: 0,
@@ -386,7 +386,7 @@ describe('POST /api/auth/passkey/verify - Success with mocked service', () => {
 
     // Verify response structure
     expect(body.user).toBeDefined();
-    expect(body.user.id).toBe(userId);
+    expect(body.user.sub).toBe(userSub);
     expect(body.user.email).toBe(email);
     expect(body.user.managed_by).toBe('database');
     expect(body.user.email_verified).toBe(true);
@@ -454,7 +454,7 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
       await services2FA.mikro.em.persist(userEntity1).flush();
 
       const passkey1 = services2FA.mikro.userPasskey.create({
-        user: userEntity1.id,
+        user: userEntity1.sub,
         credential_id: credentialId1,
         public_key: 'test-public-key-1',
         counter: 0,
@@ -475,7 +475,7 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
       await services2FA.mikro.em.persist(userEntity2).flush();
 
       const passkey2 = services2FA.mikro.userPasskey.create({
-        user: userEntity2.id,
+        user: userEntity2.sub,
         credential_id: credentialId2,
         public_key: 'test-public-key-2',
         counter: 0,
@@ -539,7 +539,7 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
     const password = 'testPassword123!';
     const credentialId = `success-2fa-credential-${crypto.randomUUID()}`;
 
-    const { userId, user } = await withMikroContext(services2FA, async () => {
+    const { userSub, user } = await withMikroContext(services2FA, async () => {
       const userEntity = services2FA.mikro.user.create({
         email,
         password_hash: password,
@@ -548,7 +548,7 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
       await services2FA.mikro.em.persist(userEntity).flush();
 
       const passkey = services2FA.mikro.userPasskey.create({
-        user: userEntity.id,
+        user: userEntity.sub,
         credential_id: credentialId,
         public_key: 'test-public-key-base64url',
         counter: 0,
@@ -560,7 +560,7 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
       });
       await services2FA.mikro.em.persist(passkey).flush();
 
-      return { userId: userEntity.id, user: userEntity };
+      return { userSub: userEntity.sub, user: userEntity };
     });
 
     // Login - should get pending2FAUser session
@@ -604,7 +604,7 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
     const body = await assertJsonBody(res);
 
     expect(body.user).toBeDefined();
-    expect(body.user.id).toBe(userId);
+    expect(body.user.sub).toBe(userSub);
     expect(body.user.email).toBe(email);
 
     // Verify we now have a full session (not just pending2FAUser)
@@ -616,7 +616,7 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
     );
     const sessionBody = await assertJsonBody(sessionRes);
     expect(sessionBody.user).toBeDefined();
-    expect(sessionBody).toHaveProperty('user.id', userId);
+    expect(sessionBody).toHaveProperty('user.sub', userSub);
 
     mockVerifyAuthentication.mockRestore();
   });

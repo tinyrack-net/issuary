@@ -53,7 +53,7 @@ describe('DELETE /api/user/passkeys/:id', () => {
     options?: { hasPassword?: boolean },
   ): Promise<{
     sessionCookie: string;
-    userId: string;
+    userSub: string;
   }> {
     await withMikroContext(services, async () => {
       const user = services.mikro.user.create({
@@ -73,18 +73,18 @@ describe('DELETE /api/user/passkeys/:id', () => {
 
     const sessionCookie = extractCookie(loginRes, 'session');
     const body = await assertJsonBody(loginRes);
-    const userId = body.user.id;
+    const userSub = body.user.sub;
 
-    return { sessionCookie, userId };
+    return { sessionCookie, userSub };
   }
 
   /**
    * Helper to link an OAuth account to a user
    */
-  async function linkOAuthAccount(userId: string): Promise<void> {
+  async function linkOAuthAccount(userSub: string): Promise<void> {
     await withMikroContext(services, async () => {
       const user = await services.mikro.user.findOneOrFail({
-        id: userId,
+        sub: userSub,
       });
       const oauthAccount = services.mikro.userOAuth.create({
         user,
@@ -134,14 +134,14 @@ describe('DELETE /api/user/passkeys/:id', () => {
     const email = generateUniqueEmail('passkey-delete-with-password');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
     const passkeyId = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Test Passkey',
     );
 
@@ -169,19 +169,19 @@ describe('DELETE /api/user/passkeys/:id', () => {
     const email = generateUniqueEmail('passkey-delete-one-of-many');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
     const passkeyId1 = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Passkey 1',
     );
     const passkeyId2 = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Passkey 2',
     );
 
@@ -220,12 +220,15 @@ describe('DELETE /api/user/passkeys/:id', () => {
       email1,
       password,
     );
-    const { userId: userId2 } = await createDbUserWithSession(email2, password);
+    const { userSub: userSub2 } = await createDbUserWithSession(
+      email2,
+      password,
+    );
 
     // Create passkey for user2
     const passkeyId = await createPasskeyForUser(
       services,
-      userId2,
+      userSub2,
       'User2 Passkey',
     );
 
@@ -271,18 +274,18 @@ describe('DELETE /api/user/passkeys/:id', () => {
     const email = generateUniqueEmail('passkey-delete-has-oauth');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
     // Link OAuth account
-    await linkOAuthAccount(userId);
+    await linkOAuthAccount(userSub);
 
     // Create only one passkey
     const passkeyId = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Only Passkey',
     );
 
@@ -310,16 +313,16 @@ describe('DELETE /api/user/passkeys/:id', () => {
     const email = generateUniqueEmail('passkey-delete-multiple');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
     // Create multiple passkeys
-    await createPasskeyForUser(services, userId, 'Passkey 1');
+    await createPasskeyForUser(services, userSub, 'Passkey 1');
     const passkeyId2 = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Passkey 2',
     );
 
@@ -348,12 +351,12 @@ describe('DELETE /api/user/passkeys/:id', () => {
     expect(sessionBody.user).toBeDefined();
     const user = sessionBody.user;
     if (!user) return;
-    const userId = user.id;
+    const userSub = user.sub;
 
     // Create passkey for config user directly in DB
     const passkeyId = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Config User Passkey',
     );
 
@@ -373,24 +376,24 @@ describe('DELETE /api/user/passkeys/:id', () => {
     const email = generateUniqueEmail('passkey-delete-all-with-password');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
     const passkeyId1 = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Passkey 1',
     );
     const passkeyId2 = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Passkey 2',
     );
     const passkeyId3 = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Passkey 3',
     );
 
@@ -409,7 +412,7 @@ describe('DELETE /api/user/passkeys/:id', () => {
 
     // Verify all passkeys are deleted
     await withMikroContext(services, async () => {
-      const passkeys = await services.mikro.userPasskey.findByUserId(userId);
+      const passkeys = await services.mikro.userPasskey.findByUserSub(userSub);
       expect(passkeys).toHaveLength(0);
     });
   });
@@ -418,14 +421,14 @@ describe('DELETE /api/user/passkeys/:id', () => {
     const email = generateUniqueEmail('passkey-delete-concurrent');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
     const passkeyId = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Test Passkey',
     );
 
@@ -457,17 +460,17 @@ describe('DELETE /api/user/passkeys/:id', () => {
     const email = generateUniqueEmail('passkey-delete-verify-list');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
     const passkeyId1 = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Passkey 1',
     );
-    await createPasskeyForUser(services, userId, 'Passkey 2');
+    await createPasskeyForUser(services, userSub, 'Passkey 2');
 
     const client = testClient(app);
     const headers = { Cookie: `session=${sessionCookie}` };
@@ -527,7 +530,7 @@ describe('DELETE /api/user/passkeys/:id - Last auth method protection', () => {
     password: string,
   ): Promise<{
     sessionCookie: string;
-    userId: string;
+    userSub: string;
   }> {
     await withMikroContext(services, async () => {
       const user = services.mikro.user.create({
@@ -547,9 +550,9 @@ describe('DELETE /api/user/passkeys/:id - Last auth method protection', () => {
 
     const sessionCookie = extractCookie(loginRes, 'session');
     const body = await assertJsonBody(loginRes);
-    const userId = body.user.id;
+    const userSub = body.user.sub;
 
-    return { sessionCookie, userId };
+    return { sessionCookie, userSub };
   }
 
   test('should prevent deleting last passkey when no other auth methods exist', async () => {
@@ -557,7 +560,7 @@ describe('DELETE /api/user/passkeys/:id - Last auth method protection', () => {
     const password = 'testPassword123!';
 
     // Create user with password
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
@@ -565,7 +568,7 @@ describe('DELETE /api/user/passkeys/:id - Last auth method protection', () => {
     // Remove password from user
     await withMikroContext(services, async () => {
       const user = await services.mikro.user.findOneOrFail(
-        { id: userId },
+        { sub: userSub },
         { populate: ['password_hash'] },
       );
       user.password_hash = null;
@@ -575,7 +578,7 @@ describe('DELETE /api/user/passkeys/:id - Last auth method protection', () => {
     // Create only one passkey
     const passkeyId = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Only Auth Method Passkey',
     );
 
@@ -603,7 +606,7 @@ describe('DELETE /api/user/passkeys/:id - Last auth method protection', () => {
     const email = generateUniqueEmail('passkey-delete-multi-no-password');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
@@ -611,7 +614,7 @@ describe('DELETE /api/user/passkeys/:id - Last auth method protection', () => {
     // Remove password
     await withMikroContext(services, async () => {
       const user = await services.mikro.user.findOneOrFail(
-        { id: userId },
+        { sub: userSub },
         { populate: ['password_hash'] },
       );
       user.password_hash = null;
@@ -621,10 +624,10 @@ describe('DELETE /api/user/passkeys/:id - Last auth method protection', () => {
     // Create multiple passkeys
     const passkeyId1 = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Passkey 1',
     );
-    await createPasskeyForUser(services, userId, 'Passkey 2');
+    await createPasskeyForUser(services, userSub, 'Passkey 2');
 
     // Should be able to delete one (still has another)
     const client = testClient(app);
@@ -721,14 +724,14 @@ describe('DELETE /api/user/passkeys/:id - second_factor.required: true', () => {
    * Helper to create a passkey for a user
    */
   async function createPasskeyFor2FATest(
-    userId: string,
+    userSub: string,
     name: string | null = null,
   ): Promise<string> {
     let passkeyId = '';
 
     await withMikroContext(servicesWith2FA, async () => {
       const passkey = servicesWith2FA.mikro.userPasskey.create({
-        user: userId,
+        user: userSub,
         credential_id: `test-credential-${crypto.randomUUID()}`,
         public_key: 'test-public-key-base64url',
         counter: 0,
@@ -756,12 +759,12 @@ describe('DELETE /api/user/passkeys/:id - second_factor.required: true', () => {
     password: string,
   ): Promise<{
     sessionCookie: string;
-    userId: string;
+    userSub: string;
   }> {
     const email = generateUniqueEmail(emailPrefix);
 
     // Create user directly in DB
-    let userId = '';
+    let userSub = '';
     await withMikroContext(servicesWith2FA, async () => {
       const user = servicesWith2FA.mikro.user.create({
         email,
@@ -769,11 +772,11 @@ describe('DELETE /api/user/passkeys/:id - second_factor.required: true', () => {
       });
       user.email_verified = true;
       await servicesWith2FA.mikro.em.persist(user).flush();
-      userId = user.id;
+      userSub = user.sub;
     });
 
     // Enable TOTP for user (to be able to login)
-    const totpSecret = await enableTotpForUser(servicesWith2FA, userId);
+    const totpSecret = await enableTotpForUser(servicesWith2FA, userSub);
 
     // Login - will require 2FA verification
     const loginClient = testClient(appWith2FARequired);
@@ -800,25 +803,25 @@ describe('DELETE /api/user/passkeys/:id - second_factor.required: true', () => {
     const verifySetCookie = verifyRes.headers.get('set-cookie');
     const sessionCookie = verifySetCookie?.match(/session=([^;]+)/)?.[1] ?? '';
 
-    return { sessionCookie, userId };
+    return { sessionCookie, userSub };
   }
 
   test('should prevent deleting last passkey when no TOTP exists and 2FA is required', async () => {
     const password = 'testPassword123!';
 
     // First create user with TOTP to get session
-    const { sessionCookie, userId } = await createUserWithPasskeySession(
+    const { sessionCookie, userSub } = await createUserWithPasskeySession(
       'passkey-delete-2fa-required-no-totp',
       password,
     );
 
     // Remove TOTP from user (to test passkey-only scenario)
     await withMikroContext(servicesWith2FA, async () => {
-      await servicesWith2FA.mikro.userTotp.deleteByUserId(userId);
+      await servicesWith2FA.mikro.userTotp.deleteByUserSub(userSub);
     });
 
     // Create only one passkey
-    const passkeyId = await createPasskeyFor2FATest(userId, 'Only Passkey');
+    const passkeyId = await createPasskeyFor2FATest(userSub, 'Only Passkey');
 
     const client = testClient(appWith2FARequired);
     const res = await client.api.user.passkeys[':id'].$delete(
@@ -842,13 +845,13 @@ describe('DELETE /api/user/passkeys/:id - second_factor.required: true', () => {
   test('should allow deleting passkey when TOTP exists and 2FA is required', async () => {
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createUserWithPasskeySession(
+    const { sessionCookie, userSub } = await createUserWithPasskeySession(
       'passkey-delete-2fa-required-has-totp',
       password,
     );
 
     // Create passkey (user already has TOTP from session setup)
-    const passkeyId = await createPasskeyFor2FATest(userId, 'Test Passkey');
+    const passkeyId = await createPasskeyFor2FATest(userSub, 'Test Passkey');
 
     const client = testClient(appWith2FARequired);
     const res = await client.api.user.passkeys[':id'].$delete(
@@ -873,19 +876,19 @@ describe('DELETE /api/user/passkeys/:id - second_factor.required: true', () => {
   test('should allow deleting one of multiple passkeys when 2FA is required', async () => {
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createUserWithPasskeySession(
+    const { sessionCookie, userSub } = await createUserWithPasskeySession(
       'passkey-delete-2fa-required-multiple',
       password,
     );
 
     // Remove TOTP to test passkey-only scenario
     await withMikroContext(servicesWith2FA, async () => {
-      await servicesWith2FA.mikro.userTotp.deleteByUserId(userId);
+      await servicesWith2FA.mikro.userTotp.deleteByUserSub(userSub);
     });
 
     // Create multiple passkeys (no TOTP)
-    const passkeyId1 = await createPasskeyFor2FATest(userId, 'Passkey 1');
-    await createPasskeyFor2FATest(userId, 'Passkey 2');
+    const passkeyId1 = await createPasskeyFor2FATest(userSub, 'Passkey 1');
+    await createPasskeyFor2FATest(userSub, 'Passkey 2');
 
     const client = testClient(appWith2FARequired);
     const res = await client.api.user.passkeys[':id'].$delete(
@@ -913,13 +916,13 @@ describe('DELETE /api/user/passkeys/:id - second_factor.required: true', () => {
     expect(sessionBody.user).toBeDefined();
     const user = sessionBody.user;
     if (!user) return;
-    const userId = user.id;
+    const userSub = user.sub;
 
     // Create passkey directly in database for config user
     let passkeyId = '';
     await withMikroContext(servicesWith2FA, async () => {
       const passkey = servicesWith2FA.mikro.userPasskey.create({
-        user: userId,
+        user: userSub,
         credential_id: `test-credential-${crypto.randomUUID()}`,
         public_key: 'test-public-key-base64url',
         counter: 0,

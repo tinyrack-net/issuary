@@ -49,7 +49,7 @@ describe('PATCH /api/user/passkeys/:id', () => {
     password: string,
   ): Promise<{
     sessionCookie: string;
-    userId: string;
+    userSub: string;
   }> {
     await withMikroContext(services, async () => {
       const user = services.mikro.user.create({
@@ -69,9 +69,9 @@ describe('PATCH /api/user/passkeys/:id', () => {
 
     const sessionCookie = extractCookie(loginRes, 'session');
     const body = await assertJsonBody(loginRes);
-    const userId = body.user.id;
+    const userSub = body.user.sub;
 
-    return { sessionCookie, userId };
+    return { sessionCookie, userSub };
   }
 
   test('should return 401 when not authenticated', async () => {
@@ -112,12 +112,12 @@ describe('PATCH /api/user/passkeys/:id', () => {
     const email = generateUniqueEmail('passkey-patch-success');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
-    const passkeyId = await createPasskeyForUser(services, userId, 'Old Name');
+    const passkeyId = await createPasskeyForUser(services, userSub, 'Old Name');
 
     const client = testClient(app);
     const res = await client.api.user.passkeys[':id'].$patch(
@@ -144,12 +144,12 @@ describe('PATCH /api/user/passkeys/:id', () => {
     const email = generateUniqueEmail('passkey-patch-null-to-name');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
-    const passkeyId = await createPasskeyForUser(services, userId, null);
+    const passkeyId = await createPasskeyForUser(services, userSub, null);
 
     const client = testClient(app);
     const res = await client.api.user.passkeys[':id'].$patch(
@@ -176,14 +176,14 @@ describe('PATCH /api/user/passkeys/:id', () => {
     const email = generateUniqueEmail('passkey-patch-empty-name');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
     const passkeyId = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Original Name',
     );
 
@@ -203,14 +203,14 @@ describe('PATCH /api/user/passkeys/:id', () => {
     const email = generateUniqueEmail('passkey-patch-long-name');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
     const passkeyId = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Original Name',
     );
 
@@ -233,14 +233,14 @@ describe('PATCH /api/user/passkeys/:id', () => {
     const email = generateUniqueEmail('passkey-patch-max-name');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
     const passkeyId = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Original Name',
     );
 
@@ -276,12 +276,15 @@ describe('PATCH /api/user/passkeys/:id', () => {
       email1,
       password,
     );
-    const { userId: userId2 } = await createDbUserWithSession(email2, password);
+    const { userSub: userSub2 } = await createDbUserWithSession(
+      email2,
+      password,
+    );
 
     // Create passkey for user2
     const passkeyId = await createPasskeyForUser(
       services,
-      userId2,
+      userSub2,
       'User2 Passkey',
     );
 
@@ -311,14 +314,14 @@ describe('PATCH /api/user/passkeys/:id', () => {
     const email = generateUniqueEmail('passkey-patch-no-name');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
     const passkeyId = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Original Name',
     );
 
@@ -357,12 +360,12 @@ describe('PATCH /api/user/passkeys/:id', () => {
     const email = generateUniqueEmail('passkey-patch-special-chars');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
-    const passkeyId = await createPasskeyForUser(services, userId, 'Original');
+    const passkeyId = await createPasskeyForUser(services, userSub, 'Original');
 
     const specialName = "My iPhone 📱 - John's Device (2024)";
 
@@ -390,12 +393,12 @@ describe('PATCH /api/user/passkeys/:id', () => {
     const email = generateUniqueEmail('passkey-patch-whitespace');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       email,
       password,
     );
 
-    const passkeyId = await createPasskeyForUser(services, userId, 'Original');
+    const passkeyId = await createPasskeyForUser(services, userSub, 'Original');
 
     // Whitespace-only name should be accepted as the schema doesn't
     // explicitly trim
@@ -425,12 +428,12 @@ describe('PATCH /api/user/passkeys/:id', () => {
     const sessionBody = await assertJsonBody(sessionRes);
     expect(sessionBody.user).toBeDefined();
     if (!sessionBody.user) return;
-    const userId = sessionBody.user.id;
+    const userSub = sessionBody.user.sub;
 
     // Create passkey for config user
     const passkeyId = await createPasskeyForUser(
       services,
-      userId,
+      userSub,
       'Config User Passkey',
     );
 

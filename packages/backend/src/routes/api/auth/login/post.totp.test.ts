@@ -32,7 +32,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 /**
  * Helper function to create a user in DB without triggering login flow.
- * Returns userId for further operations.
+ * Returns userSub for further operations.
  */
 async function createUserInDb(
   services: ServiceContainer,
@@ -41,7 +41,7 @@ async function createUserInDb(
   options: { emailVerified?: boolean } = {},
 ): Promise<string> {
   const { emailVerified = true } = options;
-  let userId = '';
+  let userSub = '';
 
   await withMikroContext(services, async () => {
     const user = services.mikro.user.create({
@@ -50,10 +50,10 @@ async function createUserInDb(
     });
     user.email_verified = emailVerified;
     await services.mikro.em.persist(user).flush();
-    userId = user.id;
+    userSub = user.sub;
   });
 
-  return userId;
+  return userSub;
 }
 
 /**
@@ -124,10 +124,10 @@ describe('POST /api/auth/login - TOTP Required Mode', () => {
     const password = 'password123';
 
     // Create user in DB without login
-    const userId = await createUserInDb(services, email, password);
+    const userSub = await createUserInDb(services, email, password);
 
     // Enable TOTP for user
-    await enableTotpForUser(services, userId);
+    await enableTotpForUser(services, userSub);
 
     // Login should return second_factor_required
     const client = testClient(app);
@@ -183,8 +183,8 @@ describe('POST /api/auth/login - TOTP Required Mode', () => {
     const password = 'password123';
 
     // Create user with TOTP enabled
-    const userId = await createUserInDb(services, email, password);
-    await enableTotpForUser(services, userId);
+    const userSub = await createUserInDb(services, email, password);
+    await enableTotpForUser(services, userSub);
 
     const client = testClient(app);
     const loginRes = await client.api.auth.login.$post({
@@ -293,8 +293,8 @@ describe('POST /api/auth/login - TOTP Optional Mode', () => {
     const password = 'password123';
 
     // Create user in DB without login
-    const userId = await createUserInDb(services, email, password);
-    await enableTotpForUser(services, userId);
+    const userSub = await createUserInDb(services, email, password);
+    await enableTotpForUser(services, userSub);
 
     // Login should require TOTP verification
     const client = testClient(app);
@@ -408,10 +408,10 @@ describe('POST /api/auth/login - TOTP Disabled Mode', () => {
     const password = 'password123';
 
     // Create user in DB
-    const userId = await createUserInDb(services, email, password);
+    const userSub = await createUserInDb(services, email, password);
 
     // Enable TOTP for user (even though TOTP is disabled in config)
-    await enableTotpForUser(services, userId);
+    await enableTotpForUser(services, userSub);
 
     // Login should still require TOTP verification because user has TOTP enabled
     // Note: The login logic checks user.totp_registered regardless of config.totp.enabled
@@ -519,10 +519,10 @@ describe('POST /api/auth/login - Email Verification + TOTP', () => {
     const password = 'password123';
 
     // Create user in DB without login
-    const userId = await createUserInDb(services, email, password);
+    const userSub = await createUserInDb(services, email, password);
 
     // Enable TOTP for user
-    await enableTotpForUser(services, userId);
+    await enableTotpForUser(services, userSub);
 
     const client = testClient(app);
     const loginRes = await client.api.auth.login.$post({
@@ -619,8 +619,8 @@ describe('POST /api/auth/login - Session State Verification', () => {
     const password = 'password123';
 
     // Create user in DB without login
-    const userId = await createUserInDb(services, email, password);
-    await enableTotpForUser(services, userId);
+    const userSub = await createUserInDb(services, email, password);
+    await enableTotpForUser(services, userSub);
 
     const client = testClient(app);
     const loginRes = await client.api.auth.login.$post({
@@ -759,8 +759,8 @@ describe('POST /api/auth/login - Session State Verification', () => {
     const password = 'password123';
 
     // Create user in DB without login
-    const userId = await createUserInDb(services, email, password);
-    const secret = await enableTotpForUser(services, userId);
+    const userSub = await createUserInDb(services, email, password);
+    const secret = await enableTotpForUser(services, userSub);
 
     // Step 1: Login - should require TOTP verification
     const client = testClient(app);

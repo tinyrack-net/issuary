@@ -144,7 +144,7 @@ describe('DELETE /api/oauth/:provider', () => {
 
       // Link OAuth account
       await services.mikro.userOAuth.linkAccount({
-        userId: user.id,
+        userSub: user.sub,
         providerName: 'google',
         providerUserId: `test-${Date.now()}`,
         accessToken: 'test-access-token',
@@ -152,7 +152,7 @@ describe('DELETE /api/oauth/:provider', () => {
         expiresAt: null,
       });
 
-      return user.id;
+      return user.sub;
     });
 
     // Verify the service logic works correctly
@@ -163,7 +163,7 @@ describe('DELETE /api/oauth/:provider', () => {
       );
       expect(user).toBeDefined();
 
-      const oauthCount = await services.mikro.userOAuth.countByUser(user.id);
+      const oauthCount = await services.mikro.userOAuth.countByUser(user.sub);
       expect(oauthCount).toBe(1);
 
       const hasPassword = user.hasPassword();
@@ -173,7 +173,7 @@ describe('DELETE /api/oauth/:provider', () => {
       // This should throw CannotUnlinkLastAuthMethod error
       try {
         await services.oauthConnectService.unlinkOAuthAccount(
-          user.id,
+          user.sub,
           'google',
         );
         return { error: null };
@@ -204,7 +204,7 @@ describe('DELETE /api/oauth/:provider', () => {
 
       // Link OAuth account
       await services.mikro.userOAuth.linkAccount({
-        userId: user.id,
+        userSub: user.sub,
         providerName: 'google',
         providerUserId: `test-${Date.now()}`,
         accessToken: 'test-access-token',
@@ -239,7 +239,7 @@ describe('DELETE /api/oauth/:provider', () => {
       const user = await services.mikro.user.findOneOrFail({
         email,
       });
-      const oauthCount = await services.mikro.userOAuth.countByUser(user.id);
+      const oauthCount = await services.mikro.userOAuth.countByUser(user.sub);
       expect(oauthCount).toBe(0);
     });
   });

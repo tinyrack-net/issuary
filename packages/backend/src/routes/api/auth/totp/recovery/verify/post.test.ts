@@ -51,7 +51,7 @@ async function createUserWithTotpAndRecoveryCodes(
 ): Promise<{
   pending2FACookie: string;
   recoveryCodes: string[];
-  userId: string;
+  userSub: string;
   totpSecret: string;
   email: string;
   password: string;
@@ -60,7 +60,7 @@ async function createUserWithTotpAndRecoveryCodes(
   const password = 'testPassword123!';
 
   // Create user and get session
-  const { sessionCookie, userId } = await createDbUserWithSession(
+  const { sessionCookie, userSub } = await createDbUserWithSession(
     app,
     services,
     email,
@@ -108,7 +108,7 @@ async function createUserWithTotpAndRecoveryCodes(
   return {
     pending2FACookie,
     recoveryCodes,
-    userId,
+    userSub,
     totpSecret,
     email,
     password,
@@ -130,7 +130,7 @@ describe('POST /api/auth/totp/recovery/verify', () => {
 
     const body = await assertJsonBody(res);
     expect(body).toHaveProperty('user');
-    expect(body.user).toHaveProperty('id');
+    expect(body.user).toHaveProperty('sub');
     expect(body.user).toHaveProperty('email');
   });
 
@@ -263,7 +263,7 @@ describe('POST /api/auth/totp/recovery/verify', () => {
   });
 
   test('should mark recovery code as used in database', async () => {
-    const { pending2FACookie, recoveryCodes, userId } =
+    const { pending2FACookie, recoveryCodes, userSub } =
       await createUserWithTotpAndRecoveryCodes('recovery-db-mark');
 
     const client = testClient(app);
@@ -277,11 +277,11 @@ describe('POST /api/auth/totp/recovery/verify', () => {
     // Verify in database that one code is marked as used
     await withMikroContext(services, async () => {
       const unusedCodes =
-        await services.mikro.userTotpRecoveryCode.findUnusedByUserId(userId);
+        await services.mikro.userTotpRecoveryCode.findUnusedByUserSub(userSub);
       expect(unusedCodes).toHaveLength(7); // 8 - 1 = 7
 
       const allCodes = await services.mikro.userTotpRecoveryCode.find({
-        user: { id: userId },
+        user: { sub: userSub },
       });
       const usedCodes = allCodes.filter((c) => c.used);
       expect(usedCodes).toHaveLength(1);
@@ -294,7 +294,7 @@ describe('POST /api/auth/totp/recovery/verify', () => {
     const password = 'testPassword123!';
 
     // Create user with TOTP and recovery codes
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -334,7 +334,7 @@ describe('POST /api/auth/totp/recovery/verify', () => {
     // Verify recovery codes exist
     await withMikroContext(services, async () => {
       const codes =
-        await services.mikro.userTotpRecoveryCode.findUnusedByUserId(userId);
+        await services.mikro.userTotpRecoveryCode.findUnusedByUserSub(userSub);
       expect(codes).toHaveLength(8);
     });
 
@@ -351,13 +351,13 @@ describe('POST /api/auth/totp/recovery/verify', () => {
     // Verify recovery codes are deleted
     await withMikroContext(services, async () => {
       const codes =
-        await services.mikro.userTotpRecoveryCode.findUnusedByUserId(userId);
+        await services.mikro.userTotpRecoveryCode.findUnusedByUserSub(userSub);
       expect(codes).toHaveLength(0);
     });
   });
 
   test('should return NoRecoveryCodesAvailable when all codes are used', async () => {
-    const { pending2FACookie, recoveryCodes, email, password, userId } =
+    const { pending2FACookie, recoveryCodes, email, password, userSub } =
       await createUserWithTotpAndRecoveryCodes('recovery-exhausted');
 
     // Use all 8 recovery codes
@@ -386,7 +386,7 @@ describe('POST /api/auth/totp/recovery/verify', () => {
     // Verify all codes are used in database
     await withMikroContext(services, async () => {
       const unusedCodes =
-        await services.mikro.userTotpRecoveryCode.findUnusedByUserId(userId);
+        await services.mikro.userTotpRecoveryCode.findUnusedByUserSub(userSub);
       expect(unusedCodes).toHaveLength(0);
     });
 

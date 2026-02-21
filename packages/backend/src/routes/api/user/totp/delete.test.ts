@@ -77,7 +77,7 @@ describe('DELETE /api/user/totp', () => {
     const email = generateUniqueEmail('totp-delete-invalid-code');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -85,7 +85,7 @@ describe('DELETE /api/user/totp', () => {
     );
 
     // Enable TOTP
-    await enableTotpForUser(services, userId);
+    await enableTotpForUser(services, userSub);
 
     const client = testClient(app);
     const res = await client.api.user.totp.$delete(
@@ -100,7 +100,7 @@ describe('DELETE /api/user/totp', () => {
     const email = generateUniqueEmail('totp-delete-success');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -108,7 +108,7 @@ describe('DELETE /api/user/totp', () => {
     );
 
     // Enable TOTP
-    const secret = await enableTotpForUser(services, userId);
+    const secret = await enableTotpForUser(services, userSub);
 
     // Generate valid code
     const validCode = services.totpService.generateToken(secret);
@@ -124,7 +124,7 @@ describe('DELETE /api/user/totp', () => {
 
     // Verify TOTP is removed from database
     await withMikroContext(services, async () => {
-      const totp = await services.mikro.userTotp.findByUserId(userId);
+      const totp = await services.mikro.userTotp.findByUserSub(userSub);
       expect(totp).toBeNull();
     });
   });
@@ -133,14 +133,14 @@ describe('DELETE /api/user/totp', () => {
     const email = generateUniqueEmail('totp-delete-format-nonnumeric');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
       password,
     );
 
-    await enableTotpForUser(services, userId);
+    await enableTotpForUser(services, userSub);
 
     const client = testClient(app);
     const res = await client.api.user.totp.$delete(
@@ -155,14 +155,14 @@ describe('DELETE /api/user/totp', () => {
     const email = generateUniqueEmail('totp-delete-format-length');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
       password,
     );
 
-    await enableTotpForUser(services, userId);
+    await enableTotpForUser(services, userSub);
 
     const client = testClient(app);
 
@@ -185,7 +185,7 @@ describe('DELETE /api/user/totp', () => {
     const email = generateUniqueEmail('totp-delete-session-update');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -193,7 +193,7 @@ describe('DELETE /api/user/totp', () => {
     );
 
     // Enable TOTP
-    const secret = await enableTotpForUser(services, userId);
+    const secret = await enableTotpForUser(services, userSub);
 
     const client = testClient(app);
 
@@ -227,7 +227,7 @@ describe('DELETE /api/user/totp', () => {
     const email = generateUniqueEmail('totp-delete-unverified');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -238,7 +238,7 @@ describe('DELETE /api/user/totp', () => {
     const secret = services.totpService.generateSecret();
     await withMikroContext(services, async () => {
       const totp = services.mikro.userTotp.create({
-        user: userId,
+        user: userSub,
         secret,
       });
       totp.verified = false;
@@ -261,7 +261,7 @@ describe('DELETE /api/user/totp', () => {
     const email = generateUniqueEmail('totp-delete-unconfirmed');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -272,7 +272,7 @@ describe('DELETE /api/user/totp', () => {
     const secret = services.totpService.generateSecret();
     await withMikroContext(services, async () => {
       const totp = services.mikro.userTotp.create({
-        user: userId,
+        user: userSub,
         secret,
       });
       totp.verified = true;
@@ -295,7 +295,7 @@ describe('DELETE /api/user/totp', () => {
     const email = generateUniqueEmail('totp-delete-replay');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -303,7 +303,7 @@ describe('DELETE /api/user/totp', () => {
     );
 
     // Enable TOTP
-    const secret = await enableTotpForUser(services, userId);
+    const secret = await enableTotpForUser(services, userSub);
     const validCode = services.totpService.generateToken(secret);
 
     const client = testClient(app);
@@ -327,7 +327,7 @@ describe('DELETE /api/user/totp', () => {
     const email = generateUniqueEmail('totp-delete-reenable');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -335,7 +335,7 @@ describe('DELETE /api/user/totp', () => {
     );
 
     // Enable TOTP (fully)
-    const secret1 = await enableTotpForUser(services, userId);
+    const secret1 = await enableTotpForUser(services, userSub);
     const validCode1 = services.totpService.generateToken(secret1);
 
     const client = testClient(app);
@@ -373,7 +373,7 @@ describe('DELETE /api/user/totp', () => {
     // Verify TOTP is fully enabled again
     await withMikroContext(services, async () => {
       const totp =
-        await services.mikro.userTotp.findFullyRegisteredByUserId(userId);
+        await services.mikro.userTotp.findFullyRegisteredByUserSub(userSub);
       expect(totp).not.toBeNull();
       expect(totp?.secret).toBe(newSecret);
     });
@@ -383,14 +383,14 @@ describe('DELETE /api/user/totp', () => {
     const email = generateUniqueEmail('totp-delete-no-code');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
       password,
     );
 
-    await enableTotpForUser(services, userId);
+    await enableTotpForUser(services, userSub);
 
     const client = testClient(app);
     const res = await client.api.user.totp.$delete(
@@ -448,13 +448,13 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
     password: string,
   ): Promise<{
     sessionCookie: string;
-    userId: string;
+    userSub: string;
     totpSecret: string;
   }> {
     const email = generateUniqueEmail(emailPrefix);
 
     // Create user directly in DB
-    let userId = '';
+    let userSub = '';
     await withMikroContext(servicesWith2FA, async () => {
       const user = servicesWith2FA.mikro.user.create({
         email,
@@ -462,11 +462,11 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
       });
       user.email_verified = true;
       await servicesWith2FA.mikro.em.persist(user).flush();
-      userId = user.id;
+      userSub = user.sub;
     });
 
     // Enable TOTP for user
-    const totpSecret = await enableTotpForUser(servicesWith2FA, userId);
+    const totpSecret = await enableTotpForUser(servicesWith2FA, userSub);
 
     // Login - will require 2FA verification
     const loginClient = testClient(appWith2FARequired);
@@ -488,7 +488,7 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
 
     const sessionCookie = extractSessionCookie(verifyRes);
 
-    return { sessionCookie, userId, totpSecret };
+    return { sessionCookie, userSub, totpSecret };
   }
 
   /**
@@ -504,7 +504,7 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
   test('should prevent disabling TOTP when no passkey exists and 2FA is required', async () => {
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId, totpSecret } =
+    const { sessionCookie, userSub, totpSecret } =
       await createUserWithTotpSession(
         'totp-delete-2fa-required-no-passkey',
         password,
@@ -524,8 +524,8 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
     // Verify TOTP was NOT deleted
     await withMikroContext(servicesWith2FA, async () => {
       const totp =
-        await servicesWith2FA.mikro.userTotp.findFullyRegisteredByUserId(
-          userId,
+        await servicesWith2FA.mikro.userTotp.findFullyRegisteredByUserSub(
+          userSub,
         );
       expect(totp).not.toBeNull();
     });
@@ -534,14 +534,14 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
   test('should allow disabling TOTP when passkey exists and 2FA is required', async () => {
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId, totpSecret } =
+    const { sessionCookie, userSub, totpSecret } =
       await createUserWithTotpSession(
         'totp-delete-2fa-required-has-passkey',
         password,
       );
 
     // Also add a passkey
-    await createPasskeyForUser(servicesWith2FA, userId, 'Test Passkey');
+    await createPasskeyForUser(servicesWith2FA, userSub, 'Test Passkey');
 
     const validCode = servicesWith2FA.totpService.generateToken(totpSecret);
 
@@ -557,8 +557,8 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
     // Verify TOTP was deleted
     await withMikroContext(servicesWith2FA, async () => {
       const totp =
-        await servicesWith2FA.mikro.userTotp.findFullyRegisteredByUserId(
-          userId,
+        await servicesWith2FA.mikro.userTotp.findFullyRegisteredByUserSub(
+          userSub,
         );
       expect(totp).toBeNull();
     });
@@ -568,7 +568,7 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
     // Create TOTP for config user first (bypassing normal flow)
     const sessionCookie = await createAuthenticatedSession(appWith2FARequired);
 
-    // Get user ID from session
+    // Get user sub from session
     const sessionClient = testClient(appWith2FARequired);
     const sessionRes = await sessionClient.api.user.session.$get(
       {},
@@ -576,14 +576,14 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
     );
     const sessionBody = await assertJsonBody(sessionRes);
     expect(sessionBody.user).toBeDefined();
-    const userId = sessionBody.user?.id;
-    if (!userId) return;
+    const userSub = sessionBody.user?.sub;
+    if (!userSub) return;
 
     // Create TOTP directly in database for config user
     const secret = servicesWith2FA.totpService.generateSecret();
     await withMikroContext(servicesWith2FA, async () => {
       const totp = servicesWith2FA.mikro.userTotp.create({
-        user: userId,
+        user: userSub,
         secret,
         verified: true,
         recovery_confirmed: true,

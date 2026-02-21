@@ -47,7 +47,7 @@ describe('POST /api/auth/login', () => {
     });
 
     const body = await assertJsonBody(res);
-    expect(body.user).toHaveProperty('id');
+    expect(body.user).toHaveProperty('sub');
     expect(body.user).toHaveProperty('second_factor_required');
   });
 

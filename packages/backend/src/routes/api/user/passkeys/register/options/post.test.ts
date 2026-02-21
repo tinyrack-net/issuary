@@ -141,7 +141,7 @@ describe('POST /api/user/passkeys/register/options', () => {
     const email = generateUniqueEmail('passkey-options-exclude-existing');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -149,8 +149,8 @@ describe('POST /api/user/passkeys/register/options', () => {
     );
 
     // Create existing passkeys
-    await createPasskeyForUser(services, userId, 'Existing Passkey 1');
-    await createPasskeyForUser(services, userId, 'Existing Passkey 2');
+    await createPasskeyForUser(services, userSub, 'Existing Passkey 1');
+    await createPasskeyForUser(services, userSub, 'Existing Passkey 2');
 
     const client = testClient(app);
     const res = await client.api.user.passkeys.register.options.$post(

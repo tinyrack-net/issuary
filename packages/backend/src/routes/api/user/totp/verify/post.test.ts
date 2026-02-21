@@ -118,7 +118,7 @@ describe('POST /api/user/totp/verify', () => {
     const email = generateUniqueEmail('totp-verify-success');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -146,7 +146,7 @@ describe('POST /api/user/totp/verify', () => {
 
     // Verify TOTP is verified but NOT fully registered in database
     await withMikroContext(services, async () => {
-      const totp = await services.mikro.userTotp.findByUserId(userId);
+      const totp = await services.mikro.userTotp.findByUserSub(userSub);
       expect(totp).not.toBeNull();
       expect(totp?.verified).toBe(true);
       expect(totp?.recovery_confirmed).toBe(false);
@@ -157,7 +157,7 @@ describe('POST /api/user/totp/verify', () => {
     const email = generateUniqueEmail('totp-verify-already-enabled');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -168,7 +168,7 @@ describe('POST /api/user/totp/verify', () => {
     const secret = services.totpService.generateSecret();
     await withMikroContext(services, async () => {
       const totp = services.mikro.userTotp.create({
-        user: userId,
+        user: userSub,
         secret,
       });
       totp.verified = true;
@@ -191,7 +191,7 @@ describe('POST /api/user/totp/verify', () => {
     const email = generateUniqueEmail('totp-verify-not-confirmed');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -202,7 +202,7 @@ describe('POST /api/user/totp/verify', () => {
     const secret = services.totpService.generateSecret();
     await withMikroContext(services, async () => {
       const totp = services.mikro.userTotp.create({
-        user: userId,
+        user: userSub,
         secret,
       });
       totp.verified = true;

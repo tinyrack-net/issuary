@@ -68,7 +68,7 @@ describe('GET /api/consent', () => {
     expect(scopeNames).toContain('email');
 
     expect(body).toHaveProperty('user');
-    expect(body.user).toHaveProperty('id');
+    expect(body.user).toHaveProperty('sub');
     expect(body.user).toHaveProperty('email');
   });
 

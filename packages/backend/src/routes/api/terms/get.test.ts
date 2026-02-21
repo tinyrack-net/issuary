@@ -189,7 +189,7 @@ describe('GET /api/terms', () => {
 
     test('should return empty pendingTerms after user consents', async () => {
       const email = generateUniqueEmail('terms-test');
-      const { sessionCookie, userId } = await createDbUserWithSession(
+      const { sessionCookie, userSub } = await createDbUserWithSession(
         app,
         services,
         email,
@@ -203,7 +203,7 @@ describe('GET /api/terms', () => {
 
         await services.mikro.userTermsConsent.recordConsents(
           requiredTerms.map((term) => ({
-            userId,
+            userSub,
             termsId: term.id,
             termsVersion: term.version,
             agreed: true,
@@ -226,7 +226,7 @@ describe('GET /api/terms', () => {
 
     test('should return userConsent with consent details', async () => {
       const email = generateUniqueEmail('terms-consent');
-      const { sessionCookie, userId } = await createDbUserWithSession(
+      const { sessionCookie, userSub } = await createDbUserWithSession(
         app,
         services,
         email,
@@ -236,7 +236,7 @@ describe('GET /api/terms', () => {
       // Record consent
       await withMikroContext(services, async () => {
         await services.mikro.userTermsConsent.recordConsent({
-          userId,
+          userSub,
           termsId: 'tos',
           termsVersion: '1.0.0',
           agreed: true,
@@ -265,7 +265,7 @@ describe('GET /api/terms', () => {
 
     test('should mark requiresUpdate when version changes', async () => {
       const email = generateUniqueEmail('terms-version');
-      const { sessionCookie, userId } = await createDbUserWithSession(
+      const { sessionCookie, userSub } = await createDbUserWithSession(
         app,
         services,
         email,
@@ -275,7 +275,7 @@ describe('GET /api/terms', () => {
       // Record consent to OLD version
       await withMikroContext(services, async () => {
         await services.mikro.userTermsConsent.recordConsent({
-          userId,
+          userSub,
           termsId: 'tos',
           termsVersion: '0.9.0', // Old version
           agreed: true,
@@ -682,7 +682,7 @@ describe('GET /api/terms', () => {
 
     test('should return latest consent when multiple exist', async () => {
       const email = generateUniqueEmail('terms-multi');
-      const { sessionCookie, userId } = await createDbUserWithSession(
+      const { sessionCookie, userSub } = await createDbUserWithSession(
         app,
         services,
         email,
@@ -693,7 +693,7 @@ describe('GET /api/terms', () => {
       await withMikroContext(services, async () => {
         // Old consent
         await services.mikro.userTermsConsent.recordConsent({
-          userId,
+          userSub,
           termsId: 'tos',
           termsVersion: '0.9.0',
           agreed: true,
@@ -702,7 +702,7 @@ describe('GET /api/terms', () => {
 
         // New consent
         await services.mikro.userTermsConsent.recordConsent({
-          userId,
+          userSub,
           termsId: 'tos',
           termsVersion: '1.0.0',
           agreed: true,

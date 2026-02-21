@@ -137,7 +137,7 @@ describe('OAuthConnectService - auto_link strategy', () => {
 
     // Verify OAuth account was linked
     const linked = await withMikroContext(services, () =>
-      services.oauthConnectService.getLinkedAccounts(result.user.id),
+      services.oauthConnectService.getLinkedAccounts(result.user.sub),
     );
     expect(linked).toHaveLength(1);
     expect(linked[0]?.provider_name).toBe('google');

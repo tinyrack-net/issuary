@@ -47,7 +47,7 @@ describe('POST /api/auth/totp/verify', () => {
     const password = 'password123';
 
     // Create user with verified email
-    const { userId } = await createDbUserWithSession(
+    const { userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -55,7 +55,7 @@ describe('POST /api/auth/totp/verify', () => {
     );
 
     // Enable TOTP for user
-    const secret = await enableTotpForUser(services, userId);
+    const secret = await enableTotpForUser(services, userSub);
 
     // Login with password - should get 2fa_required status
     const client = testClient(app);
@@ -83,7 +83,7 @@ describe('POST /api/auth/totp/verify', () => {
 
     const verifyBody = await assertJsonBody(verifyRes);
     expect(verifyBody).toHaveProperty('user');
-    expect(verifyBody.user.id).toBe(userId);
+    expect(verifyBody.user.sub).toBe(userSub);
     expect(verifyBody.user.email).toBe(email);
     expect(verifyBody.user.totp_registered).toBe(true);
   });
@@ -94,7 +94,7 @@ describe('POST /api/auth/totp/verify', () => {
     const password = 'password123';
 
     // Create user with verified email
-    const { userId } = await createDbUserWithSession(
+    const { userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -102,7 +102,7 @@ describe('POST /api/auth/totp/verify', () => {
     );
 
     // Enable TOTP for user
-    await enableTotpForUser(services, userId);
+    await enableTotpForUser(services, userSub);
 
     // Login with password
     const client = testClient(app);
@@ -140,7 +140,7 @@ describe('POST /api/auth/totp/verify', () => {
     const password = 'password123';
 
     // Create user with verified email
-    const { userId } = await createDbUserWithSession(
+    const { userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -148,7 +148,7 @@ describe('POST /api/auth/totp/verify', () => {
     );
 
     // Enable TOTP for user
-    await enableTotpForUser(services, userId);
+    await enableTotpForUser(services, userSub);
 
     // Login with password
     const client = testClient(app);
@@ -176,7 +176,7 @@ describe('POST /api/auth/totp/verify', () => {
     const password = 'password123';
 
     // Create user with verified email
-    const { userId } = await createDbUserWithSession(
+    const { userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -184,7 +184,7 @@ describe('POST /api/auth/totp/verify', () => {
     );
 
     // Enable TOTP for user
-    await enableTotpForUser(services, userId);
+    await enableTotpForUser(services, userSub);
 
     // Login with password (creates pending TOTP session)
     const client = testClient(app);
@@ -213,7 +213,7 @@ describe('POST /api/auth/totp/verify', () => {
     const password = 'password123';
 
     // Create user with verified email
-    const { userId } = await createDbUserWithSession(
+    const { userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -221,7 +221,7 @@ describe('POST /api/auth/totp/verify', () => {
     );
 
     // Enable TOTP for user
-    const secret = await enableTotpForUser(services, userId);
+    const secret = await enableTotpForUser(services, userSub);
 
     // Login with password (creates pending TOTP session)
     const client = testClient(app);
@@ -254,7 +254,7 @@ describe('POST /api/auth/totp/verify', () => {
 
     const body = await assertJsonBody(sessionRes);
     expect(body).toHaveProperty('user');
-    expect(body).toHaveProperty('user.id', userId);
+    expect(body).toHaveProperty('user.sub', userSub);
     expect(body).toHaveProperty('user.email', email);
     expect(body).toHaveProperty('user.totp_registered', true);
   });
@@ -265,7 +265,7 @@ describe('POST /api/auth/totp/verify', () => {
     const password = 'password123';
 
     // Create user with verified email
-    const { userId } = await createDbUserWithSession(
+    const { userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -273,7 +273,7 @@ describe('POST /api/auth/totp/verify', () => {
     );
 
     // Enable TOTP for user
-    await enableTotpForUser(services, userId);
+    await enableTotpForUser(services, userSub);
 
     // Login with password
     const client = testClient(app);

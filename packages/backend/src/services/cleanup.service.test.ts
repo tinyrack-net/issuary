@@ -40,7 +40,7 @@ describe('CleanupService', () => {
   describe('cleanupRevokedTokens', () => {
     let services: ServiceContainer;
     let cleanup: () => Promise<void>;
-    let userId: string;
+    let userSub: string;
     let clientId: string;
 
     beforeAll(async () => {
@@ -52,7 +52,7 @@ describe('CleanupService', () => {
       cleanup = server.cleanup;
 
       // Create test user and client for all tests
-      userId = await createTestUser(services);
+      userSub = await createTestUser(services);
       clientId = await createTestOAuthClient(services);
     });
 
@@ -106,12 +106,12 @@ describe('CleanupService', () => {
     test('should delete expired revoked tokens', async () => {
       // Create expired tokens
       await createRevokedToken(services, {
-        userId,
+        userSub,
         clientId,
         expiresAt: new Date(Date.now() - 10000), // Expired 10 seconds ago
       });
       await createRevokedToken(services, {
-        userId,
+        userSub,
         clientId,
         expiresAt: new Date(Date.now() - 20000), // Expired 20 seconds ago
       });
@@ -135,12 +135,12 @@ describe('CleanupService', () => {
     test('should not delete non-expired tokens', async () => {
       // Create one expired and one non-expired token
       await createRevokedToken(services, {
-        userId,
+        userSub,
         clientId,
         expiresAt: new Date(Date.now() - 10000), // Expired
       });
       await createRevokedToken(services, {
-        userId,
+        userSub,
         clientId,
         expiresAt: new Date(Date.now() + 60000), // Expires in 1 minute
       });
@@ -159,12 +159,12 @@ describe('CleanupService', () => {
     test('should work in dry-run mode (report but not delete)', async () => {
       // Create expired tokens
       await createRevokedToken(services, {
-        userId,
+        userSub,
         clientId,
         expiresAt: new Date(Date.now() - 10000),
       });
       await createRevokedToken(services, {
-        userId,
+        userSub,
         clientId,
         expiresAt: new Date(Date.now() - 20000),
       });
@@ -195,21 +195,21 @@ describe('CleanupService', () => {
       });
 
       try {
-        const testUserId = await createTestUser(retentionServer.services);
+        const testUserSub = await createTestUser(retentionServer.services);
         const testClientId = await createTestOAuthClient(
           retentionServer.services,
         );
 
         // Create token expired 30 minutes ago (within retention)
         await createRevokedToken(retentionServer.services, {
-          userId: testUserId,
+          userSub: testUserSub,
           clientId: testClientId,
           expiresAt: new Date(Date.now() - 30 * 60 * 1000),
         });
 
         // Create token expired 2 hours ago (past retention)
         await createRevokedToken(retentionServer.services, {
-          userId: testUserId,
+          userSub: testUserSub,
           clientId: testClientId,
           expiresAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
         });
@@ -229,13 +229,13 @@ describe('CleanupService', () => {
 
     test('should handle both access and refresh tokens', async () => {
       await createRevokedToken(services, {
-        userId,
+        userSub,
         clientId,
         expiresAt: new Date(Date.now() - 10000),
         tokenType: 'access_token',
       });
       await createRevokedToken(services, {
-        userId,
+        userSub,
         clientId,
         expiresAt: new Date(Date.now() - 10000),
         tokenType: 'refresh_token',
@@ -561,7 +561,7 @@ describe('CleanupService', () => {
   describe('cleanupOAuthCodes', () => {
     let services: ServiceContainer;
     let cleanup: () => Promise<void>;
-    let userId: string;
+    let userSub: string;
     let clientId: string;
 
     beforeAll(async () => {
@@ -572,7 +572,7 @@ describe('CleanupService', () => {
       services = server.services;
       cleanup = server.cleanup;
 
-      userId = await createTestUser(services);
+      userSub = await createTestUser(services);
       clientId = await createTestOAuthClient(services);
     });
 
@@ -626,13 +626,13 @@ describe('CleanupService', () => {
     test('should delete expired authorization codes', async () => {
       // Create expired codes
       await createOAuthCode(services, {
-        userId,
+        userSub,
         clientId,
         expiredAt: new Date(Date.now() - 10000), // Expired
         consumedAt: null,
       });
       await createOAuthCode(services, {
-        userId,
+        userSub,
         clientId,
         expiredAt: new Date(Date.now() - 20000), // Expired
         consumedAt: null,
@@ -656,7 +656,7 @@ describe('CleanupService', () => {
     test('should delete consumed codes older than retention period', async () => {
       // Create consumed code older than retention (retention is 0 in CLI_TEST_CONFIG)
       await createOAuthCode(services, {
-        userId,
+        userSub,
         clientId,
         expiredAt: new Date(Date.now() + 60000), // Not expired
         consumedAt: new Date(Date.now() - 10000), // Consumed 10 seconds ago
@@ -683,14 +683,14 @@ describe('CleanupService', () => {
       });
 
       try {
-        const testUserId = await createTestUser(retentionServer.services);
+        const testUserSub = await createTestUser(retentionServer.services);
         const testClientId = await createTestOAuthClient(
           retentionServer.services,
         );
 
         // Create recently consumed code (30 minutes ago, within 1 hour retention)
         await createOAuthCode(retentionServer.services, {
-          userId: testUserId,
+          userSub: testUserSub,
           clientId: testClientId,
           expiredAt: new Date(Date.now() + 60000),
           consumedAt: new Date(Date.now() - 30 * 60 * 1000),
@@ -711,7 +711,7 @@ describe('CleanupService', () => {
     test('should not delete non-expired and non-consumed codes', async () => {
       // Create a valid, non-consumed code
       await createOAuthCode(services, {
-        userId,
+        userSub,
         clientId,
         expiredAt: new Date(Date.now() + 60000), // Valid
         consumedAt: null, // Not consumed
@@ -729,13 +729,13 @@ describe('CleanupService', () => {
 
     test('should work in dry-run mode', async () => {
       await createOAuthCode(services, {
-        userId,
+        userSub,
         clientId,
         expiredAt: new Date(Date.now() - 10000),
         consumedAt: null,
       });
       await createOAuthCode(services, {
-        userId,
+        userSub,
         clientId,
         expiredAt: new Date(Date.now() + 60000),
         consumedAt: new Date(Date.now() - 10000),
@@ -756,13 +756,13 @@ describe('CleanupService', () => {
     test('should report correct counts for expired vs consumed', async () => {
       // Create 2 expired codes
       await createOAuthCode(services, {
-        userId,
+        userSub,
         clientId,
         expiredAt: new Date(Date.now() - 10000),
         consumedAt: null,
       });
       await createOAuthCode(services, {
-        userId,
+        userSub,
         clientId,
         expiredAt: new Date(Date.now() - 20000),
         consumedAt: null,
@@ -770,7 +770,7 @@ describe('CleanupService', () => {
 
       // Create 1 consumed code
       await createOAuthCode(services, {
-        userId,
+        userSub,
         clientId,
         expiredAt: new Date(Date.now() + 60000),
         consumedAt: new Date(Date.now() - 10000),
@@ -789,7 +789,7 @@ describe('CleanupService', () => {
   describe('cleanupEmailVerifications', () => {
     let services: ServiceContainer;
     let cleanup: () => Promise<void>;
-    let userId: string;
+    let userSub: string;
 
     beforeAll(async () => {
       const server = await createServer({
@@ -799,7 +799,7 @@ describe('CleanupService', () => {
       services = server.services;
       cleanup = server.cleanup;
 
-      userId = await createTestUser(services);
+      userSub = await createTestUser(services);
     });
 
     afterAll(async () => {
@@ -852,12 +852,12 @@ describe('CleanupService', () => {
 
     test('should delete expired unverified tokens', async () => {
       await createEmailVerification(services, {
-        userId,
+        userSub,
         expiresAt: new Date(Date.now() - 10000),
         verified: false,
       });
       await createEmailVerification(services, {
-        userId,
+        userSub,
         expiresAt: new Date(Date.now() - 20000),
         verified: false,
       });
@@ -879,14 +879,14 @@ describe('CleanupService', () => {
     test('should not delete verified tokens', async () => {
       // Create expired but verified token (should not be deleted)
       await createEmailVerification(services, {
-        userId,
+        userSub,
         expiresAt: new Date(Date.now() - 10000),
         verified: true,
       });
 
       // Create expired unverified token (should be deleted)
       await createEmailVerification(services, {
-        userId,
+        userSub,
         expiresAt: new Date(Date.now() - 10000),
         verified: false,
       });
@@ -903,7 +903,7 @@ describe('CleanupService', () => {
 
     test('should work in dry-run mode', async () => {
       await createEmailVerification(services, {
-        userId,
+        userSub,
         expiresAt: new Date(Date.now() - 10000),
         verified: false,
       });
@@ -923,7 +923,7 @@ describe('CleanupService', () => {
   describe('cleanupPasswordResets', () => {
     let services: ServiceContainer;
     let cleanup: () => Promise<void>;
-    let userId: string;
+    let userSub: string;
 
     beforeAll(async () => {
       const server = await createServer({
@@ -933,7 +933,7 @@ describe('CleanupService', () => {
       services = server.services;
       cleanup = server.cleanup;
 
-      userId = await createTestUser(services);
+      userSub = await createTestUser(services);
     });
 
     afterAll(async () => {
@@ -984,12 +984,12 @@ describe('CleanupService', () => {
 
     test('should delete expired unused tokens', async () => {
       await createPasswordReset(services, {
-        userId,
+        userSub,
         expiresAt: new Date(Date.now() - 10000),
         used: false,
       });
       await createPasswordReset(services, {
-        userId,
+        userSub,
         expiresAt: new Date(Date.now() - 20000),
         used: false,
       });
@@ -1011,14 +1011,14 @@ describe('CleanupService', () => {
     test('should not delete used tokens', async () => {
       // Create expired but used token (should not be deleted)
       await createPasswordReset(services, {
-        userId,
+        userSub,
         expiresAt: new Date(Date.now() - 10000),
         used: true,
       });
 
       // Create expired unused token (should be deleted)
       await createPasswordReset(services, {
-        userId,
+        userSub,
         expiresAt: new Date(Date.now() - 10000),
         used: false,
       });
@@ -1035,7 +1035,7 @@ describe('CleanupService', () => {
 
     test('should work in dry-run mode', async () => {
       await createPasswordReset(services, {
-        userId,
+        userSub,
         expiresAt: new Date(Date.now() - 10000),
         used: false,
       });

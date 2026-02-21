@@ -39,8 +39,8 @@ afterAll(async () => {
 async function createUserWithPasswordAndSession(
   email: string,
   password: string,
-): Promise<{ sessionCookie: string; userId: string }> {
-  let userId!: string;
+): Promise<{ sessionCookie: string; userSub: string }> {
+  let userSub!: string;
 
   await withMikroContext(services, async () => {
     const user = services.mikro.user.create({
@@ -49,7 +49,7 @@ async function createUserWithPasswordAndSession(
     });
     user.email_verified = true;
     await services.mikro.em.persist(user).flush();
-    userId = user.id;
+    userSub = user.sub;
   });
 
   const client = testClient(app);
@@ -61,7 +61,7 @@ async function createUserWithPasswordAndSession(
 
   const sessionCookie = extractCookie(loginRes, 'session');
 
-  return { sessionCookie, userId };
+  return { sessionCookie, userSub };
 }
 
 describe('DELETE /api/user/password', () => {
@@ -194,7 +194,7 @@ describe('DELETE /api/user/password', () => {
     const email = generateUniqueEmail('password-delete-with-oauth');
     const password = 'validPassword123!';
 
-    const { sessionCookie, userId } = await createUserWithPasswordAndSession(
+    const { sessionCookie, userSub } = await createUserWithPasswordAndSession(
       email,
       password,
     );
@@ -202,7 +202,7 @@ describe('DELETE /api/user/password', () => {
     // Link an OAuth account to the user
     await withMikroContext(services, async () => {
       await services.mikro.userOAuth.linkAccount({
-        userId,
+        userSub,
         providerName: 'google',
         providerUserId: `google-${Date.now()}`,
         accessToken: 'fake-access-token',
@@ -246,7 +246,7 @@ describe('DELETE /api/user/password', () => {
     const email = generateUniqueEmail('password-delete-multi-oauth');
     const password = 'validPassword123!';
 
-    const { sessionCookie, userId } = await createUserWithPasswordAndSession(
+    const { sessionCookie, userSub } = await createUserWithPasswordAndSession(
       email,
       password,
     );
@@ -254,7 +254,7 @@ describe('DELETE /api/user/password', () => {
     // Link multiple OAuth accounts
     await withMikroContext(services, async () => {
       await services.mikro.userOAuth.linkAccount({
-        userId,
+        userSub,
         providerName: 'google',
         providerUserId: `google-multi-${Date.now()}`,
         accessToken: 'fake-access-token-1',
@@ -263,7 +263,7 @@ describe('DELETE /api/user/password', () => {
       });
 
       await services.mikro.userOAuth.linkAccount({
-        userId,
+        userSub,
         providerName: 'github',
         providerUserId: `github-multi-${Date.now()}`,
         accessToken: 'fake-access-token-2',
@@ -289,7 +289,7 @@ describe('DELETE /api/user/password', () => {
     const email = generateUniqueEmail('password-delete-totp-no-oauth');
     const password = 'validPassword123!';
 
-    const { sessionCookie, userId } = await createUserWithPasswordAndSession(
+    const { sessionCookie, userSub } = await createUserWithPasswordAndSession(
       email,
       password,
     );
@@ -298,7 +298,7 @@ describe('DELETE /api/user/password', () => {
     await withMikroContext(services, async () => {
       const secret = services.totpService.generateSecret();
       const totp = services.mikro.userTotp.create({
-        user: userId,
+        user: userSub,
         secret,
       });
       totp.verified = true;
@@ -323,7 +323,7 @@ describe('DELETE /api/user/password', () => {
     const email = generateUniqueEmail('password-delete-passkey-no-oauth');
     const password = 'validPassword123!';
 
-    const { sessionCookie, userId } = await createUserWithPasswordAndSession(
+    const { sessionCookie, userSub } = await createUserWithPasswordAndSession(
       email,
       password,
     );
@@ -331,7 +331,7 @@ describe('DELETE /api/user/password', () => {
     // Register a passkey for the user
     await withMikroContext(services, async () => {
       const passkey = services.mikro.userPasskey.create({
-        user: userId,
+        user: userSub,
         credential_id: btoa('test-credential-id'),
         public_key: 'mock-public-key',
         counter: 0,
@@ -359,7 +359,7 @@ describe('DELETE /api/user/password', () => {
     const email = generateUniqueEmail('password-delete-totp-with-oauth');
     const password = 'validPassword123!';
 
-    const { sessionCookie, userId } = await createUserWithPasswordAndSession(
+    const { sessionCookie, userSub } = await createUserWithPasswordAndSession(
       email,
       password,
     );
@@ -368,7 +368,7 @@ describe('DELETE /api/user/password', () => {
     await withMikroContext(services, async () => {
       const secret = services.totpService.generateSecret();
       const totp = services.mikro.userTotp.create({
-        user: userId,
+        user: userSub,
         secret,
       });
       totp.verified = true;
@@ -376,7 +376,7 @@ describe('DELETE /api/user/password', () => {
       await services.mikro.em.persist(totp).flush();
 
       await services.mikro.userOAuth.linkAccount({
-        userId,
+        userSub,
         providerName: 'google',
         providerUserId: `google-${Date.now()}`,
         accessToken: 'fake-access-token',

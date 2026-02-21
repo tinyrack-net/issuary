@@ -126,7 +126,7 @@ describe('POST /api/user/totp/confirm', () => {
     const email = generateUniqueEmail('totp-confirm-success');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -149,7 +149,7 @@ describe('POST /api/user/totp/confirm', () => {
 
     // Verify TOTP is fully registered in database
     await withMikroContext(services, async () => {
-      const totp = await services.mikro.userTotp.findByUserId(userId);
+      const totp = await services.mikro.userTotp.findByUserSub(userSub);
       expect(totp).not.toBeNull();
       expect(totp?.verified).toBe(true);
       expect(totp?.recovery_confirmed).toBe(true);
@@ -244,7 +244,7 @@ describe('POST /api/user/totp/confirm', () => {
     const email = generateUniqueEmail('totp-full-flow');
     const password = 'testPassword123!';
 
-    const { sessionCookie, userId } = await createDbUserWithSession(
+    const { sessionCookie, userSub } = await createDbUserWithSession(
       app,
       services,
       email,
@@ -263,7 +263,7 @@ describe('POST /api/user/totp/confirm', () => {
 
     // Verify DB state after setup
     await withMikroContext(services, async () => {
-      const totp = await services.mikro.userTotp.findByUserId(userId);
+      const totp = await services.mikro.userTotp.findByUserSub(userSub);
       expect(totp?.verified).toBe(false);
       expect(totp?.recovery_confirmed).toBe(false);
     });
@@ -280,7 +280,7 @@ describe('POST /api/user/totp/confirm', () => {
 
     // Verify DB state after verify
     await withMikroContext(services, async () => {
-      const totp = await services.mikro.userTotp.findByUserId(userId);
+      const totp = await services.mikro.userTotp.findByUserSub(userSub);
       expect(totp?.verified).toBe(true);
       expect(totp?.recovery_confirmed).toBe(false);
     });
@@ -295,7 +295,7 @@ describe('POST /api/user/totp/confirm', () => {
 
     // Verify DB state after confirm
     await withMikroContext(services, async () => {
-      const totp = await services.mikro.userTotp.findByUserId(userId);
+      const totp = await services.mikro.userTotp.findByUserSub(userSub);
       expect(totp?.verified).toBe(true);
       expect(totp?.recovery_confirmed).toBe(true);
     });
