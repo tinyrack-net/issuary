@@ -2,33 +2,7 @@ import path from 'node:path';
 import { serve } from '@hono/node-server';
 import type { AppConfigInput } from '@tinyauth/backend/app';
 import { createApp } from '@tinyauth/backend/app';
-import { createServer as createViteServer } from 'vite';
-
-/**
- * Minimal test configuration for e2e tests.
- * Uses in-memory SQLite and silent logging.
- *
- * Individual setup files should spread this and add
- * only the specific config they need (users, clients,
- * auth settings, etc.).
- */
-export const MINIMAL_E2E_CONFIG = {
-  app: {
-    cookie_secret:
-      '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
-    allowed_signup_emails: ['*'],
-  },
-  logging: {
-    level: 'silent',
-    format: 'json',
-  },
-  database: {
-    type: 'memory',
-  },
-  smtp: {
-    test: true,
-  },
-} as const satisfies AppConfigInput;
+import { createServer } from 'vite';
 
 /**
  * Test user credentials used across e2e tests.
@@ -69,7 +43,7 @@ export interface CreateE2EServerOptions {
    * Port for the Vite dev server.
    * Convention: backendPort + 1000 (e.g., 19080, 19081).
    */
-  vitePort: number;
+  frontendPort: number;
 }
 
 /**
@@ -97,7 +71,7 @@ export interface CreateE2EServerOptions {
  * ```
  */
 export async function createE2EServer(options: CreateE2EServerOptions) {
-  const { config, backendPort, vitePort } = options;
+  const { config, backendPort, frontendPort: vitePort } = options;
 
   // Ensure APP_ENV is development so the backend registers
   // the frontend proxy handler instead of serving static files.
@@ -118,7 +92,7 @@ export async function createE2EServer(options: CreateE2EServerOptions) {
   // Start the backend (Hono app)
   const { app, cleanup } = await createApp({ config: mergedConfig });
 
-  const server = serve({
+  const backendServer = serve({
     fetch: app.fetch,
     port: backendPort,
     hostname: '0.0.0.0',
@@ -132,7 +106,7 @@ export async function createE2EServer(options: CreateE2EServerOptions) {
   }
 
   // Start the Vite dev server for the frontend
-  const vite = await createViteServer({
+  const frontendServer = await createServer({
     configFile: path.resolve(__dirname, '../../vite.config.ts'),
     server: {
       port: vitePort,
@@ -144,12 +118,12 @@ export async function createE2EServer(options: CreateE2EServerOptions) {
     logLevel: 'silent',
   });
 
-  await vite.listen();
+  await frontendServer.listen();
 
   // Return teardown function
   return async () => {
-    await vite.close();
-    server.close();
+    await frontendServer.close();
+    backendServer.close();
     await cleanup();
   };
 }

@@ -3,7 +3,6 @@ import {
   createE2EServer,
   E2E_TEST_CLIENT,
   E2E_TEST_USER,
-  MINIMAL_E2E_CONFIG,
 } from './shared.ts';
 
 /**
@@ -19,7 +18,21 @@ export default async function setup(project: TestProject) {
 
   return createE2EServer({
     config: {
-      ...MINIMAL_E2E_CONFIG,
+      app: {
+        cookie_secret:
+          '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+        allowed_signup_emails: ['*'],
+      },
+      logging: {
+        level: 'silent',
+        format: 'json',
+      },
+      database: {
+        type: 'memory',
+      },
+      smtp: {
+        test: true,
+      },
       users: [E2E_TEST_USER],
       clients: [E2E_TEST_CLIENT],
       auth: {
@@ -35,6 +48,6 @@ export default async function setup(project: TestProject) {
       },
     },
     backendPort: 18081,
-    vitePort: 19081,
+    frontendPort: 19081,
   });
 }
