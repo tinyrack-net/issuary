@@ -76,15 +76,11 @@ pnpm dev        # Build for development (watch mode)
 pnpm build      # Build for production
 pnpm preview    # Preview production build
 pnpm test       # Run all tests (unit + e2e)
-pnpm test:unit  # Run unit/component tests only
-pnpm test:e2e   # Run e2e tests only
 ```
 
 ### Running Single Tests
 ```bash
 cd packages/backend && pnpm test src/routes/application/oauth/authorize/get.test.ts
-cd packages/frontend && pnpm test:unit               # unit tests only
-cd packages/frontend && pnpm test:e2e                 # e2e tests only
 cd packages/frontend && vitest --project unit          # specific project
 cd packages/frontend && vitest --project 'e2e:default' # specific e2e project
 ```
