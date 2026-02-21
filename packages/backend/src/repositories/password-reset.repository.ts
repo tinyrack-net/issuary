@@ -9,7 +9,7 @@ export class PasswordResetRepository extends EntityRepository<IPasswordResetEnti
    * @returns The created password reset entity with token
    */
   async generateToken(params: {
-    userId: string;
+    userSub: string;
     expiresInHours?: number;
   }): Promise<IPasswordResetEntity> {
     // Generate a UUID token for security
@@ -21,7 +21,7 @@ export class PasswordResetRepository extends EntityRepository<IPasswordResetEnti
 
     // Invalidate all previous unused tokens for this user
     const previousTokens = await this.find({
-      user: ref(UserEntity, params.userId),
+      user: ref(UserEntity, params.userSub),
       used: false,
     });
 
@@ -31,7 +31,7 @@ export class PasswordResetRepository extends EntityRepository<IPasswordResetEnti
 
     // Create the entity
     const entity = this.create({
-      user: params.userId,
+      user: params.userSub,
       token,
       expiresAt,
     });

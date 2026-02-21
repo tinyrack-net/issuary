@@ -21,18 +21,18 @@ export class UserOAuthRepository extends EntityRepository<IUserOAuthEntity> {
   }
 
   /**
-   * Find OAuth account by provider name and user ID
+   * Find OAuth account by provider name and user sub
    *
-   * @param userId - User ID
+   * @param userSub - User sub
    * @param providerName - Name of the OAuth provider
    * @returns OAuth account entity or null if not found
    */
   async findByUserAndProvider(
-    userId: string,
+    userSub: string,
     providerName: string,
   ): Promise<IUserOAuthEntity | null> {
     return this.findOne({
-      user: ref(UserEntity, userId),
+      user: ref(UserEntity, userSub),
       provider_name: providerName,
     });
   }
@@ -40,11 +40,11 @@ export class UserOAuthRepository extends EntityRepository<IUserOAuthEntity> {
   /**
    * Find all OAuth accounts linked to a user
    *
-   * @param userId - User ID
+   * @param userSub - User sub
    * @returns Array of OAuth account entities
    */
-  async findByUser(userId: string): Promise<IUserOAuthEntity[]> {
-    return this.find({ user: ref(UserEntity, userId) });
+  async findByUser(userSub: string): Promise<IUserOAuthEntity[]> {
+    return this.find({ user: ref(UserEntity, userSub) });
   }
 
   /**
@@ -54,7 +54,7 @@ export class UserOAuthRepository extends EntityRepository<IUserOAuthEntity> {
    * @returns Newly created OAuth account entity
    */
   async linkAccount(params: {
-    userId: string;
+    userSub: string;
     providerName: string;
     providerUserId: string;
     accessToken: string;
@@ -62,7 +62,7 @@ export class UserOAuthRepository extends EntityRepository<IUserOAuthEntity> {
     expiresAt: Date | null;
   }): Promise<IUserOAuthEntity> {
     const oauthAccount = this.create({
-      user: params.userId,
+      user: params.userSub,
       provider_name: params.providerName,
       provider_user_id: params.providerUserId,
       access_token: params.accessToken,
@@ -98,12 +98,15 @@ export class UserOAuthRepository extends EntityRepository<IUserOAuthEntity> {
   /**
    * Unlink an OAuth account from a user
    *
-   * @param userId - User ID
+   * @param userSub - User sub
    * @param providerName - Name of the OAuth provider to unlink
    * @returns True if account was unlinked, false if not found
    */
-  async unlinkAccount(userId: string, providerName: string): Promise<boolean> {
-    const oauthAccount = await this.findByUserAndProvider(userId, providerName);
+  async unlinkAccount(userSub: string, providerName: string): Promise<boolean> {
+    const oauthAccount = await this.findByUserAndProvider(
+      userSub,
+      providerName,
+    );
     if (!oauthAccount) {
       return false;
     }
@@ -115,10 +118,10 @@ export class UserOAuthRepository extends EntityRepository<IUserOAuthEntity> {
   /**
    * Count the number of OAuth accounts linked to a user
    *
-   * @param userId - User ID
+   * @param userSub - User sub
    * @returns Number of linked OAuth accounts
    */
-  async countByUser(userId: string): Promise<number> {
-    return this.count({ user: ref(UserEntity, userId) });
+  async countByUser(userSub: string): Promise<number> {
+    return this.count({ user: ref(UserEntity, userSub) });
   }
 }

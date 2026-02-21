@@ -5,30 +5,30 @@ export class UserTotpRecoveryCodeRepository extends EntityRepository<IUserTotpRe
   /**
    * Find all unused recovery codes for a user
    *
-   * @param userId - User ID to lookup
+   * @param userSub - User sub to lookup
    * @returns List of unused recovery code entities
    */
-  async findUnusedByUserId(userId: string) {
-    return this.find({ user: { id: userId }, used: false });
+  async findUnusedByUserSub(userSub: string) {
+    return this.find({ user: { sub: userSub }, used: false });
   }
 
   /**
    * Count unused recovery codes for a user
    *
-   * @param userId - User ID to check
+   * @param userSub - User sub to check
    * @returns Number of unused recovery codes
    */
-  async countUnusedByUserId(userId: string) {
-    return this.count({ user: { id: userId }, used: false });
+  async countUnusedByUserSub(userSub: string) {
+    return this.count({ user: { sub: userSub }, used: false });
   }
 
   /**
    * Delete all recovery codes for a user
    *
-   * @param userId - User ID to delete recovery codes for
+   * @param userSub - User sub to delete recovery codes for
    * @returns Number of deleted records
    */
-  async deleteByUserId(userId: string) {
-    return this.nativeDelete({ user: { id: userId } });
+  async deleteByUserSub(userSub: string) {
+    return this.nativeDelete({ user: { sub: userSub } });
   }
 }

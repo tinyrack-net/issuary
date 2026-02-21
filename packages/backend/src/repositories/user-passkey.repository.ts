@@ -5,12 +5,12 @@ export class UserPasskeyRepository extends EntityRepository<IUserPasskeyEntity> 
   /**
    * Find all passkeys for a user
    *
-   * @param userId - User ID to lookup
+   * @param userSub - User sub to lookup
    * @returns Array of passkey entities
    */
-  async findByUserId(userId: string) {
+  async findByUserSub(userSub: string) {
     return this.find(
-      { user: { id: userId } },
+      { user: { sub: userSub } },
       { orderBy: { created_at: 'DESC' } },
     );
   }
@@ -29,35 +29,35 @@ export class UserPasskeyRepository extends EntityRepository<IUserPasskeyEntity> 
   }
 
   /**
-   * Find a passkey by ID and user ID
+   * Find a passkey by ID and user sub
    *
-   * @param userId - User ID
+   * @param userSub - User sub
    * @param passkeyId - Passkey ID
    * @returns Passkey entity or null if not found
    */
-  async findByUserIdAndId(userId: string, passkeyId: string) {
-    return this.findOne({ user: { id: userId }, id: passkeyId });
+  async findByUserSubAndId(userSub: string, passkeyId: string) {
+    return this.findOne({ user: { sub: userSub }, id: passkeyId });
   }
 
   /**
    * Count passkeys for a user
    *
-   * @param userId - User ID to count passkeys for
+   * @param userSub - User sub to count passkeys for
    * @returns Number of passkeys
    */
-  async countByUserId(userId: string) {
-    return this.count({ user: { id: userId } });
+  async countByUserSub(userSub: string) {
+    return this.count({ user: { sub: userSub } });
   }
 
   /**
-   * Delete a passkey by user ID and passkey ID
+   * Delete a passkey by user sub and passkey ID
    *
-   * @param userId - User ID
+   * @param userSub - User sub
    * @param passkeyId - Passkey ID
    * @returns Number of deleted records
    */
-  async deleteByUserIdAndId(userId: string, passkeyId: string) {
-    return this.nativeDelete({ user: { id: userId }, id: passkeyId });
+  async deleteByUserSubAndId(userSub: string, passkeyId: string) {
+    return this.nativeDelete({ user: { sub: userSub }, id: passkeyId });
   }
 
   /**

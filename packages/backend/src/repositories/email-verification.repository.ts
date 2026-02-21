@@ -8,7 +8,7 @@ export class EmailVerificationRepository extends EntityRepository<IEmailVerifica
    * @returns The created verification entity with token
    */
   async generateToken(params: {
-    userId: string;
+    userSub: string;
     expiresInHours?: number;
   }): Promise<IEmailVerificationEntity> {
     const token = crypto.randomUUID();
@@ -17,7 +17,7 @@ export class EmailVerificationRepository extends EntityRepository<IEmailVerifica
     const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
 
     const previousTokens = await this.find({
-      user: ref(UserEntity, params.userId),
+      user: ref(UserEntity, params.userSub),
       verified: false,
     });
 
@@ -26,7 +26,7 @@ export class EmailVerificationRepository extends EntityRepository<IEmailVerifica
     }
 
     const entity = this.create({
-      user: params.userId,
+      user: params.userSub,
       token,
       expiresAt,
     });

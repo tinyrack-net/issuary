@@ -4,27 +4,27 @@ import { EntityRepository, type Loaded } from '@mikro-orm/core';
 
 export class UserRepository extends EntityRepository<UserEntity> {
   /**
-   * Find user by ID with no relation populate.
+   * Find user by sub with no relation populate.
    * Use this for lightweight verification (e.g., middleware).
    * If you need related data (totps, passkeys, password_hash),
-   * use verifyById() or populate the entity yourself.
+   * use verifyBySub() or populate the entity yourself.
    */
-  public async findById(id: string): Promise<UserEntity> {
+  public async findBySub(sub: string): Promise<UserEntity> {
     const user = await this.findOneOrFail(
-      { id },
+      { sub },
       { failHandler: () => new e.UserNotFound.Error() },
     );
     return user;
   }
 
-  public async verifyById(
-    id: string,
+  public async verifyBySub(
+    sub: string,
   ): Promise<
     Loaded<UserEntity, 'password_hash' | 'passkeys' | 'totps', '*', never>
   > {
     const user = await this.findOneOrFail(
       {
-        id: id,
+        sub: sub,
       },
       {
         populate: ['password_hash', 'totps', 'passkeys'],

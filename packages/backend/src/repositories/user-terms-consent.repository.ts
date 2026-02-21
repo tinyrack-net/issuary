@@ -7,12 +7,12 @@ export class UserTermsConsentRepository extends EntityRepository<UserTermsConsen
    * Find the latest consent record for a user and specific term
    */
   async findLatestConsent(
-    userId: string,
+    userSub: string,
     termsId: string,
   ): Promise<UserTermsConsentEntity | null> {
     return this.findOne(
       {
-        user: ref(UserEntity, userId),
+        user: ref(UserEntity, userSub),
         terms: termsId,
       },
       {
@@ -24,10 +24,10 @@ export class UserTermsConsentRepository extends EntityRepository<UserTermsConsen
   /**
    * Find all consent records for a user
    */
-  async findAllConsents(userId: string): Promise<UserTermsConsentEntity[]> {
+  async findAllConsents(userSub: string): Promise<UserTermsConsentEntity[]> {
     return this.find(
       {
-        user: ref(UserEntity, userId),
+        user: ref(UserEntity, userSub),
       },
       {
         orderBy: { agreedAt: 'DESC' },
@@ -40,9 +40,9 @@ export class UserTermsConsentRepository extends EntityRepository<UserTermsConsen
    * Returns a map of termsId -> consent
    */
   async findLatestConsentsMap(
-    userId: string,
+    userSub: string,
   ): Promise<Map<string, UserTermsConsentEntity>> {
-    const consents = await this.findAllConsents(userId);
+    const consents = await this.findAllConsents(userSub);
     const map = new Map<string, UserTermsConsentEntity>();
 
     // Since results are ordered by agreedAt DESC, first occurrence is the latest
@@ -59,14 +59,14 @@ export class UserTermsConsentRepository extends EntityRepository<UserTermsConsen
    * Record a new consent
    */
   async recordConsent(params: {
-    userId: string;
+    userSub: string;
     termsId: string;
     termsVersion: string;
     agreed: boolean;
     consentType: 'explicit' | 'implicit';
   }): Promise<UserTermsConsentEntity> {
     const consent = this.create({
-      user: params.userId,
+      user: params.userSub,
       terms: params.termsId,
       termsId: params.termsId,
       termsVersion: params.termsVersion,
@@ -83,7 +83,7 @@ export class UserTermsConsentRepository extends EntityRepository<UserTermsConsen
    */
   async recordConsents(
     params: Array<{
-      userId: string;
+      userSub: string;
       termsId: string;
       termsVersion: string;
       agreed: boolean;
@@ -92,7 +92,7 @@ export class UserTermsConsentRepository extends EntityRepository<UserTermsConsen
   ): Promise<UserTermsConsentEntity[]> {
     const consents = params.map((p) =>
       this.create({
-        user: p.userId,
+        user: p.userSub,
         terms: p.termsId,
         termsId: p.termsId,
         termsVersion: p.termsVersion,

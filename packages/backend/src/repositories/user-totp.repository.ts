@@ -3,39 +3,39 @@ import { EntityRepository } from '@mikro-orm/core';
 
 export class UserTotpRepository extends EntityRepository<IUserTotpEntity> {
   /**
-   * Find TOTP configuration by user ID
+   * Find TOTP configuration by user sub
    *
-   * @param userId - User ID to lookup
+   * @param userSub - User sub to lookup
    * @returns TOTP entity or null if not found
    */
-  async findByUserId(userId: string) {
-    return this.findOne({ user: { id: userId } }, { populate: ['secret'] });
+  async findByUserSub(userSub: string) {
+    return this.findOne({ user: { sub: userSub } }, { populate: ['secret'] });
   }
 
   /**
-   * Find fully registered TOTP configuration by user ID
+   * Find fully registered TOTP configuration by user sub
    * (verified AND recovery codes confirmed)
    *
-   * @param userId - User ID to lookup
+   * @param userSub - User sub to lookup
    * @returns Fully registered TOTP entity or null if not found
    */
-  async findFullyRegisteredByUserId(userId: string) {
+  async findFullyRegisteredByUserSub(userSub: string) {
     return this.findOne(
-      { user: { id: userId }, verified: true, recovery_confirmed: true },
+      { user: { sub: userSub }, verified: true, recovery_confirmed: true },
       { populate: ['secret'] },
     );
   }
 
   /**
-   * Find verified TOTP configuration by user ID
+   * Find verified TOTP configuration by user sub
    * (verified but may not have recovery codes confirmed)
    *
-   * @param userId - User ID to lookup
+   * @param userSub - User sub to lookup
    * @returns Verified TOTP entity or null if not found
    */
-  async findVerifiedByUserId(userId: string) {
+  async findVerifiedByUserSub(userSub: string) {
     return this.findOne(
-      { user: { id: userId }, verified: true },
+      { user: { sub: userSub }, verified: true },
       { populate: ['secret'] },
     );
   }
@@ -43,12 +43,12 @@ export class UserTotpRepository extends EntityRepository<IUserTotpEntity> {
   /**
    * Check if user has TOTP fully enabled (verified AND recovery confirmed)
    *
-   * @param userId - User ID to check
+   * @param userSub - User sub to check
    * @returns True if TOTP is fully enabled for user
    */
-  async isRegistered(userId: string) {
+  async isRegistered(userSub: string) {
     const count = await this.count({
-      user: { id: userId },
+      user: { sub: userSub },
       verified: true,
       recovery_confirmed: true,
     });
@@ -58,10 +58,10 @@ export class UserTotpRepository extends EntityRepository<IUserTotpEntity> {
   /**
    * Delete TOTP configuration for a user
    *
-   * @param userId - User ID to delete TOTP for
+   * @param userSub - User sub to delete TOTP for
    * @returns Number of deleted records
    */
-  async deleteByUserId(userId: string) {
-    return this.nativeDelete({ user: { id: userId } });
+  async deleteByUserSub(userSub: string) {
+    return this.nativeDelete({ user: { sub: userSub } });
   }
 }

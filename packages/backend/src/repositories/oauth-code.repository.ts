@@ -14,7 +14,7 @@ export class OAuthCodeRepository extends EntityRepository<IOAuthCodeEntity> {
    */
   async generateAuthorizationCode(params: {
     clientId: string;
-    userId: string;
+    userSub: string;
     redirectUri: string;
     scope: string[];
     nonce?: string;
@@ -37,7 +37,7 @@ export class OAuthCodeRepository extends EntityRepository<IOAuthCodeEntity> {
     // Create the entity
     const entity = this.create({
       client: params.clientId,
-      user: params.userId,
+      user: params.userSub,
       codeHash,
       redirectUri: params.redirectUri,
       scope: params.scope,

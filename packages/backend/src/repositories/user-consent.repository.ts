@@ -7,11 +7,11 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
    * Find active consent for a user and client
    */
   async findConsent(
-    userId: string,
+    userSub: string,
     clientId: string,
   ): Promise<UserConsentEntity | null> {
     return this.findOne({
-      user: ref(UserEntity, userId),
+      user: ref(UserEntity, userSub),
       client: clientId,
       revoked_at: null,
     });
@@ -21,11 +21,11 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
    * Check if user has consented to all requested scopes for a client
    */
   async hasConsent(
-    userId: string,
+    userSub: string,
     clientId: string,
     requestedScopes: string[],
   ): Promise<boolean> {
-    const consent = await this.findConsent(userId, clientId);
+    const consent = await this.findConsent(userSub, clientId);
     if (!consent) {
       return false;
     }
@@ -37,12 +37,12 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
    * If consent already exists, update the scopes (merge with existing).
    */
   async grantConsent(params: {
-    userId: string;
+    userSub: string;
     clientId: string;
     scopes: string[];
   }): Promise<UserConsentEntity> {
     const existingConsent = await this.findConsent(
-      params.userId,
+      params.userSub,
       params.clientId,
     );
 
@@ -60,7 +60,7 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
 
     // Create new consent
     const consent = this.create({
-      user: params.userId,
+      user: params.userSub,
       client: params.clientId,
       scopes: params.scopes,
     });

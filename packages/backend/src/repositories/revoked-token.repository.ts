@@ -22,7 +22,7 @@ export class RevokedTokenRepository extends EntityRepository<IRevokedTokenEntity
     jti: string;
     token_type: TokenType;
     clientId: string;
-    userId: string;
+    userSub: string;
     expires_at: Date;
   }): Promise<IRevokedTokenEntity> {
     // Check if already revoked
@@ -35,7 +35,7 @@ export class RevokedTokenRepository extends EntityRepository<IRevokedTokenEntity
       jti: params.jti,
       token_type: params.token_type,
       client: params.clientId,
-      user: params.userId,
+      user: params.userSub,
       expires_at: params.expires_at,
     });
 
