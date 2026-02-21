@@ -22,7 +22,7 @@ export type TokenType = (typeof TOKEN_TYPE)[keyof typeof TOKEN_TYPE];
  * to invalidate them before their natural expiration.
  *
  * Supports both individual token revocation (by jti) and
- * bulk revocation (by user_id + client_id combination).
+ * bulk revocation (by user_sub + client_id combination).
  */
 export const RevokedTokenEntitySchema = defineEntity({
   name: 'RevokedTokenEntity',

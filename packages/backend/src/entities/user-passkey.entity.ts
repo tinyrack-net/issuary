@@ -22,7 +22,7 @@ export const UserPasskeyEntitySchema = defineEntity({
         .ref()
         .comment('Reference to the user')
         .deleteRule('cascade')
-        .index('user_passkey_user_id_idx'),
+        .index('user_passkey_user_sub_idx'),
     credential_id: p
       .string()
       .comment('WebAuthn credential ID (base64url encoded)'),

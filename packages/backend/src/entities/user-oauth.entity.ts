@@ -20,7 +20,7 @@ export const UserOAuthEntitySchema = defineEntity({
         .manyToOne(UserEntity)
         .ref()
         .comment('Reference to the user')
-        .index('user_oauth_user_id_idx'),
+        .index('user_oauth_user_sub_idx'),
     provider_name: p
       .string()
       .comment('Name of the OAuth provider (e.g., google, facebook)'),

@@ -20,7 +20,7 @@ export const EmailVerificationEntitySchema = defineEntity({
         .manyToOne(UserEntity)
         .ref()
         .comment('Reference to the user')
-        .index('email_verification_user_id_idx'),
+        .index('email_verification_user_sub_idx'),
     token: p.string().comment('Unique verification token'),
     expiresAt: p.datetime().comment('Token expiration timestamp'),
     verified: p

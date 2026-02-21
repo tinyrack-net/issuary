@@ -27,7 +27,7 @@ export const UserTermsConsentEntitySchema = defineEntity({
       p
         .manyToOne(UserEntitySchema)
         .comment('Reference to the user who gave consent')
-        .index('user_terms_consent_user_id_index')
+        .index('user_terms_consent_user_sub_index')
         .deleteRule('cascade'),
     terms: () =>
       p

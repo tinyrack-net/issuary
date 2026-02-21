@@ -28,7 +28,7 @@ export const UserConsentEntitySchema = defineEntity({
       p
         .manyToOne(UserEntitySchema)
         .comment('Reference to the user who granted consent')
-        .index('user_consent_user_id_index'),
+        .index('user_consent_user_sub_index'),
     client: () =>
       p
         .manyToOne(OAuthClientEntitySchema)

@@ -1,9 +1,9 @@
 import { UserRepository } from '@backend/repositories/user.repository.js';
 import {
   defineEntity,
+  type EventArgs,
   type InferEntity,
   p,
-  type EventArgs,
 } from '@mikro-orm/core';
 import { hash, verify } from '@node-rs/argon2';
 import { BaseSchema } from './base.entity.js';
@@ -19,10 +19,10 @@ export const UserEntitySchema = defineEntity({
   extends: BaseSchema,
   repository: () => UserRepository,
   properties: {
-    id: p
+    sub: p
       .uuid()
       .primary()
-      .comment('Primary key as UUID')
+      .comment('Subject identifier as UUID')
       .onCreate(() => crypto.randomUUID()),
     email: p.string().comment('User email address'),
     email_verified: p

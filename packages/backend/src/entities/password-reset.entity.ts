@@ -20,7 +20,7 @@ export const PasswordResetEntitySchema = defineEntity({
         .manyToOne(UserEntity)
         .ref()
         .comment('Reference to the user')
-        .index('password_reset_user_id_idx'),
+        .index('password_reset_user_sub_idx'),
     token: p.string().comment('Unique password reset token'),
     expiresAt: p.datetime().comment('Token expiration timestamp'),
     used: p.boolean().comment('Whether the token has been used').default(false),
