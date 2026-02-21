@@ -36,7 +36,7 @@ export const authorizeGet = new Hono<AppEnv>().get(
       state: f.state.optional(),
       client_id: f.clientId,
       code_challenge: f.codeChallenge.optional(),
-      code_challenge_method: f.codeChallengeMethod.optional().default('S256'),
+      code_challenge_method: f.codeChallengeMethod.default('S256'),
       scope: f.scope.optional(),
       nonce: f.nonce.optional(),
       prompt: f.prompt.optional(),
