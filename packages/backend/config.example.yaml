@@ -124,6 +124,43 @@ app:
   #   FAVICON_URL: /custom-favicon.ico
 
   # --------------------------------------------------------------------------
+  # Frontend Serving
+  # --------------------------------------------------------------------------
+
+  # frontend: Controls how the frontend is served.
+  #
+  # Options:
+  #   enabled - Whether the frontend is served at all (default: true).
+  #             Set to false for API-only deployments.
+  #   mode    - How to serve the frontend (default: 'static'):
+  #             'proxy'  - Forward non-API requests to an upstream URL.
+  #                        Useful for development with a separate dev server.
+  #             'static' - Serve built files from a local directory.
+  #   path    - Depends on mode:
+  #             proxy  → Upstream URL (default: http://localhost:8081)
+  #             static → Filesystem path (default: built-in public/ directory)
+  #
+  # Examples:
+  #
+  # Development with Vite dev server:
+  #   frontend:
+  #     mode: proxy
+  #     path: http://localhost:5173
+  #
+  # Production (default - serve built frontend):
+  #   frontend:
+  #     mode: static
+  #
+  # Custom static directory:
+  #   frontend:
+  #     mode: static
+  #     path: /var/www/html
+  #
+  # API-only (no frontend):
+  #   frontend:
+  #     enabled: false
+
+  # --------------------------------------------------------------------------
   # Internationalization (i18n) Settings
   # --------------------------------------------------------------------------
 

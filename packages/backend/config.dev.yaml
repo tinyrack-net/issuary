@@ -62,6 +62,11 @@ app:
     DESCRIPTION: Tinyauth development server
     FAVICON_URL: /vite.svg
 
+  # Frontend serving: proxy to Vite dev server
+  frontend:
+    mode: proxy
+    path: http://localhost:8081
+
 # Logging configuration
 logging:
   level: info
