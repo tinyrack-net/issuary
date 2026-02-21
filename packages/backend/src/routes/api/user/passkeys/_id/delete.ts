@@ -82,7 +82,7 @@ export const userPasskeyIdDelete = new Hono<AppEnv>().delete(
     await mikro.em.populate(userEntity, ['password_hash']);
     const hasLinkedOAuth =
       (await mikro.userOAuth.count({
-        user: { id: userEntity.id },
+        user: { sub: userEntity.sub },
       })) > 0;
     const hasOtherAuthMethods = userEntity.hasPassword() || hasLinkedOAuth;
 
@@ -90,10 +90,10 @@ export const userPasskeyIdDelete = new Hono<AppEnv>().delete(
     const secondFactorRequired = config.auth.password.second_factor.required;
 
     // Check if user has other 2FA method (TOTP)
-    const totpEnabled = await mikro.userTotp.isRegistered(userEntity.id);
+    const totpEnabled = await mikro.userTotp.isRegistered(userEntity.sub);
 
     // Delete passkey
-    await passkeyService.deletePasskey(userEntity.id, params.id, {
+    await passkeyService.deletePasskey(userEntity.sub, params.id, {
       hasOtherAuthMethods,
       secondFactorRequired,
       hasOtherSecondFactor: totpEnabled,

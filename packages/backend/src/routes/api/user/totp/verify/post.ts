@@ -76,13 +76,13 @@ export const userTotpVerifyPost = new Hono<AppEnv>().post(
     // Allow both full user session and pending 2FA setup session
     const verifiedUser = c.var.verifiedUser;
     const verifiedPending2FASetupUser = c.var.verifiedPending2FASetupUser;
-    const userId = verifiedUser?.id ?? verifiedPending2FASetupUser?.id;
+    const userSub = verifiedUser?.sub ?? verifiedPending2FASetupUser?.sub;
 
-    if (!userId) {
+    if (!userSub) {
       throw new e.Unauthorized.Error();
     }
 
-    const recoveryCodes = await totpService.verifySetup(userId, body.code);
+    const recoveryCodes = await totpService.verifySetup(userSub, body.code);
 
     return c.json({ recovery_codes: recoveryCodes }, 200);
   },

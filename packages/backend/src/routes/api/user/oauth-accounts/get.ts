@@ -45,7 +45,9 @@ export const userOauthAccountsGet = new Hono<AppEnv>().get(
     const { oauthConnectService } = c.var.services;
 
     // Get linked accounts
-    const accounts = await oauthConnectService.getLinkedAccounts(userEntity.id);
+    const accounts = await oauthConnectService.getLinkedAccounts(
+      userEntity.sub,
+    );
 
     // Get all available providers and mark linked ones
     const enabledProviders = oauthConnectService.getEnabledProviders();

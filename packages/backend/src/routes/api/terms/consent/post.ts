@@ -97,7 +97,7 @@ export const termsConsentPost = new Hono<AppEnv>().post(
       });
 
       // Set user session
-      session.setUserSession(result.user.id);
+      session.setUserSession(result.user.sub);
 
       // Clean up: remove DB record
       await mikro.pendingOAuthRegistration.consumeByToken(registrationToken);
@@ -121,7 +121,7 @@ export const termsConsentPost = new Hono<AppEnv>().post(
     // Validate and record consents
     const { validation, records } =
       await termsService.validateAndRecordConsents({
-        userId: userEntity.id,
+        userSub: userEntity.sub,
         consents,
       });
 

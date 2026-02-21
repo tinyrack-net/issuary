@@ -78,7 +78,7 @@ export const consentGet = new Hono<AppEnv>().get(
         },
         scopes,
         user: {
-          id: userEntity.id,
+          sub: userEntity.sub,
           email: userEntity.email,
         },
       },

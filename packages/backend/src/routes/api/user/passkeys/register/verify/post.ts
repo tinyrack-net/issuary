@@ -81,7 +81,7 @@ export const userPasskeyRegisterVerifyPost = new Hono<AppEnv>().post(
       throw new e.Unauthorized.Error();
     }
 
-    const userId = user.id;
+    const userSub = user.sub;
 
     // Get challenge from session
     const challenge = session.get('passkey_challenge');
@@ -112,10 +112,10 @@ export const userPasskeyRegisterVerifyPost = new Hono<AppEnv>().post(
 
     if (wasPendingSetup) {
       // Clear pending setup sessions and create full user session
-      session.setUserSession(userId);
+      session.setUserSession(userSub);
 
       // Get user data for response
-      const userEntity = await mikro.user.verifyById(userId);
+      const userEntity = await mikro.user.verifyBySub(userSub);
       const userSessionData =
         await userService.userEntityToSessionUser(userEntity);
 

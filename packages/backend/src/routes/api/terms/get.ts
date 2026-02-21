@@ -43,9 +43,9 @@ export const termsGet = new Hono<AppEnv>().get(
     const session = c.var.session;
     const { termsService } = c.var.services;
 
-    const userId = session.get('user')?.id || null;
+    const userSub = session.get('user')?.sub || null;
 
-    const terms = await termsService.getGlobalTermsWithConsent(userId, lang);
+    const terms = await termsService.getGlobalTermsWithConsent(userSub, lang);
 
     const pendingTerms = termsService.getPendingFromLocalizedTerms(terms);
 

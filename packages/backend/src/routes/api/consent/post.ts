@@ -102,7 +102,7 @@ export const consentPost = new Hono<AppEnv>().post(
     const client = await oauthClientService.findByClientId(client_id);
 
     await userConsentService.grantConsent({
-      userId: userEntity.id,
+      userSub: userEntity.sub,
       clientId: client.id,
       scopes: requestedScopes,
     });

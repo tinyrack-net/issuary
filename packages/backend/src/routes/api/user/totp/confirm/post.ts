@@ -69,20 +69,20 @@ export const userTotpConfirmPost = new Hono<AppEnv>().post(
     // Allow both full user session and pending 2FA setup session
     const verifiedUser = c.var.verifiedUser;
     const verifiedPending2FASetupUser = c.var.verifiedPending2FASetupUser;
-    const userId = verifiedUser?.id ?? verifiedPending2FASetupUser?.id;
+    const userSub = verifiedUser?.sub ?? verifiedPending2FASetupUser?.sub;
 
-    if (!userId) {
+    if (!userSub) {
       throw new e.Unauthorized.Error();
     }
 
-    await totpService.confirmSetup(userId);
+    await totpService.confirmSetup(userSub);
 
     // Convert pending 2FA setup session to full user session
     if (verifiedPending2FASetupUser) {
-      session.setUserSession(userId);
+      session.setUserSession(userSub);
     }
 
-    const userEntity = await mikro.user.verifyById(userId);
+    const userEntity = await mikro.user.verifyBySub(userSub);
     const user = await userService.userEntityToSessionUser(userEntity);
 
     return c.json({ user }, 200);

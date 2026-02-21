@@ -72,7 +72,7 @@ export const userPasskeyIdPatch = new Hono<AppEnv>().patch(
     const { passkeyService } = c.var.services;
 
     // Rename passkey
-    await passkeyService.renamePasskey(userEntity.id, params.id, body.name);
+    await passkeyService.renamePasskey(userEntity.sub, params.id, body.name);
 
     return c.json({ ok: true as const }, 200);
   },

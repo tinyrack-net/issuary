@@ -76,10 +76,10 @@ export const userTotpDelete = new Hono<AppEnv>().delete(
     const secondFactorRequired = config.auth.password.second_factor.required;
 
     // Check if user has other 2FA method (passkey)
-    const passkeyCount = await mikro.userPasskey.countByUserId(userEntity.id);
+    const passkeyCount = await mikro.userPasskey.countByUserSub(userEntity.sub);
     const hasOtherSecondFactor = passkeyCount > 0;
 
-    await totpService.disable(userEntity.id, body.code, {
+    await totpService.disable(userEntity.sub, body.code, {
       secondFactorRequired,
       hasOtherSecondFactor,
     });

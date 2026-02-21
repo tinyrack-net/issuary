@@ -156,7 +156,7 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
       }
 
       await oauthConnectService.linkOAuthAccount(
-        userEntity.id,
+        userEntity.sub,
         provider,
         tokens,
         userInfo,
@@ -238,7 +238,7 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
       );
 
       // Set user session
-      session.setUserSession(result.user.id);
+      session.setUserSession(result.user.sub);
 
       // Clear OAuth session
       session.set('oauth', undefined);
@@ -246,7 +246,7 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
       // Check if existing user needs to see terms page
       if (!result.isNewUser && explicitTerms.length > 0) {
         const pendingTerms = await termsService.getPendingRequiredTerms(
-          result.user.id,
+          result.user.sub,
         );
         const explicitTermIds = new Set(explicitTerms.map((t) => t.id));
         const shouldRedirectToTerms = pendingTerms.some((id) =>

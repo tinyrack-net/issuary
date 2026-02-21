@@ -68,7 +68,7 @@ export const oauthProviderDelete = new Hono<AppEnv>().delete(
     oauthConnectService.getProvider(provider);
 
     // Unlink the OAuth account
-    await oauthConnectService.unlinkOAuthAccount(userEntity.id, provider);
+    await oauthConnectService.unlinkOAuthAccount(userEntity.sub, provider);
 
     return c.json({ ok: true as const }, 200);
   },

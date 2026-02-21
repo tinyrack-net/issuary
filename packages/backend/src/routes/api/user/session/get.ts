@@ -37,7 +37,7 @@ export const userSessionGet = new Hono<AppEnv>().get(
     }
 
     // Load full user data with relations for complete session response
-    const fullUser = await mikro.user.verifyById(userEntity.id);
+    const fullUser = await mikro.user.verifyBySub(userEntity.sub);
     const userSession = await userService.userEntityToSessionUser(fullUser);
 
     return c.json({ user: userSession }, 200);

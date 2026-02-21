@@ -95,11 +95,11 @@ export const userPasswordDelete = new Hono<AppEnv>().delete(
     }
 
     // Check if user has at least one OAuth account
-    const oauthCount = await mikro.userOAuth.countByUser(user.id);
+    const oauthCount = await mikro.userOAuth.countByUser(user.sub);
 
     // Check if user has 2FA enabled (TOTP or Passkey)
-    const hasTotp = await mikro.userTotp.isRegistered(user.id);
-    const passkeyCount = await mikro.userPasskey.countByUserId(user.id);
+    const hasTotp = await mikro.userTotp.isRegistered(user.sub);
+    const passkeyCount = await mikro.userPasskey.countByUserSub(user.sub);
     const hasSecondFactor = hasTotp || passkeyCount > 0;
 
     // Cannot remove password if:
