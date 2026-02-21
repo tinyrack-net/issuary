@@ -1,13 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { AppType } from '@backend/app.js';
 import { interpolateHtml } from '@backend/lib/interpolate-html.js';
 import { isBackendRoute } from '@backend/lib/is-backend-route.js';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { getMimeType } from 'hono/utils/mime';
-
-const __dirname = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 
 export interface ProdStaticOptions {
   /**
@@ -19,19 +16,25 @@ export interface ProdStaticOptions {
    * be rewritten.
    */
   htmlVariables: Record<string, string>;
+
+  /**
+   * Absolute path to the directory containing the
+   * built frontend files to serve.
+   */
+  publicPath: string;
 }
 
 /**
  * Register production static file handling.
  *
- * Serves from public/ with SPA fallback and
- * HTML variable interpolation.
+ * Serves from the configured publicPath with SPA
+ * fallback and HTML variable interpolation.
  */
 export function registerProdStatic(
   app: AppType,
   options: ProdStaticOptions,
 ): void {
-  const publicPath = path.join(__dirname, '../../public');
+  const publicPath = path.resolve(options.publicPath);
   const rootIndexPath = path.join(publicPath, 'index.html');
   const { htmlVariables } = options;
   const hasVariables = Object.keys(htmlVariables).length > 0;
@@ -92,7 +95,7 @@ export function registerProdStatic(
     app.use(
       '*',
       serveStatic({
-        root: './public',
+        root: publicPath,
       }),
     );
   }

@@ -8,10 +8,9 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 const __dirname = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 
-// The static middleware resolves public/ relative to its own __dirname:
-//   path.join(__dirname, '../../public')
-// From src/middleware/ this becomes <backend-root>/public/.
-// We write test fixtures there so the middleware can find them.
+// The static middleware uses the path from config.app.frontend.path.
+// We write test fixtures into <backend-root>/public/ and pass that
+// path to the config so the middleware can find them.
 const publicPath = path.join(__dirname, '../../public');
 
 // Track whether we created the public directory so we know
@@ -109,6 +108,10 @@ describe('static prod plugin - html_variables integration', () => {
               USER_NAME: 'Alice',
               APP_TITLE: 'My App',
             },
+            frontend: {
+              mode: 'static',
+              path: publicPath,
+            },
           },
         },
       }));
@@ -193,7 +196,16 @@ describe('static prod plugin - html_variables integration', () => {
     beforeAll(async () => {
       await setupTestFiles();
       ({ app, cleanup } = await createServer({
-        config: MINIMAL_TEST_CONFIG,
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          app: {
+            ...MINIMAL_TEST_CONFIG.app,
+            frontend: {
+              mode: 'static',
+              path: publicPath,
+            },
+          },
+        },
       }));
     });
 
