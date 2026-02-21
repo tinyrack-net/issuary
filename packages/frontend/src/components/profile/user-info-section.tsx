@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 
 interface UserInfoSectionProps {
   user: {
-    id: string;
+    sub: string;
     email: string;
   };
 }
@@ -24,7 +24,7 @@ export function UserInfoSection({ user }: UserInfoSectionProps) {
           <span className="shrink-0 text-base-content/60 text-xs">
             {t('profile.id.label')}
           </span>
-          <span className="truncate font-medium text-sm">{user.id}</span>
+          <span className="truncate font-medium text-sm">{user.sub}</span>
         </div>
 
         {/* Email */}
