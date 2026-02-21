@@ -1,3 +1,4 @@
+import { createApiClient } from '@frontend-e2e/utils/api';
 import { expect, inject, test } from 'vitest';
 
 /**
@@ -31,7 +32,8 @@ interface LoginResponse {
 }
 
 test('backend is running and serves the config endpoint', async () => {
-  const res = await fetch(`${backendUrl}/api/config`);
+  const client = createApiClient({ baseUrl: backendUrl });
+  const res = await client.api.config.$get();
   expect(res.ok).toBe(true);
 
   const data: ConfigResponse = await res.json();
@@ -49,13 +51,12 @@ test('backend serves the login page HTML via proxy', async () => {
 });
 
 test('test user is configured and can authenticate', async () => {
-  const res = await fetch(`${backendUrl}/api/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+  const client = createApiClient({ baseUrl: backendUrl });
+  const res = await client.api.auth.login.$post({
+    json: {
       email: 'e2e@example.com',
       password: 'password123',
-    }),
+    },
   });
   expect(res.ok).toBe(true);
 
