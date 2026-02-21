@@ -82,15 +82,15 @@ export const authLoginPost = new Hono<AppEnv>().post(
     }
 
     const userRegistered2FAMethods = await userService.userRegistered2FAMethods(
-      userSession.id,
+      userSession.sub,
     );
 
     if (userRegistered2FAMethods.length > 0) {
-      session.setPending2FASession(userSession.id);
+      session.setPending2FASession(userSession.sub);
     } else if (userSession.second_factor_required) {
-      session.setPending2FASetupSession(userSession.id);
+      session.setPending2FASetupSession(userSession.sub);
     } else {
-      session.setUserSession(userSession.id);
+      session.setUserSession(userSession.sub);
     }
 
     return c.json({ user: userSession }, 200);

@@ -97,9 +97,9 @@ export const authRegisterPost = new Hono<AppEnv>().post(
     }
 
     if (userSession.second_factor_required) {
-      session.setPending2FASetupSession(userSession.id);
+      session.setPending2FASetupSession(userSession.sub);
     } else {
-      session.setUserSession(userSession.id);
+      session.setUserSession(userSession.sub);
     }
 
     return c.json({ user: userSession }, 200);

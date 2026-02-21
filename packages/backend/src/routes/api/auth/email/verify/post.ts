@@ -45,9 +45,9 @@ export const authEmailVerifyPost = new Hono<AppEnv>().post(
 
     await services.mikro.em.populate(user, ['password_hash']);
 
-    const totpRegistered = await services.mikro.userTotp.isRegistered(user.id);
+    const totpRegistered = await services.mikro.userTotp.isRegistered(user.sub);
     const registeredPassKeyCount =
-      await services.mikro.userPasskey.countByUserId(user.id);
+      await services.mikro.userPasskey.countByUserSub(user.sub);
 
     const secondFactorRequired =
       services.userService.user2FASetupRequired(user);
@@ -55,7 +55,7 @@ export const authEmailVerifyPost = new Hono<AppEnv>().post(
       services.userService.getAvailable2FASetupMethods();
 
     const userSession: z.infer<typeof r.AuthResponse>['user'] = {
-      id: user.id,
+      sub: user.sub,
       managed_by: 'database' as const,
       email: user.email,
       email_verified: user.email_verified,
@@ -73,11 +73,11 @@ export const authEmailVerifyPost = new Hono<AppEnv>().post(
       registeredPassKeyCount === 0 &&
       available2FAMethods.length > 0
     ) {
-      session.setPending2FASetupSession(user.id);
+      session.setPending2FASetupSession(user.sub);
       return c.json({ user: userSession }, 200);
     }
 
-    session.setUserSession(user.id);
+    session.setUserSession(user.sub);
     return c.json({ user: userSession }, 200);
   },
 );

@@ -60,16 +60,16 @@ export const authTotpVerifyPost = new Hono<AppEnv>().post(
     const pending2FAUser = c.var.verifiedPending2FAUser;
     const { mikro, userService, totpService } = c.var.services;
 
-    await totpService.verifyForAuth(pending2FAUser.id, body.code);
+    await totpService.verifyForAuth(pending2FAUser.sub, body.code);
 
     const authTime =
       session.get('pending2FAUser')?.authenticated_at ??
       Math.floor(Date.now() / 1000);
 
-    session.setUserSession(pending2FAUser.id, authTime);
+    session.setUserSession(pending2FAUser.sub, authTime);
 
     // Load full user data with relations for response
-    const fullUser = await mikro.user.verifyById(pending2FAUser.id);
+    const fullUser = await mikro.user.verifyBySub(pending2FAUser.sub);
     const userSession = await userService.userEntityToSessionUser(fullUser);
 
     return c.json({ user: userSession }, 200);

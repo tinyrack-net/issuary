@@ -47,7 +47,7 @@ export const authPasskeyOptionsPost = new Hono<AppEnv>().post(
     const pending2FAUser = c.var.verifiedPending2FAUser;
 
     const options = await passkeyService.generateAuthenticationOptions(
-      pending2FAUser?.id,
+      pending2FAUser?.sub,
     );
 
     session.set('passkey_challenge', options.challenge);
