@@ -174,24 +174,18 @@ describe('POST /oauth/token', () => {
       expect(json.code).toBe('OAUTH_CLIENT_NOT_FOUND');
     });
 
-    test('should reject disabled client', async () => {
-      // Note: This test assumes there's a disabled client in test config
-      // If not available, we can skip this test or create one in DB
+    test('should reject non-existent client', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
       const res = await exchangeCode({
         code,
-        clientId: 'disabled-client', // Assuming this exists in test config
+        clientId: 'non-existent-client',
       });
 
-      // If client doesn't exist, it will return OAUTH_CLIENT_NOT_FOUND
-      // If it exists but is disabled, it will return OAUTH_CLIENT_DISABLED
       expect(res.status).toBe(400);
       const json = await res.json();
-      expect(['OAUTH_CLIENT_NOT_FOUND', 'OAUTH_CLIENT_DISABLED']).toContain(
-        json.code,
-      );
+      expect(json.code).toBe('OAUTH_CLIENT_NOT_FOUND');
     });
 
     test('should reject invalid client_secret', async () => {
