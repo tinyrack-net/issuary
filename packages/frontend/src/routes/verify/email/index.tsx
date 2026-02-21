@@ -36,12 +36,11 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-const SearchSchema = z
-  .object({
-    token: z.string().default(''),
-    email: z.string().default(''),
-  })
-  .merge(OAuthSearchSchema);
+const SearchSchema = z.object({
+  ...OAuthSearchSchema.shape,
+  token: z.string().default(''),
+  email: z.string().default(''),
+});
 
 export const Route = createFileRoute('/verify/email/')({
   component: VerifyEmail,
