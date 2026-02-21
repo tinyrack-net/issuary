@@ -692,6 +692,16 @@ const AppConfigApp = z.object({
         'Variables are replaced in served HTML files using {{KEY}} syntax. ' +
         'Example: { "APP_TITLE": "My App" } replaces {{APP_TITLE}} in HTML.',
     ),
+  dev_proxy_upstream: z
+    .string()
+    .url()
+    .optional()
+    .default('http://localhost:8081')
+    .describe(
+      'Upstream URL for the frontend dev server proxy in development mode. ' +
+        'Only used when APP_ENV=development. ' +
+        'Default: http://localhost:8081',
+    ),
 });
 
 export type AppConfigApp = z.infer<typeof AppConfigApp>;

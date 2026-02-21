@@ -2,6 +2,9 @@ import {
   type AppConfigInput,
   resolveConfig,
 } from '@backend/lib/config/index.js';
+
+export type { AppConfigInput };
+
 import { env } from '@backend/lib/env.js';
 import { interpolateHtml } from '@backend/lib/interpolate-html.js';
 import { isBackendRoute } from '@backend/lib/is-backend-route.js';
@@ -18,7 +21,6 @@ import { e, TinyAuthError } from '@backend/schemas/error.js';
 import { initializeServices } from '@backend/services/container.js';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-
 import { openAPIRouteHandler } from 'hono-openapi';
 
 export interface CreateAppOptions {
@@ -97,7 +99,7 @@ export async function createApp(options: CreateAppOptions) {
     const hasVariables = Object.keys(variables).length > 0;
 
     const proxyHandler = createProxyHandler({
-      upstream: 'http://localhost:8081',
+      upstream: config.app.dev_proxy_upstream,
       logger,
       onResponse: hasVariables
         ? async (res) => {
@@ -122,7 +124,7 @@ export async function createApp(options: CreateAppOptions) {
     });
 
     logger.info(
-      { proxy: 'http://localhost:8081' },
+      { proxy: config.app.dev_proxy_upstream },
       'Static handler registered (development mode)',
     );
 
