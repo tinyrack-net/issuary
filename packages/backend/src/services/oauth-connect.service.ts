@@ -70,7 +70,7 @@ export interface OAuthAuthResult {
   /** Authenticated user session data */
   user: {
     managed_by: 'database' | 'config';
-    id: string;
+    sub: string;
     email: string;
     email_verified: boolean;
     email_verification_required: boolean;
@@ -311,7 +311,7 @@ export class OAuthConnectService {
       }
 
       // Compute totp_registered from userTotp repository
-      const totpRegistered = await this.mikro.userTotp.isRegistered(user.id);
+      const totpRegistered = await this.mikro.userTotp.isRegistered(user.sub);
       const secondFactorRequired =
         user.managed_by === 'config'
           ? false
@@ -320,7 +320,7 @@ export class OAuthConnectService {
       return {
         isNewUser: false,
         user: {
-          id: user.id,
+          sub: user.sub,
           managed_by: 'database',
           email: user.email,
           email_verified: user.email_verified,
@@ -329,7 +329,7 @@ export class OAuthConnectService {
           has_password: user.hasPassword(),
           totp_registered: totpRegistered,
           second_factor_required: secondFactorRequired,
-          passkey_count: await this.mikro.userPasskey.countByUserId(user.id),
+          passkey_count: await this.mikro.userPasskey.countByUserSub(user.sub),
         },
       };
     }
@@ -355,7 +355,7 @@ export class OAuthConnectService {
       // Link OAuth account (only for database-managed users)
       // Config-managed users can still be linked since they're in DB now
       await this.mikro.userOAuth.linkAccount({
-        userId: existingUser.id,
+        userSub: existingUser.sub,
         providerName: providerId,
         providerUserId: userInfo.id,
         accessToken: tokens.access_token,
@@ -369,7 +369,7 @@ export class OAuthConnectService {
 
       // Compute totp_registered from userTotp repository
       const totpRegistered = await this.mikro.userTotp.isRegistered(
-        existingUser.id,
+        existingUser.sub,
       );
       const secondFactorRequired =
         existingUser.managed_by === 'config'
@@ -380,7 +380,7 @@ export class OAuthConnectService {
       return {
         isNewUser: false,
         user: {
-          id: existingUser.id,
+          sub: existingUser.sub,
           managed_by: existingUser.managed_by,
           email: existingUser.email,
           email_verified: existingUser.email_verified,
@@ -389,8 +389,8 @@ export class OAuthConnectService {
           has_password: existingUser.hasPassword(),
           totp_registered: totpRegistered,
           second_factor_required: secondFactorRequired,
-          passkey_count: await this.mikro.userPasskey.countByUserId(
-            existingUser.id,
+          passkey_count: await this.mikro.userPasskey.countByUserSub(
+            existingUser.sub,
           ),
         },
       };
@@ -414,7 +414,7 @@ export class OAuthConnectService {
 
     // Link OAuth account
     await this.mikro.userOAuth.linkAccount({
-      userId: newUser.id,
+      userSub: newUser.sub,
       providerName: providerId,
       providerUserId: userInfo.id,
       accessToken: tokens.access_token,
@@ -429,13 +429,13 @@ export class OAuthConnectService {
     // Record implicit consents automatically for OAuth users
     // Explicit terms consent is handled in /terms page if any explicit terms exist
     await this.termsService.recordImplicitConsents({
-      userId: newUser.id,
+      userSub: newUser.sub,
     });
 
     return {
       isNewUser: true,
       user: {
-        id: newUser.id,
+        sub: newUser.sub,
         managed_by: 'database',
         email: newUser.email,
         email_verified: newUser.email_verified,
@@ -509,7 +509,7 @@ export class OAuthConnectService {
         throw new e.UserNotFound.Error();
       }
 
-      const totpRegistered = await this.mikro.userTotp.isRegistered(user.id);
+      const totpRegistered = await this.mikro.userTotp.isRegistered(user.sub);
       const secondFactorRequired =
         user.managed_by === 'config'
           ? false
@@ -518,7 +518,7 @@ export class OAuthConnectService {
       return {
         isNewUser: false,
         user: {
-          id: user.id,
+          sub: user.sub,
           managed_by: 'database',
           email: user.email,
           email_verified: user.email_verified,
@@ -527,7 +527,7 @@ export class OAuthConnectService {
           has_password: user.hasPassword(),
           totp_registered: totpRegistered,
           second_factor_required: secondFactorRequired,
-          passkey_count: await this.mikro.userPasskey.countByUserId(user.id),
+          passkey_count: await this.mikro.userPasskey.countByUserSub(user.sub),
         },
       };
     }
@@ -550,7 +550,7 @@ export class OAuthConnectService {
       }
 
       await this.mikro.userOAuth.linkAccount({
-        userId: existingUser.id,
+        userSub: existingUser.sub,
         providerName: providerId,
         providerUserId: userInfo.id,
         accessToken: tokens.access_token,
@@ -563,19 +563,19 @@ export class OAuthConnectService {
       // Record all consents for existing user (load terms once)
       const terms = await this.termsService.getGlobalTerms();
       await this.termsService.recordConsents({
-        userId: existingUser.id,
+        userSub: existingUser.sub,
         consents,
         terms,
       });
       await this.termsService.recordImplicitConsents({
-        userId: existingUser.id,
+        userSub: existingUser.sub,
         terms,
       });
 
       await this.mikro.em.flush();
 
       const totpRegistered = await this.mikro.userTotp.isRegistered(
-        existingUser.id,
+        existingUser.sub,
       );
       const secondFactorRequired =
         existingUser.managed_by === 'config'
@@ -587,7 +587,7 @@ export class OAuthConnectService {
       return {
         isNewUser: false,
         user: {
-          id: existingUser.id,
+          sub: existingUser.sub,
           managed_by: existingUser.managed_by,
           email: existingUser.email,
           email_verified: existingUser.email_verified,
@@ -596,8 +596,8 @@ export class OAuthConnectService {
           has_password: existingUser.hasPassword(),
           totp_registered: totpRegistered,
           second_factor_required: secondFactorRequired,
-          passkey_count: await this.mikro.userPasskey.countByUserId(
-            existingUser.id,
+          passkey_count: await this.mikro.userPasskey.countByUserSub(
+            existingUser.sub,
           ),
         },
       };
@@ -621,7 +621,7 @@ export class OAuthConnectService {
 
     // Link OAuth account
     await this.mikro.userOAuth.linkAccount({
-      userId: newUser.id,
+      userSub: newUser.sub,
       providerName: providerId,
       providerUserId: userInfo.id,
       accessToken: tokens.access_token,
@@ -636,19 +636,19 @@ export class OAuthConnectService {
     // Record all consents (load terms once)
     const terms = await this.termsService.getGlobalTerms();
     await this.termsService.recordConsents({
-      userId: newUser.id,
+      userSub: newUser.sub,
       consents,
       terms,
     });
     await this.termsService.recordImplicitConsents({
-      userId: newUser.id,
+      userSub: newUser.sub,
       terms,
     });
 
     return {
       isNewUser: true,
       user: {
-        id: newUser.id,
+        sub: newUser.sub,
         managed_by: 'database',
         email: newUser.email,
         email_verified: newUser.email_verified,
@@ -667,7 +667,7 @@ export class OAuthConnectService {
    * Link OAuth account to existing user
    */
   public async linkOAuthAccount(
-    userId: string,
+    userSub: string,
     providerId: string,
     tokens: OAuthTokens,
     userInfo: OAuthUserInfo,
@@ -678,19 +678,19 @@ export class OAuthConnectService {
       userInfo.id,
     );
 
-    if (existingOAuth && existingOAuth.user.id !== userId) {
+    if (existingOAuth && existingOAuth.user.sub !== userSub) {
       throw new e.OAuthAccountAlreadyLinked.Error();
     }
 
     // Get user
     const user = await this.mikro.user.findOneOrFail(
-      { id: userId },
+      { sub: userSub },
       { failHandler: () => new e.UserNotFound.Error() },
     );
 
     // Check if already linked
     const existingLink = await this.mikro.userOAuth.findByUserAndProvider(
-      userId,
+      userSub,
       providerId,
     );
 
@@ -708,7 +708,7 @@ export class OAuthConnectService {
 
     // Link OAuth account
     await this.mikro.userOAuth.linkAccount({
-      userId: user.id,
+      userSub: user.sub,
       providerName: providerId,
       providerUserId: userInfo.id,
       accessToken: tokens.access_token,
@@ -723,12 +723,12 @@ export class OAuthConnectService {
    * Unlink OAuth account from user
    */
   public async unlinkOAuthAccount(
-    userId: string,
+    userSub: string,
     providerId: string,
   ): Promise<void> {
     // Get user from database (config users are now synced to DB)
     const user = await this.mikro.user.findOneOrFail(
-      { id: userId },
+      { sub: userSub },
       {
         failHandler: () => new e.UserNotFound.Error(),
         populate: ['password_hash'],
@@ -737,7 +737,7 @@ export class OAuthConnectService {
 
     // Check if OAuth account is linked
     const oauthAccount = await this.mikro.userOAuth.findByUserAndProvider(
-      userId,
+      userSub,
       providerId,
     );
 
@@ -746,7 +746,7 @@ export class OAuthConnectService {
     }
 
     // Check if this is the last auth method
-    const oauthCount = await this.mikro.userOAuth.countByUser(userId);
+    const oauthCount = await this.mikro.userOAuth.countByUser(userSub);
     const hasPassword = user.hasPassword();
 
     // If only one OAuth and no password, can't unlink
@@ -754,22 +754,22 @@ export class OAuthConnectService {
       throw new e.CannotUnlinkLastAuthMethod.Error();
     }
 
-    await this.mikro.userOAuth.unlinkAccount(userId, providerId);
+    await this.mikro.userOAuth.unlinkAccount(userSub, providerId);
   }
 
   /**
    * Get all OAuth accounts linked to a user
    */
   public async getLinkedAccounts(
-    userId: string,
+    userSub: string,
   ): Promise<Array<{ provider_name: string; linked_at: Date }>> {
     // Get user from database (config users are now synced to DB)
     await this.mikro.user.findOneOrFail(
-      { id: userId },
+      { sub: userSub },
       { failHandler: () => new e.UserNotFound.Error() },
     );
 
-    const oauthAccounts = await this.mikro.userOAuth.findByUser(userId);
+    const oauthAccounts = await this.mikro.userOAuth.findByUser(userSub);
 
     return oauthAccounts.map((account) => ({
       provider_name: account.provider_name,

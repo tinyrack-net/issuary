@@ -436,29 +436,29 @@ export class CleanupService {
     }
 
     let deletedCount = 0;
-    const userIds = usersToDelete.map((user) => user.id);
+    const userSubs = usersToDelete.map((user) => user.sub);
 
-    for (const userId of userIds) {
+    for (const userSub of userSubs) {
       try {
         // Delete related entities first (cascading delete)
         // Use nativeDelete for reliable removal in MikroORM v7
-        await em.nativeDelete(UserOAuthEntitySchema, { user: userId });
+        await em.nativeDelete(UserOAuthEntitySchema, { user: userSub });
         await em.nativeDelete(UserTotpRecoveryCodeEntitySchema, {
-          user: userId,
+          user: userSub,
         });
-        await em.nativeDelete(UserTotpEntitySchema, { user: userId });
-        await em.nativeDelete(UserPasskeyEntitySchema, { user: userId });
-        await em.nativeDelete(UserConsentEntity, { user: userId });
+        await em.nativeDelete(UserTotpEntitySchema, { user: userSub });
+        await em.nativeDelete(UserPasskeyEntitySchema, { user: userSub });
+        await em.nativeDelete(UserConsentEntity, { user: userSub });
         await em.nativeDelete(UserTermsConsentEntity, {
-          user: userId,
+          user: userSub,
         });
         await em.nativeDelete(EmailVerificationEntitySchema, {
-          user: userId,
+          user: userSub,
         });
-        await em.nativeDelete(PasswordResetEntitySchema, { user: userId });
+        await em.nativeDelete(PasswordResetEntitySchema, { user: userSub });
 
         // Finally delete the user
-        await em.nativeDelete(UserEntity, { id: userId });
+        await em.nativeDelete(UserEntity, { sub: userSub });
         deletedCount++;
       } catch {
         // Log error but continue with other users

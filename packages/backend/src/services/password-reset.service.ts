@@ -11,11 +11,11 @@ export class PasswordResetService {
    * Invalidates all previous unused tokens
    */
   async generateToken(params: {
-    userId: string;
+    userSub: string;
     expiresInHours?: number;
   }): Promise<IPasswordResetEntity> {
     const token = await this.mikro.passwordReset.generateToken({
-      userId: params.userId,
+      userSub: params.userSub,
       expiresInHours: params.expiresInHours || 1,
     });
 
@@ -40,7 +40,7 @@ export class PasswordResetService {
       throw new e.UserNotEditable.Error();
     }
 
-    const token = await this.generateToken({ userId: user.id });
+    const token = await this.generateToken({ userSub: user.sub });
     await this.mikro.em.flush();
 
     return token;

@@ -171,14 +171,14 @@ export class EmailService {
    * Throws EmailNotActivated if SMTP is not configured.
    */
   public async generateToken(params: {
-    userId: string;
+    userSub: string;
     expiresInHours?: number;
   }): Promise<IEmailVerificationEntity> {
     if (!this.config.smtp) {
       throw new e.EmailNotActivated.Error();
     }
     const token = await this.mikro.emailVerification.generateToken({
-      userId: params.userId,
+      userSub: params.userSub,
       expiresInHours: params.expiresInHours || 24,
     });
     return token;
@@ -226,7 +226,7 @@ export class EmailService {
     if (user.email_verified) {
       throw new e.EmailAlreadyVerified.Error();
     }
-    const token = await this.generateToken({ userId: user.id });
+    const token = await this.generateToken({ userSub: user.sub });
     await this.mikro.em.flush();
     return token;
   }
@@ -235,12 +235,12 @@ export class EmailService {
    * Check if user has pending verification.
    * Throws EmailNotActivated if SMTP is not configured.
    */
-  public async hasPendingVerification(userId: string): Promise<boolean> {
+  public async hasPendingVerification(userSub: string): Promise<boolean> {
     if (!this.config.smtp) {
       throw new e.EmailNotActivated.Error();
     }
     const count = await this.mikro.emailVerification.count({
-      user: { id: userId },
+      user: { sub: userSub },
       verified: false,
       expiresAt: { $gt: new Date() },
     });

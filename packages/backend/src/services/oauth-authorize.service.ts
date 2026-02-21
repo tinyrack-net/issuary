@@ -62,7 +62,7 @@ export class OAuthAuthorizeService {
   public async authorize(params: {
     query: AuthorizeParams;
     userSession?: {
-      id: string;
+      sub: string;
       /** OIDC: Time when End-User authentication occurred (Unix timestamp) */
       authenticated_at: number;
     };
@@ -93,7 +93,7 @@ export class OAuthAuthorizeService {
     }
 
     // 7. Check user session
-    if (!userSession?.id) {
+    if (!userSession?.sub) {
       // Handle prompt=none - must return error if not logged in
       if (query.prompt === 'none') {
         return {
@@ -116,14 +116,14 @@ export class OAuthAuthorizeService {
     }
 
     // 8. User is logged in - Verify user exists
-    const userCount = await this.mikro.user.count({ id: userSession.id });
+    const userCount = await this.mikro.user.count({ sub: userSession.sub });
     if (userCount === 0) {
       throw new e.UserNotFound.Error();
     }
 
     // 9. Check if consent is required (using IDs, not entities)
     const requiresConsent = await this.userConsentService.requiresConsent({
-      userId: userSession.id,
+      userSub: userSession.sub,
       clientId: client.id,
       requestedScopes,
       prompt: query.prompt,
@@ -153,7 +153,7 @@ export class OAuthAuthorizeService {
 
     const codeParams: {
       clientId: string;
-      userId: string;
+      userSub: string;
       redirectUri: string;
       scope: string[];
       nonce?: string;
@@ -162,7 +162,7 @@ export class OAuthAuthorizeService {
       authTime?: number;
     } = {
       clientId: client.id,
-      userId: userSession.id,
+      userSub: userSession.sub,
       redirectUri: query.redirect_uri,
       scope: requestedScopes,
     };
@@ -328,7 +328,7 @@ export class OAuthAuthorizeService {
    */
   private async generateAuthorizationCode(params: {
     clientId: string;
-    userId: string;
+    userSub: string;
     redirectUri: string;
     scope: string[];
     nonce?: string;
@@ -338,7 +338,7 @@ export class OAuthAuthorizeService {
   }): Promise<string> {
     const codeParams: {
       clientId: string;
-      userId: string;
+      userSub: string;
       redirectUri: string;
       scope: string[];
       nonce?: string;
@@ -347,7 +347,7 @@ export class OAuthAuthorizeService {
       authTime?: number;
     } = {
       clientId: params.clientId,
-      userId: params.userId,
+      userSub: params.userSub,
       redirectUri: params.redirectUri,
       scope: params.scope,
     };

@@ -78,7 +78,9 @@ export class PasskeyService {
     user: UserEntity,
   ): Promise<PublicKeyCredentialCreationOptionsJSON> {
     // Get existing passkeys to exclude
-    const existingPasskeys = await this.mikro.userPasskey.findByUserId(user.id);
+    const existingPasskeys = await this.mikro.userPasskey.findByUserSub(
+      user.sub,
+    );
 
     const options = await generateRegistrationOptions({
       rpName: this.rpName,
@@ -135,7 +137,7 @@ export class PasskeyService {
 
     // Create and save passkey
     const passkey = this.mikro.em.create(UserPasskeyEntitySchema, {
-      user: user.id,
+      user: user.sub,
       credential_id: credential.id,
       public_key: isoBase64URL.fromBuffer(credential.publicKey),
       counter: Number(credential.counter),
@@ -154,18 +156,18 @@ export class PasskeyService {
 
   /**
    * Generate authentication options
-   * If userId is provided, allow only that user's passkeys
+   * If userSub is provided, allow only that user's passkeys
    * If not provided, allow discoverable credentials (usernameless)
    */
   public async generateAuthenticationOptions(
-    userId?: string,
+    userSub?: string,
   ): Promise<PublicKeyCredentialRequestOptionsJSON> {
     let allowCredentials:
       | { id: string; transports?: AuthenticatorTransportFuture[] }[]
       | undefined;
 
-    if (userId) {
-      const userPasskeys = await this.mikro.userPasskey.findByUserId(userId);
+    if (userSub) {
+      const userPasskeys = await this.mikro.userPasskey.findByUserSub(userSub);
       allowCredentials = userPasskeys.map((passkey) => ({
         id: passkey.credential_id,
         ...(passkey.transports && {
@@ -230,8 +232,8 @@ export class PasskeyService {
   /**
    * Get all passkeys for a user
    */
-  public async getUserPasskeys(userId: string): Promise<PasskeyInfo[]> {
-    const passkeys = await this.mikro.userPasskey.findByUserId(userId);
+  public async getUserPasskeys(userSub: string): Promise<PasskeyInfo[]> {
+    const passkeys = await this.mikro.userPasskey.findByUserSub(userSub);
     return passkeys.map((p) => ({
       id: p.id,
       credential_id: p.credential_id,
@@ -246,7 +248,7 @@ export class PasskeyService {
    * Delete a passkey
    */
   public async deletePasskey(
-    userId: string,
+    userSub: string,
     passkeyId: string,
     options: {
       hasOtherAuthMethods: boolean;
@@ -254,8 +256,8 @@ export class PasskeyService {
       hasOtherSecondFactor: boolean;
     },
   ): Promise<void> {
-    const passkey = await this.mikro.userPasskey.findByUserIdAndId(
-      userId,
+    const passkey = await this.mikro.userPasskey.findByUserSubAndId(
+      userSub,
       passkeyId,
     );
 
@@ -263,7 +265,7 @@ export class PasskeyService {
       throw new e.PasskeyNotFound.Error();
     }
 
-    const passkeyCount = await this.mikro.userPasskey.countByUserId(userId);
+    const passkeyCount = await this.mikro.userPasskey.countByUserSub(userSub);
 
     // Check if this is the last auth method
     if (passkeyCount === 1 && !options.hasOtherAuthMethods) {
@@ -278,19 +280,19 @@ export class PasskeyService {
       }
     }
 
-    await this.mikro.userPasskey.deleteByUserIdAndId(userId, passkeyId);
+    await this.mikro.userPasskey.deleteByUserSubAndId(userSub, passkeyId);
   }
 
   /**
    * Rename a passkey
    */
   public async renamePasskey(
-    userId: string,
+    userSub: string,
     passkeyId: string,
     name: string,
   ): Promise<void> {
-    const passkey = await this.mikro.userPasskey.findByUserIdAndId(
-      userId,
+    const passkey = await this.mikro.userPasskey.findByUserSubAndId(
+      userSub,
       passkeyId,
     );
 

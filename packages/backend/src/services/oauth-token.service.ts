@@ -167,7 +167,7 @@ export class OAuthTokenService {
 
     // 7. Build token response
     return this.buildTokenResponse({
-      userId: user.id,
+      userSub: user.sub,
       userEmail: user.email,
       userEmailVerified: user.email_verified,
       clientId: client.clientId,
@@ -211,7 +211,7 @@ export class OAuthTokenService {
     }
 
     // 3. Load user (supports both config and DB users)
-    const userEntity = await this.mikro.user.verifyById(refreshPayload.sub);
+    const userEntity = await this.mikro.user.verifyBySub(refreshPayload.sub);
     const userData = await this.userService.userEntityToSessionUser(userEntity);
 
     // 4. Get client info
@@ -226,7 +226,7 @@ export class OAuthTokenService {
         jti: refreshPayload.jti,
         token_type: 'refresh_token',
         clientId: client.id, // Use entity primary key
-        userId: userData.id,
+        userSub: userData.sub,
         expires_at: new Date(refreshPayload.exp * 1000),
       });
     }
@@ -234,7 +234,7 @@ export class OAuthTokenService {
     // 6. Build token response with new access and refresh tokens
     // (no nonce in refresh flow)
     return this.buildTokenResponse({
-      userId: userData.id,
+      userSub: userData.sub,
       userEmail: userData.email,
       userEmailVerified: userData.email_verified,
       clientId: client.clientId,
@@ -352,7 +352,7 @@ export class OAuthTokenService {
     }
 
     const jti = decoded.jti;
-    const userId = decoded.sub;
+    const userSub = decoded.sub;
     const rawClientId = decoded['client_id'];
     const clientId = typeof rawClientId === 'string' ? rawClientId : undefined;
     const rawTyp = decoded['typ'];
@@ -376,7 +376,7 @@ export class OAuthTokenService {
 
     // Look up user and client entities to get primary keys
     // Note: clientId from token is the business key, we need the entity's primary key
-    const userEntity = await this.mikro.user.findOne({ id: userId });
+    const userEntity = await this.mikro.user.findOne({ sub: userSub });
     const clientEntity = await this.mikro.oauthClient.findOne({ clientId });
 
     if (!userEntity || !clientEntity) {
@@ -389,7 +389,7 @@ export class OAuthTokenService {
       jti,
       token_type: tokenType,
       clientId: clientEntity.id, // Use entity's primary key
-      userId: userEntity.id,
+      userSub: userEntity.sub,
       expires_at: expiresAt,
     });
 
@@ -434,7 +434,7 @@ export class OAuthTokenService {
    * @returns Complete token response
    */
   private async buildTokenResponse(params: {
-    userId: string;
+    userSub: string;
     userEmail: string;
     userEmailVerified: boolean;
     clientId: string;
@@ -444,7 +444,7 @@ export class OAuthTokenService {
     authTime?: number;
   }): Promise<TokenResponse> {
     const {
-      userId,
+      userSub,
       userEmail,
       userEmailVerified,
       clientId,
@@ -458,7 +458,7 @@ export class OAuthTokenService {
     // Generate access token (RFC 6749 §1.4)
     const accessToken = await this.jwtService.signAccessToken({
       typ: 'access_token',
-      sub: userId,
+      sub: userSub,
       client_id: clientId,
       scope: scopeString,
     });
@@ -466,7 +466,7 @@ export class OAuthTokenService {
     // Generate refresh token (RFC 6749 §1.5)
     const refreshToken = await this.jwtService.signRefreshToken({
       typ: 'refresh_token',
-      sub: userId,
+      sub: userSub,
       client_id: clientId,
       scope: scopeString,
     });
@@ -491,7 +491,7 @@ export class OAuthTokenService {
         email_verified?: boolean;
         name?: string;
       } = {
-        sub: userId,
+        sub: userSub,
         aud: clientId,
       };
 

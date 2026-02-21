@@ -10,11 +10,15 @@ export class UserConsentService {
    * Check if user has already consented to the requested scopes for a client.
    */
   public async hasConsent(
-    userId: string,
+    userSub: string,
     clientId: string,
     requestedScopes: string[],
   ): Promise<boolean> {
-    return this.mikro.userConsent.hasConsent(userId, clientId, requestedScopes);
+    return this.mikro.userConsent.hasConsent(
+      userSub,
+      clientId,
+      requestedScopes,
+    );
   }
 
   /**
@@ -25,12 +29,12 @@ export class UserConsentService {
    * @returns true if consent screen should be shown
    */
   public async requiresConsent(params: {
-    userId: string;
+    userSub: string;
     clientId: string;
     requestedScopes: string[];
     prompt?: z.infer<typeof f.prompt> | undefined;
   }): Promise<boolean> {
-    const { userId, clientId, requestedScopes, prompt } = params;
+    const { userSub, clientId, requestedScopes, prompt } = params;
 
     // If prompt=consent, always show consent screen
     if (prompt === 'consent') {
@@ -39,7 +43,7 @@ export class UserConsentService {
 
     // Check if user has already consented to all requested scopes
     const hasExistingConsent = await this.hasConsent(
-      userId,
+      userSub,
       clientId,
       requestedScopes,
     );
@@ -52,14 +56,14 @@ export class UserConsentService {
    * Grant consent for a user to a client with specific scopes.
    */
   public async grantConsent(params: {
-    userId: string;
+    userSub: string;
     clientId: string;
     scopes: string[];
   }): Promise<UserConsentEntity> {
-    const { userId, clientId, scopes } = params;
+    const { userSub, clientId, scopes } = params;
 
     return this.mikro.userConsent.grantConsent({
-      userId,
+      userSub,
       clientId,
       scopes,
     });

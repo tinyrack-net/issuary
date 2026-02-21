@@ -172,7 +172,7 @@ export class TermsService {
    * Accepts optional pre-loaded terms to avoid redundant DB queries.
    */
   public async recordConsents(params: {
-    userId: string;
+    userSub: string;
     consents: Array<{
       termsId: string;
       agreed: boolean;
@@ -191,7 +191,7 @@ export class TermsService {
         }
 
         return {
-          userId: params.userId,
+          userSub: params.userSub,
           termsId: consent.termsId,
           termsVersion: term.version,
           agreed: consent.agreed,
@@ -215,7 +215,7 @@ export class TermsService {
    * DB queries.
    */
   public async recordImplicitConsents(params: {
-    userId: string;
+    userSub: string;
     terms?: LoadedTerms[];
   }): Promise<UserTermsConsentEntity[]> {
     const terms = params.terms ?? (await this.getGlobalTerms());
@@ -228,7 +228,7 @@ export class TermsService {
     }
 
     return this.recordConsents({
-      userId: params.userId,
+      userSub: params.userSub,
       consents: implicitTerms.map((t) => ({
         termsId: t.id,
         agreed: true,
@@ -285,7 +285,7 @@ export class TermsService {
    * (explicit + implicit) in a single flow. Loads terms only once.
    */
   public async validateAndRecordConsents(params: {
-    userId: string;
+    userSub: string;
     consents: Array<{ termsId: string; agreed: boolean }>;
   }): Promise<{
     validation: { valid: boolean; missingTerms: string[] };
@@ -306,7 +306,7 @@ export class TermsService {
     const explicitRecords =
       params.consents.length > 0
         ? await this.recordConsents({
-            userId: params.userId,
+            userSub: params.userSub,
             consents: params.consents,
             terms,
           })
@@ -314,7 +314,7 @@ export class TermsService {
 
     // Record implicit consents
     const implicitRecords = await this.recordImplicitConsents({
-      userId: params.userId,
+      userSub: params.userSub,
       terms,
     });
 

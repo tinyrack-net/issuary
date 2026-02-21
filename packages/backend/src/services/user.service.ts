@@ -31,7 +31,7 @@ export class UserService {
       .some((totp) => totp.verified && totp.recovery_confirmed);
 
     return {
-      id: user.id,
+      sub: user.sub,
       managed_by: user.managed_by,
       email: user.email,
       email_verified: user.email_verified,
@@ -87,7 +87,7 @@ export class UserService {
     // 3. Generate email verification token and send email
     if (this.config.smtp) {
       const verification = await this.emailService.generateToken({
-        userId: user.id,
+        userSub: user.sub,
       });
       await this.mikro.em.flush();
       this.emailService.sendVerificationEmailAsync({
@@ -102,7 +102,7 @@ export class UserService {
       // Record explicit consents provided by user
       if (params.consents && params.consents.length > 0) {
         await this.termsService.recordConsents({
-          userId: user.id,
+          userSub: user.sub,
           consents: params.consents,
           terms,
         });
@@ -110,14 +110,14 @@ export class UserService {
 
       // Record implicit consents for terms with implicit consent mode
       await this.termsService.recordImplicitConsents({
-        userId: user.id,
+        userSub: user.sub,
         terms,
       });
     }
 
     // 5. Return session info
     return {
-      id: user.id,
+      sub: user.sub,
       managed_by: 'database',
       email: user.email,
       email_verified: user.email_verified,
@@ -134,12 +134,12 @@ export class UserService {
    * Request account deletion (soft delete).
    * Config-managed users cannot be deleted.
    */
-  public async requestDeletion(userId: string): Promise<{
+  public async requestDeletion(userSub: string): Promise<{
     deleted_at: Date;
   }> {
     // Check if user exists and is not config-managed
     const user = await this.mikro.user.findOneOrFail(
-      { id: userId, deleted_at: null },
+      { sub: userSub, deleted_at: null },
       { failHandler: () => new e.UserNotFound.Error() },
     );
 
@@ -175,17 +175,17 @@ export class UserService {
   }
 
   public async userRegistered2FAMethods(
-    userId: string,
+    userSub: string,
   ): Promise<('totp' | 'passkey')[]> {
     const user = await this.mikro.user.findOneOrFail({
-      id: userId,
+      sub: userSub,
     });
     const methods: ('totp' | 'passkey')[] = [];
-    const totpEnabled = await this.mikro.userTotp.isRegistered(user.id);
+    const totpEnabled = await this.mikro.userTotp.isRegistered(user.sub);
     if (totpEnabled) {
       methods.push('totp');
     }
-    const passkeyCount = await this.mikro.userPasskey.countByUserId(user.id);
+    const passkeyCount = await this.mikro.userPasskey.countByUserSub(user.sub);
     if (passkeyCount > 0) {
       methods.push('passkey');
     }
