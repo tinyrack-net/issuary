@@ -33,10 +33,6 @@ tsconfig.tsbuildinfo
 *.sqlite
 *.sqlite3
 
-# Playwright
-test-results/
-playwright-report/
-playwright/.cache/
 
 .aider*
 .astro
