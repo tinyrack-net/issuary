@@ -7,5 +7,21 @@ export default defineConfig({
     maxWorkers: '90%',
     testTimeout: 20000,
     exclude: ['./dist/*', './node_modules/*'],
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts'],
+      exclude: [
+        'src/**/*.test.ts',
+        'src/test-utils/**',
+        'src/db/cli.ts',
+        'src/cli.ts',
+        'src/export-openapi.ts',
+      ],
+      reporter: ['text', 'lcov'],
+      thresholds: {
+        lines: 70,
+        branches: 60,
+      },
+    },
   },
 });
