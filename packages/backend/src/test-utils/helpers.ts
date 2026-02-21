@@ -123,11 +123,11 @@ export async function expectError(
  * @param email - User email
  * @param password - User password
  * @param options - Additional options
- * @returns Session cookie value and user ID
+ * @returns Session cookie value and user sub
  *
  * @example
  * ```typescript
- * const { sessionCookie, userId } = await createDbUserWithSession(
+ * const { sessionCookie, userSub } = await createDbUserWithSession(
  *   app,
  *   services,
  *   generateUniqueEmail('test'),
@@ -141,7 +141,7 @@ export async function createDbUserWithSession(
   email: string,
   password: string,
   options: { emailVerified?: boolean } = {},
-): Promise<{ sessionCookie: string; userId: string }> {
+): Promise<{ sessionCookie: string; userSub: string }> {
   const { emailVerified = true } = options;
 
   await withMikroContext(services, async () => {
@@ -167,9 +167,9 @@ export async function createDbUserWithSession(
 
   const sessionCookie = extractCookie(loginRes, 'session');
   const body = await assertJsonBody(loginRes);
-  const userId = body.user.id;
+  const userSub = body.user.sub;
 
-  return { sessionCookie, userId };
+  return { sessionCookie, userSub };
 }
 
 /**
@@ -234,7 +234,7 @@ export async function enableTotpForUser(
 
   await withMikroContext(services, async () => {
     // Check if TOTP already exists
-    const existingTotp = await services.mikro.userTotp.findByUserId(userId);
+    const existingTotp = await services.mikro.userTotp.findByUserSub(userId);
     if (existingTotp) {
       existingTotp.verified = true;
       existingTotp.recovery_confirmed = true;

@@ -114,7 +114,7 @@ async function syncUsers(
     await em.upsert(
       UserEntity,
       {
-        id: configUser.id,
+        sub: configUser.sub,
         email: configUser.email,
         password_hash: hashedPassword,
         email_verified: true,
@@ -124,20 +124,20 @@ async function syncUsers(
         updated_at: now,
       },
       {
-        onConflictFields: ['id'],
+        onConflictFields: ['sub'],
         onConflictAction: 'merge',
-        // Exclude id and created_at from merge (don't update primary key or creation time)
-        onConflictExcludeFields: ['id', 'created_at'],
+        // Exclude sub and created_at from merge (don't update primary key or creation time)
+        onConflictExcludeFields: ['sub', 'created_at'],
       },
     );
   }
 
   // Remove config-managed users that are no longer in config
-  const configUserIds = config.users.map((u) => u.id);
-  if (configUserIds.length > 0) {
+  const configUserSubs = config.users.map((u) => u.sub);
+  if (configUserSubs.length > 0) {
     await em.nativeDelete(UserEntity, {
       managed_by: 'config',
-      id: { $nin: configUserIds },
+      sub: { $nin: configUserSubs },
     });
   } else {
     // If no config users, remove all config-managed users

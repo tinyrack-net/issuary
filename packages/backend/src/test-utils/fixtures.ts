@@ -44,7 +44,7 @@ export const TEST_USER = {
  * Spread this into your server config's users array.
  */
 export const TEST_USER_CONFIG = {
-  id: 'test-config-user',
+  sub: 'test-config-user',
   email: TEST_USER.email,
   password: TEST_USER.password,
   role: 'admin',

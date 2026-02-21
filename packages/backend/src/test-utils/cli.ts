@@ -86,7 +86,7 @@ export async function createTestUser(
     managedBy = 'database',
   } = options;
 
-  let userId = '';
+  let userSub = '';
 
   await withMikroContext(services, async () => {
     const user = services.mikro.user.create({
@@ -97,10 +97,10 @@ export async function createTestUser(
     user.deleted_at = deletedAt;
     user.managed_by = managedBy;
     await services.mikro.em.persist(user).flush();
-    userId = user.id;
+    userSub = user.sub;
   });
 
-  return userId;
+  return userSub;
 }
 
 /**
@@ -156,14 +156,14 @@ export async function createTestOAuthClient(
 export async function createRevokedToken(
   services: ServiceContainer,
   options: {
-    userId: string;
+    userSub: string;
     clientId: string;
     expiresAt?: Date;
     tokenType?: TokenType;
   },
 ): Promise<string> {
   const {
-    userId,
+    userSub,
     clientId,
     expiresAt = new Date(Date.now() - 1000), // Expired by default
     tokenType = 'access_token',
@@ -177,7 +177,7 @@ export async function createRevokedToken(
       jti: `test-jti-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       token_type: tokenType,
       clientId,
-      userId,
+      userSub,
       expires_at: expiresAt,
     });
     tokenId = token.id;
@@ -196,14 +196,14 @@ export async function createRevokedToken(
 export async function createOAuthCode(
   services: ServiceContainer,
   options: {
-    userId: string;
+    userSub: string;
     clientId: string;
     expiredAt?: Date;
     consumedAt?: Date | null;
   },
 ): Promise<string> {
   const {
-    userId,
+    userSub,
     clientId,
     expiredAt = new Date(Date.now() - 1000), // Expired by default
     consumedAt = null,
@@ -216,7 +216,7 @@ export async function createOAuthCode(
     const { entity } = await services.mikro.oauthCode.generateAuthorizationCode(
       {
         clientId,
-        userId,
+        userSub,
         redirectUri: 'http://localhost/callback',
         scope: ['openid'],
         nonce: 'test-nonce',
@@ -247,13 +247,13 @@ export async function createOAuthCode(
 export async function createEmailVerification(
   services: ServiceContainer,
   options: {
-    userId: string;
+    userSub: string;
     expiresAt?: Date;
     verified?: boolean;
   },
 ): Promise<string> {
   const {
-    userId,
+    userSub,
     expiresAt = new Date(Date.now() - 1000), // Expired by default
     verified = false,
   } = options;
@@ -263,7 +263,7 @@ export async function createEmailVerification(
   await withMikroContext(services, async () => {
     // Use repository's generateToken method for proper entity creation
     const verification = await services.mikro.emailVerification.generateToken({
-      userId,
+      userSub,
       expiresInHours: 1,
     });
     // Override the fields for test purposes
@@ -286,13 +286,13 @@ export async function createEmailVerification(
 export async function createPasswordReset(
   services: ServiceContainer,
   options: {
-    userId: string;
+    userSub: string;
     expiresAt?: Date;
     used?: boolean;
   },
 ): Promise<string> {
   const {
-    userId,
+    userSub,
     expiresAt = new Date(Date.now() - 1000), // Expired by default
     used = false,
   } = options;
@@ -302,7 +302,7 @@ export async function createPasswordReset(
   await withMikroContext(services, async () => {
     // Use repository's generateToken method for proper entity creation
     const reset = await services.mikro.passwordReset.generateToken({
-      userId,
+      userSub,
       expiresInHours: 1,
     });
     // Override the fields for test purposes
