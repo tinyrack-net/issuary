@@ -15,8 +15,8 @@ export const verifyAuth = <Optional extends boolean = false>(options?: {
 }) =>
   createMiddleware<{
     Variables: SessionEnv['Variables'] &
-    ServicesEnv['Variables'] &
-    VerifiedAuthEnv<Optional>['Variables'];
+      ServicesEnv['Variables'] &
+      VerifiedAuthEnv<Optional>['Variables'];
   }>(async (c, next) => {
     const services = c.var.services;
     const sessionHelper = c.var.session;
@@ -30,7 +30,7 @@ export const verifyAuth = <Optional extends boolean = false>(options?: {
       throw new e.Unauthorized.Error();
     }
     try {
-      const userEntity = await services.mikro.user.findById(session.id);
+      const userEntity = await services.mikro.user.findBySub(session.sub);
       c.set('verifiedUser', userEntity);
     } catch (err) {
       if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
@@ -50,8 +50,8 @@ export const verifyAuth = <Optional extends boolean = false>(options?: {
 type VerifiedPending2FAUserEnv<Optional extends boolean> = {
   Variables: {
     verifiedPending2FAUser: Optional extends true
-    ? UserEntity | undefined
-    : UserEntity;
+      ? UserEntity | undefined
+      : UserEntity;
   };
 };
 
@@ -62,8 +62,8 @@ export const verifyPending2FAUser = <
 }) =>
   createMiddleware<{
     Variables: SessionEnv['Variables'] &
-    ServicesEnv['Variables'] &
-    VerifiedPending2FAUserEnv<Optional>['Variables'];
+      ServicesEnv['Variables'] &
+      VerifiedPending2FAUserEnv<Optional>['Variables'];
   }>(async (c, next) => {
     const services = c.var.services;
     const sessionHelper = c.var.session;
@@ -77,7 +77,7 @@ export const verifyPending2FAUser = <
       throw new e.Unauthorized.Error();
     }
     try {
-      const userEntity = await services.mikro.user.findById(session.id);
+      const userEntity = await services.mikro.user.findBySub(session.sub);
       c.set('verifiedPending2FAUser', userEntity);
     } catch (err) {
       if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
@@ -97,8 +97,8 @@ export const verifyPending2FAUser = <
 type VerifiedPending2FASetupUserEnv<Optional extends boolean> = {
   Variables: {
     verifiedPending2FASetupUser: Optional extends true
-    ? UserEntity | undefined
-    : UserEntity;
+      ? UserEntity | undefined
+      : UserEntity;
   };
 };
 
@@ -109,8 +109,8 @@ export const verifyPending2FASetupUser = <
 }) =>
   createMiddleware<{
     Variables: SessionEnv['Variables'] &
-    ServicesEnv['Variables'] &
-    VerifiedPending2FASetupUserEnv<Optional>['Variables'];
+      ServicesEnv['Variables'] &
+      VerifiedPending2FASetupUserEnv<Optional>['Variables'];
   }>(async (c, next) => {
     const services = c.var.services;
     const sessionHelper = c.var.session;
@@ -124,7 +124,7 @@ export const verifyPending2FASetupUser = <
       throw new e.Unauthorized.Error();
     }
     try {
-      const userEntity = await services.mikro.user.findById(session.id);
+      const userEntity = await services.mikro.user.findBySub(session.sub);
       c.set('verifiedPending2FASetupUser', userEntity);
     } catch (err) {
       if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {

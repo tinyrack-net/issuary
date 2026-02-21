@@ -11,7 +11,7 @@ export interface SessionData {
    * Cleared when entering pending 2FA states or on logout.
    */
   user?: {
-    id: string;
+    sub: string;
     authenticated_at: number;
   };
   /**
@@ -20,7 +20,7 @@ export interface SessionData {
    * Promoted to `user` session after successful 2FA, or cleared on failure.
    */
   pending2FAUser?: {
-    id: string;
+    sub: string;
     authenticated_at: number;
   };
   /**
@@ -29,7 +29,7 @@ export interface SessionData {
    * Promoted to `user` session after successful TOTP setup.
    */
   pending2FASetup?: {
-    id: string;
+    sub: string;
   };
   /**
    * Temporary state for external OAuth provider flows (social login/register/link).
@@ -56,9 +56,9 @@ export interface SessionHelper {
   get<K extends keyof SessionData>(key: K): SessionData[K];
   set<K extends keyof SessionData>(key: K, value: SessionData[K]): void;
   delete(): void;
-  setUserSession(userId: string, authenticatedAt?: number): void;
-  setPending2FASession(userId: string, authenticatedAt?: number): void;
-  setPending2FASetupSession(userId: string): void;
+  setUserSession(userSub: string, authenticatedAt?: number): void;
+  setPending2FASession(userSub: string, authenticatedAt?: number): void;
+  setPending2FASetupSession(userSub: string): void;
   clearAuthSessions(): void;
 }
 
@@ -104,26 +104,26 @@ export function sessionMiddleware(cookieSecret: string, isSecure: boolean) {
           Reflect.deleteProperty(data, key);
         }
       },
-      setUserSession(userId: string, authenticatedAt?: number): void {
+      setUserSession(userSub: string, authenticatedAt?: number): void {
         delete data.pending2FAUser;
         delete data.pending2FASetup;
         data.user = {
-          id: userId,
+          sub: userSub,
           authenticated_at: authenticatedAt ?? Math.floor(Date.now() / 1000),
         };
       },
-      setPending2FASession(userId: string, authenticatedAt?: number): void {
+      setPending2FASession(userSub: string, authenticatedAt?: number): void {
         delete data.user;
         delete data.pending2FASetup;
         data.pending2FAUser = {
-          id: userId,
+          sub: userSub,
           authenticated_at: authenticatedAt ?? Math.floor(Date.now() / 1000),
         };
       },
-      setPending2FASetupSession(userId: string): void {
+      setPending2FASetupSession(userSub: string): void {
         delete data.user;
         delete data.pending2FAUser;
-        data.pending2FASetup = { id: userId };
+        data.pending2FASetup = { sub: userSub };
       },
       clearAuthSessions(): void {
         delete data.user;
