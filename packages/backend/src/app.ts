@@ -93,13 +93,18 @@ export async function createApp(options: CreateAppOptions) {
     }),
   );
 
-  // Register static file / proxy handler
-  if (env.APP_ENV === 'development') {
+  // Register frontend handler based on config
+  const { frontend } = config.app;
+
+  if (!frontend.enabled) {
+    logger.info('Frontend disabled (frontend.enabled = false)');
+    app.notFound((c) => c.json({ error: 'Not Found' }, 404));
+  } else if (frontend.mode === 'proxy') {
     const variables = config.app.html_variables;
     const hasVariables = Object.keys(variables).length > 0;
 
     const proxyHandler = createProxyHandler({
-      upstream: config.app.dev_proxy_upstream,
+      upstream: frontend.path,
       logger,
       onResponse: hasVariables
         ? async (res) => {
@@ -124,8 +129,8 @@ export async function createApp(options: CreateAppOptions) {
     });
 
     logger.info(
-      { proxy: config.app.dev_proxy_upstream },
-      'Static handler registered (development mode)',
+      { proxy: frontend.path },
+      'Frontend handler registered (proxy mode)',
     );
 
     app.notFound(async (c) => {
@@ -136,9 +141,13 @@ export async function createApp(options: CreateAppOptions) {
       return proxyHandler(c);
     });
   } else {
-    logger.info('Static handler registered (production mode)');
+    logger.info(
+      { path: frontend.path },
+      'Frontend handler registered (static mode)',
+    );
     registerProdStatic(app, {
       htmlVariables: config.app.html_variables,
+      publicPath: frontend.path,
     });
   }
 
