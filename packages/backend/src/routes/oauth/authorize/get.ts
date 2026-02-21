@@ -83,7 +83,7 @@ export const authorizeGet = new Hono<AppEnv>().get(
       const authorizeParams: {
         query: AuthorizeParams;
         userSession?: {
-          id: string;
+          sub: string;
           authenticated_at: number;
         };
       } = {

@@ -54,7 +54,7 @@ export const userinfoGet = new Hono<AppEnv>().get(
     });
 
     // Load user
-    const userEntity = await mikro.user.verifyById(tokenPayload.sub);
+    const userEntity = await mikro.user.verifyBySub(tokenPayload.sub);
     const userData = await userService.userEntityToSessionUser(userEntity);
 
     // Parse scopes from token
@@ -62,7 +62,7 @@ export const userinfoGet = new Hono<AppEnv>().get(
 
     // Build response based on granted scopes
     const userInfo: UserInfoResponse = {
-      sub: userData.id,
+      sub: userData.sub,
     };
 
     if (scopes.includes('email')) {
