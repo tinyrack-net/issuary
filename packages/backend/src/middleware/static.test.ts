@@ -8,10 +8,15 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 const __dirname = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 
-// Matches the path resolved by the static middleware at
-// src/middleware/static.ts: path.join(__dirname, '../../public')
-// From src/middleware/ that resolves to <backend-root>/public/
+// The static middleware resolves public/ relative to its own __dirname:
+//   path.join(__dirname, '../../public')
+// From src/middleware/ this becomes <backend-root>/public/.
+// We write test fixtures there so the middleware can find them.
 const publicPath = path.join(__dirname, '../../public');
+
+// Track whether we created the public directory so we know
+// whether to remove the whole directory or just test files.
+let createdPublicDir = false;
 
 const INDEX_HTML = [
   '<!doctype html>',
@@ -28,7 +33,21 @@ const TEST_HTML = [
   '</html>',
 ].join('\n');
 
+// Files managed by these tests — only these are removed on cleanup.
+const TEST_FILES = [
+  'index.html',
+  'test-interpolation.html',
+  'test.svg',
+  'test-subdir/index.html',
+];
+
 async function setupTestFiles(): Promise<void> {
+  try {
+    await fs.promises.stat(publicPath);
+  } catch {
+    createdPublicDir = true;
+  }
+
   await fs.promises.mkdir(path.join(publicPath, 'test-subdir'), {
     recursive: true,
   });
@@ -55,10 +74,20 @@ async function setupTestFiles(): Promise<void> {
 }
 
 async function cleanupTestFiles(): Promise<void> {
-  await fs.promises.rm(publicPath, {
-    recursive: true,
-    force: true,
-  });
+  if (createdPublicDir) {
+    // We created the whole directory — safe to remove it entirely
+    await fs.promises.rm(publicPath, { recursive: true, force: true });
+    return;
+  }
+
+  // Only remove the files we created, leave other files intact
+  for (const file of TEST_FILES) {
+    await fs.promises
+      .rm(path.join(publicPath, file), { force: true })
+      .catch(() => {});
+  }
+  // Try to remove the test subdirectory (only succeeds if empty)
+  await fs.promises.rmdir(path.join(publicPath, 'test-subdir')).catch(() => {});
 }
 
 // All routes tested here are handled by the prod static/notFound handler and
