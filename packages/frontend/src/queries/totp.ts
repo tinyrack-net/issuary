@@ -1,24 +1,24 @@
-import { api, jsonOk } from '@frontend/libs/api';
+import { client, jsonOk } from '@frontend/libs/api';
 import { mutationOptions } from '@tanstack/react-query';
 import type { InferRequestType, InferResponseType } from 'hono/client';
 
 export type TotpSetupResponse = InferResponseType<
-  (typeof api.api.user.totp.setup)['$post'],
+  (typeof client.api.user.totp.setup)['$post'],
   200
 >;
 
 export type TotpSetupVerifyResponse = InferResponseType<
-  (typeof api.api.user.totp.verify)['$post'],
+  (typeof client.api.user.totp.verify)['$post'],
   200
 >;
 
 export type TotpConfirmResponse = InferResponseType<
-  (typeof api.api.user.totp.confirm)['$post'],
+  (typeof client.api.user.totp.confirm)['$post'],
   200
 >;
 
 export type TotpLoginVerifyResponse = InferResponseType<
-  (typeof api.api.auth.totp.verify)['$post'],
+  (typeof client.api.auth.totp.verify)['$post'],
   200
 >;
 
@@ -27,7 +27,7 @@ export type TotpLoginVerifyResponse = InferResponseType<
  */
 export const startTotpSetupMutationOptions = mutationOptions({
   mutationFn: async () => {
-    const res = await api.api.user.totp.setup.$post();
+    const res = await client.api.user.totp.setup.$post();
     return jsonOk(res);
   },
 });
@@ -36,12 +36,12 @@ export const startTotpSetupMutationOptions = mutationOptions({
  * Verify TOTP code during setup (returns recovery codes)
  */
 export type VerifyTotpParams = InferRequestType<
-  (typeof api.api.user.totp.verify)['$post']
+  (typeof client.api.user.totp.verify)['$post']
 >['json'];
 
 export const verifyTotpMutationOptions = mutationOptions({
   mutationFn: async (values: VerifyTotpParams) => {
-    const res = await api.api.user.totp.verify.$post({
+    const res = await client.api.user.totp.verify.$post({
       json: values,
     });
     return jsonOk(res);
@@ -54,7 +54,7 @@ export const verifyTotpMutationOptions = mutationOptions({
  */
 export const confirmTotpSetupMutationOptions = mutationOptions({
   mutationFn: async () => {
-    const res = await api.api.user.totp.confirm.$post({
+    const res = await client.api.user.totp.confirm.$post({
       json: {},
     });
     return jsonOk(res);
@@ -65,12 +65,12 @@ export const confirmTotpSetupMutationOptions = mutationOptions({
  * Disable TOTP authentication
  */
 export type DisableTotpParams = InferRequestType<
-  (typeof api.api.user.totp)['$delete']
+  (typeof client.api.user.totp)['$delete']
 >['json'];
 
 export const disableTotpMutationOptions = mutationOptions({
   mutationFn: async (values: DisableTotpParams) => {
-    const res = await api.api.user.totp.$delete({
+    const res = await client.api.user.totp.$delete({
       json: values,
     });
     return jsonOk(res);
@@ -81,12 +81,12 @@ export const disableTotpMutationOptions = mutationOptions({
  * Verify TOTP code during login (complete 2FA login)
  */
 export type VerifyTotpLoginParams = InferRequestType<
-  (typeof api.api.auth.totp.verify)['$post']
+  (typeof client.api.auth.totp.verify)['$post']
 >['json'];
 
 export const verifyTotpLoginMutationOptions = mutationOptions({
   mutationFn: async (values: VerifyTotpLoginParams) => {
-    const res = await api.api.auth.totp.verify.$post({
+    const res = await client.api.auth.totp.verify.$post({
       json: values,
     });
     return jsonOk(res);
@@ -97,17 +97,17 @@ export const verifyTotpLoginMutationOptions = mutationOptions({
  * Verify recovery code during login (complete 2FA login)
  */
 export type VerifyRecoveryCodeParams = InferRequestType<
-  (typeof api.api.auth.totp.recovery.verify)['$post']
+  (typeof client.api.auth.totp.recovery.verify)['$post']
 >['json'];
 
 export type VerifyRecoveryCodeResponse = InferResponseType<
-  (typeof api.api.auth.totp.recovery.verify)['$post'],
+  (typeof client.api.auth.totp.recovery.verify)['$post'],
   200
 >;
 
 export const verifyRecoveryCodeMutationOptions = mutationOptions({
   mutationFn: async (values: VerifyRecoveryCodeParams) => {
-    const res = await api.api.auth.totp.recovery.verify.$post({
+    const res = await client.api.auth.totp.recovery.verify.$post({
       json: values,
     });
     return jsonOk(res);

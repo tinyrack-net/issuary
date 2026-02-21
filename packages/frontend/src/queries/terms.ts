@@ -1,10 +1,10 @@
-import { api, jsonOk } from '@frontend/libs/api';
+import { client, jsonOk } from '@frontend/libs/api';
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import type { InferRequestType, InferResponseType } from 'hono/client';
 import { queryKeys } from './keys';
 
 export type TermsResponse = InferResponseType<
-  (typeof api.api.terms)['$get'],
+  (typeof client.api.terms)['$get'],
   200
 >;
 
@@ -19,7 +19,7 @@ export const getTermsQueryOptions = (lang?: string) =>
   queryOptions({
     queryKey: queryKeys.terms(lang),
     queryFn: async () => {
-      const res = await api.api.terms.$get({
+      const res = await client.api.terms.$get({
         query: { lang: lang ?? 'en' },
       });
       return jsonOk(res);
@@ -30,21 +30,21 @@ export const getTermsQueryOptions = (lang?: string) =>
  * Consent decision for a term
  */
 export type TermsConsentItem = InferRequestType<
-  (typeof api.api.terms.consent)['$post']
+  (typeof client.api.terms.consent)['$post']
 >['json']['consents'][number];
 
 /**
  * Terms consent request
  */
 export type TermsConsentRequest = InferRequestType<
-  (typeof api.api.terms.consent)['$post']
+  (typeof client.api.terms.consent)['$post']
 >['json'];
 
 /**
  * Terms consent response
  */
 export type TermsConsentResponse = InferResponseType<
-  (typeof api.api.terms.consent)['$post'],
+  (typeof client.api.terms.consent)['$post'],
   200
 >;
 
@@ -53,7 +53,7 @@ export type TermsConsentResponse = InferResponseType<
  */
 export const termsConsentMutationOptions = mutationOptions({
   mutationFn: async (params: TermsConsentRequest) => {
-    const res = await api.api.terms.consent.$post({
+    const res = await client.api.terms.consent.$post({
       json: params,
     });
     return jsonOk(res);

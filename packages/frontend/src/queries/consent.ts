@@ -1,4 +1,4 @@
-import { api, jsonOk } from '@frontend/libs/api';
+import { client, jsonOk } from '@frontend/libs/api';
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import type { InferRequestType, InferResponseType } from 'hono/client';
 import { queryKeys } from './keys';
@@ -9,7 +9,7 @@ export type ConsentInfoParams = {
 };
 
 export type ConsentInfoResponse = InferResponseType<
-  (typeof api.api.consent)['$get'],
+  (typeof client.api.consent)['$get'],
   200
 >;
 
@@ -19,7 +19,7 @@ export const getConsentInfoQueryOptions = (params: ConsentInfoParams) =>
   queryOptions({
     queryKey: queryKeys.consent(params.client_id, params.scope),
     queryFn: async () => {
-      const res = await api.api.consent.$get({
+      const res = await client.api.consent.$get({
         query: {
           client_id: params.client_id,
           scope: params.scope,
@@ -30,17 +30,17 @@ export const getConsentInfoQueryOptions = (params: ConsentInfoParams) =>
   });
 
 export type ConsentDecisionParams = InferRequestType<
-  (typeof api.api.consent)['$post']
+  (typeof client.api.consent)['$post']
 >['json'];
 
 export type ConsentDecisionResponse = InferResponseType<
-  (typeof api.api.consent)['$post'],
+  (typeof client.api.consent)['$post'],
   200
 >;
 
 export const consentDecisionMutationOptions = mutationOptions({
   mutationFn: async (params: ConsentDecisionParams) => {
-    const res = await api.api.consent.$post({
+    const res = await client.api.consent.$post({
       json: params,
     });
     return jsonOk(res);

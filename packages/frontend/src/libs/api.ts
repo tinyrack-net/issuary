@@ -36,7 +36,7 @@ const customFetch: typeof fetch = async (input, init) => {
  * All API calls should use this client instead of
  * raw fetch or the old etch() wrapper.
  */
-export const api = hc<AppType>('/', {
+export const client = hc<AppType>('/', {
   fetch: customFetch,
 });
 

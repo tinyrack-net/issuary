@@ -1,11 +1,11 @@
-import { api, jsonOk } from '@frontend/libs/api';
+import { client, jsonOk } from '@frontend/libs/api';
 import type { SecondFactorMethod } from '@frontend/libs/oauth-search';
 import { queryOptions } from '@tanstack/react-query';
 import type { InferResponseType } from 'hono/client';
 import { queryKeys } from './keys';
 
 export type AppConfigs = InferResponseType<
-  (typeof api.api.config)['$get'],
+  (typeof client.api.config)['$get'],
   200
 >;
 
@@ -18,7 +18,7 @@ export type OAuthProviderType = OAuthAuthenticationMethod['type'];
 export const appConfigQueryOptions = queryOptions({
   queryKey: queryKeys.config(),
   queryFn: async () => {
-    const response = await api.api.config.$get();
+    const response = await client.api.config.$get();
     return jsonOk(response);
   },
   select: (data) => {

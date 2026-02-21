@@ -1,10 +1,10 @@
-import { api, jsonOk } from '@frontend/libs/api';
+import { client, jsonOk } from '@frontend/libs/api';
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import type { InferResponseType } from 'hono/client';
 import { queryKeys } from './keys';
 
 export type OAuthAccountsResponse = InferResponseType<
-  (typeof api.api.user)['oauth-accounts']['$get'],
+  (typeof client.api.user)['oauth-accounts']['$get'],
   200
 >;
 
@@ -19,7 +19,7 @@ export type OAuthProviderWithStatus =
 export const oauthAccountsQueryOptions = queryOptions({
   queryKey: queryKeys.oauth.accounts(),
   queryFn: async () => {
-    const res = await api.api.user['oauth-accounts'].$get();
+    const res = await client.api.user['oauth-accounts'].$get();
     return jsonOk(res);
   },
 });
@@ -29,7 +29,7 @@ export const oauthAccountsQueryOptions = queryOptions({
  */
 export const unlinkOAuthMutationOptions = mutationOptions({
   mutationFn: async (providerId: string) => {
-    const res = await api.api.oauth[':provider'].$delete({
+    const res = await client.api.oauth[':provider'].$delete({
       param: { provider: providerId },
     });
     return jsonOk(res);
