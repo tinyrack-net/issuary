@@ -26,6 +26,9 @@
   },
   "include": [
     "vite.config.ts",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "e2e/setup",
+    "e2e/fixtures"
   ]
 }
