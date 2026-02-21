@@ -14,10 +14,12 @@ import {
  * Provides the backend URL to tests via `inject('backendUrl')`.
  */
 export default async function setup(project: TestProject) {
-  project.provide('backendUrl', 'http://localhost:18081');
+  const frontendPort = 19081;
+  const backendPort = 18081;
+  project.provide('backendUrl', `http://localhost:${backendPort}`);
 
   return createE2EServer({
-    config: {
+    backendConfigs: {
       app: {
         cookie_secret:
           '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
@@ -47,7 +49,7 @@ export default async function setup(project: TestProject) {
         },
       },
     },
-    backendPort: 18081,
-    frontendPort: 19081,
+    backendPort: backendPort,
+    frontendPort: frontendPort,
   });
 }

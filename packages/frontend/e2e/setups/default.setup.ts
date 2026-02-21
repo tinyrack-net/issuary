@@ -1,9 +1,5 @@
 import type { TestProject } from 'vitest/node';
-import {
-  createE2EServer,
-  E2E_TEST_CLIENT,
-  E2E_TEST_USER,
-} from './shared.ts';
+import { createE2EServer, E2E_TEST_CLIENT, E2E_TEST_USER } from './shared.ts';
 
 /**
  * Global setup for the "e2e:default" project.
@@ -14,10 +10,12 @@ import {
  * Provides the backend URL to tests via `inject('backendUrl')`.
  */
 export default async function setup(project: TestProject) {
-  project.provide('backendUrl', 'http://localhost:18080');
+  const frontendPort = 19080;
+  const backendPort = 18080;
+  project.provide('backendUrl', `http://localhost:${backendPort}`);
 
   return createE2EServer({
-    config: {
+    backendConfigs: {
       app: {
         cookie_secret:
           '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
@@ -36,7 +34,7 @@ export default async function setup(project: TestProject) {
       users: [E2E_TEST_USER],
       clients: [E2E_TEST_CLIENT],
     },
-    backendPort: 18080,
-    frontendPort: 19080,
+    backendPort: backendPort,
+    frontendPort: frontendPort,
   });
 }

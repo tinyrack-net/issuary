@@ -33,7 +33,7 @@ export interface CreateE2EServerOptions {
    * Application configuration.
    * Spread MINIMAL_E2E_CONFIG and add test-specific overrides.
    */
-  config: AppConfigInput;
+  backendConfigs: AppConfigInput;
   /**
    * Port for the backend HTTP server.
    * Convention: 18080 for default, 18081 for totp-required, etc.
@@ -49,9 +49,9 @@ export interface CreateE2EServerOptions {
 /**
  * Start a backend server and Vite dev server for e2e tests.
  *
- * The backend runs in development mode so it proxies non-API
- * routes to the Vite dev server, serving the full application
- * (frontend + backend) on a single port.
+ * The backend is configured with `frontend.mode: 'proxy'` so
+ * it forwards non-API routes to the Vite dev server, serving
+ * the full application (frontend + backend) on a single port.
  *
  * Returns a teardown function that stops both servers.
  *
@@ -61,55 +61,44 @@ export interface CreateE2EServerOptions {
  * export default async function setup() {
  *   return createE2EServer({
  *     config: {
- *       ...MINIMAL_E2E_CONFIG,
+   *     ...configs,
  *       users: [E2E_TEST_USER],
  *     },
  *     backendPort: 18080,
- *     vitePort: 19080,
+ *     frontendPort: 19080,
  *   });
  * }
  * ```
  */
 export async function createE2EServer(options: CreateE2EServerOptions) {
-  const { config, backendPort, frontendPort: vitePort } = options;
-
-  // Ensure APP_ENV is development so the backend registers
-  // the frontend proxy handler instead of serving static files.
-  const originalAppEnv = process.env['APP_ENV'];
-  process.env['APP_ENV'] = 'development';
-
-  // Merge port and proxy upstream into the config
-  const mergedConfig: AppConfigInput = {
-    ...config,
-    app: {
-      ...config.app,
-      port: backendPort,
-      host: `http://localhost:${backendPort}`,
-      dev_proxy_upstream: `http://localhost:${vitePort}`,
-    },
-  };
-
   // Start the backend (Hono app)
-  const { app, cleanup } = await createApp({ config: mergedConfig });
+  const { app, cleanup } = await createApp({
+    config: {
+      ...options.backendConfigs,
+      app: {
+        ...options.backendConfigs.app,
+        port: options.backendPort,
+        host: `http://localhost:${options.backendPort}`,
+        frontend: {
+          enabled: true,
+          mode: 'proxy',
+          path: `http://localhost:${options.frontendPort}`,
+        },
+      },
+    },
+  });
 
   const backendServer = serve({
     fetch: app.fetch,
-    port: backendPort,
+    port: options.backendPort,
     hostname: '0.0.0.0',
   });
-
-  // Restore APP_ENV after createApp has read it
-  if (originalAppEnv !== undefined) {
-    process.env['APP_ENV'] = originalAppEnv;
-  } else {
-    delete process.env['APP_ENV'];
-  }
 
   // Start the Vite dev server for the frontend
   const frontendServer = await createServer({
     configFile: path.resolve(__dirname, '../../vite.config.ts'),
     server: {
-      port: vitePort,
+      port: options.frontendPort,
       strictPort: true,
       // Disable HMR websocket to avoid noise in tests
       hmr: false,
