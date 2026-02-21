@@ -11,7 +11,7 @@ import { oauthSchema } from './oauth.js';
 const UserSession = z
   .object({
     managed_by: z.literal(['database', 'config']),
-    id: f.userId,
+    sub: f.userSub,
     email: f.userEmail,
     email_verified: f.emailVerified,
     email_verification_required: z
@@ -64,7 +64,7 @@ const ConsentScope = z
 
 const ConsentUser = z
   .object({
-    id: z.string(),
+    sub: z.string(),
     email: z.string(),
   })
   .describe('Consent User');

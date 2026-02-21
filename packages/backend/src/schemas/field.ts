@@ -10,7 +10,7 @@ export const f = {
   uuid: z.uuid().describe('Entity UUID'),
 
   // User fields
-  userId: z.string().describe('User ID'),
+  userSub: z.string().describe('User Sub'),
   userEmail: z.email().describe('User email address'),
   userPassword: z.string().min(6).max(100).describe("User's password"),
   emailVerified: z.boolean().describe("Whether the user's email is verified"),
