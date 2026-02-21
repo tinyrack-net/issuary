@@ -42,8 +42,8 @@ const createError = <
       }
     },
     Schema: z.object({
-      code: z.literal<CODE>(code),
-      message: z.literal<MESSAGE>(message),
+      code: z.literal(code),
+      message: z.literal(message),
     }),
   };
 };
@@ -52,7 +52,7 @@ const createErrorWithData = <
   STATUS extends ContentfulStatusCode = ContentfulStatusCode,
   CODE extends string = string,
   MESSAGE extends string = string,
-  DATA_SCHEMA extends z.ZodTypeAny = z.ZodTypeAny,
+  DATA_SCHEMA extends z.ZodType = z.ZodType,
 >(
   status: STATUS,
   code: CODE,
@@ -77,8 +77,8 @@ const createErrorWithData = <
       }
     },
     Schema: z.object({
-      code: z.literal<CODE>(code),
-      message: z.literal<MESSAGE>(message),
+      code: z.literal(code),
+      message: z.literal(message),
       data: dataSchema,
     }),
   };

@@ -72,7 +72,7 @@ const ConsentUser = z
 const LinkedOAuthAccount = z
   .object({
     provider_name: z.string(),
-    linked_at: z.string().datetime(),
+    linked_at: z.iso.datetime(),
   })
   .describe('Linked OAuth Account');
 
@@ -456,7 +456,7 @@ export const r = {
       name: z.string().nullable(),
       device_type: f.passkeyDeviceType,
       backed_up: z.boolean(),
-      created_at: z.string().datetime(),
+      created_at: z.iso.datetime(),
     })
     .describe('Passkey information'),
 
@@ -492,23 +492,25 @@ export const r = {
   PasskeyRegistrationBody: z.object({
     response: z
       .record(z.string(), z.any())
-      .refine(
-        (val): boolean => {
-          if (typeof val !== 'object' || val === null) return false;
-          if (!('id' in val) || !('rawId' in val) || !('type' in val))
-            return false;
-          if (val['type'] !== 'public-key') return false;
-          if (!('response' in val)) return false;
-          const response = val['response'];
-          if (typeof response !== 'object' || response === null) return false;
-          if (
-            !('clientDataJSON' in response) ||
-            !('attestationObject' in response)
-          )
-            return false;
-          return true;
-        },
-        { message: 'Invalid WebAuthn registration response structure' },
+      .check(
+        z.refine(
+          (val): boolean => {
+            if (typeof val !== 'object' || val === null) return false;
+            if (!('id' in val) || !('rawId' in val) || !('type' in val))
+              return false;
+            if (val['type'] !== 'public-key') return false;
+            if (!('response' in val)) return false;
+            const response = val['response'];
+            if (typeof response !== 'object' || response === null) return false;
+            if (
+              !('clientDataJSON' in response) ||
+              !('attestationObject' in response)
+            )
+              return false;
+            return true;
+          },
+          { error: 'Invalid WebAuthn registration response structure' },
+        ),
       )
       .describe('WebAuthn registration response'),
     name: f.passkeyName.optional().describe('Optional name for the passkey'),
@@ -524,13 +526,12 @@ export const r = {
       light_theme: AppTheme,
       dark_theme: AppTheme,
       theme_mode: z.enum(['light', 'dark', 'system']),
-      background_url: z.string().url().optional(),
+      background_url: z.url().optional(),
       signup_implicit_terms: z
         .record(z.string(), z.string())
         .optional()
         .describe('Localized notice text for implicit consent terms'),
       icon_url: z
-        .string()
         .url()
         .optional()
         .describe('Icon/logo URL displayed on authentication pages'),

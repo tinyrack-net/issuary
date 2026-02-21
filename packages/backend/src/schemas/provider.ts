@@ -26,9 +26,11 @@ export const zz = {
     .string()
     .or(z.number())
     .transform((val) => (typeof val === 'string' ? Number(val) : val))
-    .refine((val) => val > 0 && val < 65536, {
-      message: 'PORT must be a valid port number between 1 and 65535',
-    }),
+    .check(
+      z.refine((val) => val > 0 && val < 65536, {
+        error: 'PORT must be a valid port number between 1 and 65535',
+      }),
+    ),
   COERCE_BOOLEAN: CoerceBoolean,
   coerceInt,
 };
