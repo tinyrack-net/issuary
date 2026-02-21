@@ -45,7 +45,7 @@ function ForgotPassword() {
   const forgotPasswordSchema = useMemo(
     () =>
       z.object({
-        email: z.string().email(t('validation.email.invalid')),
+        email: z.email({ error: t('validation.email.invalid') }),
       }),
     [t],
   );
