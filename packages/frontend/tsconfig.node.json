@@ -29,6 +29,7 @@
     "vitest.config.ts",
     "playwright.config.ts",
     "e2e/setup",
-    "e2e/fixtures"
+    "e2e/fixtures",
+    "e2e/configs"
   ]
 }
