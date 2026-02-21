@@ -26,9 +26,8 @@
     "baseUrl": ".",
     "paths": {
       "@frontend/*": ["./src/*"],
-      "@frontend-e2e/*": ["./e2e/*"],
       "@backend/*": ["../backend/src/*"]
     }
   },
-  "include": ["src", "e2e/tests", "e2e/utils", "e2e/provided-context.d.ts"]
+  "include": ["src"]
 }
