@@ -1,7 +1,7 @@
 import {
-  E2E_DEFAULT_CONFIG,
-  E2E_DEFAULT_PORTS,
-} from '@frontend-e2e/configs/default.js';
+  E2E_MINIMAL_CONFIG,
+  E2E_MINIMAL_PORTS,
+} from '@frontend-e2e/configs/minimal.js';
 import {
   E2E_TOTP_REQUIRED_CONFIG,
   E2E_TOTP_REQUIRED_PORTS,
@@ -19,7 +19,7 @@ import { createE2EServer } from './create-server.js';
  */
 export default async function globalSetup() {
   const teardowns = await Promise.all([
-    createE2EServer(E2E_DEFAULT_CONFIG, E2E_DEFAULT_PORTS),
+    createE2EServer(E2E_MINIMAL_CONFIG, E2E_MINIMAL_PORTS),
     createE2EServer(E2E_TOTP_REQUIRED_CONFIG, E2E_TOTP_REQUIRED_PORTS),
   ]);
 

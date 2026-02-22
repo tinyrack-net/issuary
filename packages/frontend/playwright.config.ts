@@ -1,12 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
-import { E2E_DEFAULT_PORTS } from './e2e/configs/default.js';
+import { E2E_MINIMAL_PORTS } from './e2e/configs/minimal.js';
 import { E2E_TOTP_REQUIRED_PORTS } from './e2e/configs/totp-required.js';
 
 const configs = [
   {
-    name: 'default',
-    testDir: './e2e/tests/default',
-    port: E2E_DEFAULT_PORTS.backend,
+    name: 'minimal',
+    testDir: './e2e/tests/minimal',
+    port: E2E_MINIMAL_PORTS.backend,
   },
   {
     name: 'totp-required',
