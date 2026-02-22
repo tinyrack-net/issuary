@@ -9,7 +9,13 @@ import {
 } from '@frontend/queries/totp.js';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { TotpSetupStep } from './types.js';
+
+export type TotpSetupStep = 'loading' | 'qr' | 'verify' | 'recovery' | 'error';
+
+export interface TotpSetupData {
+  qr_code: string;
+  secret: string;
+}
 
 export interface UseTotpSetupOptions {
   onSetupSuccess?: (data: TotpSetupResponse) => void;
