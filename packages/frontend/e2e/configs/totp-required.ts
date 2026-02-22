@@ -23,23 +23,23 @@ export const E2E_TOTP_REQUIRED_CONFIG = {
     cookie_secret:
       'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2',
     allowed_signup_emails: ['*'],
-    auth: {
-      password: {
-        enabled: true,
-        email_verification: true,
-        second_factor: {
-          required: true,
-        },
-        totp: {
-          enabled: true,
-          issuer: 'TinyauthE2E',
-        },
-      },
-    },
     frontend: {
       enabled: true,
       mode: 'proxy',
       path: `http://localhost:${E2E_TOTP_REQUIRED_PORTS.frontend}`,
+    },
+  },
+  auth: {
+    password: {
+      enabled: true,
+      email_verification: true,
+      second_factor: {
+        required: true,
+      },
+      totp: {
+        enabled: true,
+        issuer: 'TinyauthE2E',
+      },
     },
   },
   logging: {
@@ -48,9 +48,6 @@ export const E2E_TOTP_REQUIRED_CONFIG = {
   },
   database: {
     type: 'memory',
-  },
-  smtp: {
-    test: true,
   },
   users: [E2E_TEST_USER_CONFIG],
   clients: [E2E_TEST_CLIENT_CONFIG],

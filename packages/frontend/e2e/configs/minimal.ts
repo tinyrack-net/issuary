@@ -36,9 +36,6 @@ export const E2E_MINIMAL_CONFIG = {
   database: {
     type: 'memory',
   },
-  smtp: {
-    test: true,
-  },
   users: [E2E_TEST_USER_CONFIG],
   clients: [E2E_TEST_CLIENT_CONFIG],
 } as const satisfies AppConfigInput;
