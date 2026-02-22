@@ -1,4 +1,7 @@
-import { E2E_DEFAULT_CONFIG, E2E_DEFAULT_PORTS } from '@frontend-e2e/configs/default.js';
+import {
+  E2E_DEFAULT_CONFIG,
+  E2E_DEFAULT_PORTS,
+} from '@frontend-e2e/configs/default.js';
 import {
   E2E_TOTP_REQUIRED_CONFIG,
   E2E_TOTP_REQUIRED_PORTS,
