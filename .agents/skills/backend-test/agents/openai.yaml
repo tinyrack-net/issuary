@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend Test"
+  short_description: "Create and debug backend Vitest test workflows"
+  default_prompt: "Create, update, and debug backend Vitest tests for the tinyauth backend package."
