@@ -15,7 +15,7 @@ import { verifyRecoveryCodeMutationOptions } from '@frontend/queries/totp.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -258,6 +258,7 @@ function VerifyRecovery() {
       </div>
 
       <FooterLink
+        as={Link}
         linkText={t('verifyRecovery.backToLogin')}
         search={extractOAuthParams(search)}
         text=""

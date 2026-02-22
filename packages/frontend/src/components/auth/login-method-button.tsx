@@ -5,24 +5,15 @@ import {
   GoogleLogoIcon,
   LinkIcon,
 } from '@phosphor-icons/react';
-import { Link } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
+import { createElement, type ElementType, type ReactNode } from 'react';
 
-type LoginMethodButtonProps = {
+type LoginMethodButtonProps<C extends ElementType> = {
+  as: C;
   icon?: string | ReactNode;
   label: string;
-  // OAuth provider type for well-known icons
   providerType?: OAuthProviderType;
-  // External link
-  href?: string;
-  // Internal route (TanStack Router)
-  to?: string;
-  search?: Record<string, unknown>;
-  // Button action
-  onClick?: () => void;
   isLoading?: boolean;
-  disabled?: boolean;
-};
+} & Record<string, unknown>;
 
 const PROVIDER_ICONS: Record<
   Exclude<OAuthProviderType, 'generic_oauth'>,
@@ -33,18 +24,14 @@ const PROVIDER_ICONS: Record<
   apple: <AppleLogoIcon className="size-6" weight="regular" />,
 };
 
-export function LoginMethodButton({
+export function LoginMethodButton<C extends ElementType>({
+  as: Component,
   icon,
   label,
   providerType,
-  href,
-  to,
-  search,
-  onClick,
   isLoading,
-  disabled,
-}: LoginMethodButtonProps) {
-  // Determine icon: providerType icon > custom icon > fallback
+  ...rest
+}: LoginMethodButtonProps<C>) {
   let iconElement: ReactNode;
   if (providerType && providerType !== 'generic_oauth') {
     iconElement = PROVIDER_ICONS[providerType];
@@ -65,36 +52,13 @@ export function LoginMethodButton({
     </>
   );
 
-  const className =
-    'btn btn-ghost flex h-auto flex-row gap-2 border-base-300 py-3 sm:flex-col';
-
-  // External link
-  if (href) {
-    return (
-      <a className={className} href={href}>
-        {content}
-      </a>
-    );
-  }
-
-  // Internal route
-  if (to) {
-    return (
-      <Link className={className} search={search} to={to}>
-        {content}
-      </Link>
-    );
-  }
-
-  // Button
-  return (
-    <button
-      className={className}
-      disabled={disabled || isLoading}
-      onClick={onClick}
-      type="button"
-    >
-      {content}
-    </button>
+  return createElement(
+    Component,
+    {
+      className:
+        'btn btn-ghost flex h-auto flex-row gap-2 border-base-300 py-3 sm:flex-col',
+      ...rest,
+    },
+    content,
   );
 }

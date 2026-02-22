@@ -1,28 +1,29 @@
-import { Link } from '@tanstack/react-router';
+import { createElement, type ElementType } from 'react';
 
-type FooterLinkProps = {
+type FooterLinkProps<C extends ElementType> = {
+  as: C;
   text: string;
   linkText: string;
-  to: string;
-  search?: Record<string, unknown>;
   className?: string;
-};
+} & Record<string, unknown>;
 
-export function FooterLink({
+export function FooterLink<C extends ElementType>({
+  as: Component,
   text,
   linkText,
-  to,
-  search,
   className = '',
-}: FooterLinkProps) {
+  ...linkProps
+}: FooterLinkProps<C>) {
   return (
     <div
       className={`mt-6 text-center text-base-content/70 text-xs ${className}`}
     >
       {text}{' '}
-      <Link className="link link-info font-medium" search={search} to={to}>
-        {linkText}
-      </Link>
+      {createElement(
+        Component,
+        { className: 'link link-info font-medium', ...linkProps },
+        linkText,
+      )}
     </div>
   );
 }

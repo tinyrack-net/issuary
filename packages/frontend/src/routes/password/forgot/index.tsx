@@ -145,6 +145,7 @@ function ForgotPassword() {
       </form>
 
       <FooterLink
+        as={Link}
         linkText={t('register.link.login')}
         text={t('forgotPassword.footer.rememberedPassword')}
         to="/login"

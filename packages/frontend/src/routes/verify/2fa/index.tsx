@@ -68,6 +68,7 @@ function Verify2FA() {
       </div>
 
       <FooterLink
+        as={Link}
         linkText={t('verify2fa.backToLogin')}
         search={oauthParams}
         text=""

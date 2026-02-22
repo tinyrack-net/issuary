@@ -26,7 +26,7 @@ import {
   XCircleIcon,
 } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -223,6 +223,7 @@ function SetupTotp() {
             </div>
           </div>
           <FooterLink
+            as={Link}
             linkText={t('setupTotp.backToLogin')}
             search={extractOAuthParams(search)}
             text=""
@@ -251,6 +252,7 @@ function SetupTotp() {
             {t('setupTotp.goToProfile')}
           </button>
           <FooterLink
+            as={Link}
             linkText={t('setupTotp.backToLogin')}
             search={extractOAuthParams(search)}
             text=""
@@ -279,6 +281,7 @@ function SetupTotp() {
           {t('setupTotp.retry')}
         </button>
         <FooterLink
+          as={Link}
           linkText={t('setupTotp.backToLogin')}
           search={extractOAuthParams(search)}
           text=""
@@ -322,6 +325,7 @@ function SetupTotp() {
         <QrStep onNext={goToVerify} setupData={setupData} />
 
         <FooterLink
+          as={Link}
           linkText={t('setupTotp.backToLogin')}
           search={extractOAuthParams(search)}
           text=""

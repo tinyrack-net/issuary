@@ -13,7 +13,7 @@ import { authenticateWithPasskeyMutationOptions } from '@frontend/queries/passke
 import { getSessionQueryOptions } from '@frontend/queries/session.js';
 import { FingerprintIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -117,6 +117,7 @@ function VerifyPasskey() {
       </div>
 
       <FooterLink
+        as={Link}
         linkText={t('verifyPasskey.backToLogin')}
         search={search}
         text=""

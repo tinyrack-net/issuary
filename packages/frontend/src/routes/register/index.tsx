@@ -25,7 +25,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { Link, createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useDeferredValue, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -305,6 +305,7 @@ function Register() {
       )}
 
       <FooterLink
+        as={Link}
         linkText={t('register.link.login')}
         search={extractOAuthParams(search)}
         text={t('register.footer.haveAccount')}

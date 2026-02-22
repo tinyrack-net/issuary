@@ -74,6 +74,7 @@ function Setup2FA() {
       </div>
 
       <FooterLink
+        as={Link}
         linkText={t('setup2fa.backToLogin')}
         search={oauthParams}
         text=""

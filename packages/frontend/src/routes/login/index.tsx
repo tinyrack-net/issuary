@@ -27,7 +27,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
@@ -138,6 +138,7 @@ function Login() {
         {/* OAuth Providers */}
         {oauthProviders.map((provider) => (
           <LoginMethodButton
+            as="a"
             href={buildOAuthUrl(provider.id)}
             icon={provider.icon_url}
             key={provider.id}
@@ -149,6 +150,7 @@ function Login() {
         {/* Password Login */}
         {isPasswordAuthEnabled && (
           <LoginMethodButton
+            as={Link}
             icon={<EnvelopeSimpleIcon className="size-6" weight="regular" />}
             label={t('login.method.password')}
             search={extractOAuthParams(search)}
@@ -159,10 +161,13 @@ function Login() {
         {/* Passkey Login */}
         {isPasskeyEnabled && (
           <LoginMethodButton
+            as="button"
+            disabled={passkeyLoginMutation.isPending}
             icon={<FingerprintIcon className="size-6" weight="regular" />}
             isLoading={passkeyLoginMutation.isPending}
             label={t('login.method.passkey')}
             onClick={() => passkeyLoginMutation.mutate()}
+            type="button"
           />
         )}
       </LoginMethodList>

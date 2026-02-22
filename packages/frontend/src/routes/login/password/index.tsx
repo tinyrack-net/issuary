@@ -266,6 +266,7 @@ function LoginPassword() {
 
       {configData.app.public_registration && (
         <FooterLink
+          as={Link}
           linkText={t('login.link.register')}
           search={extractOAuthParams(search)}
           text={t('login.footer.noAccount')}
