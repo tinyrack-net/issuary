@@ -161,82 +161,15 @@ Services are Fastify plugins that encapsulate business logic:
 
 ### Frontend Testing
 
-The frontend uses **Vitest multi-project configuration** with **@vitest/browser-playwright** for real browser testing. All tests (unit and e2e) run in actual browsers, not jsdom.
-
-#### Test Projects
-
-| Project | Description | Browsers | Backend |
-|---|---|---|---|
-| `unit` | Component/unit tests colocated with source | chromium, firefox | Not needed |
-| `e2e:default` | E2E with default auth config | chromium | Port 18080 |
-| `e2e:totp-required` | E2E with TOTP-required config | chromium | Port 18081 |
-
-#### File Structure
-```
-packages/frontend/
-├── src/**/*.test.{ts,tsx}           # Unit/component tests (colocated)
-├── e2e/
-│   ├── provided-context.d.ts        # ProvidedContext type augmentation
-│   ├── setups/
-│   │   ├── shared.ts                # createE2EServer() helper, test fixtures
-│   │   ├── default.setup.ts         # globalSetup for e2e:default
-│   │   └── totp-required.setup.ts   # globalSetup for e2e:totp-required
-│   └── tests/
-│       ├── default/**/*.test.tsx    # Tests for default config
-│       └── totp-required/**/*.test.tsx  # Tests for TOTP config
-├── vitest.config.ts                 # Multi-project Vitest config
-├── tsconfig.test.json               # TypeScript config for test files
-└── tsconfig.node.json               # TypeScript config for setup files
-```
-
-#### Writing Unit/Component Tests
+#### Unit/Component Tests
 - Colocate with source files: `component.tsx` -> `component.test.tsx`
 - Use `vitest-browser-react` for rendering: `import { render } from 'vitest-browser-react'`
 - Use `expect.element()` for DOM assertions: `await expect.element(screen.getByText('...')).toBeVisible()`
 
-```tsx
-import { expect, test } from 'vitest';
-import { render } from 'vitest-browser-react';
-
-test('renders component', async () => {
-  const screen = await render(<MyComponent />);
-  await expect.element(screen.getByText('Hello')).toBeVisible();
-});
-```
-
-#### Writing E2E Tests
-- Place in `e2e/tests/<config-name>/` directory
-- Use `inject('backendUrl')` to get the backend URL (provided by globalSetup)
-- Tests run in a browser iframe; use `fetch()` for API calls, not `window.location`
-
-```tsx
-import { expect, inject, test } from 'vitest';
-
-const backendUrl = inject('backendUrl');
-
-test('api returns data', async () => {
-  const res = await fetch(`${backendUrl}/api/endpoint`);
-  expect(res.ok).toBe(true);
-});
-```
-
-#### Adding a New E2E Config Group
-1. Create `e2e/setups/<name>.setup.ts` with a `globalSetup` function
-2. Use unique ports: backend `1808X`, vite `1908X` (increment X)
-3. Create test directory `e2e/tests/<name>/`
-4. Add a new project entry in `vitest.config.ts`
-
-#### E2E Architecture
-- Each e2e project starts its own **backend + Vite dev server** pair via `globalSetup`
-- The backend runs in development mode and proxies non-API routes to the Vite dev server
-- Shared helpers: `MINIMAL_E2E_CONFIG`, `E2E_TEST_USER`, `E2E_TEST_CLIENT` in `e2e/setups/shared.ts`
-- The `ProvidedContext` augmentation in `e2e/provided-context.d.ts` must include `export {}` to work as a module augmentation (not an ambient declaration)
-
-#### TypeScript Configuration for Tests
-- `tsconfig.test.json`: Covers test files (`src/**/*.test.*`, `e2e/tests/`, `e2e/provided-context.d.ts`)
-- `tsconfig.node.json`: Covers setup files (`e2e/setups/`, `e2e/provided-context.d.ts`, `vitest.config.ts`)
-- Both reference `e2e/provided-context.d.ts` for `ProvidedContext` type augmentation
-- Test files must pass `tsc -b` type checking (included in `pnpm build`)
+#### E2E Tests (Playwright)
+- Use the `/e2e` skill for full conventions, helpers, config patterns, and examples
+- Tests in `packages/frontend/e2e/tests/<config>/`, run with `npx playwright test`
+- Each config group has its own backend + Vite server pair (ports `1808X`/`1908X`)
 
 ### Frontend-Specific Patterns
 
