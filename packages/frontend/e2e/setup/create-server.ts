@@ -1,14 +1,10 @@
 import type { AddressInfo } from 'node:net';
 import { createServer as createNetServer } from 'node:net';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { serve } from '@hono/node-server';
 import type { AppConfigInput } from '@tinyauth/backend/app';
 import { createApp } from '@tinyauth/backend/app';
-import { createServer as createViteServer } from 'vite';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const frontendRoot = path.resolve(__dirname, '../..');
+const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
 
 export type TestHonoApp = Awaited<ReturnType<typeof createE2EServer>>['app'];
 
@@ -31,9 +27,28 @@ type ConfigFactory = (
   frontendPort: number,
 ) => AppConfigInput;
 
+function getSharedFrontendPort(): number {
+  const rawPort = process.env[SHARED_FRONTEND_PORT_ENV];
+  if (!rawPort) {
+    throw new Error(
+      `${SHARED_FRONTEND_PORT_ENV} is not set. ` +
+        'Ensure Playwright global setup started the shared frontend server.',
+    );
+  }
+
+  const frontendPort = Number(rawPort);
+  if (!Number.isInteger(frontendPort) || frontendPort <= 0) {
+    throw new Error(
+      `${SHARED_FRONTEND_PORT_ENV} must be a positive integer. Received: ${rawPort}`,
+    );
+  }
+
+  return frontendPort;
+}
+
 /**
- * Creates and starts the Vite dev server + backend server pair
- * for an e2e test config group using dynamically allocated ports.
+ * Creates and starts the backend server for an e2e test config
+ * using a per-server backend port and shared frontend port.
  *
  * Registers test-only endpoints on the backend for accessing
  * email verification tokens and TOTP secrets during e2e tests.
@@ -42,27 +57,15 @@ type ConfigFactory = (
  * @returns Object with backendPort and teardown function
  */
 export async function createE2EServer(configFactory: ConfigFactory) {
-  const [backendPort, frontendPort] = await Promise.all([
-    getFreePort(),
-    getFreePort(),
-  ]);
+  const backendPort = await getFreePort();
+  const frontendPort = getSharedFrontendPort();
 
   const config = configFactory(backendPort, frontendPort);
 
-  // 1. Start Vite dev server
-  const frontendServer = await createViteServer({
-    root: frontendRoot,
-    server: {
-      port: frontendPort,
-      strictPort: true,
-    },
-  });
-  await frontendServer.listen();
-
-  // 2. Start backend
+  // 1. Start backend
   const { app, services, cleanup } = await createApp({ config });
 
-  // 3. Register test-only API endpoints
+  // 2. Register test-only API endpoints
   const testApp = app
     .get('/test/email-token/:email', async (c) => {
       const email = c.req.param('email');
@@ -112,13 +115,12 @@ export async function createE2EServer(configFactory: ConfigFactory) {
     hostname: '0.0.0.0',
   });
 
-  // 4. Return server handle
+  // 3. Return server handle
   return {
     app: testApp,
     backendPort,
     teardown: async () => {
       backendServer.close();
-      await frontendServer.close();
       await cleanup();
     },
   };
