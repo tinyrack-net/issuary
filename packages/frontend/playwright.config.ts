@@ -77,6 +77,10 @@ const configs = [
     name: 'terms-complete-registration',
     testDir: './e2e/tests/terms-complete-registration',
   },
+  {
+    name: 'journey-oauth-2fa',
+    testDir: './e2e/tests/journey-oauth-2fa',
+  },
 ];
 
 const browsers = [

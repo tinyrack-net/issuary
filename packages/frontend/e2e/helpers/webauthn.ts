@@ -4,6 +4,14 @@ type VirtualAuthenticatorHandle = {
   teardown: () => Promise<void>;
 };
 
+function isTargetClosedError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.message.includes('Target page, context or browser has been closed') ||
+      error.message.includes('Session closed'))
+  );
+}
+
 /**
  * Enables a Chromium virtual authenticator for passkey e2e tests.
  */
@@ -29,11 +37,32 @@ export async function enableVirtualAuthenticator(
 
   return {
     teardown: async () => {
-      await cdp.send('WebAuthn.removeVirtualAuthenticator', {
-        authenticatorId,
-      });
-      await cdp.send('WebAuthn.disable');
-      await cdp.detach();
+      try {
+        await cdp.send('WebAuthn.removeVirtualAuthenticator', {
+          authenticatorId,
+        });
+      } catch (error) {
+        if (!isTargetClosedError(error)) {
+          throw error;
+        }
+        return;
+      }
+
+      try {
+        await cdp.send('WebAuthn.disable');
+      } catch (error) {
+        if (!isTargetClosedError(error)) {
+          throw error;
+        }
+      }
+
+      try {
+        await cdp.detach();
+      } catch (error) {
+        if (!isTargetClosedError(error)) {
+          throw error;
+        }
+      }
     },
   };
 }
