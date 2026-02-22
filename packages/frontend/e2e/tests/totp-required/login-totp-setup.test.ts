@@ -1,4 +1,5 @@
 import { E2E_TEST_USER } from '@frontend-e2e/fixtures/index.js';
+import { expect, test } from '@frontend-e2e/fixtures/totp-required.js';
 import { performLogin, totpSetupPage } from '@frontend-e2e/helpers/login.js';
 import { fillPinInput } from '@frontend-e2e/helpers/pin-input.js';
 import { registerUser } from '@frontend-e2e/helpers/register.js';
@@ -6,7 +7,6 @@ import {
   generateTotpCode,
   interceptTotpSecret,
 } from '@frontend-e2e/helpers/totp.js';
-import { expect, test } from '@playwright/test';
 
 /**
  * Generates a unique test email for each test to avoid collisions.

@@ -1,8 +1,8 @@
 import { E2E_TEST_CLIENT } from '@frontend-e2e/fixtures/index.js';
+import { expect, test } from '@frontend-e2e/fixtures/minimal.js';
 import { buildOAuthAuthorizeUrl } from '@frontend-e2e/helpers/consent.js';
 import { loginAndGoToProfile } from '@frontend-e2e/helpers/profile-page.js';
 import { registerUser } from '@frontend-e2e/helpers/register.js';
-import { expect, test } from '@playwright/test';
 
 /**
  * Generates a unique test email for each test to avoid session conflicts.
@@ -82,14 +82,17 @@ test.describe('OAuth consent flow', () => {
     // Wait for Allow button
     await expect(page.getByRole('button', { name: 'Allow' })).toBeVisible();
 
+    // Capture the redirect request before clicking, since the redirect
+    // target is a dummy client URL that nothing serves.
+    const redirectPromise = page.waitForRequest((req) =>
+      req.url().startsWith(E2E_TEST_CLIENT.redirectUri),
+    );
+
     // Click Allow
     await page.getByRole('button', { name: 'Allow' }).click();
 
-    // Should redirect to the client redirect_uri with code and state
-    await page.waitForURL((url) =>
-      url.href.startsWith(E2E_TEST_CLIENT.redirectUri),
-    );
-    const url = new URL(page.url());
+    const redirectRequest = await redirectPromise;
+    const url = new URL(redirectRequest.url());
     expect(url.searchParams.get('code')).toBeTruthy();
     expect(url.searchParams.get('state')).toBe('test-allow-state');
   });
@@ -111,14 +114,17 @@ test.describe('OAuth consent flow', () => {
     // Wait for Deny button
     await expect(page.getByRole('button', { name: 'Deny' })).toBeVisible();
 
+    // Capture the redirect request before clicking, since the redirect
+    // target is a dummy client URL that nothing serves.
+    const redirectPromise = page.waitForRequest((req) =>
+      req.url().startsWith(E2E_TEST_CLIENT.redirectUri),
+    );
+
     // Click Deny
     await page.getByRole('button', { name: 'Deny' }).click();
 
-    // Should redirect to the client redirect_uri with error
-    await page.waitForURL((url) =>
-      url.href.startsWith(E2E_TEST_CLIENT.redirectUri),
-    );
-    const url = new URL(page.url());
+    const redirectRequest = await redirectPromise;
+    const url = new URL(redirectRequest.url());
     expect(url.searchParams.get('error')).toBe('access_denied');
     expect(url.searchParams.get('state')).toBe('test-deny-state');
   });

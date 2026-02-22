@@ -1,8 +1,8 @@
+import { expect, test } from '@frontend-e2e/fixtures/totp-required.js';
 import { performLogin } from '@frontend-e2e/helpers/login.js';
 import { recoveryPage } from '@frontend-e2e/helpers/recovery.js';
 import { registerUser } from '@frontend-e2e/helpers/register.js';
 import { generateTotpCode } from '@frontend-e2e/helpers/totp.js';
-import { expect, test } from '@playwright/test';
 
 /**
  * Generates a unique test email for each test to avoid collisions.

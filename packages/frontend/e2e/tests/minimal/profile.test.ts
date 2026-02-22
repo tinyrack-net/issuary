@@ -1,11 +1,11 @@
 import { E2E_TEST_USER } from '@frontend-e2e/fixtures/index.js';
+import { expect, test } from '@frontend-e2e/fixtures/minimal.js';
 import {
   changePasswordModal,
   loginAndGoToProfile,
   modal,
 } from '@frontend-e2e/helpers/profile-page.js';
 import { registerUser } from '@frontend-e2e/helpers/register.js';
-import { expect, test } from '@playwright/test';
 
 /**
  * Generates a unique test email for each test to avoid collisions.

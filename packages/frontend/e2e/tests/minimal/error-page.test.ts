@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '@frontend-e2e/fixtures/minimal.js';
 
 test.describe('Error page', () => {
   test('displays code and message from URL params', async ({ page }) => {

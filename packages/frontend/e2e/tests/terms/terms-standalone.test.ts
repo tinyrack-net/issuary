@@ -1,13 +1,9 @@
 import { E2E_TEST_USER } from '@frontend-e2e/fixtures/index.js';
+import { expect, test } from '@frontend-e2e/fixtures/terms.js';
 import { loginAndGoToProfile } from '@frontend-e2e/helpers/profile-page.js';
 import { registerPage } from '@frontend-e2e/helpers/register-page.js';
-import { expect, test } from '@playwright/test';
 
 test.describe('Standalone terms page', () => {
-  // Run serially: these tests share the config-managed E2E_TEST_USER
-  // and concurrent logins can cause session conflicts.
-  test.describe.configure({ mode: 'serial' });
-
   test('displays explicit terms checkboxes', async ({ page }) => {
     await loginAndGoToProfile(
       page,

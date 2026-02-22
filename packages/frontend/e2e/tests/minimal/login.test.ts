@@ -1,10 +1,10 @@
 import { E2E_TEST_USER } from '@frontend-e2e/fixtures/index.js';
+import { expect, test } from '@frontend-e2e/fixtures/minimal.js';
 import {
   loginMethodPage,
   loginPasswordPage,
   performLogin,
 } from '@frontend-e2e/helpers/login.js';
-import { expect, test } from '@playwright/test';
 
 test.describe('Login flow', () => {
   test('redirects unauthenticated users to /login', async ({ page }) => {

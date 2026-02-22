@@ -1,3 +1,5 @@
+import type { AddressInfo } from 'node:net';
+import { createServer as createNetServer } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serve } from '@hono/node-server';
@@ -8,30 +10,50 @@ import { createServer as createViteServer } from 'vite';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendRoot = path.resolve(__dirname, '../..');
 
-interface E2EPorts {
-  readonly backend: number;
-  readonly frontend: number;
-}
-
 export type TestHonoApp = Awaited<ReturnType<typeof createE2EServer>>['app'];
 
 /**
+ * Finds a free port by briefly binding to port 0.
+ */
+function getFreePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const srv = createNetServer();
+    srv.listen(0, '127.0.0.1', () => {
+      const port = (srv.address() as AddressInfo).port;
+      srv.close(() => resolve(port));
+    });
+    srv.on('error', reject);
+  });
+}
+
+type ConfigFactory = (
+  backendPort: number,
+  frontendPort: number,
+) => AppConfigInput;
+
+/**
  * Creates and starts the Vite dev server + backend server pair
- * for an e2e test config group.
+ * for an e2e test config group using dynamically allocated ports.
  *
  * Registers test-only endpoints on the backend for accessing
  * email verification tokens and TOTP secrets during e2e tests.
  *
- * @param config - Backend app configuration
- * @param ports - Port numbers for backend and Vite servers
- * @returns Object with teardown function
+ * @param configFactory - Factory that produces config given ports
+ * @returns Object with backendPort and teardown function
  */
-export async function createE2EServer(config: AppConfigInput, ports: E2EPorts) {
+export async function createE2EServer(configFactory: ConfigFactory) {
+  const [backendPort, frontendPort] = await Promise.all([
+    getFreePort(),
+    getFreePort(),
+  ]);
+
+  const config = configFactory(backendPort, frontendPort);
+
   // 1. Start Vite dev server
   const frontendServer = await createViteServer({
     root: frontendRoot,
     server: {
-      port: ports.frontend,
+      port: frontendPort,
       strictPort: true,
     },
   });
@@ -86,13 +108,14 @@ export async function createE2EServer(config: AppConfigInput, ports: E2EPorts) {
 
   const backendServer = serve({
     fetch: testApp.fetch,
-    port: ports.backend,
+    port: backendPort,
     hostname: '0.0.0.0',
   });
 
   // 4. Return server handle
   return {
     app: testApp,
+    backendPort,
     teardown: async () => {
       backendServer.close();
       await frontendServer.close();

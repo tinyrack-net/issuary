@@ -1,7 +1,7 @@
+import { expect, test } from '@frontend-e2e/fixtures/email-verification.js';
 import { getEmailToken } from '@frontend-e2e/helpers/email-token.js';
 import { emailVerifyPage, performLogin } from '@frontend-e2e/helpers/login.js';
 import { registerUser } from '@frontend-e2e/helpers/register.js';
-import { expect, test } from '@playwright/test';
 
 /**
  * Generates a unique test email for each test to avoid collisions.

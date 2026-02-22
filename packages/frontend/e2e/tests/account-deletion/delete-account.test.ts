@@ -1,10 +1,10 @@
+import { expect, test } from '@frontend-e2e/fixtures/account-deletion.js';
 import {
   deleteAccountModal,
   loginAndGoToProfile,
   modal,
 } from '@frontend-e2e/helpers/profile-page.js';
 import { registerUser } from '@frontend-e2e/helpers/register.js';
-import { expect, test } from '@playwright/test';
 
 /**
  * Generates a unique test email for each test to avoid collisions.

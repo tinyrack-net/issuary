@@ -1,5 +1,5 @@
+import { expect, test } from '@frontend-e2e/fixtures/registration-disabled.js';
 import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
-import { expect, test } from '@playwright/test';
 
 test.describe('Registration disabled', () => {
   test('navigating to /register redirects to /login', async ({ page }) => {
