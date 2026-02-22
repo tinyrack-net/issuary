@@ -43,6 +43,24 @@ test.describe('OAuth providers mixed configuration', () => {
     );
   });
 
+  test('temporarily unavailable oauth error is mapped to UI message', async ({
+    page,
+  }) => {
+    await page.goto('/login?oauth_error=temporarily_unavailable');
+    await expectOAuthError(
+      page,
+      'The service is temporarily unavailable. Please try again later.',
+    );
+  });
+
+  test('server oauth error is mapped to UI message', async ({ page }) => {
+    await page.goto('/login?oauth_error=server_error');
+    await expectOAuthError(
+      page,
+      'An error occurred on the authentication server. Please try again later.',
+    );
+  });
+
   test('successful provider callback logs user in and lands on profile', async ({
     page,
   }) => {

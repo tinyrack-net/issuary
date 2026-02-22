@@ -80,6 +80,20 @@ test.describe('Delete account flow', () => {
     ).toBeVisible();
   });
 
+  test('delete modal shows retention period from config', async ({
+    page,
+    request,
+    baseURL,
+  }) => {
+    const email = uniqueEmail('retention');
+    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    await loginAndGoToProfile(page, email, TEST_PASSWORD);
+
+    await page.getByRole('button', { name: 'Delete Account' }).click();
+    await expect(page.locator(modal.openModal)).toBeVisible();
+    await expect(page.getByText(/after 30 days\./)).toBeVisible();
+  });
+
   test('cannot login after account deletion', async ({
     page,
     request,

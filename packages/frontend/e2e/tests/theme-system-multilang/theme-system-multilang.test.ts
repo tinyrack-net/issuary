@@ -78,4 +78,25 @@ test.describe('Theme system and language fallback behavior', () => {
       })
       .toBe('en');
   });
+
+  test('switching language selector to auto clears stored preference', async ({
+    page,
+  }) => {
+    await page.goto('/login');
+
+    const languageSelect = page.locator('select.select.select-ghost.select-sm');
+    await languageSelect.selectOption('en');
+    await languageSelect.selectOption('auto');
+
+    await expect
+      .poll(async () => {
+        return page.evaluate(
+          (languageStorageKey) => localStorage.getItem(languageStorageKey),
+          LANGUAGE_STORAGE_KEY,
+        );
+      })
+      .toBeNull();
+
+    await expect(languageSelect).toHaveValue('auto');
+  });
 });

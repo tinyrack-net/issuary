@@ -22,4 +22,9 @@ test.describe('Registration disabled', () => {
 
     expect(res.status).toBe(403);
   });
+
+  test('password login page hides register link', async ({ page }) => {
+    await page.goto('/login/password');
+    await expect(page.locator('a[href^="/register"]')).toHaveCount(0);
+  });
 });

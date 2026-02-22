@@ -34,4 +34,21 @@ test.describe('UI config driven rendering', () => {
     await expect(page.locator('select.select.select-ghost')).toHaveCount(0);
     await expect(page.locator('button.btn-circle.btn-sm')).toHaveCount(0);
   });
+
+  test('fixed light theme ignores stored theme preference', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('tinyauth-theme-mode', 'dark');
+    });
+    await page.goto('/login');
+
+    await expect
+      .poll(async () => {
+        return page.evaluate(() =>
+          document.documentElement.getAttribute('data-theme'),
+        );
+      })
+      .toBe('light');
+  });
 });
