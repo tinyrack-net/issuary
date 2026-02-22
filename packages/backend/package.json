@@ -7,7 +7,7 @@
   "main": "dist/cli.js",
   "exports": {
     ".": {
-      "types": "./dist/server.d.ts",
+      "types": "./dist/cli.d.ts",
       "default": "./dist/cli.js"
     },
     "./app": {
