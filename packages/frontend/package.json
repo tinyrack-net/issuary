@@ -47,6 +47,7 @@
     "@vitest/ui": "catalog:",
     "babel-plugin-react-compiler": "catalog:",
     "daisyui": "catalog:",
+    "otplib": "^13.2.1",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
