@@ -16,7 +16,14 @@ tests.
 | `password-disabled` | `e2e/configs/password-disabled.ts` | `e2e/fixtures/password-disabled.ts` | `e2e/tests/password-disabled` | Password auth disabled |
 | `account-deletion-disabled` | `e2e/configs/account-deletion-disabled.ts` | `e2e/fixtures/account-deletion-disabled.ts` | `e2e/tests/account-deletion-disabled` | Account deletion hidden/blocked |
 | `oauth-providers` | `e2e/configs/oauth-providers.ts` | `e2e/fixtures/oauth-providers.ts` | `e2e/tests/oauth-providers` | External provider login and error handling with stub endpoints |
+| `oauth-providers-mixed` | `e2e/configs/oauth-providers-mixed.ts` | `e2e/fixtures/oauth-providers-mixed.ts` | `e2e/tests/oauth-providers-mixed` | Mixed enabled/disabled provider behavior and OAuth callback outcomes |
 | `ui-branding-locale-theme` | `e2e/configs/ui-branding-locale-theme.ts` | `e2e/fixtures/ui-branding-locale-theme.ts` | `e2e/tests/ui-branding-locale-theme` | Branding, locale, and theme rendering |
+| `theme-system-multilang` | `e2e/configs/theme-system-multilang.ts` | `e2e/fixtures/theme-system-multilang.ts` | `e2e/tests/theme-system-multilang` | System theme mode and language selector state |
+| `totp-optional` | `e2e/configs/totp-optional.ts` | `e2e/fixtures/totp-optional.ts` | `e2e/tests/totp-optional` | Optional TOTP verification and method visibility |
+| `config-managed-profile` | `e2e/configs/config-managed-profile.ts` | `e2e/fixtures/config-managed-profile.ts` | `e2e/tests/config-managed-profile` | Config-managed account restrictions in profile UI |
+| `passkey-optional` | `e2e/configs/passkey-optional.ts` | `e2e/fixtures/passkey-optional.ts` | `e2e/tests/passkey-optional` | Optional passkey verification and passkey-only method visibility |
+| `email-verification-2fa-required` | `e2e/configs/email-verification-2fa-required.ts` | `e2e/fixtures/email-verification-2fa-required.ts` | `e2e/tests/email-verification-2fa-required` | Email verification continuation into required 2FA setup |
+| `terms-complete-registration` | `e2e/configs/terms-complete-registration.ts` | `e2e/fixtures/terms-complete-registration.ts` | `e2e/tests/terms-complete-registration` | Terms page behavior for `mode=complete_registration` |
 
 ## Project Naming Rule
 
