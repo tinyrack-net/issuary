@@ -21,6 +21,7 @@
     "tsBuildInfoFile": "./node_modules/.cache/tsconfig.node.tsbuildinfo",
     "baseUrl": ".",
     "paths": {
+      "@frontend-e2e/*": ["./e2e/*"],
       "@backend/*": ["../backend/src/*"]
     }
   },
