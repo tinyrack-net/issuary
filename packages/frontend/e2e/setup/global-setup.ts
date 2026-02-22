@@ -1,4 +1,8 @@
 import {
+  E2E_ACCOUNT_DELETION_CONFIG,
+  E2E_ACCOUNT_DELETION_PORTS,
+} from '@frontend-e2e/configs/account-deletion.js';
+import {
   E2E_EMAIL_VERIFICATION_CONFIG,
   E2E_EMAIL_VERIFICATION_PORTS,
 } from '@frontend-e2e/configs/email-verification.js';
@@ -42,6 +46,7 @@ export default async function globalSetup() {
       E2E_REGISTRATION_DISABLED_PORTS,
     ),
     createE2EServer(E2E_TERMS_CONFIG, E2E_TERMS_PORTS),
+    createE2EServer(E2E_ACCOUNT_DELETION_CONFIG, E2E_ACCOUNT_DELETION_PORTS),
   ]);
 
   return async () => {

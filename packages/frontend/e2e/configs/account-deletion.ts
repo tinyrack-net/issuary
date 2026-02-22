@@ -1,0 +1,42 @@
+import {
+  E2E_TEST_CLIENT_CONFIG,
+  E2E_TEST_USER_CONFIG,
+} from '@frontend-e2e/fixtures/index.js';
+import type { AppConfigInput } from '@tinyauth/backend/app';
+
+/**
+ * Port configuration for the account-deletion e2e test servers.
+ */
+export const E2E_ACCOUNT_DELETION_PORTS = {
+  backend: 18085,
+  frontend: 19085,
+} as const;
+
+/**
+ * Account deletion backend configuration for e2e tests.
+ * Enables account deletion so users can delete their accounts.
+ */
+export const E2E_ACCOUNT_DELETION_CONFIG = {
+  app: {
+    host: `http://localhost:${E2E_ACCOUNT_DELETION_PORTS.backend}`,
+    port: E2E_ACCOUNT_DELETION_PORTS.backend,
+    cookie_secret:
+      'f1e2d3c4b5a6f7e8d9c0b1a2f3e4d5c6b7a8f9e0d1c2b3a4f5e6d7c8b9a0f1e2',
+    allowed_signup_emails: ['*'],
+    account_deletion: true,
+    frontend: {
+      enabled: true,
+      mode: 'proxy',
+      path: `http://localhost:${E2E_ACCOUNT_DELETION_PORTS.frontend}`,
+    },
+  },
+  logging: {
+    level: 'silent',
+    format: 'json',
+  },
+  database: {
+    type: 'memory',
+  },
+  users: [E2E_TEST_USER_CONFIG],
+  clients: [E2E_TEST_CLIENT_CONFIG],
+} as const satisfies AppConfigInput;

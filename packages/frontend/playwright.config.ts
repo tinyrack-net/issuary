@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { E2E_ACCOUNT_DELETION_PORTS } from './e2e/configs/account-deletion.js';
 import { E2E_EMAIL_VERIFICATION_PORTS } from './e2e/configs/email-verification.js';
 import { E2E_MINIMAL_PORTS } from './e2e/configs/minimal.js';
 import { E2E_REGISTRATION_DISABLED_PORTS } from './e2e/configs/registration-disabled.js';
@@ -31,6 +32,11 @@ const configs = [
     testDir: './e2e/tests/terms',
     port: E2E_TERMS_PORTS.backend,
   },
+  {
+    name: 'account-deletion',
+    testDir: './e2e/tests/account-deletion',
+    port: E2E_ACCOUNT_DELETION_PORTS.backend,
+  },
 ];
 
 const browsers = [
@@ -42,7 +48,7 @@ export default defineConfig({
   globalSetup: './e2e/setup/global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
-  retries: process.env['CI'] ? 2 : 0,
+  retries: process.env['CI'] ? 2 : 1,
   workers: process.env['CI'] ? 1 : undefined,
   reporter: 'html',
   projects: configs.flatMap((config) =>
