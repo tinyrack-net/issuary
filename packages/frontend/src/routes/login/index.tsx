@@ -2,8 +2,8 @@ import { LoginMethodButton } from '@frontend/components/auth/login-method-button
 import { LoginMethodList } from '@frontend/components/auth/login-method-list.js';
 import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { Alert } from '@frontend/components/ui/alert.js';
-import { PageLayout } from '@frontend/components/ui/page-layout.js';
 import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
+import { PageLayout } from '@frontend/features/layout/page-layout.js';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
@@ -27,7 +27,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 

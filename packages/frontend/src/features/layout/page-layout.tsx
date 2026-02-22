@@ -1,5 +1,5 @@
-import { LanguageSelector } from '@frontend/components/ui/language-selector.js';
 import { ThemeToggle } from '@frontend/components/ui/theme-toggle.js';
+import { LanguageSelector } from '@frontend/features/layout/language-selector.js';
 import { useTheme } from '@frontend/hooks/use-theme.js';
 import { appConfigQueryOptions } from '@frontend/queries/config.js';
 import { useSuspenseQuery } from '@tanstack/react-query';

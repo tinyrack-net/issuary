@@ -1,7 +1,7 @@
 import { FooterLink } from '@frontend/components/auth/footer-link.js';
 import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { SubmitButton } from '@frontend/components/auth/submit-button.js';
-import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { PageLayout } from '@frontend/features/layout/page-layout.js';
 import { TinyAuthError } from '@frontend/libs/error.js';
 import {
   buildAuthorizeUrl,
@@ -15,7 +15,7 @@ import { verifyRecoveryCodeMutationOptions } from '@frontend/queries/totp.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';

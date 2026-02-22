@@ -3,8 +3,8 @@ import { IconInput } from '@frontend/components/auth/icon-input.js';
 import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { SubmitButton } from '@frontend/components/auth/submit-button.js';
 import { TermsCheckboxList } from '@frontend/components/terms/terms-checkbox-list.js';
-import { PageLayout } from '@frontend/components/ui/page-layout.js';
 import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
+import { PageLayout } from '@frontend/features/layout/page-layout.js';
 import { TinyAuthError } from '@frontend/libs/error.js';
 import {
   buildAuthorizeUrl,
@@ -25,7 +25,12 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { Link, createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  Link,
+  redirect,
+  useNavigate,
+} from '@tanstack/react-router';
 import { useDeferredValue, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';

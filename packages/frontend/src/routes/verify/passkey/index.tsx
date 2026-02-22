@@ -1,7 +1,7 @@
 import { FooterLink } from '@frontend/components/auth/footer-link.js';
 import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { Alert } from '@frontend/components/ui/alert.js';
-import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { PageLayout } from '@frontend/features/layout/page-layout.js';
 import { TinyAuthError } from '@frontend/libs/error.js';
 import {
   buildAuthorizeUrl,
@@ -13,7 +13,7 @@ import { authenticateWithPasskeyMutationOptions } from '@frontend/queries/passke
 import { getSessionQueryOptions } from '@frontend/queries/session.js';
 import { FingerprintIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 

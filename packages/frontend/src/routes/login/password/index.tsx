@@ -2,8 +2,8 @@ import { FooterLink } from '@frontend/components/auth/footer-link.js';
 import { IconInput } from '@frontend/components/auth/icon-input.js';
 import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { SubmitButton } from '@frontend/components/auth/submit-button.js';
-import { PageLayout } from '@frontend/components/ui/page-layout.js';
 import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
+import { PageLayout } from '@frontend/features/layout/page-layout.js';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,

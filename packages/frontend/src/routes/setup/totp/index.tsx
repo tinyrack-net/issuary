@@ -2,10 +2,10 @@ import { FooterLink } from '@frontend/components/auth/footer-link.js';
 import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { QrStep } from '@frontend/components/totp/qr-step.js';
 import { RecoveryCodesStep } from '@frontend/components/totp/recovery-codes-step.js';
-import { useTotpSetup } from '@frontend/components/totp/use-totp-setup.js';
 import { VerifyStep } from '@frontend/components/totp/verify-step.js';
 import { Alert } from '@frontend/components/ui/alert.js';
-import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { PageLayout } from '@frontend/features/layout/page-layout.js';
+import { useTotpSetup } from '@frontend/features/totp/use-totp-setup.js';
 import { TinyAuthError } from '@frontend/libs/error.js';
 import {
   buildAuthorizeUrl,
@@ -26,7 +26,7 @@ import {
   XCircleIcon,
 } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 

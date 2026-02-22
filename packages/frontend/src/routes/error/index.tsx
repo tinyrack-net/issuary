@@ -1,6 +1,6 @@
 import { PageHeader } from '@frontend/components/auth/page-header.js';
 import { Alert } from '@frontend/components/ui/alert.js';
-import { PageLayout } from '@frontend/components/ui/page-layout.js';
+import { PageLayout } from '@frontend/features/layout/page-layout.js';
 import { HouseIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
