@@ -8,6 +8,34 @@ const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
 
 export type TestHonoApp = Awaited<ReturnType<typeof createE2EServer>>['app'];
 
+type OAuthStubProfile = {
+  sub: string;
+  email: string;
+  email_verified: boolean;
+  name: string;
+  picture: string;
+};
+
+function getOAuthStubProfile(provider: string): OAuthStubProfile {
+  if (provider === 'stub-not-allowed') {
+    return {
+      sub: 'oauth-stub-not-allowed',
+      email: 'oauth-stub-not-allowed@example.com',
+      email_verified: true,
+      name: 'OAuth Stub Not Allowed',
+      picture: 'https://example.com/stub-not-allowed.png',
+    };
+  }
+
+  return {
+    sub: `oauth-${provider}`,
+    email: `oauth-${provider}@allowed.test`,
+    email_verified: true,
+    name: `OAuth ${provider}`,
+    picture: `https://example.com/${provider}.png`,
+  };
+}
+
 /**
  * Finds a free port by briefly binding to port 0.
  */
@@ -107,6 +135,63 @@ export async function createE2EServer(configFactory: ConfigFactory) {
         return c.json({ error: 'No pending reset token' }, 404);
       }
       return c.json({ token: reset.token });
+    })
+    .get('/test/oauth-stub/:provider/authorize', async (c) => {
+      const provider = c.req.param('provider');
+      const redirectUri = c.req.query('redirect_uri');
+      const state = c.req.query('state');
+      const scenario =
+        c.req.query('scenario') ??
+        (provider.includes('denied') ? 'denied' : 'success');
+
+      if (!redirectUri || !state) {
+        return c.json({ error: 'Missing redirect_uri or state' }, 400);
+      }
+
+      const callbackUrl = new URL(redirectUri);
+      callbackUrl.searchParams.set('state', state);
+
+      if (scenario === 'denied') {
+        callbackUrl.searchParams.set('error', 'access_denied');
+        callbackUrl.searchParams.set(
+          'error_description',
+          `${provider} denied by oauth stub`,
+        );
+      } else {
+        callbackUrl.searchParams.set('code', `${provider}-code`);
+      }
+
+      return c.redirect(callbackUrl.toString());
+    })
+    .post('/test/oauth-stub/:provider/token', async (c) => {
+      const provider = c.req.param('provider');
+      const form = await c.req.parseBody();
+      const code = form['code'];
+
+      if (typeof code !== 'string') {
+        return c.json({ error: 'Missing code' }, 400);
+      }
+
+      if (code !== `${provider}-code`) {
+        return c.json({ error: 'Invalid code' }, 400);
+      }
+
+      return c.json({
+        access_token: `access-token-${provider}`,
+        token_type: 'Bearer',
+        expires_in: 3600,
+      });
+    })
+    .get('/test/oauth-stub/:provider/userinfo', async (c) => {
+      const provider = c.req.param('provider');
+      const authorization = c.req.header('authorization');
+
+      if (authorization !== `Bearer access-token-${provider}`) {
+        return c.json({ error: 'Invalid token' }, 401);
+      }
+
+      const profile = getOAuthStubProfile(provider);
+      return c.json(profile);
     });
 
   const backendServer = serve({
