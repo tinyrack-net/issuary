@@ -65,6 +65,18 @@ const configs = [
     name: 'config-managed-profile',
     testDir: './e2e/tests/config-managed-profile',
   },
+  {
+    name: 'passkey-optional',
+    testDir: './e2e/tests/passkey-optional',
+  },
+  {
+    name: 'email-verification-2fa-required',
+    testDir: './e2e/tests/email-verification-2fa-required',
+  },
+  {
+    name: 'terms-complete-registration',
+    testDir: './e2e/tests/terms-complete-registration',
+  },
 ];
 
 const browsers = [
