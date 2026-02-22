@@ -2,7 +2,7 @@ import type { AppConfigInput } from '@tinyauth/backend/app';
 import {
   E2E_TEST_CLIENT_CONFIG,
   E2E_TEST_USER_CONFIG,
-} from '../fixtures/index.js';
+} from '@frontend-e2e/fixtures/index.js';
 
 /**
  * Port configuration for the TOTP-required e2e test servers.
