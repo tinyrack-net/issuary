@@ -59,7 +59,7 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "@hono/node-server": "^1.14.3",
+    "@hono/node-server": "catalog:",
     "@hono/standard-validator": "^0.2.2",
     "@mikro-orm/core": "^7.0.0-rc.1",
     "@mikro-orm/decorators": "^7.0.0-rc.1",
@@ -76,7 +76,7 @@
     "commander": "^14.0.3",
     "croner": "^10.0.1",
     "dotenv": "^17.2.4",
-    "hono": "^4.8.3",
+    "hono": "catalog:",
     "hono-openapi": "^1.2.0",
     "jose": "catalog:",
     "nodemailer": "^8.0.0",
