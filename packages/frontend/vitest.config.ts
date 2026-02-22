@@ -29,8 +29,6 @@ const sharedResolve = {
 };
 
 export default defineConfig({
-  plugins: sharedPlugins,
-  resolve: sharedResolve,
   server: {
     host: '0.0.0.0',
     allowedHosts: ['desktop.server.lan'],
@@ -43,6 +41,7 @@ export default defineConfig({
         test: {
           name: 'unit',
           include: ['src/**/*.test.{ts,tsx}'],
+          setupFiles: ['./src/test-utils/vitest-browser-setup.ts'],
           browser: {
             enabled: true,
             provider: MODE === 'preview' ? preview() : playwright(),
