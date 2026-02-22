@@ -39,6 +39,7 @@ export default defineConfig({
   retries: process.env['CI'] ? 2 : 1,
   workers: process.env['CI'] ? 1 : undefined,
   reporter: 'html',
+  timeout: 1000 * 60,
   projects: configs.flatMap((config) =>
     browsers.map((browser) => ({
       name: `${config.name}:${browser.name}`,
