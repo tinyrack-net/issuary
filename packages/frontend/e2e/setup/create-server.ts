@@ -67,6 +67,21 @@ export async function createE2EServer(config: AppConfigInput, ports: E2EPorts) {
         return c.json({ error: 'TOTP not found' }, 404);
       }
       return c.json({ secret: totp.secret });
+    })
+    .get('/test/password-reset-token/:email', async (c) => {
+      const email = c.req.param('email');
+      const user = await services.mikro.user.findOne({ email });
+      if (!user) {
+        return c.json({ error: 'User not found' }, 404);
+      }
+      const reset = await services.mikro.passwordReset.findOne(
+        { user: user.sub, used: false },
+        { orderBy: { created_at: 'desc' } },
+      );
+      if (!reset) {
+        return c.json({ error: 'No pending reset token' }, 404);
+      }
+      return c.json({ token: reset.token });
     });
 
   const backendServer = serve({
