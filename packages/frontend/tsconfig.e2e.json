@@ -25,5 +25,5 @@
       "@backend/*": ["../backend/src/*"]
     }
   },
-  "include": ["e2e/tests"]
+  "include": ["e2e/tests", "e2e/helpers"]
 }

@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
+import { E2E_EMAIL_VERIFICATION_PORTS } from './e2e/configs/email-verification.js';
 import { E2E_MINIMAL_PORTS } from './e2e/configs/minimal.js';
+import { E2E_REGISTRATION_DISABLED_PORTS } from './e2e/configs/registration-disabled.js';
+import { E2E_TERMS_PORTS } from './e2e/configs/terms.js';
 import { E2E_TOTP_REQUIRED_PORTS } from './e2e/configs/totp-required.js';
 
 const configs = [
@@ -12,6 +15,21 @@ const configs = [
     name: 'totp-required',
     testDir: './e2e/tests/totp-required',
     port: E2E_TOTP_REQUIRED_PORTS.backend,
+  },
+  {
+    name: 'email-verification',
+    testDir: './e2e/tests/email-verification',
+    port: E2E_EMAIL_VERIFICATION_PORTS.backend,
+  },
+  {
+    name: 'registration-disabled',
+    testDir: './e2e/tests/registration-disabled',
+    port: E2E_REGISTRATION_DISABLED_PORTS.backend,
+  },
+  {
+    name: 'terms',
+    testDir: './e2e/tests/terms',
+    port: E2E_TERMS_PORTS.backend,
   },
 ];
 
