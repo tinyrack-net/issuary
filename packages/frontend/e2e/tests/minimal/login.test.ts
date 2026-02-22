@@ -32,6 +32,15 @@ test.describe('Login flow', () => {
     await expect(page.locator(loginPasswordPage.submitButton)).toBeVisible();
   });
 
+  test('password login hides forgot-password link when SMTP is disabled', async ({
+    page,
+  }) => {
+    await page.goto('/login/password');
+    await expect(
+      page.getByRole('link', { name: 'Forgot password?' }),
+    ).toHaveCount(0);
+  });
+
   test('successful login navigates to profile', async ({ page }) => {
     await page.goto('/login/password');
     await page.locator(loginPasswordPage.emailInput).fill(E2E_TEST_USER.email);

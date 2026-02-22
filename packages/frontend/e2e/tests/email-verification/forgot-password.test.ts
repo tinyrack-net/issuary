@@ -13,6 +13,15 @@ function uniqueEmail(suffix: string): string {
 const TEST_PASSWORD = 'test-password-123';
 
 test.describe('Forgot password flow', () => {
+  test('password login shows forgot password link when SMTP is enabled', async ({
+    page,
+  }) => {
+    await page.goto('/login/password');
+    await expect(
+      page.getByRole('link', { name: 'Forgot password?' }),
+    ).toBeVisible();
+  });
+
   test('submit email shows success view', async ({
     page,
     request,
