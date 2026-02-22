@@ -402,6 +402,9 @@ importers:
       daisyui:
         specifier: 'catalog:'
         version: 5.5.18
+      otplib:
+        specifier: ^13.2.1
+        version: 13.2.1
       tailwindcss:
         specifier: 'catalog:'
         version: 4.1.18
