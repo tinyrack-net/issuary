@@ -1,7 +1,19 @@
 import {
+  E2E_EMAIL_VERIFICATION_CONFIG,
+  E2E_EMAIL_VERIFICATION_PORTS,
+} from '@frontend-e2e/configs/email-verification.js';
+import {
   E2E_MINIMAL_CONFIG,
   E2E_MINIMAL_PORTS,
 } from '@frontend-e2e/configs/minimal.js';
+import {
+  E2E_REGISTRATION_DISABLED_CONFIG,
+  E2E_REGISTRATION_DISABLED_PORTS,
+} from '@frontend-e2e/configs/registration-disabled.js';
+import {
+  E2E_TERMS_CONFIG,
+  E2E_TERMS_PORTS,
+} from '@frontend-e2e/configs/terms.js';
 import {
   E2E_TOTP_REQUIRED_CONFIG,
   E2E_TOTP_REQUIRED_PORTS,
@@ -18,12 +30,21 @@ import { createE2EServer } from './create-server.js';
  * Returns a teardown function that stops all servers.
  */
 export default async function globalSetup() {
-  const teardowns = await Promise.all([
+  const servers = await Promise.all([
     createE2EServer(E2E_MINIMAL_CONFIG, E2E_MINIMAL_PORTS),
     createE2EServer(E2E_TOTP_REQUIRED_CONFIG, E2E_TOTP_REQUIRED_PORTS),
+    createE2EServer(
+      E2E_EMAIL_VERIFICATION_CONFIG,
+      E2E_EMAIL_VERIFICATION_PORTS,
+    ),
+    createE2EServer(
+      E2E_REGISTRATION_DISABLED_CONFIG,
+      E2E_REGISTRATION_DISABLED_PORTS,
+    ),
+    createE2EServer(E2E_TERMS_CONFIG, E2E_TERMS_PORTS),
   ]);
 
   return async () => {
-    await Promise.all(teardowns.map((teardown) => teardown()));
+    await Promise.all(servers.map((server) => server.teardown()));
   };
 }
