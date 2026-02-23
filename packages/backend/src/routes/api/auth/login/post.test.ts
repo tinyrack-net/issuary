@@ -268,3 +268,42 @@ describe('POST /api/auth/login', () => {
     await expectError(loginAfterRes, e.InvalidEmailOrPassword);
   });
 });
+
+describe('POST /api/auth/login - password disabled', () => {
+  let appDisabled: AppType;
+  let cleanupDisabled: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        users: [TEST_USER_CONFIG],
+        auth: {
+          password: {
+            enabled: false,
+          },
+        },
+      },
+    });
+    appDisabled = server.app;
+    cleanupDisabled = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanupDisabled();
+  });
+
+  test('should return validation error when password auth is disabled', async () => {
+    const client = testClient(appDisabled);
+    const res = await client.api.auth.login.$post({
+      json: {
+        email: TEST_USER.email,
+        password: TEST_USER.password,
+      },
+    });
+
+    const body = await assertJsonBody(res, 400);
+    expect(body.code).toBe('VALIDATION_ERROR');
+    expect(body.data).toBe('Password authentication is disabled');
+  });
+});

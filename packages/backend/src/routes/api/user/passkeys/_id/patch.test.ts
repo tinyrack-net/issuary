@@ -476,7 +476,7 @@ describe('PATCH /api/user/passkeys/:id - Passkey disabled', () => {
     await cleanupDisabled();
   });
 
-  test('should return 404 when passkey is disabled in config (route not registered)', async () => {
+  test('should return 400 when passkey is disabled in config', async () => {
     const sessionCookie = await createAuthenticatedSession(appDisabled);
 
     const client = testClient(appDisabled);

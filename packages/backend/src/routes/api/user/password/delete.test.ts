@@ -398,3 +398,58 @@ describe('DELETE /api/user/password', () => {
     expect(body.ok).toBe(true);
   });
 });
+
+describe('DELETE /api/user/password - password disabled', () => {
+  let appSession: AppType;
+  let cleanupSession: () => Promise<void>;
+  let appDisabled: AppType;
+  let cleanupDisabled: () => Promise<void>;
+
+  beforeAll(async () => {
+    const sessionServer = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        users: [TEST_USER_CONFIG],
+      },
+    });
+    appSession = sessionServer.app;
+    cleanupSession = sessionServer.cleanup;
+
+    const disabledServer = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        users: [TEST_USER_CONFIG],
+        auth: {
+          password: {
+            enabled: false,
+          },
+        },
+      },
+    });
+    appDisabled = disabledServer.app;
+    cleanupDisabled = disabledServer.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanupSession();
+    await cleanupDisabled();
+  });
+
+  test('should return validation error when password auth is disabled', async () => {
+    const sessionCookie = await createAuthenticatedSession(appSession);
+
+    const client = testClient(appDisabled);
+    const res = await client.api.user.password.$delete(
+      {
+        json: {
+          current_password: 'changemelater',
+        },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+
+    const body = await assertJsonBody(res, 400);
+    expect(body.code).toBe('VALIDATION_ERROR');
+    expect(body.data).toBe('Password authentication is disabled');
+  });
+});

@@ -4,6 +4,7 @@ import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
+  expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   registerUser,
@@ -189,3 +190,35 @@ describe('POST /api/auth/email/verify', () => {
 });
 
 // Note: Email resend tests are in the dedicated resend/post.test.ts file
+
+describe('POST /api/auth/email/verify (smtp disabled)', () => {
+  let appNoSmtp: AppType;
+  let cleanupNoSmtp: () => Promise<void>;
+
+  beforeAll(async () => {
+    const { smtp: _smtp, ...configWithoutSmtp } = MINIMAL_TEST_CONFIG;
+    void _smtp;
+    const server = await createServer({
+      config: {
+        ...configWithoutSmtp,
+      },
+    });
+    appNoSmtp = server.app;
+    cleanupNoSmtp = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanupNoSmtp();
+  });
+
+  test('should return EMAIL_NOT_ACTIVATED when smtp is disabled', async () => {
+    const client = testClient(appNoSmtp);
+    const res = await client.api.auth.email.verify.$post({
+      json: {
+        token: 'dummy-token',
+      },
+    });
+
+    await expectError(res, e.EmailNotActivated);
+  });
+});

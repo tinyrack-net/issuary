@@ -1,8 +1,10 @@
 import type { AppType } from '@backend/app.js';
+import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
+  expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_USER,
@@ -178,5 +180,39 @@ describe('POST /api/auth/email/resend', () => {
     // Config user is pre-verified, so should return EMAIL_ALREADY_VERIFIED or USER_NOT_FOUND
     // depending on implementation (config users may not be in email verification flow)
     expect([400, 404]).toContain(res.status);
+  });
+});
+
+describe('POST /api/auth/email/resend (smtp disabled)', () => {
+  let appNoSmtp: AppType;
+  let cleanupNoSmtp: () => Promise<void>;
+
+  beforeAll(async () => {
+    const { smtp: _smtp, ...configWithoutSmtp } = MINIMAL_TEST_CONFIG;
+    void _smtp;
+    const server = await createServer({
+      config: {
+        ...configWithoutSmtp,
+        users: [TEST_USER_CONFIG],
+      },
+    });
+    appNoSmtp = server.app;
+    cleanupNoSmtp = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanupNoSmtp();
+  });
+
+  test('should return EMAIL_NOT_ACTIVATED when smtp is disabled', async () => {
+    const client = testClient(appNoSmtp);
+    const res = await client.api.auth.email.resend.$post({
+      header: { 'accept-language': 'en' },
+      json: {
+        email: TEST_USER.email,
+      },
+    });
+
+    await expectError(res, e.EmailNotActivated);
   });
 });

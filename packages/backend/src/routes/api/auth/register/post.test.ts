@@ -662,3 +662,45 @@ describe('POST /api/auth/register (no terms configured)', () => {
     expect(body).toHaveProperty('user');
   });
 });
+
+describe('POST /api/auth/register (password disabled)', () => {
+  let app: AppType;
+  let cleanup: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        users: [TEST_USER_CONFIG],
+        auth: {
+          password: {
+            enabled: false,
+          },
+        },
+        terms: TEST_TERMS_CONFIG,
+      },
+    });
+    app = server.app;
+    cleanup = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanup();
+  });
+
+  test('should return validation error when password auth is disabled', async () => {
+    const client = testClient(app);
+    const res = await client.api.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
+        email: generateUniqueEmail('password-disabled'),
+        password: TEST_USER_CONFIG.password,
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+
+    const body = await assertJsonBody(res, 400);
+    expect(body.code).toBe('VALIDATION_ERROR');
+    expect(body.data).toBe('Password authentication is disabled');
+  });
+});

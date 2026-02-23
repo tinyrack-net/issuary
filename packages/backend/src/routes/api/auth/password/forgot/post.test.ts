@@ -1,7 +1,10 @@
 import type { AppType } from '@backend/app.js';
+import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
+  expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   registerUser,
@@ -172,3 +175,76 @@ describe('POST /api/auth/password/forgot', () => {
 });
 
 // Note: Password reset tests are in the dedicated reset/post.test.ts file
+
+describe('POST /api/auth/password/forgot (smtp disabled)', () => {
+  let appNoSmtp: AppType;
+  let cleanupNoSmtp: () => Promise<void>;
+
+  beforeAll(async () => {
+    const { smtp: _smtp, ...configWithoutSmtp } = MINIMAL_TEST_CONFIG;
+    void _smtp;
+    const server = await createServer({
+      config: {
+        ...configWithoutSmtp,
+        users: [TEST_USER_CONFIG],
+      },
+    });
+    appNoSmtp = server.app;
+    cleanupNoSmtp = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanupNoSmtp();
+  });
+
+  test('should return EMAIL_NOT_ACTIVATED when smtp is disabled', async () => {
+    const client = testClient(appNoSmtp);
+    const res = await client.api.auth.password.forgot.$post({
+      header: { 'accept-language': 'en' },
+      json: {
+        email: TEST_USER_CONFIG.email,
+      },
+    });
+
+    await expectError(res, e.EmailNotActivated);
+  });
+});
+
+describe('POST /api/auth/password/forgot (password disabled)', () => {
+  let appPasswordDisabled: AppType;
+  let cleanupPasswordDisabled: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        users: [TEST_USER_CONFIG],
+        auth: {
+          password: {
+            enabled: false,
+          },
+        },
+      },
+    });
+    appPasswordDisabled = server.app;
+    cleanupPasswordDisabled = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanupPasswordDisabled();
+  });
+
+  test('should return validation error when password auth is disabled', async () => {
+    const client = testClient(appPasswordDisabled);
+    const res = await client.api.auth.password.forgot.$post({
+      header: { 'accept-language': 'en' },
+      json: {
+        email: TEST_USER_CONFIG.email,
+      },
+    });
+
+    const body = await assertJsonBody(res, 400);
+    expect(body.code).toBe('VALIDATION_ERROR');
+    expect(body.data).toBe('Password authentication is disabled');
+  });
+});

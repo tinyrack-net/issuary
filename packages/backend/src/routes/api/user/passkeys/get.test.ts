@@ -1,10 +1,12 @@
 import type { AppType } from '@backend/app.js';
+import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
   createPasskeyForUser,
+  expectError,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -309,5 +311,43 @@ describe('GET /api/user/passkeys', () => {
     );
     expect(deviceTypes).toContain('singleDevice');
     expect(deviceTypes).toContain('multiDevice');
+  });
+});
+
+describe('GET /api/user/passkeys - Passkey disabled', () => {
+  let appDisabled: AppType;
+  let cleanupDisabled: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        users: [TEST_USER_CONFIG],
+        auth: {
+          passkey: {
+            enabled: false,
+            email_verification: true,
+          },
+        },
+      },
+    });
+    appDisabled = server.app;
+    cleanupDisabled = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanupDisabled();
+  });
+
+  test('should return 400 when passkey is disabled', async () => {
+    const sessionCookie = await createAuthenticatedSession(appDisabled);
+
+    const client = testClient(appDisabled);
+    const res = await client.api.user.passkeys.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+
+    await expectError(res, e.PasskeyNotEnabled);
   });
 });

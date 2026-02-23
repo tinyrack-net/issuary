@@ -271,7 +271,7 @@ describe('POST /api/auth/passkey/options - Passkey disabled', () => {
     await cleanupDisabled();
   });
 
-  test('should return 404 when passkey is disabled (route not registered)', async () => {
+  test('should return 400 when passkey is disabled', async () => {
     const client = testClient(appDisabled);
     const res = await client.api.auth.passkey.options.$post();
 
