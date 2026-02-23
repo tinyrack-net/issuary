@@ -254,3 +254,44 @@ describe('POST /api/user/totp/setup', () => {
     expect(isValid).toBe(true);
   });
 });
+
+describe('POST /api/user/totp/setup - TOTP disabled', () => {
+  let appDisabled: AppType;
+  let cleanupDisabled: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        users: [TEST_USER_CONFIG],
+        auth: {
+          password: {
+            totp: {
+              enabled: false,
+            },
+          },
+        },
+      },
+    });
+    appDisabled = server.app;
+    cleanupDisabled = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanupDisabled();
+  });
+
+  test('should return validation error when TOTP is disabled', async () => {
+    const sessionCookie = await createAuthenticatedSession(appDisabled);
+
+    const client = testClient(appDisabled);
+    const res = await client.api.user.totp.setup.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+
+    const body = await assertJsonBody(res, 400);
+    expect(body.code).toBe('VALIDATION_ERROR');
+    expect(body.data).toBe('TOTP is disabled');
+  });
+});

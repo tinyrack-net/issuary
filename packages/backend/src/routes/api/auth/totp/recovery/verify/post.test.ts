@@ -5,8 +5,10 @@ import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
   createDbUserWithSession,
+  enableTotpForUser,
   expectError,
   extractCookie,
+  generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '@backend/test-utils/index.js';
@@ -465,5 +467,64 @@ describe('POST /api/auth/totp/recovery/verify', () => {
     );
 
     expect(res.status).toBe(400);
+  });
+});
+
+describe('POST /api/auth/totp/recovery/verify - TOTP disabled', () => {
+  let appDisabled: AppType;
+  let servicesDisabled: ServiceContainer;
+  let cleanupDisabled: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        auth: {
+          password: {
+            totp: {
+              enabled: false,
+            },
+          },
+        },
+      },
+    });
+    appDisabled = server.app;
+    servicesDisabled = server.services;
+    cleanupDisabled = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanupDisabled();
+  });
+
+  test('should return validation error when TOTP auth is disabled', async () => {
+    const email = generateUniqueEmail('recovery-disabled');
+    const password = 'password123';
+
+    const { userSub } = await createDbUserWithSession(
+      appDisabled,
+      servicesDisabled,
+      email,
+      password,
+    );
+    await enableTotpForUser(servicesDisabled, userSub);
+
+    const client = testClient(appDisabled);
+    const loginRes = await client.api.auth.login.$post({
+      json: { email, password },
+    });
+    expect(loginRes.status).toBe(200);
+    const sessionCookie = extractCookie(loginRes, 'session');
+
+    const res = await client.api.auth.totp.recovery.verify.$post(
+      {
+        json: { code: 'abcd-1234' },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+
+    const body = await assertJsonBody(res, 400);
+    expect(body.code).toBe('VALIDATION_ERROR');
+    expect(body.data).toBe('TOTP authentication is disabled');
   });
 });

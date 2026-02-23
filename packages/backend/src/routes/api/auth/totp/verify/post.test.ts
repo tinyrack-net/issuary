@@ -298,3 +298,62 @@ describe('POST /api/auth/totp/verify', () => {
 });
 
 // Note: Login TOTP flow tests are in the dedicated login/post.totp.test.ts file
+
+describe('POST /api/auth/totp/verify - TOTP disabled', () => {
+  let appDisabled: AppType;
+  let servicesDisabled: ServiceContainer;
+  let cleanupDisabled: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createServer({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        auth: {
+          password: {
+            totp: {
+              enabled: false,
+            },
+          },
+        },
+      },
+    });
+    appDisabled = server.app;
+    servicesDisabled = server.services;
+    cleanupDisabled = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanupDisabled();
+  });
+
+  test('should return validation error when TOTP auth is disabled', async () => {
+    const email = generateUniqueEmail('totp-verify-disabled');
+    const password = 'password123';
+
+    const { userSub } = await createDbUserWithSession(
+      appDisabled,
+      servicesDisabled,
+      email,
+      password,
+    );
+    await enableTotpForUser(servicesDisabled, userSub);
+
+    const client = testClient(appDisabled);
+    const loginRes = await client.api.auth.login.$post({
+      json: { email, password },
+    });
+    expect(loginRes.status).toBe(200);
+    const sessionCookie = extractCookie(loginRes, 'session');
+
+    const verifyRes = await client.api.auth.totp.verify.$post(
+      {
+        json: { code: '123456' },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+
+    const body = await assertJsonBody(verifyRes, 400);
+    expect(body.code).toBe('VALIDATION_ERROR');
+    expect(body.data).toBe('TOTP authentication is disabled');
+  });
+});
