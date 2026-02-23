@@ -1,9 +1,11 @@
 import type { AppType } from '@backend/app.js';
+import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
   createDbUserWithSession,
+  expectError,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -194,6 +196,10 @@ describe('POST /api/auth/passkey/verify', () => {
     const sessionCookie = extractCookie(optionsRes, 'session');
 
     // Try to verify with invalid signature
+    const mockVerifyAuthentication = vi
+      .spyOn(services.passkeyService, 'verifyAuthentication')
+      .mockRejectedValueOnce(new e.PasskeyVerificationFailed.Error());
+
     const authedClient = testClient(app);
     const res = await authedClient.api.auth.passkey.verify.$post(
       {
@@ -207,41 +213,81 @@ describe('POST /api/auth/passkey/verify', () => {
       { headers: { Cookie: `session=${sessionCookie}` } },
     );
 
-    // Should fail at verification (400 or 500 depending on WebAuthn lib error handling)
-    expect([400, 500].includes(res.status)).toBe(true);
+    await expectError(res, e.PasskeyVerificationFailed);
+    mockVerifyAuthentication.mockRestore();
   });
 
   test('should clear challenge from session after attempt', async () => {
+    const email = generateUniqueEmail('passkey-clear-challenge');
+    const password = 'testPassword123!';
+    const credentialId = `clear-challenge-${crypto.randomUUID()}`;
+
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
+        email,
+        password_hash: password,
+      });
+      user.email_verified = true;
+      await services.mikro.em.persist(user).flush();
+
+      const passkey = services.mikro.userPasskey.create({
+        user: user.sub,
+        credential_id: credentialId,
+        public_key: 'test-public-key-base64url',
+        counter: 0,
+        device_type: 'multiDevice',
+        backed_up: true,
+        transports: ['internal'],
+        name: 'Challenge Clearing Passkey',
+        aaguid: 'test-aaguid',
+      });
+      await services.mikro.em.persist(passkey).flush();
+    });
+
     // Get options first
     const client = testClient(app);
     const optionsRes = await client.api.auth.passkey.options.$post();
     const sessionCookie = extractCookie(optionsRes, 'session');
 
     const authedClient = testClient(app);
+    const mockVerifyAuthentication = vi
+      .spyOn(services.passkeyService, 'verifyAuthentication')
+      .mockRejectedValue(new e.PasskeyVerificationFailed.Error());
 
     // First attempt (will fail)
-    await authedClient.api.auth.passkey.verify.$post(
+    const firstRes = await authedClient.api.auth.passkey.verify.$post(
       {
         json: {
-          response: createMockAuthenticationResponse(),
+          response: createMockAuthenticationResponse({
+            id: credentialId,
+            rawId: credentialId,
+          }),
         },
       },
       { headers: { Cookie: `session=${sessionCookie}` } },
     );
+    await expectError(firstRes, e.PasskeyVerificationFailed);
 
     // Second attempt with same session should fail with challenge not found
     const res2 = await authedClient.api.auth.passkey.verify.$post(
       {
         json: {
-          response: createMockAuthenticationResponse(),
+          response: createMockAuthenticationResponse({
+            id: credentialId,
+            rawId: credentialId,
+          }),
         },
       },
       { headers: { Cookie: `session=${sessionCookie}` } },
     );
 
-    // Challenge should be cleared, so second attempt fails with challenge not found
-    // or passkey not found (whichever check comes first)
-    expect([400, 404].includes(res2.status)).toBe(true);
+    const secondBody = await assertJsonBody(res2, 400);
+    expect(
+      secondBody.code === 'PASSKEY_CHALLENGE_NOT_FOUND' ||
+        secondBody.code === 'PASSKEY_VERIFICATION_FAILED',
+    ).toBe(true);
+
+    mockVerifyAuthentication.mockRestore();
   });
 
   test('should return 400 when type is not public-key', async () => {
@@ -270,6 +316,9 @@ describe('POST /api/auth/passkey/verify', () => {
     const sessionCookie = extractCookie(optionsRes, 'session');
 
     const authedClient = testClient(app);
+    const mockVerifyAuthentication = vi
+      .spyOn(services.passkeyService, 'verifyAuthentication')
+      .mockRejectedValue(new e.PasskeyVerificationFailed.Error());
 
     // Send concurrent verification requests
     const results = await Promise.all([
@@ -291,10 +340,17 @@ describe('POST /api/auth/passkey/verify', () => {
       ),
     ]);
 
-    // All should fail (challenge or passkey error)
+    // First request can fail at verification; subsequent request should
+    // fail because challenge is single-use and already cleared.
     for (const res of results) {
-      expect([400, 404, 500].includes(res.status)).toBe(true);
+      const body = await assertJsonBody(res, 400);
+      expect(
+        body.code === 'PASSKEY_VERIFICATION_FAILED' ||
+          body.code === 'PASSKEY_CHALLENGE_NOT_FOUND',
+      ).toBe(true);
     }
+
+    mockVerifyAuthentication.mockRestore();
   });
 });
 

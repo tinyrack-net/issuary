@@ -14,7 +14,7 @@ import {
 } from '@backend/test-utils/index.js';
 import type { RegistrationResponseJSON } from '@simplewebauthn/server';
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 
 /**
  * Helper to create a DB user with session
@@ -206,6 +206,10 @@ describe('POST /api/user/passkeys/register/verify', () => {
     }
 
     // Try to verify with an invalid response
+    const mockVerifyRegistration = vi
+      .spyOn(services.passkeyService, 'verifyRegistration')
+      .mockRejectedValueOnce(new e.PasskeyVerificationFailed.Error());
+
     const updatedClient = testClient(app);
     const res = await updatedClient.api.user.passkeys.register.verify.$post(
       {
@@ -216,15 +220,8 @@ describe('POST /api/user/passkeys/register/verify', () => {
       { headers: { Cookie: `session=${updatedSessionCookie}` } },
     );
 
-    // WebAuthn library may throw unhandled error (500) or handled error (400).
-    // Status codes from the error handler aren't part of the route's type,
-    // so we compare via Number() to avoid TS2367.
-    const status = Number(res.status);
-    expect(status === 400 || status === 500).toBe(true);
-    if (status === 400) {
-      const body = await assertJsonBody(res, 400);
-      expect(body.code).toBe('PASSKEY_VERIFICATION_FAILED');
-    }
+    await expectError(res, e.PasskeyVerificationFailed);
+    mockVerifyRegistration.mockRestore();
   });
 
   test('should return 400 when response is missing required fields', async () => {
@@ -345,6 +342,10 @@ describe('POST /api/user/passkeys/register/verify', () => {
     }
 
     // Verify with name (will fail due to invalid response, but name should be accepted)
+    const mockVerifyRegistration = vi
+      .spyOn(services.passkeyService, 'verifyRegistration')
+      .mockRejectedValueOnce(new e.PasskeyVerificationFailed.Error());
+
     const updatedClient = testClient(app);
     const res = await updatedClient.api.user.passkeys.register.verify.$post(
       {
@@ -356,15 +357,8 @@ describe('POST /api/user/passkeys/register/verify', () => {
       { headers: { Cookie: `session=${updatedSessionCookie}` } },
     );
 
-    // Should fail at verification step, not at validation.
-    // Status codes from the error handler aren't part of the route's type,
-    // so we compare via Number() to avoid TS2367.
-    const status = Number(res.status);
-    expect(status === 400 || status === 500).toBe(true);
-    if (status === 400) {
-      const body = await assertJsonBody(res, 400);
-      expect(body.code).toBe('PASSKEY_VERIFICATION_FAILED');
-    }
+    await expectError(res, e.PasskeyVerificationFailed);
+    mockVerifyRegistration.mockRestore();
   });
 
   test('should return 400 when name exceeds max length', async () => {
@@ -492,9 +486,11 @@ describe('POST /api/user/passkeys/register/verify', () => {
       updatedSessionCookie = sessionCookie;
     }
 
-    // Try to register a passkey with same credential ID
-    // Note: In reality, the attestation would need to be valid,
-    // but we test that duplicate check happens
+    // Simulate duplicate credential from passkey service.
+    const mockVerifyRegistration = vi
+      .spyOn(services.passkeyService, 'verifyRegistration')
+      .mockRejectedValueOnce(new e.PasskeyAlreadyExists.Error());
+
     const updatedClient = testClient(app);
     const res = await updatedClient.api.user.passkeys.register.verify.$post(
       {
@@ -508,10 +504,8 @@ describe('POST /api/user/passkeys/register/verify', () => {
       { headers: { Cookie: `session=${updatedSessionCookie}` } },
     );
 
-    // Will fail at verification since the attestation is invalid
-    // In a real scenario with valid attestation, it would return 409
-    // WebAuthn library may throw unhandled error (500) or handled error (400)
-    expect([400, 500].includes(res.status)).toBe(true);
+    await expectError(res, e.PasskeyAlreadyExists);
+    mockVerifyRegistration.mockRestore();
   });
 
   test('should return 403 for config-managed users', async () => {
@@ -556,6 +550,10 @@ describe('POST /api/user/passkeys/register/verify', () => {
       updatedSessionCookie = sessionCookie;
     }
 
+    const mockVerifyRegistration = vi
+      .spyOn(services.passkeyService, 'verifyRegistration')
+      .mockRejectedValueOnce(new e.PasskeyVerificationFailed.Error());
+
     // Try with malformed clientDataJSON
     const updatedClient = testClient(app);
     const res = await updatedClient.api.user.passkeys.register.verify.$post(
@@ -569,8 +567,8 @@ describe('POST /api/user/passkeys/register/verify', () => {
       { headers: { Cookie: `session=${updatedSessionCookie}` } },
     );
 
-    // Should fail - either 400 (handled error) or 500 (unhandled in WebAuthn lib)
-    expect([400, 500].includes(res.status)).toBe(true);
+    await expectError(res, e.PasskeyVerificationFailed);
+    mockVerifyRegistration.mockRestore();
   });
 
   test('should clear challenge from session after failed verification', async () => {
@@ -601,20 +599,23 @@ describe('POST /api/user/passkeys/register/verify', () => {
 
     const updatedClient = testClient(app);
     const updatedHeaders = { Cookie: `session=${updatedSessionCookie}` };
+    const mockVerifyRegistration = vi
+      .spyOn(services.passkeyService, 'verifyRegistration')
+      .mockRejectedValue(new e.PasskeyVerificationFailed.Error());
 
     // First verification attempt (will fail)
-    await updatedClient.api.user.passkeys.register.verify.$post(
-      {
-        json: {
-          response: createMockRegistrationResponse(),
+    const firstRes =
+      await updatedClient.api.user.passkeys.register.verify.$post(
+        {
+          json: {
+            response: createMockRegistrationResponse(),
+          },
         },
-      },
-      { headers: updatedHeaders },
-    );
+        { headers: updatedHeaders },
+      );
+    await expectError(firstRes, e.PasskeyVerificationFailed);
 
     // Try again with the same session
-    // The challenge may or may not be cleared depending on implementation
-    // This tests the behavior
     const res2 = await updatedClient.api.user.passkeys.register.verify.$post(
       {
         json: {
@@ -624,9 +625,13 @@ describe('POST /api/user/passkeys/register/verify', () => {
       { headers: updatedHeaders },
     );
 
-    // Either challenge not found or verification failed again
-    // WebAuthn library may throw unhandled error (500) or handled error (400)
-    expect([400, 500].includes(res2.status)).toBe(true);
+    const secondBody = await assertJsonBody(res2, 400);
+    expect(
+      secondBody.code === 'PASSKEY_CHALLENGE_NOT_FOUND' ||
+        secondBody.code === 'PASSKEY_VERIFICATION_FAILED',
+    ).toBe(true);
+
+    mockVerifyRegistration.mockRestore();
   });
 
   test('should handle concurrent verification attempts', async () => {
@@ -657,6 +662,9 @@ describe('POST /api/user/passkeys/register/verify', () => {
 
     const updatedClient = testClient(app);
     const updatedHeaders = { Cookie: `session=${updatedSessionCookie}` };
+    const mockVerifyRegistration = vi
+      .spyOn(services.passkeyService, 'verifyRegistration')
+      .mockRejectedValue(new e.PasskeyVerificationFailed.Error());
 
     // Send concurrent verification requests
     const results = await Promise.all([
@@ -678,11 +686,17 @@ describe('POST /api/user/passkeys/register/verify', () => {
       ),
     ]);
 
-    // All should fail (verification or challenge error)
-    // WebAuthn library may throw unhandled error (500) or handled error (400)
+    // First request can fail at verification; subsequent requests fail
+    // because challenge is single-use and already cleared.
     for (const res of results) {
-      expect([400, 500].includes(res.status)).toBe(true);
+      const body = await assertJsonBody(res, 400);
+      expect(
+        body.code === 'PASSKEY_VERIFICATION_FAILED' ||
+          body.code === 'PASSKEY_CHALLENGE_NOT_FOUND',
+      ).toBe(true);
     }
+
+    mockVerifyRegistration.mockRestore();
   });
 
   test('should require response to have proper nested structure', async () => {
