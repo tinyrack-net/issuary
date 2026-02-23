@@ -98,6 +98,17 @@ describe('GET /api/config', () => {
     expect(json.auth.passkey.email_verification).toBeTypeOf('boolean');
   });
 
+  test('should include smtp enabled flag', async () => {
+    const client = testClient(app);
+    const res = await client.api.config.$get();
+
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+    expect(json.smtp.enabled).toBeTypeOf('boolean');
+    expect(json.smtp.enabled).toBe(true);
+  });
+
   test('should include identity providers', async () => {
     const client = testClient(app);
     const res = await client.api.config.$get();
@@ -128,5 +139,36 @@ describe('GET /api/config', () => {
 
     // Should not return 401
     expect(res.status).toBe(200);
+  });
+});
+
+describe('GET /api/config (smtp disabled)', () => {
+  let appNoSmtp: AppType;
+  let cleanupNoSmtp: () => Promise<void>;
+
+  beforeAll(async () => {
+    const { smtp: _smtp, ...configWithoutSmtp } = MINIMAL_TEST_CONFIG;
+    void _smtp;
+    const server = await createServer({
+      config: {
+        ...configWithoutSmtp,
+      },
+    });
+    appNoSmtp = server.app;
+    cleanupNoSmtp = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanupNoSmtp();
+  });
+
+  test('should expose smtp.enabled=false when smtp is not configured', async () => {
+    const client = testClient(appNoSmtp);
+    const res = await client.api.config.$get();
+
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+    expect(json.smtp.enabled).toBe(false);
   });
 });

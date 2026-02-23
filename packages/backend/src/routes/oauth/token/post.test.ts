@@ -1,5 +1,6 @@
 import type { AppType } from '@backend/app.js';
 import { createServer } from '@backend/server.js';
+import type { ServiceContainer } from '@backend/services/container.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
@@ -17,16 +18,32 @@ import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 let app: AppType;
+let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  ({ app, cleanup } = await createServer({
+  ({ app, services, cleanup } = await createServer({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       clients: [TEST_OAUTH_CLIENT_CONFIG],
     },
   }));
+
+  await services.mikro.em.fork().transactional(async (em) => {
+    const disabledClient = services.mikro.oauthClient.create({
+      clientId: 'disabled-client',
+      clientSecretHash: null,
+      name: 'Disabled Client',
+      grantTypes: ['refresh_token'],
+      responseTypes: ['code'],
+      scopes: ['openid'],
+      redirectUris: [TEST_OAUTH_CLIENT.redirectUri],
+      enabled: false,
+      managed_by: 'database',
+    });
+    await em.persist(disabledClient).flush();
+  });
 });
 
 afterAll(async () => {
@@ -200,6 +217,20 @@ describe('POST /oauth/token', () => {
       expect(res.status).toBe(401);
       const json = await res.json();
       expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+    });
+
+    test('should reject disabled client', async () => {
+      const client = testClient(app);
+      const res = await client.oauth.token.$post({
+        form: {
+          grant_type: 'refresh_token',
+          client_id: 'disabled-client',
+          refresh_token: 'dummy-refresh-token',
+        },
+      });
+
+      const json = await assertJsonBody(res, 400);
+      expect(json.code).toBe('OAUTH_CLIENT_DISABLED');
     });
   });
 
