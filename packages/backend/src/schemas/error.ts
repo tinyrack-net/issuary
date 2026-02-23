@@ -42,8 +42,8 @@ const createError = <
       }
     },
     Schema: z.object({
-      code: z.literal(code),
-      message: z.literal(message),
+      code: z.literal(code).describe('Machine-readable error code'),
+      message: z.literal(message).describe('Human-readable error message'),
     }),
   };
 };
@@ -77,9 +77,9 @@ const createErrorWithData = <
       }
     },
     Schema: z.object({
-      code: z.literal(code),
-      message: z.literal(message),
-      data: dataSchema,
+      code: z.literal(code).describe('Machine-readable error code'),
+      message: z.literal(message).describe('Human-readable error message'),
+      data: dataSchema.describe('Additional error context'),
     }),
   };
 };

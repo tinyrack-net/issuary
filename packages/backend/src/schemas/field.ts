@@ -10,7 +10,7 @@ export const f = {
   uuid: z.uuid().describe('Entity UUID'),
 
   // User fields
-  userSub: z.string().describe('User Sub'),
+  userSub: z.uuid().describe('User subject identifier (UUID)'),
   userEmail: z.email().describe('User email address'),
   userPassword: z.string().min(6).max(100).describe("User's password"),
   emailVerified: z.boolean().describe("Whether the user's email is verified"),
@@ -18,7 +18,7 @@ export const f = {
   // OAuth fields
   clientId: z.string().min(1).max(1000).describe('OAuth client ID'),
   clientSecret: z.string().min(1).max(1000).describe('OAuth client secret'),
-  redirectUri: z.string().min(1).max(1000).describe('OAuth redirect URI'),
+  redirectUri: z.url().max(1000).describe('OAuth redirect URI'),
   scope: z.string().max(1000).describe('Space-delimited list of OAuth scopes'),
   responseType: z
     .string()
@@ -88,11 +88,13 @@ export const f = {
     .string()
     .min(1)
     .max(2000)
-    .describe('URL to redirect after completion'),
+    .describe('Return URL or path to redirect after completion'),
 
   // i18n fields
   languageCode: z
     .string()
+    .min(2)
+    .max(10)
     .default('en')
     .describe('Language code for localized content'),
 

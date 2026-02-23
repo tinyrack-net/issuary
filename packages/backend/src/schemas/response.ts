@@ -10,7 +10,9 @@ import { oauthSchema } from './oauth.js';
 // Base schemas
 const UserSession = z
   .object({
-    managed_by: z.literal(['database', 'config']),
+    managed_by: z
+      .enum(['database', 'config'])
+      .describe('User data source (database or static config)'),
     sub: f.userSub,
     email: f.userEmail,
     email_verified: f.emailVerified,
@@ -35,79 +37,89 @@ const UserSession = z
 
 const OAuthClient = z
   .object({
-    id: z.string(),
-    clientId: z.string(),
-    name: z.string(),
-    managed_by: z.enum(['config', 'database']),
-    enabled: z.boolean(),
-    redirectUris: z.array(z.string()),
-    responseTypes: z.array(z.string()),
-    scopes: z.array(z.string()),
-    grantTypes: z.array(z.string()),
+    id: f.uuid.describe('OAuth client internal UUID'),
+    clientId: f.clientId.describe('OAuth client ID exposed to clients'),
+    name: z.string().describe('Display name of the OAuth client'),
+    managed_by: z
+      .enum(['config', 'database'])
+      .describe('Whether the client is managed by config or database'),
+    enabled: z.boolean().describe('Whether the client is enabled'),
+    redirectUris: z.array(f.redirectUri).describe('Allowed redirect URIs'),
+    responseTypes: z
+      .array(z.string().min(1))
+      .describe('Allowed OAuth response types'),
+    scopes: z.array(z.string().min(1)).describe('Allowed OAuth scopes'),
+    grantTypes: z
+      .array(z.string().min(1))
+      .describe('Allowed OAuth grant types'),
   })
   .describe('OAuth Client Information');
 
 const ConsentClient = z
   .object({
-    id: z.string(),
-    clientId: z.string(),
-    name: z.string(),
+    id: f.uuid.describe('OAuth client internal UUID'),
+    clientId: f.clientId.describe('OAuth client ID'),
+    name: z.string().describe('OAuth client display name'),
   })
   .describe('Consent Client Information');
 
 const ConsentScope = z
   .object({
-    name: z.string(),
-    description: z.string(),
+    name: z.string().describe('Scope name'),
+    description: z.string().describe('Scope description shown to users'),
   })
   .describe('Consent Scope');
 
 const ConsentUser = z
   .object({
-    sub: z.string(),
-    email: z.string(),
+    sub: f.userSub,
+    email: f.userEmail,
   })
   .describe('Consent User');
 
 const LinkedOAuthAccount = z
   .object({
-    provider_name: z.string(),
-    linked_at: z.iso.datetime(),
+    provider_name: f.providerName.describe('OAuth provider identifier'),
+    linked_at: z.iso
+      .datetime()
+      .describe('Timestamp when the provider account was linked'),
   })
   .describe('Linked OAuth Account');
 
 const AvailableOAuthProvider = z
   .object({
-    id: z.string(),
-    display_name: z.string(),
-    icon_url: z.string().optional(),
-    linked: z.boolean(),
+    id: z.string().describe('Provider identifier'),
+    display_name: z.string().describe('Provider display name'),
+    icon_url: z.url().optional().describe('Provider icon URL'),
+    linked: z
+      .boolean()
+      .describe('Whether this provider is linked to the current user'),
   })
   .describe('Available OAuth Provider');
 
 // Generic response schemas
 const OAuthError = z
   .object({
-    error: z.string(),
-    error_description: z.string(),
+    error: z.string().describe('OAuth/OIDC error code'),
+    error_description: z.string().describe('Human-readable error description'),
   })
   .describe('OAuth Error Response');
 
 const MessageResponse = z
   .object({
-    message: z.string(),
+    message: z.string().describe('Response message'),
   })
   .describe('Message Response');
 
 const OkResponse = z
   .object({
-    ok: z.literal(true),
+    ok: z.literal(true).describe('Indicates successful operation'),
   })
   .describe('OK Response');
 
 const RedirectUrlResponse = z
   .object({
-    redirect_url: z.string(),
+    redirect_url: z.url().describe('Absolute URL to redirect the user to'),
   })
   .describe('Redirect URL Response');
 
@@ -231,10 +243,21 @@ const AuthenticatorAttestationResponseJSON = z
   .looseObject({
     clientDataJSON: f.base64UrlString,
     attestationObject: f.base64UrlString,
-    transports: z.array(f.authenticatorTransport).optional(),
-    publicKeyAlgorithm: z.number().int().optional(),
-    publicKey: f.base64UrlString.optional(),
-    authenticatorData: f.base64UrlString.optional(),
+    transports: z
+      .array(f.authenticatorTransport)
+      .optional()
+      .describe('Authenticator transport hints'),
+    publicKeyAlgorithm: z
+      .number()
+      .int()
+      .optional()
+      .describe('COSE public key algorithm identifier'),
+    publicKey: f.base64UrlString
+      .optional()
+      .describe('Authenticator public key (Base64URL)'),
+    authenticatorData: f.base64UrlString
+      .optional()
+      .describe('Authenticator data (Base64URL)'),
   })
   .describe('Authenticator attestation response');
 
@@ -249,7 +272,9 @@ const RegistrationResponseJSON = z
     rawId: f.base64UrlString,
     response: AuthenticatorAttestationResponseJSON,
     authenticatorAttachment: f.authenticatorAttachment.optional(),
-    clientExtensionResults: z.record(z.string(), z.unknown()),
+    clientExtensionResults: z
+      .record(z.string(), z.unknown())
+      .describe('Client extension results'),
     type: f.publicKeyCredentialType,
   })
   .describe('WebAuthn registration response');
@@ -278,7 +303,9 @@ const AuthenticationResponseJSON = z
     rawId: f.base64UrlString,
     response: AuthenticatorAssertionResponseJSON,
     authenticatorAttachment: f.authenticatorAttachment.optional(),
-    clientExtensionResults: z.record(z.string(), z.unknown()),
+    clientExtensionResults: z
+      .record(z.string(), z.unknown())
+      .describe('Client extension results'),
     type: f.publicKeyCredentialType,
   })
   .describe('WebAuthn authentication response');
@@ -286,18 +313,22 @@ const AuthenticationResponseJSON = z
 // Basic authentication methods response schema (fixed structure)
 const BasicAuthenticationMethods = z
   .object({
-    password: AppConfigPasswordAuth,
-    passkey: AppConfigPasskeyAuth,
+    password: AppConfigPasswordAuth.describe(
+      'Password authentication settings',
+    ),
+    passkey: AppConfigPasskeyAuth.describe('Passkey authentication settings'),
   })
   .describe('Basic Authentication Methods');
 
 // OAuth authentication method response schema (only enabled providers are returned)
 const OAuthAuthenticationMethod = z
   .object({
-    id: z.string(),
-    type: z.enum(['github', 'google', 'apple', 'generic_oauth']),
-    display_name: z.string(),
-    icon_url: z.string().optional(),
+    id: z.string().describe('Provider identifier'),
+    type: z
+      .enum(['github', 'google', 'apple', 'generic_oauth'])
+      .describe('Provider type'),
+    display_name: z.string().describe('Provider display name'),
+    icon_url: z.url().optional().describe('Provider icon URL'),
   })
   .describe('OAuth Authentication Method');
 
@@ -333,33 +364,52 @@ export const r = {
   RedirectUrlResponse,
 
   // Simple user session response (for endpoints with no special states)
-  UserSessionResponse: z.object({
-    user: UserSession,
-  }),
+  UserSessionResponse: z
+    .object({
+      user: UserSession.describe('Authenticated user session'),
+    })
+    .describe('User session response'),
 
   // Unified auth response - discriminated union by status field
   // Combines login, register, email verify, and session responses
   // Note: user info is only provided when status is 'authenticated'
-  AuthResponse: z.object({
-    user: UserSession,
-  }),
+  AuthResponse: z
+    .object({
+      user: UserSession.describe('Authenticated user session'),
+    })
+    .describe('Authentication response'),
 
-  OAuthCallbackResponse: z.object({
-    user: UserSession,
-    is_new_user: z.boolean(),
-    return_url: z.string().optional(),
-  }),
+  OAuthCallbackResponse: z
+    .object({
+      user: UserSession.describe('Authenticated user session'),
+      is_new_user: z
+        .boolean()
+        .describe('Whether this callback created a new user account'),
+      return_url: z
+        .string()
+        .optional()
+        .describe('Optional return URL after OAuth flow completion'),
+    })
+    .describe('OAuth callback response'),
 
-  ConsentInfoResponse: z.object({
-    client: ConsentClient,
-    scopes: z.array(ConsentScope),
-    user: ConsentUser,
-  }),
+  ConsentInfoResponse: z
+    .object({
+      client: ConsentClient.describe('OAuth client requesting consent'),
+      scopes: z.array(ConsentScope).describe('Requested OAuth scopes'),
+      user: ConsentUser.describe('Current user providing consent'),
+    })
+    .describe('Consent page information'),
 
-  LinkedAccountsResponse: z.object({
-    accounts: z.array(LinkedOAuthAccount),
-    available_providers: z.array(AvailableOAuthProvider),
-  }),
+  LinkedAccountsResponse: z
+    .object({
+      accounts: z
+        .array(LinkedOAuthAccount)
+        .describe('OAuth accounts currently linked to the user'),
+      available_providers: z
+        .array(AvailableOAuthProvider)
+        .describe('Configured providers with linked state'),
+    })
+    .describe('Linked OAuth accounts response'),
 
   // Token response (RFC 6749) - re-export from oauth schema
   TokenResponse: oauthSchema.TokenResponse,
@@ -369,53 +419,56 @@ export const r = {
 
   // UserInfo response (OIDC Core)
   UserInfoResponse: z.object({
-    sub: z.string().describe('Subject identifier'),
-    email: z.string().optional(),
-    email_verified: z.boolean().optional(),
-    name: z.string().optional(),
-    picture: z.string().optional(),
-    preferred_username: z.string().optional(),
+    sub: f.userSub.describe('Subject identifier'),
+    email: z.email().optional().describe('User email address'),
+    email_verified: z
+      .boolean()
+      .optional()
+      .describe('Whether the email address is verified'),
+    name: z.string().optional().describe('Display name'),
+    picture: z.url().optional().describe('Profile picture URL'),
+    preferred_username: z.string().optional().describe('Preferred username'),
   }),
 
   // Health check response
   HealthResponse: z.object({
-    status: z.literal('ok'),
-    version: z.string(),
+    status: z.literal('ok').describe('Overall health status'),
+    version: z.string().describe('Backend version'),
     uptime: z.number().describe('Uptime in seconds'),
     checks: z.object({
-      database: z.literal('ok'),
+      database: z.literal('ok').describe('Database health status'),
     }),
   }),
 
   HealthErrorResponse: z.object({
-    status: z.literal('error'),
-    version: z.string(),
+    status: z.literal('error').describe('Overall health status'),
+    version: z.string().describe('Backend version'),
     uptime: z.number().describe('Uptime in seconds'),
     checks: z.object({
-      database: z.enum(['ok', 'error']),
+      database: z.enum(['ok', 'error']).describe('Database health status'),
     }),
-    error: z.string().optional(),
+    error: z.string().optional().describe('Optional failure reason'),
   }),
 
   // Liveness probe response
   LivenessResponse: z.object({
-    status: z.literal('ok'),
+    status: z.literal('ok').describe('Liveness status'),
   }),
 
   // Readiness probe response
   ReadinessResponse: z.object({
-    status: z.literal('ok'),
+    status: z.literal('ok').describe('Readiness status'),
     checks: z.object({
-      database: z.literal('ok'),
+      database: z.literal('ok').describe('Database readiness status'),
     }),
   }),
 
   ReadinessErrorResponse: z.object({
-    status: z.literal('error'),
+    status: z.literal('error').describe('Readiness status'),
     checks: z.object({
-      database: z.enum(['ok', 'error']),
+      database: z.enum(['ok', 'error']).describe('Database readiness status'),
     }),
-    error: z.string().optional(),
+    error: z.string().optional().describe('Optional failure reason'),
   }),
 
   // TOTP responses
@@ -439,7 +492,7 @@ export const r = {
   }),
 
   PasskeySetupVerifyResponse: z.object({
-    ok: z.literal(true),
+    ok: z.literal(true).describe('Whether passkey verification succeeded'),
     user: UserSession.optional().describe(
       'User session if passkey setup was completed from pending setup state',
     ),
@@ -451,12 +504,16 @@ export const r = {
   // Passkey info schema
   PasskeyInfo: z
     .object({
-      id: z.string(),
-      credential_id: z.string(),
-      name: z.string().nullable(),
+      id: f.uuid.describe('Passkey record UUID'),
+      credential_id: f.passkeyCredentialId.describe('Passkey credential ID'),
+      name: z.string().nullable().describe('User-defined passkey name'),
       device_type: f.passkeyDeviceType,
-      backed_up: z.boolean(),
-      created_at: z.iso.datetime(),
+      backed_up: z
+        .boolean()
+        .describe('Whether the credential is synced/backed up'),
+      created_at: z.iso
+        .datetime()
+        .describe('Timestamp when the passkey was created'),
     })
     .describe('Passkey information'),
 
@@ -519,14 +576,20 @@ export const r = {
   // App config response
   ConfigResponse: z.object({
     app: z.object({
-      public_registration: z.boolean(),
-      supported_languages: z.array(z.string()),
-      default_language: z.string(),
-      fallback_language: z.string(),
-      light_theme: AppTheme,
-      dark_theme: AppTheme,
-      theme_mode: z.enum(['light', 'dark', 'system']),
-      background_url: z.url().optional(),
+      public_registration: z
+        .boolean()
+        .describe('Whether public self-registration is enabled'),
+      supported_languages: z
+        .array(z.string().min(2))
+        .describe('Languages enabled for this deployment'),
+      default_language: z.string().describe('Default UI language'),
+      fallback_language: z.string().describe('Fallback UI language'),
+      light_theme: AppTheme.describe('Theme preset used in light mode'),
+      dark_theme: AppTheme.describe('Theme preset used in dark mode'),
+      theme_mode: z
+        .enum(['light', 'dark', 'system'])
+        .describe('Theme mode strategy'),
+      background_url: z.url().optional().describe('Background image URL'),
       signup_implicit_terms: z
         .record(z.string(), z.string())
         .optional()
@@ -545,13 +608,17 @@ export const r = {
         .describe('Localized subtitle text for login page'),
     }),
     database: z.object({
-      enabled: z.boolean(),
+      enabled: z
+        .boolean()
+        .describe('Whether database-backed features are enabled'),
     }),
     smtp: z.object({
-      enabled: z.boolean(),
+      enabled: z.boolean().describe('Whether SMTP email delivery is enabled'),
     }),
-    auth: BasicAuthenticationMethods,
-    identity_providers: z.array(OAuthAuthenticationMethod),
+    auth: BasicAuthenticationMethods.describe('Enabled authentication methods'),
+    identity_providers: z
+      .array(OAuthAuthenticationMethod)
+      .describe('Enabled external identity providers'),
     account_deletion: z.object({
       enabled: z.boolean().describe('Whether account deletion is enabled'),
       retention_period: z
