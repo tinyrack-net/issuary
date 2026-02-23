@@ -143,6 +143,7 @@ function ResetPassword() {
 
         <button
           className="btn btn-block h-10 font-semibold text-[14px]"
+          data-testid="reset-password-go-login"
           onClick={() => navigate({ to: '/login' })}
           type="button"
         >
@@ -171,7 +172,10 @@ function ResetPassword() {
         )}
 
         {queryToken && errors.token && (
-          <div className="alert alert-error">
+          <div
+            className="alert alert-error"
+            data-testid="reset-password-token-error"
+          >
             <span className="text-sm">{errors.token.message}</span>
           </div>
         )}
@@ -204,7 +208,11 @@ function ResetPassword() {
       </form>
 
       <div className="mt-6 text-center text-base-content/70 text-xs">
-        <Link className="link link-info font-medium" to="/login">
+        <Link
+          className="link link-info font-medium"
+          data-testid="reset-password-back-to-login"
+          to="/login"
+        >
           {t('resetPassword.backToLogin')}
         </Link>
       </div>

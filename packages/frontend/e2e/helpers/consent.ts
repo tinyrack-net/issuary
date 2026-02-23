@@ -5,13 +5,13 @@ import type { Page } from '@playwright/test';
  */
 export const consentPage = {
   /** User info section showing email */
-  userEmail: '.bg-base-200.p-3 .font-medium',
+  userEmail: '[data-testid="consent-user-email"]',
   /** Permission scope items */
-  scopeItem: 'ul li',
+  scopeItem: '[data-testid="consent-scope-list"] li',
   /** Deny button */
-  denyButton: 'button.btn-outline',
+  denyButton: '[data-testid="consent-deny"]',
   /** Allow button */
-  allowButton: 'button.btn-primary',
+  allowButton: '[data-testid="consent-allow"]',
 } as const;
 
 /**

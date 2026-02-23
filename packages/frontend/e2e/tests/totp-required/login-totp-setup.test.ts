@@ -82,7 +82,9 @@ test.describe('TOTP setup flow (DB user, 2FA required)', () => {
     await fillPinInput(page, '000000');
 
     // Should show error
-    await expect(page.locator('.text-error').first()).toBeVisible();
+    await expect(
+      page.locator('[data-testid="pin-input-error"]').first(),
+    ).toBeVisible();
 
     // Should stay on setup page
     await expect(page).toHaveURL(/\/setup\/totp/);

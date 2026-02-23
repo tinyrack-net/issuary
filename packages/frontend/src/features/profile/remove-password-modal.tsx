@@ -111,7 +111,10 @@ export function RemovePasswordModal({
             {...form.register('currentPassword')}
           />
           {form.formState.errors.currentPassword && (
-            <span className="label-text-alt mt-0.5 text-error">
+            <span
+              className="label-text-alt mt-0.5 text-error"
+              data-testid="remove-password-error"
+            >
               {form.formState.errors.currentPassword.message}
             </span>
           )}
@@ -124,6 +127,7 @@ export function RemovePasswordModal({
         <ModalActions>
           <button
             className="btn btn-sm"
+            data-testid="remove-password-cancel"
             disabled={mutation.isPending}
             onClick={handleClose}
             type="button"
@@ -132,6 +136,7 @@ export function RemovePasswordModal({
           </button>
           <button
             className="btn btn-sm btn-error"
+            data-testid="remove-password-submit"
             disabled={mutation.isPending}
             type="submit"
           >

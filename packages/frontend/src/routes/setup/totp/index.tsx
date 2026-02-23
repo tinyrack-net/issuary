@@ -187,7 +187,10 @@ function SetupTotp() {
           subtitle={t('setupTotp.subtitle')}
           title={t('setupTotp.title')}
         />
-        <div className="flex justify-center py-8">
+        <div
+          className="flex justify-center py-8"
+          data-testid="totp-setup-loading"
+        >
           <span className="loading loading-spinner loading-lg" />
         </div>
       </PageLayout>
@@ -204,7 +207,10 @@ function SetupTotp() {
             subtitle={t('setupTotp.subtitle')}
             title={t('setupTotp.title')}
           />
-          <div className="alert alert-warning mb-4">
+          <div
+            className="alert alert-warning mb-4"
+            data-testid="totp-setup-session-expired"
+          >
             <WarningCircleIcon className="size-5" weight="fill" />
             <div className="flex flex-col gap-1">
               <span>{t('setupTotp.error.expired')}</span>

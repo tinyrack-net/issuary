@@ -128,7 +128,10 @@ export function SetupPasskeyModal({
               {...form.register('name')}
             />
             {form.formState.errors.name && (
-              <span className="label-text-alt mt-0.5 text-error">
+              <span
+                className="label-text-alt mt-0.5 text-error"
+                data-testid="setup-passkey-error"
+              >
                 {form.formState.errors.name.message}
               </span>
             )}
@@ -138,10 +141,19 @@ export function SetupPasskeyModal({
           </div>
 
           <ModalActions>
-            <button className="btn btn-sm" onClick={handleClose} type="button">
+            <button
+              className="btn btn-sm"
+              data-testid="setup-passkey-cancel"
+              onClick={handleClose}
+              type="button"
+            >
               {t('profile.passkey.setupModal.cancel')}
             </button>
-            <button className="btn btn-sm btn-primary" type="submit">
+            <button
+              className="btn btn-sm btn-primary"
+              data-testid="setup-passkey-continue"
+              type="submit"
+            >
               {t('profile.passkey.setupModal.continue')}
             </button>
           </ModalActions>
@@ -161,7 +173,10 @@ export function SetupPasskeyModal({
 
       {step === 'register' && (
         <div className="mt-4">
-          <div className="flex flex-col items-center gap-3 py-6">
+          <div
+            className="flex flex-col items-center gap-3 py-6"
+            data-testid="setup-passkey-loading"
+          >
             <span className="loading loading-spinner loading-md" />
             <p className="text-center text-base-content/60 text-xs">
               {t('profile.passkey.setupModal.waitingForDevice')}
@@ -171,6 +186,7 @@ export function SetupPasskeyModal({
           <ModalActions>
             <button
               className="btn btn-sm"
+              data-testid="setup-passkey-cancel"
               disabled={isPending}
               onClick={handleClose}
               type="button"

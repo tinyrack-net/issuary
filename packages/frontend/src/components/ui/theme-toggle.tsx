@@ -55,6 +55,7 @@ export function ThemeToggle({
       <button
         aria-label={t('common.theme.select')}
         className="btn btn-circle btn-sm"
+        data-testid="theme-toggle"
         onClick={onCycle}
         type="button"
       >

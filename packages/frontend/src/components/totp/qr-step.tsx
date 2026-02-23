@@ -45,6 +45,7 @@ export function QrStep({
 
       <button
         className="btn btn-sm btn-primary btn-block"
+        data-testid="totp-qr-next"
         onClick={onNext}
         type="button"
       >

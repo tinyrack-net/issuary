@@ -118,7 +118,9 @@ function Consent() {
         <p className="text-base-content/60 text-xs">
           {t('consent.loggedInAs')}
         </p>
-        <p className="font-medium text-sm">{user.email}</p>
+        <p className="font-medium text-sm" data-testid="consent-user-email">
+          {user.email}
+        </p>
       </div>
 
       {/* Requested permissions */}
@@ -126,7 +128,7 @@ function Consent() {
         <h2 className="mb-3 font-semibold text-sm">
           {t('consent.permissions.title')}
         </h2>
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-2" data-testid="consent-scope-list">
           {scopes.map((scope: { name: string; description: string }) => (
             <li
               className="flex items-start gap-3 rounded-lg bg-base-200 p-3"
@@ -152,6 +154,7 @@ function Consent() {
       <div className="flex gap-3">
         <button
           className="btn btn-outline h-10 flex-1 font-semibold text-[14px]"
+          data-testid="consent-deny"
           disabled={consentMutation.isPending}
           onClick={handleDeny}
           type="button"
@@ -167,6 +170,7 @@ function Consent() {
         </button>
         <button
           className="btn btn-primary h-10 flex-1 font-semibold text-[14px]"
+          data-testid="consent-allow"
           disabled={consentMutation.isPending}
           onClick={handleAllow}
           type="button"

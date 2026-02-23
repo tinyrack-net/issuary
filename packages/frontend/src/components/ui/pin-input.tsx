@@ -216,7 +216,12 @@ export const PinInput = ({
         ))}
       </div>
       {error && (
-        <p className="mt-2 text-center text-error text-sm">{error.message}</p>
+        <p
+          className="mt-2 text-center text-error text-sm"
+          data-testid="pin-input-error"
+        >
+          {error.message}
+        </p>
       )}
     </div>
   );

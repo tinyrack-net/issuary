@@ -36,7 +36,9 @@ function ErrorPage() {
         <p className="mb-1 text-base-content/50 text-xs">
           {t('error.codeLabel')}
         </p>
-        <code className="font-mono text-error text-sm">{errorCode}</code>
+        <code className="font-mono text-error text-sm" data-testid="error-code">
+          {errorCode}
+        </code>
       </div>
 
       {/* Actions */}

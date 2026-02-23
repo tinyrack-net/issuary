@@ -31,8 +31,8 @@ test.describe('UI config driven rendering', () => {
   }) => {
     await page.goto('/login');
 
-    await expect(page.locator('select.select.select-ghost')).toHaveCount(0);
-    await expect(page.locator('button.btn-circle.btn-sm')).toHaveCount(0);
+    await expect(page.getByTestId('language-selector')).toHaveCount(0);
+    await expect(page.getByTestId('theme-toggle')).toHaveCount(0);
   });
 
   test('fixed light theme ignores stored theme preference', async ({

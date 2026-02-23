@@ -7,12 +7,12 @@ export const registerPage = {
   emailInput: 'input[name="email"]',
   passwordInput: 'input[name="password"]',
   submitButton: 'button[type="submit"]',
-  fieldError: '.text-error',
+  fieldError: '[data-testid="field-error"], [data-testid="terms-field-error"]',
   loginLink: 'a[href^="/login"]',
-  termsCheckbox: 'input[type="checkbox"].checkbox',
-  requiredBadge: '.badge-error',
-  optionalBadge: '.badge-ghost',
-  implicitNotice: '.prose',
+  termsCheckbox: '[data-testid="terms-checkbox"]',
+  requiredBadge: '[data-testid="terms-badge-required"]',
+  optionalBadge: '[data-testid="terms-badge-optional"]',
+  implicitNotice: '[data-testid="terms-implicit-notice"]',
 } as const;
 
 /**

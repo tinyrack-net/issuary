@@ -70,6 +70,7 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
             <input
               checked={allChecked}
               className="checkbox checkbox-primary checkbox-xs"
+              data-testid="terms-checkbox"
               disabled={disabled}
               onChange={(e) => handleAllChange(e.target.checked)}
               type="checkbox"
@@ -95,6 +96,7 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                   <input
                     checked={(field.value as boolean) ?? false}
                     className="checkbox checkbox-primary checkbox-xs"
+                    data-testid="terms-checkbox"
                     disabled={disabled}
                     onChange={(e) => field.onChange(e.target.checked)}
                     type="checkbox"
@@ -104,6 +106,11 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                     className={`badge badge-xs ${
                       term.required ? 'badge-error' : 'badge-ghost'
                     }`}
+                    data-testid={
+                      term.required
+                        ? 'terms-badge-required'
+                        : 'terms-badge-optional'
+                    }
                   >
                     {term.required ? t('terms.required') : t('terms.optional')}
                   </span>
@@ -144,7 +151,10 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                   </p>
                 )}
                 {termsConsentsErrors?.[term.id] && (
-                  <p className="ml-5 text-error text-xs">
+                  <p
+                    className="ml-5 text-error text-xs"
+                    data-testid="terms-field-error"
+                  >
                     {termsConsentsErrors[term.id]?.message}
                   </p>
                 )}

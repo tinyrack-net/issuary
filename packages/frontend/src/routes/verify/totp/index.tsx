@@ -177,7 +177,10 @@ function VerifyTotp() {
       />
 
       {sessionExpired && (
-        <div className="alert alert-warning mb-4">
+        <div
+          className="alert alert-warning mb-4"
+          data-testid="totp-verify-session-expired"
+        >
           <WarningCircleIcon className="size-5" weight="fill" />
           <div className="flex flex-col gap-1">
             <span>{t('verifyTotp.error.expired')}</span>
@@ -229,6 +232,7 @@ function VerifyTotp() {
       <div className="mt-4 text-center">
         <button
           className="link link-info font-medium text-xs"
+          data-testid="totp-verify-recovery-link"
           onClick={() =>
             router.navigate({
               to: '/verify/totp/recovery',

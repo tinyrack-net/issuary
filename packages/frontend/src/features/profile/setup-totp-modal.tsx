@@ -90,7 +90,10 @@ export function SetupTotpModal({
       title={modalTitle}
     >
       {isSetupPending && (
-        <div className="flex justify-center py-6">
+        <div
+          className="flex justify-center py-6"
+          data-testid="setup-totp-loading"
+        >
           <span className="loading loading-spinner loading-md" />
         </div>
       )}

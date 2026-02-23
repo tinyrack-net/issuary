@@ -17,7 +17,7 @@ test.describe('Theme system and language fallback behavior', () => {
       page.getByText(/Theme system.*implicit terms.*notice\./),
     ).toBeVisible();
 
-    const languageSelect = page.locator('select.select.select-ghost.select-sm');
+    const languageSelect = page.getByTestId('language-selector');
     await expect(languageSelect).toBeVisible();
     await expect(languageSelect.locator('option')).toHaveCount(3);
   });
@@ -27,7 +27,7 @@ test.describe('Theme system and language fallback behavior', () => {
   }) => {
     await page.goto('/login');
 
-    const toggle = page.locator('button.btn-circle.btn-sm');
+    const toggle = page.getByTestId('theme-toggle');
     await expect(toggle).toBeVisible();
 
     await toggle.click();
@@ -66,7 +66,7 @@ test.describe('Theme system and language fallback behavior', () => {
   }) => {
     await page.goto('/login');
 
-    const languageSelect = page.locator('select.select.select-ghost.select-sm');
+    const languageSelect = page.getByTestId('language-selector');
     await languageSelect.selectOption('en');
 
     await expect
@@ -84,7 +84,7 @@ test.describe('Theme system and language fallback behavior', () => {
   }) => {
     await page.goto('/login');
 
-    const languageSelect = page.locator('select.select.select-ghost.select-sm');
+    const languageSelect = page.getByTestId('language-selector');
     await languageSelect.selectOption('en');
     await languageSelect.selectOption('auto');
 

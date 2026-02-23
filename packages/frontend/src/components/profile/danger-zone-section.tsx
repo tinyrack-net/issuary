@@ -46,6 +46,7 @@ export function DangerZoneSection({
           </div>
           <button
             className="btn btn-error btn-outline btn-sm gap-2"
+            data-testid="profile-delete-account"
             disabled={isConfigManaged}
             onClick={onDeleteClick}
             type="button"

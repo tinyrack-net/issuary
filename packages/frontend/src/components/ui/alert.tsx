@@ -14,7 +14,10 @@ export function Alert({
   className = '',
 }: AlertProps) {
   return (
-    <div className={`alert alert-${type} ${className}`}>
+    <div
+      className={`alert alert-${type} ${className}`}
+      data-testid={`alert-${type}`}
+    >
       <IconComponent className="size-5" weight="fill" />
       <span>{children}</span>
     </div>

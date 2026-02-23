@@ -30,6 +30,7 @@ export function AlertBanner({ variant, children }: AlertBannerProps) {
   return (
     <div
       className={`flex items-start gap-3 rounded-lg p-3 ${variantClasses[variant]}`}
+      data-testid={`alert-banner-${variant}`}
     >
       <IconComponent className="mt-0.5 size-5 shrink-0" weight="fill" />
       <div className="min-w-0 flex-1 text-sm">{children}</div>

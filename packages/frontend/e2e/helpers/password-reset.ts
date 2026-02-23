@@ -6,9 +6,9 @@ import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 export const forgotPasswordPage = {
   emailInput: 'input[type="email"]',
   submitButton: 'button[type="submit"]',
-  successAlert: '.alert-success',
+  successAlert: '[data-testid="alert-success"]',
   backToLoginLink: 'a[href="/login"]',
-  fieldError: '.text-error',
+  fieldError: '[data-testid="field-error"]',
 } as const;
 
 /**
@@ -19,11 +19,11 @@ export const resetPasswordPage = {
   passwordInput: 'input[name="password"]',
   confirmPasswordInput: 'input[name="confirmPassword"]',
   submitButton: 'button[type="submit"]',
-  successAlert: '.alert-success',
-  goToLoginButton: 'button.btn.btn-block',
-  tokenError: '.alert-error',
-  fieldError: '.text-error',
-  backToLoginLink: 'a.link.link-info',
+  successAlert: '[data-testid="alert-success"]',
+  goToLoginButton: '[data-testid="reset-password-go-login"]',
+  tokenError: '[data-testid="reset-password-token-error"]',
+  fieldError: '[data-testid="field-error"]',
+  backToLoginLink: '[data-testid="reset-password-back-to-login"]',
 } as const;
 
 /**

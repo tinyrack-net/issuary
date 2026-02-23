@@ -91,7 +91,10 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
             {...form.register('password')}
           />
           {form.formState.errors.password && (
-            <span className="label-text-alt mt-0.5 text-error">
+            <span
+              className="label-text-alt mt-0.5 text-error"
+              data-testid="set-password-error-password"
+            >
               {form.formState.errors.password.message}
             </span>
           )}
@@ -114,7 +117,10 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
             {...form.register('confirmPassword')}
           />
           {form.formState.errors.confirmPassword && (
-            <span className="label-text-alt mt-0.5 text-error">
+            <span
+              className="label-text-alt mt-0.5 text-error"
+              data-testid="set-password-error-confirmPassword"
+            >
               {form.formState.errors.confirmPassword.message}
             </span>
           )}
@@ -127,6 +133,7 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
         <ModalActions>
           <button
             className="btn btn-sm"
+            data-testid="set-password-cancel"
             disabled={mutation.isPending}
             onClick={handleClose}
             type="button"
@@ -135,6 +142,7 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
           </button>
           <button
             className="btn btn-sm btn-primary"
+            data-testid="set-password-submit"
             disabled={mutation.isPending}
             type="submit"
           >

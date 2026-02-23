@@ -27,6 +27,7 @@ export const IconInput = ({
         className={`input input-bordered flex items-center gap-2 ${
           error ? 'input-error' : ''
         }`}
+        data-testid={error ? 'input-error-wrapper' : undefined}
       >
         <IconComponent className="size-5 opacity-70" />
         <input
@@ -38,7 +39,11 @@ export const IconInput = ({
           {...props}
         />
       </label>
-      {error && <p className="mt-1 text-error text-sm">{error.message}</p>}
+      {error && (
+        <p className="mt-1 text-error text-sm" data-testid="field-error">
+          {error.message}
+        </p>
+      )}
     </div>
   );
 };

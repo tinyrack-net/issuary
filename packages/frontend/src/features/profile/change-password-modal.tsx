@@ -114,7 +114,10 @@ export function ChangePasswordModal({
             {...form.register('currentPassword')}
           />
           {form.formState.errors.currentPassword && (
-            <span className="label-text-alt mt-0.5 text-error">
+            <span
+              className="label-text-alt mt-0.5 text-error"
+              data-testid="change-password-error-currentPassword"
+            >
               {form.formState.errors.currentPassword.message}
             </span>
           )}
@@ -137,7 +140,10 @@ export function ChangePasswordModal({
             {...form.register('newPassword')}
           />
           {form.formState.errors.newPassword && (
-            <span className="label-text-alt mt-0.5 text-error">
+            <span
+              className="label-text-alt mt-0.5 text-error"
+              data-testid="change-password-error-newPassword"
+            >
               {form.formState.errors.newPassword.message}
             </span>
           )}
@@ -160,7 +166,10 @@ export function ChangePasswordModal({
             {...form.register('confirmPassword')}
           />
           {form.formState.errors.confirmPassword && (
-            <span className="label-text-alt mt-0.5 text-error">
+            <span
+              className="label-text-alt mt-0.5 text-error"
+              data-testid="change-password-error-confirmPassword"
+            >
               {form.formState.errors.confirmPassword.message}
             </span>
           )}
@@ -173,6 +182,7 @@ export function ChangePasswordModal({
         <ModalActions>
           <button
             className="btn btn-sm"
+            data-testid="change-password-cancel"
             disabled={mutation.isPending}
             onClick={handleClose}
             type="button"
@@ -181,6 +191,7 @@ export function ChangePasswordModal({
           </button>
           <button
             className="btn btn-sm btn-primary"
+            data-testid="change-password-submit"
             disabled={mutation.isPending}
             type="submit"
           >

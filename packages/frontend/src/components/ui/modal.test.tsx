@@ -53,12 +53,10 @@ test('close button calls onClose', async () => {
     </Modal>,
   );
 
-  // The close button is a btn-circle btn-ghost inside the modal-box
-  const closeBtn = screen.getByRole('button', { name: '' }).all()[0];
-  if (closeBtn) {
-    await closeBtn.click();
-    expect(onClose).toHaveBeenCalledOnce();
-  }
+  // The close button has data-testid="modal-close"
+  const closeBtn = screen.getByTestId('modal-close');
+  await closeBtn.click();
+  expect(onClose).toHaveBeenCalledOnce();
 });
 
 test('backdrop click calls onClose', async () => {
@@ -89,8 +87,8 @@ test('preventClose hides close button and ignores backdrop', async () => {
   );
 
   expect(container.textContent).toContain('Locked');
-  // No close button should be rendered (btn-circle btn-ghost)
-  expect(container.querySelector('.btn-circle')).toBeNull();
+  // No close button should be rendered
+  expect(container.querySelector('[data-testid="modal-close"]')).toBeNull();
 });
 
 test('ModalActions renders children', async () => {

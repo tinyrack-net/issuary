@@ -62,6 +62,7 @@ export function UnlinkOAuthModal({
         <ModalActions>
           <button
             className="btn btn-sm"
+            data-testid="unlink-oauth-cancel"
             disabled={isPending}
             onClick={handleClose}
             type="button"
@@ -70,6 +71,7 @@ export function UnlinkOAuthModal({
           </button>
           <button
             className="btn btn-sm btn-error"
+            data-testid="unlink-oauth-unlink"
             disabled={isPending}
             onClick={handleConfirm}
             type="button"

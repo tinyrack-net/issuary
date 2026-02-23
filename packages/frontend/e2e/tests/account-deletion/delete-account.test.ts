@@ -1,4 +1,5 @@
 import { expect, test } from '@frontend-e2e/fixtures/account-deletion.js';
+import { loginPasswordPage } from '@frontend-e2e/helpers/login.js';
 import {
   deleteAccountModal,
   loginAndGoToProfile,
@@ -114,12 +115,14 @@ test.describe('Delete account flow', () => {
 
     // Try to login with the deleted account
     await page.goto('/login/password');
-    await page.locator('input[name="email"]').fill(email);
-    await page.locator('input[name="password"]').fill(TEST_PASSWORD);
-    await page.locator('button[type="submit"]').click();
+    await page.locator(loginPasswordPage.emailInput).fill(email);
+    await page.locator(loginPasswordPage.passwordInput).fill(TEST_PASSWORD);
+    await page.locator(loginPasswordPage.submitButton).click();
 
     // Should show error (user not found)
-    await expect(page.locator('.text-error').first()).toBeVisible();
+    await expect(
+      page.locator(loginPasswordPage.fieldError).first(),
+    ).toBeVisible();
     await expect(page).toHaveURL(/\/login\/password/);
   });
 });

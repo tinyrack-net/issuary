@@ -14,23 +14,23 @@ export const loginPasswordPage = {
   emailInput: 'input[name="email"]',
   passwordInput: 'input[name="password"]',
   submitButton: 'button[type="submit"]',
-  fieldError: '.text-error',
-  inputError: '.input-error',
+  fieldError: '[data-testid="field-error"]',
+  inputError: '[data-testid="input-error-wrapper"]',
 } as const;
 
 /**
  * Selectors for the TOTP setup page (/setup/totp).
  */
 export const totpSetupPage = {
-  loadingSpinner: '.loading.loading-spinner',
+  loadingSpinner: '[data-testid="totp-setup-loading"]',
   qrCodeImage: 'img[alt="TOTP QR Code"]',
-  nextButton: '.btn.btn-primary.btn-block',
+  nextButton: '[data-testid="totp-qr-next"]',
   pinInput: 'input[inputMode="numeric"]',
   submitButton: 'button[type="submit"]',
-  recoveryCodesGrid: '.grid.grid-cols-2',
-  confirmCheckbox: 'input[type="checkbox"].checkbox',
-  confirmButton: '.btn.btn-primary.btn-block',
-  backButton: '.btn.btn-ghost.btn-xs',
+  recoveryCodesGrid: '[data-testid="recovery-codes-grid"]',
+  confirmCheckbox: '[data-testid="recovery-codes-confirm"]',
+  confirmButton: '[data-testid="recovery-codes-submit"]',
+  backButton: '[data-testid="totp-verify-back"]',
 } as const;
 
 /**
@@ -39,21 +39,21 @@ export const totpSetupPage = {
 export const totpVerifyPage = {
   pinInput: 'input[inputMode="numeric"]',
   submitButton: 'button[type="submit"]',
-  fieldError: '.text-error',
-  recoveryCodeLink: 'button.link.link-info',
-  sessionExpiredAlert: '.alert.alert-warning',
+  fieldError: '[data-testid="pin-input-error"]',
+  recoveryCodeLink: '[data-testid="totp-verify-recovery-link"]',
+  sessionExpiredAlert: '[data-testid="totp-verify-session-expired"]',
 } as const;
 
 /**
  * Selectors for the email verify page (/verify/email).
  */
 export const emailVerifyPage = {
-  tokenInput: 'input[placeholder]',
+  tokenInput: 'input[name="token"]',
   submitButton: 'button[type="submit"]',
-  resendButton: 'button.btn.btn-ghost.btn-sm',
-  successAlert: '.alert-success',
-  goToProfileButton: 'button.btn.btn-block',
-  fieldError: '.text-error',
+  resendButton: '[data-testid="email-verify-resend"]',
+  successAlert: '[data-testid="alert-success"]',
+  goToProfileButton: '[data-testid="email-verify-go-profile"]',
+  fieldError: '[data-testid="field-error"]',
 } as const;
 
 /**

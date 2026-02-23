@@ -182,7 +182,10 @@ function VerifyRecovery() {
       />
 
       {sessionExpired && (
-        <div className="alert alert-warning mb-4">
+        <div
+          className="alert alert-warning mb-4"
+          data-testid="recovery-session-expired"
+        >
           <WarningCircleIcon className="size-5" weight="fill" />
           <div className="flex flex-col gap-1">
             <span>{t('verifyRecovery.error.expired')}</span>
@@ -210,6 +213,7 @@ function VerifyRecovery() {
             className={`input input-bordered w-full text-center font-mono ${
               errors.code ? 'input-error' : ''
             }`}
+            data-testid="recovery-code-input"
             disabled={sessionExpired}
             placeholder={t('verifyRecovery.placeholder')}
             ref={(el) => {
@@ -219,7 +223,12 @@ function VerifyRecovery() {
             type="text"
           />
           {errors.code && (
-            <p className="fieldset-label text-error">{errors.code.message}</p>
+            <p
+              className="fieldset-label text-error"
+              data-testid="recovery-error"
+            >
+              {errors.code.message}
+            </p>
           )}
         </fieldset>
 
@@ -245,6 +254,7 @@ function VerifyRecovery() {
       <div className="mt-4 text-center">
         <button
           className="link link-info font-medium text-xs"
+          data-testid="recovery-back-to-totp"
           onClick={() =>
             router.navigate({
               to: '/verify/totp',

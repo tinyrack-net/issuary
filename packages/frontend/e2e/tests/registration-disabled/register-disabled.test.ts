@@ -25,6 +25,6 @@ test.describe('Registration disabled', () => {
 
   test('password login page hides register link', async ({ page }) => {
     await page.goto('/login/password');
-    await expect(page.locator('a[href^="/register"]')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Sign up' })).toHaveCount(0);
   });
 });

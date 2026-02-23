@@ -9,15 +9,15 @@ import type { Page } from '@playwright/test';
 
 export const profilePage = {
   /** Header section */
-  logoutButton: 'button.btn-ghost.btn-sm',
-  userEmail: '.text-base-content\\/70.text-sm',
+  logoutButton: '[data-testid="profile-logout"]',
+  userEmail: '[data-testid="profile-user-email"]',
 
-  /** Password section buttons (use getByRole in tests for text matching) */
-  passwordChangeButton: 'button.btn-ghost.btn-xs.text-primary',
-  passwordRemoveButton: 'button.btn-ghost.btn-xs.text-error',
+  /** Password section buttons */
+  passwordChangeButton: '[data-testid="profile-password-change"]',
+  passwordRemoveButton: '[data-testid="profile-password-remove"]',
 
   /** Delete account section */
-  deleteAccountButton: 'button.btn-error',
+  deleteAccountButton: '[data-testid="profile-delete-account"]',
 } as const;
 
 /**
@@ -27,9 +27,9 @@ export const changePasswordModal = {
   currentPassword: '#current-password',
   newPassword: '#new-password-change',
   confirmPassword: '#confirm-password-change',
-  cancelButton: 'dialog.modal-open button.btn.btn-sm:not(.btn-primary)',
-  submitButton: 'dialog.modal-open button.btn.btn-sm.btn-primary',
-  fieldError: 'dialog.modal-open .text-error',
+  cancelButton: 'dialog.modal-open [data-testid="change-password-cancel"]',
+  submitButton: 'dialog.modal-open [data-testid="change-password-submit"]',
+  fieldError: 'dialog.modal-open [data-testid^="change-password-error"]',
 } as const;
 
 /**
@@ -38,9 +38,9 @@ export const changePasswordModal = {
 export const setPasswordModal = {
   newPassword: '#new-password',
   confirmPassword: '#confirm-password',
-  cancelButton: 'dialog.modal-open button.btn.btn-sm:not(.btn-primary)',
-  submitButton: 'dialog.modal-open button.btn.btn-sm.btn-primary',
-  fieldError: 'dialog.modal-open .text-error',
+  cancelButton: 'dialog.modal-open [data-testid="set-password-cancel"]',
+  submitButton: 'dialog.modal-open [data-testid="set-password-submit"]',
+  fieldError: 'dialog.modal-open [data-testid^="set-password-error"]',
 } as const;
 
 /**
@@ -48,9 +48,9 @@ export const setPasswordModal = {
  */
 export const removePasswordModal = {
   currentPassword: '#current-password-remove',
-  cancelButton: 'dialog.modal-open button.btn.btn-sm:not(.btn-error)',
-  submitButton: 'dialog.modal-open button.btn.btn-sm.btn-error',
-  fieldError: 'dialog.modal-open .text-error',
+  cancelButton: 'dialog.modal-open [data-testid="remove-password-cancel"]',
+  submitButton: 'dialog.modal-open [data-testid="remove-password-submit"]',
+  fieldError: 'dialog.modal-open [data-testid="remove-password-error"]',
 } as const;
 
 /**
@@ -58,10 +58,10 @@ export const removePasswordModal = {
  */
 export const disableTotpModal = {
   codeInput: '#disable-totp-code',
-  cancelButton: 'dialog.modal-open button.btn.btn-sm:not(.btn-error)',
-  submitButton: 'dialog.modal-open button.btn.btn-sm.btn-error',
-  fieldError: 'dialog.modal-open .text-error',
-  warningAlert: 'dialog.modal-open .text-warning',
+  cancelButton: 'dialog.modal-open [data-testid="disable-totp-cancel"]',
+  submitButton: 'dialog.modal-open [data-testid="disable-totp-submit"]',
+  fieldError: 'dialog.modal-open [data-testid="disable-totp-error"]',
+  warningAlert: 'dialog.modal-open [data-testid="alert-banner-warning"]',
 } as const;
 
 /**
@@ -69,11 +69,11 @@ export const disableTotpModal = {
  */
 export const setupTotpModal = {
   qrCodeImage: 'dialog.modal-open img[alt="TOTP QR Code"]',
-  nextButton: 'dialog.modal-open .btn.btn-primary.btn-block',
+  nextButton: 'dialog.modal-open [data-testid="totp-qr-next"]',
   pinInput: 'dialog.modal-open input[inputMode="numeric"]',
-  recoveryCodesGrid: 'dialog.modal-open .grid.grid-cols-2',
-  confirmCheckbox: 'dialog.modal-open input[type="checkbox"].checkbox',
-  confirmButton: 'dialog.modal-open .btn.btn-primary.btn-block',
+  recoveryCodesGrid: 'dialog.modal-open [data-testid="recovery-codes-grid"]',
+  confirmCheckbox: 'dialog.modal-open [data-testid="recovery-codes-confirm"]',
+  confirmButton: 'dialog.modal-open [data-testid="recovery-codes-submit"]',
 } as const;
 
 /**
@@ -81,10 +81,10 @@ export const setupTotpModal = {
  */
 export const deleteAccountModal = {
   confirmInput: '#delete-confirmation',
-  cancelButton: 'dialog.modal-open button.btn.btn-sm:not(.btn-error)',
-  submitButton: 'dialog.modal-open button.btn.btn-sm.btn-error',
-  fieldError: 'dialog.modal-open .text-error',
-  warningAlert: 'dialog.modal-open .alert-error',
+  cancelButton: 'dialog.modal-open [data-testid="delete-account-cancel"]',
+  submitButton: 'dialog.modal-open [data-testid="delete-account-submit"]',
+  fieldError: 'dialog.modal-open [data-testid="delete-account-error"]',
+  warningAlert: 'dialog.modal-open [data-testid="alert-banner-error"]',
 } as const;
 
 /**
@@ -92,32 +92,32 @@ export const deleteAccountModal = {
  */
 export const setupPasskeyModal = {
   nameInput: '#passkey-name',
-  cancelButton: 'dialog.modal-open button.btn.btn-sm:not(.btn-primary)',
-  continueButton: 'dialog.modal-open button.btn.btn-sm.btn-primary',
-  waitingMessage: 'dialog.modal-open .loading.loading-spinner',
-  fieldError: 'dialog.modal-open .text-error',
+  cancelButton: 'dialog.modal-open [data-testid="setup-passkey-cancel"]',
+  continueButton: 'dialog.modal-open [data-testid="setup-passkey-continue"]',
+  waitingMessage: 'dialog.modal-open [data-testid="setup-passkey-loading"]',
+  fieldError: 'dialog.modal-open [data-testid="setup-passkey-error"]',
 } as const;
 
 /**
  * Selectors for the manage passkeys modal.
  */
 export const managePasskeysModal = {
-  closeButton:
-    'dialog.modal-open .modal-action button.btn.btn-sm:not(.btn-primary)',
-  addNewButton: 'dialog.modal-open .modal-action button.btn.btn-sm.btn-primary',
-  passkeyItem: 'dialog.modal-open .rounded-lg.bg-base-200',
-  deleteError: 'dialog.modal-open .alert-error',
-  emptyState: 'dialog.modal-open .text-base-content\\/60.text-sm',
+  closeButton: 'dialog.modal-open [data-testid="manage-passkeys-close"]',
+  addNewButton: 'dialog.modal-open [data-testid="manage-passkeys-add-new"]',
+  passkeyItem: 'dialog.modal-open [data-testid="passkey-item"]',
+  renameInput: 'dialog.modal-open [data-testid="passkey-rename-input"]',
+  deleteError: 'dialog.modal-open [data-testid="alert-banner-error"]',
+  emptyState: 'dialog.modal-open [data-testid="passkeys-empty"]',
 } as const;
 
 /**
  * Selectors for the unlink OAuth modal.
  */
 export const unlinkOAuthModal = {
-  cancelButton: 'dialog.modal-open button.btn.btn-sm:not(.btn-error)',
-  unlinkButton: 'dialog.modal-open button.btn.btn-sm.btn-error',
-  warningAlert: 'dialog.modal-open .text-warning',
-  errorAlert: 'dialog.modal-open .text-error',
+  cancelButton: 'dialog.modal-open [data-testid="unlink-oauth-cancel"]',
+  unlinkButton: 'dialog.modal-open [data-testid="unlink-oauth-unlink"]',
+  warningAlert: 'dialog.modal-open [data-testid="alert-banner-warning"]',
+  errorAlert: 'dialog.modal-open [data-testid="alert-banner-error"]',
 } as const;
 
 /**
@@ -125,6 +125,7 @@ export const unlinkOAuthModal = {
  */
 export const modal = {
   openModal: 'dialog.modal.modal-open',
+  closeButton: 'dialog.modal-open [data-testid="modal-close"]',
 } as const;
 
 /**

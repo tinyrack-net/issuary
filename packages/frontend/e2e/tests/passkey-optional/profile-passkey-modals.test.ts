@@ -199,9 +199,7 @@ test.describe('ManagePasskeysModal (profile)', () => {
       await page.getByRole('button', { name: 'Rename' }).first().click();
 
       // Edit form should appear with input
-      const nameInput = page
-        .locator('dialog.modal-open input[type="text"]')
-        .first();
+      const nameInput = page.locator(managePasskeysModal.renameInput).first();
       await expect(nameInput).toBeVisible();
 
       // Clear and type new name

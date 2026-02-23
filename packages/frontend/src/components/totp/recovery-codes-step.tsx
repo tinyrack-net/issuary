@@ -32,7 +32,10 @@ export function RecoveryCodesStep({
         {t('setupTotp.recoveryCodes.description')}
       </p>
 
-      <div className="grid grid-cols-2 gap-2 rounded-lg bg-base-200 p-3">
+      <div
+        className="grid grid-cols-2 gap-2 rounded-lg bg-base-200 p-3"
+        data-testid="recovery-codes-grid"
+      >
         {recoveryCodes.map((code) => (
           <code
             className="rounded bg-base-300 px-2 py-1 text-center font-mono text-sm"
@@ -70,6 +73,7 @@ export function RecoveryCodesStep({
         <input
           checked={confirmed}
           className="checkbox checkbox-sm"
+          data-testid="recovery-codes-confirm"
           disabled={isLoading}
           onChange={(event) => setConfirmed(event.target.checked)}
           type="checkbox"
@@ -81,6 +85,7 @@ export function RecoveryCodesStep({
 
       <button
         className="btn btn-sm btn-primary btn-block"
+        data-testid="recovery-codes-submit"
         disabled={!confirmed || isLoading}
         onClick={onConfirm}
         type="button"

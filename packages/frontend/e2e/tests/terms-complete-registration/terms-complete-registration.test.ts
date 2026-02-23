@@ -2,6 +2,7 @@ import {
   expect,
   test,
 } from '@frontend-e2e/fixtures/terms-complete-registration.js';
+import { registerPage } from '@frontend-e2e/helpers/register-page.js';
 
 test.describe('Terms complete registration mode', () => {
   test('normal terms route redirects unauthenticated user to login', async ({
@@ -21,9 +22,7 @@ test.describe('Terms complete registration mode', () => {
 
     await expect(page).toHaveURL(/\/terms/);
     await expect(page.getByRole('heading', { name: 'Terms' })).toBeVisible();
-    await expect(page.locator('input[type="checkbox"].checkbox')).toHaveCount(
-      3,
-    );
+    await expect(page.locator(registerPage.termsCheckbox)).toHaveCount(3);
   });
 
   test('invalid registration token shows submit error on consent', async ({
@@ -33,7 +32,7 @@ test.describe('Terms complete registration mode', () => {
       '/terms?mode=complete_registration&registration_token=invalid-token',
     );
 
-    const checkboxes = page.locator('input[type="checkbox"].checkbox');
+    const checkboxes = page.locator(registerPage.termsCheckbox);
     await checkboxes.nth(1).check();
 
     await page.locator('button[type="submit"]').click();

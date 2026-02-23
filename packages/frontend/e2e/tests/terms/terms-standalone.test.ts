@@ -52,7 +52,9 @@ test.describe('Standalone terms page', () => {
     await page.locator('button[type="submit"]').click();
 
     // Should show validation error
-    await expect(page.locator('.text-error').first()).toBeVisible({
+    await expect(
+      page.locator('[data-testid="terms-field-error"]').first(),
+    ).toBeVisible({
       timeout: 10000,
     });
   });

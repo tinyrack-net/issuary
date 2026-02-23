@@ -207,13 +207,17 @@ function Profile() {
             <InitialAvatar email={user.email} size="lg" />
             <div className="min-w-0">
               <h1 className="font-bold text-xl">{t('profile.title')}</h1>
-              <p className="truncate text-base-content/70 text-sm">
+              <p
+                className="truncate text-base-content/70 text-sm"
+                data-testid="profile-user-email"
+              >
                 {user.email}
               </p>
             </div>
           </div>
           <button
             className="btn btn-ghost btn-sm gap-2"
+            data-testid="profile-logout"
             disabled={logoutMutation.isPending}
             onClick={() => logoutMutation.mutate()}
             type="button"

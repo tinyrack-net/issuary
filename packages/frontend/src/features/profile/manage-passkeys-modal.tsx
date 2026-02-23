@@ -129,7 +129,10 @@ export function ManagePasskeysModal({
         )}
 
         {!isLoading && passkeys.length === 0 && (
-          <div className="py-6 text-center text-base-content/60 text-sm">
+          <div
+            className="py-6 text-center text-base-content/60 text-sm"
+            data-testid="passkeys-empty"
+          >
             <p>{t('profile.passkey.manageModal.noPasskeys')}</p>
           </div>
         )}
@@ -156,11 +159,17 @@ export function ManagePasskeysModal({
       </div>
 
       <ModalActions>
-        <button className="btn btn-sm" onClick={handleClose} type="button">
+        <button
+          className="btn btn-sm"
+          data-testid="manage-passkeys-close"
+          onClick={handleClose}
+          type="button"
+        >
           {t('profile.passkey.manageModal.close')}
         </button>
         <button
           className="btn btn-sm btn-primary"
+          data-testid="manage-passkeys-add-new"
           onClick={() => {
             handleClose();
             onAddNew();
@@ -246,12 +255,16 @@ function PasskeyItem({
           className={`input input-bordered input-sm w-full ${
             form.formState.errors.name ? 'input-error' : ''
           }`}
+          data-testid="passkey-rename-input"
           placeholder={t('profile.passkey.manageModal.namePlaceholder')}
           type="text"
           {...form.register('name')}
         />
         {form.formState.errors.name && (
-          <span className="text-error text-xs">
+          <span
+            className="text-error text-xs"
+            data-testid="passkey-rename-error"
+          >
             {form.formState.errors.name.message}
           </span>
         )}
@@ -311,7 +324,10 @@ function PasskeyItem({
   }
 
   return (
-    <div className="flex items-center justify-between rounded-lg bg-base-200 p-2">
+    <div
+      className="flex items-center justify-between rounded-lg bg-base-200 p-2"
+      data-testid="passkey-item"
+    >
       <div className="flex items-center gap-2">
         {passkey.device_type === 'multiDevice' ? (
           <CloudIcon className="size-4 text-primary" weight="regular" />

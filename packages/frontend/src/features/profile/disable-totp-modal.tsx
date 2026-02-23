@@ -105,7 +105,10 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
             {...form.register('code')}
           />
           {form.formState.errors.code && (
-            <span className="label-text-alt mt-0.5 text-error">
+            <span
+              className="label-text-alt mt-0.5 text-error"
+              data-testid="disable-totp-error"
+            >
               {form.formState.errors.code.message}
             </span>
           )}
@@ -114,6 +117,7 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
         <ModalActions>
           <button
             className="btn btn-sm"
+            data-testid="disable-totp-cancel"
             disabled={mutation.isPending}
             onClick={handleClose}
             type="button"
@@ -122,6 +126,7 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
           </button>
           <button
             className="btn btn-sm btn-error"
+            data-testid="disable-totp-submit"
             disabled={mutation.isPending}
             type="submit"
           >

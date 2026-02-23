@@ -112,7 +112,10 @@ export function DeleteAccountModal({
             autoComplete="off"
           />
           {form.formState.errors.confirmation && (
-            <span className="label-text-alt mt-0.5 text-error">
+            <span
+              className="label-text-alt mt-0.5 text-error"
+              data-testid="delete-account-error"
+            >
               {form.formState.errors.confirmation.message}
             </span>
           )}
@@ -127,6 +130,7 @@ export function DeleteAccountModal({
         <ModalActions>
           <button
             className="btn btn-sm"
+            data-testid="delete-account-cancel"
             disabled={mutation.isPending}
             onClick={handleClose}
             type="button"
@@ -135,6 +139,7 @@ export function DeleteAccountModal({
           </button>
           <button
             className="btn btn-sm btn-error"
+            data-testid="delete-account-submit"
             disabled={mutation.isPending}
             type="submit"
           >

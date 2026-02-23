@@ -280,6 +280,7 @@ function Register() {
                   dangerouslySetInnerHTML={{
                     __html: implicitNotice,
                   }}
+                  data-testid="terms-implicit-notice"
                 />
               </div>
             )}

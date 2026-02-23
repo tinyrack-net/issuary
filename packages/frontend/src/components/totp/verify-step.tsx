@@ -97,6 +97,7 @@ export function VerifyStep({
       <div className="mt-3 text-center">
         <button
           className="btn btn-ghost btn-xs"
+          data-testid="totp-verify-back"
           disabled={isPending}
           onClick={onBack}
           type="button"

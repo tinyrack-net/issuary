@@ -1,5 +1,5 @@
 import { expect, test } from '@frontend-e2e/fixtures/totp-required.js';
-import { performLogin } from '@frontend-e2e/helpers/login.js';
+import { performLogin, totpVerifyPage } from '@frontend-e2e/helpers/login.js';
 import { recoveryPage } from '@frontend-e2e/helpers/recovery.js';
 import { registerUser } from '@frontend-e2e/helpers/register.js';
 import { generateTotpCode } from '@frontend-e2e/helpers/totp.js';
@@ -78,7 +78,7 @@ test.describe('TOTP recovery code verification', () => {
     await page.waitForURL('**/verify/totp');
 
     // Click "Use a recovery code" link
-    await page.locator('button.link.link-info').click();
+    await page.locator(totpVerifyPage.recoveryCodeLink).click();
     await page.waitForURL('**/verify/totp/recovery');
 
     // Enter first recovery code
@@ -96,7 +96,7 @@ test.describe('TOTP recovery code verification', () => {
     await performLogin(page, email, TEST_PASSWORD);
     await page.waitForURL('**/verify/totp');
 
-    await page.locator('button.link.link-info').click();
+    await page.locator(totpVerifyPage.recoveryCodeLink).click();
     await page.waitForURL('**/verify/totp/recovery');
 
     // Enter invalid recovery code
@@ -114,7 +114,7 @@ test.describe('TOTP recovery code verification', () => {
     await performLogin(page, email, TEST_PASSWORD);
     await page.waitForURL('**/verify/totp');
 
-    await page.locator('button.link.link-info').click();
+    await page.locator(totpVerifyPage.recoveryCodeLink).click();
     await page.waitForURL('**/verify/totp/recovery');
 
     // Click "back to authenticator" link

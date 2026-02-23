@@ -1,5 +1,6 @@
 import { expect, test } from '@frontend-e2e/fixtures/terms.js';
 import { modal } from '@frontend-e2e/helpers/profile-page.js';
+import { registerPage } from '@frontend-e2e/helpers/register-page.js';
 
 test.describe('TermsContentModal', () => {
   test('clicking View link on text-type terms opens content modal', async ({
@@ -18,9 +19,9 @@ test.describe('TermsContentModal', () => {
     await expect(page.locator(modal.openModal)).toBeVisible();
 
     // Modal title should show "Terms of Service"
-    await expect(page.locator('dialog.modal-open h3').first()).toContainText(
-      'Terms of Service',
-    );
+    await expect(
+      page.locator(modal.openModal).getByRole('heading').first(),
+    ).toContainText('Terms of Service');
 
     // Content should be displayed
     await expect(
@@ -37,13 +38,13 @@ test.describe('TermsContentModal', () => {
     await expect(page.locator(modal.openModal)).toBeVisible();
 
     // Close the modal using the X button
-    await page.locator('dialog.modal-open button.btn-circle.btn-ghost').click();
+    await page.locator(modal.closeButton).click();
 
     // Modal should close
     await expect(page.locator(modal.openModal)).not.toBeVisible();
 
     // Registration form should still be visible
-    await expect(page.locator('input[name="email"]')).toBeVisible();
+    await expect(page.locator(registerPage.emailInput)).toBeVisible();
   });
 
   test('privacy policy modal shows correct content', async ({ page }) => {
@@ -57,9 +58,9 @@ test.describe('TermsContentModal', () => {
     await expect(page.locator(modal.openModal)).toBeVisible();
 
     // Modal title should show "Privacy Policy"
-    await expect(page.locator('dialog.modal-open h3').first()).toContainText(
-      'Privacy Policy',
-    );
+    await expect(
+      page.locator(modal.openModal).getByRole('heading').first(),
+    ).toContainText('Privacy Policy');
 
     // Content should be displayed
     await expect(

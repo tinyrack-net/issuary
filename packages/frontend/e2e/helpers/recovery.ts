@@ -4,13 +4,13 @@
  */
 export const recoveryPage = {
   /** Recovery code text input */
-  codeInput: 'input[autocomplete="off"]',
+  codeInput: '[data-testid="recovery-code-input"]',
   /** Submit button */
   submitButton: 'button[type="submit"]',
   /** Field error text */
-  fieldError: '.text-error',
+  fieldError: '[data-testid="recovery-error"]',
   /** Session expired warning alert */
-  sessionExpiredAlert: '.alert-warning',
+  sessionExpiredAlert: '[data-testid="recovery-session-expired"]',
   /** "Back to authenticator" link */
-  backToTotpLink: 'button.link.link-info',
+  backToTotpLink: '[data-testid="recovery-back-to-totp"]',
 } as const;

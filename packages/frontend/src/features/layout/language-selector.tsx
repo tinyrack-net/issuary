@@ -43,6 +43,7 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
       <select
         aria-label={t('common.language.select')}
         className="select select-ghost select-sm text-base-content/60"
+        data-testid="language-selector"
         onChange={handleChange}
         value={currentValue}
       >

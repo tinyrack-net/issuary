@@ -82,7 +82,9 @@ export function Modal({
           </div>
           {!preventClose && (
             <button
+              aria-label="Close"
               className="btn btn-circle btn-ghost btn-xs shrink-0"
+              data-testid="modal-close"
               onClick={onClose}
               type="button"
             >

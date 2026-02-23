@@ -189,6 +189,7 @@ function VerifyEmail() {
 
         <button
           className="btn btn-block h-10 font-semibold text-[14px]"
+          data-testid="email-verify-go-profile"
           onClick={() => navigate({ to: '/profile' })}
           type="button"
         >
@@ -246,6 +247,7 @@ function VerifyEmail() {
 
           <button
             className="btn btn-ghost btn-sm w-full"
+            data-testid="email-verify-resend"
             disabled={resendVerificationMutation.isPending || resendSuccess}
             onClick={handleResend}
             type="button"
