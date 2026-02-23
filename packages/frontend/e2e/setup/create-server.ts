@@ -136,6 +136,41 @@ export async function createE2EServer(configFactory: ConfigFactory) {
       }
       return c.json({ token: reset.token });
     })
+    .post('/test/totp/setup/:email', async (c) => {
+      const email = c.req.param('email');
+      const user = await services.mikro.user.findOne({ email });
+      if (!user) {
+        return c.json({ error: 'User not found' }, 404);
+      }
+      const secret = services.totpService.generateSecret();
+      const totp = services.mikro.userTotp.create({
+        user: user.sub,
+        secret,
+        verified: true,
+        recovery_confirmed: true,
+      });
+      services.mikro.em.persist(totp);
+      await services.mikro.em.flush();
+      return c.json({ secret });
+    })
+    .post('/test/totp/setup-with-recovery/:email', async (c) => {
+      const email = c.req.param('email');
+      const user = await services.mikro.user.findOne({ email });
+      if (!user) {
+        return c.json({ error: 'User not found' }, 404);
+      }
+      const setupData = await services.totpService.startSetup(user);
+      const code = services.totpService.generateToken(setupData.secret);
+      const recoveryCodes = await services.totpService.verifySetup(
+        user.sub,
+        code,
+      );
+      await services.totpService.confirmSetup(user.sub);
+      return c.json({
+        secret: setupData.secret,
+        recovery_codes: recoveryCodes,
+      });
+    })
     .get('/test/oauth-stub/:provider/authorize', async (c) => {
       const provider = c.req.param('provider');
       const redirectUri = c.req.query('redirect_uri');

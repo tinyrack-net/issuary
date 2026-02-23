@@ -3,7 +3,7 @@ import { performLogin } from '@frontend-e2e/helpers/login.js';
 import { fillPinInput } from '@frontend-e2e/helpers/pin-input.js';
 import {
   generateTotpCode,
-  setupTotpViaApi,
+  setupTotpViaTestApi,
 } from '@frontend-e2e/helpers/totp.js';
 import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
@@ -35,11 +35,7 @@ test.describe('TOTP optional configuration', () => {
     await expect(page).toHaveURL(/\/profile/);
   });
 
-  test('user with TOTP is routed to verify flow', async ({
-    page,
-    request,
-    baseURL,
-  }) => {
+  test('user with TOTP is routed to verify flow', async ({ page, baseURL }) => {
     const email = uniqueEmail('has-totp');
     const client = getTestApiClient({ baseUrl: String(baseURL) });
     const registerRes = await client.api.auth.register.$post({
@@ -50,7 +46,7 @@ test.describe('TOTP optional configuration', () => {
       throw new Error(`Failed to register user: ${registerRes.status}`);
     }
 
-    const { secret } = await setupTotpViaApi(request, String(baseURL));
+    const { secret } = await setupTotpViaTestApi(String(baseURL), email);
 
     await performLogin(page, email, TEST_PASSWORD);
     await page.waitForURL('**/verify/totp');

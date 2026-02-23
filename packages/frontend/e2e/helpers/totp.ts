@@ -1,3 +1,4 @@
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 import type { APIRequestContext, Page, Route } from '@playwright/test';
 import { generateSync } from 'otplib';
 
@@ -80,4 +81,60 @@ export async function setupTotpViaApi(
   }
 
   return { secret };
+}
+
+/**
+ * Sets up TOTP for a user via the test-only endpoint (no session required).
+ *
+ * Directly creates a verified TOTP record in the database, bypassing
+ * the authenticated API flow. This avoids cookie-store mismatch between
+ * the Hono RPC client (used for registration) and Playwright's
+ * APIRequestContext.
+ *
+ * @param baseURL - Backend base URL
+ * @param email - User email
+ * @returns The TOTP secret for generating codes later
+ */
+export async function setupTotpViaTestApi(
+  baseURL: string,
+  email: string,
+): Promise<SetupTotpResult> {
+  const client = getTestApiClient({ baseUrl: baseURL });
+  const res = await client.test.totp.setup[':email'].$post({
+    param: { email },
+  });
+  if (!res.ok) {
+    throw new Error(`TOTP test setup failed: ${res.status}`);
+  }
+  const data = (await res.json()) as { secret: string };
+  return { secret: data.secret };
+}
+
+/**
+ * Sets up TOTP with recovery codes via the test-only endpoint
+ * (no session required).
+ *
+ * Performs the full TOTP setup flow server-side (start, verify, confirm)
+ * and returns both the secret and recovery codes.
+ *
+ * @param baseURL - Backend base URL
+ * @param email - User email
+ * @returns The TOTP secret and recovery codes
+ */
+export async function setupTotpWithRecoveryViaTestApi(
+  baseURL: string,
+  email: string,
+): Promise<{ secret: string; recoveryCodes: string[] }> {
+  const client = getTestApiClient({ baseUrl: baseURL });
+  const res = await client.test.totp['setup-with-recovery'][':email'].$post({
+    param: { email },
+  });
+  if (!res.ok) {
+    throw new Error(`TOTP test setup with recovery failed: ${res.status}`);
+  }
+  const data = (await res.json()) as {
+    secret: string;
+    recovery_codes: string[];
+  };
+  return { secret: data.secret, recoveryCodes: data.recovery_codes };
 }

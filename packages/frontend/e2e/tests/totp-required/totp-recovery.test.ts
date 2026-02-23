@@ -1,7 +1,7 @@
 import { expect, test } from '@frontend-e2e/fixtures/totp-required.js';
 import { performLogin, totpVerifyPage } from '@frontend-e2e/helpers/login.js';
 import { recoveryPage } from '@frontend-e2e/helpers/recovery.js';
-import { generateTotpCode } from '@frontend-e2e/helpers/totp.js';
+import { setupTotpWithRecoveryViaTestApi } from '@frontend-e2e/helpers/totp.js';
 import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 /**
@@ -14,52 +14,11 @@ function uniqueEmail(suffix: string): string {
 
 const TEST_PASSWORD = 'test-password-123';
 
-/**
- * Sets up TOTP via API and returns both the secret and recovery codes.
- */
-async function setupTotpWithRecoveryCodes(
-  request: import('@playwright/test').APIRequestContext,
-  baseURL: string,
-): Promise<{ secret: string; recoveryCodes: string[] }> {
-  // Step 1: Start setup
-  const setupRes = await request.post(`${baseURL}/api/user/totp/setup`);
-  if (!setupRes.ok()) {
-    throw new Error(
-      `TOTP setup failed: ${setupRes.status()} ${await setupRes.text()}`,
-    );
-  }
-  const { secret } = (await setupRes.json()) as { secret: string };
-
-  // Step 2: Verify with valid code (returns recovery codes)
-  const code = generateTotpCode(secret);
-  const verifyRes = await request.post(`${baseURL}/api/user/totp/verify`, {
-    data: { code },
-  });
-  if (!verifyRes.ok()) {
-    throw new Error(
-      `TOTP verify failed: ${verifyRes.status()} ${await verifyRes.text()}`,
-    );
-  }
-  const verifyBody = (await verifyRes.json()) as {
-    recovery_codes: string[];
-  };
-
-  // Step 3: Confirm
-  const confirmRes = await request.post(`${baseURL}/api/user/totp/confirm`);
-  if (!confirmRes.ok()) {
-    throw new Error(
-      `TOTP confirm failed: ${confirmRes.status()} ${await confirmRes.text()}`,
-    );
-  }
-
-  return { secret, recoveryCodes: verifyBody.recovery_codes };
-}
-
 test.describe('TOTP recovery code verification', () => {
   let email: string;
   let recoveryCodes: string[];
 
-  test.beforeAll(async ({ request, baseURL }) => {
+  test.beforeAll(async ({ baseURL }) => {
     email = uniqueEmail('recovery');
 
     // Register user
@@ -72,8 +31,11 @@ test.describe('TOTP recovery code verification', () => {
       throw new Error(`Failed to register user: ${registerRes.status}`);
     }
 
-    // Set up TOTP and capture recovery codes
-    const result = await setupTotpWithRecoveryCodes(request, String(baseURL));
+    // Set up TOTP and capture recovery codes via test endpoint
+    const result = await setupTotpWithRecoveryViaTestApi(
+      String(baseURL),
+      email,
+    );
     recoveryCodes = result.recoveryCodes;
   });
 

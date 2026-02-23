@@ -3,7 +3,7 @@ import { performLogin, totpVerifyPage } from '@frontend-e2e/helpers/login.js';
 import { fillPinInput } from '@frontend-e2e/helpers/pin-input.js';
 import {
   generateTotpCode,
-  setupTotpViaApi,
+  setupTotpViaTestApi,
 } from '@frontend-e2e/helpers/totp.js';
 import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
@@ -21,7 +21,7 @@ test.describe('TOTP verify flow (DB user with TOTP already set up)', () => {
   let email: string;
   let totpSecret: string;
 
-  test.beforeAll(async ({ request, baseURL }) => {
+  test.beforeAll(async ({ baseURL }) => {
     email = uniqueEmail('verify');
 
     // Register user
@@ -34,8 +34,8 @@ test.describe('TOTP verify flow (DB user with TOTP already set up)', () => {
       throw new Error(`Failed to register user: ${registerRes.status}`);
     }
 
-    // Set up TOTP via API (3-step flow)
-    const result = await setupTotpViaApi(request, String(baseURL));
+    // Set up TOTP via test endpoint (no session required)
+    const result = await setupTotpViaTestApi(String(baseURL), email);
     totpSecret = result.secret;
   });
 

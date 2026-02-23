@@ -10,7 +10,7 @@ import {
 import {
   generateTotpCode,
   interceptTotpSecret,
-  setupTotpViaApi,
+  setupTotpViaTestApi,
 } from '@frontend-e2e/helpers/totp.js';
 import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
@@ -246,7 +246,6 @@ test.describe('SetupTotpModal (profile)', () => {
 test.describe('DisableTotpModal (profile, optional 2FA)', () => {
   test('successfully disable TOTP with valid code', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('disable-ok');
@@ -258,7 +257,7 @@ test.describe('DisableTotpModal (profile, optional 2FA)', () => {
     if (!registerRes.ok) {
       throw new Error(`Failed to register user: ${registerRes.status}`);
     }
-    const { secret } = await setupTotpViaApi(request, String(baseURL));
+    const { secret } = await setupTotpViaTestApi(String(baseURL), email);
 
     await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);
 
@@ -291,11 +290,7 @@ test.describe('DisableTotpModal (profile, optional 2FA)', () => {
     await expect(page.getByRole('button', { name: 'Enable' })).toBeVisible();
   });
 
-  test('cancel closes modal without disabling', async ({
-    page,
-    request,
-    baseURL,
-  }) => {
+  test('cancel closes modal without disabling', async ({ page, baseURL }) => {
     const email = uniqueEmail('disable-cancel');
     const client = getTestApiClient({ baseUrl: String(baseURL) });
     const registerRes = await client.api.auth.register.$post({
@@ -305,7 +300,7 @@ test.describe('DisableTotpModal (profile, optional 2FA)', () => {
     if (!registerRes.ok) {
       throw new Error(`Failed to register user: ${registerRes.status}`);
     }
-    const { secret } = await setupTotpViaApi(request, String(baseURL));
+    const { secret } = await setupTotpViaTestApi(String(baseURL), email);
 
     await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);
 
