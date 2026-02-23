@@ -4,7 +4,9 @@ import { Alert } from '@frontend/components/ui/alert.js';
 import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
 import { PageLayout } from '@frontend/features/layout/page-layout.js';
 import { OAuthSearchSchema } from '@frontend/libs/oauth-search';
+import { tick } from '@frontend/libs/promise.js';
 import { appConfigQueryOptions } from '@frontend/queries/config';
+import { getSessionQueryOptions } from '@frontend/queries/session.js';
 import {
   getTermsQueryOptions,
   type TermsConsentItem,
@@ -12,7 +14,11 @@ import {
 } from '@frontend/queries/terms.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { CheckIcon, WarningIcon } from '@phosphor-icons/react';
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import {
   createFileRoute,
   type ErrorComponentProps,
@@ -77,6 +83,7 @@ export const Route = createFileRoute('/terms/')({
 function Terms() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const search = Route.useSearch();
 
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
@@ -143,7 +150,13 @@ function Terms() {
 
   const consentMutation = useMutation({
     ...termsConsentMutationOptions,
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: getSessionQueryOptions.queryKey,
+      });
+      await queryClient.fetchQuery(getSessionQueryOptions);
+      await tick();
+
       // Redirect after successful consent
       if (search.redirect) {
         window.location.href = search.redirect;
