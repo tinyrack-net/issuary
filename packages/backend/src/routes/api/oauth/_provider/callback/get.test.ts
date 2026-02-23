@@ -1,18 +1,34 @@
 import type { AppType } from '@backend/app.js';
 import { e } from '@backend/schemas/error.js';
 import { createServer } from '@backend/server.js';
+import type { ServiceContainer } from '@backend/services/container.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   expectError,
   extractCookie,
+  generateUniqueEmail,
   getLocationHeader,
   MINIMAL_TEST_CONFIG,
+  mockOAuthProviderFetch,
   TEST_USER_CONFIG,
 } from '@backend/test-utils/index.js';
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  test,
+  vi,
+} from 'vitest';
+
+const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+const GOOGLE_USERINFO_URL = 'https://openidconnect.googleapis.com/v1/userinfo';
 
 let app: AppType;
+let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
@@ -40,10 +56,16 @@ beforeAll(async () => {
           email_conflict_strategy: 'auto_link',
         },
       ],
+      terms: [],
     },
   });
   app = server.app;
+  services = server.services;
   cleanup = server.cleanup;
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 afterAll(async () => {
@@ -51,22 +73,28 @@ afterAll(async () => {
 });
 
 /**
- * Helper: Start OAuth flow and get session data
+ * Helper: Start OAuth flow and get session state/cookie.
  */
 async function startOAuthFlow(
   provider: string,
-  mode: 'login' | 'register' | 'link' = 'login',
-  sessionCookie?: string,
+  options?: {
+    mode?: 'login' | 'register' | 'link';
+    sessionCookie?: string;
+    returnUrl?: string;
+  },
 ): Promise<{ sessionCookie: string; state: string }> {
   const client = testClient(app);
 
   const res = await client.api.oauth[':provider'].authorize.$get(
     {
       param: { provider },
-      query: { mode },
+      query: {
+        mode: options?.mode ?? 'login',
+        ...(options?.returnUrl ? { return_url: options.returnUrl } : {}),
+      },
     },
-    sessionCookie
-      ? { headers: { Cookie: `session=${sessionCookie}` } }
+    options?.sessionCookie
+      ? { headers: { Cookie: `session=${options.sessionCookie}` } }
       : undefined,
   );
 
@@ -79,11 +107,208 @@ async function startOAuthFlow(
   }
 
   const cookie = extractCookie(res, 'session');
-
   return { sessionCookie: cookie, state };
 }
 
 describe('GET /api/oauth/:provider/callback', () => {
+  describe('Success Flows', () => {
+    test('should complete login mode callback and create authenticated session', async () => {
+      const oauthEmail = generateUniqueEmail('oauth-callback-login');
+      const { sessionCookie, state } = await startOAuthFlow('google', {
+        mode: 'login',
+      });
+
+      const oauthMock = mockOAuthProviderFetch({
+        tokenUrl: GOOGLE_TOKEN_URL,
+        userInfoUrl: GOOGLE_USERINFO_URL,
+        userInfo: {
+          id: `google-login-${Date.now()}`,
+          email: oauthEmail,
+          email_verified: true,
+          name: 'OAuth Login User',
+        },
+      });
+
+      try {
+        const client = testClient(app);
+        const callbackRes = await client.api.oauth[':provider'].callback.$get(
+          {
+            param: { provider: 'google' },
+            query: {
+              code: 'oauth-login-code',
+              state,
+            },
+          },
+          { headers: { Cookie: `session=${sessionCookie}` } },
+        );
+
+        expect(callbackRes.status).toBe(302);
+        const callbackLocation = new URL(
+          getLocationHeader(callbackRes),
+          'http://test',
+        );
+        expect(callbackLocation.pathname).toBe('/profile');
+
+        const callbackCookie = extractCookie(callbackRes, 'session');
+
+        const sessionClient = testClient(app);
+        const sessionRes = await sessionClient.api.user.session.$get(
+          {},
+          { headers: { Cookie: `session=${callbackCookie}` } },
+        );
+        const sessionBody = await assertJsonBody(sessionRes);
+        expect(sessionBody.user).not.toBeNull();
+        expect(sessionBody.user?.email).toBe(oauthEmail);
+
+        const replayRes = await client.api.oauth[':provider'].callback.$get(
+          {
+            param: { provider: 'google' },
+            query: {
+              code: 'oauth-login-code',
+              state,
+            },
+          },
+          { headers: { Cookie: `session=${callbackCookie}` } },
+        );
+        await expectError(replayRes, e.OAuthSessionExpired);
+      } finally {
+        oauthMock.restore();
+      }
+    });
+
+    test('should complete register mode callback and redirect to return_url', async () => {
+      const oauthEmail = generateUniqueEmail('oauth-callback-register');
+      const returnUrl = '/profile?tab=oauth';
+
+      const { sessionCookie, state } = await startOAuthFlow('google', {
+        mode: 'register',
+        returnUrl,
+      });
+
+      const oauthMock = mockOAuthProviderFetch({
+        tokenUrl: GOOGLE_TOKEN_URL,
+        userInfoUrl: GOOGLE_USERINFO_URL,
+        userInfo: {
+          id: `google-register-${Date.now()}`,
+          email: oauthEmail,
+          email_verified: true,
+          name: 'OAuth Register User',
+        },
+      });
+
+      try {
+        const client = testClient(app);
+        const callbackRes = await client.api.oauth[':provider'].callback.$get(
+          {
+            param: { provider: 'google' },
+            query: {
+              code: 'oauth-register-code',
+              state,
+            },
+          },
+          { headers: { Cookie: `session=${sessionCookie}` } },
+        );
+
+        expect(callbackRes.status).toBe(302);
+        const callbackLocation = new URL(
+          getLocationHeader(callbackRes),
+          'http://test',
+        );
+        expect(callbackLocation.pathname).toBe('/profile');
+        expect(callbackLocation.searchParams.get('tab')).toBe('oauth');
+
+        const callbackCookie = extractCookie(callbackRes, 'session');
+        const sessionClient = testClient(app);
+        const sessionRes = await sessionClient.api.user.session.$get(
+          {},
+          { headers: { Cookie: `session=${callbackCookie}` } },
+        );
+        const sessionBody = await assertJsonBody(sessionRes);
+        expect(sessionBody.user).not.toBeNull();
+        expect(sessionBody.user?.email).toBe(oauthEmail);
+      } finally {
+        oauthMock.restore();
+      }
+    });
+
+    test('should complete link mode callback and keep existing user session', async () => {
+      const existingSessionCookie = await createAuthenticatedSession(app);
+      const returnUrl = '/profile?tab=linked';
+
+      const sessionClient = testClient(app);
+      const beforeSessionRes = await sessionClient.api.user.session.$get(
+        {},
+        { headers: { Cookie: `session=${existingSessionCookie}` } },
+      );
+      const beforeSession = await assertJsonBody(beforeSessionRes);
+      const beforeUserSub = beforeSession.user?.sub;
+      if (!beforeUserSub) {
+        throw new Error('Expected authenticated user before OAuth link flow');
+      }
+
+      const { sessionCookie, state } = await startOAuthFlow('google', {
+        mode: 'link',
+        sessionCookie: existingSessionCookie,
+        returnUrl,
+      });
+
+      const oauthMock = mockOAuthProviderFetch({
+        tokenUrl: GOOGLE_TOKEN_URL,
+        userInfoUrl: GOOGLE_USERINFO_URL,
+        userInfo: {
+          id: `google-link-${Date.now()}`,
+          email: generateUniqueEmail('oauth-callback-link'),
+          email_verified: true,
+          name: 'OAuth Link User',
+        },
+      });
+
+      try {
+        const client = testClient(app);
+        const callbackRes = await client.api.oauth[':provider'].callback.$get(
+          {
+            param: { provider: 'google' },
+            query: {
+              code: 'oauth-link-code',
+              state,
+            },
+          },
+          { headers: { Cookie: `session=${sessionCookie}` } },
+        );
+
+        expect(callbackRes.status).toBe(302);
+        const callbackLocation = new URL(
+          getLocationHeader(callbackRes),
+          'http://test',
+        );
+        expect(callbackLocation.pathname).toBe('/profile');
+        expect(callbackLocation.searchParams.get('tab')).toBe('linked');
+
+        const callbackCookie = extractCookie(callbackRes, 'session');
+
+        const afterSessionRes = await sessionClient.api.user.session.$get(
+          {},
+          { headers: { Cookie: `session=${callbackCookie}` } },
+        );
+        const afterSession = await assertJsonBody(afterSessionRes);
+        expect(afterSession.user?.sub).toBe(beforeUserSub);
+
+        const linkedRes = await sessionClient.api.user['oauth-accounts'].$get(
+          {},
+          { headers: { Cookie: `session=${callbackCookie}` } },
+        );
+        const linkedBody = await assertJsonBody(linkedRes);
+        const hasGoogleLink = linkedBody.accounts.some(
+          (account: { provider_name: string }) =>
+            account.provider_name === 'google',
+        );
+        expect(hasGoogleLink).toBe(true);
+      } finally {
+        oauthMock.restore();
+      }
+    });
+  });
+
   describe('Error Handling - OAuth Provider Errors', () => {
     test('should redirect to login with error when OAuth provider returns error', async () => {
       // Start OAuth flow to get valid session
@@ -295,11 +520,16 @@ describe('GET /api/oauth/:provider/callback', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { sessionCookie: oauthSession, state } = await startOAuthFlow(
         'google',
-        'link',
-        sessionCookie,
+        {
+          mode: 'link',
+          sessionCookie,
+        },
       );
 
-      // Note: Token exchange will fail with test code, but we verify the flow starts correctly
+      const exchangeSpy = vi
+        .spyOn(services.oauthConnectService, 'exchangeCodeForTokens')
+        .mockRejectedValueOnce(new e.OAuthTokenExchangeFailed.Error());
+
       const client = testClient(app);
       const res = await client.api.oauth[':provider'].callback.$get(
         {
@@ -312,16 +542,19 @@ describe('GET /api/oauth/:provider/callback', () => {
         { headers: { Cookie: `session=${oauthSession}` } },
       );
 
-      // Will fail at token exchange, not at auth check
-      // This means link mode flow is working
-      expect(res.status).toBe(502); // Token exchange failed
+      expect(res.status).toBe(502);
       await expectError(res, e.OAuthTokenExchangeFailed);
+      exchangeSpy.mockRestore();
     });
   });
 
   describe('Token Exchange Errors', () => {
     test('should return 502 when token exchange fails', async () => {
       const { sessionCookie, state } = await startOAuthFlow('google');
+
+      const exchangeSpy = vi
+        .spyOn(services.oauthConnectService, 'exchangeCodeForTokens')
+        .mockRejectedValueOnce(new e.OAuthTokenExchangeFailed.Error());
 
       const client = testClient(app);
       const res = await client.api.oauth[':provider'].callback.$get(
@@ -337,6 +570,7 @@ describe('GET /api/oauth/:provider/callback', () => {
 
       expect(res.status).toBe(502);
       await expectError(res, e.OAuthTokenExchangeFailed);
+      exchangeSpy.mockRestore();
     });
   });
 

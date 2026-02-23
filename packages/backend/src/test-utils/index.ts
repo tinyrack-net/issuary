@@ -65,5 +65,11 @@ export {
   refreshAccessToken,
   revokeToken,
 } from './oauth.js';
+export type {
+  OAuthMockTokens,
+  OAuthMockUserInfo,
+  OAuthProviderFetchMockOptions,
+} from './oauth-mock.js';
+export { mockOAuthProviderFetch } from './oauth-mock.js';
 // Setup utilities
 export { MINIMAL_TEST_CONFIG } from './setup.js';
