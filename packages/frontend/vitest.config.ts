@@ -7,27 +7,6 @@ import { defineConfig } from 'vitest/config';
 
 const MODE = process.env['VITEST_BROWSER_MODE'] as string;
 
-/**
- * Shared Vite plugins for all test projects.
- */
-const sharedPlugins = [
-  react({
-    babel: {
-      plugins: [['babel-plugin-react-compiler']],
-    },
-  }),
-  tailwindcss(),
-];
-
-/**
- * Shared resolve config for all test projects.
- */
-const sharedResolve = {
-  alias: {
-    '@frontend': path.resolve(__dirname, './src'),
-  },
-};
-
 export default defineConfig({
   server: {
     host: '0.0.0.0',
@@ -36,8 +15,19 @@ export default defineConfig({
   test: {
     projects: [
       {
-        plugins: sharedPlugins,
-        resolve: sharedResolve,
+        plugins: [
+          react({
+            babel: {
+              plugins: [['babel-plugin-react-compiler']],
+            },
+          }),
+          tailwindcss(),
+        ],
+        resolve: {
+          alias: {
+            '@frontend': path.resolve(__dirname, './src'),
+          },
+        },
         test: {
           name: 'unit',
           include: ['src/**/*.test.{ts,tsx}'],
