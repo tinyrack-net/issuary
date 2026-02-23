@@ -75,6 +75,87 @@ function getOAuthStubProfile(provider: string): Record<string, unknown> {
   };
 }
 
+const OAUTH_STUB_SCENARIOS = [
+  'success',
+  'denied',
+  'server_error',
+  'temporarily_unavailable',
+  'unknown_error',
+  'missing_state',
+  'missing_code',
+  'token_error',
+  'userinfo_error',
+] as const;
+
+type OAuthStubScenario = (typeof OAUTH_STUB_SCENARIOS)[number];
+
+function parseOAuthStubScenario(
+  value: string | undefined,
+): OAuthStubScenario | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  for (const candidate of OAUTH_STUB_SCENARIOS) {
+    if (candidate === value) {
+      return candidate;
+    }
+  }
+
+  return undefined;
+}
+
+function getOAuthStubScenario(
+  provider: string,
+  requested: string | undefined,
+): OAuthStubScenario {
+  const parsed = parseOAuthStubScenario(requested);
+  if (parsed) {
+    return parsed;
+  }
+
+  if (provider.includes('denied')) {
+    return 'denied';
+  }
+  if (provider.includes('server-error')) {
+    return 'server_error';
+  }
+  if (provider.includes('temporarily-unavailable')) {
+    return 'temporarily_unavailable';
+  }
+  if (provider.includes('unknown-error')) {
+    return 'unknown_error';
+  }
+  if (provider.includes('missing-state')) {
+    return 'missing_state';
+  }
+  if (provider.includes('missing-code')) {
+    return 'missing_code';
+  }
+  if (provider.includes('token-error')) {
+    return 'token_error';
+  }
+  if (provider.includes('userinfo-error')) {
+    return 'userinfo_error';
+  }
+
+  return 'success';
+}
+
+function buildOAuthStubCode(
+  provider: string,
+  scenario: OAuthStubScenario,
+): string {
+  if (scenario === 'token_error') {
+    return `${provider}-token-error-code`;
+  }
+  if (scenario === 'userinfo_error') {
+    return `${provider}-userinfo-error-code`;
+  }
+
+  return `${provider}-code`;
+}
+
 /**
  * Finds a free port by briefly binding to port 0.
  */
@@ -215,9 +296,7 @@ export async function createE2EServer(configFactory: ConfigFactory) {
       const redirectUri = c.req.query('redirect_uri');
       const state = c.req.query('state');
       const responseMode = c.req.query('response_mode');
-      const scenario =
-        c.req.query('scenario') ??
-        (provider.includes('denied') ? 'denied' : 'success');
+      const scenario = getOAuthStubScenario(provider, c.req.query('scenario'));
 
       if (!redirectUri || !state) {
         return c.json({ error: 'Missing redirect_uri or state' }, 400);
@@ -225,18 +304,40 @@ export async function createE2EServer(configFactory: ConfigFactory) {
 
       // Apple-style form_post: return HTML that auto-submits a POST form
       if (responseMode === 'form_post') {
-        const code = scenario === 'denied' ? undefined : `${provider}-code`;
-        const formFields: string[] = [
-          `<input type="hidden" name="state" value="${state}">`,
-        ];
-        if (scenario === 'denied') {
+        const formFields: string[] = [];
+
+        if (
+          scenario === 'denied' ||
+          scenario === 'server_error' ||
+          scenario === 'temporarily_unavailable' ||
+          scenario === 'unknown_error'
+        ) {
+          const errorCode =
+            scenario === 'denied'
+              ? 'access_denied'
+              : scenario === 'unknown_error'
+                ? 'stub_unknown'
+                : scenario;
           formFields.push(
-            '<input type="hidden" name="error" value="access_denied">',
+            `<input type="hidden" name="state" value="${state}">`,
+            `<input type="hidden" name="error" value="${errorCode}">`,
             `<input type="hidden" name="error_description" value="${provider} denied by oauth stub">`,
           );
+        } else if (scenario === 'missing_state') {
+          formFields.push(
+            `<input type="hidden" name="code" value="${buildOAuthStubCode(provider, scenario)}">`,
+          );
+        } else if (scenario === 'missing_code') {
+          formFields.push(
+            `<input type="hidden" name="state" value="${state}">`,
+          );
         } else {
-          formFields.push(`<input type="hidden" name="code" value="${code}">`);
+          formFields.push(
+            `<input type="hidden" name="state" value="${state}">`,
+            `<input type="hidden" name="code" value="${buildOAuthStubCode(provider, scenario)}">`,
+          );
         }
+
         const html = [
           '<html><body>',
           `<form method="POST" action="${redirectUri}">`,
@@ -249,16 +350,32 @@ export async function createE2EServer(configFactory: ConfigFactory) {
       }
 
       const callbackUrl = new URL(redirectUri);
-      callbackUrl.searchParams.set('state', state);
+      if (scenario !== 'missing_state') {
+        callbackUrl.searchParams.set('state', state);
+      }
 
-      if (scenario === 'denied') {
-        callbackUrl.searchParams.set('error', 'access_denied');
+      if (
+        scenario === 'denied' ||
+        scenario === 'server_error' ||
+        scenario === 'temporarily_unavailable' ||
+        scenario === 'unknown_error'
+      ) {
+        const errorCode =
+          scenario === 'denied'
+            ? 'access_denied'
+            : scenario === 'unknown_error'
+              ? 'stub_unknown'
+              : scenario;
+        callbackUrl.searchParams.set('error', errorCode);
         callbackUrl.searchParams.set(
           'error_description',
           `${provider} denied by oauth stub`,
         );
-      } else {
-        callbackUrl.searchParams.set('code', `${provider}-code`);
+      } else if (scenario !== 'missing_code') {
+        callbackUrl.searchParams.set(
+          'code',
+          buildOAuthStubCode(provider, scenario),
+        );
       }
 
       return c.redirect(callbackUrl.toString());
@@ -272,12 +389,22 @@ export async function createE2EServer(configFactory: ConfigFactory) {
         return c.json({ error: 'Missing code' }, 400);
       }
 
-      if (code !== `${provider}-code`) {
+      if (code === `${provider}-token-error-code`) {
+        return c.json({ error: 'temporarily_unavailable' }, 503);
+      }
+
+      if (
+        code !== `${provider}-code` &&
+        code !== `${provider}-userinfo-error-code`
+      ) {
         return c.json({ error: 'Invalid code' }, 400);
       }
 
+      const hasUserInfoError = code === `${provider}-userinfo-error-code`;
       const tokenResponse: Record<string, unknown> = {
-        access_token: `access-token-${provider}`,
+        access_token: hasUserInfoError
+          ? `access-token-${provider}-userinfo-error`
+          : `access-token-${provider}`,
         token_type: 'Bearer',
         expires_in: 3600,
       };
@@ -298,8 +425,17 @@ export async function createE2EServer(configFactory: ConfigFactory) {
       const provider = c.req.param('provider');
       const authorization = c.req.header('authorization');
 
-      if (authorization !== `Bearer access-token-${provider}`) {
+      const successToken = `Bearer access-token-${provider}`;
+      const userinfoErrorToken = `Bearer access-token-${provider}-userinfo-error`;
+
+      if (
+        authorization !== successToken &&
+        authorization !== userinfoErrorToken
+      ) {
         return c.json({ error: 'Invalid token' }, 401);
+      }
+      if (authorization === userinfoErrorToken) {
+        return c.json({ error: 'userinfo_failed' }, 503);
       }
 
       const profile = getOAuthStubProfile(provider);

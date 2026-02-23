@@ -61,6 +61,13 @@ test.describe('OAuth providers mixed configuration', () => {
     );
   });
 
+  test('unknown oauth error falls back to generic message', async ({
+    page,
+  }) => {
+    await page.goto('/login?oauth_error=unknown_oauth_error');
+    await expectOAuthError(page, 'OAuth login failed. Please try again.');
+  });
+
   test('successful provider callback logs user in and lands on profile', async ({
     page,
   }) => {

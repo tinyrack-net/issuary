@@ -32,4 +32,17 @@ test.describe('OAuth providers UI', () => {
     await expect(page.getByText('GitHub')).toBeVisible();
     await expect(page.getByText('Google')).toBeVisible();
   });
+
+  test('provider callback error redirects to login with mapped message', async ({
+    page,
+  }) => {
+    await page.goto(
+      '/api/oauth/github/callback?error=access_denied&error_description=user_denied',
+    );
+
+    await page.waitForURL('**/login**');
+    await expect(
+      page.getByText('The authorization request was denied.'),
+    ).toBeVisible();
+  });
 });
