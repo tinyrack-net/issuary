@@ -32,10 +32,28 @@ beforeAll(async () => {
         {
           id: 'github',
           type: 'github',
-          enabled: false,
+          enabled: true,
           display_name: 'GitHub',
           client_id: 'test-github-client-id',
           client_secret: 'test-github-client-secret',
+          email_conflict_strategy: 'auto_link',
+        },
+        {
+          id: 'apple',
+          type: 'apple',
+          enabled: true,
+          display_name: 'Apple',
+          client_id: 'test-apple-client-id',
+          client_secret: 'test-apple-client-secret',
+          email_conflict_strategy: 'auto_link',
+        },
+        {
+          id: 'disabled-github',
+          type: 'github',
+          enabled: false,
+          display_name: 'Disabled GitHub',
+          client_id: 'test-disabled-github-client-id',
+          client_secret: 'test-disabled-github-client-secret',
           email_conflict_strategy: 'auto_link',
         },
       ],
@@ -213,10 +231,9 @@ describe('GET /api/oauth/:provider/authorize', () => {
     });
 
     test('should return 404 for disabled provider', async () => {
-      // GitHub is disabled in test config
       const client = testClient(app);
       const res = await client.api.oauth[':provider'].authorize.$get({
-        param: { provider: 'github' },
+        param: { provider: 'disabled-github' },
         query: {},
       });
 
@@ -311,6 +328,91 @@ describe('GET /api/oauth/:provider/authorize', () => {
           /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
         );
       }
+    });
+  });
+
+  describe('GitHub Provider', () => {
+    test('should redirect to GitHub authorization URL', async () => {
+      const client = testClient(app);
+      const res = await client.api.oauth[':provider'].authorize.$get({
+        param: { provider: 'github' },
+        query: {},
+      });
+
+      expect(res.status).toBe(302);
+      const location = new URL(getLocationHeader(res));
+
+      expect(location.origin).toBe('https://github.com');
+      expect(location.pathname).toBe('/login/oauth/authorize');
+      expect(location.searchParams.get('client_id')).toBe(
+        'test-github-client-id',
+      );
+    });
+
+    test('should use user:email scope for GitHub', async () => {
+      const client = testClient(app);
+      const res = await client.api.oauth[':provider'].authorize.$get({
+        param: { provider: 'github' },
+        query: {},
+      });
+
+      const location = new URL(getLocationHeader(res));
+      expect(location.searchParams.get('scope')).toBe('user:email');
+    });
+
+    test('should not include response_mode for GitHub', async () => {
+      const client = testClient(app);
+      const res = await client.api.oauth[':provider'].authorize.$get({
+        param: { provider: 'github' },
+        query: {},
+      });
+
+      const location = new URL(getLocationHeader(res));
+      expect(location.searchParams.get('response_mode')).toBeNull();
+    });
+  });
+
+  describe('Apple Provider', () => {
+    test('should redirect to Apple authorization URL', async () => {
+      const client = testClient(app);
+      const res = await client.api.oauth[':provider'].authorize.$get({
+        param: { provider: 'apple' },
+        query: {},
+      });
+
+      expect(res.status).toBe(302);
+      const location = new URL(getLocationHeader(res));
+
+      expect(location.origin).toBe('https://appleid.apple.com');
+      expect(location.pathname).toBe('/auth/authorize');
+      expect(location.searchParams.get('client_id')).toBe(
+        'test-apple-client-id',
+      );
+    });
+
+    test('should include response_mode=form_post for Apple', async () => {
+      const client = testClient(app);
+      const res = await client.api.oauth[':provider'].authorize.$get({
+        param: { provider: 'apple' },
+        query: {},
+      });
+
+      const location = new URL(getLocationHeader(res));
+      expect(location.searchParams.get('response_mode')).toBe('form_post');
+    });
+
+    test('should use openid email name scopes for Apple', async () => {
+      const client = testClient(app);
+      const res = await client.api.oauth[':provider'].authorize.$get({
+        param: { provider: 'apple' },
+        query: {},
+      });
+
+      const location = new URL(getLocationHeader(res));
+      const scopes = location.searchParams.get('scope')?.split(' ') ?? [];
+      expect(scopes).toContain('openid');
+      expect(scopes).toContain('email');
+      expect(scopes).toContain('name');
     });
   });
 });
