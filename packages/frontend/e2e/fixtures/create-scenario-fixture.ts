@@ -14,7 +14,7 @@ type ConfigFactory = (
 export function createScenarioFixture(configFactory: ConfigFactory) {
   return base.extend<object, { serverPort: number }>({
     serverPort: [
-      async (_port, use) => {
+      async ({ browserName: _browserName }, use) => {
         const server = await createE2EServer(configFactory);
         await use(server.backendPort);
         await server.teardown();
