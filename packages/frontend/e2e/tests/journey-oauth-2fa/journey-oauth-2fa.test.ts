@@ -14,10 +14,10 @@ import {
   emailVerifyPage,
   loginPasswordPage,
 } from '@frontend-e2e/helpers/login.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
 import { registerPage } from '@frontend-e2e/helpers/register-page.js';
 import { interceptTotpSecret } from '@frontend-e2e/helpers/totp.js';
 import { enableVirtualAuthenticator } from '@frontend-e2e/helpers/webauthn.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 function uniqueEmail(suffix: string): string {
   const ts = Date.now();
@@ -127,13 +127,19 @@ test.describe('OAuth continuation across email verification and 2FA', () => {
 
   test('login -> verify email -> setup 2FA -> consent redirect', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('login-verify-setup');
     const oauthParams = uniqueOauthParams('login-verify-setup');
 
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
 
     await page.goto(buildAuthEntryUrl('login', 'password', oauthParams));
     await submitPasswordLogin(page, email, TEST_PASSWORD);

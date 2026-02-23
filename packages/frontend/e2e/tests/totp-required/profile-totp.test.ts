@@ -2,11 +2,11 @@ import { expect, test } from '@frontend-e2e/fixtures/totp-required.js';
 import { performLogin } from '@frontend-e2e/helpers/login.js';
 import { fillPinInput } from '@frontend-e2e/helpers/pin-input.js';
 import { disableTotpModal, modal } from '@frontend-e2e/helpers/profile-page.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
 import {
   generateTotpCode,
   setupTotpViaApi,
 } from '@frontend-e2e/helpers/totp.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 /**
  * Generates a unique test email for each test to avoid collisions.
@@ -43,7 +43,14 @@ test.describe('Profile TOTP management (2FA required)', () => {
     baseURL,
   }) => {
     const email = uniqueEmail('show-enabled');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     const { secret } = await setupTotpViaApi(request, String(baseURL));
 
     await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);
@@ -63,7 +70,14 @@ test.describe('Profile TOTP management (2FA required)', () => {
     baseURL,
   }) => {
     const email = uniqueEmail('disable-err');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     const { secret } = await setupTotpViaApi(request, String(baseURL));
 
     await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);
@@ -89,7 +103,14 @@ test.describe('Profile TOTP management (2FA required)', () => {
     baseURL,
   }) => {
     const email = uniqueEmail('cant-disable');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     const { secret } = await setupTotpViaApi(request, String(baseURL));
 
     await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);

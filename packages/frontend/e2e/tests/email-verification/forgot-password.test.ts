@@ -1,6 +1,6 @@
 import { expect, test } from '@frontend-e2e/fixtures/email-verification.js';
 import { forgotPasswordPage } from '@frontend-e2e/helpers/password-reset.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 /**
  * Generates a unique test email for each test to avoid collisions.
@@ -22,13 +22,16 @@ test.describe('Forgot password flow', () => {
     ).toBeVisible();
   });
 
-  test('submit email shows success view', async ({
-    page,
-    request,
-    baseURL,
-  }) => {
+  test('submit email shows success view', async ({ page, baseURL }) => {
     const email = uniqueEmail('success');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
 
     await page.goto('/password/forgot');
 

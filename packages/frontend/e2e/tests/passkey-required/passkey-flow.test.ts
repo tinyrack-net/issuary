@@ -1,8 +1,8 @@
 import { expect, test } from '@frontend-e2e/fixtures/passkey-required.js';
 import { performLogin } from '@frontend-e2e/helpers/login.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
 import { performRegister } from '@frontend-e2e/helpers/register-page.js';
 import { enableVirtualAuthenticator } from '@frontend-e2e/helpers/webauthn.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 function uniqueEmail(suffix: string): string {
   const ts = Date.now();
@@ -36,7 +36,6 @@ test.describe('Passkey-required flow', () => {
 
   test('user with passkey completes passkey verification on next login', async ({
     page,
-    request,
     baseURL,
     browserName,
   }) => {
@@ -45,7 +44,14 @@ test.describe('Passkey-required flow', () => {
     const virtualAuth = await enableVirtualAuthenticator(page);
     try {
       const email = uniqueEmail('verify');
-      await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+      const client = getTestApiClient({ baseUrl: String(baseURL) });
+      const registerRes = await client.api.auth.register.$post({
+        header: {},
+        json: { email, password: TEST_PASSWORD },
+      });
+      if (!registerRes.ok) {
+        throw new Error(`Failed to register user: ${registerRes.status}`);
+      }
 
       await performLogin(page, email, TEST_PASSWORD);
       await page.waitForURL('**/setup/passkey**');

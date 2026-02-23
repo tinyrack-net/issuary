@@ -3,7 +3,7 @@ import {
   getPasswordResetToken,
   resetPasswordPage,
 } from '@frontend-e2e/helpers/password-reset.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 /**
  * Generates a unique test email for each test to avoid collisions.
@@ -36,11 +36,17 @@ async function requestResetToken(
 test.describe('Reset password flow', () => {
   test('full flow: forgot -> token -> reset -> success', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('full-flow');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
 
     // Request password reset
     const token = await requestResetToken(page, String(baseURL), email);
@@ -78,11 +84,17 @@ test.describe('Reset password flow', () => {
 
   test('password mismatch shows validation error', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('mismatch');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     const token = await requestResetToken(page, String(baseURL), email);
 
     await page.goto(`/password/reset?token=${token}`);
@@ -100,13 +112,16 @@ test.describe('Reset password flow', () => {
     ).toBeVisible();
   });
 
-  test('short password shows validation error', async ({
-    page,
-    request,
-    baseURL,
-  }) => {
+  test('short password shows validation error', async ({ page, baseURL }) => {
     const email = uniqueEmail('short');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     const token = await requestResetToken(page, String(baseURL), email);
 
     await page.goto(`/password/reset?token=${token}`);
@@ -122,13 +137,16 @@ test.describe('Reset password flow', () => {
     ).toBeVisible();
   });
 
-  test('success view has go to login button', async ({
-    page,
-    request,
-    baseURL,
-  }) => {
+  test('success view has go to login button', async ({ page, baseURL }) => {
     const email = uniqueEmail('go-to-login');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     const token = await requestResetToken(page, String(baseURL), email);
 
     await page.goto(`/password/reset?token=${token}`);

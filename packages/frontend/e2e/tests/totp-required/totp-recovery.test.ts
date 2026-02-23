@@ -1,8 +1,8 @@
 import { expect, test } from '@frontend-e2e/fixtures/totp-required.js';
 import { performLogin, totpVerifyPage } from '@frontend-e2e/helpers/login.js';
 import { recoveryPage } from '@frontend-e2e/helpers/recovery.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
 import { generateTotpCode } from '@frontend-e2e/helpers/totp.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 /**
  * Generates a unique test email for each test to avoid collisions.
@@ -63,7 +63,14 @@ test.describe('TOTP recovery code verification', () => {
     email = uniqueEmail('recovery');
 
     // Register user
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
 
     // Set up TOTP and capture recovery codes
     const result = await setupTotpWithRecoveryCodes(request, String(baseURL));

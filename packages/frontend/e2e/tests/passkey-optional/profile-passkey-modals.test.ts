@@ -5,8 +5,8 @@ import {
   modal,
   setupPasskeyModal,
 } from '@frontend-e2e/helpers/profile-page.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
 import { enableVirtualAuthenticator } from '@frontend-e2e/helpers/webauthn.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 function uniqueEmail(suffix: string): string {
   const ts = Date.now();
@@ -18,14 +18,20 @@ const TEST_PASSWORD = 'test-password-123';
 test.describe('SetupPasskeyModal (profile)', () => {
   test('Add Passkey button opens modal with name input', async ({
     page,
-    request,
     baseURL,
     browserName,
   }) => {
     test.skip(browserName !== 'chromium', 'Virtual WebAuthn requires Chromium');
 
     const email = uniqueEmail('setup-open');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     // Should show "No passkeys registered"
@@ -48,7 +54,6 @@ test.describe('SetupPasskeyModal (profile)', () => {
 
   test('complete passkey registration flow from profile modal', async ({
     page,
-    request,
     baseURL,
     browserName,
   }) => {
@@ -57,7 +62,14 @@ test.describe('SetupPasskeyModal (profile)', () => {
     const virtualAuth = await enableVirtualAuthenticator(page);
     try {
       const email = uniqueEmail('setup-complete');
-      await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+      const client = getTestApiClient({ baseUrl: String(baseURL) });
+      const registerRes = await client.api.auth.register.$post({
+        header: {},
+        json: { email, password: TEST_PASSWORD },
+      });
+      if (!registerRes.ok) {
+        throw new Error(`Failed to register user: ${registerRes.status}`);
+      }
       await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
       // Click "Add Passkey"
@@ -86,14 +98,20 @@ test.describe('SetupPasskeyModal (profile)', () => {
 
   test('cancel closes modal without adding passkey', async ({
     page,
-    request,
     baseURL,
     browserName,
   }) => {
     test.skip(browserName !== 'chromium', 'Virtual WebAuthn requires Chromium');
 
     const email = uniqueEmail('setup-cancel');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     await page.getByRole('button', { name: 'Add Passkey' }).click();
@@ -119,10 +137,16 @@ test.describe('ManagePasskeysModal (profile)', () => {
     page: import('@playwright/test').Page,
     email: string,
     password: string,
-    request: import('@playwright/test').APIRequestContext,
     baseURL: string,
   ): Promise<void> {
-    await registerUser(request, baseURL, email, password);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, password);
 
     // Use the direct URL to register passkey (like the existing test)
@@ -132,7 +156,6 @@ test.describe('ManagePasskeysModal (profile)', () => {
 
   test('Manage button opens modal listing passkeys', async ({
     page,
-    request,
     baseURL,
     browserName,
   }) => {
@@ -141,13 +164,7 @@ test.describe('ManagePasskeysModal (profile)', () => {
     const virtualAuth = await enableVirtualAuthenticator(page);
     try {
       const email = uniqueEmail('manage-list');
-      await setupPasskeyForUser(
-        page,
-        email,
-        TEST_PASSWORD,
-        request,
-        String(baseURL),
-      );
+      await setupPasskeyForUser(page, email, TEST_PASSWORD, String(baseURL));
 
       // Click "Manage" button
       await page.getByRole('button', { name: 'Manage' }).click();
@@ -175,7 +192,6 @@ test.describe('ManagePasskeysModal (profile)', () => {
 
   test('rename passkey via inline edit', async ({
     page,
-    request,
     baseURL,
     browserName,
   }) => {
@@ -184,13 +200,7 @@ test.describe('ManagePasskeysModal (profile)', () => {
     const virtualAuth = await enableVirtualAuthenticator(page);
     try {
       const email = uniqueEmail('manage-rename');
-      await setupPasskeyForUser(
-        page,
-        email,
-        TEST_PASSWORD,
-        request,
-        String(baseURL),
-      );
+      await setupPasskeyForUser(page, email, TEST_PASSWORD, String(baseURL));
 
       await page.getByRole('button', { name: 'Manage' }).click();
       await expect(page.locator(modal.openModal)).toBeVisible();
@@ -218,7 +228,6 @@ test.describe('ManagePasskeysModal (profile)', () => {
 
   test('delete passkey with inline confirmation', async ({
     page,
-    request,
     baseURL,
     browserName,
   }) => {
@@ -227,13 +236,7 @@ test.describe('ManagePasskeysModal (profile)', () => {
     const virtualAuth = await enableVirtualAuthenticator(page);
     try {
       const email = uniqueEmail('manage-delete');
-      await setupPasskeyForUser(
-        page,
-        email,
-        TEST_PASSWORD,
-        request,
-        String(baseURL),
-      );
+      await setupPasskeyForUser(page, email, TEST_PASSWORD, String(baseURL));
 
       await page.getByRole('button', { name: 'Manage' }).click();
       await expect(page.locator(modal.openModal)).toBeVisible();
@@ -256,7 +259,6 @@ test.describe('ManagePasskeysModal (profile)', () => {
 
   test('Add New Passkey button transitions to setup modal', async ({
     page,
-    request,
     baseURL,
     browserName,
   }) => {
@@ -265,13 +267,7 @@ test.describe('ManagePasskeysModal (profile)', () => {
     const virtualAuth = await enableVirtualAuthenticator(page);
     try {
       const email = uniqueEmail('manage-add-new');
-      await setupPasskeyForUser(
-        page,
-        email,
-        TEST_PASSWORD,
-        request,
-        String(baseURL),
-      );
+      await setupPasskeyForUser(page, email, TEST_PASSWORD, String(baseURL));
 
       await page.getByRole('button', { name: 'Manage' }).click();
       await expect(page.locator(modal.openModal)).toBeVisible();
@@ -292,7 +288,6 @@ test.describe('ManagePasskeysModal (profile)', () => {
 
   test('close button dismisses modal', async ({
     page,
-    request,
     baseURL,
     browserName,
   }) => {
@@ -301,13 +296,7 @@ test.describe('ManagePasskeysModal (profile)', () => {
     const virtualAuth = await enableVirtualAuthenticator(page);
     try {
       const email = uniqueEmail('manage-close');
-      await setupPasskeyForUser(
-        page,
-        email,
-        TEST_PASSWORD,
-        request,
-        String(baseURL),
-      );
+      await setupPasskeyForUser(page, email, TEST_PASSWORD, String(baseURL));
 
       await page.getByRole('button', { name: 'Manage' }).click();
       await expect(page.locator(modal.openModal)).toBeVisible();

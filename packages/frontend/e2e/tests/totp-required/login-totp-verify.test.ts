@@ -1,11 +1,11 @@
 import { expect, test } from '@frontend-e2e/fixtures/totp-required.js';
 import { performLogin, totpVerifyPage } from '@frontend-e2e/helpers/login.js';
 import { fillPinInput } from '@frontend-e2e/helpers/pin-input.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
 import {
   generateTotpCode,
   setupTotpViaApi,
 } from '@frontend-e2e/helpers/totp.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 /**
  * Generates a unique test email for each test to avoid collisions.
@@ -24,8 +24,15 @@ test.describe('TOTP verify flow (DB user with TOTP already set up)', () => {
   test.beforeAll(async ({ request, baseURL }) => {
     email = uniqueEmail('verify');
 
-    // Register user (Playwright request manages cookies automatically)
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    // Register user
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
 
     // Set up TOTP via API (3-step flow)
     const result = await setupTotpViaApi(request, String(baseURL));

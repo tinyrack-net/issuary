@@ -2,7 +2,7 @@ import { E2E_TEST_CLIENT } from '@frontend-e2e/fixtures/index.js';
 import { expect, test } from '@frontend-e2e/fixtures/minimal.js';
 import { buildOAuthAuthorizeUrl } from '@frontend-e2e/helpers/consent.js';
 import { loginAndGoToProfile } from '@frontend-e2e/helpers/profile-page.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 /**
  * Generates a unique test email for each test to avoid session conflicts.
@@ -38,11 +38,17 @@ async function gotoConsentPage(
 test.describe('OAuth consent flow', () => {
   test('consent page shows client name, scopes, and user email', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('display');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     // Navigate to OAuth authorize
@@ -67,11 +73,17 @@ test.describe('OAuth consent flow', () => {
 
   test('allow consent redirects with authorization code', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('allow');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     const authorizeUrl = buildOAuthAuthorizeUrl({
@@ -97,13 +109,16 @@ test.describe('OAuth consent flow', () => {
     expect(url.searchParams.get('state')).toBe('test-allow-state');
   });
 
-  test('deny consent redirects with error', async ({
-    page,
-    request,
-    baseURL,
-  }) => {
+  test('deny consent redirects with error', async ({ page, baseURL }) => {
     const email = uniqueEmail('deny');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     const authorizeUrl = buildOAuthAuthorizeUrl({

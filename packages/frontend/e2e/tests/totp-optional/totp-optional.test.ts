@@ -1,11 +1,11 @@
 import { expect, test } from '@frontend-e2e/fixtures/totp-optional.js';
 import { performLogin } from '@frontend-e2e/helpers/login.js';
 import { fillPinInput } from '@frontend-e2e/helpers/pin-input.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
 import {
   generateTotpCode,
   setupTotpViaApi,
 } from '@frontend-e2e/helpers/totp.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 function uniqueEmail(suffix: string): string {
   const ts = Date.now();
@@ -17,11 +17,17 @@ const TEST_PASSWORD = 'test-password-123';
 test.describe('TOTP optional configuration', () => {
   test('user without TOTP logs in directly to profile', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('no-totp');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
 
     await performLogin(page, email, TEST_PASSWORD);
     await page.waitForURL('**/profile');
@@ -35,7 +41,14 @@ test.describe('TOTP optional configuration', () => {
     baseURL,
   }) => {
     const email = uniqueEmail('has-totp');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
 
     const { secret } = await setupTotpViaApi(request, String(baseURL));
 

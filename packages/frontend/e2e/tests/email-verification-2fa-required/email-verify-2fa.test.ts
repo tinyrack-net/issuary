@@ -4,8 +4,8 @@ import {
 } from '@frontend-e2e/fixtures/email-verification-2fa-required.js';
 import { getEmailToken } from '@frontend-e2e/helpers/email-token.js';
 import { performLogin } from '@frontend-e2e/helpers/login.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
 import { performRegister } from '@frontend-e2e/helpers/register-page.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 function uniqueEmail(suffix: string): string {
   const ts = Date.now();
@@ -35,11 +35,17 @@ test.describe('Email verification with required 2FA', () => {
 
   test('login verification continues to setup 2FA selection', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('login');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
 
     await performLogin(page, email, TEST_PASSWORD);
     await page.waitForURL('**/verify/email**');

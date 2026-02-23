@@ -7,12 +7,12 @@ import {
   modal,
   setupTotpModal,
 } from '@frontend-e2e/helpers/profile-page.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
 import {
   generateTotpCode,
   interceptTotpSecret,
   setupTotpViaApi,
 } from '@frontend-e2e/helpers/totp.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 function uniqueEmail(suffix: string): string {
   const ts = Date.now();
@@ -42,11 +42,17 @@ async function loginWithTotpAndGoToProfile(
 test.describe('SetupTotpModal (profile)', () => {
   test('opens modal with QR code on Enable click', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('setup-qr');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     // TOTP should show as not enabled
@@ -73,11 +79,17 @@ test.describe('SetupTotpModal (profile)', () => {
 
   test('Next button progresses to PIN entry step', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('setup-next');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     const secretPromise = interceptTotpSecret(page);
@@ -92,13 +104,16 @@ test.describe('SetupTotpModal (profile)', () => {
     await expect(page.locator(setupTotpModal.pinInput).first()).toBeVisible();
   });
 
-  test('valid TOTP code shows recovery codes', async ({
-    page,
-    request,
-    baseURL,
-  }) => {
+  test('valid TOTP code shows recovery codes', async ({ page, baseURL }) => {
     const email = uniqueEmail('setup-recovery');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     const secretPromise = interceptTotpSecret(page);
@@ -118,9 +133,16 @@ test.describe('SetupTotpModal (profile)', () => {
     await expect(page.locator(setupTotpModal.recoveryCodesGrid)).toBeVisible();
   });
 
-  test('invalid TOTP code shows error', async ({ page, request, baseURL }) => {
+  test('invalid TOTP code shows error', async ({ page, baseURL }) => {
     const email = uniqueEmail('setup-invalid');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     const secretPromise = interceptTotpSecret(page);
@@ -141,11 +163,17 @@ test.describe('SetupTotpModal (profile)', () => {
 
   test('full setup flow: QR -> verify -> recovery -> confirm', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('setup-full');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     const secretPromise = interceptTotpSecret(page);
@@ -184,11 +212,17 @@ test.describe('SetupTotpModal (profile)', () => {
 
   test('cancel closes modal without setting up TOTP', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('setup-cancel');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     const secretPromise = interceptTotpSecret(page);
@@ -216,7 +250,14 @@ test.describe('DisableTotpModal (profile, optional 2FA)', () => {
     baseURL,
   }) => {
     const email = uniqueEmail('disable-ok');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     const { secret } = await setupTotpViaApi(request, String(baseURL));
 
     await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);
@@ -256,7 +297,14 @@ test.describe('DisableTotpModal (profile, optional 2FA)', () => {
     baseURL,
   }) => {
     const email = uniqueEmail('disable-cancel');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     const { secret } = await setupTotpViaApi(request, String(baseURL));
 
     await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);

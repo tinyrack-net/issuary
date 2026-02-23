@@ -5,7 +5,7 @@ import {
   loginAndGoToProfile,
   modal,
 } from '@frontend-e2e/helpers/profile-page.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 /**
  * Generates a unique test email for each test to avoid collisions.
@@ -18,13 +18,16 @@ function uniqueEmail(suffix: string): string {
 const TEST_PASSWORD = 'test-password-123';
 
 test.describe('Delete account flow', () => {
-  test('delete account button is visible', async ({
-    page,
-    request,
-    baseURL,
-  }) => {
+  test('delete account button is visible', async ({ page, baseURL }) => {
     const email = uniqueEmail('visible');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     // "Delete Account" button should be visible
@@ -35,11 +38,17 @@ test.describe('Delete account flow', () => {
 
   test('successful account deletion redirects to login', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('success');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     // Click delete button
@@ -61,11 +70,17 @@ test.describe('Delete account flow', () => {
 
   test('wrong confirmation text shows validation error', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('wrong-confirm');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     await page.getByRole('button', { name: 'Delete Account' }).click();
@@ -83,11 +98,17 @@ test.describe('Delete account flow', () => {
 
   test('delete modal shows retention period from config', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('retention');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     await page.getByRole('button', { name: 'Delete Account' }).click();
@@ -95,13 +116,16 @@ test.describe('Delete account flow', () => {
     await expect(page.getByText(/after 30 days\./)).toBeVisible();
   });
 
-  test('cannot login after account deletion', async ({
-    page,
-    request,
-    baseURL,
-  }) => {
+  test('cannot login after account deletion', async ({ page, baseURL }) => {
     const email = uniqueEmail('no-login');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     // Delete the account

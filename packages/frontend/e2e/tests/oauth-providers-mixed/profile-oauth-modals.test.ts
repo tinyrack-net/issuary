@@ -5,7 +5,7 @@ import {
   setPasswordModal,
   unlinkOAuthModal,
 } from '@frontend-e2e/helpers/profile-page.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 const TEST_PASSWORD = 'test-password-123';
 
@@ -121,11 +121,17 @@ test.describe('RemovePasswordModal', () => {
    */
   async function setupUserWithPasswordAndOAuth(
     page: import('@playwright/test').Page,
-    request: import('@playwright/test').APIRequestContext,
     baseURL: string,
   ): Promise<void> {
     // Register a user with password using the same email as the stub
-    await registerUser(request, baseURL, OAUTH_USER_EMAIL, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: baseURL });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email: OAUTH_USER_EMAIL, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
 
     // Login via OAuth stub - auto_link will link OAuth to existing user
     await loginViaOAuthStub(page);
@@ -133,10 +139,9 @@ test.describe('RemovePasswordModal', () => {
 
   test('user with password and OAuth can remove password', async ({
     page,
-    request,
     baseURL,
   }) => {
-    await setupUserWithPasswordAndOAuth(page, request, String(baseURL));
+    await setupUserWithPasswordAndOAuth(page, String(baseURL));
 
     // Should show password is set
     await expect(page.getByText('Password is set')).toBeVisible();
@@ -160,12 +165,8 @@ test.describe('RemovePasswordModal', () => {
     await expect(page.getByText('No password set')).toBeVisible();
   });
 
-  test('wrong current password shows error', async ({
-    page,
-    request,
-    baseURL,
-  }) => {
-    await setupUserWithPasswordAndOAuth(page, request, String(baseURL));
+  test('wrong current password shows error', async ({ page, baseURL }) => {
+    await setupUserWithPasswordAndOAuth(page, String(baseURL));
 
     await page.getByRole('button', { name: 'Remove Password' }).click();
     await expect(page.locator(modal.openModal)).toBeVisible();
@@ -184,10 +185,9 @@ test.describe('RemovePasswordModal', () => {
 
   test('cancel closes modal without removing password', async ({
     page,
-    request,
     baseURL,
   }) => {
-    await setupUserWithPasswordAndOAuth(page, request, String(baseURL));
+    await setupUserWithPasswordAndOAuth(page, String(baseURL));
 
     await page.getByRole('button', { name: 'Remove Password' }).click();
     await expect(page.locator(modal.openModal)).toBeVisible();
@@ -205,19 +205,24 @@ test.describe('UnlinkOAuthModal', () => {
    */
   async function setupLinkedUser(
     page: import('@playwright/test').Page,
-    request: import('@playwright/test').APIRequestContext,
     baseURL: string,
   ): Promise<void> {
-    await registerUser(request, baseURL, OAUTH_USER_EMAIL, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: baseURL });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email: OAUTH_USER_EMAIL, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginViaOAuthStub(page);
   }
 
   test('unlink button opens confirmation modal with provider name', async ({
     page,
-    request,
     baseURL,
   }) => {
-    await setupLinkedUser(page, request, String(baseURL));
+    await setupLinkedUser(page, String(baseURL));
 
     // Find the Linked Accounts section
     await expect(
@@ -244,10 +249,9 @@ test.describe('UnlinkOAuthModal', () => {
 
   test('confirm unlink removes the linked account', async ({
     page,
-    request,
     baseURL,
   }) => {
-    await setupLinkedUser(page, request, String(baseURL));
+    await setupLinkedUser(page, String(baseURL));
 
     await page.getByRole('button', { name: 'Unlink' }).click();
     await expect(page.locator(modal.openModal)).toBeVisible();
@@ -262,12 +266,8 @@ test.describe('UnlinkOAuthModal', () => {
     await expect(page.getByText('Not connected').first()).toBeVisible();
   });
 
-  test('cancel closes modal without unlinking', async ({
-    page,
-    request,
-    baseURL,
-  }) => {
-    await setupLinkedUser(page, request, String(baseURL));
+  test('cancel closes modal without unlinking', async ({ page, baseURL }) => {
+    await setupLinkedUser(page, String(baseURL));
 
     await page.getByRole('button', { name: 'Unlink' }).click();
     await expect(page.locator(modal.openModal)).toBeVisible();

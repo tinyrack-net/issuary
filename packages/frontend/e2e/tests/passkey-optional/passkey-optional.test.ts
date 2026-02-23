@@ -1,7 +1,7 @@
 import { expect, test } from '@frontend-e2e/fixtures/passkey-optional.js';
 import { performLogin } from '@frontend-e2e/helpers/login.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
 import { enableVirtualAuthenticator } from '@frontend-e2e/helpers/webauthn.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 function uniqueEmail(suffix: string): string {
   const ts = Date.now();
@@ -13,11 +13,17 @@ const TEST_PASSWORD = 'test-password-123';
 test.describe('Passkey optional configuration', () => {
   test('user without passkey logs in directly to profile', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('no-passkey');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
 
     await performLogin(page, email, TEST_PASSWORD);
     await page.waitForURL('**/profile');
@@ -38,7 +44,6 @@ test.describe('Passkey optional configuration', () => {
 
   test('user can register a passkey from profile', async ({
     page,
-    request,
     baseURL,
     browserName,
   }) => {
@@ -47,7 +52,14 @@ test.describe('Passkey optional configuration', () => {
     const virtualAuth = await enableVirtualAuthenticator(page);
     try {
       const email = uniqueEmail('has-passkey');
-      await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+      const client = getTestApiClient({ baseUrl: String(baseURL) });
+      const registerRes = await client.api.auth.register.$post({
+        header: {},
+        json: { email, password: TEST_PASSWORD },
+      });
+      if (!registerRes.ok) {
+        throw new Error(`Failed to register user: ${registerRes.status}`);
+      }
 
       await performLogin(page, email, TEST_PASSWORD);
       await page.waitForURL('**/profile');

@@ -5,7 +5,7 @@ import {
   loginAndGoToProfile,
   modal,
 } from '@frontend-e2e/helpers/profile-page.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 /**
  * Generates a unique test email for each test to avoid collisions.
@@ -18,13 +18,16 @@ function uniqueEmail(suffix: string): string {
 const TEST_PASSWORD = 'test-password-123';
 
 test.describe('Profile page', () => {
-  test('displays user email and account info', async ({
-    page,
-    request,
-    baseURL,
-  }) => {
+  test('displays user email and account info', async ({ page, baseURL }) => {
     const email = uniqueEmail('display');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     // Verify user email is visible
@@ -36,11 +39,17 @@ test.describe('Profile page', () => {
 
   test('shows security section with password status', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('security');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     // Security section header should be visible
@@ -73,13 +82,16 @@ test.describe('Profile page', () => {
 });
 
 test.describe('Change password', () => {
-  test('successful password change closes modal', async ({
-    page,
-    request,
-    baseURL,
-  }) => {
+  test('successful password change closes modal', async ({ page, baseURL }) => {
     const email = uniqueEmail('change-pw-ok');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     // Click "Change Password" button
@@ -104,13 +116,16 @@ test.describe('Change password', () => {
     await expect(page.locator(modal.openModal)).not.toBeVisible();
   });
 
-  test('wrong current password shows error', async ({
-    page,
-    request,
-    baseURL,
-  }) => {
+  test('wrong current password shows error', async ({ page, baseURL }) => {
     const email = uniqueEmail('change-pw-err');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     await page.getByRole('button', { name: 'Change Password' }).click();
@@ -136,11 +151,17 @@ test.describe('Change password', () => {
 
   test('password mismatch shows validation error', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('change-pw-mismatch');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     await page.getByRole('button', { name: 'Change Password' }).click();
@@ -162,13 +183,16 @@ test.describe('Change password', () => {
     ).toBeVisible();
   });
 
-  test('short password shows validation error', async ({
-    page,
-    request,
-    baseURL,
-  }) => {
+  test('short password shows validation error', async ({ page, baseURL }) => {
     const email = uniqueEmail('change-pw-short');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
     await page.getByRole('button', { name: 'Change Password' }).click();

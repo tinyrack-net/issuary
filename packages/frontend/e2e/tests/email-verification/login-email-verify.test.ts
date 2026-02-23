@@ -1,7 +1,7 @@
 import { expect, test } from '@frontend-e2e/fixtures/email-verification.js';
 import { getEmailToken } from '@frontend-e2e/helpers/email-token.js';
 import { emailVerifyPage, performLogin } from '@frontend-e2e/helpers/login.js';
-import { registerUser } from '@frontend-e2e/helpers/register.js';
+import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 
 /**
  * Generates a unique test email for each test to avoid collisions.
@@ -14,9 +14,16 @@ function uniqueEmail(suffix: string): string {
 const TEST_PASSWORD = 'test-password-123';
 
 test.describe('Email verification flow (DB user, SMTP enabled)', () => {
-  test('full email verification flow', async ({ page, request, baseURL }) => {
+  test('full email verification flow', async ({ page, baseURL }) => {
     const email = uniqueEmail('full');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
 
     await performLogin(page, email, TEST_PASSWORD);
     await page.waitForURL('**/verify/email**');
@@ -42,11 +49,17 @@ test.describe('Email verification flow (DB user, SMTP enabled)', () => {
 
   test('email verification: invalid token shows error', async ({
     page,
-    request,
     baseURL,
   }) => {
     const email = uniqueEmail('invalid-token');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
 
     await performLogin(page, email, TEST_PASSWORD);
     await page.waitForURL('**/verify/email**');
@@ -65,9 +78,16 @@ test.describe('Email verification flow (DB user, SMTP enabled)', () => {
     await expect(page).toHaveURL(/\/verify\/email/);
   });
 
-  test('resend verification email', async ({ page, request, baseURL }) => {
+  test('resend verification email', async ({ page, baseURL }) => {
     const email = uniqueEmail('resend');
-    await registerUser(request, String(baseURL), email, TEST_PASSWORD);
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
 
     await performLogin(page, email, TEST_PASSWORD);
     await page.waitForURL('**/verify/email**');
