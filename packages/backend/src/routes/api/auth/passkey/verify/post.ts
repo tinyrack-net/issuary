@@ -69,7 +69,7 @@ export const authPasskeyVerifyPost = new Hono<AppEnv>().post(
     const session = c.var.session;
     const { mikro, passkeyService, userService } = c.var.services;
 
-    const pending2FAUser = c.var.verifiedPending2FAUser;
+    const pending2FA = c.var.verifiedPending2FAUser;
 
     // Get challenge from session
     const challenge = session.get('passkey_challenge');
@@ -90,7 +90,7 @@ export const authPasskeyVerifyPost = new Hono<AppEnv>().post(
       challenge,
     );
 
-    if (pending2FAUser && passkeyUser.sub !== pending2FAUser.sub) {
+    if (pending2FA && passkeyUser.sub !== pending2FA.user.sub) {
       throw new e.PasskeyUserMismatch.Error();
     }
 
@@ -98,8 +98,7 @@ export const authPasskeyVerifyPost = new Hono<AppEnv>().post(
     const sessionUser = await userService.userEntityToSessionUser(userEntity);
 
     const authTime =
-      session.get('pending2FAUser')?.authenticated_at ??
-      Math.floor(Date.now() / 1000);
+      pending2FA?.authenticatedAt ?? Math.floor(Date.now() / 1000);
 
     session.setUserSession(passkeyUser.sub, authTime);
 

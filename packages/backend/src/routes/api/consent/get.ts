@@ -60,7 +60,7 @@ export const consentGet = new Hono<AppEnv>().get(
   async (c) => {
     const query = c.req.valid('query');
     const { client_id, scope } = query;
-    const userEntity = c.var.verifiedUser;
+    const { user: userEntity } = c.var.verifiedUser;
     const { oauthClientService } = c.var.services;
 
     // Fetch OAuth client information

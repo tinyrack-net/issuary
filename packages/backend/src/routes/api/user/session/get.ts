@@ -29,15 +29,15 @@ export const userSessionGet = new Hono<AppEnv>().get(
   }),
   verifyAuth({ optional: true }),
   async (c) => {
-    const userEntity = c.var.verifiedUser;
+    const verifiedAuth = c.var.verifiedUser;
     const { mikro, userService } = c.var.services;
 
-    if (!userEntity) {
+    if (!verifiedAuth) {
       return c.json({ user: null }, 200);
     }
 
     // Load full user data with relations for complete session response
-    const fullUser = await mikro.user.verifyBySub(userEntity.sub);
+    const fullUser = await mikro.user.verifyBySub(verifiedAuth.user.sub);
     const userSession = await userService.userEntityToSessionUser(fullUser);
 
     return c.json({ user: userSession }, 200);

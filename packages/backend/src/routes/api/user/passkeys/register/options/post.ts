@@ -68,7 +68,8 @@ export const userPasskeyRegisterOptionsPost = new Hono<AppEnv>().post(
     const session = c.var.session;
     const { passkeyService } = c.var.services;
 
-    const user = c.var.verifiedUser ?? c.var.verifiedPending2FASetupUser;
+    const user =
+      c.var.verifiedUser?.user ?? c.var.verifiedPending2FASetupUser?.user;
 
     if (!user) {
       throw new e.Unauthorized.Error();

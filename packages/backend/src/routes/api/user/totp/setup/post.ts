@@ -67,7 +67,8 @@ export const userTotpSetupPost = new Hono<AppEnv>().post(
       throw new e.ValidationError.Error('TOTP is disabled');
     }
 
-    const user = c.var.verifiedUser ?? c.var.verifiedPending2FASetupUser;
+    const user =
+      c.var.verifiedUser?.user ?? c.var.verifiedPending2FASetupUser?.user;
 
     if (!user) {
       throw new e.Unauthorized.Error();

@@ -113,15 +113,15 @@ export const termsConsentPost = new Hono<AppEnv>().post(
     }
 
     // Standard flow: authenticated user recording consent
-    const userEntity = c.var.verifiedUser;
-    if (!userEntity) {
+    const verifiedAuth = c.var.verifiedUser;
+    if (!verifiedAuth) {
       throw new e.Unauthorized.Error();
     }
 
     // Validate and record consents
     const { validation, records } =
       await termsService.validateAndRecordConsents({
-        userSub: userEntity.sub,
+        userSub: verifiedAuth.user.sub,
         consents,
       });
 

@@ -71,7 +71,7 @@ export const userPasswordPost = new Hono<AppEnv>().post(
   verifyAuth(),
   async (c) => {
     const body = c.req.valid('json');
-    const user = c.var.verifiedUser;
+    const { user } = c.var.verifiedUser;
     const { mikro } = c.var.services;
 
     // Config users cannot set password

@@ -4,9 +4,25 @@ import { createMiddleware } from 'hono/factory';
 import type { ServicesEnv } from './services.js';
 import type { SessionEnv } from './session.js';
 
+export interface VerifiedAuth {
+  user: UserEntity;
+  authenticatedAt: number;
+}
+
+export interface VerifiedPending2FA {
+  user: UserEntity;
+  authenticatedAt: number;
+}
+
+export interface VerifiedPending2FASetup {
+  user: UserEntity;
+}
+
 type VerifiedAuthEnv<Optional extends boolean> = {
   Variables: {
-    verifiedUser: Optional extends true ? UserEntity | undefined : UserEntity;
+    verifiedUser: Optional extends true
+      ? VerifiedAuth | undefined
+      : VerifiedAuth;
   };
 };
 
@@ -31,7 +47,10 @@ export const verifyAuth = <Optional extends boolean = false>(options?: {
     }
     try {
       const userEntity = await services.mikro.user.findBySub(session.sub);
-      c.set('verifiedUser', userEntity);
+      c.set('verifiedUser', {
+        user: userEntity,
+        authenticatedAt: session.authenticated_at,
+      });
     } catch (err) {
       if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
         sessionHelper.clearAuthSessions();
@@ -50,8 +69,8 @@ export const verifyAuth = <Optional extends boolean = false>(options?: {
 type VerifiedPending2FAUserEnv<Optional extends boolean> = {
   Variables: {
     verifiedPending2FAUser: Optional extends true
-      ? UserEntity | undefined
-      : UserEntity;
+      ? VerifiedPending2FA | undefined
+      : VerifiedPending2FA;
   };
 };
 
@@ -78,7 +97,10 @@ export const verifyPending2FAUser = <
     }
     try {
       const userEntity = await services.mikro.user.findBySub(session.sub);
-      c.set('verifiedPending2FAUser', userEntity);
+      c.set('verifiedPending2FAUser', {
+        user: userEntity,
+        authenticatedAt: session.authenticated_at,
+      });
     } catch (err) {
       if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
         sessionHelper.clearAuthSessions();
@@ -97,8 +119,8 @@ export const verifyPending2FAUser = <
 type VerifiedPending2FASetupUserEnv<Optional extends boolean> = {
   Variables: {
     verifiedPending2FASetupUser: Optional extends true
-      ? UserEntity | undefined
-      : UserEntity;
+      ? VerifiedPending2FASetup | undefined
+      : VerifiedPending2FASetup;
   };
 };
 
@@ -125,7 +147,7 @@ export const verifyPending2FASetupUser = <
     }
     try {
       const userEntity = await services.mikro.user.findBySub(session.sub);
-      c.set('verifiedPending2FASetupUser', userEntity);
+      c.set('verifiedPending2FASetupUser', { user: userEntity });
     } catch (err) {
       if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
         sessionHelper.clearAuthSessions();

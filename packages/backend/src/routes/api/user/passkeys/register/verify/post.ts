@@ -73,14 +73,13 @@ export const userPasskeyRegisterVerifyPost = new Hono<AppEnv>().post(
     const { mikro, passkeyService, userService } = c.var.services;
 
     // Allow both full user session and pending 2FA setup session
-    const verifiedUser = c.var.verifiedUser;
-    const verifiedPending2FASetupUser = c.var.verifiedPending2FASetupUser;
-    const user = verifiedUser ?? verifiedPending2FASetupUser;
+    const verified = c.var.verifiedUser ?? c.var.verifiedPending2FASetupUser;
 
-    if (!user) {
+    if (!verified) {
       throw new e.Unauthorized.Error();
     }
 
+    const user = verified.user;
     const userSub = user.sub;
 
     // Get challenge from session
@@ -108,7 +107,7 @@ export const userPasskeyRegisterVerifyPost = new Hono<AppEnv>().post(
     session.set('passkey_challenge', undefined);
 
     // Check if this was from pending 2FA setup session
-    const wasPendingSetup = !!verifiedPending2FASetupUser;
+    const wasPendingSetup = !!c.var.verifiedPending2FASetupUser;
 
     if (wasPendingSetup) {
       // Clear pending setup sessions and create full user session

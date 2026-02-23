@@ -77,7 +77,7 @@ export const consentPost = new Hono<AppEnv>().post(
       decision,
     } = body;
 
-    const userEntity = c.var.verifiedUser;
+    const { user: userEntity } = c.var.verifiedUser;
     const { oauthClientService, userConsentService } = c.var.services;
 
     // If user denied consent, redirect back with error

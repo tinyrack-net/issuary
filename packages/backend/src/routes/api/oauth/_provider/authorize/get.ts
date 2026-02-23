@@ -59,8 +59,7 @@ export const oauthProviderAuthorizeGet = new Hono<AppEnv>().get(
 
     // Link mode requires authenticated user
     if (mode === 'link') {
-      const verifiedUser = c.var.verifiedUser;
-      if (!verifiedUser) {
+      if (!c.var.verifiedUser) {
         throw new e.Unauthorized.Error();
       }
     }

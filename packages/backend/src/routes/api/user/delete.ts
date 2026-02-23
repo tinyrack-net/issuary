@@ -71,7 +71,7 @@ export const userDelete = new Hono<AppEnv>().delete(
     if (!config.app.account_deletion) {
       throw new e.AccountDeletionDisabled.Error();
     }
-    const userEntity = c.var.verifiedUser;
+    const { user: userEntity } = c.var.verifiedUser;
 
     if (userEntity.managed_by === 'config') {
       throw new e.UserNotEditable.Error();

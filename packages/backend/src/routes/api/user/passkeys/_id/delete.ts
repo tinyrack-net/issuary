@@ -70,7 +70,7 @@ export const userPasskeyIdDelete = new Hono<AppEnv>().delete(
     }
 
     const params = c.req.valid('param');
-    const userEntity = c.var.verifiedUser;
+    const { user: userEntity } = c.var.verifiedUser;
     const { mikro, passkeyService } = c.var.services;
 
     // Config users cannot manage 2FA

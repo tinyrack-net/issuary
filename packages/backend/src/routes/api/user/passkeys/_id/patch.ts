@@ -68,7 +68,7 @@ export const userPasskeyIdPatch = new Hono<AppEnv>().patch(
 
     const params = c.req.valid('param');
     const body = c.req.valid('json');
-    const userEntity = c.var.verifiedUser;
+    const { user: userEntity } = c.var.verifiedUser;
     const { passkeyService } = c.var.services;
 
     // Rename passkey

@@ -44,10 +44,10 @@ export const authPasskeyOptionsPost = new Hono<AppEnv>().post(
     const session = c.var.session;
     const { passkeyService } = c.var.services;
 
-    const pending2FAUser = c.var.verifiedPending2FAUser;
+    const pending2FA = c.var.verifiedPending2FAUser;
 
     const options = await passkeyService.generateAuthenticationOptions(
-      pending2FAUser?.sub,
+      pending2FA?.user.sub,
     );
 
     session.set('passkey_challenge', options.challenge);
