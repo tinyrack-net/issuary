@@ -59,4 +59,30 @@ test.describe('Email verification with required 2FA', () => {
     await expect(page.locator('a[href^="/setup/totp"]')).toBeVisible();
     await expect(page.locator('a[href^="/setup/passkey"]')).toBeVisible();
   });
+
+  test('invalid token keeps user on verify-email and blocks 2FA setup', async ({
+    page,
+    baseURL,
+  }) => {
+    const email = uniqueEmail('invalid-token');
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
+
+    await performLogin(page, email, TEST_PASSWORD);
+    await page.waitForURL('**/verify/email**');
+
+    await page.locator('input[name="token"]').fill('invalid-token-value');
+    await page.locator('button[type="submit"]').click();
+
+    await expect(
+      page.locator('[data-testid="field-error"]').first(),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/\/verify\/email/);
+  });
 });

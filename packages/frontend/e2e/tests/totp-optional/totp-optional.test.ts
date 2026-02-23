@@ -67,4 +67,19 @@ test.describe('TOTP optional configuration', () => {
     await expect(page.locator('a[href^="/verify/totp"]')).toBeVisible();
     await expect(page.locator('a[href^="/verify/passkey"]')).toHaveCount(0);
   });
+
+  test('direct passkey setup route shows guarded setup screen', async ({
+    page,
+  }) => {
+    await page.goto('/setup/passkey');
+    await expect(
+      page.getByRole('heading', { name: 'Set Up Passkey' }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Two-factor authentication is required to continue'),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Back to login' }),
+    ).toBeVisible();
+  });
 });

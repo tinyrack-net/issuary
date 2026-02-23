@@ -67,6 +67,45 @@ test.describe('Reset password flow', () => {
     await expect(page.getByText('Password reset!')).toBeVisible();
   });
 
+  test('password reset token cannot be reused after success', async ({
+    page,
+    baseURL,
+    request,
+  }) => {
+    const email = uniqueEmail('token-single-use');
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
+
+    const token = await requestResetToken(page, String(baseURL), email);
+    await page.goto(`/password/reset?token=${token}`);
+    await page.locator(resetPasswordPage.passwordInput).fill(NEW_PASSWORD);
+    await page
+      .locator(resetPasswordPage.confirmPasswordInput)
+      .fill(NEW_PASSWORD);
+    await page.locator(resetPasswordPage.submitButton).click();
+    await expect(page.getByText('Password reset!')).toBeVisible();
+
+    const reuseRes = await request.post(
+      `${String(baseURL)}/api/auth/password/reset`,
+      {
+        data: {
+          token,
+          password: 'another-password-789',
+        },
+      },
+    );
+    expect(reuseRes.status()).toBe(400);
+    await expect(reuseRes.json()).resolves.toMatchObject({
+      code: 'INVALID_PASSWORD_RESET_TOKEN',
+    });
+  });
+
   test('invalid token shows error', async ({ page }) => {
     await page.goto('/password/reset?token=invalid-token-123');
 

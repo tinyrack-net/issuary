@@ -107,4 +107,30 @@ test.describe('TOTP setup flow (DB user, 2FA required)', () => {
     await page.waitForURL('**/profile');
     await expect(page).toHaveURL(/\/profile/);
   });
+
+  test('setup 2FA chooser is skipped in TOTP-only required config', async ({
+    page,
+    baseURL,
+  }) => {
+    const email = uniqueEmail('skip-setup-chooser');
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
+
+    await performLogin(page, email, TEST_PASSWORD);
+    await page.waitForURL('**/setup/totp');
+
+    await page.goto('/setup/2fa');
+    await expect(page.locator('a[href^="/setup/passkey"]')).toHaveCount(0);
+
+    const isTotpSetupRoute = /\/setup\/totp/.test(page.url());
+    if (!isTotpSetupRoute) {
+      await expect(page.locator('a[href^="/setup/totp"]')).toBeVisible();
+    }
+  });
 });

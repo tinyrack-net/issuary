@@ -47,6 +47,41 @@ test.describe('Email verification flow (DB user, SMTP enabled)', () => {
     await expect(page).toHaveURL(/\/profile/);
   });
 
+  test('email verification token cannot be reused after success', async ({
+    page,
+    baseURL,
+    request,
+  }) => {
+    const email = uniqueEmail('single-use');
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
+
+    await performLogin(page, email, TEST_PASSWORD);
+    await page.waitForURL('**/verify/email**');
+
+    const token = await getEmailToken(String(baseURL), email);
+    await page.locator(emailVerifyPage.tokenInput).fill(token);
+    await page.locator(emailVerifyPage.submitButton).click();
+    await expect(page.locator(emailVerifyPage.successAlert)).toBeVisible();
+
+    const reuseRes = await request.post(
+      `${String(baseURL)}/api/auth/email/verify`,
+      {
+        data: { token },
+      },
+    );
+    expect(reuseRes.status()).toBe(400);
+    await expect(reuseRes.json()).resolves.toMatchObject({
+      code: 'INVALID_VERIFICATION_TOKEN',
+    });
+  });
+
   test('email verification: invalid token shows error', async ({
     page,
     baseURL,

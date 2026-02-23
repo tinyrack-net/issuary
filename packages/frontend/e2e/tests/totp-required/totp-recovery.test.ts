@@ -61,6 +61,32 @@ test.describe('TOTP recovery code verification', () => {
     await expect(page).toHaveURL(/\/profile/);
   });
 
+  test('used recovery code cannot be reused', async ({ page }) => {
+    const code = recoveryCodes[1];
+    expect(code).toBeTruthy();
+
+    await performLogin(page, email, TEST_PASSWORD);
+    await page.waitForURL('**/verify/totp');
+    await page.locator(totpVerifyPage.recoveryCodeLink).click();
+    await page.waitForURL('**/verify/totp/recovery');
+    await page.locator(recoveryPage.codeInput).fill(String(code));
+    await page.locator(recoveryPage.submitButton).click();
+    await page.waitForURL('**/profile');
+
+    await page.getByRole('button', { name: 'Log out' }).click();
+    await page.waitForURL('**/login');
+
+    await performLogin(page, email, TEST_PASSWORD);
+    await page.waitForURL('**/verify/totp');
+    await page.locator(totpVerifyPage.recoveryCodeLink).click();
+    await page.waitForURL('**/verify/totp/recovery');
+    await page.locator(recoveryPage.codeInput).fill(String(code));
+    await page.locator(recoveryPage.submitButton).click();
+
+    await expect(page.locator(recoveryPage.fieldError).first()).toBeVisible();
+    await expect(page).toHaveURL(/\/verify\/totp\/recovery/);
+  });
+
   test('invalid recovery code shows error', async ({ page }) => {
     await performLogin(page, email, TEST_PASSWORD);
     await page.waitForURL('**/verify/totp');

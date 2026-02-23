@@ -37,4 +37,39 @@ test.describe('Dual 2FA selection UI', () => {
     await expect(page.locator('a[href^="/verify/totp"]')).toBeVisible();
     await expect(page.locator('a[href^="/verify/passkey"]')).toBeVisible();
   });
+
+  test('setup 2FA page can route to both setup methods', async ({
+    page,
+    baseURL,
+  }) => {
+    const email = uniqueEmail('setup-route');
+    const client = getTestApiClient({ baseUrl: String(baseURL) });
+    const registerRes = await client.api.auth.register.$post({
+      header: {},
+      json: { email, password: TEST_PASSWORD },
+    });
+    if (!registerRes.ok) {
+      throw new Error(`Failed to register user: ${registerRes.status}`);
+    }
+
+    await performLogin(page, email, TEST_PASSWORD);
+    await page.waitForURL('**/setup/2fa');
+
+    await page.locator('a[href^="/setup/totp"]').click();
+    await page.waitForURL('**/setup/totp');
+
+    await page.goto('/setup/2fa');
+    await page.locator('a[href^="/setup/passkey"]').click();
+    await expect(page).toHaveURL(/\/setup\/passkey/);
+  });
+
+  test('verify 2FA page can route to both verify methods', async ({ page }) => {
+    await page.goto('/verify/2fa');
+    await page.locator('a[href^="/verify/totp"]').click();
+    await page.waitForURL('**/verify/totp');
+
+    await page.goto('/verify/2fa');
+    await page.locator('a[href^="/verify/passkey"]').click();
+    await page.waitForURL('**/verify/passkey');
+  });
 });

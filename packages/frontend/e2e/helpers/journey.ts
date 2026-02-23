@@ -157,3 +157,22 @@ export async function allowConsentAndExpectRedirect(
   await page.getByRole('button', { name: 'Allow' }).click();
   await redirectPromise;
 }
+
+/**
+ * Clicks Deny on consent and verifies error/state redirect params.
+ */
+export async function denyConsentAndExpectRedirect(
+  page: Page,
+  redirectUri: string,
+  expectedState: string,
+): Promise<void> {
+  await expect(page.locator(consentPage.denyButton)).toBeVisible();
+  const redirectPromise = page.waitForRequest((request) =>
+    request.url().startsWith(redirectUri),
+  );
+  await page.getByRole('button', { name: 'Deny' }).click();
+  const redirectRequest = await redirectPromise;
+  const redirectUrl = new URL(redirectRequest.url());
+  expect(redirectUrl.searchParams.get('error')).toBe('access_denied');
+  expect(redirectUrl.searchParams.get('state')).toBe(expectedState);
+}

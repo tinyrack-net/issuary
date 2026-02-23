@@ -7,6 +7,7 @@ import {
   completeEmailVerification,
   completeTotpSetup,
   completeTotpVerify,
+  denyConsentAndExpectRedirect,
   expectOAuthParamsPresent,
   type JourneyOAuthParams,
 } from '@frontend-e2e/helpers/journey.js';
@@ -81,6 +82,36 @@ test.describe('OAuth continuation across email verification and 2FA', () => {
     await expectOAuthParamsPresent(page, oauthParams);
 
     await allowConsentAndExpectRedirect(
+      page,
+      E2E_TEST_CLIENT.redirectUri,
+      oauthParams.state,
+    );
+  });
+
+  test('register -> verify email -> setup TOTP -> deny consent redirect', async ({
+    page,
+    baseURL,
+  }) => {
+    const email = uniqueEmail('register-totp-deny');
+    const oauthParams = uniqueOauthParams('register-totp-deny');
+
+    await page.goto(buildAuthEntryUrl('register', 'form', oauthParams));
+    await submitRegisterForm(page, email, TEST_PASSWORD);
+
+    await page.waitForURL('**/verify/email**');
+    await completeEmailVerification(page, String(baseURL), email);
+    await page.waitForURL('**/setup/2fa**');
+
+    const totpSecretPromise = interceptTotpSecret(page);
+    await page.locator('a[href^="/setup/totp"]').click();
+    await page.waitForURL('**/setup/totp**');
+    const totpSecret = await totpSecretPromise;
+    await completeTotpSetup(page, totpSecret);
+
+    await page.waitForURL('**/consent**');
+    await expectOAuthParamsPresent(page, oauthParams);
+
+    await denyConsentAndExpectRedirect(
       page,
       E2E_TEST_CLIENT.redirectUri,
       oauthParams.state,
