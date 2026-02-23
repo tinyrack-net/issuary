@@ -8,15 +8,36 @@ const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
 
 export type TestHonoApp = Awaited<ReturnType<typeof createE2EServer>>['app'];
 
-type OAuthStubProfile = {
-  sub: string;
-  email: string;
-  email_verified: boolean;
-  name: string;
-  picture: string;
-};
+/**
+ * Base64url encode a string (no padding).
+ */
+function base64url(input: string): string {
+  return Buffer.from(input)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
 
-function getOAuthStubProfile(provider: string): OAuthStubProfile {
+/**
+ * Create an unsigned JWT (alg: "none") with the given claims.
+ * Used to simulate Apple-style ID tokens in OAuth stubs.
+ * The backend's decodeJwt() decodes without signature verification.
+ */
+function createUnsignedJwt(claims: Record<string, unknown>): string {
+  const header = base64url(JSON.stringify({ alg: 'none', typ: 'JWT' }));
+  const payload = base64url(JSON.stringify(claims));
+  return `${header}.${payload}.`;
+}
+
+/**
+ * Returns the stub profile for the given provider.
+ * GitHub-style providers return a GitHub-shaped response (numeric id,
+ * avatar_url, no email_verified).
+ * Apple-style providers should not call userinfo (they use ID tokens).
+ * All others return standard OIDC-shaped responses.
+ */
+function getOAuthStubProfile(provider: string): Record<string, unknown> {
   if (provider === 'stub-not-allowed') {
     return {
       sub: 'oauth-stub-not-allowed',
@@ -25,6 +46,24 @@ function getOAuthStubProfile(provider: string): OAuthStubProfile {
       name: 'OAuth Stub Not Allowed',
       picture: 'https://example.com/stub-not-allowed.png',
     };
+  }
+
+  // GitHub-style: numeric id, avatar_url, no email_verified
+  if (provider.startsWith('github-stub')) {
+    return {
+      id: 42,
+      email: `oauth-${provider}@allowed.test`,
+      name: `GitHub ${provider}`,
+      avatar_url: `https://example.com/${provider}.png`,
+      login: 'octocat',
+    };
+  }
+
+  // Apple-style: should not reach userinfo endpoint
+  if (provider.startsWith('apple-stub')) {
+    throw new Error(
+      `Apple stub '${provider}' should not call userinfo endpoint`,
+    );
   }
 
   return {
@@ -175,12 +214,38 @@ export async function createE2EServer(configFactory: ConfigFactory) {
       const provider = c.req.param('provider');
       const redirectUri = c.req.query('redirect_uri');
       const state = c.req.query('state');
+      const responseMode = c.req.query('response_mode');
       const scenario =
         c.req.query('scenario') ??
         (provider.includes('denied') ? 'denied' : 'success');
 
       if (!redirectUri || !state) {
         return c.json({ error: 'Missing redirect_uri or state' }, 400);
+      }
+
+      // Apple-style form_post: return HTML that auto-submits a POST form
+      if (responseMode === 'form_post') {
+        const code = scenario === 'denied' ? undefined : `${provider}-code`;
+        const formFields: string[] = [
+          `<input type="hidden" name="state" value="${state}">`,
+        ];
+        if (scenario === 'denied') {
+          formFields.push(
+            '<input type="hidden" name="error" value="access_denied">',
+            `<input type="hidden" name="error_description" value="${provider} denied by oauth stub">`,
+          );
+        } else {
+          formFields.push(`<input type="hidden" name="code" value="${code}">`);
+        }
+        const html = [
+          '<html><body>',
+          `<form method="POST" action="${redirectUri}">`,
+          ...formFields,
+          '</form>',
+          '<script>document.forms[0].submit();</script>',
+          '</body></html>',
+        ].join('');
+        return c.html(html);
       }
 
       const callbackUrl = new URL(redirectUri);
@@ -211,11 +276,23 @@ export async function createE2EServer(configFactory: ConfigFactory) {
         return c.json({ error: 'Invalid code' }, 400);
       }
 
-      return c.json({
+      const tokenResponse: Record<string, unknown> = {
         access_token: `access-token-${provider}`,
         token_type: 'Bearer',
         expires_in: 3600,
-      });
+      };
+
+      // Apple-style: include id_token with user claims
+      if (provider.startsWith('apple-stub')) {
+        tokenResponse['id_token'] = createUnsignedJwt({
+          iss: 'https://appleid.apple.com',
+          sub: `oauth-${provider}`,
+          email: `oauth-${provider}@allowed.test`,
+          email_verified: true,
+        });
+      }
+
+      return c.json(tokenResponse);
     })
     .get('/test/oauth-stub/:provider/userinfo', async (c) => {
       const provider = c.req.param('provider');
