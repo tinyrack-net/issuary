@@ -15,13 +15,14 @@ This document maps backend `/api/config` driven behavior to E2E coverage.
 | `auth.password.totp.enabled` | TOTP setup/verify availability and profile section | `tests/totp-required/*.test.ts`, `tests/totp-optional/totp-optional.test.ts` |
 | `auth.passkey.enabled` | Passkey setup/verify availability and profile section | `tests/passkey-required/passkey-flow.test.ts`, `tests/dual-2fa/choose-2fa.test.ts`, `tests/totp-optional/totp-optional.test.ts`, `tests/passkey-optional/passkey-optional.test.ts` |
 | `identity_providers[*].enabled` | OAuth provider buttons and linked account providers | `tests/oauth-providers/oauth-providers.test.ts`, `tests/oauth-providers-mixed/oauth-providers-mixed.test.ts` |
-| `app.signup_implicit_terms` | Implicit terms notice on auth pages | `tests/terms/register-terms.test.ts`, `tests/theme-system-multilang/theme-system-multilang.test.ts` |
+| OAuth callback branching (`isNewUser` + explicit terms) | Existing user login vs new user complete-registration redirect behavior | `tests/oauth-providers-terms/oauth-branching.test.ts` |
+| `app.signup_implicit_terms` | Implicit terms notice on auth pages | `tests/terms/register-terms.test.ts`, `tests/theme-system-multilang/theme-system-multilang.test.ts`, `tests/oauth-providers-terms/register-terms-ux.test.ts` |
 | `app.title/subtitle/icon_url/background_url` | Branding on auth layout | `tests/ui-branding-locale-theme/ui-config.test.ts`, `tests/theme-system-multilang/theme-system-multilang.test.ts` |
 | `app.supported_languages/default_language/fallback_language` | Language selector visibility and fallback text lookup | `tests/ui-branding-locale-theme/ui-config.test.ts`, `tests/theme-system-multilang/theme-system-multilang.test.ts` |
 | `app.theme_mode/light_theme/dark_theme` | Theme toggle visibility and runtime theme switching | `tests/ui-branding-locale-theme/ui-config.test.ts`, `tests/theme-system-multilang/theme-system-multilang.test.ts` |
 | `app.account_deletion` + `cleanup.deleted_users.retention` | Danger zone visibility and retention-based messaging | `tests/account-deletion/delete-account.test.ts`, `tests/account-deletion-disabled/account-deletion-disabled.test.ts`, `tests/config-managed-profile/config-managed-profile.test.ts` |
 | Config-managed user (`managed_by=config`) | Restricted profile security controls | `tests/config-managed-profile/config-managed-profile.test.ts` |
-| `terms` route mode (`mode=complete_registration`) | Unauthenticated terms flow for pending OAuth signup | `tests/terms-complete-registration/terms-complete-registration.test.ts` |
+| `terms` route mode (`mode=complete_registration`) | Unauthenticated terms flow for pending OAuth signup | `tests/terms-complete-registration/terms-complete-registration.test.ts`, `tests/oauth-providers-terms/oauth-branching.test.ts`, `tests/oauth-providers-terms/oauth-client-terms-continuity.test.ts` |
 
 ## OAuth stub notes
 
