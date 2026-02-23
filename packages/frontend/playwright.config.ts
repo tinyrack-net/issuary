@@ -81,6 +81,10 @@ const configs = [
     name: 'journey-oauth-2fa',
     testDir: './e2e/tests/journey-oauth-2fa',
   },
+  {
+    name: 'oauth-providers-specific',
+    testDir: './e2e/tests/oauth-providers-specific',
+  },
 ];
 
 const browsers = [
