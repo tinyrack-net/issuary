@@ -1,5 +1,6 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyAuth } from '@backend/middleware/auth.js';
 import { f } from '@backend/schemas/field.js';
 import { termsSchema } from '@backend/schemas/terms.js';
 import { Hono } from 'hono';
@@ -37,13 +38,13 @@ export const termsGet = new Hono<AppEnv>().get(
       lang: f.languageCode,
     }),
   ),
+  verifyAuth({ optional: true }),
   async (c) => {
     const query = c.req.valid('query');
     const { lang } = query;
-    const session = c.var.session;
     const { termsService } = c.var.services;
 
-    const userSub = session.get('user')?.sub || null;
+    const userSub = c.var.verifiedUser?.user.sub ?? null;
 
     const terms = await termsService.getGlobalTermsWithConsent(userSub, lang);
 

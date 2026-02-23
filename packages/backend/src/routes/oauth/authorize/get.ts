@@ -1,5 +1,6 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
+import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
@@ -44,9 +45,9 @@ export const authorizeGet = new Hono<AppEnv>().get(
       display: f.display.optional(),
     }),
   ),
+  verifyAuth({ optional: true }),
   async (c) => {
     const query = c.req.valid('query');
-    const session = c.var.session;
     const { oauthAuthorizeService } = c.var.services;
 
     // Helper function to redirect with error
@@ -76,8 +77,7 @@ export const authorizeGet = new Hono<AppEnv>().get(
     };
 
     try {
-      // Get user session
-      const userSession = session.get('user');
+      const verifiedUser = c.var.verifiedUser;
 
       // Call authorize service
       const authorizeParams: {
@@ -90,8 +90,11 @@ export const authorizeGet = new Hono<AppEnv>().get(
         query: query,
       };
 
-      if (userSession) {
-        authorizeParams.userSession = userSession;
+      if (verifiedUser) {
+        authorizeParams.userSession = {
+          sub: verifiedUser.user.sub,
+          authenticated_at: verifiedUser.authenticatedAt,
+        };
       }
 
       const result = await oauthAuthorizeService.authorize(authorizeParams);
