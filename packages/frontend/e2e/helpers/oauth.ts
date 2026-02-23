@@ -7,7 +7,7 @@ export async function startOAuthLogin(
   page: Page,
   providerName: string,
 ): Promise<void> {
-  await page.getByRole('link', { name: providerName }).click();
+  await page.getByRole('link', { name: providerName, exact: true }).click();
 }
 
 /**

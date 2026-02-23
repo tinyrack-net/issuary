@@ -50,6 +50,10 @@ const configs = [
     testDir: './e2e/tests/oauth-providers-mixed',
   },
   {
+    name: 'oauth-providers-terms',
+    testDir: './e2e/tests/oauth-providers-terms',
+  },
+  {
     name: 'ui-branding-locale-theme',
     testDir: './e2e/tests/ui-branding-locale-theme',
   },
