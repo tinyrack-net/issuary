@@ -138,7 +138,7 @@ describe('POST /api/user/passkeys/register/verify', () => {
     await cleanup();
   });
 
-  test('should return 401 when not authenticated', async () => {
+  test('should return 400 when not authenticated (no challenge in session)', async () => {
     const client = testClient(app);
     const res = await client.api.user.passkeys.register.verify.$post({
       json: {
@@ -146,8 +146,8 @@ describe('POST /api/user/passkeys/register/verify', () => {
       },
     });
 
-    const body = await assertJsonBody(res, 401);
-    expect(body.code).toBe('UNAUTHORIZED');
+    const body = await assertJsonBody(res, 400);
+    expect(body.code).toBe('PASSKEY_CHALLENGE_NOT_FOUND');
   });
 
   test('should return 400 when no challenge in session', async () => {

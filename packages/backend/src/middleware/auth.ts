@@ -2,7 +2,7 @@ import type { UserEntity } from '@backend/entities/user.entity.js';
 import { e, TinyAuthError } from '@backend/schemas/error.js';
 import { createMiddleware } from 'hono/factory';
 import type { ServicesEnv } from './services.js';
-import type { SessionEnv } from './session.js';
+import type { SessionData, SessionEnv } from './session.js';
 
 export interface VerifiedAuth {
   user: UserEntity;
@@ -160,5 +160,55 @@ export const verifyPending2FASetupUser = <
       }
       throw err;
     }
+    await next();
+  });
+
+type VerifiedPasskeyChallengeEnv = {
+  Variables: {
+    verifiedPasskeyChallenge: string;
+  };
+};
+
+export const verifyPasskeyChallenge = () =>
+  createMiddleware<{
+    Variables: SessionEnv['Variables'] &
+      VerifiedPasskeyChallengeEnv['Variables'];
+  }>(async (c, next) => {
+    const sessionHelper = c.var.session;
+    const challenge = sessionHelper.get('passkey_challenge');
+    if (!challenge) {
+      throw new e.PasskeyChallengeNotFound.Error();
+    }
+    sessionHelper.set('passkey_challenge', undefined);
+    c.set('verifiedPasskeyChallenge', challenge);
+    await next();
+  });
+
+type VerifiedOAuthEnv<Optional extends boolean> = {
+  Variables: {
+    verifiedOAuth: Optional extends true
+      ? NonNullable<SessionData['oauth']> | undefined
+      : NonNullable<SessionData['oauth']>;
+  };
+};
+
+export const verifyOAuth = <Optional extends boolean = false>(options?: {
+  optional?: Optional;
+}) =>
+  createMiddleware<{
+    Variables: SessionEnv['Variables'] &
+      VerifiedOAuthEnv<Optional>['Variables'];
+  }>(async (c, next) => {
+    const sessionHelper = c.var.session;
+    const oauth = sessionHelper.get('oauth');
+    if (!oauth) {
+      if (options?.optional) {
+        c.set('verifiedOAuth', undefined as never);
+        await next();
+        return;
+      }
+      throw new e.OAuthSessionExpired.Error();
+    }
+    c.set('verifiedOAuth', oauth);
     await next();
   });

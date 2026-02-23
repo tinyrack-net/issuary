@@ -2,6 +2,7 @@ import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import {
   verifyAuth,
+  verifyPasskeyChallenge,
   verifyPending2FASetupUser,
 } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
@@ -62,6 +63,7 @@ export const userPasskeyRegisterVerifyPost = new Hono<AppEnv>().post(
   validator('json', r.PasskeyRegistrationBody),
   verifyAuth({ optional: true }),
   verifyPending2FASetupUser({ optional: true }),
+  verifyPasskeyChallenge(),
   async (c) => {
     const config = c.var.services.config;
     if (!config.auth.passkey.enabled) {
@@ -82,11 +84,7 @@ export const userPasskeyRegisterVerifyPost = new Hono<AppEnv>().post(
     const user = verified.user;
     const userSub = user.sub;
 
-    // Get challenge from session
-    const challenge = session.get('passkey_challenge');
-    if (!challenge) {
-      throw new e.PasskeyChallengeNotFound.Error();
-    }
+    const challenge = c.var.verifiedPasskeyChallenge;
 
     // Cast for @simplewebauthn compatibility - Zod's inferred type
     // (Record<string, any>) is not structurally assignable to
@@ -102,9 +100,6 @@ export const userPasskeyRegisterVerifyPost = new Hono<AppEnv>().post(
       challenge,
       body.name,
     );
-
-    // Clear challenge from session
-    session.set('passkey_challenge', undefined);
 
     // Check if this was from pending 2FA setup session
     const wasPendingSetup = !!c.var.verifiedPending2FASetupUser;

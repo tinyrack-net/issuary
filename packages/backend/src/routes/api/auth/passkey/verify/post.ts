@@ -1,6 +1,9 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
-import { verifyPending2FAUser } from '@backend/middleware/auth.js';
+import {
+  verifyPasskeyChallenge,
+  verifyPending2FAUser,
+} from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { r } from '@backend/schemas/response.js';
 import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
@@ -59,6 +62,7 @@ export const authPasskeyVerifyPost = new Hono<AppEnv>().post(
     }),
   ),
   verifyPending2FAUser({ optional: true }),
+  verifyPasskeyChallenge(),
   async (c) => {
     const config = c.var.services.config;
     if (!config.auth.passkey.enabled) {
@@ -70,15 +74,7 @@ export const authPasskeyVerifyPost = new Hono<AppEnv>().post(
     const { mikro, passkeyService, userService } = c.var.services;
 
     const pending2FA = c.var.verifiedPending2FAUser;
-
-    // Get challenge from session
-    const challenge = session.get('passkey_challenge');
-
-    if (!challenge) {
-      throw new e.PasskeyChallengeNotFound.Error();
-    }
-
-    session.set('passkey_challenge', undefined);
+    const challenge = c.var.verifiedPasskeyChallenge;
 
     // Cast for @simplewebauthn compatibility - Zod's inferred type
     // differs from @simplewebauthn's AuthenticationResponseJSON due to

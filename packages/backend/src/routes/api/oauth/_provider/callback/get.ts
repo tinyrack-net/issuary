@@ -1,7 +1,7 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { isEmailAllowed } from '@backend/lib/email-pattern.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
-import { verifyAuth } from '@backend/middleware/auth.js';
+import { verifyAuth, verifyOAuth } from '@backend/middleware/auth.js';
 import { e, TinyAuthError } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
@@ -86,6 +86,7 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
     }),
   ),
   verifyAuth({ optional: true }),
+  verifyOAuth({ optional: true }),
   async (c) => {
     const params = c.req.valid('param');
     const query = c.req.valid('query');
@@ -103,7 +104,7 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
         errorUrl.searchParams.set('oauth_error_description', error_description);
       }
 
-      const oauthSession = session.get('oauth');
+      const oauthSession = c.var.verifiedOAuth;
       if (oauthSession?.returnUrl) {
         errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
       }
@@ -118,7 +119,7 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
     }
 
     // Retrieve OAuth session data
-    const oauthSession = session.get('oauth');
+    const oauthSession = c.var.verifiedOAuth;
 
     if (!oauthSession) {
       throw new e.OAuthSessionExpired.Error();
