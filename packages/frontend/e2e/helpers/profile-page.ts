@@ -61,7 +61,7 @@ export const disableTotpModal = {
   cancelButton: 'dialog.modal-open button.btn.btn-sm:not(.btn-error)',
   submitButton: 'dialog.modal-open button.btn.btn-sm.btn-error',
   fieldError: 'dialog.modal-open .text-error',
-  warningAlert: 'dialog.modal-open .alert-warning',
+  warningAlert: 'dialog.modal-open .text-warning',
 } as const;
 
 /**
@@ -85,6 +85,39 @@ export const deleteAccountModal = {
   submitButton: 'dialog.modal-open button.btn.btn-sm.btn-error',
   fieldError: 'dialog.modal-open .text-error',
   warningAlert: 'dialog.modal-open .alert-error',
+} as const;
+
+/**
+ * Selectors for the setup passkey modal.
+ */
+export const setupPasskeyModal = {
+  nameInput: '#passkey-name',
+  cancelButton: 'dialog.modal-open button.btn.btn-sm:not(.btn-primary)',
+  continueButton: 'dialog.modal-open button.btn.btn-sm.btn-primary',
+  waitingMessage: 'dialog.modal-open .loading.loading-spinner',
+  fieldError: 'dialog.modal-open .text-error',
+} as const;
+
+/**
+ * Selectors for the manage passkeys modal.
+ */
+export const managePasskeysModal = {
+  closeButton:
+    'dialog.modal-open .modal-action button.btn.btn-sm:not(.btn-primary)',
+  addNewButton: 'dialog.modal-open .modal-action button.btn.btn-sm.btn-primary',
+  passkeyItem: 'dialog.modal-open .rounded-lg.bg-base-200',
+  deleteError: 'dialog.modal-open .alert-error',
+  emptyState: 'dialog.modal-open .text-base-content\\/60.text-sm',
+} as const;
+
+/**
+ * Selectors for the unlink OAuth modal.
+ */
+export const unlinkOAuthModal = {
+  cancelButton: 'dialog.modal-open button.btn.btn-sm:not(.btn-error)',
+  unlinkButton: 'dialog.modal-open button.btn.btn-sm.btn-error',
+  warningAlert: 'dialog.modal-open .text-warning',
+  errorAlert: 'dialog.modal-open .text-error',
 } as const;
 
 /**
