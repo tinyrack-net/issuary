@@ -8,6 +8,7 @@ test.describe('OAuth providers UI', () => {
 
     await expect(page.getByText('GitHub')).toBeVisible();
     await expect(page.getByText('Google')).toBeVisible();
+    await expect(page.getByText('GitHub Disabled')).toHaveCount(0);
 
     await expect(
       page.locator('a[href^="/api/oauth/github/authorize?mode=login"]'),
@@ -15,6 +16,11 @@ test.describe('OAuth providers UI', () => {
     await expect(
       page.locator('a[href^="/api/oauth/google/authorize?mode=login"]'),
     ).toBeVisible();
+    await expect(
+      page.locator(
+        'a[href^="/api/oauth/github-disabled/authorize?mode=login"]',
+      ),
+    ).toHaveCount(0);
   });
 
   test('profile shows linked accounts section for available providers', async ({
@@ -31,6 +37,7 @@ test.describe('OAuth providers UI', () => {
     ).toBeVisible();
     await expect(page.getByText('GitHub')).toBeVisible();
     await expect(page.getByText('Google')).toBeVisible();
+    await expect(page.getByText('GitHub Disabled')).toHaveCount(0);
   });
 
   test('provider callback error redirects to login with mapped message', async ({
@@ -44,5 +51,23 @@ test.describe('OAuth providers UI', () => {
     await expect(
       page.getByText('The authorization request was denied.'),
     ).toBeVisible();
+  });
+
+  test('callback without oauth session returns OAUTH_SESSION_EXPIRED', async ({
+    request,
+    baseURL,
+  }) => {
+    const callbackUrl = new URL(`${String(baseURL)}/api/oauth/github/callback`);
+    callbackUrl.searchParams.set('code', 'github-code');
+    callbackUrl.searchParams.set('state', 'missing-oauth-session');
+
+    const response = await request.get(callbackUrl.toString(), {
+      maxRedirects: 0,
+    });
+
+    expect(response.status()).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'OAUTH_SESSION_EXPIRED',
+    });
   });
 });

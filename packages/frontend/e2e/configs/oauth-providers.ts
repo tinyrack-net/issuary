@@ -45,6 +45,16 @@ export function createOauthProvidersConfig(
         client_secret: 'test-google-client-secret',
         email_conflict_strategy: 'auto_link',
       },
+      {
+        id: 'github-disabled',
+        type: 'github',
+        enabled: false,
+        display_name: 'GitHub Disabled',
+        icon_url: 'https://example.com/github-disabled.svg',
+        client_id: 'test-github-disabled-client-id',
+        client_secret: 'test-github-disabled-client-secret',
+        email_conflict_strategy: 'auto_link',
+      },
     ],
     logging: {
       level: 'silent',

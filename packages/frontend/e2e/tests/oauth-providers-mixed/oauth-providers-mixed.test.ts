@@ -98,4 +98,23 @@ test.describe('OAuth providers mixed configuration', () => {
     await expect(page.getByText('Stub Not Allowed')).toBeVisible();
     await expect(page.getByText('Stub Disabled')).toHaveCount(0);
   });
+
+  test('callback without oauth session returns OAUTH_SESSION_EXPIRED', async ({
+    request,
+    baseURL,
+  }) => {
+    const callbackUrl = new URL(
+      `${String(baseURL)}/api/oauth/stub-success/callback`,
+    );
+    callbackUrl.searchParams.set('code', 'stub-success-code');
+    callbackUrl.searchParams.set('state', 'missing-oauth-session');
+
+    const response = await request.get(callbackUrl.toString(), {
+      maxRedirects: 0,
+    });
+    expect(response.status()).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'OAUTH_SESSION_EXPIRED',
+    });
+  });
 });
