@@ -5,6 +5,7 @@ export interface OAuthMockTokens {
   token_type: string;
   refresh_token?: string;
   expires_in?: number;
+  id_token?: string;
 }
 
 export interface OAuthMockUserInfo {
@@ -17,9 +18,17 @@ export interface OAuthMockUserInfo {
 
 export interface OAuthProviderFetchMockOptions {
   tokenUrl: string;
-  userInfoUrl: string;
+  /** Set to null for providers without a userinfo endpoint (e.g. Apple). */
+  userInfoUrl: string | null;
   tokens?: Partial<OAuthMockTokens>;
   userInfo?: Partial<OAuthMockUserInfo>;
+  /**
+   * Raw userinfo response body returned by the mock.
+   * Use this to supply provider-specific field names
+   * (e.g. GitHub: `{ id: 123, avatar_url: '...' }`).
+   * When omitted, a Google-style response is returned.
+   */
+  rawUserInfoResponse?: Record<string, unknown>;
 }
 
 export interface OAuthProviderFetchMock {
@@ -74,6 +83,7 @@ export function mockOAuthProviderFetch(
     ...(options.tokens?.expires_in
       ? { expires_in: options.tokens.expires_in }
       : { expires_in: 3600 }),
+    ...(options.tokens?.id_token ? { id_token: options.tokens.id_token } : {}),
   };
 
   const userInfo: OAuthMockUserInfo = {
@@ -93,18 +103,23 @@ export function mockOAuthProviderFetch(
         return jsonResponse(tokens);
       }
 
-      if (url === options.userInfoUrl) {
+      if (options.userInfoUrl && url === options.userInfoUrl) {
         const authorization = getAuthorizationHeader(input, init);
         if (authorization !== `Bearer ${tokens.access_token}`) {
           return jsonResponse({ error: 'invalid_token' }, 401);
         }
-        return jsonResponse({
+
+        // Use rawUserInfoResponse if provided, otherwise default to
+        // Google-style field names for backward compatibility.
+        const body = options.rawUserInfoResponse ?? {
           sub: userInfo.id,
           email: userInfo.email,
           email_verified: userInfo.email_verified,
           name: userInfo.name,
           picture: userInfo.picture,
-        });
+        };
+
+        return jsonResponse(body);
       }
 
       throw new Error(`Unexpected OAuth mock fetch request: ${url}`);

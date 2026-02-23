@@ -26,6 +26,8 @@ import {
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_USERINFO_URL = 'https://openidconnect.googleapis.com/v1/userinfo';
+const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token';
+const GITHUB_USERINFO_URL = 'https://api.github.com/user';
 
 let app: AppType;
 let services: ServiceContainer;
@@ -49,7 +51,7 @@ beforeAll(async () => {
         {
           id: 'github',
           type: 'github',
-          enabled: false,
+          enabled: true,
           display_name: 'GitHub',
           client_id: 'test-github-client-id',
           client_secret: 'test-github-client-secret',
@@ -597,6 +599,60 @@ describe('GET /api/oauth/:provider/callback', () => {
       });
 
       await expectError(res, e.OAuthInvalidRequest);
+    });
+  });
+
+  describe('GitHub Callback', () => {
+    test('should complete GitHub login with GitHub-specific field mapping', async () => {
+      const oauthEmail = generateUniqueEmail('github-callback');
+      const { sessionCookie, state } = await startOAuthFlow('github', {
+        mode: 'login',
+      });
+
+      const oauthMock = mockOAuthProviderFetch({
+        tokenUrl: GITHUB_TOKEN_URL,
+        userInfoUrl: GITHUB_USERINFO_URL,
+        rawUserInfoResponse: {
+          id: 42,
+          email: oauthEmail,
+          name: 'GitHub User',
+          avatar_url: 'https://github.com/images/avatar.png',
+        },
+      });
+
+      try {
+        const client = testClient(app);
+        const callbackRes = await client.api.oauth[':provider'].callback.$get(
+          {
+            param: { provider: 'github' },
+            query: {
+              code: 'github-auth-code',
+              state,
+            },
+          },
+          { headers: { Cookie: `session=${sessionCookie}` } },
+        );
+
+        expect(callbackRes.status).toBe(302);
+        const callbackLocation = new URL(
+          getLocationHeader(callbackRes),
+          'http://test',
+        );
+        expect(callbackLocation.pathname).toBe('/profile');
+
+        // Verify session was created with correct user
+        const callbackCookie = extractCookie(callbackRes, 'session');
+        const sessionClient = testClient(app);
+        const sessionRes = await sessionClient.api.user.session.$get(
+          {},
+          { headers: { Cookie: `session=${callbackCookie}` } },
+        );
+        const sessionBody = await assertJsonBody(sessionRes);
+        expect(sessionBody.user).not.toBeNull();
+        expect(sessionBody.user?.email).toBe(oauthEmail);
+      } finally {
+        oauthMock.restore();
+      }
     });
   });
 });

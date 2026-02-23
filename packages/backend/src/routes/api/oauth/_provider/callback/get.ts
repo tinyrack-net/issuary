@@ -1,8 +1,7 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
-import { isEmailAllowed } from '@backend/lib/email-pattern.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { verifyAuth, verifyOAuth } from '@backend/middleware/auth.js';
-import { e, TinyAuthError } from '@backend/schemas/error.js';
+import { e } from '@backend/schemas/error.js';
 import { f } from '@backend/schemas/field.js';
 import { r } from '@backend/schemas/response.js';
 import { Hono } from 'hono';
@@ -88,207 +87,60 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
   verifyAuth({ optional: true }),
   verifyOAuth({ optional: true }),
   async (c) => {
-    const params = c.req.valid('param');
-    const query = c.req.valid('query');
-    const { provider } = params;
-    const { code, state, error, error_description } = query;
-    const session = c.var.session;
-    const { config, mikro, oauthConnectService, termsService } = c.var.services;
+    const { provider } = c.req.valid('param');
+    const { code, state, error, error_description } = c.req.valid('query');
+    const { session } = c.var;
+    const { config, oauthConnectService } = c.var.services;
+    const oauthSession = c.var.verifiedOAuth;
 
     // Handle OAuth error response
     if (error) {
       const errorUrl = new URL('/login', config.app.host);
       errorUrl.searchParams.set('oauth_error', error);
-
       if (error_description) {
         errorUrl.searchParams.set('oauth_error_description', error_description);
       }
-
-      const oauthSession = c.var.verifiedOAuth;
       if (oauthSession?.returnUrl) {
         errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
       }
-
       session.set('oauth', undefined);
       return c.redirect(errorUrl.toString());
     }
 
-    // Validate required parameters for success flow
+    // Validate required parameters
     if (!code || !state) {
       throw new e.OAuthInvalidRequest.Error();
     }
-
-    // Retrieve OAuth session data
-    const oauthSession = c.var.verifiedOAuth;
 
     if (!oauthSession) {
       throw new e.OAuthSessionExpired.Error();
     }
 
-    // Validate state parameter
-    if (oauthSession.state !== state) {
-      throw new e.OAuthStateMismatch.Error();
-    }
-
-    // Validate provider matches
-    if (oauthSession.providerId !== provider) {
-      throw new e.OAuthProviderNotFound.Error();
-    }
-
-    // Exchange code for tokens
-    const tokens = await oauthConnectService.exchangeCodeForTokens(
+    const result = await oauthConnectService.processOAuthCallback({
       provider,
       code,
-      oauthSession.codeVerifier,
-    );
+      state,
+      oauthSession,
+      userSub: c.var.verifiedUser?.user.sub,
+      requestUrl: c.req.url,
+    });
 
-    // Fetch user info from provider
-    const userInfo = await oauthConnectService.fetchUserInfo(
-      provider,
-      tokens.access_token,
-    );
+    // Clear OAuth session for all outcomes
+    session.set('oauth', undefined);
 
-    // Handle based on mode
-    if (oauthSession.mode === 'link') {
-      // Link mode: link OAuth account to existing user
-      const verifiedAuth = c.var.verifiedUser;
-      if (!verifiedAuth) {
-        throw new e.Unauthorized.Error();
-      }
-
-      await oauthConnectService.linkOAuthAccount(
-        verifiedAuth.user.sub,
-        provider,
-        tokens,
-        userInfo,
-      );
-
-      // Clear OAuth session
-      session.set('oauth', undefined);
-
-      // Redirect to return URL or profile
-      const returnUrl = oauthSession.returnUrl || '/profile';
-      return c.redirect(returnUrl);
-    }
-
-    // Check if this would be a new user and if explicit terms exist
-    const isNewUser = await oauthConnectService.isNewOAuthUser(
-      provider,
-      userInfo,
-    );
-
-    // For new users, check email allowlist before proceeding
-    if (isNewUser) {
-      const { allowed_signup_emails } = config.app;
-      if (!isEmailAllowed(userInfo.email, allowed_signup_emails)) {
-        const errorUrl = new URL('/login', config.app.host);
-        errorUrl.searchParams.set(
-          'oauth_error',
-          'registration_email_not_allowed',
-        );
-        if (oauthSession.returnUrl) {
-          errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
-        }
-        session.set('oauth', undefined);
-        return c.redirect(errorUrl.toString());
-      }
-    }
-
-    // Load terms once and reuse
-    const allTerms = await termsService.getGlobalTerms();
-    const explicitTerms = await termsService.getExplicitTerms(allTerms);
-
-    if (isNewUser && explicitTerms.length > 0) {
-      // New user with explicit terms: persist to DB (avoids cookie size limits)
-      const pendingToken =
-        await mikro.pendingOAuthRegistration.createPendingRegistration({
-          providerId: provider,
-          accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token,
-          expiresIn: tokens.expires_in,
-          tokenType: tokens.token_type,
-          userInfo: {
-            id: userInfo.id,
-            email: userInfo.email,
-            email_verified: userInfo.email_verified,
-            name: userInfo.name,
-            picture: userInfo.picture,
-          },
-          returnUrl: oauthSession.returnUrl,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        });
-
-      // Clear OAuth flow session
-      session.set('oauth', undefined);
-
-      const termsUrl = new URL('/terms', `${config.app.host}`);
-      termsUrl.searchParams.set('mode', 'complete_registration');
-      termsUrl.searchParams.set('registration_token', pendingToken);
-      if (oauthSession.returnUrl) {
-        termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
-      }
-      return c.redirect(termsUrl.toString());
-    }
-
-    // Login/Register mode: authenticate with OAuth
-    try {
-      const result = await oauthConnectService.authenticateWithOAuth(
-        provider,
-        tokens,
-        userInfo,
-      );
-
-      // Set user session
-      session.setUserSession(result.user.sub);
-
-      // Clear OAuth session
-      session.set('oauth', undefined);
-
-      // Check if existing user needs to see terms page
-      if (!result.isNewUser && explicitTerms.length > 0) {
-        const pendingTerms = await termsService.getPendingRequiredTerms(
-          result.user.sub,
-        );
-        const explicitTermIds = new Set(explicitTerms.map((t) => t.id));
-        const shouldRedirectToTerms = pendingTerms.some((id) =>
-          explicitTermIds.has(id),
-        );
-
-        if (shouldRedirectToTerms) {
-          const url = new URL(c.req.url);
-          const termsUrl = new URL('/terms', `${url.protocol}//${url.host}`);
-          if (oauthSession.returnUrl) {
-            termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
-          }
-          return c.redirect(termsUrl.toString());
-        }
-      }
-
-      // If return URL is provided, redirect
-      if (oauthSession.returnUrl) {
-        return c.redirect(oauthSession.returnUrl);
-      }
-
-      // Default: redirect to profile page
-      return c.redirect('/profile');
-    } catch (err) {
-      // Catch RegistrationEmailNotAllowed and redirect to login
-      if (
-        err instanceof TinyAuthError &&
-        err.code === 'REGISTRATION_EMAIL_NOT_ALLOWED'
-      ) {
-        const errorUrl = new URL('/login', config.app.host);
-        errorUrl.searchParams.set(
-          'oauth_error',
-          'registration_email_not_allowed',
-        );
-        if (oauthSession.returnUrl) {
-          errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
-        }
-        session.set('oauth', undefined);
-        return c.redirect(errorUrl.toString());
-      }
-      throw err;
+    switch (result.action) {
+      case 'error_redirect':
+        return c.redirect(result.url);
+      case 'link_complete':
+        return c.redirect(result.returnUrl);
+      case 'terms_redirect':
+        return c.redirect(result.url);
+      case 'login_terms_redirect':
+        session.setUserSession(result.userSub);
+        return c.redirect(result.termsUrl);
+      case 'login_complete':
+        session.setUserSession(result.userSub);
+        return c.redirect(result.returnUrl || '/profile');
     }
   },
 );

@@ -3,9 +3,19 @@ import type { ServiceContainer } from '@backend/services/container.js';
 import {
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
+  mockOAuthProviderFetch,
   withMikroContext,
 } from '@backend/test-utils/index.js';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { generateKeyPair, SignJWT } from 'jose';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  test,
+  vi,
+} from 'vitest';
 
 /**
  * Tests for OAuthConnectService.authenticateWithOAuth()
@@ -301,5 +311,281 @@ describe('OAuthConnectService - completeOAuthRegistration', () => {
       ),
       'OAUTH_EMAIL_NOT_VERIFIED',
     );
+  });
+});
+
+describe('OAuthConnectService - fetchUserInfo', () => {
+  describe('GitHub field mapping', () => {
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
+
+    beforeAll(async () => {
+      const server = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          identity_providers: [
+            {
+              id: 'github',
+              type: 'github',
+              enabled: true,
+              display_name: 'GitHub',
+              client_id: 'test-github-client-id',
+              client_secret: 'test-github-client-secret',
+              email_conflict_strategy: 'auto_link',
+            },
+          ],
+        },
+      });
+      services = server.services;
+      cleanup = server.cleanup;
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    afterAll(async () => {
+      await cleanup();
+    });
+
+    test('should map GitHub-specific field names correctly', async () => {
+      const oauthMock = mockOAuthProviderFetch({
+        tokenUrl: 'https://github.com/login/oauth/access_token',
+        userInfoUrl: 'https://api.github.com/user',
+        rawUserInfoResponse: {
+          id: 12345,
+          email: 'octocat@github.com',
+          name: 'The Octocat',
+          avatar_url: 'https://github.com/images/octocat.png',
+        },
+      });
+
+      try {
+        const userInfo = await services.oauthConnectService.fetchUserInfo(
+          'github',
+          oauthMock.tokens.access_token,
+        );
+
+        expect(userInfo.id).toBe('12345');
+        expect(userInfo.email).toBe('octocat@github.com');
+        expect(userInfo.name).toBe('The Octocat');
+        expect(userInfo.picture).toBe('https://github.com/images/octocat.png');
+      } finally {
+        oauthMock.restore();
+      }
+    });
+
+    test('should stringify numeric GitHub user ID', async () => {
+      const oauthMock = mockOAuthProviderFetch({
+        tokenUrl: 'https://github.com/login/oauth/access_token',
+        userInfoUrl: 'https://api.github.com/user',
+        rawUserInfoResponse: {
+          id: 98765432,
+          email: 'numeric-id@github.com',
+        },
+      });
+
+      try {
+        const userInfo = await services.oauthConnectService.fetchUserInfo(
+          'github',
+          oauthMock.tokens.access_token,
+        );
+
+        expect(userInfo.id).toBe('98765432');
+        expect(typeof userInfo.id).toBe('string');
+      } finally {
+        oauthMock.restore();
+      }
+    });
+
+    test('should default email_verified to true when mapping is absent', async () => {
+      const oauthMock = mockOAuthProviderFetch({
+        tokenUrl: 'https://github.com/login/oauth/access_token',
+        userInfoUrl: 'https://api.github.com/user',
+        rawUserInfoResponse: {
+          id: 111,
+          email: 'no-verified-field@github.com',
+          // GitHub does not return email_verified
+        },
+      });
+
+      try {
+        const userInfo = await services.oauthConnectService.fetchUserInfo(
+          'github',
+          oauthMock.tokens.access_token,
+        );
+
+        expect(userInfo.email_verified).toBe(true);
+      } finally {
+        oauthMock.restore();
+      }
+    });
+
+    test('should throw when mapped id field is missing from response', async () => {
+      const oauthMock = mockOAuthProviderFetch({
+        tokenUrl: 'https://github.com/login/oauth/access_token',
+        userInfoUrl: 'https://api.github.com/user',
+        rawUserInfoResponse: {
+          // 'id' field is missing — GitHub mapping expects 'id'
+          sub: 'wrong-field-name',
+          email: 'missing-id@github.com',
+        },
+      });
+
+      try {
+        await expect(
+          services.oauthConnectService.fetchUserInfo(
+            'github',
+            oauthMock.tokens.access_token,
+          ),
+        ).rejects.toHaveProperty('code', 'OAUTH_USERINFO_FAILED');
+      } finally {
+        oauthMock.restore();
+      }
+    });
+
+    test('should throw when email is missing from response', async () => {
+      const oauthMock = mockOAuthProviderFetch({
+        tokenUrl: 'https://github.com/login/oauth/access_token',
+        userInfoUrl: 'https://api.github.com/user',
+        rawUserInfoResponse: {
+          id: 222,
+          // email is missing
+        },
+      });
+
+      try {
+        await expect(
+          services.oauthConnectService.fetchUserInfo(
+            'github',
+            oauthMock.tokens.access_token,
+          ),
+        ).rejects.toHaveProperty('code', 'OAUTH_USERINFO_FAILED');
+      } finally {
+        oauthMock.restore();
+      }
+    });
+  });
+
+  describe('Apple ID token decoding', () => {
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
+
+    beforeAll(async () => {
+      const server = await createServer({
+        config: {
+          ...MINIMAL_TEST_CONFIG,
+          identity_providers: [
+            {
+              id: 'apple',
+              type: 'apple',
+              enabled: true,
+              display_name: 'Apple',
+              client_id: 'test-apple-client-id',
+              client_secret: 'test-apple-client-secret',
+              email_conflict_strategy: 'auto_link',
+            },
+          ],
+        },
+      });
+      services = server.services;
+      cleanup = server.cleanup;
+    });
+
+    afterAll(async () => {
+      await cleanup();
+    });
+
+    test('should extract user info from ID token when userinfo_url is null', async () => {
+      const { privateKey } = await generateKeyPair('RS256');
+      const idToken = await new SignJWT({
+        sub: 'apple-user-001',
+        email: 'user@icloud.com',
+        email_verified: true,
+      })
+        .setProtectedHeader({ alg: 'RS256' })
+        .setIssuedAt()
+        .sign(privateKey);
+
+      const userInfo = await services.oauthConnectService.fetchUserInfo(
+        'apple',
+        'unused-access-token',
+        idToken,
+      );
+
+      expect(userInfo.id).toBe('apple-user-001');
+      expect(userInfo.email).toBe('user@icloud.com');
+      expect(userInfo.email_verified).toBe(true);
+    });
+
+    test('should handle Apple ID token with email_verified as string "true"', async () => {
+      const { privateKey } = await generateKeyPair('RS256');
+      const idToken = await new SignJWT({
+        sub: 'apple-user-002',
+        email: 'user2@icloud.com',
+        email_verified: 'true',
+      })
+        .setProtectedHeader({ alg: 'RS256' })
+        .setIssuedAt()
+        .sign(privateKey);
+
+      const userInfo = await services.oauthConnectService.fetchUserInfo(
+        'apple',
+        'unused-access-token',
+        idToken,
+      );
+
+      expect(userInfo.email_verified).toBe(true);
+    });
+
+    test('should throw when no ID token is provided for Apple', async () => {
+      await expect(
+        services.oauthConnectService.fetchUserInfo(
+          'apple',
+          'unused-access-token',
+          // no idToken
+        ),
+      ).rejects.toHaveProperty('code', 'OAUTH_USERINFO_FAILED');
+    });
+
+    test('should throw when ID token is missing sub claim', async () => {
+      const { privateKey } = await generateKeyPair('RS256');
+      const idToken = await new SignJWT({
+        // sub is missing
+        email: 'nosub@icloud.com',
+        email_verified: true,
+      })
+        .setProtectedHeader({ alg: 'RS256' })
+        .setIssuedAt()
+        .sign(privateKey);
+
+      await expect(
+        services.oauthConnectService.fetchUserInfo(
+          'apple',
+          'unused-access-token',
+          idToken,
+        ),
+      ).rejects.toHaveProperty('code', 'OAUTH_USERINFO_FAILED');
+    });
+
+    test('should throw when ID token is missing email claim', async () => {
+      const { privateKey } = await generateKeyPair('RS256');
+      const idToken = await new SignJWT({
+        sub: 'apple-user-noemail',
+        // email is missing
+        email_verified: true,
+      })
+        .setProtectedHeader({ alg: 'RS256' })
+        .setIssuedAt()
+        .sign(privateKey);
+
+      await expect(
+        services.oauthConnectService.fetchUserInfo(
+          'apple',
+          'unused-access-token',
+          idToken,
+        ),
+      ).rejects.toHaveProperty('code', 'OAUTH_USERINFO_FAILED');
+    });
   });
 });

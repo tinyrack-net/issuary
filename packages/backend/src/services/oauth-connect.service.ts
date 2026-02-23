@@ -5,9 +5,10 @@ import {
 } from '@backend/lib/config/index.js';
 import { isEmailAllowed } from '@backend/lib/email-pattern.js';
 import { generatePKCE } from '@backend/lib/pkce.js';
-import { e } from '@backend/schemas/error.js';
+import { e, TinyAuthError } from '@backend/schemas/error.js';
 import type { f } from '@backend/schemas/field.js';
 import type { MikroService } from '@backend/services/mikro.service.js';
+import { decodeJwt } from 'jose';
 import z from 'zod';
 import type { TermsService } from './terms.service.js';
 import type { UserService } from './user.service.js';
@@ -81,6 +82,28 @@ export interface OAuthAuthResult {
   };
 }
 
+/**
+ * Result of processing an OAuth callback.
+ * Each variant tells the handler what session changes and redirect to perform.
+ */
+export type OAuthCallbackResult =
+  | { action: 'error_redirect'; url: string }
+  | { action: 'link_complete'; returnUrl: string }
+  | {
+      action: 'terms_redirect';
+      url: string;
+    }
+  | {
+      action: 'login_complete';
+      userSub: string;
+      returnUrl: string | undefined;
+    }
+  | {
+      action: 'login_terms_redirect';
+      userSub: string;
+      termsUrl: string;
+    };
+
 // Note: This service uses fastify.config for identity_providers (OAuth providers config)
 // but user-related config lookups have been removed since users are now synced to DB.
 
@@ -91,6 +114,165 @@ export class OAuthConnectService {
     private readonly mikro: MikroService,
     private readonly termsService: TermsService,
   ) {}
+
+  /**
+   * Process an OAuth callback: validate session, exchange tokens, and
+   * determine the appropriate next action (redirect, login, link, terms).
+   * Pure business logic — no session writes or HTTP responses.
+   */
+  public async processOAuthCallback(params: {
+    provider: string;
+    code: string;
+    state: string;
+    oauthSession: OAuthSessionData;
+    userSub?: string | undefined;
+    requestUrl: string;
+  }): Promise<OAuthCallbackResult> {
+    const { provider, code, state, oauthSession, userSub, requestUrl } = params;
+
+    // Validate state parameter
+    if (oauthSession.state !== state) {
+      throw new e.OAuthStateMismatch.Error();
+    }
+
+    // Validate provider matches
+    if (oauthSession.providerId !== provider) {
+      throw new e.OAuthProviderNotFound.Error();
+    }
+
+    // Exchange code for tokens
+    const tokens = await this.exchangeCodeForTokens(
+      provider,
+      code,
+      oauthSession.codeVerifier,
+    );
+
+    // Fetch user info from provider
+    const userInfo = await this.fetchUserInfo(
+      provider,
+      tokens.access_token,
+      tokens.id_token,
+    );
+
+    // Handle link mode
+    if (oauthSession.mode === 'link') {
+      if (!userSub) {
+        throw new e.Unauthorized.Error();
+      }
+
+      await this.linkOAuthAccount(userSub, provider, tokens, userInfo);
+
+      const returnUrl = oauthSession.returnUrl || '/profile';
+      return { action: 'link_complete', returnUrl };
+    }
+
+    // Check if this would be a new user
+    const isNewUser = await this.isNewOAuthUser(provider, userInfo);
+
+    // For new users, check email allowlist
+    if (isNewUser) {
+      const { allowed_signup_emails } = this.config.app;
+      if (!isEmailAllowed(userInfo.email, allowed_signup_emails)) {
+        const errorUrl = new URL('/login', this.config.app.host);
+        errorUrl.searchParams.set(
+          'oauth_error',
+          'registration_email_not_allowed',
+        );
+        if (oauthSession.returnUrl) {
+          errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
+        }
+        return { action: 'error_redirect', url: errorUrl.toString() };
+      }
+    }
+
+    // Load terms once and reuse
+    const allTerms = await this.termsService.getGlobalTerms();
+    const explicitTerms = await this.termsService.getExplicitTerms(allTerms);
+
+    if (isNewUser && explicitTerms.length > 0) {
+      // New user with explicit terms: persist to DB
+      const pendingToken =
+        await this.mikro.pendingOAuthRegistration.createPendingRegistration({
+          providerId: provider,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+          expiresIn: tokens.expires_in,
+          tokenType: tokens.token_type,
+          userInfo: {
+            id: userInfo.id,
+            email: userInfo.email,
+            email_verified: userInfo.email_verified,
+            name: userInfo.name,
+            picture: userInfo.picture,
+          },
+          returnUrl: oauthSession.returnUrl,
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        });
+
+      const termsUrl = new URL('/terms', `${this.config.app.host}`);
+      termsUrl.searchParams.set('mode', 'complete_registration');
+      termsUrl.searchParams.set('registration_token', pendingToken);
+      if (oauthSession.returnUrl) {
+        termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
+      }
+      return { action: 'terms_redirect', url: termsUrl.toString() };
+    }
+
+    // Login/Register mode: authenticate with OAuth
+    try {
+      const result = await this.authenticateWithOAuth(
+        provider,
+        tokens,
+        userInfo,
+      );
+
+      // Check if existing user needs to see terms page
+      if (!result.isNewUser && explicitTerms.length > 0) {
+        const pendingTerms = await this.termsService.getPendingRequiredTerms(
+          result.user.sub,
+        );
+        const explicitTermIds = new Set(explicitTerms.map((t) => t.id));
+        const shouldRedirectToTerms = pendingTerms.some((id) =>
+          explicitTermIds.has(id),
+        );
+
+        if (shouldRedirectToTerms) {
+          const url = new URL(requestUrl);
+          const termsUrl = new URL('/terms', `${url.protocol}//${url.host}`);
+          if (oauthSession.returnUrl) {
+            termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
+          }
+          return {
+            action: 'login_terms_redirect',
+            userSub: result.user.sub,
+            termsUrl: termsUrl.toString(),
+          };
+        }
+      }
+
+      return {
+        action: 'login_complete',
+        userSub: result.user.sub,
+        returnUrl: oauthSession.returnUrl,
+      };
+    } catch (err) {
+      if (
+        err instanceof TinyAuthError &&
+        err.code === 'REGISTRATION_EMAIL_NOT_ALLOWED'
+      ) {
+        const errorUrl = new URL('/login', this.config.app.host);
+        errorUrl.searchParams.set(
+          'oauth_error',
+          'registration_email_not_allowed',
+        );
+        if (oauthSession.returnUrl) {
+          errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
+        }
+        return { action: 'error_redirect', url: errorUrl.toString() };
+      }
+      throw err;
+    }
+  }
 
   /**
    * Get all enabled OAuth providers
@@ -214,17 +396,19 @@ export class OAuthConnectService {
   }
 
   /**
-   * Fetch user info from OAuth provider
+   * Fetch user info from OAuth provider.
+   * For providers without a userinfo endpoint (e.g. Apple), decodes the ID token.
    */
   public async fetchUserInfo(
     providerId: string,
     accessToken: string,
+    idToken?: string,
   ): Promise<OAuthUserInfo> {
     const provider = this.getProvider(providerId);
 
-    // Apple doesn't have a userinfo endpoint - info is in the ID token
+    // Providers without a userinfo endpoint (e.g. Apple) use the ID token
     if (!provider.userinfo_url) {
-      throw new e.OAuthUserInfoFailed.Error();
+      return this.extractUserInfoFromIdToken(provider, idToken);
     }
 
     const response = await fetch(provider.userinfo_url, {
@@ -239,6 +423,35 @@ export class OAuthConnectService {
     }
 
     const data = z.record(z.string(), z.unknown()).parse(await response.json());
+    return this.mapUserInfo(provider, data);
+  }
+
+  /**
+   * Extract user info from an ID token JWT (used by Apple).
+   * Decodes without verification since the token was received directly
+   * from the provider's token endpoint over TLS.
+   */
+  private extractUserInfoFromIdToken(
+    provider: ResolvedOAuthConfig,
+    idToken?: string,
+  ): OAuthUserInfo {
+    if (!idToken) {
+      throw new e.OAuthUserInfoFailed.Error();
+    }
+
+    const claims = decodeJwt(idToken);
+    const data = claims as Record<string, unknown>;
+    return this.mapUserInfo(provider, data);
+  }
+
+  /**
+   * Map provider-specific field names to normalized OAuthUserInfo
+   * using the provider's userinfo_mapping configuration.
+   */
+  private mapUserInfo(
+    provider: ResolvedOAuthConfig,
+    data: Record<string, unknown>,
+  ): OAuthUserInfo {
     const mapping = provider.userinfo_mapping;
 
     // Extract user ID
