@@ -1,22 +1,7 @@
 import { createTermsCompleteRegistrationConfig } from '@frontend-e2e/configs/terms-complete-registration.js';
-import { createE2EServer } from '@frontend-e2e/setup/create-server.js';
-import { test as base } from '@playwright/test';
+import { createScenarioFixture } from '@frontend-e2e/fixtures/create-scenario-fixture.js';
 
-export const test = base.extend<object, { serverPort: number }>({
-  serverPort: [
-    // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructuring
-    async ({}, use) => {
-      const server = await createE2EServer(
-        createTermsCompleteRegistrationConfig,
-      );
-      await use(server.backendPort);
-      await server.teardown();
-    },
-    { scope: 'worker' },
-  ],
-  baseURL: async ({ serverPort }, use) => {
-    await use(`http://localhost:${serverPort}`);
-  },
-});
-
+export const test = createScenarioFixture(
+  createTermsCompleteRegistrationConfig,
+);
 export { expect } from '@playwright/test';
