@@ -31,10 +31,12 @@ export const userPasswordPut = new Hono<AppEnv>().put(
       400: {
         content: {
           'application/json': {
-            schema: resolver(e.PasswordNotSet.Schema),
+            schema: resolver(
+              z.union([e.PasswordNotSet.Schema, e.ValidationError.Schema]),
+            ),
           },
         },
-        description: 'Password not set',
+        description: 'Password not set or password auth disabled',
       },
       401: {
         content: {
@@ -72,8 +74,13 @@ export const userPasswordPut = new Hono<AppEnv>().put(
   verifyAuth(),
   async (c) => {
     const body = c.req.valid('json');
+    const { config } = c.var.services;
     const { user } = c.var.verifiedUser;
     const { mikro } = c.var.services;
+
+    if (!config.auth.password.enabled) {
+      throw new e.ValidationError.Error('Password authentication is disabled');
+    }
 
     // Config users cannot change password
     if (user.managed_by === 'config') {

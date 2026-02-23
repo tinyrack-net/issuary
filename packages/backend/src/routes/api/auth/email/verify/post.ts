@@ -28,6 +28,14 @@ export const authEmailVerifyPost = new Hono<AppEnv>().post(
         },
         description: 'Invalid verification token',
       },
+      403: {
+        content: {
+          'application/json': {
+            schema: resolver(e.EmailNotActivated.Schema),
+          },
+        },
+        description: 'Email service not activated',
+      },
     },
   }),
   validator(

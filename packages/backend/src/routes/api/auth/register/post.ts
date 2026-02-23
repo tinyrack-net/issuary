@@ -72,6 +72,11 @@ export const authRegisterPost = new Hono<AppEnv>().post(
     const { email, password, consents } = body;
     const { config, userService } = c.var.services;
     const session = c.var.session;
+
+    if (!config.auth.password.enabled) {
+      throw new e.ValidationError.Error('Password authentication is disabled');
+    }
+
     const { allowed_signup_emails } = config.app;
 
     // Check if signup is disabled entirely

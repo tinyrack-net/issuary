@@ -26,6 +26,14 @@ export const userPasskeysGet = new Hono<AppEnv>().get(
         },
         description: 'Success',
       },
+      400: {
+        content: {
+          'application/json': {
+            schema: resolver(e.PasskeyNotEnabled.Schema),
+          },
+        },
+        description: 'Passkey authentication is disabled',
+      },
       401: {
         content: {
           'application/json': {

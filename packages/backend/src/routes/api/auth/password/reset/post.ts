@@ -25,18 +25,25 @@ export const authPasswordResetPost = new Hono<AppEnv>().post(
       400: {
         content: {
           'application/json': {
-            schema: resolver(e.InvalidPasswordResetToken.Schema),
+            schema: resolver(
+              z.union([
+                e.InvalidPasswordResetToken.Schema,
+                e.ValidationError.Schema,
+              ]),
+            ),
           },
         },
-        description: 'Invalid password reset token',
+        description: 'Invalid password reset token or validation error',
       },
       403: {
         content: {
           'application/json': {
-            schema: resolver(e.UserNotEditable.Schema),
+            schema: resolver(
+              z.union([e.UserNotEditable.Schema, e.EmailNotActivated.Schema]),
+            ),
           },
         },
-        description: 'User not editable',
+        description: 'User not editable or email service not activated',
       },
     },
   }),
@@ -50,8 +57,12 @@ export const authPasswordResetPost = new Hono<AppEnv>().post(
   async (c) => {
     const services = c.var.services;
 
+    if (!services.config.auth.password.enabled) {
+      throw new e.ValidationError.Error('Password authentication is disabled');
+    }
+
     if (!services.config.smtp) {
-      throw new e.ValidationError.Error('Email service is not available');
+      throw new e.EmailNotActivated.Error();
     }
 
     const body = c.req.valid('json');

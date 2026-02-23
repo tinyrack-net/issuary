@@ -21,13 +21,21 @@ export const authPasswordForgotPost = new Hono<AppEnv>().post(
         },
         description: 'Success',
       },
+      400: {
+        content: {
+          'application/json': {
+            schema: resolver(e.ValidationError.Schema),
+          },
+        },
+        description: 'Validation error',
+      },
       403: {
         content: {
           'application/json': {
-            schema: resolver(e.UserNotEditable.Schema),
+            schema: resolver(e.EmailNotActivated.Schema),
           },
         },
-        description: 'User not editable',
+        description: 'Email service not activated',
       },
     },
   }),
@@ -46,9 +54,13 @@ export const authPasswordForgotPost = new Hono<AppEnv>().post(
   async (c) => {
     const services = c.var.services;
 
+    if (!services.config.auth.password.enabled) {
+      throw new e.ValidationError.Error('Password authentication is disabled');
+    }
+
     // Only enable if email service is available
     if (!services.config.smtp) {
-      return c.json({ ok: true as const }, 200);
+      throw new e.EmailNotActivated.Error();
     }
 
     const body = c.req.valid('json');

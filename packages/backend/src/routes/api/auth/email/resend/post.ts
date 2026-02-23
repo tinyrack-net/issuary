@@ -38,6 +38,14 @@ export const authEmailResendPost = new Hono<AppEnv>().post(
         },
         description: 'User not found',
       },
+      403: {
+        content: {
+          'application/json': {
+            schema: resolver(e.EmailNotActivated.Schema),
+          },
+        },
+        description: 'Email service not activated',
+      },
     },
   }),
   validator(

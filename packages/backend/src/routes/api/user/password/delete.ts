@@ -31,11 +31,13 @@ export const userPasswordDelete = new Hono<AppEnv>().delete(
       400: {
         content: {
           'application/json': {
-            schema: resolver(e.PasswordNotSet.Schema),
+            schema: resolver(
+              z.union([e.PasswordNotSet.Schema, e.ValidationError.Schema]),
+            ),
           },
         },
         description:
-          'Password not set, cannot remove last auth method, or cannot remove password with second factor only',
+          'Password not set, password auth disabled, cannot remove last auth method, or cannot remove password with second factor only',
       },
       401: {
         content: {
@@ -72,8 +74,13 @@ export const userPasswordDelete = new Hono<AppEnv>().delete(
   verifyAuth(),
   async (c) => {
     const body = c.req.valid('json');
+    const { config } = c.var.services;
     const { user } = c.var.verifiedUser;
     const { mikro } = c.var.services;
+
+    if (!config.auth.password.enabled) {
+      throw new e.ValidationError.Error('Password authentication is disabled');
+    }
 
     // Config users cannot remove password
     if (user.managed_by === 'config') {

@@ -36,6 +36,14 @@ export const userPasswordPost = new Hono<AppEnv>().post(
         },
         description: 'Unauthorized',
       },
+      400: {
+        content: {
+          'application/json': {
+            schema: resolver(e.ValidationError.Schema),
+          },
+        },
+        description: 'Password authentication disabled or validation error',
+      },
       403: {
         content: {
           'application/json': {
@@ -71,8 +79,13 @@ export const userPasswordPost = new Hono<AppEnv>().post(
   verifyAuth(),
   async (c) => {
     const body = c.req.valid('json');
+    const { config } = c.var.services;
     const { user } = c.var.verifiedUser;
     const { mikro } = c.var.services;
+
+    if (!config.auth.password.enabled) {
+      throw new e.ValidationError.Error('Password authentication is disabled');
+    }
 
     // Config users cannot set password
     if (user.managed_by === 'config') {
