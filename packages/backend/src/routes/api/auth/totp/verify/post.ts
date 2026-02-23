@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { verifyPending2FAUser } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
@@ -12,6 +13,7 @@ export const authTotpVerifyPost = new Hono<AppEnv>().post(
   '/auth/totp/verify',
   describeRoute({
     tags: [TAGS.AUTH],
+    security: OPENAPI_SECURITY.cookieSession,
     summary: 'Verify TOTP for login',
     description:
       'Complete login by verifying TOTP code. Requires pending 2FA session from password login.',

@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import {
   verifyAuth,
@@ -20,6 +21,7 @@ export const userTotpVerifyPost = new Hono<AppEnv>().post(
   '/user/totp/verify',
   describeRoute({
     tags: [TAGS.USER],
+    security: OPENAPI_SECURITY.cookieSession,
     summary: 'Verify TOTP Setup',
     description:
       'Verify the TOTP code from authenticator app. ' +

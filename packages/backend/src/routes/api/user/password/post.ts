@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
@@ -17,6 +18,7 @@ export const userPasswordPost = new Hono<AppEnv>().post(
   '/user/password',
   describeRoute({
     tags: [TAGS.USER],
+    security: OPENAPI_SECURITY.cookieSession,
     summary: 'Set Password',
     description:
       'Set a password for users who signed up via OAuth. ' +

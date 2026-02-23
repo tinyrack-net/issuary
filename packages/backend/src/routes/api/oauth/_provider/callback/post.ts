@@ -8,6 +8,15 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 
+const OAuthProviderCallbackFormBody = z
+  .object({
+    code: f.authorizationCode.optional(),
+    state: f.state.optional(),
+    error: z.string().optional(),
+    error_description: z.string().optional(),
+  })
+  .describe('OAuth provider callback payload');
+
 export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
   '/oauth/:provider/callback',
   describeRoute({
@@ -30,7 +39,13 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
       400: {
         content: {
           'application/json': {
-            schema: resolver(e.OAuthStateMismatch.Schema),
+            schema: resolver(
+              z.union([
+                e.OAuthStateMismatch.Schema,
+                e.OAuthInvalidRequest.Schema,
+                e.OAuthSessionExpired.Schema,
+              ]),
+            ),
           },
         },
         description: 'State mismatch, session expired, or invalid request',
@@ -38,7 +53,12 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
       403: {
         content: {
           'application/json': {
-            schema: resolver(e.OAuthEmailNotVerified.Schema),
+            schema: resolver(
+              z.union([
+                e.OAuthEmailNotVerified.Schema,
+                e.RegistrationEmailNotAllowed.Schema,
+              ]),
+            ),
           },
         },
         description: 'Email not verified or registration email not allowed',
@@ -54,7 +74,12 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
       409: {
         content: {
           'application/json': {
-            schema: resolver(e.OAuthEmailConflict.Schema),
+            schema: resolver(
+              z.union([
+                e.OAuthEmailConflict.Schema,
+                e.OAuthAccountAlreadyLinked.Schema,
+              ]),
+            ),
           },
         },
         description: 'Email conflict or account already linked',
@@ -62,7 +87,12 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
       502: {
         content: {
           'application/json': {
-            schema: resolver(e.OAuthTokenExchangeFailed.Schema),
+            schema: resolver(
+              z.union([
+                e.OAuthTokenExchangeFailed.Schema,
+                e.OAuthUserInfoFailed.Schema,
+              ]),
+            ),
           },
         },
         description: 'Token exchange failed or user info failed',
@@ -75,15 +105,7 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
       provider: f.providerName,
     }),
   ),
-  validator(
-    'form',
-    z.object({
-      code: f.authorizationCode.optional(),
-      state: f.state.optional(),
-      error: z.string().optional(),
-      error_description: z.string().optional(),
-    }),
-  ),
+  validator('form', OAuthProviderCallbackFormBody),
   verifyAuth({ optional: true }),
   verifyOAuth({ optional: true }),
   async (c) => {

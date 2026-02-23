@@ -1,11 +1,13 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
 import { calculatePermanentDeletionDate } from '@backend/lib/config/index.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { r } from '@backend/schemas/response.js';
 import { Hono } from 'hono';
 import { describeRoute, resolver } from 'hono-openapi';
+import { z } from 'zod';
 
 /**
  * DELETE /api/user
@@ -16,6 +18,7 @@ export const userDelete = new Hono<AppEnv>().delete(
   '/user',
   describeRoute({
     tags: [TAGS.USER],
+    security: OPENAPI_SECURITY.cookieSession,
     summary: 'Delete Account',
     description:
       'Request account deletion. The account will be soft-deleted and ' +
@@ -48,7 +51,12 @@ export const userDelete = new Hono<AppEnv>().delete(
       403: {
         content: {
           'application/json': {
-            schema: resolver(e.AccountDeletionDisabled.Schema),
+            schema: resolver(
+              z.union([
+                e.AccountDeletionDisabled.Schema,
+                e.UserNotEditable.Schema,
+              ]),
+            ),
           },
         },
         description: 'Account deletion disabled or user not editable',

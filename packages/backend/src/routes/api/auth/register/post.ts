@@ -34,7 +34,12 @@ export const authRegisterPost = new Hono<AppEnv>().post(
       403: {
         content: {
           'application/json': {
-            schema: resolver(e.RegistrationDisabled.Schema),
+            schema: resolver(
+              z.union([
+                e.RegistrationDisabled.Schema,
+                e.RegistrationEmailNotAllowed.Schema,
+              ]),
+            ),
           },
         },
         description: 'Registration disabled or email not allowed',

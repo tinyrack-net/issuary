@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
@@ -12,6 +13,7 @@ export const oauthProviderDelete = new Hono<AppEnv>().delete(
   '/oauth/:provider',
   describeRoute({
     tags: [TAGS.OAUTH_CONNECT],
+    security: OPENAPI_SECURITY.cookieSession,
     summary: 'Unlink OAuth Account',
     description: 'Unlinks an OAuth provider from the current user',
     responses: {

@@ -7,6 +7,18 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 
+const TokenRequestBody = z
+  .object({
+    grant_type: f.grantType,
+    code: f.authorizationCode.optional(),
+    redirect_uri: f.redirectUri.optional(),
+    client_id: f.clientId,
+    client_secret: f.clientSecret.optional(),
+    code_verifier: f.codeVerifier.optional(),
+    refresh_token: f.token.optional(),
+  })
+  .describe('OAuth2 token request payload');
+
 export const tokenPost = new Hono<AppEnv>().post(
   '/token',
   describeRoute({
@@ -26,10 +38,19 @@ export const tokenPost = new Hono<AppEnv>().post(
       400: {
         content: {
           'application/json': {
-            schema: resolver(e.MissingAuthorizationCode.Schema),
+            schema: resolver(
+              z.union([
+                e.OAuthClientDisabled.Schema,
+                e.MissingAuthorizationCode.Schema,
+                e.MissingRedirectUri.Schema,
+                e.MissingRefreshToken.Schema,
+                e.UnsupportedGrantType.Schema,
+              ]),
+            ),
           },
         },
-        description: 'Bad request',
+        description:
+          'Bad request, unsupported grant type, missing parameters, or disabled client',
       },
       401: {
         content: {
@@ -41,18 +62,7 @@ export const tokenPost = new Hono<AppEnv>().post(
       },
     },
   }),
-  validator(
-    'form',
-    z.object({
-      grant_type: f.grantType,
-      code: f.authorizationCode.optional(),
-      redirect_uri: f.redirectUri.optional(),
-      client_id: f.clientId,
-      client_secret: f.clientSecret.optional(),
-      code_verifier: f.codeVerifier.optional(),
-      refresh_token: f.token.optional(),
-    }),
-  ),
+  validator('form', TokenRequestBody),
   async (c) => {
     const body = c.req.valid('form');
     const { oauthClientService, oauthTokenService } = c.var.services;

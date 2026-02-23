@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import {
   verifyAuth,
@@ -19,6 +20,7 @@ export const userTotpSetupPost = new Hono<AppEnv>().post(
   '/user/totp/setup',
   describeRoute({
     tags: [TAGS.USER],
+    security: OPENAPI_SECURITY.cookieSession,
     summary: 'Start TOTP Setup',
     description:
       'Generate a new TOTP secret and QR code for authenticator app setup. ' +
@@ -39,6 +41,14 @@ export const userTotpSetupPost = new Hono<AppEnv>().post(
           },
         },
         description: 'Unauthorized',
+      },
+      400: {
+        content: {
+          'application/json': {
+            schema: resolver(e.ValidationError.Schema),
+          },
+        },
+        description: 'Validation error (for example when TOTP is disabled)',
       },
       403: {
         content: {

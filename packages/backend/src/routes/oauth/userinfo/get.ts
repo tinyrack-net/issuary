@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { e } from '@backend/schemas/error.js';
 import { h } from '@backend/schemas/header.js';
@@ -13,6 +14,7 @@ export const userinfoGet = new Hono<AppEnv>().get(
   '/userinfo',
   describeRoute({
     tags: [TAGS.OPENID],
+    security: OPENAPI_SECURITY.bearer,
     summary: 'User Info',
     description:
       'OIDC UserInfo Endpoint - Returns claims about the authenticated user (RFC OIDC Core §5.3)',

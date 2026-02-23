@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
@@ -17,6 +18,7 @@ export const userPasswordDelete = new Hono<AppEnv>().delete(
   '/user/password',
   describeRoute({
     tags: [TAGS.USER],
+    security: OPENAPI_SECURITY.cookieSession,
     summary: 'Remove Password',
     description:
       'Remove password for users who have at least one OAuth account linked. ' +
@@ -32,7 +34,12 @@ export const userPasswordDelete = new Hono<AppEnv>().delete(
         content: {
           'application/json': {
             schema: resolver(
-              z.union([e.PasswordNotSet.Schema, e.ValidationError.Schema]),
+              z.union([
+                e.PasswordNotSet.Schema,
+                e.CannotRemoveLastAuthMethod.Schema,
+                e.CannotRemovePasswordWithSecondFactorOnly.Schema,
+                e.ValidationError.Schema,
+              ]),
             ),
           },
         },
@@ -42,7 +49,9 @@ export const userPasswordDelete = new Hono<AppEnv>().delete(
       401: {
         content: {
           'application/json': {
-            schema: resolver(e.Unauthorized.Schema),
+            schema: resolver(
+              z.union([e.Unauthorized.Schema, e.InvalidCurrentPassword.Schema]),
+            ),
           },
         },
         description: 'Unauthorized or invalid current password',

@@ -30,7 +30,13 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
       400: {
         content: {
           'application/json': {
-            schema: resolver(e.OAuthStateMismatch.Schema),
+            schema: resolver(
+              z.union([
+                e.OAuthStateMismatch.Schema,
+                e.OAuthInvalidRequest.Schema,
+                e.OAuthSessionExpired.Schema,
+              ]),
+            ),
           },
         },
         description: 'State mismatch, session expired, or invalid request',
@@ -38,7 +44,12 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
       403: {
         content: {
           'application/json': {
-            schema: resolver(e.OAuthEmailNotVerified.Schema),
+            schema: resolver(
+              z.union([
+                e.OAuthEmailNotVerified.Schema,
+                e.RegistrationEmailNotAllowed.Schema,
+              ]),
+            ),
           },
         },
         description: 'Email not verified or registration email not allowed',
@@ -54,7 +65,12 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
       409: {
         content: {
           'application/json': {
-            schema: resolver(e.OAuthEmailConflict.Schema),
+            schema: resolver(
+              z.union([
+                e.OAuthEmailConflict.Schema,
+                e.OAuthAccountAlreadyLinked.Schema,
+              ]),
+            ),
           },
         },
         description: 'Email conflict or account already linked',
@@ -62,7 +78,12 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
       502: {
         content: {
           'application/json': {
-            schema: resolver(e.OAuthTokenExchangeFailed.Schema),
+            schema: resolver(
+              z.union([
+                e.OAuthTokenExchangeFailed.Schema,
+                e.OAuthUserInfoFailed.Schema,
+              ]),
+            ),
           },
         },
         description: 'Token exchange failed or user info failed',

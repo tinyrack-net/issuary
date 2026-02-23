@@ -22,8 +22,8 @@ afterAll(async () => {
 });
 
 describe('GET /api/docs/json', () => {
-  // Note: /api/docs/json is registered via app.doc31() and is NOT part of
-  // the typed route system, so we use app.request() for these tests.
+  // /api/docs/json is registered directly on the app, not in the typed
+  // route tree, so these tests use app.request().
   test('should return 200 with valid OpenAPI 3.1.0 JSON spec', async () => {
     const res = await app.request('/api/docs/json', {
       method: 'GET',
@@ -59,6 +59,20 @@ describe('GET /api/docs/json', () => {
 
     const body = await res.json();
     expect(body.paths).toHaveProperty('/api/health');
+  });
+
+  test('should include security schemes for cookie and bearer auth', async () => {
+    const res = await app.request('/api/docs/json', {
+      method: 'GET',
+    });
+
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.components).toBeDefined();
+    expect(body.components.securitySchemes).toBeDefined();
+    expect(body.components.securitySchemes).toHaveProperty('cookieSessionAuth');
+    expect(body.components.securitySchemes).toHaveProperty('bearerAuth');
   });
 });
 

@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import {
   verifyAuth,
@@ -19,6 +20,7 @@ export const userTotpConfirmPost = new Hono<AppEnv>().post(
   '/user/totp/confirm',
   describeRoute({
     tags: [TAGS.USER],
+    security: OPENAPI_SECURITY.cookieSession,
     summary: 'Confirm TOTP Setup',
     description:
       'Confirm that recovery codes have been saved to complete TOTP setup. ' +

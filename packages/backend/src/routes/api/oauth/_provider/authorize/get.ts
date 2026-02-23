@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
@@ -11,6 +12,7 @@ export const oauthProviderAuthorizeGet = new Hono<AppEnv>().get(
   '/oauth/:provider/authorize',
   describeRoute({
     tags: [TAGS.OAUTH_CONNECT],
+    security: OPENAPI_SECURITY.optionalCookieSession,
     summary: 'Initiate OAuth Authorize Flow',
     description: 'Redirects the user to the OAuth provider for authentication',
     responses: {

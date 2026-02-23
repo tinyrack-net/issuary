@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { verifyPending2FAUser } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
@@ -19,6 +20,7 @@ export const authTotpRecoveryVerifyPost = new Hono<AppEnv>().post(
   '/auth/totp/recovery/verify',
   describeRoute({
     tags: [TAGS.AUTH],
+    security: OPENAPI_SECURITY.cookieSession,
     summary: 'Verify TOTP recovery code for login',
     description:
       'Complete login by verifying a one-time TOTP recovery code. ' +

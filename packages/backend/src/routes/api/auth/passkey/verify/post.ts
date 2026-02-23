@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import {
   verifyPasskeyChallenge,
@@ -15,6 +16,7 @@ export const authPasskeyVerifyPost = new Hono<AppEnv>().post(
   '/auth/passkey/verify',
   describeRoute({
     tags: [TAGS.AUTH],
+    security: OPENAPI_SECURITY.cookieSession,
     summary: 'Verify Passkey Authentication',
     description:
       'Verify WebAuthn authentication response and create session. ' +

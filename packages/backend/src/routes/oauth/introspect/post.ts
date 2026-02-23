@@ -7,6 +7,15 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 
+const IntrospectionRequestBody = z
+  .object({
+    token: f.token,
+    token_type_hint: f.tokenTypeHint.optional(),
+    client_id: f.clientId.optional(),
+    client_secret: f.clientSecret.optional(),
+  })
+  .describe('OAuth2 token introspection request payload');
+
 export const introspectPost = new Hono<AppEnv>().post(
   '/introspect',
   describeRoute({
@@ -26,7 +35,12 @@ export const introspectPost = new Hono<AppEnv>().post(
       400: {
         content: {
           'application/json': {
-            schema: resolver(e.OAuthClientNotFound.Schema),
+            schema: resolver(
+              z.union([
+                e.OAuthClientNotFound.Schema,
+                e.OAuthClientDisabled.Schema,
+              ]),
+            ),
           },
         },
         description: 'OAuth client not found or disabled',
@@ -41,15 +55,7 @@ export const introspectPost = new Hono<AppEnv>().post(
       },
     },
   }),
-  validator(
-    'form',
-    z.object({
-      token: f.token,
-      token_type_hint: f.tokenTypeHint.optional(),
-      client_id: f.clientId.optional(),
-      client_secret: f.clientSecret.optional(),
-    }),
-  ),
+  validator('form', IntrospectionRequestBody),
   async (c) => {
     const body = c.req.valid('form');
     const { oauthClientService, oauthTokenService } = c.var.services;

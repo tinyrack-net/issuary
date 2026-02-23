@@ -1,10 +1,12 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
 import { termsSchema } from '@backend/schemas/terms.js';
 import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
+import { z } from 'zod';
 
 /**
  * POST /api/terms/consent
@@ -15,6 +17,7 @@ export const termsConsentPost = new Hono<AppEnv>().post(
   '/terms/consent',
   describeRoute({
     tags: [TAGS.TERMS],
+    security: OPENAPI_SECURITY.optionalCookieSession,
     summary: 'Submit terms consent',
     description:
       'Record user consent decisions for terms of service. ' +
@@ -32,7 +35,9 @@ export const termsConsentPost = new Hono<AppEnv>().post(
       400: {
         content: {
           'application/json': {
-            schema: resolver(e.ValidationError.Schema),
+            schema: resolver(
+              z.union([e.ValidationError.Schema, e.OAuthSessionExpired.Schema]),
+            ),
           },
         },
         description: 'Validation error or OAuth session expired',

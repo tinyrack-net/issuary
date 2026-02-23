@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
@@ -17,6 +18,7 @@ export const userPasswordPut = new Hono<AppEnv>().put(
   '/user/password',
   describeRoute({
     tags: [TAGS.USER],
+    security: OPENAPI_SECURITY.cookieSession,
     summary: 'Change Password',
     description:
       'Change password for users who already have a password set. ' +
@@ -41,7 +43,9 @@ export const userPasswordPut = new Hono<AppEnv>().put(
       401: {
         content: {
           'application/json': {
-            schema: resolver(e.Unauthorized.Schema),
+            schema: resolver(
+              z.union([e.Unauthorized.Schema, e.InvalidCurrentPassword.Schema]),
+            ),
           },
         },
         description: 'Unauthorized or invalid current password',

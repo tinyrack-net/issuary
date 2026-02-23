@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { verifyAuth } from '@backend/middleware/auth.js';
 import { r } from '@backend/schemas/response.js';
@@ -10,6 +11,7 @@ export const userSessionGet = new Hono<AppEnv>().get(
   '/user/session',
   describeRoute({
     tags: [TAGS.USER],
+    security: OPENAPI_SECURITY.optionalCookieSession,
     summary: 'Get Session',
     description: 'Get Session',
     responses: {

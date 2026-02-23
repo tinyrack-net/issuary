@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { parseScopesWithDescriptions } from '@backend/lib/scopes.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { verifyAuth } from '@backend/middleware/auth.js';
@@ -19,6 +20,7 @@ export const consentGet = new Hono<AppEnv>().get(
   '/consent',
   describeRoute({
     tags: [TAGS.CONSENT],
+    security: OPENAPI_SECURITY.cookieSession,
     summary: 'Get consent information',
     description:
       'Returns OAuth client information and requested scopes for the consent page.',

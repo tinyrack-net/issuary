@@ -37,6 +37,9 @@
     "mikro-orm:debug": "NODE_OPTIONS='--import tsx' mikro-orm debug",
     "mikro-orm:schema:create": "NODE_OPTIONS='--import tsx' mikro-orm migration:create --initial",
     "export:openapi": "APP_ENV=test NODE_OPTIONS='--import tsx' tsx src/export-openapi.ts",
+    "openapi:export": "pnpm export:openapi",
+    "openapi:check": "APP_ENV=test NODE_OPTIONS='--import tsx' tsx src/check-openapi.ts",
+    "openapi:check:strict": "APP_ENV=test NODE_OPTIONS='--import tsx' tsx src/check-openapi.ts --strict",
     "email:preview": "email dev --dir src/emails/templates --port 3001"
   },
   "devDependencies": {

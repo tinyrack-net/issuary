@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { verifyAuth } from '@backend/middleware/auth.js';
 import { f } from '@backend/schemas/field.js';
@@ -17,6 +18,7 @@ export const termsGet = new Hono<AppEnv>().get(
   '/terms',
   describeRoute({
     tags: [TAGS.TERMS],
+    security: OPENAPI_SECURITY.optionalCookieSession,
     summary: 'Get terms of service',
     description:
       'Returns list of terms with consent mode and user consent status. ' +

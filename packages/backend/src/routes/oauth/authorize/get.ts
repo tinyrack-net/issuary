@@ -1,4 +1,5 @@
 import type { AppEnv } from '@backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
 import { TAGS } from '@backend/lib/swagger-tags.js';
 import { verifyAuth } from '@backend/middleware/auth.js';
 import { e } from '@backend/schemas/error.js';
@@ -13,6 +14,7 @@ export const authorizeGet = new Hono<AppEnv>().get(
   '/authorize',
   describeRoute({
     tags: [TAGS.OPENID],
+    security: OPENAPI_SECURITY.optionalCookieSession,
     summary: 'Authorize',
     description: 'OAuth2 Authorization Endpoint',
     responses: {
