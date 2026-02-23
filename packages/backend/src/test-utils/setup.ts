@@ -44,6 +44,9 @@ export const MINIMAL_TEST_CONFIG = {
     cookie_secret:
       '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
     allowed_signup_emails: ['*'],
+    frontend: {
+      enabled: false,
+    },
   },
   logging: {
     level: 'silent',
