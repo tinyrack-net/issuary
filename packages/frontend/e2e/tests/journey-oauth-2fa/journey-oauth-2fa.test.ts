@@ -10,9 +10,12 @@ import {
   expectOAuthParamsPresent,
   type JourneyOAuthParams,
 } from '@frontend-e2e/helpers/journey.js';
-import { emailVerifyPage, loginPasswordPage } from '@frontend-e2e/helpers/login.js';
-import { registerPage } from '@frontend-e2e/helpers/register-page.js';
+import {
+  emailVerifyPage,
+  loginPasswordPage,
+} from '@frontend-e2e/helpers/login.js';
 import { registerUser } from '@frontend-e2e/helpers/register.js';
+import { registerPage } from '@frontend-e2e/helpers/register-page.js';
 import { interceptTotpSecret } from '@frontend-e2e/helpers/totp.js';
 import { enableVirtualAuthenticator } from '@frontend-e2e/helpers/webauthn.js';
 
@@ -169,6 +172,7 @@ test.describe('OAuth continuation across email verification and 2FA', () => {
     test.skip(browserName !== 'chromium', 'Virtual WebAuthn requires Chromium');
 
     const virtualAuth = await enableVirtualAuthenticator(page);
+    let hasVirtualAuth = true;
     try {
       const email = uniqueEmail('login-verify-2fa');
       const oauthParams = uniqueOauthParams('login-verify-2fa');
@@ -189,6 +193,11 @@ test.describe('OAuth continuation across email verification and 2FA', () => {
 
       await page.goto('/setup/passkey?passkey_name=default');
       await page.waitForURL('**/profile');
+
+      // Prevent conditional passkey autofill from short-circuiting
+      // password login in this test path.
+      await virtualAuth.teardown();
+      hasVirtualAuth = false;
 
       await page.getByRole('button', { name: 'Log out' }).click();
       await page.waitForURL('**/login');
@@ -215,7 +224,9 @@ test.describe('OAuth continuation across email verification and 2FA', () => {
         oauthParams.state,
       );
     } finally {
-      await virtualAuth.teardown();
+      if (hasVirtualAuth) {
+        await virtualAuth.teardown();
+      }
     }
   });
 
@@ -257,7 +268,9 @@ test.describe('OAuth continuation across email verification and 2FA', () => {
     await page.locator(emailVerifyPage.tokenInput).fill('invalid-token-value');
     await page.locator(emailVerifyPage.submitButton).click();
 
-    await expect(page.locator(emailVerifyPage.fieldError).first()).toBeVisible();
+    await expect(
+      page.locator(emailVerifyPage.fieldError).first(),
+    ).toBeVisible();
     await expect(page).toHaveURL(/\/verify\/email/);
     await expectOAuthParamsPresent(page, oauthParams);
   });

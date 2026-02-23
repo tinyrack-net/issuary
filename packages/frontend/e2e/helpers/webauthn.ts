@@ -7,7 +7,9 @@ type VirtualAuthenticatorHandle = {
 function isTargetClosedError(error: unknown): boolean {
   return (
     error instanceof Error &&
-    (error.message.includes('Target page, context or browser has been closed') ||
+    (error.message.includes(
+      'Target page, context or browser has been closed',
+    ) ||
       error.message.includes('Session closed'))
   );
 }
