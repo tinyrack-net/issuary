@@ -66,4 +66,50 @@ test.describe('OAuth client continuity through complete-registration terms', () 
     });
     expect(tokens.access_token).toBeTruthy();
   });
+
+  test('invalid registration token keeps oauth redirect context for retry', async ({
+    page,
+  }) => {
+    const oauth = buildOAuthFlowInput(
+      `oauth-providers-terms-invalid-token-${Date.now()}`,
+    );
+
+    await page.goto(buildAuthorizePath(oauth.authorizeParams), {
+      waitUntil: 'networkidle',
+    });
+    await page.waitForURL('**/login**');
+
+    await startOAuthLogin(page, 'Stub New User OIDC');
+    await page.waitForURL('**/terms**');
+
+    const initialTermsUrl = new URL(page.url());
+    const redirect = initialTermsUrl.searchParams.get('redirect');
+    if (!redirect) {
+      throw new Error('Expected redirect parameter on complete registration');
+    }
+
+    await page.goto(
+      `/terms?mode=complete_registration&registration_token=invalid-token&redirect=${encodeURIComponent(redirect)}`,
+    );
+
+    await page.locator(registerPage.termsCheckbox).nth(1).check();
+    await page.locator('button[type="submit"]').click();
+
+    await expect(
+      page.getByText('Failed to submit consent. Please try again.'),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/\/terms/);
+
+    const retryTermsUrl = new URL(page.url());
+    expect(retryTermsUrl.searchParams.get('mode')).toBe(
+      'complete_registration',
+    );
+    expect(retryTermsUrl.searchParams.get('redirect')).toBe(redirect);
+
+    const redirectUrl = new URL(redirect);
+    expect(redirectUrl.pathname).toBe('/oauth/authorize');
+    expect(redirectUrl.searchParams.get('state')).toBe(
+      oauth.authorizeParams.state,
+    );
+  });
 });

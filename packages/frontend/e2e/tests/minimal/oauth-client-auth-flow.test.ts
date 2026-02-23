@@ -230,4 +230,39 @@ test.describe('OAuth client authentication flow', () => {
     expect(url.searchParams.get('error')).toBe('access_denied');
     expect(url.searchParams.get('state')).toBe(oauth.authorizeParams.state);
   });
+
+  test('token exchange rejects invalid PKCE verifier', async ({
+    page,
+    baseURL,
+    request,
+  }) => {
+    const email = uniqueEmail('invalid-pkce');
+    await registerUserByApi(String(baseURL), email, TEST_PASSWORD);
+
+    const oauth = buildOAuthFlowInput('oauth-invalid-pkce');
+    await page.goto(buildAuthorizePath(oauth.authorizeParams), {
+      waitUntil: 'networkidle',
+    });
+
+    await page.waitForURL('**/login**');
+    await loginThroughPasswordForm(page, email, TEST_PASSWORD);
+    await page.waitForURL('**/consent**');
+
+    const code = await allowConsentAndCaptureCode(page);
+
+    const response = await request.post(`${String(baseURL)}/oauth/token`, {
+      form: {
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: oauth.authorizeParams.redirect_uri,
+        client_id: oauth.authorizeParams.client_id,
+        code_verifier: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      },
+    });
+
+    expect(response.status()).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'INVALID_PKCE_VERIFIER',
+    });
+  });
 });
