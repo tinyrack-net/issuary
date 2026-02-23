@@ -62,6 +62,10 @@ const configs = [
     testDir: './e2e/tests/theme-system-multilang',
   },
   {
+    name: 'theme-dark-fixed',
+    testDir: './e2e/tests/theme-dark-fixed',
+  },
+  {
     name: 'totp-optional',
     testDir: './e2e/tests/totp-optional',
   },
