@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import type { AuthState, TokenResponse } from '@/types/oidc';
+import type { AuthState, TokenResponse } from '#example-next-basic/types/oidc';
 import { assertTokenResponse } from './validators';
 
 const TOKEN_COOKIE_NAME = 'oidc_tokens';

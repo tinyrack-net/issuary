@@ -1,4 +1,4 @@
-import type { OpenIDConfiguration } from '@/types/oidc';
+import type { OpenIDConfiguration } from '#example-next-basic/types/oidc';
 import { assertOpenIDConfiguration } from './validators';
 
 /**

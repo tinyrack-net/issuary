@@ -4,7 +4,7 @@
  * https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */
 
-import { initializeOIDCConfig } from '@/lib/oidc-config';
+import { initializeOIDCConfig } from '#example-next-basic/lib/oidc-config';
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {

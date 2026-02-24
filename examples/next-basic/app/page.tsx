@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { getTokens } from '@/lib/token-storage';
+import { getTokens } from '#example-next-basic/lib/token-storage';
 
 export default async function Home() {
   const tokens = await getTokens();

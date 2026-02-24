@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { revokeToken } from '@/lib/oidc-client';
-import { clearTokens, getTokens } from '@/lib/token-storage';
+import { revokeToken } from '#example-next-basic/lib/oidc-client';
+import { clearTokens, getTokens } from '#example-next-basic/lib/token-storage';
 
 /**
  * POST /api/auth/revoke

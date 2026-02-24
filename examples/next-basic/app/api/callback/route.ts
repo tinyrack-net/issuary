@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
-import { exchangeCodeForTokens } from '@/lib/oidc-client';
-import { assertAuthState } from '@/lib/validators';
-import type { AuthState } from '@/types/oidc';
+import { exchangeCodeForTokens } from '#example-next-basic/lib/oidc-client';
+import { assertAuthState } from '#example-next-basic/lib/validators';
+import type { AuthState } from '#example-next-basic/types/oidc';
 
 const STATE_COOKIE_NAME = 'oidc_state';
 const TOKEN_COOKIE_NAME = 'oidc_tokens';

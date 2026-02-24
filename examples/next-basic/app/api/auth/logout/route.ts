@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { clearTokens } from '@/lib/token-storage';
+import { clearTokens } from '#example-next-basic/lib/token-storage';
 
 export async function GET() {
   // Clear tokens from cookies

@@ -5,15 +5,18 @@ import {
   useNavigate,
 } from '@tanstack/react-router';
 import { useState } from 'react';
-import { TokenDisplay } from '@/components/token-display';
-import { UserInfo } from '@/components/user-info';
+import { TokenDisplay } from '#example-react-spa/components/token-display.js';
+import { UserInfo } from '#example-react-spa/components/user-info.js';
 import {
   decodeIDToken,
   introspectToken,
   revokeToken,
-} from '@/libs/oidc-client';
-import { clearTokens, getTokens } from '@/libs/token-storage';
-import type { IntrospectionResponse } from '@/types/oidc';
+} from '#example-react-spa/libs/oidc-client.js';
+import {
+  clearTokens,
+  getTokens,
+} from '#example-react-spa/libs/token-storage.js';
+import type { IntrospectionResponse } from '#example-react-spa/types/oidc.js';
 
 export const Route = createFileRoute('/profile')({
   component: ProfilePage,

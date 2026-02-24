@@ -1,4 +1,4 @@
-import type { PKCEPair } from '@/types/oidc';
+import type { PKCEPair } from '#example-react-spa/types/oidc.js';
 
 /**
  * Base64 URL encode without padding

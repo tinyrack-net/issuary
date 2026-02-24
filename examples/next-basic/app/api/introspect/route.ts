@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { introspectToken } from '@/lib/oidc-client';
+import { introspectToken } from '#example-next-basic/lib/oidc-client';
 
 export async function POST(request: Request) {
   try {

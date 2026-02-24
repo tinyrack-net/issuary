@@ -1,4 +1,7 @@
-import type { AuthState, TokenResponse } from '@/types/oidc';
+import type {
+  AuthState,
+  TokenResponse,
+} from '#example-react-spa/types/oidc.js';
 import { assertAuthState, assertTokenResponse } from './validators';
 
 const TOKEN_STORAGE_KEY = 'oidc_tokens';

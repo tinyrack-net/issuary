@@ -4,6 +4,12 @@
   "version": "1.0.0",
   "license": "AGPL-3.0-only",
   "type": "module",
+  "imports": {
+    "#example-react-spa/*": {
+      "types": "./src/*",
+      "default": "./src/*"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

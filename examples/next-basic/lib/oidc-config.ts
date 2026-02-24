@@ -1,4 +1,7 @@
-import type { OIDCConfig, OpenIDConfiguration } from '@/types/oidc';
+import type {
+  OIDCConfig,
+  OpenIDConfiguration,
+} from '#example-next-basic/types/oidc';
 import { loadEnvConfig } from './env';
 import {
   fetchOpenIDConfiguration,

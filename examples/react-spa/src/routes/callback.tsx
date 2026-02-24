@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { exchangeCodeForTokens } from '@/libs/oidc-client';
-import { clearAuthState, getAuthState, saveTokens } from '@/libs/token-storage';
+import { exchangeCodeForTokens } from '#example-react-spa/libs/oidc-client.js';
+import {
+  clearAuthState,
+  getAuthState,
+  saveTokens,
+} from '#example-react-spa/libs/token-storage.js';
 
 export const Route = createFileRoute('/callback')({
   component: CallbackPage,

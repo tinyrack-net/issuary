@@ -1,5 +1,5 @@
 import { createRouter } from '@tanstack/react-router';
-import type { TokenResponse } from '@/types/oidc';
+import type { TokenResponse } from '#example-react-spa/types/oidc.js';
 import { routeTree } from '../routeTree.gen';
 import { queryClient } from './query-client';
 

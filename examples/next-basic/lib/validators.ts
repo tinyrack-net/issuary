@@ -5,7 +5,7 @@ import type {
   OpenIDConfiguration,
   TokenResponse,
   UserInfo,
-} from '@/types/oidc';
+} from '#example-next-basic/types/oidc';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;

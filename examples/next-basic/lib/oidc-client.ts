@@ -3,7 +3,7 @@ import type {
   IDTokenPayload,
   IntrospectionResponse,
   TokenResponse,
-} from '@/types/oidc';
+} from '#example-next-basic/types/oidc';
 import { getOIDCConfig } from './oidc-config';
 import {
   assertIDTokenPayload,

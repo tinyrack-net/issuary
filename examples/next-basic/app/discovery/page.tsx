@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { loadEnvConfig } from '@/lib/env';
-import { fetchOpenIDConfiguration } from '@/lib/oidc-discovery';
-import type { JWKS, OpenIDConfiguration } from '@/types/oidc';
+import { loadEnvConfig } from '#example-next-basic/lib/env';
+import { fetchOpenIDConfiguration } from '#example-next-basic/lib/oidc-discovery';
+import type { JWKS, OpenIDConfiguration } from '#example-next-basic/types/oidc';
 
 async function fetchDiscoveryConfig(): Promise<OpenIDConfiguration | null> {
   try {

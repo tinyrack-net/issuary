@@ -1,7 +1,11 @@
 import { redirect } from 'next/navigation';
-import { buildAuthorizationUrl } from '@/lib/oidc-client';
-import { generateNonce, generatePKCEPair, generateState } from '@/lib/pkce';
-import { saveAuthState } from '@/lib/token-storage';
+import { buildAuthorizationUrl } from '#example-next-basic/lib/oidc-client';
+import {
+  generateNonce,
+  generatePKCEPair,
+  generateState,
+} from '#example-next-basic/lib/pkce';
+import { saveAuthState } from '#example-next-basic/lib/token-storage';
 
 export async function GET() {
   // Generate PKCE pair, state, and nonce

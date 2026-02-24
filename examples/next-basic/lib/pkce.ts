@@ -1,4 +1,4 @@
-import type { PKCEPair } from '@/types/oidc';
+import type { PKCEPair } from '#example-next-basic/types/oidc';
 
 /**
  * Generate a random code verifier for PKCE

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { decodeIDToken } from '@/lib/oidc-client';
-import { getTokens } from '@/lib/token-storage';
+import { decodeIDToken } from '#example-next-basic/lib/oidc-client';
+import { getTokens } from '#example-next-basic/lib/token-storage';
 import { IntrospectSection } from './introspect-section';
 import { RevokeSection } from './revoke-section';
 

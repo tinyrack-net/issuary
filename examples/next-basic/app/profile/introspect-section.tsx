@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { IntrospectionResponse } from '@/types/oidc';
+import type { IntrospectionResponse } from '#example-next-basic/types/oidc';
 
 interface IntrospectSectionProps {
   accessToken: string;
