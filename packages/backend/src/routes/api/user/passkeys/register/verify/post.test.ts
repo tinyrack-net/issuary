@@ -1,7 +1,10 @@
-import type { AppType } from '@backend/app.js';
-import { e } from '@backend/schemas/error.js';
-import { createServer } from '@backend/server.js';
-import type { ServiceContainer } from '@backend/services/container.js';
+import type { RegistrationResponseJSON } from '@simplewebauthn/server';
+import { testClient } from 'hono/testing';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import type { AppType } from '#backend/app.js';
+import { e } from '#backend/schemas/error.js';
+import { createServer } from '#backend/server.js';
+import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
@@ -11,10 +14,7 @@ import {
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
   withMikroContext,
-} from '@backend/test-utils/index.js';
-import type { RegistrationResponseJSON } from '@simplewebauthn/server';
-import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+} from '#backend/test-utils/index.js';
 
 /**
  * Helper to create a DB user with session

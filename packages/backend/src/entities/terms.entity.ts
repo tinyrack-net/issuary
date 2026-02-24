@@ -1,5 +1,5 @@
-import { TermsRepository } from '@backend/repositories/terms.repository.js';
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
+import { TermsRepository } from '#backend/repositories/terms.repository.js';
 import { BaseSchema } from './base.entity.js';
 import { TermsContentEntitySchema } from './terms-content.entity.js';
 import { UserTermsConsentEntitySchema } from './user-terms-consent.entity.js';

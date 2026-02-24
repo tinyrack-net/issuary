@@ -1,5 +1,5 @@
-import { OAuthCodeRepository } from '@backend/repositories/oauth-code.repository.js';
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
+import { OAuthCodeRepository } from '#backend/repositories/oauth-code.repository.js';
 import { BaseSchema } from './base.entity.js';
 import { OAuthClientEntitySchema } from './oauth-client.entity.js';
 import { UserEntity } from './user.entity.js';

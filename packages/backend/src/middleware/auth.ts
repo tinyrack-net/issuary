@@ -1,6 +1,6 @@
-import type { UserEntity } from '@backend/entities/user.entity.js';
-import { e, TinyAuthError } from '@backend/schemas/error.js';
 import { createMiddleware } from 'hono/factory';
+import type { UserEntity } from '#backend/entities/user.entity.js';
+import { e, TinyAuthError } from '#backend/schemas/error.js';
 import type { ServicesEnv } from './services.js';
 import type { SessionData, SessionEnv } from './session.js';
 

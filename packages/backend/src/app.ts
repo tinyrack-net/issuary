@@ -1,25 +1,25 @@
-import {
-  type AppConfigInput,
-  resolveConfig,
-} from '@backend/lib/config/index.js';
-import { env } from '@backend/lib/env.js';
-import { interpolateHtml } from '@backend/lib/interpolate-html.js';
-import { isBackendRoute } from '@backend/lib/is-backend-route.js';
-import { createLogger } from '@backend/lib/logger.js';
-import { OPENAPI_DOCUMENTATION } from '@backend/lib/openapi.js';
-import { loggerMiddleware } from '@backend/middleware/logger.js';
-import { mikroOrmMiddleware } from '@backend/middleware/mikro-orm.js';
-import { createProxyHandler } from '@backend/middleware/proxy.js';
-import { servicesMiddleware } from '@backend/middleware/services.js';
-import { sessionMiddleware } from '@backend/middleware/session.js';
-import { registerProdStatic } from '@backend/middleware/static.js';
-import { trustedProxyGuard } from '@backend/middleware/trusted-proxy-guard.js';
-import { routes } from '@backend/routes/index.js';
-import { e, TinyAuthError } from '@backend/schemas/error.js';
-import { initializeServices } from '@backend/services/container.js';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { generateSpecs } from 'hono-openapi';
+import {
+  type AppConfigInput,
+  resolveConfig,
+} from '#backend/lib/config/index.js';
+import { env } from '#backend/lib/env.js';
+import { interpolateHtml } from '#backend/lib/interpolate-html.js';
+import { isBackendRoute } from '#backend/lib/is-backend-route.js';
+import { createLogger } from '#backend/lib/logger.js';
+import { OPENAPI_DOCUMENTATION } from '#backend/lib/openapi.js';
+import { loggerMiddleware } from '#backend/middleware/logger.js';
+import { mikroOrmMiddleware } from '#backend/middleware/mikro-orm.js';
+import { createProxyHandler } from '#backend/middleware/proxy.js';
+import { servicesMiddleware } from '#backend/middleware/services.js';
+import { sessionMiddleware } from '#backend/middleware/session.js';
+import { registerProdStatic } from '#backend/middleware/static.js';
+import { trustedProxyGuard } from '#backend/middleware/trusted-proxy-guard.js';
+import { routes } from '#backend/routes/index.js';
+import { e, TinyAuthError } from '#backend/schemas/error.js';
+import { initializeServices } from '#backend/services/container.js';
 
 export type { AppConfigInput };
 

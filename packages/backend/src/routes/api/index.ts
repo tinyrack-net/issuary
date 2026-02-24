@@ -1,5 +1,5 @@
-import type { AppEnv } from '@backend/lib/app-env.js';
 import { Hono } from 'hono';
+import type { AppEnv } from '#backend/lib/app-env.js';
 import { authRoutes } from './auth/index.js';
 import { configRoutes } from './config/index.js';
 import { consentRoutes } from './consent/index.js';

@@ -1,13 +1,13 @@
-import type { AppType } from '@backend/app.js';
-import { createServer } from '@backend/server.js';
+import { testClient } from 'hono/testing';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import type { AppType } from '#backend/app.js';
+import { createServer } from '#backend/server.js';
 import {
   assertJsonBody,
   MINIMAL_TEST_CONFIG,
   TEST_USER,
   TEST_USER_CONFIG,
-} from '@backend/test-utils/index.js';
-import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+} from '#backend/test-utils/index.js';
 
 let app: AppType;
 let cleanup: () => Promise<void>;

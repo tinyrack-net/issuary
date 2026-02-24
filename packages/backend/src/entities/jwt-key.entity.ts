@@ -1,5 +1,5 @@
-import { JwtKeyRepository } from '@backend/repositories/jwt-key.repository.js';
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
+import { JwtKeyRepository } from '#backend/repositories/jwt-key.repository.js';
 import { BaseSchema } from './base.entity.js';
 
 /**

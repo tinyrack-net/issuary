@@ -1,8 +1,8 @@
 import http from 'node:http';
-import { createLogger } from '@backend/lib/logger.js';
-import { createProxyHandler } from '@backend/middleware/proxy.js';
 import { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createLogger } from '#backend/lib/logger.js';
+import { createProxyHandler } from '#backend/middleware/proxy.js';
 
 /**
  * Spin up a tiny HTTP server that behaves like an

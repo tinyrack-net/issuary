@@ -6,11 +6,12 @@
     "composite": true,
 
     "paths": {
-      "@backend/*": ["./src/*"]
+      "#backend/*": ["./src/*"]
     },
 
     "module": "NodeNext",
     "moduleResolution": "nodenext",
+    "resolvePackageJsonImports": true,
     "target": "esnext",
     "types": ["node"],
     "jsx": "react-jsx",

@@ -1,5 +1,5 @@
-import type { AppEnv } from '@backend/lib/app-env.js';
 import { Hono } from 'hono';
+import type { AppEnv } from '#backend/lib/app-env.js';
 import { authEmailResendPost } from './email/resend/post.js';
 import { authEmailVerifyPost } from './email/verify/post.js';
 import { authLoginPost } from './login/post.js';

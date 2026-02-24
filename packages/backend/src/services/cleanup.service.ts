@@ -1,27 +1,27 @@
-import { EmailVerificationEntitySchema } from '@backend/entities/email-verification.entity.js';
+import { EmailVerificationEntitySchema } from '#backend/entities/email-verification.entity.js';
 import {
   JwtKeyEntity,
   JwtKeyStatus,
-} from '@backend/entities/jwt-key.entity.js';
-import { OAuthCodeEntitySchema } from '@backend/entities/oauth-code.entity.js';
-import { PasswordResetEntitySchema } from '@backend/entities/password-reset.entity.js';
-import { PendingOAuthRegistrationEntitySchema } from '@backend/entities/pending-oauth-registration.entity.js';
-import { RevokedTokenEntitySchema } from '@backend/entities/revoked-token.entity.js';
-import { UserEntity } from '@backend/entities/user.entity.js';
-import { UserConsentEntity } from '@backend/entities/user-consent.entity.js';
-import { UserOAuthEntitySchema } from '@backend/entities/user-oauth.entity.js';
-import { UserPasskeyEntitySchema } from '@backend/entities/user-passkey.entity.js';
-import { UserTermsConsentEntity } from '@backend/entities/user-terms-consent.entity.js';
-import { UserTotpEntitySchema } from '@backend/entities/user-totp.entity.js';
-import { UserTotpRecoveryCodeEntitySchema } from '@backend/entities/user-totp-recovery-code.entity.js';
-import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
+} from '#backend/entities/jwt-key.entity.js';
+import { OAuthCodeEntitySchema } from '#backend/entities/oauth-code.entity.js';
+import { PasswordResetEntitySchema } from '#backend/entities/password-reset.entity.js';
+import { PendingOAuthRegistrationEntitySchema } from '#backend/entities/pending-oauth-registration.entity.js';
+import { RevokedTokenEntitySchema } from '#backend/entities/revoked-token.entity.js';
+import { UserEntity } from '#backend/entities/user.entity.js';
+import { UserConsentEntity } from '#backend/entities/user-consent.entity.js';
+import { UserOAuthEntitySchema } from '#backend/entities/user-oauth.entity.js';
+import { UserPasskeyEntitySchema } from '#backend/entities/user-passkey.entity.js';
+import { UserTermsConsentEntity } from '#backend/entities/user-terms-consent.entity.js';
+import { UserTotpEntitySchema } from '#backend/entities/user-totp.entity.js';
+import { UserTotpRecoveryCodeEntitySchema } from '#backend/entities/user-totp-recovery-code.entity.js';
+import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
 import {
   calculateCutoffDate,
   formatDuration,
   parseDurationToMs,
-} from '@backend/lib/duration.js';
-import type { JwtKeyRepository } from '@backend/repositories/jwt-key.repository.js';
-import type { MikroService } from '@backend/services/mikro.service.js';
+} from '#backend/lib/duration.js';
+import type { JwtKeyRepository } from '#backend/repositories/jwt-key.repository.js';
+import type { MikroService } from '#backend/services/mikro.service.js';
 import type { JwtService } from './jwt.service.js';
 
 /**

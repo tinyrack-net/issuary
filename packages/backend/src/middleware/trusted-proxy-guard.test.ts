@@ -1,6 +1,6 @@
-import { trustedProxyGuard } from '@backend/middleware/trusted-proxy-guard.js';
 import { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
+import { trustedProxyGuard } from '#backend/middleware/trusted-proxy-guard.js';
 
 /**
  * Tests for the trusted-proxy-guard Hono middleware.

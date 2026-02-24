@@ -1,15 +1,15 @@
+import { decodeJwt } from 'jose';
+import z from 'zod';
 import {
   type ResolvedAppConfig,
   type ResolvedOAuthConfig,
   resolveOAuthConfig,
-} from '@backend/lib/config/index.js';
-import { isEmailAllowed } from '@backend/lib/email-pattern.js';
-import { generatePKCE } from '@backend/lib/pkce.js';
-import { e, TinyAuthError } from '@backend/schemas/error.js';
-import type { f } from '@backend/schemas/field.js';
-import type { MikroService } from '@backend/services/mikro.service.js';
-import { decodeJwt } from 'jose';
-import z from 'zod';
+} from '#backend/lib/config/index.js';
+import { isEmailAllowed } from '#backend/lib/email-pattern.js';
+import { generatePKCE } from '#backend/lib/pkce.js';
+import { e, TinyAuthError } from '#backend/schemas/error.js';
+import type { f } from '#backend/schemas/field.js';
+import type { MikroService } from '#backend/services/mikro.service.js';
 import type { TermsService } from './terms.service.js';
 import type { UserService } from './user.service.js';
 

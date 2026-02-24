@@ -1,5 +1,5 @@
-import type { AppEnv } from '@backend/lib/app-env.js';
 import { Hono } from 'hono';
+import type { AppEnv } from '#backend/lib/app-env.js';
 import { wellKnownRoutes } from './.well-known/index.js';
 import { apiRoutes } from './api/index.js';
 import { oauthApplicationRoutes } from './oauth/index.js';

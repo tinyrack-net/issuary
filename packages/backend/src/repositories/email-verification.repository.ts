@@ -1,6 +1,6 @@
-import type { IEmailVerificationEntity } from '@backend/entities/email-verification.entity.js';
-import { UserEntity } from '@backend/entities/user.entity.js';
 import { EntityRepository, ref } from '@mikro-orm/core';
+import type { IEmailVerificationEntity } from '#backend/entities/email-verification.entity.js';
+import { UserEntity } from '#backend/entities/user.entity.js';
 
 export class EmailVerificationRepository extends EntityRepository<IEmailVerificationEntity> {
   /**

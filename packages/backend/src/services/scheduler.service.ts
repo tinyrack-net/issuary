@@ -1,7 +1,7 @@
-import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
-import type { Logger } from '@backend/lib/logger.js';
-import type { CleanupService } from '@backend/services/cleanup.service.js';
 import { Cron } from 'croner';
+import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { Logger } from '#backend/lib/logger.js';
+import type { CleanupService } from '#backend/services/cleanup.service.js';
 
 export class SchedulerService {
   public cleanupJob: Cron | null = null;

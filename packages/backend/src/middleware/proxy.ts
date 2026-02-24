@@ -1,6 +1,6 @@
-import type { Logger } from '@backend/lib/logger.js';
 import type { Context } from 'hono';
 import { proxy } from 'hono/proxy';
+import type { Logger } from '#backend/lib/logger.js';
 
 export interface ProxyHandlerOptions {
   /**

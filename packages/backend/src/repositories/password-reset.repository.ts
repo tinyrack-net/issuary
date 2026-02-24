@@ -1,6 +1,6 @@
-import type { IPasswordResetEntity } from '@backend/entities/password-reset.entity.js';
-import { UserEntity } from '@backend/entities/user.entity.js';
 import { EntityRepository, ref } from '@mikro-orm/core';
+import type { IPasswordResetEntity } from '#backend/entities/password-reset.entity.js';
+import { UserEntity } from '#backend/entities/user.entity.js';
 
 export class PasswordResetRepository extends EntityRepository<IPasswordResetEntity> {
   /**

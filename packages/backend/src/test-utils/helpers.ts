@@ -1,8 +1,8 @@
-import type { AppType } from '@backend/app.js';
-import type { ServiceContainer } from '@backend/services/container.js';
 import { RequestContext } from '@mikro-orm/core';
 import { testClient } from 'hono/testing';
 import { expect } from 'vitest';
+import type { AppType } from '#backend/app.js';
+import type { ServiceContainer } from '#backend/services/container.js';
 import { assertJsonBody } from './client.js';
 import { generateUniqueEmail, TEST_CONSENTS, TEST_USER } from './fixtures.js';
 
@@ -93,8 +93,8 @@ export interface ErrorDefinition {
  *
  * @example
  * ```typescript
- * import { e } from '@backend/schemas/error.js';
- * import { expectError } from '@backend/test-utils/index.js';
+ * import { e } from '#backend/schemas/error.js';
+ * import { expectError } from '#backend/test-utils/index.js';
  *
  * const client = testClient(app);
  * const res = await client.api.auth.login.$post({

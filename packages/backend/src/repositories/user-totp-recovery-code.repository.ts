@@ -1,5 +1,5 @@
-import type { IUserTotpRecoveryCodeEntity } from '@backend/entities/user-totp-recovery-code.entity.js';
 import { EntityRepository } from '@mikro-orm/core';
+import type { IUserTotpRecoveryCodeEntity } from '#backend/entities/user-totp-recovery-code.entity.js';
 
 export class UserTotpRecoveryCodeRepository extends EntityRepository<IUserTotpRecoveryCodeEntity> {
   /**

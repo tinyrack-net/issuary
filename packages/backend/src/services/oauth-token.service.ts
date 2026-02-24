@@ -2,11 +2,11 @@ import {
   stringToBytes,
   toArrayBuffer,
   toBase64Url,
-} from '@backend/lib/base64url.js';
-import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
-import { validatePKCE } from '@backend/lib/pkce.js';
-import { e } from '@backend/schemas/error.js';
-import type { MikroService } from '@backend/services/mikro.service.js';
+} from '#backend/lib/base64url.js';
+import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import { validatePKCE } from '#backend/lib/pkce.js';
+import { e } from '#backend/schemas/error.js';
+import type { MikroService } from '#backend/services/mikro.service.js';
 import type {
   AccessTokenPayload,
   JwtService,

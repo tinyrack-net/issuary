@@ -1,16 +1,16 @@
+import nodemailer from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 import {
   renderPasswordResetEmail,
   renderVerificationEmail,
-} from '@backend/emails/render.js';
-import type { IEmailVerificationEntity } from '@backend/entities/email-verification.entity.js';
-import type { UserEntity } from '@backend/entities/user.entity.js';
-import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
-import { DEFAULT_LOCALE, type Locale } from '@backend/lib/locale.js';
-import type { Logger } from '@backend/lib/logger.js';
-import { e } from '@backend/schemas/error.js';
-import type { MikroService } from '@backend/services/mikro.service.js';
-import nodemailer from 'nodemailer';
-import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
+} from '#backend/emails/render.js';
+import type { IEmailVerificationEntity } from '#backend/entities/email-verification.entity.js';
+import type { UserEntity } from '#backend/entities/user.entity.js';
+import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import { DEFAULT_LOCALE, type Locale } from '#backend/lib/locale.js';
+import type { Logger } from '#backend/lib/logger.js';
+import { e } from '#backend/schemas/error.js';
+import type { MikroService } from '#backend/services/mikro.service.js';
 
 export class EmailService {
   private readonly transporter: nodemailer.Transporter<

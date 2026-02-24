@@ -1,7 +1,7 @@
-import type { ITermsEntity } from '@backend/entities/terms.entity.js';
-import type { UserTermsConsentEntity } from '@backend/entities/user-terms-consent.entity.js';
-import type { MikroService } from '@backend/services/mikro.service.js';
 import type { Loaded } from '@mikro-orm/core';
+import type { ITermsEntity } from '#backend/entities/terms.entity.js';
+import type { UserTermsConsentEntity } from '#backend/entities/user-terms-consent.entity.js';
+import type { MikroService } from '#backend/services/mikro.service.js';
 
 /**
  * Loaded terms type alias for readability

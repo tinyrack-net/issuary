@@ -1,5 +1,5 @@
-import type { AppEnv } from '@backend/lib/app-env.js';
 import { Hono } from 'hono';
+import type { AppEnv } from '#backend/lib/app-env.js';
 import { termsConsentPost } from './consent/post.js';
 import { termsGet } from './get.js';
 

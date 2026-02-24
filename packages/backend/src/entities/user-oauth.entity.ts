@@ -1,9 +1,9 @@
-import { UserOAuthRepository } from '@backend/repositories/user-oauth.repository.js';
 import {
   defineEntity,
   type InferEntity,
   type RequiredNullable,
 } from '@mikro-orm/core';
+import { UserOAuthRepository } from '#backend/repositories/user-oauth.repository.js';
 import { BaseSchema } from './base.entity.js';
 import { UserEntity } from './user.entity.js';
 

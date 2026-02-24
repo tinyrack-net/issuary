@@ -1,14 +1,14 @@
-import type { AppEnv } from '@backend/lib/app-env.js';
-import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
-import { parseScopesWithDescriptions } from '@backend/lib/scopes.js';
-import { TAGS } from '@backend/lib/swagger-tags.js';
-import { verifyAuth } from '@backend/middleware/auth.js';
-import { e } from '@backend/schemas/error.js';
-import { f } from '@backend/schemas/field.js';
-import { r } from '@backend/schemas/response.js';
 import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
+import type { AppEnv } from '#backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '#backend/lib/openapi.js';
+import { parseScopesWithDescriptions } from '#backend/lib/scopes.js';
+import { TAGS } from '#backend/lib/swagger-tags.js';
+import { verifyAuth } from '#backend/middleware/auth.js';
+import { e } from '#backend/schemas/error.js';
+import { f } from '#backend/schemas/field.js';
+import { r } from '#backend/schemas/response.js';
 
 /**
  * GET /api/oauth/consent

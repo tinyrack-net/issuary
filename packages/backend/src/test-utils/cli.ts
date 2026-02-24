@@ -3,22 +3,22 @@
  * Provides helper functions for creating test data with specific states.
  */
 
-import { EmailVerificationEntitySchema } from '@backend/entities/email-verification.entity.js';
+import { EmailVerificationEntitySchema } from '#backend/entities/email-verification.entity.js';
 import {
   JwtKeyEntity,
   JwtKeyStatus,
-} from '@backend/entities/jwt-key.entity.js';
-import { OAuthClientEntitySchema } from '@backend/entities/oauth-client.entity.js';
-import { OAuthCodeEntitySchema } from '@backend/entities/oauth-code.entity.js';
-import { PasswordResetEntitySchema } from '@backend/entities/password-reset.entity.js';
-import { PendingOAuthRegistrationEntitySchema } from '@backend/entities/pending-oauth-registration.entity.js';
+} from '#backend/entities/jwt-key.entity.js';
+import { OAuthClientEntitySchema } from '#backend/entities/oauth-client.entity.js';
+import { OAuthCodeEntitySchema } from '#backend/entities/oauth-code.entity.js';
+import { PasswordResetEntitySchema } from '#backend/entities/password-reset.entity.js';
+import { PendingOAuthRegistrationEntitySchema } from '#backend/entities/pending-oauth-registration.entity.js';
 import {
   RevokedTokenEntitySchema,
   type TokenType,
-} from '@backend/entities/revoked-token.entity.js';
-import { UserEntity } from '@backend/entities/user.entity.js';
-import type { AppConfigInput } from '@backend/lib/config/index.js';
-import type { ServiceContainer } from '@backend/services/container.js';
+} from '#backend/entities/revoked-token.entity.js';
+import { UserEntity } from '#backend/entities/user.entity.js';
+import type { AppConfigInput } from '#backend/lib/config/index.js';
+import type { ServiceContainer } from '#backend/services/container.js';
 import { withMikroContext } from './helpers.js';
 import { MINIMAL_TEST_CONFIG } from './setup.js';
 

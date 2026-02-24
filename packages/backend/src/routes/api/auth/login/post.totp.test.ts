@@ -14,9 +14,11 @@
  * - Otherwise => immediate login success
  */
 
-import type { AppType } from '@backend/app.js';
-import { createServer } from '@backend/server.js';
-import type { ServiceContainer } from '@backend/services/container.js';
+import { testClient } from 'hono/testing';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import type { AppType } from '#backend/app.js';
+import { createServer } from '#backend/server.js';
+import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
   enableTotpForUser,
@@ -26,9 +28,7 @@ import {
   TEST_USER,
   TEST_USER_CONFIG,
   withMikroContext,
-} from '@backend/test-utils/index.js';
-import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+} from '#backend/test-utils/index.js';
 
 /**
  * Helper function to create a user in DB without triggering login flow.

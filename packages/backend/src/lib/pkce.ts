@@ -1,5 +1,5 @@
-import { e } from '@backend/schemas/error.js';
 import { base64url } from 'jose';
+import { e } from '#backend/schemas/error.js';
 
 function generateVerifier(length: number): string {
   const buffer = new Uint8Array(length);

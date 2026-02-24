@@ -1,9 +1,9 @@
+import { z } from 'zod';
 import {
   AppConfigPasskeyAuth,
   AppConfigPasswordAuth,
   AppTheme,
-} from '@backend/lib/config/index.js';
-import { z } from 'zod';
+} from '#backend/lib/config/index.js';
 import { f } from './field.js';
 import { oauthSchema } from './oauth.js';
 

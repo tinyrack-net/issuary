@@ -1,10 +1,10 @@
-import { createServer } from '@backend/server.js';
-import type { ServiceContainer } from '@backend/services/container.js';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createServer } from '#backend/server.js';
+import type { ServiceContainer } from '#backend/services/container.js';
 import {
   MINIMAL_TEST_CONFIG,
   withMikroContext,
-} from '@backend/test-utils/index.js';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+} from '#backend/test-utils/index.js';
 
 describe('OAuthTokenService', () => {
   describe('introspectToken', () => {

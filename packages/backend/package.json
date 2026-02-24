@@ -19,27 +19,34 @@
       "default": "./dist/rpc.js"
     }
   },
+  "imports": {
+    "#backend/*": {
+      "types": "./dist/*",
+      "development": "./src/*",
+      "default": "./dist/*"
+    }
+  },
   "bin": {
     "tinyauth": "./dist/cli.js"
   },
   "scripts": {
-    "dev": "APP_ENV=development CONFIG_PATH=./config.dev.minimal.yaml tsx watch --include './src/**/*' --include ./config.dev.minimal.yaml src/cli.ts serve",
-    "dev:maximal": "APP_ENV=development CONFIG_PATH=./config.dev.yaml tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve",
-    "dev:cli": "APP_ENV=development CONFIG_PATH=./config.dev.yaml tsx src/cli.ts",
-    "test": "APP_ENV=test NODE_OPTIONS='--import tsx' vitest",
-    "test:coverage": "APP_ENV=test NODE_OPTIONS='--import tsx' vitest run --coverage",
+    "dev": "APP_ENV=development CONFIG_PATH=./config.dev.minimal.yaml NODE_OPTIONS='--conditions=development' tsx watch --include './src/**/*' --include ./config.dev.minimal.yaml src/cli.ts serve",
+    "dev:maximal": "APP_ENV=development CONFIG_PATH=./config.dev.yaml NODE_OPTIONS='--conditions=development' tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve",
+    "dev:cli": "APP_ENV=development CONFIG_PATH=./config.dev.yaml NODE_OPTIONS='--conditions=development' tsx src/cli.ts",
+    "test": "APP_ENV=test NODE_OPTIONS='--conditions=development --import tsx' vitest",
+    "test:coverage": "APP_ENV=test NODE_OPTIONS='--conditions=development --import tsx' vitest run --coverage",
     "start": "node dist/cli.js serve",
-    "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
+    "build": "tsc --project tsconfig.json",
     "build:watch": "tsc -w",
     "serve": "APP_ENV=production node dist/cli.js serve",
     "job": "APP_ENV=production node dist/cli.js job",
-    "mikro-orm": "NODE_OPTIONS='--import tsx' mikro-orm ",
-    "mikro-orm:debug": "NODE_OPTIONS='--import tsx' mikro-orm debug",
-    "mikro-orm:schema:create": "NODE_OPTIONS='--import tsx' mikro-orm migration:create --initial",
-    "export:openapi": "APP_ENV=test NODE_OPTIONS='--import tsx' tsx src/export-openapi.ts",
+    "mikro-orm": "NODE_OPTIONS='--conditions=development --import tsx' mikro-orm ",
+    "mikro-orm:debug": "NODE_OPTIONS='--conditions=development --import tsx' mikro-orm debug",
+    "mikro-orm:schema:create": "NODE_OPTIONS='--conditions=development --import tsx' mikro-orm migration:create --initial",
+    "export:openapi": "APP_ENV=test NODE_OPTIONS='--conditions=development --import tsx' tsx src/export-openapi.ts",
     "openapi:export": "pnpm export:openapi",
-    "openapi:check": "APP_ENV=test NODE_OPTIONS='--import tsx' tsx src/check-openapi.ts",
-    "openapi:check:strict": "APP_ENV=test NODE_OPTIONS='--import tsx' tsx src/check-openapi.ts --strict",
+    "openapi:check": "APP_ENV=test NODE_OPTIONS='--conditions=development --import tsx' tsx src/check-openapi.ts",
+    "openapi:check:strict": "APP_ENV=test NODE_OPTIONS='--conditions=development --import tsx' tsx src/check-openapi.ts --strict",
     "email:preview": "email dev --dir src/emails/templates --port 3001"
   },
   "devDependencies": {
@@ -55,7 +62,6 @@
     "pino-pretty": "^13.1.3",
     "react": "catalog:",
     "react-email": "^5.2.7",
-    "tsc-alias": "^1.8.16",
     "tsx": "^4.21.0",
     "typescript": "catalog:",
     "vite-tsconfig-paths": "^6.0.5",

@@ -1,8 +1,8 @@
-import type { AppType } from '@backend/app.js';
-import { createApp } from '@backend/app.js';
-import type { AppConfigInput } from '@backend/lib/config/index.js';
-import { env } from '@backend/lib/env.js';
 import { serve } from '@hono/node-server';
+import type { AppType } from '#backend/app.js';
+import { createApp } from '#backend/app.js';
+import type { AppConfigInput } from '#backend/lib/config/index.js';
+import { env } from '#backend/lib/env.js';
 
 export type { AppType };
 

@@ -1,6 +1,6 @@
-import { isBackendRoute } from '@backend/lib/is-backend-route.js';
 import { createMiddleware } from 'hono/factory';
 import type pino from 'pino';
+import { isBackendRoute } from '#backend/lib/is-backend-route.js';
 
 /**
  * Hono env type that declares the `logger` context variable.

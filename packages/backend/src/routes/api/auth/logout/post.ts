@@ -1,8 +1,8 @@
-import type { AppEnv } from '@backend/lib/app-env.js';
-import { TAGS } from '@backend/lib/swagger-tags.js';
-import { r } from '@backend/schemas/response.js';
 import { Hono } from 'hono';
 import { describeRoute, resolver } from 'hono-openapi';
+import type { AppEnv } from '#backend/lib/app-env.js';
+import { TAGS } from '#backend/lib/swagger-tags.js';
+import { r } from '#backend/schemas/response.js';
 
 export const authLogoutPost = new Hono<AppEnv>().post(
   '/auth/logout',

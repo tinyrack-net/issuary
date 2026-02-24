@@ -1,10 +1,10 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import type { Options } from '@mikro-orm/core';
 import { Migrator } from '@mikro-orm/migrations';
 import { defineConfig, PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { SeedManager } from '@mikro-orm/seeder';
+import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
 import { EmailVerificationEntitySchema } from '../entities/email-verification.entity.js';
 import { JwtKeyEntitySchema } from '../entities/jwt-key.entity.js';
 import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.js';

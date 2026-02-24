@@ -1,6 +1,6 @@
-import type { AppType } from '@backend/app.js';
 import { testClient } from 'hono/testing';
 import type * as jose from 'jose';
+import type { AppType } from '#backend/app.js';
 import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT } from './fixtures.js';
 import { createAuthenticatedSession, grantConsent } from './helpers.js';
 

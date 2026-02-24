@@ -1,5 +1,5 @@
-import { UserConsentRepository } from '@backend/repositories/user-consent.repository.js';
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
+import { UserConsentRepository } from '#backend/repositories/user-consent.repository.js';
 import { BaseSchema } from './base.entity.js';
 import { OAuthClientEntitySchema } from './oauth-client.entity.js';
 import { UserEntitySchema } from './user.entity.js';

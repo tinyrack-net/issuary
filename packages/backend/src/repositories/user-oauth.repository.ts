@@ -1,6 +1,6 @@
-import { UserEntity } from '@backend/entities/user.entity.js';
-import type { IUserOAuthEntity } from '@backend/entities/user-oauth.entity.js';
 import { EntityRepository, ref } from '@mikro-orm/core';
+import { UserEntity } from '#backend/entities/user.entity.js';
+import type { IUserOAuthEntity } from '#backend/entities/user-oauth.entity.js';
 
 export class UserOAuthRepository extends EntityRepository<IUserOAuthEntity> {
   /**

@@ -1,14 +1,3 @@
-import type { AppType } from '@backend/app.js';
-import { createServer } from '@backend/server.js';
-import {
-  assertJsonBody,
-  extractCookie,
-  generateUniqueEmail,
-  getLocationHeader,
-  MINIMAL_TEST_CONFIG,
-  mockOAuthProviderFetch,
-  TEST_USER_CONFIG,
-} from '@backend/test-utils/index.js';
 import { testClient } from 'hono/testing';
 import { generateKeyPair, SignJWT } from 'jose';
 import {
@@ -20,6 +9,17 @@ import {
   test,
   vi,
 } from 'vitest';
+import type { AppType } from '#backend/app.js';
+import { createServer } from '#backend/server.js';
+import {
+  assertJsonBody,
+  extractCookie,
+  generateUniqueEmail,
+  getLocationHeader,
+  MINIMAL_TEST_CONFIG,
+  mockOAuthProviderFetch,
+  TEST_USER_CONFIG,
+} from '#backend/test-utils/index.js';
 
 const APPLE_TOKEN_URL = 'https://appleid.apple.com/auth/token';
 

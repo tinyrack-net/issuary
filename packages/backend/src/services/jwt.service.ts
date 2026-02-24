@@ -1,12 +1,4 @@
 import {
-  type JwtKeyEntity,
-  JwtKeyStatus,
-} from '@backend/entities/jwt-key.entity.js';
-import { bytesToString, fromBase64Url } from '@backend/lib/base64url.js';
-import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
-import { e } from '@backend/schemas/error.js';
-import type { MikroService } from '@backend/services/mikro.service.js';
-import {
   decodeJwt,
   exportJWK,
   exportPKCS8,
@@ -18,6 +10,14 @@ import {
   jwtVerify,
   SignJWT,
 } from 'jose';
+import {
+  type JwtKeyEntity,
+  JwtKeyStatus,
+} from '#backend/entities/jwt-key.entity.js';
+import { bytesToString, fromBase64Url } from '#backend/lib/base64url.js';
+import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import { e } from '#backend/schemas/error.js';
+import type { MikroService } from '#backend/services/mikro.service.js';
 
 // ---------------------------------------------------------------------------
 // Key Management Types

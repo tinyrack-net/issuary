@@ -19,7 +19,7 @@ RUN pnpm --filter @tinyauth/frontend build
 FROM deps AS backend-build
 COPY packages/backend ./packages/backend
 COPY --from=frontend-build /app/packages/backend/public ./packages/backend/public
-# tsc-alias는 build 스크립트에 포함됨
+# build 스크립트는 tsc 컴파일만 수행함
 RUN pnpm --filter @tinyauth/backend build
 
 # ===== Stage 5: Production Dependencies =====

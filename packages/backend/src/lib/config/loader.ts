@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Logger } from '@backend/lib/logger.js';
 import nodemailer from 'nodemailer';
 import YAML from 'yaml';
+import type { Logger } from '#backend/lib/logger.js';
 import { deepMerge } from '../deep-merge.js';
 import { env } from '../env.js';
 import { resolveEnvVariables } from '../interpolate-env.js';

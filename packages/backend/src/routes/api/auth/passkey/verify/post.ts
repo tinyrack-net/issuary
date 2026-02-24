@@ -1,16 +1,16 @@
-import type { AppEnv } from '@backend/lib/app-env.js';
-import { OPENAPI_SECURITY } from '@backend/lib/openapi.js';
-import { TAGS } from '@backend/lib/swagger-tags.js';
-import {
-  verifyPasskeyChallenge,
-  verifyPending2FAUser,
-} from '@backend/middleware/auth.js';
-import { e } from '@backend/schemas/error.js';
-import { r } from '@backend/schemas/response.js';
 import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
 import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
+import type { AppEnv } from '#backend/lib/app-env.js';
+import { OPENAPI_SECURITY } from '#backend/lib/openapi.js';
+import { TAGS } from '#backend/lib/swagger-tags.js';
+import {
+  verifyPasskeyChallenge,
+  verifyPending2FAUser,
+} from '#backend/middleware/auth.js';
+import { e } from '#backend/schemas/error.js';
+import { r } from '#backend/schemas/response.js';
 
 export const authPasskeyVerifyPost = new Hono<AppEnv>().post(
   '/auth/passkey/verify',

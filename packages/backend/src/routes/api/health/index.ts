@@ -1,5 +1,5 @@
-import type { AppEnv } from '@backend/lib/app-env.js';
 import { Hono } from 'hono';
+import type { AppEnv } from '#backend/lib/app-env.js';
 import { healthGet } from './get.js';
 import { healthLiveGet } from './live/get.js';
 import { healthReadyGet } from './ready/get.js';

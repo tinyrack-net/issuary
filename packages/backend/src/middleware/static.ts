@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { AppType } from '@backend/app.js';
-import { interpolateHtml } from '@backend/lib/interpolate-html.js';
-import { isBackendRoute } from '@backend/lib/is-backend-route.js';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { getMimeType } from 'hono/utils/mime';
+import type { AppType } from '#backend/app.js';
+import { interpolateHtml } from '#backend/lib/interpolate-html.js';
+import { isBackendRoute } from '#backend/lib/is-backend-route.js';
 
 export interface ProdStaticOptions {
   /**

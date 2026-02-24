@@ -1,18 +1,3 @@
-import type { AppType } from '@backend/app.js';
-import { e } from '@backend/schemas/error.js';
-import { createServer } from '@backend/server.js';
-import type { ServiceContainer } from '@backend/services/container.js';
-import {
-  assertJsonBody,
-  createAuthenticatedSession,
-  expectError,
-  extractCookie,
-  generateUniqueEmail,
-  getLocationHeader,
-  MINIMAL_TEST_CONFIG,
-  mockOAuthProviderFetch,
-  TEST_USER_CONFIG,
-} from '@backend/test-utils/index.js';
 import { testClient } from 'hono/testing';
 import {
   afterAll,
@@ -23,6 +8,21 @@ import {
   test,
   vi,
 } from 'vitest';
+import type { AppType } from '#backend/app.js';
+import { e } from '#backend/schemas/error.js';
+import { createServer } from '#backend/server.js';
+import type { ServiceContainer } from '#backend/services/container.js';
+import {
+  assertJsonBody,
+  createAuthenticatedSession,
+  expectError,
+  extractCookie,
+  generateUniqueEmail,
+  getLocationHeader,
+  MINIMAL_TEST_CONFIG,
+  mockOAuthProviderFetch,
+  TEST_USER_CONFIG,
+} from '#backend/test-utils/index.js';
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_USERINFO_URL = 'https://openidconnect.googleapis.com/v1/userinfo';

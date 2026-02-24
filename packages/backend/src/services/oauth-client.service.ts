@@ -1,8 +1,8 @@
-import { e } from '@backend/schemas/error.js';
-import type { r } from '@backend/schemas/response.js';
-import type { MikroService } from '@backend/services/mikro.service.js';
 import { verify } from '@node-rs/argon2';
 import type z from 'zod';
+import { e } from '#backend/schemas/error.js';
+import type { r } from '#backend/schemas/response.js';
+import type { MikroService } from '#backend/services/mikro.service.js';
 
 export class OAuthClientService {
   public constructor(private readonly mikro: MikroService) {}

@@ -1,5 +1,5 @@
-import { RevokedTokenRepository } from '@backend/repositories/revoked-token.repository.js';
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
+import { RevokedTokenRepository } from '#backend/repositories/revoked-token.repository.js';
 import { BaseSchema } from './base.entity.js';
 import { OAuthClientEntitySchema } from './oauth-client.entity.js';
 import { UserEntitySchema } from './user.entity.js';

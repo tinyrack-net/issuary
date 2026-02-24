@@ -1,8 +1,8 @@
 import { writeFileSync } from 'node:fs';
-import { OPENAPI_DOCUMENTATION } from '@backend/lib/openapi.js';
-import { createServer } from '@backend/server.js';
-import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/setup.js';
 import { generateSpecs } from 'hono-openapi';
+import { OPENAPI_DOCUMENTATION } from '#backend/lib/openapi.js';
+import { createServer } from '#backend/server.js';
+import { MINIMAL_TEST_CONFIG } from '#backend/test-utils/setup.js';
 
 /**
  * Export the OpenAPI spec as JSON.

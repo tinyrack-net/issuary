@@ -1,9 +1,9 @@
+import { z } from 'zod';
 import {
   DEFAULT_LOCALE,
   isAvailableLocale,
   type Locale,
-} from '@backend/lib/locale.js';
-import { z } from 'zod';
+} from '#backend/lib/locale.js';
 
 export const f = {
   // Common fields

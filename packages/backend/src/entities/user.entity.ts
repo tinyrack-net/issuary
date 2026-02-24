@@ -1,4 +1,3 @@
-import { UserRepository } from '@backend/repositories/user.repository.js';
 import {
   defineEntity,
   type EventArgs,
@@ -6,6 +5,7 @@ import {
   p,
 } from '@mikro-orm/core';
 import { hash, verify } from '@node-rs/argon2';
+import { UserRepository } from '#backend/repositories/user.repository.js';
 import { BaseSchema } from './base.entity.js';
 import { UserOAuthEntitySchema } from './user-oauth.entity.js';
 import { UserPasskeyEntitySchema } from './user-passkey.entity.js';

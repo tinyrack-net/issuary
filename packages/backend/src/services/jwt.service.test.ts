@@ -1,17 +1,3 @@
-import {
-  JwtKeyEntity,
-  JwtKeyStatus,
-} from '@backend/entities/jwt-key.entity.js';
-import { createServer } from '@backend/server.js';
-import type { ServiceContainer } from '@backend/services/container.js';
-import type { JwtService } from '@backend/services/jwt.service.js';
-import {
-  CLI_TEST_CONFIG,
-  createTestOAuthClient,
-  createTestUser,
-  MINIMAL_TEST_CONFIG,
-  withMikroContext,
-} from '@backend/test-utils/index.js';
 import { decodeJwt, decodeProtectedHeader } from 'jose';
 import {
   afterAll,
@@ -22,6 +8,20 @@ import {
   test,
   vi,
 } from 'vitest';
+import {
+  JwtKeyEntity,
+  JwtKeyStatus,
+} from '#backend/entities/jwt-key.entity.js';
+import { createServer } from '#backend/server.js';
+import type { ServiceContainer } from '#backend/services/container.js';
+import type { JwtService } from '#backend/services/jwt.service.js';
+import {
+  CLI_TEST_CONFIG,
+  createTestOAuthClient,
+  createTestUser,
+  MINIMAL_TEST_CONFIG,
+  withMikroContext,
+} from '#backend/test-utils/index.js';
 
 describe('JwtService', () => {
   describe('extractBearerToken', () => {

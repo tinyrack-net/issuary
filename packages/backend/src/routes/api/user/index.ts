@@ -1,5 +1,5 @@
-import type { AppEnv } from '@backend/lib/app-env.js';
 import { Hono } from 'hono';
+import type { AppEnv } from '#backend/lib/app-env.js';
 import { userDelete } from './delete.js';
 import { userOauthAccountsGet } from './oauth-accounts/get.js';
 import { userPasskeyIdDelete } from './passkeys/_id/delete.js';

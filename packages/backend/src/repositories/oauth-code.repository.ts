@@ -1,11 +1,11 @@
+import { EntityRepository } from '@mikro-orm/core';
+import { hash, verify } from '@node-rs/argon2';
 import type {
   IOAuthCodeEntity,
   OAuthCodeChallengeMethods,
-} from '@backend/entities/oauth-code.entity.js';
-import { getRandomBytes, toBase64Url } from '@backend/lib/base64url.js';
-import { e } from '@backend/schemas/error.js';
-import { EntityRepository } from '@mikro-orm/core';
-import { hash, verify } from '@node-rs/argon2';
+} from '#backend/entities/oauth-code.entity.js';
+import { getRandomBytes, toBase64Url } from '#backend/lib/base64url.js';
+import { e } from '#backend/schemas/error.js';
 
 export class OAuthCodeRepository extends EntityRepository<IOAuthCodeEntity> {
   /**

@@ -1,10 +1,10 @@
-import { OAuthClientEntitySchema } from '@backend/entities/oauth-client.entity.js';
-import { TermsEntitySchema } from '@backend/entities/terms.entity.js';
-import { TermsContentEntitySchema } from '@backend/entities/terms-content.entity.js';
-import { UserEntity } from '@backend/entities/user.entity.js';
-import type { ResolvedAppConfig } from '@backend/lib/config/index.js';
 import type { EntityManager } from '@mikro-orm/core';
 import { hash } from '@node-rs/argon2';
+import { OAuthClientEntitySchema } from '#backend/entities/oauth-client.entity.js';
+import { TermsEntitySchema } from '#backend/entities/terms.entity.js';
+import { TermsContentEntitySchema } from '#backend/entities/terms-content.entity.js';
+import { UserEntity } from '#backend/entities/user.entity.js';
+import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
 
 /**
  * ConfigSeeder

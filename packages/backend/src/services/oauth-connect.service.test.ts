@@ -1,11 +1,3 @@
-import { createServer } from '@backend/server.js';
-import type { ServiceContainer } from '@backend/services/container.js';
-import {
-  generateUniqueEmail,
-  MINIMAL_TEST_CONFIG,
-  mockOAuthProviderFetch,
-  withMikroContext,
-} from '@backend/test-utils/index.js';
 import { generateKeyPair, SignJWT } from 'jose';
 import {
   afterAll,
@@ -16,6 +8,14 @@ import {
   test,
   vi,
 } from 'vitest';
+import { createServer } from '#backend/server.js';
+import type { ServiceContainer } from '#backend/services/container.js';
+import {
+  generateUniqueEmail,
+  MINIMAL_TEST_CONFIG,
+  mockOAuthProviderFetch,
+  withMikroContext,
+} from '#backend/test-utils/index.js';
 
 /**
  * Tests for OAuthConnectService.authenticateWithOAuth()

@@ -1,5 +1,5 @@
-import type { AppEnv } from '@backend/lib/app-env.js';
 import { Hono } from 'hono';
+import type { AppEnv } from '#backend/lib/app-env.js';
 import { jwksGet } from './.well-known/jwks/get.js';
 import { oidcConfigGet } from './.well-known/openid-configuration/get.js';
 import { authorizeGet } from './authorize/get.js';

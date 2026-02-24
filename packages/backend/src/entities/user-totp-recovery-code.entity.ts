@@ -1,5 +1,5 @@
-import { UserTotpRecoveryCodeRepository } from '@backend/repositories/user-totp-recovery-code.repository.js';
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
+import { UserTotpRecoveryCodeRepository } from '#backend/repositories/user-totp-recovery-code.repository.js';
 import { BaseSchema } from './base.entity.js';
 import { UserEntitySchema } from './user.entity.js';
 

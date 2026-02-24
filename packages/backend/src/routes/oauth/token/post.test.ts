@@ -1,6 +1,9 @@
-import type { AppType } from '@backend/app.js';
-import { createServer } from '@backend/server.js';
-import type { ServiceContainer } from '@backend/services/container.js';
+import { testClient } from 'hono/testing';
+import * as jose from 'jose';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import type { AppType } from '#backend/app.js';
+import { createServer } from '#backend/server.js';
+import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
@@ -12,10 +15,7 @@ import {
   TEST_OAUTH_CLIENT_CONFIG,
   TEST_PKCE,
   TEST_USER_CONFIG,
-} from '@backend/test-utils/index.js';
-import { testClient } from 'hono/testing';
-import * as jose from 'jose';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+} from '#backend/test-utils/index.js';
 
 let app: AppType;
 let services: ServiceContainer;

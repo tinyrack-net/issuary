@@ -1,8 +1,8 @@
+import pino from 'pino';
 import {
   type AppConfigLogging,
   DEFAULT_LOGGING_CONFIG,
-} from '@backend/lib/config/schema.js';
-import pino from 'pino';
+} from '#backend/lib/config/schema.js';
 
 export type { Logger } from 'pino';
 

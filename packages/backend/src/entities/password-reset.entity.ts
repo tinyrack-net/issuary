@@ -1,5 +1,5 @@
-import { PasswordResetRepository } from '@backend/repositories/password-reset.repository.js';
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
+import { PasswordResetRepository } from '#backend/repositories/password-reset.repository.js';
 import { BaseSchema } from './base.entity.js';
 import { UserEntity } from './user.entity.js';
 

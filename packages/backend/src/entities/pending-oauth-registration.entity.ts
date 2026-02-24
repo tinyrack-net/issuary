@@ -1,5 +1,5 @@
-import { PendingOAuthRegistrationRepository } from '@backend/repositories/pending-oauth-registration.repository.js';
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
+import { PendingOAuthRegistrationRepository } from '#backend/repositories/pending-oauth-registration.repository.js';
 import { BaseSchema } from './base.entity.js';
 
 /**
