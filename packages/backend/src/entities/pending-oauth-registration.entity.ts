@@ -32,12 +32,12 @@ export const PendingOAuthRegistrationEntitySchema = defineEntity({
     accessToken: p
       .text()
       .comment('OAuth access token from the provider')
-      .lazy(true, false),
+      .lazy(),
     refreshToken: p
       .text()
       .comment('OAuth refresh token from the provider')
       .nullable()
-      .lazy(true, false),
+      .lazy(),
     expiresIn: p
       .integer()
       .comment('Token expiration duration in seconds')

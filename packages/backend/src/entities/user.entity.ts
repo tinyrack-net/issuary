@@ -33,7 +33,7 @@ export const UserEntitySchema = defineEntity({
       .string()
       .comment('Hashed password for local authentication')
       .nullable()
-      .lazy(true, false),
+      .lazy(),
     managed_by: p
       .string()
       .$type<'database' | 'config'>()

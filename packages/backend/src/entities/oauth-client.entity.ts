@@ -22,7 +22,7 @@ export const OAuthClientEntitySchema = defineEntity({
       .string()
       .comment('Hash of the client secret (null for public clients using PKCE)')
       .nullable()
-      .lazy(true, false),
+      .lazy(),
     name: p.string().comment('Human-readable name of the OAuth client'),
     grantTypes: p
       .json<string[]>()

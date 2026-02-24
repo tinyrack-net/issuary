@@ -54,7 +54,7 @@ export const JwtKeyEntitySchema = defineEntity({
     private_key: p
       .text()
       .comment('RSA private key in PEM format')
-      .lazy(true, false)
+      .lazy()
       .hidden(),
 
     /**
