@@ -2,7 +2,6 @@ import {
   type AppConfigInput,
   resolveConfig,
 } from '@backend/lib/config/index.js';
-export type { AppConfigInput };
 import { env } from '@backend/lib/env.js';
 import { interpolateHtml } from '@backend/lib/interpolate-html.js';
 import { isBackendRoute } from '@backend/lib/is-backend-route.js';
@@ -21,6 +20,8 @@ import { initializeServices } from '@backend/services/container.js';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { generateSpecs } from 'hono-openapi';
+
+export type { AppConfigInput };
 
 export interface CreateAppOptions {
   /**
@@ -102,23 +103,23 @@ export async function createApp(options: CreateAppOptions) {
       logger,
       onResponse: hasVariables
         ? async (res) => {
-          const ct = res.headers.get('content-type') ?? '';
-          if (!ct.includes('text/html')) {
-            return res;
+            const ct = res.headers.get('content-type') ?? '';
+            if (!ct.includes('text/html')) {
+              return res;
+            }
+            const raw = await res.text();
+            const interpolated = interpolateHtml(raw, variables);
+            const headers = new Headers(res.headers);
+            headers.set(
+              'content-length',
+              String(new TextEncoder().encode(interpolated).byteLength),
+            );
+            return new Response(interpolated, {
+              status: res.status,
+              statusText: res.statusText,
+              headers,
+            });
           }
-          const raw = await res.text();
-          const interpolated = interpolateHtml(raw, variables);
-          const headers = new Headers(res.headers);
-          headers.set(
-            'content-length',
-            String(new TextEncoder().encode(interpolated).byteLength),
-          );
-          return new Response(interpolated, {
-            status: res.status,
-            statusText: res.statusText,
-            headers,
-          });
-        }
         : undefined,
     });
 
