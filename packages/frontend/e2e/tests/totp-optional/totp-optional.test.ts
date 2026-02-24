@@ -1,11 +1,11 @@
-import { expect, test } from '@frontend-e2e/fixtures/totp-optional.js';
-import { performLogin } from '@frontend-e2e/helpers/login.js';
-import { fillPinInput } from '@frontend-e2e/helpers/pin-input.js';
+import { expect, test } from '#frontend-e2e/fixtures/totp-optional.js';
+import { performLogin } from '#frontend-e2e/helpers/login.js';
+import { fillPinInput } from '#frontend-e2e/helpers/pin-input.js';
 import {
   generateTotpCode,
   setupTotpViaTestApi,
-} from '@frontend-e2e/helpers/totp.js';
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/helpers/totp.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 function uniqueEmail(suffix: string): string {
   const ts = Date.now();

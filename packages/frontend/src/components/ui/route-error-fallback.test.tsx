@@ -1,7 +1,7 @@
-import { TinyAuthError } from '@frontend/libs/error';
-import { initTestI18n } from '@frontend/test-utils/i18n';
 import { beforeAll, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
+import { TinyAuthError } from '#frontend/libs/error.js';
+import { initTestI18n } from '#frontend/test-utils/i18n.js';
 import { RouteErrorFallback } from './route-error-fallback';
 
 beforeAll(() => {

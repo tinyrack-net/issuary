@@ -1,4 +1,3 @@
-import path from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
@@ -23,11 +22,6 @@ export default defineConfig({
           }),
           tailwindcss(),
         ],
-        resolve: {
-          alias: {
-            '@frontend': path.resolve(__dirname, './src'),
-          },
-        },
         test: {
           name: 'unit',
           include: ['src/**/*.test.{ts,tsx}'],

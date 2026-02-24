@@ -1,15 +1,15 @@
-import { expect, test } from '@frontend-e2e/fixtures/terms.js';
-import { consentPage } from '@frontend-e2e/helpers/consent.js';
-import { loginPasswordPage } from '@frontend-e2e/helpers/login.js';
+import { expect, test } from '#frontend-e2e/fixtures/terms.js';
+import { consentPage } from '#frontend-e2e/helpers/consent.js';
+import { loginPasswordPage } from '#frontend-e2e/helpers/login.js';
 import {
   allowConsentAndCaptureCode,
   buildAuthorizePath,
   buildOAuthFlowInput,
   exchangeAuthorizationCode,
   expectOAuthParamsInCurrentUrl,
-} from '@frontend-e2e/helpers/oauth-client-flow.js';
-import { registerPage } from '@frontend-e2e/helpers/register-page.js';
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/helpers/oauth-client-flow.js';
+import { registerPage } from '#frontend-e2e/helpers/register-page.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 const TEST_PASSWORD = 'test-password-123';
 const REQUIRED_CONSENTS = [

@@ -1,9 +1,9 @@
-import { expect, test } from '@frontend-e2e/fixtures/minimal.js';
-import { consentPage } from '@frontend-e2e/helpers/consent.js';
+import { expect, test } from '#frontend-e2e/fixtures/minimal.js';
+import { consentPage } from '#frontend-e2e/helpers/consent.js';
 import {
   loginMethodPage,
   loginPasswordPage,
-} from '@frontend-e2e/helpers/login.js';
+} from '#frontend-e2e/helpers/login.js';
 import {
   allowConsentAndCaptureCode,
   buildAuthorizePath,
@@ -12,9 +12,9 @@ import {
   denyConsentAndCaptureRedirect,
   exchangeAuthorizationCode,
   expectOAuthParamsInCurrentUrl,
-} from '@frontend-e2e/helpers/oauth-client-flow.js';
-import { registerPage } from '@frontend-e2e/helpers/register-page.js';
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/helpers/oauth-client-flow.js';
+import { registerPage } from '#frontend-e2e/helpers/register-page.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 const TEST_PASSWORD = 'test-password-123';
 

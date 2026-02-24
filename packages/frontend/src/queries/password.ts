@@ -1,6 +1,6 @@
-import { client, jsonOk } from '@frontend/libs/api';
 import { mutationOptions } from '@tanstack/react-query';
 import type { InferRequestType } from 'hono/client';
+import { client, jsonOk } from '#frontend/libs/api.js';
 
 /**
  * Set password for OAuth-only users

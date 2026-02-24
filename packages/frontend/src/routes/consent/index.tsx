@@ -1,14 +1,3 @@
-import { PageHeader } from '@frontend/components/auth/page-header.js';
-import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
-import { PageLayout } from '@frontend/features/layout/page-layout.js';
-import {
-  buildAuthorizeUrl,
-  OAuthSearchSchema,
-} from '@frontend/libs/oauth-search';
-import {
-  consentDecisionMutationOptions,
-  getConsentInfoQueryOptions,
-} from '@frontend/queries/consent';
 import { ShieldCheckIcon, XIcon } from '@phosphor-icons/react';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import {
@@ -17,6 +6,17 @@ import {
 } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { PageHeader } from '#frontend/components/auth/page-header.js';
+import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.js';
+import { PageLayout } from '#frontend/features/layout/page-layout.js';
+import {
+  buildAuthorizeUrl,
+  OAuthSearchSchema,
+} from '#frontend/libs/oauth-search.js';
+import {
+  consentDecisionMutationOptions,
+  getConsentInfoQueryOptions,
+} from '#frontend/queries/consent.js';
 
 const ConsentSearchSchema = OAuthSearchSchema.extend({
   client_id: z.string(),

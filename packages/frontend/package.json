@@ -4,6 +4,16 @@
   "version": "1.0.0",
   "license": "AGPL-3.0-only",
   "type": "module",
+  "imports": {
+    "#frontend/*": {
+      "types": "./src/*",
+      "default": "./src/*"
+    },
+    "#frontend-e2e/*": {
+      "types": "./e2e/*",
+      "default": "./e2e/*"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "dev:build": "vite build --watch",

@@ -1,4 +1,4 @@
-import { expect, test } from '@frontend-e2e/fixtures/password-disabled.js';
+import { expect, test } from '#frontend-e2e/fixtures/password-disabled.js';
 
 test.describe('Password disabled configuration', () => {
   test('login page hides password method and keeps oauth method', async ({

@@ -1,8 +1,8 @@
-import { E2E_TEST_CLIENT } from '@frontend-e2e/fixtures/index.js';
-import { expect, test } from '@frontend-e2e/fixtures/minimal.js';
-import { buildOAuthAuthorizeUrl } from '@frontend-e2e/helpers/consent.js';
-import { loginAndGoToProfile } from '@frontend-e2e/helpers/profile-page.js';
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
+import { E2E_TEST_CLIENT } from '#frontend-e2e/fixtures/index.js';
+import { expect, test } from '#frontend-e2e/fixtures/minimal.js';
+import { buildOAuthAuthorizeUrl } from '#frontend-e2e/helpers/consent.js';
+import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 /**
  * Generates a unique test email for each test to avoid session conflicts.

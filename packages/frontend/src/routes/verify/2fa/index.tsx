@@ -1,13 +1,13 @@
-import { FooterLink } from '@frontend/components/auth/footer-link.js';
-import { PageHeader } from '@frontend/components/auth/page-header.js';
-import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
-import { PageLayout } from '@frontend/features/layout/page-layout.js';
-import { extractOAuthParams } from '@frontend/libs/oauth-search.js';
-import { appConfigQueryOptions } from '@frontend/queries/config';
 import { FingerprintIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { FooterLink } from '#frontend/components/auth/footer-link.js';
+import { PageHeader } from '#frontend/components/auth/page-header.js';
+import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.js';
+import { PageLayout } from '#frontend/features/layout/page-layout.js';
+import { extractOAuthParams } from '#frontend/libs/oauth-search.js';
+import { appConfigQueryOptions } from '#frontend/queries/config.js';
 
 export const Route = createFileRoute('/verify/2fa/')({
   component: Verify2FA,

@@ -1,6 +1,6 @@
-import { expect, test } from '@frontend-e2e/fixtures/email-verification.js';
-import { forgotPasswordPage } from '@frontend-e2e/helpers/password-reset.js';
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
+import { expect, test } from '#frontend-e2e/fixtures/email-verification.js';
+import { forgotPasswordPage } from '#frontend-e2e/helpers/password-reset.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 /**
  * Generates a unique test email for each test to avoid collisions.

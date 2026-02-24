@@ -1,11 +1,11 @@
 import {
   expect,
   test,
-} from '@frontend-e2e/fixtures/email-verification-2fa-required.js';
-import { getEmailToken } from '@frontend-e2e/helpers/email-token.js';
-import { performLogin } from '@frontend-e2e/helpers/login.js';
-import { performRegister } from '@frontend-e2e/helpers/register-page.js';
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/fixtures/email-verification-2fa-required.js';
+import { getEmailToken } from '#frontend-e2e/helpers/email-token.js';
+import { performLogin } from '#frontend-e2e/helpers/login.js';
+import { performRegister } from '#frontend-e2e/helpers/register-page.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 function uniqueEmail(suffix: string): string {
   const ts = Date.now();

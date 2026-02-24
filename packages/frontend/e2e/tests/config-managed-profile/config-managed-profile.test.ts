@@ -1,6 +1,6 @@
-import { expect, test } from '@frontend-e2e/fixtures/config-managed-profile.js';
-import { E2E_TEST_USER } from '@frontend-e2e/fixtures/index.js';
-import { performLogin } from '@frontend-e2e/helpers/login.js';
+import { expect, test } from '#frontend-e2e/fixtures/config-managed-profile.js';
+import { E2E_TEST_USER } from '#frontend-e2e/fixtures/index.js';
+import { performLogin } from '#frontend-e2e/helpers/login.js';
 
 test.describe('Config-managed profile constraints', () => {
   test('config-managed user sees restricted security and delete controls', async ({

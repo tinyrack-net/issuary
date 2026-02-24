@@ -1,8 +1,8 @@
-import { expect, test } from '@frontend-e2e/fixtures/oauth-providers-terms.js';
-import { startOAuthLogin } from '@frontend-e2e/helpers/oauth.js';
-import { registerPage } from '@frontend-e2e/helpers/register-page.js';
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 import { z } from 'zod';
+import { expect, test } from '#frontend-e2e/fixtures/oauth-providers-terms.js';
+import { startOAuthLogin } from '#frontend-e2e/helpers/oauth.js';
+import { registerPage } from '#frontend-e2e/helpers/register-page.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 const TEST_PASSWORD = 'test-password-123';
 const EXISTING_COMPLETE_EMAIL = 'oauth-stub-existing-complete@allowed.test';

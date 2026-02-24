@@ -1,15 +1,15 @@
 import {
   expect,
   test,
-} from '@frontend-e2e/fixtures/oauth-providers-specific.js';
+} from '#frontend-e2e/fixtures/oauth-providers-specific.js';
 import {
   expectOAuthError,
   startOAuthLogin,
-} from '@frontend-e2e/helpers/oauth.js';
+} from '#frontend-e2e/helpers/oauth.js';
 import {
   expectOAuthCallbackApiError,
   initOAuthCallbackSession,
-} from '@frontend-e2e/helpers/oauth-callback.js';
+} from '#frontend-e2e/helpers/oauth-callback.js';
 
 test.describe('OAuth callback error handling', () => {
   test('apple form_post denied callback maps to access denied message', async ({

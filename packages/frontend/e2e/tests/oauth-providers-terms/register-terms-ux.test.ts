@@ -1,5 +1,5 @@
-import { expect, test } from '@frontend-e2e/fixtures/oauth-providers-terms.js';
-import { registerPage } from '@frontend-e2e/helpers/register-page.js';
+import { expect, test } from '#frontend-e2e/fixtures/oauth-providers-terms.js';
+import { registerPage } from '#frontend-e2e/helpers/register-page.js';
 
 const TEST_PASSWORD = 'test-password-123';
 

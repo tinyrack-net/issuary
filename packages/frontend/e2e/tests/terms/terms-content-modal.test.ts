@@ -1,6 +1,6 @@
-import { expect, test } from '@frontend-e2e/fixtures/terms.js';
-import { modal } from '@frontend-e2e/helpers/profile-page.js';
-import { registerPage } from '@frontend-e2e/helpers/register-page.js';
+import { expect, test } from '#frontend-e2e/fixtures/terms.js';
+import { modal } from '#frontend-e2e/helpers/profile-page.js';
+import { registerPage } from '#frontend-e2e/helpers/register-page.js';
 
 test.describe('TermsContentModal', () => {
   test('clicking View link on text-type terms opens content modal', async ({

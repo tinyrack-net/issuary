@@ -1,7 +1,7 @@
-import { E2E_TEST_USER } from '@frontend-e2e/fixtures/index.js';
-import { expect, test } from '@frontend-e2e/fixtures/terms.js';
-import { loginAndGoToProfile } from '@frontend-e2e/helpers/profile-page.js';
-import { registerPage } from '@frontend-e2e/helpers/register-page.js';
+import { E2E_TEST_USER } from '#frontend-e2e/fixtures/index.js';
+import { expect, test } from '#frontend-e2e/fixtures/terms.js';
+import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.js';
+import { registerPage } from '#frontend-e2e/helpers/register-page.js';
 
 test.describe('Standalone terms page', () => {
   test('displays explicit terms checkboxes', async ({ page }) => {

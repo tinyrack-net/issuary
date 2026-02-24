@@ -1,5 +1,5 @@
-import { E2E_TEST_CLIENT } from '@frontend-e2e/fixtures/index.js';
-import { expect, test } from '@frontend-e2e/fixtures/journey-oauth-2fa.js';
+import { E2E_TEST_CLIENT } from '#frontend-e2e/fixtures/index.js';
+import { expect, test } from '#frontend-e2e/fixtures/journey-oauth-2fa.js';
 import {
   allowConsentAndExpectRedirect,
   buildAuthEntryUrl,
@@ -10,15 +10,15 @@ import {
   denyConsentAndExpectRedirect,
   expectOAuthParamsPresent,
   type JourneyOAuthParams,
-} from '@frontend-e2e/helpers/journey.js';
+} from '#frontend-e2e/helpers/journey.js';
 import {
   emailVerifyPage,
   loginPasswordPage,
-} from '@frontend-e2e/helpers/login.js';
-import { registerPage } from '@frontend-e2e/helpers/register-page.js';
-import { interceptTotpSecret } from '@frontend-e2e/helpers/totp.js';
-import { enableVirtualAuthenticator } from '@frontend-e2e/helpers/webauthn.js';
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/helpers/login.js';
+import { registerPage } from '#frontend-e2e/helpers/register-page.js';
+import { interceptTotpSecret } from '#frontend-e2e/helpers/totp.js';
+import { enableVirtualAuthenticator } from '#frontend-e2e/helpers/webauthn.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 function uniqueEmail(suffix: string): string {
   const ts = Date.now();

@@ -1,9 +1,9 @@
 import {
   expect,
   test,
-} from '@frontend-e2e/fixtures/account-deletion-disabled.js';
-import { E2E_TEST_USER } from '@frontend-e2e/fixtures/index.js';
-import { loginAndGoToProfile } from '@frontend-e2e/helpers/profile-page.js';
+} from '#frontend-e2e/fixtures/account-deletion-disabled.js';
+import { E2E_TEST_USER } from '#frontend-e2e/fixtures/index.js';
+import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.js';
 
 test.describe('Account deletion disabled configuration', () => {
   test('profile hides delete account entry points', async ({ page }) => {

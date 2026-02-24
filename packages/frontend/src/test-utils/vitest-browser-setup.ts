@@ -1,1 +1,1 @@
-import '@frontend/index.css';
+import '#frontend/index.css';

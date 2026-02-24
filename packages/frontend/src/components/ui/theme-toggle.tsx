@@ -1,6 +1,6 @@
-import type { Theme, ThemeMode } from '@frontend/queries/config.js';
 import { CircleHalfIcon, MoonIcon, SunIcon } from '@phosphor-icons/react';
 import { useTranslation } from 'react-i18next';
+import type { Theme, ThemeMode } from '#frontend/queries/config.js';
 
 type ThemeToggleProps = {
   themeMode: ThemeMode;

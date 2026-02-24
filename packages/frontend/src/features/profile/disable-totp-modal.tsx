@@ -1,8 +1,3 @@
-import { AlertBanner } from '@frontend/components/ui/alert-banner.js';
-import { Modal, ModalActions } from '@frontend/components/ui/modal.js';
-import { TinyAuthError } from '@frontend/libs/error.js';
-import { getSessionQueryOptions } from '@frontend/queries/session.js';
-import { disableTotpMutationOptions } from '@frontend/queries/totp.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { ShieldCheckIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +5,11 @@ import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod';
+import { AlertBanner } from '#frontend/components/ui/alert-banner.js';
+import { Modal, ModalActions } from '#frontend/components/ui/modal.js';
+import { TinyAuthError } from '#frontend/libs/error.js';
+import { getSessionQueryOptions } from '#frontend/queries/session.js';
+import { disableTotpMutationOptions } from '#frontend/queries/totp.js';
 
 interface DisableTotpModalProps {
   isOpen: boolean;

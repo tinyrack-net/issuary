@@ -1,8 +1,8 @@
-import { expect, test } from '@frontend-e2e/fixtures/minimal.js';
+import { expect, test } from '#frontend-e2e/fixtures/minimal.js';
 import {
   performRegister,
   registerPage,
-} from '@frontend-e2e/helpers/register-page.js';
+} from '#frontend-e2e/helpers/register-page.js';
 
 /**
  * Generates a unique test email for each test to avoid collisions.

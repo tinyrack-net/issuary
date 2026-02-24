@@ -1,8 +1,8 @@
+import type { AppConfigInput } from '@tinyauth/backend/app';
 import {
   E2E_TEST_CLIENT_CONFIG,
   E2E_TEST_USER_CONFIG,
-} from '@frontend-e2e/fixtures/index.js';
-import type { AppConfigInput } from '@tinyauth/backend/app';
+} from '#frontend-e2e/fixtures/index.js';
 
 /**
  * Creates a TOTP-optional configuration for e2e tests.

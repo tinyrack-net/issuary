@@ -1,4 +1,4 @@
-import { expect, test } from '@frontend-e2e/fixtures/theme-system-multilang.js';
+import { expect, test } from '#frontend-e2e/fixtures/theme-system-multilang.js';
 
 const THEME_MODE_STORAGE_KEY = 'tinyauth-theme-mode';
 const LANGUAGE_STORAGE_KEY = 'tinyauth-language';

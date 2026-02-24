@@ -8,6 +8,7 @@
     "strictNullChecks": true,
     /* Bundler mode */
     "moduleResolution": "bundler",
+    "resolvePackageJsonImports": true,
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
@@ -21,7 +22,7 @@
     "tsBuildInfoFile": "./node_modules/.cache/tsconfig.e2e.tsbuildinfo",
     "baseUrl": ".",
     "paths": {
-      "@frontend-e2e/*": ["./e2e/*"]
+      "#frontend-e2e/*": ["./e2e/*"]
     }
   },
   "include": ["e2e/tests", "e2e/helpers", "e2e/fixtures"]

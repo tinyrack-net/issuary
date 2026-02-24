@@ -1,6 +1,6 @@
-import { createE2EServer } from '@frontend-e2e/setup/create-server.js';
 import { test as base } from '@playwright/test';
 import type { AppConfigInput } from '@tinyauth/backend/app';
+import { createE2EServer } from '#frontend-e2e/setup/create-server.js';
 
 type ConfigFactory = (
   backendPort: number,

@@ -1,4 +1,4 @@
-import { expect, test } from '@frontend-e2e/fixtures/theme-dark-fixed.js';
+import { expect, test } from '#frontend-e2e/fixtures/theme-dark-fixed.js';
 
 test.describe('Fixed dark theme configuration', () => {
   test('fixed dark mode hides theme toggle controls', async ({ page }) => {

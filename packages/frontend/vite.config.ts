@@ -17,11 +17,6 @@ export default defineConfig({
     }),
     tailwindcss(),
   ],
-  resolve: {
-    alias: {
-      '@frontend': path.resolve(__dirname, './src'),
-    },
-  },
   build: {
     outDir: path.resolve(__dirname, '../backend/public'),
     emptyOutDir: true,

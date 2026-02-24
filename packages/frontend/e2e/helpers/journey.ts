@@ -1,9 +1,9 @@
-import { consentPage } from '@frontend-e2e/helpers/consent.js';
-import { getEmailToken } from '@frontend-e2e/helpers/email-token.js';
-import { emailVerifyPage, totpSetupPage } from '@frontend-e2e/helpers/login.js';
-import { fillPinInput } from '@frontend-e2e/helpers/pin-input.js';
-import { generateTotpCode } from '@frontend-e2e/helpers/totp.js';
 import { expect, type Page } from '@playwright/test';
+import { consentPage } from '#frontend-e2e/helpers/consent.js';
+import { getEmailToken } from '#frontend-e2e/helpers/email-token.js';
+import { emailVerifyPage, totpSetupPage } from '#frontend-e2e/helpers/login.js';
+import { fillPinInput } from '#frontend-e2e/helpers/pin-input.js';
+import { generateTotpCode } from '#frontend-e2e/helpers/totp.js';
 
 export type JourneyOAuthParams = {
   client_id: string;

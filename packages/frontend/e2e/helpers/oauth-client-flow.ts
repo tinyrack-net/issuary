@@ -1,8 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { E2E_TEST_CLIENT } from '@frontend-e2e/fixtures/index.js';
-import { consentPage } from '@frontend-e2e/helpers/consent.js';
 import { type APIRequestContext, expect, type Page } from '@playwright/test';
 import { z } from 'zod';
+import { E2E_TEST_CLIENT } from '#frontend-e2e/fixtures/index.js';
+import { consentPage } from '#frontend-e2e/helpers/consent.js';
 
 export type OAuthPrompt = 'none' | 'login' | 'consent' | 'select_account';
 

@@ -1,23 +1,3 @@
-import { FooterLink } from '@frontend/components/auth/footer-link.js';
-import { IconInput } from '@frontend/components/auth/icon-input.js';
-import { PageHeader } from '@frontend/components/auth/page-header.js';
-import { SubmitButton } from '@frontend/components/auth/submit-button.js';
-import { TermsCheckboxList } from '@frontend/components/terms/terms-checkbox-list.js';
-import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
-import { PageLayout } from '@frontend/features/layout/page-layout.js';
-import { TinyAuthError } from '@frontend/libs/error.js';
-import {
-  buildAuthorizeUrl,
-  extractOAuthParams,
-  isOAuthFlow,
-  OAuthSearchSchema,
-  type SecondFactorMethod,
-} from '@frontend/libs/oauth-search.js';
-import { tick } from '@frontend/libs/promise.js';
-import { appConfigQueryOptions } from '@frontend/queries/config.js';
-import { registerMutationOptions } from '@frontend/queries/register.js';
-import { getSessionQueryOptions } from '@frontend/queries/session.js';
-import { getTermsQueryOptions } from '@frontend/queries/terms.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { EnvelopeSimpleIcon, LockIcon } from '@phosphor-icons/react';
 import {
@@ -35,6 +15,26 @@ import { useDeferredValue, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { FooterLink } from '#frontend/components/auth/footer-link.js';
+import { IconInput } from '#frontend/components/auth/icon-input.js';
+import { PageHeader } from '#frontend/components/auth/page-header.js';
+import { SubmitButton } from '#frontend/components/auth/submit-button.js';
+import { TermsCheckboxList } from '#frontend/components/terms/terms-checkbox-list.js';
+import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.js';
+import { PageLayout } from '#frontend/features/layout/page-layout.js';
+import { TinyAuthError } from '#frontend/libs/error.js';
+import {
+  buildAuthorizeUrl,
+  extractOAuthParams,
+  isOAuthFlow,
+  OAuthSearchSchema,
+  type SecondFactorMethod,
+} from '#frontend/libs/oauth-search.js';
+import { tick } from '#frontend/libs/promise.js';
+import { appConfigQueryOptions } from '#frontend/queries/config.js';
+import { registerMutationOptions } from '#frontend/queries/register.js';
+import { getSessionQueryOptions } from '#frontend/queries/session.js';
+import { getTermsQueryOptions } from '#frontend/queries/terms.js';
 
 export const Route = createFileRoute('/register/')({
   component: Register,

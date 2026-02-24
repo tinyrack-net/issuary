@@ -1,7 +1,7 @@
-import { TinyAuthError } from '@frontend/libs/error.js';
 import { WarningCircleIcon } from '@phosphor-icons/react';
 import type { ErrorComponentProps } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { TinyAuthError } from '#frontend/libs/error.js';
 
 /**
  * Minimal error layout that does NOT depend on any queries.

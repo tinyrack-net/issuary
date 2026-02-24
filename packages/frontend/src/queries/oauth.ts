@@ -1,6 +1,6 @@
-import { client, jsonOk } from '@frontend/libs/api';
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import type { InferResponseType } from 'hono/client';
+import { client, jsonOk } from '#frontend/libs/api.js';
 import { queryKeys } from './keys';
 
 export type OAuthAccountsResponse = InferResponseType<

@@ -1,11 +1,11 @@
-import { expect, test } from '@frontend-e2e/fixtures/oauth-providers-mixed.js';
+import { expect, test } from '#frontend-e2e/fixtures/oauth-providers-mixed.js';
 import {
   modal,
   removePasswordModal,
   setPasswordModal,
   unlinkOAuthModal,
-} from '@frontend-e2e/helpers/profile-page.js';
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/helpers/profile-page.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 const TEST_PASSWORD = 'test-password-123';
 

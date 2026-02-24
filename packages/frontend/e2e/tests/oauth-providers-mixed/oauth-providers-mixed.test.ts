@@ -1,10 +1,10 @@
-import { E2E_TEST_USER } from '@frontend-e2e/fixtures/index.js';
-import { expect, test } from '@frontend-e2e/fixtures/oauth-providers-mixed.js';
+import { E2E_TEST_USER } from '#frontend-e2e/fixtures/index.js';
+import { expect, test } from '#frontend-e2e/fixtures/oauth-providers-mixed.js';
 import {
   expectOAuthError,
   startOAuthLogin,
-} from '@frontend-e2e/helpers/oauth.js';
-import { loginAndGoToProfile } from '@frontend-e2e/helpers/profile-page.js';
+} from '#frontend-e2e/helpers/oauth.js';
+import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.js';
 
 test.describe('OAuth providers mixed configuration', () => {
   test('login page shows only enabled providers', async ({ page }) => {

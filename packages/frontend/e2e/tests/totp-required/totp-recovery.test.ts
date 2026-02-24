@@ -1,8 +1,8 @@
-import { expect, test } from '@frontend-e2e/fixtures/totp-required.js';
-import { performLogin, totpVerifyPage } from '@frontend-e2e/helpers/login.js';
-import { recoveryPage } from '@frontend-e2e/helpers/recovery.js';
-import { setupTotpWithRecoveryViaTestApi } from '@frontend-e2e/helpers/totp.js';
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
+import { expect, test } from '#frontend-e2e/fixtures/totp-required.js';
+import { performLogin, totpVerifyPage } from '#frontend-e2e/helpers/login.js';
+import { recoveryPage } from '#frontend-e2e/helpers/recovery.js';
+import { setupTotpWithRecoveryViaTestApi } from '#frontend-e2e/helpers/totp.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 /**
  * Generates a unique test email for each test to avoid collisions.

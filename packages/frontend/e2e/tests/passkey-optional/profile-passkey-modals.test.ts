@@ -1,12 +1,12 @@
-import { expect, test } from '@frontend-e2e/fixtures/passkey-optional.js';
+import { expect, test } from '#frontend-e2e/fixtures/passkey-optional.js';
 import {
   loginAndGoToProfile,
   managePasskeysModal,
   modal,
   setupPasskeyModal,
-} from '@frontend-e2e/helpers/profile-page.js';
-import { enableVirtualAuthenticator } from '@frontend-e2e/helpers/webauthn.js';
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/helpers/profile-page.js';
+import { enableVirtualAuthenticator } from '#frontend-e2e/helpers/webauthn.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 function uniqueEmail(suffix: string): string {
   const ts = Date.now();

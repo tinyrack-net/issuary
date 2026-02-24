@@ -1,17 +1,3 @@
-import { FooterLink } from '@frontend/components/auth/footer-link.js';
-import { PageHeader } from '@frontend/components/auth/page-header.js';
-import { SubmitButton } from '@frontend/components/auth/submit-button.js';
-import { Alert } from '@frontend/components/ui/alert.js';
-import { PageLayout } from '@frontend/features/layout/page-layout.js';
-import {
-  buildAuthorizeUrl,
-  extractOAuthParams,
-  isOAuthFlow,
-  OAuthSearchSchema,
-} from '@frontend/libs/oauth-search.js';
-import { tick } from '@frontend/libs/promise.js';
-import { registerPasskeyMutationOptions } from '@frontend/queries/passkey.js';
-import { getSessionQueryOptions } from '@frontend/queries/session.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import {
   FingerprintIcon,
@@ -24,6 +10,20 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { FooterLink } from '#frontend/components/auth/footer-link.js';
+import { PageHeader } from '#frontend/components/auth/page-header.js';
+import { SubmitButton } from '#frontend/components/auth/submit-button.js';
+import { Alert } from '#frontend/components/ui/alert.js';
+import { PageLayout } from '#frontend/features/layout/page-layout.js';
+import {
+  buildAuthorizeUrl,
+  extractOAuthParams,
+  isOAuthFlow,
+  OAuthSearchSchema,
+} from '#frontend/libs/oauth-search.js';
+import { tick } from '#frontend/libs/promise.js';
+import { registerPasskeyMutationOptions } from '#frontend/queries/passkey.js';
+import { getSessionQueryOptions } from '#frontend/queries/session.js';
 
 const SearchSchema = OAuthSearchSchema.extend({
   passkey_name: z.string().optional(),

@@ -1,8 +1,8 @@
 import {
   expect,
   test,
-} from '@frontend-e2e/fixtures/terms-complete-registration.js';
-import { registerPage } from '@frontend-e2e/helpers/register-page.js';
+} from '#frontend-e2e/fixtures/terms-complete-registration.js';
+import { registerPage } from '#frontend-e2e/helpers/register-page.js';
 
 const REDIRECT_PARAM =
   '/oauth/authorize?client_id=e2e-test-client-id&state=terms-complete-state';

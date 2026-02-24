@@ -1,4 +1,3 @@
-import type { OAuthProviderType } from '@frontend/queries/config.js';
 import {
   AppleLogoIcon,
   GithubLogoIcon,
@@ -6,6 +5,7 @@ import {
   LinkIcon,
 } from '@phosphor-icons/react';
 import { createElement, type ElementType, type ReactNode } from 'react';
+import type { OAuthProviderType } from '#frontend/queries/config.js';
 
 type LoginMethodButtonProps<C extends ElementType> = {
   as: C;

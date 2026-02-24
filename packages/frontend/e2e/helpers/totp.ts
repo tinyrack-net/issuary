@@ -1,6 +1,6 @@
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
 import type { APIRequestContext, Page, Route } from '@playwright/test';
 import { generateSync } from 'otplib';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 /**
  * Intercepts the TOTP setup API response to extract the secret.

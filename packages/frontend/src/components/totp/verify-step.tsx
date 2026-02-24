@@ -1,13 +1,13 @@
-import { SubmitButton } from '@frontend/components/auth/submit-button.js';
-import {
-  PinInput,
-  type PinInputRef,
-} from '@frontend/components/ui/pin-input.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useCallback, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { SubmitButton } from '#frontend/components/auth/submit-button.js';
+import {
+  PinInput,
+  type PinInputRef,
+} from '#frontend/components/ui/pin-input.js';
 
 export interface VerifyStepProps {
   onSubmit: (code: string) => Promise<void>;

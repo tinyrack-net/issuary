@@ -1,14 +1,14 @@
-import { expect, test } from '@frontend-e2e/fixtures/oauth-providers-terms.js';
-import { consentPage } from '@frontend-e2e/helpers/consent.js';
-import { startOAuthLogin } from '@frontend-e2e/helpers/oauth.js';
+import { expect, test } from '#frontend-e2e/fixtures/oauth-providers-terms.js';
+import { consentPage } from '#frontend-e2e/helpers/consent.js';
+import { startOAuthLogin } from '#frontend-e2e/helpers/oauth.js';
 import {
   buildAuthorizePath,
   buildOAuthFlowInput,
   captureClientRedirectAfterAction,
   exchangeAuthorizationCode,
   expectOAuthParamsInCurrentUrl,
-} from '@frontend-e2e/helpers/oauth-client-flow.js';
-import { registerPage } from '@frontend-e2e/helpers/register-page.js';
+} from '#frontend-e2e/helpers/oauth-client-flow.js';
+import { registerPage } from '#frontend-e2e/helpers/register-page.js';
 
 test.describe('OAuth client continuity through complete-registration terms', () => {
   test('new OAuth signup returns to authorize flow and reaches client callback', async ({

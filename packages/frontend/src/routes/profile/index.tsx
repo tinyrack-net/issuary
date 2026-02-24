@@ -1,31 +1,3 @@
-import { DangerZoneSection } from '@frontend/components/profile/danger-zone-section.js';
-import { LinkedAccountsSection } from '@frontend/components/profile/linked-accounts-section.js';
-import { PasskeySection } from '@frontend/components/profile/passkey-section.js';
-import { PasswordSection } from '@frontend/components/profile/password-section.js';
-import { TotpSection } from '@frontend/components/profile/totp-section.js';
-import { UnlinkOAuthModal } from '@frontend/components/profile/unlink-oauth-modal.js';
-import { UserInfoSection } from '@frontend/components/profile/user-info-section.js';
-import { Alert } from '@frontend/components/ui/alert.js';
-import { InitialAvatar } from '@frontend/components/ui/initial-avatar.js';
-import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
-import { PageLayout } from '@frontend/features/layout/page-layout.js';
-import { ChangePasswordModal } from '@frontend/features/profile/change-password-modal.js';
-import { DeleteAccountModal } from '@frontend/features/profile/delete-account-modal.js';
-import { DisableTotpModal } from '@frontend/features/profile/disable-totp-modal.js';
-import { ManagePasskeysModal } from '@frontend/features/profile/manage-passkeys-modal.js';
-import { RemovePasswordModal } from '@frontend/features/profile/remove-password-modal.js';
-import { SetPasswordModal } from '@frontend/features/profile/set-password-modal.js';
-import { SetupPasskeyModal } from '@frontend/features/profile/setup-passkey-modal.js';
-import { SetupTotpModal } from '@frontend/features/profile/setup-totp-modal.js';
-import { tick } from '@frontend/libs/promise.js';
-import { appConfigQueryOptions } from '@frontend/queries/config.js';
-import { logoutMutationOptions } from '@frontend/queries/logout.js';
-import {
-  getOAuthAuthorizeUrl,
-  oauthAccountsQueryOptions,
-  unlinkOAuthMutationOptions,
-} from '@frontend/queries/oauth.js';
-import { getSessionQueryOptions } from '@frontend/queries/session.js';
 import { SignOutIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import {
   useMutation,
@@ -41,6 +13,34 @@ import {
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { DangerZoneSection } from '#frontend/components/profile/danger-zone-section.js';
+import { LinkedAccountsSection } from '#frontend/components/profile/linked-accounts-section.js';
+import { PasskeySection } from '#frontend/components/profile/passkey-section.js';
+import { PasswordSection } from '#frontend/components/profile/password-section.js';
+import { TotpSection } from '#frontend/components/profile/totp-section.js';
+import { UnlinkOAuthModal } from '#frontend/components/profile/unlink-oauth-modal.js';
+import { UserInfoSection } from '#frontend/components/profile/user-info-section.js';
+import { Alert } from '#frontend/components/ui/alert.js';
+import { InitialAvatar } from '#frontend/components/ui/initial-avatar.js';
+import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.js';
+import { PageLayout } from '#frontend/features/layout/page-layout.js';
+import { ChangePasswordModal } from '#frontend/features/profile/change-password-modal.js';
+import { DeleteAccountModal } from '#frontend/features/profile/delete-account-modal.js';
+import { DisableTotpModal } from '#frontend/features/profile/disable-totp-modal.js';
+import { ManagePasskeysModal } from '#frontend/features/profile/manage-passkeys-modal.js';
+import { RemovePasswordModal } from '#frontend/features/profile/remove-password-modal.js';
+import { SetPasswordModal } from '#frontend/features/profile/set-password-modal.js';
+import { SetupPasskeyModal } from '#frontend/features/profile/setup-passkey-modal.js';
+import { SetupTotpModal } from '#frontend/features/profile/setup-totp-modal.js';
+import { tick } from '#frontend/libs/promise.js';
+import { appConfigQueryOptions } from '#frontend/queries/config.js';
+import { logoutMutationOptions } from '#frontend/queries/logout.js';
+import {
+  getOAuthAuthorizeUrl,
+  oauthAccountsQueryOptions,
+  unlinkOAuthMutationOptions,
+} from '#frontend/queries/oauth.js';
+import { getSessionQueryOptions } from '#frontend/queries/session.js';
 
 type PasswordModalType = 'set' | 'change' | 'remove' | null;
 type TotpModalType = 'setup' | 'disable' | null;

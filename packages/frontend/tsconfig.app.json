@@ -10,6 +10,7 @@
     "sourceMap": true,
     /* Bundler mode */
     "moduleResolution": "bundler",
+    "resolvePackageJsonImports": true,
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
@@ -22,10 +23,9 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "tsBuildInfoFile": "./node_modules/.cache/tsconfig.app.tsbuildinfo",
-    /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "@frontend/*": ["./src/*"]
+      "#frontend/*": ["./src/*"]
     }
   },
   "include": ["src"]

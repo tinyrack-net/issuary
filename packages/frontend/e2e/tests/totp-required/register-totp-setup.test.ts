@@ -1,11 +1,11 @@
-import { expect, test } from '@frontend-e2e/fixtures/totp-required.js';
-import { totpSetupPage } from '@frontend-e2e/helpers/login.js';
-import { fillPinInput } from '@frontend-e2e/helpers/pin-input.js';
-import { performRegister } from '@frontend-e2e/helpers/register-page.js';
+import { expect, test } from '#frontend-e2e/fixtures/totp-required.js';
+import { totpSetupPage } from '#frontend-e2e/helpers/login.js';
+import { fillPinInput } from '#frontend-e2e/helpers/pin-input.js';
+import { performRegister } from '#frontend-e2e/helpers/register-page.js';
 import {
   generateTotpCode,
   interceptTotpSecret,
-} from '@frontend-e2e/helpers/totp.js';
+} from '#frontend-e2e/helpers/totp.js';
 
 /**
  * Generates a unique test email for each test to avoid collisions.

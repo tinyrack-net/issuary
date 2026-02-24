@@ -1,8 +1,8 @@
-import { expect, test } from '@frontend-e2e/fixtures/passkey-required.js';
-import { performLogin } from '@frontend-e2e/helpers/login.js';
-import { performRegister } from '@frontend-e2e/helpers/register-page.js';
-import { enableVirtualAuthenticator } from '@frontend-e2e/helpers/webauthn.js';
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
+import { expect, test } from '#frontend-e2e/fixtures/passkey-required.js';
+import { performLogin } from '#frontend-e2e/helpers/login.js';
+import { performRegister } from '#frontend-e2e/helpers/register-page.js';
+import { enableVirtualAuthenticator } from '#frontend-e2e/helpers/webauthn.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 function uniqueEmail(suffix: string): string {
   const ts = Date.now();

@@ -1,8 +1,3 @@
-import { AlertBanner } from '@frontend/components/ui/alert-banner.js';
-import { Modal, ModalActions } from '@frontend/components/ui/modal.js';
-import { queryKeys } from '@frontend/queries/keys';
-import { registerPasskeyMutationOptions } from '@frontend/queries/passkey.js';
-import { getSessionQueryOptions } from '@frontend/queries/session.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { FingerprintIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +5,11 @@ import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod';
+import { AlertBanner } from '#frontend/components/ui/alert-banner.js';
+import { Modal, ModalActions } from '#frontend/components/ui/modal.js';
+import { queryKeys } from '#frontend/queries/keys.js';
+import { registerPasskeyMutationOptions } from '#frontend/queries/passkey.js';
+import { getSessionQueryOptions } from '#frontend/queries/session.js';
 
 interface SetupPasskeyModalProps {
   isOpen: boolean;

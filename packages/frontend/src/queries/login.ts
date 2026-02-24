@@ -1,6 +1,6 @@
-import { client, jsonOk } from '@frontend/libs/api';
 import { mutationOptions } from '@tanstack/react-query';
 import type { InferRequestType, InferResponseType } from 'hono/client';
+import { client, jsonOk } from '#frontend/libs/api.js';
 
 export type LoginParams = InferRequestType<
   (typeof client.api.auth.login)['$post']

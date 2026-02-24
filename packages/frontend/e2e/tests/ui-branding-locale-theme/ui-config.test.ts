@@ -1,7 +1,7 @@
 import {
   expect,
   test,
-} from '@frontend-e2e/fixtures/ui-branding-locale-theme.js';
+} from '#frontend-e2e/fixtures/ui-branding-locale-theme.js';
 
 test.describe('UI config driven rendering', () => {
   test('login page renders branding title subtitle and icon', async ({

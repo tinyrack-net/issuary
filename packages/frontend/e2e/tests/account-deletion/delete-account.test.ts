@@ -1,11 +1,11 @@
-import { expect, test } from '@frontend-e2e/fixtures/account-deletion.js';
-import { loginPasswordPage } from '@frontend-e2e/helpers/login.js';
+import { expect, test } from '#frontend-e2e/fixtures/account-deletion.js';
+import { loginPasswordPage } from '#frontend-e2e/helpers/login.js';
 import {
   deleteAccountModal,
   loginAndGoToProfile,
   modal,
-} from '@frontend-e2e/helpers/profile-page.js';
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/helpers/profile-page.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 /**
  * Generates a unique test email for each test to avoid collisions.

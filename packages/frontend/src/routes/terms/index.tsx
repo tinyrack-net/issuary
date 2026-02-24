@@ -1,17 +1,3 @@
-import { PageHeader } from '@frontend/components/auth/page-header.js';
-import { TermsCheckboxList } from '@frontend/components/terms/terms-checkbox-list.js';
-import { Alert } from '@frontend/components/ui/alert.js';
-import { RouteErrorFallback } from '@frontend/components/ui/route-error-fallback.js';
-import { PageLayout } from '@frontend/features/layout/page-layout.js';
-import { OAuthSearchSchema } from '@frontend/libs/oauth-search';
-import { tick } from '@frontend/libs/promise.js';
-import { appConfigQueryOptions } from '@frontend/queries/config';
-import { getSessionQueryOptions } from '@frontend/queries/session.js';
-import {
-  getTermsQueryOptions,
-  type TermsConsentItem,
-  termsConsentMutationOptions,
-} from '@frontend/queries/terms.js';
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { CheckIcon, WarningIcon } from '@phosphor-icons/react';
 import {
@@ -29,6 +15,20 @@ import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { PageHeader } from '#frontend/components/auth/page-header.js';
+import { TermsCheckboxList } from '#frontend/components/terms/terms-checkbox-list.js';
+import { Alert } from '#frontend/components/ui/alert.js';
+import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.js';
+import { PageLayout } from '#frontend/features/layout/page-layout.js';
+import { OAuthSearchSchema } from '#frontend/libs/oauth-search.js';
+import { tick } from '#frontend/libs/promise.js';
+import { appConfigQueryOptions } from '#frontend/queries/config.js';
+import { getSessionQueryOptions } from '#frontend/queries/session.js';
+import {
+  getTermsQueryOptions,
+  type TermsConsentItem,
+  termsConsentMutationOptions,
+} from '#frontend/queries/terms.js';
 
 const TermsSearchSchema = OAuthSearchSchema.extend({
   redirect: z.string().optional(),

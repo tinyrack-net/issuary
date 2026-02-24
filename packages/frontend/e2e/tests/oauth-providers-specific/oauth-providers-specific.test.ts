@@ -1,11 +1,11 @@
-import { E2E_TEST_USER } from '@frontend-e2e/fixtures/index.js';
+import { E2E_TEST_USER } from '#frontend-e2e/fixtures/index.js';
 import {
   expect,
   test,
-} from '@frontend-e2e/fixtures/oauth-providers-specific.js';
-import { startOAuthLogin } from '@frontend-e2e/helpers/oauth.js';
-import { loginAndGoToProfile } from '@frontend-e2e/helpers/profile-page.js';
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/fixtures/oauth-providers-specific.js';
+import { startOAuthLogin } from '#frontend-e2e/helpers/oauth.js';
+import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 test.describe('Provider-specific OAuth flows', () => {
   test('login page shows all three provider stubs', async ({ page }) => {

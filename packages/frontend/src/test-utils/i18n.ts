@@ -1,6 +1,6 @@
-import en from '@frontend/i18n/locales/en.json';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import en from '#frontend/i18n/locales/en.json';
 
 /**
  * Initialize i18n for unit tests.

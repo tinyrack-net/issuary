@@ -1,11 +1,11 @@
-import { E2E_TEST_USER } from '@frontend-e2e/fixtures/index.js';
-import { expect, test } from '@frontend-e2e/fixtures/minimal.js';
+import { E2E_TEST_USER } from '#frontend-e2e/fixtures/index.js';
+import { expect, test } from '#frontend-e2e/fixtures/minimal.js';
 import {
   changePasswordModal,
   loginAndGoToProfile,
   modal,
-} from '@frontend-e2e/helpers/profile-page.js';
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/helpers/profile-page.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 /**
  * Generates a unique test email for each test to avoid collisions.

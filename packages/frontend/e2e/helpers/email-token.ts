@@ -1,4 +1,4 @@
-import { getTestApiClient } from '@frontend-e2e/setup/api-client.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 /**
  * Fetches the email verification token for a user via the test endpoint.

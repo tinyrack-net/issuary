@@ -1,6 +1,6 @@
-import { E2E_TEST_USER } from '@frontend-e2e/fixtures/index.js';
-import { expect, test } from '@frontend-e2e/fixtures/oauth-providers.js';
-import { loginAndGoToProfile } from '@frontend-e2e/helpers/profile-page.js';
+import { E2E_TEST_USER } from '#frontend-e2e/fixtures/index.js';
+import { expect, test } from '#frontend-e2e/fixtures/oauth-providers.js';
+import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.js';
 
 test.describe('OAuth providers UI', () => {
   test('login page renders configured oauth providers', async ({ page }) => {
