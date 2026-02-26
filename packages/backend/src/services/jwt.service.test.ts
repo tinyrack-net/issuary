@@ -8,11 +8,11 @@ import {
   test,
   vi,
 } from 'vitest';
+import { createApp } from '#backend/app.js';
 import {
   JwtKeyEntity,
   JwtKeyStatus,
 } from '#backend/entities/jwt-key.entity.js';
-import { createServer } from '#backend/server.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import type { JwtService } from '#backend/services/jwt.service.js';
 import {
@@ -29,9 +29,8 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: MINIMAL_TEST_CONFIG,
-        skipListen: true,
       });
       jwtService = server.services.jwtService;
       cleanup = server.cleanup;
@@ -92,9 +91,8 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: MINIMAL_TEST_CONFIG,
-        skipListen: true,
       });
       jwtService = server.services.jwtService;
       cleanup = server.cleanup;
@@ -124,9 +122,8 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: CLI_TEST_CONFIG,
-        skipListen: true,
       });
       services = server.services;
       cleanup = server.cleanup;
@@ -217,7 +214,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
@@ -225,7 +222,6 @@ describe('JwtService', () => {
             host: 'https://auth.example.com',
           },
         },
-        skipListen: true,
       });
       services = server.services;
       cleanup = server.cleanup;
@@ -413,9 +409,8 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: MINIMAL_TEST_CONFIG,
-        skipListen: true,
       });
       services = server.services;
       cleanup = server.cleanup;
@@ -456,9 +451,8 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: MINIMAL_TEST_CONFIG,
-        skipListen: true,
       });
       services = server.services;
       cleanup = server.cleanup;
@@ -501,9 +495,8 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: CLI_TEST_CONFIG,
-        skipListen: true,
       });
       services = server.services;
       cleanup = server.cleanup;
@@ -580,9 +573,8 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: MINIMAL_TEST_CONFIG,
-        skipListen: true,
       });
       services = server.services;
       cleanup = server.cleanup;

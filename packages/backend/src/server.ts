@@ -15,12 +15,6 @@ export interface CreateServerOptions {
    * fields have defaults.
    */
   config: AppConfigInput;
-  /**
-   * Skip listening on port (useful for CLI job
-   * execution). When true, the server is initialized
-   * but does not bind to a port.
-   */
-  skipListen?: boolean;
 }
 
 export async function createServer(createOptions: CreateServerOptions) {
@@ -28,9 +22,9 @@ export async function createServer(createOptions: CreateServerOptions) {
     config: createOptions.config,
   });
 
-  // Start HTTP server if not test and not skipListen
+  // Start HTTP server if not test
   let server: ReturnType<typeof serve> | undefined;
-  if (env.APP_ENV !== 'test' && !createOptions.skipListen) {
+  if (env.APP_ENV !== 'test') {
     server = serve(
       {
         fetch: app.fetch,

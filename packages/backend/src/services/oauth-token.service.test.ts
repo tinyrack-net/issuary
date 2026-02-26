@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createServer } from '#backend/server.js';
+import { createApp } from '#backend/app.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   MINIMAL_TEST_CONFIG,
@@ -14,7 +14,7 @@ describe('OAuthTokenService', () => {
     let refreshToken: string;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
@@ -22,7 +22,6 @@ describe('OAuthTokenService', () => {
             host: 'https://auth.test.com',
           },
         },
-        skipListen: true,
       });
       services = server.services;
       cleanup = server.cleanup;

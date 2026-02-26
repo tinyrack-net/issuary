@@ -6,6 +6,7 @@ import {
   expect,
   test,
 } from 'vitest';
+import { createApp } from '#backend/app.js';
 import { EmailVerificationEntitySchema } from '#backend/entities/email-verification.entity.js';
 import {
   JwtKeyEntity,
@@ -16,7 +17,6 @@ import { PasswordResetEntitySchema } from '#backend/entities/password-reset.enti
 import { PendingOAuthRegistrationEntitySchema } from '#backend/entities/pending-oauth-registration.entity.js';
 import { RevokedTokenEntitySchema } from '#backend/entities/revoked-token.entity.js';
 import { UserEntity } from '#backend/entities/user.entity.js';
-import { createServer } from '#backend/server.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   CLI_TEST_CONFIG,
@@ -44,9 +44,8 @@ describe('CleanupService', () => {
     let clientId: string;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: CLI_TEST_CONFIG,
-        skipListen: true,
       });
       services = server.services;
       cleanup = server.cleanup;
@@ -69,14 +68,13 @@ describe('CleanupService', () => {
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledServer = await createServer({
+      const disabledServer = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
             revoked_tokens: { enabled: false },
           },
         },
-        skipListen: true,
       });
 
       try {
@@ -184,14 +182,13 @@ describe('CleanupService', () => {
 
     test('should respect retention period configuration', async () => {
       // Create app with 1 hour retention
-      const retentionServer = await createServer({
+      const retentionServer = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
             revoked_tokens: { enabled: true, retention: '1h' },
           },
         },
-        skipListen: true,
       });
 
       try {
@@ -254,7 +251,7 @@ describe('CleanupService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: {
           ...CLI_TEST_CONFIG,
           app: {
@@ -264,7 +261,6 @@ describe('CleanupService', () => {
             jwt_key_overlap_days: 7,
           },
         },
-        skipListen: true,
       });
       services = server.services;
       cleanup = server.cleanup;
@@ -285,14 +281,13 @@ describe('CleanupService', () => {
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledServer = await createServer({
+      const disabledServer = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
             jwt_keys: { enabled: false },
           },
         },
-        skipListen: true,
       });
 
       try {
@@ -310,7 +305,7 @@ describe('CleanupService', () => {
     });
 
     test('should skip when jwt_key_rotation_enabled is false', async () => {
-      const noRotationServer = await createServer({
+      const noRotationServer = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
@@ -321,7 +316,6 @@ describe('CleanupService', () => {
             jwt_keys: { enabled: true },
           },
         },
-        skipListen: true,
       });
 
       try {
@@ -565,9 +559,8 @@ describe('CleanupService', () => {
     let clientId: string;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: CLI_TEST_CONFIG,
-        skipListen: true,
       });
       services = server.services;
       cleanup = server.cleanup;
@@ -589,14 +582,13 @@ describe('CleanupService', () => {
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledServer = await createServer({
+      const disabledServer = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
             oauth_codes: { enabled: false },
           },
         },
-        skipListen: true,
       });
 
       try {
@@ -672,14 +664,13 @@ describe('CleanupService', () => {
 
     test('should not delete recently consumed codes within retention', async () => {
       // Create app with 1 hour consumed retention
-      const retentionServer = await createServer({
+      const retentionServer = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
             oauth_codes: { enabled: true, consumed_retention: '1h' },
           },
         },
-        skipListen: true,
       });
 
       try {
@@ -792,9 +783,8 @@ describe('CleanupService', () => {
     let userSub: string;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: CLI_TEST_CONFIG,
-        skipListen: true,
       });
       services = server.services;
       cleanup = server.cleanup;
@@ -814,14 +804,13 @@ describe('CleanupService', () => {
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledServer = await createServer({
+      const disabledServer = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
             email_verifications: { enabled: false },
           },
         },
-        skipListen: true,
       });
 
       try {
@@ -926,9 +915,8 @@ describe('CleanupService', () => {
     let userSub: string;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: CLI_TEST_CONFIG,
-        skipListen: true,
       });
       services = server.services;
       cleanup = server.cleanup;
@@ -948,14 +936,13 @@ describe('CleanupService', () => {
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledServer = await createServer({
+      const disabledServer = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
             password_resets: { enabled: false },
           },
         },
-        skipListen: true,
       });
 
       try {
@@ -1057,9 +1044,8 @@ describe('CleanupService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: CLI_TEST_CONFIG,
-        skipListen: true,
       });
       services = server.services;
       cleanup = server.cleanup;
@@ -1077,14 +1063,13 @@ describe('CleanupService', () => {
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledServer = await createServer({
+      const disabledServer = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
             deleted_users: { enabled: false },
           },
         },
-        skipListen: true,
       });
 
       try {
@@ -1102,7 +1087,7 @@ describe('CleanupService', () => {
     });
 
     test('should skip when account_deletion feature is disabled', async () => {
-      const noAccountDeletionServer = await createServer({
+      const noAccountDeletionServer = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
@@ -1113,7 +1098,6 @@ describe('CleanupService', () => {
             deleted_users: { enabled: true, retention: '0' },
           },
         },
-        skipListen: true,
       });
 
       try {
@@ -1224,9 +1208,8 @@ describe('CleanupService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createServer({
+      const server = await createApp({
         config: CLI_TEST_CONFIG,
-        skipListen: true,
       });
       services = server.services;
       cleanup = server.cleanup;
@@ -1244,14 +1227,13 @@ describe('CleanupService', () => {
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledServer = await createServer({
+      const disabledServer = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
             pending_oauth_registrations: { enabled: false },
           },
         },
-        skipListen: true,
       });
 
       try {
@@ -1355,7 +1337,7 @@ describe('CleanupService', () => {
     });
 
     test('should respect retention period configuration', async () => {
-      const retentionServer = await createServer({
+      const retentionServer = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -1365,7 +1347,6 @@ describe('CleanupService', () => {
             },
           },
         },
-        skipListen: true,
       });
 
       try {
