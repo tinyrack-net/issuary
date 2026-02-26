@@ -2,8 +2,8 @@ import type { RegistrationResponseJSON } from '@simplewebauthn/server';
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { AppType } from '#backend/app.js';
+import { createApp } from '#backend/app.js';
 import { e } from '#backend/schemas/error.js';
-import { createServer } from '#backend/server.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
@@ -117,7 +117,7 @@ describe('POST /api/user/passkeys/register/verify', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
@@ -754,7 +754,7 @@ describe('POST /api/user/passkeys/register/verify - Passkey disabled', () => {
   let cleanupDisabled: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],

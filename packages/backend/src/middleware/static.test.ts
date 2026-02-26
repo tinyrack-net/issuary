@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#backend/app.js';
-import { createServer } from '#backend/server.js';
+import { createApp } from '#backend/app.js';
 import { MINIMAL_TEST_CONFIG } from '#backend/test-utils/index.js';
 
 const __dirname = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
@@ -98,7 +98,7 @@ describe('static prod plugin - html_variables integration', () => {
 
     beforeAll(async () => {
       await setupTestFiles();
-      ({ app, cleanup } = await createServer({
+      ({ app, cleanup } = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
@@ -195,7 +195,7 @@ describe('static prod plugin - html_variables integration', () => {
 
     beforeAll(async () => {
       await setupTestFiles();
-      ({ app, cleanup } = await createServer({
+      ({ app, cleanup } = await createApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {

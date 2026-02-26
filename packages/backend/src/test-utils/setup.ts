@@ -11,7 +11,7 @@ import type { AppConfigInput } from '#backend/lib/config/index.js';
  *
  * @example
  * ```typescript
- * import { createServer } from '#backend/server.js';
+ * import { createApp } from '#backend/app.js';
  * import { MINIMAL_TEST_CONFIG } from '#backend/test-utils/setup.js';
  * import type { AppType } from '#backend/app.js';
  * import type { ServiceContainer } from '#backend/services/container.js';
@@ -21,7 +21,7 @@ import type { AppConfigInput } from '#backend/lib/config/index.js';
  * let cleanup: () => Promise<void>;
  *
  * beforeAll(async () => {
- *   ({ app, services, cleanup } = await createServer({
+ *   ({ app, services, cleanup } = await createApp({
  *     config: {
  *       ...MINIMAL_TEST_CONFIG,
  *       // Only add config this test actually needs:

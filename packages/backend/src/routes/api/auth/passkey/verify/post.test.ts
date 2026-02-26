@@ -1,8 +1,8 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { AppType } from '#backend/app.js';
+import { createApp } from '#backend/app.js';
 import { e } from '#backend/schemas/error.js';
-import { createServer } from '#backend/server.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
@@ -58,7 +58,7 @@ describe('POST /api/auth/passkey/verify', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -360,7 +360,7 @@ describe('POST /api/auth/passkey/verify - Success with mocked service', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -466,7 +466,7 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
   let cleanup2FA: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -683,7 +683,7 @@ describe('POST /api/auth/passkey/verify - Passkey disabled', () => {
   let cleanupDisabled: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {

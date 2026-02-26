@@ -1,8 +1,8 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#backend/app.js';
+import { createApp } from '#backend/app.js';
 import { e } from '#backend/schemas/error.js';
-import { createServer } from '#backend/server.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
@@ -28,7 +28,7 @@ describe('POST /api/auth/register', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
@@ -316,7 +316,7 @@ describe('POST /api/auth/register (signup disabled)', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
@@ -355,7 +355,7 @@ describe('POST /api/auth/register (domain wildcard pattern)', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
@@ -413,7 +413,7 @@ describe('POST /api/auth/register (exact email pattern)', () => {
   const exactEmail = 'exact-allowed@specific.com';
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
@@ -469,7 +469,7 @@ describe('POST /api/auth/register (multiple patterns)', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
@@ -537,7 +537,7 @@ describe('POST /api/auth/register (implicit consent mode)', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
@@ -626,7 +626,7 @@ describe('POST /api/auth/register (no terms configured)', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
@@ -668,7 +668,7 @@ describe('POST /api/auth/register (password disabled)', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],

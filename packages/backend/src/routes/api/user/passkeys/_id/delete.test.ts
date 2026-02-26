@@ -1,8 +1,8 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#backend/app.js';
+import { createApp } from '#backend/app.js';
 import { e } from '#backend/schemas/error.js';
-import { createServer } from '#backend/server.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
@@ -23,7 +23,7 @@ describe('DELETE /api/user/passkeys/:id', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
@@ -502,7 +502,7 @@ describe('DELETE /api/user/passkeys/:id - Last auth method protection', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -648,7 +648,7 @@ describe('DELETE /api/user/passkeys/:id - Passkey disabled', () => {
   let cleanupDisabled: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
@@ -692,7 +692,7 @@ describe('DELETE /api/user/passkeys/:id - second_factor.required: true', () => {
   let cleanupWith2FA: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createServer({
+    const server = await createApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
