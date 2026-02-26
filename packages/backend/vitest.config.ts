@@ -15,7 +15,6 @@ export default defineConfig({
         'src/test-utils/**',
         'src/db/cli.ts',
         'src/cli.ts',
-        'src/export-openapi.ts',
       ],
       reporter: ['text', 'lcov'],
       thresholds: {
