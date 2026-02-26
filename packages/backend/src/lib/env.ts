@@ -7,11 +7,10 @@ const EnvironmentSchema = z.object({
    * The application environment
    *
    * Options:
-   * - test: Used for running tests
    * - development: Used for local development
    * - production: Used for production deployments
    */
-  APP_ENV: z.enum(['test', 'development', 'production']).default('development'),
+  APP_ENV: z.enum(['development', 'production']).default('development'),
 
   /**
    * @description

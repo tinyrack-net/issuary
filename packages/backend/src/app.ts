@@ -5,7 +5,6 @@ import {
   type AppConfigInput,
   resolveConfig,
 } from '#backend/lib/config/index.js';
-import { env } from '#backend/lib/env.js';
 import { interpolateHtml } from '#backend/lib/interpolate-html.js';
 import { isBackendRoute } from '#backend/lib/is-backend-route.js';
 import { createLogger } from '#backend/lib/logger.js';
@@ -64,7 +63,7 @@ export async function createApp(options: CreateAppOptions) {
     .use(
       '*',
       cors({
-        origin: env.APP_ENV === 'development' ? '*' : config.app.host,
+        origin: config.app.host,
         credentials: true,
       }),
     )

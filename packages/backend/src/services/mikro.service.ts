@@ -17,7 +17,6 @@ import { UserTermsConsentEntity } from '#backend/entities/user-terms-consent.ent
 import { UserTotpEntitySchema } from '#backend/entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '#backend/entities/user-totp-recovery-code.entity.js';
 import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
-import { env } from '#backend/lib/env.js';
 import type { Logger } from '#backend/lib/logger.js';
 import type { EmailVerificationRepository } from '#backend/repositories/email-verification.repository.js';
 import type { JwtKeyRepository } from '#backend/repositories/jwt-key.repository.js';
@@ -99,8 +98,6 @@ export class MikroService {
 
     if (config.database.type === 'memory') {
       await orm.schema.refresh();
-    } else if (env.APP_ENV === 'development') {
-      await orm.schema.update();
     } else {
       await orm.migrator.up();
     }

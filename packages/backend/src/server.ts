@@ -2,7 +2,6 @@ import { serve } from '@hono/node-server';
 import type { AppType } from '#backend/app.js';
 import { createApp } from '#backend/app.js';
 import type { AppConfigInput } from '#backend/lib/config/index.js';
-import { env } from '#backend/lib/env.js';
 
 export type { AppType };
 
@@ -23,22 +22,16 @@ export async function createServer(createOptions: CreateServerOptions) {
   });
 
   // Start HTTP server if not test
-  let server: ReturnType<typeof serve> | undefined;
-  if (env.APP_ENV !== 'test') {
-    server = serve(
-      {
-        fetch: app.fetch,
-        port: services.config.app.port,
-        hostname: '0.0.0.0',
-      },
-      (info) => {
-        logger.info(
-          { port: info.port },
-          `Server listening on port ${info.port}`,
-        );
-      },
-    );
-  }
+  const server = serve(
+    {
+      fetch: app.fetch,
+      port: services.config.app.port,
+      hostname: '0.0.0.0',
+    },
+    (info) => {
+      logger.info({ port: info.port }, `Server listening on port ${info.port}`);
+    },
+  );
 
   return { app, services, cleanup, server, logger };
 }
