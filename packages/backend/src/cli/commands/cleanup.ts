@@ -1,5 +1,9 @@
 import { Command } from 'commander';
-import { loadConfig, resolveConfig } from '../../lib/config/index.js';
+import {
+  ConfigValidationError,
+  loadConfig,
+  resolveConfig,
+} from '../../lib/config/index.js';
 import { createLogger } from '../../lib/logger.js';
 import {
   initializeServices,
@@ -122,6 +126,13 @@ export const cleanupCommand = new Command('cleanup')
           process.exit(1);
         }
       } catch (err) {
+        if (err instanceof ConfigValidationError) {
+          console.error(err.message);
+          if (cleanup) {
+            await cleanup();
+          }
+          process.exit(1);
+        }
         // Use console.error as fallback since logger
         // may not be initialized
         console.error('Cleanup failed:', err);
