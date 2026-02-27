@@ -6,7 +6,7 @@ import type { AppType } from '#backend/app.js';
 import { interpolateHtml } from '#backend/lib/interpolate-html.js';
 import { isBackendRoute } from '#backend/lib/is-backend-route.js';
 
-export interface ProdStaticOptions {
+export interface StaticRouteOptions {
   /**
    * Key-value pairs for HTML template variable
    * interpolation using {{KEY}} syntax.
@@ -30,9 +30,9 @@ export interface ProdStaticOptions {
  * Serves from the configured publicPath with SPA
  * fallback and HTML variable interpolation.
  */
-export function registerProdStatic(
+export function registerStaticRoutes(
   app: AppType,
-  options: ProdStaticOptions,
+  options: StaticRouteOptions,
 ): void {
   const publicPath = path.resolve(options.publicPath);
   const rootIndexPath = path.join(publicPath, 'index.html');

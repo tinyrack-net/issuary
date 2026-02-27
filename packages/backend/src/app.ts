@@ -14,7 +14,7 @@ import { mikroOrmMiddleware } from '#backend/middleware/mikro-orm.js';
 import { createProxyHandler } from '#backend/middleware/proxy.js';
 import { servicesMiddleware } from '#backend/middleware/services.js';
 import { sessionMiddleware } from '#backend/middleware/session.js';
-import { registerProdStatic } from '#backend/middleware/static.js';
+import { registerStaticRoutes } from '#backend/middleware/static.js';
 import { trustedProxyGuard } from '#backend/middleware/trusted-proxy-guard.js';
 import { routes } from '#backend/routes/index.js';
 import { e, TinyAuthError } from '#backend/schemas/error.js';
@@ -139,7 +139,7 @@ export async function createApp(options: CreateAppOptions) {
       { path: frontend.path },
       'Frontend handler registered (static mode)',
     );
-    registerProdStatic(app, {
+    registerStaticRoutes(app, {
       htmlVariables: config.app.html_variables,
       publicPath: frontend.path,
     });
