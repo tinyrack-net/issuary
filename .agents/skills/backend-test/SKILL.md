@@ -21,7 +21,7 @@ in-memory test configuration instead of ad-hoc setup.
 - Keep naming aligned with file-based routing conventions.
 
 2. Build test server setup once per file.
-- In `beforeAll`, call `createServer` with
+- In `beforeAll`, call `createApp` with
   `config: { ...MINIMAL_TEST_CONFIG, ...overrides }`.
 - Keep module-level `app`, `services`, and `cleanup` variables.
 - In `afterAll`, always call `await cleanup()`.

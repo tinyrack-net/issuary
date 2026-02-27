@@ -4,7 +4,7 @@
 
 ```ts
 import type { AppType } from '@backend/app.js';
-import { createServer } from '@backend/server.js';
+import { createApp } from '@backend/app.js';
 import type { ServiceContainer } from '@backend/services/container.js';
 import { MINIMAL_TEST_CONFIG } from '@backend/test-utils/index.js';
 import { afterAll, beforeAll } from 'vitest';
@@ -14,7 +14,7 @@ let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  ({ app, services, cleanup } = await createServer({
+  ({ app, services, cleanup } = await createApp({
     config: {
       ...MINIMAL_TEST_CONFIG,
     },
