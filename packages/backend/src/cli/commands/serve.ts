@@ -31,7 +31,10 @@ export const serveCommand = new Command('serve')
         hostname: '0.0.0.0',
       },
       (info) => {
-        logger.info({ port: info.port }, `Server listening on port ${info.port}`);
+        logger.info(
+          { port: info.port },
+          `Server listening on port ${info.port}`,
+        );
       },
     );
 
