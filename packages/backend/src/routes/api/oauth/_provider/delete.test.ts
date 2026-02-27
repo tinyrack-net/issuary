@@ -133,7 +133,7 @@ describe('DELETE /api/oauth/:provider', () => {
     // Create OAuth-only user (no password)
     const email = generateUniqueEmail('oauth-only');
 
-    const _sessionCookie = await withMikroContext(services, async () => {
+    await withMikroContext(services, async () => {
       // Create user without password
       const user = services.mikro.user.create({
         email,

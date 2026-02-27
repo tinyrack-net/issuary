@@ -709,7 +709,7 @@ describe('Token Lifecycle and Rotation', () => {
       });
 
       expect(tokenRes1.status).toBe(200);
-      const _tokens = await tokenRes1.json();
+      await tokenRes1.json();
 
       // Attempt to reuse the code
       const tokenRes2 = await exchangeCodeForTokens(app, {
