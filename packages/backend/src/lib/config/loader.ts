@@ -8,6 +8,7 @@ import type { Logger } from '#backend/lib/logger.js';
 import { deepMerge } from '../deep-merge.js';
 import { env } from '../env.js';
 import { resolveEnvVariables } from '../interpolate-env.js';
+import { resolveAbsolutePath } from '../resolve-path.js';
 import { ConfigValidationError } from './format-error.js';
 import {
   type AppConfig,
@@ -79,13 +80,6 @@ function parseConfig(input: unknown): AppConfig {
     throw err;
   }
 }
-
-const resolveAbsolutePath = (configPath: string): string => {
-  if (path.isAbsolute(configPath)) {
-    return configPath;
-  }
-  return path.resolve(process.cwd(), configPath);
-};
 
 /**
  * Resolve SMTP configuration.
