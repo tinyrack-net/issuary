@@ -4,17 +4,19 @@
   "type": "module",
   "description": "",
   "license": "AGPL-3.0-only",
-  "main": "dist/cli.js",
   "exports": {
     ".": {
+      "@tinyauth/source": "./src/cli.ts",
       "types": "./dist/cli.d.ts",
       "default": "./dist/cli.js"
     },
     "./app": {
+      "@tinyauth/source": "./src/app.ts",
       "types": "./dist/app.d.ts",
       "default": "./dist/app.js"
     },
     "./rpc": {
+      "@tinyauth/source": "./src/rpc.ts",
       "types": "./dist/rpc.d.ts",
       "default": "./dist/rpc.js"
     }
@@ -22,7 +24,7 @@
   "imports": {
     "#backend/*": {
       "types": "./dist/*",
-      "development": "./src/*",
+      "@tinyauth/source": "./src/*",
       "default": "./dist/*"
     }
   },
@@ -30,20 +32,21 @@
     "tinyauth": "./dist/cli.js"
   },
   "scripts": {
-    "dev": "CONFIG_PATH=./config.dev.minimal.yaml NODE_OPTIONS='--conditions=development' tsx watch --include './src/**/*' --include ./config.dev.minimal.yaml src/cli.ts serve",
-    "dev:maximal": "CONFIG_PATH=./config.dev.yaml NODE_OPTIONS='--conditions=development' tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve",
-    "dev:cli": "CONFIG_PATH=./config.dev.yaml NODE_OPTIONS='--conditions=development' tsx src/cli.ts",
-    "test": "NODE_OPTIONS='--conditions=development --import tsx' vitest",
-    "test:coverage": "NODE_OPTIONS='--conditions=development --import tsx' vitest run --coverage",
+    "dev": "CONFIG_PATH=./config.dev.minimal.yaml NODE_OPTIONS='--conditions=@tinyauth/source' tsx watch --include './src/**/*' --include ./config.dev.minimal.yaml src/cli.ts serve",
+    "dev:maximal": "CONFIG_PATH=./config.dev.yaml NODE_OPTIONS='--conditions=@tinyauth/source' tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve",
+    "dev:cli": "CONFIG_PATH=./config.dev.yaml NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/cli.ts",
+    "test": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' vitest",
+    "test:coverage": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' vitest run --coverage",
     "start": "node dist/cli.js serve",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "build": "tsc --project tsconfig.json",
     "build:watch": "tsc -w",
     "serve": "node dist/cli.js serve",
     "job": "node dist/cli.js job",
-    "mikro-orm": "NODE_OPTIONS='--conditions=development --import tsx' mikro-orm ",
-    "mikro-orm:debug": "NODE_OPTIONS='--conditions=development --import tsx' mikro-orm debug",
-    "mikro-orm:schema:create": "NODE_OPTIONS='--conditions=development --import tsx' mikro-orm migration:create --initial",
-    "export:openapi": "NODE_OPTIONS='--conditions=development --import tsx' tsx src/cli.ts export:openapi",
+    "mikro-orm": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm ",
+    "mikro-orm:debug": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm debug",
+    "mikro-orm:schema:create": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm migration:create --initial",
+    "export:openapi": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' tsx src/cli.ts export:openapi",
     "openapi:export": "pnpm export:openapi",
     "email:preview": "email dev --dir src/emails/templates --port 3001"
   },

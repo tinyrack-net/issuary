@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import { render } from '@react-email/render';
 import type { Locale } from '#backend/lib/locale.js';
 import { getTranslations } from './i18n/index.js';
