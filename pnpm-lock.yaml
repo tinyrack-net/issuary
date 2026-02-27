@@ -405,6 +405,9 @@ importers:
       tailwindcss:
         specifier: 'catalog:'
         version: 4.1.18
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -448,6 +451,12 @@ importers:
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.3.14
+      '@tinyauth/backend':
+        specifier: workspace:*
+        version: link:../backend
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3

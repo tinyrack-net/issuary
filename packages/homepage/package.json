@@ -5,7 +5,7 @@
   "private": true,
   "license": "AGPL-3.0-only",
   "scripts": {
-    "generate:openapi": "pnpm --filter @tinyauth/backend export:openapi ../homepage/public/openapi.json",
+    "generate:openapi": "NODE_OPTIONS='--conditions=@tinyauth/source' tsx node_modules/@tinyauth/backend/src/cli.ts export:openapi public/openapi.json",
     "dev": "pnpm generate:openapi && astro dev",
     "build": "pnpm generate:openapi && astro check && astro build",
     "preview": "astro preview"
@@ -22,6 +22,8 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.6",
     "@biomejs/biome": "catalog:",
+    "@tinyauth/backend": "workspace:*",
+    "tsx": "^4.21.0",
     "typescript": "catalog:"
   }
 }
