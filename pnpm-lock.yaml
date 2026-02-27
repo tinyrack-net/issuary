@@ -187,6 +187,9 @@ importers:
       '@hono/standard-validator':
         specifier: ^0.2.2
         version: 0.2.2(@standard-schema/spec@1.1.0)(hono@4.11.9)
+      '@mikro-orm/cli':
+        specifier: ^7.0.0-rc.2
+        version: 7.0.0-rc.2(dataloader@2.2.3)
       '@mikro-orm/core':
         specifier: ^7.0.0-rc.2
         version: 7.0.0-rc.2(dataloader@2.2.3)
@@ -253,12 +256,18 @@ importers:
       pino:
         specifier: ^10.3.1
         version: 10.3.1
+      pino-pretty:
+        specifier: ^13.1.3
+        version: 13.1.3
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
       react:
         specifier: 'catalog:'
         version: 19.2.4
+      react-email:
+        specifier: ^5.2.7
+        version: 5.2.7
       yaml:
         specifier: ^2.8.2
         version: 2.8.2
@@ -269,9 +278,6 @@ importers:
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.3.14
-      '@mikro-orm/cli':
-        specifier: ^7.0.0-rc.2
-        version: 7.0.0-rc.2(dataloader@2.2.3)
       '@react-email/preview-server':
         specifier: 5.2.7
         version: 5.2.7(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -293,12 +299,6 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^4.0.18
         version: 4.0.18(@vitest/browser@4.0.18(vite@7.3.1(@types/node@24.10.11)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))(vitest@4.0.18))(vitest@4.0.18)
-      pino-pretty:
-        specifier: ^13.1.3
-        version: 13.1.3
-      react-email:
-        specifier: ^5.2.7
-        version: 5.2.7
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
