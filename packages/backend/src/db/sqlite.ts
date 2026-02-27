@@ -21,6 +21,7 @@ import { UserTermsConsentEntitySchema } from '../entities/user-terms-consent.ent
 import { UserTotpEntitySchema } from '../entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '../entities/user-totp-recovery-code.entity.js';
 import type { ResolvedAppConfig } from '../lib/config/index.js';
+import compiledFunctions from './compiled-functions.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +33,7 @@ export const mikroormSqliteConfig = (config: ResolvedAppConfig): Options => {
   return defineConfig({
     driver: SqliteDriver,
     dbName: config.database.path,
+    compiledFunctions: compiledFunctions,
     entities: [
       UserEntitySchema,
       OAuthClientEntitySchema,

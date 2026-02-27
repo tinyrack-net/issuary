@@ -20,7 +20,9 @@
       "!**/build",
       "!**/coverage",
       "!**/routeTree.gen.ts",
-      "!**/next-env.d.ts"
+      "!**/next-env.d.ts",
+      "!**/compiled-functions.js",
+      "!**/compiled-functions.d.ts"
     ]
   },
   "formatter": {
