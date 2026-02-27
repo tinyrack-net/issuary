@@ -1,4 +1,4 @@
-import type { AppConfigInput } from '@tinyauth/backend/app';
+import type { AppConfigInput } from '@tinyauth/backend';
 import { createEmailVerification2faRequiredConfig } from '#frontend-e2e/configs/email-verification-2fa-required.js';
 
 /**

@@ -1,4 +1,4 @@
-import type { AppConfigInput } from '@tinyauth/backend/app';
+import type { AppConfigInput } from '@tinyauth/backend';
 import {
   E2E_TEST_CLIENT_CONFIG,
   E2E_TEST_USER_CONFIG,

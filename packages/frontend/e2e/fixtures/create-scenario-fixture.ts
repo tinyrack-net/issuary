@@ -1,5 +1,5 @@
 import { test as base } from '@playwright/test';
-import type { AppConfigInput } from '@tinyauth/backend/app';
+import type { AppConfigInput } from '@tinyauth/backend';
 import { createE2EServer } from '#frontend-e2e/setup/create-server.js';
 
 type ConfigFactory = (

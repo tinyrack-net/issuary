@@ -37,4 +37,4 @@ export const E2E_TEST_CLIENT_CONFIG = {
   response_types: ['code'],
   grant_types: ['authorization_code'],
   scope: 'openid profile email',
-} as const;
+};

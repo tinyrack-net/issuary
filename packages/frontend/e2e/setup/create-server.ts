@@ -1,8 +1,8 @@
 import type { AddressInfo } from 'node:net';
 import { createServer as createNetServer } from 'node:net';
 import { serve } from '@hono/node-server';
-import type { AppConfigInput } from '@tinyauth/backend/app';
-import { createApp } from '@tinyauth/backend/app';
+import type { AppConfigInput } from '@tinyauth/backend';
+import { createApp } from '@tinyauth/backend';
 
 const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
 

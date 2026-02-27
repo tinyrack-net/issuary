@@ -1,4 +1,4 @@
-import type { AppType } from '@tinyauth/backend/rpc';
+import type { AppType } from '@tinyauth/backend';
 import type { ClientResponse } from 'hono/client';
 import { hc } from 'hono/client';
 import type { StatusCode, SuccessStatusCode } from 'hono/utils/http-status';
