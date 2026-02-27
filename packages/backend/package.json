@@ -11,7 +11,8 @@
   },
   "files": [
     "public",
-    "dist"
+    "dist",
+    "config.yaml"
   ],
   "publishConfig": {
     "exports": {
@@ -53,8 +54,7 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "build": "tsc --project tsconfig.json",
     "build:watch": "tsc -w",
-    "serve": "node dist/cli.js serve",
-    "job": "node dist/cli.js job",
+    "cli": "node dist/cli.js",
     "mikro-orm": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm",
     "mikro-orm:compile": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm compile",
     "mikro-orm:debug": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm debug",
