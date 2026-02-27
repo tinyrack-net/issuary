@@ -4,6 +4,8 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "composite": true,
+    "allowJs": true,
+    "checkJs": false,
 
     "paths": {
       "#backend/*": ["./src/*"]
