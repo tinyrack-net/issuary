@@ -73,7 +73,7 @@ export type AppConfigDatabaseMemory = z.infer<typeof AppConfigDatabaseMemory>;
 
 const AppConfigDatabaseSqlite = z.object({
   type: z.literal('sqlite'),
-  path: z.string().default('test.db'),
+  path: z.string().default('./test.db'),
 });
 
 export type AppConfigDatabaseSqlite = z.infer<typeof AppConfigDatabaseSqlite>;
@@ -975,7 +975,7 @@ export const AppConfigSchema = z.object({
   app: AppConfigApp,
   database: AppConfigDatabase.default({
     type: 'sqlite',
-    path: 'test.db',
+    path: './test.db',
   }),
   logging: AppConfigLogging.default(DEFAULT_LOGGING_CONFIG),
   auth: AppConfigAuth.default({
