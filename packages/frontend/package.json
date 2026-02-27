@@ -23,8 +23,8 @@
     "test:unit": "vitest",
     "test:unit:ui": "vitest --ui",
     "test:unit:preview": "VITEST_BROWSER_MODE=preview vitest",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' playwright test",
+    "test:e2e:ui": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' playwright test --ui"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -59,6 +59,7 @@
     "daisyui": "catalog:",
     "otplib": "^13.2.1",
     "tailwindcss": "catalog:",
+    "tsx": "^4.21.0",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
