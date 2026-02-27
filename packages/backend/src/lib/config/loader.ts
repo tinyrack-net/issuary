@@ -3,10 +3,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import nodemailer from 'nodemailer';
 import YAML from 'yaml';
+import z from 'zod';
 import type { Logger } from '#backend/lib/logger.js';
 import { deepMerge } from '../deep-merge.js';
 import { env } from '../env.js';
 import { resolveEnvVariables } from '../interpolate-env.js';
+import { ConfigValidationError } from './format-error.js';
 import {
   type AppConfig,
   type AppConfigInput,
@@ -62,6 +64,21 @@ const DEFAULT_CONFIG = {
     cron: '${SCHEDULER_CRON:-0 2 * * *}',
   },
 };
+
+/**
+ * Parse input through AppConfigSchema, converting ZodError into a
+ * human-readable ConfigValidationError.
+ */
+function parseConfig(input: unknown): AppConfig {
+  try {
+    return AppConfigSchema.parse(input);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      throw new ConfigValidationError(err.issues);
+    }
+    throw err;
+  }
+}
 
 const resolveAbsolutePath = (configPath: string): string => {
   if (path.isAbsolute(configPath)) {
@@ -141,7 +158,7 @@ export async function resolveConfig(
   input: AppConfigInput,
 ): Promise<ResolvedAppConfig> {
   // Parse through AppConfigSchema to apply all defaults
-  const parsed = AppConfigSchema.parse(input);
+  const parsed = parseConfig(input);
 
   // Resolve SMTP config (handle test: true case)
   const smtpConfig = await resolveSmtpConfig(parsed.smtp);
@@ -167,7 +184,7 @@ const loadConfigFromPath = (configPath: string): AppConfig => {
   const rawConfig = YAML.parse(file);
   const merged = deepMerge(DEFAULT_CONFIG, rawConfig);
   const resolvedConfig = resolveEnvVariables(merged);
-  return AppConfigSchema.parse(resolvedConfig);
+  return parseConfig(resolvedConfig);
 };
 
 /**
@@ -220,5 +237,5 @@ export function loadConfig(options?: {
     'No config file found, using environment variables with defaults',
   );
   const resolved = resolveEnvVariables(DEFAULT_CONFIG);
-  return AppConfigSchema.parse(resolved);
+  return parseConfig(resolved);
 }

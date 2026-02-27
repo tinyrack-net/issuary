@@ -6,6 +6,8 @@ export {
   formatDuration,
   parseDurationToMs,
 } from '#backend/lib/duration.js';
+// Config errors
+export { ConfigValidationError } from './format-error.js';
 // Config loader
 export { loadConfig, resolveConfig } from './loader.js';
 // OAuth resolver
