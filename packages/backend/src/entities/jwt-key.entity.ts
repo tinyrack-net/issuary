@@ -10,16 +10,18 @@ import { BaseSchema } from './base.entity.js';
  * - previous: Recently rotated out, still valid for verification
  * - retired: No longer valid for any operation
  */
-export enum JwtKeyStatus {
+export const JwtKeyStatus = {
   /** Generated but not yet active */
-  NEXT = 'next',
+  NEXT: 'next',
   /** Currently used for signing */
-  ACTIVE = 'active',
+  ACTIVE: 'active',
   /** Recently rotated, still valid for verification */
-  PREVIOUS = 'previous',
+  PREVIOUS: 'previous',
   /** No longer valid */
-  RETIRED = 'retired',
-}
+  RETIRED: 'retired',
+} as const;
+
+export type JwtKeyStatus = (typeof JwtKeyStatus)[keyof typeof JwtKeyStatus];
 
 /**
  * JWT Key Entity for asymmetric key management (RS256)

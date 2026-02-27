@@ -4,7 +4,10 @@ import type { f } from '#backend/schemas/field.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 
 export class UserConsentService {
-  public constructor(private readonly mikro: MikroService) {}
+  private readonly mikro: MikroService;
+  public constructor(mikro: MikroService) {
+    this.mikro = mikro;
+  }
 
   /**
    * Check if user has already consented to the requested scopes for a client.

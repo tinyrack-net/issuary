@@ -10,12 +10,21 @@ import type { EmailService } from './email.service.js';
 import type { TermsService } from './terms.service.js';
 
 export class UserService {
+  private readonly mikro: MikroService;
+  private readonly config: ResolvedAppConfig;
+  private readonly emailService: EmailService;
+  private readonly termsService?: TermsService | undefined;
   public constructor(
-    private readonly mikro: MikroService,
-    private readonly config: ResolvedAppConfig,
-    private readonly emailService: EmailService,
-    private readonly termsService?: TermsService,
-  ) {}
+    mikro: MikroService,
+    config: ResolvedAppConfig,
+    emailService: EmailService,
+    termsService?: TermsService,
+  ) {
+    this.mikro = mikro;
+    this.config = config;
+    this.emailService = emailService;
+    this.termsService = termsService;
+  }
 
   public async userEntityToSessionUser(
     user: Loaded<

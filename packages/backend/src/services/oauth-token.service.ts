@@ -94,13 +94,24 @@ export interface TokenResponse {
  * Supports both config-based and database-based users/clients.
  */
 export class OAuthTokenService {
+  private readonly config: ResolvedAppConfig;
+  private readonly mikro: MikroService;
+  private readonly userService: UserService;
+  private readonly oauthClientService: OAuthClientService;
+  private readonly jwtService: JwtService;
   constructor(
-    private readonly config: ResolvedAppConfig,
-    private readonly mikro: MikroService,
-    private readonly userService: UserService,
-    private readonly oauthClientService: OAuthClientService,
-    private readonly jwtService: JwtService,
-  ) {}
+    config: ResolvedAppConfig,
+    mikro: MikroService,
+    userService: UserService,
+    oauthClientService: OAuthClientService,
+    jwtService: JwtService,
+  ) {
+    this.config = config;
+    this.mikro = mikro;
+    this.userService = userService;
+    this.oauthClientService = oauthClientService;
+    this.jwtService = jwtService;
+  }
 
   /**
    * Exchange authorization code for tokens

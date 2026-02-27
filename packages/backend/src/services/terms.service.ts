@@ -48,7 +48,10 @@ export interface LocalizedTermItem {
 }
 
 export class TermsService {
-  public constructor(private readonly mikro: MikroService) {}
+  private readonly mikro: MikroService;
+  public constructor(mikro: MikroService) {
+    this.mikro = mikro;
+  }
 
   /**
    * Get all global terms from database

@@ -167,10 +167,12 @@ export class JwtService {
   /** Deduplication lock for concurrent ensureActiveKey calls */
   private ensureActiveKeyPromise: Promise<JwtKeyEntity> | null = null;
 
-  constructor(
-    private readonly config: ResolvedAppConfig,
-    private readonly mikro: MikroService,
-  ) {}
+  private readonly config: ResolvedAppConfig;
+  private readonly mikro: MikroService;
+  constructor(config: ResolvedAppConfig, mikro: MikroService) {
+    this.config = config;
+    this.mikro = mikro;
+  }
 
   // ---------------------------------------------------------------------------
   // Key Generation & Management

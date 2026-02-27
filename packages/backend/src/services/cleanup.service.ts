@@ -95,11 +95,18 @@ export interface CleanupSummary {
  * - In-process scheduler (cron-based)
  */
 export class CleanupService {
+  private readonly config: ResolvedAppConfig;
+  private readonly mikro: MikroService;
+  private readonly jwtService: JwtService;
   constructor(
-    private readonly config: ResolvedAppConfig,
-    private readonly mikro: MikroService,
-    private readonly jwtService: JwtService,
-  ) {}
+    config: ResolvedAppConfig,
+    mikro: MikroService,
+    jwtService: JwtService,
+  ) {
+    this.config = config;
+    this.mikro = mikro;
+    this.jwtService = jwtService;
+  }
 
   // ---------------------------------------------------------------------------
   // Revoked Tokens Cleanup

@@ -49,12 +49,21 @@ export interface AuthorizeResult {
 }
 
 export class OAuthAuthorizeService {
+  private readonly config: ResolvedAppConfig;
+  private readonly mikro: MikroService;
+  private readonly oauthClientService: OAuthClientService;
+  private readonly userConsentService: UserConsentService;
   public constructor(
-    private readonly config: ResolvedAppConfig,
-    private readonly mikro: MikroService,
-    private readonly oauthClientService: OAuthClientService,
-    private readonly userConsentService: UserConsentService,
-  ) {}
+    config: ResolvedAppConfig,
+    mikro: MikroService,
+    oauthClientService: OAuthClientService,
+    userConsentService: UserConsentService,
+  ) {
+    this.config = config;
+    this.mikro = mikro;
+    this.oauthClientService = oauthClientService;
+    this.userConsentService = userConsentService;
+  }
 
   /**
    * Handle OAuth authorization request

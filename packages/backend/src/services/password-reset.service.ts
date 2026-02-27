@@ -4,7 +4,10 @@ import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 
 export class PasswordResetService {
-  public constructor(private readonly mikro: MikroService) {}
+  private readonly mikro: MikroService;
+  public constructor(mikro: MikroService) {
+    this.mikro = mikro;
+  }
 
   /**
    * Generate password reset token for a user

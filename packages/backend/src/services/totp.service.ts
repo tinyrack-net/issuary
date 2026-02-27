@@ -23,10 +23,12 @@ export interface TotpSetupData {
 const RECOVERY_CODE_COUNT = 8;
 
 export class TotpService {
-  public constructor(
-    private readonly mikro: MikroService,
-    private readonly config: ResolvedAppConfig,
-  ) {}
+  private readonly mikro: MikroService;
+  private readonly config: ResolvedAppConfig;
+  public constructor(mikro: MikroService, config: ResolvedAppConfig) {
+    this.mikro = mikro;
+    this.config = config;
+  }
 
   /**
    * Generate a new TOTP secret for a user

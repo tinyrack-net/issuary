@@ -43,10 +43,12 @@ export interface PasskeyInfo {
 export class PasskeyService {
   private readonly rpName: string = 'TinyRack Auth';
 
-  public constructor(
-    private readonly mikro: MikroService,
-    private readonly config: ResolvedAppConfig,
-  ) {}
+  private readonly mikro: MikroService;
+  private readonly config: ResolvedAppConfig;
+  public constructor(mikro: MikroService, config: ResolvedAppConfig) {
+    this.mikro = mikro;
+    this.config = config;
+  }
 
   /**
    * Get rpId from config or extract from app.host hostname

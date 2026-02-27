@@ -6,11 +6,17 @@ import type { CleanupService } from '#backend/services/cleanup.service.js';
 export class SchedulerService {
   public cleanupJob: Cron | null = null;
 
+  private readonly config: ResolvedAppConfig;
+  private readonly cleanupService: CleanupService;
+  private readonly logger: Logger;
   public constructor(
-    private readonly config: ResolvedAppConfig,
-    private readonly cleanupService: CleanupService,
-    private readonly logger: Logger,
+    config: ResolvedAppConfig,
+    cleanupService: CleanupService,
+    logger: Logger,
   ) {
+    this.config = config;
+    this.cleanupService = cleanupService;
+    this.logger = logger;
     this.logger.info(
       {
         enabled: this.config.scheduler.enabled,

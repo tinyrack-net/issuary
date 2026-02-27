@@ -18,11 +18,17 @@ export class EmailService {
     SMTPTransport.Options
   > | null;
 
+  private readonly config: ResolvedAppConfig;
+  private readonly mikro: MikroService;
+  private readonly logger: Logger;
   public constructor(
-    private readonly config: ResolvedAppConfig,
-    private readonly mikro: MikroService,
-    private readonly logger: Logger,
+    config: ResolvedAppConfig,
+    mikro: MikroService,
+    logger: Logger,
   ) {
+    this.config = config;
+    this.mikro = mikro;
+    this.logger = logger;
     if (config.smtp) {
       this.transporter = nodemailer.createTransport({
         host: config.smtp.host,

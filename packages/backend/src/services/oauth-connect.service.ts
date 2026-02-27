@@ -108,12 +108,21 @@ export type OAuthCallbackResult =
 // but user-related config lookups have been removed since users are now synced to DB.
 
 export class OAuthConnectService {
+  private readonly config: ResolvedAppConfig;
+  private readonly userService: UserService;
+  private readonly mikro: MikroService;
+  private readonly termsService: TermsService;
   public constructor(
-    private readonly config: ResolvedAppConfig,
-    private readonly userService: UserService,
-    private readonly mikro: MikroService,
-    private readonly termsService: TermsService,
-  ) {}
+    config: ResolvedAppConfig,
+    userService: UserService,
+    mikro: MikroService,
+    termsService: TermsService,
+  ) {
+    this.config = config;
+    this.userService = userService;
+    this.mikro = mikro;
+    this.termsService = termsService;
+  }
 
   /**
    * Process an OAuth callback: validate session, exchange tokens, and

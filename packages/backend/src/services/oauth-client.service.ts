@@ -5,7 +5,10 @@ import type { r } from '#backend/schemas/response.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 
 export class OAuthClientService {
-  public constructor(private readonly mikro: MikroService) {}
+  private readonly mikro: MikroService;
+  public constructor(mikro: MikroService) {
+    this.mikro = mikro;
+  }
 
   /**
    * Find OAuth client by client_id from database.
