@@ -1,6 +1,7 @@
+import { serve } from '@hono/node-server';
 import { Command } from 'commander';
+import { createApp } from '../../app.js';
 import { loadConfig } from '../../lib/config/index.js';
-import { createServer } from '../../server.js';
 
 /**
  * Serve command
@@ -19,9 +20,20 @@ export const serveCommand = new Command('serve')
     const config = loadConfig({
       configPath: options.configPath,
     });
-    const { cleanup, server, logger } = await createServer({
+    const { app, cleanup, services, logger } = await createApp({
       config,
     });
+
+    const server = serve(
+      {
+        fetch: app.fetch,
+        port: services.config.app.port,
+        hostname: '0.0.0.0',
+      },
+      (info) => {
+        logger.info({ port: info.port }, `Server listening on port ${info.port}`);
+      },
+    );
 
     // Handle graceful shutdown
     const shutdown = async (signal: string) => {

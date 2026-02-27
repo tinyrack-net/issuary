@@ -6,25 +6,15 @@
   "license": "AGPL-3.0-only",
   "exports": {
     ".": {
-      "@tinyauth/source": "./src/cli.ts",
-      "types": "./dist/cli.d.ts",
-      "default": "./dist/cli.js"
-    },
-    "./app": {
-      "@tinyauth/source": "./src/app.ts",
-      "types": "./dist/app.d.ts",
-      "default": "./dist/app.js"
-    },
-    "./rpc": {
-      "@tinyauth/source": "./src/rpc.ts",
-      "types": "./dist/rpc.d.ts",
-      "default": "./dist/rpc.js"
+      "@tinyauth/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
   "imports": {
     "#backend/*": {
-      "types": "./dist/*",
       "@tinyauth/source": "./src/*",
+      "types": "./dist/*",
       "default": "./dist/*"
     }
   },
