@@ -1,266 +1,46 @@
 app:
-  host: http://localhost:8080
-  port: 8080
   cookie_secret: 3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b
-  jwt_access_token_ttl: 3600
-  jwt_refresh_token_ttl: 2592000
   allowed_signup_emails:
-    - "*" # Allow all emails
-    # - "me@winetree94.com" # Allow specific email
-    # - '*@winetree94.com'     # Allow all emails at domain
-    # - '*@vivident.xyz'       # Allow all emails at domain
-
-  # Internationalization (i18n) settings
-  supported_languages:
-    - en
-    - ko
-    - ja
-  default_language: auto
-  fallback_language: ko
-
-  # Theme settings for authentication pages
-  # light_theme: light
-  # dark_theme: dark
-  # theme_mode: system
-
-  # Background image URL for authentication pages
-  background_url: https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071
-  # Icon/logo URL displayed at the top of authentication pages (48x48)
-  icon_url: https://example.com/logo.png
-
-  # Localized title for login page (overrides default "Welcome back!")
-  title:
-    ko: tinyauth
-    en: tinyauth
-    ja: tinyauth
-
-  # Localized subtitle for login page
-  subtitle:
-    ko: 계정에 로그인하세요.
-    en: Log in to your account
-    ja: アカウントにログインしてください。
-
-  # Trust proxy configuration for reverse proxy environments
-  # Options: true (trust all), false (default), IP/CIDR string, array of IPs, or number (nth hop)
-  # trust_proxy: ["10.0.0.0/8"]
-  # trust_proxy: '127.0.0.1'
-  # trust_proxy: ['10.0.0.0/8', '172.16.0.0/12']
-
-  # Notice text for implicit consent mode (displayed on login/signup pages)
-  # Shown below OAuth buttons and signup form
+    - "*"
+  frontend:
+    mode: proxy
+    path: http://localhost:8081
   signup_implicit_terms:
     ko: 계속하면 <a href="https://example.com/terms/ko" target="_blank">이용약관</a> 및 <a href="https://example.com/privacy/ko" target="_blank">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
     en: By continuing, you agree to our <a href="https://example.com/terms/en" target="_blank">Terms of Service</a> and <a href="https://example.com/privacy/en" target="_blank">Privacy Policy</a>.
     ja: 続行することで、<a href="https://example.com/terms/ja" target="_blank">利用規約</a>および<a href="https://example.com/privacy/ja" target="_blank">プライバシーポリシー</a>に同意したものとみなされます。
 
-  # Account deletion feature
-  account_deletion: true
-
-  # HTML template variables (use {{KEY}} syntax in HTML files)
-  html_variables:
-    TITLE: tinyauth
-    DESCRIPTION: Tinyauth development server
-    FAVICON_URL: /vite.svg
-
-  # Frontend serving: proxy to Vite dev server
-  frontend:
-    mode: proxy
-    path: http://localhost:8081
-
-# Logging configuration
 logging:
-  level: info
+  level: trace
   format: pretty
-  # Suppress proxied frontend asset logs (JS, CSS, HMR, etc.)
-  # Set to true to see them
   http_log_proxy: false
 
-# Scheduler configuration
-# Controls the in-process scheduler for automated cleanup tasks.
-#
-# Deployment options:
-#   1. Single Container (default): Keep enabled: true
-#      The scheduler runs cleanup tasks automatically on a cron schedule.
-#
-#   2. Kubernetes CronJob: Set enabled: false
-#      Use external K8s CronJobs to run cleanup via CLI:
-#      $ tinyauth cleanup
-scheduler:
-  enabled: true
-  cron: "0 2 * * *" # Daily at 2 AM
+database:
+  type: sqlite
+  path: test.db
 
-# Cleanup configuration
-# Controls the retention periods for various entities.
-# Cleanup tasks are run automatically by the scheduler (if enabled)
-# or manually via `tinyauth cleanup` CLI command.
-cleanup:
-  # Revoked tokens (already expired, safe to delete immediately)
-  revoked_tokens:
+auth:
+  password:
     enabled: true
-    retention: "0" # 0 = immediate after expiry
+    email_verification: false
+    second_factor:
+      required: false
 
-  # OAuth authorization codes
-  oauth_codes:
-    enabled: true
-    consumed_retention: "24h" # Keep consumed codes for debugging
-
-  # Email verification tokens
-  email_verifications:
-    enabled: true
-    retention: "0"
-
-  # Password reset tokens
-  password_resets:
-    enabled: true
-    retention: "0"
-
-  # Soft-deleted users (permanent deletion)
-  deleted_users:
-    enabled: true
-    retention: "30d" # Retention period before permanent deletion
-
-  # JWT signing key rotation
-  jwt_keys:
-    enabled: true
-
-# Terms of Service configuration
-# Manages user consent for terms, privacy policy, and other agreements
 terms:
-  # Terms of Service (required, explicit consent)
   - id: tos
     required: true
     consent_mode: implicit
     version: "1.0.0"
-    content:
-      ko:
-        title: 이용약관
-        type: link
-        content: https://example.com/terms/ko
-      en:
-        title: Terms of Service
-        type: link
-        content: https://example.com/terms/en
-      ja:
-        title: 利用規約
-        type: link
-        content: https://example.com/terms/ja
 
-  # Privacy Policy (required, explicit consent)
   - id: privacy
     required: true
     consent_mode: implicit
     version: "1.0.0"
-    content:
-      ko:
-        title: 개인정보처리방침
-        type: link
-        content: https://example.com/privacy/ko
-      en:
-        title: Privacy Policy
-        type: link
-        content: https://example.com/privacy/en
-      ja:
-        title: プライバシーポリシー
-        type: link
-        content: https://example.com/privacy/ja
 
   - id: marketing2
     required: false
     consent_mode: explicit
     version: "1.0.0"
-    content:
-      ko:
-        title: 마케팅 정보 수신 동의
-        type: text
-        content: 이벤트, 프로모션 등 마케팅 정보를 이메일로 받아보시겠습니까?
-      en:
-        title: Marketing Communications
-        type: text
-        content: Would you like to receive marketing emails about events and promotions?
-      ja:
-        title: マーケティング情報の受信
-        type: text
-        content: イベントやプロモーションなどのマーケティング情報をメールで受け取りますか？
-
-database:
-  type: sqlite
-  path: test.db
-  # type: postgres
-  # host: ${DATABASE_HOST:-localhost}
-  # port: ${DATABASE_PORT:-5432}
-  # name: $DATABASE_NAME
-  # user: $DATABASE_USER
-  # password: $DATABASE_PASSWORD
-
-smtp:
-  host: mail.winetree94.com
-  secure: true
-  port: 465
-  user: "tester@tinyrack.net"
-  password: $SMTP_PASSWORD
-  from: "tester@tinyrack.net"
-  test: false
-
-auth:
-  password:
-    enabled: true
-    email_verification: true
-    second_factor:
-      required: false
-    totp:
-      enabled: true
-      issuer: tinyauth
-  passkey:
-    enabled: true
-    # WebAuthn Relying Party ID (domain only, no protocol/port)
-    # Must be current domain or a registrable parent domain
-    # If not specified, extracted from app.host hostname
-    # Use parent domain to share passkeys across subdomains
-    # rp_id: winetree94.com
-    #
-    # Allowed origins for WebAuthn verification
-    # If not specified, uses app.host
-    # origins:
-    #   - https://test-auth.intranet.winetree94.com
-    #   - https://other-auth.intranet.winetree94.com
-
-identity_providers:
-  - id: github
-    type: github
-    enabled: true
-    display_name: GitHub
-    client_id: $GITHUB_CLIENT_ID
-    client_secret: $GITHUB_CLIENT_SECRET
-    email_conflict_strategy: auto_link
-
-# - id: google
-#   type: google
-#   enabled: false
-#   display_name: Google
-#   client_id: $GOOGLE_CLIENT_ID
-#   client_secret: $GOOGLE_CLIENT_SECRET
-#   email_conflict_strategy: auto_link
-#
-# Example: Generic OAuth provider (custom IDP)
-# - id: custom-idp
-#   type: generic_oauth
-#   enabled: false
-#   display_name: My Custom IDP
-#   client_id: $CUSTOM_CLIENT_ID
-#   client_secret: $CUSTOM_CLIENT_SECRET
-#   authorization_url: https://idp.example.com/authorize
-#   token_url: https://idp.example.com/token
-#   userinfo_url: https://idp.example.com/userinfo
-#   scopes:
-#     - openid
-#     - email
-#     - profile
-#   userinfo_mapping:
-#     id: sub
-#     email: email
-#     email_verified: email_verified
-#     name: name
-#     picture: picture
 
 clients:
   - id: test-config-oauth-client
