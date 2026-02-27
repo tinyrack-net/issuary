@@ -1,5 +1,6 @@
 {
   "name": "@tinyauth/base",
+  "private": true,
   "version": "1.0.0",
   "scripts": {
     "dev": "pnpm -r --parallel dev",
