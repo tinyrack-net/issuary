@@ -6,16 +6,19 @@ export {
   formatDuration,
   parseDurationToMs,
 } from '#backend/lib/duration.js';
-// Config errors
-export { ConfigValidationError } from './format-error.js';
-// Config loader
-export { loadConfig, resolveConfig } from './loader.js';
+// Zod error formatting
+export {
+  ConfigValidationError,
+  formatZodError,
+} from '#backend/lib/format-zod-error.js';
 // OAuth resolver
 export {
   type ResolvedOAuthConfig,
   resolveOAuthConfig,
   type WellKnownOAuthProvider,
-} from './oauth-resolver.js';
+} from '#backend/lib/oauth-resolver.js';
+// Config loader
+export { loadConfig, resolveConfig } from './loader.js';
 // Config schemas and types
 export {
   type AppConfig,

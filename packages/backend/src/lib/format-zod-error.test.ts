@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import type z from 'zod';
-import { ConfigValidationError, formatConfigError } from './format-error.js';
+import { ConfigValidationError, formatZodError } from './format-zod-error.js';
 
-describe('formatConfigError', () => {
+describe('formatZodError', () => {
   test('formats a single issue with path and error', () => {
     const issues: z.core.$ZodIssue[] = [
       {
@@ -13,9 +13,9 @@ describe('formatConfigError', () => {
       },
     ];
 
-    const result = formatConfigError(issues);
+    const result = formatZodError(issues);
 
-    expect(result).toContain('Configuration validation failed (1 issue):');
+    expect(result).toContain('Validation failed (1 issue):');
     expect(result).toContain('1. app.cookie_secret');
     expect(result).toContain(
       'Error: Invalid input: expected string, received number',
@@ -42,9 +42,9 @@ describe('formatConfigError', () => {
       },
     ];
 
-    const result = formatConfigError(issues);
+    const result = formatZodError(issues);
 
-    expect(result).toContain('Configuration validation failed (2 issues):');
+    expect(result).toContain('Validation failed (2 issues):');
     expect(result).toContain('1. app.cookie_secret');
     expect(result).toContain(
       'Error: Too small: expected string to have >=16 characters',
@@ -66,7 +66,7 @@ describe('formatConfigError', () => {
       },
     ];
 
-    const result = formatConfigError(issues);
+    const result = formatZodError(issues);
 
     expect(result).toContain('1. clients[0].redirect_uris[1]');
   });
@@ -83,7 +83,7 @@ describe('formatConfigError', () => {
       },
     ];
 
-    const result = formatConfigError(issues);
+    const result = formatZodError(issues);
 
     expect(result).toContain('Error: Too big: expected number to be <=100');
     expect(result).toContain('Expected: number <= 100');
@@ -99,7 +99,7 @@ describe('formatConfigError', () => {
       },
     ];
 
-    const result = formatConfigError(issues);
+    const result = formatZodError(issues);
 
     expect(result).toContain('Error: Invalid URL');
     expect(result).toContain('Expected: valid url');
@@ -115,7 +115,7 @@ describe('formatConfigError', () => {
       },
     ];
 
-    const result = formatConfigError(issues);
+    const result = formatZodError(issues);
 
     expect(result).toContain('Error: Invalid union: no matching variant');
     expect(result).not.toContain('Expected:');
@@ -131,9 +131,24 @@ describe('formatConfigError', () => {
       },
     ];
 
-    const result = formatConfigError(issues);
+    const result = formatZodError(issues);
 
     expect(result).toContain('1. (root)');
+  });
+
+  test('uses custom label in header', () => {
+    const issues: z.core.$ZodIssue[] = [
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        path: ['field'],
+        message: 'Invalid input: expected string',
+      },
+    ];
+
+    const result = formatZodError(issues, 'Configuration validation');
+
+    expect(result).toContain('Configuration validation failed (1 issue):');
   });
 });
 

@@ -76,11 +76,19 @@ function formatPath(path: (string | number)[]): string {
 }
 
 /**
- * Format an array of Zod issues into a human-readable configuration
+ * Format an array of Zod issues into a human-readable validation
  * error message.
+ *
+ * @param issues - Zod validation issues to format
+ * @param label - Label for the header (default: `"Validation"`).
+ *   Produces e.g. `"Validation failed (2 issues):"` or
+ *   `"Configuration validation failed (1 issue):"`.
  */
-export function formatConfigError(issues: z.core.$ZodIssue[]): string {
-  const header = `Configuration validation failed (${issues.length} ${issues.length === 1 ? 'issue' : 'issues'}):`;
+export function formatZodError(
+  issues: z.core.$ZodIssue[],
+  label = 'Validation',
+): string {
+  const header = `${label} failed (${issues.length} ${issues.length === 1 ? 'issue' : 'issues'}):`;
 
   const entries = issues.map((issue, idx) => {
     const num = `  ${idx + 1}. `;
@@ -108,6 +116,6 @@ export class ConfigValidationError extends Error {
   override readonly name = 'ConfigValidationError';
 
   constructor(issues: z.core.$ZodIssue[]) {
-    super(formatConfigError(issues));
+    super(formatZodError(issues, 'Configuration validation'));
   }
 }

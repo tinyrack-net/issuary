@@ -1,4 +1,4 @@
-import type { AppConfigIdentityProvider } from './schema.js';
+import type { AppConfigIdentityProvider } from './config/schema.js';
 
 /**
  * Well-known OAuth providers with pre-configured endpoints.

@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest';
+import type { AppConfigIdentityProvider } from './config/schema.js';
 import {
   resolveOAuthConfig,
   WELL_KNOWN_OAUTH_PROVIDERS,
 } from './oauth-resolver.js';
-import type { AppConfigIdentityProvider } from './schema.js';
 
 describe('resolveOAuthConfig', () => {
   describe('Google', () => {

@@ -7,9 +7,9 @@ import z from 'zod';
 import type { Logger } from '#backend/lib/logger.js';
 import { deepMerge } from '../deep-merge.js';
 import { env } from '../env.js';
+import { ConfigValidationError } from '../format-zod-error.js';
 import { resolveEnvVariables } from '../interpolate-env.js';
 import { resolveAbsolutePath } from '../resolve-path.js';
-import { ConfigValidationError } from './format-error.js';
 import {
   type AppConfig,
   type AppConfigInput,
