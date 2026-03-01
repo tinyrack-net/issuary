@@ -45,11 +45,11 @@
     "tinyauth": "./dist/cli.js"
   },
   "scripts": {
-    "dev": "CONFIG_PATH=./config.dev.yaml NODE_OPTIONS='--conditions=@tinyauth/source' tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve",
+    "dev": "NODE_OPTIONS='--conditions=@tinyauth/source' tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve --config-path='./config.dev.yaml'",
     "dev:cli": "CONFIG_PATH=./config.dev.yaml NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/cli.ts",
     "test": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' vitest",
     "test:coverage": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' vitest run --coverage",
-    "clean": "rm -rf dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo",
+    "clean": "rm -rf dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo publish",
     "build": "npm run clean && tsc -b tsconfig.json",
     "build:watch": "tsc -b -w tsconfig.json",
     "cli": "node dist/cli.js",
@@ -58,7 +58,6 @@
     "mikro-orm:debug": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm debug",
     "mikro-orm:schema:create": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm migration:create --initial",
     "export:openapi": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' tsx src/cli.ts export:openapi",
-    "openapi:export": "pnpm export:openapi",
     "email:preview": "email dev --dir src/emails/templates --port 3001"
   },
   "devDependencies": {
