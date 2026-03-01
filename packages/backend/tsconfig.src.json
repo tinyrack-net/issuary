@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.src.tsbuildinfo"
+  },
+  "include": ["src/**/*", "src/**/.*/**/*", "src/**/*.json"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/**/*.test.ts",
+    "src/**/.*/**/*.test.ts",
+    "src/test-utils/**/*"
+  ]
+}

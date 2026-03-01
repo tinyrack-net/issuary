@@ -11,8 +11,7 @@
   },
   "files": [
     "public",
-    "dist",
-    "config.yaml"
+    "dist"
   ],
   "publishConfig": {
     "exports": {
@@ -50,10 +49,9 @@
     "dev:cli": "CONFIG_PATH=./config.dev.yaml NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/cli.ts",
     "test": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' vitest",
     "test:coverage": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' vitest run --coverage",
-    "start": "node dist/cli.js serve",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo",
-    "build": "tsc --project tsconfig.json",
-    "build:watch": "tsc -w",
+    "clean": "rm -rf dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo",
+    "build": "npm run clean && tsc -b tsconfig.json",
+    "build:watch": "tsc -b -w tsconfig.json",
     "cli": "node dist/cli.js",
     "mikro-orm": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm",
     "mikro-orm:compile": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm compile",

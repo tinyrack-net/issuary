@@ -3,7 +3,6 @@ import { Command } from 'commander';
 import { generateSpecs } from 'hono-openapi';
 import { createApp } from '#backend/app.js';
 import { OPENAPI_DOCUMENTATION } from '#backend/lib/openapi.js';
-import { MINIMAL_TEST_CONFIG } from '#backend/test-utils/setup.js';
 
 /**
  * Export OpenAPI command
@@ -16,7 +15,26 @@ export const exportOpenapiCommand = new Command('export:openapi')
   .argument('[output-path]', 'Write spec to file instead of stdout')
   .action(async (outputPath?: string) => {
     const { app, cleanup, logger } = await createApp({
-      config: MINIMAL_TEST_CONFIG,
+      config: {
+        app: {
+          cookie_secret:
+            '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+          allowed_signup_emails: ['*'],
+          frontend: {
+            enabled: false,
+          },
+        },
+        logging: {
+          level: 'silent',
+          format: 'json',
+        },
+        database: {
+          type: 'memory',
+        },
+        smtp: {
+          test: true,
+        },
+      },
     });
 
     try {

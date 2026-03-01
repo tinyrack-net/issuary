@@ -1,48 +1,7 @@
 {
-  "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "composite": true,
-    "allowJs": true,
-    "checkJs": false,
-
-    "paths": {
-      "#backend/*": ["./src/*"]
-    },
-
-    "module": "NodeNext",
-    "moduleResolution": "nodenext",
-    "resolvePackageJsonImports": true,
-    "target": "esnext",
-    "types": ["node"],
-    "jsx": "react-jsx",
-
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-
-    "noImplicitReturns": true,
-    "noImplicitOverride": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "strictNullChecks": true,
-    "allowImportingTsExtensions": false,
-
-    "strict": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "noUncheckedSideEffectImports": true,
-    "moduleDetection": "force",
-    "erasableSyntaxOnly": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "resolveJsonModule": true
-  },
-  "include": ["src/**/*", "src/**/.*/**/*", "src/**/*.json"],
-  "exclude": ["node_modules", "dist"]
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.src.json" },
+    { "path": "./tsconfig.test.json" }
+  ]
 }

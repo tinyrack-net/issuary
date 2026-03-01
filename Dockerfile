@@ -19,9 +19,7 @@ COPY packages/backend/ packages/backend/
 
 RUN pnpm --filter @tinyauth/frontend build
 
-RUN find packages/backend/src -name '*.test.ts' -delete && \
-    rm -f packages/backend/tsconfig.tsbuildinfo && \
-    pnpm --filter @tinyauth/backend build
+RUN pnpm --filter @tinyauth/backend build
 RUN pnpm --filter @tinyauth/backend deploy --prod --legacy /app/deploy
 
 # Stage 3: Minimal runtime image
