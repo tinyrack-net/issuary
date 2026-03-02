@@ -88,7 +88,7 @@ export class MikroService {
   ): Promise<MikroService> {
     logger.info('Initializing MikroORM...');
 
-    const dbConfigs = getDbConfigs(config);
+    const dbConfigs = getDbConfigs(config.database);
     const ormOptions: Options = {
       ...dbConfigs,
       debug: false,

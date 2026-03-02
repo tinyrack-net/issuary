@@ -20,16 +20,15 @@ import { UserPasskeyEntitySchema } from '../entities/user-passkey.entity.js';
 import { UserTermsConsentEntitySchema } from '../entities/user-terms-consent.entity.js';
 import { UserTotpEntitySchema } from '../entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '../entities/user-totp-recovery-code.entity.js';
-import type { ResolvedAppConfig } from '../lib/config/index.js';
+import type { AppConfigDatabaseMemory } from '../lib/config/schema.js';
 import compiledFunctions from './compiled-functions.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const mikroormMemoryConfig = (config: ResolvedAppConfig): Options => {
-  if (config.database.type !== 'memory') {
-    throw new Error('Database type is not memory');
-  }
+export const mikroormMemoryConfig = (
+  _database: AppConfigDatabaseMemory,
+): Options => {
   return defineConfig({
     driver: SqliteDriver,
     dbName: ':memory:',

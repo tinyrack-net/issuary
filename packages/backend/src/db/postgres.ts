@@ -4,7 +4,7 @@ import type { Options } from '@mikro-orm/core';
 import { Migrator } from '@mikro-orm/migrations';
 import { defineConfig, PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { SeedManager } from '@mikro-orm/seeder';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { AppConfigDatabasePostgres } from '#backend/lib/config/schema.js';
 import { EmailVerificationEntitySchema } from '../entities/email-verification.entity.js';
 import { JwtKeyEntitySchema } from '../entities/jwt-key.entity.js';
 import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.js';
@@ -26,10 +26,9 @@ import compiledFunctions from './compiled-functions.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const mikroormPostgresConfig = (config: ResolvedAppConfig): Options => {
-  if (config.database.type !== 'postgres') {
-    throw new Error('Database type is not postgres');
-  }
+export const mikroormPostgresConfig = (
+  database: AppConfigDatabasePostgres,
+): Options => {
   return defineConfig({
     compiledFunctions: compiledFunctions,
     driver: PostgreSqlDriver,
@@ -56,11 +55,11 @@ export const mikroormPostgresConfig = (config: ResolvedAppConfig): Options => {
       pathTs: path.join(__dirname, '../migrations/postgres'),
       glob: '!(*.d).{ts,js}',
     },
-    host: config.database.host,
-    port: config.database.port,
-    dbName: config.database.name,
-    user: config.database.user,
-    password: config.database.password,
+    host: database.host,
+    port: database.port,
+    dbName: database.name,
+    user: database.user,
+    password: database.password,
     extensions: [SeedManager, Migrator],
     driverOptions: {
       connection: {
