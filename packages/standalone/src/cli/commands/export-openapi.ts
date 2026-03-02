@@ -1,8 +1,8 @@
 import { writeFileSync } from 'node:fs';
+import { createApp } from '@tinyauth/backend';
+import { OPENAPI_DOCUMENTATION } from '@tinyauth/backend/openapi';
 import { Command } from 'commander';
 import { generateSpecs } from 'hono-openapi';
-import { createApp } from '#backend/app.js';
-import { OPENAPI_DOCUMENTATION } from '#backend/lib/openapi.js';
 
 /**
  * Export OpenAPI command

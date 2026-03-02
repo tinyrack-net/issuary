@@ -1,11 +1,11 @@
 import { serve } from '@hono/node-server';
-import { Command } from 'commander';
-import { createApp } from '../../app.js';
+import { createApp } from '@tinyauth/backend';
 import {
   type AppConfig,
   ConfigValidationError,
-  loadConfig,
-} from '../../lib/config/index.js';
+} from '@tinyauth/backend/config';
+import { Command } from 'commander';
+import { loadConfig } from '#standalone/lib/load-config.js';
 
 /**
  * Serve command

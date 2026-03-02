@@ -18,6 +18,26 @@
       ".": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
+      },
+      "./config": {
+        "types": "./dist/lib/config/index.d.ts",
+        "default": "./dist/lib/config/index.js"
+      },
+      "./logger": {
+        "types": "./dist/lib/logger.d.ts",
+        "default": "./dist/lib/logger.js"
+      },
+      "./openapi": {
+        "types": "./dist/lib/openapi.d.ts",
+        "default": "./dist/lib/openapi.js"
+      },
+      "./services": {
+        "types": "./dist/services/container.d.ts",
+        "default": "./dist/services/container.js"
+      },
+      "./db": {
+        "types": "./dist/db/index.d.ts",
+        "default": "./dist/db/index.js"
       }
     },
     "imports": {
@@ -32,6 +52,31 @@
       "@tinyauth/source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./config": {
+      "@tinyauth/source": "./src/lib/config/index.ts",
+      "types": "./dist/lib/config/index.d.ts",
+      "default": "./dist/lib/config/index.js"
+    },
+    "./logger": {
+      "@tinyauth/source": "./src/lib/logger.ts",
+      "types": "./dist/lib/logger.d.ts",
+      "default": "./dist/lib/logger.js"
+    },
+    "./openapi": {
+      "@tinyauth/source": "./src/lib/openapi.ts",
+      "types": "./dist/lib/openapi.d.ts",
+      "default": "./dist/lib/openapi.js"
+    },
+    "./services": {
+      "@tinyauth/source": "./src/services/container.ts",
+      "types": "./dist/services/container.d.ts",
+      "default": "./dist/services/container.js"
+    },
+    "./db": {
+      "@tinyauth/source": "./src/db/index.ts",
+      "types": "./dist/db/index.d.ts",
+      "default": "./dist/db/index.js"
     }
   },
   "imports": {
@@ -41,23 +86,12 @@
       "default": "./dist/*"
     }
   },
-  "bin": {
-    "tinyauth": "./dist/cli.js"
-  },
   "scripts": {
-    "dev": "NODE_OPTIONS='--conditions=@tinyauth/source' tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve --config-path='./config.dev.yaml'",
-    "dev:cli": "CONFIG_PATH=./config.dev.yaml NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/cli.ts",
     "test": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' vitest",
     "test:coverage": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' vitest run --coverage",
     "clean": "rm -rf dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo publish",
     "build": "npm run clean && tsc -b tsconfig.json",
     "build:watch": "tsc -b -w tsconfig.json",
-    "cli": "node dist/cli.js",
-    "mikro-orm": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm",
-    "mikro-orm:compile": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm compile",
-    "mikro-orm:debug": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm debug",
-    "mikro-orm:schema:create": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm migration:create --initial",
-    "export:openapi": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' tsx src/cli.ts export:openapi",
     "email:preview": "email dev --dir src/emails/templates --port 3001"
   },
   "devDependencies": {
@@ -75,7 +109,6 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "@hono/node-server": "catalog:",
     "@hono/standard-validator": "^0.2.2",
     "@mikro-orm/cli": "^7.0.0-rc.2",
     "@mikro-orm/core": "^7.0.0-rc.2",
@@ -90,9 +123,7 @@
     "@react-email/tailwind": "^2.0.4",
     "@scalar/hono-api-reference": "^0.5.175",
     "@simplewebauthn/server": "^13.2.2",
-    "commander": "^14.0.3",
     "croner": "^10.0.1",
-    "dotenv": "^17.2.4",
     "hono": "catalog:",
     "hono-openapi": "^1.2.0",
     "jose": "catalog:",
@@ -104,13 +135,6 @@
     "pino": "^10.3.1",
     "qrcode": "^1.5.4",
     "react": "catalog:",
-    "yaml": "^2.8.2",
     "zod": "catalog:"
-  },
-  "mikro-orm": {
-    "configPaths": [
-      "./src/db/cli.ts",
-      "./dist/db/cli.js"
-    ]
   }
 }

@@ -18,7 +18,7 @@ export {
   type WellKnownOAuthProvider,
 } from '#backend/lib/oauth-resolver.js';
 // Config loader
-export { loadConfig, resolveConfig } from './loader.js';
+export { parseConfig, resolveConfig } from './loader.js';
 // Config schemas and types
 export {
   type AppConfig,

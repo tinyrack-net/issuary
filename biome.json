@@ -96,7 +96,7 @@
       }
     },
     {
-      "includes": ["packages/backend/src/lib/config/loader.ts"],
+      "includes": ["packages/standalone/src/lib/load-config.ts"],
       "linter": {
         "rules": {
           "suspicious": {

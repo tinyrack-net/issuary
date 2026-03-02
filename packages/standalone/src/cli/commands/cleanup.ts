@@ -1,14 +1,11 @@
-import { Command } from 'commander';
-import {
-  ConfigValidationError,
-  loadConfig,
-  resolveConfig,
-} from '../../lib/config/index.js';
-import { createLogger } from '../../lib/logger.js';
+import { ConfigValidationError, resolveConfig } from '@tinyauth/backend/config';
+import { createLogger } from '@tinyauth/backend/logger';
 import {
   initializeServices,
   type ServiceContainer,
-} from '../../services/container.js';
+} from '@tinyauth/backend/services';
+import { Command } from 'commander';
+import { loadConfig } from '#standalone/lib/load-config.js';
 
 /**
  * Cleanup command
