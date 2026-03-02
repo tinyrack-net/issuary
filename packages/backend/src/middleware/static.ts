@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { serveStatic } from '@hono/node-server/serve-static';
 import { getMimeType } from 'hono/utils/mime';
 import type { AppType } from '#backend/app.js';
 import { interpolateHtml } from '#backend/lib/interpolate-html.js';
@@ -87,16 +86,6 @@ export function registerStaticRoutes(
   function isSafePath(resolved: string): boolean {
     return (
       resolved === publicPath || resolved.startsWith(`${publicPath}${path.sep}`)
-    );
-  }
-
-  // Serve static files when no html_variables
-  if (!hasVariables) {
-    app.use(
-      '*',
-      serveStatic({
-        root: publicPath,
-      }),
     );
   }
 
