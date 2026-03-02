@@ -29,7 +29,8 @@ export const exportOpenapiCommand = new Command('export:openapi')
           format: 'json',
         },
         database: {
-          type: 'memory',
+          type: 'sqlite',
+          test: true,
         },
         smtp: {
           test: true,

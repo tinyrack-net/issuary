@@ -1,6 +1,5 @@
 import type { Options } from '@mikro-orm/core';
 import type { AppConfigDatabase } from '#backend/lib/config/schema.js';
-import { mikroormMemoryConfig } from './memory.js';
 import { mikroormPostgresConfig } from './postgres.js';
 import { mikroormSqliteConfig } from './sqlite.js';
 
@@ -15,9 +14,6 @@ export function getDbConfigs(database: AppConfigDatabase): Options {
     }
     case 'sqlite': {
       return mikroormSqliteConfig(database);
-    }
-    case 'memory': {
-      return mikroormMemoryConfig(database);
     }
   }
 }

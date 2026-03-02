@@ -53,7 +53,8 @@ export const MINIMAL_TEST_CONFIG = {
     format: 'json',
   },
   database: {
-    type: 'memory',
+    type: 'sqlite',
+    test: true,
   },
   smtp: {
     test: true,

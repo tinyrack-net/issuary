@@ -35,7 +35,8 @@ export function createTermsConfig(
       format: 'json',
     },
     database: {
-      type: 'memory',
+      type: 'sqlite',
+      test: true,
     },
     terms: [
       {

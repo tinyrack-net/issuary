@@ -43,7 +43,8 @@ export function createTotpRequiredConfig(
       format: 'json',
     },
     database: {
-      type: 'memory',
+      type: 'sqlite',
+      test: true,
     },
     users: [E2E_TEST_USER_CONFIG],
     clients: [E2E_TEST_CLIENT_CONFIG],

@@ -65,15 +65,10 @@ export type AppConfigClient = z.infer<typeof AppConfigClient>;
 // Database
 // ---------------------------------------------------------------------------
 
-const AppConfigDatabaseMemory = z.object({
-  type: z.literal('memory'),
-});
-
-export type AppConfigDatabaseMemory = z.infer<typeof AppConfigDatabaseMemory>;
-
 const AppConfigDatabaseSqlite = z.object({
   type: z.literal('sqlite'),
   path: z.string().default('./test.db'),
+  test: z.boolean().default(false),
 });
 
 export type AppConfigDatabaseSqlite = z.infer<typeof AppConfigDatabaseSqlite>;
@@ -92,7 +87,6 @@ export type AppConfigDatabasePostgres = z.infer<
 >;
 
 const AppConfigDatabase = z.discriminatedUnion('type', [
-  AppConfigDatabaseMemory,
   AppConfigDatabaseSqlite,
   AppConfigDatabasePostgres,
 ]);
@@ -976,6 +970,7 @@ export const AppConfigSchema = z.object({
   database: AppConfigDatabase.default({
     type: 'sqlite',
     path: './test.db',
+    test: false,
   }),
   logging: AppConfigLogging.default(DEFAULT_LOGGING_CONFIG),
   auth: AppConfigAuth.default({

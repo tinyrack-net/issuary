@@ -96,7 +96,7 @@ export class MikroService {
     };
     const orm = await MikroORM.init(ormOptions);
 
-    if (config.database.type === 'memory') {
+    if (config.database.type === 'sqlite' && config.database.test) {
       await orm.schema.refresh();
     } else {
       await orm.migrator.up();

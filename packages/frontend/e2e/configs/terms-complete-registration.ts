@@ -35,7 +35,8 @@ export function createTermsCompleteRegistrationConfig(
       format: 'json',
     },
     database: {
-      type: 'memory',
+      type: 'sqlite',
+      test: true,
     },
     terms: [
       {

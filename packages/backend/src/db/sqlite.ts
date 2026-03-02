@@ -31,7 +31,7 @@ export const mikroormSqliteConfig = (
 ): Options => {
   return defineConfig({
     driver: SqliteDriver,
-    dbName: database.path,
+    dbName: database.test ? ':memory:' : database.path,
     compiledFunctions: compiledFunctions,
     entities: [
       UserEntitySchema,

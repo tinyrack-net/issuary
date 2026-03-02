@@ -128,7 +128,8 @@ export function createOauthProvidersTermsConfig(
       format: 'json',
     },
     database: {
-      type: 'memory',
+      type: 'sqlite',
+      test: true,
     },
     terms: [
       {
