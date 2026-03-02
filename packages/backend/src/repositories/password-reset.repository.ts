@@ -37,7 +37,7 @@ export class PasswordResetRepository extends EntityRepository<IPasswordResetEnti
     });
 
     // Persist to database
-    await this.getEntityManager().persist(entity);
+    this.getEntityManager().persist(entity);
 
     return entity;
   }

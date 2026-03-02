@@ -31,7 +31,7 @@ export class EmailVerificationRepository extends EntityRepository<IEmailVerifica
       expiresAt,
     });
 
-    await this.getEntityManager().persist(entity);
+    this.getEntityManager().persist(entity);
 
     return entity;
   }
