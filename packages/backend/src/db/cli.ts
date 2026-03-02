@@ -8,4 +8,5 @@ import { getDbConfigs } from './index.js';
  */
 const externalConfig = loadConfig();
 const config = await resolveConfig(externalConfig);
-export default getDbConfigs(config.database);
+
+export default await getDbConfigs(config.database);

@@ -66,6 +66,7 @@ export const mikroormPostgresConfig = (
         ssl: true,
       },
     },
-    debug: true,
+    dynamicImportProvider: (id: string) => import(id),
+    debug: false,
   });
 };

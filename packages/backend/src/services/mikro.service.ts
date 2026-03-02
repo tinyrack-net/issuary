@@ -1,4 +1,4 @@
-import { MikroORM, type Options } from '@mikro-orm/core';
+import { MikroORM } from '@mikro-orm/core';
 import { getDbConfigs } from '#backend/db/index.js';
 import { EmailVerificationEntitySchema } from '#backend/entities/email-verification.entity.js';
 import { JwtKeyEntity } from '#backend/entities/jwt-key.entity.js';
@@ -87,14 +87,7 @@ export class MikroService {
     logger: Logger,
   ): Promise<MikroService> {
     logger.info('Initializing MikroORM...');
-
-    const dbConfigs = getDbConfigs(config.database);
-    const ormOptions: Options = {
-      ...dbConfigs,
-      debug: false,
-      dynamicImportProvider: (id) => import(id),
-    };
-    const orm = await MikroORM.init(ormOptions);
+    const orm = await MikroORM.init(await getDbConfigs(config.database));
 
     if (config.database.type === 'sqlite' && config.database.test) {
       await orm.schema.refresh();

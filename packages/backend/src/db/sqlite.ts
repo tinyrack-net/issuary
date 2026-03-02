@@ -57,6 +57,7 @@ export const mikroormSqliteConfig = (
       glob: '!(*.d).{ts,js}',
     },
     extensions: [SeedManager, Migrator],
-    debug: true,
+    dynamicImportProvider: (id: string) => import(id),
+    debug: false,
   });
 };
