@@ -2,6 +2,7 @@ import { serve } from '@hono/node-server';
 import { ConfigValidationError } from '@tinyauth/backend/config';
 import { Command } from 'commander';
 import { createStandaloneApp } from '#standalone/app.js';
+import { loadConfig } from '#standalone/lib/load-config.js';
 
 /**
  * Serve command
@@ -15,11 +16,12 @@ import { createStandaloneApp } from '#standalone/app.js';
  */
 export const serveCommand = new Command('serve')
   .description('Start the TinyAuth server')
-  .option('-c, --config-path <path>', 'Path to config file')
-  .action(async (options: { configPath?: string }) => {
+  .requiredOption('-c, --config-path <path>', 'Path to config file')
+  .action(async (options: { configPath: string }) => {
     try {
+      const config = loadConfig({ configPath: options.configPath });
       const { app, cleanup, services, logger } = await createStandaloneApp({
-        configPath: options.configPath,
+        config,
       });
 
       const server = serve(

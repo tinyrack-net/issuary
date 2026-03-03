@@ -16,8 +16,9 @@ logging:
   http_log_proxy: false
 
 database:
+  test: true
   type: sqlite
-  path: test.db
+  path: ./test.db
 
 auth:
   password:

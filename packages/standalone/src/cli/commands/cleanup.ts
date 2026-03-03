@@ -5,10 +5,7 @@ import {
   type ServiceContainer,
 } from '@tinyauth/backend/services';
 import { Command } from 'commander';
-import {
-  loadResolvedConfig,
-  toBackendConfig,
-} from '#standalone/lib/load-config.js';
+import { loadResolvedConfig } from '#standalone/lib/load-config.js';
 
 /**
  * Cleanup command
@@ -25,12 +22,12 @@ import {
  */
 export const cleanupCommand = new Command('cleanup')
   .description('Run all cleanup and maintenance tasks')
-  .option('-c, --config-path <path>', 'Path to config file')
+  .requiredOption('-c, --config-path <path>', 'Path to config file')
   .option('-n, --dry-run', 'Show what would be cleaned without deleting', false)
   .option('-v, --verbose', 'Show detailed progress for each task', false)
   .action(
     async (options: {
-      configPath?: string;
+      configPath: string;
       dryRun: boolean;
       verbose: boolean;
     }) => {
@@ -40,13 +37,10 @@ export const cleanupCommand = new Command('cleanup')
       let cleanup: (() => Promise<void>) | undefined;
 
       try {
-        const resolved = await loadResolvedConfig(
-          configPath ? { configPath } : undefined,
-        );
-        const backendConfig = toBackendConfig(resolved);
+        const resolved = await loadResolvedConfig({ configPath });
         const logger = createLogger({
           logging: {
-            ...backendConfig.logging,
+            ...resolved.logging,
             level: verbose ? 'debug' : 'info',
           },
         });
@@ -59,7 +53,7 @@ export const cleanupCommand = new Command('cleanup')
           logger.debug('Initializing services...');
         }
 
-        const result = await initializeServices(backendConfig, logger);
+        const result = await initializeServices(resolved, logger);
         services = result.services;
         cleanup = result.cleanup;
 

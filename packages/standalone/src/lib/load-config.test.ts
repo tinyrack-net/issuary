@@ -33,54 +33,23 @@ describe('load-config', () => {
     Object.assign(process.env, originalEnv);
   });
 
-  test('prefers the explicit configPath option', async () => {
+  test('loads config from the given configPath', async () => {
     const dir = await fs.promises.mkdtemp(
       path.join(os.tmpdir(), 'tinyauth-load-config-'),
     );
-    const explicitFile = await writeConfigFile(
+    const configFile = await writeConfigFile(
       dir,
-      'explicit.yaml',
+      'config.yaml',
       'app:\n  cookie_secret: explicit-secret-1234567890\n',
     );
-    const envFile = await writeConfigFile(
-      dir,
-      'env.yaml',
-      'app:\n  cookie_secret: env-secret-1234567890\n',
-    );
-    process.env['CONFIG_PATH'] = envFile;
 
-    const config = loadConfig({ configPath: explicitFile });
+    const config = loadConfig({ configPath: configFile });
 
     expect(config.app.cookie_secret).toBe('explicit-secret-1234567890');
     await fs.promises.rm(dir, { recursive: true, force: true });
   });
 
-  test('uses CONFIG_PATH when no explicit configPath is provided', async () => {
-    const dir = await fs.promises.mkdtemp(
-      path.join(os.tmpdir(), 'tinyauth-load-config-env-'),
-    );
-    const envFile = await writeConfigFile(
-      dir,
-      'env.yaml',
-      'app:\n  cookie_secret: env-secret-1234567890\n',
-    );
-    process.env['CONFIG_PATH'] = envFile;
-
-    const config = loadConfig();
-
-    expect(config.app.cookie_secret).toBe('env-secret-1234567890');
-    await fs.promises.rm(dir, { recursive: true, force: true });
-  });
-
-  test('falls back to environment defaults when no config file exists', () => {
-    const config = loadConfig();
-
-    expect(config.app.cookie_secret).toBe(process.env['COOKIE_SECRET']);
-    expect(config.app.frontend.mode).toBe('static');
-    expect(config.app.frontend.path).toBe('/opt/tinyauth/frontend');
-  });
-
-  test('throws when an explicit configPath is missing', () => {
+  test('throws when configPath file is missing', () => {
     expect(() => loadConfig({ configPath: '/missing/config.yaml' })).toThrow(
       'Config file not found',
     );
@@ -128,11 +97,5 @@ describe('load-config', () => {
     expect(config.app.frontend.enabled).toBe(false);
     expect(config.app.frontend.path).toBe('');
     await fs.promises.rm(dir, { recursive: true, force: true });
-  });
-
-  test('returns raw config with standalone frontend defaults applied', () => {
-    const config = loadConfig();
-
-    expect(config.app.frontend.path).toBe('/opt/tinyauth/frontend');
   });
 });
