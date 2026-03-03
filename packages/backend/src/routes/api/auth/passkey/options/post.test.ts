@@ -1,10 +1,10 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#backend/app.js';
-import { createApp } from '#backend/app.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
+  createTestApp,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -16,7 +16,7 @@ describe('POST /api/auth/passkey/options', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createApp({
+    const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -130,7 +130,7 @@ describe('POST /api/auth/passkey/options - 2FA mode', () => {
   let cleanup2FA: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createApp({
+    const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -219,7 +219,7 @@ describe('POST /api/auth/passkey/options - 2FA mode', () => {
 
   test('should return empty allowCredentials for passwordless mode', async () => {
     // Create a new app instance just to get options without session
-    const server = await createApp({
+    const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -252,7 +252,7 @@ describe('POST /api/auth/passkey/options - Passkey disabled', () => {
   let cleanupDisabled: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createApp({
+    const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -286,7 +286,7 @@ describe('POST /api/auth/passkey/options - Custom rpId', () => {
   let cleanupCustomRpId: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createApp({
+    const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {

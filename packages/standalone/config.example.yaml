@@ -1,0 +1,26 @@
+app:
+  # frontend: Standalone-only frontend serving configuration.
+  #
+  # Options:
+  #   enabled - Whether the frontend is served at all (default: true).
+  #             Set to false for API-only deployments.
+  #   mode    - How to serve the frontend (default: 'static'):
+  #             'proxy'  - Forward non-API requests to an upstream URL.
+  #                        Useful for development with a separate dev server.
+  #             'static' - Serve built files from a local directory.
+  #   path    - Depends on mode:
+  #             proxy  → Upstream URL (default: http://localhost:8081)
+  #             static → Filesystem path (default: /opt/tinyauth/frontend)
+  #
+  # Development with Vite dev server:
+  frontend:
+    mode: proxy
+    path: http://localhost:8081
+
+  # html_variables: Standalone-only HTML template variables.
+  # Use {{KEY}} syntax in HTML files to reference these variables.
+  # Variables are replaced when standalone serves HTML responses.
+  html_variables:
+    TITLE: Tinyauth
+    DESCRIPTION: OIDC for everyone
+    FAVICON_URL: /vite.svg

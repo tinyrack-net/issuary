@@ -10,9 +10,9 @@ import {
   vi,
 } from 'vitest';
 import type { AppType } from '#backend/app.js';
-import { createApp } from '#backend/app.js';
 import {
   assertJsonBody,
+  createTestApp,
   extractCookie,
   generateUniqueEmail,
   getLocationHeader,
@@ -27,7 +27,7 @@ let app: AppType;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  const server = await createApp({
+  const server = await createTestApp({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],

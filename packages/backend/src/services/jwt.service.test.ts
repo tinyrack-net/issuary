@@ -8,7 +8,6 @@ import {
   test,
   vi,
 } from 'vitest';
-import { createApp } from '#backend/app.js';
 import {
   JwtKeyEntity,
   JwtKeyStatus,
@@ -17,6 +16,7 @@ import type { ServiceContainer } from '#backend/services/container.js';
 import type { JwtService } from '#backend/services/jwt.service.js';
 import {
   CLI_TEST_CONFIG,
+  createTestApp,
   createTestOAuthClient,
   createTestUser,
   MINIMAL_TEST_CONFIG,
@@ -29,7 +29,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: MINIMAL_TEST_CONFIG,
       });
       jwtService = server.services.jwtService;
@@ -91,7 +91,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: MINIMAL_TEST_CONFIG,
       });
       jwtService = server.services.jwtService;
@@ -122,7 +122,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: CLI_TEST_CONFIG,
       });
       services = server.services;
@@ -214,7 +214,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
@@ -409,7 +409,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: MINIMAL_TEST_CONFIG,
       });
       services = server.services;
@@ -451,7 +451,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: MINIMAL_TEST_CONFIG,
       });
       services = server.services;
@@ -495,7 +495,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: CLI_TEST_CONFIG,
       });
       services = server.services;
@@ -573,7 +573,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: MINIMAL_TEST_CONFIG,
       });
       services = server.services;

@@ -1,10 +1,10 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#backend/app.js';
-import { createApp } from '#backend/app.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
+  createTestApp,
   MINIMAL_TEST_CONFIG,
   TEST_OAUTH_CLIENT,
   TEST_OAUTH_CLIENT_CONFIG,
@@ -15,7 +15,7 @@ let app: AppType;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  const server = await createApp({
+  const server = await createTestApp({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],

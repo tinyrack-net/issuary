@@ -1,4 +1,4 @@
-import type { AppConfigInput } from '@tinyauth/backend';
+import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
 import {
   E2E_TEST_CLIENT_CONFIG,
   E2E_TEST_USER_CONFIG,
@@ -15,7 +15,7 @@ const OAUTH_EXISTING_PENDING_EMAIL = 'oauth-stub-existing-pending@allowed.test';
 export function createOauthProvidersTermsConfig(
   backendPort: number,
   frontendPort: number,
-): AppConfigInput {
+): StandaloneConfigInput {
   const host = `http://localhost:${backendPort}`;
 
   return {

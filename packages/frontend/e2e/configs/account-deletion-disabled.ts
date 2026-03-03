@@ -1,4 +1,4 @@
-import type { AppConfigInput } from '@tinyauth/backend';
+import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
 import {
   E2E_TEST_CLIENT_CONFIG,
   E2E_TEST_USER_CONFIG,
@@ -10,7 +10,7 @@ import {
 export function createAccountDeletionDisabledConfig(
   backendPort: number,
   frontendPort: number,
-): AppConfigInput {
+): StandaloneConfigInput {
   return {
     app: {
       host: `http://localhost:${backendPort}`,

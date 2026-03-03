@@ -7,6 +7,10 @@ description: 전체 config.yaml 스키마 레퍼런스
 
 ---
 
+`app.frontend`와 `app.html_variables`는 standalone 전용 설정이에요.
+`@tinyauth/standalone`만 이 값을 해석하고,
+`@tinyauth/backend/config`는 이 필드를 허용하지 않아요.
+
 ## `app` - 애플리케이션 설정
 
 ### 서버
@@ -35,11 +39,20 @@ description: 전체 config.yaml 스키마 레퍼런스
 | `allowed_signup_emails` | `string[]` | `[]` | - | 가입 허용 이메일 패턴 (`*`, `*@domain.com` 등) |
 | `account_deletion` | `boolean` | `false` | `ACCOUNT_DELETION` | 사용자 계정 삭제 기능 활성화 |
 
+### 프론트엔드 서빙
+
+| 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
+|------|------|--------|-----------|------|
+| `frontend.enabled` | `boolean` | `true` | - | 프론트엔드 서빙 활성화 여부. `false`면 API-only 모드 |
+| `frontend.mode` | `'proxy' \| 'static'` | `'static'` | - | `proxy`는 업스트림 URL로 전달하고, `static`은 디스크의 빌드 결과물을 서빙해요 |
+| `frontend.path` | `string` | 런타임 기본값 | - | standalone config에서 생략 가능해요. standalone 런타임이 `proxy` 모드에서는 `http://localhost:8081`, `static` 모드에서는 `/opt/tinyauth/frontend`를 채워줘요 |
+| `html_variables` | `Record<string, string>` | `{}` | - | standalone이 HTML을 서빙할 때 `{{KEY}}` 플레이스홀더를 치환하는 변수 집합이에요 |
+
 ### 다국어 (i18n)
 
 | 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
 |------|------|--------|-----------|------|
-| `supported_languages` | `Locale[]` | `['en']` | - | 지원 언어 (`en`, `ko`, `ja`) |
+| `supported_languages` | `Locale[]` | `['en', 'ko', 'ja']` | - | 지원 언어 (`en`, `ko`, `ja`) |
 | `default_language` | `'auto' \| Locale` | `'auto'` | `DEFAULT_LANGUAGE` | 기본 언어 |
 | `fallback_language` | `Locale` | `'en'` | `FALLBACK_LANGUAGE` | 대체 언어 |
 

@@ -1,4 +1,8 @@
-import type { AppConfigInput } from '#backend/lib/config/index.js';
+import { createApp } from '#backend/app.js';
+import {
+  type AppConfigInput,
+  resolveConfig,
+} from '#backend/lib/config/index.js';
 
 /**
  * Minimal test configuration.
@@ -11,8 +15,7 @@ import type { AppConfigInput } from '#backend/lib/config/index.js';
  *
  * @example
  * ```typescript
- * import { createApp } from '#backend/app.js';
- * import { MINIMAL_TEST_CONFIG } from '#backend/test-utils/setup.js';
+ * import { createTestApp, MINIMAL_TEST_CONFIG } from '#backend/test-utils/setup.js';
  * import type { AppType } from '#backend/app.js';
  * import type { ServiceContainer } from '#backend/services/container.js';
  *
@@ -21,7 +24,7 @@ import type { AppConfigInput } from '#backend/lib/config/index.js';
  * let cleanup: () => Promise<void>;
  *
  * beforeAll(async () => {
- *   ({ app, services, cleanup } = await createApp({
+ *   ({ app, services, cleanup } = await createTestApp({
  *     config: {
  *       ...MINIMAL_TEST_CONFIG,
  *       // Only add config this test actually needs:
@@ -44,9 +47,6 @@ export const MINIMAL_TEST_CONFIG = {
     cookie_secret:
       '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
     allowed_signup_emails: ['*'],
-    frontend: {
-      enabled: false,
-    },
   },
   logging: {
     level: 'silent',
@@ -60,3 +60,12 @@ export const MINIMAL_TEST_CONFIG = {
     test: true,
   },
 } as const satisfies AppConfigInput;
+
+export async function createTestApp(options?: {
+  config?: AppConfigInput | undefined;
+}) {
+  const resolvedConfig = await resolveConfig(
+    options?.config ?? MINIMAL_TEST_CONFIG,
+  );
+  return createApp({ config: resolvedConfig });
+}

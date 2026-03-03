@@ -1,13 +1,13 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#backend/app.js';
-import { createApp } from '#backend/app.js';
 import { e } from '#backend/schemas/error.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
   createDbUserWithSession,
+  createTestApp,
   expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -30,7 +30,7 @@ describe('DELETE /api/user', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
@@ -199,7 +199,7 @@ describe('DELETE /api/user', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {

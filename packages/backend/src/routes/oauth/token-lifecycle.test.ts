@@ -2,9 +2,9 @@ import { testClient } from 'hono/testing';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#backend/app.js';
-import { createApp } from '#backend/app.js';
 import {
   createAuthenticatedSession,
+  createTestApp,
   exchangeCodeForTokens,
   getAuthorizationCode,
   getUserInfo,
@@ -23,7 +23,7 @@ let app: AppType;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  ({ app, cleanup } = await createApp({
+  ({ app, cleanup } = await createTestApp({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],

@@ -1,13 +1,30 @@
 import 'dotenv/config';
-import { existsSync, readFileSync } from 'node:fs';
-import { type AppConfig, parseConfig } from '@tinyauth/backend/config';
+import * as fs from 'node:fs';
+import {
+  ConfigValidationError,
+  parseConfig,
+  type ResolvedAppConfig,
+  resolveConfig,
+} from '@tinyauth/backend/config';
 import type { Logger } from '@tinyauth/backend/logger';
 import YAML from 'yaml';
+import z from 'zod';
+import {
+  type ResolvedStandaloneConfig,
+  type ResolvedStandaloneFrontendConfig,
+  type StandaloneAppExtension,
+  StandaloneAppExtensionSchema,
+  type StandaloneConfig,
+  type StandaloneConfigInput,
+  type StandaloneFrontendConfig,
+} from '#standalone/lib/config/schema.js';
 import { deepMerge } from './deep-merge.js';
 import { resolveEnvVariables } from './interpolate-env.js';
 import { resolveAbsolutePath } from './resolve-path.js';
 
 const DEFAULT_CONFIG_PATH = '/opt/config.yaml';
+export const DEFAULT_FRONTEND_PROXY_UPSTREAM = 'http://localhost:8081';
+export const DEFAULT_FRONTEND_STATIC_PATH = '/opt/tinyauth/frontend';
 
 /**
  * Default configuration with environment variable references.
@@ -52,15 +69,144 @@ const DEFAULT_CONFIG = {
   },
 };
 
-const loadConfigFromPath = (configPath: string): AppConfig => {
-  if (!existsSync(configPath)) {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object';
+}
+
+function getStandaloneAppInput(input: unknown): unknown {
+  if (!isRecord(input)) {
+    return {};
+  }
+
+  const app = input['app'];
+  if (!isRecord(app)) {
+    return {};
+  }
+
+  return {
+    frontend: app['frontend'],
+    html_variables: app['html_variables'],
+  };
+}
+
+function stripStandaloneAppInput(input: unknown): unknown {
+  if (!isRecord(input)) {
+    return input;
+  }
+
+  const app = input['app'];
+  if (!isRecord(app)) {
+    return input;
+  }
+
+  const backendApp = { ...app };
+  Reflect.deleteProperty(backendApp, 'frontend');
+  Reflect.deleteProperty(backendApp, 'html_variables');
+
+  return {
+    ...input,
+    app: backendApp,
+  };
+}
+
+function parseStandaloneAppExtension(input: unknown): StandaloneAppExtension {
+  try {
+    return StandaloneAppExtensionSchema.parse(input);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      throw new ConfigValidationError(err.issues);
+    }
+    throw err;
+  }
+}
+
+function applyStandaloneFrontendDefaults(
+  extension: StandaloneAppExtension,
+): StandaloneAppExtension {
+  const { frontend } = extension;
+  if (!frontend.enabled || frontend.path !== undefined) {
+    return extension;
+  }
+
+  return {
+    ...extension,
+    frontend: {
+      ...frontend,
+      path:
+        frontend.mode === 'proxy'
+          ? DEFAULT_FRONTEND_PROXY_UPSTREAM
+          : DEFAULT_FRONTEND_STATIC_PATH,
+    },
+  };
+}
+
+function buildStandaloneConfig(
+  backendConfig: ReturnType<typeof parseConfig>,
+  extension: StandaloneAppExtension,
+): StandaloneConfig {
+  return {
+    ...backendConfig,
+    app: {
+      ...backendConfig.app,
+      frontend: extension.frontend,
+      html_variables: extension.html_variables,
+    },
+  };
+}
+
+function resolveStandaloneFrontendConfig(
+  frontend: StandaloneFrontendConfig,
+): ResolvedStandaloneFrontendConfig {
+  if (!frontend.enabled) {
+    return {
+      enabled: false,
+      mode: frontend.mode,
+      path: frontend.path ?? '',
+    };
+  }
+
+  return {
+    enabled: frontend.enabled,
+    mode: frontend.mode,
+    path:
+      frontend.path ??
+      (frontend.mode === 'proxy'
+        ? DEFAULT_FRONTEND_PROXY_UPSTREAM
+        : DEFAULT_FRONTEND_STATIC_PATH),
+  };
+}
+
+function buildResolvedStandaloneConfig(
+  backendConfig: ResolvedAppConfig,
+  extension: StandaloneAppExtension,
+): ResolvedStandaloneConfig {
+  return {
+    ...backendConfig,
+    app: {
+      ...backendConfig.app,
+      frontend: resolveStandaloneFrontendConfig(extension.frontend),
+      html_variables: extension.html_variables,
+    },
+  };
+}
+
+function parseStandaloneConfig(input: unknown): StandaloneConfig {
+  const extension = applyStandaloneFrontendDefaults(
+    parseStandaloneAppExtension(getStandaloneAppInput(input)),
+  );
+  const backendConfig = parseConfig(stripStandaloneAppInput(input));
+  return buildStandaloneConfig(backendConfig, extension);
+}
+
+const loadConfigFromPath = (configPath: string): StandaloneConfig => {
+  if (!fs.existsSync(configPath)) {
     throw new Error(`Config file not found at "${configPath}"`);
   }
-  const file = readFileSync(configPath, 'utf8');
+  const file = fs.readFileSync(configPath, 'utf8');
   const rawConfig = YAML.parse(file);
   const merged = deepMerge(DEFAULT_CONFIG, rawConfig);
   const resolvedConfig = resolveEnvVariables(merged);
-  return parseConfig(resolvedConfig);
+  return parseStandaloneConfig(resolvedConfig);
 };
 
 /**
@@ -81,9 +227,11 @@ const loadConfigFromPath = (configPath: string): AppConfig => {
  */
 export function loadConfig(options?: {
   configPath?: string | undefined;
+  defaultConfigPath?: string | undefined;
   logger?: Logger | undefined;
-}): AppConfig {
+}): StandaloneConfig {
   const logger = options?.logger;
+  const defaultConfigPath = options?.defaultConfigPath ?? DEFAULT_CONFIG_PATH;
 
   // 1. Explicit path provided by caller (e.g., CLI --config-path)
   if (options?.configPath) {
@@ -100,12 +248,9 @@ export function loadConfig(options?: {
   }
 
   // 3. Default path exists — use it
-  if (existsSync(DEFAULT_CONFIG_PATH)) {
-    logger?.info(
-      { configPath: DEFAULT_CONFIG_PATH },
-      'Loading config from file',
-    );
-    return loadConfigFromPath(DEFAULT_CONFIG_PATH);
+  if (fs.existsSync(defaultConfigPath)) {
+    logger?.info({ configPath: defaultConfigPath }, 'Loading config from file');
+    return loadConfigFromPath(defaultConfigPath);
   }
 
   // 4. Fall back to environment variables with defaults
@@ -113,5 +258,36 @@ export function loadConfig(options?: {
     'No config file found, using environment variables with defaults',
   );
   const resolved = resolveEnvVariables(DEFAULT_CONFIG);
-  return parseConfig(resolved);
+  return parseStandaloneConfig(resolved);
+}
+
+export async function resolveStandaloneConfig(
+  input: StandaloneConfigInput | StandaloneConfig,
+): Promise<ResolvedStandaloneConfig> {
+  const extension = applyStandaloneFrontendDefaults(
+    parseStandaloneAppExtension(getStandaloneAppInput(input)),
+  );
+  const backendConfig = await resolveConfig(stripStandaloneAppInput(input));
+  return buildResolvedStandaloneConfig(backendConfig, extension);
+}
+
+export async function loadResolvedConfig(options?: {
+  configPath?: string | undefined;
+  defaultConfigPath?: string | undefined;
+  logger?: Logger | undefined;
+}): Promise<ResolvedStandaloneConfig> {
+  return resolveStandaloneConfig(loadConfig(options));
+}
+
+export function toBackendConfig(
+  config: ResolvedStandaloneConfig,
+): ResolvedAppConfig {
+  const app = { ...config.app };
+  Reflect.deleteProperty(app, 'frontend');
+  Reflect.deleteProperty(app, 'html_variables');
+
+  return {
+    ...config,
+    app,
+  };
 }

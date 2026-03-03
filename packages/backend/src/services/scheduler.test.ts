@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createApp } from '#backend/app.js';
 import type { ServiceContainer } from '#backend/services/container.js';
+import { createTestApp } from '#backend/test-utils/index.js';
 import { MINIMAL_TEST_CONFIG } from '#backend/test-utils/setup.js';
 
 describe('scheduler plugin', () => {
@@ -16,7 +16,7 @@ describe('scheduler plugin', () => {
 
   describe('when scheduler is disabled', () => {
     beforeEach(async () => {
-      ({ services, cleanup } = await createApp({
+      ({ services, cleanup } = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {
@@ -38,7 +38,7 @@ describe('scheduler plugin', () => {
 
   describe('when scheduler is enabled', () => {
     beforeEach(async () => {
-      ({ services, cleanup } = await createApp({
+      ({ services, cleanup } = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {
@@ -76,7 +76,7 @@ describe('scheduler plugin', () => {
   describe('with default config', () => {
     beforeEach(async () => {
       // Default config should have scheduler enabled
-      ({ services, cleanup } = await createApp({
+      ({ services, cleanup } = await createTestApp({
         config: MINIMAL_TEST_CONFIG,
       }));
     });
@@ -96,7 +96,7 @@ describe('scheduler plugin', () => {
 
   describe('cron schedule validation', () => {
     it('should accept valid cron expression', async () => {
-      ({ services, cleanup } = await createApp({
+      ({ services, cleanup } = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {
@@ -111,7 +111,7 @@ describe('scheduler plugin', () => {
     });
 
     it('should accept hourly cron expression', async () => {
-      ({ services, cleanup } = await createApp({
+      ({ services, cleanup } = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {
@@ -127,7 +127,7 @@ describe('scheduler plugin', () => {
 
   describe('CLI mode', () => {
     beforeEach(async () => {
-      ({ services, cleanup } = await createApp({
+      ({ services, cleanup } = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {

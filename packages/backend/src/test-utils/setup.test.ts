@@ -1,0 +1,45 @@
+import { testClient } from 'hono/testing';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import type { AppType } from '#backend/app.js';
+import { createTestApp, MINIMAL_TEST_CONFIG } from './setup.js';
+
+describe('createTestApp', () => {
+  let app: AppType;
+  let cleanup: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createTestApp();
+    app = server.app;
+    cleanup = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanup();
+  });
+
+  test('creates an app from the minimal raw test config', async () => {
+    const client = testClient(app);
+    const res = await client.api.health.$get();
+
+    expect(res.status).toBe(200);
+  });
+
+  test('resolves overridden raw config before startup', async () => {
+    const server = await createTestApp({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        app: {
+          ...MINIMAL_TEST_CONFIG.app,
+          host: 'http://localhost:9090',
+        },
+      },
+    });
+
+    try {
+      const res = await server.app.request('/login');
+      expect(res.status).toBe(404);
+    } finally {
+      await server.cleanup();
+    }
+  });
+});

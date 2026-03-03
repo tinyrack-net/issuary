@@ -1,4 +1,3 @@
-import { resolveConfig } from '@tinyauth/backend/config';
 import { getDbConfigs } from '@tinyauth/backend/db';
 import { loadConfig } from '#standalone/lib/load-config.js';
 
@@ -8,6 +7,5 @@ import { loadConfig } from '#standalone/lib/load-config.js';
  * This uses top-level await to load config and return the appropriate config.
  */
 const config = loadConfig();
-const resolved = await resolveConfig(config);
 
-export default await getDbConfigs(resolved.database);
+export default await getDbConfigs(config.database);

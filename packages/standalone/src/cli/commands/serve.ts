@@ -1,11 +1,7 @@
 import { serve } from '@hono/node-server';
-import { createApp } from '@tinyauth/backend';
-import {
-  type AppConfig,
-  ConfigValidationError,
-} from '@tinyauth/backend/config';
+import { ConfigValidationError } from '@tinyauth/backend/config';
 import { Command } from 'commander';
-import { loadConfig } from '#standalone/lib/load-config.js';
+import { createStandaloneApp } from '#standalone/app.js';
 
 /**
  * Serve command
@@ -21,11 +17,36 @@ export const serveCommand = new Command('serve')
   .description('Start the TinyAuth server')
   .option('-c, --config-path <path>', 'Path to config file')
   .action(async (options: { configPath?: string }) => {
-    let config: AppConfig;
     try {
-      config = loadConfig({
+      const { app, cleanup, services, logger } = await createStandaloneApp({
         configPath: options.configPath,
       });
+
+      const server = serve(
+        {
+          fetch: app.fetch,
+          port: services.config.app.port,
+          hostname: '0.0.0.0',
+        },
+        (info) => {
+          logger.info(
+            { port: info.port },
+            `Server listening on port ${info.port}`,
+          );
+        },
+      );
+
+      const shutdown = async (signal: string) => {
+        logger.info({ signal }, `Received ${signal}, shutting down...`);
+        if (server) {
+          server.close();
+        }
+        await cleanup();
+        process.exit(0);
+      };
+
+      process.on('SIGTERM', () => shutdown('SIGTERM'));
+      process.on('SIGINT', () => shutdown('SIGINT'));
     } catch (err) {
       if (err instanceof ConfigValidationError) {
         console.error(err.message);
@@ -33,35 +54,4 @@ export const serveCommand = new Command('serve')
       }
       throw err;
     }
-
-    const { app, cleanup, services, logger } = await createApp({
-      config,
-    });
-
-    const server = serve(
-      {
-        fetch: app.fetch,
-        port: services.config.app.port,
-        hostname: '0.0.0.0',
-      },
-      (info) => {
-        logger.info(
-          { port: info.port },
-          `Server listening on port ${info.port}`,
-        );
-      },
-    );
-
-    // Handle graceful shutdown
-    const shutdown = async (signal: string) => {
-      logger.info({ signal }, `Received ${signal}, shutting down...`);
-      if (server) {
-        server.close();
-      }
-      await cleanup();
-      process.exit(0);
-    };
-
-    process.on('SIGTERM', () => shutdown('SIGTERM'));
-    process.on('SIGINT', () => shutdown('SIGINT'));
   });

@@ -140,7 +140,6 @@ describe('interpolateHtml', () => {
       const result = interpolateHtml('{{A}}', {
         A: '{{B}}',
       });
-      // No recursive replacement — single pass only
       expect(result).toBe('{{B}}');
     });
   });

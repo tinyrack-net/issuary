@@ -1,5 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import { createApp } from '@tinyauth/backend';
+import { type AppConfigInput, resolveConfig } from '@tinyauth/backend/config';
 import { OPENAPI_DOCUMENTATION } from '@tinyauth/backend/openapi';
 import { Command } from 'commander';
 import { generateSpecs } from 'hono-openapi';
@@ -14,28 +15,27 @@ export const exportOpenapiCommand = new Command('export:openapi')
   .description('Export the OpenAPI spec as JSON')
   .argument('[output-path]', 'Write spec to file instead of stdout')
   .action(async (outputPath?: string) => {
-    const { app, cleanup, logger } = await createApp({
-      config: {
-        app: {
-          cookie_secret:
-            '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
-          allowed_signup_emails: ['*'],
-          frontend: {
-            enabled: false,
-          },
-        },
-        logging: {
-          level: 'silent',
-          format: 'json',
-        },
-        database: {
-          type: 'sqlite',
-          test: true,
-        },
-        smtp: {
-          test: true,
-        },
+    const config = {
+      app: {
+        cookie_secret:
+          '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+        allowed_signup_emails: ['*'],
       },
+      logging: {
+        level: 'silent',
+        format: 'json',
+      },
+      database: {
+        type: 'sqlite',
+        test: true,
+      },
+      smtp: {
+        test: true,
+      },
+    } satisfies AppConfigInput;
+
+    const { app, cleanup, logger } = await createApp({
+      config: await resolveConfig(config),
     });
 
     try {

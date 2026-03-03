@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createApp } from '#backend/app.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
+  createTestApp,
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '#backend/test-utils/index.js';
@@ -14,7 +14,7 @@ describe('OAuthTokenService', () => {
     let refreshToken: string;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {

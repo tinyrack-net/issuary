@@ -7,8 +7,8 @@ description: Tinyauth 환경 변수 참조
 
 ```yaml
 app:
-  host: "${TINYAUTH_APP_HOST}"
-  cookie_secret: "$TINYAUTH_COOKIE_SECRET"
+  host: "${APP_HOST}"
+  cookie_secret: "$COOKIE_SECRET"
 ```
 
 > `$VAR` 또는 `${VAR}` 구문 모두 유효한 표현이에요.
@@ -18,9 +18,9 @@ app:
 ```bash
 docker run \
   -p 8080:8080 \
-  -v ./config.yaml:/opt/tinyauth/config.yaml \
-  -e TINYAUTH_APP_HOST=https://example.com \
-  -e TINYAUTH_COOKIE_SECRET=your-secret-key \
+  -v ./config.yaml:/opt/config.yaml \
+  -e APP_HOST=https://example.com \
+  -e COOKIE_SECRET=your-secret-key \
   tinyrack/tinyauth
 ```
 
@@ -32,10 +32,10 @@ docker run \
 
 ```yaml
 app:
-  host: "${TINYAUTH_APP_HOST:-https://default-tinyauth-domain.com}"
+  host: "${APP_HOST:-https://default-tinyauth-domain.com}"
 ```
 
-이 경우 `TINYAUTH_APP_HOST` 환경 변수가 설정돼 있으면 그 값을 사용하고, 설정되어 있지 않다면 `https://default-tinyauth-domain.com` 을 기본값으로 사용해요.
+이 경우 `APP_HOST` 환경 변수가 설정돼 있으면 그 값을 사용하고, 설정되어 있지 않다면 `https://default-tinyauth-domain.com` 을 기본값으로 사용해요.
 
 `tinyauth`는 이미 설정의 많은 부분에서 환경 변수를 먼저 참조하도록 기본값이 구성되어 있어요. 예를 들어, `app` 섹션에서는 다음과 같은 환경 변수와 기본값이 할당되어 있어요.
 

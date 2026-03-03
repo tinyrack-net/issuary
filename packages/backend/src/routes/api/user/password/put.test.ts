@@ -1,11 +1,11 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#backend/app.js';
-import { createApp } from '#backend/app.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
+  createTestApp,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -18,7 +18,7 @@ let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  const server = await createApp({
+  const server = await createTestApp({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
@@ -241,7 +241,7 @@ describe('PUT /api/user/password - password disabled', () => {
   let cleanupDisabled: () => Promise<void>;
 
   beforeAll(async () => {
-    const sessionServer = await createApp({
+    const sessionServer = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
@@ -250,7 +250,7 @@ describe('PUT /api/user/password - password disabled', () => {
     appSession = sessionServer.app;
     cleanupSession = sessionServer.cleanup;
 
-    const disabledServer = await createApp({
+    const disabledServer = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],

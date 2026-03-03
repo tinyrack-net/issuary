@@ -13,11 +13,33 @@
     "dist"
   ],
   "publishConfig": {
+    "exports": {
+      "./config": {
+        "types": "./dist/config.d.ts",
+        "default": "./dist/config.js"
+      },
+      "./app": {
+        "types": "./dist/app.d.ts",
+        "default": "./dist/app.js"
+      }
+    },
     "imports": {
       "#standalone/*": {
         "types": "./dist/*",
         "default": "./dist/*"
       }
+    }
+  },
+  "exports": {
+    "./config": {
+      "@tinyauth/source": "./src/config.ts",
+      "types": "./dist/config.d.ts",
+      "default": "./dist/config.js"
+    },
+    "./app": {
+      "@tinyauth/source": "./src/app.ts",
+      "types": "./dist/app.d.ts",
+      "default": "./dist/app.js"
     }
   },
   "imports": {
@@ -58,8 +80,10 @@
     "@mikro-orm/cli": "^7.0.0-rc.2",
     "commander": "^14.0.3",
     "dotenv": "^17.2.4",
+    "hono": "catalog:",
     "hono-openapi": "^1.2.0",
-    "yaml": "^2.8.2"
+    "yaml": "^2.8.2",
+    "zod": "catalog:"
   },
   "mikro-orm": {
     "configPaths": [

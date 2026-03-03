@@ -496,53 +496,6 @@ export const AppTheme = z.enum([
 
 export type AppTheme = z.infer<typeof AppTheme>;
 
-// ---------------------------------------------------------------------------
-// Frontend Serving
-// ---------------------------------------------------------------------------
-
-/**
- * Frontend serving configuration.
- *
- * - `enabled`: Whether the frontend is served at all. When `false`, only
- *   backend API routes are available (API-only mode).
- * - `mode`: How to serve the frontend.
- *   - `'proxy'`: Forward non-API requests to an upstream server (e.g.,
- *     a Vite dev server). `path` must be a URL.
- *   - `'static'`: Serve built frontend files from a local directory.
- *     `path` is a filesystem path (absolute or relative to CWD).
- * - `path`: The upstream URL (proxy mode) or filesystem directory (static
- *   mode). Defaults are applied during config resolution based on mode.
- */
-const AppConfigFrontend = z.object({
-  enabled: z
-    .boolean()
-    .default(true)
-    .describe(
-      'Whether the frontend is served. ' +
-        'Set to false for API-only deployments.',
-    ),
-  mode: z
-    .enum(['proxy', 'static'])
-    .default('static')
-    .describe(
-      'How to serve the frontend. ' +
-        '"proxy": forward non-API requests to the URL in path. ' +
-        '"static": serve built files from the directory in path.',
-    ),
-  path: z
-    .string()
-    .default('/opt/tinyauth/frontend')
-    .describe(
-      'Proxy mode: upstream URL (e.g., http://localhost:5173). ' +
-        'Static mode: filesystem path to the built frontend directory. ' +
-        'Defaults: proxy → http://localhost:8081, ' +
-        'static → built-in public/ directory.',
-    ),
-});
-
-export type AppConfigFrontend = z.infer<typeof AppConfigFrontend>;
-export type AppConfigFrontendInput = z.input<typeof AppConfigFrontend>;
-
 const AppConfigApp = z.object({
   host: z.string().default('http://localhost:8080'),
   port: zz.PORT.default(8080),
@@ -666,24 +619,6 @@ const AppConfigApp = z.object({
     ),
   account_deletion: zz.COERCE_BOOLEAN.default(false).describe(
     'Whether users can delete their own accounts',
-  ),
-  html_variables: z
-    .record(z.string(), z.string())
-    .default({})
-    .describe(
-      'Key-value pairs for HTML template variable interpolation. ' +
-        'Variables are replaced in served HTML files using {{KEY}} syntax. ' +
-        'Example: { "APP_TITLE": "My App" } replaces {{APP_TITLE}} in HTML.',
-    ),
-
-  frontend: AppConfigFrontend.default({
-    enabled: true,
-    mode: 'static',
-    path: '/opt/tinyauth/frontend',
-  }).describe(
-    'Frontend serving configuration. ' +
-      'Controls how the frontend is served: ' +
-      'proxy to an upstream server, static files, or disabled.',
   ),
 });
 
@@ -1023,24 +958,10 @@ export type AppConfigInput = z.input<typeof AppConfigSchema>;
 export type AppConfig = z.infer<typeof AppConfigSchema>;
 
 /**
- * Fully resolved frontend configuration.
- * After resolution, `path` is always a string (defaults applied).
- */
-export type ResolvedAppConfigFrontend = {
-  enabled: boolean;
-  mode: 'proxy' | 'static';
-  path: string;
-};
-
-/**
  * Fully resolved configuration type - use this at runtime.
  * The smtp field is guaranteed to be either a full AppConfigSmtp object
  * or undefined (the `{ test: true }` shorthand has been resolved).
- * The frontend field is guaranteed to be fully resolved with path filled.
  */
-export type ResolvedAppConfig = Omit<AppConfig, 'smtp' | 'app'> & {
-  app: Omit<AppConfig['app'], 'frontend'> & {
-    frontend: ResolvedAppConfigFrontend;
-  };
+export type ResolvedAppConfig = Omit<AppConfig, 'smtp'> & {
   smtp: AppConfigSmtp | undefined;
 };

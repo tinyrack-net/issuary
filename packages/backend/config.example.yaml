@@ -103,62 +103,14 @@ app:
   account_deletion: ${ACCOUNT_DELETION:-false}
 
   # --------------------------------------------------------------------------
-  # HTML Template Variables
+  # Standalone-only Frontend Settings
   # --------------------------------------------------------------------------
 
-  # html_variables: Key-value pairs injected into served HTML files.
-  # Use {{KEY}} syntax in HTML files to reference these variables.
-  # Variables are replaced at runtime when the HTML file is first requested
-  # and cached for subsequent requests.
+  # `app.frontend` and `app.html_variables` are no longer part of the
+  # backend config schema. They are owned by `@tinyauth/standalone`.
   #
-  # Built-in variables (with defaults):
-  #   TITLE       - Page title (default: "Tinyauth")
-  #   DESCRIPTION - Meta description for SEO (default: empty)
-  #   FAVICON_URL - Favicon URL (default: "/vite.svg")
-  #
-  # You can also define custom variables and use {{KEY}} in HTML.
-  #
-  # html_variables:
-  #   TITLE: My Auth Service
-  #   DESCRIPTION: Authentication portal for My Company
-  #   FAVICON_URL: /custom-favicon.ico
-
-  # --------------------------------------------------------------------------
-  # Frontend Serving
-  # --------------------------------------------------------------------------
-
-  # frontend: Controls how the frontend is served.
-  #
-  # Options:
-  #   enabled - Whether the frontend is served at all (default: true).
-  #             Set to false for API-only deployments.
-  #   mode    - How to serve the frontend (default: 'static'):
-  #             'proxy'  - Forward non-API requests to an upstream URL.
-  #                        Useful for development with a separate dev server.
-  #             'static' - Serve built files from a local directory.
-  #   path    - Depends on mode:
-  #             proxy  → Upstream URL (default: http://localhost:8081)
-  #             static → Filesystem path (default: built-in public/ directory)
-  #
-  # Examples:
-  #
-  # Development with Vite dev server:
-  #   frontend:
-  #     mode: proxy
-  #     path: http://localhost:5173
-  #
-  # Production (default - serve built frontend):
-  #   frontend:
-  #     mode: static
-  #
-  # Custom static directory:
-  #   frontend:
-  #     mode: static
-  #     path: /var/www/html
-  #
-  # API-only (no frontend):
-  #   frontend:
-  #     enabled: false
+  # See `packages/standalone/config.example.yaml` for the standalone-only
+  # frontend serving and HTML interpolation settings.
 
   # --------------------------------------------------------------------------
   # Internationalization (i18n) Settings

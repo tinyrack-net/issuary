@@ -1,24 +1,62 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import nodemailer from 'nodemailer';
 import z from 'zod';
 import { ConfigValidationError } from '../format-zod-error.js';
 import {
   type AppConfig,
-  type AppConfigInput,
   AppConfigSchema,
   type AppConfigSmtp,
   type ResolvedAppConfig,
-  type ResolvedAppConfigFrontend,
 } from './schema.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object';
+}
+
+function getStandaloneOnlyConfigIssues(input: unknown): z.core.$ZodIssue[] {
+  if (!isRecord(input)) {
+    return [];
+  }
+
+  const app = input['app'];
+  if (!isRecord(app)) {
+    return [];
+  }
+
+  const issues: z.core.$ZodIssue[] = [];
+
+  if (Object.hasOwn(app, 'frontend')) {
+    issues.push({
+      code: 'custom',
+      message:
+        'app.frontend is standalone-only. ' +
+        'Use @tinyauth/standalone/config or createStandaloneApp().',
+      path: ['app', 'frontend'],
+    });
+  }
+
+  if (Object.hasOwn(app, 'html_variables')) {
+    issues.push({
+      code: 'custom',
+      message:
+        'app.html_variables is standalone-only. ' +
+        'Use @tinyauth/standalone/config or createStandaloneApp().',
+      path: ['app', 'html_variables'],
+    });
+  }
+
+  return issues;
+}
 
 /**
  * Parse input through AppConfigSchema, converting ZodError into a
  * human-readable ConfigValidationError.
  */
 export function parseConfig(input: unknown): AppConfig {
+  const standaloneOnlyIssues = getStandaloneOnlyConfigIssues(input);
+  if (standaloneOnlyIssues.length > 0) {
+    throw new ConfigValidationError(standaloneOnlyIssues);
+  }
+
   try {
     return AppConfigSchema.parse(input);
   } catch (err) {
@@ -56,48 +94,15 @@ const resolveSmtpConfig = async (
 };
 
 /**
- * Default path for the built-in public/ directory.
- * Resolved relative to this file: lib/config/ → ../../public
- * (works for both src/ and dist/ layouts).
- */
-export const DEFAULT_STATIC_PATH = path.resolve(__dirname, '../../public');
-
-/**
- * Default upstream URL for proxy mode.
- */
-export const DEFAULT_PROXY_UPSTREAM = 'http://localhost:8081';
-
-/**
- * Resolve the frontend configuration, filling in defaults
- * for `path` based on the chosen mode.
- */
-function resolveFrontendConfig(
-  frontend: AppConfig['app']['frontend'],
-): ResolvedAppConfigFrontend {
-  const { enabled, mode } = frontend;
-  let resolvedPath: string;
-
-  if (frontend.path !== undefined) {
-    resolvedPath = frontend.path;
-  } else if (mode === 'proxy') {
-    resolvedPath = DEFAULT_PROXY_UPSTREAM;
-  } else {
-    resolvedPath = DEFAULT_STATIC_PATH;
-  }
-
-  return { enabled, mode, path: resolvedPath };
-}
-
-/**
- * Transform AppConfigInput to ResolvedAppConfig.
- * This parses the input through the schema (applying defaults),
+ * Transform raw backend config input to ResolvedAppConfig.
+ * This parses the input through the backend schema (applying defaults),
  * resolves test SMTP accounts, and returns the fully resolved config.
  *
  * @param input - The configuration input (with optional fields)
  * @returns The fully resolved configuration with all defaults applied
  */
 export async function resolveConfig(
-  input: AppConfigInput,
+  input: unknown,
 ): Promise<ResolvedAppConfig> {
   // Parse through AppConfigSchema to apply all defaults
   const parsed = parseConfig(input);
@@ -105,15 +110,8 @@ export async function resolveConfig(
   // Resolve SMTP config (handle test: true case)
   const smtpConfig = await resolveSmtpConfig(parsed.smtp);
 
-  // Resolve frontend config (fill in path defaults)
-  const resolvedFrontend = resolveFrontendConfig(parsed.app.frontend);
-
   return {
     ...parsed,
-    app: {
-      ...parsed.app,
-      frontend: resolvedFrontend,
-    },
     smtp: smtpConfig,
   };
 }

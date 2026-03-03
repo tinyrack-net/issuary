@@ -1,11 +1,14 @@
-import { ConfigValidationError, resolveConfig } from '@tinyauth/backend/config';
+import { ConfigValidationError } from '@tinyauth/backend/config';
 import { createLogger } from '@tinyauth/backend/logger';
 import {
   initializeServices,
   type ServiceContainer,
 } from '@tinyauth/backend/services';
 import { Command } from 'commander';
-import { loadConfig } from '#standalone/lib/load-config.js';
+import {
+  loadResolvedConfig,
+  toBackendConfig,
+} from '#standalone/lib/load-config.js';
 
 /**
  * Cleanup command
@@ -37,11 +40,13 @@ export const cleanupCommand = new Command('cleanup')
       let cleanup: (() => Promise<void>) | undefined;
 
       try {
-        const config = loadConfig(configPath ? { configPath } : undefined);
-        const resolved = await resolveConfig(config);
+        const resolved = await loadResolvedConfig(
+          configPath ? { configPath } : undefined,
+        );
+        const backendConfig = toBackendConfig(resolved);
         const logger = createLogger({
           logging: {
-            ...resolved.logging,
+            ...backendConfig.logging,
             level: verbose ? 'debug' : 'info',
           },
         });
@@ -54,7 +59,7 @@ export const cleanupCommand = new Command('cleanup')
           logger.debug('Initializing services...');
         }
 
-        const result = await initializeServices(resolved, logger);
+        const result = await initializeServices(backendConfig, logger);
         services = result.services;
         cleanup = result.cleanup;
 

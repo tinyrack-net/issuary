@@ -1,13 +1,13 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#backend/app.js';
-import { createApp } from '#backend/app.js';
 import { e } from '#backend/schemas/error.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
   createPasskeyForUser,
+  createTestApp,
   expectError,
   extractCookie,
   generateUniqueEmail,
@@ -22,7 +22,7 @@ describe('GET /api/user/passkeys', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createApp({
+    const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
@@ -319,7 +319,7 @@ describe('GET /api/user/passkeys - Passkey disabled', () => {
   let cleanupDisabled: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createApp({
+    const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],

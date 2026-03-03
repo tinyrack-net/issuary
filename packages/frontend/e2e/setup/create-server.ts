@@ -1,8 +1,8 @@
 import type { AddressInfo } from 'node:net';
 import { createServer as createNetServer } from 'node:net';
 import { serve } from '@hono/node-server';
-import type { AppConfigInput } from '@tinyauth/backend';
-import { createApp } from '@tinyauth/backend';
+import { createStandaloneApp } from '@tinyauth/standalone/app';
+import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
 
 const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
 
@@ -173,7 +173,7 @@ function getFreePort(): Promise<number> {
 type ConfigFactory = (
   backendPort: number,
   frontendPort: number,
-) => AppConfigInput;
+) => StandaloneConfigInput;
 
 function getSharedFrontendPort(): number {
   const rawPort = process.env[SHARED_FRONTEND_PORT_ENV];
@@ -211,7 +211,7 @@ export async function createE2EServer(configFactory: ConfigFactory) {
   const config = configFactory(backendPort, frontendPort);
 
   // 1. Start backend
-  const { app, services, cleanup } = await createApp({ config });
+  const { app, services, cleanup } = await createStandaloneApp({ config });
 
   // 2. Register test-only API endpoints
   const testApp = app

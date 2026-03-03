@@ -1,10 +1,10 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#backend/app.js';
-import { createApp } from '#backend/app.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   createDbUserWithSession,
+  createTestApp,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_TERMS_CONFIG,
@@ -17,7 +17,7 @@ describe('GET /api/terms', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
@@ -100,7 +100,7 @@ describe('GET /api/terms', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
@@ -172,7 +172,7 @@ describe('GET /api/terms', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],
@@ -331,7 +331,7 @@ describe('GET /api/terms', () => {
       let cleanup: () => Promise<void>;
 
       beforeAll(async () => {
-        const server = await createApp({
+        const server = await createTestApp({
           config: {
             ...MINIMAL_TEST_CONFIG,
             terms: [...TEST_TERMS_CONFIG],
@@ -361,7 +361,7 @@ describe('GET /api/terms', () => {
       let cleanup: () => Promise<void>;
 
       beforeAll(async () => {
-        const server = await createApp({
+        const server = await createTestApp({
           config: {
             ...MINIMAL_TEST_CONFIG,
             app: {
@@ -413,7 +413,7 @@ describe('GET /api/terms', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [
@@ -516,7 +516,7 @@ describe('GET /api/terms', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [
@@ -596,7 +596,7 @@ describe('GET /api/terms', () => {
       let cleanup: () => Promise<void>;
 
       beforeAll(async () => {
-        const server = await createApp({
+        const server = await createTestApp({
           config: {
             ...MINIMAL_TEST_CONFIG,
             terms: [],
@@ -627,7 +627,7 @@ describe('GET /api/terms', () => {
       let cleanup: () => Promise<void>;
 
       beforeAll(async () => {
-        const server = await createApp({
+        const server = await createTestApp({
           config: {
             ...MINIMAL_TEST_CONFIG,
             terms: [...TEST_TERMS_CONFIG],
@@ -665,7 +665,7 @@ describe('GET /api/terms', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           terms: [...TEST_TERMS_CONFIG],

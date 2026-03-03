@@ -1,12 +1,12 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#backend/app.js';
-import { createApp } from '#backend/app.js';
 import { e } from '#backend/schemas/error.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
   createDbUserWithSession,
+  createTestApp,
   enableTotpForUser,
   expectError,
   extractCookie,
@@ -19,7 +19,7 @@ let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  const server = await createApp({
+  const server = await createTestApp({
     config: {
       ...MINIMAL_TEST_CONFIG,
       auth: {
@@ -305,7 +305,7 @@ describe('POST /api/auth/totp/verify - TOTP disabled', () => {
   let cleanupDisabled: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createApp({
+    const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {

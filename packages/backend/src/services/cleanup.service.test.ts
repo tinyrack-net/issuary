@@ -6,7 +6,6 @@ import {
   expect,
   test,
 } from 'vitest';
-import { createApp } from '#backend/app.js';
 import { EmailVerificationEntitySchema } from '#backend/entities/email-verification.entity.js';
 import {
   JwtKeyEntity,
@@ -32,6 +31,7 @@ import {
   getJwtKey,
 } from '#backend/test-utils/cli.js';
 import {
+  createTestApp,
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '#backend/test-utils/index.js';
@@ -44,7 +44,7 @@ describe('CleanupService', () => {
     let clientId: string;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: CLI_TEST_CONFIG,
       });
       services = server.services;
@@ -68,7 +68,7 @@ describe('CleanupService', () => {
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledServer = await createApp({
+      const disabledServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -182,7 +182,7 @@ describe('CleanupService', () => {
 
     test('should respect retention period configuration', async () => {
       // Create app with 1 hour retention
-      const retentionServer = await createApp({
+      const retentionServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -251,7 +251,7 @@ describe('CleanupService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: {
           ...CLI_TEST_CONFIG,
           app: {
@@ -281,7 +281,7 @@ describe('CleanupService', () => {
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledServer = await createApp({
+      const disabledServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -305,7 +305,7 @@ describe('CleanupService', () => {
     });
 
     test('should skip when jwt_key_rotation_enabled is false', async () => {
-      const noRotationServer = await createApp({
+      const noRotationServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
@@ -559,7 +559,7 @@ describe('CleanupService', () => {
     let clientId: string;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: CLI_TEST_CONFIG,
       });
       services = server.services;
@@ -582,7 +582,7 @@ describe('CleanupService', () => {
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledServer = await createApp({
+      const disabledServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -664,7 +664,7 @@ describe('CleanupService', () => {
 
     test('should not delete recently consumed codes within retention', async () => {
       // Create app with 1 hour consumed retention
-      const retentionServer = await createApp({
+      const retentionServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -783,7 +783,7 @@ describe('CleanupService', () => {
     let userSub: string;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: CLI_TEST_CONFIG,
       });
       services = server.services;
@@ -804,7 +804,7 @@ describe('CleanupService', () => {
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledServer = await createApp({
+      const disabledServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -915,7 +915,7 @@ describe('CleanupService', () => {
     let userSub: string;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: CLI_TEST_CONFIG,
       });
       services = server.services;
@@ -936,7 +936,7 @@ describe('CleanupService', () => {
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledServer = await createApp({
+      const disabledServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -1044,7 +1044,7 @@ describe('CleanupService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: CLI_TEST_CONFIG,
       });
       services = server.services;
@@ -1063,7 +1063,7 @@ describe('CleanupService', () => {
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledServer = await createApp({
+      const disabledServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -1087,7 +1087,7 @@ describe('CleanupService', () => {
     });
 
     test('should skip when account_deletion feature is disabled', async () => {
-      const noAccountDeletionServer = await createApp({
+      const noAccountDeletionServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
@@ -1208,7 +1208,7 @@ describe('CleanupService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createApp({
+      const server = await createTestApp({
         config: CLI_TEST_CONFIG,
       });
       services = server.services;
@@ -1227,7 +1227,7 @@ describe('CleanupService', () => {
     });
 
     test('should skip when disabled in config', async () => {
-      const disabledServer = await createApp({
+      const disabledServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
@@ -1337,7 +1337,7 @@ describe('CleanupService', () => {
     });
 
     test('should respect retention period configuration', async () => {
-      const retentionServer = await createApp({
+      const retentionServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {

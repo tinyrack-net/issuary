@@ -1,4 +1,4 @@
-import type { AppConfigInput } from '@tinyauth/backend';
+import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
 import { createEmailVerification2faRequiredConfig } from '#frontend-e2e/configs/email-verification-2fa-required.js';
 
 /**
@@ -8,6 +8,6 @@ import { createEmailVerification2faRequiredConfig } from '#frontend-e2e/configs/
 export function createJourneyOauth2faConfig(
   backendPort: number,
   frontendPort: number,
-): AppConfigInput {
+): StandaloneConfigInput {
   return createEmailVerification2faRequiredConfig(backendPort, frontendPort);
 }

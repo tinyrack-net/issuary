@@ -9,12 +9,12 @@ import {
   vi,
 } from 'vitest';
 import type { AppType } from '#backend/app.js';
-import { createApp } from '#backend/app.js';
 import { e } from '#backend/schemas/error.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
+  createTestApp,
   expectError,
   extractCookie,
   generateUniqueEmail,
@@ -34,7 +34,7 @@ let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  const server = await createApp({
+  const server = await createTestApp({
     config: {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],

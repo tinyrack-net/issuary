@@ -1,4 +1,4 @@
-import type { AppConfigInput } from '@tinyauth/backend';
+import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
 import {
   E2E_TEST_CLIENT_CONFIG,
   E2E_TEST_USER_CONFIG,
@@ -13,7 +13,7 @@ import {
 export function createOauthProvidersSpecificConfig(
   backendPort: number,
   frontendPort: number,
-): AppConfigInput {
+): StandaloneConfigInput {
   const host = `http://localhost:${backendPort}`;
 
   return {

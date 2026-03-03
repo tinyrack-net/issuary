@@ -1,6 +1,6 @@
+import type { Logger } from '@tinyauth/backend/logger';
 import type { Context } from 'hono';
 import { proxy } from 'hono/proxy';
-import type { Logger } from '#backend/lib/logger.js';
 
 export interface ProxyHandlerOptions {
   /**
@@ -23,23 +23,6 @@ export interface ProxyHandlerOptions {
     | undefined;
 }
 
-/**
- * Create a proxy handler that forwards requests to an
- * upstream server.
- *
- * Returns a plain async function `(c) => Response` that
- * can be used in `notFound`, `app.use()`, or any other
- * Hono handler position.
- *
- * @example
- * ```ts
- * const handler = createProxyHandler({
- *   upstream: 'http://localhost:8081',
- *   logger,
- * });
- * app.notFound((c) => handler(c));
- * ```
- */
 export function createProxyHandler(options: ProxyHandlerOptions) {
   return async (c: Context): Promise<Response> => {
     const reqUrl = new URL(c.req.url);

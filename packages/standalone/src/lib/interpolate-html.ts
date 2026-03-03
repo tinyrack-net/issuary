@@ -3,15 +3,6 @@
  * Only matches keys that follow identifier naming rules
  * (start with a letter or underscore, followed by alphanumerics or underscores).
  * Unmatched placeholders are left as-is.
- *
- * @example
- * ```ts
- * interpolateHtml('<title>{{TITLE}}</title>', { TITLE: 'Hello' });
- * // => '<title>Hello</title>'
- *
- * interpolateHtml('<p>{{MISSING}}</p>', {});
- * // => '<p>{{MISSING}}</p>'
- * ```
  */
 export function interpolateHtml(
   html: string,

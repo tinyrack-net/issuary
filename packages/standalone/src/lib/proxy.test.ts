@@ -1,20 +1,9 @@
 import http from 'node:http';
+import { createLogger } from '@tinyauth/backend/logger';
 import { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createLogger } from '#backend/lib/logger.js';
-import { createProxyHandler } from '#backend/middleware/proxy.js';
+import { createProxyHandler } from './proxy.js';
 
-/**
- * Spin up a tiny HTTP server that behaves like an
- * upstream for the proxy handler.
- *
- * Routes:
- *   GET /          → 200 HTML
- *   GET /style.css → 200 CSS
- *   GET /304       → 304 Not Modified (no body)
- *   GET /204       → 204 No Content   (no body)
- *   *              → 404
- */
 function createMockUpstream(): Promise<{
   server: http.Server;
   port: number;

@@ -17,10 +17,10 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#backend/app.js';
-import { createApp } from '#backend/app.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
+  createTestApp,
   enableTotpForUser,
   extractCookie,
   generateUniqueEmail,
@@ -68,7 +68,7 @@ describe('POST /api/auth/login - TOTP Required Mode', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createApp({
+    const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
@@ -237,7 +237,7 @@ describe('POST /api/auth/login - TOTP Optional Mode', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createApp({
+    const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -354,7 +354,7 @@ describe('POST /api/auth/login - TOTP Disabled Mode', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createApp({
+    const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -439,7 +439,7 @@ describe('POST /api/auth/login - Email Verification + TOTP', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createApp({
+    const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
@@ -547,7 +547,7 @@ describe('POST /api/auth/login - Session State Verification', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createApp({
+    const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
