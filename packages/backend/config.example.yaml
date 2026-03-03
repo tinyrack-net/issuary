@@ -107,7 +107,8 @@ app:
   # --------------------------------------------------------------------------
 
   # `app.frontend` and `app.html_variables` are no longer part of the
-  # backend config schema. They are owned by `@tinyauth/standalone`.
+  # backend config schema. They are owned by `@tinyauth/standalone`,
+  # and backend config parsing ignores them if they are present.
   #
   # See `packages/standalone/config.example.yaml` for the standalone-only
   # frontend serving and HTML interpolation settings.

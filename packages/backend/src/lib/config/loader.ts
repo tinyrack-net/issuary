@@ -8,55 +8,11 @@ import {
   type ResolvedAppConfig,
 } from './schema.js';
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object';
-}
-
-function getStandaloneOnlyConfigIssues(input: unknown): z.core.$ZodIssue[] {
-  if (!isRecord(input)) {
-    return [];
-  }
-
-  const app = input['app'];
-  if (!isRecord(app)) {
-    return [];
-  }
-
-  const issues: z.core.$ZodIssue[] = [];
-
-  if (Object.hasOwn(app, 'frontend')) {
-    issues.push({
-      code: 'custom',
-      message:
-        'app.frontend is standalone-only. ' +
-        'Use @tinyauth/standalone/config or createStandaloneApp().',
-      path: ['app', 'frontend'],
-    });
-  }
-
-  if (Object.hasOwn(app, 'html_variables')) {
-    issues.push({
-      code: 'custom',
-      message:
-        'app.html_variables is standalone-only. ' +
-        'Use @tinyauth/standalone/config or createStandaloneApp().',
-      path: ['app', 'html_variables'],
-    });
-  }
-
-  return issues;
-}
-
 /**
  * Parse input through AppConfigSchema, converting ZodError into a
  * human-readable ConfigValidationError.
  */
 export function parseConfig(input: unknown): AppConfig {
-  const standaloneOnlyIssues = getStandaloneOnlyConfigIssues(input);
-  if (standaloneOnlyIssues.length > 0) {
-    throw new ConfigValidationError(standaloneOnlyIssues);
-  }
-
   try {
     return AppConfigSchema.parse(input);
   } catch (err) {

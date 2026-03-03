@@ -1,5 +1,4 @@
 import { describe, expect, test, vi } from 'vitest';
-import { ConfigValidationError } from '#backend/lib/format-zod-error.js';
 import { MINIMAL_TEST_CONFIG } from '#backend/test-utils/index.js';
 import { resolveConfig } from './loader.js';
 
@@ -18,8 +17,8 @@ vi.mock('nodemailer', () => ({
 }));
 
 describe('resolveConfig', () => {
-  test('rejects standalone frontend config', async () => {
-    const promise = resolveConfig({
+  test('ignores standalone frontend config', async () => {
+    const resolved = await resolveConfig({
       ...MINIMAL_TEST_CONFIG,
       app: {
         ...MINIMAL_TEST_CONFIG.app,
@@ -29,12 +28,12 @@ describe('resolveConfig', () => {
       },
     });
 
-    await expect(promise).rejects.toBeInstanceOf(ConfigValidationError);
-    await expect(promise).rejects.toThrow('app.frontend');
+    expect(Object.hasOwn(resolved.app, 'frontend')).toBe(false);
+    expect(Object.hasOwn(resolved.app, 'html_variables')).toBe(false);
   });
 
-  test('rejects standalone html variables config', async () => {
-    const promise = resolveConfig({
+  test('ignores standalone html variables config', async () => {
+    const resolved = await resolveConfig({
       ...MINIMAL_TEST_CONFIG,
       app: {
         ...MINIMAL_TEST_CONFIG.app,
@@ -44,8 +43,8 @@ describe('resolveConfig', () => {
       },
     });
 
-    await expect(promise).rejects.toBeInstanceOf(ConfigValidationError);
-    await expect(promise).rejects.toThrow('app.html_variables');
+    expect(Object.hasOwn(resolved.app, 'frontend')).toBe(false);
+    expect(Object.hasOwn(resolved.app, 'html_variables')).toBe(false);
   });
 
   test('returns backend-only resolved config', async () => {
