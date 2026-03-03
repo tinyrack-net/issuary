@@ -1,5 +1,3 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { Options } from '@mikro-orm/core';
 import { Migrator } from '@mikro-orm/migrations';
 import { defineConfig, PostgreSqlDriver } from '@mikro-orm/postgresql';
@@ -22,9 +20,6 @@ import { UserTermsConsentEntitySchema } from '../entities/user-terms-consent.ent
 import { UserTotpEntitySchema } from '../entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '../entities/user-totp-recovery-code.entity.js';
 import compiledFunctions from './compiled-functions.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export const mikroormPostgresConfig = (
   database: AppConfigDatabasePostgres,
@@ -50,11 +45,6 @@ export const mikroormPostgresConfig = (
       UserTotpRecoveryCodeEntitySchema,
       UserTotpEntitySchema,
     ],
-    migrations: {
-      path: path.join(__dirname, '../migrations/postgres'),
-      pathTs: path.join(__dirname, '../migrations/postgres'),
-      glob: '!(*.d).{ts,js}',
-    },
     host: database.host,
     port: database.port,
     dbName: database.name,
@@ -66,7 +56,6 @@ export const mikroormPostgresConfig = (
         ssl: true,
       },
     },
-    dynamicImportProvider: (id: string) => import(id),
     debug: false,
   });
 };

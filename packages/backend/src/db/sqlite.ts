@@ -1,5 +1,3 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { Options } from '@mikro-orm/core';
 import { Migrator } from '@mikro-orm/migrations';
 import { SeedManager } from '@mikro-orm/seeder';
@@ -22,9 +20,6 @@ import { UserTotpEntitySchema } from '../entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '../entities/user-totp-recovery-code.entity.js';
 import type { AppConfigDatabaseSqlite } from '../lib/config/schema.js';
 import compiledFunctions from './compiled-functions.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export const mikroormSqliteConfig = (
   database: AppConfigDatabaseSqlite,
@@ -51,13 +46,7 @@ export const mikroormSqliteConfig = (
       UserTotpRecoveryCodeEntitySchema,
       UserTotpEntitySchema,
     ],
-    migrations: {
-      path: path.join(__dirname, '../migrations/sqlite'),
-      pathTs: path.join(__dirname, '../migrations/sqlite'),
-      glob: '!(*.d).{ts,js}',
-    },
     extensions: [SeedManager, Migrator],
-    dynamicImportProvider: (id: string) => import(id),
     debug: false,
   });
 };
