@@ -11,7 +11,7 @@ const startTime = Date.now();
  * GET /health
  *
  * Comprehensive health check endpoint.
- * Returns detailed status information including version, uptime, and dependency checks.
+ * Returns detailed status information including uptime and dependency checks.
  */
 export const healthGet = new Hono<AppEnv>().get(
   '/health',
@@ -19,7 +19,7 @@ export const healthGet = new Hono<AppEnv>().get(
     tags: [TAGS.HEALTH],
     summary: 'Health check',
     description:
-      'Returns comprehensive health status including version, uptime, and dependency checks.',
+      'Returns comprehensive health status including uptime and dependency checks.',
     responses: {
       200: {
         content: {
@@ -42,7 +42,6 @@ export const healthGet = new Hono<AppEnv>().get(
   async (c) => {
     const { mikro } = c.var.services;
     const uptime = Math.floor((Date.now() - startTime) / 1000);
-    const version = process.env['npm_package_version'] || '1.0.0';
 
     // Check database connectivity
     let databaseStatus: 'ok' | 'error' = 'error';
@@ -61,7 +60,6 @@ export const healthGet = new Hono<AppEnv>().get(
       return c.json(
         {
           status: 'ok' as const,
-          version,
           uptime,
           checks: { database: 'ok' as const },
         },
@@ -72,7 +70,6 @@ export const healthGet = new Hono<AppEnv>().get(
     return c.json(
       {
         status: 'error' as const,
-        version,
         uptime,
         checks: { database: databaseStatus },
         error: errorMessage,

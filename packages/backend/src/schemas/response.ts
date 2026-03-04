@@ -433,7 +433,6 @@ export const r = {
   // Health check response
   HealthResponse: z.object({
     status: z.literal('ok').describe('Overall health status'),
-    version: z.string().describe('Backend version'),
     uptime: z.number().describe('Uptime in seconds'),
     checks: z.object({
       database: z.literal('ok').describe('Database health status'),
@@ -442,7 +441,6 @@ export const r = {
 
   HealthErrorResponse: z.object({
     status: z.literal('error').describe('Overall health status'),
-    version: z.string().describe('Backend version'),
     uptime: z.number().describe('Uptime in seconds'),
     checks: z.object({
       database: z.enum(['ok', 'error']).describe('Database health status'),
