@@ -1,7 +1,7 @@
-import type {
-  AppConfig,
-  AppConfigInput,
-  ResolvedAppConfig,
+import {
+  AppConfigApp,
+  AppConfigSchema,
+  type ResolvedAppConfig,
 } from '@tinyauth/backend/config';
 import z from 'zod';
 
@@ -24,7 +24,7 @@ export type ResolvedStandaloneFrontendConfig = {
   path: string;
 };
 
-export const StandaloneAppExtensionSchema = z.object({
+const StandaloneAppSchema = AppConfigApp.extend({
   frontend: StandaloneFrontendConfigSchema.default({
     enabled: true,
     mode: 'static',
@@ -32,23 +32,12 @@ export const StandaloneAppExtensionSchema = z.object({
   html_variables: z.record(z.string(), z.string()).default({}),
 });
 
-export type StandaloneAppExtension = z.infer<
-  typeof StandaloneAppExtensionSchema
->;
+export const StandaloneConfigSchema = AppConfigSchema.extend({
+  app: StandaloneAppSchema,
+});
 
-export type StandaloneConfigInput = Omit<AppConfigInput, 'app'> & {
-  app: AppConfigInput['app'] & {
-    frontend?: StandaloneFrontendConfigInput | undefined;
-    html_variables?: Record<string, string> | undefined;
-  };
-};
-
-export type StandaloneConfig = Omit<AppConfig, 'app'> & {
-  app: AppConfig['app'] & {
-    frontend: StandaloneFrontendConfig;
-    html_variables: Record<string, string>;
-  };
-};
+export type StandaloneConfigInput = z.input<typeof StandaloneConfigSchema>;
+export type StandaloneConfig = z.infer<typeof StandaloneConfigSchema>;
 
 export type ResolvedStandaloneConfig = Omit<ResolvedAppConfig, 'app'> & {
   app: ResolvedAppConfig['app'] & {
