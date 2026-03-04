@@ -50,6 +50,12 @@ pnpm install
 pnpm dev
 ```
 
+## Examples
+
+- `examples/next-basic` - Next.js OIDC client
+- `examples/react-spa` - React SPA PKCE client
+- `examples/cloudflare-worker-hono` - Cloudflare Worker deployment of `@tinyauth/backend` with the bundled TinyAuth frontend
+
 ## License
 
 [MIT](LICENSE)
