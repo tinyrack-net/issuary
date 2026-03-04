@@ -22,9 +22,11 @@ export { parseConfig, resolveConfig } from './loader.js';
 // Config schemas and types
 export {
   type AppConfig,
+  AppConfigApp,
   type AppConfigInput,
   AppConfigPasskeyAuth,
   AppConfigPasswordAuth,
+  AppConfigSchema,
   AppTheme,
   type LogFormat,
   type LogLevel,

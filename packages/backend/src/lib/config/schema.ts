@@ -496,7 +496,7 @@ export const AppTheme = z.enum([
 
 export type AppTheme = z.infer<typeof AppTheme>;
 
-const AppConfigApp = z.object({
+export const AppConfigApp = z.object({
   host: z.string().default('http://localhost:8080'),
   port: zz.PORT.default(8080),
   cookie_secret: z.string().min(16),
