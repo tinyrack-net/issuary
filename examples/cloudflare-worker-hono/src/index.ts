@@ -87,10 +87,6 @@ export async function createCloudflareExampleApp(assets: AssetFetcher) {
         enabled: false,
         cron: '0 2 * * *',
       },
-      users: [],
-      clients: [],
-      terms: [],
-      smtp: {}
     },
   });
 
