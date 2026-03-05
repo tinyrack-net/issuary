@@ -66,8 +66,10 @@ export async function resolveConfig(
   // Resolve SMTP config (handle test: true case)
   const smtpConfig = await resolveSmtpConfig(parsed.smtp);
 
+  const { smtp: _smtp, ...rest } = parsed;
+
   return {
-    ...parsed,
-    smtp: smtpConfig,
+    ...rest,
+    ...(smtpConfig ? { smtp: smtpConfig } : {}),
   };
 }

@@ -1055,5 +1055,5 @@ export type AppConfig = z.infer<typeof AppConfigSchema>;
  * or undefined (the `{ test: true }` shorthand has been resolved).
  */
 export type ResolvedAppConfig = Omit<AppConfig, 'smtp'> & {
-  smtp: AppConfigSmtp | undefined;
+  smtp?: AppConfigSmtp;
 };
