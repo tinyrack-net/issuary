@@ -75,36 +75,20 @@ export const userPasswordPost = new Hono<AppEnv>().post(
   validator(
     'json',
     z.object({
-      password: f.userPassword,
+      password: f.newUserPassword,
     }),
   ),
   verifyAuth(),
   async (c) => {
     const body = c.req.valid('json');
-    const { config } = c.var.services;
+    const { config, passwordAuthService } = c.var.services;
     const { user } = c.var.verifiedUser;
-    const { mikro } = c.var.services;
 
     if (!config.auth.password.enabled) {
       throw new e.ValidationError.Error('Password authentication is disabled');
     }
 
-    // Config users cannot set password
-    if (user.managed_by === 'config') {
-      throw new e.UserNotEditable.Error();
-    }
-
-    // Load password_hash for password check
-    await mikro.em.populate(user, ['password_hash']);
-
-    // Check if password is already set
-    if (user.hasPassword()) {
-      throw new e.PasswordAlreadySet.Error();
-    }
-
-    // Set new password
-    user.password_hash = body.password;
-    await mikro.em.flush();
+    await passwordAuthService.setPasswordForUser(user, body.password);
 
     return c.json({ ok: true as const }, 200);
   },

@@ -50,35 +50,16 @@ export const authEmailVerifyPost = new Hono<AppEnv>().post(
     const body = c.req.valid('json');
 
     const user = await services.emailService.verifyEmail(body.token);
-
-    await services.mikro.em.populate(user, ['password_hash']);
-
-    const totpRegistered = await services.mikro.userTotp.isRegistered(user.sub);
-    const registeredPassKeyCount =
-      await services.mikro.userPasskey.countByUserSub(user.sub);
-
-    const secondFactorRequired =
-      services.userService.user2FASetupRequired(user);
+    const userSession = await services.userService.getSessionUserBySub(
+      user.sub,
+    );
     const available2FAMethods =
       services.userService.getAvailable2FASetupMethods();
 
-    const userSession: z.infer<typeof r.AuthResponse>['user'] = {
-      sub: user.sub,
-      managed_by: 'database' as const,
-      email: user.email,
-      email_verified: user.email_verified,
-      email_verification_required:
-        services.userService.userEmailVerificationRequired(user),
-      has_password: user.hasPassword(),
-      totp_registered: totpRegistered,
-      second_factor_required: secondFactorRequired,
-      passkey_count: registeredPassKeyCount,
-    };
-
     if (
-      secondFactorRequired &&
-      !totpRegistered &&
-      registeredPassKeyCount === 0 &&
+      userSession.second_factor_required &&
+      !userSession.totp_registered &&
+      userSession.passkey_count === 0 &&
       available2FAMethods.length > 0
     ) {
       session.setPending2FASetupSession(user.sub);

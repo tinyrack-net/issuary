@@ -182,7 +182,7 @@ describe('POST /api/auth/totp/recovery/verify', () => {
     const client = testClient(app);
     const res = await client.api.auth.totp.recovery.verify.$post(
       {
-        json: { code: 'aaaa-zzzz' },
+        json: { code: 'ABCD-EFGH-JKLM-NPQR' },
       },
       { headers: { Cookie: `session=${pending2FACookie}` } },
     );
@@ -193,7 +193,7 @@ describe('POST /api/auth/totp/recovery/verify', () => {
   test('should return 401 when no pending 2FA session', async () => {
     const client = testClient(app);
     const res = await client.api.auth.totp.recovery.verify.$post({
-      json: { code: 'abcd-ef12' },
+      json: { code: 'ABCD-EFGH-JKLM-NPQR' },
     });
 
     await expectError(res, e.Unauthorized);
@@ -208,7 +208,7 @@ describe('POST /api/auth/totp/recovery/verify', () => {
     // Missing hyphen
     const res1 = await client.api.auth.totp.recovery.verify.$post(
       {
-        json: { code: 'abcdefgh' },
+        json: { code: 'ABCDEFGHJKLMNPQR' },
       },
       { headers: { Cookie: `session=${pending2FACookie}` } },
     );
@@ -217,16 +217,16 @@ describe('POST /api/auth/totp/recovery/verify', () => {
     // Too short
     const res2 = await client.api.auth.totp.recovery.verify.$post(
       {
-        json: { code: 'abc-def' },
+        json: { code: 'ABCD-EFGH-JKLM' },
       },
       { headers: { Cookie: `session=${pending2FACookie}` } },
     );
     expect(res2.status).toBe(400);
 
-    // Uppercase (should not match pattern)
+    // Invalid characters (I and O are excluded from the recovery alphabet)
     const res3 = await client.api.auth.totp.recovery.verify.$post(
       {
-        json: { code: 'ABCD-EF12' },
+        json: { code: 'ABCD-EFGH-IKLM-NOPQ' },
       },
       { headers: { Cookie: `session=${pending2FACookie}` } },
     );
@@ -402,7 +402,7 @@ describe('POST /api/auth/totp/recovery/verify', () => {
     const client = testClient(app);
     const res = await client.api.auth.totp.recovery.verify.$post(
       {
-        json: { code: 'abcd-1234' },
+        json: { code: recoveryCodes[0] ?? '' },
       },
       { headers: { Cookie: `session=${newCookie}` } },
     );
@@ -518,7 +518,7 @@ describe('POST /api/auth/totp/recovery/verify - TOTP disabled', () => {
 
     const res = await client.api.auth.totp.recovery.verify.$post(
       {
-        json: { code: 'abcd-1234' },
+        json: { code: 'ABCD-EFGH-JKLM-NPQR' },
       },
       { headers: { Cookie: `session=${sessionCookie}` } },
     );

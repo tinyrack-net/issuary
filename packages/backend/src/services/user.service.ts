@@ -7,22 +7,26 @@ import { e } from '#backend/schemas/error.js';
 import type { r } from '#backend/schemas/response.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 import type { EmailService } from './email.service.js';
+import type { PasswordAuthService } from './password-auth.service.js';
 import type { TermsService } from './terms.service.js';
 
 export class UserService {
   private readonly mikro: MikroService;
   private readonly config: ResolvedAppConfig;
   private readonly emailService: EmailService;
+  private readonly passwordAuthService: PasswordAuthService;
   private readonly termsService?: TermsService | undefined;
   public constructor(
     mikro: MikroService,
     config: ResolvedAppConfig,
     emailService: EmailService,
+    passwordAuthService: PasswordAuthService,
     termsService?: TermsService,
   ) {
     this.mikro = mikro;
     this.config = config;
     this.emailService = emailService;
+    this.passwordAuthService = passwordAuthService;
     this.termsService = termsService;
   }
 
@@ -39,6 +43,35 @@ export class UserService {
       .getItems()
       .some((totp) => totp.verified && totp.recovery_confirmed);
 
+    return this.buildSessionUser({
+      user,
+      totpRegistered: totpFullyRegistered,
+      passkeyCount: user.passkeys.length,
+    });
+  }
+
+  public async getSessionUserBySub(
+    userSub: string,
+  ): Promise<z.infer<typeof r.UserSession>> {
+    const user = await this.mikro.user.verifyBySub(userSub);
+    return this.userEntityToSessionUser(user);
+  }
+
+  public async buildSessionUser(params: {
+    user: Pick<
+      UserEntity,
+      'sub' | 'managed_by' | 'email' | 'email_verified'
+    > & {
+      hasPassword(): boolean;
+    };
+    totpRegistered: boolean;
+    passkeyCount: number;
+  }): Promise<z.infer<typeof r.UserSession>> {
+    const { user, totpRegistered, passkeyCount } = params;
+    const recoveryCodeCount = totpRegistered
+      ? await this.mikro.userTotpRecoveryCode.countUnusedByUserSub(user.sub)
+      : 0;
+
     return {
       sub: user.sub,
       managed_by: user.managed_by,
@@ -46,9 +79,10 @@ export class UserService {
       email_verified: user.email_verified,
       email_verification_required: this.userEmailVerificationRequired(user),
       has_password: user.hasPassword(),
-      totp_registered: totpFullyRegistered,
+      totp_registered: totpRegistered,
+      totp_recovery_codes_missing: totpRegistered && recoveryCodeCount === 0,
       second_factor_required: this.user2FASetupRequired(user),
-      passkey_count: user.passkeys.length,
+      passkey_count: passkeyCount,
     };
   }
 
@@ -88,7 +122,7 @@ export class UserService {
     }
 
     // 2. Register the user
-    const user = await this.mikro.user.register({
+    const user = await this.passwordAuthService.createDatabaseUser({
       email: params.email,
       password: params.password,
     });
@@ -133,6 +167,7 @@ export class UserService {
       email_verification_required: this.userEmailVerificationRequired(user),
       has_password: user.hasPassword(),
       totp_registered: false,
+      totp_recovery_codes_missing: false,
       second_factor_required: this.user2FASetupRequired(user),
       passkey_count: 0,
     };

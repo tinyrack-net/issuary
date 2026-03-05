@@ -43,9 +43,10 @@ async function createUserWithPasswordAndSession(
   let userSub!: string;
 
   await withMikroContext(services, async () => {
+    const passwordHash = await services.securityService.hashPassword(password);
     const user = services.mikro.user.create({
       email,
-      password_hash: password, // Will be hashed by entity lifecycle hook
+      password_hash: passwordHash,
     });
     user.email_verified = true;
     await services.mikro.em.persist(user).flush();
@@ -106,7 +107,8 @@ describe('DELETE /api/user/password', () => {
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
 
-      user.password_hash = 'tempPassword123!';
+      user.password_hash =
+        await services.securityService.hashPassword('tempPassword123!');
       await services.mikro.em.flush();
     });
 

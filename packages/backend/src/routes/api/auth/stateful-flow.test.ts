@@ -73,6 +73,7 @@ beforeAll(async () => {
       },
       logging: MINIMAL_TEST_CONFIG.logging,
       database: MINIMAL_TEST_CONFIG.database,
+      security: MINIMAL_TEST_CONFIG.security,
       auth: {
         password: {
           enabled: true,
@@ -320,9 +321,11 @@ describe('Stateful auth flows', () => {
     const credentialId = `stateful-passkey-${crypto.randomUUID()}`;
 
     const user = await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const userEntity = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       userEntity.email_verified = true;
       await services.mikro.em.persist(userEntity).flush();

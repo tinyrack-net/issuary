@@ -29,9 +29,10 @@ async function createDbUserWithSessionHelper(
   userSub: string;
 }> {
   await withMikroContext(services, async () => {
+    const passwordHash = await services.securityService.hashPassword(password);
     const user = services.mikro.user.create({
       email,
-      password_hash: password,
+      password_hash: passwordHash,
     });
     user.email_verified = true;
     await services.mikro.em.persist(user).flush();

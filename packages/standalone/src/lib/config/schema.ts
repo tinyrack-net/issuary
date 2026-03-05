@@ -32,7 +32,7 @@ const StandaloneAppSchema = AppConfigApp.extend({
   html_variables: z.record(z.string(), z.string()).default({}),
 });
 
-export const StandaloneConfigSchema = AppConfigSchema.extend({
+export const StandaloneConfigSchema = AppConfigSchema.safeExtend({
   app: StandaloneAppSchema,
 });
 

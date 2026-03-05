@@ -2,6 +2,14 @@ import { EntityRepository } from '@mikro-orm/core';
 import type { IUserTotpRecoveryCodeEntity } from '#backend/entities/user-totp-recovery-code.entity.js';
 
 export class UserTotpRecoveryCodeRepository extends EntityRepository<IUserTotpRecoveryCodeEntity> {
+  async findUnusedByUserSubAndCodeHash(userSub: string, codeHash: string) {
+    return this.findOne({
+      user: { sub: userSub },
+      code_hash: codeHash,
+      used: false,
+    });
+  }
+
   /**
    * Find all unused recovery codes for a user
    *
@@ -20,6 +28,10 @@ export class UserTotpRecoveryCodeRepository extends EntityRepository<IUserTotpRe
    */
   async countUnusedByUserSub(userSub: string) {
     return this.count({ user: { sub: userSub }, used: false });
+  }
+
+  async countByUserSub(userSub: string) {
+    return this.count({ user: { sub: userSub } });
   }
 
   /**

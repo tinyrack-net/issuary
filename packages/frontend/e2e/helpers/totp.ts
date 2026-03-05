@@ -86,8 +86,9 @@ export async function setupTotpViaApi(
 /**
  * Sets up TOTP for a user via the test-only endpoint (no session required).
  *
- * Directly creates a verified TOTP record in the database, bypassing
- * the authenticated API flow. This avoids cookie-store mismatch between
+ * Performs the full server-side TOTP setup flow, including generating
+ * recovery codes and confirming the setup, while bypassing the
+ * authenticated browser flow. This avoids cookie-store mismatch between
  * the Hono RPC client (used for registration) and Playwright's
  * APIRequestContext.
  *
@@ -100,13 +101,16 @@ export async function setupTotpViaTestApi(
   email: string,
 ): Promise<SetupTotpResult> {
   const client = getTestApiClient({ baseUrl: baseURL });
-  const res = await client.test.totp.setup[':email'].$post({
+  const res = await client.test.totp['setup-with-recovery'][':email'].$post({
     param: { email },
   });
   if (!res.ok) {
     throw new Error(`TOTP test setup failed: ${res.status}`);
   }
-  const data = (await res.json()) as { secret: string };
+  const data = (await res.json()) as {
+    secret: string;
+    recovery_codes: string[];
+  };
   return { secret: data.secret };
 }
 
@@ -137,4 +141,27 @@ export async function setupTotpWithRecoveryViaTestApi(
     recovery_codes: string[];
   };
   return { secret: data.secret, recoveryCodes: data.recovery_codes };
+}
+
+/**
+ * Intercepts the TOTP recovery regeneration API response to capture
+ * the new recovery codes returned by the server.
+ *
+ * Must be called BEFORE the regeneration request is made. Returns a
+ * promise that resolves with the array of new recovery codes when
+ * the response is intercepted.
+ */
+export function interceptRegeneratedRecoveryCodes(
+  page: Page,
+): Promise<string[]> {
+  return new Promise((resolve) => {
+    const handler = async (route: Route) => {
+      const response = await route.fetch();
+      const body = (await response.json()) as { recovery_codes: string[] };
+      resolve(body.recovery_codes);
+      await route.fulfill({ response });
+      await page.unroute('**/api/user/totp/recovery/regenerate', handler);
+    };
+    void page.route('**/api/user/totp/recovery/regenerate', handler);
+  });
 }

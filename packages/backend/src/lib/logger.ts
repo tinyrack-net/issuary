@@ -32,6 +32,7 @@ export function createLogger(options?: CreateLoggerOptions): pino.Logger {
         'password',
         'client_secret',
         'cookie_secret',
+        'hash_master_secret',
         'req.headers.authorization',
         'req.headers.cookie',
       ],

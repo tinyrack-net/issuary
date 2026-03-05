@@ -1,10 +1,10 @@
 import type { EntityManager } from '@mikro-orm/core';
-import { hash } from '@node-rs/argon2';
 import { OAuthClientEntitySchema } from '#backend/entities/oauth-client.entity.js';
 import { TermsEntitySchema } from '#backend/entities/terms.entity.js';
 import { TermsContentEntitySchema } from '#backend/entities/terms-content.entity.js';
 import { UserEntity } from '#backend/entities/user.entity.js';
 import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { SecurityService } from '#backend/services/security.service.js';
 
 /**
  * ConfigSeeder
@@ -26,10 +26,11 @@ import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
 export async function seedConfig(
   em: EntityManager,
   config: ResolvedAppConfig,
+  securityService: SecurityService,
 ): Promise<void> {
   await syncTerms(em, config);
-  await syncUsers(em, config);
-  await syncOAuthClients(em, config);
+  await syncUsers(em, config, securityService);
+  await syncOAuthClients(em, config, securityService);
 }
 
 /**
@@ -103,11 +104,14 @@ async function syncTerms(
 async function syncUsers(
   em: EntityManager,
   config: ResolvedAppConfig,
+  securityService: SecurityService,
 ): Promise<void> {
   const now = new Date();
 
   for (const configUser of config.users) {
-    const hashedPassword = await hash(configUser.password);
+    const hashedPassword = await securityService.hashPassword(
+      configUser.password,
+    );
 
     // Use upsert for atomic INSERT ON CONFLICT DO UPDATE
     // This is cluster-safe: concurrent instances won't cause race conditions
@@ -152,13 +156,14 @@ async function syncUsers(
 async function syncOAuthClients(
   em: EntityManager,
   config: ResolvedAppConfig,
+  securityService: SecurityService,
 ): Promise<void> {
   const now = new Date();
 
   for (const client of config.clients) {
     // Public clients (PKCE-only) don't have client_secret
     const hashedSecret = client.client_secret
-      ? await hash(client.client_secret)
+      ? await securityService.hashClientSecret(client.client_secret)
       : null;
 
     // Use upsert for atomic INSERT ON CONFLICT DO UPDATE

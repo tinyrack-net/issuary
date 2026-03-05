@@ -24,6 +24,14 @@ beforeAll(async () => {
           email_conflict_strategy: 'auto_link',
         },
       ],
+      auth: {
+        password: {
+          policy: {
+            min_length: 8,
+            max_length: 64,
+          },
+        },
+      },
     },
   });
   app = server.app;
@@ -74,6 +82,10 @@ describe('GET /api/config', () => {
     // Check password auth method exists
     expect(json.auth.password).toBeDefined();
     expect(json.auth.password.enabled).toBeTypeOf('boolean');
+    expect(json.auth.password.policy).toEqual({
+      min_length: 8,
+      max_length: 64,
+    });
 
     // Check second_factor configuration
     if (json.auth.password.second_factor) {
@@ -84,6 +96,8 @@ describe('GET /api/config', () => {
     if (json.auth.password.totp) {
       expect(json.auth.password.totp.enabled).toBeTypeOf('boolean');
     }
+
+    expect(json).not.toHaveProperty('security');
   });
 
   test('should include passkey authentication method in auth', async () => {

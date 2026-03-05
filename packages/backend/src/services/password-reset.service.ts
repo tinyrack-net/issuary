@@ -2,11 +2,17 @@ import type { IPasswordResetEntity } from '#backend/entities/password-reset.enti
 import type { UserEntity } from '#backend/entities/user.entity.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
+import type { PasswordAuthService } from './password-auth.service.js';
 
 export class PasswordResetService {
   private readonly mikro: MikroService;
-  public constructor(mikro: MikroService) {
+  private readonly passwordAuthService: PasswordAuthService;
+  public constructor(
+    mikro: MikroService,
+    passwordAuthService: PasswordAuthService,
+  ) {
     this.mikro = mikro;
+    this.passwordAuthService = passwordAuthService;
   }
 
   /**
@@ -73,8 +79,7 @@ export class PasswordResetService {
       throw new e.UserNotEditable.Error();
     }
 
-    user.password_hash = params.password;
-    await this.mikro.em.flush();
+    await this.passwordAuthService.replacePassword(user, params.password);
 
     return user;
   }

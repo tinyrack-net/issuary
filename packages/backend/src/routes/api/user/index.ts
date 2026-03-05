@@ -13,6 +13,7 @@ import { userPasswordPut } from './password/put.js';
 import { userSessionGet } from './session/get.js';
 import { userTotpConfirmPost } from './totp/confirm/post.js';
 import { userTotpDelete } from './totp/delete.js';
+import { userTotpRecoveryRegeneratePost } from './totp/recovery/regenerate/post.js';
 import { userTotpSetupPost } from './totp/setup/post.js';
 import { userTotpVerifyPost } from './totp/verify/post.js';
 
@@ -26,6 +27,7 @@ export const userRoutes = new Hono<AppEnv>()
   .route('/', userTotpSetupPost)
   .route('/', userTotpVerifyPost)
   .route('/', userTotpConfirmPost)
+  .route('/', userTotpRecoveryRegeneratePost)
   .route('/', userTotpDelete)
   .route('/', userPasskeysGet)
   .route('/', userPasskeyIdDelete)

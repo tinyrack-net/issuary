@@ -1,6 +1,10 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { KeyIcon } from '@phosphor-icons/react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +12,7 @@ import z from 'zod';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.js';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.js';
 import { TinyAuthError } from '#frontend/libs/error.js';
+import { appConfigQueryOptions } from '#frontend/queries/config.js';
 import { changePasswordMutationOptions } from '#frontend/queries/password.js';
 import { getSessionQueryOptions } from '#frontend/queries/session.js';
 
@@ -22,6 +27,8 @@ export function ChangePasswordModal({
 }: ChangePasswordModalProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
+  const passwordPolicy = configData.auth.password.policy;
 
   const schema = useMemo(
     () =>
@@ -30,15 +37,25 @@ export function ChangePasswordModal({
           currentPassword: z.string().min(1, t('validation.password.required')),
           newPassword: z
             .string()
-            .min(6, t('validation.password.min'))
-            .max(100, t('validation.password.max')),
+            .min(
+              passwordPolicy.min_length,
+              t('validation.password.min', {
+                count: passwordPolicy.min_length,
+              }),
+            )
+            .max(
+              passwordPolicy.max_length,
+              t('validation.password.max', {
+                count: passwordPolicy.max_length,
+              }),
+            ),
           confirmPassword: z.string(),
         })
         .refine((data) => data.newPassword === data.confirmPassword, {
           message: t('validation.confirmPassword.mismatch'),
           path: ['confirmPassword'],
         }),
-    [t],
+    [passwordPolicy.max_length, passwordPolicy.min_length, t],
   );
 
   const form = useForm({

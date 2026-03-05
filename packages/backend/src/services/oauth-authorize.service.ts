@@ -1,8 +1,10 @@
 import type z from 'zod';
+import { getRandomBytes, toBase64Url } from '#backend/lib/base64url.js';
 import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
 import { e } from '#backend/schemas/error.js';
 import type { f } from '#backend/schemas/field.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
+import type { SecurityService } from '#backend/services/security.service.js';
 import type { OAuthClientService } from './oauth-client.service.js';
 import type { UserConsentService } from './user-consent.service.js';
 
@@ -53,16 +55,19 @@ export class OAuthAuthorizeService {
   private readonly mikro: MikroService;
   private readonly oauthClientService: OAuthClientService;
   private readonly userConsentService: UserConsentService;
+  private readonly securityService: SecurityService;
   public constructor(
     config: ResolvedAppConfig,
     mikro: MikroService,
     oauthClientService: OAuthClientService,
     userConsentService: UserConsentService,
+    securityService: SecurityService,
   ) {
     this.config = config;
     this.mikro = mikro;
     this.oauthClientService = oauthClientService;
     this.userConsentService = userConsentService;
+    this.securityService = securityService;
   }
 
   /**
@@ -375,8 +380,16 @@ export class OAuthAuthorizeService {
       codeParams.authTime = params.authTime;
     }
 
-    const { code } =
-      await this.mikro.oauthCode.generateAuthorizationCode(codeParams);
+    const code = toBase64Url(getRandomBytes(32));
+    const codeHash = await this.securityService.hashOpaqueToken(
+      'oauth-code',
+      code,
+    );
+
+    await this.mikro.oauthCode.createAuthorizationCode({
+      ...codeParams,
+      codeHash,
+    });
 
     return code;
   }

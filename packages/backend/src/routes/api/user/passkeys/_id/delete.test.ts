@@ -56,9 +56,13 @@ describe('DELETE /api/user/passkeys/:id', () => {
     userSub: string;
   }> {
     await withMikroContext(services, async () => {
+      const passwordHash =
+        options?.hasPassword === false
+          ? null
+          : await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: options?.hasPassword === false ? null : password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
@@ -533,9 +537,11 @@ describe('DELETE /api/user/passkeys/:id - Last auth method protection', () => {
     userSub: string;
   }> {
     await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
@@ -766,9 +772,11 @@ describe('DELETE /api/user/passkeys/:id - second_factor.required: true', () => {
     // Create user directly in DB
     let userSub = '';
     await withMikroContext(servicesWith2FA, async () => {
+      const passwordHash =
+        await servicesWith2FA.securityService.hashPassword(password);
       const user = servicesWith2FA.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await servicesWith2FA.mikro.em.persist(user).flush();

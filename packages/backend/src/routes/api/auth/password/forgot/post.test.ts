@@ -18,6 +18,7 @@ import {
 let app: AppType;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
+const REGISTERED_USER_PASSWORD = 'password123!';
 
 beforeAll(async () => {
   const server = await createTestApp({
@@ -46,7 +47,7 @@ describe('POST /api/auth/password/forgot', () => {
     const uniqueEmail = generateUniqueEmail('forgot');
     await registerUser(app, {
       email: uniqueEmail,
-      password: 'password123',
+      password: REGISTERED_USER_PASSWORD,
     });
 
     // 2. Request password reset
@@ -113,7 +114,7 @@ describe('POST /api/auth/password/forgot', () => {
     const uniqueEmail = generateUniqueEmail('invalidate');
     await registerUser(app, {
       email: uniqueEmail,
-      password: 'password123',
+      password: REGISTERED_USER_PASSWORD,
     });
 
     // 2. Request first password reset

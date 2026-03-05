@@ -17,6 +17,7 @@ import {
 let app: AppType;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
+const REGISTERED_USER_PASSWORD = 'password123!';
 
 beforeAll(async () => {
   const server = await createTestApp({
@@ -40,7 +41,7 @@ describe('POST /api/auth/email/verify', () => {
     const uniqueEmail = generateUniqueEmail('verify');
     const registerRes = await registerUser(app, {
       email: uniqueEmail,
-      password: 'password123',
+      password: REGISTERED_USER_PASSWORD,
     });
 
     expect(registerRes.status).toBe(200);
@@ -107,7 +108,7 @@ describe('POST /api/auth/email/verify', () => {
     const uniqueEmail = generateUniqueEmail('expired');
     await registerUser(app, {
       email: uniqueEmail,
-      password: 'password123',
+      password: REGISTERED_USER_PASSWORD,
     });
 
     // 2. Get the verification token and expire it
@@ -156,7 +157,7 @@ describe('POST /api/auth/email/verify', () => {
     const uniqueEmail = generateUniqueEmail('used');
     await registerUser(app, {
       email: uniqueEmail,
-      password: 'password123',
+      password: REGISTERED_USER_PASSWORD,
     });
 
     // 2. Get the token

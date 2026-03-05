@@ -1,6 +1,12 @@
 import z from 'zod';
+import { fromBase64Url } from '#backend/lib/base64url.js';
 import { DurationString } from '#backend/lib/duration.js';
 import { AVAILABLE_LOCALES, DEFAULT_LOCALE } from '#backend/lib/locale.js';
+import {
+  getPasswordPolicyError,
+  PASSWORD_POLICY_MAX_LENGTH,
+  PASSWORD_POLICY_MIN_LENGTH,
+} from '#backend/lib/password-policy.js';
 import { f } from '#backend/schemas/field.js';
 import { zz } from '#backend/schemas/provider.js';
 
@@ -33,7 +39,7 @@ export type AppConfigSmtp = z.infer<typeof AppConfigSmtp>;
 const AppConfigUser = z.object({
   sub: z.string().min(1),
   email: f.userEmail,
-  password: f.userPassword,
+  password: z.string().min(1).max(PASSWORD_POLICY_MAX_LENGTH),
   role: z.enum(['user', 'admin']).default('user'),
 });
 
@@ -642,6 +648,32 @@ const AppConfigSecondFactor = z.object({
 
 export type AppConfigSecondFactor = z.infer<typeof AppConfigSecondFactor>;
 
+export const AppConfigPasswordPolicy = z
+  .object({
+    min_length: z
+      .number()
+      .int()
+      .min(1)
+      .max(PASSWORD_POLICY_MAX_LENGTH)
+      .default(PASSWORD_POLICY_MIN_LENGTH),
+    max_length: z
+      .number()
+      .int()
+      .max(PASSWORD_POLICY_MAX_LENGTH)
+      .default(PASSWORD_POLICY_MAX_LENGTH),
+  })
+  .superRefine((value, ctx) => {
+    if (value.min_length > value.max_length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['max_length'],
+        message: 'max_length must be greater than or equal to min_length',
+      });
+    }
+  });
+
+export type AppConfigPasswordPolicy = z.infer<typeof AppConfigPasswordPolicy>;
+
 /**
  * Password authentication configuration (fixed type).
  */
@@ -664,9 +696,18 @@ export const AppConfigPasswordAuth = z.object({
       enabled: false,
       issuer: 'Tinyrack',
     }),
+  policy: AppConfigPasswordPolicy.default({
+    min_length: PASSWORD_POLICY_MIN_LENGTH,
+    max_length: PASSWORD_POLICY_MAX_LENGTH,
+  }),
 });
 
 export type AppConfigPasswordAuth = z.infer<typeof AppConfigPasswordAuth>;
+
+const DEFAULT_PASSWORD_POLICY: AppConfigPasswordPolicy = {
+  min_length: PASSWORD_POLICY_MIN_LENGTH,
+  max_length: PASSWORD_POLICY_MAX_LENGTH,
+};
 
 /**
  * Domain regex for WebAuthn rpId validation.
@@ -726,6 +767,7 @@ const AppConfigAuth = z.object({
       enabled: false,
       issuer: 'Tinyrack',
     },
+    policy: DEFAULT_PASSWORD_POLICY,
   }),
   passkey: AppConfigPasskeyAuth.default({
     enabled: false,
@@ -734,6 +776,35 @@ const AppConfigAuth = z.object({
 });
 
 export type AppConfigAuth = z.infer<typeof AppConfigAuth>;
+
+const AppConfigSecurity = z
+  .object({
+    hash_master_secret: z
+      .string()
+      .min(1)
+      .superRefine((value, ctx) => {
+        try {
+          const decoded = fromBase64Url(value);
+          if (decoded.length !== 32) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message:
+                'hash_master_secret must be a base64url-encoded 32-byte secret',
+            });
+          }
+        } catch {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              'hash_master_secret must be a valid base64url-encoded secret',
+          });
+        }
+      }),
+    pbkdf2_iterations: z.number().int().min(1).default(600000),
+  })
+  .strict();
+
+export type AppConfigSecurity = z.infer<typeof AppConfigSecurity>;
 
 // ---------------------------------------------------------------------------
 // Identity Providers
@@ -900,48 +971,69 @@ export type AppConfigIdentityProviders = z.infer<
  * and parsed configuration. The SMTP field supports a `{ test: true }`
  * shorthand that gets resolved to actual SMTP credentials at runtime.
  */
-export const AppConfigSchema = z.object({
-  app: AppConfigApp,
-  database: AppConfigDatabase.default({
-    type: 'sqlite',
-    path: './test.db',
-    test: false,
-  }),
-  logging: AppConfigLogging.default(DEFAULT_LOGGING_CONFIG),
-  auth: AppConfigAuth.default({
-    password: {
-      enabled: true,
-      email_verification: true,
-      second_factor: {
-        required: false,
+export const AppConfigSchema = z
+  .object({
+    app: AppConfigApp,
+    database: AppConfigDatabase.default({
+      type: 'sqlite',
+      path: './test.db',
+      test: false,
+    }),
+    logging: AppConfigLogging.default(DEFAULT_LOGGING_CONFIG),
+    auth: AppConfigAuth.default({
+      password: {
+        enabled: true,
+        email_verification: true,
+        second_factor: {
+          required: false,
+        },
+        totp: {
+          enabled: false,
+          issuer: '',
+        },
+        policy: DEFAULT_PASSWORD_POLICY,
       },
-      totp: {
+      passkey: {
         enabled: false,
-        issuer: '',
+        email_verification: true,
       },
-    },
-    passkey: {
-      enabled: false,
-      email_verification: true,
-    },
-  }),
-  identity_providers: AppConfigIdentityProviders.default([]),
-  smtp: z
-    .discriminatedUnion('test', [
-      AppConfigSmtp.extend({
-        test: z.literal(false),
-      }),
-      z.object({
-        test: z.literal(true),
-      }),
-    ])
-    .optional(),
-  cleanup: AppConfigCleanup.default(DEFAULT_CLEANUP_CONFIG),
-  scheduler: AppConfigScheduler.default(DEFAULT_SCHEDULER_CONFIG),
-  terms: AppConfigTerms.default([]),
-  clients: z.array(AppConfigClient).default([]),
-  users: z.array(AppConfigUser).default([]),
-});
+    }),
+    identity_providers: AppConfigIdentityProviders.default([]),
+    security: AppConfigSecurity,
+    smtp: z
+      .discriminatedUnion('test', [
+        AppConfigSmtp.extend({
+          test: z.literal(false),
+        }),
+        z.object({
+          test: z.literal(true),
+        }),
+      ])
+      .optional(),
+    cleanup: AppConfigCleanup.default(DEFAULT_CLEANUP_CONFIG),
+    scheduler: AppConfigScheduler.default(DEFAULT_SCHEDULER_CONFIG),
+    terms: AppConfigTerms.default([]),
+    clients: z.array(AppConfigClient).default([]),
+    users: z.array(AppConfigUser).default([]),
+  })
+  .superRefine((config, ctx) => {
+    for (const [index, user] of config.users.entries()) {
+      const error = getPasswordPolicyError(
+        user.password,
+        config.auth.password.policy,
+      );
+
+      if (!error) {
+        continue;
+      }
+
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['users', index, 'password'],
+        message: error,
+      });
+    }
+  });
 
 /**
  * Input type for AppConfigSchema - use this for function parameters.

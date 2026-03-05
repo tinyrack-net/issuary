@@ -89,9 +89,10 @@ export async function createTestUser(
   let userSub = '';
 
   await withMikroContext(services, async () => {
+    const passwordHash = await services.securityService.hashPassword(password);
     const user = services.mikro.user.create({
       email,
-      password_hash: password,
+      password_hash: passwordHash,
     });
     user.email_verified = emailVerified;
     user.deleted_at = deletedAt;
@@ -128,9 +129,11 @@ export async function createTestOAuthClient(
 
   await withMikroContext(services, async () => {
     const em = services.mikro.em;
+    const clientSecretHash =
+      await services.securityService.hashClientSecret('test-secret-hash');
     const client = em.create(OAuthClientEntitySchema, {
       clientId,
-      clientSecretHash: 'test-secret-hash',
+      clientSecretHash,
       name,
       redirectUris,
       grantTypes: ['authorization_code'],
@@ -212,19 +215,21 @@ export async function createOAuthCode(
   let codeId = '';
 
   await withMikroContext(services, async () => {
-    // Use repository's generateAuthorizationCode method for proper entity creation
-    const { entity } = await services.mikro.oauthCode.generateAuthorizationCode(
-      {
-        clientId,
-        userSub,
-        redirectUri: 'http://localhost/callback',
-        scope: ['openid'],
-        nonce: 'test-nonce',
-        codeChallenge: 'test-challenge',
-        codeChallengeMethod: 'S256',
-        expiresInSeconds: 600,
-      },
+    const codeHash = await services.securityService.hashOpaqueToken(
+      'oauth-code',
+      `test-oauth-code-${crypto.randomUUID()}`,
     );
+    const entity = await services.mikro.oauthCode.createAuthorizationCode({
+      clientId,
+      userSub,
+      codeHash,
+      redirectUri: 'http://localhost/callback',
+      scope: ['openid'],
+      nonce: 'test-nonce',
+      codeChallenge: 'test-challenge',
+      codeChallengeMethod: 'S256',
+      expiresInSeconds: 600,
+    });
     // Override expiredAt for expired codes
     entity.expiredAt = expiredAt;
     if (consumedAt !== null) {

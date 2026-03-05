@@ -24,6 +24,8 @@ describe('load-config', () => {
     }
     process.env['COOKIE_SECRET'] =
       '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b';
+    process.env['HASH_MASTER_SECRET'] =
+      'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
   });
 
   afterEach(() => {
@@ -40,7 +42,12 @@ describe('load-config', () => {
     const configFile = await writeConfigFile(
       dir,
       'config.yaml',
-      'app:\n  cookie_secret: explicit-secret-1234567890\n',
+      [
+        'app:',
+        '  cookie_secret: explicit-secret-1234567890',
+        'security:',
+        '  hash_master_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+      ].join('\n'),
     );
 
     const config = loadConfig({ configPath: configFile });
@@ -68,6 +75,8 @@ describe('load-config', () => {
         '  frontend:',
         '    enabled: true',
         '    mode: proxy',
+        'security:',
+        '  hash_master_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       ].join('\n'),
     );
 
@@ -89,6 +98,8 @@ describe('load-config', () => {
         '  cookie_secret: disabled-secret-1234567890',
         '  frontend:',
         '    enabled: false',
+        'security:',
+        '  hash_master_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       ].join('\n'),
     );
 
@@ -96,6 +107,48 @@ describe('load-config', () => {
 
     expect(config.app.frontend.enabled).toBe(false);
     expect(config.app.frontend.path).toBe('');
+    await fs.promises.rm(dir, { recursive: true, force: true });
+  });
+
+  test('fails when security.hash_master_secret is missing', async () => {
+    const dir = await fs.promises.mkdtemp(
+      path.join(os.tmpdir(), 'tinyauth-load-config-missing-security-'),
+    );
+    const configFile = await writeConfigFile(
+      dir,
+      'missing-security.yaml',
+      ['app:', '  cookie_secret: missing-security-secret-1234567890'].join(
+        '\n',
+      ),
+    );
+
+    await expect(
+      loadResolvedConfig({ configPath: configFile }),
+    ).rejects.toThrow('security');
+
+    await fs.promises.rm(dir, { recursive: true, force: true });
+  });
+
+  test('rejects removed security.hash_master_secret_version config', async () => {
+    const dir = await fs.promises.mkdtemp(
+      path.join(os.tmpdir(), 'tinyauth-load-config-legacy-security-'),
+    );
+    const configFile = await writeConfigFile(
+      dir,
+      'legacy-security.yaml',
+      [
+        'app:',
+        '  cookie_secret: legacy-security-secret-1234567890',
+        'security:',
+        '  hash_master_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+        '  hash_master_secret_version: 1',
+      ].join('\n'),
+    );
+
+    await expect(
+      loadResolvedConfig({ configPath: configFile }),
+    ).rejects.toThrow('hash_master_secret_version');
+
     await fs.promises.rm(dir, { recursive: true, force: true });
   });
 });

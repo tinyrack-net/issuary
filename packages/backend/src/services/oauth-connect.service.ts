@@ -9,6 +9,7 @@ import { isEmailAllowed } from '#backend/lib/email-pattern.js';
 import { generatePKCE } from '#backend/lib/pkce.js';
 import { e, TinyAuthError } from '#backend/schemas/error.js';
 import type { f } from '#backend/schemas/field.js';
+import type { r } from '#backend/schemas/response.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 import type { TermsService } from './terms.service.js';
 import type { UserService } from './user.service.js';
@@ -69,17 +70,7 @@ export interface OAuthAuthResult {
   /** Whether this is a newly created user */
   isNewUser: boolean;
   /** Authenticated user session data */
-  user: {
-    managed_by: 'database' | 'config';
-    sub: string;
-    email: string;
-    email_verified: boolean;
-    email_verification_required: boolean;
-    has_password: boolean;
-    totp_registered: boolean;
-    second_factor_required: boolean;
-    passkey_count: number;
-  };
+  user: z.infer<typeof r.UserSession>;
 }
 
 /**
@@ -532,27 +523,9 @@ export class OAuthConnectService {
         throw new e.UserNotFound.Error();
       }
 
-      // Compute totp_registered from userTotp repository
-      const totpRegistered = await this.mikro.userTotp.isRegistered(user.sub);
-      const secondFactorRequired =
-        user.managed_by === 'config'
-          ? false
-          : this.config.auth.password.second_factor.required;
-
       return {
         isNewUser: false,
-        user: {
-          sub: user.sub,
-          managed_by: 'database',
-          email: user.email,
-          email_verified: user.email_verified,
-          email_verification_required:
-            this.userService.userEmailVerificationRequired(user),
-          has_password: user.hasPassword(),
-          totp_registered: totpRegistered,
-          second_factor_required: secondFactorRequired,
-          passkey_count: await this.mikro.userPasskey.countByUserSub(user.sub),
-        },
+        user: await this.userService.getSessionUserBySub(user.sub),
       };
     }
 
@@ -589,32 +562,9 @@ export class OAuthConnectService {
 
       await this.mikro.em.flush();
 
-      // Compute totp_registered from userTotp repository
-      const totpRegistered = await this.mikro.userTotp.isRegistered(
-        existingUser.sub,
-      );
-      const secondFactorRequired =
-        existingUser.managed_by === 'config'
-          ? false
-          : this.config.auth.password.second_factor.required;
-
-      await this.mikro.em.populate(existingUser, ['password_hash']);
       return {
         isNewUser: false,
-        user: {
-          sub: existingUser.sub,
-          managed_by: existingUser.managed_by,
-          email: existingUser.email,
-          email_verified: existingUser.email_verified,
-          email_verification_required:
-            this.userService.userEmailVerificationRequired(existingUser),
-          has_password: existingUser.hasPassword(),
-          totp_registered: totpRegistered,
-          second_factor_required: secondFactorRequired,
-          passkey_count: await this.mikro.userPasskey.countByUserSub(
-            existingUser.sub,
-          ),
-        },
+        user: await this.userService.getSessionUserBySub(existingUser.sub),
       };
     }
 
@@ -656,19 +606,7 @@ export class OAuthConnectService {
 
     return {
       isNewUser: true,
-      user: {
-        sub: newUser.sub,
-        managed_by: 'database',
-        email: newUser.email,
-        email_verified: newUser.email_verified,
-        email_verification_required:
-          this.userService.userEmailVerificationRequired(newUser),
-        has_password: newUser.hasPassword(),
-        totp_registered: false, // New user has no TOTP
-        second_factor_required:
-          this.config.auth.password.second_factor.required,
-        passkey_count: 0, // New user has no passkeys
-      },
+      user: await this.userService.getSessionUserBySub(newUser.sub),
     };
   }
 
@@ -731,26 +669,9 @@ export class OAuthConnectService {
         throw new e.UserNotFound.Error();
       }
 
-      const totpRegistered = await this.mikro.userTotp.isRegistered(user.sub);
-      const secondFactorRequired =
-        user.managed_by === 'config'
-          ? false
-          : this.config.auth.password.second_factor.required;
-
       return {
         isNewUser: false,
-        user: {
-          sub: user.sub,
-          managed_by: 'database',
-          email: user.email,
-          email_verified: user.email_verified,
-          email_verification_required:
-            this.userService.userEmailVerificationRequired(user),
-          has_password: user.hasPassword(),
-          totp_registered: totpRegistered,
-          second_factor_required: secondFactorRequired,
-          passkey_count: await this.mikro.userPasskey.countByUserSub(user.sub),
-        },
+        user: await this.userService.getSessionUserBySub(user.sub),
       };
     }
 
@@ -796,32 +717,9 @@ export class OAuthConnectService {
 
       await this.mikro.em.flush();
 
-      const totpRegistered = await this.mikro.userTotp.isRegistered(
-        existingUser.sub,
-      );
-      const secondFactorRequired =
-        existingUser.managed_by === 'config'
-          ? false
-          : this.config.auth.password.second_factor.required;
-
-      await this.mikro.em.populate(existingUser, ['password_hash']);
-
       return {
         isNewUser: false,
-        user: {
-          sub: existingUser.sub,
-          managed_by: existingUser.managed_by,
-          email: existingUser.email,
-          email_verified: existingUser.email_verified,
-          email_verification_required:
-            this.userService.userEmailVerificationRequired(existingUser),
-          has_password: existingUser.hasPassword(),
-          totp_registered: totpRegistered,
-          second_factor_required: secondFactorRequired,
-          passkey_count: await this.mikro.userPasskey.countByUserSub(
-            existingUser.sub,
-          ),
-        },
+        user: await this.userService.getSessionUserBySub(existingUser.sub),
       };
     }
 
@@ -869,19 +767,7 @@ export class OAuthConnectService {
 
     return {
       isNewUser: true,
-      user: {
-        sub: newUser.sub,
-        managed_by: 'database',
-        email: newUser.email,
-        email_verified: newUser.email_verified,
-        email_verification_required:
-          this.userService.userEmailVerificationRequired(newUser),
-        has_password: newUser.hasPassword(),
-        totp_registered: false,
-        second_factor_required:
-          this.config.auth.password.second_factor.required,
-        passkey_count: 0,
-      },
+      user: await this.userService.getSessionUserBySub(newUser.sub),
     };
   }
 

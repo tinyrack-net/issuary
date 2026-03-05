@@ -223,9 +223,11 @@ describe('POST /api/auth/passkey/verify', () => {
     const credentialId = `clear-challenge-${crypto.randomUUID()}`;
 
     await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
@@ -502,9 +504,11 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
 
     const { user2 } = await withMikroContext(services2FA, async () => {
       // Create user1 with passkey
+      const passwordHash =
+        await services2FA.securityService.hashPassword(password);
       const userEntity1 = services2FA.mikro.user.create({
         email: email1,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       userEntity1.email_verified = true;
       await services2FA.mikro.em.persist(userEntity1).flush();
@@ -525,7 +529,7 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
       // Create user2 with passkey
       const userEntity2 = services2FA.mikro.user.create({
         email: email2,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       userEntity2.email_verified = true;
       await services2FA.mikro.em.persist(userEntity2).flush();
@@ -596,9 +600,11 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
     const credentialId = `success-2fa-credential-${crypto.randomUUID()}`;
 
     const { userSub, user } = await withMikroContext(services2FA, async () => {
+      const passwordHash =
+        await services2FA.securityService.hashPassword(password);
       const userEntity = services2FA.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       userEntity.email_verified = true;
       await services2FA.mikro.em.persist(userEntity).flush();

@@ -145,9 +145,10 @@ export async function createDbUserWithSession(
   const { emailVerified = true } = options;
 
   await withMikroContext(services, async () => {
+    const passwordHash = await services.securityService.hashPassword(password);
     const user = services.mikro.user.create({
       email,
-      password_hash: password, // Will be hashed by entity lifecycle hook
+      password_hash: passwordHash,
     });
     user.email_verified = emailVerified;
     await services.mikro.em.persist(user).flush();
@@ -317,7 +318,10 @@ export async function grantConsent(
  *
  * @example
  * ```typescript
- * const res = await registerUser(app, { email: 'test@example.com', password: 'password123' });
+ * const res = await registerUser(app, {
+ *   email: 'test@example.com',
+ *   password: 'password123!',
+ * });
  * expect(res.status).toBe(200);
  * ```
  */
@@ -350,7 +354,7 @@ export async function registerUser(
 ): Promise<Response> {
   const {
     email = generateUniqueEmail('test'),
-    password = 'password123',
+    password = 'password123!',
     consents = TEST_CONSENTS,
   } = options;
 

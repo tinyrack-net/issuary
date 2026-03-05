@@ -5,7 +5,7 @@ import {
   LockIcon,
   LockKeyIcon,
 } from '@phosphor-icons/react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import {
   createFileRoute,
   Link,
@@ -59,6 +59,8 @@ function ResetPassword() {
   const search = Route.useSearch();
   const { token: queryToken } = search;
   const [resetSuccess, setResetSuccess] = useState(false);
+  const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
+  const passwordPolicy = configData.auth.password.policy;
 
   const resetPasswordSchema = useMemo(
     () =>
@@ -67,8 +69,18 @@ function ResetPassword() {
           token: z.string().min(1, t('validation.token.required')),
           password: z
             .string()
-            .min(6, t('validation.password.min'))
-            .max(100, t('validation.password.max')),
+            .min(
+              passwordPolicy.min_length,
+              t('validation.password.min', {
+                count: passwordPolicy.min_length,
+              }),
+            )
+            .max(
+              passwordPolicy.max_length,
+              t('validation.password.max', {
+                count: passwordPolicy.max_length,
+              }),
+            ),
           confirmPassword: z
             .string()
             .min(1, t('validation.confirmPassword.required')),
@@ -77,7 +89,7 @@ function ResetPassword() {
           message: t('validation.confirmPassword.mismatch'),
           path: ['confirmPassword'],
         }),
-    [t],
+    [passwordPolicy.max_length, passwordPolicy.min_length, t],
   );
 
   const resetPasswordMutation = useMutation({

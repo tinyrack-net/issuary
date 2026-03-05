@@ -56,6 +56,10 @@ export const MINIMAL_TEST_CONFIG = {
     type: 'sqlite',
     test: true,
   },
+  security: {
+    hash_master_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+    pbkdf2_iterations: 1000,
+  },
   smtp: {
     test: true,
   },

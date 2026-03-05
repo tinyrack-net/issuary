@@ -44,9 +44,10 @@ async function createUserInDb(
   let userSub = '';
 
   await withMikroContext(services, async () => {
+    const passwordHash = await services.securityService.hashPassword(password);
     const user = services.mikro.user.create({
       email,
-      password_hash: password,
+      password_hash: passwordHash,
     });
     user.email_verified = emailVerified;
     await services.mikro.em.persist(user).flush();
@@ -100,9 +101,11 @@ describe('POST /api/auth/login - TOTP Required Mode', () => {
 
     // Create user without TOTP
     await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
@@ -147,9 +150,11 @@ describe('POST /api/auth/login - TOTP Required Mode', () => {
 
     // Create user without TOTP
     await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
@@ -268,9 +273,11 @@ describe('POST /api/auth/login - TOTP Optional Mode', () => {
 
     // Create user without TOTP
     await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
@@ -314,9 +321,11 @@ describe('POST /api/auth/login - TOTP Optional Mode', () => {
 
     // Create user without TOTP
     await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
@@ -385,9 +394,11 @@ describe('POST /api/auth/login - TOTP Disabled Mode', () => {
 
     // Create user without TOTP
     await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
@@ -470,9 +481,11 @@ describe('POST /api/auth/login - Email Verification + TOTP', () => {
 
     // Create user with unverified email and no TOTP
     await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = false; // Email not verified
       await services.mikro.em.persist(user).flush();
@@ -495,9 +508,11 @@ describe('POST /api/auth/login - Email Verification + TOTP', () => {
 
     // Create user with verified email but no TOTP
     await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true; // Email verified
       await services.mikro.em.persist(user).flush();
@@ -579,9 +594,11 @@ describe('POST /api/auth/login - Session State Verification', () => {
 
     // Create user without TOTP
     await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
@@ -683,9 +700,11 @@ describe('POST /api/auth/login - Session State Verification', () => {
 
     // Create user without TOTP
     await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();

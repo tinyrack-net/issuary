@@ -99,7 +99,8 @@ describe('POST /api/user/password', () => {
       await services.mikro.em.persist(user).flush();
 
       // Create a temporary password for login
-      user.password_hash = 'tempPassword123!';
+      user.password_hash =
+        await services.securityService.hashPassword('tempPassword123!');
       await services.mikro.em.flush();
     });
 
@@ -146,6 +147,55 @@ describe('POST /api/user/password', () => {
     expect(verifyLoginRes.status).toBe(200);
   });
 
+  test('should reject password exceeding maximum length', async () => {
+    const email = generateUniqueEmail('password-post-too-long');
+
+    // Create OAuth-only user and get session
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
+        email,
+        password_hash: null,
+      });
+      user.email_verified = true;
+      await services.mikro.em.persist(user).flush();
+
+      user.password_hash =
+        await services.securityService.hashPassword('tempPassword123!');
+      await services.mikro.em.flush();
+    });
+
+    const loginClient = testClient(app);
+    const loginRes = await loginClient.api.auth.login.$post({
+      json: {
+        email,
+        password: 'tempPassword123!',
+      },
+    });
+
+    // Remove password after login
+    await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail(
+        { email },
+        { populate: ['password_hash'] },
+      );
+      user.password_hash = null;
+      await services.mikro.em.flush();
+    });
+
+    const sessionCookie = extractCookie(loginRes, 'session');
+
+    // Try to set a password that's too long
+    const client = testClient(app);
+    const res = await client.api.user.password.$post(
+      {
+        json: { password: 'a'.repeat(257) },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+
+    expect(res.status).toBe(400);
+  });
+
   test('should validate password format', async () => {
     const email = generateUniqueEmail('password-post-validation');
 
@@ -158,7 +208,8 @@ describe('POST /api/user/password', () => {
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
 
-      user.password_hash = 'tempPassword123!';
+      user.password_hash =
+        await services.securityService.hashPassword('tempPassword123!');
       await services.mikro.em.flush();
     });
 
@@ -191,7 +242,9 @@ describe('POST /api/user/password', () => {
       { headers: { Cookie: `session=${sessionCookie}` } },
     );
 
-    expect(res.status).toBe(400);
+    const body = await assertJsonBody(res, 400);
+    expect(body.code).toBe('VALIDATION_ERROR');
+    expect(body.data).toBe('Password must be at least 12 characters long.');
   });
 });
 

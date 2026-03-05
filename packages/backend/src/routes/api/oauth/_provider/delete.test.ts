@@ -63,9 +63,11 @@ describe('DELETE /api/oauth/:provider', () => {
 
     // Create user with password and verified email
     const sessionCookie = await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
@@ -100,9 +102,11 @@ describe('DELETE /api/oauth/:provider', () => {
     const password = 'TestPassword123!';
 
     const sessionCookie = await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
@@ -195,9 +199,11 @@ describe('DELETE /api/oauth/:provider', () => {
 
     const sessionCookie = await withMikroContext(services, async () => {
       // Create user with password
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();

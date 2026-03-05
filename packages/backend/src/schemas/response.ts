@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   AppConfigPasskeyAuth,
   AppConfigPasswordAuth,
+  AppConfigPasswordPolicy,
   AppTheme,
 } from '#backend/lib/config/index.js';
 import { f } from './field.js';
@@ -23,6 +24,9 @@ const UserSession = z
     totp_registered: z
       .boolean()
       .describe('Whether TOTP is registered for the user'),
+    totp_recovery_codes_missing: z
+      .boolean()
+      .describe('Whether the user has no usable TOTP recovery codes left'),
     second_factor_required: z
       .boolean()
       .describe(
@@ -311,11 +315,19 @@ const AuthenticationResponseJSON = z
   .describe('WebAuthn authentication response');
 
 // Basic authentication methods response schema (fixed structure)
+const PublicPasswordAuth = z
+  .object({
+    enabled: AppConfigPasswordAuth.shape.enabled,
+    email_verification: AppConfigPasswordAuth.shape.email_verification,
+    second_factor: AppConfigPasswordAuth.shape.second_factor,
+    totp: AppConfigPasswordAuth.shape.totp,
+    policy: AppConfigPasswordPolicy.describe('Password policy settings'),
+  })
+  .describe('Public password authentication settings');
+
 const BasicAuthenticationMethods = z
   .object({
-    password: AppConfigPasswordAuth.describe(
-      'Password authentication settings',
-    ),
+    password: PublicPasswordAuth,
     passkey: AppConfigPasskeyAuth.describe('Passkey authentication settings'),
   })
   .describe('Basic Authentication Methods');

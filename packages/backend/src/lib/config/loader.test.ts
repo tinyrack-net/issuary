@@ -62,4 +62,85 @@ describe('resolveConfig', () => {
     expect(resolved.smtp?.host).toBe('smtp.test.local');
     expect(resolved.smtp?.user).toBe('test-user');
   });
+
+  test('validates config users against the configured password policy', async () => {
+    await expect(
+      resolveConfig({
+        ...MINIMAL_TEST_CONFIG,
+        auth: {
+          password: {
+            policy: {
+              min_length: 4,
+              max_length: 6,
+            },
+          },
+        },
+        users: [
+          {
+            sub: 'config-user',
+            email: 'config-user@example.com',
+            password: '123',
+            role: 'user',
+          },
+        ],
+      }),
+    ).rejects.toThrow('Password must be at least 4 characters long.');
+  });
+
+  test('rejects password policy where max_length is less than min_length', async () => {
+    await expect(
+      resolveConfig({
+        ...MINIMAL_TEST_CONFIG,
+        auth: {
+          password: {
+            policy: {
+              min_length: 10,
+              max_length: 5,
+            },
+          },
+        },
+      }),
+    ).rejects.toThrow('max_length');
+  });
+
+  test('accepts valid custom password policy', async () => {
+    await expect(
+      resolveConfig({
+        ...MINIMAL_TEST_CONFIG,
+        auth: {
+          password: {
+            policy: {
+              min_length: 8,
+              max_length: 64,
+            },
+          },
+        },
+      }),
+    ).resolves.toBeDefined();
+  });
+
+  test('rejects invalid hash_master_secret with wrong byte length', async () => {
+    await expect(
+      resolveConfig({
+        ...MINIMAL_TEST_CONFIG,
+        security: {
+          hash_master_secret: 'MDEyMzQ1Njc4OWFiY2Rl',
+          pbkdf2_iterations: 1000,
+        },
+      }),
+    ).rejects.toThrow();
+  });
+
+  test('rejects removed security.hash_master_secret_version config', async () => {
+    await expect(
+      resolveConfig({
+        ...MINIMAL_TEST_CONFIG,
+        security: {
+          hash_master_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+          pbkdf2_iterations: 1000,
+          hash_master_secret_version: 1,
+        },
+      }),
+    ).rejects.toThrow('hash_master_secret_version');
+  });
 });

@@ -36,6 +36,8 @@ afterAll(async () => {
   await cleanup();
 });
 
+const REGISTERED_USER_PASSWORD = 'password123!';
+
 describe('POST /api/auth/login', () => {
   test('should login successfully with correct credentials (app config user)', async () => {
     const client = testClient(app);
@@ -56,7 +58,7 @@ describe('POST /api/auth/login', () => {
     const uniqueEmail = generateUniqueEmail('loginuser');
     const registerRes = await registerUser(app, {
       email: uniqueEmail,
-      password: 'password123',
+      password: REGISTERED_USER_PASSWORD,
     });
 
     expect(registerRes.status).toBe(200);
@@ -65,7 +67,7 @@ describe('POST /api/auth/login', () => {
     const loginRes = await client.api.auth.login.$post({
       json: {
         email: uniqueEmail,
-        password: 'password123',
+        password: REGISTERED_USER_PASSWORD,
       },
     });
 
@@ -79,7 +81,7 @@ describe('POST /api/auth/login', () => {
     const uniqueEmail = generateUniqueEmail('unverified');
     const registerRes = await registerUser(app, {
       email: uniqueEmail,
-      password: 'password123',
+      password: REGISTERED_USER_PASSWORD,
     });
 
     expect(registerRes.status).toBe(200);
@@ -89,7 +91,7 @@ describe('POST /api/auth/login', () => {
     const loginRes = await client.api.auth.login.$post({
       json: {
         email: uniqueEmail,
-        password: 'password123',
+        password: REGISTERED_USER_PASSWORD,
       },
     });
 
@@ -103,7 +105,7 @@ describe('POST /api/auth/login', () => {
     const uniqueEmail = generateUniqueEmail('verified');
     const registerRes = await registerUser(app, {
       email: uniqueEmail,
-      password: 'password123',
+      password: REGISTERED_USER_PASSWORD,
     });
 
     expect(registerRes.status).toBe(200);
@@ -122,7 +124,7 @@ describe('POST /api/auth/login', () => {
     const loginRes = await client.api.auth.login.$post({
       json: {
         email: uniqueEmail,
-        password: 'password123',
+        password: REGISTERED_USER_PASSWORD,
       },
     });
 
@@ -192,9 +194,7 @@ describe('POST /api/auth/login', () => {
       },
     });
 
-    const body = await assertJsonBody(res, 400);
-    expect(body).toHaveProperty('error');
-    expect(body.success).toBe(false);
+    await expectError(res, e.InvalidEmailOrPassword);
   });
 
   test('should fail with missing email', async () => {
@@ -227,7 +227,7 @@ describe('POST /api/auth/login', () => {
 
   test('should fail to login with deleted user', async () => {
     const uniqueEmail = generateUniqueEmail('deleteduser');
-    const password = 'password123';
+    const password = REGISTERED_USER_PASSWORD;
 
     // First, register a new user
     const registerRes = await registerUser(app, {

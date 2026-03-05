@@ -95,7 +95,7 @@ test.describe('TOTP recovery code verification', () => {
     await page.waitForURL('**/verify/totp/recovery');
 
     // Enter invalid recovery code
-    await page.locator(recoveryPage.codeInput).fill('aaaa-bbbb');
+    await page.locator(recoveryPage.codeInput).fill('ABCD-EFGH-JKLM-NPQR');
     await page.locator(recoveryPage.submitButton).click();
 
     // Should show error

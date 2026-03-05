@@ -11,6 +11,9 @@ export const profilePage = {
   /** Header section */
   logoutButton: '[data-testid="profile-logout"]',
   userEmail: '[data-testid="profile-user-email"]',
+  totpRecoveryWarning: '[data-testid="profile-totp-recovery-warning"]',
+  totpRegenerateButton: '[data-testid="profile-totp-regenerate"]',
+  totpDisableButton: '[data-testid="profile-totp-disable"]',
 
   /** Password section buttons */
   passwordChangeButton: '[data-testid="profile-password-change"]',
@@ -62,6 +65,14 @@ export const disableTotpModal = {
   submitButton: 'dialog.modal-open [data-testid="disable-totp-submit"]',
   fieldError: 'dialog.modal-open [data-testid="disable-totp-error"]',
   warningAlert: 'dialog.modal-open [data-testid="alert-banner-warning"]',
+} as const;
+
+export const regenerateTotpModal = {
+  fieldError: 'dialog.modal-open [data-testid="pin-input-error"]',
+  errorAlert: 'dialog.modal-open [data-testid="alert-banner-error"]',
+  recoveryCodesGrid: 'dialog.modal-open [data-testid="recovery-codes-grid"]',
+  confirmCheckbox: 'dialog.modal-open [data-testid="recovery-codes-confirm"]',
+  confirmButton: 'dialog.modal-open [data-testid="recovery-codes-submit"]',
 } as const;
 
 /**

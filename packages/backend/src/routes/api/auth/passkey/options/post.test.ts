@@ -163,9 +163,11 @@ describe('POST /api/auth/passkey/options - 2FA mode', () => {
 
     // Create user with passkey in DB
     await withMikroContext(services2FA, async () => {
+      const passwordHash =
+        await services2FA.securityService.hashPassword(password);
       const user = services2FA.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services2FA.mikro.em.persist(user).flush();

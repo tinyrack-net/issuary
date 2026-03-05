@@ -64,7 +64,7 @@ export const authRegisterPost = new Hono<AppEnv>().post(
     'json',
     z.object({
       email: f.userEmail,
-      password: f.userPassword,
+      password: f.newUserPassword,
       consents: z
         .array(termsSchema.ConsentItem)
         .optional()

@@ -38,3 +38,8 @@ export const E2E_TEST_CLIENT_CONFIG = {
   grant_types: ['authorization_code'],
   scope: 'openid profile email',
 };
+
+export const E2E_TEST_SECURITY_CONFIG = {
+  hash_master_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+  pbkdf2_iterations: 1000,
+} as const;

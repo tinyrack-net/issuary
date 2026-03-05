@@ -109,9 +109,11 @@ describe('GET /api/user/oauth-accounts', () => {
 
     const sessionCookie = await withMikroContext(services, async () => {
       // Create user with password
+      const passwordHash =
+        await services.securityService.hashPassword(password);
       const user = services.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();

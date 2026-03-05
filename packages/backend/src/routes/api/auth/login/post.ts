@@ -60,17 +60,15 @@ export const authLoginPost = new Hono<AppEnv>().post(
     }
 
     const body = c.req.valid('json');
-    const { mikro, userService } = c.var.services;
+    const { passwordAuthService, userService } = c.var.services;
     const session = c.var.session;
 
-    const userEntity = await mikro.user.verifyByEmailAndPassword({
-      email: body.email,
-      password: body.password,
-    });
-
-    if (!(await userEntity.verifyPassword(body.password))) {
-      throw new e.InvalidEmailOrPassword.Error();
-    }
+    const userEntity = await passwordAuthService.authenticateByEmailAndPassword(
+      {
+        email: body.email,
+        password: body.password,
+      },
+    );
 
     const userSession = await userService.userEntityToSessionUser(userEntity);
 

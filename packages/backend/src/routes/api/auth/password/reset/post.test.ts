@@ -245,15 +245,36 @@ describe('POST /api/auth/password/reset', () => {
   });
 
   test('should validate password format', async () => {
+    const email = generateUniqueEmail('password-reset-policy');
+    const password = 'TestPassword123!';
+
+    const registerRes = await registerUser(app, {
+      email,
+      password,
+    });
+    expect(registerRes.status).toBe(200);
+
+    const token = await withMikroContext(services, async () => {
+      const user = await services.mikro.user.findOneOrFail({ email });
+      const resetEntity = await services.passwordResetService.generateToken({
+        userSub: user.sub,
+        expiresInHours: 1,
+      });
+      await services.mikro.em.flush();
+      return resetEntity.token;
+    });
+
     const client = testClient(app);
     const res = await client.api.auth.password.reset.$post({
       json: {
-        token: 'some-token',
-        password: '123', // Too short / invalid
+        token,
+        password: '123',
       },
     });
 
-    expect(res.status).toBe(400);
+    const body = await assertJsonBody(res, 400);
+    expect(body.code).toBe('VALIDATION_ERROR');
+    expect(body.data).toBe('Password must be at least 12 characters long.');
   });
 
   test('should not require authentication', async () => {

@@ -1,6 +1,7 @@
 import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
 import {
   E2E_TEST_CLIENT_CONFIG,
+  E2E_TEST_SECURITY_CONFIG,
   E2E_TEST_USER_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 
@@ -26,6 +27,7 @@ export function createEmailVerificationConfig(
         path: `http://localhost:${frontendPort}`,
       },
     },
+    security: E2E_TEST_SECURITY_CONFIG,
     logging: {
       level: 'silent',
       format: 'json',

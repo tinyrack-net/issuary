@@ -21,7 +21,7 @@ export const UserTotpRecoveryCodeEntitySchema = defineEntity({
         .comment('Reference to the user')
         .deleteRule('cascade')
         .index('user_totp_recovery_code_user_sub_idx'),
-    code_hash: p.string().comment('Argon2 hashed recovery code'),
+    code_hash: p.string().comment('Versioned recovery code hash'),
     used: p
       .boolean()
       .comment('Whether this recovery code has been used')

@@ -11,8 +11,12 @@ import {
 
 export interface VerifyStepProps {
   onSubmit: (code: string) => Promise<void>;
-  onBack: () => void;
+  onBack?: (() => void) | undefined;
   isPending: boolean;
+  invalidMessage?: string | undefined;
+  submitLabel?: string | undefined;
+  pendingText?: string | undefined;
+  backLabel?: string | undefined;
   className?: string;
 }
 
@@ -24,6 +28,10 @@ export function VerifyStep({
   onSubmit,
   onBack,
   isPending,
+  invalidMessage,
+  submitLabel,
+  pendingText,
+  backLabel,
   className = '',
 }: VerifyStepProps) {
   const { t } = useTranslation();
@@ -60,13 +68,13 @@ export function VerifyStep({
       } catch {
         setError('code', {
           type: 'manual',
-          message: t('setupTotp.error.invalid'),
+          message: invalidMessage ?? t('setupTotp.error.invalid'),
         });
         setValue('code', '');
         pinInputRef.current?.focus();
       }
     },
-    [onSubmit, setError, setValue, t],
+    [invalidMessage, onSubmit, setError, setValue, t],
   );
 
   return (
@@ -88,23 +96,25 @@ export function VerifyStep({
         <SubmitButton
           className="btn-sm mt-1"
           isPending={isPending}
-          pendingText={t('setupTotp.verifying')}
+          pendingText={pendingText ?? t('setupTotp.verifying')}
         >
-          {t('setupTotp.verify')}
+          {submitLabel ?? t('setupTotp.verify')}
         </SubmitButton>
       </form>
 
-      <div className="mt-3 text-center">
-        <button
-          className="btn btn-ghost btn-xs"
-          data-testid="totp-verify-back"
-          disabled={isPending}
-          onClick={onBack}
-          type="button"
-        >
-          {t('setupTotp.back')}
-        </button>
-      </div>
+      {onBack && (
+        <div className="mt-3 text-center">
+          <button
+            className="btn btn-ghost btn-xs"
+            data-testid="totp-verify-back"
+            disabled={isPending}
+            onClick={onBack}
+            type="button"
+          >
+            {backLabel ?? t('setupTotp.back')}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

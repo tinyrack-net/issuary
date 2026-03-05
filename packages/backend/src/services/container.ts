@@ -10,8 +10,10 @@ import { OAuthClientService } from '#backend/services/oauth-client.service.js';
 import { OAuthConnectService } from '#backend/services/oauth-connect.service.js';
 import { OAuthTokenService } from '#backend/services/oauth-token.service.js';
 import { PasskeyService } from '#backend/services/passkey.service.js';
+import { PasswordAuthService } from '#backend/services/password-auth.service.js';
 import { PasswordResetService } from '#backend/services/password-reset.service.js';
 import { SchedulerService } from '#backend/services/scheduler.service.js';
+import { SecurityService } from '#backend/services/security.service.js';
 import { TermsService } from '#backend/services/terms.service.js';
 import { TotpService } from '#backend/services/totp.service.js';
 import { UserService } from '#backend/services/user.service.js';
@@ -19,10 +21,12 @@ import { UserConsentService } from '#backend/services/user-consent.service.js';
 
 export interface ServiceContainer {
   config: ResolvedAppConfig;
+  securityService: SecurityService;
   mikro: MikroService;
   scheduler: SchedulerService;
   emailService: EmailService;
   jwtService: JwtService;
+  passwordAuthService: PasswordAuthService;
   passwordResetService: PasswordResetService;
   termsService: TermsService;
   userConsentService: UserConsentService;
@@ -45,12 +49,14 @@ export async function initializeServices(
   config: ResolvedAppConfig,
   logger: Logger,
 ): Promise<InitResult> {
+  const securityService = new SecurityService(config);
+
   // 1. Initialize MikroORM
   const mikroLogger = logger.child({ service: 'mikro' });
   const mikro = await MikroService.initialize(config, mikroLogger);
 
   // 2. Bootstrap: seed config users/clients
-  await seedConfig(mikro.orm.em.fork(), config);
+  await seedConfig(mikro.orm.em.fork(), config, securityService);
   logger.info(
     {
       users: config.users.length,
@@ -63,16 +69,25 @@ export async function initializeServices(
   const emailLogger = logger.child({ service: 'email' });
   const emailService = new EmailService(config, mikro, emailLogger);
   const jwtService = new JwtService(config, mikro);
-  const passwordResetService = new PasswordResetService(mikro);
+  const passwordAuthService = new PasswordAuthService(
+    mikro,
+    securityService,
+    config.auth.password.policy,
+  );
+  const passwordResetService = new PasswordResetService(
+    mikro,
+    passwordAuthService,
+  );
   const termsService = new TermsService(mikro);
   const userConsentService = new UserConsentService(mikro);
-  const oauthClientService = new OAuthClientService(mikro);
-  const totpService = new TotpService(mikro, config);
+  const oauthClientService = new OAuthClientService(mikro, securityService);
+  const totpService = new TotpService(mikro, config, securityService);
   const passkeyService = new PasskeyService(mikro, config);
   const userService = new UserService(
     mikro,
     config,
     emailService,
+    passwordAuthService,
     termsService,
   );
   const oauthAuthorizeService = new OAuthAuthorizeService(
@@ -80,6 +95,7 @@ export async function initializeServices(
     mikro,
     oauthClientService,
     userConsentService,
+    securityService,
   );
   const oauthConnectService = new OAuthConnectService(
     config,
@@ -93,6 +109,7 @@ export async function initializeServices(
     userService,
     oauthClientService,
     jwtService,
+    securityService,
   );
   const cleanupService = new CleanupService(config, mikro, jwtService);
 
@@ -106,10 +123,12 @@ export async function initializeServices(
 
   const services: ServiceContainer = {
     config,
+    securityService,
     mikro,
     scheduler,
     emailService,
     jwtService,
+    passwordAuthService,
     passwordResetService,
     termsService,
     userConsentService,

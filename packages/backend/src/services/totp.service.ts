@@ -1,10 +1,11 @@
-import { hash, verify } from '@node-rs/argon2';
 import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
 import qrcode from 'qrcode';
 import type { UserEntity } from '#backend/entities/user.entity.js';
 import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import { getRandomBytes } from '#backend/lib/crypto.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
+import type { SecurityService } from '#backend/services/security.service.js';
 
 /**
  * TOTP setup data returned when initiating 2FA setup
@@ -21,13 +22,22 @@ export interface TotpSetupData {
 
 /** Number of recovery codes to generate */
 const RECOVERY_CODE_COUNT = 8;
+const RECOVERY_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTVWXYZ23456789';
+const RECOVERY_CODE_LENGTH = 16;
+const RECOVERY_CODE_GROUP_LENGTH = 4;
 
 export class TotpService {
   private readonly mikro: MikroService;
   private readonly config: ResolvedAppConfig;
-  public constructor(mikro: MikroService, config: ResolvedAppConfig) {
+  private readonly securityService: SecurityService;
+  public constructor(
+    mikro: MikroService,
+    config: ResolvedAppConfig,
+    securityService: SecurityService,
+  ) {
     this.mikro = mikro;
     this.config = config;
+    this.securityService = securityService;
   }
 
   /**
@@ -210,17 +220,23 @@ export class TotpService {
   }
 
   /**
-   * Generate a single recovery code in the format xxxx-xxxx
-   * Uses lowercase alphanumeric characters (a-z, 0-9)
+   * Generate a single recovery code in the format XXXX-XXXX-XXXX-XXXX.
    */
   public generateRecoveryCodeString(): string {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    const array = new Uint8Array(8);
-    crypto.getRandomValues(array);
-    const code = Array.from(array)
-      .map((byte) => chars[byte % chars.length])
+    const bytes = getRandomBytes(RECOVERY_CODE_LENGTH);
+    const code = Array.from(bytes)
+      .map(
+        (byte) => RECOVERY_CODE_ALPHABET[byte % RECOVERY_CODE_ALPHABET.length],
+      )
       .join('');
-    return `${code.slice(0, 4)}-${code.slice(4)}`;
+    return Array.from(
+      { length: RECOVERY_CODE_LENGTH / RECOVERY_CODE_GROUP_LENGTH },
+      (_, index) =>
+        code.slice(
+          index * RECOVERY_CODE_GROUP_LENGTH,
+          (index + 1) * RECOVERY_CODE_GROUP_LENGTH,
+        ),
+    ).join('-');
   }
 
   /**
@@ -245,7 +261,10 @@ export class TotpService {
       const code = this.generateRecoveryCodeString();
       plainCodes.push(code);
 
-      const codeHash = await hash(code);
+      const codeHash = await this.securityService.hashOpaqueToken(
+        'totp-recovery',
+        code,
+      );
       const entity = this.mikro.userTotpRecoveryCode.create({
         user: freshUser.sub,
         code_hash: codeHash,
@@ -263,31 +282,60 @@ export class TotpService {
    * The code is single-use: once verified, it is marked as used.
    */
   public async verifyRecoveryCode(userId: string, code: string): Promise<void> {
+    const normalizedCode = code.toUpperCase();
+
     // Ensure TOTP is actually fully enabled for this user
     const totp = await this.mikro.userTotp.findFullyRegisteredByUserSub(userId);
     if (!totp) {
       throw new e.TotpNotEnabled.Error();
     }
 
-    const unusedCodes =
-      await this.mikro.userTotpRecoveryCode.findUnusedByUserSub(userId);
+    const unusedCodeCount =
+      await this.mikro.userTotpRecoveryCode.countUnusedByUserSub(userId);
 
-    if (unusedCodes.length === 0) {
+    if (unusedCodeCount === 0) {
       throw new e.NoRecoveryCodesAvailable.Error();
     }
 
-    // Try each unused code (argon2 verify is needed since codes
-    // are hashed)
-    for (const recoveryCode of unusedCodes) {
-      const isMatch = await verify(recoveryCode.code_hash, code);
-      if (isMatch) {
-        recoveryCode.used = true;
-        recoveryCode.used_at = new Date();
-        await this.mikro.em.flush();
-        return;
-      }
+    const codeHash = await this.securityService.hashOpaqueToken(
+      'totp-recovery',
+      normalizedCode,
+    );
+    const recoveryCode =
+      await this.mikro.userTotpRecoveryCode.findUnusedByUserSubAndCodeHash(
+        userId,
+        codeHash,
+      );
+
+    if (!recoveryCode) {
+      throw new e.InvalidRecoveryCode.Error();
     }
 
-    throw new e.InvalidRecoveryCode.Error();
+    recoveryCode.used = true;
+    recoveryCode.used_at = new Date();
+    await this.mikro.em.flush();
+  }
+
+  public async regenerateRecoveryCodes(
+    userId: string,
+    token: string,
+  ): Promise<string[]> {
+    const totp = await this.mikro.userTotp.findFullyRegisteredByUserSub(userId);
+    if (!totp) {
+      throw new e.TotpNotEnabled.Error();
+    }
+
+    this.verifyToken(token, totp.secret);
+
+    const user = await this.mikro.user.findOneOrFail(
+      {
+        sub: userId,
+      },
+      {
+        failHandler: () => new e.UserNotFound.Error(),
+      },
+    );
+
+    return this.generateRecoveryCodes(user);
   }
 }

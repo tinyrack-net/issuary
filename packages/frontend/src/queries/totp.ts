@@ -17,6 +17,11 @@ export type TotpConfirmResponse = InferResponseType<
   200
 >;
 
+export type RegenerateTotpRecoveryCodesResponse = InferResponseType<
+  (typeof client.api.user.totp.recovery.regenerate)['$post'],
+  200
+>;
+
 export type TotpLoginVerifyResponse = InferResponseType<
   (typeof client.api.auth.totp.verify)['$post'],
   200
@@ -71,6 +76,19 @@ export type DisableTotpParams = InferRequestType<
 export const disableTotpMutationOptions = mutationOptions({
   mutationFn: async (values: DisableTotpParams) => {
     const res = await client.api.user.totp.$delete({
+      json: values,
+    });
+    return jsonOk(res);
+  },
+});
+
+export type RegenerateTotpRecoveryCodesParams = InferRequestType<
+  (typeof client.api.user.totp.recovery.regenerate)['$post']
+>['json'];
+
+export const regenerateTotpRecoveryCodesMutationOptions = mutationOptions({
+  mutationFn: async (values: RegenerateTotpRecoveryCodesParams) => {
+    const res = await client.api.user.totp.recovery.regenerate.$post({
       json: values,
     });
     return jsonOk(res);

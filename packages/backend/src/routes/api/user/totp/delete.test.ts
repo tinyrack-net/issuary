@@ -456,9 +456,11 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
     // Create user directly in DB
     let userSub = '';
     await withMikroContext(servicesWith2FA, async () => {
+      const passwordHash =
+        await servicesWith2FA.securityService.hashPassword(password);
       const user = servicesWith2FA.mikro.user.create({
         email,
-        password_hash: password,
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await servicesWith2FA.mikro.em.persist(user).flush();

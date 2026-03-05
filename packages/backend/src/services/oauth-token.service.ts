@@ -7,6 +7,7 @@ import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
 import { validatePKCE } from '#backend/lib/pkce.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
+import type { SecurityService } from '#backend/services/security.service.js';
 import type {
   AccessTokenPayload,
   JwtService,
@@ -99,18 +100,21 @@ export class OAuthTokenService {
   private readonly userService: UserService;
   private readonly oauthClientService: OAuthClientService;
   private readonly jwtService: JwtService;
+  private readonly securityService: SecurityService;
   constructor(
     config: ResolvedAppConfig,
     mikro: MikroService,
     userService: UserService,
     oauthClientService: OAuthClientService,
     jwtService: JwtService,
+    securityService: SecurityService,
   ) {
     this.config = config;
     this.mikro = mikro;
     this.userService = userService;
     this.oauthClientService = oauthClientService;
     this.jwtService = jwtService;
+    this.securityService = securityService;
   }
 
   /**
@@ -134,14 +138,26 @@ export class OAuthTokenService {
 
     // 2. Verify and consume the authorization code
     // Authorization codes are single-use (RFC 6749 §4.1.2)
-    const codeEntity = await this.mikro.oauthCode.verifyAndConsumeCode(
+    const codeHash = await this.securityService.hashOpaqueToken(
+      'oauth-code',
       code,
-      client.id, // Use primary key for FK reference
     );
+    const codeEntity =
+      await this.mikro.oauthCode.findUnconsumedByClientAndCodeHash(
+        client.id,
+        codeHash,
+      );
 
     if (!codeEntity) {
       throw new e.InvalidAuthorizationCode.Error();
     }
+
+    if (codeEntity.expiredAt < new Date()) {
+      throw new e.InvalidAuthorizationCode.Error();
+    }
+
+    codeEntity.consumedAt = new Date();
+    await this.mikro.em.flush();
 
     // 3. Populate user relation
     await this.mikro.em.populate(codeEntity, ['user']);

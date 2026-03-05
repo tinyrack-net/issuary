@@ -1,10 +1,4 @@
-import {
-  defineEntity,
-  type EventArgs,
-  type InferEntity,
-  p,
-} from '@mikro-orm/core';
-import { hash, verify } from '@node-rs/argon2';
+import { defineEntity, type InferEntity, p } from '@mikro-orm/core';
 import { UserRepository } from '#backend/repositories/user.repository.js';
 import { BaseSchema } from './base.entity.js';
 import { UserOAuthEntitySchema } from './user-oauth.entity.js';
@@ -67,29 +61,11 @@ export const UserEntitySchema = defineEntity({
       properties: ['deleted_at'],
     },
   ],
-  hooks: {
-    beforeCreate: ['hashPassword'],
-    beforeUpdate: ['hashPassword'],
-  },
 });
 
 export type IUserEntity = InferEntity<typeof UserEntitySchema>;
 
 export class UserEntity extends UserEntitySchema.class {
-  async hashPassword(args: EventArgs<UserEntity>) {
-    const changed_password = args.changeSet?.payload.password_hash;
-    if (typeof changed_password === 'string') {
-      args.entity.password_hash = await hash(changed_password);
-    }
-  }
-
-  async verifyPassword(password: string) {
-    if (!this.password_hash) {
-      return false;
-    }
-    return verify(this.password_hash, password);
-  }
-
   /**
    * Check if user has a password set
    */

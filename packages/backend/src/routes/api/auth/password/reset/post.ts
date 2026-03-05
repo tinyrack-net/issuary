@@ -51,7 +51,7 @@ export const authPasswordResetPost = new Hono<AppEnv>().post(
     'json',
     z.object({
       token: f.token,
-      password: f.userPassword,
+      password: f.newUserPassword,
     }),
   ),
   async (c) => {

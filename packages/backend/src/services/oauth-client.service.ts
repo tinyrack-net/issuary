@@ -1,13 +1,15 @@
-import { verify } from '@node-rs/argon2';
 import type z from 'zod';
 import { e } from '#backend/schemas/error.js';
 import type { r } from '#backend/schemas/response.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
+import type { SecurityService } from '#backend/services/security.service.js';
 
 export class OAuthClientService {
   private readonly mikro: MikroService;
-  public constructor(mikro: MikroService) {
+  private readonly securityService: SecurityService;
+  public constructor(mikro: MikroService, securityService: SecurityService) {
     this.mikro = mikro;
+    this.securityService = securityService;
   }
 
   /**
@@ -87,7 +89,7 @@ export class OAuthClientService {
   }
 
   /**
-   * Verify client secret using argon2 hash verification.
+   * Verify client secret using the current PBKDF2 hash format.
    * All clients (including config clients) now have hashed secrets in DB.
    * Public clients (PKCE-only) have null clientSecretHash.
    * @returns true if valid, false otherwise
@@ -110,6 +112,9 @@ export class OAuthClientService {
       return false;
     }
 
-    return verify(client.clientSecretHash, clientSecret);
+    return this.securityService.verifyClientSecret(
+      client.clientSecretHash,
+      clientSecret,
+    );
   }
 }

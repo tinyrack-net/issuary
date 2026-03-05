@@ -78,6 +78,7 @@ function Register() {
   );
 
   const isPasswordAuthEnabled = configData.auth.password.enabled;
+  const passwordPolicy = configData.auth.password.policy;
 
   // Check if there are any terms to display
   const hasTerms = termsData.terms.length > 0;
@@ -98,8 +99,18 @@ function Register() {
         email: z.email(t('validation.email.invalid')),
         password: z
           .string()
-          .min(6, t('validation.password.min'))
-          .max(100, t('validation.password.max')),
+          .min(
+            passwordPolicy.min_length,
+            t('validation.password.min', {
+              count: passwordPolicy.min_length,
+            }),
+          )
+          .max(
+            passwordPolicy.max_length,
+            t('validation.password.max', {
+              count: passwordPolicy.max_length,
+            }),
+          ),
         termsConsents: z.object(
           Object.fromEntries(
             explicitTerms.map((term) => [
@@ -113,7 +124,7 @@ function Register() {
           ),
         ),
       }),
-    [t, explicitTerms],
+    [explicitTerms, passwordPolicy.max_length, passwordPolicy.min_length, t],
   );
 
   type RegisterFormValues = z.infer<typeof registerSchema>;

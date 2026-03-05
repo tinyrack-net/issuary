@@ -121,9 +121,11 @@ describe('OAuthConnectService - auto_link strategy', () => {
 
     // Create existing user in DB
     await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword('test-password');
       const user = services.mikro.user.create({
         email,
-        password_hash: 'test-password',
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
@@ -213,9 +215,11 @@ describe('OAuthConnectService - require_link strategy', () => {
 
     // Create existing user in DB
     await withMikroContext(services, async () => {
+      const passwordHash =
+        await services.securityService.hashPassword('test-password');
       const user = services.mikro.user.create({
         email,
-        password_hash: 'test-password',
+        password_hash: passwordHash,
       });
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();

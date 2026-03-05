@@ -20,6 +20,10 @@ database:
   type: sqlite
   path: ./test.db
 
+security:
+  hash_master_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY
+  pbkdf2_iterations: 600000
+
 auth:
   password:
     enabled: true

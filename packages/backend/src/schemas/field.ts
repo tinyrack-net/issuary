@@ -4,6 +4,7 @@ import {
   isAvailableLocale,
   type Locale,
 } from '#backend/lib/locale.js';
+import { PASSWORD_POLICY_MAX_LENGTH } from '#backend/lib/password-policy.js';
 
 export const f = {
   // Common fields
@@ -12,7 +13,16 @@ export const f = {
   // User fields
   userSub: z.uuid().describe('User subject identifier (UUID)'),
   userEmail: z.email().describe('User email address'),
-  userPassword: z.string().min(6).max(100).describe("User's password"),
+  userPassword: z
+    .string()
+    .min(1)
+    .max(PASSWORD_POLICY_MAX_LENGTH)
+    .describe("User's password"),
+  newUserPassword: z
+    .string()
+    .min(1)
+    .max(PASSWORD_POLICY_MAX_LENGTH)
+    .describe("User's new password"),
   emailVerified: z.boolean().describe("Whether the user's email is verified"),
 
   // OAuth fields
@@ -143,11 +153,16 @@ export const f = {
   // TOTP Recovery Code fields
   recoveryCode: z
     .string()
-    .regex(
-      /^[a-z0-9]{4}-[a-z0-9]{4}$/,
-      'Recovery code must be in format: xxxx-xxxx',
+    .transform((value) => value.toUpperCase())
+    .pipe(
+      z
+        .string()
+        .regex(
+          /^[A-HJ-NP-TV-Z2-9]{4}(?:-[A-HJ-NP-TV-Z2-9]{4}){3}$/,
+          'Recovery code must be in format: XXXX-XXXX-XXXX-XXXX',
+        ),
     )
-    .describe('One-time recovery code for TOTP (format: xxxx-xxxx)'),
+    .describe('One-time recovery code for TOTP (format: XXXX-XXXX-XXXX-XXXX)'),
 
   // WebAuthn/Passkey fields
   base64UrlString: z.string().describe('Base64URL-encoded string'),

@@ -60,9 +60,14 @@ function VerifyRecovery() {
       z.object({
         code: z
           .string()
-          .regex(
-            /^[a-z0-9]{4}-[a-z0-9]{4}$/,
-            t('verifyRecovery.error.invalid'),
+          .transform((value) => value.toUpperCase())
+          .pipe(
+            z
+              .string()
+              .regex(
+                /^[A-HJ-NP-TV-Z2-9]{4}(?:-[A-HJ-NP-TV-Z2-9]{4}){3}$/,
+                t('verifyRecovery.error.invalid'),
+              ),
           ),
       }),
     [t],

@@ -126,7 +126,6 @@
     "@mikro-orm/postgresql": "^7.0.0-rc.2",
     "@mikro-orm/seeder": "^7.0.0-rc.2",
     "@mikro-orm/sqlite": "^7.0.0-rc.2",
-    "@node-rs/argon2": "^2.0.2",
     "@react-email/components": "^1.0.7",
     "@react-email/render": "^2.0.4",
     "@react-email/tailwind": "^2.0.4",

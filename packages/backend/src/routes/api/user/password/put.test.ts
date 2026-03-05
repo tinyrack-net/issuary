@@ -41,9 +41,10 @@ async function createUserWithPasswordAndSession(
   password: string,
 ): Promise<string> {
   await withMikroContext(services, async () => {
+    const passwordHash = await services.securityService.hashPassword(password);
     const user = services.mikro.user.create({
       email,
-      password_hash: password, // Will be hashed by entity lifecycle hook
+      password_hash: passwordHash,
     });
     user.email_verified = true;
     await services.mikro.em.persist(user).flush();
@@ -105,7 +106,8 @@ describe('PUT /api/user/password', () => {
       user.email_verified = true;
       await services.mikro.em.persist(user).flush();
 
-      user.password_hash = 'tempPassword123!';
+      user.password_hash =
+        await services.securityService.hashPassword('tempPassword123!');
       await services.mikro.em.flush();
     });
 
@@ -209,6 +211,29 @@ describe('PUT /api/user/password', () => {
     expect(oldPasswordLoginRes.status).toBe(401);
   });
 
+  test('should reject new password exceeding maximum length', async () => {
+    const email = generateUniqueEmail('password-put-too-long');
+    const password = 'validPassword123!';
+
+    const sessionCookie = await createUserWithPasswordAndSession(
+      email,
+      password,
+    );
+
+    const client = testClient(app);
+    const res = await client.api.user.password.$put(
+      {
+        json: {
+          current_password: password,
+          new_password: 'a'.repeat(257),
+        },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+
+    expect(res.status).toBe(400);
+  });
+
   test('should validate new password format', async () => {
     const email = generateUniqueEmail('password-put-validation');
     const password = 'validPassword123!';
@@ -230,7 +255,9 @@ describe('PUT /api/user/password', () => {
       { headers: { Cookie: `session=${sessionCookie}` } },
     );
 
-    expect(res.status).toBe(400);
+    const body = await assertJsonBody(res, 400);
+    expect(body.code).toBe('VALIDATION_ERROR');
+    expect(body.data).toBe('Password must be at least 12 characters long.');
   });
 });
 

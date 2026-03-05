@@ -28,6 +28,7 @@ import { ChangePasswordModal } from '#frontend/features/profile/change-password-
 import { DeleteAccountModal } from '#frontend/features/profile/delete-account-modal.js';
 import { DisableTotpModal } from '#frontend/features/profile/disable-totp-modal.js';
 import { ManagePasskeysModal } from '#frontend/features/profile/manage-passkeys-modal.js';
+import { RegenerateTotpRecoveryCodesModal } from '#frontend/features/profile/regenerate-totp-recovery-codes-modal.js';
 import { RemovePasswordModal } from '#frontend/features/profile/remove-password-modal.js';
 import { SetPasswordModal } from '#frontend/features/profile/set-password-modal.js';
 import { SetupPasskeyModal } from '#frontend/features/profile/setup-passkey-modal.js';
@@ -43,7 +44,7 @@ import {
 import { getSessionQueryOptions } from '#frontend/queries/session.js';
 
 type PasswordModalType = 'set' | 'change' | 'remove' | null;
-type TotpModalType = 'setup' | 'disable' | null;
+type TotpModalType = 'setup' | 'disable' | 'regenerate' | null;
 type PasskeyModalType = 'setup' | 'manage' | null;
 
 const SearchSchema = z.object({
@@ -257,6 +258,16 @@ function Profile() {
                 {t('profile.security.description')}
               </p>
             </div>
+            {showTotpSection && user.totp_recovery_codes_missing && (
+              <div
+                className="border-base-200 border-b px-4 py-3"
+                data-testid="profile-totp-recovery-warning"
+              >
+                <Alert icon={WarningCircleIcon} type="warning">
+                  {t('profile.totp.recoveryCodesMissing')}
+                </Alert>
+              </div>
+            )}
             <div className="divide-y divide-base-200">
               {showPasswordSection && (
                 <PasswordSection
@@ -274,6 +285,7 @@ function Profile() {
               {showTotpSection && (
                 <TotpSection
                   onOpenModal={setTotpModal}
+                  recoveryCodesMissing={user.totp_recovery_codes_missing}
                   totpEnabled={user.totp_registered}
                 />
               )}
@@ -331,6 +343,10 @@ function Profile() {
       />
       <DisableTotpModal
         isOpen={totpModal === 'disable'}
+        onClose={() => setTotpModal(null)}
+      />
+      <RegenerateTotpRecoveryCodesModal
+        isOpen={totpModal === 'regenerate'}
         onClose={() => setTotpModal(null)}
       />
 

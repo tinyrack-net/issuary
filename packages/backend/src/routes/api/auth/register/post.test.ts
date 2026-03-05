@@ -22,6 +22,8 @@ const REQUIRED_CONSENTS = [
   { termsId: 'privacy', agreed: true },
 ];
 
+const VALID_PASSWORD = 'Password12345!';
+
 describe('POST /api/auth/register', () => {
   let app: AppType;
   let services: ServiceContainer;
@@ -56,7 +58,7 @@ describe('POST /api/auth/register', () => {
       header: { 'accept-language': 'en' },
       json: {
         email: uniqueEmail,
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: REQUIRED_CONSENTS,
       },
     });
@@ -74,7 +76,7 @@ describe('POST /api/auth/register', () => {
     const res = await client.api.auth.register.$post({
       json: {
         email: uniqueEmail,
-        password: 'password123',
+        password: VALID_PASSWORD,
         // No consents provided
       },
     });
@@ -91,7 +93,7 @@ describe('POST /api/auth/register', () => {
     const res = await client.api.auth.register.$post({
       json: {
         email: uniqueEmail,
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: [
           { termsId: 'tos', agreed: true },
           { termsId: 'privacy', agreed: false },
@@ -111,7 +113,7 @@ describe('POST /api/auth/register', () => {
       header: { 'accept-language': 'en' },
       json: {
         email: 'test-config-user@example.com',
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: REQUIRED_CONSENTS,
       },
     });
@@ -128,7 +130,7 @@ describe('POST /api/auth/register', () => {
       header: { 'accept-language': 'en' },
       json: {
         email: uniqueEmail,
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: REQUIRED_CONSENTS,
       },
     });
@@ -138,7 +140,7 @@ describe('POST /api/auth/register', () => {
       header: { 'accept-language': 'en' },
       json: {
         email: uniqueEmail,
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: REQUIRED_CONSENTS,
       },
     });
@@ -153,7 +155,7 @@ describe('POST /api/auth/register', () => {
     const res = await client.api.auth.register.$post({
       json: {
         email: 'not-an-email',
-        password: 'password123',
+        password: VALID_PASSWORD,
       },
     });
 
@@ -165,17 +167,18 @@ describe('POST /api/auth/register', () => {
   test('should fail with short password', async () => {
     const client = testClient(app);
 
-    // @ts-expect-error testing validation with invalid input
     const res = await client.api.auth.register.$post({
+      header: { 'accept-language': 'en' },
       json: {
         email: 'test@example.com',
         password: '12345',
+        consents: REQUIRED_CONSENTS,
       },
     });
 
     const body = await assertJsonBody(res, 400);
-    expect(body).toHaveProperty('error');
-    expect(body.success).toBe(false);
+    expect(body.code).toBe('VALIDATION_ERROR');
+    expect(body.data).toBe('Password must be at least 12 characters long.');
   });
 
   test('should fail with long password', async () => {
@@ -185,7 +188,7 @@ describe('POST /api/auth/register', () => {
     const res = await client.api.auth.register.$post({
       json: {
         email: 'test@example.com',
-        password: 'a'.repeat(101),
+        password: 'a'.repeat(257),
       },
     });
 
@@ -194,13 +197,48 @@ describe('POST /api/auth/register', () => {
     expect(body.success).toBe(false);
   });
 
+  test('should honor a custom configured password policy', async () => {
+    const { app: customApp, cleanup: customCleanup } = await createTestApp({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        app: {
+          ...MINIMAL_TEST_CONFIG.app,
+          allowed_signup_emails: ['*'],
+        },
+        auth: {
+          password: {
+            policy: {
+              min_length: 4,
+              max_length: 6,
+            },
+          },
+        },
+      },
+    });
+
+    try {
+      const client = testClient(customApp);
+      const res = await client.api.auth.register.$post({
+        header: { 'accept-language': 'en' },
+        json: {
+          email: generateUniqueEmail('custom-policy'),
+          password: '1234',
+        },
+      });
+
+      expect(res.status).toBe(200);
+    } finally {
+      await customCleanup();
+    }
+  });
+
   test('should fail with missing email', async () => {
     const client = testClient(app);
 
     const res = await client.api.auth.register.$post({
       // @ts-expect-error testing validation with invalid input
       json: {
-        password: 'password123',
+        password: VALID_PASSWORD,
       },
     });
 
@@ -232,7 +270,7 @@ describe('POST /api/auth/register', () => {
       header: { 'accept-language': 'en' },
       json: {
         email: uniqueEmail,
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: REQUIRED_CONSENTS,
       },
     });
@@ -248,7 +286,7 @@ describe('POST /api/auth/register', () => {
       header: { 'accept-language': 'en' },
       json: {
         email: uniqueEmail,
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: REQUIRED_CONSENTS,
       },
     });
@@ -284,7 +322,7 @@ describe('POST /api/auth/register', () => {
       header: { 'accept-language': 'en' },
       json: {
         email: uniqueEmail,
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: REQUIRED_CONSENTS,
       },
     });
@@ -341,7 +379,7 @@ describe('POST /api/auth/register (signup disabled)', () => {
       header: { 'accept-language': 'en' },
       json: {
         email: 'test@example.com',
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: REQUIRED_CONSENTS,
       },
     });
@@ -380,7 +418,7 @@ describe('POST /api/auth/register (domain wildcard pattern)', () => {
       header: { 'accept-language': 'en' },
       json: {
         email: 'user@notallowed.com',
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: REQUIRED_CONSENTS,
       },
     });
@@ -396,7 +434,7 @@ describe('POST /api/auth/register (domain wildcard pattern)', () => {
       header: { 'accept-language': 'en' },
       json: {
         email: uniqueEmail,
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: REQUIRED_CONSENTS,
       },
     });
@@ -438,7 +476,7 @@ describe('POST /api/auth/register (exact email pattern)', () => {
       header: { 'accept-language': 'en' },
       json: {
         email: exactEmail,
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: REQUIRED_CONSENTS,
       },
     });
@@ -455,7 +493,7 @@ describe('POST /api/auth/register (exact email pattern)', () => {
       header: { 'accept-language': 'en' },
       json: {
         email: 'other@specific.com',
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: REQUIRED_CONSENTS,
       },
     });
@@ -495,7 +533,7 @@ describe('POST /api/auth/register (multiple patterns)', () => {
       header: { 'accept-language': 'en' },
       json: {
         email,
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: REQUIRED_CONSENTS,
       },
     });
@@ -509,7 +547,7 @@ describe('POST /api/auth/register (multiple patterns)', () => {
       header: { 'accept-language': 'en' },
       json: {
         email: 'special@other.com',
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: REQUIRED_CONSENTS,
       },
     });
@@ -523,7 +561,7 @@ describe('POST /api/auth/register (multiple patterns)', () => {
       header: { 'accept-language': 'en' },
       json: {
         email: 'nobody@rejected.com',
-        password: 'password123',
+        password: VALID_PASSWORD,
         consents: REQUIRED_CONSENTS,
       },
     });
@@ -581,7 +619,7 @@ describe('POST /api/auth/register (implicit consent mode)', () => {
     const res = await client.api.auth.register.$post({
       json: {
         email: uniqueEmail,
-        password: 'password123',
+        password: VALID_PASSWORD,
         // No consents provided - should work in implicit mode
       },
     });
@@ -599,7 +637,7 @@ describe('POST /api/auth/register (implicit consent mode)', () => {
     const res = await client.api.auth.register.$post({
       json: {
         email: uniqueEmail,
-        password: 'password123',
+        password: VALID_PASSWORD,
       },
     });
 
@@ -652,7 +690,7 @@ describe('POST /api/auth/register (no terms configured)', () => {
     const res = await client.api.auth.register.$post({
       json: {
         email: uniqueEmail,
-        password: 'password123',
+        password: VALID_PASSWORD,
         // No consents needed
       },
     });
