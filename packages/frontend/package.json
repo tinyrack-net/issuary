@@ -51,6 +51,8 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@types/nodemailer": "^7.0.9",
+    "nodemailer": "^8.0.0",
     "@vitejs/plugin-react": "catalog:",
     "@vitest/browser-playwright": "catalog:",
     "@vitest/browser-preview": "catalog:",
