@@ -1,5 +1,6 @@
 import type { AppType } from '@tinyauth/backend';
 import { createApp } from '@tinyauth/backend';
+import { sqlite } from '@tinyauth/backend/config';
 import { isBackendRoute } from '@tinyauth/backend/routing';
 
 interface AssetFetcher {
@@ -67,14 +68,8 @@ export async function createCloudflareExampleApp(assets: AssetFetcher) {
         default_language: 'auto',
         fallback_language: 'en',
       },
-      database: {
-        type: 'postgres',
-        host: '127.0.0.1',
-        port: 5432,
-        user: 'postgres',
-        password: 'postgres',
-        name: 'tinyauth',
-      },
+      database: sqlite({
+      }),
       security: {
         hash_master_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       },
