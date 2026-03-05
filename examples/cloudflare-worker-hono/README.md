@@ -18,32 +18,19 @@ serves the existing TinyAuth frontend from `packages/backend/public`.
 - Cloudflare account with Workers enabled
 - `pnpm install`
 
+## Configuration
+
+All configuration values are hardcoded in `src/config.ts`. Edit that file
+directly to change the database connection, secrets, or other settings.
+
 ## Local Development
 
-1. Copy `.dev.vars.example` to `.dev.vars` and update the values.
-2. Run `pnpm --filter @tinyauth/example-cloudflare-worker-hono dev`
+Run `pnpm --filter @tinyauth/example-cloudflare-worker-hono dev`
 
 The `dev` script rebuilds `@tinyauth/frontend` into `packages/backend/public`
 before starting the Worker dev server. If you change frontend code while
 working on the example, rerun the command or keep a separate
 `pnpm --filter @tinyauth/frontend build --watch` process running.
-
-## Required Variables
-
-- `COOKIE_SECRET`: 32-byte hex string for session cookies
-- `DATABASE_URL`: PostgreSQL connection string
-
-Optional variables:
-
-- `APP_HOST`
-- `ALLOWED_SIGNUP_EMAILS`
-- `USERS_JSON`
-- `CLIENTS_JSON`
-- `TERMS_JSON`
-- `HTML_TITLE`
-- `HTML_DESCRIPTION`
-- `HTML_FAVICON_URL`
-- `LOG_LEVEL`
 
 ## Build And Deploy
 
@@ -60,4 +47,3 @@ pnpm --filter @tinyauth/example-cloudflare-worker-hono deploy
   `FAVICON_URL`.
 - Unknown file-like requests such as `/missing.js` return `404` instead of the
   SPA shell.
-

@@ -42,10 +42,6 @@ export default defineConfig(({ mode }) => {
             ]
           : []),
         {
-          find: '@node-rs/argon2',
-          replacement: path.resolve(__dirname, './src/shims/argon2.ts'),
-        },
-        {
           find: 'nodemailer',
           replacement: path.resolve(__dirname, './src/shims/nodemailer.ts'),
         },

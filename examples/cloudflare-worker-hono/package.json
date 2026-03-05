@@ -12,7 +12,6 @@
     "test": "NODE_OPTIONS='--conditions=@tinyauth/source' vitest run"
   },
   "dependencies": {
-    "@node-rs/argon2-wasm32-wasi": "^2.0.2",
     "@tinyauth/backend": "workspace:*"
   },
   "devDependencies": {
