@@ -61,6 +61,15 @@ describe('resolveConfig', () => {
     expect(resolved.smtp?.test).toBe(true);
     expect(resolved.smtp?.host).toBe('smtp.test.local');
     expect(resolved.smtp?.user).toBe('test-user');
+    expect(typeof resolved.smtp?.createTransport).toBe('function');
+    expect(typeof resolved.smtp?.getTestMessageUrl).toBe('function');
+  });
+
+  test('returns composed database config', async () => {
+    const resolved = await resolveConfig(MINIMAL_TEST_CONFIG);
+
+    expect(resolved.database.type).toBe('sqlite');
+    expect(typeof resolved.database.getMikroOrmOptions).toBe('function');
   });
 
   test('validates config users against the configured password policy', async () => {

@@ -1,4 +1,3 @@
-import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 import {
   renderPasswordResetEmail,
@@ -7,16 +6,14 @@ import {
 import type { IEmailVerificationEntity } from '#backend/entities/email-verification.entity.js';
 import type { UserEntity } from '#backend/entities/user.entity.js';
 import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { SmtpTransport } from '#backend/lib/config/runtime.js';
 import { DEFAULT_LOCALE, type Locale } from '#backend/lib/locale.js';
 import type { Logger } from '#backend/lib/logger.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 
 export class EmailService {
-  private readonly transporter: nodemailer.Transporter<
-    SMTPTransport.SentMessageInfo,
-    SMTPTransport.Options
-  > | null;
+  private readonly transporter: Promise<SmtpTransport> | null;
 
   private readonly config: ResolvedAppConfig;
   private readonly mikro: MikroService;
@@ -30,22 +27,14 @@ export class EmailService {
     this.mikro = mikro;
     this.logger = logger;
     if (config.smtp) {
-      this.transporter = nodemailer.createTransport({
-        host: config.smtp.host,
-        port: config.smtp.port,
-        secure: config.smtp.secure,
-        auth: {
-          user: config.smtp.user,
-          pass: config.smtp.password,
-        },
-      });
+      this.transporter = config.smtp.createTransport();
       this.logger.info(
         { host: config.smtp.host, port: config.smtp.port },
-        'Nodemailer initialized',
+        'SMTP transport initialized',
       );
     } else {
       this.transporter = null;
-      this.logger.warn('Nodemailer: no SMTP config, emails disabled');
+      this.logger.warn('SMTP disabled: no SMTP config');
     }
   }
 
@@ -73,9 +62,10 @@ export class EmailService {
     token: string;
     locale?: Locale | undefined;
   }): Promise<SMTPTransport.SentMessageInfo> {
-    if (!this.transporter || !this.config.smtp) {
+    if (!this.config.smtp || !this.transporter) {
       throw new e.EmailNotActivated.Error();
     }
+    const transporter = await this.transporter;
 
     const verificationUrl = `${this.config.app.host}/verify/email?token=${params.token}`;
 
@@ -86,7 +76,7 @@ export class EmailService {
       appName: this.getAppName(params.locale),
     });
 
-    const info = await this.transporter.sendMail({
+    const info = await transporter.sendMail({
       from: this.config.smtp.from,
       to: params.email,
       subject,
@@ -97,7 +87,7 @@ export class EmailService {
     this.logger.info({ messageId: info.messageId }, 'Email sent');
 
     if (this.config.smtp.test) {
-      const previewUrl = nodemailer.getTestMessageUrl(info);
+      const previewUrl = await this.config.smtp.getTestMessageUrl(info);
       if (previewUrl) {
         this.logger.info({ previewUrl }, 'Preview URL');
       }
@@ -121,9 +111,10 @@ export class EmailService {
     token: string;
     locale?: Locale | undefined;
   }): Promise<SMTPTransport.SentMessageInfo> {
-    if (!this.transporter || !this.config.smtp) {
+    if (!this.config.smtp || !this.transporter) {
       throw new e.EmailNotActivated.Error();
     }
+    const transporter = await this.transporter;
 
     const resetUrl = `${this.config.app.host}/password/reset?token=${params.token}`;
 
@@ -134,7 +125,7 @@ export class EmailService {
       appName: this.getAppName(params.locale),
     });
 
-    const info = await this.transporter.sendMail({
+    const info = await transporter.sendMail({
       from: this.config.smtp.from,
       to: params.email,
       subject,
@@ -148,7 +139,7 @@ export class EmailService {
     );
 
     if (this.config.smtp.test) {
-      const previewUrl = nodemailer.getTestMessageUrl(info);
+      const previewUrl = await this.config.smtp.getTestMessageUrl(info);
       if (previewUrl) {
         this.logger.info({ previewUrl }, 'Preview URL');
       }

@@ -1,6 +1,6 @@
-import nodemailer from 'nodemailer';
 import z from 'zod';
 import { ConfigValidationError } from '../format-zod-error.js';
+import { postgres, smtp, sqlite } from './runtime.js';
 import {
   type AppConfig,
   AppConfigSchema,
@@ -35,6 +35,7 @@ const resolveSmtpConfig = async (
     return undefined;
   }
   if (smtp.test) {
+    const { default: nodemailer } = await import('nodemailer');
     const testAccount = await nodemailer.createTestAccount();
     return {
       host: testAccount.smtp.host,
@@ -47,6 +48,17 @@ const resolveSmtpConfig = async (
     };
   }
   return smtp;
+};
+
+const composeDatabaseConfig = (
+  database: AppConfig['database'],
+): ResolvedAppConfig['database'] => {
+  switch (database.type) {
+    case 'postgres':
+      return postgres(database);
+    case 'sqlite':
+      return sqlite(database);
+  }
 };
 
 /**
@@ -66,10 +78,12 @@ export async function resolveConfig(
   // Resolve SMTP config (handle test: true case)
   const smtpConfig = await resolveSmtpConfig(parsed.smtp);
 
-  const { smtp: _smtp, ...rest } = parsed;
+  const { smtp: _smtp, database: _database, ...rest } = parsed;
+  const databaseConfig = composeDatabaseConfig(parsed.database);
 
   return {
     ...rest,
-    ...(smtpConfig ? { smtp: smtpConfig } : {}),
+    database: databaseConfig,
+    ...(smtpConfig ? { smtp: smtp(smtpConfig) } : {}),
   };
 }
