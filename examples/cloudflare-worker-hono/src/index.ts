@@ -1,6 +1,5 @@
-import type { AppType } from '@tinyauth/backend';
-import { createApp } from '@tinyauth/backend';
-import { sqlite } from '@tinyauth/backend/config';
+import { type AppType, createApp } from '@tinyauth/backend';
+import { sqlite } from '@tinyauth/backend/database';
 import { isBackendRoute } from '@tinyauth/backend/routing';
 
 interface AssetFetcher {
@@ -113,18 +112,6 @@ export async function createCloudflareExampleApp(assets: AssetFetcher) {
 
 type AppExecutionContext = Parameters<AppType['fetch']>[2];
 
-let appPromise: ReturnType<typeof createCloudflareExampleApp> | undefined;
-
-async function getApp(assets: AssetFetcher) {
-  if (!appPromise) {
-    appPromise = createCloudflareExampleApp(assets).catch((error: unknown) => {
-      appPromise = undefined;
-      throw error;
-    });
-  }
-
-  return appPromise;
-}
 
 const worker = {
   async fetch(
@@ -132,7 +119,7 @@ const worker = {
     env: Env,
     executionContext: AppExecutionContext,
   ) {
-    const app = await getApp(env.ASSETS);
+    const app = await createCloudflareExampleApp(env.ASSETS);
     return app.fetch(request, env, executionContext);
   },
 };

@@ -42,6 +42,14 @@
       "./db": {
         "types": "./dist/db/index.d.ts",
         "default": "./dist/db/index.js"
+      },
+      "./database": {
+        "types": "./dist/database.d.ts",
+        "default": "./dist/database.js"
+      },
+      "./mail": {
+        "types": "./dist/mail.d.ts",
+        "default": "./dist/mail.js"
       }
     },
     "imports": {
@@ -86,6 +94,16 @@
       "@tinyauth/source": "./src/db/index.ts",
       "types": "./dist/db/index.d.ts",
       "default": "./dist/db/index.js"
+    },
+    "./database": {
+      "@tinyauth/source": "./src/database.ts",
+      "types": "./dist/database.d.ts",
+      "default": "./dist/database.js"
+    },
+    "./mail": {
+      "@tinyauth/source": "./src/mail.ts",
+      "types": "./dist/mail.d.ts",
+      "default": "./dist/mail.js"
     }
   },
   "imports": {

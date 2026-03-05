@@ -19,17 +19,6 @@ export {
 } from '#backend/lib/oauth-resolver.js';
 // Config loader
 export { parseConfig, resolveConfig } from './loader.js';
-// Runtime config factories
-export {
-  type ComposedDatabaseConfig,
-  type ComposedDatabaseConfigPostgres,
-  type ComposedDatabaseConfigSqlite,
-  type ComposedSmtpConfig,
-  postgres,
-  type SmtpTransport,
-  smtp,
-  sqlite,
-} from './runtime.js';
 // Config schemas and types
 export {
   type AppConfig,

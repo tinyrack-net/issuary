@@ -1,6 +1,7 @@
 import z from 'zod';
+import { postgres, sqlite } from '#backend/database.js';
+import { smtp } from '#backend/mail.js';
 import { ConfigValidationError } from '../format-zod-error.js';
-import { postgres, smtp, sqlite } from './runtime.js';
 import {
   type AppConfig,
   AppConfigSchema,

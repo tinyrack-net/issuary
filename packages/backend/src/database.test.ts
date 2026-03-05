@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
-import { postgres, smtp, sqlite } from './runtime.js';
+import { postgres, sqlite } from '#backend/database.js';
 
-describe('runtime config factories', () => {
+describe('database config factories', () => {
   test('composes sqlite database config', async () => {
     const config = sqlite({
       type: 'sqlite',
@@ -30,20 +30,5 @@ describe('runtime config factories', () => {
     expect(config.type).toBe('postgres');
     expect(config.host).toBe('localhost');
     expect(typeof config.getMikroOrmOptions).toBe('function');
-  });
-
-  test('returns false preview url for non-test smtp config', () => {
-    const config = smtp({
-      host: 'localhost',
-      port: 465,
-      secure: true,
-      user: 'user',
-      password: 'password',
-      test: false,
-    });
-
-    expect(config.test).toBe(false);
-    expect(typeof config.createTransport).toBe('function');
-    expect(typeof config.getTestMessageUrl).toBe('function');
   });
 });

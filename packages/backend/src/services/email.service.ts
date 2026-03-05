@@ -6,9 +6,9 @@ import {
 import type { IEmailVerificationEntity } from '#backend/entities/email-verification.entity.js';
 import type { UserEntity } from '#backend/entities/user.entity.js';
 import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
-import type { SmtpTransport } from '#backend/lib/config/runtime.js';
 import { DEFAULT_LOCALE, type Locale } from '#backend/lib/locale.js';
 import type { Logger } from '#backend/lib/logger.js';
+import type { SmtpTransport } from '#backend/mail.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 

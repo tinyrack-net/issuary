@@ -1,4 +1,5 @@
 import z from 'zod';
+import type { ComposedDatabaseConfig } from '#backend/database.js';
 import { fromBase64Url } from '#backend/lib/base64url.js';
 import { DurationString } from '#backend/lib/duration.js';
 import { AVAILABLE_LOCALES, DEFAULT_LOCALE } from '#backend/lib/locale.js';
@@ -7,9 +8,9 @@ import {
   PASSWORD_POLICY_MAX_LENGTH,
   PASSWORD_POLICY_MIN_LENGTH,
 } from '#backend/lib/password-policy.js';
+import type { ComposedSmtpConfig } from '#backend/mail.js';
 import { f } from '#backend/schemas/field.js';
 import { zz } from '#backend/schemas/provider.js';
-import type { ComposedDatabaseConfig, ComposedSmtpConfig } from './runtime.js';
 
 /**
  * Zod schema for locale validation.
@@ -193,8 +194,8 @@ const TermsItem = z
       .default('explicit')
       .describe(
         'Consent mode for this term: ' +
-        '"explicit" shows checkbox requiring user action, ' +
-        '"implicit" means signup implies agreement',
+          '"explicit" shows checkbox requiring user action, ' +
+          '"implicit" means signup implies agreement',
       ),
     version: z
       .string()
@@ -205,7 +206,7 @@ const TermsItem = z
       .default({})
       .describe(
         'Localized content keyed by language code (e.g., "en", "ko"). ' +
-        'Can be omitted for implicit consent terms where content is not displayed.',
+          'Can be omitted for implicit consent terms where content is not displayed.',
       ),
   })
   .describe('Individual term configuration');
@@ -442,17 +443,17 @@ export const AppConfigLogging = z
       .default(DEFAULT_LOGGING_CONFIG.format)
       .describe(
         'Log output format. ' +
-        '"json" outputs structured JSON (default). ' +
-        '"pretty" outputs human-readable format.',
+          '"json" outputs structured JSON (default). ' +
+          '"pretty" outputs human-readable format.',
       ),
     http_log_proxy: z
       .boolean()
       .default(DEFAULT_LOGGING_CONFIG.http_log_proxy)
       .describe(
         'Whether to log HTTP access logs for proxied frontend requests ' +
-        'in development mode. When false (default), proxy requests ' +
-        'are completely suppressed, keeping the terminal clean. ' +
-        'Set to true to see them.',
+          'in development mode. When false (default), proxy requests ' +
+          'are completely suppressed, keeping the terminal clean. ' +
+          'Set to true to see them.',
       ),
   })
   .describe('Logging configuration');
@@ -534,9 +535,9 @@ export const AppConfigApp = z.object({
     .default([])
     .describe(
       'Email patterns allowed for signup. ' +
-      '"*" allows all emails, "*@domain.com" allows a specific domain, ' +
-      '"user@domain.com" allows a specific email. ' +
-      'Empty array disables signup entirely.',
+        '"*" allows all emails, "*@domain.com" allows a specific domain, ' +
+        '"user@domain.com" allows a specific email. ' +
+        'Empty array disables signup entirely.',
     ),
   supported_languages: z
     .array(LocaleSchema)
@@ -585,16 +586,16 @@ export const AppConfigApp = z.object({
     })
     .describe(
       'Trust proxy configuration for X-Forwarded-* headers. ' +
-      'Can be true (trust all), false (trust none), ' +
-      'IP/CIDR string, array of IPs, or number (nth hop)',
+        'Can be true (trust all), false (trust none), ' +
+        'IP/CIDR string, array of IPs, or number (nth hop)',
     ),
   signup_implicit_terms: z
     .record(z.string(), z.string())
     .default({})
     .describe(
       'Localized notice text for implicit consent terms during signup. ' +
-      'Keyed by language code (e.g., "en", "ko"). ' +
-      'Displayed when any term has consent_mode: "implicit".',
+        'Keyed by language code (e.g., "en", "ko"). ' +
+        'Displayed when any term has consent_mode: "implicit".',
     ),
   icon_url: z
     .url()
@@ -609,8 +610,8 @@ export const AppConfigApp = z.object({
     })
     .describe(
       'Localized title text for login page. ' +
-      'Keyed by language code (e.g., "en", "ko"). ' +
-      'Overrides the default i18n login title.',
+        'Keyed by language code (e.g., "en", "ko"). ' +
+        'Overrides the default i18n login title.',
     ),
   subtitle: z
     .record(z.string(), z.string())
@@ -621,8 +622,8 @@ export const AppConfigApp = z.object({
     })
     .describe(
       'Localized subtitle text for login page. ' +
-      'Keyed by language code (e.g., "en", "ko"). ' +
-      'Overrides the default i18n login subtitle.',
+        'Keyed by language code (e.g., "en", "ko"). ' +
+        'Overrides the default i18n login subtitle.',
     ),
   account_deletion: zz.COERCE_BOOLEAN.default(false).describe(
     'Whether users can delete their own accounts',
@@ -740,7 +741,7 @@ export const AppConfigPasskeyAuth = z.object({
     .regex(
       rpIdDomainRegex,
       'rp_id must be a valid domain without protocol or port ' +
-      '(e.g., "example.com" or "localhost")',
+        '(e.g., "example.com" or "localhost")',
     )
     .optional(),
   /**
