@@ -23,6 +23,10 @@
       "better-sqlite3",
       "esbuild",
       "libsql"
+    ],
+    "ignoredBuiltDependencies": [
+      "sharp",
+      "workerd"
     ]
   }
 }
