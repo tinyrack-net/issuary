@@ -1,8 +1,7 @@
-import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
+import type { ResolvedAppConfig } from '@tinyauth/backend/config';
 import {
-  E2E_TEST_CLIENT_CONFIG,
-  E2E_TEST_SECURITY_CONFIG,
-  E2E_TEST_USER_CONFIG,
+  E2E_BASE_APP_CONFIG,
+  E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 
 /**
@@ -10,10 +9,12 @@ import {
  */
 export function createTermsCompleteRegistrationConfig(
   backendPort: number,
-  frontendPort: number,
-): StandaloneConfigInput {
+  _frontendPort: number,
+): ResolvedAppConfig {
   return {
+    ...E2E_BASE_CONFIG,
     app: {
+      ...E2E_BASE_APP_CONFIG,
       host: `http://localhost:${backendPort}`,
       port: backendPort,
       cookie_secret:
@@ -25,20 +26,6 @@ export function createTermsCompleteRegistrationConfig(
       signup_implicit_terms: {
         en: 'By signing up, you agree to analytics collection.',
       },
-      frontend: {
-        enabled: true,
-        mode: 'proxy',
-        path: `http://localhost:${frontendPort}`,
-      },
-    },
-    security: E2E_TEST_SECURITY_CONFIG,
-    logging: {
-      level: 'silent',
-      format: 'json',
-    },
-    database: {
-      type: 'sqlite',
-      test: true,
     },
     terms: [
       {
@@ -68,7 +55,5 @@ export function createTermsCompleteRegistrationConfig(
         },
       },
     ],
-    users: [E2E_TEST_USER_CONFIG],
-    clients: [E2E_TEST_CLIENT_CONFIG],
   };
 }

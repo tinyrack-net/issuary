@@ -1,8 +1,9 @@
 import type { AddressInfo } from 'node:net';
 import { createServer as createNetServer } from 'node:net';
 import { serve } from '@hono/node-server';
-import { createStandaloneApp } from '@tinyauth/standalone/app';
-import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
+import { createApp } from '@tinyauth/backend';
+import type { ResolvedAppConfig } from '@tinyauth/backend/config';
+import { isBackendRoute } from '@tinyauth/backend/routing';
 
 const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
 
@@ -170,10 +171,14 @@ function getFreePort(): Promise<number> {
   });
 }
 
+export type E2EConfigResult = Omit<ResolvedAppConfig, 'smtp'> & {
+  smtp?: { test: true } | ResolvedAppConfig['smtp'];
+};
+
 type ConfigFactory = (
   backendPort: number,
   frontendPort: number,
-) => StandaloneConfigInput;
+) => E2EConfigResult;
 
 function getSharedFrontendPort(): number {
   const rawPort = process.env[SHARED_FRONTEND_PORT_ENV];
@@ -208,10 +213,34 @@ export async function createE2EServer(configFactory: ConfigFactory) {
   const backendPort = await getFreePort();
   const frontendPort = getSharedFrontendPort();
 
-  const config = configFactory(backendPort, frontendPort);
+  const { smtp: rawSmtp, ...restConfig } = configFactory(
+    backendPort,
+    frontendPort,
+  );
+
+  // Resolve smtp: { test: true } into a real test SMTP config
+  let resolvedSmtp: ResolvedAppConfig['smtp'];
+  if (
+    rawSmtp &&
+    'test' in rawSmtp &&
+    rawSmtp.test === true &&
+    !('createTransport' in rawSmtp)
+  ) {
+    const { resolveTestSmtp } = await import(
+      '#frontend-e2e/setup/resolve-test-smtp.js'
+    );
+    resolvedSmtp = await resolveTestSmtp();
+  } else if (rawSmtp && 'createTransport' in rawSmtp) {
+    resolvedSmtp = rawSmtp as ResolvedAppConfig['smtp'];
+  }
+
+  const config: ResolvedAppConfig = {
+    ...restConfig,
+    ...(resolvedSmtp ? { smtp: resolvedSmtp } : {}),
+  };
 
   // 1. Start backend
-  const { app, services, cleanup } = await createStandaloneApp({ config });
+  const { app, services, cleanup } = await createApp({ config });
 
   // 2. Register test-only API endpoints
   const testApp = app
@@ -440,6 +469,18 @@ export async function createE2EServer(configFactory: ConfigFactory) {
 
       const profile = getOAuthStubProfile(provider);
       return c.json(profile);
+    })
+    .notFound(async (c) => {
+      const url = new URL(c.req.url);
+      if (isBackendRoute(url.pathname)) {
+        return c.json({ error: 'Not Found' }, 404);
+      }
+      const upstream = `http://localhost:${frontendPort}${url.pathname}${url.search}`;
+      const res = await fetch(upstream, { headers: c.req.raw.headers });
+      return new Response(res.body, {
+        status: res.status,
+        headers: res.headers,
+      });
     });
 
   const backendServer = serve({

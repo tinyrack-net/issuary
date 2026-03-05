@@ -1,8 +1,8 @@
-import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
+import type { ResolvedAppConfig } from '@tinyauth/backend/config';
 import {
-  E2E_TEST_CLIENT_CONFIG,
-  E2E_TEST_SECURITY_CONFIG,
-  E2E_TEST_USER_CONFIG,
+  E2E_BASE_APP_CONFIG,
+  E2E_BASE_AUTH_CONFIG,
+  E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 
 /**
@@ -10,10 +10,12 @@ import {
  */
 export function createTotpOptionalConfig(
   backendPort: number,
-  frontendPort: number,
-): StandaloneConfigInput {
+  _frontendPort: number,
+): ResolvedAppConfig {
   return {
+    ...E2E_BASE_CONFIG,
     app: {
+      ...E2E_BASE_APP_CONFIG,
       host: `http://localhost:${backendPort}`,
       port: backendPort,
       cookie_secret:
@@ -22,38 +24,16 @@ export function createTotpOptionalConfig(
       supported_languages: ['en'],
       default_language: 'en',
       fallback_language: 'en',
-      frontend: {
-        enabled: true,
-        mode: 'proxy',
-        path: `http://localhost:${frontendPort}`,
-      },
     },
-    security: E2E_TEST_SECURITY_CONFIG,
     auth: {
       password: {
+        ...E2E_BASE_AUTH_CONFIG.password,
         enabled: true,
         email_verification: false,
-        second_factor: {
-          required: false,
-        },
-        totp: {
-          enabled: true,
-          issuer: 'TinyauthE2E',
-        },
+        second_factor: { required: false },
+        totp: { enabled: true, issuer: 'TinyauthE2E' },
       },
-      passkey: {
-        enabled: false,
-      },
+      passkey: { ...E2E_BASE_AUTH_CONFIG.passkey, enabled: false },
     },
-    logging: {
-      level: 'silent',
-      format: 'json',
-    },
-    database: {
-      type: 'sqlite',
-      test: true,
-    },
-    users: [E2E_TEST_USER_CONFIG],
-    clients: [E2E_TEST_CLIENT_CONFIG],
   };
 }

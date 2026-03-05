@@ -48,7 +48,6 @@
     "@tailwindcss/vite": "catalog:",
     "@tanstack/router-plugin": "catalog:",
     "@tinyauth/backend": "workspace:*",
-    "@tinyauth/standalone": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
