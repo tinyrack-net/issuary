@@ -1,5 +1,6 @@
 import z from 'zod';
 import type { ComposedDatabaseConfig } from '#backend/database.js';
+import type { ResolvedIdentityProvider } from '#backend/identity-provider.js';
 import { fromBase64Url } from '#backend/lib/base64url.js';
 import { DurationString } from '#backend/lib/duration.js';
 import { AVAILABLE_LOCALES, DEFAULT_LOCALE } from '#backend/lib/locale.js';
@@ -1056,7 +1057,11 @@ export type AppConfig = z.infer<typeof AppConfigSchema>;
  * The smtp field is guaranteed to be either a full AppConfigSmtp object
  * or undefined (the `{ test: true }` shorthand has been resolved).
  */
-export type ResolvedAppConfig = Omit<AppConfig, 'database' | 'smtp'> & {
+export type ResolvedAppConfig = Omit<
+  AppConfig,
+  'database' | 'smtp' | 'identity_providers'
+> & {
   database: ComposedDatabaseConfig;
   smtp?: ComposedSmtpConfig;
+  identity_providers: ResolvedIdentityProvider[];
 };

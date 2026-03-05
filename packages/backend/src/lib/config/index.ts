@@ -1,3 +1,11 @@
+// Identity provider
+export {
+  apple,
+  genericOAuth,
+  github,
+  google,
+  type ResolvedIdentityProvider,
+} from '#backend/identity-provider.js';
 // Duration utilities
 export {
   calculateCutoffDate,
@@ -11,12 +19,6 @@ export {
   ConfigValidationError,
   formatZodError,
 } from '#backend/lib/format-zod-error.js';
-// OAuth resolver
-export {
-  type ResolvedOAuthConfig,
-  resolveOAuthConfig,
-  type WellKnownOAuthProvider,
-} from '#backend/lib/oauth-resolver.js';
 // Config loader
 export { parseConfig, resolveConfig } from './loader.js';
 // Config schemas and types

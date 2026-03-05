@@ -1,9 +1,8 @@
 import { decodeJwt } from 'jose';
 import z from 'zod';
-import {
-  type ResolvedAppConfig,
-  type ResolvedOAuthConfig,
-  resolveOAuthConfig,
+import type {
+  ResolvedAppConfig,
+  ResolvedIdentityProvider,
 } from '#backend/lib/config/index.js';
 import { isEmailAllowed } from '#backend/lib/email-pattern.js';
 import { generatePKCE } from '#backend/lib/pkce.js';
@@ -288,13 +287,12 @@ export class OAuthConnectService {
       icon_url?: string | undefined;
     }> = [];
 
-    for (const config of this.config.identity_providers) {
-      if (config.enabled) {
-        const resolved = resolveOAuthConfig(config);
+    for (const provider of this.config.identity_providers) {
+      if (provider.enabled) {
         providers.push({
-          id: resolved.id,
-          display_name: resolved.display_name,
-          icon_url: resolved.icon_url,
+          id: provider.id,
+          display_name: provider.display_name,
+          icon_url: provider.icon_url,
         });
       }
     }
@@ -305,14 +303,14 @@ export class OAuthConnectService {
   /**
    * Get OAuth provider config by id
    */
-  public getProvider(id: string): ResolvedOAuthConfig {
-    const config = this.config.identity_providers.find((c) => c.id === id);
+  public getProvider(id: string): ResolvedIdentityProvider {
+    const provider = this.config.identity_providers.find((c) => c.id === id);
 
-    if (!config || !config.enabled) {
+    if (!provider || !provider.enabled) {
       throw new e.OAuthProviderNotFound.Error();
     }
 
-    return resolveOAuthConfig(config);
+    return provider;
   }
 
   /**
@@ -432,7 +430,7 @@ export class OAuthConnectService {
    * from the provider's token endpoint over TLS.
    */
   private extractUserInfoFromIdToken(
-    provider: ResolvedOAuthConfig,
+    provider: ResolvedIdentityProvider,
     idToken?: string,
   ): OAuthUserInfo {
     if (!idToken) {
@@ -449,7 +447,7 @@ export class OAuthConnectService {
    * using the provider's userinfo_mapping configuration.
    */
   private mapUserInfo(
-    provider: ResolvedOAuthConfig,
+    provider: ResolvedIdentityProvider,
     data: Record<string, unknown>,
   ): OAuthUserInfo {
     const mapping = provider.userinfo_mapping;

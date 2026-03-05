@@ -1,5 +1,12 @@
 import z from 'zod';
 import { postgres, sqlite } from '#backend/database.js';
+import {
+  apple,
+  genericOAuth,
+  github,
+  google,
+  type ResolvedIdentityProvider,
+} from '#backend/identity-provider.js';
 import { smtp } from '#backend/mail.js';
 import { ConfigValidationError } from '../format-zod-error.js';
 import {
@@ -62,6 +69,29 @@ const composeDatabaseConfig = (
   }
 };
 
+const composeIdentityProvider = (
+  config: AppConfig['identity_providers'][number],
+): ResolvedIdentityProvider => {
+  switch (config.type) {
+    case 'github': {
+      const { type: _, ...rest } = config;
+      return github(rest);
+    }
+    case 'google': {
+      const { type: _, ...rest } = config;
+      return google(rest);
+    }
+    case 'apple': {
+      const { type: _, ...rest } = config;
+      return apple(rest);
+    }
+    case 'generic_oauth': {
+      const { type: _, ...rest } = config;
+      return genericOAuth(rest);
+    }
+  }
+};
+
 /**
  * Transform raw backend config input to ResolvedAppConfig.
  * This parses the input through the backend schema (applying defaults),
@@ -79,12 +109,21 @@ export async function resolveConfig(
   // Resolve SMTP config (handle test: true case)
   const smtpConfig = await resolveSmtpConfig(parsed.smtp);
 
-  const { smtp: _smtp, database: _database, ...rest } = parsed;
+  const {
+    smtp: _smtp,
+    database: _database,
+    identity_providers: _idp,
+    ...rest
+  } = parsed;
   const databaseConfig = composeDatabaseConfig(parsed.database);
+  const identityProvidersConfig = parsed.identity_providers.map(
+    composeIdentityProvider,
+  );
 
   return {
     ...rest,
     database: databaseConfig,
+    identity_providers: identityProvidersConfig,
     ...(smtpConfig ? { smtp: smtp(smtpConfig) } : {}),
   };
 }
