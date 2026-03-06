@@ -23,10 +23,6 @@
         "types": "./dist/entries/config.d.ts",
         "default": "./dist/entries/config.js"
       },
-      "./openapi": {
-        "types": "./dist/lib/openapi.d.ts",
-        "default": "./dist/lib/openapi.js"
-      },
       "./routing": {
         "types": "./dist/entries/routing.d.ts",
         "default": "./dist/entries/routing.js"
@@ -81,11 +77,6 @@
       "@tinyauth/source": "./src/entries/config.ts",
       "types": "./dist/entries/config.d.ts",
       "default": "./dist/entries/config.js"
-    },
-    "./openapi": {
-      "@tinyauth/source": "./src/lib/openapi.ts",
-      "types": "./dist/lib/openapi.d.ts",
-      "default": "./dist/lib/openapi.js"
     },
     "./routing": {
       "@tinyauth/source": "./src/entries/routing.ts",
