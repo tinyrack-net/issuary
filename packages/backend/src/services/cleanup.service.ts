@@ -14,7 +14,7 @@ import { UserPasskeyEntitySchema } from '#backend/entities/user-passkey.entity.j
 import { UserTermsConsentEntity } from '#backend/entities/user-terms-consent.entity.js';
 import { UserTotpEntitySchema } from '#backend/entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '#backend/entities/user-totp-recovery-code.entity.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 import {
   calculateCutoffDate,
   formatDuration,

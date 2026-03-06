@@ -18,7 +18,7 @@ import { UserPasskeyEntitySchema } from '#backend/entities/user-passkey.entity.j
 import { UserTermsConsentEntitySchema } from '#backend/entities/user-terms-consent.entity.js';
 import { UserTotpEntitySchema } from '#backend/entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '#backend/entities/user-totp-recovery-code.entity.js';
-import type { DatabaseConfigRuntime } from '#backend/lib/config/schema.js';
+import type { DatabaseConfigRuntime } from '#backend/lib/schema.js';
 
 export function postgres(database: {
   host: string;

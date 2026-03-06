@@ -1,7 +1,7 @@
 import type {
   AppleOAuthSchema,
   ResolvedIdentityProvider,
-} from '#backend/lib/config/schema.js';
+} from '#backend/lib/schema.js';
 
 export function apple(
   config: Omit<AppleOAuthSchema, 'type'>,

@@ -15,7 +15,7 @@ import {
   JwtKeyStatus,
 } from '#backend/entities/jwt-key.entity.js';
 import { bytesToString, fromBase64Url } from '#backend/lib/base64url.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 

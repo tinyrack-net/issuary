@@ -4,8 +4,8 @@ import {
 } from '#backend/emails/render.js';
 import type { IEmailVerificationEntity } from '#backend/entities/email-verification.entity.js';
 import type { UserEntity } from '#backend/entities/user.entity.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
-import type { MailTransport } from '#backend/lib/config/schema.js';
+import type { ResolvedAppConfig } from '#backend/lib/schema.js';
+import type { MailTransport } from '#backend/lib/schema.js';
 import { DEFAULT_LOCALE, type Locale } from '#backend/lib/locale.js';
 import type { Logger } from '#backend/lib/logger.js';
 import { e } from '#backend/schemas/error.js';

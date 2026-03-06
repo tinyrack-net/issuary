@@ -1,7 +1,7 @@
 import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
 import qrcode from 'qrcode';
 import type { UserEntity } from '#backend/entities/user.entity.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 import { getRandomBytes } from '#backend/lib/crypto.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';

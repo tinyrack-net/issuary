@@ -3,7 +3,7 @@ import z from 'zod';
 import type {
   ResolvedAppConfig,
   ResolvedIdentityProvider,
-} from '#backend/lib/config/index.js';
+} from '#backend/lib/schema.js';
 import { isEmailAllowed } from '#backend/lib/email-pattern.js';
 import { generatePKCE } from '#backend/lib/pkce.js';
 import { e, TinyAuthError } from '#backend/schemas/error.js';

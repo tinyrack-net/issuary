@@ -1,7 +1,7 @@
 import type {
   GoogleOAuthSchema,
   ResolvedIdentityProvider,
-} from '#backend/lib/config/schema.js';
+} from '#backend/lib/schema.js';
 
 export function google(
   config: Omit<GoogleOAuthSchema, 'type'>,

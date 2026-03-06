@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { generateSpecs } from 'hono-openapi';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 import { createLogger } from '#backend/lib/logger.js';
 import { OPENAPI_DOCUMENTATION } from '#backend/lib/openapi.js';
 import { loggerMiddleware } from '#backend/middleware/logger.js';

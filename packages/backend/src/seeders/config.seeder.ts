@@ -3,7 +3,7 @@ import { OAuthClientEntitySchema } from '#backend/entities/oauth-client.entity.j
 import { TermsEntitySchema } from '#backend/entities/terms.entity.js';
 import { TermsContentEntitySchema } from '#backend/entities/terms-content.entity.js';
 import { UserEntity } from '#backend/entities/user.entity.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 import type { SecurityService } from '#backend/services/security.service.js';
 
 /**

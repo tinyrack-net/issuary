@@ -2,7 +2,7 @@ import nm from 'nodemailer';
 import type {
   AppConfigSmtp,
   MailConfigRuntime,
-} from '#backend/lib/config/schema.js';
+} from '#backend/lib/schema.js';
 
 export function nodemailer(config: AppConfigSmtp): MailConfigRuntime {
   return {

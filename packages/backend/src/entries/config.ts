@@ -1,1 +1,1 @@
-export * from '#backend/lib/config/schema.js';
+export * from '#backend/lib/schema.js';

@@ -1,7 +1,7 @@
 import type {
   GithubOAuthSchema,
   ResolvedIdentityProvider,
-} from '#backend/lib/config/schema.js';
+} from '#backend/lib/schema.js';
 
 export function github(
   config: Omit<GithubOAuthSchema, 'type'>,

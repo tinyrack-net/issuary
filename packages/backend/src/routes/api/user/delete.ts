@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { describeRoute, resolver } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '#backend/lib/app-env.js';
-import { calculatePermanentDeletionDate } from '#backend/lib/config/index.js';
+import { calculatePermanentDeletionDate } from '#backend/lib/duration.js';
 import { OPENAPI_SECURITY } from '#backend/lib/openapi.js';
 import { TAGS } from '#backend/lib/swagger-tags.js';
 import { verifyAuth } from '#backend/middleware/auth.js';

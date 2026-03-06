@@ -2,8 +2,8 @@ import nm from 'nodemailer';
 import { type CreateAppOptions, createApp } from '#backend/entries/app.js';
 import { sqlite } from '#backend/entries/database/sqlite.js';
 import { nodemailer } from '#backend/entries/mail/nodemailer.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
-import type { MailConfigRuntime } from '#backend/lib/config/schema.js';
+import type { ResolvedAppConfig } from '#backend/lib/schema.js';
+import type { MailConfigRuntime } from '#backend/lib/schema.js';
 
 /**
  * Minimal test configuration as a fully resolved config.

@@ -1,5 +1,5 @@
 import { fromBase64Url } from '#backend/lib/base64url.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 import {
   derivePbkdf2Bytes,
   derivePurposeKeyBytes,

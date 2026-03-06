@@ -4,7 +4,7 @@ import {
   AppConfigPasswordAuth,
   AppConfigPasswordPolicy,
   AppTheme,
-} from '#backend/lib/config/index.js';
+} from '#backend/lib/schema.js';
 import { f } from './field.js';
 import { oauthSchema } from './oauth.js';
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 import { MINIMAL_TEST_CONFIG } from '#backend/test-utils/setup.js';
 import { SecurityService } from './security.service.js';
 

@@ -2,7 +2,7 @@ import pino from 'pino';
 import {
   type AppConfigLogging,
   DEFAULT_LOGGING_CONFIG,
-} from '#backend/lib/config/schema.js';
+} from '#backend/lib/schema.js';
 
 export type { Logger } from 'pino';
 

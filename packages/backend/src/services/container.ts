@@ -1,4 +1,4 @@
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 import type { Logger } from '#backend/lib/logger.js';
 import { seedConfig } from '#backend/seeders/config.seeder.js';
 import { CleanupService } from '#backend/services/cleanup.service.js';
