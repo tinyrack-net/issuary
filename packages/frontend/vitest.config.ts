@@ -14,6 +14,9 @@ export default defineConfig({
   test: {
     projects: [
       {
+        resolve: {
+          conditions: ['@tinyauth/source'],
+        },
         plugins: [
           react({
             babel: {
