@@ -1,5 +1,5 @@
 import { getDbConfigs } from '@tinyauth/backend/db';
-import { loadConfigFromPath } from '#standalone/lib/load-config.js';
+import { loadConfig } from '#standalone/lib/load-config.js';
 
 /**
  * Default export for MikroORM CLI.
@@ -12,6 +12,6 @@ if (!configPath) {
     'CONFIG_PATH environment variable is required for MikroORM CLI',
   );
 }
-const config = loadConfigFromPath({ configPath });
+const config = loadConfig({ configPath });
 
 export default await getDbConfigs(config.database);

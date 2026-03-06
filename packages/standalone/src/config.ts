@@ -8,7 +8,7 @@ export {
   type StandaloneFrontendConfigInput,
 } from '#standalone/lib/config/schema.js';
 export {
-  loadConfigFromPath as loadConfig,
+  loadConfig,
   loadResolvedConfig,
   resolveStandaloneConfig,
 } from '#standalone/lib/load-config.js';

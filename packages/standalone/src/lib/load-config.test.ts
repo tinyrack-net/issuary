@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import { loadConfigFromPath, loadResolvedConfig } from './load-config.js';
+import { loadConfig, loadResolvedConfig } from './load-config.js';
 
 const originalEnv = { ...process.env };
 
@@ -50,14 +50,14 @@ describe('load-config', () => {
       ].join('\n'),
     );
 
-    const config = loadConfigFromPath({ configPath: configFile });
+    const config = loadConfig({ configPath: configFile });
 
     expect(config.app.cookie_secret).toBe('explicit-secret-1234567890');
     await fs.promises.rm(dir, { recursive: true, force: true });
   });
 
   test('throws when configPath file is missing', () => {
-    expect(() => loadConfigFromPath({ configPath: '/missing/config.yaml' })).toThrow(
+    expect(() => loadConfig({ configPath: '/missing/config.yaml' })).toThrow(
       'Config file not found',
     );
   });
