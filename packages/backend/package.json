@@ -39,10 +39,6 @@
         "types": "./dist/services/container.d.ts",
         "default": "./dist/services/container.js"
       },
-      "./db": {
-        "types": "./dist/db/index.d.ts",
-        "default": "./dist/db/index.js"
-      },
       "./database/postgres": {
         "types": "./dist/entries/database/postgres.d.ts",
         "default": "./dist/entries/database/postgres.js"
@@ -110,11 +106,6 @@
       "types": "./dist/services/container.d.ts",
       "default": "./dist/services/container.js"
     },
-    "./db": {
-      "@tinyauth/source": "./src/db/index.ts",
-      "types": "./dist/db/index.d.ts",
-      "default": "./dist/db/index.js"
-    },
     "./database/postgres": {
       "@tinyauth/source": "./src/entries/database/postgres.ts",
       "types": "./dist/entries/database/postgres.d.ts",
@@ -164,7 +155,11 @@
     "clean": "rm -rf dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo publish",
     "build": "npm run clean && tsc -b tsconfig.json",
     "build:watch": "tsc -b -w tsconfig.json",
-    "email:preview": "email dev --dir src/emails/templates --port 3001"
+    "email:preview": "email dev --dir src/emails/templates --port 3001",
+    "mikro-orm": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm",
+    "mikro-orm:compile": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm compile",
+    "mikro-orm:debug": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm debug",
+    "mikro-orm:schema:create": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm migration:create --initial"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
@@ -207,5 +202,11 @@
     "qrcode": "^1.5.4",
     "react": "catalog:",
     "zod": "catalog:"
+  },
+  "mikro-orm": {
+    "configPaths": [
+      "./src/entries/database/cli.ts",
+      "./dist/entries/database/cli.js"
+    ]
   }
 }

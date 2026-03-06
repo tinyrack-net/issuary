@@ -37,11 +37,6 @@ export default defineConfig({
         ).pathname,
       },
       {
-        find: /^@tinyauth\/backend\/db$/,
-        replacement: new URL('../backend/src/db/index.ts', import.meta.url)
-          .pathname,
-      },
-      {
         find: /^@tinyauth\/backend\/database\/postgres$/,
         replacement: new URL(
           '../backend/src/entries/database/postgres.ts',
