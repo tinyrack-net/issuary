@@ -28,8 +28,8 @@
         "default": "./dist/entries/routing.js"
       },
       "./services": {
-        "types": "./dist/services/container.d.ts",
-        "default": "./dist/services/container.js"
+        "types": "./dist/entries/services.d.ts",
+        "default": "./dist/entries/services.js"
       },
       "./database/postgres": {
         "types": "./dist/entries/database/postgres.d.ts",
