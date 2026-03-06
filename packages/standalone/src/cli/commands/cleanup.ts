@@ -1,4 +1,3 @@
-import { ConfigValidationError } from '@tinyauth/backend/config';
 import {
   initializeServices,
   type ServiceContainer,
@@ -122,13 +121,6 @@ export const cleanupCommand = new Command('cleanup')
           process.exit(1);
         }
       } catch (err) {
-        if (err instanceof ConfigValidationError) {
-          console.error(err.message);
-          if (cleanup) {
-            await cleanup();
-          }
-          process.exit(1);
-        }
         // Use console.error as fallback since logger
         // may not be initialized
         console.error('Cleanup failed:', err);
