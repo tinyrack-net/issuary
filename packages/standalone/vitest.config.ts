@@ -18,13 +18,6 @@ export default defineConfig({
           .pathname,
       },
       {
-        find: /^@tinyauth\/backend\/routing$/,
-        replacement: new URL(
-          '../backend/src/entries/routing.ts',
-          import.meta.url,
-        ).pathname,
-      },
-      {
         find: /^@tinyauth\/backend\/services$/,
         replacement: new URL(
           '../backend/src/services/container.ts',

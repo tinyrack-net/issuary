@@ -3,8 +3,15 @@ import { createServer as createNetServer } from 'node:net';
 import { serve } from '@hono/node-server';
 import { createApp } from '@tinyauth/backend';
 import type { ResolvedAppConfig } from '@tinyauth/backend/config';
-import { isBackendRoute } from '@tinyauth/backend/routing';
 import { resolveTestMailConfig } from '#frontend-e2e/setup/resolve-test-smtp.js';
+
+function isBackendRoute(urlPath: string): boolean {
+  return (
+    urlPath.startsWith('/api') ||
+    urlPath.startsWith('/oauth') ||
+    urlPath.startsWith('/.well-known')
+  );
+}
 
 const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
 

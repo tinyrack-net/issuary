@@ -1,10 +1,17 @@
 import type { AppType } from '@tinyauth/backend';
-import { isBackendRoute } from '@tinyauth/backend/routing';
 import type { ResolvedStandaloneFrontendConfig } from '#standalone/lib/config/schema.js';
 import type { Logger } from '#standalone/lib/logger.js';
 import { interpolateHtml } from './interpolate-html.js';
 import { createProxyHandler } from './proxy.js';
 import { registerStaticRoutes } from './static.js';
+
+function isBackendRoute(urlPath: string): boolean {
+  return (
+    urlPath.startsWith('/api') ||
+    urlPath.startsWith('/oauth') ||
+    urlPath.startsWith('/.well-known')
+  );
+}
 
 export interface RegisterFrontendRoutesOptions {
   frontend: ResolvedStandaloneFrontendConfig;

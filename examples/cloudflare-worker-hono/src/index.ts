@@ -1,6 +1,13 @@
 import { type AppType, createApp } from '@tinyauth/backend';
 import { sqlite } from '@tinyauth/backend/database/sqlite';
-import { isBackendRoute } from '@tinyauth/backend/routing';
+
+function isBackendRoute(urlPath: string): boolean {
+  return (
+    urlPath.startsWith('/api') ||
+    urlPath.startsWith('/oauth') ||
+    urlPath.startsWith('/.well-known')
+  );
+}
 
 interface AssetFetcher {
   fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;

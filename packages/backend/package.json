@@ -78,11 +78,6 @@
       "types": "./dist/entries/config.d.ts",
       "default": "./dist/entries/config.js"
     },
-    "./routing": {
-      "@tinyauth/source": "./src/entries/routing.ts",
-      "types": "./dist/entries/routing.d.ts",
-      "default": "./dist/entries/routing.js"
-    },
     "./services": {
       "@tinyauth/source": "./src/services/container.ts",
       "types": "./dist/services/container.d.ts",

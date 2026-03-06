@@ -1,9 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { AppType } from '@tinyauth/backend';
-import { isBackendRoute } from '@tinyauth/backend/routing';
 import { getMimeType } from 'hono/utils/mime';
 import { interpolateHtml } from './interpolate-html.js';
+
+function isBackendRoute(urlPath: string): boolean {
+  return (
+    urlPath.startsWith('/api') ||
+    urlPath.startsWith('/oauth') ||
+    urlPath.startsWith('/.well-known')
+  );
+}
 
 export interface StaticRouteOptions {
   htmlVariables: Record<string, string>;
