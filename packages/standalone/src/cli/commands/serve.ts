@@ -1,5 +1,4 @@
 import { serve } from '@hono/node-server';
-import { ConfigValidationError } from '@tinyauth/backend/config';
 import { Command } from 'commander';
 import { createStandaloneApp } from '#standalone/app.js';
 import { loadConfig } from '#standalone/lib/load-config.js';
@@ -50,10 +49,7 @@ export const serveCommand = new Command('serve')
       process.on('SIGTERM', () => shutdown('SIGTERM'));
       process.on('SIGINT', () => shutdown('SIGINT'));
     } catch (err) {
-      if (err instanceof ConfigValidationError) {
-        console.error(err.message);
-        process.exit(1);
-      }
-      throw err;
+      console.error(err);
+      process.exit(1);
     }
   });

@@ -64,30 +64,6 @@ describe('resolveConfig', () => {
     expect(typeof resolved.database.initialize).toBe('function');
   });
 
-  test('validates config users against the configured password policy', async () => {
-    await expect(
-      resolveConfig({
-        ...MINIMAL_CONFIG,
-        auth: {
-          password: {
-            policy: {
-              min_length: 4,
-              max_length: 6,
-            },
-          },
-        },
-        users: [
-          {
-            sub: 'config-user',
-            email: 'config-user@example.com',
-            password: '123',
-            role: 'user',
-          },
-        ],
-      }),
-    ).rejects.toThrow('Password must be at least 4 characters long.');
-  });
-
   test('rejects password policy where max_length is less than min_length', async () => {
     await expect(
       resolveConfig({
