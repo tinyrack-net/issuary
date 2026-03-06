@@ -40,6 +40,16 @@ export default defineConfig({
           .pathname,
       },
       {
+        find: /^@tinyauth\/backend\/database$/,
+        replacement: new URL('../backend/src/database.ts', import.meta.url)
+          .pathname,
+      },
+      {
+        find: /^@tinyauth\/backend\/mail$/,
+        replacement: new URL('../backend/src/mail.ts', import.meta.url)
+          .pathname,
+      },
+      {
         find: /^@tinyauth\/backend$/,
         replacement: new URL('../backend/src/index.ts', import.meta.url)
           .pathname,

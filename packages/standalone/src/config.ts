@@ -10,5 +10,7 @@ export {
 export {
   loadConfig,
   loadResolvedConfig,
+  parseConfig,
+  resolveConfig,
   resolveStandaloneConfig,
 } from '#standalone/lib/load-config.js';

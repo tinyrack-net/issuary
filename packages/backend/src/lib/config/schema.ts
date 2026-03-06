@@ -5,12 +5,10 @@ import { fromBase64Url } from '#backend/lib/base64url.js';
 import { DurationString } from '#backend/lib/duration.js';
 import { AVAILABLE_LOCALES, DEFAULT_LOCALE } from '#backend/lib/locale.js';
 import {
-  getPasswordPolicyError,
   PASSWORD_POLICY_MAX_LENGTH,
   PASSWORD_POLICY_MIN_LENGTH,
 } from '#backend/lib/password-policy.js';
 import type { ComposedSmtpConfig } from '#backend/mail.js';
-import { f } from '#backend/schemas/field.js';
 import { zz } from '#backend/schemas/provider.js';
 
 /**
@@ -23,30 +21,26 @@ const LocaleSchema = z.enum(AVAILABLE_LOCALES);
 // SMTP
 // ---------------------------------------------------------------------------
 
-const AppConfigSmtp = z.object({
-  host: z.string().default('localhost'),
-  port: zz.PORT.default(465),
-  secure: z.boolean().default(true),
-  user: z.string().min(1),
-  password: z.string().min(1),
-  from: z.string().optional(),
-  test: z.boolean().default(false),
-});
-
-export type AppConfigSmtp = z.infer<typeof AppConfigSmtp>;
+export interface AppConfigSmtp {
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  password: string;
+  from?: string | undefined;
+  test: boolean;
+}
 
 // ---------------------------------------------------------------------------
 // User
 // ---------------------------------------------------------------------------
 
-const AppConfigUser = z.object({
-  sub: z.string().min(1),
-  email: f.userEmail,
-  password: z.string().min(1).max(PASSWORD_POLICY_MAX_LENGTH),
-  role: z.enum(['user', 'admin']).default('user'),
-});
-
-export type AppConfigUser = z.infer<typeof AppConfigUser>;
+export interface AppConfigUser {
+  sub: string;
+  email: string;
+  password: string;
+  role: 'user' | 'admin';
+}
 
 // ---------------------------------------------------------------------------
 // Client
@@ -56,51 +50,40 @@ export type AppConfigUser = z.infer<typeof AppConfigUser>;
  * OAuth/OIDC client configuration.
  * Defines applications that can authenticate through TinyAuth.
  */
-const AppConfigClient = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  logo_uri: z.string().optional(),
-  client_id: z.string().min(1),
-  client_secret: z.string().min(1).optional(),
-  redirect_uris: z.array(z.string()).min(1),
-  response_types: z.array(z.string()).min(1),
-  grant_types: z.array(z.string()).min(1),
-  scope: z.string().min(1),
-});
-
-export type AppConfigClient = z.infer<typeof AppConfigClient>;
+export interface AppConfigClient {
+  id: string;
+  name: string;
+  logo_uri?: string | undefined;
+  client_id: string;
+  client_secret?: string | undefined;
+  redirect_uris: string[];
+  response_types: string[];
+  grant_types: string[];
+  scope: string;
+}
 
 // ---------------------------------------------------------------------------
 // Database
 // ---------------------------------------------------------------------------
 
-const AppConfigDatabaseSqlite = z.object({
-  type: z.literal('sqlite'),
-  path: z.string().default('./test.db'),
-  test: z.boolean().default(false),
-});
+export interface AppConfigDatabaseSqlite {
+  type: 'sqlite';
+  path: string;
+  test: boolean;
+}
 
-export type AppConfigDatabaseSqlite = z.infer<typeof AppConfigDatabaseSqlite>;
+export interface AppConfigDatabasePostgres {
+  type: 'postgres';
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  name: string;
+}
 
-const AppConfigDatabasePostgres = z.object({
-  type: z.literal('postgres'),
-  host: z.string().default('localhost'),
-  port: zz.PORT.default(5432),
-  user: z.string().min(1).default('test'),
-  password: z.string().min(1).default('test'),
-  name: z.string().min(1).default('test'),
-});
-
-export type AppConfigDatabasePostgres = z.infer<
-  typeof AppConfigDatabasePostgres
->;
-
-const AppConfigDatabase = z.discriminatedUnion('type', [
-  AppConfigDatabaseSqlite,
-  AppConfigDatabasePostgres,
-]);
-
-export type AppConfigDatabase = z.infer<typeof AppConfigDatabase>;
+export type AppConfigDatabase =
+  | AppConfigDatabaseSqlite
+  | AppConfigDatabasePostgres;
 
 // ---------------------------------------------------------------------------
 // Scheduler
@@ -122,7 +105,7 @@ const CronExpression = z
 /**
  * Default scheduler configuration
  */
-const DEFAULT_SCHEDULER_CONFIG = {
+export const DEFAULT_SCHEDULER_CONFIG = {
   enabled: true,
   cron: '0 2 * * *', // Daily at 2 AM
 } as const;
@@ -136,7 +119,7 @@ const DEFAULT_SCHEDULER_CONFIG = {
  * For Kubernetes deployments, disable the scheduler and use CronJobs
  * to run `tinyauth cleanup` externally.
  */
-const AppConfigScheduler = z
+export const AppConfigScheduler = z
   .object({
     enabled: zz.COERCE_BOOLEAN.default(
       DEFAULT_SCHEDULER_CONFIG.enabled,
@@ -179,7 +162,7 @@ const TermsLocalizedContent = z
 /**
  * Individual term item configuration.
  */
-const TermsItem = z
+export const TermsItem = z
   .object({
     id: z
       .string()
@@ -217,7 +200,7 @@ export type TermsItem = z.infer<typeof TermsItem>;
 /**
  * Terms configuration schema.
  */
-const AppConfigTerms = z
+export const AppConfigTerms = z
   .array(TermsItem)
   .default([])
   .describe('Terms of service configuration');
@@ -324,7 +307,7 @@ const CleanupJwtKeysConfig = z
 /**
  * Default cleanup configuration
  */
-const DEFAULT_CLEANUP_CONFIG = {
+export const DEFAULT_CLEANUP_CONFIG = {
   revoked_tokens: {
     enabled: true,
     retention: '0',
@@ -363,7 +346,7 @@ const DEFAULT_CLEANUP_CONFIG = {
  * For Kubernetes deployments, create a CronJob that runs:
  * `tinyauth cleanup` on a regular schedule (e.g., daily at 2 AM).
  */
-const AppConfigCleanup = z
+export const AppConfigCleanup = z
   .object({
     revoked_tokens: CleanupRevokedTokensConfig.default(
       DEFAULT_CLEANUP_CONFIG.revoked_tokens,
@@ -759,7 +742,7 @@ export type AppConfigPasskeyAuth = z.infer<typeof AppConfigPasskeyAuth>;
  * Authentication methods configuration (fixed structure).
  * Contains password and passkey authentication settings.
  */
-const AppConfigAuth = z.object({
+export const AppConfigAuth = z.object({
   password: AppConfigPasswordAuth.default({
     enabled: true,
     email_verification: true,
@@ -780,7 +763,7 @@ const AppConfigAuth = z.object({
 
 export type AppConfigAuth = z.infer<typeof AppConfigAuth>;
 
-const AppConfigSecurity = z
+export const AppConfigSecurity = z
   .object({
     hash_master_secret: z
       .string()
@@ -940,7 +923,7 @@ export type GenericOAuthSchema = z.infer<typeof GenericOAuthSchema>;
  * Well-known providers (github, google, apple) use pre-configured endpoints.
  * Generic OAuth requires all endpoints to be specified.
  */
-const AppConfigIdentityProvider = z.discriminatedUnion('type', [
+export const AppConfigIdentityProvider = z.discriminatedUnion('type', [
   GithubOAuthSchema,
   GoogleOAuthSchema,
   AppleOAuthSchema,
@@ -955,7 +938,7 @@ export type AppConfigIdentityProvider = z.infer<
  * Identity providers configuration.
  * Array of external OAuth/OIDC provider configurations for social login.
  */
-const AppConfigIdentityProviders = z
+export const AppConfigIdentityProviders = z
   .array(AppConfigIdentityProvider)
   .default([]);
 
@@ -964,104 +947,27 @@ export type AppConfigIdentityProviders = z.infer<
 >;
 
 // ---------------------------------------------------------------------------
-// Root (top-level config)
+// Resolved config (runtime type)
 // ---------------------------------------------------------------------------
 
 /**
- * Unified application configuration schema.
- *
- * This schema defines the structure for both user input (config.yaml)
- * and parsed configuration. The SMTP field supports a `{ test: true }`
- * shorthand that gets resolved to actual SMTP credentials at runtime.
- */
-export const AppConfigSchema = z
-  .object({
-    app: AppConfigApp,
-    database: AppConfigDatabase.default({
-      type: 'sqlite',
-      path: './test.db',
-      test: false,
-    }),
-    logging: AppConfigLogging.default(DEFAULT_LOGGING_CONFIG),
-    auth: AppConfigAuth.default({
-      password: {
-        enabled: true,
-        email_verification: true,
-        second_factor: {
-          required: false,
-        },
-        totp: {
-          enabled: false,
-          issuer: '',
-        },
-        policy: DEFAULT_PASSWORD_POLICY,
-      },
-      passkey: {
-        enabled: false,
-        email_verification: true,
-      },
-    }),
-    identity_providers: AppConfigIdentityProviders.default([]),
-    security: AppConfigSecurity,
-    smtp: z
-      .discriminatedUnion('test', [
-        AppConfigSmtp.extend({
-          test: z.literal(false),
-        }),
-        z.object({
-          test: z.literal(true),
-        }),
-      ])
-      .optional(),
-    cleanup: AppConfigCleanup.default(DEFAULT_CLEANUP_CONFIG),
-    scheduler: AppConfigScheduler.default(DEFAULT_SCHEDULER_CONFIG),
-    terms: AppConfigTerms.default([]),
-    clients: z.array(AppConfigClient).default([]),
-    users: z.array(AppConfigUser).default([]),
-  })
-  .superRefine((config, ctx) => {
-    for (const [index, user] of config.users.entries()) {
-      const error = getPasswordPolicyError(
-        user.password,
-        config.auth.password.policy,
-      );
-
-      if (!error) {
-        continue;
-      }
-
-      ctx.addIssue({
-        code: 'custom',
-        path: ['users', index, 'password'],
-        message: error,
-      });
-    }
-  });
-
-/**
- * Input type for AppConfigSchema - use this for function parameters.
- * Fields with defaults are optional in this type.
- */
-export type AppConfigInput = z.input<typeof AppConfigSchema>;
-
-/**
- * Output type for AppConfigSchema - use this for parsed config.
- * All fields are present after parsing (defaults applied).
- * Note: smtp field may still be `{ test: true }` - use ResolvedAppConfig
- * for runtime usage where smtp is fully resolved.
- */
-export type AppConfig = z.infer<typeof AppConfigSchema>;
-
-/**
  * Fully resolved configuration type - use this at runtime.
- * The smtp field is guaranteed to be either a full AppConfigSmtp object
- * or undefined (the `{ test: true }` shorthand has been resolved).
+ * All fields are guaranteed to be fully resolved:
+ * - database: composed with MikroORM options
+ * - smtp: fully resolved (no `{ test: true }` shorthand)
+ * - identity_providers: resolved with endpoint URLs
  */
-export type ResolvedAppConfig = Omit<
-  AppConfig,
-  'database' | 'smtp' | 'identity_providers'
-> & {
+export interface ResolvedAppConfig {
+  app: AppConfigApp;
+  logging: AppConfigLogging;
+  auth: AppConfigAuth;
+  security: AppConfigSecurity;
+  cleanup: AppConfigCleanup;
+  scheduler: AppConfigScheduler;
+  terms: AppConfigTerms;
+  clients: AppConfigClient[];
+  users: AppConfigUser[];
   database: ComposedDatabaseConfig;
   smtp?: ComposedSmtpConfig;
   identity_providers: ResolvedIdentityProvider[];
-};
+}

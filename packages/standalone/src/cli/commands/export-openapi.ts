@@ -1,9 +1,10 @@
 import { writeFileSync } from 'node:fs';
 import { createApp } from '@tinyauth/backend';
-import { type AppConfigInput, resolveConfig } from '@tinyauth/backend/config';
 import { OPENAPI_DOCUMENTATION } from '@tinyauth/backend/openapi';
 import { Command } from 'commander';
 import { generateSpecs } from 'hono-openapi';
+import type { StandaloneConfigInput } from '#standalone/lib/config/schema.js';
+import { resolveConfig } from '#standalone/lib/load-config.js';
 
 /**
  * Export OpenAPI command
@@ -36,7 +37,7 @@ export const exportOpenapiCommand = new Command('export:openapi')
       smtp: {
         test: true,
       },
-    } satisfies AppConfigInput;
+    } satisfies StandaloneConfigInput;
 
     const { app, cleanup, logger } = await createApp({
       config: await resolveConfig(config),

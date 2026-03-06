@@ -1,6 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { MINIMAL_TEST_CONFIG } from '#backend/test-utils/index.js';
-import { resolveConfig } from './loader.js';
+import { resolveConfig } from '#standalone/lib/load-config.js';
 
 vi.mock('nodemailer', () => ({
   default: {
@@ -16,27 +15,27 @@ vi.mock('nodemailer', () => ({
   },
 }));
 
+const MINIMAL_CONFIG = {
+  app: {
+    cookie_secret:
+      '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+    allowed_signup_emails: ['*'],
+  },
+  security: {
+    hash_master_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+    pbkdf2_iterations: 1000,
+  },
+};
+
 describe('resolveConfig', () => {
-  test('ignores standalone frontend config', async () => {
+  test('strips standalone-only fields (frontend, html_variables)', async () => {
     const resolved = await resolveConfig({
-      ...MINIMAL_TEST_CONFIG,
+      ...MINIMAL_CONFIG,
       app: {
-        ...MINIMAL_TEST_CONFIG.app,
+        ...MINIMAL_CONFIG.app,
         frontend: {
           enabled: true,
         },
-      },
-    });
-
-    expect(Object.hasOwn(resolved.app, 'frontend')).toBe(false);
-    expect(Object.hasOwn(resolved.app, 'html_variables')).toBe(false);
-  });
-
-  test('ignores standalone html variables config', async () => {
-    const resolved = await resolveConfig({
-      ...MINIMAL_TEST_CONFIG,
-      app: {
-        ...MINIMAL_TEST_CONFIG.app,
         html_variables: {
           TITLE: 'TinyAuth',
         },
@@ -47,16 +46,9 @@ describe('resolveConfig', () => {
     expect(Object.hasOwn(resolved.app, 'html_variables')).toBe(false);
   });
 
-  test('returns backend-only resolved config', async () => {
-    const resolved = await resolveConfig(MINIMAL_TEST_CONFIG);
-
-    expect(Object.hasOwn(resolved.app, 'frontend')).toBe(false);
-    expect(Object.hasOwn(resolved.app, 'html_variables')).toBe(false);
-  });
-
   test('resolves smtp test accounts', async () => {
     const resolved = await resolveConfig({
-      ...MINIMAL_TEST_CONFIG,
+      ...MINIMAL_CONFIG,
       smtp: { test: true },
     });
 
@@ -69,7 +61,7 @@ describe('resolveConfig', () => {
   });
 
   test('returns composed database config', async () => {
-    const resolved = await resolveConfig(MINIMAL_TEST_CONFIG);
+    const resolved = await resolveConfig(MINIMAL_CONFIG);
 
     expect(resolved.database.type).toBe('sqlite');
     expect(typeof resolved.database.getMikroOrmOptions).toBe('function');
@@ -78,7 +70,7 @@ describe('resolveConfig', () => {
   test('validates config users against the configured password policy', async () => {
     await expect(
       resolveConfig({
-        ...MINIMAL_TEST_CONFIG,
+        ...MINIMAL_CONFIG,
         auth: {
           password: {
             policy: {
@@ -102,7 +94,7 @@ describe('resolveConfig', () => {
   test('rejects password policy where max_length is less than min_length', async () => {
     await expect(
       resolveConfig({
-        ...MINIMAL_TEST_CONFIG,
+        ...MINIMAL_CONFIG,
         auth: {
           password: {
             policy: {
@@ -118,7 +110,7 @@ describe('resolveConfig', () => {
   test('accepts valid custom password policy', async () => {
     await expect(
       resolveConfig({
-        ...MINIMAL_TEST_CONFIG,
+        ...MINIMAL_CONFIG,
         auth: {
           password: {
             policy: {
@@ -134,7 +126,7 @@ describe('resolveConfig', () => {
   test('rejects invalid hash_master_secret with wrong byte length', async () => {
     await expect(
       resolveConfig({
-        ...MINIMAL_TEST_CONFIG,
+        ...MINIMAL_CONFIG,
         security: {
           hash_master_secret: 'MDEyMzQ1Njc4OWFiY2Rl',
           pbkdf2_iterations: 1000,
@@ -146,7 +138,7 @@ describe('resolveConfig', () => {
   test('rejects removed security.hash_master_secret_version config', async () => {
     await expect(
       resolveConfig({
-        ...MINIMAL_TEST_CONFIG,
+        ...MINIMAL_CONFIG,
         security: {
           hash_master_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
           pbkdf2_iterations: 1000,

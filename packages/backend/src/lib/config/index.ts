@@ -19,20 +19,37 @@ export {
   ConfigValidationError,
   formatZodError,
 } from '#backend/lib/format-zod-error.js';
-// Config loader
-export { parseConfig, resolveConfig } from './loader.js';
+// Password policy
+export { getPasswordPolicyError } from '#backend/lib/password-policy.js';
+export type {
+  AppConfigClient,
+  AppConfigDatabase,
+  AppConfigDatabasePostgres,
+  AppConfigDatabaseSqlite,
+  AppConfigSecondFactor,
+  AppConfigSmtp,
+  AppConfigUser,
+  LogFormat,
+  LogLevel,
+  ResolvedAppConfig,
+  TermsItem,
+} from './schema.js';
 // Config schemas and types
 export {
-  type AppConfig,
   AppConfigApp,
-  type AppConfigInput,
+  AppConfigAuth,
+  AppConfigCleanup,
+  AppConfigIdentityProvider,
+  AppConfigIdentityProviders,
+  AppConfigLogging,
   AppConfigPasskeyAuth,
   AppConfigPasswordAuth,
   AppConfigPasswordPolicy,
-  AppConfigSchema,
-  type AppConfigSecurity,
+  AppConfigScheduler,
+  AppConfigSecurity,
+  AppConfigTerms,
   AppTheme,
-  type LogFormat,
-  type LogLevel,
-  type ResolvedAppConfig,
+  DEFAULT_CLEANUP_CONFIG,
+  DEFAULT_LOGGING_CONFIG,
+  DEFAULT_SCHEDULER_CONFIG,
 } from './schema.js';

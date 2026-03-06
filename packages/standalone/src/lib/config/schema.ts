@@ -1,9 +1,72 @@
 import {
   AppConfigApp,
-  AppConfigSchema,
+  AppConfigAuth,
+  AppConfigCleanup,
+  AppConfigIdentityProviders,
+  AppConfigLogging,
+  AppConfigScheduler,
+  AppConfigSecurity,
+  AppConfigTerms,
+  DEFAULT_CLEANUP_CONFIG,
+  DEFAULT_LOGGING_CONFIG,
+  DEFAULT_SCHEDULER_CONFIG,
+  getPasswordPolicyError,
   type ResolvedAppConfig,
 } from '@tinyauth/backend/config';
 import z from 'zod';
+
+// ---------------------------------------------------------------------------
+// Local Zod schemas for runtime validation (types live in backend)
+// ---------------------------------------------------------------------------
+
+const AppConfigSmtpSchema = z.object({
+  host: z.string().default('localhost'),
+  port: z.number().int().min(1).max(65535).default(465),
+  secure: z.boolean().default(true),
+  user: z.string().min(1),
+  password: z.string().min(1),
+  from: z.string().optional(),
+  test: z.boolean().default(false),
+});
+
+const AppConfigUserSchema = z.object({
+  sub: z.string().min(1),
+  email: z.email(),
+  password: z.string().min(1).max(256),
+  role: z.enum(['user', 'admin']).default('user'),
+});
+
+const AppConfigClientSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  logo_uri: z.string().optional(),
+  client_id: z.string().min(1),
+  client_secret: z.string().min(1).optional(),
+  redirect_uris: z.array(z.string()).min(1),
+  response_types: z.array(z.string()).min(1),
+  grant_types: z.array(z.string()).min(1),
+  scope: z.string().min(1),
+});
+
+const AppConfigDatabaseSqliteSchema = z.object({
+  type: z.literal('sqlite'),
+  path: z.string().default('./test.db'),
+  test: z.boolean().default(false),
+});
+
+const AppConfigDatabasePostgresSchema = z.object({
+  type: z.literal('postgres'),
+  host: z.string().default('localhost'),
+  port: z.number().int().min(1).max(65535).default(5432),
+  user: z.string().min(1).default('test'),
+  password: z.string().min(1).default('test'),
+  name: z.string().min(1).default('test'),
+});
+
+const AppConfigDatabaseSchema = z.discriminatedUnion('type', [
+  AppConfigDatabaseSqliteSchema,
+  AppConfigDatabasePostgresSchema,
+]);
 
 export const StandaloneFrontendConfigSchema = z.object({
   enabled: z.boolean().default(true),
@@ -32,9 +95,72 @@ const StandaloneAppSchema = AppConfigApp.extend({
   html_variables: z.record(z.string(), z.string()).default({}),
 });
 
-export const StandaloneConfigSchema = AppConfigSchema.safeExtend({
-  app: StandaloneAppSchema,
-});
+export const StandaloneConfigSchema = z
+  .object({
+    app: StandaloneAppSchema,
+    database: AppConfigDatabaseSchema.default({
+      type: 'sqlite',
+      path: './test.db',
+      test: false,
+    }),
+    logging: AppConfigLogging.default(DEFAULT_LOGGING_CONFIG),
+    auth: AppConfigAuth.default({
+      password: {
+        enabled: true,
+        email_verification: true,
+        second_factor: {
+          required: false,
+        },
+        totp: {
+          enabled: false,
+          issuer: '',
+        },
+        policy: {
+          min_length: 12,
+          max_length: 256,
+        },
+      },
+      passkey: {
+        enabled: false,
+        email_verification: true,
+      },
+    }),
+    identity_providers: AppConfigIdentityProviders.default([]),
+    security: AppConfigSecurity,
+    smtp: z
+      .discriminatedUnion('test', [
+        AppConfigSmtpSchema.extend({
+          test: z.literal(false),
+        }),
+        z.object({
+          test: z.literal(true),
+        }),
+      ])
+      .optional(),
+    cleanup: AppConfigCleanup.default(DEFAULT_CLEANUP_CONFIG),
+    scheduler: AppConfigScheduler.default(DEFAULT_SCHEDULER_CONFIG),
+    terms: AppConfigTerms.default([]),
+    clients: z.array(AppConfigClientSchema).default([]),
+    users: z.array(AppConfigUserSchema).default([]),
+  })
+  .superRefine((config, ctx) => {
+    for (const [index, user] of config.users.entries()) {
+      const error = getPasswordPolicyError(
+        user.password,
+        config.auth.password.policy,
+      );
+
+      if (!error) {
+        continue;
+      }
+
+      ctx.addIssue({
+        code: 'custom',
+        path: ['users', index, 'password'],
+        message: error,
+      });
+    }
+  });
 
 export type StandaloneConfigInput = z.input<typeof StandaloneConfigSchema>;
 export type StandaloneConfig = z.infer<typeof StandaloneConfigSchema>;

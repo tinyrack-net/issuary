@@ -1,6 +1,15 @@
 import * as fs from 'node:fs';
-import { ConfigValidationError, resolveConfig } from '@tinyauth/backend/config';
+import {
+  apple,
+  ConfigValidationError,
+  genericOAuth,
+  github,
+  google,
+  type ResolvedAppConfig,
+} from '@tinyauth/backend/config';
+import { postgres, sqlite } from '@tinyauth/backend/database';
 import type { Logger } from '@tinyauth/backend/logger';
+import { smtp } from '@tinyauth/backend/mail';
 import YAML from 'yaml';
 import z from 'zod';
 import {
@@ -60,7 +69,7 @@ function resolveStandaloneFrontendConfig(
   };
 }
 
-function parseStandaloneConfig(input: unknown): StandaloneConfig {
+export function parseConfig(input: unknown): StandaloneConfig {
   try {
     const config = StandaloneConfigSchema.parse(input);
     return applyFrontendPathDefaults(config);
@@ -72,6 +81,90 @@ function parseStandaloneConfig(input: unknown): StandaloneConfig {
   }
 }
 
+const resolveSmtpConfig = async (
+  smtpInput: StandaloneConfig['smtp'],
+): Promise<ResolvedAppConfig['smtp']> => {
+  if (!smtpInput) {
+    return undefined;
+  }
+  if (smtpInput.test) {
+    const { default: nodemailer } = await import('nodemailer');
+    const testAccount = await nodemailer.createTestAccount();
+    return smtp({
+      host: testAccount.smtp.host,
+      port: testAccount.smtp.port,
+      secure: testAccount.smtp.secure,
+      user: testAccount.user,
+      password: testAccount.pass,
+      from: testAccount.user,
+      test: true,
+    });
+  }
+  return smtp(smtpInput);
+};
+
+const composeDatabaseConfig = (
+  database: StandaloneConfig['database'],
+): ResolvedAppConfig['database'] => {
+  switch (database.type) {
+    case 'postgres':
+      return postgres(database);
+    case 'sqlite':
+      return sqlite(database);
+  }
+};
+
+const composeIdentityProvider = (
+  config: StandaloneConfig['identity_providers'][number],
+): ResolvedAppConfig['identity_providers'][number] => {
+  switch (config.type) {
+    case 'github': {
+      const { type: _, ...rest } = config;
+      return github(rest);
+    }
+    case 'google': {
+      const { type: _, ...rest } = config;
+      return google(rest);
+    }
+    case 'apple': {
+      const { type: _, ...rest } = config;
+      return apple(rest);
+    }
+    case 'generic_oauth': {
+      const { type: _, ...rest } = config;
+      return genericOAuth(rest);
+    }
+  }
+};
+
+export async function resolveConfig(
+  input: unknown,
+): Promise<ResolvedAppConfig> {
+  const parsed = parseConfig(input);
+
+  const smtpConfig = await resolveSmtpConfig(parsed.smtp);
+  const databaseConfig = composeDatabaseConfig(parsed.database);
+  const identityProvidersConfig = parsed.identity_providers.map(
+    composeIdentityProvider,
+  );
+
+  const {
+    smtp: _smtp,
+    database: _database,
+    identity_providers: _idp,
+    app: { frontend: _frontend, html_variables: _htmlVars, ...appRest },
+    ...rest
+  } = parsed;
+
+  return {
+    ...rest,
+    app: appRest,
+    database: databaseConfig,
+    identity_providers: identityProvidersConfig,
+    ...(smtpConfig ? { smtp: smtpConfig } : {}),
+  };
+}
+
 const loadConfigFromPath = (configPath: string): StandaloneConfig => {
   if (!fs.existsSync(configPath)) {
     throw new Error(`Config file not found at "${configPath}"`);
@@ -79,7 +172,7 @@ const loadConfigFromPath = (configPath: string): StandaloneConfig => {
   const file = fs.readFileSync(configPath, 'utf8');
   const rawConfig = YAML.parse(file);
   const resolvedConfig = resolveEnvVariables(rawConfig);
-  return parseStandaloneConfig(resolvedConfig);
+  return parseConfig(resolvedConfig);
 };
 
 /**
@@ -101,7 +194,7 @@ export function loadConfig(options: {
 export async function resolveStandaloneConfig(
   input: StandaloneConfigInput | StandaloneConfig,
 ): Promise<ResolvedStandaloneConfig> {
-  const parsed = parseStandaloneConfig(input);
+  const parsed = parseConfig(input);
   const backendConfig = await resolveConfig(input);
   return {
     ...backendConfig,
