@@ -18,11 +18,6 @@ export default defineConfig({
           .pathname,
       },
       {
-        find: /^@tinyauth\/backend\/openapi$/,
-        replacement: new URL('../backend/src/lib/openapi.ts', import.meta.url)
-          .pathname,
-      },
-      {
         find: /^@tinyauth\/backend\/routing$/,
         replacement: new URL(
           '../backend/src/entries/routing.ts',
