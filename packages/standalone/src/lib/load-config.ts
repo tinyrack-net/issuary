@@ -1,19 +1,14 @@
 import * as fs from 'node:fs';
 import nm from 'nodemailer';
-import {
-  ConfigValidationError,
-  type ResolvedAppConfig,
-} from '@tinyauth/backend/config';
+import type { ResolvedAppConfig } from '@tinyauth/backend/config';
 import { postgres } from '@tinyauth/backend/database/postgres';
 import { sqlite } from '@tinyauth/backend/database/sqlite';
 import { apple } from '@tinyauth/backend/identity-providers/apple';
 import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth';
 import { github } from '@tinyauth/backend/identity-providers/github';
 import { google } from '@tinyauth/backend/identity-providers/google';
-import type { Logger } from '@tinyauth/backend/logger';
 import { nodemailer } from '@tinyauth/backend/mail/nodemailer';
 import YAML from 'yaml';
-import z from 'zod';
 import {
   type ResolvedStandaloneConfig,
   type ResolvedStandaloneFrontendConfig,
@@ -22,6 +17,7 @@ import {
   StandaloneConfigSchema,
   type StandaloneFrontendConfig,
 } from '#standalone/lib/config/schema.js';
+import type { Logger } from '#standalone/lib/logger.js';
 import { resolveEnvVariables } from './interpolate-env.js';
 import { resolveAbsolutePath } from './resolve-path.js';
 
@@ -72,15 +68,8 @@ function resolveStandaloneFrontendConfig(
 }
 
 export function parseConfig(input: unknown): StandaloneConfig {
-  try {
-    const config = StandaloneConfigSchema.parse(input);
-    return applyFrontendPathDefaults(config);
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      throw new ConfigValidationError(err.issues);
-    }
-    throw err;
-  }
+  const config = StandaloneConfigSchema.parse(input);
+  return applyFrontendPathDefaults(config);
 }
 
 const resolveMailConfig = async (

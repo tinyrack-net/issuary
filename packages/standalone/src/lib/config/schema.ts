@@ -10,7 +10,6 @@ import {
   DEFAULT_CLEANUP_CONFIG,
   DEFAULT_LOGGING_CONFIG,
   DEFAULT_SCHEDULER_CONFIG,
-  getPasswordPolicyError,
   type ResolvedAppConfig,
 } from '@tinyauth/backend/config';
 import z from 'zod';
@@ -95,72 +94,53 @@ const StandaloneAppSchema = AppConfigApp.extend({
   html_variables: z.record(z.string(), z.string()).default({}),
 });
 
-export const StandaloneConfigSchema = z
-  .object({
-    app: StandaloneAppSchema,
-    database: AppConfigDatabaseSchema.default({
-      type: 'sqlite',
-      path: './test.db',
-      test: false,
-    }),
-    logging: AppConfigLogging.default(DEFAULT_LOGGING_CONFIG),
-    auth: AppConfigAuth.default({
-      password: {
-        enabled: true,
-        email_verification: true,
-        second_factor: {
-          required: false,
-        },
-        totp: {
-          enabled: false,
-          issuer: '',
-        },
-        policy: {
-          min_length: 12,
-          max_length: 256,
-        },
+export const StandaloneConfigSchema = z.object({
+  app: StandaloneAppSchema,
+  database: AppConfigDatabaseSchema.default({
+    type: 'sqlite',
+    path: './test.db',
+    test: false,
+  }),
+  logging: AppConfigLogging.default(DEFAULT_LOGGING_CONFIG),
+  auth: AppConfigAuth.default({
+    password: {
+      enabled: true,
+      email_verification: true,
+      second_factor: {
+        required: false,
       },
-      passkey: {
+      totp: {
         enabled: false,
-        email_verification: true,
+        issuer: '',
       },
-    }),
-    identity_providers: AppConfigIdentityProviders.default([]),
-    security: AppConfigSecurity,
-    smtp: z
-      .discriminatedUnion('test', [
-        AppConfigSmtpSchema.extend({
-          test: z.literal(false),
-        }),
-        z.object({
-          test: z.literal(true),
-        }),
-      ])
-      .optional(),
-    cleanup: AppConfigCleanup.default(DEFAULT_CLEANUP_CONFIG),
-    scheduler: AppConfigScheduler.default(DEFAULT_SCHEDULER_CONFIG),
-    terms: AppConfigTerms.default([]),
-    clients: z.array(AppConfigClientSchema).default([]),
-    users: z.array(AppConfigUserSchema).default([]),
-  })
-  .superRefine((config, ctx) => {
-    for (const [index, user] of config.users.entries()) {
-      const error = getPasswordPolicyError(
-        user.password,
-        config.auth.password.policy,
-      );
-
-      if (!error) {
-        continue;
-      }
-
-      ctx.addIssue({
-        code: 'custom',
-        path: ['users', index, 'password'],
-        message: error,
-      });
-    }
-  });
+      policy: {
+        min_length: 12,
+        max_length: 256,
+      },
+    },
+    passkey: {
+      enabled: false,
+      email_verification: true,
+    },
+  }),
+  identity_providers: AppConfigIdentityProviders.default([]),
+  security: AppConfigSecurity,
+  smtp: z
+    .discriminatedUnion('test', [
+      AppConfigSmtpSchema.extend({
+        test: z.literal(false),
+      }),
+      z.object({
+        test: z.literal(true),
+      }),
+    ])
+    .optional(),
+  cleanup: AppConfigCleanup.default(DEFAULT_CLEANUP_CONFIG),
+  scheduler: AppConfigScheduler.default(DEFAULT_SCHEDULER_CONFIG),
+  terms: AppConfigTerms.default([]),
+  clients: z.array(AppConfigClientSchema).default([]),
+  users: z.array(AppConfigUserSchema).default([]),
+});
 
 export type StandaloneConfigInput = z.input<typeof StandaloneConfigSchema>;
 export type StandaloneConfig = z.infer<typeof StandaloneConfigSchema>;

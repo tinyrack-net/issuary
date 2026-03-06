@@ -1,11 +1,11 @@
 import { ConfigValidationError } from '@tinyauth/backend/config';
-import { createLogger } from '@tinyauth/backend/logger';
 import {
   initializeServices,
   type ServiceContainer,
 } from '@tinyauth/backend/services';
 import { Command } from 'commander';
 import { loadResolvedConfig } from '#standalone/lib/load-config.js';
+import { createLogger } from '#standalone/lib/logger.js';
 
 /**
  * Cleanup command

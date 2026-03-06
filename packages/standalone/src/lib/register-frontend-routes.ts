@@ -1,7 +1,7 @@
 import type { AppType } from '@tinyauth/backend';
-import type { Logger } from '@tinyauth/backend/logger';
 import { isBackendRoute } from '@tinyauth/backend/routing';
 import type { ResolvedStandaloneFrontendConfig } from '#standalone/lib/config/schema.js';
+import type { Logger } from '#standalone/lib/logger.js';
 import { interpolateHtml } from './interpolate-html.js';
 import { createProxyHandler } from './proxy.js';
 import { registerStaticRoutes } from './static.js';

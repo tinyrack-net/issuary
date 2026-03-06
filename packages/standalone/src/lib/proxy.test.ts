@@ -1,7 +1,7 @@
 import http from 'node:http';
-import { createLogger } from '@tinyauth/backend/logger';
 import { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { createLogger } from '#standalone/lib/logger.js';
 import { createProxyHandler } from './proxy.js';
 
 function createMockUpstream(): Promise<{

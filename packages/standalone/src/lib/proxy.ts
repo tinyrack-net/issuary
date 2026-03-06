@@ -1,6 +1,6 @@
-import type { Logger } from '@tinyauth/backend/logger';
 import type { Context } from 'hono';
 import { proxy } from 'hono/proxy';
+import type { Logger } from '#standalone/lib/logger.js';
 
 export interface ProxyHandlerOptions {
   /**

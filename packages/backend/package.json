@@ -20,12 +20,8 @@
         "default": "./dist/entries/index.js"
       },
       "./config": {
-        "types": "./dist/lib/config/index.d.ts",
-        "default": "./dist/lib/config/index.js"
-      },
-      "./logger": {
-        "types": "./dist/lib/logger.d.ts",
-        "default": "./dist/lib/logger.js"
+        "types": "./dist/entries/config.d.ts",
+        "default": "./dist/entries/config.js"
       },
       "./openapi": {
         "types": "./dist/lib/openapi.d.ts",
@@ -82,14 +78,9 @@
       "default": "./dist/entries/index.js"
     },
     "./config": {
-      "@tinyauth/source": "./src/lib/config/index.ts",
-      "types": "./dist/lib/config/index.d.ts",
-      "default": "./dist/lib/config/index.js"
-    },
-    "./logger": {
-      "@tinyauth/source": "./src/lib/logger.ts",
-      "types": "./dist/lib/logger.d.ts",
-      "default": "./dist/lib/logger.js"
+      "@tinyauth/source": "./src/entries/config.ts",
+      "types": "./dist/entries/config.d.ts",
+      "default": "./dist/entries/config.js"
     },
     "./openapi": {
       "@tinyauth/source": "./src/lib/openapi.ts",
