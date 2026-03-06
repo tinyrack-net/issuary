@@ -391,12 +391,12 @@ importers:
       '@tinyauth/backend':
         specifier: workspace:*
         version: link:../backend
-      '@tinyauth/standalone':
-        specifier: workspace:*
-        version: link:../standalone
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.11
+      '@types/nodemailer':
+        specifier: ^7.0.9
+        version: 7.0.9
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.13
@@ -421,6 +421,9 @@ importers:
       daisyui:
         specifier: 'catalog:'
         version: 5.5.18
+      nodemailer:
+        specifier: ^8.0.0
+        version: 8.0.0
       otplib:
         specifier: ^13.2.1
         version: 13.2.1

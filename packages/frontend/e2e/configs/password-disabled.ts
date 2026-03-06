@@ -1,8 +1,9 @@
-import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
+import type { ResolvedAppConfig } from '@tinyauth/backend/config';
+import { google } from '@tinyauth/backend/config';
 import {
-  E2E_TEST_CLIENT_CONFIG,
-  E2E_TEST_SECURITY_CONFIG,
-  E2E_TEST_USER_CONFIG,
+  E2E_BASE_APP_CONFIG,
+  E2E_BASE_AUTH_CONFIG,
+  E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 
 /**
@@ -11,50 +12,34 @@ import {
  */
 export function createPasswordDisabledConfig(
   backendPort: number,
-  frontendPort: number,
-): StandaloneConfigInput {
+  _frontendPort: number,
+): ResolvedAppConfig {
   return {
+    ...E2E_BASE_CONFIG,
     app: {
+      ...E2E_BASE_APP_CONFIG,
       host: `http://localhost:${backendPort}`,
       port: backendPort,
       cookie_secret:
         '33d4e6f8a0b2c4d6e8f0112233445566778899aabbccddeeff00112233445566',
       allowed_signup_emails: ['*'],
-      frontend: {
-        enabled: true,
-        mode: 'proxy',
-        path: `http://localhost:${frontendPort}`,
-      },
     },
-    security: E2E_TEST_SECURITY_CONFIG,
     auth: {
       password: {
+        ...E2E_BASE_AUTH_CONFIG.password,
         enabled: false,
       },
-      passkey: {
-        enabled: true,
-      },
+      passkey: { ...E2E_BASE_AUTH_CONFIG.passkey, enabled: true },
     },
     identity_providers: [
-      {
+      google({
         id: 'google',
-        type: 'google',
         enabled: true,
         display_name: 'Google',
         client_id: 'test-google-client-id',
         client_secret: 'test-google-client-secret',
         email_conflict_strategy: 'auto_link',
-      },
+      }),
     ],
-    logging: {
-      level: 'silent',
-      format: 'json',
-    },
-    database: {
-      type: 'sqlite',
-      test: true,
-    },
-    users: [E2E_TEST_USER_CONFIG],
-    clients: [E2E_TEST_CLIENT_CONFIG],
   };
 }

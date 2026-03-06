@@ -1,7 +1,9 @@
-import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
+import type { ResolvedAppConfig } from '@tinyauth/backend/config';
+import { genericOAuth } from '@tinyauth/backend/config';
 import {
+  E2E_BASE_APP_CONFIG,
+  E2E_BASE_CONFIG,
   E2E_TEST_CLIENT_CONFIG,
-  E2E_TEST_SECURITY_CONFIG,
   E2E_TEST_USER_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 
@@ -15,12 +17,14 @@ const OAUTH_EXISTING_PENDING_EMAIL = 'oauth-stub-existing-pending@allowed.test';
  */
 export function createOauthProvidersTermsConfig(
   backendPort: number,
-  frontendPort: number,
-): StandaloneConfigInput {
+  _frontendPort: number,
+): ResolvedAppConfig {
   const host = `http://localhost:${backendPort}`;
 
   return {
+    ...E2E_BASE_CONFIG,
     app: {
+      ...E2E_BASE_APP_CONFIG,
       host,
       port: backendPort,
       cookie_secret:
@@ -32,17 +36,10 @@ export function createOauthProvidersTermsConfig(
       signup_implicit_terms: {
         en: 'By signing up, you agree to product analytics tracking.',
       },
-      frontend: {
-        enabled: true,
-        mode: 'proxy',
-        path: `http://localhost:${frontendPort}`,
-      },
     },
-    security: E2E_TEST_SECURITY_CONFIG,
     identity_providers: [
-      {
+      genericOAuth({
         id: 'stub-new-user',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Stub New User',
         icon_url: 'https://example.com/stub-new-user.svg',
@@ -60,10 +57,9 @@ export function createOauthProvidersTermsConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'stub-new-user-oidc',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Stub New User OIDC',
         icon_url: 'https://example.com/stub-new-user-oidc.svg',
@@ -81,10 +77,9 @@ export function createOauthProvidersTermsConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'stub-existing-pending',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Stub Existing Pending',
         icon_url: 'https://example.com/stub-existing-pending.svg',
@@ -102,10 +97,9 @@ export function createOauthProvidersTermsConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'stub-existing-complete',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Stub Existing Complete',
         icon_url: 'https://example.com/stub-existing-complete.svg',
@@ -123,16 +117,8 @@ export function createOauthProvidersTermsConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
+      }),
     ],
-    logging: {
-      level: 'silent',
-      format: 'json',
-    },
-    database: {
-      type: 'sqlite',
-      test: true,
-    },
     terms: [
       {
         id: 'tos',

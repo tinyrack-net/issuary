@@ -1,8 +1,8 @@
-import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
+import type { ResolvedAppConfig } from '@tinyauth/backend/config';
+import { genericOAuth } from '@tinyauth/backend/config';
 import {
-  E2E_TEST_CLIENT_CONFIG,
-  E2E_TEST_SECURITY_CONFIG,
-  E2E_TEST_USER_CONFIG,
+  E2E_BASE_APP_CONFIG,
+  E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 
 /**
@@ -13,12 +13,14 @@ import {
  */
 export function createOauthProvidersSpecificConfig(
   backendPort: number,
-  frontendPort: number,
-): StandaloneConfigInput {
+  _frontendPort: number,
+): ResolvedAppConfig {
   const host = `http://localhost:${backendPort}`;
 
   return {
+    ...E2E_BASE_CONFIG,
     app: {
+      ...E2E_BASE_APP_CONFIG,
       host,
       port: backendPort,
       cookie_secret:
@@ -27,17 +29,10 @@ export function createOauthProvidersSpecificConfig(
       supported_languages: ['en'],
       default_language: 'en',
       fallback_language: 'en',
-      frontend: {
-        enabled: true,
-        mode: 'proxy',
-        path: `http://localhost:${frontendPort}`,
-      },
     },
-    security: E2E_TEST_SECURITY_CONFIG,
     identity_providers: [
-      {
+      genericOAuth({
         id: 'github-stub',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'GitHub Stub',
         icon_url: 'https://example.com/github-stub.svg',
@@ -54,10 +49,9 @@ export function createOauthProvidersSpecificConfig(
           name: 'name',
           picture: 'avatar_url',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'apple-stub',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Apple Stub',
         icon_url: 'https://example.com/apple-stub.svg',
@@ -73,10 +67,9 @@ export function createOauthProvidersSpecificConfig(
           email: 'email',
           email_verified: 'email_verified',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'google-stub',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Google Stub',
         icon_url: 'https://example.com/google-stub.svg',
@@ -94,10 +87,9 @@ export function createOauthProvidersSpecificConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'apple-denied-stub',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Apple Denied Stub',
         icon_url: 'https://example.com/apple-denied-stub.svg',
@@ -113,10 +105,9 @@ export function createOauthProvidersSpecificConfig(
           email: 'email',
           email_verified: 'email_verified',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'server-error-stub',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Server Error Stub',
         icon_url: 'https://example.com/server-error-stub.svg',
@@ -134,10 +125,9 @@ export function createOauthProvidersSpecificConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'temporarily-unavailable-stub',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Temporarily Unavailable Stub',
         icon_url: 'https://example.com/temporarily-unavailable-stub.svg',
@@ -155,10 +145,9 @@ export function createOauthProvidersSpecificConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'unknown-error-stub',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Unknown Error Stub',
         icon_url: 'https://example.com/unknown-error-stub.svg',
@@ -176,10 +165,9 @@ export function createOauthProvidersSpecificConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'missing-state-stub',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Missing State Stub',
         icon_url: 'https://example.com/missing-state-stub.svg',
@@ -197,10 +185,9 @@ export function createOauthProvidersSpecificConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'missing-code-stub',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Missing Code Stub',
         icon_url: 'https://example.com/missing-code-stub.svg',
@@ -218,10 +205,9 @@ export function createOauthProvidersSpecificConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'token-error-stub',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Token Error Stub',
         icon_url: 'https://example.com/token-error-stub.svg',
@@ -239,10 +225,9 @@ export function createOauthProvidersSpecificConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'userinfo-error-stub',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Userinfo Error Stub',
         icon_url: 'https://example.com/userinfo-error-stub.svg',
@@ -260,17 +245,7 @@ export function createOauthProvidersSpecificConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
+      }),
     ],
-    logging: {
-      level: 'silent',
-      format: 'json',
-    },
-    database: {
-      type: 'sqlite',
-      test: true,
-    },
-    users: [E2E_TEST_USER_CONFIG],
-    clients: [E2E_TEST_CLIENT_CONFIG],
   };
 }

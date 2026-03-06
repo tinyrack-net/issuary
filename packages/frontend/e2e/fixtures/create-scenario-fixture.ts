@@ -1,11 +1,13 @@
 import { test as base } from '@playwright/test';
-import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
-import { createE2EServer } from '#frontend-e2e/setup/create-server.js';
+import {
+  createE2EServer,
+  type E2EConfigResult,
+} from '#frontend-e2e/setup/create-server.js';
 
 type ConfigFactory = (
   backendPort: number,
   frontendPort: number,
-) => StandaloneConfigInput;
+) => E2EConfigResult;
 
 /**
  * Creates a standardized Playwright fixture for an e2e scenario.

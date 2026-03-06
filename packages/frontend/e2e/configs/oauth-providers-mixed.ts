@@ -1,8 +1,8 @@
-import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
+import type { ResolvedAppConfig } from '@tinyauth/backend/config';
+import { genericOAuth } from '@tinyauth/backend/config';
 import {
-  E2E_TEST_CLIENT_CONFIG,
-  E2E_TEST_SECURITY_CONFIG,
-  E2E_TEST_USER_CONFIG,
+  E2E_BASE_APP_CONFIG,
+  E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 
 /**
@@ -11,12 +11,14 @@ import {
  */
 export function createOauthProvidersMixedConfig(
   backendPort: number,
-  frontendPort: number,
-): StandaloneConfigInput {
+  _frontendPort: number,
+): ResolvedAppConfig {
   const host = `http://localhost:${backendPort}`;
 
   return {
+    ...E2E_BASE_CONFIG,
     app: {
+      ...E2E_BASE_APP_CONFIG,
       host,
       port: backendPort,
       cookie_secret:
@@ -25,17 +27,10 @@ export function createOauthProvidersMixedConfig(
       supported_languages: ['en'],
       default_language: 'en',
       fallback_language: 'en',
-      frontend: {
-        enabled: true,
-        mode: 'proxy',
-        path: `http://localhost:${frontendPort}`,
-      },
     },
-    security: E2E_TEST_SECURITY_CONFIG,
     identity_providers: [
-      {
+      genericOAuth({
         id: 'stub-success',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Stub Success',
         icon_url: 'https://example.com/stub-success.svg',
@@ -53,10 +48,9 @@ export function createOauthProvidersMixedConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'stub-denied',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Stub Denied',
         icon_url: 'https://example.com/stub-denied.svg',
@@ -74,10 +68,9 @@ export function createOauthProvidersMixedConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'stub-not-allowed',
-        type: 'generic_oauth',
         enabled: true,
         display_name: 'Stub Not Allowed',
         icon_url: 'https://example.com/stub-not-allowed.svg',
@@ -95,10 +88,9 @@ export function createOauthProvidersMixedConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
-      {
+      }),
+      genericOAuth({
         id: 'stub-disabled',
-        type: 'generic_oauth',
         enabled: false,
         display_name: 'Stub Disabled',
         icon_url: 'https://example.com/stub-disabled.svg',
@@ -116,17 +108,7 @@ export function createOauthProvidersMixedConfig(
           name: 'name',
           picture: 'picture',
         },
-      },
+      }),
     ],
-    logging: {
-      level: 'silent',
-      format: 'json',
-    },
-    database: {
-      type: 'sqlite',
-      test: true,
-    },
-    users: [E2E_TEST_USER_CONFIG],
-    clients: [E2E_TEST_CLIENT_CONFIG],
   };
 }
