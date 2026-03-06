@@ -16,8 +16,8 @@
   "publishConfig": {
     "exports": {
       ".": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
+        "types": "./dist/entries/index.d.ts",
+        "default": "./dist/entries/index.js"
       },
       "./config": {
         "types": "./dist/lib/config/index.d.ts",
@@ -32,8 +32,8 @@
         "default": "./dist/lib/openapi.js"
       },
       "./routing": {
-        "types": "./dist/routing.d.ts",
-        "default": "./dist/routing.js"
+        "types": "./dist/entries/routing.d.ts",
+        "default": "./dist/entries/routing.js"
       },
       "./services": {
         "types": "./dist/services/container.d.ts",
@@ -43,13 +43,33 @@
         "types": "./dist/db/index.d.ts",
         "default": "./dist/db/index.js"
       },
-      "./database": {
-        "types": "./dist/database.d.ts",
-        "default": "./dist/database.js"
+      "./database/postgres": {
+        "types": "./dist/entries/database/postgres.d.ts",
+        "default": "./dist/entries/database/postgres.js"
+      },
+      "./database/sqlite": {
+        "types": "./dist/entries/database/sqlite.d.ts",
+        "default": "./dist/entries/database/sqlite.js"
       },
       "./mail": {
-        "types": "./dist/mail.d.ts",
-        "default": "./dist/mail.js"
+        "types": "./dist/entries/mail.d.ts",
+        "default": "./dist/entries/mail.js"
+      },
+      "./identity-providers/github": {
+        "types": "./dist/entries/identity-providers/github.d.ts",
+        "default": "./dist/entries/identity-providers/github.js"
+      },
+      "./identity-providers/google": {
+        "types": "./dist/entries/identity-providers/google.d.ts",
+        "default": "./dist/entries/identity-providers/google.js"
+      },
+      "./identity-providers/apple": {
+        "types": "./dist/entries/identity-providers/apple.d.ts",
+        "default": "./dist/entries/identity-providers/apple.js"
+      },
+      "./identity-providers/generic-oauth": {
+        "types": "./dist/entries/identity-providers/generic-oauth.d.ts",
+        "default": "./dist/entries/identity-providers/generic-oauth.js"
       }
     },
     "imports": {
@@ -61,9 +81,9 @@
   },
   "exports": {
     ".": {
-      "@tinyauth/source": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "@tinyauth/source": "./src/entries/index.ts",
+      "types": "./dist/entries/index.d.ts",
+      "default": "./dist/entries/index.js"
     },
     "./config": {
       "@tinyauth/source": "./src/lib/config/index.ts",
@@ -81,9 +101,9 @@
       "default": "./dist/lib/openapi.js"
     },
     "./routing": {
-      "@tinyauth/source": "./src/routing.ts",
-      "types": "./dist/routing.d.ts",
-      "default": "./dist/routing.js"
+      "@tinyauth/source": "./src/entries/routing.ts",
+      "types": "./dist/entries/routing.d.ts",
+      "default": "./dist/entries/routing.js"
     },
     "./services": {
       "@tinyauth/source": "./src/services/container.ts",
@@ -95,15 +115,40 @@
       "types": "./dist/db/index.d.ts",
       "default": "./dist/db/index.js"
     },
-    "./database": {
-      "@tinyauth/source": "./src/database.ts",
-      "types": "./dist/database.d.ts",
-      "default": "./dist/database.js"
+    "./database/postgres": {
+      "@tinyauth/source": "./src/entries/database/postgres.ts",
+      "types": "./dist/entries/database/postgres.d.ts",
+      "default": "./dist/entries/database/postgres.js"
+    },
+    "./database/sqlite": {
+      "@tinyauth/source": "./src/entries/database/sqlite.ts",
+      "types": "./dist/entries/database/sqlite.d.ts",
+      "default": "./dist/entries/database/sqlite.js"
     },
     "./mail": {
-      "@tinyauth/source": "./src/mail.ts",
-      "types": "./dist/mail.d.ts",
-      "default": "./dist/mail.js"
+      "@tinyauth/source": "./src/entries/mail.ts",
+      "types": "./dist/entries/mail.d.ts",
+      "default": "./dist/entries/mail.js"
+    },
+    "./identity-providers/github": {
+      "@tinyauth/source": "./src/entries/identity-providers/github.ts",
+      "types": "./dist/entries/identity-providers/github.d.ts",
+      "default": "./dist/entries/identity-providers/github.js"
+    },
+    "./identity-providers/google": {
+      "@tinyauth/source": "./src/entries/identity-providers/google.ts",
+      "types": "./dist/entries/identity-providers/google.d.ts",
+      "default": "./dist/entries/identity-providers/google.js"
+    },
+    "./identity-providers/apple": {
+      "@tinyauth/source": "./src/entries/identity-providers/apple.ts",
+      "types": "./dist/entries/identity-providers/apple.d.ts",
+      "default": "./dist/entries/identity-providers/apple.js"
+    },
+    "./identity-providers/generic-oauth": {
+      "@tinyauth/source": "./src/entries/identity-providers/generic-oauth.ts",
+      "types": "./dist/entries/identity-providers/generic-oauth.d.ts",
+      "default": "./dist/entries/identity-providers/generic-oauth.js"
     }
   },
   "imports": {
@@ -137,13 +182,13 @@
   },
   "dependencies": {
     "@hono/standard-validator": "^0.2.2",
-    "@mikro-orm/cli": "^7.0.0-rc.2",
-    "@mikro-orm/core": "^7.0.0-rc.2",
-    "@mikro-orm/decorators": "^7.0.0-rc.2",
-    "@mikro-orm/migrations": "^7.0.0-rc.2",
-    "@mikro-orm/postgresql": "^7.0.0-rc.2",
-    "@mikro-orm/seeder": "^7.0.0-rc.2",
-    "@mikro-orm/sqlite": "^7.0.0-rc.2",
+    "@mikro-orm/cli": "^7.0.0-rc.3",
+    "@mikro-orm/core": "^7.0.0-rc.3",
+    "@mikro-orm/decorators": "^7.0.0-rc.3",
+    "@mikro-orm/migrations": "^7.0.0-rc.3",
+    "@mikro-orm/postgresql": "^7.0.0-rc.3",
+    "@mikro-orm/seeder": "^7.0.0-rc.3",
+    "@mikro-orm/sqlite": "^7.0.0-rc.3",
     "@react-email/components": "^1.0.7",
     "@react-email/render": "^2.0.4",
     "@react-email/tailwind": "^2.0.4",

@@ -1,5 +1,5 @@
 import type { ResolvedAppConfig } from '@tinyauth/backend/config';
-import { genericOAuth } from '@tinyauth/backend/config';
+import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth';
 import {
   E2E_BASE_APP_CONFIG,
   E2E_BASE_CONFIG,

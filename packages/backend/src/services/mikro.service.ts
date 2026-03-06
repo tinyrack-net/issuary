@@ -87,14 +87,9 @@ export class MikroService {
   ): Promise<MikroService> {
     logger.info('Initializing MikroORM...');
     const orm = await MikroORM.init(await config.database.getMikroOrmOptions());
+    await config.database.initialize(orm);
 
-    if (config.database.type === 'sqlite' && config.database.test) {
-      await orm.schema.refresh();
-    } else {
-      await orm.migrator.up();
-    }
-
-    logger.info({ database: config.database.type }, 'MikroORM initialized');
+    logger.info('MikroORM initialized');
 
     return new MikroService(orm);
   }

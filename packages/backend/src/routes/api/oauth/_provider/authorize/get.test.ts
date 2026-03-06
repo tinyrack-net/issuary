@@ -1,7 +1,9 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '#backend/app.js';
-import { apple, github, google } from '#backend/lib/config/index.js';
+import type { AppType } from '#backend/entries/app.js';
+import { apple } from '#backend/entries/identity-providers/apple.js';
+import { github } from '#backend/entries/identity-providers/github.js';
+import { google } from '#backend/entries/identity-providers/google.js';
 import { e } from '#backend/schemas/error.js';
 import {
   createAuthenticatedSession,

@@ -18,12 +18,12 @@ import { UserPasskeyEntitySchema } from '../entities/user-passkey.entity.js';
 import { UserTermsConsentEntitySchema } from '../entities/user-terms-consent.entity.js';
 import { UserTotpEntitySchema } from '../entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '../entities/user-totp-recovery-code.entity.js';
-import type { AppConfigDatabaseSqlite } from '../lib/config/schema.js';
 import compiledFunctions from './compiled-functions.js';
 
-export const mikroormSqliteConfig = (
-  database: AppConfigDatabaseSqlite,
-): Options => {
+export const mikroormSqliteConfig = (database: {
+  path: string;
+  test: boolean;
+}): Options => {
   return defineConfig({
     driver: SqliteDriver,
     dbName: database.test ? ':memory:' : database.path,

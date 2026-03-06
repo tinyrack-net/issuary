@@ -1,7 +1,7 @@
-import { type CreateAppOptions, createApp } from '#backend/app.js';
-import { sqlite } from '#backend/database.js';
+import { type CreateAppOptions, createApp } from '#backend/entries/app.js';
+import { sqlite } from '#backend/entries/database/sqlite.js';
+import type { ComposedSmtpConfig } from '#backend/entries/mail.js';
 import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
-import type { ComposedSmtpConfig } from '#backend/mail.js';
 
 /**
  * Minimal test configuration as a fully resolved config.
@@ -13,7 +13,7 @@ import type { ComposedSmtpConfig } from '#backend/mail.js';
  * @example
  * ```typescript
  * import { createTestApp, MINIMAL_TEST_CONFIG } from '#backend/test-utils/setup.js';
- * import type { AppType } from '#backend/app.js';
+ * import type { AppType } from '#backend/entries/app.js';
  * import type { ServiceContainer } from '#backend/services/container.js';
  *
  * let app: AppType;
@@ -74,7 +74,7 @@ export const MINIMAL_TEST_CONFIG = {
     },
     account_deletion: false,
   },
-  database: sqlite({ type: 'sqlite', path: './test.db', test: true }),
+  database: sqlite({ path: './test.db', test: true }),
   logging: {
     level: 'silent' as const,
     format: 'json' as const,
@@ -150,7 +150,7 @@ export const MINIMAL_TEST_CONFIG = {
  */
 export async function createTestSmtpConfig(): Promise<ComposedSmtpConfig> {
   const { default: nodemailer } = await import('nodemailer');
-  const { smtp } = await import('#backend/mail.js');
+  const { smtp } = await import('#backend/entries/mail.js');
   const testAccount = await nodemailer.createTestAccount();
   return smtp({
     host: testAccount.smtp.host,

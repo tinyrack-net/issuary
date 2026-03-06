@@ -1,6 +1,6 @@
+import type { MikroORM, Options } from '@mikro-orm/core';
 import z from 'zod';
-import type { ComposedDatabaseConfig } from '#backend/database.js';
-import type { ResolvedIdentityProvider } from '#backend/identity-provider.js';
+import type { ComposedSmtpConfig } from '#backend/entries/mail.js';
 import { fromBase64Url } from '#backend/lib/base64url.js';
 import { DurationString } from '#backend/lib/duration.js';
 import { AVAILABLE_LOCALES, DEFAULT_LOCALE } from '#backend/lib/locale.js';
@@ -8,7 +8,6 @@ import {
   PASSWORD_POLICY_MAX_LENGTH,
   PASSWORD_POLICY_MIN_LENGTH,
 } from '#backend/lib/password-policy.js';
-import type { ComposedSmtpConfig } from '#backend/mail.js';
 import { zz } from '#backend/schemas/provider.js';
 
 /**
@@ -62,28 +61,10 @@ export interface AppConfigClient {
   scope: string;
 }
 
-// ---------------------------------------------------------------------------
-// Database
-// ---------------------------------------------------------------------------
-
-export interface AppConfigDatabaseSqlite {
-  type: 'sqlite';
-  path: string;
-  test: boolean;
-}
-
-export interface AppConfigDatabasePostgres {
-  type: 'postgres';
-  host: string;
-  port: number;
-  user: string;
-  password: string;
-  name: string;
-}
-
-export type AppConfigDatabase =
-  | AppConfigDatabaseSqlite
-  | AppConfigDatabasePostgres;
+export type DatabaseConfigRuntime = {
+  getMikroOrmOptions: () => Promise<Options>;
+  initialize: (orm: MikroORM) => Promise<void>;
+};
 
 // ---------------------------------------------------------------------------
 // Scheduler
@@ -947,6 +928,34 @@ export type AppConfigIdentityProviders = z.infer<
 >;
 
 // ---------------------------------------------------------------------------
+// Resolved Identity Provider (runtime type)
+// ---------------------------------------------------------------------------
+
+export interface ResolvedIdentityProvider {
+  id: string;
+  type: 'github' | 'google' | 'apple' | 'generic_oauth';
+  enabled: boolean;
+  display_name: string;
+  icon_url?: string | undefined;
+  client_id: string;
+  client_secret: string;
+  authorization_url: string;
+  token_url: string;
+  userinfo_url: string | null;
+  email_url?: string | undefined;
+  scopes: string[];
+  response_mode?: string | undefined;
+  email_conflict_strategy: 'auto_link' | 'require_link';
+  userinfo_mapping: {
+    id: string;
+    email: string;
+    email_verified?: string | undefined;
+    name?: string | undefined;
+    picture?: string | undefined;
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Resolved config (runtime type)
 // ---------------------------------------------------------------------------
 
@@ -967,7 +976,7 @@ export interface ResolvedAppConfig {
   terms: AppConfigTerms;
   clients: AppConfigClient[];
   users: AppConfigUser[];
-  database: ComposedDatabaseConfig;
+  database: DatabaseConfigRuntime;
   smtp?: ComposedSmtpConfig;
   identity_providers: ResolvedIdentityProvider[];
 }

@@ -78,7 +78,7 @@
   "dependencies": {
     "@tinyauth/backend": "workspace:*",
     "@hono/node-server": "catalog:",
-    "@mikro-orm/cli": "^7.0.0-rc.2",
+    "@mikro-orm/cli": "^7.0.0-rc.3",
     "commander": "^14.0.3",
     "dotenv": "^17.2.4",
     "hono": "catalog:",

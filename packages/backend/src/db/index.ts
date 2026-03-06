@@ -1,13 +1,21 @@
 import type { Options } from '@mikro-orm/core';
-import type { AppConfigDatabase } from '#backend/lib/config/schema.js';
+
+type DatabaseConfig =
+  | { type: 'sqlite'; path: string; test: boolean }
+  | {
+      type: 'postgres';
+      host: string;
+      port: number;
+      user: string;
+      password: string;
+      name: string;
+    };
 
 /**
  * Get MikroORM config from AppConfig.
  * Used by the application at runtime.
  */
-export async function getDbConfigs(
-  database: AppConfigDatabase,
-): Promise<Options> {
+export async function getDbConfigs(database: DatabaseConfig): Promise<Options> {
   switch (database.type) {
     case 'postgres': {
       const { mikroormPostgresConfig } = await import('./postgres.js');

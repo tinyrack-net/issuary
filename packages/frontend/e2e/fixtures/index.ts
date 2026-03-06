@@ -1,5 +1,5 @@
 import type { ResolvedAppConfig } from '@tinyauth/backend/config';
-import { sqlite } from '@tinyauth/backend/database';
+import { sqlite } from '@tinyauth/backend/database/sqlite';
 
 /**
  * Test user credentials for e2e tests.
@@ -86,7 +86,7 @@ export const E2E_BASE_AUTH_CONFIG: ResolvedAppConfig['auth'] = {
 export const E2E_BASE_CONFIG: Omit<ResolvedAppConfig, 'app'> = {
   security: E2E_TEST_SECURITY_CONFIG,
   logging: { level: 'silent', format: 'json', http_log_proxy: false },
-  database: sqlite({ type: 'sqlite', path: './test.db', test: true }),
+  database: sqlite({ path: './test.db', test: true }),
   auth: E2E_BASE_AUTH_CONFIG,
   cleanup: {
     revoked_tokens: { enabled: true, retention: '0' },

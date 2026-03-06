@@ -1,7 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '#backend/app.js';
-import { google } from '#backend/lib/config/index.js';
+import type { AppType } from '#backend/entries/app.js';
+import { google } from '#backend/entries/identity-providers/google.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,

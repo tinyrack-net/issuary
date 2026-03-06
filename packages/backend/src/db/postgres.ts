@@ -2,7 +2,6 @@ import type { Options } from '@mikro-orm/core';
 import { Migrator } from '@mikro-orm/migrations';
 import { defineConfig, PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { SeedManager } from '@mikro-orm/seeder';
-import type { AppConfigDatabasePostgres } from '#backend/lib/config/schema.js';
 import { EmailVerificationEntitySchema } from '../entities/email-verification.entity.js';
 import { JwtKeyEntitySchema } from '../entities/jwt-key.entity.js';
 import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.js';
@@ -21,9 +20,13 @@ import { UserTotpEntitySchema } from '../entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '../entities/user-totp-recovery-code.entity.js';
 import compiledFunctions from './compiled-functions.js';
 
-export const mikroormPostgresConfig = (
-  database: AppConfigDatabasePostgres,
-): Options => {
+export const mikroormPostgresConfig = (database: {
+  host: string;
+  port: number;
+  name: string;
+  user: string;
+  password: string;
+}): Options => {
   return defineConfig({
     compiledFunctions: compiledFunctions,
     driver: PostgreSqlDriver,

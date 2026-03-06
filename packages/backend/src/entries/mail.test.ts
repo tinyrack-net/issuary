@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { smtp } from '#backend/mail.js';
+import { smtp } from '#backend/entries/mail.js';
 
 describe('smtp config factory', () => {
   test('returns false preview url for non-test smtp config', () => {

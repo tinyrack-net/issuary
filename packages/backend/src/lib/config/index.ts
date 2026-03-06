@@ -1,11 +1,3 @@
-// Identity provider
-export {
-  apple,
-  genericOAuth,
-  github,
-  google,
-  type ResolvedIdentityProvider,
-} from '#backend/identity-provider.js';
 // Duration utilities
 export {
   calculateCutoffDate,
@@ -23,15 +15,14 @@ export {
 export { getPasswordPolicyError } from '#backend/lib/password-policy.js';
 export type {
   AppConfigClient,
-  AppConfigDatabase,
-  AppConfigDatabasePostgres,
-  AppConfigDatabaseSqlite,
   AppConfigSecondFactor,
   AppConfigSmtp,
   AppConfigUser,
+  DatabaseConfigRuntime,
   LogFormat,
   LogLevel,
   ResolvedAppConfig,
+  ResolvedIdentityProvider,
   TermsItem,
 } from './schema.js';
 // Config schemas and types

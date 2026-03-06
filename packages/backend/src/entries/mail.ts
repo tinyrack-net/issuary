@@ -1,5 +1,5 @@
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
-import type { AppConfigSmtp } from './lib/config/schema.js';
+import type { AppConfigSmtp } from '#backend/lib/config/schema.js';
 
 export interface SmtpTransport {
   sendMail(options: {

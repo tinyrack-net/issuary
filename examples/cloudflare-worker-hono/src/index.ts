@@ -1,5 +1,5 @@
 import { type AppType, createApp } from '@tinyauth/backend';
-import { sqlite } from '@tinyauth/backend/database';
+import { sqlite } from '@tinyauth/backend/database/sqlite';
 import { isBackendRoute } from '@tinyauth/backend/routing';
 
 interface AssetFetcher {
@@ -88,7 +88,6 @@ export async function createCloudflareExampleApp(assets: AssetFetcher) {
         account_deletion: false,
       },
       database: sqlite({
-        type: 'sqlite',
         path: './test.db',
         test: true,
       }),

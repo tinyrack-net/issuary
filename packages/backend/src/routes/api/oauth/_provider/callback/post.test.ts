@@ -9,8 +9,8 @@ import {
   test,
   vi,
 } from 'vitest';
-import type { AppType } from '#backend/app.js';
-import { apple } from '#backend/lib/config/index.js';
+import type { AppType } from '#backend/entries/app.js';
+import { apple } from '#backend/entries/identity-providers/apple.js';
 import {
   assertJsonBody,
   createTestApp,

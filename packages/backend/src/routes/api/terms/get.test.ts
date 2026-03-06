@@ -1,6 +1,6 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '#backend/app.js';
+import type { AppType } from '#backend/entries/app.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   createDbUserWithSession,

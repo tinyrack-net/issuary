@@ -8,8 +8,9 @@ import {
   test,
   vi,
 } from 'vitest';
-import type { AppType } from '#backend/app.js';
-import { github, google } from '#backend/lib/config/index.js';
+import type { AppType } from '#backend/entries/app.js';
+import { github } from '#backend/entries/identity-providers/github.js';
+import { google } from '#backend/entries/identity-providers/google.js';
 import { e } from '#backend/schemas/error.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {

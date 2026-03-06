@@ -24,8 +24,10 @@ export default defineConfig({
       },
       {
         find: /^@tinyauth\/backend\/routing$/,
-        replacement: new URL('../backend/src/routing.ts', import.meta.url)
-          .pathname,
+        replacement: new URL(
+          '../backend/src/entries/routing.ts',
+          import.meta.url,
+        ).pathname,
       },
       {
         find: /^@tinyauth\/backend\/services$/,
@@ -40,19 +42,58 @@ export default defineConfig({
           .pathname,
       },
       {
-        find: /^@tinyauth\/backend\/database$/,
-        replacement: new URL('../backend/src/database.ts', import.meta.url)
-          .pathname,
+        find: /^@tinyauth\/backend\/database\/postgres$/,
+        replacement: new URL(
+          '../backend/src/entries/database/postgres.ts',
+          import.meta.url,
+        ).pathname,
+      },
+      {
+        find: /^@tinyauth\/backend\/database\/sqlite$/,
+        replacement: new URL(
+          '../backend/src/entries/database/sqlite.ts',
+          import.meta.url,
+        ).pathname,
       },
       {
         find: /^@tinyauth\/backend\/mail$/,
-        replacement: new URL('../backend/src/mail.ts', import.meta.url)
+        replacement: new URL('../backend/src/entries/mail.ts', import.meta.url)
           .pathname,
       },
       {
+        find: /^@tinyauth\/backend\/identity-providers\/github$/,
+        replacement: new URL(
+          '../backend/src/entries/identity-providers/github.ts',
+          import.meta.url,
+        ).pathname,
+      },
+      {
+        find: /^@tinyauth\/backend\/identity-providers\/google$/,
+        replacement: new URL(
+          '../backend/src/entries/identity-providers/google.ts',
+          import.meta.url,
+        ).pathname,
+      },
+      {
+        find: /^@tinyauth\/backend\/identity-providers\/apple$/,
+        replacement: new URL(
+          '../backend/src/entries/identity-providers/apple.ts',
+          import.meta.url,
+        ).pathname,
+      },
+      {
+        find: /^@tinyauth\/backend\/identity-providers\/generic-oauth$/,
+        replacement: new URL(
+          '../backend/src/entries/identity-providers/generic-oauth.ts',
+          import.meta.url,
+        ).pathname,
+      },
+      {
         find: /^@tinyauth\/backend$/,
-        replacement: new URL('../backend/src/index.ts', import.meta.url)
-          .pathname,
+        replacement: new URL(
+          '../backend/src/entries/index.ts',
+          import.meta.url,
+        ).pathname,
       },
     ],
     conditions: ['@tinyauth/source'],

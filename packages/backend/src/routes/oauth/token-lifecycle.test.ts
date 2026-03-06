@@ -1,7 +1,7 @@
 import { testClient } from 'hono/testing';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '#backend/app.js';
+import type { AppType } from '#backend/entries/app.js';
 import {
   createAuthenticatedSession,
   createTestApp,

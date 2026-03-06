@@ -63,8 +63,8 @@ describe('resolveConfig', () => {
   test('returns composed database config', async () => {
     const resolved = await resolveConfig(MINIMAL_CONFIG);
 
-    expect(resolved.database.type).toBe('sqlite');
     expect(typeof resolved.database.getMikroOrmOptions).toBe('function');
+    expect(typeof resolved.database.initialize).toBe('function');
   });
 
   test('validates config users against the configured password policy', async () => {

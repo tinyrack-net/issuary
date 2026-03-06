@@ -1,13 +1,14 @@
 import * as fs from 'node:fs';
 import {
-  apple,
   ConfigValidationError,
-  genericOAuth,
-  github,
-  google,
   type ResolvedAppConfig,
 } from '@tinyauth/backend/config';
-import { postgres, sqlite } from '@tinyauth/backend/database';
+import { postgres } from '@tinyauth/backend/database/postgres';
+import { sqlite } from '@tinyauth/backend/database/sqlite';
+import { apple } from '@tinyauth/backend/identity-providers/apple';
+import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth';
+import { github } from '@tinyauth/backend/identity-providers/github';
+import { google } from '@tinyauth/backend/identity-providers/google';
 import type { Logger } from '@tinyauth/backend/logger';
 import { smtp } from '@tinyauth/backend/mail';
 import YAML from 'yaml';
@@ -107,10 +108,14 @@ const composeDatabaseConfig = (
   database: StandaloneConfig['database'],
 ): ResolvedAppConfig['database'] => {
   switch (database.type) {
-    case 'postgres':
-      return postgres(database);
-    case 'sqlite':
-      return sqlite(database);
+    case 'postgres': {
+      const { type: _, ...rest } = database;
+      return postgres(rest);
+    }
+    case 'sqlite': {
+      const { type: _, ...rest } = database;
+      return sqlite(rest);
+    }
   }
 };
 

@@ -1,7 +1,7 @@
 import { RequestContext } from '@mikro-orm/core';
 import { testClient } from 'hono/testing';
 import { expect } from 'vitest';
-import type { AppType } from '#backend/app.js';
+import type { AppType } from '#backend/entries/app.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import { assertJsonBody } from './client.js';
 import { generateUniqueEmail, TEST_CONSENTS, TEST_USER } from './fixtures.js';

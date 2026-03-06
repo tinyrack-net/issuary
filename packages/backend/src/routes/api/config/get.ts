@@ -60,7 +60,7 @@ export const configGet = new Hono<AppEnv>().get(
           subtitle: config.app.subtitle,
         },
         database: {
-          enabled: !!config.database?.type,
+          enabled: !!config.database,
         },
         smtp: {
           enabled: !!config.smtp,

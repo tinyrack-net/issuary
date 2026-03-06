@@ -1,5 +1,5 @@
 import type { ResolvedAppConfig } from '@tinyauth/backend/config';
-import { google } from '@tinyauth/backend/config';
+import { google } from '@tinyauth/backend/identity-providers/google';
 import {
   E2E_BASE_APP_CONFIG,
   E2E_BASE_AUTH_CONFIG,
