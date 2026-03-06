@@ -1,5 +1,4 @@
 import * as fs from 'node:fs';
-import nm from 'nodemailer';
 import type { ResolvedAppConfig } from '@tinyauth/backend/config';
 import { postgres } from '@tinyauth/backend/database/postgres';
 import { sqlite } from '@tinyauth/backend/database/sqlite';
@@ -8,6 +7,7 @@ import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth
 import { github } from '@tinyauth/backend/identity-providers/github';
 import { google } from '@tinyauth/backend/identity-providers/google';
 import { nodemailer } from '@tinyauth/backend/mail/nodemailer';
+import nm from 'nodemailer';
 import YAML from 'yaml';
 import {
   type ResolvedStandaloneConfig,

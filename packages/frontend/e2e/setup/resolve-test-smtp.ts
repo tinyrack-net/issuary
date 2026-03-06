@@ -1,6 +1,6 @@
-import nm from 'nodemailer';
 import type { ResolvedAppConfig } from '@tinyauth/backend/config';
 import { nodemailer } from '@tinyauth/backend/mail/nodemailer';
+import nm from 'nodemailer';
 
 export async function resolveTestMailConfig(): Promise<
   NonNullable<ResolvedAppConfig['mail']>

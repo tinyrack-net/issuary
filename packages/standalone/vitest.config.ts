@@ -85,10 +85,8 @@ export default defineConfig({
       },
       {
         find: /^@tinyauth\/backend$/,
-        replacement: new URL(
-          '../backend/src/entries/index.ts',
-          import.meta.url,
-        ).pathname,
+        replacement: new URL('../backend/src/entries/index.ts', import.meta.url)
+          .pathname,
       },
     ],
     conditions: ['@tinyauth/source'],
