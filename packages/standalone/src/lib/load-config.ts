@@ -1,4 +1,5 @@
 import * as fs from 'node:fs';
+import nm from 'nodemailer';
 import {
   ConfigValidationError,
   type ResolvedAppConfig,
@@ -89,7 +90,6 @@ const resolveMailConfig = async (
     return undefined;
   }
   if (smtpInput.test) {
-    const { default: nm } = await import('nodemailer');
     const testAccount = await nm.createTestAccount();
     return nodemailer({
       host: testAccount.smtp.host,

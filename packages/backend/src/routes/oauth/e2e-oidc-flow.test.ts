@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { testClient } from 'hono/testing';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
@@ -270,7 +271,6 @@ describe('End-to-End OIDC Flow', () => {
 
       // Compute at_hash manually to verify
       // OIDC Core 1.0 §3.1.3.6: at_hash = base64url(left_half(sha256(access_token)))
-      const { createHash } = await import('node:crypto');
       const hash = createHash('sha256').update(tokens.access_token).digest();
       const leftHalf = hash.subarray(0, hash.length / 2);
       const expectedAtHash = leftHalf.toString('base64url');

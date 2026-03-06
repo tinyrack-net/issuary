@@ -1,3 +1,4 @@
+import nm from 'nodemailer';
 import type {
   AppConfigSmtp,
   MailConfigRuntime,
@@ -7,7 +8,6 @@ export function nodemailer(config: AppConfigSmtp): MailConfigRuntime {
   return {
     from: config.from,
     createTransport: async () => {
-      const { default: nm } = await import('nodemailer');
       const transport = nm.createTransport({
         host: config.host,
         port: config.port,

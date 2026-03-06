@@ -4,6 +4,7 @@ import { serve } from '@hono/node-server';
 import { createApp } from '@tinyauth/backend';
 import type { ResolvedAppConfig } from '@tinyauth/backend/config';
 import { isBackendRoute } from '@tinyauth/backend/routing';
+import { resolveTestMailConfig } from '#frontend-e2e/setup/resolve-test-smtp.js';
 
 const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
 
@@ -226,9 +227,6 @@ export async function createE2EServer(configFactory: ConfigFactory) {
     (rawMail as Record<string, unknown>).test === true &&
     !('createTransport' in rawMail)
   ) {
-    const { resolveTestMailConfig } = await import(
-      '#frontend-e2e/setup/resolve-test-smtp.js'
-    );
     resolvedMail = await resolveTestMailConfig();
   } else if (rawMail && 'createTransport' in rawMail) {
     resolvedMail = rawMail as ResolvedAppConfig['mail'];
