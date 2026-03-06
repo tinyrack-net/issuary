@@ -1,7 +1,7 @@
 import { type CreateAppOptions, createApp } from '#backend/entries/app.js';
 import { sqlite } from '#backend/entries/database/sqlite.js';
-import type { ComposedSmtpConfig } from '#backend/entries/mail.js';
 import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { MailConfigRuntime } from '#backend/lib/config/schema.js';
 
 /**
  * Minimal test configuration as a fully resolved config.
@@ -148,11 +148,11 @@ export const MINIMAL_TEST_CONFIG = {
  * Create a resolved SMTP config using nodemailer's test account.
  * Call this in `beforeAll` for tests that need email functionality.
  */
-export async function createTestSmtpConfig(): Promise<ComposedSmtpConfig> {
-  const { default: nodemailer } = await import('nodemailer');
-  const { smtp } = await import('#backend/entries/mail.js');
-  const testAccount = await nodemailer.createTestAccount();
-  return smtp({
+export async function createTestMailConfig(): Promise<MailConfigRuntime> {
+  const { default: nm } = await import('nodemailer');
+  const { nodemailer } = await import('#backend/entries/mail/nodemailer.js');
+  const testAccount = await nm.createTestAccount();
+  return nodemailer({
     host: testAccount.smtp.host,
     port: testAccount.smtp.port,
     secure: testAccount.smtp.secure,

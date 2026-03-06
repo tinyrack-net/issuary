@@ -10,7 +10,7 @@ import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth
 import { github } from '@tinyauth/backend/identity-providers/github';
 import { google } from '@tinyauth/backend/identity-providers/google';
 import type { Logger } from '@tinyauth/backend/logger';
-import { smtp } from '@tinyauth/backend/mail';
+import { nodemailer } from '@tinyauth/backend/mail/nodemailer';
 import YAML from 'yaml';
 import z from 'zod';
 import {
@@ -82,16 +82,16 @@ export function parseConfig(input: unknown): StandaloneConfig {
   }
 }
 
-const resolveSmtpConfig = async (
+const resolveMailConfig = async (
   smtpInput: StandaloneConfig['smtp'],
-): Promise<ResolvedAppConfig['smtp']> => {
+): Promise<ResolvedAppConfig['mail']> => {
   if (!smtpInput) {
     return undefined;
   }
   if (smtpInput.test) {
-    const { default: nodemailer } = await import('nodemailer');
-    const testAccount = await nodemailer.createTestAccount();
-    return smtp({
+    const { default: nm } = await import('nodemailer');
+    const testAccount = await nm.createTestAccount();
+    return nodemailer({
       host: testAccount.smtp.host,
       port: testAccount.smtp.port,
       secure: testAccount.smtp.secure,
@@ -101,7 +101,7 @@ const resolveSmtpConfig = async (
       test: true,
     });
   }
-  return smtp(smtpInput);
+  return nodemailer(smtpInput);
 };
 
 const composeDatabaseConfig = (
@@ -147,7 +147,7 @@ export async function resolveConfig(
 ): Promise<ResolvedAppConfig> {
   const parsed = parseConfig(input);
 
-  const smtpConfig = await resolveSmtpConfig(parsed.smtp);
+  const mailConfig = await resolveMailConfig(parsed.smtp);
   const databaseConfig = composeDatabaseConfig(parsed.database);
   const identityProvidersConfig = parsed.identity_providers.map(
     composeIdentityProvider,
@@ -166,7 +166,7 @@ export async function resolveConfig(
     app: appRest,
     database: databaseConfig,
     identity_providers: identityProvidersConfig,
-    ...(smtpConfig ? { smtp: smtpConfig } : {}),
+    ...(mailConfig ? { mail: mailConfig } : {}),
   };
 }
 

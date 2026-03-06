@@ -1,6 +1,5 @@
 import type { MikroORM, Options } from '@mikro-orm/core';
 import z from 'zod';
-import type { ComposedSmtpConfig } from '#backend/entries/mail.js';
 import { fromBase64Url } from '#backend/lib/base64url.js';
 import { DurationString } from '#backend/lib/duration.js';
 import { AVAILABLE_LOCALES, DEFAULT_LOCALE } from '#backend/lib/locale.js';
@@ -28,6 +27,25 @@ export interface AppConfigSmtp {
   password: string;
   from?: string | undefined;
   test: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Mail (abstract runtime interface)
+// ---------------------------------------------------------------------------
+
+export interface MailTransport {
+  sendMail(options: {
+    from?: string | undefined;
+    to: string;
+    subject: string;
+    text: string;
+    html: string;
+  }): Promise<unknown>;
+}
+
+export interface MailConfigRuntime {
+  from?: string | undefined;
+  createTransport: () => Promise<MailTransport>;
 }
 
 // ---------------------------------------------------------------------------
@@ -977,6 +995,6 @@ export interface ResolvedAppConfig {
   clients: AppConfigClient[];
   users: AppConfigUser[];
   database: DatabaseConfigRuntime;
-  smtp?: ComposedSmtpConfig;
+  mail?: MailConfigRuntime;
   identity_providers: ResolvedIdentityProvider[];
 }

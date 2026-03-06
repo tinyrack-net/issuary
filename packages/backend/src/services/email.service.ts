@@ -1,19 +1,18 @@
-import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 import {
   renderPasswordResetEmail,
   renderVerificationEmail,
 } from '#backend/emails/render.js';
 import type { IEmailVerificationEntity } from '#backend/entities/email-verification.entity.js';
 import type { UserEntity } from '#backend/entities/user.entity.js';
-import type { SmtpTransport } from '#backend/entries/mail.js';
 import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { MailTransport } from '#backend/lib/config/schema.js';
 import { DEFAULT_LOCALE, type Locale } from '#backend/lib/locale.js';
 import type { Logger } from '#backend/lib/logger.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 
 export class EmailService {
-  private readonly transporter: Promise<SmtpTransport> | null;
+  private readonly transporter: Promise<MailTransport> | null;
 
   private readonly config: ResolvedAppConfig;
   private readonly mikro: MikroService;
@@ -26,15 +25,12 @@ export class EmailService {
     this.config = config;
     this.mikro = mikro;
     this.logger = logger;
-    if (config.smtp) {
-      this.transporter = config.smtp.createTransport();
-      this.logger.info(
-        { host: config.smtp.host, port: config.smtp.port },
-        'SMTP transport initialized',
-      );
+    if (config.mail) {
+      this.transporter = config.mail.createTransport();
+      this.logger.info('Mail transport initialized');
     } else {
       this.transporter = null;
-      this.logger.warn('SMTP disabled: no SMTP config');
+      this.logger.warn('Mail disabled: no mail config');
     }
   }
 
@@ -61,8 +57,8 @@ export class EmailService {
     email: string;
     token: string;
     locale?: Locale | undefined;
-  }): Promise<SMTPTransport.SentMessageInfo> {
-    if (!this.config.smtp || !this.transporter) {
+  }): Promise<void> {
+    if (!this.config.mail || !this.transporter) {
       throw new e.EmailNotActivated.Error();
     }
     const transporter = await this.transporter;
@@ -76,24 +72,15 @@ export class EmailService {
       appName: this.getAppName(params.locale),
     });
 
-    const info = await transporter.sendMail({
-      from: this.config.smtp.from,
+    await transporter.sendMail({
+      from: this.config.mail.from,
       to: params.email,
       subject,
       text,
       html,
     });
 
-    this.logger.info({ messageId: info.messageId }, 'Email sent');
-
-    if (this.config.smtp.test) {
-      const previewUrl = await this.config.smtp.getTestMessageUrl(info);
-      if (previewUrl) {
-        this.logger.info({ previewUrl }, 'Preview URL');
-      }
-    }
-
-    return info;
+    this.logger.info('Verification email sent');
   }
 
   public sendVerificationEmailAsync(params: {
@@ -110,8 +97,8 @@ export class EmailService {
     email: string;
     token: string;
     locale?: Locale | undefined;
-  }): Promise<SMTPTransport.SentMessageInfo> {
-    if (!this.config.smtp || !this.transporter) {
+  }): Promise<void> {
+    if (!this.config.mail || !this.transporter) {
       throw new e.EmailNotActivated.Error();
     }
     const transporter = await this.transporter;
@@ -125,27 +112,15 @@ export class EmailService {
       appName: this.getAppName(params.locale),
     });
 
-    const info = await transporter.sendMail({
-      from: this.config.smtp.from,
+    await transporter.sendMail({
+      from: this.config.mail.from,
       to: params.email,
       subject,
       text,
       html,
     });
 
-    this.logger.info(
-      { messageId: info.messageId },
-      'Password reset email sent',
-    );
-
-    if (this.config.smtp.test) {
-      const previewUrl = await this.config.smtp.getTestMessageUrl(info);
-      if (previewUrl) {
-        this.logger.info({ previewUrl }, 'Preview URL');
-      }
-    }
-
-    return info;
+    this.logger.info('Password reset email sent');
   }
 
   /**
@@ -171,7 +146,7 @@ export class EmailService {
     userSub: string;
     expiresInHours?: number;
   }): Promise<IEmailVerificationEntity> {
-    if (!this.config.smtp) {
+    if (!this.config.mail) {
       throw new e.EmailNotActivated.Error();
     }
     const token = await this.mikro.emailVerification.generateToken({
@@ -187,7 +162,7 @@ export class EmailService {
    * Throws EmailNotActivated if SMTP is not configured.
    */
   public async verifyEmail(token: string): Promise<UserEntity> {
-    if (!this.config.smtp) {
+    if (!this.config.mail) {
       throw new e.EmailNotActivated.Error();
     }
     const verification = await this.mikro.emailVerification.verifyToken(token);
@@ -211,7 +186,7 @@ export class EmailService {
   public async resendVerification(
     email: string,
   ): Promise<IEmailVerificationEntity> {
-    if (!this.config.smtp) {
+    if (!this.config.mail) {
       throw new e.EmailNotActivated.Error();
     }
     const user = await this.mikro.user.findOneOrFail(
@@ -233,7 +208,7 @@ export class EmailService {
    * Throws EmailNotActivated if SMTP is not configured.
    */
   public async hasPendingVerification(userSub: string): Promise<boolean> {
-    if (!this.config.smtp) {
+    if (!this.config.mail) {
       throw new e.EmailNotActivated.Error();
     }
     const count = await this.mikro.emailVerification.count({

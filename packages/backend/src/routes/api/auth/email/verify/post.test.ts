@@ -6,7 +6,7 @@ import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
   createTestApp,
-  createTestSmtpConfig,
+  createTestMailConfig,
   expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -21,11 +21,11 @@ let cleanup: () => Promise<void>;
 const REGISTERED_USER_PASSWORD = 'password123!';
 
 beforeAll(async () => {
-  const smtp = await createTestSmtpConfig();
+  const mail = await createTestMailConfig();
   const server = await createTestApp({
     config: {
       ...MINIMAL_TEST_CONFIG,
-      smtp,
+      mail,
       terms: TEST_TERMS_CONFIG,
     },
   });

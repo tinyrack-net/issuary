@@ -4,7 +4,7 @@ import type { AppType } from '#backend/entries/app.js';
 import { google } from '#backend/entries/identity-providers/google.js';
 import {
   createTestApp,
-  createTestSmtpConfig,
+  createTestMailConfig,
   MINIMAL_TEST_CONFIG,
 } from '#backend/test-utils/index.js';
 
@@ -12,11 +12,11 @@ let app: AppType;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  const smtp = await createTestSmtpConfig();
+  const mail = await createTestMailConfig();
   const server = await createTestApp({
     config: {
       ...MINIMAL_TEST_CONFIG,
-      smtp,
+      mail,
       identity_providers: [
         google({
           id: 'google',

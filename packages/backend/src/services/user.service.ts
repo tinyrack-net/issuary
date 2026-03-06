@@ -128,7 +128,7 @@ export class UserService {
     });
 
     // 3. Generate email verification token and send email
-    if (this.config.smtp) {
+    if (this.config.mail) {
       const verification = await this.emailService.generateToken({
         userSub: user.sub,
       });
@@ -203,7 +203,7 @@ export class UserService {
   public userEmailVerificationRequired(userLike: {
     managed_by: UserEntity['managed_by'];
   }): boolean {
-    return userLike.managed_by !== 'config' && !!this.config.smtp;
+    return userLike.managed_by !== 'config' && !!this.config.mail;
   }
 
   /**

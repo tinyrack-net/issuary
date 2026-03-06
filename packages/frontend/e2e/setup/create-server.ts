@@ -171,8 +171,8 @@ function getFreePort(): Promise<number> {
   });
 }
 
-export type E2EConfigResult = Omit<ResolvedAppConfig, 'smtp'> & {
-  smtp?: { test: true } | ResolvedAppConfig['smtp'];
+export type E2EConfigResult = Omit<ResolvedAppConfig, 'mail'> & {
+  mail?: { test: true } | ResolvedAppConfig['mail'];
 };
 
 type ConfigFactory = (
@@ -213,30 +213,30 @@ export async function createE2EServer(configFactory: ConfigFactory) {
   const backendPort = await getFreePort();
   const frontendPort = getSharedFrontendPort();
 
-  const { smtp: rawSmtp, ...restConfig } = configFactory(
+  const { mail: rawMail, ...restConfig } = configFactory(
     backendPort,
     frontendPort,
   );
 
-  // Resolve smtp: { test: true } into a real test SMTP config
-  let resolvedSmtp: ResolvedAppConfig['smtp'];
+  // Resolve mail config: { test: true } shorthand into a real test mail config
+  let resolvedMail: ResolvedAppConfig['mail'];
   if (
-    rawSmtp &&
-    'test' in rawSmtp &&
-    rawSmtp.test === true &&
-    !('createTransport' in rawSmtp)
+    rawMail &&
+    'test' in rawMail &&
+    (rawMail as Record<string, unknown>).test === true &&
+    !('createTransport' in rawMail)
   ) {
-    const { resolveTestSmtp } = await import(
+    const { resolveTestMailConfig } = await import(
       '#frontend-e2e/setup/resolve-test-smtp.js'
     );
-    resolvedSmtp = await resolveTestSmtp();
-  } else if (rawSmtp && 'createTransport' in rawSmtp) {
-    resolvedSmtp = rawSmtp as ResolvedAppConfig['smtp'];
+    resolvedMail = await resolveTestMailConfig();
+  } else if (rawMail && 'createTransport' in rawMail) {
+    resolvedMail = rawMail as ResolvedAppConfig['mail'];
   }
 
   const config: ResolvedAppConfig = {
     ...restConfig,
-    ...(resolvedSmtp ? { smtp: resolvedSmtp } : {}),
+    ...(resolvedMail ? { mail: resolvedMail } : {}),
   };
 
   // 1. Start backend

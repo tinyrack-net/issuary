@@ -63,7 +63,7 @@ export const configGet = new Hono<AppEnv>().get(
           enabled: !!config.database,
         },
         smtp: {
-          enabled: !!config.smtp,
+          enabled: !!config.mail,
         },
         auth: config.auth,
         identity_providers: identityProviders,

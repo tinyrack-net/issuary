@@ -1,5 +1,5 @@
 import type { ResolvedAppConfig } from '@tinyauth/backend/config';
-import { smtp } from '@tinyauth/backend/mail';
+import { nodemailer } from '@tinyauth/backend/mail/nodemailer';
 
 interface TestAccount {
   smtp: { host: string; port: number; secure: boolean };
@@ -7,8 +7,8 @@ interface TestAccount {
   pass: string;
 }
 
-export async function resolveTestSmtp(): Promise<
-  NonNullable<ResolvedAppConfig['smtp']>
+export async function resolveTestMailConfig(): Promise<
+  NonNullable<ResolvedAppConfig['mail']>
 > {
   // Dynamic import to avoid TypeScript needing @types/nodemailer
   // nodemailer is available at runtime via @tinyauth/backend
@@ -16,7 +16,7 @@ export async function resolveTestSmtp(): Promise<
     'return import("nodemailer")',
   )()) as { default: { createTestAccount(): Promise<TestAccount> } };
   const testAccount = await nodemailerModule.default.createTestAccount();
-  return smtp({
+  return nodemailer({
     host: testAccount.smtp.host,
     port: testAccount.smtp.port,
     secure: testAccount.smtp.secure,

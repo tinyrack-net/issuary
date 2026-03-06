@@ -21,7 +21,7 @@ import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
   createTestApp,
-  createTestSmtpConfig,
+  createTestMailConfig,
   enableTotpForUser,
   extractCookie,
   generateUniqueEmail,
@@ -451,11 +451,11 @@ describe('POST /api/auth/login - Email Verification + TOTP', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const smtp = await createTestSmtpConfig();
+    const mail = await createTestMailConfig();
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        smtp,
+        mail,
         auth: {
           ...MINIMAL_TEST_CONFIG.auth,
           password: {

@@ -47,9 +47,9 @@
         "types": "./dist/entries/database/sqlite.d.ts",
         "default": "./dist/entries/database/sqlite.js"
       },
-      "./mail": {
-        "types": "./dist/entries/mail.d.ts",
-        "default": "./dist/entries/mail.js"
+      "./mail/nodemailer": {
+        "types": "./dist/entries/mail/nodemailer.d.ts",
+        "default": "./dist/entries/mail/nodemailer.js"
       },
       "./identity-providers/github": {
         "types": "./dist/entries/identity-providers/github.d.ts",
@@ -116,10 +116,10 @@
       "types": "./dist/entries/database/sqlite.d.ts",
       "default": "./dist/entries/database/sqlite.js"
     },
-    "./mail": {
-      "@tinyauth/source": "./src/entries/mail.ts",
-      "types": "./dist/entries/mail.d.ts",
-      "default": "./dist/entries/mail.js"
+    "./mail/nodemailer": {
+      "@tinyauth/source": "./src/entries/mail/nodemailer.ts",
+      "types": "./dist/entries/mail/nodemailer.d.ts",
+      "default": "./dist/entries/mail/nodemailer.js"
     },
     "./identity-providers/github": {
       "@tinyauth/source": "./src/entries/identity-providers/github.ts",

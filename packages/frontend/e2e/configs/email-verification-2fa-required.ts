@@ -36,6 +36,6 @@ export function createEmailVerification2faRequiredConfig(
       },
       passkey: { ...E2E_BASE_AUTH_CONFIG.passkey, enabled: true },
     },
-    smtp: { test: true },
+    mail: { test: true },
   };
 }

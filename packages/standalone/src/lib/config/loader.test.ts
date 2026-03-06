@@ -52,12 +52,9 @@ describe('resolveConfig', () => {
       smtp: { test: true },
     });
 
-    expect(resolved.smtp).toBeDefined();
-    expect(resolved.smtp?.test).toBe(true);
-    expect(resolved.smtp?.host).toBe('smtp.test.local');
-    expect(resolved.smtp?.user).toBe('test-user');
-    expect(typeof resolved.smtp?.createTransport).toBe('function');
-    expect(typeof resolved.smtp?.getTestMessageUrl).toBe('function');
+    expect(resolved.mail).toBeDefined();
+    expect(resolved.mail?.from).toBeDefined();
+    expect(typeof resolved.mail?.createTransport).toBe('function');
   });
 
   test('returns composed database config', async () => {
