@@ -62,6 +62,7 @@ describe('POST /api/auth/passkey/verify', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
+          ...MINIMAL_TEST_CONFIG.auth,
           passkey: {
             enabled: true,
             email_verification: true,
@@ -366,6 +367,7 @@ describe('POST /api/auth/passkey/verify - Success with mocked service', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
+          ...MINIMAL_TEST_CONFIG.auth,
           passkey: {
             enabled: true,
             email_verification: true,
@@ -472,7 +474,9 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
+          ...MINIMAL_TEST_CONFIG.auth,
           password: {
+            ...MINIMAL_TEST_CONFIG.auth.password,
             enabled: true,
             second_factor: {
               required: true,
@@ -693,6 +697,7 @@ describe('POST /api/auth/passkey/verify - Passkey disabled', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
+          ...MINIMAL_TEST_CONFIG.auth,
           passkey: {
             enabled: false,
             email_verification: true,

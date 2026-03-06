@@ -72,7 +72,11 @@ describe('CleanupService', () => {
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
-            revoked_tokens: { enabled: false },
+            ...MINIMAL_TEST_CONFIG.cleanup,
+            revoked_tokens: {
+              ...MINIMAL_TEST_CONFIG.cleanup.revoked_tokens,
+              enabled: false,
+            },
           },
         },
       });
@@ -186,6 +190,7 @@ describe('CleanupService', () => {
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
+            ...MINIMAL_TEST_CONFIG.cleanup,
             revoked_tokens: { enabled: true, retention: '1h' },
           },
         },
@@ -285,6 +290,7 @@ describe('CleanupService', () => {
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
+            ...MINIMAL_TEST_CONFIG.cleanup,
             jwt_keys: { enabled: false },
           },
         },
@@ -313,6 +319,7 @@ describe('CleanupService', () => {
             jwt_key_rotation_enabled: false,
           },
           cleanup: {
+            ...MINIMAL_TEST_CONFIG.cleanup,
             jwt_keys: { enabled: true },
           },
         },
@@ -586,7 +593,11 @@ describe('CleanupService', () => {
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
-            oauth_codes: { enabled: false },
+            ...MINIMAL_TEST_CONFIG.cleanup,
+            oauth_codes: {
+              ...MINIMAL_TEST_CONFIG.cleanup.oauth_codes,
+              enabled: false,
+            },
           },
         },
       });
@@ -668,6 +679,7 @@ describe('CleanupService', () => {
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
+            ...MINIMAL_TEST_CONFIG.cleanup,
             oauth_codes: { enabled: true, consumed_retention: '1h' },
           },
         },
@@ -808,7 +820,11 @@ describe('CleanupService', () => {
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
-            email_verifications: { enabled: false },
+            ...MINIMAL_TEST_CONFIG.cleanup,
+            email_verifications: {
+              ...MINIMAL_TEST_CONFIG.cleanup.email_verifications,
+              enabled: false,
+            },
           },
         },
       });
@@ -940,7 +956,11 @@ describe('CleanupService', () => {
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
-            password_resets: { enabled: false },
+            ...MINIMAL_TEST_CONFIG.cleanup,
+            password_resets: {
+              ...MINIMAL_TEST_CONFIG.cleanup.password_resets,
+              enabled: false,
+            },
           },
         },
       });
@@ -1067,7 +1087,11 @@ describe('CleanupService', () => {
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
-            deleted_users: { enabled: false },
+            ...MINIMAL_TEST_CONFIG.cleanup,
+            deleted_users: {
+              ...MINIMAL_TEST_CONFIG.cleanup.deleted_users,
+              enabled: false,
+            },
           },
         },
       });
@@ -1095,6 +1119,7 @@ describe('CleanupService', () => {
             account_deletion: false,
           },
           cleanup: {
+            ...MINIMAL_TEST_CONFIG.cleanup,
             deleted_users: { enabled: true, retention: '0' },
           },
         },
@@ -1231,7 +1256,11 @@ describe('CleanupService', () => {
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
-            pending_oauth_registrations: { enabled: false },
+            ...MINIMAL_TEST_CONFIG.cleanup,
+            pending_oauth_registrations: {
+              ...MINIMAL_TEST_CONFIG.cleanup.pending_oauth_registrations,
+              enabled: false,
+            },
           },
         },
       });
@@ -1341,6 +1370,7 @@ describe('CleanupService', () => {
         config: {
           ...MINIMAL_TEST_CONFIG,
           cleanup: {
+            ...MINIMAL_TEST_CONFIG.cleanup,
             pending_oauth_registrations: {
               enabled: true,
               retention: '1h',

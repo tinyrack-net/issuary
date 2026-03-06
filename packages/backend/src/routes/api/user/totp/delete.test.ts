@@ -27,10 +27,10 @@ describe('DELETE /api/user/totp', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
+          ...MINIMAL_TEST_CONFIG.auth,
           password: {
-            totp: {
-              enabled: true,
-            },
+            ...MINIMAL_TEST_CONFIG.auth.password,
+            totp: { ...MINIMAL_TEST_CONFIG.auth.password.totp, enabled: true },
           },
         },
       },
@@ -416,17 +416,15 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
         auth: {
+          ...MINIMAL_TEST_CONFIG.auth,
           password: {
+            ...MINIMAL_TEST_CONFIG.auth.password,
             second_factor: {
               required: true,
             },
-            totp: {
-              enabled: true,
-            },
+            totp: { ...MINIMAL_TEST_CONFIG.auth.password.totp, enabled: true },
           },
-          passkey: {
-            enabled: true,
-          },
+          passkey: { ...MINIMAL_TEST_CONFIG.auth.passkey, enabled: true },
         },
       },
     });

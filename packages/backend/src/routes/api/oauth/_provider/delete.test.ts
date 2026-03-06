@@ -1,6 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#backend/app.js';
+import { google } from '#backend/lib/config/index.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
@@ -24,15 +25,14 @@ beforeAll(async () => {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       identity_providers: [
-        {
+        google({
           id: 'google',
-          type: 'google',
           enabled: true,
           display_name: 'Google',
           client_id: 'test-google-client-id',
           client_secret: 'test-google-client-secret',
           email_conflict_strategy: 'auto_link',
-        },
+        }),
       ],
     },
   });

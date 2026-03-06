@@ -25,10 +25,10 @@ beforeAll(async () => {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       auth: {
+        ...MINIMAL_TEST_CONFIG.auth,
         password: {
-          totp: {
-            enabled: true,
-          },
+          ...MINIMAL_TEST_CONFIG.auth.password,
+          totp: { ...MINIMAL_TEST_CONFIG.auth.password.totp, enabled: true },
         },
       },
     },
@@ -265,10 +265,10 @@ describe('POST /api/user/totp/setup - TOTP disabled', () => {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
         auth: {
+          ...MINIMAL_TEST_CONFIG.auth,
           password: {
-            totp: {
-              enabled: false,
-            },
+            ...MINIMAL_TEST_CONFIG.auth.password,
+            totp: { ...MINIMAL_TEST_CONFIG.auth.password.totp, enabled: false },
           },
         },
       },

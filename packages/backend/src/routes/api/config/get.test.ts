@@ -1,8 +1,10 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#backend/app.js';
+import { google } from '#backend/lib/config/index.js';
 import {
   createTestApp,
+  createTestSmtpConfig,
   MINIMAL_TEST_CONFIG,
 } from '#backend/test-utils/index.js';
 
@@ -10,22 +12,25 @@ let app: AppType;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
+  const smtp = await createTestSmtpConfig();
   const server = await createTestApp({
     config: {
       ...MINIMAL_TEST_CONFIG,
+      smtp,
       identity_providers: [
-        {
+        google({
           id: 'google',
-          type: 'google',
           enabled: true,
           display_name: 'Google',
           client_id: 'test-google-client-id',
           client_secret: 'test-google-client-secret',
           email_conflict_strategy: 'auto_link',
-        },
+        }),
       ],
       auth: {
+        ...MINIMAL_TEST_CONFIG.auth,
         password: {
+          ...MINIMAL_TEST_CONFIG.auth.password,
           policy: {
             min_length: 8,
             max_length: 64,
@@ -163,8 +168,7 @@ describe('GET /api/config (smtp disabled)', () => {
   let cleanupNoSmtp: () => Promise<void>;
 
   beforeAll(async () => {
-    const { smtp: _smtp, ...configWithoutSmtp } = MINIMAL_TEST_CONFIG;
-    void _smtp;
+    const configWithoutSmtp = MINIMAL_TEST_CONFIG;
     const server = await createTestApp({
       config: {
         ...configWithoutSmtp,

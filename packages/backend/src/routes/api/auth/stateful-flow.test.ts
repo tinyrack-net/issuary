@@ -9,6 +9,7 @@ import {
   vi,
 } from 'vitest';
 import type { AppType } from '#backend/app.js';
+import { google } from '#backend/lib/config/index.js';
 import { e } from '#backend/schemas/error.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
@@ -67,42 +68,38 @@ let cleanup: () => Promise<void>;
 beforeAll(async () => {
   const server = await createTestApp({
     config: {
-      app: {
-        ...MINIMAL_TEST_CONFIG.app,
-        allowed_signup_emails: ['*'],
-      },
-      logging: MINIMAL_TEST_CONFIG.logging,
-      database: MINIMAL_TEST_CONFIG.database,
-      security: MINIMAL_TEST_CONFIG.security,
+      ...MINIMAL_TEST_CONFIG,
       auth: {
+        ...MINIMAL_TEST_CONFIG.auth,
         password: {
+          ...MINIMAL_TEST_CONFIG.auth.password,
           enabled: true,
           email_verification: false,
           second_factor: {
             required: true,
           },
           totp: {
+            ...MINIMAL_TEST_CONFIG.auth.password.totp,
             enabled: true,
             issuer: 'TinyAuthStatefulTest',
           },
         },
         passkey: {
+          ...MINIMAL_TEST_CONFIG.auth.passkey,
           enabled: true,
           email_verification: true,
         },
       },
       identity_providers: [
-        {
+        google({
           id: 'google',
-          type: 'google',
           enabled: true,
           display_name: 'Google',
           client_id: 'test-google-client-id',
           client_secret: 'test-google-client-secret',
           email_conflict_strategy: 'auto_link',
-        },
+        }),
       ],
-      terms: [],
     },
   });
   app = server.app;

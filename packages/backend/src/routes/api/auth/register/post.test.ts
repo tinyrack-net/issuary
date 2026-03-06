@@ -6,6 +6,7 @@ import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
   createTestApp,
+  createTestSmtpConfig,
   expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -30,9 +31,11 @@ describe('POST /api/auth/register', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
+    const smtp = await createTestSmtpConfig();
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
+        smtp,
         app: {
           ...MINIMAL_TEST_CONFIG.app,
           allowed_signup_emails: ['*'],
@@ -206,7 +209,9 @@ describe('POST /api/auth/register', () => {
           allowed_signup_emails: ['*'],
         },
         auth: {
+          ...MINIMAL_TEST_CONFIG.auth,
           password: {
+            ...MINIMAL_TEST_CONFIG.auth.password,
             policy: {
               min_length: 4,
               max_length: 6,
@@ -711,7 +716,9 @@ describe('POST /api/auth/register (password disabled)', () => {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
         auth: {
+          ...MINIMAL_TEST_CONFIG.auth,
           password: {
+            ...MINIMAL_TEST_CONFIG.auth.password,
             enabled: false,
           },
         },

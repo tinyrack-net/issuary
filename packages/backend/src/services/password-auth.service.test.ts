@@ -363,7 +363,9 @@ describe('PasswordAuthService with custom password policy', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
+          ...MINIMAL_TEST_CONFIG.auth,
           password: {
+            ...MINIMAL_TEST_CONFIG.auth.password,
             policy: {
               min_length: 4,
               max_length: 6,

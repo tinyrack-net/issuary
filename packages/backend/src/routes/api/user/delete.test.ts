@@ -39,6 +39,7 @@ describe('DELETE /api/user', () => {
           },
           users: [TEST_USER_CONFIG],
           cleanup: {
+            ...MINIMAL_TEST_CONFIG.cleanup,
             deleted_users: {
               enabled: true,
               retention: '30d',

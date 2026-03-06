@@ -55,7 +55,10 @@ describe('resolveConfig', () => {
   });
 
   test('resolves smtp test accounts', async () => {
-    const resolved = await resolveConfig(MINIMAL_TEST_CONFIG);
+    const resolved = await resolveConfig({
+      ...MINIMAL_TEST_CONFIG,
+      smtp: { test: true },
+    });
 
     expect(resolved.smtp).toBeDefined();
     expect(resolved.smtp?.test).toBe(true);

@@ -17,14 +17,14 @@ describe('createTestApp', () => {
     await cleanup();
   });
 
-  test('creates an app from the minimal raw test config', async () => {
+  test('creates an app from the minimal resolved test config', async () => {
     const client = testClient(app);
     const res = await client.api.health.$get();
 
     expect(res.status).toBe(200);
   });
 
-  test('resolves overridden raw config before startup', async () => {
+  test('accepts overridden resolved config', async () => {
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,

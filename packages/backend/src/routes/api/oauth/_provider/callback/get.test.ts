@@ -9,6 +9,7 @@ import {
   vi,
 } from 'vitest';
 import type { AppType } from '#backend/app.js';
+import { github, google } from '#backend/lib/config/index.js';
 import { e } from '#backend/schemas/error.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
@@ -39,24 +40,22 @@ beforeAll(async () => {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       identity_providers: [
-        {
+        google({
           id: 'google',
-          type: 'google',
           enabled: true,
           display_name: 'Google',
           client_id: 'test-google-client-id',
           client_secret: 'test-google-client-secret',
           email_conflict_strategy: 'auto_link',
-        },
-        {
+        }),
+        github({
           id: 'github',
-          type: 'github',
           enabled: true,
           display_name: 'GitHub',
           client_id: 'test-github-client-id',
           client_secret: 'test-github-client-secret',
           email_conflict_strategy: 'auto_link',
-        },
+        }),
       ],
       terms: [],
     },

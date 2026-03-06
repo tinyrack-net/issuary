@@ -8,6 +8,7 @@ import {
   test,
   vi,
 } from 'vitest';
+import { apple, github, google } from '#backend/lib/config/index.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   createTestApp,
@@ -58,15 +59,14 @@ describe('OAuthConnectService - auto_link strategy', () => {
           allowed_signup_emails: ['*'],
         },
         identity_providers: [
-          {
+          google({
             id: 'google',
-            type: 'google',
             enabled: true,
             display_name: 'Google',
             client_id: 'test-google-client-id',
             client_secret: 'test-google-client-secret',
             email_conflict_strategy: 'auto_link',
-          },
+          }),
         ],
       },
     });
@@ -190,15 +190,14 @@ describe('OAuthConnectService - require_link strategy', () => {
           allowed_signup_emails: ['*'],
         },
         identity_providers: [
-          {
+          google({
             id: 'google',
-            type: 'google',
             enabled: true,
             display_name: 'Google',
             client_id: 'test-google-client-id',
             client_secret: 'test-google-client-secret',
             email_conflict_strategy: 'require_link',
-          },
+          }),
         ],
       },
     });
@@ -274,15 +273,14 @@ describe('OAuthConnectService - completeOAuthRegistration', () => {
           allowed_signup_emails: ['*'],
         },
         identity_providers: [
-          {
+          google({
             id: 'google',
-            type: 'google',
             enabled: true,
             display_name: 'Google',
             client_id: 'test-google-client-id',
             client_secret: 'test-google-client-secret',
             email_conflict_strategy: 'auto_link',
-          },
+          }),
         ],
       },
     });
@@ -328,15 +326,14 @@ describe('OAuthConnectService - fetchUserInfo', () => {
         config: {
           ...MINIMAL_TEST_CONFIG,
           identity_providers: [
-            {
+            github({
               id: 'github',
-              type: 'github',
               enabled: true,
               display_name: 'GitHub',
               client_id: 'test-github-client-id',
               client_secret: 'test-github-client-secret',
               email_conflict_strategy: 'auto_link',
-            },
+            }),
           ],
         },
       });
@@ -480,15 +477,14 @@ describe('OAuthConnectService - fetchUserInfo', () => {
         config: {
           ...MINIMAL_TEST_CONFIG,
           identity_providers: [
-            {
+            apple({
               id: 'apple',
-              type: 'apple',
               enabled: true,
               display_name: 'Apple',
               client_id: 'test-apple-client-id',
               client_secret: 'test-apple-client-secret',
               email_conflict_strategy: 'auto_link',
-            },
+            }),
           ],
         },
       });

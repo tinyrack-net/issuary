@@ -1,28 +1,21 @@
 import { describe, expect, test } from 'vitest';
-import { resolveConfig } from '#backend/lib/config/index.js';
+import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
 import { MINIMAL_TEST_CONFIG } from '#backend/test-utils/setup.js';
 import { SecurityService } from './security.service.js';
 
-const NEXT_CONFIG = {
-  ...MINIMAL_TEST_CONFIG,
-  security: {
-    hash_master_secret: 'ZmVkY2JhOTg3NjU0MzIxMGZlZGNiYTk4NzY1NDMyMTA',
-    pbkdf2_iterations: 1000,
-  },
-} as const;
-
-async function createService(
-  overrides?: Partial<Omit<typeof MINIMAL_TEST_CONFIG, 'security'>> & {
-    security?: { hash_master_secret: string; pbkdf2_iterations: number };
-  },
-) {
-  const config = await resolveConfig({ ...MINIMAL_TEST_CONFIG, ...overrides });
+function createService(
+  securityOverride?: ResolvedAppConfig['security'],
+): SecurityService {
+  const config: ResolvedAppConfig = {
+    ...MINIMAL_TEST_CONFIG,
+    ...(securityOverride ? { security: securityOverride } : {}),
+  };
   return new SecurityService(config);
 }
 
 describe('SecurityService', () => {
   test('hashes and verifies passwords', async () => {
-    const service = await createService();
+    const service = createService();
     const hash = await service.hashPassword('correct horse battery staple');
 
     await expect(
@@ -34,9 +27,10 @@ describe('SecurityService', () => {
   });
 
   test('does not verify hashes across different instances', async () => {
-    const first = await createService();
-    const second = await createService({
-      security: NEXT_CONFIG.security,
+    const first = createService();
+    const second = createService({
+      hash_master_secret: 'ZmVkY2JhOTg3NjU0MzIxMGZlZGNiYTk4NzY1NDMyMTA',
+      pbkdf2_iterations: 1000,
     });
     const hash = await first.hashPassword('secret password');
 
@@ -46,7 +40,7 @@ describe('SecurityService', () => {
   });
 
   test('rejects malformed and removed legacy password hash formats', async () => {
-    const service = await createService();
+    const service = createService();
 
     await expect(
       service.verifyPassword(
@@ -71,7 +65,7 @@ describe('SecurityService', () => {
   });
 
   test('same password hashed twice produces different outputs', async () => {
-    const service = await createService();
+    const service = createService();
     const hash1 = await service.hashPassword('identical password');
     const hash2 = await service.hashPassword('identical password');
 
@@ -79,7 +73,7 @@ describe('SecurityService', () => {
   });
 
   test('hashClientSecret and verifyClientSecret round-trip', async () => {
-    const service = await createService();
+    const service = createService();
     const clientSecret = 'my-super-secret-client-value';
     const hash = await service.hashClientSecret(clientSecret);
 
@@ -92,7 +86,7 @@ describe('SecurityService', () => {
   });
 
   test('same value with different purposes produces different hashes', async () => {
-    const service = await createService();
+    const service = createService();
     const value = 'shared-value-across-purposes';
     const passwordHash = await service.hashPassword(value);
     const clientSecretHash = await service.hashClientSecret(value);
@@ -101,7 +95,7 @@ describe('SecurityService', () => {
   });
 
   test('unicode NFC normalization (cafe\u0301 vs caf\u00e9)', async () => {
-    const service = await createService();
+    const service = createService();
     const precomposed = 'caf\u00e9';
     const decomposed = 'cafe\u0301';
     const hash = await service.hashPassword(precomposed);
@@ -110,7 +104,7 @@ describe('SecurityService', () => {
   });
 
   test('malformed hash strings return false without throwing', async () => {
-    const service = await createService();
+    const service = createService();
 
     await expect(service.verifyPassword('', 'password')).resolves.toBe(false);
     await expect(
@@ -122,9 +116,10 @@ describe('SecurityService', () => {
   });
 
   test('hashes opaque tokens deterministically for one key and differently across keys', async () => {
-    const first = await createService();
-    const second = await createService({
-      security: NEXT_CONFIG.security,
+    const first = createService();
+    const second = createService({
+      hash_master_secret: 'ZmVkY2JhOTg3NjU0MzIxMGZlZGNiYTk4NzY1NDMyMTA',
+      pbkdf2_iterations: 1000,
     });
 
     const firstHash = await first.hashOpaqueToken(

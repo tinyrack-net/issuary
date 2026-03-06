@@ -28,6 +28,7 @@ describe('DELETE /api/user/passkeys/:id', () => {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
         auth: {
+          ...MINIMAL_TEST_CONFIG.auth,
           passkey: {
             enabled: true,
             email_verification: true,
@@ -510,6 +511,7 @@ describe('DELETE /api/user/passkeys/:id - Last auth method protection', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
+          ...MINIMAL_TEST_CONFIG.auth,
           passkey: {
             enabled: true,
             email_verification: true,
@@ -659,6 +661,7 @@ describe('DELETE /api/user/passkeys/:id - Passkey disabled', () => {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
         auth: {
+          ...MINIMAL_TEST_CONFIG.auth,
           passkey: {
             enabled: false,
             email_verification: true,
@@ -703,17 +706,15 @@ describe('DELETE /api/user/passkeys/:id - second_factor.required: true', () => {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
         auth: {
+          ...MINIMAL_TEST_CONFIG.auth,
           password: {
+            ...MINIMAL_TEST_CONFIG.auth.password,
             second_factor: {
               required: true,
             },
-            totp: {
-              enabled: true,
-            },
+            totp: { ...MINIMAL_TEST_CONFIG.auth.password.totp, enabled: true },
           },
-          passkey: {
-            enabled: true,
-          },
+          passkey: { ...MINIMAL_TEST_CONFIG.auth.passkey, enabled: true },
         },
       },
     });

@@ -1,15 +1,12 @@
-import { createApp } from '#backend/app.js';
-import {
-  type AppConfigInput,
-  resolveConfig,
-} from '#backend/lib/config/index.js';
+import { type CreateAppOptions, createApp } from '#backend/app.js';
+import { sqlite } from '#backend/database.js';
+import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { ComposedSmtpConfig } from '#backend/mail.js';
 
 /**
- * Minimal test configuration.
- * Contains only the essential fields required for tests to run:
- * - cookie_secret: Required by the app
- * - database.type: 'memory' for in-memory testing
- * - smtp.test: true for test email accounts
+ * Minimal test configuration as a fully resolved config.
+ * Contains all Zod defaults explicitly spelled out so that
+ * no `resolveConfig` call is needed in tests.
  *
  * Tests should spread this and add only the specific config they need.
  *
@@ -27,10 +24,11 @@ import {
  *   ({ app, services, cleanup } = await createTestApp({
  *     config: {
  *       ...MINIMAL_TEST_CONFIG,
- *       // Only add config this test actually needs:
  *       auth: {
+ *         ...MINIMAL_TEST_CONFIG.auth,
  *         password: {
- *           totp: { enabled: true },
+ *           ...MINIMAL_TEST_CONFIG.auth.password,
+ *           totp: { ...MINIMAL_TEST_CONFIG.auth.password.totp, enabled: true },
  *         },
  *       },
  *     },
@@ -44,32 +42,127 @@ import {
  */
 export const MINIMAL_TEST_CONFIG = {
   app: {
+    host: 'http://localhost:8080',
+    port: 8080,
     cookie_secret:
       '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+    jwt_access_token_ttl: 3600,
+    jwt_refresh_token_ttl: 2592000,
+    jwt_key_rotation_enabled: true,
+    jwt_key_rotation_days: 30,
+    jwt_key_overlap_days: 7,
     allowed_signup_emails: ['*'],
+    supported_languages: ['en', 'ko', 'ja'],
+    default_language: 'auto',
+    fallback_language: 'en',
+    light_theme: 'light',
+    dark_theme: 'dark',
+    theme_mode: 'system',
+    background_url:
+      'https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071',
+    trust_proxy: false,
+    signup_implicit_terms: {},
+    title: {
+      ko: 'Tinyauth',
+      en: 'Tinyauth',
+      ja: 'Tinyauth',
+    },
+    subtitle: {
+      ko: '가볍고 빠른 인증 솔루션',
+      en: 'Lightweight identity provider for your apps',
+      ja: '軽量でシンプルな認証ソリューション',
+    },
+    account_deletion: false,
   },
+  database: sqlite({ type: 'sqlite', path: './test.db', test: true }),
   logging: {
-    level: 'silent',
-    format: 'json',
+    level: 'silent' as const,
+    format: 'json' as const,
+    http_log_proxy: false,
   },
-  database: {
-    type: 'sqlite',
-    test: true,
+  auth: {
+    password: {
+      enabled: true,
+      email_verification: true,
+      second_factor: {
+        required: false,
+      },
+      totp: {
+        enabled: false,
+        issuer: 'Tinyrack',
+      },
+      policy: {
+        min_length: 12,
+        max_length: 256,
+      },
+    },
+    passkey: {
+      enabled: false,
+      email_verification: true,
+    },
   },
   security: {
     hash_master_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
     pbkdf2_iterations: 1000,
   },
-  smtp: {
-    test: true,
+  cleanup: {
+    revoked_tokens: {
+      enabled: true,
+      retention: '0',
+    },
+    oauth_codes: {
+      enabled: true,
+      consumed_retention: '24h',
+    },
+    email_verifications: {
+      enabled: true,
+      retention: '0',
+    },
+    password_resets: {
+      enabled: true,
+      retention: '0',
+    },
+    deleted_users: {
+      enabled: true,
+      retention: '30d',
+    },
+    pending_oauth_registrations: {
+      enabled: true,
+      retention: '0',
+    },
+    jwt_keys: {
+      enabled: true,
+    },
   },
-} as const satisfies AppConfigInput;
+  scheduler: {
+    enabled: true,
+    cron: '0 2 * * *',
+  },
+  terms: [],
+  clients: [],
+  users: [],
+  identity_providers: [],
+} as const satisfies ResolvedAppConfig;
 
-export async function createTestApp(options?: {
-  config?: AppConfigInput | undefined;
-}) {
-  const resolvedConfig = await resolveConfig(
-    options?.config ?? MINIMAL_TEST_CONFIG,
-  );
-  return createApp({ config: resolvedConfig });
+/**
+ * Create a resolved SMTP config using nodemailer's test account.
+ * Call this in `beforeAll` for tests that need email functionality.
+ */
+export async function createTestSmtpConfig(): Promise<ComposedSmtpConfig> {
+  const { default: nodemailer } = await import('nodemailer');
+  const { smtp } = await import('#backend/mail.js');
+  const testAccount = await nodemailer.createTestAccount();
+  return smtp({
+    host: testAccount.smtp.host,
+    port: testAccount.smtp.port,
+    secure: testAccount.smtp.secure,
+    user: testAccount.user,
+    password: testAccount.pass,
+    from: testAccount.user,
+    test: true,
+  });
+}
+
+export async function createTestApp(options?: CreateAppOptions) {
+  return createApp(options ?? { config: MINIMAL_TEST_CONFIG });
 }

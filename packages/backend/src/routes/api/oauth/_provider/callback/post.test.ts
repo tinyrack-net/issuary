@@ -10,6 +10,7 @@ import {
   vi,
 } from 'vitest';
 import type { AppType } from '#backend/app.js';
+import { apple } from '#backend/lib/config/index.js';
 import {
   assertJsonBody,
   createTestApp,
@@ -32,15 +33,14 @@ beforeAll(async () => {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       identity_providers: [
-        {
+        apple({
           id: 'apple',
-          type: 'apple',
           enabled: true,
           display_name: 'Apple',
           client_id: 'test-apple-client-id',
           client_secret: 'test-apple-client-secret',
           email_conflict_strategy: 'auto_link',
-        },
+        }),
       ],
       terms: [],
     },

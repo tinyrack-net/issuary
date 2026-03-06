@@ -1,6 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#backend/app.js';
+import { apple, github, google } from '#backend/lib/config/index.js';
 import { e } from '#backend/schemas/error.js';
 import {
   createAuthenticatedSession,
@@ -20,42 +21,38 @@ beforeAll(async () => {
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
       identity_providers: [
-        {
+        google({
           id: 'google',
-          type: 'google',
           enabled: true,
           display_name: 'Google',
           client_id: 'test-google-client-id',
           client_secret: 'test-google-client-secret',
           email_conflict_strategy: 'auto_link',
-        },
-        {
+        }),
+        github({
           id: 'github',
-          type: 'github',
           enabled: true,
           display_name: 'GitHub',
           client_id: 'test-github-client-id',
           client_secret: 'test-github-client-secret',
           email_conflict_strategy: 'auto_link',
-        },
-        {
+        }),
+        apple({
           id: 'apple',
-          type: 'apple',
           enabled: true,
           display_name: 'Apple',
           client_id: 'test-apple-client-id',
           client_secret: 'test-apple-client-secret',
           email_conflict_strategy: 'auto_link',
-        },
-        {
+        }),
+        github({
           id: 'disabled-github',
-          type: 'github',
           enabled: false,
           display_name: 'Disabled GitHub',
           client_id: 'test-disabled-github-client-id',
           client_secret: 'test-disabled-github-client-secret',
           email_conflict_strategy: 'auto_link',
-        },
+        }),
       ],
     },
   });
