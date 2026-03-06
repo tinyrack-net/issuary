@@ -23,10 +23,6 @@
         "types": "./dist/entries/config.d.ts",
         "default": "./dist/entries/config.js"
       },
-      "./routing": {
-        "types": "./dist/entries/routing.d.ts",
-        "default": "./dist/entries/routing.js"
-      },
       "./services": {
         "types": "./dist/entries/services.d.ts",
         "default": "./dist/entries/services.js"
