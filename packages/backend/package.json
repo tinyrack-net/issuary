@@ -79,9 +79,9 @@
       "default": "./dist/entries/config.js"
     },
     "./services": {
-      "@tinyauth/source": "./src/services/container.ts",
-      "types": "./dist/services/container.d.ts",
-      "default": "./dist/services/container.js"
+      "@tinyauth/source": "./src/entries/services.ts",
+      "types": "./dist/entries/services.d.ts",
+      "default": "./dist/entries/services.js"
     },
     "./database/postgres": {
       "@tinyauth/source": "./src/entries/database/postgres.ts",
