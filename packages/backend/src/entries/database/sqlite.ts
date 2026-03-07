@@ -18,12 +18,12 @@ import { UserPasskeyEntitySchema } from '#backend/entities/user-passkey.entity.j
 import { UserTermsConsentEntitySchema } from '#backend/entities/user-terms-consent.entity.js';
 import { UserTotpEntitySchema } from '#backend/entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '#backend/entities/user-totp-recovery-code.entity.js';
-import type { DatabaseConfigRuntime } from '#backend/lib/config/index.js';
+import type { DatabaseConfig } from '#backend/lib/config/index.js';
 
 export function sqlite(database: {
   path: string;
   test: boolean;
-}): DatabaseConfigRuntime {
+}): DatabaseConfig {
   return {
     getMikroOrmOptions: async () => {
       return defineConfig({

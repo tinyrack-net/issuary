@@ -8,7 +8,7 @@ import {
  * Second factor configuration for password authentication.
  * Determines if users must set up 2FA after registration.
  */
-const AppConfigSecondFactor = z.object({
+const SecondFactorConfigSchema = z.object({
   /**
    * Whether a second factor is required for password authentication.
    * If true, users must set up at least one 2FA method (TOTP or passkey).
@@ -16,9 +16,9 @@ const AppConfigSecondFactor = z.object({
   required: z.boolean().default(false),
 });
 
-export type AppConfigSecondFactor = z.infer<typeof AppConfigSecondFactor>;
+export type SecondFactorConfig = z.infer<typeof SecondFactorConfigSchema>;
 
-export const AppConfigPasswordPolicy = z
+export const PasswordPolicyConfigSchema = z
   .object({
     min_length: z
       .number()
@@ -42,19 +42,19 @@ export const AppConfigPasswordPolicy = z
     }
   });
 
-export type AppConfigPasswordPolicy = z.infer<typeof AppConfigPasswordPolicy>;
+export type PasswordPolicyConfig = z.infer<typeof PasswordPolicyConfigSchema>;
 
 /**
  * Password authentication configuration (fixed type).
  */
-export const AppConfigPasswordAuth = z.object({
+export const PasswordAuthConfigSchema = z.object({
   enabled: z.boolean().default(true),
   email_verification: z.boolean().default(true),
   /**
    * Second factor requirement configuration.
    * Controls whether users must set up 2FA after registration.
    */
-  second_factor: AppConfigSecondFactor.default({
+  second_factor: SecondFactorConfigSchema.default({
     required: false,
   }),
   totp: z
@@ -66,15 +66,15 @@ export const AppConfigPasswordAuth = z.object({
       enabled: false,
       issuer: 'Tinyrack',
     }),
-  policy: AppConfigPasswordPolicy.default({
+  policy: PasswordPolicyConfigSchema.default({
     min_length: PASSWORD_POLICY_MIN_LENGTH,
     max_length: PASSWORD_POLICY_MAX_LENGTH,
   }),
 });
 
-export type AppConfigPasswordAuth = z.infer<typeof AppConfigPasswordAuth>;
+export type PasswordAuthConfig = z.infer<typeof PasswordAuthConfigSchema>;
 
-const DEFAULT_PASSWORD_POLICY: AppConfigPasswordPolicy = {
+const DEFAULT_PASSWORD_POLICY: PasswordPolicyConfig = {
   min_length: PASSWORD_POLICY_MIN_LENGTH,
   max_length: PASSWORD_POLICY_MAX_LENGTH,
 };
@@ -94,7 +94,7 @@ const rpIdDomainRegex =
 /**
  * Passkey (WebAuthn) authentication configuration (fixed type).
  */
-export const AppConfigPasskeyAuth = z.object({
+export const PasskeyAuthConfigSchema = z.object({
   enabled: z.boolean().default(false),
   email_verification: z.boolean().default(true),
   /**
@@ -120,14 +120,14 @@ export const AppConfigPasskeyAuth = z.object({
   origins: z.array(z.url()).optional(),
 });
 
-export type AppConfigPasskeyAuth = z.infer<typeof AppConfigPasskeyAuth>;
+export type PasskeyAuthConfig = z.infer<typeof PasskeyAuthConfigSchema>;
 
 /**
  * Authentication methods configuration (fixed structure).
  * Contains password and passkey authentication settings.
  */
-export const AppConfigAuth = z.object({
-  password: AppConfigPasswordAuth.default({
+export const AuthConfigSchema = z.object({
+  password: PasswordAuthConfigSchema.default({
     enabled: true,
     email_verification: true,
     second_factor: {
@@ -139,10 +139,10 @@ export const AppConfigAuth = z.object({
     },
     policy: DEFAULT_PASSWORD_POLICY,
   }),
-  passkey: AppConfigPasskeyAuth.default({
+  passkey: PasskeyAuthConfigSchema.default({
     enabled: false,
     email_verification: true,
   }),
 });
 
-export type AppConfigAuth = z.infer<typeof AppConfigAuth>;
+export type AuthConfig = z.infer<typeof AuthConfigSchema>;

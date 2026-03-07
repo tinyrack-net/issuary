@@ -1,11 +1,11 @@
 import { decodeJwt } from 'jose';
 import z from 'zod';
+import type {
+  IdentityProviderConfig,
+  TinyAuthConfigs,
+} from '#backend/lib/config/index.js';
 import { isEmailAllowed } from '#backend/lib/email-pattern.js';
 import { generatePKCE } from '#backend/lib/pkce.js';
-import type {
-  TinyAuthConfigs,
-  ResolvedIdentityProvider,
-} from '#backend/lib/config/index.js';
 import { e, TinyAuthError } from '#backend/schemas/error.js';
 import type { f } from '#backend/schemas/field.js';
 import type { r } from '#backend/schemas/response.js';
@@ -303,7 +303,7 @@ export class OAuthConnectService {
   /**
    * Get OAuth provider config by id
    */
-  public getProvider(id: string): ResolvedIdentityProvider {
+  public getProvider(id: string): IdentityProviderConfig {
     const provider = this.config.identity_providers.find((c) => c.id === id);
 
     if (!provider || !provider.enabled) {
@@ -430,7 +430,7 @@ export class OAuthConnectService {
    * from the provider's token endpoint over TLS.
    */
   private extractUserInfoFromIdToken(
-    provider: ResolvedIdentityProvider,
+    provider: IdentityProviderConfig,
     idToken?: string,
   ): OAuthUserInfo {
     if (!idToken) {
@@ -447,7 +447,7 @@ export class OAuthConnectService {
    * using the provider's userinfo_mapping configuration.
    */
   private mapUserInfo(
-    provider: ResolvedIdentityProvider,
+    provider: IdentityProviderConfig,
     data: Record<string, unknown>,
   ): OAuthUserInfo {
     const mapping = provider.userinfo_mapping;

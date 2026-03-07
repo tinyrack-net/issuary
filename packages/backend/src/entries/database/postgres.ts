@@ -18,7 +18,7 @@ import { UserPasskeyEntitySchema } from '#backend/entities/user-passkey.entity.j
 import { UserTermsConsentEntitySchema } from '#backend/entities/user-terms-consent.entity.js';
 import { UserTotpEntitySchema } from '#backend/entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '#backend/entities/user-totp-recovery-code.entity.js';
-import type { DatabaseConfigRuntime } from '#backend/lib/config/index.js';
+import type { DatabaseConfig } from '#backend/lib/config/index.js';
 
 export function postgres(database: {
   host: string;
@@ -26,7 +26,7 @@ export function postgres(database: {
   user: string;
   password: string;
   name: string;
-}): DatabaseConfigRuntime {
+}): DatabaseConfig {
   return {
     getMikroOrmOptions: async () => {
       return defineConfig({

@@ -40,7 +40,7 @@ export const DEFAULT_LOGGING_CONFIG = {
  * Controls the log level and output format.
  * Configured via config file only (no environment variable override).
  */
-export const AppConfigLogging = z
+export const LoggingConfigSchema = z
   .object({
     level: z
       .enum(LOG_LEVELS)
@@ -66,4 +66,4 @@ export const AppConfigLogging = z
   })
   .describe('Logging configuration');
 
-export type AppConfigLogging = z.infer<typeof AppConfigLogging>;
+export type LoggingConfig = z.infer<typeof LoggingConfigSchema>;

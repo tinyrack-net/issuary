@@ -1,9 +1,9 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { generateSpecs } from 'hono-openapi';
+import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
 import { createLogger } from '#backend/lib/logger.js';
 import { OPENAPI_DOCUMENTATION } from '#backend/lib/openapi.js';
-import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
 import { loggerMiddleware } from '#backend/middleware/logger.js';
 import { mikroOrmMiddleware } from '#backend/middleware/mikro-orm.js';
 import { servicesMiddleware } from '#backend/middleware/services.js';

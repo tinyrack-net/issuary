@@ -6,9 +6,9 @@ import { zz } from '#backend/schemas/provider.js';
  * Zod schema for locale validation.
  * Validates that a string is one of the available locales.
  */
-const LocaleSchema = z.enum(AVAILABLE_LOCALES);
+export const LocaleSchema = z.enum(AVAILABLE_LOCALES);
 
-export const AppTheme = z.enum([
+export const AppThemeSchema = z.enum([
   'light',
   'dark',
   'cupcake',
@@ -46,9 +46,9 @@ export const AppTheme = z.enum([
   'silk',
 ]);
 
-export type AppTheme = z.infer<typeof AppTheme>;
+export type AppTheme = z.infer<typeof AppThemeSchema>;
 
-export const AppConfigApp = z.object({
+export const AppConfigSchema = z.object({
   host: z.string().default('http://localhost:8080'),
   port: zz.PORT.default(8080),
   cookie_secret: z.string().min(16),
@@ -99,8 +99,8 @@ export const AppConfigApp = z.object({
     `Fallback language when requested locale is unavailable. Must be one of: ${AVAILABLE_LOCALES.join(', ')}`,
   ),
 
-  light_theme: AppTheme.default('light').describe('Light theme name'),
-  dark_theme: AppTheme.default('dark').describe('Dark theme name'),
+  light_theme: AppThemeSchema.default('light').describe('Light theme name'),
+  dark_theme: AppThemeSchema.default('dark').describe('Dark theme name'),
   theme_mode: z
     .enum(['light', 'dark', 'system'])
     .default('system')
@@ -174,4 +174,4 @@ export const AppConfigApp = z.object({
   ),
 });
 
-export type AppConfigApp = z.infer<typeof AppConfigApp>;
+export type AppConfig = z.infer<typeof AppConfigSchema>;

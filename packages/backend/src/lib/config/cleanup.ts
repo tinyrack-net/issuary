@@ -4,7 +4,7 @@ import { DurationString } from '#backend/lib/duration.js';
 /**
  * Configuration for revoked tokens cleanup
  */
-const CleanupRevokedTokensConfig = z
+const CleanupRevokedTokensConfigSchema = z
   .object({
     enabled: z
       .boolean()
@@ -19,7 +19,7 @@ const CleanupRevokedTokensConfig = z
 /**
  * Configuration for OAuth authorization codes cleanup
  */
-const CleanupOAuthCodesConfig = z
+const CleanupOAuthCodesConfigSchema = z
   .object({
     enabled: z.boolean().default(true).describe('Enable OAuth codes cleanup'),
     consumed_retention: DurationString.default('24h').describe(
@@ -31,7 +31,7 @@ const CleanupOAuthCodesConfig = z
 /**
  * Configuration for email verification tokens cleanup
  */
-const CleanupEmailVerificationsConfig = z
+const CleanupEmailVerificationsConfigSchema = z
   .object({
     enabled: z
       .boolean()
@@ -46,7 +46,7 @@ const CleanupEmailVerificationsConfig = z
 /**
  * Configuration for password reset tokens cleanup
  */
-const CleanupPasswordResetsConfig = z
+const CleanupPasswordResetsConfigSchema = z
   .object({
     enabled: z
       .boolean()
@@ -61,7 +61,7 @@ const CleanupPasswordResetsConfig = z
 /**
  * Configuration for deleted users cleanup (permanent deletion)
  */
-const CleanupDeletedUsersConfig = z
+const CleanupDeletedUsersConfigSchema = z
   .object({
     enabled: z.boolean().default(true).describe('Enable deleted users cleanup'),
     retention: DurationString.default('30d').describe(
@@ -73,7 +73,7 @@ const CleanupDeletedUsersConfig = z
 /**
  * Configuration for pending OAuth registrations cleanup
  */
-const CleanupPendingOAuthRegistrationsConfig = z
+const CleanupPendingOAuthRegistrationsConfigSchema = z
   .object({
     enabled: z
       .boolean()
@@ -88,7 +88,7 @@ const CleanupPendingOAuthRegistrationsConfig = z
 /**
  * Configuration for JWT key rotation
  */
-const CleanupJwtKeysConfig = z
+const CleanupJwtKeysConfigSchema = z
   .object({
     enabled: z.boolean().default(true).describe('Enable JWT key rotation'),
   })
@@ -136,28 +136,31 @@ export const DEFAULT_CLEANUP_CONFIG = {
  * For Kubernetes deployments, create a CronJob that runs:
  * `tinyauth cleanup` on a regular schedule (e.g., daily at 2 AM).
  */
-export const AppConfigCleanup = z
+export const CleanupConfigSchema = z
   .object({
-    revoked_tokens: CleanupRevokedTokensConfig.default(
+    revoked_tokens: CleanupRevokedTokensConfigSchema.default(
       DEFAULT_CLEANUP_CONFIG.revoked_tokens,
     ),
-    oauth_codes: CleanupOAuthCodesConfig.default(
+    oauth_codes: CleanupOAuthCodesConfigSchema.default(
       DEFAULT_CLEANUP_CONFIG.oauth_codes,
     ),
-    email_verifications: CleanupEmailVerificationsConfig.default(
+    email_verifications: CleanupEmailVerificationsConfigSchema.default(
       DEFAULT_CLEANUP_CONFIG.email_verifications,
     ),
-    password_resets: CleanupPasswordResetsConfig.default(
+    password_resets: CleanupPasswordResetsConfigSchema.default(
       DEFAULT_CLEANUP_CONFIG.password_resets,
     ),
-    deleted_users: CleanupDeletedUsersConfig.default(
+    deleted_users: CleanupDeletedUsersConfigSchema.default(
       DEFAULT_CLEANUP_CONFIG.deleted_users,
     ),
-    pending_oauth_registrations: CleanupPendingOAuthRegistrationsConfig.default(
-      DEFAULT_CLEANUP_CONFIG.pending_oauth_registrations,
+    pending_oauth_registrations:
+      CleanupPendingOAuthRegistrationsConfigSchema.default(
+        DEFAULT_CLEANUP_CONFIG.pending_oauth_registrations,
+      ),
+    jwt_keys: CleanupJwtKeysConfigSchema.default(
+      DEFAULT_CLEANUP_CONFIG.jwt_keys,
     ),
-    jwt_keys: CleanupJwtKeysConfig.default(DEFAULT_CLEANUP_CONFIG.jwt_keys),
   })
   .describe('Cleanup configuration for maintenance tasks');
 
-export type AppConfigCleanup = z.infer<typeof AppConfigCleanup>;
+export type CleanupConfig = z.infer<typeof CleanupConfigSchema>;

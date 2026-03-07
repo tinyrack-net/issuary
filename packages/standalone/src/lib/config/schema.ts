@@ -1,14 +1,14 @@
 import {
-  AppConfigApp,
-  AppConfigAuth,
-  AppConfigCleanup,
-  AppConfigLogging,
-  AppConfigScheduler,
-  AppConfigSecurity,
-  AppConfigTerms,
+  AppConfigSchema,
+  AuthConfigSchema,
+  CleanupConfigSchema,
   DEFAULT_CLEANUP_CONFIG,
   DEFAULT_LOGGING_CONFIG,
   DEFAULT_SCHEDULER_CONFIG,
+  LoggingConfigSchema,
+  SchedulerConfigSchema,
+  SecurityConfigSchema,
+  TermsConfigSchema,
   type TinyAuthConfigs,
 } from '@tinyauth/backend/config';
 import z from 'zod';
@@ -169,7 +169,7 @@ export type ResolvedStandaloneFrontendConfig = {
   path: string;
 };
 
-const StandaloneAppSchema = AppConfigApp.extend({
+const StandaloneAppSchema = AppConfigSchema.extend({
   frontend: StandaloneFrontendConfigSchema.default({
     enabled: true,
     mode: 'static',
@@ -184,8 +184,8 @@ export const StandaloneConfigSchema = z.object({
     path: './test.db',
     test: false,
   }),
-  logging: AppConfigLogging.default(DEFAULT_LOGGING_CONFIG),
-  auth: AppConfigAuth.default({
+  logging: LoggingConfigSchema.default(DEFAULT_LOGGING_CONFIG),
+  auth: AuthConfigSchema.default({
     password: {
       enabled: true,
       email_verification: true,
@@ -207,7 +207,7 @@ export const StandaloneConfigSchema = z.object({
     },
   }),
   identity_providers: AppConfigIdentityProviders.default([]),
-  security: AppConfigSecurity,
+  security: SecurityConfigSchema,
   smtp: z
     .discriminatedUnion('test', [
       AppConfigSmtpSchema.extend({
@@ -218,9 +218,9 @@ export const StandaloneConfigSchema = z.object({
       }),
     ])
     .optional(),
-  cleanup: AppConfigCleanup.default(DEFAULT_CLEANUP_CONFIG),
-  scheduler: AppConfigScheduler.default(DEFAULT_SCHEDULER_CONFIG),
-  terms: AppConfigTerms.default([]),
+  cleanup: CleanupConfigSchema.default(DEFAULT_CLEANUP_CONFIG),
+  scheduler: SchedulerConfigSchema.default(DEFAULT_SCHEDULER_CONFIG),
+  terms: TermsConfigSchema.default([]),
   clients: z.array(AppConfigClientSchema).default([]),
   users: z.array(AppConfigUserSchema).default([]),
 });

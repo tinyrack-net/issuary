@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { nodemailer } from '#backend/entries/mail/nodemailer.js';
 
 describe('nodemailer config factory', () => {
-  test('returns a valid MailConfigRuntime', () => {
+  test('returns a valid MailConfig', () => {
     const config = nodemailer({
       host: 'localhost',
       port: 465,

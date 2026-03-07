@@ -1,4 +1,4 @@
-import type { ResolvedIdentityProvider } from '#backend/lib/config/index.js';
+import type { IdentityProviderConfig } from '#backend/lib/config/index.js';
 
 export interface GoogleOAuthConfig {
   id: string;
@@ -11,7 +11,7 @@ export interface GoogleOAuthConfig {
   email_conflict_strategy: 'auto_link' | 'require_link';
 }
 
-export function google(config: GoogleOAuthConfig): ResolvedIdentityProvider {
+export function google(config: GoogleOAuthConfig): IdentityProviderConfig {
   return {
     id: config.id,
     type: 'google',

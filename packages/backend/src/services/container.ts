@@ -1,5 +1,5 @@
-import type { Logger } from '#backend/lib/logger.js';
 import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import type { Logger } from '#backend/lib/logger.js';
 import { seedConfig } from '#backend/seeders/config.seeder.js';
 import { CleanupService } from '#backend/services/cleanup.service.js';
 import { EmailService } from '#backend/services/email.service.js';

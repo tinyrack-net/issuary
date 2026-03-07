@@ -131,9 +131,7 @@ const composeIdentityProvider = (
   }
 };
 
-export async function resolveConfig(
-  input: unknown,
-): Promise<TinyAuthConfigs> {
+export async function resolveConfig(input: unknown): Promise<TinyAuthConfigs> {
   const parsed = parseConfig(input);
 
   const mailConfig = await resolveMailConfig(parsed.smtp);

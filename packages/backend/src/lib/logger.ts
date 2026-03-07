@@ -1,13 +1,13 @@
 import pino from 'pino';
 import {
-  type AppConfigLogging,
   DEFAULT_LOGGING_CONFIG,
+  type LoggingConfig,
 } from '#backend/lib/config/index.js';
 
 export type { Logger } from 'pino';
 
 export interface CreateLoggerOptions {
-  logging?: Partial<AppConfigLogging> | undefined;
+  logging?: Partial<LoggingConfig> | undefined;
 }
 
 /**

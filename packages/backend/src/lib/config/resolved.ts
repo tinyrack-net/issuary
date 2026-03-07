@@ -1,15 +1,15 @@
-import type { AppConfigApp } from './app.js';
-import type { AppConfigAuth } from './auth.js';
-import type { AppConfigCleanup } from './cleanup.js';
-import type { AppConfigClient } from './client.js';
+import type { AppConfig } from './app.js';
+import type { AuthConfig } from './auth.js';
+import type { CleanupConfig } from './cleanup.js';
+import type { ClientConfig } from './client.js';
 import type { DatabaseConfig } from './database.js';
 import type { IdentityProviderConfig } from './identity-providers.js';
-import type { AppConfigLogging } from './logging.js';
+import type { LoggingConfig } from './logging.js';
 import type { MailConfig } from './mail.js';
-import type { AppConfigScheduler } from './scheduler.js';
-import type { AppConfigSecurity } from './security.js';
-import type { AppConfigTerms } from './terms.js';
-import type { AppConfigUser } from './user.js';
+import type { SchedulerConfig } from './scheduler.js';
+import type { SecurityConfig } from './security.js';
+import type { TermsConfig } from './terms.js';
+import type { UserConfig } from './user.js';
 
 /**
  * Fully resolved configuration type - use this at runtime.
@@ -19,15 +19,15 @@ import type { AppConfigUser } from './user.js';
  * - identity_providers: resolved with endpoint URLs
  */
 export interface TinyAuthConfigs {
-  app: AppConfigApp;
-  logging: AppConfigLogging;
-  auth: AppConfigAuth;
-  security: AppConfigSecurity;
-  cleanup: AppConfigCleanup;
-  scheduler: AppConfigScheduler;
-  terms: AppConfigTerms;
-  clients: AppConfigClient[];
-  users: AppConfigUser[];
+  app: AppConfig;
+  logging: LoggingConfig;
+  auth: AuthConfig;
+  security: SecurityConfig;
+  cleanup: CleanupConfig;
+  scheduler: SchedulerConfig;
+  terms: TermsConfig;
+  clients: ClientConfig[];
+  users: UserConfig[];
   database: DatabaseConfig;
   mail?: MailConfig;
   identity_providers: IdentityProviderConfig[];

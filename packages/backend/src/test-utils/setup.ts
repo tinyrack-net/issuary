@@ -2,10 +2,7 @@ import nm from 'nodemailer';
 import { type CreateAppOptions, createApp } from '#backend/entries/app.js';
 import { sqlite } from '#backend/entries/database/sqlite.js';
 import { nodemailer } from '#backend/entries/mail/nodemailer.js';
-import type {
-  MailConfigRuntime,
-  TinyAuthConfigs,
-} from '#backend/lib/config/index.js';
+import type { MailConfig, TinyAuthConfigs } from '#backend/lib/config/index.js';
 
 /**
  * Minimal test configuration as a fully resolved config.
@@ -152,7 +149,7 @@ export const MINIMAL_TEST_CONFIG = {
  * Create a resolved SMTP config using nodemailer's test account.
  * Call this in `beforeAll` for tests that need email functionality.
  */
-export async function createTestMailConfig(): Promise<MailConfigRuntime> {
+export async function createTestMailConfig(): Promise<MailConfig> {
   const testAccount = await nm.createTestAccount();
   return nodemailer({
     host: testAccount.smtp.host,

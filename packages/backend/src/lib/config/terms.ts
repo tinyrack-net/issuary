@@ -5,26 +5,26 @@ import z from 'zod';
  * Each language code maps to a title, type, and content.
  * Type determines how the content should be interpreted.
  */
-const TermsLocalizedContentLink = z.object({
+const TermsLocalizedContentLinkSchema = z.object({
   title: z.string().min(1).describe('Display title for the term'),
   type: z.literal('link').describe('Content type: link to external document'),
   content: z.url().describe('URL to the full terms document'),
 });
 
-const TermsLocalizedContentText = z.object({
+const TermsLocalizedContentTextSchema = z.object({
   title: z.string().min(1).describe('Display title for the term'),
   type: z.literal('text').describe('Content type: inline text'),
   content: z.string().min(1).describe('Inline text content'),
 });
 
-const TermsLocalizedContent = z
-  .union([TermsLocalizedContentLink, TermsLocalizedContentText])
+const TermsLocalizedContentSchema = z
+  .union([TermsLocalizedContentLinkSchema, TermsLocalizedContentTextSchema])
   .describe('Localized content for a term');
 
 /**
  * Individual term item configuration.
  */
-export const TermsItem = z
+export const TermsItemSchema = z
   .object({
     id: z
       .string()
@@ -48,7 +48,7 @@ export const TermsItem = z
       .min(1)
       .describe('Version string for tracking changes (e.g., "1.0.0")'),
     content: z
-      .record(z.string(), TermsLocalizedContent)
+      .record(z.string(), TermsLocalizedContentSchema)
       .default({})
       .describe(
         'Localized content keyed by language code (e.g., "en", "ko"). ' +
@@ -57,14 +57,14 @@ export const TermsItem = z
   })
   .describe('Individual term configuration');
 
-export type TermsItem = z.infer<typeof TermsItem>;
+export type TermsItem = z.infer<typeof TermsItemSchema>;
 
 /**
  * Terms configuration schema.
  */
-export const AppConfigTerms = z
-  .array(TermsItem)
+export const TermsConfigSchema = z
+  .array(TermsItemSchema)
   .default([])
   .describe('Terms of service configuration');
 
-export type AppConfigTerms = z.infer<typeof AppConfigTerms>;
+export type TermsConfig = z.infer<typeof TermsConfigSchema>;

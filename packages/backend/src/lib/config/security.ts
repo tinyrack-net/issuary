@@ -1,7 +1,7 @@
 import z from 'zod';
 import { fromBase64Url } from '#backend/lib/base64url.js';
 
-export const AppConfigSecurity = z
+export const SecurityConfigSchema = z
   .object({
     hash_master_secret: z
       .string()
@@ -28,4 +28,4 @@ export const AppConfigSecurity = z
   })
   .strict();
 
-export type AppConfigSecurity = z.infer<typeof AppConfigSecurity>;
+export type SecurityConfig = z.infer<typeof SecurityConfigSchema>;

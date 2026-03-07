@@ -1,8 +1,8 @@
 import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
 import qrcode from 'qrcode';
 import type { UserEntity } from '#backend/entities/user.entity.js';
-import { getRandomBytes } from '#backend/lib/crypto.js';
 import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import { getRandomBytes } from '#backend/lib/crypto.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 import type { SecurityService } from '#backend/services/security.service.js';

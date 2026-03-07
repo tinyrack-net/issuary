@@ -1,4 +1,4 @@
-import type { ResolvedIdentityProvider } from '#backend/lib/config/index.js';
+import type { IdentityProviderConfig } from '#backend/lib/config/index.js';
 
 export interface GenericOAuthConfig {
   id: string;
@@ -25,7 +25,7 @@ export interface GenericOAuthConfig {
 
 export function genericOAuth(
   config: GenericOAuthConfig,
-): ResolvedIdentityProvider {
+): IdentityProviderConfig {
   return {
     id: config.id,
     type: 'generic_oauth',

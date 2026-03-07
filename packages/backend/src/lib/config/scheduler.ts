@@ -9,7 +9,7 @@ import { zz } from '#backend/schemas/provider.js';
  *
  * Note: Full validation is done by croner at runtime.
  */
-const CronExpression = z
+const CronExpressionSchema = z
   .string()
   .min(9) // Minimum valid cron: "* * * * *"
   .describe('Cron expression in 5-field format');
@@ -31,17 +31,17 @@ export const DEFAULT_SCHEDULER_CONFIG = {
  * For Kubernetes deployments, disable the scheduler and use CronJobs
  * to run `tinyauth cleanup` externally.
  */
-export const AppConfigScheduler = z
+export const SchedulerConfigSchema = z
   .object({
     enabled: zz.COERCE_BOOLEAN.default(
       DEFAULT_SCHEDULER_CONFIG.enabled,
     ).describe(
       'Enable in-process cleanup scheduler. Disable when using external schedulers (K8s CronJob).',
     ),
-    cron: CronExpression.default(DEFAULT_SCHEDULER_CONFIG.cron).describe(
+    cron: CronExpressionSchema.default(DEFAULT_SCHEDULER_CONFIG.cron).describe(
       'Cron schedule for running all cleanup tasks. Default: daily at 2 AM.',
     ),
   })
   .describe('In-process scheduler configuration for automated cleanup tasks');
 
-export type AppConfigScheduler = z.infer<typeof AppConfigScheduler>;
+export type SchedulerConfig = z.infer<typeof SchedulerConfigSchema>;

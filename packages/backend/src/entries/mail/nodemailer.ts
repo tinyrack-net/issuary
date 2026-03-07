@@ -1,5 +1,5 @@
 import nm from 'nodemailer';
-import type { MailConfigRuntime } from '#backend/lib/config/index.js';
+import type { MailConfig } from '#backend/lib/config/index.js';
 
 export function nodemailer(config: {
   host: string;
@@ -9,7 +9,7 @@ export function nodemailer(config: {
   password: string;
   from?: string | undefined;
   test: boolean;
-}): MailConfigRuntime {
+}): MailConfig {
   return {
     from: config.from,
     createTransport: async () => {

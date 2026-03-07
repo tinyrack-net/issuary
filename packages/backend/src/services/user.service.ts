@@ -1,8 +1,8 @@
 import type { Loaded } from '@mikro-orm/core';
 import type z from 'zod';
 import type { UserEntity } from '#backend/entities/user.entity.js';
-import type { Locale } from '#backend/lib/locale.js';
 import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import type { Locale } from '#backend/lib/locale.js';
 import { e } from '#backend/schemas/error.js';
 import type { r } from '#backend/schemas/response.js';
 import type { MikroService } from '#backend/services/mikro.service.js';

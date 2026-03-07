@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import {
-  AppConfigPasskeyAuth,
-  AppConfigPasswordAuth,
-  AppConfigPasswordPolicy,
-  AppTheme,
+  AppThemeSchema,
+  PasskeyAuthConfigSchema,
+  PasswordAuthConfigSchema,
+  PasswordPolicyConfigSchema,
 } from '#backend/lib/config/index.js';
 import { f } from './field.js';
 import { oauthSchema } from './oauth.js';
@@ -317,18 +317,20 @@ const AuthenticationResponseJSON = z
 // Basic authentication methods response schema (fixed structure)
 const PublicPasswordAuth = z
   .object({
-    enabled: AppConfigPasswordAuth.shape.enabled,
-    email_verification: AppConfigPasswordAuth.shape.email_verification,
-    second_factor: AppConfigPasswordAuth.shape.second_factor,
-    totp: AppConfigPasswordAuth.shape.totp,
-    policy: AppConfigPasswordPolicy.describe('Password policy settings'),
+    enabled: PasswordAuthConfigSchema.shape.enabled,
+    email_verification: PasswordAuthConfigSchema.shape.email_verification,
+    second_factor: PasswordAuthConfigSchema.shape.second_factor,
+    totp: PasswordAuthConfigSchema.shape.totp,
+    policy: PasswordPolicyConfigSchema.describe('Password policy settings'),
   })
   .describe('Public password authentication settings');
 
 const BasicAuthenticationMethods = z
   .object({
     password: PublicPasswordAuth,
-    passkey: AppConfigPasskeyAuth.describe('Passkey authentication settings'),
+    passkey: PasskeyAuthConfigSchema.describe(
+      'Passkey authentication settings',
+    ),
   })
   .describe('Basic Authentication Methods');
 
@@ -594,8 +596,8 @@ export const r = {
         .describe('Languages enabled for this deployment'),
       default_language: z.string().describe('Default UI language'),
       fallback_language: z.string().describe('Fallback UI language'),
-      light_theme: AppTheme.describe('Theme preset used in light mode'),
-      dark_theme: AppTheme.describe('Theme preset used in dark mode'),
+      light_theme: AppThemeSchema.describe('Theme preset used in light mode'),
+      dark_theme: AppThemeSchema.describe('Theme preset used in dark mode'),
       theme_mode: z
         .enum(['light', 'dark', 'system'])
         .describe('Theme mode strategy'),

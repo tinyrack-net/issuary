@@ -1,4 +1,4 @@
-import type { ResolvedIdentityProvider } from '#backend/lib/config/index.js';
+import type { IdentityProviderConfig } from '#backend/lib/config/index.js';
 
 export interface AppleOAuthConfig {
   id: string;
@@ -12,7 +12,7 @@ export interface AppleOAuthConfig {
   email_conflict_strategy: 'auto_link' | 'require_link';
 }
 
-export function apple(config: AppleOAuthConfig): ResolvedIdentityProvider {
+export function apple(config: AppleOAuthConfig): IdentityProviderConfig {
   return {
     id: config.id,
     type: 'apple',

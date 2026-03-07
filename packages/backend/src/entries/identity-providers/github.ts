@@ -1,4 +1,4 @@
-import type { ResolvedIdentityProvider } from '#backend/lib/config/index.js';
+import type { IdentityProviderConfig } from '#backend/lib/config/index.js';
 
 export interface GithubOAuthConfig {
   id: string;
@@ -11,7 +11,7 @@ export interface GithubOAuthConfig {
   email_conflict_strategy: 'auto_link' | 'require_link';
 }
 
-export function github(config: GithubOAuthConfig): ResolvedIdentityProvider {
+export function github(config: GithubOAuthConfig): IdentityProviderConfig {
   return {
     id: config.id,
     type: 'github',

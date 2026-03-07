@@ -2,7 +2,7 @@
  * OAuth/OIDC client configuration.
  * Defines applications that can authenticate through TinyAuth.
  */
-export interface AppConfigClient {
+export interface ClientConfig {
   id: string;
   name: string;
   logo_uri?: string | undefined;
