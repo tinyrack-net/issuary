@@ -161,6 +161,7 @@ export const CleanupConfigSchema = z
       DEFAULT_CLEANUP_CONFIG.jwt_keys,
     ),
   })
+  .default(DEFAULT_CLEANUP_CONFIG)
   .describe('Cleanup configuration for maintenance tasks');
 
 export type CleanupConfig = z.infer<typeof CleanupConfigSchema>;

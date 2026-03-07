@@ -17,3 +17,5 @@ export const ClientConfigSchema = z.object({
 });
 
 export type ClientConfig = z.infer<typeof ClientConfigSchema>;
+
+export const ClientConfigsSchema = z.array(ClientConfigSchema).default([]);

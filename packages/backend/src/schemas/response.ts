@@ -317,10 +317,11 @@ const AuthenticationResponseJSON = z
 // Basic authentication methods response schema (fixed structure)
 const PublicPasswordAuth = z
   .object({
-    enabled: PasswordAuthConfigSchema.shape.enabled,
-    email_verification: PasswordAuthConfigSchema.shape.email_verification,
-    second_factor: PasswordAuthConfigSchema.shape.second_factor,
-    totp: PasswordAuthConfigSchema.shape.totp,
+    enabled: PasswordAuthConfigSchema.unwrap().shape.enabled,
+    email_verification:
+      PasswordAuthConfigSchema.unwrap().shape.email_verification,
+    second_factor: PasswordAuthConfigSchema.unwrap().shape.second_factor,
+    totp: PasswordAuthConfigSchema.unwrap().shape.totp,
     policy: PasswordPolicyConfigSchema.describe('Password policy settings'),
   })
   .describe('Public password authentication settings');

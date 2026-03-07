@@ -1,10 +1,10 @@
 import z from 'zod';
 
 /**
- * Log level values.
+ * Log level schema.
  * Maps to pino log levels.
  */
-const LOG_LEVELS = [
+export const LogLevelSchema = z.enum([
   'trace',
   'debug',
   'info',
@@ -12,27 +12,18 @@ const LOG_LEVELS = [
   'error',
   'fatal',
   'silent',
-] as const;
+]);
 
-export type LogLevel = (typeof LOG_LEVELS)[number];
+export type LogLevel = z.infer<typeof LogLevelSchema>;
 
 /**
- * Log format values.
+ * Log format schema.
  * - 'json': Structured JSON output (default)
  * - 'pretty': Human-readable pretty-printed output
  */
-const LOG_FORMATS = ['json', 'pretty'] as const;
+export const LogFormatSchema = z.enum(['json', 'pretty']);
 
-export type LogFormat = (typeof LOG_FORMATS)[number];
-
-/**
- * Default logging configuration.
- */
-export const DEFAULT_LOGGING_CONFIG = {
-  level: 'info',
-  format: 'json',
-  http_log_proxy: false,
-} as const;
+export type LogFormat = z.infer<typeof LogFormatSchema>;
 
 /**
  * Logging configuration schema.
@@ -42,27 +33,26 @@ export const DEFAULT_LOGGING_CONFIG = {
  */
 export const LoggingConfigSchema = z
   .object({
-    level: z
-      .enum(LOG_LEVELS)
-      .default(DEFAULT_LOGGING_CONFIG.level)
-      .describe('Log level.'),
-    format: z
-      .enum(LOG_FORMATS)
-      .default(DEFAULT_LOGGING_CONFIG.format)
-      .describe(
-        'Log output format. ' +
-          '"json" outputs structured JSON (default). ' +
-          '"pretty" outputs human-readable format.',
-      ),
+    level: LogLevelSchema.default('info').describe('Log level.'),
+    format: LogFormatSchema.default('json').describe(
+      'Log output format. ' +
+        '"json" outputs structured JSON (default). ' +
+        '"pretty" outputs human-readable format.',
+    ),
     http_log_proxy: z
       .boolean()
-      .default(DEFAULT_LOGGING_CONFIG.http_log_proxy)
+      .default(false)
       .describe(
         'Whether to log HTTP access logs for proxied frontend requests ' +
           'in development mode. When false (default), proxy requests ' +
           'are completely suppressed, keeping the terminal clean. ' +
           'Set to true to see them.',
       ),
+  })
+  .default({
+    level: 'info',
+    format: 'json',
+    http_log_proxy: false,
   })
   .describe('Logging configuration');
 

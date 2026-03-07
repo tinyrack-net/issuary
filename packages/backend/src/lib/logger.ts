@@ -1,7 +1,7 @@
 import pino from 'pino';
 import {
-  DEFAULT_LOGGING_CONFIG,
   type LoggingConfig,
+  LoggingConfigSchema,
 } from '#backend/lib/config/index.js';
 
 export type { Logger } from 'pino';
@@ -13,17 +13,13 @@ export interface CreateLoggerOptions {
 /**
  * Create the root pino logger instance.
  *
- * Any omitted logging fields fall back to
- * {@link DEFAULT_LOGGING_CONFIG} defaults.
- *
  * @param options - Logging configuration (all fields optional)
  * @returns A configured pino logger
  */
 export function createLogger(options?: CreateLoggerOptions): pino.Logger {
-  const logging = {
-    ...DEFAULT_LOGGING_CONFIG,
+  const logging = LoggingConfigSchema.parse({
     ...options?.logging,
-  };
+  });
 
   const pinoOptions: pino.LoggerOptions = {
     level: logging.level,

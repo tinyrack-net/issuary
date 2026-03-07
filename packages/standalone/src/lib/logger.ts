@@ -1,10 +1,12 @@
 import {
-  DEFAULT_LOGGING_CONFIG,
   type LoggingConfig,
+  LoggingConfigSchema,
 } from '@tinyauth/backend/config';
 import pino from 'pino';
 
 export type { Logger } from 'pino';
+
+const DEFAULT_LOGGING_CONFIG = LoggingConfigSchema.parse(undefined);
 
 export interface CreateLoggerOptions {
   logging?: Partial<LoggingConfig> | undefined;

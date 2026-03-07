@@ -8,3 +8,5 @@ export const UserConfigSchema = z.object({
 });
 
 export type UserConfig = z.infer<typeof UserConfigSchema>;
+
+export const UserConfigsSchema = z.array(UserConfigSchema).default([]);

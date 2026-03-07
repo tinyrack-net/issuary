@@ -2,9 +2,6 @@ import {
   AppConfigSchema,
   AuthConfigSchema,
   CleanupConfigSchema,
-  DEFAULT_CLEANUP_CONFIG,
-  DEFAULT_LOGGING_CONFIG,
-  DEFAULT_SCHEDULER_CONFIG,
   LoggingConfigSchema,
   SchedulerConfigSchema,
   SecurityConfigSchema,
@@ -184,28 +181,8 @@ export const StandaloneConfigSchema = z.object({
     path: './test.db',
     test: false,
   }),
-  logging: LoggingConfigSchema.default(DEFAULT_LOGGING_CONFIG),
-  auth: AuthConfigSchema.default({
-    password: {
-      enabled: true,
-      email_verification: true,
-      second_factor: {
-        required: false,
-      },
-      totp: {
-        enabled: false,
-        issuer: '',
-      },
-      policy: {
-        min_length: 12,
-        max_length: 256,
-      },
-    },
-    passkey: {
-      enabled: false,
-      email_verification: true,
-    },
-  }),
+  logging: LoggingConfigSchema,
+  auth: AuthConfigSchema,
   identity_providers: AppConfigIdentityProviders.default([]),
   security: SecurityConfigSchema,
   smtp: z
@@ -218,8 +195,8 @@ export const StandaloneConfigSchema = z.object({
       }),
     ])
     .optional(),
-  cleanup: CleanupConfigSchema.default(DEFAULT_CLEANUP_CONFIG),
-  scheduler: SchedulerConfigSchema.default(DEFAULT_SCHEDULER_CONFIG),
+  cleanup: CleanupConfigSchema,
+  scheduler: SchedulerConfigSchema,
   terms: TermsConfigSchema.default([]),
   clients: z.array(AppConfigClientSchema).default([]),
   users: z.array(AppConfigUserSchema).default([]),

@@ -2,15 +2,15 @@ import z from 'zod';
 import { AppConfigSchema } from './app.js';
 import { AuthConfigSchema } from './auth.js';
 import { CleanupConfigSchema } from './cleanup.js';
-import { ClientConfigSchema } from './client.js';
+import { ClientConfigsSchema } from './client.js';
 import { DatabaseConfigSchema } from './database.js';
-import { IdentityProviderConfigSchema } from './identity-providers.js';
+import { IdentityProviderConfigsSchema } from './identity-providers.js';
 import { LoggingConfigSchema } from './logging.js';
 import { MailConfigSchema } from './mail.js';
 import { SchedulerConfigSchema } from './scheduler.js';
 import { SecurityConfigSchema } from './security.js';
 import { TermsConfigSchema } from './terms.js';
-import { UserConfigSchema } from './user.js';
+import { UserConfigsSchema } from './user.js';
 
 /**
  * Fully resolved configuration type - use this at runtime.
@@ -27,11 +27,13 @@ export const TinyAuthConfigsSchema = z.object({
   cleanup: CleanupConfigSchema,
   scheduler: SchedulerConfigSchema,
   terms: TermsConfigSchema,
-  clients: z.array(ClientConfigSchema),
-  users: z.array(UserConfigSchema),
+  clients: ClientConfigsSchema,
+  users: UserConfigsSchema,
   database: DatabaseConfigSchema,
-  mail: MailConfigSchema.optional(),
-  identity_providers: z.array(IdentityProviderConfigSchema),
+  mail: MailConfigSchema,
+  identity_providers: IdentityProviderConfigsSchema,
 });
 
+export type TinyAuthInputConfigs = z.input<typeof TinyAuthConfigsSchema>;
 export type TinyAuthConfigs = z.infer<typeof TinyAuthConfigsSchema>;
+

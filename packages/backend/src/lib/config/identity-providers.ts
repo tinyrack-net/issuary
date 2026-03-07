@@ -26,6 +26,10 @@ export const IdentityProviderConfigSchema = z.object({
   userinfo_mapping: UserinfoMappingConfigSchema,
 });
 
+export const IdentityProviderConfigsSchema = z
+  .array(IdentityProviderConfigSchema)
+  .default([]);
+
 export type IdentityProviderConfig = z.infer<
   typeof IdentityProviderConfigSchema
 >;

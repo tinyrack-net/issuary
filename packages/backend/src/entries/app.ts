@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { generateSpecs } from 'hono-openapi';
 import {
-  type TinyAuthConfigs,
   TinyAuthConfigsSchema,
+  type TinyAuthInputConfigs,
 } from '#backend/lib/config/index.js';
 import { createLogger } from '#backend/lib/logger.js';
 import { OPENAPI_DOCUMENTATION } from '#backend/lib/openapi.js';
@@ -20,7 +20,7 @@ export interface CreateAppOptions {
   /**
    * Application configuration for the backend runtime.
    */
-  config: TinyAuthConfigs;
+  config: TinyAuthInputConfigs;
 }
 
 export async function createApp(options: CreateAppOptions) {

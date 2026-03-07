@@ -15,10 +15,12 @@ export interface MailConfig {
   createTransport: () => Promise<MailTransport>;
 }
 
-export const MailConfigSchema = z.custom<MailConfig>(
-  (val) =>
-    typeof val === 'object' &&
-    val !== null &&
-    typeof (val as MailConfig).createTransport === 'function',
-  { message: 'Invalid MailConfig: must have createTransport function' },
-);
+export const MailConfigSchema = z
+  .custom<MailConfig>(
+    (val) =>
+      typeof val === 'object' &&
+      val !== null &&
+      typeof (val as MailConfig).createTransport === 'function',
+    { message: 'Invalid MailConfig: must have createTransport function' },
+  )
+  .optional();

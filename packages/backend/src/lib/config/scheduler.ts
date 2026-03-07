@@ -42,6 +42,7 @@ export const SchedulerConfigSchema = z
       'Cron schedule for running all cleanup tasks. Default: daily at 2 AM.',
     ),
   })
+  .default(DEFAULT_SCHEDULER_CONFIG)
   .describe('In-process scheduler configuration for automated cleanup tasks');
 
 export type SchedulerConfig = z.infer<typeof SchedulerConfigSchema>;
