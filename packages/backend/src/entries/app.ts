@@ -1,7 +1,10 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { generateSpecs } from 'hono-openapi';
-import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import {
+  type TinyAuthConfigs,
+  TinyAuthConfigsSchema,
+} from '#backend/lib/config/index.js';
 import { createLogger } from '#backend/lib/logger.js';
 import { OPENAPI_DOCUMENTATION } from '#backend/lib/openapi.js';
 import { loggerMiddleware } from '#backend/middleware/logger.js';
@@ -21,7 +24,7 @@ export interface CreateAppOptions {
 }
 
 export async function createApp(options: CreateAppOptions) {
-  const { config } = options;
+  const config = TinyAuthConfigsSchema.parse(options.config);
 
   // Create root logger (use config.logging.level: 'silent' to suppress)
   const logger = createLogger({ logging: config.logging });

@@ -1,15 +1,16 @@
-import type { AppConfig } from './app.js';
-import type { AuthConfig } from './auth.js';
-import type { CleanupConfig } from './cleanup.js';
-import type { ClientConfig } from './client.js';
-import type { DatabaseConfig } from './database.js';
-import type { IdentityProviderConfig } from './identity-providers.js';
-import type { LoggingConfig } from './logging.js';
-import type { MailConfig } from './mail.js';
-import type { SchedulerConfig } from './scheduler.js';
-import type { SecurityConfig } from './security.js';
-import type { TermsConfig } from './terms.js';
-import type { UserConfig } from './user.js';
+import z from 'zod';
+import { AppConfigSchema } from './app.js';
+import { AuthConfigSchema } from './auth.js';
+import { CleanupConfigSchema } from './cleanup.js';
+import { ClientConfigSchema } from './client.js';
+import { DatabaseConfigSchema } from './database.js';
+import { IdentityProviderConfigSchema } from './identity-providers.js';
+import { LoggingConfigSchema } from './logging.js';
+import { MailConfigSchema } from './mail.js';
+import { SchedulerConfigSchema } from './scheduler.js';
+import { SecurityConfigSchema } from './security.js';
+import { TermsConfigSchema } from './terms.js';
+import { UserConfigSchema } from './user.js';
 
 /**
  * Fully resolved configuration type - use this at runtime.
@@ -18,17 +19,19 @@ import type { UserConfig } from './user.js';
  * - smtp: fully resolved (no `{ test: true }` shorthand)
  * - identity_providers: resolved with endpoint URLs
  */
-export interface TinyAuthConfigs {
-  app: AppConfig;
-  logging: LoggingConfig;
-  auth: AuthConfig;
-  security: SecurityConfig;
-  cleanup: CleanupConfig;
-  scheduler: SchedulerConfig;
-  terms: TermsConfig;
-  clients: ClientConfig[];
-  users: UserConfig[];
-  database: DatabaseConfig;
-  mail?: MailConfig;
-  identity_providers: IdentityProviderConfig[];
-}
+export const TinyAuthConfigsSchema = z.object({
+  app: AppConfigSchema,
+  logging: LoggingConfigSchema,
+  auth: AuthConfigSchema,
+  security: SecurityConfigSchema,
+  cleanup: CleanupConfigSchema,
+  scheduler: SchedulerConfigSchema,
+  terms: TermsConfigSchema,
+  clients: z.array(ClientConfigSchema),
+  users: z.array(UserConfigSchema),
+  database: DatabaseConfigSchema,
+  mail: MailConfigSchema.optional(),
+  identity_providers: z.array(IdentityProviderConfigSchema),
+});
+
+export type TinyAuthConfigs = z.infer<typeof TinyAuthConfigsSchema>;
