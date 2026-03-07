@@ -71,6 +71,10 @@ pnpm biome check .  # Lint check
 
 **Note**: Tests take a long time (~20 min). Always pipe test output through `tail` to see only the summary.
 
+## Backward Compatibility
+- This project is under active development and **backward compatibility is not required**.
+- Feel free to make breaking changes without maintaining legacy support.
+
 ## General Best Practices
 - Write descriptive commit messages
 - Keep functions small and focused
