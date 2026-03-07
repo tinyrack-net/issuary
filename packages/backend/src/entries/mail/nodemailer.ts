@@ -1,10 +1,15 @@
 import nm from 'nodemailer';
-import type {
-  AppConfigSmtp,
-  MailConfigRuntime,
-} from '#backend/lib/schema.js';
+import type { MailConfigRuntime } from '#backend/lib/schema.js';
 
-export function nodemailer(config: AppConfigSmtp): MailConfigRuntime {
+export function nodemailer(config: {
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  password: string;
+  from?: string | undefined;
+  test: boolean;
+}): MailConfigRuntime {
   return {
     from: config.from,
     createTransport: async () => {

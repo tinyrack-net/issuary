@@ -1,8 +1,8 @@
 import type { Loaded } from '@mikro-orm/core';
 import type z from 'zod';
 import type { UserEntity } from '#backend/entities/user.entity.js';
-import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 import type { Locale } from '#backend/lib/locale.js';
+import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 import { e } from '#backend/schemas/error.js';
 import type { r } from '#backend/schemas/response.js';
 import type { MikroService } from '#backend/services/mikro.service.js';

@@ -1,6 +1,6 @@
 import { Cron } from 'croner';
-import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 import type { Logger } from '#backend/lib/logger.js';
+import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 import type { CleanupService } from '#backend/services/cleanup.service.js';
 
 export class SchedulerService {

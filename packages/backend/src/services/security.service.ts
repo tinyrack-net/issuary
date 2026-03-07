@@ -1,5 +1,4 @@
 import { fromBase64Url } from '#backend/lib/base64url.js';
-import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 import {
   derivePbkdf2Bytes,
   derivePurposeKeyBytes,
@@ -10,6 +9,7 @@ import {
   signOpaqueValue,
   timingSafeEqualBytes,
 } from '#backend/lib/crypto.js';
+import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 
 const PBKDF2_ALGORITHM = 'pbkdf2-sha256';
 const HMAC_ALGORITHM = 'hmac-sha256';

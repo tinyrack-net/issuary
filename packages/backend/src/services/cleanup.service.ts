@@ -14,12 +14,12 @@ import { UserPasskeyEntitySchema } from '#backend/entities/user-passkey.entity.j
 import { UserTermsConsentEntity } from '#backend/entities/user-terms-consent.entity.js';
 import { UserTotpEntitySchema } from '#backend/entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '#backend/entities/user-totp-recovery-code.entity.js';
-import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 import {
   calculateCutoffDate,
   formatDuration,
   parseDurationToMs,
 } from '#backend/lib/duration.js';
+import type { ResolvedAppConfig } from '#backend/lib/schema.js';
 import type { JwtKeyRepository } from '#backend/repositories/jwt-key.repository.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 import type { JwtService } from './jwt.service.js';
