@@ -1,7 +1,27 @@
-import type {
-  GenericOAuthConfig,
-  ResolvedIdentityProvider,
-} from '#backend/lib/schema.js';
+import type { ResolvedIdentityProvider } from '#backend/lib/schema.js';
+
+export interface GenericOAuthConfig {
+  id: string;
+  enabled: boolean;
+  display_name: string;
+  icon_url?: string | undefined;
+  client_id: string;
+  client_secret: string;
+  authorization_url: string;
+  token_url: string;
+  userinfo_url?: string | null | undefined;
+  email_url?: string | undefined;
+  scopes: string[];
+  response_mode?: 'query' | 'fragment' | 'form_post' | undefined;
+  email_conflict_strategy: 'auto_link' | 'require_link';
+  userinfo_mapping: {
+    id: string;
+    email: string;
+    email_verified?: string | undefined;
+    name?: string | undefined;
+    picture?: string | undefined;
+  };
+}
 
 export function genericOAuth(
   config: GenericOAuthConfig,

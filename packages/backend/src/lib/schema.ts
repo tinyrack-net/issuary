@@ -777,67 +777,6 @@ export const AppConfigSecurity = z
 export type AppConfigSecurity = z.infer<typeof AppConfigSecurity>;
 
 // ---------------------------------------------------------------------------
-// Identity Providers
-// ---------------------------------------------------------------------------
-
-export interface GithubOAuthConfig {
-  id: string;
-  enabled: boolean;
-  display_name?: string | undefined;
-  icon_url?: string | undefined;
-  client_id: string;
-  client_secret: string;
-  scopes?: string[] | undefined;
-  email_conflict_strategy: 'auto_link' | 'require_link';
-}
-
-export interface GoogleOAuthConfig {
-  id: string;
-  enabled: boolean;
-  display_name?: string | undefined;
-  icon_url?: string | undefined;
-  client_id: string;
-  client_secret: string;
-  scopes?: string[] | undefined;
-  email_conflict_strategy: 'auto_link' | 'require_link';
-}
-
-export interface AppleOAuthConfig {
-  id: string;
-  enabled: boolean;
-  display_name?: string | undefined;
-  icon_url?: string | undefined;
-  client_id: string;
-  client_secret: string;
-  scopes?: string[] | undefined;
-  response_mode?: 'query' | 'fragment' | 'form_post' | undefined;
-  email_conflict_strategy: 'auto_link' | 'require_link';
-}
-
-export interface GenericOAuthConfig {
-  id: string;
-  enabled: boolean;
-  display_name: string;
-  icon_url?: string | undefined;
-  client_id: string;
-  client_secret: string;
-  authorization_url: string;
-  token_url: string;
-  userinfo_url?: string | null | undefined;
-  email_url?: string | undefined;
-  scopes: string[];
-  response_mode?: 'query' | 'fragment' | 'form_post' | undefined;
-  email_conflict_strategy: 'auto_link' | 'require_link';
-  userinfo_mapping: {
-    id: string;
-    email: string;
-    email_verified?: string | undefined;
-    name?: string | undefined;
-    picture?: string | undefined;
-  };
-}
-
-// ---------------------------------------------------------------------------
 // Resolved Identity Provider (runtime type)
 // ---------------------------------------------------------------------------
 

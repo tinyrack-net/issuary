@@ -1,7 +1,16 @@
-import type {
-  AppleOAuthConfig,
-  ResolvedIdentityProvider,
-} from '#backend/lib/schema.js';
+import type { ResolvedIdentityProvider } from '#backend/lib/schema.js';
+
+export interface AppleOAuthConfig {
+  id: string;
+  enabled: boolean;
+  display_name?: string | undefined;
+  icon_url?: string | undefined;
+  client_id: string;
+  client_secret: string;
+  scopes?: string[] | undefined;
+  response_mode?: 'query' | 'fragment' | 'form_post' | undefined;
+  email_conflict_strategy: 'auto_link' | 'require_link';
+}
 
 export function apple(config: AppleOAuthConfig): ResolvedIdentityProvider {
   return {
