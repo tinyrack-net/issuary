@@ -1,6 +1,6 @@
 import type z from 'zod';
 import { getRandomBytes, toBase64Url } from '#backend/lib/base64url.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
 import { e } from '#backend/schemas/error.js';
 import type { f } from '#backend/schemas/field.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
@@ -51,13 +51,13 @@ export interface AuthorizeResult {
 }
 
 export class OAuthAuthorizeService {
-  private readonly config: ResolvedAppConfig;
+  private readonly config: TinyAuthConfigs;
   private readonly mikro: MikroService;
   private readonly oauthClientService: OAuthClientService;
   private readonly userConsentService: UserConsentService;
   private readonly securityService: SecurityService;
   public constructor(
-    config: ResolvedAppConfig,
+    config: TinyAuthConfigs,
     mikro: MikroService,
     oauthClientService: OAuthClientService,
     userConsentService: UserConsentService,

@@ -1,4 +1,4 @@
-import type { ResolvedAppConfig } from '@tinyauth/backend/config';
+import type { TinyAuthConfigs } from '@tinyauth/backend/config';
 import { github } from '@tinyauth/backend/identity-providers/github';
 import { google } from '@tinyauth/backend/identity-providers/google';
 import {
@@ -12,7 +12,7 @@ import {
 export function createOauthProvidersConfig(
   backendPort: number,
   _frontendPort: number,
-): ResolvedAppConfig {
+): TinyAuthConfigs {
   return {
     ...E2E_BASE_CONFIG,
     app: {

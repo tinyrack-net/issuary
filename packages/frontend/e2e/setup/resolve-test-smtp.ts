@@ -1,9 +1,9 @@
-import type { ResolvedAppConfig } from '@tinyauth/backend/config';
+import type { TinyAuthConfigs } from '@tinyauth/backend/config';
 import { nodemailer } from '@tinyauth/backend/mail/nodemailer';
 import nm from 'nodemailer';
 
 export async function resolveTestMailConfig(): Promise<
-  NonNullable<ResolvedAppConfig['mail']>
+  NonNullable<TinyAuthConfigs['mail']>
 > {
   const testAccount = await nm.createTestAccount();
   return nodemailer({

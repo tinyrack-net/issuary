@@ -17,7 +17,7 @@ import {
   type TokenType,
 } from '#backend/entities/revoked-token.entity.js';
 import { UserEntity } from '#backend/entities/user.entity.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import { withMikroContext } from './helpers.js';
 import { MINIMAL_TEST_CONFIG } from './setup.js';
@@ -59,7 +59,7 @@ export const CLI_TEST_CONFIG = {
     },
     jwt_keys: { enabled: true },
   },
-} as const satisfies ResolvedAppConfig;
+} as const satisfies TinyAuthConfigs;
 
 /**
  * Create a test user in the database.

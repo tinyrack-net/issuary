@@ -1,4 +1,4 @@
-import type { ResolvedAppConfig } from '@tinyauth/backend/config';
+import type { TinyAuthConfigs } from '@tinyauth/backend/config';
 import { google } from '@tinyauth/backend/identity-providers/google';
 import {
   E2E_BASE_APP_CONFIG,
@@ -13,7 +13,7 @@ import {
 export function createPasswordDisabledConfig(
   backendPort: number,
   _frontendPort: number,
-): ResolvedAppConfig {
+): TinyAuthConfigs {
   return {
     ...E2E_BASE_CONFIG,
     app: {

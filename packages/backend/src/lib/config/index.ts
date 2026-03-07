@@ -13,7 +13,7 @@ export type { ResolvedIdentityProvider } from './identity-providers.js';
 export type { LogFormat, LogLevel } from './logging.js';
 export { AppConfigLogging, DEFAULT_LOGGING_CONFIG } from './logging.js';
 export type { MailConfigRuntime, MailTransport } from './mail.js';
-export type { ResolvedAppConfig } from './resolved.js';
+export type { TinyAuthConfigs } from './resolved.js';
 export { AppConfigScheduler, DEFAULT_SCHEDULER_CONFIG } from './scheduler.js';
 export { AppConfigSecurity } from './security.js';
 export { AppConfigTerms, TermsItem } from './terms.js';

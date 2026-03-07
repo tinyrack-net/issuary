@@ -1,4 +1,4 @@
-import type { ResolvedAppConfig } from '@tinyauth/backend/config';
+import type { TinyAuthConfigs } from '@tinyauth/backend/config';
 import { sqlite } from '@tinyauth/backend/database/sqlite';
 
 /**
@@ -70,9 +70,9 @@ export const E2E_BASE_APP_CONFIG = {
     ja: '軽量でシンプルな認証ソリューション',
   },
   account_deletion: false,
-} satisfies Partial<ResolvedAppConfig['app']>;
+} satisfies Partial<TinyAuthConfigs['app']>;
 
-export const E2E_BASE_AUTH_CONFIG: ResolvedAppConfig['auth'] = {
+export const E2E_BASE_AUTH_CONFIG: TinyAuthConfigs['auth'] = {
   password: {
     enabled: true,
     email_verification: true,
@@ -83,7 +83,7 @@ export const E2E_BASE_AUTH_CONFIG: ResolvedAppConfig['auth'] = {
   passkey: { enabled: false, email_verification: true },
 };
 
-export const E2E_BASE_CONFIG: Omit<ResolvedAppConfig, 'app'> = {
+export const E2E_BASE_CONFIG: Omit<TinyAuthConfigs, 'app'> = {
   security: E2E_TEST_SECURITY_CONFIG,
   logging: { level: 'silent', format: 'json', http_log_proxy: false },
   database: sqlite({ path: './test.db', test: true }),

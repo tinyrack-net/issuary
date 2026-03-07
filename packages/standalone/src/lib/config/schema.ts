@@ -9,7 +9,7 @@ import {
   DEFAULT_CLEANUP_CONFIG,
   DEFAULT_LOGGING_CONFIG,
   DEFAULT_SCHEDULER_CONFIG,
-  type ResolvedAppConfig,
+  type TinyAuthConfigs,
 } from '@tinyauth/backend/config';
 import z from 'zod';
 
@@ -228,8 +228,8 @@ export const StandaloneConfigSchema = z.object({
 export type StandaloneConfigInput = z.input<typeof StandaloneConfigSchema>;
 export type StandaloneConfig = z.infer<typeof StandaloneConfigSchema>;
 
-export type ResolvedStandaloneConfig = Omit<ResolvedAppConfig, 'app'> & {
-  app: ResolvedAppConfig['app'] & {
+export type ResolvedStandaloneConfig = Omit<TinyAuthConfigs, 'app'> & {
+  app: TinyAuthConfigs['app'] & {
     frontend: ResolvedStandaloneFrontendConfig;
     html_variables: Record<string, string>;
   };

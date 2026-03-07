@@ -16,7 +16,7 @@ import { UserTermsConsentEntity } from '#backend/entities/user-terms-consent.ent
 import { UserTotpEntitySchema } from '#backend/entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '#backend/entities/user-totp-recovery-code.entity.js';
 import type { Logger } from '#backend/lib/logger.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
 import type { EmailVerificationRepository } from '#backend/repositories/email-verification.repository.js';
 import type { JwtKeyRepository } from '#backend/repositories/jwt-key.repository.js';
 import type { OAuthClientRepository } from '#backend/repositories/oauth-client.repository.js';
@@ -82,7 +82,7 @@ export class MikroService {
   }
 
   public static async initialize(
-    config: ResolvedAppConfig,
+    config: TinyAuthConfigs,
     logger: Logger,
   ): Promise<MikroService> {
     logger.info('Initializing MikroORM...');

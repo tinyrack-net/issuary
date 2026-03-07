@@ -1,5 +1,5 @@
 import * as fs from 'node:fs';
-import type { ResolvedAppConfig } from '@tinyauth/backend/config';
+import type { TinyAuthConfigs } from '@tinyauth/backend/config';
 import { postgres } from '@tinyauth/backend/database/postgres';
 import { sqlite } from '@tinyauth/backend/database/sqlite';
 import { apple } from '@tinyauth/backend/identity-providers/apple';
@@ -74,7 +74,7 @@ export function parseConfig(input: unknown): StandaloneConfig {
 
 const resolveMailConfig = async (
   smtpInput: StandaloneConfig['smtp'],
-): Promise<ResolvedAppConfig['mail']> => {
+): Promise<TinyAuthConfigs['mail']> => {
   if (!smtpInput) {
     return undefined;
   }
@@ -95,7 +95,7 @@ const resolveMailConfig = async (
 
 const composeDatabaseConfig = (
   database: StandaloneConfig['database'],
-): ResolvedAppConfig['database'] => {
+): TinyAuthConfigs['database'] => {
   switch (database.type) {
     case 'postgres': {
       const { type: _, ...rest } = database;
@@ -110,7 +110,7 @@ const composeDatabaseConfig = (
 
 const composeIdentityProvider = (
   config: StandaloneConfig['identity_providers'][number],
-): ResolvedAppConfig['identity_providers'][number] => {
+): TinyAuthConfigs['identity_providers'][number] => {
   switch (config.type) {
     case 'github': {
       const { type: _, ...rest } = config;
@@ -133,7 +133,7 @@ const composeIdentityProvider = (
 
 export async function resolveConfig(
   input: unknown,
-): Promise<ResolvedAppConfig> {
+): Promise<TinyAuthConfigs> {
   const parsed = parseConfig(input);
 
   const mailConfig = await resolveMailConfig(parsed.smtp);

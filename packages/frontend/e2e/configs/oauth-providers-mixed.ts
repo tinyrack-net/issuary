@@ -1,4 +1,4 @@
-import type { ResolvedAppConfig } from '@tinyauth/backend/config';
+import type { TinyAuthConfigs } from '@tinyauth/backend/config';
 import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth';
 import {
   E2E_BASE_APP_CONFIG,
@@ -12,7 +12,7 @@ import {
 export function createOauthProvidersMixedConfig(
   backendPort: number,
   _frontendPort: number,
-): ResolvedAppConfig {
+): TinyAuthConfigs {
   const host = `http://localhost:${backendPort}`;
 
   return {

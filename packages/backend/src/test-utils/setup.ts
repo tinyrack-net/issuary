@@ -4,7 +4,7 @@ import { sqlite } from '#backend/entries/database/sqlite.js';
 import { nodemailer } from '#backend/entries/mail/nodemailer.js';
 import type {
   MailConfigRuntime,
-  ResolvedAppConfig,
+  TinyAuthConfigs,
 } from '#backend/lib/config/index.js';
 
 /**
@@ -146,7 +146,7 @@ export const MINIMAL_TEST_CONFIG = {
   clients: [],
   users: [],
   identity_providers: [],
-} as const satisfies ResolvedAppConfig;
+} as const satisfies TinyAuthConfigs;
 
 /**
  * Create a resolved SMTP config using nodemailer's test account.

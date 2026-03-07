@@ -1,5 +1,5 @@
 import type { Logger } from '#backend/lib/logger.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
 import { seedConfig } from '#backend/seeders/config.seeder.js';
 import { CleanupService } from '#backend/services/cleanup.service.js';
 import { EmailService } from '#backend/services/email.service.js';
@@ -20,7 +20,7 @@ import { UserService } from '#backend/services/user.service.js';
 import { UserConsentService } from '#backend/services/user-consent.service.js';
 
 export interface ServiceContainer {
-  config: ResolvedAppConfig;
+  config: TinyAuthConfigs;
   securityService: SecurityService;
   mikro: MikroService;
   scheduler: SchedulerService;
@@ -46,7 +46,7 @@ export interface InitResult {
 }
 
 export async function initializeServices(
-  config: ResolvedAppConfig,
+  config: TinyAuthConfigs,
   logger: Logger,
 ): Promise<InitResult> {
   const securityService = new SecurityService(config);

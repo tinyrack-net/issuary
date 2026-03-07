@@ -2,7 +2,7 @@ import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
 import qrcode from 'qrcode';
 import type { UserEntity } from '#backend/entities/user.entity.js';
 import { getRandomBytes } from '#backend/lib/crypto.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 import type { SecurityService } from '#backend/services/security.service.js';
@@ -28,11 +28,11 @@ const RECOVERY_CODE_GROUP_LENGTH = 4;
 
 export class TotpService {
   private readonly mikro: MikroService;
-  private readonly config: ResolvedAppConfig;
+  private readonly config: TinyAuthConfigs;
   private readonly securityService: SecurityService;
   public constructor(
     mikro: MikroService,
-    config: ResolvedAppConfig,
+    config: TinyAuthConfigs,
     securityService: SecurityService,
   ) {
     this.mikro = mikro;

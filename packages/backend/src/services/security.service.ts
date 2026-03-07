@@ -9,7 +9,7 @@ import {
   signOpaqueValue,
   timingSafeEqualBytes,
 } from '#backend/lib/crypto.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
 
 const PBKDF2_ALGORITHM = 'pbkdf2-sha256';
 const HMAC_ALGORITHM = 'hmac-sha256';
@@ -34,7 +34,7 @@ export class SecurityService {
   private readonly pbkdf2Iterations: number;
   private readonly purposeKeyCache = new Map<Purpose, Promise<Uint8Array>>();
 
-  public constructor(config: ResolvedAppConfig) {
+  public constructor(config: TinyAuthConfigs) {
     const decodedSecret = fromBase64Url(config.security.hash_master_secret);
     if (decodedSecret.length !== 32) {
       throw new Error('security.hash_master_secret must decode to 32 bytes.');

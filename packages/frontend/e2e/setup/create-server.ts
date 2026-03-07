@@ -2,7 +2,7 @@ import type { AddressInfo } from 'node:net';
 import { createServer as createNetServer } from 'node:net';
 import { serve } from '@hono/node-server';
 import { createApp } from '@tinyauth/backend';
-import type { ResolvedAppConfig } from '@tinyauth/backend/config';
+import type { TinyAuthConfigs } from '@tinyauth/backend/config';
 import { resolveTestMailConfig } from '#frontend-e2e/setup/resolve-test-smtp.js';
 
 function isBackendRoute(urlPath: string): boolean {
@@ -179,8 +179,8 @@ function getFreePort(): Promise<number> {
   });
 }
 
-export type E2EConfigResult = Omit<ResolvedAppConfig, 'mail'> & {
-  mail?: { test: true } | ResolvedAppConfig['mail'];
+export type E2EConfigResult = Omit<TinyAuthConfigs, 'mail'> & {
+  mail?: { test: true } | TinyAuthConfigs['mail'];
 };
 
 type ConfigFactory = (
@@ -227,7 +227,7 @@ export async function createE2EServer(configFactory: ConfigFactory) {
   );
 
   // Resolve mail config: { test: true } shorthand into a real test mail config
-  let resolvedMail: ResolvedAppConfig['mail'];
+  let resolvedMail: TinyAuthConfigs['mail'];
   if (
     rawMail &&
     'test' in rawMail &&
@@ -236,10 +236,10 @@ export async function createE2EServer(configFactory: ConfigFactory) {
   ) {
     resolvedMail = await resolveTestMailConfig();
   } else if (rawMail && 'createTransport' in rawMail) {
-    resolvedMail = rawMail as ResolvedAppConfig['mail'];
+    resolvedMail = rawMail as TinyAuthConfigs['mail'];
   }
 
-  const config: ResolvedAppConfig = {
+  const config: TinyAuthConfigs = {
     ...restConfig,
     ...(resolvedMail ? { mail: resolvedMail } : {}),
   };

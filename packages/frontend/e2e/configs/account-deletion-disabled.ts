@@ -1,4 +1,4 @@
-import type { ResolvedAppConfig } from '@tinyauth/backend/config';
+import type { TinyAuthConfigs } from '@tinyauth/backend/config';
 import {
   E2E_BASE_APP_CONFIG,
   E2E_BASE_CONFIG,
@@ -10,7 +10,7 @@ import {
 export function createAccountDeletionDisabledConfig(
   backendPort: number,
   _frontendPort: number,
-): ResolvedAppConfig {
+): TinyAuthConfigs {
   return {
     ...E2E_BASE_CONFIG,
     app: {

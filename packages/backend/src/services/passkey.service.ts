@@ -17,7 +17,7 @@ import {
   type IUserPasskeyEntity,
   UserPasskeyEntitySchema,
 } from '#backend/entities/user-passkey.entity.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 
@@ -44,8 +44,8 @@ export class PasskeyService {
   private readonly rpName: string = 'TinyRack Auth';
 
   private readonly mikro: MikroService;
-  private readonly config: ResolvedAppConfig;
-  public constructor(mikro: MikroService, config: ResolvedAppConfig) {
+  private readonly config: TinyAuthConfigs;
+  public constructor(mikro: MikroService, config: TinyAuthConfigs) {
     this.mikro = mikro;
     this.config = config;
   }

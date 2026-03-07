@@ -19,7 +19,7 @@ import {
   formatDuration,
   parseDurationToMs,
 } from '#backend/lib/duration.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
 import type { JwtKeyRepository } from '#backend/repositories/jwt-key.repository.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 import type { JwtService } from './jwt.service.js';
@@ -95,11 +95,11 @@ export interface CleanupSummary {
  * - In-process scheduler (cron-based)
  */
 export class CleanupService {
-  private readonly config: ResolvedAppConfig;
+  private readonly config: TinyAuthConfigs;
   private readonly mikro: MikroService;
   private readonly jwtService: JwtService;
   constructor(
-    config: ResolvedAppConfig,
+    config: TinyAuthConfigs,
     mikro: MikroService,
     jwtService: JwtService,
   ) {

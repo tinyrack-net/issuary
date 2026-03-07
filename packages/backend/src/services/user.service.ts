@@ -2,7 +2,7 @@ import type { Loaded } from '@mikro-orm/core';
 import type z from 'zod';
 import type { UserEntity } from '#backend/entities/user.entity.js';
 import type { Locale } from '#backend/lib/locale.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
 import { e } from '#backend/schemas/error.js';
 import type { r } from '#backend/schemas/response.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
@@ -12,13 +12,13 @@ import type { TermsService } from './terms.service.js';
 
 export class UserService {
   private readonly mikro: MikroService;
-  private readonly config: ResolvedAppConfig;
+  private readonly config: TinyAuthConfigs;
   private readonly emailService: EmailService;
   private readonly passwordAuthService: PasswordAuthService;
   private readonly termsService?: TermsService | undefined;
   public constructor(
     mikro: MikroService,
-    config: ResolvedAppConfig,
+    config: TinyAuthConfigs,
     emailService: EmailService,
     passwordAuthService: PasswordAuthService,
     termsService?: TermsService,

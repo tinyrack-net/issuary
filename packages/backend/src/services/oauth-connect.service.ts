@@ -3,7 +3,7 @@ import z from 'zod';
 import { isEmailAllowed } from '#backend/lib/email-pattern.js';
 import { generatePKCE } from '#backend/lib/pkce.js';
 import type {
-  ResolvedAppConfig,
+  TinyAuthConfigs,
   ResolvedIdentityProvider,
 } from '#backend/lib/config/index.js';
 import { e, TinyAuthError } from '#backend/schemas/error.js';
@@ -98,12 +98,12 @@ export type OAuthCallbackResult =
 // but user-related config lookups have been removed since users are now synced to DB.
 
 export class OAuthConnectService {
-  private readonly config: ResolvedAppConfig;
+  private readonly config: TinyAuthConfigs;
   private readonly userService: UserService;
   private readonly mikro: MikroService;
   private readonly termsService: TermsService;
   public constructor(
-    config: ResolvedAppConfig,
+    config: TinyAuthConfigs,
     userService: UserService,
     mikro: MikroService,
     termsService: TermsService,

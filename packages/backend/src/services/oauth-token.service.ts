@@ -4,7 +4,7 @@ import {
   toBase64Url,
 } from '#backend/lib/base64url.js';
 import { validatePKCE } from '#backend/lib/pkce.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 import type { SecurityService } from '#backend/services/security.service.js';
@@ -95,14 +95,14 @@ export interface TokenResponse {
  * Supports both config-based and database-based users/clients.
  */
 export class OAuthTokenService {
-  private readonly config: ResolvedAppConfig;
+  private readonly config: TinyAuthConfigs;
   private readonly mikro: MikroService;
   private readonly userService: UserService;
   private readonly oauthClientService: OAuthClientService;
   private readonly jwtService: JwtService;
   private readonly securityService: SecurityService;
   constructor(
-    config: ResolvedAppConfig,
+    config: TinyAuthConfigs,
     mikro: MikroService,
     userService: UserService,
     oauthClientService: OAuthClientService,

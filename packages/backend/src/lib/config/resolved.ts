@@ -18,7 +18,7 @@ import type { AppConfigUser } from './user.js';
  * - smtp: fully resolved (no `{ test: true }` shorthand)
  * - identity_providers: resolved with endpoint URLs
  */
-export interface ResolvedAppConfig {
+export interface TinyAuthConfigs {
   app: AppConfigApp;
   logging: AppConfigLogging;
   auth: AppConfigAuth;

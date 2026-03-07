@@ -15,7 +15,7 @@ import {
   JwtKeyStatus,
 } from '#backend/entities/jwt-key.entity.js';
 import { bytesToString, fromBase64Url } from '#backend/lib/base64url.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 
@@ -167,9 +167,9 @@ export class JwtService {
   /** Deduplication lock for concurrent ensureActiveKey calls */
   private ensureActiveKeyPromise: Promise<JwtKeyEntity> | null = null;
 
-  private readonly config: ResolvedAppConfig;
+  private readonly config: TinyAuthConfigs;
   private readonly mikro: MikroService;
-  constructor(config: ResolvedAppConfig, mikro: MikroService) {
+  constructor(config: TinyAuthConfigs, mikro: MikroService) {
     this.config = config;
     this.mikro = mikro;
   }

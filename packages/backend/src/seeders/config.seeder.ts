@@ -3,7 +3,7 @@ import { OAuthClientEntitySchema } from '#backend/entities/oauth-client.entity.j
 import { TermsEntitySchema } from '#backend/entities/terms.entity.js';
 import { TermsContentEntitySchema } from '#backend/entities/terms-content.entity.js';
 import { UserEntity } from '#backend/entities/user.entity.js';
-import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
+import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
 import type { SecurityService } from '#backend/services/security.service.js';
 
 /**
@@ -25,7 +25,7 @@ import type { SecurityService } from '#backend/services/security.service.js';
  */
 export async function seedConfig(
   em: EntityManager,
-  config: ResolvedAppConfig,
+  config: TinyAuthConfigs,
   securityService: SecurityService,
 ): Promise<void> {
   await syncTerms(em, config);
@@ -39,7 +39,7 @@ export async function seedConfig(
  */
 async function syncTerms(
   em: EntityManager,
-  config: ResolvedAppConfig,
+  config: TinyAuthConfigs,
 ): Promise<void> {
   const now = new Date();
   const configTerms = config.terms;
@@ -103,7 +103,7 @@ async function syncTerms(
  */
 async function syncUsers(
   em: EntityManager,
-  config: ResolvedAppConfig,
+  config: TinyAuthConfigs,
   securityService: SecurityService,
 ): Promise<void> {
   const now = new Date();
@@ -155,7 +155,7 @@ async function syncUsers(
  */
 async function syncOAuthClients(
   em: EntityManager,
-  config: ResolvedAppConfig,
+  config: TinyAuthConfigs,
   securityService: SecurityService,
 ): Promise<void> {
   const now = new Date();
