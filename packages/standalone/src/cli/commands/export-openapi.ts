@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { createApp } from '@tinyauth/backend';
 import { Command } from 'commander';
 import { generateSpecs } from 'hono-openapi';
-import type { StandaloneConfigInput } from '#standalone/lib/config/schema.js';
+import type { StandaloneConfigInput } from '#standalone/lib/config/index.js';
 import { resolveConfig } from '#standalone/lib/load-config.js';
 
 const OPENAPI_DOCUMENTATION = {

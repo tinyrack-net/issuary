@@ -6,7 +6,7 @@ export {
   StandaloneConfigSchema,
   type StandaloneFrontendConfig,
   type StandaloneFrontendConfigInput,
-} from '#standalone/lib/config/schema.js';
+} from '#standalone/lib/config/index.js';
 export {
   loadConfig,
   loadResolvedConfig,

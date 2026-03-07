@@ -1,5 +1,5 @@
 import { createApp } from '@tinyauth/backend';
-import type { StandaloneConfigInput } from './lib/config/schema.js';
+import type { StandaloneConfigInput } from './lib/config/index.js';
 import { resolveStandaloneConfig } from './lib/load-config.js';
 import { registerFrontendRoutes } from './lib/register-frontend-routes.js';
 

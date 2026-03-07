@@ -16,7 +16,7 @@ import {
   type StandaloneConfigInput,
   StandaloneConfigSchema,
   type StandaloneFrontendConfig,
-} from '#standalone/lib/config/schema.js';
+} from '#standalone/lib/config/index.js';
 import type { Logger } from '#standalone/lib/logger.js';
 import { resolveEnvVariables } from './interpolate-env.js';
 import { resolveAbsolutePath } from './resolve-path.js';
