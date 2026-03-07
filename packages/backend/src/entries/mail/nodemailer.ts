@@ -1,5 +1,5 @@
 import nm from 'nodemailer';
-import type { MailConfigRuntime } from '#backend/lib/schema.js';
+import type { MailConfigRuntime } from '#backend/lib/config/index.js';
 
 export function nodemailer(config: {
   host: string;

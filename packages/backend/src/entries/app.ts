@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import { generateSpecs } from 'hono-openapi';
 import { createLogger } from '#backend/lib/logger.js';
 import { OPENAPI_DOCUMENTATION } from '#backend/lib/openapi.js';
-import type { ResolvedAppConfig } from '#backend/lib/schema.js';
+import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
 import { loggerMiddleware } from '#backend/middleware/logger.js';
 import { mikroOrmMiddleware } from '#backend/middleware/mikro-orm.js';
 import { servicesMiddleware } from '#backend/middleware/services.js';

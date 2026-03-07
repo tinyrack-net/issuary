@@ -5,7 +5,7 @@ import { generatePKCE } from '#backend/lib/pkce.js';
 import type {
   ResolvedAppConfig,
   ResolvedIdentityProvider,
-} from '#backend/lib/schema.js';
+} from '#backend/lib/config/index.js';
 import { e, TinyAuthError } from '#backend/schemas/error.js';
 import type { f } from '#backend/schemas/field.js';
 import type { r } from '#backend/schemas/response.js';

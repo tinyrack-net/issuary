@@ -19,7 +19,7 @@ import {
   formatDuration,
   parseDurationToMs,
 } from '#backend/lib/duration.js';
-import type { ResolvedAppConfig } from '#backend/lib/schema.js';
+import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
 import type { JwtKeyRepository } from '#backend/repositories/jwt-key.repository.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 import type { JwtService } from './jwt.service.js';

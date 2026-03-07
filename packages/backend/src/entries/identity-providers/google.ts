@@ -1,4 +1,4 @@
-import type { ResolvedIdentityProvider } from '#backend/lib/schema.js';
+import type { ResolvedIdentityProvider } from '#backend/lib/config/index.js';
 
 export interface GoogleOAuthConfig {
   id: string;

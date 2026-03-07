@@ -20,8 +20,8 @@
         "default": "./dist/entries/index.js"
       },
       "./config": {
-        "types": "./dist/entries/config.d.ts",
-        "default": "./dist/entries/config.js"
+        "types": "./dist/entries/config/index.d.ts",
+        "default": "./dist/entries/config/index.js"
       },
       "./services": {
         "types": "./dist/entries/services.d.ts",
@@ -70,9 +70,9 @@
       "default": "./dist/entries/index.js"
     },
     "./config": {
-      "@tinyauth/source": "./src/entries/config.ts",
-      "types": "./dist/entries/config.d.ts",
-      "default": "./dist/entries/config.js"
+      "@tinyauth/source": "./src/entries/config/index.ts",
+      "types": "./dist/entries/config/index.d.ts",
+      "default": "./dist/entries/config/index.js"
     },
     "./services": {
       "@tinyauth/source": "./src/entries/services.ts",

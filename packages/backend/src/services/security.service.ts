@@ -9,7 +9,7 @@ import {
   signOpaqueValue,
   timingSafeEqualBytes,
 } from '#backend/lib/crypto.js';
-import type { ResolvedAppConfig } from '#backend/lib/schema.js';
+import type { ResolvedAppConfig } from '#backend/lib/config/index.js';
 
 const PBKDF2_ALGORITHM = 'pbkdf2-sha256';
 const HMAC_ALGORITHM = 'hmac-sha256';

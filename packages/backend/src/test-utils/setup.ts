@@ -5,7 +5,7 @@ import { nodemailer } from '#backend/entries/mail/nodemailer.js';
 import type {
   MailConfigRuntime,
   ResolvedAppConfig,
-} from '#backend/lib/schema.js';
+} from '#backend/lib/config/index.js';
 
 /**
  * Minimal test configuration as a fully resolved config.
