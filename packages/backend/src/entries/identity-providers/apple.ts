@@ -1,11 +1,9 @@
 import type {
-  AppleOAuthSchema,
+  AppleOAuthConfig,
   ResolvedIdentityProvider,
 } from '#backend/lib/schema.js';
 
-export function apple(
-  config: Omit<AppleOAuthSchema, 'type'>,
-): ResolvedIdentityProvider {
+export function apple(config: AppleOAuthConfig): ResolvedIdentityProvider {
   return {
     id: config.id,
     type: 'apple',

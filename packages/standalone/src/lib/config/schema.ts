@@ -2,7 +2,6 @@ import {
   AppConfigApp,
   AppConfigAuth,
   AppConfigCleanup,
-  AppConfigIdentityProviders,
   AppConfigLogging,
   AppConfigScheduler,
   AppConfigSecurity,
@@ -13,6 +12,90 @@ import {
   type ResolvedAppConfig,
 } from '@tinyauth/backend/config';
 import z from 'zod';
+
+// ---------------------------------------------------------------------------
+// Identity Provider Zod schemas (for YAML config validation)
+// ---------------------------------------------------------------------------
+
+const GithubOAuthSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal('github'),
+  enabled: z.boolean().default(false),
+  display_name: z.string().optional(),
+  icon_url: z.string().optional(),
+  client_id: z.string().min(1),
+  client_secret: z.string().min(1),
+  scopes: z.array(z.string()).optional(),
+  email_conflict_strategy: z
+    .enum(['auto_link', 'require_link'])
+    .default('auto_link'),
+});
+
+const GoogleOAuthSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal('google'),
+  enabled: z.boolean().default(false),
+  display_name: z.string().optional(),
+  icon_url: z.string().optional(),
+  client_id: z.string().min(1),
+  client_secret: z.string().min(1),
+  scopes: z.array(z.string()).optional(),
+  email_conflict_strategy: z
+    .enum(['auto_link', 'require_link'])
+    .default('auto_link'),
+});
+
+const AppleOAuthSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal('apple'),
+  enabled: z.boolean().default(false),
+  display_name: z.string().optional(),
+  icon_url: z.string().optional(),
+  client_id: z.string().min(1),
+  client_secret: z.string().min(1),
+  scopes: z.array(z.string()).optional(),
+  response_mode: z.enum(['query', 'fragment', 'form_post']).optional(),
+  email_conflict_strategy: z
+    .enum(['auto_link', 'require_link'])
+    .default('auto_link'),
+});
+
+const GenericOAuthSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal('generic_oauth'),
+  enabled: z.boolean().default(false),
+  display_name: z.string().min(1),
+  icon_url: z.string().optional(),
+  client_id: z.string().min(1),
+  client_secret: z.string().min(1),
+  authorization_url: z.url(),
+  token_url: z.url(),
+  userinfo_url: z.url().nullish(),
+  email_url: z.url().optional(),
+  scopes: z.array(z.string()).min(1),
+  response_mode: z.enum(['query', 'fragment', 'form_post']).optional(),
+  email_conflict_strategy: z
+    .enum(['auto_link', 'require_link'])
+    .default('auto_link'),
+  userinfo_mapping: z.object({
+    id: z.string(),
+    email: z.string(),
+    email_verified: z.string().optional(),
+    name: z.string().optional(),
+    picture: z.string().optional(),
+  }),
+});
+
+const AppConfigIdentityProvider = z.discriminatedUnion('type', [
+  GithubOAuthSchema,
+  GoogleOAuthSchema,
+  AppleOAuthSchema,
+  GenericOAuthSchema,
+]);
+
+const AppConfigIdentityProviders = z
+  .array(AppConfigIdentityProvider)
+  .default([]);
 
 // ---------------------------------------------------------------------------
 // Local Zod schemas for runtime validation (types live in backend)

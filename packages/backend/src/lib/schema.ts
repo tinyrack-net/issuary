@@ -16,23 +16,8 @@ import { zz } from '#backend/schemas/provider.js';
 const LocaleSchema = z.enum(AVAILABLE_LOCALES);
 
 // ---------------------------------------------------------------------------
-// SMTP
-// ---------------------------------------------------------------------------
-
-export interface AppConfigSmtp {
-  host: string;
-  port: number;
-  secure: boolean;
-  user: string;
-  password: string;
-  from?: string | undefined;
-  test: boolean;
-}
-
-// ---------------------------------------------------------------------------
 // Mail (abstract runtime interface)
 // ---------------------------------------------------------------------------
-
 export interface MailTransport {
   sendMail(options: {
     from?: string | undefined;
@@ -795,155 +780,62 @@ export type AppConfigSecurity = z.infer<typeof AppConfigSecurity>;
 // Identity Providers
 // ---------------------------------------------------------------------------
 
-/**
- * GitHub OAuth provider schema.
- * Uses pre-configured endpoints from WELL_KNOWN_OAUTH_PROVIDERS.
- */
-const GithubOAuthSchema = z.object({
-  id: z.string().min(1).describe('Unique identifier for this OAuth provider'),
-  type: z.literal('github'),
-  enabled: z.boolean().default(false),
-  display_name: z.string().optional().describe('Display name shown in UI'),
-  icon_url: z.string().optional().describe('Icon URL shown in UI'),
-  client_id: z.string().min(1).describe('OAuth client ID'),
-  client_secret: z.string().min(1).describe('OAuth client secret'),
-  scopes: z
-    .array(z.string())
-    .optional()
-    .describe('OAuth scopes (defaults to provider defaults)'),
-  email_conflict_strategy: z
-    .enum(['auto_link', 'require_link'])
-    .default('auto_link')
-    .describe('Email conflict resolution strategy'),
-});
+export interface GithubOAuthConfig {
+  id: string;
+  enabled: boolean;
+  display_name?: string | undefined;
+  icon_url?: string | undefined;
+  client_id: string;
+  client_secret: string;
+  scopes?: string[] | undefined;
+  email_conflict_strategy: 'auto_link' | 'require_link';
+}
 
-export type GithubOAuthSchema = z.infer<typeof GithubOAuthSchema>;
+export interface GoogleOAuthConfig {
+  id: string;
+  enabled: boolean;
+  display_name?: string | undefined;
+  icon_url?: string | undefined;
+  client_id: string;
+  client_secret: string;
+  scopes?: string[] | undefined;
+  email_conflict_strategy: 'auto_link' | 'require_link';
+}
 
-/**
- * Google OAuth provider schema.
- * Uses pre-configured endpoints from WELL_KNOWN_OAUTH_PROVIDERS.
- */
-const GoogleOAuthSchema = z.object({
-  id: z.string().min(1).describe('Unique identifier for this OAuth provider'),
-  type: z.literal('google'),
-  enabled: z.boolean().default(false),
-  display_name: z.string().optional().describe('Display name shown in UI'),
-  icon_url: z.string().optional().describe('Icon URL shown in UI'),
-  client_id: z.string().min(1).describe('OAuth client ID'),
-  client_secret: z.string().min(1).describe('OAuth client secret'),
-  scopes: z
-    .array(z.string())
-    .optional()
-    .describe('OAuth scopes (defaults to provider defaults)'),
-  email_conflict_strategy: z
-    .enum(['auto_link', 'require_link'])
-    .default('auto_link')
-    .describe('Email conflict resolution strategy'),
-});
+export interface AppleOAuthConfig {
+  id: string;
+  enabled: boolean;
+  display_name?: string | undefined;
+  icon_url?: string | undefined;
+  client_id: string;
+  client_secret: string;
+  scopes?: string[] | undefined;
+  response_mode?: 'query' | 'fragment' | 'form_post' | undefined;
+  email_conflict_strategy: 'auto_link' | 'require_link';
+}
 
-export type GoogleOAuthSchema = z.infer<typeof GoogleOAuthSchema>;
-
-/**
- * Apple OAuth provider schema.
- * Uses pre-configured endpoints from WELL_KNOWN_OAUTH_PROVIDERS.
- * Apple uses form_post response mode by default.
- */
-const AppleOAuthSchema = z.object({
-  id: z.string().min(1).describe('Unique identifier for this OAuth provider'),
-  type: z.literal('apple'),
-  enabled: z.boolean().default(false),
-  display_name: z.string().optional().describe('Display name shown in UI'),
-  icon_url: z.string().optional().describe('Icon URL shown in UI'),
-  client_id: z.string().min(1).describe('OAuth client ID'),
-  client_secret: z.string().min(1).describe('OAuth client secret'),
-  scopes: z
-    .array(z.string())
-    .optional()
-    .describe('OAuth scopes (defaults to provider defaults)'),
-  response_mode: z
-    .enum(['query', 'fragment', 'form_post'])
-    .optional()
-    .describe('Response mode (defaults to form_post for Apple)'),
-  email_conflict_strategy: z
-    .enum(['auto_link', 'require_link'])
-    .default('auto_link')
-    .describe('Email conflict resolution strategy'),
-});
-
-export type AppleOAuthSchema = z.infer<typeof AppleOAuthSchema>;
-
-/**
- * Generic OAuth provider schema for custom OAuth providers.
- * Requires all endpoint URLs and userinfo mapping to be specified.
- */
-const GenericOAuthSchema = z.object({
-  id: z.string().min(1).describe('Unique identifier for this OAuth provider'),
-  type: z.literal('generic_oauth'),
-  enabled: z.boolean().default(false),
-  display_name: z.string().min(1).describe('Display name shown in UI'),
-  icon_url: z.string().optional().describe('Icon URL shown in UI'),
-  client_id: z.string().min(1).describe('OAuth client ID'),
-  client_secret: z.string().min(1).describe('OAuth client secret'),
-  authorization_url: z.url().describe('Authorization endpoint URL'),
-  token_url: z.url().describe('Token endpoint URL'),
-  userinfo_url: z.url().nullish().describe('UserInfo endpoint URL'),
-  email_url: z
-    .url()
-    .optional()
-    .describe('Additional URL for fetching email (e.g., GitHub)'),
-  scopes: z.array(z.string()).min(1).describe('OAuth scopes to request'),
-  response_mode: z
-    .enum(['query', 'fragment', 'form_post'])
-    .optional()
-    .describe('Response mode'),
-  email_conflict_strategy: z
-    .enum(['auto_link', 'require_link'])
-    .default('auto_link')
-    .describe('Email conflict resolution strategy'),
-  userinfo_mapping: z
-    .object({
-      id: z.string().describe('Field name for user ID'),
-      email: z.string().describe('Field name for email'),
-      email_verified: z
-        .string()
-        .optional()
-        .describe('Field name for email_verified'),
-      name: z.string().optional().describe('Field name for name'),
-      picture: z.string().optional().describe('Field name for picture'),
-    })
-    .describe('Mapping from provider userinfo response to standard fields'),
-});
-
-export type GenericOAuthSchema = z.infer<typeof GenericOAuthSchema>;
-
-/**
- * Identity provider configuration.
- * Discriminated union based on 'type' field.
- * Well-known providers (github, google, apple) use pre-configured endpoints.
- * Generic OAuth requires all endpoints to be specified.
- */
-export const AppConfigIdentityProvider = z.discriminatedUnion('type', [
-  GithubOAuthSchema,
-  GoogleOAuthSchema,
-  AppleOAuthSchema,
-  GenericOAuthSchema,
-]);
-
-export type AppConfigIdentityProvider = z.infer<
-  typeof AppConfigIdentityProvider
->;
-
-/**
- * Identity providers configuration.
- * Array of external OAuth/OIDC provider configurations for social login.
- */
-export const AppConfigIdentityProviders = z
-  .array(AppConfigIdentityProvider)
-  .default([]);
-
-export type AppConfigIdentityProviders = z.infer<
-  typeof AppConfigIdentityProviders
->;
+export interface GenericOAuthConfig {
+  id: string;
+  enabled: boolean;
+  display_name: string;
+  icon_url?: string | undefined;
+  client_id: string;
+  client_secret: string;
+  authorization_url: string;
+  token_url: string;
+  userinfo_url?: string | null | undefined;
+  email_url?: string | undefined;
+  scopes: string[];
+  response_mode?: 'query' | 'fragment' | 'form_post' | undefined;
+  email_conflict_strategy: 'auto_link' | 'require_link';
+  userinfo_mapping: {
+    id: string;
+    email: string;
+    email_verified?: string | undefined;
+    name?: string | undefined;
+    picture?: string | undefined;
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Resolved Identity Provider (runtime type)

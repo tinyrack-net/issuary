@@ -1,10 +1,10 @@
 import type {
-  GenericOAuthSchema,
+  GenericOAuthConfig,
   ResolvedIdentityProvider,
 } from '#backend/lib/schema.js';
 
 export function genericOAuth(
-  config: Omit<GenericOAuthSchema, 'type'>,
+  config: GenericOAuthConfig,
 ): ResolvedIdentityProvider {
   return {
     id: config.id,

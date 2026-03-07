@@ -1,11 +1,9 @@
 import type {
-  GithubOAuthSchema,
+  GithubOAuthConfig,
   ResolvedIdentityProvider,
 } from '#backend/lib/schema.js';
 
-export function github(
-  config: Omit<GithubOAuthSchema, 'type'>,
-): ResolvedIdentityProvider {
+export function github(config: GithubOAuthConfig): ResolvedIdentityProvider {
   return {
     id: config.id,
     type: 'github',

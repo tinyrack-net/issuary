@@ -1,11 +1,9 @@
 import type {
-  GoogleOAuthSchema,
+  GoogleOAuthConfig,
   ResolvedIdentityProvider,
 } from '#backend/lib/schema.js';
 
-export function google(
-  config: Omit<GoogleOAuthSchema, 'type'>,
-): ResolvedIdentityProvider {
+export function google(config: GoogleOAuthConfig): ResolvedIdentityProvider {
   return {
     id: config.id,
     type: 'google',
