@@ -2,10 +2,10 @@ import type { AppConfigApp } from './app.js';
 import type { AppConfigAuth } from './auth.js';
 import type { AppConfigCleanup } from './cleanup.js';
 import type { AppConfigClient } from './client.js';
-import type { DatabaseConfigRuntime } from './database.js';
-import type { ResolvedIdentityProvider } from './identity-providers.js';
+import type { DatabaseConfig } from './database.js';
+import type { IdentityProviderConfig } from './identity-providers.js';
 import type { AppConfigLogging } from './logging.js';
-import type { MailConfigRuntime } from './mail.js';
+import type { MailConfig } from './mail.js';
 import type { AppConfigScheduler } from './scheduler.js';
 import type { AppConfigSecurity } from './security.js';
 import type { AppConfigTerms } from './terms.js';
@@ -28,7 +28,7 @@ export interface TinyAuthConfigs {
   terms: AppConfigTerms;
   clients: AppConfigClient[];
   users: AppConfigUser[];
-  database: DatabaseConfigRuntime;
-  mail?: MailConfigRuntime;
-  identity_providers: ResolvedIdentityProvider[];
+  database: DatabaseConfig;
+  mail?: MailConfig;
+  identity_providers: IdentityProviderConfig[];
 }

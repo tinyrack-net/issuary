@@ -1,4 +1,4 @@
-export interface ResolvedIdentityProvider {
+export interface IdentityProviderConfig {
   id: string;
   type: 'github' | 'google' | 'apple' | 'generic_oauth';
   enabled: boolean;

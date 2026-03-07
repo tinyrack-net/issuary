@@ -8,7 +8,7 @@ export interface MailTransport {
   }): Promise<unknown>;
 }
 
-export interface MailConfigRuntime {
+export interface MailConfig {
   from?: string | undefined;
   createTransport: () => Promise<MailTransport>;
 }
