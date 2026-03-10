@@ -1,0 +1,23 @@
+{
+  "name": "@tinyauth/example-node-hono-sqlite",
+  "private": true,
+  "version": "1.0.0",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @tinyauth/frontend build && NODE_OPTIONS='--conditions=@tinyauth/source' tsx watch src/index.ts",
+    "start": "pnpm --filter @tinyauth/frontend build && NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/index.ts",
+    "build": "tsc --noEmit",
+    "test": "pnpm --filter @tinyauth/frontend build && NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/smoke-test.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "catalog:",
+    "@tinyauth/backend": "workspace:*",
+    "hono": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "^4.21.0",
+    "typescript": "catalog:"
+  }
+}
