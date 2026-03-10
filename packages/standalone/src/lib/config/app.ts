@@ -8,6 +8,6 @@ export const StandaloneAppConfigSchema = AppConfigSchema.extend({
     mode: 'static',
   }),
   html_variables: z.record(z.string(), z.string()).default({}),
-});
+}).strict();
 
 export type StandaloneAppConfig = z.infer<typeof StandaloneAppConfigSchema>;
