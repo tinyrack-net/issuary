@@ -127,7 +127,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: tinyauth
-          image: tinyrack/tinyauth:latest
+          image: ghcr.io/tinyrack/tinyauth:latest
           ports:
             - containerPort: 8080
               protocol: TCP
@@ -249,7 +249,7 @@ spec:
             runAsUser: 1000
           containers:
             - name: cleanup
-              image: tinyrack/tinyauth:latest
+              image: ghcr.io/tinyrack/tinyauth:latest
               command: ["tinyauth", "cleanup"]
               envFrom:
                 - secretRef:
