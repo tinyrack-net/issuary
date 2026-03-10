@@ -38,4 +38,3 @@ export type ResolvedStandaloneConfig = Omit<TinyAuthConfigs, 'app'> & {
     html_variables: Record<string, string>;
   };
 };
-

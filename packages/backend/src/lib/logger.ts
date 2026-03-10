@@ -27,8 +27,10 @@ export function createLogger(options?: CreateLoggerOptions): pino.Logger {
       paths: [
         'password',
         'client_secret',
-        'cookie_secret',
-        'hash_master_secret',
+        'security.session_secret',
+        'security.hash_secret',
+        'config.security.session_secret',
+        'config.security.hash_secret',
         'req.headers.authorization',
         'req.headers.cookie',
       ],

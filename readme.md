@@ -28,7 +28,10 @@ All configuration is done via `config.yaml`:
 app:
   host: https://auth.example.com
   port: 8080
-  cookie_secret: <your-secret>
+
+security:
+  session_secret: <your-session-secret>
+  hash_secret: <your-hash-secret>
 
 database:
   type: sqlite

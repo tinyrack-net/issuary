@@ -29,7 +29,9 @@ describe('SecurityService', () => {
   test('does not verify hashes across different instances', async () => {
     const first = createService();
     const second = createService({
-      hash_master_secret: 'ZmVkY2JhOTg3NjU0MzIxMGZlZGNiYTk4NzY1NDMyMTA',
+      session_secret:
+        '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+      hash_secret: 'ZmVkY2JhOTg3NjU0MzIxMGZlZGNiYTk4NzY1NDMyMTA',
       pbkdf2_iterations: 1000,
     });
     const hash = await first.hashPassword('secret password');
@@ -118,7 +120,9 @@ describe('SecurityService', () => {
   test('hashes opaque tokens deterministically for one key and differently across keys', async () => {
     const first = createService();
     const second = createService({
-      hash_master_secret: 'ZmVkY2JhOTg3NjU0MzIxMGZlZGNiYTk4NzY1NDMyMTA',
+      session_secret:
+        '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+      hash_secret: 'ZmVkY2JhOTg3NjU0MzIxMGZlZGNiYTk4NzY1NDMyMTA',
       pbkdf2_iterations: 1000,
     });
 

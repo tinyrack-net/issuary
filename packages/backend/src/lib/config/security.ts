@@ -3,7 +3,8 @@ import { fromBase64Url } from '#backend/lib/base64url.js';
 
 export const SecurityConfigSchema = z
   .object({
-    hash_master_secret: z
+    session_secret: z.string().min(16),
+    hash_secret: z
       .string()
       .min(1)
       .superRefine((value, ctx) => {
@@ -12,15 +13,13 @@ export const SecurityConfigSchema = z
           if (decoded.length !== 32) {
             ctx.addIssue({
               code: 'custom',
-              message:
-                'hash_master_secret must be a base64url-encoded 32-byte secret',
+              message: 'hash_secret must be a base64url-encoded 32-byte secret',
             });
           }
         } catch {
           ctx.addIssue({
             code: 'custom',
-            message:
-              'hash_master_secret must be a valid base64url-encoded secret',
+            message: 'hash_secret must be a valid base64url-encoded secret',
           });
         }
       }),

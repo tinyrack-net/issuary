@@ -22,10 +22,9 @@ describe('load-config', () => {
     for (const key of Object.keys(process.env)) {
       delete process.env[key];
     }
-    process.env['COOKIE_SECRET'] =
+    process.env['SESSION_SECRET'] =
       '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b';
-    process.env['HASH_MASTER_SECRET'] =
-      'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
+    process.env['HASH_SECRET'] = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
   });
 
   afterEach(() => {
@@ -43,16 +42,16 @@ describe('load-config', () => {
       dir,
       'config.yaml',
       [
-        'app:',
-        '  cookie_secret: explicit-secret-1234567890',
+        'app: {}',
         'security:',
-        '  hash_master_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+        '  session_secret: explicit-secret-1234567890',
+        '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       ].join('\n'),
     );
 
     const config = loadConfig(configFile);
 
-    expect(config.app.cookie_secret).toBe('explicit-secret-1234567890');
+    expect(config.security.session_secret).toBe('explicit-secret-1234567890');
     await fs.promises.rm(dir, { recursive: true, force: true });
   });
 
@@ -65,12 +64,12 @@ describe('load-config', () => {
       'proxy.yaml',
       [
         'app:',
-        '  cookie_secret: proxy-secret-1234567890',
         '  frontend:',
         '    enabled: true',
         '    mode: proxy',
         'security:',
-        '  hash_master_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+        '  session_secret: proxy-secret-1234567890',
+        '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       ].join('\n'),
     );
 
@@ -89,11 +88,11 @@ describe('load-config', () => {
       'disabled.yaml',
       [
         'app:',
-        '  cookie_secret: disabled-secret-1234567890',
         '  frontend:',
         '    enabled: false',
         'security:',
-        '  hash_master_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+        '  session_secret: disabled-secret-1234567890',
+        '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       ].join('\n'),
     );
 
@@ -104,21 +103,46 @@ describe('load-config', () => {
     await fs.promises.rm(dir, { recursive: true, force: true });
   });
 
-  test('fails when security.hash_master_secret is missing', async () => {
+  test('fails when security.session_secret is missing', async () => {
     const dir = await fs.promises.mkdtemp(
       path.join(os.tmpdir(), 'tinyauth-load-config-missing-security-'),
     );
     const configFile = await writeConfigFile(
       dir,
       'missing-security.yaml',
-      ['app:', '  cookie_secret: missing-security-secret-1234567890'].join(
-        '\n',
-      ),
+      [
+        'app: {}',
+        'security:',
+        '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+      ].join('\n'),
     );
 
     await expect(
       loadResolvedConfig({ configPath: configFile }),
     ).rejects.toThrow('security');
+
+    await fs.promises.rm(dir, { recursive: true, force: true });
+  });
+
+  test('rejects removed app.cookie_secret config', async () => {
+    const dir = await fs.promises.mkdtemp(
+      path.join(os.tmpdir(), 'tinyauth-load-config-legacy-app-'),
+    );
+    const configFile = await writeConfigFile(
+      dir,
+      'legacy-app.yaml',
+      [
+        'app:',
+        '  cookie_secret: legacy-app-secret-1234567890',
+        'security:',
+        '  session_secret: explicit-secret-1234567890',
+        '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+      ].join('\n'),
+    );
+
+    await expect(
+      loadResolvedConfig({ configPath: configFile }),
+    ).rejects.toThrow('cookie_secret');
 
     await fs.promises.rm(dir, { recursive: true, force: true });
   });
@@ -131,10 +155,9 @@ describe('load-config', () => {
       dir,
       'legacy-security.yaml',
       [
-        'app:',
-        '  cookie_secret: legacy-security-secret-1234567890',
         'security:',
-        '  hash_master_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+        '  session_secret: legacy-security-secret-1234567890',
+        '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
         '  hash_master_secret_version: 1',
       ].join('\n'),
     );

@@ -43,8 +43,6 @@ export const exportOpenapiCommand = new Command('export:openapi')
   .action(async (outputPath?: string) => {
     const config = {
       app: {
-        cookie_secret:
-          '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
         allowed_signup_emails: ['*'],
       },
       logging: {
@@ -56,7 +54,9 @@ export const exportOpenapiCommand = new Command('export:openapi')
         test: true,
       },
       security: {
-        hash_master_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+        session_secret:
+          '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+        hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
         pbkdf2_iterations: 1000,
       },
       smtp: {

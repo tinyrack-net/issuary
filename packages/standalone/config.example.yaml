@@ -20,7 +20,7 @@
 # -----------------------------------------------------------------------------
 # Application Settings
 # -----------------------------------------------------------------------------
-# Core application configuration including server, security, and UI settings.
+# Core application configuration including server and UI settings.
 # -----------------------------------------------------------------------------
 app:
   # --------------------------------------------------------------------------
@@ -37,16 +37,6 @@ app:
   # Default: 8080
   # For production behind a reverse proxy, this is typically the internal port.
   port: ${PORT:-8080}
-
-  # --------------------------------------------------------------------------
-  # Security Settings
-  # --------------------------------------------------------------------------
-
-  # cookie_secret: A 256-bit (32 bytes) secret key for signing session cookies.
-  # IMPORTANT: Generate a unique, random value for production environments.
-  # You can generate one using: openssl rand -hex 32
-  # WARNING: Changing this value will invalidate all existing sessions.
-  cookie_secret: ${COOKIE_SECRET}
 
   # jwt_access_token_ttl: Time-to-live for JWT access tokens in seconds.
   # Access tokens are short-lived and used for API authentication.
@@ -108,7 +98,7 @@ app:
 
   # `app.frontend` and `app.html_variables` are no longer part of the
   # backend config schema. They are owned by `@tinyauth/standalone`,
-  # and backend config parsing ignores them if they are present.
+  # and `@tinyauth/backend/config` rejects them if they are present.
   #
   # See `packages/standalone/config.example.yaml` for the standalone-only
   # frontend serving and HTML interpolation settings.
@@ -215,6 +205,29 @@ app:
   #   ko: 계속하면 <a href="https://example.com/terms/ko" target="_blank">이용약관</a> 및 <a href="https://example.com/privacy/ko" target="_blank">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
   #   en: By continuing, you agree to our <a href="https://example.com/terms/en" target="_blank">Terms of Service</a> and <a href="https://example.com/privacy/en" target="_blank">Privacy Policy</a>.
   #   ja: 続行することで、<a href="https://example.com/terms/ja" target="_blank">利用規約</a>および<a href="https://example.com/privacy/ja" target="_blank">プライバシーポリシー</a>に同意したものとみなされます。
+
+# -----------------------------------------------------------------------------
+# Security Configuration
+# -----------------------------------------------------------------------------
+# Secrets and cryptographic parameters used for sessions and hashing.
+# -----------------------------------------------------------------------------
+security:
+  # session_secret: A 256-bit (32 bytes) secret key for signing session cookies.
+  # IMPORTANT: Generate a unique, random value for production environments.
+  # You can generate one using: openssl rand -hex 32
+  # WARNING: Changing this value will invalidate all existing sessions.
+  session_secret: ${SESSION_SECRET}
+
+  # hash_secret: A base64url-encoded 32-byte secret used as the root key for
+  # password, client secret, and opaque token hashing.
+  # Generate one with:
+  #   openssl rand -base64 32 | tr '+/' '-_' | tr -d '='
+  hash_secret: ${HASH_SECRET}
+
+  # pbkdf2_iterations: Number of PBKDF2 iterations for password and client
+  # secret hashing. Higher values increase CPU cost and resistance to brute force.
+  # Default: 600000
+  pbkdf2_iterations: ${PBKDF2_ITERATIONS:-600000}
 
 # -----------------------------------------------------------------------------
 # Logging Configuration

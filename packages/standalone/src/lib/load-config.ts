@@ -18,9 +18,9 @@ import {
   type StandaloneFrontendConfig,
 } from '#standalone/lib/config/index.js';
 import type { Logger } from '#standalone/lib/logger.js';
+import { DEFAULT_CONFIG_PATH } from './constants.js';
 import { resolveEnvVariables } from './interpolate-env.js';
 import { resolveAbsolutePath } from './resolve-path.js';
-import { DEFAULT_CONFIG_PATH } from './constants.js';
 
 export const DEFAULT_FRONTEND_PROXY_UPSTREAM = 'http://localhost:8081';
 export const DEFAULT_FRONTEND_STATIC_PATH = '/opt/tinyauth/frontend';
@@ -179,13 +179,11 @@ export function loadConfig(configPath?: string | undefined): StandaloneConfig {
     console.warn(`Config file not found at "${configPath}"`);
     // TODO change
     const defaultConfig: StandaloneConfigInput = {
-      app: {
-        cookie_secret:
-          'e7e1f64d40b55fd8b5e529b5d85d62e39922d52b4364fc197546efaa72305d24',
-      },
+      app: {},
       security: {
-        hash_master_secret:
+        session_secret:
           'e7e1f64d40b55fd8b5e529b5d85d62e39922d52b4364fc197546efaa72305d24',
+        hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       },
     };
     return parseConfig(defaultConfig);

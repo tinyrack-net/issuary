@@ -18,8 +18,6 @@ export function createConfigManagedProfileConfig(
       ...E2E_BASE_APP_CONFIG,
       host: `http://localhost:${backendPort}`,
       port: backendPort,
-      cookie_secret:
-        '12d4e6f8a0b2c4d6e8f0112233445566778899aabbccddeeff00112233445566',
       allowed_signup_emails: ['*'],
       account_deletion: true,
       supported_languages: ['en'],

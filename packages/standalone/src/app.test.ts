@@ -7,10 +7,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createStandaloneApp } from './app.js';
 
 const BASE_CONFIG = {
-  app: {
-    cookie_secret:
-      '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
-  },
+  app: {},
   logging: {
     level: 'silent',
     format: 'json',
@@ -20,7 +17,9 @@ const BASE_CONFIG = {
     test: true,
   },
   security: {
-    hash_master_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+    session_secret:
+      '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+    hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
     pbkdf2_iterations: 1000,
   },
 } satisfies StandaloneConfigInput;

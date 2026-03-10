@@ -12,7 +12,7 @@ export interface CreateStandaloneAppOptions {
 
 export async function createStandaloneApp(options: CreateStandaloneAppOptions) {
   const config = await resolveStandaloneConfig(options.config);
-  const { frontend, html_variables } = config.app;
+  const { frontend, html_variables, ...backendAppConfig } = config.app;
 
   let frontendHandler: FrontendConfig | undefined;
 
@@ -33,5 +33,11 @@ export async function createStandaloneApp(options: CreateStandaloneAppOptions) {
           });
   }
 
-  return createApp({ config: { ...config, frontend: frontendHandler } });
+  return createApp({
+    config: {
+      ...config,
+      app: backendAppConfig,
+      frontend: frontendHandler,
+    },
+  });
 }

@@ -27,8 +27,6 @@ export function createOauthProvidersTermsConfig(
       ...E2E_BASE_APP_CONFIG,
       host,
       port: backendPort,
-      cookie_secret:
-        '99d4e6f8a0b2c4d6e8f0112233445566778899aabbccddeeff00112233445566',
       allowed_signup_emails: ['*@allowed.test'],
       supported_languages: ['en'],
       default_language: 'en',

@@ -15,8 +15,6 @@ export function createMinimalConfig(
       ...E2E_BASE_APP_CONFIG,
       host: `http://localhost:${backendPort}`,
       port: backendPort,
-      cookie_secret:
-        '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
       allowed_signup_emails: ['*'],
     },
   };

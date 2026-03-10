@@ -35,9 +35,9 @@ export class SecurityService {
   private readonly purposeKeyCache = new Map<Purpose, Promise<Uint8Array>>();
 
   public constructor(config: TinyAuthConfigs) {
-    const decodedSecret = fromBase64Url(config.security.hash_master_secret);
+    const decodedSecret = fromBase64Url(config.security.hash_secret);
     if (decodedSecret.length !== 32) {
-      throw new Error('security.hash_master_secret must decode to 32 bytes.');
+      throw new Error('security.hash_secret must decode to 32 bytes.');
     }
 
     this.hashMasterSecret = decodedSecret;

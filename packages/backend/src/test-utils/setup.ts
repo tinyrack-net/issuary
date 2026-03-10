@@ -45,8 +45,6 @@ export const MINIMAL_TEST_CONFIG = {
   app: {
     host: 'http://localhost:8080',
     port: 8080,
-    cookie_secret:
-      '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
     jwt_access_token_ttl: 3600,
     jwt_refresh_token_ttl: 2592000,
     jwt_key_rotation_enabled: true,
@@ -102,7 +100,9 @@ export const MINIMAL_TEST_CONFIG = {
     },
   },
   security: {
-    hash_master_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+    session_secret:
+      '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+    hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
     pbkdf2_iterations: 1000,
   },
   cleanup: {

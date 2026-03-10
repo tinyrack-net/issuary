@@ -17,12 +17,12 @@ vi.mock('nodemailer', () => ({
 
 const MINIMAL_CONFIG = {
   app: {
-    cookie_secret:
-      '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
     allowed_signup_emails: ['*'],
   },
   security: {
-    hash_master_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+    session_secret:
+      '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+    hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
     pbkdf2_iterations: 1000,
   },
 };
@@ -96,12 +96,26 @@ describe('resolveConfig', () => {
     ).resolves.toBeDefined();
   });
 
-  test('rejects invalid hash_master_secret with wrong byte length', async () => {
+  test('rejects removed app.cookie_secret config', async () => {
+    await expect(
+      resolveConfig({
+        ...MINIMAL_CONFIG,
+        app: {
+          ...MINIMAL_CONFIG.app,
+          cookie_secret:
+            '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+        },
+      }),
+    ).rejects.toThrow('cookie_secret');
+  });
+
+  test('rejects invalid hash_secret with wrong byte length', async () => {
     await expect(
       resolveConfig({
         ...MINIMAL_CONFIG,
         security: {
-          hash_master_secret: 'MDEyMzQ1Njc4OWFiY2Rl',
+          ...MINIMAL_CONFIG.security,
+          hash_secret: 'MDEyMzQ1Njc4OWFiY2Rl',
           pbkdf2_iterations: 1000,
         },
       }),
@@ -113,7 +127,7 @@ describe('resolveConfig', () => {
       resolveConfig({
         ...MINIMAL_CONFIG,
         security: {
-          hash_master_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+          ...MINIMAL_CONFIG.security,
           pbkdf2_iterations: 1000,
           hash_master_secret_version: 1,
         },

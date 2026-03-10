@@ -53,7 +53,7 @@ export async function createApp(options: CreateAppOptions) {
     .use(
       '*',
       sessionMiddleware(
-        config.app.cookie_secret,
+        config.security.session_secret,
         config.app.host.startsWith('https'),
       ),
     )

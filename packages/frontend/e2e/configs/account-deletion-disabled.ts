@@ -17,8 +17,6 @@ export function createAccountDeletionDisabledConfig(
       ...E2E_BASE_APP_CONFIG,
       host: `http://localhost:${backendPort}`,
       port: backendPort,
-      cookie_secret:
-        '44d4e6f8a0b2c4d6e8f0112233445566778899aabbccddeeff00112233445566',
       allowed_signup_emails: ['*'],
       account_deletion: false,
     },

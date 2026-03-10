@@ -18,9 +18,9 @@ const HTML_VARIABLES = {
   FAVICON_URL: '/vite.svg',
 } as const;
 
-const COOKIE_SECRET =
+const SESSION_SECRET =
   '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
-const HASH_MASTER_SECRET = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
+const HASH_SECRET = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
 
 export interface CreateNodeHonoSqliteExampleAppOptions {
   test?: boolean;
@@ -55,7 +55,6 @@ export async function createNodeHonoSqliteExampleApp(
   return createApp({
     config: {
       app: {
-        cookie_secret: COOKIE_SECRET,
         allowed_signup_emails: ['*'],
       },
       auth: {
@@ -75,7 +74,8 @@ export async function createNodeHonoSqliteExampleApp(
         enabled: false,
       },
       security: {
-        hash_master_secret: HASH_MASTER_SECRET,
+        session_secret: SESSION_SECRET,
+        hash_secret: HASH_SECRET,
       },
       frontend: createStaticHandler({
         publicPath: frontendPublicPath,

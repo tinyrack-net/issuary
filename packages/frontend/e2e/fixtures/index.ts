@@ -43,7 +43,9 @@ export const E2E_TEST_CLIENT_CONFIG = {
 };
 
 export const E2E_TEST_SECURITY_CONFIG = {
-  hash_master_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+  session_secret:
+    '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+  hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
   pbkdf2_iterations: 1000,
 } as const;
 

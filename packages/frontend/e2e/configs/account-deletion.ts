@@ -18,8 +18,6 @@ export function createAccountDeletionConfig(
       ...E2E_BASE_APP_CONFIG,
       host: `http://localhost:${backendPort}`,
       port: backendPort,
-      cookie_secret:
-        'f1e2d3c4b5a6f7e8d9c0b1a2f3e4d5c6b7a8f9e0d1c2b3a4f5e6d7c8b9a0f1e2',
       allowed_signup_emails: ['*'],
       account_deletion: true,
     },
