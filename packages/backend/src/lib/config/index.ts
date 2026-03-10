@@ -19,6 +19,8 @@ export type { ClientConfig } from './client.js';
 export { ClientConfigSchema, ClientConfigsSchema } from './client.js';
 export type { DatabaseConfig } from './database.js';
 export { DatabaseConfigSchema } from './database.js';
+export type { FrontendConfig } from './frontend.js';
+export { FrontendConfigSchema } from './frontend.js';
 export type { IdentityProviderConfig } from './identity-providers.js';
 export {
   IdentityProviderConfigSchema,

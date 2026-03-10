@@ -4,6 +4,7 @@ import { AuthConfigSchema } from './auth.js';
 import { CleanupConfigSchema } from './cleanup.js';
 import { ClientConfigsSchema } from './client.js';
 import { DatabaseConfigSchema } from './database.js';
+import { FrontendConfigSchema } from './frontend.js';
 import { IdentityProviderConfigsSchema } from './identity-providers.js';
 import { LoggingConfigSchema } from './logging.js';
 import { MailConfigSchema } from './mail.js';
@@ -30,10 +31,10 @@ export const TinyAuthConfigsSchema = z.object({
   clients: ClientConfigsSchema,
   users: UserConfigsSchema,
   database: DatabaseConfigSchema,
+  frontend: FrontendConfigSchema,
   mail: MailConfigSchema,
   identity_providers: IdentityProviderConfigsSchema,
 });
 
 export type TinyAuthInputConfigs = z.input<typeof TinyAuthConfigsSchema>;
 export type TinyAuthConfigs = z.infer<typeof TinyAuthConfigsSchema>;
-

@@ -79,7 +79,6 @@ export const MINIMAL_TEST_CONFIG = {
   logging: {
     level: 'silent' as const,
     format: 'json' as const,
-    http_log_proxy: false,
   },
   auth: {
     password: {

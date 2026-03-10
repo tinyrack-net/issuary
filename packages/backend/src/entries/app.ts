@@ -42,12 +42,7 @@ export async function createApp(options: CreateAppOptions) {
       const internalErr = new e.InternalServerError.Error();
       return c.json(internalErr.toJson(), internalErr.status);
     })
-    .use(
-      '*',
-      loggerMiddleware(logger, {
-        httpLogProxy: config.logging.http_log_proxy,
-      }),
-    )
+    .use('*', loggerMiddleware(logger))
     .use(
       '*',
       cors({
@@ -66,7 +61,12 @@ export async function createApp(options: CreateAppOptions) {
     .use('*', servicesMiddleware(services))
     .use('*', mikroOrmMiddleware)
     .route('/', routes)
-    .notFound((c) => c.json({ error: 'Not Found' }, 404));
+    .notFound(async (c) => {
+      if (config.frontend) {
+        return config.frontend(c);
+      }
+      return c.json({ error: 'Not Found' }, 404);
+    });
 
   app.get('/api/docs/json', async (c) => {
     const spec = await generateSpecs(app, {

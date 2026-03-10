@@ -1,7 +1,6 @@
 import http from 'node:http';
 import { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createLogger } from '#standalone/lib/logger.js';
 import { createProxyHandler } from './proxy.js';
 
 function createMockUpstream(): Promise<{
@@ -59,7 +58,6 @@ describe('createProxyHandler', () => {
 
     const handler = createProxyHandler({
       upstream: `http://127.0.0.1:${String(result.port)}`,
-      logger: createLogger({ logging: { level: 'silent' } }),
     });
 
     app = new Hono();
@@ -126,7 +124,6 @@ describe('createProxyHandler with onResponse', () => {
 
     const handler = createProxyHandler({
       upstream: `http://127.0.0.1:${String(result.port)}`,
-      logger: createLogger({ logging: { level: 'silent' } }),
       onResponse: async (res) => {
         const contentType = res.headers.get('content-type') ?? '';
         if (!contentType.includes('text/html')) {

@@ -1,29 +1,9 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import type { AppType } from '@tinyauth/backend';
-import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
+import { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createStandaloneApp } from '#standalone/app.js';
-
-const BASE_CONFIG = {
-  app: {
-    cookie_secret:
-      '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
-  },
-  logging: {
-    level: 'silent',
-    format: 'json',
-  },
-  database: {
-    type: 'sqlite',
-    test: true,
-  },
-  security: {
-    hash_master_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
-    pbkdf2_iterations: 1000,
-  },
-} satisfies StandaloneConfigInput;
+import { createStaticHandler } from './static.js';
 
 const INDEX_HTML = [
   '<!doctype html>',
@@ -40,15 +20,24 @@ const TEST_HTML = [
   '</html>',
 ].join('\n');
 
-describe('registerStaticRoutes', () => {
-  describe('with html_variables configured', () => {
-    let app: AppType;
-    let cleanup: () => Promise<void>;
+function createTestApp(
+  publicPath: string,
+  htmlVariables: Record<string, string>,
+) {
+  const app = new Hono();
+  const handler = createStaticHandler({ publicPath, htmlVariables });
+  app.notFound((c) => handler(c));
+  return app;
+}
+
+describe('createStaticHandler', () => {
+  describe('with htmlVariables configured', () => {
+    let app: InstanceType<typeof Hono>;
     let publicPath = '';
 
     beforeAll(async () => {
       publicPath = await fs.promises.mkdtemp(
-        path.join(os.tmpdir(), 'tinyauth-static-routes-'),
+        path.join(os.tmpdir(), 'tinyauth-static-handler-'),
       );
       await fs.promises.mkdir(path.join(publicPath, 'test-subdir'), {
         recursive: true,
@@ -74,28 +63,14 @@ describe('registerStaticRoutes', () => {
         'utf-8',
       );
 
-      ({ app, cleanup } = await createStandaloneApp({
-        config: {
-          ...BASE_CONFIG,
-          app: {
-            ...BASE_CONFIG.app,
-            html_variables: {
-              PAGE_TITLE: 'Test App',
-              USER_NAME: 'Alice',
-              APP_TITLE: 'My App',
-            },
-            frontend: {
-              enabled: true,
-              mode: 'static',
-              path: publicPath,
-            },
-          },
-        },
-      }));
+      app = createTestApp(publicPath, {
+        PAGE_TITLE: 'Test App',
+        USER_NAME: 'Alice',
+        APP_TITLE: 'My App',
+      });
     });
 
     afterAll(async () => {
-      await cleanup();
       await fs.promises.rm(publicPath, { recursive: true, force: true });
     });
 
@@ -134,12 +109,6 @@ describe('registerStaticRoutes', () => {
       expect(res.headers.get('content-type')).toContain('image/svg+xml');
     });
 
-    test('returns 404 for API routes', async () => {
-      const res = await app.request('/api/nonexistent');
-
-      expect(res.status).toBe(404);
-    });
-
     test('does not serve files outside the public directory', async () => {
       const res = await app.request('/../package.json');
 
@@ -159,9 +128,8 @@ describe('registerStaticRoutes', () => {
     });
   });
 
-  describe('without html_variables', () => {
-    let app: AppType;
-    let cleanup: () => Promise<void>;
+  describe('without htmlVariables', () => {
+    let app: InstanceType<typeof Hono>;
     let publicPath = '';
 
     beforeAll(async () => {
@@ -179,23 +147,10 @@ describe('registerStaticRoutes', () => {
         'utf-8',
       );
 
-      ({ app, cleanup } = await createStandaloneApp({
-        config: {
-          ...BASE_CONFIG,
-          app: {
-            ...BASE_CONFIG.app,
-            frontend: {
-              enabled: true,
-              mode: 'static',
-              path: publicPath,
-            },
-          },
-        },
-      }));
+      app = createTestApp(publicPath, {});
     });
 
     afterAll(async () => {
-      await cleanup();
       await fs.promises.rm(publicPath, { recursive: true, force: true });
     });
 

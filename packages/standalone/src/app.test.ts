@@ -70,11 +70,11 @@ describe('createStandaloneApp', () => {
       await expect(res.text()).resolves.toContain('standalone static app');
     });
 
-    test('preserves backend 404 handling for API routes', async () => {
+    test('delegates unmatched API routes to frontend handler', async () => {
       const res = await app.request('/api/nonexistent');
 
-      expect(res.status).toBe(404);
-      await expect(res.json()).resolves.toEqual({ error: 'Not Found' });
+      expect(res.status).toBe(200);
+      await expect(res.text()).resolves.toContain('standalone static app');
     });
   });
 

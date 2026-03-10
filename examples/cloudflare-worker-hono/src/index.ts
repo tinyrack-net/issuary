@@ -1,13 +1,9 @@
 import { type AppType, createApp } from '@tinyauth/backend';
 import { sqlite } from '@tinyauth/backend/database/sqlite';
-
-function isBackendRoute(urlPath: string): boolean {
-  return (
-    urlPath.startsWith('/api') ||
-    urlPath.startsWith('/oauth') ||
-    urlPath.startsWith('/.well-known')
-  );
-}
+import {
+  type FrontendConfig,
+  interpolateHtmlResponse,
+} from '@tinyauth/backend/frontend';
 
 interface AssetFetcher {
   fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
@@ -23,13 +19,8 @@ const HTML_VARIABLES: Record<string, string> = {
   FAVICON_URL: '/vite.svg',
 };
 
-function interpolateHtml(
-  template: string,
-  variables: Record<string, string>,
-): string {
-  return template.replace(/{{([A-Z0-9_]+)}}/g, (_match, rawKey: string) => {
-    return variables[rawKey] ?? '';
-  });
+function hasFileExtension(pathname: string): boolean {
+  return /\/[^/]+\.[^/]+$/.test(pathname);
 }
 
 function isHtmlResponse(response: Response): boolean {
@@ -39,27 +30,25 @@ function isHtmlResponse(response: Response): boolean {
   );
 }
 
-function hasFileExtension(pathname: string): boolean {
-  return /\/[^/]+\.[^/]+$/.test(pathname);
-}
+function createAssetsHandler(assets: AssetFetcher): FrontendConfig {
+  return async (c) => {
+    const pathname = new URL(c.req.url).pathname;
+    const assetResponse = await assets.fetch(c.req.raw);
 
-async function interpolateHtmlResponse(
-  response: Response,
-  variables: Record<string, string>,
-): Promise<Response> {
-  if (!isHtmlResponse(response)) {
-    return response;
-  }
+    if (
+      pathname !== '/index.html' &&
+      hasFileExtension(pathname) &&
+      isHtmlResponse(assetResponse)
+    ) {
+      return c.text('Not Found', 404);
+    }
 
-  const interpolated = interpolateHtml(await response.text(), variables);
-  const headers = new Headers(response.headers);
-  headers.delete('content-length');
+    if (c.req.method !== 'GET') {
+      return assetResponse;
+    }
 
-  return new Response(interpolated, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
+    return interpolateHtmlResponse(assetResponse, HTML_VARIABLES);
+  };
 }
 
 export async function createCloudflareExampleApp(assets: AssetFetcher) {
@@ -76,30 +65,8 @@ export async function createCloudflareExampleApp(assets: AssetFetcher) {
       security: {
         hash_master_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       },
+      frontend: createAssetsHandler(assets),
     },
-  });
-
-  result.app.notFound(async (c) => {
-    const pathname = new URL(c.req.url).pathname;
-
-    if (isBackendRoute(pathname)) {
-      return c.json({ error: 'Not Found' }, 404);
-    }
-
-    const assetResponse = await assets.fetch(c.req.raw);
-    if (
-      pathname !== '/index.html' &&
-      hasFileExtension(pathname) &&
-      isHtmlResponse(assetResponse)
-    ) {
-      return c.text('Not Found', 404);
-    }
-
-    if (c.req.method !== 'GET') {
-      return assetResponse;
-    }
-
-    return interpolateHtmlResponse(assetResponse, HTML_VARIABLES);
   });
 
   return result.app;

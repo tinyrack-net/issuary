@@ -1,26 +1,22 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { AppType } from '@tinyauth/backend';
+import type { Context } from 'hono';
 import { getMimeType } from 'hono/utils/mime';
+import type { FrontendConfig } from '#backend/lib/config/frontend.js';
 import { interpolateHtml } from './interpolate-html.js';
 
-function isBackendRoute(urlPath: string): boolean {
-  return (
-    urlPath.startsWith('/api') ||
-    urlPath.startsWith('/oauth') ||
-    urlPath.startsWith('/.well-known')
-  );
-}
-
-export interface StaticRouteOptions {
+export interface CreateStaticHandlerOptions {
   htmlVariables: Record<string, string>;
   publicPath: string;
 }
 
-export function registerStaticRoutes(
-  app: AppType,
-  options: StaticRouteOptions,
-): void {
+/**
+ * Create a FrontendConfig that serves static files from a directory.
+ * Supports HTML variable interpolation and SPA fallback to index.html.
+ */
+export function createStaticHandler(
+  options: CreateStaticHandlerOptions,
+): FrontendConfig {
   const publicPath = path.resolve(options.publicPath);
   const rootIndexPath = path.join(publicPath, 'index.html');
   const { htmlVariables } = options;
@@ -53,16 +49,16 @@ export function registerStaticRoutes(
     );
   }
 
-  app.notFound(async (c) => {
+  return async (c: Context): Promise<Response> => {
     const urlPath = c.req.path;
-
-    if (isBackendRoute(urlPath)) {
-      return c.json({ error: 'Not Found' }, 404);
-    }
 
     const resolved = path.resolve(publicPath, `.${urlPath}`);
     if (!isSafePath(resolved)) {
-      return c.json({ error: 'Not Found' }, 404);
+      return c.html(
+        hasVariables
+          ? await getInterpolatedHtml(rootIndexPath)
+          : await getRootIndex(),
+      );
     }
 
     try {
@@ -107,5 +103,5 @@ export function registerStaticRoutes(
     } catch {
       return c.json({ error: 'Not Found' }, 404);
     }
-  });
+  };
 }

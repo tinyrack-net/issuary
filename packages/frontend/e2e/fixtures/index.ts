@@ -85,7 +85,7 @@ export const E2E_BASE_AUTH_CONFIG: TinyAuthConfigs['auth'] = {
 
 export const E2E_BASE_CONFIG: Omit<TinyAuthConfigs, 'app'> = {
   security: E2E_TEST_SECURITY_CONFIG,
-  logging: { level: 'silent', format: 'json', http_log_proxy: false },
+  logging: { level: 'silent', format: 'json' },
   database: sqlite({ path: './test.db', test: true }),
   auth: E2E_BASE_AUTH_CONFIG,
   cleanup: {

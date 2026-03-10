@@ -13,7 +13,6 @@ app:
 logging:
   level: trace
   format: pretty
-  http_log_proxy: false
 
 database:
   test: true

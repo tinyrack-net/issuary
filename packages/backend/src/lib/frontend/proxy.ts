@@ -1,17 +1,14 @@
 import type { Context } from 'hono';
 import { proxy } from 'hono/proxy';
-import type { Logger } from '#standalone/lib/logger.js';
 
-export interface ProxyHandlerOptions {
+import type { FrontendConfig } from '#backend/lib/config/frontend.js';
+
+export interface CreateProxyHandlerOptions {
   /**
    * Upstream server URL to proxy requests to.
    * Example: 'http://localhost:8081'
    */
   upstream: string;
-  /**
-   * Logger instance for proxy error reporting.
-   */
-  logger: Logger;
   /**
    * Optional response interceptor.
    * Called with the proxied Response before it is
@@ -23,24 +20,24 @@ export interface ProxyHandlerOptions {
     | undefined;
 }
 
-export function createProxyHandler(options: ProxyHandlerOptions) {
+/**
+ * Create a FrontendConfig that proxies requests to an upstream server.
+ */
+export function createProxyHandler(
+  options: CreateProxyHandlerOptions,
+): FrontendConfig {
   return async (c: Context): Promise<Response> => {
     const reqUrl = new URL(c.req.url);
     const targetUrl = `${options.upstream}${reqUrl.pathname}${reqUrl.search}`;
 
-    try {
-      const res = await proxy(targetUrl, {
-        raw: c.req.raw,
-      });
+    const res = await proxy(targetUrl, {
+      raw: c.req.raw,
+    });
 
-      if (options.onResponse) {
-        return options.onResponse(res);
-      }
-
-      return res;
-    } catch (err) {
-      options.logger.error({ err }, 'Proxy error');
-      return c.json({ error: 'Proxy error' }, 502);
+    if (options.onResponse) {
+      return options.onResponse(res);
     }
+
+    return res;
   };
 }

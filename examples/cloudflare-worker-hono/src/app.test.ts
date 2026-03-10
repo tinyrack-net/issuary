@@ -1,3 +1,4 @@
+import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
@@ -63,13 +64,26 @@ function createAssetsFetcher() {
 
 beforeEach(() => {
   createAppMock.mockReset();
-  createAppMock.mockImplementation(async () => {
-    const app = new Hono();
-    app.get('/api/health/live', (c) => {
-      return c.json({ status: 'ok' });
-    });
-    return { app };
-  });
+  createAppMock.mockImplementation(
+    async (options: {
+      config: { frontend?: (c: Context) => Response | Promise<Response> };
+    }) => {
+      const app = new Hono();
+      app.get('/api/health/live', (c) => {
+        return c.json({ status: 'ok' });
+      });
+
+      const frontendHandler = options.config.frontend;
+      app.notFound(async (c) => {
+        if (frontendHandler) {
+          return frontendHandler(c);
+        }
+        return c.json({ error: 'Not Found' }, 404);
+      });
+
+      return { app };
+    },
+  );
 });
 
 describe('createCloudflareExampleApp', () => {
@@ -87,7 +101,7 @@ describe('createCloudflareExampleApp', () => {
     expect(assets.fetch).not.toHaveBeenCalled();
   });
 
-  test('returns json 404 for unknown backend routes', async () => {
+  test('delegates unknown backend routes to frontend handler', async () => {
     const { createCloudflareExampleApp } = await import('./index.js');
     const assets = createAssetsFetcher();
     const app = await createCloudflareExampleApp(assets);
@@ -97,8 +111,7 @@ describe('createCloudflareExampleApp', () => {
     );
 
     expect(response.status).toBe(404);
-    await expect(response.json()).resolves.toEqual({ error: 'Not Found' });
-    expect(assets.fetch).not.toHaveBeenCalled();
+    expect(assets.fetch).toHaveBeenCalled();
   });
 
   test('serves interpolated frontend html for app routes', async () => {

@@ -234,16 +234,6 @@ logging:
   #   - 'pretty': Human-readable output
   format: json
 
-  # http_log_proxy: Whether to log HTTP access logs for proxied frontend
-  # requests in development mode.
-  # When false (default), proxy requests (JS, CSS, images, HMR, etc.)
-  # are completely suppressed, keeping the terminal clean.
-  # Set to true to see them.
-  # Only relevant in development mode where a frontend dev server proxy
-  # is active; has no effect in production.
-  # Default: false
-  http_log_proxy: false
-
 # -----------------------------------------------------------------------------
 # Scheduler Configuration
 # -----------------------------------------------------------------------------

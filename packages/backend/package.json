@@ -54,6 +54,18 @@
       "./identity-providers/generic-oauth": {
         "types": "./dist/entries/identity-providers/generic-oauth.d.ts",
         "default": "./dist/entries/identity-providers/generic-oauth.js"
+      },
+      "./frontend": {
+        "types": "./dist/entries/frontend/index.d.ts",
+        "default": "./dist/entries/frontend/index.js"
+      },
+      "./frontend/static": {
+        "types": "./dist/entries/frontend/static.d.ts",
+        "default": "./dist/entries/frontend/static.js"
+      },
+      "./frontend/proxy": {
+        "types": "./dist/entries/frontend/proxy.d.ts",
+        "default": "./dist/entries/frontend/proxy.js"
       }
     },
     "imports": {
@@ -113,6 +125,21 @@
       "@tinyauth/source": "./src/entries/identity-providers/generic-oauth.ts",
       "types": "./dist/entries/identity-providers/generic-oauth.d.ts",
       "default": "./dist/entries/identity-providers/generic-oauth.js"
+    },
+    "./frontend": {
+      "@tinyauth/source": "./src/entries/frontend/index.ts",
+      "types": "./dist/entries/frontend/index.d.ts",
+      "default": "./dist/entries/frontend/index.js"
+    },
+    "./frontend/static": {
+      "@tinyauth/source": "./src/entries/frontend/static.ts",
+      "types": "./dist/entries/frontend/static.d.ts",
+      "default": "./dist/entries/frontend/static.js"
+    },
+    "./frontend/proxy": {
+      "@tinyauth/source": "./src/entries/frontend/proxy.ts",
+      "types": "./dist/entries/frontend/proxy.d.ts",
+      "default": "./dist/entries/frontend/proxy.js"
     }
   },
   "imports": {

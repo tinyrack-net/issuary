@@ -5,14 +5,6 @@ import { createApp } from '@tinyauth/backend';
 import type { TinyAuthConfigs } from '@tinyauth/backend/config';
 import { resolveTestMailConfig } from '#frontend-e2e/setup/resolve-test-smtp.js';
 
-function isBackendRoute(urlPath: string): boolean {
-  return (
-    urlPath.startsWith('/api') ||
-    urlPath.startsWith('/oauth') ||
-    urlPath.startsWith('/.well-known')
-  );
-}
-
 const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
 
 export type TestHonoApp = Awaited<ReturnType<typeof createE2EServer>>['app'];
@@ -477,7 +469,12 @@ export async function createE2EServer(configFactory: ConfigFactory) {
     })
     .notFound(async (c) => {
       const url = new URL(c.req.url);
-      if (isBackendRoute(url.pathname)) {
+      if (
+        url.pathname.startsWith('/api') ||
+        url.pathname.startsWith('/oauth') ||
+        url.pathname.startsWith('/.well-known') ||
+        url.pathname.startsWith('/test')
+      ) {
         return c.json({ error: 'Not Found' }, 404);
       }
       const upstream = `http://localhost:${frontendPort}${url.pathname}${url.search}`;
