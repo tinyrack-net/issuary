@@ -15,10 +15,16 @@ export const StandaloneDatabasePostgresConfigSchema = z.object({
   name: z.string().min(1).default('test'),
 });
 
-export const StandaloneDatabaseConfigSchema = z.discriminatedUnion('type', [
-  StandaloneDatabaseSqliteConfigSchema,
-  StandaloneDatabasePostgresConfigSchema,
-]);
+export const StandaloneDatabaseConfigSchema = z
+  .discriminatedUnion('type', [
+    StandaloneDatabaseSqliteConfigSchema,
+    StandaloneDatabasePostgresConfigSchema,
+  ])
+  .default({
+    type: 'sqlite',
+    path: './test.db',
+    test: false,
+  });
 
 export type StandaloneDatabaseConfig = z.infer<
   typeof StandaloneDatabaseConfigSchema

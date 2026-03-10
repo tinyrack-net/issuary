@@ -16,11 +16,7 @@ import { StandaloneUserConfigsSchema } from './user.js';
 
 export const StandaloneConfigSchema = z.object({
   app: StandaloneAppConfigSchema,
-  database: StandaloneDatabaseConfigSchema.default({
-    type: 'sqlite',
-    path: './test.db',
-    test: false,
-  }),
+  database: StandaloneDatabaseConfigSchema,
   logging: StandaloneLoggingConfigSchema,
   auth: StandaloneAuthConfigSchema,
   identity_providers: StandaloneIdentityProviderConfigsSchema.default([]),
@@ -42,3 +38,4 @@ export type ResolvedStandaloneConfig = Omit<TinyAuthConfigs, 'app'> & {
     html_variables: Record<string, string>;
   };
 };
+

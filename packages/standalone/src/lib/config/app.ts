@@ -11,3 +11,4 @@ export const StandaloneAppConfigSchema = AppConfigSchema.extend({
 });
 
 export type StandaloneAppConfig = z.infer<typeof StandaloneAppConfigSchema>;
+

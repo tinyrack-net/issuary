@@ -50,16 +50,10 @@ describe('load-config', () => {
       ].join('\n'),
     );
 
-    const config = loadConfig({ configPath: configFile });
+    const config = loadConfig(configFile);
 
     expect(config.app.cookie_secret).toBe('explicit-secret-1234567890');
     await fs.promises.rm(dir, { recursive: true, force: true });
-  });
-
-  test('throws when configPath file is missing', () => {
-    expect(() => loadConfig({ configPath: '/missing/config.yaml' })).toThrow(
-      'Config file not found',
-    );
   });
 
   test('applies proxy frontend defaults during standalone resolution', async () => {

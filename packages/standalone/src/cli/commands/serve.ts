@@ -15,10 +15,10 @@ import { loadConfig } from '#standalone/lib/load-config.js';
  */
 export const serveCommand = new Command('serve')
   .description('Start the TinyAuth server')
-  .requiredOption('-c, --config-path <path>', 'Path to config file')
-  .action(async (options: { configPath: string }) => {
+  .option('-c, --config-path <path>', 'Path to config file')
+  .action(async (options: { configPath?: string | undefined }) => {
     try {
-      const config = loadConfig({ configPath: options.configPath });
+      const config = loadConfig(options.configPath);
       const { app, cleanup, services, logger } = await createStandaloneApp({
         config,
       });

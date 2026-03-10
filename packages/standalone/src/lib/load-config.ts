@@ -20,6 +20,7 @@ import {
 import type { Logger } from '#standalone/lib/logger.js';
 import { resolveEnvVariables } from './interpolate-env.js';
 import { resolveAbsolutePath } from './resolve-path.js';
+import { DEFAULT_CONFIG_PATH } from './constants.js';
 
 export const DEFAULT_FRONTEND_PROXY_UPSTREAM = 'http://localhost:8081';
 export const DEFAULT_FRONTEND_STATIC_PATH = '/opt/tinyauth/frontend';
@@ -157,16 +158,6 @@ export async function resolveConfig(input: unknown): Promise<TinyAuthConfigs> {
   };
 }
 
-const loadConfigFromPath = (configPath: string): StandaloneConfig => {
-  if (!fs.existsSync(configPath)) {
-    throw new Error(`Config file not found at "${configPath}"`);
-  }
-  const file = fs.readFileSync(configPath, 'utf8');
-  const rawConfig = YAML.parse(file);
-  const resolvedConfig = resolveEnvVariables(rawConfig);
-  return parseConfig(resolvedConfig);
-};
-
 /**
  * Load configuration from a YAML config file.
  *
@@ -174,13 +165,31 @@ const loadConfigFromPath = (configPath: string): StandaloneConfig => {
  * @param options.configPath - Path to the config file (required)
  * @param options.logger - Logger instance for config loading messages
  */
-export function loadConfig(options: {
-  configPath: string;
-  logger?: Logger | undefined;
-}): StandaloneConfig {
-  const configPath = resolveAbsolutePath(options.configPath);
-  options.logger?.info({ configPath }, 'Loading config from file');
-  return loadConfigFromPath(configPath);
+export function loadConfig(configPath?: string | undefined): StandaloneConfig {
+  const resolvedPath = configPath
+    ? resolveAbsolutePath(configPath)
+    : DEFAULT_CONFIG_PATH;
+
+  if (fs.existsSync(resolvedPath)) {
+    const file = fs.readFileSync(resolvedPath, 'utf8');
+    const rawConfig = YAML.parse(file);
+    const resolvedConfig = resolveEnvVariables(rawConfig);
+    return parseConfig(resolvedConfig);
+  } else {
+    console.warn(`Config file not found at "${configPath}"`);
+    // TODO change
+    const defaultConfig: StandaloneConfigInput = {
+      app: {
+        cookie_secret:
+          'e7e1f64d40b55fd8b5e529b5d85d62e39922d52b4364fc197546efaa72305d24',
+      },
+      security: {
+        hash_master_secret:
+          'e7e1f64d40b55fd8b5e529b5d85d62e39922d52b4364fc197546efaa72305d24',
+      },
+    };
+    return parseConfig(defaultConfig);
+  }
 }
 
 export async function resolveStandaloneConfig(
@@ -202,5 +211,5 @@ export async function loadResolvedConfig(options: {
   configPath: string;
   logger?: Logger | undefined;
 }): Promise<ResolvedStandaloneConfig> {
-  return resolveStandaloneConfig(loadConfig(options));
+  return resolveStandaloneConfig(loadConfig(options.configPath));
 }

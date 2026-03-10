@@ -24,7 +24,7 @@ const program = new Command();
 
 program.name('tinyauth').description('TinyAuth OIDC Provider').version('1.0.0');
 
-program.addCommand(serveCommand, { isDefault: true });
+program.addCommand(serveCommand);
 program.addCommand(cleanupCommand);
 program.addCommand(exportOpenapiCommand);
 
