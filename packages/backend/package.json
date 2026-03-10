@@ -16,56 +16,56 @@
   "publishConfig": {
     "exports": {
       ".": {
-        "types": "./dist/entries/index.d.ts",
-        "default": "./dist/entries/index.js"
+        "types": "./dist/entrypoints/index.d.ts",
+        "default": "./dist/entrypoints/index.js"
       },
       "./config": {
-        "types": "./dist/entries/config/index.d.ts",
-        "default": "./dist/entries/config/index.js"
+        "types": "./dist/entrypoints/config/index.d.ts",
+        "default": "./dist/entrypoints/config/index.js"
       },
       "./services": {
-        "types": "./dist/entries/services.d.ts",
-        "default": "./dist/entries/services.js"
+        "types": "./dist/entrypoints/services.d.ts",
+        "default": "./dist/entrypoints/services.js"
       },
       "./database/postgres": {
-        "types": "./dist/entries/database/postgres.d.ts",
-        "default": "./dist/entries/database/postgres.js"
+        "types": "./dist/entrypoints/database/postgres.d.ts",
+        "default": "./dist/entrypoints/database/postgres.js"
       },
       "./database/sqlite": {
-        "types": "./dist/entries/database/sqlite.d.ts",
-        "default": "./dist/entries/database/sqlite.js"
+        "types": "./dist/entrypoints/database/sqlite.d.ts",
+        "default": "./dist/entrypoints/database/sqlite.js"
       },
       "./mail/nodemailer": {
-        "types": "./dist/entries/mail/nodemailer.d.ts",
-        "default": "./dist/entries/mail/nodemailer.js"
+        "types": "./dist/entrypoints/mail/nodemailer.d.ts",
+        "default": "./dist/entrypoints/mail/nodemailer.js"
       },
       "./identity-providers/github": {
-        "types": "./dist/entries/identity-providers/github.d.ts",
-        "default": "./dist/entries/identity-providers/github.js"
+        "types": "./dist/entrypoints/identity-providers/github.d.ts",
+        "default": "./dist/entrypoints/identity-providers/github.js"
       },
       "./identity-providers/google": {
-        "types": "./dist/entries/identity-providers/google.d.ts",
-        "default": "./dist/entries/identity-providers/google.js"
+        "types": "./dist/entrypoints/identity-providers/google.d.ts",
+        "default": "./dist/entrypoints/identity-providers/google.js"
       },
       "./identity-providers/apple": {
-        "types": "./dist/entries/identity-providers/apple.d.ts",
-        "default": "./dist/entries/identity-providers/apple.js"
+        "types": "./dist/entrypoints/identity-providers/apple.d.ts",
+        "default": "./dist/entrypoints/identity-providers/apple.js"
       },
       "./identity-providers/generic-oauth": {
-        "types": "./dist/entries/identity-providers/generic-oauth.d.ts",
-        "default": "./dist/entries/identity-providers/generic-oauth.js"
+        "types": "./dist/entrypoints/identity-providers/generic-oauth.d.ts",
+        "default": "./dist/entrypoints/identity-providers/generic-oauth.js"
       },
       "./frontend": {
-        "types": "./dist/entries/frontend/index.d.ts",
-        "default": "./dist/entries/frontend/index.js"
+        "types": "./dist/entrypoints/frontend/index.d.ts",
+        "default": "./dist/entrypoints/frontend/index.js"
       },
       "./frontend/static": {
-        "types": "./dist/entries/frontend/static.d.ts",
-        "default": "./dist/entries/frontend/static.js"
+        "types": "./dist/entrypoints/frontend/static.d.ts",
+        "default": "./dist/entrypoints/frontend/static.js"
       },
       "./frontend/proxy": {
-        "types": "./dist/entries/frontend/proxy.d.ts",
-        "default": "./dist/entries/frontend/proxy.js"
+        "types": "./dist/entrypoints/frontend/proxy.d.ts",
+        "default": "./dist/entrypoints/frontend/proxy.js"
       }
     },
     "imports": {
@@ -77,69 +77,69 @@
   },
   "exports": {
     ".": {
-      "@tinyauth/source": "./src/entries/index.ts",
-      "types": "./dist/entries/index.d.ts",
-      "default": "./dist/entries/index.js"
+      "@tinyauth/source": "./src/entrypoints/index.ts",
+      "types": "./dist/entrypoints/index.d.ts",
+      "default": "./dist/entrypoints/index.js"
     },
     "./config": {
-      "@tinyauth/source": "./src/entries/config/index.ts",
-      "types": "./dist/entries/config/index.d.ts",
-      "default": "./dist/entries/config/index.js"
+      "@tinyauth/source": "./src/entrypoints/config/index.ts",
+      "types": "./dist/entrypoints/config/index.d.ts",
+      "default": "./dist/entrypoints/config/index.js"
     },
     "./services": {
-      "@tinyauth/source": "./src/entries/services.ts",
-      "types": "./dist/entries/services.d.ts",
-      "default": "./dist/entries/services.js"
+      "@tinyauth/source": "./src/entrypoints/services.ts",
+      "types": "./dist/entrypoints/services.d.ts",
+      "default": "./dist/entrypoints/services.js"
     },
     "./database/postgres": {
-      "@tinyauth/source": "./src/entries/database/postgres.ts",
-      "types": "./dist/entries/database/postgres.d.ts",
-      "default": "./dist/entries/database/postgres.js"
+      "@tinyauth/source": "./src/entrypoints/database/postgres.ts",
+      "types": "./dist/entrypoints/database/postgres.d.ts",
+      "default": "./dist/entrypoints/database/postgres.js"
     },
     "./database/sqlite": {
-      "@tinyauth/source": "./src/entries/database/sqlite.ts",
-      "types": "./dist/entries/database/sqlite.d.ts",
-      "default": "./dist/entries/database/sqlite.js"
+      "@tinyauth/source": "./src/entrypoints/database/sqlite.ts",
+      "types": "./dist/entrypoints/database/sqlite.d.ts",
+      "default": "./dist/entrypoints/database/sqlite.js"
     },
     "./mail/nodemailer": {
-      "@tinyauth/source": "./src/entries/mail/nodemailer.ts",
-      "types": "./dist/entries/mail/nodemailer.d.ts",
-      "default": "./dist/entries/mail/nodemailer.js"
+      "@tinyauth/source": "./src/entrypoints/mail/nodemailer.ts",
+      "types": "./dist/entrypoints/mail/nodemailer.d.ts",
+      "default": "./dist/entrypoints/mail/nodemailer.js"
     },
     "./identity-providers/github": {
-      "@tinyauth/source": "./src/entries/identity-providers/github.ts",
-      "types": "./dist/entries/identity-providers/github.d.ts",
-      "default": "./dist/entries/identity-providers/github.js"
+      "@tinyauth/source": "./src/entrypoints/identity-providers/github.ts",
+      "types": "./dist/entrypoints/identity-providers/github.d.ts",
+      "default": "./dist/entrypoints/identity-providers/github.js"
     },
     "./identity-providers/google": {
-      "@tinyauth/source": "./src/entries/identity-providers/google.ts",
-      "types": "./dist/entries/identity-providers/google.d.ts",
-      "default": "./dist/entries/identity-providers/google.js"
+      "@tinyauth/source": "./src/entrypoints/identity-providers/google.ts",
+      "types": "./dist/entrypoints/identity-providers/google.d.ts",
+      "default": "./dist/entrypoints/identity-providers/google.js"
     },
     "./identity-providers/apple": {
-      "@tinyauth/source": "./src/entries/identity-providers/apple.ts",
-      "types": "./dist/entries/identity-providers/apple.d.ts",
-      "default": "./dist/entries/identity-providers/apple.js"
+      "@tinyauth/source": "./src/entrypoints/identity-providers/apple.ts",
+      "types": "./dist/entrypoints/identity-providers/apple.d.ts",
+      "default": "./dist/entrypoints/identity-providers/apple.js"
     },
     "./identity-providers/generic-oauth": {
-      "@tinyauth/source": "./src/entries/identity-providers/generic-oauth.ts",
-      "types": "./dist/entries/identity-providers/generic-oauth.d.ts",
-      "default": "./dist/entries/identity-providers/generic-oauth.js"
+      "@tinyauth/source": "./src/entrypoints/identity-providers/generic-oauth.ts",
+      "types": "./dist/entrypoints/identity-providers/generic-oauth.d.ts",
+      "default": "./dist/entrypoints/identity-providers/generic-oauth.js"
     },
     "./frontend": {
-      "@tinyauth/source": "./src/entries/frontend/index.ts",
-      "types": "./dist/entries/frontend/index.d.ts",
-      "default": "./dist/entries/frontend/index.js"
+      "@tinyauth/source": "./src/entrypoints/frontend/index.ts",
+      "types": "./dist/entrypoints/frontend/index.d.ts",
+      "default": "./dist/entrypoints/frontend/index.js"
     },
     "./frontend/static": {
-      "@tinyauth/source": "./src/entries/frontend/static.ts",
-      "types": "./dist/entries/frontend/static.d.ts",
-      "default": "./dist/entries/frontend/static.js"
+      "@tinyauth/source": "./src/entrypoints/frontend/static.ts",
+      "types": "./dist/entrypoints/frontend/static.d.ts",
+      "default": "./dist/entrypoints/frontend/static.js"
     },
     "./frontend/proxy": {
-      "@tinyauth/source": "./src/entries/frontend/proxy.ts",
-      "types": "./dist/entries/frontend/proxy.d.ts",
-      "default": "./dist/entries/frontend/proxy.js"
+      "@tinyauth/source": "./src/entrypoints/frontend/proxy.ts",
+      "types": "./dist/entrypoints/frontend/proxy.d.ts",
+      "default": "./dist/entrypoints/frontend/proxy.js"
     }
   },
   "imports": {
@@ -205,8 +205,8 @@
   },
   "mikro-orm": {
     "configPaths": [
-      "./src/entries/database/cli.ts",
-      "./dist/entries/database/cli.js"
+      "./src/entrypoints/database/cli.ts",
+      "./dist/entrypoints/database/cli.js"
     ]
   }
 }

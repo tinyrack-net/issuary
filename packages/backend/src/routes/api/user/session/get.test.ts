@@ -1,7 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { UserEntity } from '#backend/entities/user.entity.js';
-import type { AppType } from '#backend/entries/app.js';
+import type { AppType } from '#backend/entrypoints/app.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,

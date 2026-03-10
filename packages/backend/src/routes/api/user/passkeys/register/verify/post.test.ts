@@ -1,7 +1,7 @@
 import type { RegistrationResponseJSON } from '@simplewebauthn/server';
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
-import type { AppType } from '#backend/entries/app.js';
+import type { AppType } from '#backend/entrypoints/app.js';
 import { e } from '#backend/schemas/error.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {

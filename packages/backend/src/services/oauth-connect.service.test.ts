@@ -8,9 +8,9 @@ import {
   test,
   vi,
 } from 'vitest';
-import { apple } from '#backend/entries/identity-providers/apple.js';
-import { github } from '#backend/entries/identity-providers/github.js';
-import { google } from '#backend/entries/identity-providers/google.js';
+import { apple } from '#backend/entrypoints/identity-providers/apple.js';
+import { github } from '#backend/entrypoints/identity-providers/github.js';
+import { google } from '#backend/entrypoints/identity-providers/google.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import {
   createTestApp,

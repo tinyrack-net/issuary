@@ -1,7 +1,7 @@
 import nm from 'nodemailer';
-import { type CreateAppOptions, createApp } from '#backend/entries/app.js';
-import { sqlite } from '#backend/entries/database/sqlite.js';
-import { nodemailer } from '#backend/entries/mail/nodemailer.js';
+import { type CreateAppOptions, createApp } from '#backend/entrypoints/app.js';
+import { sqlite } from '#backend/entrypoints/database/sqlite.js';
+import { nodemailer } from '#backend/entrypoints/mail/nodemailer.js';
 import type { MailConfig, TinyAuthConfigs } from '#backend/lib/config/index.js';
 
 /**
@@ -14,7 +14,7 @@ import type { MailConfig, TinyAuthConfigs } from '#backend/lib/config/index.js';
  * @example
  * ```typescript
  * import { createTestApp, MINIMAL_TEST_CONFIG } from '#backend/test-utils/setup.js';
- * import type { AppType } from '#backend/entries/app.js';
+ * import type { AppType } from '#backend/entrypoints/app.js';
  * import type { ServiceContainer } from '#backend/services/container.js';
  *
  * let app: AppType;

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { nodemailer } from '#backend/entries/mail/nodemailer.js';
+import { nodemailer } from '#backend/entrypoints/mail/nodemailer.js';
 
 describe('nodemailer config factory', () => {
   test('returns a valid MailConfig', () => {
