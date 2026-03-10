@@ -9,7 +9,8 @@ description: 1분 안에 Tinyauth를 실행해 보세요
 docker run \
   --rm \
   -p 8080:8080 \
-  -e COOKIE_SECRET="$(openssl rand -hex 32)" \
+  -e SESSION_SECRET="$(openssl rand -hex 32)" \
+  -e HASH_SECRET="$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')" \
   ghcr.io/tinyrack/tinyauth
 ```
 
@@ -32,9 +33,12 @@ docker run \
 ```yaml
 # config.yaml
 app:
-  cookie_secret: "$(openssl rand -hex 32)"
   allowed_signup_emails:
     - '*'
+
+security:
+  session_secret: "$(openssl rand -hex 32)"
+  hash_secret: "$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')"
 ```
 
 ```bash
@@ -51,14 +55,15 @@ docker run \
 
 ```yaml
 # config.yaml
-app:
-  cookie_secret: "$(openssl rand -hex 32)"
-
 users:
   - id: admin
     email: admin@example.com
     password: your-password
     role: admin
+
+security:
+  session_secret: "$(openssl rand -hex 32)"
+  hash_secret: "$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')"
 ```
 
 ```bash

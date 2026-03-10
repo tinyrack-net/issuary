@@ -8,7 +8,9 @@ description: Tinyauth 환경 변수 참조
 ```yaml
 app:
   host: "${APP_HOST}"
-  cookie_secret: "$COOKIE_SECRET"
+security:
+  session_secret: "$SESSION_SECRET"
+  hash_secret: "$HASH_SECRET"
 ```
 
 > `$VAR` 또는 `${VAR}` 구문 모두 유효한 표현이에요.
@@ -20,7 +22,8 @@ docker run \
   -p 8080:8080 \
   -v ./config.yaml:/opt/config.yaml \
   -e APP_HOST=https://example.com \
-  -e COOKIE_SECRET=your-secret-key \
+  -e SESSION_SECRET=your-session-secret \
+  -e HASH_SECRET=your-base64url-hash-secret \
   ghcr.io/tinyrack/tinyauth
 ```
 
@@ -48,6 +51,9 @@ app:
   jwt_key_rotation_enabled: ${JWT_KEY_ROTATION_ENABLED:-true}
   jwt_key_rotation_days: ${JWT_KEY_ROTATION_DAYS:-30}
   jwt_key_overlap_days: ${JWT_KEY_OVERLAP_DAYS:-7}
+security:
+  session_secret: ${SESSION_SECRET}
+  hash_secret: ${HASH_SECRET}
 ```
 
 전체 환경 변수와 기본값을 확인하려면 [설정 스키마 문서](/ko/reference/configuration-schema)를 참고해 주세요.

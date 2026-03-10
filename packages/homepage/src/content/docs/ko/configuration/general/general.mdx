@@ -10,16 +10,20 @@ description: Tinyauth용 PostgreSQL 데이터베이스 구성하기
 app:
   host: ${APP_HOST:-http://localhost:8080}
   port: ${PORT:-8080}
-  cookie_secret: ${COOKIE_SECRET}
+
+security:
+  session_secret: ${SESSION_SECRET}
+  hash_secret: ${HASH_SECRET}
 ```
 
 - `host`: `tinyauth`에 접속에 사용할 기본 URL을 지정해요. 이는 사용중인 리버스 프록시 설정과 일치해야 하며, 공개된 서비스인 경우 `https` 프로토콜을 사용하는 것이 중요해요. `http` 프로토콜은 일부 기능(패스키)에 제한이 있을 수 있어요.
 - `port`: `tinyauth` 서버가 수신 대기할 포트를 지정해요.
-- `cookie_secret`: 쿠키를 암호화하는데 사용하는 32 바이트 비밀키를 지정해요.
-`tinyauth`는 암호화된 `HTTP Only` 쿠키 방식으로 무상태 세션을 구현해요. 이 값을 중간에 변경하면 기존의 모든 세션이 무효화돼요.
+- `security.session_secret`: 세션 쿠키를 서명하는 데 사용하는 비밀 키예요. `tinyauth`는 `HTTP Only` 쿠키 방식으로 무상태 세션을 구현해요. 이 값을 중간에 변경하면 기존의 모든 세션이 무효화돼요.
+- `security.hash_secret`: 비밀번호와 각종 비밀값 해싱에 사용하는 base64url 32바이트 루트 시크릿이에요.
 
 :::note
-`cookie_secret`은 `openssl rand -hex 32` 명령어로 안전한 값을 생성할 수 있어요.
+`security.session_secret`은 `openssl rand -hex 32` 명령어로 생성할 수 있어요.
+`security.hash_secret`은 `openssl rand -base64 32 | tr '+/' '-_' | tr -d '='` 명령어로 생성할 수 있어요.
 :::
 
 ---
@@ -33,31 +37,7 @@ app:
 app:
   host: https://auth.tinyrack.net
   port: 8080
-  cookie_secret: 978aec42d5347fbbd6459948c558e8f5b9d0ee244bce983910a01aaf42692513
+security:
+  session_secret: 978aec42d5347fbbd6459948c558e8f5b9d0ee244bce983910a01aaf42692513
+  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY
 ```
-
-{/* `tinyauth`에 접속할 때 사용할 기본 URL을 지정해요. 이는 사용중인 리버스 프록시 설정과 일치해야 하며, 공개된 서비스인 경우 `https` 프로토콜을 사용하는 것이 중요해요. 다음과 같이 설정할 수 있어요.
-
-```yaml
-# config.yaml
-app:
-  host: "https://내_도메인.com"
-  cookie_secret: 'your-32-byte-random-secret-key-here'
-```
-
-## Cookie 비밀 키 지정
-
-`tinyauth`는 암호화된 `HTTP Only` 쿠키 방식으로 무상태 세션을 구현해요.
-이 방식은 브라우저에서의 XSS 공격을 방지하고, 수평적 확장에 유리하다는 장점을 가져요.
-`cookie_secret`은 이 쿠키를 암호화하는데 사용하는 비밀키에요. 다음과 같이 설정할 수 있어요.
-
-```yaml
-# config.yaml
-app:
-  cookie_secret: 'your-32-byte-random-secret-key-here'
-```
-
-- `host`: `tinyauth`에 접속할 때 사용할 URL을 지정해요. 공개된 서비스인 경우 보안을 위해 리버스 프록시와 `https` 프로토콜을 사용할 것을 강력히 권장드려요.
-- `cookie_secret`: 에는 32바이트 비밀 키를 사용해요. 고유하고 무작위인 값을 생성하는 것이 중요해요.
-이는 `openssl rand -hex 32` 명령어로 안전한 값을 생성할 수 있어요.
-이 값을 중간에 변경하면 기존의 모든 세션이 무효화돼요. */}

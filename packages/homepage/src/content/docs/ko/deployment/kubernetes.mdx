@@ -42,8 +42,13 @@ data:
     app:
       host: https://auth.example.com
       port: 8080
-      cookie_secret: ${COOKIE_SECRET}
       trust_proxy: true
+      allowed_signup_emails:
+        - '*'
+
+    security:
+      session_secret: ${SESSION_SECRET}
+      hash_secret: ${HASH_SECRET}
 
     database:
       type: postgres
@@ -60,10 +65,6 @@ data:
       password:
         enabled: true
         email_verification: true
-
-    app:
-      allowed_signup_emails:
-        - '*'
 ```
 
 :::note
@@ -84,7 +85,8 @@ metadata:
   namespace: tinyauth
 type: Opaque
 stringData:
-  COOKIE_SECRET: "your-32-byte-random-secret-key-here"
+  SESSION_SECRET: "your-32-byte-random-session-secret"
+  HASH_SECRET: "your-base64url-hash-secret"
   DATABASE_HOST: "postgres-host"
   DATABASE_PORT: "5432"
   DATABASE_NAME: "tinyauth"

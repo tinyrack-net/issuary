@@ -72,7 +72,10 @@ volumes:
 # config.yaml
 app:
   host: https://auth.example.com
-  cookie_secret: your-32-byte-secret
+
+security:
+  session_secret: your-session-secret
+  hash_secret: your-base64url-hash-secret
 
 database:
   type: postgres

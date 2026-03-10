@@ -8,7 +8,7 @@ description: Docker를 사용하여 Tinyauth를 배포하는 방법
 ## 사전 준비
 
 - Docker 및 Docker Compose 설치
-- 최소 16자 이상의 쿠키 시크릿 값
+- 세션 시크릿과 해시 시크릿 값
 
 ---
 
@@ -20,9 +20,12 @@ description: Docker를 사용하여 Tinyauth를 배포하는 방법
 # config.yaml
 app:
   host: https://auth.example.com
-  cookie_secret: your_cookie_secret_here_min_16_chars
   allowed_signup_emails:
     - '*'
+
+security:
+  session_secret: your_session_secret_here_min_16_chars
+  hash_secret: your_base64url_hash_secret_here
 
 database:
   type: sqlite
@@ -108,9 +111,12 @@ SQLite 대신 PostgreSQL을 사용하고 싶다면 아래 예시를 참고하세
 # config.yaml
 app:
   host: https://auth.example.com
-  cookie_secret: your_cookie_secret_here_min_16_chars
   allowed_signup_emails:
     - '*'
+
+security:
+  session_secret: your_session_secret_here_min_16_chars
+  hash_secret: your_base64url_hash_secret_here
 
 database:
   type: postgres
@@ -188,10 +194,13 @@ volumes:
 # config.yaml
 app:
   host: https://auth.example.com
-  cookie_secret: your_cookie_secret_here_min_16_chars
   trust_proxy: true
   allowed_signup_emails:
     - '*'
+
+security:
+  session_secret: your_session_secret_here_min_16_chars
+  hash_secret: your_base64url_hash_secret_here
 
 database:
   type: sqlite
@@ -271,10 +280,13 @@ Traefik도 마찬가지로 `trust_proxy`를 `true`로 설정해야 해요.
 # config.yaml
 app:
   host: https://auth.example.com
-  cookie_secret: your_cookie_secret_here_min_16_chars
   trust_proxy: true
   allowed_signup_emails:
     - '*'
+
+security:
+  session_secret: your_session_secret_here_min_16_chars
+  hash_secret: your_base64url_hash_secret_here
 
 database:
   type: sqlite
@@ -357,9 +369,10 @@ command:
 
 ## 보안 권장 사항
 
-- `cookie_secret`은 반드시 16자 이상의 랜덤 문자열을 사용하세요
+- `security.session_secret`은 반드시 16자 이상의 랜덤 문자열을 사용하세요
+- `security.hash_secret`은 base64url 32바이트 값으로 생성하세요
 - 프로덕션 환경에서는 반드시 HTTPS를 적용하세요
 - `read_only: true`와 `no-new-privileges` 옵션을 사용하세요
 - 비루트 사용자(`user: '1001:1001'`)로 컨테이너를 실행하세요
 - 설정 파일은 읽기 전용(`:ro`)으로 마운트하세요
-- `cookie_secret`과 데이터베이스 비밀번호 같은 민감한 값은 Docker Secrets이나 환경 변수를 활용하세요
+- `security.session_secret`, `security.hash_secret`, 데이터베이스 비밀번호 같은 민감한 값은 Docker Secrets이나 환경 변수를 활용하세요

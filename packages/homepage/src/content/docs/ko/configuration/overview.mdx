@@ -8,6 +8,7 @@ description: Tinyauth 설정 시스템 이해하기
 ```yaml
 # config.yaml
 app:                  # 애플리케이션 설정
+security:             # 세션/해시 시크릿 설정
 database:             # 데이터베이스 설정
 auth:                 # 기본 인증 방식 설정
 identity_providers:   # 타사 인증 방식 설정
@@ -38,11 +39,15 @@ docker run \
 # config.yaml
 app:
   host: "https://내_도메인.com"
-  cookie_secret: "아주_중요한_비밀_키"
+
+security:
+  session_secret: "아주_중요한_세션_시크릿"
+  hash_secret: "base64url_32바이트_해시_시크릿"
 ```
 
 - `host`: `tinyauth`에 접속할 때 사용할 URL을 지정해요. 공개된 서비스인 경우 보안을 위해 리버스 프록시와 `https` 프로토콜을 사용할 것을 강력히 권장드려요.
-- `cookie_secret`: 로그인된 사용자의 세션 쿠키를 암호화하는 데 사용되는 비밀 키예요. 최소 **16자 이상**이어야 하며, `openssl rand -hex 32` 명령어를 통해 안전하게 생성할 수 있어요.
+- `security.session_secret`: 로그인된 사용자의 세션 쿠키를 서명하는 데 사용되는 비밀 키예요. 최소 **16자 이상**이어야 하며, `openssl rand -hex 32` 명령어를 통해 생성할 수 있어요.
+- `security.hash_secret`: 비밀번호와 각종 토큰 해싱에 사용하는 base64url 32바이트 루트 시크릿이에요.
 
 ---
 
@@ -51,7 +56,7 @@ app:
 이외의 다른 설정들은 아래 문서를 참고하여 선호에 맞게 하나씩 조정해 나가시길 바라요.
 
 - [테마](/ko/configuration/general/theme) - UI 테마와 다크 모드 설정
-- [보안](/ko/configuration/general/security) - 쿠키 암호화, JWT 토큰, 회원가입 제어
+- [보안](/ko/configuration/general/security) - 세션 시크릿, 해시 시크릿, JWT 토큰, 회원가입 제어
 - [언어](/ko/configuration/general/language) - 지원 언어와 기본 언어 설정
 - [브랜딩](/ko/configuration/general/branding) - 로고, 배경 이미지, 타이틀 커스터마이징
 - [데이터베이스](/ko/configuration/database/sqlite) - SQLite 또는 PostgreSQL 설정

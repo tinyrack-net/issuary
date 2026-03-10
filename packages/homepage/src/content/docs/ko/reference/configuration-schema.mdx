@@ -19,7 +19,6 @@ description: 전체 config.yaml 스키마 레퍼런스
 |------|------|--------|-----------|------|
 | `host` | `string` | `http://localhost:8080` | `APP_HOST` | 서비스의 공개 URL |
 | `port` | `number` (1-65535) | `8080` | `PORT` | 서버 리스닝 포트 |
-| `cookie_secret` | `string` (16자 이상) | **필수** | `COOKIE_SECRET` | 세션 쿠키 서명 키 |
 | `trust_proxy` | `boolean \| string \| string[] \| number` | `false` | `TRUST_PROXY` | 리버스 프록시 신뢰 설정 |
 
 ### JWT / 토큰
@@ -68,6 +67,16 @@ description: 전체 config.yaml 스키마 레퍼런스
 | `title` | `Record<string, string>` | - | - | 다국어 제목 |
 | `subtitle` | `Record<string, string>` | - | - | 다국어 부제목 |
 | `signup_implicit_terms` | `Record<string, string>` | - | - | 암시적 동의 안내 문구 (HTML) |
+
+---
+
+## `security` - 보안 시크릿 설정
+
+| 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
+|------|------|--------|-----------|------|
+| `session_secret` | `string` (16자 이상) | **필수** | `SESSION_SECRET` | 세션 쿠키 서명 키 |
+| `hash_secret` | `string` (base64url 32바이트) | **필수** | `HASH_SECRET` | 비밀번호, 클라이언트 시크릿, 일회성 토큰 해싱용 루트 시크릿 |
+| `pbkdf2_iterations` | `integer` (최소 1) | `600000` | `PBKDF2_ITERATIONS` | PBKDF2 반복 횟수 |
 
 ---
 
