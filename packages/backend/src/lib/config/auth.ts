@@ -85,9 +85,7 @@ export const PasswordAuthConfigSchema = z
     second_factor: SecondFactorConfigSchema,
     totp: z
       .object({
-        enabled: z
-          .boolean()
-          .default(PASSWORD_AUTH_TOTP_CONFIG_DEFAULT.enabled),
+        enabled: z.boolean().default(PASSWORD_AUTH_TOTP_CONFIG_DEFAULT.enabled),
         issuer: z.string().default(PASSWORD_AUTH_TOTP_CONFIG_DEFAULT.issuer),
       })
       .default(PASSWORD_AUTH_TOTP_CONFIG_DEFAULT),
