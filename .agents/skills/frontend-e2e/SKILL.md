@@ -8,17 +8,16 @@ description: Create, update, and debug Playwright end-to-end tests for the tinya
 ## Overview
 
 Implement repository-aligned Playwright E2E tests in
-`packages/frontend/e2e`. Reuse the existing scenario structure,
-test fixtures, and helper modules instead of ad-hoc setup.
+`packages/frontend/e2e`. Reuse the existing scenario directories,
+shared helper modules, and the generic backend fixture helper instead of
+reintroducing scenario-level config wrappers.
 
 ## Execute Workflow
 
 1. Select the correct scenario.
 - Prefer an existing scenario test directory under `e2e/tests/*`.
-- If no scenario matches, create the full scenario set:
-  `e2e/configs/<name>.ts`, `e2e/fixtures/<name>.ts`,
-  `e2e/tests/<name>/...`, and a matching project entry in
-  `playwright.config.ts`.
+- If no scenario matches, create a new `e2e/tests/<name>/...` directory
+  and a matching project entry in `playwright.config.ts`.
 
 2. Reuse helpers before adding new selectors or flow logic.
 - Prefer helper modules in `e2e/helpers/*.ts` for page actions and
@@ -26,10 +25,15 @@ test fixtures, and helper modules instead of ad-hoc setup.
 - Keep selectors grouped by page/flow as exported `const` objects.
 - Keep helper function signatures explicit and typed.
 
-3. Use scenario fixture imports, not raw Playwright base test.
-- Import `test` and `expect` from `@frontend-e2e/fixtures/<scenario>.js`.
-- Keep local imports on alias paths with `.js` extension.
-- Rely on the fixture-provided backend server and `baseURL`.
+3. Define a local fixture in each spec file.
+- Import `expect` from `@playwright/test`.
+- Import `createScenarioFixture` from
+  `@frontend-e2e/fixtures/create-scenario-fixture.js`.
+- Build the backend config inline with `E2E_BASE_CONFIG` and
+  `createTestAppConfig(...)` from `@frontend-e2e/fixtures/index.js`.
+- Declare only the options the spec actually needs.
+- If a long provider list or term list is shared across specs, extract
+  only that fragment into `e2e/fragments/*.ts`.
 
 4. Build deterministic tests.
 - Wait on navigation with `waitForURL` and assert final route via
@@ -56,7 +60,7 @@ test fixtures, and helper modules instead of ad-hoc setup.
 - Read `references/repo-layout.md` for exact architecture and import
   patterns.
 - Read `references/scenario-matrix.md` to map auth feature changes to
-  scenario directories and fixture/config files.
+  scenario directories.
 
 ## Follow Conventions
 
