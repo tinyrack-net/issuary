@@ -1,4 +1,10 @@
-import { expect, test } from '#frontend-e2e/fixtures/minimal.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+  E2E_TEST_CLIENT_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import { consentPage } from '#frontend-e2e/helpers/consent.js';
 import {
   loginMethodPage,
@@ -15,6 +21,14 @@ import {
 } from '#frontend-e2e/helpers/oauth-client-flow.js';
 import { registerPage } from '#frontend-e2e/helpers/register-page.js';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort, {
+    allowed_signup_emails: ['*'],
+  }),
+  clients: [E2E_TEST_CLIENT_CONFIG],
+}));
 
 const TEST_PASSWORD = 'test-password-123';
 

@@ -1,8 +1,22 @@
-import { E2E_TEST_CLIENT } from '#frontend-e2e/fixtures/index.js';
-import { expect, test } from '#frontend-e2e/fixtures/minimal.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+  E2E_TEST_CLIENT,
+  E2E_TEST_CLIENT_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import { buildOAuthAuthorizeUrl } from '#frontend-e2e/helpers/consent.js';
 import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.js';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort, {
+    allowed_signup_emails: ['*'],
+  }),
+  clients: [E2E_TEST_CLIENT_CONFIG],
+}));
 
 /**
  * Generates a unique test email for each test to avoid session conflicts.

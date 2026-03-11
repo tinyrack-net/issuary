@@ -1,4 +1,10 @@
-import { expect, test } from '#frontend-e2e/fixtures/oauth-providers-mixed.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
+import { createMixedOauthProviders } from '#frontend-e2e/fragments/oauth-providers.js';
 import {
   modal,
   removePasswordModal,
@@ -8,6 +14,18 @@ import {
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 const TEST_PASSWORD = 'test-password-123';
+
+const test = createScenarioFixture((backendPort) => {
+  const host = `http://localhost:${backendPort}`;
+
+  return {
+    ...E2E_BASE_CONFIG,
+    app: createTestAppConfig(backendPort, {
+      allowed_signup_emails: ['*@allowed.test'],
+    }),
+    identity_providers: createMixedOauthProviders(host),
+  };
+});
 
 /**
  * The stub-success OAuth provider always returns a user with this email.

@@ -1,5 +1,17 @@
-import { expect, test } from '#frontend-e2e/fixtures/registration-disabled.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort, {
+    allowed_signup_emails: [],
+  }),
+}));
 
 test.describe('Registration disabled', () => {
   test('navigating to /register redirects to /login', async ({ page }) => {

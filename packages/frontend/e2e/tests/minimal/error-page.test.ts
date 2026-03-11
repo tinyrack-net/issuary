@@ -1,4 +1,14 @@
-import { expect, test } from '#frontend-e2e/fixtures/minimal.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort),
+}));
 
 test.describe('Error page', () => {
   test('displays code and message from URL params', async ({ page }) => {

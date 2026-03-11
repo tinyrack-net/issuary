@@ -1,4 +1,10 @@
-import { expect, test } from '#frontend-e2e/fixtures/terms.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+  E2E_TEST_CLIENT_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import { consentPage } from '#frontend-e2e/helpers/consent.js';
 import { loginPasswordPage } from '#frontend-e2e/helpers/login.js';
 import {
@@ -10,6 +16,44 @@ import {
 } from '#frontend-e2e/helpers/oauth-client-flow.js';
 import { registerPage } from '#frontend-e2e/helpers/register-page.js';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
+
+const TERMS_CONFIG = [
+  {
+    id: 'tos',
+    required: true,
+    consent_mode: 'explicit',
+    version: '1.0.0',
+    content: {
+      en: {
+        title: 'Terms of Service',
+        type: 'text',
+        content: 'Test Terms of Service content for e2e testing.',
+      },
+    },
+  },
+  {
+    id: 'privacy',
+    required: false,
+    consent_mode: 'explicit',
+    version: '1.0.0',
+    content: {
+      en: {
+        title: 'Privacy Policy',
+        type: 'text',
+        content: 'Test Privacy Policy content for e2e testing.',
+      },
+    },
+  },
+] as const;
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort, {
+    allowed_signup_emails: ['*'],
+  }),
+  terms: [...TERMS_CONFIG],
+  clients: [E2E_TEST_CLIENT_CONFIG],
+}));
 
 const TEST_PASSWORD = 'test-password-123';
 const REQUIRED_CONSENTS = [

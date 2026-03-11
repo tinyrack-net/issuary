@@ -1,8 +1,45 @@
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  expect,
-  test,
-} from '#frontend-e2e/fixtures/terms-complete-registration.js';
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import { registerPage } from '#frontend-e2e/helpers/register-page.js';
+
+const TERMS_CONFIG = [
+  {
+    id: 'tos',
+    required: true,
+    consent_mode: 'explicit',
+    version: '1.0.0',
+    content: {
+      en: {
+        title: 'Terms of Service',
+        type: 'text',
+        content: 'Test Terms of Service content for complete registration.',
+      },
+    },
+  },
+  {
+    id: 'privacy',
+    required: false,
+    consent_mode: 'explicit',
+    version: '1.0.0',
+    content: {
+      en: {
+        title: 'Privacy Policy',
+        type: 'text',
+        content: 'Test Privacy Policy content for complete registration.',
+      },
+    },
+  },
+] as const;
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort),
+  terms: [...TERMS_CONFIG],
+}));
 
 const REDIRECT_PARAM =
   '/oauth/authorize?client_id=e2e-test-client-id&state=terms-complete-state';

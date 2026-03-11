@@ -1,4 +1,9 @@
-import { expect, test } from '#frontend-e2e/fixtures/totp-optional.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import { performLogin } from '#frontend-e2e/helpers/login.js';
 import { fillPinInput } from '#frontend-e2e/helpers/pin-input.js';
 import {
@@ -13,6 +18,18 @@ function uniqueEmail(suffix: string): string {
 }
 
 const TEST_PASSWORD = 'test-password-123';
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort, {
+    allowed_signup_emails: ['*'],
+  }),
+  auth: {
+    password: {
+      totp: { enabled: true },
+    },
+  },
+}));
 
 test.describe('TOTP optional configuration', () => {
   test('user without TOTP logs in directly to profile', async ({

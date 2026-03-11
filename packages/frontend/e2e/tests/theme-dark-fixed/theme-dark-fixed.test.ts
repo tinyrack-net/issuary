@@ -1,4 +1,16 @@
-import { expect, test } from '#frontend-e2e/fixtures/theme-dark-fixed.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort, {
+    theme_mode: 'dark',
+  }),
+}));
 
 test.describe('Fixed dark theme configuration', () => {
   test('fixed dark mode hides theme toggle controls', async ({ page }) => {

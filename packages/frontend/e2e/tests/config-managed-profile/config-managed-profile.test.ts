@@ -1,6 +1,20 @@
-import { expect, test } from '#frontend-e2e/fixtures/config-managed-profile.js';
-import { E2E_TEST_USER } from '#frontend-e2e/fixtures/index.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+  E2E_TEST_USER,
+  E2E_TEST_USER_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import { performLogin } from '#frontend-e2e/helpers/login.js';
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort, {
+    account_deletion: true,
+  }),
+  users: [E2E_TEST_USER_CONFIG],
+}));
 
 test.describe('Config-managed profile constraints', () => {
   test('config-managed user sees restricted security and delete controls', async ({

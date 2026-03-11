@@ -1,7 +1,49 @@
-import { E2E_TEST_USER } from '#frontend-e2e/fixtures/index.js';
-import { expect, test } from '#frontend-e2e/fixtures/terms.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+  E2E_TEST_USER,
+  E2E_TEST_USER_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.js';
 import { registerPage } from '#frontend-e2e/helpers/register-page.js';
+
+const TERMS_CONFIG = [
+  {
+    id: 'tos',
+    required: true,
+    consent_mode: 'explicit',
+    version: '1.0.0',
+    content: {
+      en: {
+        title: 'Terms of Service',
+        type: 'text',
+        content: 'Test Terms of Service content for e2e testing.',
+      },
+    },
+  },
+  {
+    id: 'privacy',
+    required: false,
+    consent_mode: 'explicit',
+    version: '1.0.0',
+    content: {
+      en: {
+        title: 'Privacy Policy',
+        type: 'text',
+        content: 'Test Privacy Policy content for e2e testing.',
+      },
+    },
+  },
+] as const;
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort),
+  users: [E2E_TEST_USER_CONFIG],
+  terms: [...TERMS_CONFIG],
+}));
 
 test.describe('Standalone terms page', () => {
   test('displays explicit terms checkboxes', async ({ page }) => {

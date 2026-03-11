@@ -1,5 +1,63 @@
-import { expect, test } from '#frontend-e2e/fixtures/oauth-providers-terms.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import { registerPage } from '#frontend-e2e/helpers/register-page.js';
+
+const TERMS_CONFIG = [
+  {
+    id: 'tos',
+    required: true,
+    consent_mode: 'explicit',
+    version: '1.0.0',
+    content: {
+      en: {
+        title: 'Terms of Service',
+        type: 'text',
+        content: 'Test Terms of Service content for oauth providers terms.',
+      },
+    },
+  },
+  {
+    id: 'privacy',
+    required: false,
+    consent_mode: 'explicit',
+    version: '1.0.0',
+    content: {
+      en: {
+        title: 'Privacy Policy',
+        type: 'text',
+        content: 'Test Privacy Policy content for oauth providers terms.',
+      },
+    },
+  },
+  {
+    id: 'analytics',
+    required: true,
+    consent_mode: 'implicit',
+    version: '1.0.0',
+    content: {
+      en: {
+        title: 'Analytics Terms',
+        type: 'text',
+        content: 'Implicit analytics terms for oauth providers terms.',
+      },
+    },
+  },
+] as const;
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort, {
+    allowed_signup_emails: ['*'],
+    signup_implicit_terms: {
+      en: 'By signing up, you agree to product analytics tracking.',
+    },
+  }),
+  terms: [...TERMS_CONFIG],
+}));
 
 const TEST_PASSWORD = 'test-password-123';
 

@@ -1,5 +1,11 @@
-import { E2E_TEST_USER } from '#frontend-e2e/fixtures/index.js';
-import { expect, test } from '#frontend-e2e/fixtures/totp-required.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+  E2E_TEST_USER,
+  E2E_TEST_USER_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import { performLogin, totpSetupPage } from '#frontend-e2e/helpers/login.js';
 import { fillPinInput } from '#frontend-e2e/helpers/pin-input.js';
 import {
@@ -17,6 +23,20 @@ function uniqueEmail(suffix: string): string {
 }
 
 const TEST_PASSWORD = 'test-password-123';
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort, {
+    allowed_signup_emails: ['*'],
+  }),
+  auth: {
+    password: {
+      second_factor: { required: true },
+      totp: { enabled: true },
+    },
+  },
+  users: [E2E_TEST_USER_CONFIG],
+}));
 
 test.describe('TOTP setup flow (DB user, 2FA required)', () => {
   test('full TOTP setup: QR -> verify -> recovery -> profile', async ({

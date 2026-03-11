@@ -2,7 +2,10 @@ import type { AddressInfo } from 'node:net';
 import { createServer as createNetServer } from 'node:net';
 import { serve } from '@hono/node-server';
 import { createApp } from '@tinyauth/backend';
-import type { TinyAuthConfigs } from '@tinyauth/backend/config';
+import type {
+  TinyAuthConfigs,
+  TinyAuthInputConfigs,
+} from '@tinyauth/backend/config';
 import { resolveTestMailConfig } from '#frontend-e2e/setup/resolve-test-smtp.js';
 
 const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
@@ -171,8 +174,8 @@ function getFreePort(): Promise<number> {
   });
 }
 
-export type E2EConfigResult = Omit<TinyAuthConfigs, 'mail'> & {
-  mail?: { test: true } | TinyAuthConfigs['mail'];
+export type E2EConfigResult = Omit<TinyAuthInputConfigs, 'mail'> & {
+  mail?: { test: true } | TinyAuthInputConfigs['mail'];
 };
 
 type ConfigFactory = (
@@ -231,7 +234,7 @@ export async function createE2EServer(configFactory: ConfigFactory) {
     resolvedMail = rawMail as TinyAuthConfigs['mail'];
   }
 
-  const config: TinyAuthConfigs = {
+  const config: TinyAuthInputConfigs = {
     ...restConfig,
     ...(resolvedMail ? { mail: resolvedMail } : {}),
   };

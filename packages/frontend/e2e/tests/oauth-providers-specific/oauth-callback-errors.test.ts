@@ -1,7 +1,10 @@
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  expect,
-  test,
-} from '#frontend-e2e/fixtures/oauth-providers-specific.js';
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
+import { createSpecificOauthProviders } from '#frontend-e2e/fragments/oauth-providers.js';
 import {
   expectOAuthError,
   startOAuthLogin,
@@ -10,6 +13,18 @@ import {
   expectOAuthCallbackApiError,
   initOAuthCallbackSession,
 } from '#frontend-e2e/helpers/oauth-callback.js';
+
+const test = createScenarioFixture((backendPort) => {
+  const host = `http://localhost:${backendPort}`;
+
+  return {
+    ...E2E_BASE_CONFIG,
+    app: createTestAppConfig(backendPort, {
+      allowed_signup_emails: ['*@allowed.test'],
+    }),
+    identity_providers: createSpecificOauthProviders(host),
+  };
+});
 
 test.describe('OAuth callback error handling', () => {
   test('apple form_post denied callback maps to access denied message', async ({

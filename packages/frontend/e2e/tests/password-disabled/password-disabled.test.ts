@@ -1,4 +1,32 @@
-import { expect, test } from '#frontend-e2e/fixtures/password-disabled.js';
+import { expect } from '@playwright/test';
+import { google } from '@tinyauth/backend/identity-providers/google';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort, {
+    allowed_signup_emails: ['*'],
+  }),
+  auth: {
+    password: {
+      enabled: false,
+    },
+  },
+  identity_providers: [
+    google({
+      id: 'google',
+      enabled: true,
+      display_name: 'Google',
+      client_id: 'test-google-client-id',
+      client_secret: 'test-google-client-secret',
+      email_conflict_strategy: 'auto_link',
+    }),
+  ],
+}));
 
 test.describe('Password disabled configuration', () => {
   test('login page hides password method and keeps oauth method', async ({

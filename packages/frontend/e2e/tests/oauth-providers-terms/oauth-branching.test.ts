@@ -1,11 +1,142 @@
+import { expect } from '@playwright/test';
+import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth';
 import { z } from 'zod';
-import { expect, test } from '#frontend-e2e/fixtures/oauth-providers-terms.js';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import { startOAuthLogin } from '#frontend-e2e/helpers/oauth.js';
 import { registerPage } from '#frontend-e2e/helpers/register-page.js';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 const TEST_PASSWORD = 'test-password-123';
 const EXISTING_COMPLETE_EMAIL = 'oauth-stub-existing-complete@allowed.test';
+const OAUTH_EXISTING_PENDING_EMAIL = 'oauth-stub-existing-pending@allowed.test';
+
+const TERMS_CONFIG = [
+  {
+    id: 'tos',
+    required: true,
+    consent_mode: 'explicit',
+    version: '1.0.0',
+    content: {
+      en: {
+        title: 'Terms of Service',
+        type: 'text',
+        content: 'Test Terms of Service content for oauth providers terms.',
+      },
+    },
+  },
+  {
+    id: 'privacy',
+    required: false,
+    consent_mode: 'explicit',
+    version: '1.0.0',
+    content: {
+      en: {
+        title: 'Privacy Policy',
+        type: 'text',
+        content: 'Test Privacy Policy content for oauth providers terms.',
+      },
+    },
+  },
+  {
+    id: 'analytics',
+    required: true,
+    consent_mode: 'implicit',
+    version: '1.0.0',
+    content: {
+      en: {
+        title: 'Analytics Terms',
+        type: 'text',
+        content: 'Implicit analytics terms for oauth providers terms.',
+      },
+    },
+  },
+] as const;
+
+const test = createScenarioFixture((backendPort) => {
+  const host = `http://localhost:${backendPort}`;
+
+  return {
+    ...E2E_BASE_CONFIG,
+    app: createTestAppConfig(backendPort, {
+      allowed_signup_emails: ['*'],
+    }),
+    identity_providers: [
+      genericOAuth({
+        id: 'stub-new-user',
+        enabled: true,
+        display_name: 'Stub New User',
+        icon_url: 'https://example.com/stub-new-user.svg',
+        client_id: 'stub-new-user-client-id',
+        client_secret: 'stub-new-user-client-secret',
+        authorization_url: `${host}/test/oauth-stub/stub-new-user/authorize`,
+        token_url: `${host}/test/oauth-stub/stub-new-user/token`,
+        userinfo_url: `${host}/test/oauth-stub/stub-new-user/userinfo`,
+        scopes: ['openid', 'profile', 'email'],
+        email_conflict_strategy: 'auto_link',
+        userinfo_mapping: {
+          id: 'sub',
+          email: 'email',
+          email_verified: 'email_verified',
+          name: 'name',
+          picture: 'picture',
+        },
+      }),
+      genericOAuth({
+        id: 'stub-existing-pending',
+        enabled: true,
+        display_name: 'Stub Existing Pending',
+        icon_url: 'https://example.com/stub-existing-pending.svg',
+        client_id: 'stub-existing-pending-client-id',
+        client_secret: 'stub-existing-pending-client-secret',
+        authorization_url: `${host}/test/oauth-stub/stub-existing-pending/authorize`,
+        token_url: `${host}/test/oauth-stub/stub-existing-pending/token`,
+        userinfo_url: `${host}/test/oauth-stub/stub-existing-pending/userinfo`,
+        scopes: ['openid', 'profile', 'email'],
+        email_conflict_strategy: 'auto_link',
+        userinfo_mapping: {
+          id: 'sub',
+          email: 'email',
+          email_verified: 'email_verified',
+          name: 'name',
+          picture: 'picture',
+        },
+      }),
+      genericOAuth({
+        id: 'stub-existing-complete',
+        enabled: true,
+        display_name: 'Stub Existing Complete',
+        icon_url: 'https://example.com/stub-existing-complete.svg',
+        client_id: 'stub-existing-complete-client-id',
+        client_secret: 'stub-existing-complete-client-secret',
+        authorization_url: `${host}/test/oauth-stub/stub-existing-complete/authorize`,
+        token_url: `${host}/test/oauth-stub/stub-existing-complete/token`,
+        userinfo_url: `${host}/test/oauth-stub/stub-existing-complete/userinfo`,
+        scopes: ['openid', 'profile', 'email'],
+        email_conflict_strategy: 'auto_link',
+        userinfo_mapping: {
+          id: 'sub',
+          email: 'email',
+          email_verified: 'email_verified',
+          name: 'name',
+          picture: 'picture',
+        },
+      }),
+    ],
+    terms: [...TERMS_CONFIG],
+    users: [
+      {
+        sub: 'oauth-existing-pending',
+        email: OAUTH_EXISTING_PENDING_EMAIL,
+        password: 'changemelater',
+        role: 'admin',
+      },
+    ],
+  };
+});
 
 const consentPayloadSchema = z.object({
   consents: z.array(

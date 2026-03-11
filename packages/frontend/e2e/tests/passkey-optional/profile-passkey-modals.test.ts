@@ -1,4 +1,9 @@
-import { expect, test } from '#frontend-e2e/fixtures/passkey-optional.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import {
   loginAndGoToProfile,
   managePasskeysModal,
@@ -14,6 +19,16 @@ function uniqueEmail(suffix: string): string {
 }
 
 const TEST_PASSWORD = 'test-password-123';
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort, {
+    allowed_signup_emails: ['*'],
+  }),
+  auth: {
+    passkey: { enabled: true },
+  },
+}));
 
 test.describe('SetupPasskeyModal (profile)', () => {
   test('Add Passkey button opens modal with name input', async ({

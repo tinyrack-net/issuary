@@ -1,5 +1,11 @@
-import { E2E_TEST_CLIENT } from '#frontend-e2e/fixtures/index.js';
-import { expect, test } from '#frontend-e2e/fixtures/journey-oauth-2fa.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+  E2E_TEST_CLIENT,
+  E2E_TEST_CLIENT_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import {
   allowConsentAndExpectRedirect,
   buildAuthEntryUrl,
@@ -51,6 +57,22 @@ async function submitPasswordLogin(
 }
 
 const TEST_PASSWORD = 'test-password-123';
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort, {
+    allowed_signup_emails: ['*'],
+  }),
+  auth: {
+    password: {
+      second_factor: { required: true },
+      totp: { enabled: true },
+    },
+    passkey: { enabled: true },
+  },
+  clients: [E2E_TEST_CLIENT_CONFIG],
+  mail: { test: true },
+}));
 
 test.describe('OAuth continuation across email verification and 2FA', () => {
   test('register -> verify email -> setup TOTP -> consent redirect', async ({

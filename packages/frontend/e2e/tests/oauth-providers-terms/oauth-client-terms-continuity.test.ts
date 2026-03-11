@@ -1,4 +1,11 @@
-import { expect, test } from '#frontend-e2e/fixtures/oauth-providers-terms.js';
+import { expect } from '@playwright/test';
+import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+  E2E_TEST_CLIENT_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import { consentPage } from '#frontend-e2e/helpers/consent.js';
 import { startOAuthLogin } from '#frontend-e2e/helpers/oauth.js';
 import {
@@ -9,6 +16,83 @@ import {
   expectOAuthParamsInCurrentUrl,
 } from '#frontend-e2e/helpers/oauth-client-flow.js';
 import { registerPage } from '#frontend-e2e/helpers/register-page.js';
+
+const TERMS_CONFIG = [
+  {
+    id: 'tos',
+    required: true,
+    consent_mode: 'explicit',
+    version: '1.0.0',
+    content: {
+      en: {
+        title: 'Terms of Service',
+        type: 'text',
+        content: 'Test Terms of Service content for oauth providers terms.',
+      },
+    },
+  },
+  {
+    id: 'privacy',
+    required: false,
+    consent_mode: 'explicit',
+    version: '1.0.0',
+    content: {
+      en: {
+        title: 'Privacy Policy',
+        type: 'text',
+        content: 'Test Privacy Policy content for oauth providers terms.',
+      },
+    },
+  },
+  {
+    id: 'analytics',
+    required: true,
+    consent_mode: 'implicit',
+    version: '1.0.0',
+    content: {
+      en: {
+        title: 'Analytics Terms',
+        type: 'text',
+        content: 'Implicit analytics terms for oauth providers terms.',
+      },
+    },
+  },
+] as const;
+
+const test = createScenarioFixture((backendPort) => {
+  const host = `http://localhost:${backendPort}`;
+
+  return {
+    ...E2E_BASE_CONFIG,
+    app: createTestAppConfig(backendPort, {
+      allowed_signup_emails: ['*'],
+    }),
+    identity_providers: [
+      genericOAuth({
+        id: 'stub-new-user-oidc',
+        enabled: true,
+        display_name: 'Stub New User OIDC',
+        icon_url: 'https://example.com/stub-new-user-oidc.svg',
+        client_id: 'stub-new-user-oidc-client-id',
+        client_secret: 'stub-new-user-oidc-client-secret',
+        authorization_url: `${host}/test/oauth-stub/stub-new-user-oidc/authorize`,
+        token_url: `${host}/test/oauth-stub/stub-new-user-oidc/token`,
+        userinfo_url: `${host}/test/oauth-stub/stub-new-user-oidc/userinfo`,
+        scopes: ['openid', 'profile', 'email'],
+        email_conflict_strategy: 'auto_link',
+        userinfo_mapping: {
+          id: 'sub',
+          email: 'email',
+          email_verified: 'email_verified',
+          name: 'name',
+          picture: 'picture',
+        },
+      }),
+    ],
+    terms: [...TERMS_CONFIG],
+    clients: [E2E_TEST_CLIENT_CONFIG],
+  };
+});
 
 test.describe('OAuth client continuity through complete-registration terms', () => {
   test('new OAuth signup returns to authorize flow and reaches client callback', async ({

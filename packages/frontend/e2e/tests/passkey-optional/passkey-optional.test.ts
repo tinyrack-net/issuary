@@ -1,4 +1,9 @@
-import { expect, test } from '#frontend-e2e/fixtures/passkey-optional.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import { performLogin } from '#frontend-e2e/helpers/login.js';
 import { enableVirtualAuthenticator } from '#frontend-e2e/helpers/webauthn.js';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
@@ -9,6 +14,16 @@ function uniqueEmail(suffix: string): string {
 }
 
 const TEST_PASSWORD = 'test-password-123';
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort, {
+    allowed_signup_emails: ['*'],
+  }),
+  auth: {
+    passkey: { enabled: true },
+  },
+}));
 
 test.describe('Passkey optional configuration', () => {
   test('user without passkey logs in directly to profile', async ({

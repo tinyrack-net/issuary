@@ -1,10 +1,30 @@
-import { E2E_TEST_USER } from '#frontend-e2e/fixtures/index.js';
-import { expect, test } from '#frontend-e2e/fixtures/oauth-providers-mixed.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+  E2E_TEST_USER,
+  E2E_TEST_USER_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
+import { createMixedOauthProviders } from '#frontend-e2e/fragments/oauth-providers.js';
 import {
   expectOAuthError,
   startOAuthLogin,
 } from '#frontend-e2e/helpers/oauth.js';
 import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.js';
+
+const test = createScenarioFixture((backendPort) => {
+  const host = `http://localhost:${backendPort}`;
+
+  return {
+    ...E2E_BASE_CONFIG,
+    app: createTestAppConfig(backendPort, {
+      allowed_signup_emails: ['*@allowed.test'],
+    }),
+    users: [E2E_TEST_USER_CONFIG],
+    identity_providers: createMixedOauthProviders(host),
+  };
+});
 
 test.describe('OAuth providers mixed configuration', () => {
   test('login page shows only enabled providers', async ({ page }) => {

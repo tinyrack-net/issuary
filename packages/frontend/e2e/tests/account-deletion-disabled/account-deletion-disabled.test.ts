@@ -1,9 +1,20 @@
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  expect,
-  test,
-} from '#frontend-e2e/fixtures/account-deletion-disabled.js';
-import { E2E_TEST_USER } from '#frontend-e2e/fixtures/index.js';
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+  E2E_TEST_USER,
+  E2E_TEST_USER_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.js';
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort, {
+    account_deletion: false,
+  }),
+  users: [E2E_TEST_USER_CONFIG],
+}));
 
 test.describe('Account deletion disabled configuration', () => {
   test('profile hides delete account entry points', async ({ page }) => {

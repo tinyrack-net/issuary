@@ -1,4 +1,9 @@
-import { expect, test } from '#frontend-e2e/fixtures/account-deletion.js';
+import { expect } from '@playwright/test';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import {
+  createTestAppConfig,
+  E2E_BASE_CONFIG,
+} from '#frontend-e2e/fixtures/index.js';
 import { loginPasswordPage } from '#frontend-e2e/helpers/login.js';
 import {
   deleteAccountModal,
@@ -6,6 +11,14 @@ import {
   modal,
 } from '#frontend-e2e/helpers/profile-page.js';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
+
+const test = createScenarioFixture((backendPort) => ({
+  ...E2E_BASE_CONFIG,
+  app: createTestAppConfig(backendPort, {
+    allowed_signup_emails: ['*'],
+    account_deletion: true,
+  }),
+}));
 
 /**
  * Generates a unique test email for each test to avoid collisions.
