@@ -17,10 +17,12 @@ const CronExpressionSchema = z
 /**
  * Default scheduler configuration
  */
-export const DEFAULT_SCHEDULER_CONFIG = {
+export const SCHEDULER_CONFIG_DEFAULT = {
   enabled: true,
   cron: '0 2 * * *', // Daily at 2 AM
-} as const;
+};
+
+export const DEFAULT_SCHEDULER_CONFIG = SCHEDULER_CONFIG_DEFAULT;
 
 /**
  * In-process scheduler configuration.
@@ -34,15 +36,15 @@ export const DEFAULT_SCHEDULER_CONFIG = {
 export const SchedulerConfigSchema = z
   .object({
     enabled: zz.COERCE_BOOLEAN.default(
-      DEFAULT_SCHEDULER_CONFIG.enabled,
+      SCHEDULER_CONFIG_DEFAULT.enabled,
     ).describe(
       'Enable in-process cleanup scheduler. Disable when using external schedulers (K8s CronJob).',
     ),
-    cron: CronExpressionSchema.default(DEFAULT_SCHEDULER_CONFIG.cron).describe(
+    cron: CronExpressionSchema.default(SCHEDULER_CONFIG_DEFAULT.cron).describe(
       'Cron schedule for running all cleanup tasks. Default: daily at 2 AM.',
     ),
   })
-  .default(DEFAULT_SCHEDULER_CONFIG)
+  .default(SCHEDULER_CONFIG_DEFAULT)
   .describe('In-process scheduler configuration for automated cleanup tasks');
 
 export type SchedulerConfig = z.infer<typeof SchedulerConfigSchema>;

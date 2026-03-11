@@ -1,5 +1,5 @@
 import z from 'zod';
-import { AppConfigSchema } from './app.js';
+import { APP_CONFIG_DEFAULT, AppConfigSchema } from './app.js';
 import { AuthConfigSchema } from './auth.js';
 import { CleanupConfigSchema } from './cleanup.js';
 import { ClientConfigsSchema } from './client.js';
@@ -21,7 +21,7 @@ import { UserConfigsSchema } from './user.js';
  * - identity_providers: resolved with endpoint URLs
  */
 export const TinyAuthConfigsSchema = z.object({
-  app: AppConfigSchema,
+  app: AppConfigSchema.default({ ...APP_CONFIG_DEFAULT }),
   logging: LoggingConfigSchema,
   auth: AuthConfigSchema,
   security: SecurityConfigSchema,

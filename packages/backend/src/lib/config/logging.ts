@@ -25,6 +25,14 @@ export const LogFormatSchema = z.enum(['json', 'pretty']);
 
 export type LogFormat = z.infer<typeof LogFormatSchema>;
 
+export const LOGGING_CONFIG_DEFAULT: {
+  level: LogLevel;
+  format: LogFormat;
+} = {
+  level: 'info',
+  format: 'json',
+};
+
 /**
  * Logging configuration schema.
  *
@@ -33,17 +41,16 @@ export type LogFormat = z.infer<typeof LogFormatSchema>;
  */
 export const LoggingConfigSchema = z
   .object({
-    level: LogLevelSchema.default('info').describe('Log level.'),
-    format: LogFormatSchema.default('json').describe(
+    level: LogLevelSchema.default(LOGGING_CONFIG_DEFAULT.level).describe(
+      'Log level.',
+    ),
+    format: LogFormatSchema.default(LOGGING_CONFIG_DEFAULT.format).describe(
       'Log output format. ' +
         '"json" outputs structured JSON (default). ' +
         '"pretty" outputs human-readable format.',
     ),
   })
-  .default({
-    level: 'info',
-    format: 'json',
-  })
+  .default(LOGGING_CONFIG_DEFAULT)
   .describe('Logging configuration');
 
 export type LoggingConfig = z.infer<typeof LoggingConfigSchema>;

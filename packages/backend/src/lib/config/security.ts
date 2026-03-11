@@ -1,6 +1,10 @@
 import z from 'zod';
 import { fromBase64Url } from '#backend/lib/base64url.js';
 
+export const SECURITY_CONFIG_DEFAULT = {
+  pbkdf2_iterations: 600000,
+};
+
 export const SecurityConfigSchema = z
   .object({
     session_secret: z.string().min(16),
@@ -23,7 +27,11 @@ export const SecurityConfigSchema = z
           });
         }
       }),
-    pbkdf2_iterations: z.number().int().min(1).default(600000),
+    pbkdf2_iterations: z
+      .number()
+      .int()
+      .min(1)
+      .default(SECURITY_CONFIG_DEFAULT.pbkdf2_iterations),
   })
   .strict();
 

@@ -52,7 +52,7 @@ export const AppThemeSchema = z.enum([
 
 export type AppTheme = z.infer<typeof AppThemeSchema>;
 
-const APP_CONFIG_DEFAULT = {
+export const APP_CONFIG_DEFAULT = {
   host: `http://localhost:8080`,
   port: 8080,
   jwt_access_token_ttl: 3600,

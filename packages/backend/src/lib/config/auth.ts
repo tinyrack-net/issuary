@@ -4,6 +4,10 @@ import {
   PASSWORD_POLICY_MIN_LENGTH,
 } from '#backend/lib/password-policy.js';
 
+const SECOND_FACTOR_CONFIG_DEFAULT = {
+  required: false,
+};
+
 /**
  * Second factor configuration for password authentication.
  * Determines if users must set up 2FA after registration.
@@ -14,13 +18,16 @@ const SecondFactorConfigSchema = z
      * Whether a second factor is required for password authentication.
      * If true, users must set up at least one 2FA method (TOTP or passkey).
      */
-    required: z.boolean().default(false),
+    required: z.boolean().default(SECOND_FACTOR_CONFIG_DEFAULT.required),
   })
-  .default({
-    required: false,
-  });
+  .default(SECOND_FACTOR_CONFIG_DEFAULT);
 
 export type SecondFactorConfig = z.infer<typeof SecondFactorConfigSchema>;
+
+export const PASSWORD_POLICY_CONFIG_DEFAULT = {
+  min_length: PASSWORD_POLICY_MIN_LENGTH,
+  max_length: PASSWORD_POLICY_MAX_LENGTH,
+};
 
 export const PasswordPolicyConfigSchema = z
   .object({
@@ -29,17 +36,14 @@ export const PasswordPolicyConfigSchema = z
       .int()
       .min(1)
       .max(PASSWORD_POLICY_MAX_LENGTH)
-      .default(PASSWORD_POLICY_MIN_LENGTH),
+      .default(PASSWORD_POLICY_CONFIG_DEFAULT.min_length),
     max_length: z
       .number()
       .int()
       .max(PASSWORD_POLICY_MAX_LENGTH)
-      .default(PASSWORD_POLICY_MAX_LENGTH),
+      .default(PASSWORD_POLICY_CONFIG_DEFAULT.max_length),
   })
-  .default({
-    min_length: PASSWORD_POLICY_MIN_LENGTH,
-    max_length: PASSWORD_POLICY_MAX_LENGTH,
-  })
+  .default(PASSWORD_POLICY_CONFIG_DEFAULT)
   .superRefine((value, ctx) => {
     if (value.min_length > value.max_length) {
       ctx.addIssue({
@@ -52,13 +56,28 @@ export const PasswordPolicyConfigSchema = z
 
 export type PasswordPolicyConfig = z.infer<typeof PasswordPolicyConfigSchema>;
 
+const PASSWORD_AUTH_TOTP_CONFIG_DEFAULT = {
+  enabled: false,
+  issuer: 'Tinyrack',
+};
+
+export const PASSWORD_AUTH_CONFIG_DEFAULT = {
+  enabled: true,
+  email_verification: true,
+  second_factor: SECOND_FACTOR_CONFIG_DEFAULT,
+  totp: PASSWORD_AUTH_TOTP_CONFIG_DEFAULT,
+  policy: PASSWORD_POLICY_CONFIG_DEFAULT,
+};
+
 /**
  * Password authentication configuration (fixed type).
  */
 export const PasswordAuthConfigSchema = z
   .object({
-    enabled: z.boolean().default(true),
-    email_verification: z.boolean().default(true),
+    enabled: z.boolean().default(PASSWORD_AUTH_CONFIG_DEFAULT.enabled),
+    email_verification: z
+      .boolean()
+      .default(PASSWORD_AUTH_CONFIG_DEFAULT.email_verification),
     /**
      * Second factor requirement configuration.
      * Controls whether users must set up 2FA after registration.
@@ -66,30 +85,15 @@ export const PasswordAuthConfigSchema = z
     second_factor: SecondFactorConfigSchema,
     totp: z
       .object({
-        enabled: z.boolean().default(false),
-        issuer: z.string().default('Tinyrack'),
+        enabled: z
+          .boolean()
+          .default(PASSWORD_AUTH_TOTP_CONFIG_DEFAULT.enabled),
+        issuer: z.string().default(PASSWORD_AUTH_TOTP_CONFIG_DEFAULT.issuer),
       })
-      .default({
-        enabled: false,
-        issuer: 'Tinyrack',
-      }),
+      .default(PASSWORD_AUTH_TOTP_CONFIG_DEFAULT),
     policy: PasswordPolicyConfigSchema,
   })
-  .default({
-    enabled: true,
-    email_verification: true,
-    second_factor: {
-      required: false,
-    },
-    totp: {
-      enabled: false,
-      issuer: 'Tinyrack',
-    },
-    policy: {
-      min_length: PASSWORD_POLICY_MIN_LENGTH,
-      max_length: PASSWORD_POLICY_MAX_LENGTH,
-    },
-  });
+  .default(PASSWORD_AUTH_CONFIG_DEFAULT);
 
 export type PasswordAuthConfig = z.infer<typeof PasswordAuthConfigSchema>;
 
@@ -105,13 +109,20 @@ export type PasswordAuthConfig = z.infer<typeof PasswordAuthConfigSchema>;
 const rpIdDomainRegex =
   /^(?!.*:\/\/)(?!.*:\d)(localhost|[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+)$/;
 
+export const PASSKEY_AUTH_CONFIG_DEFAULT = {
+  enabled: false,
+  email_verification: true,
+};
+
 /**
  * Passkey (WebAuthn) authentication configuration (fixed type).
  */
 export const PasskeyAuthConfigSchema = z
   .object({
-    enabled: z.boolean().default(false),
-    email_verification: z.boolean().default(true),
+    enabled: z.boolean().default(PASSKEY_AUTH_CONFIG_DEFAULT.enabled),
+    email_verification: z
+      .boolean()
+      .default(PASSKEY_AUTH_CONFIG_DEFAULT.email_verification),
     /**
      * WebAuthn Relying Party ID (domain only, no protocol or port).
      * Must be current domain or a registrable parent domain.
@@ -134,12 +145,14 @@ export const PasskeyAuthConfigSchema = z
      */
     origins: z.array(z.url()).optional(),
   })
-  .default({
-    enabled: false,
-    email_verification: true,
-  });
+  .default(PASSKEY_AUTH_CONFIG_DEFAULT);
 
 export type PasskeyAuthConfig = z.infer<typeof PasskeyAuthConfigSchema>;
+
+export const AUTH_CONFIG_DEFAULT = {
+  password: PASSWORD_AUTH_CONFIG_DEFAULT,
+  passkey: PASSKEY_AUTH_CONFIG_DEFAULT,
+};
 
 /**
  * Authentication methods configuration (fixed structure).
@@ -150,26 +163,6 @@ export const AuthConfigSchema = z
     password: PasswordAuthConfigSchema,
     passkey: PasskeyAuthConfigSchema,
   })
-  .default({
-    password: {
-      enabled: true,
-      email_verification: true,
-      second_factor: {
-        required: false,
-      },
-      totp: {
-        enabled: false,
-        issuer: 'Tinyrack',
-      },
-      policy: {
-        min_length: PASSWORD_POLICY_MIN_LENGTH,
-        max_length: PASSWORD_POLICY_MAX_LENGTH,
-      },
-    },
-    passkey: {
-      enabled: false,
-      email_verification: true,
-    },
-  });
+  .default(AUTH_CONFIG_DEFAULT);
 
 export type AuthConfig = z.infer<typeof AuthConfigSchema>;

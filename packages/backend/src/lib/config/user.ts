@@ -9,4 +9,8 @@ export const UserConfigSchema = z.object({
 
 export type UserConfig = z.infer<typeof UserConfigSchema>;
 
-export const UserConfigsSchema = z.array(UserConfigSchema).default([]);
+export const USER_CONFIGS_DEFAULT: UserConfig[] = [];
+
+export const UserConfigsSchema = z
+  .array(UserConfigSchema)
+  .default(USER_CONFIGS_DEFAULT);
