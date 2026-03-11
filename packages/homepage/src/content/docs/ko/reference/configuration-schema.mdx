@@ -51,7 +51,8 @@ description: 전체 config.yaml 스키마 레퍼런스
 
 | 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
 |------|------|--------|-----------|------|
-| `allowed_email_patterns` | `string[]` | `[]` | `ALLOWED_EMAIL_PATTERN` | 가입 허용 이메일 패턴. 빈 배열이면 자체 회원가입이 비활성화돼요. |
+| `enabled` | `boolean` | `false` | `REGISTRATION_ENABLED` | 자체 회원가입 활성화 여부. 비밀번호 가입과 최초 OAuth 가입 모두 이 값을 따라요. |
+| `allowed_email_patterns` | `string[]` | `[]` | - | 가입 허용 이메일 패턴. `enabled: true`일 때만 적용되며, 빈 배열이면 모든 이메일 가입을 허용해요. |
 | `email_verification_required` | `boolean` | `true` | `EMAIL_VERIFICATION_REQUIRED` | 비밀번호 회원가입 후 이메일 인증 필수 여부 |
 | `signup_notice` | `Record<string, string>` | `{}` | - | 암시적 약관 동의 안내 문구(HTML 가능) |
 
@@ -142,7 +143,7 @@ description: 전체 config.yaml 스키마 레퍼런스
 
 ## `identity_providers`
 
-배열 형태로 여러 제공자를 설정할 수 있어요. 자세한 내용은 [타사 로그인 개요](/ko/configuration/oauth/overview)를 참고해 주세요.
+배열 형태로 여러 제공자를 설정할 수 있어요. 사용하지 않을 때는 섹션을 생략하거나 `[]`로 두면 돼요. 자세한 내용은 [타사 로그인 개요](/ko/configuration/oauth/overview)를 참고해 주세요.
 
 | 항목 | 유형 | 설명 |
 |------|------|------|
@@ -194,6 +195,8 @@ description: 전체 config.yaml 스키마 레퍼런스
 | `consent_mode` | `'explicit' \| 'implicit'` | 동의 수집 방식 |
 | `version` | `string` | 약관 버전 |
 | `content` | `Record<string, { title, type, content }>` | 언어별 약관 내용 |
+
+`content`의 각 항목에서 `type`은 `link` 또는 `text`만 사용할 수 있어요.
 
 ## `scheduler`
 

@@ -26,6 +26,47 @@ The current config model is organized by top-level groups:
 
 `frontend` and `frontend.html_variables` are standalone-only settings. They are parsed by `@tinyauth/standalone` and are not part of the backend's declarative config contract.
 
+## `registration`
+
+| Field | Type | Default | Description |
+|------|------|--------|------|
+| `enabled` | `boolean` | `false` | Canonical self-registration switch. It gates password signup and first-time OAuth signup. |
+| `allowed_email_patterns` | `string[]` | `[]` | Optional email filters checked only when `enabled` is `true`. If omitted or empty, signup is unrestricted. |
+| `email_verification_required` | `boolean` | `true` | Requires email verification for password signups. |
+| `signup_notice` | `Record<string, string>` | `{}` | Localized HTML-capable notice text for implicit consent terms. |
+
+## `identity_providers`
+
+Use an array to configure external OAuth providers. Omit the field or use `[]` when none are configured.
+
+| Field | Type | Description |
+|------|------|------|
+| `id` | `string` | Unique provider identifier. |
+| `type` | `'github' \| 'google' \| 'apple' \| 'generic_oauth'` | Provider type. |
+| `enabled` | `boolean` | Enables the provider. |
+| `display_name` | `string` | Display label for the login button. Required for `generic_oauth`. |
+| `icon_url` | `string` | Optional icon URL. |
+| `client_id` | `string` | OAuth client ID. |
+| `client_secret` | `string` | OAuth client secret. |
+| `authorization_url` | `string` | Authorization endpoint for `generic_oauth`. |
+| `token_url` | `string` | Token endpoint for `generic_oauth`. |
+| `userinfo_url` | `string \| null` | Userinfo endpoint for `generic_oauth`. |
+| `email_url` | `string` | Email endpoint when required by the provider. |
+| `scopes` | `string[]` | Requested OAuth scopes. |
+| `email_conflict_strategy` | `'auto_link' \| 'require_link'` | Handling for email collisions with existing accounts. |
+
+## `terms`
+
+| Field | Type | Description |
+|------|------|------|
+| `id` | `string` | Unique identifier for the term. |
+| `required` | `boolean` | Whether accepting the term is mandatory. |
+| `consent_mode` | `'explicit' \| 'implicit'` | Consent collection mode. |
+| `version` | `string` | Version string used for re-consent tracking. |
+| `content` | `Record<string, { title, type, content }>` | Localized term content. |
+
+Within each localized `content` item, `type` must be `link` or `text`.
+
 ## `frontend`
 
 | Field | Type | Default | Description |

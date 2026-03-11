@@ -22,8 +22,7 @@ server:
   public_origin: https://auth.example.com
 
 registration:
-  allowed_email_patterns:
-    - '*'
+  enabled: false
 
 security:
   session_secret: your_session_secret_here_min_16_chars
@@ -47,6 +46,8 @@ clients:
       - refresh_token
     scope: openid profile email
 ```
+
+위 예시는 자체 회원가입을 기본적으로 닫아 둔 운영용 시작점이에요. 공개 회원가입이 필요하다면 [회원가입 설정](/ko/configuration/general/register) 문서처럼 `registration.enabled: true`를 명시적으로 설정하세요.
 
 ---
 
@@ -115,8 +116,7 @@ server:
   public_origin: https://auth.example.com
 
 registration:
-  allowed_email_patterns:
-    - '*'
+  enabled: false
 
 security:
   session_secret: your_session_secret_here_min_16_chars
@@ -201,8 +201,7 @@ server:
   trust_proxy: true
 
 registration:
-  allowed_email_patterns:
-    - '*'
+  enabled: false
 
 security:
   session_secret: your_session_secret_here_min_16_chars
@@ -289,8 +288,7 @@ server:
   trust_proxy: true
 
 registration:
-  allowed_email_patterns:
-    - '*'
+  enabled: false
 
 security:
   session_secret: your_session_secret_here_min_16_chars

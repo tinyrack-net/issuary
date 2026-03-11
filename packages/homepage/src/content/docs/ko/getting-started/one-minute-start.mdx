@@ -33,13 +33,16 @@ docker run \
 ```yaml
 # config.yaml
 registration:
-  allowed_email_patterns:
-    - '*'
+  enabled: true
+  allowed_email_patterns: []
+  email_verification_required: false
 
 security:
   session_secret: "$(openssl rand -hex 32)"
   hash_secret: "$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')"
 ```
+
+빠른 로컬 확인을 위해 `email_verification_required: false`를 함께 사용해요. 프로덕션에서는 이메일 전송 설정을 추가하고 이메일 인증을 다시 활성화하는 편이 안전해요.
 
 ```bash
 docker run \

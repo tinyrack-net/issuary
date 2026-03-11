@@ -49,9 +49,7 @@ data:
       hash_secret: ${HASH_SECRET}
 
     registration:
-      allowed_email_patterns:
-        - '*'
-      email_verification_required: true
+      enabled: false
 
     database:
       type: postgres
@@ -73,6 +71,8 @@ data:
     scheduler:
       enabled: false
 ```
+
+이 예시는 자체 회원가입을 닫아 둔 기본 배포 예시예요. 공개 회원가입이 필요하면 `registration.enabled: true`를 명시하고, 비밀번호 가입을 사용할 경우 이메일 전송 설정도 함께 점검하세요.
 
 :::note
 Kubernetes 환경에서는 내장 스케줄러를 비활성화(`scheduler.enabled: false`)하고, 대신 CronJob으로 정리 작업을 실행하는 것을 권장해요. 이렇게 하면 여러 파드가 동시에 정리 작업을 실행하는 것을 방지할 수 있어요.

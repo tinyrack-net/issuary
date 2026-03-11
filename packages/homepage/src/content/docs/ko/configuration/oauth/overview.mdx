@@ -3,7 +3,7 @@ title: OAuth 개요
 description: Tinyauth에서 타사 OAuth 로그인 제공자 구성하기
 ---
 
-`tinyauth`는 타사 OAuth 제공자를 통한 소셜 로그인을 지원해요. 사용자는 기존 계정(Google, GitHub, Apple 등)으로 간편하게 로그인하거나 회원가입할 수 있어요. 타사 로그인은 `identity_providers` 섹션에서 구성하며, 여러 제공자를 동시에 활성화할 수 있어요.
+`tinyauth`는 타사 OAuth 제공자를 통한 소셜 로그인을 지원해요. 사용자는 기존 계정(Google, GitHub, Apple 등)으로 간편하게 로그인할 수 있고, 최초 가입은 `registration.enabled`가 켜져 있을 때만 허용돼요. 타사 로그인은 `identity_providers` 섹션에서 구성하며, 여러 제공자를 동시에 활성화할 수 있어요.
 
 ```yaml
 # config.yaml
@@ -20,6 +20,10 @@ identity_providers:
     client_id: ${GITHUB_CLIENT_ID}
     client_secret: ${GITHUB_CLIENT_SECRET}
 ```
+
+:::note
+OAuth 제공자를 활성화해도 새 계정 생성은 자동으로 열리지 않아요. 처음 로그인한 OAuth 사용자가 계정을 만들 수 있게 하려면 `registration.enabled: true`를 함께 설정하세요.
+:::
 
 ---
 
