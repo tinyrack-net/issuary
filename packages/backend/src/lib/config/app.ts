@@ -114,9 +114,9 @@ export const AppConfigSchema = z.object({
     .default(APP_CONFIG_DEFAULT.allowed_signup_emails)
     .describe(
       'Email patterns allowed for signup. ' +
-      '"*" allows all emails, "*@domain.com" allows a specific domain, ' +
-      '"user@domain.com" allows a specific email. ' +
-      'Empty array disables signup entirely.',
+        '"*" allows all emails, "*@domain.com" allows a specific domain, ' +
+        '"user@domain.com" allows a specific email. ' +
+        'Empty array disables signup entirely.',
     ),
   supported_languages: z
     .array(LocaleSchema)
@@ -169,16 +169,16 @@ export const AppConfigSchema = z.object({
     })
     .describe(
       'Trust proxy configuration for X-Forwarded-* headers. ' +
-      'Can be true (trust all), false (trust none), ' +
-      'IP/CIDR string, array of IPs, or number (nth hop)',
+        'Can be true (trust all), false (trust none), ' +
+        'IP/CIDR string, array of IPs, or number (nth hop)',
     ),
   signup_implicit_terms: z
     .record(z.string(), z.string())
     .default(APP_CONFIG_DEFAULT.signup_implicit_terms)
     .describe(
       'Localized notice text for implicit consent terms during signup. ' +
-      'Keyed by language code (e.g., "en", "ko"). ' +
-      'Displayed when any term has consent_mode: "implicit".',
+        'Keyed by language code (e.g., "en", "ko"). ' +
+        'Displayed when any term has consent_mode: "implicit".',
     ),
   icon_url: z
     .url()
@@ -189,16 +189,16 @@ export const AppConfigSchema = z.object({
     .default(APP_CONFIG_DEFAULT.title)
     .describe(
       'Localized title text for login page. ' +
-      'Keyed by language code (e.g., "en", "ko"). ' +
-      'Overrides the default i18n login title.',
+        'Keyed by language code (e.g., "en", "ko"). ' +
+        'Overrides the default i18n login title.',
     ),
   subtitle: z
     .record(z.string(), z.string())
     .default(APP_CONFIG_DEFAULT.subtitle)
     .describe(
       'Localized subtitle text for login page. ' +
-      'Keyed by language code (e.g., "en", "ko"). ' +
-      'Overrides the default i18n login subtitle.',
+        'Keyed by language code (e.g., "en", "ko"). ' +
+        'Overrides the default i18n login subtitle.',
     ),
   account_deletion: zz.COERCE_BOOLEAN.default(
     APP_CONFIG_DEFAULT.account_deletion,
