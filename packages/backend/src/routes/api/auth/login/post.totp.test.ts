@@ -21,7 +21,7 @@ import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
   createTestApp,
-  createTestMailConfig,
+  createTestEmailConfig,
   enableTotpForUser,
   extractCookie,
   generateUniqueEmail,
@@ -74,11 +74,13 @@ describe('POST /api/auth/login - TOTP Required Mode', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
+        registration: {
+          email_verification_required: false,
+        },
         auth: {
           password: {
-            email_verification: false,
-            second_factor: {
-              required: true,
+            two_factor: {
+              enrollment_required: true,
             },
             totp: { enabled: true },
           },
@@ -244,11 +246,13 @@ describe('POST /api/auth/login - TOTP Optional Mode', () => {
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
+        registration: {
+          email_verification_required: false,
+        },
         auth: {
           password: {
-            email_verification: false,
-            second_factor: {
-              required: false,
+            two_factor: {
+              enrollment_required: false,
             },
             totp: { enabled: true },
           },
@@ -363,11 +367,13 @@ describe('POST /api/auth/login - TOTP Disabled Mode', () => {
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
+        registration: {
+          email_verification_required: false,
+        },
         auth: {
           password: {
-            email_verification: false,
-            second_factor: {
-              required: false,
+            two_factor: {
+              enrollment_required: false,
             },
             totp: { enabled: false },
           },
@@ -445,16 +451,18 @@ describe('POST /api/auth/login - Email Verification + TOTP', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const mail = await createTestMailConfig();
+    const mail = await createTestEmailConfig();
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        mail,
+        email: mail,
+        registration: {
+          email_verification_required: true,
+        },
         auth: {
           password: {
-            email_verification: true,
-            second_factor: {
-              required: true,
+            two_factor: {
+              enrollment_required: true,
             },
             totp: { enabled: true },
           },
@@ -561,11 +569,13 @@ describe('POST /api/auth/login - Session State Verification', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
+        registration: {
+          email_verification_required: false,
+        },
         auth: {
           password: {
-            email_verification: false,
-            second_factor: {
-              required: true,
+            two_factor: {
+              enrollment_required: true,
             },
             totp: { enabled: true },
           },

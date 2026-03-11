@@ -89,7 +89,8 @@ export const userPasskeyIdDelete = new Hono<AppEnv>().delete(
     const hasOtherAuthMethods = userEntity.hasPassword() || hasLinkedOAuth;
 
     // Check if 2FA is required
-    const secondFactorRequired = config.auth.password.second_factor.required;
+    const secondFactorRequired =
+      config.auth.password.two_factor.enrollment_required;
 
     // Check if user has other 2FA method (TOTP)
     const totpEnabled = await mikro.userTotp.isRegistered(userEntity.sub);

@@ -56,8 +56,9 @@ describe('OAuthConnectService - auto_link strategy', () => {
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        app: {
-          allowed_signup_emails: ['*'],
+        registration: {
+          enabled: true,
+          allowed_email_patterns: ['*'],
         },
         identity_providers: [
           google({
@@ -186,8 +187,9 @@ describe('OAuthConnectService - require_link strategy', () => {
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        app: {
-          allowed_signup_emails: ['*'],
+        registration: {
+          enabled: true,
+          allowed_email_patterns: ['*'],
         },
         identity_providers: [
           google({
@@ -268,8 +270,9 @@ describe('OAuthConnectService - completeOAuthRegistration', () => {
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        app: {
-          allowed_signup_emails: ['*'],
+        registration: {
+          enabled: true,
+          allowed_email_patterns: ['*'],
         },
         identity_providers: [
           google({

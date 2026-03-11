@@ -85,9 +85,9 @@ const Loader = memo(() => {
   useEffect(() => {
     if (config && !i18nInitialized) {
       initI18n({
-        supportedLanguages: config.app.supported_languages,
-        defaultLanguage: config.app.default_language,
-        fallbackLanguage: config.app.fallback_language,
+        supportedLanguages: config.i18n.supported_languages,
+        defaultLanguage: config.i18n.default_language,
+        fallbackLanguage: config.i18n.fallback_language,
       });
       setI18nInitialized(true);
     }

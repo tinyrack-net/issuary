@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  createTestAppConfig,
+  createTestConfig,
   E2E_BASE_CONFIG,
   E2E_TEST_USER,
   E2E_TEST_USER_CONFIG,
@@ -16,8 +16,11 @@ const test = createScenarioFixture((backendPort) => {
 
   return {
     ...E2E_BASE_CONFIG,
-    app: createTestAppConfig(backendPort, {
-      allowed_signup_emails: ['*@allowed.test'],
+    ...createTestConfig(backendPort, {
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*@allowed.test'],
+      },
     }),
     users: [E2E_TEST_USER_CONFIG],
     identity_providers: createSpecificOauthProviders(host),

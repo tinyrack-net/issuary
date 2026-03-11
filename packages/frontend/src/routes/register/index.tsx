@@ -44,7 +44,7 @@ export const Route = createFileRoute('/register/')({
     const config = await context.queryClient.ensureQueryData(
       appConfigQueryOptions,
     );
-    if (!config.app.public_registration) {
+    if (!config.registration.public_registration) {
       throw redirect({
         to: '/',
         replace: true,
@@ -90,8 +90,8 @@ function Register() {
 
   // Get implicit notice from config
   const implicitNotice =
-    configData.app.signup_implicit_terms?.[lang] ??
-    configData.app.signup_implicit_terms?.[configData.app.fallback_language];
+    configData.registration.signup_notice?.[lang] ??
+    configData.registration.signup_notice?.[configData.i18n.fallback_language];
 
   const registerSchema = useMemo(
     () =>

@@ -59,7 +59,7 @@ export const authPasswordForgotPost = new Hono<AppEnv>().post(
     }
 
     // Only enable if email service is available
-    if (!services.config.mail) {
+    if (!services.config.email) {
       throw new e.EmailNotActivated.Error();
     }
 

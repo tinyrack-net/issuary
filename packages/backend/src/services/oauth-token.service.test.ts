@@ -17,8 +17,8 @@ describe('OAuthTokenService', () => {
       const server = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
-          app: {
-            host: 'https://auth.test.com',
+          server: {
+            public_origin: 'https://auth.test.com',
           },
         },
       });

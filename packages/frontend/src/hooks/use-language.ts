@@ -41,7 +41,7 @@ export function useLanguage() {
   const { data: config } = useSuspenseQuery(appConfigQueryOptions);
 
   // Get supported languages from server config
-  const supportedLanguages = config.app.supported_languages;
+  const supportedLanguages = config.i18n.supported_languages;
 
   // Filter to only languages we have translations for
   const availableLanguages = getAvailableLanguages(supportedLanguages);
@@ -59,7 +59,7 @@ export function useLanguage() {
   // Detect browser language for display in auto mode
   const detectedLanguage = detectBrowserLanguage(
     availableLanguages,
-    config.app.fallback_language,
+    config.i18n.fallback_language,
   );
 
   const setLanguage = useCallback(

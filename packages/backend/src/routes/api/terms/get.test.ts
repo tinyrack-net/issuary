@@ -364,8 +364,8 @@ describe('GET /api/terms', () => {
         const server = await createTestApp({
           config: {
             ...MINIMAL_TEST_CONFIG,
-            app: {
-              signup_implicit_terms: {
+            registration: {
+              signup_notice: {
                 ko: '가입하시면 약관에 동의하는 것입니다.',
                 en: 'By signing up you agree to our terms.',
               },

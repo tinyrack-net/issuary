@@ -24,10 +24,12 @@ describe('PATCH /api/user/passkeys/:id', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
+        registration: {
+          email_verification_required: true,
+        },
         auth: {
           passkey: {
             enabled: true,
-            email_verification: true,
           },
         },
       },
@@ -462,10 +464,12 @@ describe('PATCH /api/user/passkeys/:id - Passkey disabled', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
+        registration: {
+          email_verification_required: true,
+        },
         auth: {
           passkey: {
             enabled: false,
-            email_verification: true,
           },
         },
       },

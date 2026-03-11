@@ -1,10 +1,12 @@
-app:
-  allowed_signup_emails:
-    - "*"
-  frontend:
-    mode: proxy
-    path: http://localhost:8081
-  signup_implicit_terms:
+frontend:
+  mode: proxy
+  path: http://localhost:8081
+
+registration:
+  enabled: true
+  allowed_email_patterns: []
+  email_verification_required: false
+  signup_notice:
     ko: 계속하면 <a href="https://example.com/terms/ko" target="_blank">이용약관</a> 및 <a href="https://example.com/privacy/ko" target="_blank">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
     en: By continuing, you agree to our <a href="https://example.com/terms/en" target="_blank">Terms of Service</a> and <a href="https://example.com/privacy/en" target="_blank">Privacy Policy</a>.
     ja: 続行することで、<a href="https://example.com/terms/ja" target="_blank">利用規約</a>および<a href="https://example.com/privacy/ja" target="_blank">プライバシーポリシー</a>に同意したものとみなされます。
@@ -14,8 +16,8 @@ logging:
   format: pretty
 
 database:
-  test: true
   type: sqlite
+  test: true
   path: ./test.db
 
 security:
@@ -26,9 +28,8 @@ security:
 auth:
   password:
     enabled: true
-    email_verification: false
-    second_factor:
-      required: false
+    two_factor:
+      enrollment_required: false
 
 terms:
   - id: tos
@@ -65,7 +66,6 @@ clients:
     name: React SPA Test Client (Public)
     logo_uri: http://localhost:3001
     client_id: react-spa-client
-    # No client_secret - this is a Public Client using PKCE
     redirect_uris:
       - http://localhost:3001/callback
     response_types:
@@ -80,3 +80,5 @@ users:
     email: test-config-user@example.com
     password: changemelater
     role: admin
+
+identity_providers: []

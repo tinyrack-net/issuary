@@ -41,7 +41,7 @@ describe('scheduler plugin', () => {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {
             enabled: true,
-            cron: '0 2 * * *', // Daily at 2 AM
+            cron: '0 2 * * *',
           },
         },
       }));
@@ -99,7 +99,7 @@ describe('scheduler plugin', () => {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {
             enabled: true,
-            cron: '*/30 * * * *', // Every 30 minutes
+            cron: '*/30 * * * *',
           },
         },
       }));
@@ -114,7 +114,7 @@ describe('scheduler plugin', () => {
           ...MINIMAL_TEST_CONFIG,
           scheduler: {
             enabled: true,
-            cron: '0 */6 * * *', // Every 6 hours
+            cron: '0 */6 * * *',
           },
         },
       }));

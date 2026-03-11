@@ -32,8 +32,8 @@ docker run \
 
 ```yaml
 # config.yaml
-app:
-  allowed_signup_emails:
+registration:
+  allowed_email_patterns:
     - '*'
 
 security:
@@ -56,7 +56,7 @@ docker run \
 ```yaml
 # config.yaml
 users:
-  - id: admin
+  - sub: admin
     email: admin@example.com
     password: your-password
     role: admin

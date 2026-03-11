@@ -256,11 +256,14 @@ describe('CleanupService', () => {
       const server = await createTestApp({
         config: {
           ...CLI_TEST_CONFIG,
-          app: {
-            ...CLI_TEST_CONFIG.app,
-            jwt_key_rotation_enabled: true,
-            jwt_key_rotation_days: 30,
-            jwt_key_overlap_days: 7,
+          tokens: {
+            ...CLI_TEST_CONFIG.tokens,
+            key_rotation: {
+              ...CLI_TEST_CONFIG.tokens.key_rotation,
+              enabled: true,
+              interval_days: 30,
+              overlap_days: 7,
+            },
           },
         },
       });
@@ -286,8 +289,8 @@ describe('CleanupService', () => {
       const disabledServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
-          cleanup: {
-            jwt_keys: { enabled: false },
+          tokens: {
+            key_rotation: { enabled: false },
           },
         },
       });
@@ -300,7 +303,7 @@ describe('CleanupService', () => {
 
         expect(result.skipped).toBe(true);
         expect(result.deletedCount).toBe(0);
-        expect(result.message).toBe('Disabled in config');
+        expect(result.message).toBe('JWT key rotation is disabled');
       } finally {
         await disabledServer.cleanup();
       }
@@ -310,11 +313,8 @@ describe('CleanupService', () => {
       const noRotationServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
-          app: {
-            jwt_key_rotation_enabled: false,
-          },
-          cleanup: {
-            jwt_keys: { enabled: true },
+          tokens: {
+            key_rotation: { enabled: false },
           },
         },
       });
@@ -326,9 +326,7 @@ describe('CleanupService', () => {
           });
 
         expect(result.skipped).toBe(true);
-        expect(result.message).toBe(
-          'JWT key rotation is disabled in app config',
-        );
+        expect(result.message).toBe('JWT key rotation is disabled');
       } finally {
         await noRotationServer.cleanup();
       }
@@ -1073,10 +1071,8 @@ describe('CleanupService', () => {
       const disabledServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
-          cleanup: {
-            deleted_users: {
-              enabled: false,
-            },
+          account_deletion: {
+            enabled: false,
           },
         },
       });
@@ -1089,7 +1085,7 @@ describe('CleanupService', () => {
 
         expect(result.skipped).toBe(true);
         expect(result.deletedCount).toBe(0);
-        expect(result.message).toBe('Disabled in config');
+        expect(result.message).toBe('Account deletion feature is disabled');
       } finally {
         await disabledServer.cleanup();
       }
@@ -1099,11 +1095,8 @@ describe('CleanupService', () => {
       const noAccountDeletionServer = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
-          app: {
-            account_deletion: false,
-          },
-          cleanup: {
-            deleted_users: { enabled: true, retention: '0' },
+          account_deletion: {
+            enabled: false,
           },
         },
       });

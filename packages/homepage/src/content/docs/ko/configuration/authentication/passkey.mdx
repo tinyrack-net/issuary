@@ -7,10 +7,12 @@ description: Tinyrack Auth에서 WebAuthn/패스키 인증 구성하기
 
 ```yaml
 # config.yaml
+server:
+  public_origin: https://auth.example.com
+
 auth:
   passkey:
     enabled: true
-    email_verification: true
     rp_id: example.com
     origins:
       - https://auth.example.com
@@ -18,9 +20,8 @@ auth:
 ```
 
 - `enabled`: 패스키 인증을 활성화할지 여부예요. 기본값은 `false`예요.
-- `email_verification`: 패스키로 등록한 사용자에게 이메일 인증을 요구할지 여부예요. 기본값은 `true`이며, 활성화하려면 [SMTP 설정](/ko/configuration/authentication/email-verification)이 필요해요.
-- `rp_id`: WebAuthn Relying Party ID예요. 프로토콜(`https://`)이나 포트(`:8080`)를 제외한 도메인만 입력해야 해요. 지정하지 않으면 `app.host`에서 자동으로 추출돼요. 상위 도메인을 지정하면 하위 도메인 간에 패스키를 공유할 수 있어요.
-- `origins`: WebAuthn 검증에 허용할 출처(origin) 목록이에요. 지정하지 않으면 `app.host` 값이 기본으로 사용돼요. 여러 도메인에서 동일한 패스키를 사용해야 하는 경우 유용해요.
+- `rp_id`: WebAuthn Relying Party ID예요. 프로토콜(`https://`)이나 포트(`:8080`)를 제외한 도메인만 입력해야 해요. 지정하지 않으면 `server.public_origin`의 호스트명에서 자동으로 추출돼요. 상위 도메인을 지정하면 하위 도메인 간에 패스키를 공유할 수 있어요.
+- `origins`: WebAuthn 검증에 허용할 출처(origin) 목록이에요. 지정하지 않으면 `server.public_origin` 값이 기본으로 사용돼요. 여러 도메인에서 동일한 패스키를 사용해야 하는 경우 유용해요.
 
 :::caution
 패스키는 보안상의 이유로 `https` 프로토콜에서만 정상 동작해요 (`localhost`는 예외). 프로덕션 환경에서는 반드시 `https`를 사용해 주세요.
@@ -34,21 +35,23 @@ auth:
 
 ```yaml
 # config.yaml
+server:
+  public_origin: https://auth.example.com
+
 auth:
   passkey:
     enabled: true
-    email_verification: true
     rp_id: example.com
     origins:
       - https://auth.example.com
 ```
 
-단일 도메인에서만 패스키를 사용하는 경우, `rp_id`와 `origins`를 생략하면 `app.host`에서 자동으로 설정돼요.
+단일 도메인에서만 패스키를 사용하는 경우, `rp_id`와 `origins`를 생략하면 `server.public_origin`에서 자동으로 설정돼요.
 
 ```yaml
 # config.yaml
-app:
-  host: https://auth.example.com
+server:
+  public_origin: https://auth.example.com
 
 auth:
   passkey:

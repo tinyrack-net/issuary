@@ -9,8 +9,8 @@ export type AppConfigs = InferResponseType<
   200
 >;
 
-export type Theme = AppConfigs['app']['light_theme'];
-export type ThemeMode = AppConfigs['app']['theme_mode'];
+export type Theme = AppConfigs['branding']['light_theme'];
+export type ThemeMode = AppConfigs['branding']['theme_mode'];
 export type OAuthAuthenticationMethod =
   AppConfigs['identity_providers'][number];
 export type OAuthProviderType = OAuthAuthenticationMethod['type'];

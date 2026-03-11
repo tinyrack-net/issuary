@@ -6,7 +6,7 @@ description: Tinyauth 프론트엔드의 테마 및 다크 모드 구성하기
 `tinyauth` 의 프론트엔드는 [daisyUI](https://daisyui.com/)를 기반으로 구축됐어요. 이 덕분에 다양한 테마 옵션을 제공하며, 선호하는 인터페이스 모양과 느낌을 지정할 수 있어요. 설정의 예시는 다음과 같아요.
 
 ```yaml
-app:
+branding:
   theme_mode: system
   light_theme: light
   dark_theme: dark
@@ -32,7 +32,7 @@ app:
 만약 `light` 모드에서는 `cupcake` 테마를, `dark` 모드에서는 `dracula` 테마를 사용하고 싶다면 다음과 같이 설정할 수 있어요.
 
 ```yaml
-app:
+branding:
   theme_mode: system
   light_theme: cupcake
   dark_theme: dracula
@@ -41,7 +41,7 @@ app:
 만약 `light` 모드로 고정하면서 `emerald` 테마를 사용하고 싶다면 다음과 같이 설정할 수 있어요.
 
 ```yaml
-app:
+branding:
   theme_mode: light
   light_theme: emerald
 ```

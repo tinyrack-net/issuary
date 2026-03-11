@@ -1,5 +1,3 @@
-export type { StandaloneAppConfig } from './app.js';
-export { StandaloneAppConfigSchema } from './app.js';
 export type { StandaloneAuthConfig } from './auth.js';
 export { StandaloneAuthConfigSchema } from './auth.js';
 export type { StandaloneCleanupConfig } from './cleanup.js';
@@ -38,11 +36,6 @@ export type { StandaloneSchedulerConfig } from './scheduler.js';
 export { StandaloneSchedulerConfigSchema } from './scheduler.js';
 export type { StandaloneSecurityConfig } from './security.js';
 export { StandaloneSecurityConfigSchema } from './security.js';
-export type { StandaloneSmtpConfig } from './smtp.js';
-export {
-  StandaloneSmtpConfigSchema,
-  StandaloneSmtpUnionSchema,
-} from './smtp.js';
 export type { StandaloneTermsConfig } from './terms.js';
 export { StandaloneTermsConfigSchema } from './terms.js';
 export type { StandaloneUserConfig } from './user.js';

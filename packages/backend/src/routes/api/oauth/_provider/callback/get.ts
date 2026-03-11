@@ -116,7 +116,7 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
 
     // Handle OAuth error response
     if (error) {
-      const errorUrl = new URL('/login', config.app.host);
+      const errorUrl = new URL('/login', config.server.public_origin);
       errorUrl.searchParams.set('oauth_error', error);
       if (error_description) {
         errorUrl.searchParams.set('oauth_error_description', error_description);

@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  createTestAppConfig,
+  createTestConfig,
   E2E_BASE_CONFIG,
   E2E_TEST_USER,
   E2E_TEST_USER_CONFIG,
@@ -14,7 +14,7 @@ import {
 
 const test = createScenarioFixture((backendPort) => ({
   ...E2E_BASE_CONFIG,
-  app: createTestAppConfig(backendPort),
+  ...createTestConfig(backendPort),
   users: [E2E_TEST_USER_CONFIG],
 }));
 
@@ -44,7 +44,7 @@ test.describe('Login flow', () => {
     await expect(page.locator(loginPasswordPage.submitButton)).toBeVisible();
   });
 
-  test('password login hides forgot-password link when SMTP is disabled', async ({
+  test('password login hides forgot-password link when email is disabled', async ({
     page,
   }) => {
     await page.goto('/login/password');

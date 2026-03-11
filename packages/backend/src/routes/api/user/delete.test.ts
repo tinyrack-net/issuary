@@ -33,16 +33,11 @@ describe('DELETE /api/user', () => {
       const server = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
-          app: {
-            account_deletion: true,
+          account_deletion: {
+            enabled: true,
+            retention: '30d',
           },
           users: [TEST_USER_CONFIG],
-          cleanup: {
-            deleted_users: {
-              enabled: true,
-              retention: '30d',
-            },
-          },
         },
       });
       app = server.app;
@@ -201,8 +196,8 @@ describe('DELETE /api/user', () => {
       const server = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
-          app: {
-            account_deletion: false,
+          account_deletion: {
+            enabled: false,
           },
         },
       });

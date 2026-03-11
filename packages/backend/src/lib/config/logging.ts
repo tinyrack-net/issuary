@@ -50,6 +50,7 @@ export const LoggingConfigSchema = z
         '"pretty" outputs human-readable format.',
     ),
   })
+  .strict()
   .default(LOGGING_CONFIG_DEFAULT)
   .describe('Logging configuration');
 

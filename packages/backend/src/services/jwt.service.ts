@@ -15,7 +15,7 @@ import {
   JwtKeyStatus,
 } from '#backend/entities/jwt-key.entity.js';
 import { bytesToString, fromBase64Url } from '#backend/lib/base64url.js';
-import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 
@@ -167,9 +167,9 @@ export class JwtService {
   /** Deduplication lock for concurrent ensureActiveKey calls */
   private ensureActiveKeyPromise: Promise<JwtKeyEntity> | null = null;
 
-  private readonly config: TinyAuthConfigs;
+  private readonly config: TinyAuthRuntimeConfig;
   private readonly mikro: MikroService;
-  constructor(config: TinyAuthConfigs, mikro: MikroService) {
+  constructor(config: TinyAuthRuntimeConfig, mikro: MikroService) {
     this.config = config;
     this.mikro = mikro;
   }
@@ -245,7 +245,7 @@ export class JwtService {
    */
   async createAndActivateKey(): Promise<JwtKeyEntity> {
     const keyPair = await this.generateKeyPair();
-    const rotationDays = this.config.app.jwt_key_rotation_days ?? 30;
+    const rotationDays = this.config.tokens.key_rotation.interval_days;
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + rotationDays);
@@ -273,7 +273,7 @@ export class JwtService {
    */
   async createNextKey(): Promise<JwtKeyEntity> {
     const keyPair = await this.generateKeyPair();
-    const rotationDays = this.config.app.jwt_key_rotation_days ?? 30;
+    const rotationDays = this.config.tokens.key_rotation.interval_days;
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + rotationDays);
@@ -348,7 +348,7 @@ export class JwtService {
    * @param overlapDays - Days to keep previous keys valid
    */
   async retireOldKeys(overlapDays?: number): Promise<number> {
-    const days = overlapDays ?? this.config.app.jwt_key_overlap_days ?? 7;
+    const days = overlapDays ?? this.config.tokens.key_rotation.overlap_days;
     const keysToRetire = await this.mikro.jwtKey.getKeysToRetire(days);
 
     for (const key of keysToRetire) {
@@ -481,7 +481,7 @@ export class JwtService {
    * Sign an access token using RS256
    */
   async signAccessToken(payload: AccessTokenPayload): Promise<string> {
-    const ttl = this.config.app.jwt_access_token_ttl || 3600;
+    const ttl = this.config.tokens.access_token_ttl;
     const key = await this.getActiveKey();
     const privateKey = await importPKCS8(key.private_key, key.algorithm);
     const jti = crypto.randomUUID();
@@ -496,7 +496,7 @@ export class JwtService {
       .setJti(jti)
       .setIssuedAt()
       .setExpirationTime(`${ttl}s`)
-      .setIssuer(this.config.app.host)
+      .setIssuer(this.config.server.public_origin)
       .sign(privateKey);
 
     return jwt;
@@ -506,7 +506,7 @@ export class JwtService {
    * Sign a refresh token using RS256
    */
   async signRefreshToken(payload: RefreshTokenPayload): Promise<string> {
-    const ttl = this.config.app.jwt_refresh_token_ttl || 2592000;
+    const ttl = this.config.tokens.refresh_token_ttl;
     const key = await this.getActiveKey();
     const privateKey = await importPKCS8(key.private_key, key.algorithm);
     const jti = crypto.randomUUID();
@@ -521,7 +521,7 @@ export class JwtService {
       .setJti(jti)
       .setIssuedAt()
       .setExpirationTime(`${ttl}s`)
-      .setIssuer(this.config.app.host)
+      .setIssuer(this.config.server.public_origin)
       .sign(privateKey);
 
     return jwt;
@@ -535,7 +535,7 @@ export class JwtService {
    * - at_hash: Access Token hash (when provided)
    */
   async signIdToken(payload: IdTokenPayload): Promise<string> {
-    const ttl = this.config.app.jwt_access_token_ttl || 3600;
+    const ttl = this.config.tokens.access_token_ttl;
     const key = await this.getActiveKey();
     const privateKey = await importPKCS8(key.private_key, key.algorithm);
 
@@ -555,7 +555,7 @@ export class JwtService {
       .setProtectedHeader({ alg: key.algorithm, typ: 'JWT', kid: key.kid })
       .setIssuedAt()
       .setExpirationTime(`${ttl}s`)
-      .setIssuer(this.config.app.host)
+      .setIssuer(this.config.server.public_origin)
       .sign(privateKey);
 
     return jwt;

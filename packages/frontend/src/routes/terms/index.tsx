@@ -90,8 +90,8 @@ function Terms() {
   const lang = search.lang ?? i18n.language;
   const termsQuery = useSuspenseQuery(getTermsQueryOptions(lang));
   const implicitNotice =
-    configData.app.signup_implicit_terms?.[lang] ??
-    configData.app.signup_implicit_terms?.[configData.app.fallback_language];
+    configData.registration.signup_notice?.[lang] ??
+    configData.registration.signup_notice?.[configData.i18n.fallback_language];
 
   // Separate explicit and implicit terms
   const explicitTerms = useMemo(

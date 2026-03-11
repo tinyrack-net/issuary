@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  createTestAppConfig,
+  createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 import { forgotPasswordPage } from '#frontend-e2e/helpers/password-reset.js';
@@ -19,14 +19,17 @@ const TEST_PASSWORD = 'test-password-123';
 
 const test = createScenarioFixture((backendPort) => ({
   ...E2E_BASE_CONFIG,
-  app: createTestAppConfig(backendPort, {
-    allowed_signup_emails: ['*'],
+  ...createTestConfig(backendPort, {
+    registration: {
+      enabled: true,
+      allowed_email_patterns: ['*'],
+    },
   }),
-  mail: { test: true },
+  email: { test: true },
 }));
 
 test.describe('Forgot password flow', () => {
-  test('password login shows forgot password link when SMTP is enabled', async ({
+  test('password login shows forgot password link when email is enabled', async ({
     page,
   }) => {
     await page.goto('/login/password');

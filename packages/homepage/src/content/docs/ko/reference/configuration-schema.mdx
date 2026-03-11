@@ -3,74 +3,73 @@ title: 설정 스키마
 description: 전체 config.yaml 스키마 레퍼런스
 ---
 
-이 문서는 `tinyauth`의 `config.yaml` 설정 파일에서 사용 가능한 모든 항목, 유형, 기본값 및 관련 환경 변수를 정리한 전체 레퍼런스예요.
+이 문서는 현재 `tinyauth`의 `config.yaml` 구조를 top-level 그룹 기준으로 정리한 레퍼런스예요.
 
----
+:::note
+`frontend`와 `frontend.html_variables`는 standalone 전용 설정이에요. `@tinyauth/standalone`만 이 값을 해석하고, `@tinyauth/backend`의 직접 구성에서는 사용하지 않아요.
+:::
 
-`app.frontend`와 `app.html_variables`는 standalone 전용 설정이에요.
-`@tinyauth/standalone`만 이 값을 해석하고,
-`@tinyauth/backend/config`는 이 필드를 허용하지 않아요.
-
-## `app` - 애플리케이션 설정
-
-### 서버
+## `server`
 
 | 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
 |------|------|--------|-----------|------|
-| `host` | `string` | `http://localhost:8080` | `APP_HOST` | 서비스의 공개 URL |
-| `port` | `number` (1-65535) | `8080` | `PORT` | 서버 리스닝 포트 |
-| `trust_proxy` | `boolean \| string \| string[] \| number` | `false` | `TRUST_PROXY` | 리버스 프록시 신뢰 설정 |
+| `public_origin` | `string` (URL) | `http://localhost:8080` | `PUBLIC_ORIGIN` | 공개 URL. 리다이렉트, 이메일 링크, OIDC issuer metadata의 기준이 돼요. |
+| `listen_port` | `number` | `8080` | `LISTEN_PORT` | standalone 서버가 바인딩할 포트예요. |
+| `trust_proxy` | `boolean \| string \| string[] \| number` | `false` | `TRUST_PROXY` | 리버스 프록시 헤더 신뢰 설정이에요. |
 
-### JWT / 토큰
-
-| 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
-|------|------|--------|-----------|------|
-| `jwt_access_token_ttl` | `integer` (최소 60) | `3600` | `JWT_ACCESS_TOKEN_TTL` | 액세스 토큰 수명 (초) |
-| `jwt_refresh_token_ttl` | `integer` (최소 3600) | `2592000` | `JWT_REFRESH_TOKEN_TTL` | 리프레시 토큰 수명 (초) |
-| `jwt_key_rotation_enabled` | `boolean` | `true` | `JWT_KEY_ROTATION_ENABLED` | JWT 키 자동 순환 활성화 |
-| `jwt_key_rotation_days` | `integer` (최소 1) | `30` | `JWT_KEY_ROTATION_DAYS` | 키 순환 주기 (일) |
-| `jwt_key_overlap_days` | `integer` (최소 1) | `7` | `JWT_KEY_OVERLAP_DAYS` | 이전 키 유효 유지 기간 (일) |
-
-### 회원가입 / 접근 제어
+## `tokens`
 
 | 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
 |------|------|--------|-----------|------|
-| `allowed_signup_emails` | `string[]` | `[]` | - | 가입 허용 이메일 패턴 (`*`, `*@domain.com` 등) |
-| `account_deletion` | `boolean` | `false` | `ACCOUNT_DELETION` | 사용자 계정 삭제 기능 활성화 |
+| `access_token_ttl` | `integer` (최소 60) | `3600` | `ACCESS_TOKEN_TTL` | 액세스 토큰 수명(초) |
+| `refresh_token_ttl` | `integer` (최소 3600) | `2592000` | `REFRESH_TOKEN_TTL` | 리프레시 토큰 수명(초) |
+| `key_rotation.enabled` | `boolean` | `true` | `JWT_KEY_ROTATION_ENABLED` | JWT 키 자동 순환 활성화 |
+| `key_rotation.interval_days` | `integer` (최소 1) | `30` | `JWT_KEY_ROTATION_DAYS` | 키 순환 주기(일) |
+| `key_rotation.overlap_days` | `integer` (최소 1) | `7` | `JWT_KEY_OVERLAP_DAYS` | 이전 키 유지 기간(일) |
 
-### 프론트엔드 서빙
-
-| 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
-|------|------|--------|-----------|------|
-| `frontend.enabled` | `boolean` | `true` | - | 프론트엔드 서빙 활성화 여부. `false`면 API-only 모드 |
-| `frontend.mode` | `'proxy' \| 'static'` | `'static'` | - | `proxy`는 업스트림 URL로 전달하고, `static`은 디스크의 빌드 결과물을 서빙해요 |
-| `frontend.path` | `string` | 런타임 기본값 | - | standalone config에서 생략 가능해요. standalone 런타임이 `proxy` 모드에서는 `http://localhost:8081`, `static` 모드에서는 `/opt/tinyauth/frontend`를 채워줘요 |
-| `html_variables` | `Record<string, string>` | `{}` | - | standalone이 HTML을 서빙할 때 `{{KEY}}` 플레이스홀더를 치환하는 변수 집합이에요 |
-
-### 다국어 (i18n)
+## `i18n`
 
 | 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
 |------|------|--------|-----------|------|
-| `supported_languages` | `Locale[]` | `['en', 'ko', 'ja']` | - | 지원 언어 (`en`, `ko`, `ja`) |
+| `supported_languages` | `Locale[]` | `['en', 'ko', 'ja']` | - | 지원 언어 목록 |
 | `default_language` | `'auto' \| Locale` | `'auto'` | `DEFAULT_LANGUAGE` | 기본 언어 |
 | `fallback_language` | `Locale` | `'en'` | `FALLBACK_LANGUAGE` | 대체 언어 |
 
-### UI / 테마 / 브랜딩
+## `branding`
 
 | 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
 |------|------|--------|-----------|------|
-| `theme_mode` | `'light' \| 'dark' \| 'system'` | `'system'` | `THEME_MODE` | 테마 모드 |
 | `light_theme` | `AppTheme` | `'light'` | `LIGHT_THEME` | 라이트 모드 테마 |
 | `dark_theme` | `AppTheme` | `'dark'` | `DARK_THEME` | 다크 모드 테마 |
-| `background_url` | `string` (URL) | - | - | 배경 이미지 URL |
-| `icon_url` | `string` (URL) | - | - | 로고 이미지 URL |
-| `title` | `Record<string, string>` | - | - | 다국어 제목 |
-| `subtitle` | `Record<string, string>` | - | - | 다국어 부제목 |
-| `signup_implicit_terms` | `Record<string, string>` | - | - | 암시적 동의 안내 문구 (HTML) |
+| `theme_mode` | `'light' \| 'dark' \| 'system'` | `'system'` | `THEME_MODE` | 테마 선택 방식 |
+| `background_url` | `string` (URL) | 기본 배경 이미지 | `BACKGROUND_URL` | 배경 이미지 URL |
+| `icon_url` | `string` (URL) | - | `ICON_URL` | 로고 이미지 URL |
+| `title` | `Record<string, string>` | 기본 다국어 제목 | - | 언어별 제목 |
+| `subtitle` | `Record<string, string>` | 기본 다국어 부제목 | - | 언어별 부제목 |
 
----
+## `registration`
 
-## `security` - 보안 시크릿 설정
+| 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
+|------|------|--------|-----------|------|
+| `allowed_email_patterns` | `string[]` | `[]` | `ALLOWED_EMAIL_PATTERN` | 가입 허용 이메일 패턴. 빈 배열이면 자체 회원가입이 비활성화돼요. |
+| `email_verification_required` | `boolean` | `true` | `EMAIL_VERIFICATION_REQUIRED` | 비밀번호 회원가입 후 이메일 인증 필수 여부 |
+| `signup_notice` | `Record<string, string>` | `{}` | - | 암시적 약관 동의 안내 문구(HTML 가능) |
+
+## `account_deletion`
+
+| 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
+|------|------|--------|-----------|------|
+| `enabled` | `boolean` | `false` | `ACCOUNT_DELETION_ENABLED` | 사용자 직접 탈퇴 허용 여부 |
+| `retention` | `DurationString` | `'30d'` | `ACCOUNT_DELETION_RETENTION` | 탈퇴 요청 후 실제 영구 삭제까지의 유예 기간 |
+
+## `logging`
+
+| 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
+|------|------|--------|-----------|------|
+| `level` | `'trace' \| 'debug' \| 'info' \| 'warn' \| 'error' \| 'fatal' \| 'silent'` | `'info'` | `LOG_LEVEL` | 로그 레벨 |
+| `format` | `'json' \| 'pretty'` | `'json'` | `LOG_FORMAT` | 로그 출력 형식 |
+
+## `security`
 
 | 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
 |------|------|--------|-----------|------|
@@ -78,92 +77,90 @@ description: 전체 config.yaml 스키마 레퍼런스
 | `hash_secret` | `string` (base64url 32바이트) | **필수** | `HASH_SECRET` | 비밀번호, 클라이언트 시크릿, 일회성 토큰 해싱용 루트 시크릿 |
 | `pbkdf2_iterations` | `integer` (최소 1) | `600000` | `PBKDF2_ITERATIONS` | PBKDF2 반복 횟수 |
 
----
+## `database`
 
-## `database` - 데이터베이스 설정
-
-`type` 필드에 따라 설정 항목이 달라요.
+`database.type`에 따라 하위 필드가 달라져요.
 
 ### SQLite (`type: 'sqlite'`)
 
 | 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
 |------|------|--------|-----------|------|
-| `type` | `'sqlite'` | - | `DB_TYPE` | 데이터베이스 유형 |
-| `path` | `string` | `/opt/tinyauth/database.db` | `DB_PATH` | 데이터베이스 파일 경로 |
+| `type` | `'sqlite'` | - | `DATABASE_TYPE` | 데이터베이스 유형 |
+| `path` | `string` | `/opt/tinyauth/database.db` | `DATABASE_PATH` | 데이터베이스 파일 경로 |
+| `test` | `boolean` | `false` | `DATABASE_TEST` | 테스트 모드 여부 |
 
 ### PostgreSQL (`type: 'postgres'`)
 
 | 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
 |------|------|--------|-----------|------|
-| `type` | `'postgres'` | - | `DB_TYPE` | 데이터베이스 유형 |
+| `type` | `'postgres'` | - | `DATABASE_TYPE` | 데이터베이스 유형 |
 | `host` | `string` | `'localhost'` | `DATABASE_HOST` | 호스트 |
 | `port` | `number` | `5432` | `DATABASE_PORT` | 포트 |
-| `name` | `string` | `'test'` | `DATABASE_NAME` | 데이터베이스 이름 |
-| `user` | `string` | `'test'` | `DATABASE_USER` | 사용자 |
-| `password` | `string` | `'test'` | `DATABASE_PASSWORD` | 비밀번호 |
+| `user` | `string` | `'postgres'` | `DATABASE_USER` | 사용자 |
+| `password` | `string` | `'postgres'` | `DATABASE_PASSWORD` | 비밀번호 |
+| `name` | `string` | `'tinyauth'` | `DATABASE_NAME` | 데이터베이스 이름 |
 
----
+## `auth`
 
-## `auth` - 인증 설정
-
-### 비밀번호 (`auth.password`)
-
-| 항목 | 유형 | 기본값 | 설명 |
-|------|------|--------|------|
-| `enabled` | `boolean` | `true` | 비밀번호 인증 활성화 |
-| `email_verification` | `boolean` | `true` | 이메일 인증 필수 여부 |
-| `second_factor.required` | `boolean` | `false` | 2단계 인증 필수 여부 |
-| `totp.enabled` | `boolean` | `false` | TOTP 활성화 |
-| `totp.issuer` | `string` | `'Tinyrack'` | 인증 앱 표시 이름 |
-
-### 패스키 (`auth.passkey`)
-
-| 항목 | 유형 | 기본값 | 설명 |
-|------|------|--------|------|
-| `enabled` | `boolean` | `false` | 패스키 인증 활성화 |
-| `email_verification` | `boolean` | `true` | 이메일 인증 필수 여부 |
-| `rp_id` | `string` | `app.host`에서 추출 | Relying Party ID (도메인만) |
-| `origins` | `string[]` | `[app.host]` | 허용 WebAuthn 출처 |
-
----
-
-## `identity_providers` - 타사 로그인 설정
-
-배열 형태로 여러 제공자를 설정할 수 있어요. 자세한 내용은 [타사 로그인 개요](/ko/configuration/oauth/overview)를 참고해 주세요.
-
-### 공통 항목
-
-| 항목 | 유형 | 기본값 | 설명 |
-|------|------|--------|------|
-| `id` | `string` | - | 고유 식별자 |
-| `type` | `'github' \| 'google' \| 'apple' \| 'generic_oauth'` | - | 제공자 유형 |
-| `enabled` | `boolean` | `false` | 활성화 여부 |
-| `display_name` | `string` | - | 표시 이름 (`generic_oauth`에서 필수) |
-| `icon_url` | `string` | - | 아이콘 URL |
-| `client_id` | `string` | - | OAuth 클라이언트 ID |
-| `client_secret` | `string` | - | OAuth 클라이언트 시크릿 |
-| `scopes` | `string[]` | 유형별 기본값 | OAuth 스코프 |
-| `email_conflict_strategy` | `'auto_link' \| 'require_link'` | `'auto_link'` | 이메일 충돌 처리 방식 |
-
----
-
-## `smtp` - SMTP 이메일 설정
+### `auth.password`
 
 | 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
 |------|------|--------|-----------|------|
-| `host` | `string` | `'localhost'` | - | SMTP 서버 호스트 |
-| `port` | `number` | `465` | - | SMTP 포트 |
-| `secure` | `boolean` | `true` | - | SSL/TLS 사용 |
-| `user` | `string` | **필수** | `SMTP_USER` | SMTP 사용자 |
-| `password` | `string` | **필수** | `SMTP_PASSWORD` | SMTP 비밀번호 |
-| `from` | `string` | - | - | 발신자 주소 |
-| `test` | `boolean` | `false` | - | 테스트 모드 (Ethereal) |
+| `enabled` | `boolean` | `true` | `PASSWORD_AUTH_ENABLED` | 비밀번호 인증 활성화 |
+| `two_factor.enrollment_required` | `boolean` | `false` | `PASSWORD_2FA_ENROLLMENT_REQUIRED` | 비밀번호 사용자의 2차 인증 등록 필수 여부 |
+| `totp.enabled` | `boolean` | `false` | `PASSWORD_TOTP_ENABLED` | TOTP 사용 여부 |
+| `totp.issuer` | `string` | `'Tinyrack'` | `PASSWORD_TOTP_ISSUER` | 인증 앱 표시 이름 |
+| `policy.min_length` | `number` | `8` | `PASSWORD_MIN_LENGTH` | 최소 길이 |
+| `policy.max_length` | `number` | `128` | `PASSWORD_MAX_LENGTH` | 최대 길이 |
 
----
+### `auth.passkey`
 
-## `clients` - OAuth 클라이언트 설정
+| 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
+|------|------|--------|-----------|------|
+| `enabled` | `boolean` | `false` | `PASSKEY_ENABLED` | 패스키 인증 활성화 |
+| `rp_id` | `string` | `server.public_origin`에서 추출 | `PASSKEY_RP_ID` | WebAuthn RP ID (도메인만) |
+| `origins` | `string[]` | `[server.public_origin]` | - | 허용 WebAuthn origin 목록 |
 
-배열 형태로 여러 클라이언트를 설정할 수 있어요. 자세한 내용은 [클라이언트 연동](/ko/configuration/client-integration/overview)을 참고해 주세요.
+## `email`
+
+`email`은 선택 설정이며, 메일 전송 기능을 사용할 때만 필요해요.
+
+| 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
+|------|------|--------|-----------|------|
+| `transport` | `'smtp' \| 'test'` | - | `EMAIL_TRANSPORT` | 이메일 전송 방식 |
+| `from` | `string` | - | `EMAIL_FROM` | 발신자 주소 |
+
+### SMTP (`transport: 'smtp'`)
+
+| 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
+|------|------|--------|-----------|------|
+| `host` | `string` | `'localhost'` | `EMAIL_HOST` | SMTP 서버 호스트 |
+| `port` | `number` | `465` | `EMAIL_PORT` | SMTP 포트 |
+| `secure` | `boolean` | `true` | `EMAIL_SECURE` | SSL/TLS 사용 여부 |
+| `user` | `string` | **필수** | `EMAIL_USER` | SMTP 사용자 |
+| `password` | `string` | **필수** | `EMAIL_PASSWORD` | SMTP 비밀번호 |
+
+## `identity_providers`
+
+배열 형태로 여러 제공자를 설정할 수 있어요. 자세한 내용은 [타사 로그인 개요](/ko/configuration/oauth/overview)를 참고해 주세요.
+
+| 항목 | 유형 | 설명 |
+|------|------|------|
+| `id` | `string` | 고유 식별자 |
+| `type` | `'github' \| 'google' \| 'apple' \| 'generic_oauth'` | 제공자 유형 |
+| `enabled` | `boolean` | 활성화 여부 |
+| `display_name` | `string` | 표시 이름 |
+| `icon_url` | `string` | 아이콘 URL |
+| `client_id` | `string` | OAuth 클라이언트 ID |
+| `client_secret` | `string` | OAuth 클라이언트 시크릿 |
+| `authorization_url` | `string` | 인증 엔드포인트 |
+| `token_url` | `string` | 토큰 엔드포인트 |
+| `userinfo_url` | `string \| null` | 사용자 정보 엔드포인트 |
+| `email_url` | `string` | 이메일 조회 엔드포인트 |
+| `scopes` | `string[]` | 요청 스코프 목록 |
+| `email_conflict_strategy` | `'auto_link' \| 'require_link'` | 이메일 충돌 처리 방식 |
+
+## `clients`
 
 | 항목 | 유형 | 설명 |
 |------|------|------|
@@ -171,65 +168,63 @@ description: 전체 config.yaml 스키마 레퍼런스
 | `name` | `string` | 표시 이름 |
 | `logo_uri` | `string` | 로고 URL |
 | `client_id` | `string` | 공개 클라이언트 ID |
-| `client_secret` | `string` | 클라이언트 시크릿 (공개 클라이언트는 생략) |
+| `client_secret` | `string` | 클라이언트 시크릿 |
 | `redirect_uris` | `string[]` | 허용 리다이렉트 URL |
 | `response_types` | `string[]` | 허용 응답 유형 |
 | `grant_types` | `string[]` | 허용 권한 부여 유형 |
-| `scope` | `string` | 허용 스코프 (공백 구분) |
+| `scope` | `string` | 허용 스코프(공백 구분) |
 
----
+## `users`
 
-## `users` - 사전 정의 사용자
+| 항목 | 유형 | 설명 |
+|------|------|------|
+| `sub` | `string` | 사용자 고유 식별자 |
+| `email` | `string` | 이메일 주소 |
+| `password` | `string` | 초기 비밀번호 |
+| `role` | `'user' \| 'admin'` | 사용자 역할 |
 
-| 항목 | 유형 | 기본값 | 설명 |
-|------|------|--------|------|
-| `id` | `string` | - | 고유 식별자 |
-| `email` | `string` | - | 이메일 주소 |
-| `password` | `string` (6-100자) | - | 초기 비밀번호 |
-| `role` | `'user' \| 'admin'` | `'user'` | 사용자 역할 |
+## `terms`
 
----
+배열 형태로 여러 약관을 설정할 수 있어요.
 
-## `terms` - 이용약관 설정
+| 항목 | 유형 | 설명 |
+|------|------|------|
+| `id` | `string` | 고유 식별자 (소문자, `-`, `_`) |
+| `required` | `boolean` | 필수 동의 여부 |
+| `consent_mode` | `'explicit' \| 'implicit'` | 동의 수집 방식 |
+| `version` | `string` | 약관 버전 |
+| `content` | `Record<string, { title, type, content }>` | 언어별 약관 내용 |
 
-배열 형태로 여러 약관을 설정할 수 있어요. 자세한 내용은 [암시적 플로우](/ko/configuration/terms/implicit-flow) 및 [명시적 플로우](/ko/configuration/terms/explicit-flow)를 참고해 주세요.
-
-| 항목 | 유형 | 기본값 | 설명 |
-|------|------|--------|------|
-| `id` | `string` | - | 고유 식별자 (소문자, `-`, `_`) |
-| `required` | `boolean` | `true` | 동의 필수 여부 |
-| `consent_mode` | `'explicit' \| 'implicit'` | `'explicit'` | 동의 수집 방식 |
-| `version` | `string` | - | 버전 문자열 |
-| `content` | `Record<lang, {title, type, content}>` | - | 언어별 약관 내용 |
-
----
-
-## `scheduler` - 스케줄러 설정
+## `scheduler`
 
 | 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
 |------|------|--------|-----------|------|
 | `enabled` | `boolean` | `true` | `SCHEDULER_ENABLED` | 내장 스케줄러 활성화 |
 | `cron` | `string` | `'0 2 * * *'` | `SCHEDULER_CRON` | cron 표현식 |
 
----
+## `cleanup`
 
-## `cleanup` - 데이터 정리 설정
+| 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
+|------|------|--------|-----------|------|
+| `revoked_tokens.enabled` | `boolean` | `true` | `CLEANUP_REVOKED_TOKENS_ENABLED` | 취소된 토큰 정리 |
+| `revoked_tokens.retention` | `DurationString` | `'0'` | `CLEANUP_REVOKED_TOKENS_RETENTION` | 보존 기간 |
+| `oauth_codes.enabled` | `boolean` | `true` | `CLEANUP_OAUTH_CODES_ENABLED` | 인증 코드 정리 |
+| `oauth_codes.consumed_retention` | `DurationString` | `'24h'` | `CLEANUP_OAUTH_CODES_RETENTION` | 사용된 코드 보존 기간 |
+| `email_verifications.enabled` | `boolean` | `true` | `CLEANUP_EMAIL_VERIFICATIONS_ENABLED` | 이메일 인증 토큰 정리 |
+| `email_verifications.retention` | `DurationString` | `'0'` | `CLEANUP_EMAIL_VERIFICATIONS_RETENTION` | 보존 기간 |
+| `password_resets.enabled` | `boolean` | `true` | `CLEANUP_PASSWORD_RESETS_ENABLED` | 비밀번호 재설정 토큰 정리 |
+| `password_resets.retention` | `DurationString` | `'0'` | `CLEANUP_PASSWORD_RESETS_RETENTION` | 보존 기간 |
+| `pending_oauth_registrations.enabled` | `boolean` | `true` | `CLEANUP_PENDING_OAUTH_REGISTRATIONS_ENABLED` | 중단된 OAuth 가입 정리 |
+| `pending_oauth_registrations.retention` | `DurationString` | `'0'` | `CLEANUP_PENDING_OAUTH_REGISTRATIONS_RETENTION` | 보존 기간 |
 
-자세한 내용은 [작업 스케줄러](/ko/configuration/scheduler)를 참고해 주세요.
+## `frontend` (standalone only)
 
-| 항목 | 유형 | 기본값 | 설명 |
-|------|------|--------|------|
-| `revoked_tokens.enabled` | `boolean` | `true` | 취소된 토큰 정리 |
-| `revoked_tokens.retention` | `DurationString` | `'0'` | 보존 기간 |
-| `oauth_codes.enabled` | `boolean` | `true` | 인증 코드 정리 |
-| `oauth_codes.consumed_retention` | `DurationString` | `'24h'` | 사용된 코드 보존 기간 |
-| `email_verifications.enabled` | `boolean` | `true` | 이메일 인증 토큰 정리 |
-| `email_verifications.retention` | `DurationString` | `'0'` | 보존 기간 |
-| `password_resets.enabled` | `boolean` | `true` | 비밀번호 재설정 토큰 정리 |
-| `password_resets.retention` | `DurationString` | `'0'` | 보존 기간 |
-| `deleted_users.enabled` | `boolean` | `true` | 삭제된 사용자 영구 삭제 |
-| `deleted_users.retention` | `DurationString` | `'30d'` | 유예 기간 |
-| `jwt_keys.enabled` | `boolean` | `true` | JWT 키 순환 |
+| 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
+|------|------|--------|-----------|------|
+| `enabled` | `boolean` | `true` | `FRONTEND_ENABLED` | 프론트엔드 서빙 활성화 여부 |
+| `mode` | `'proxy' \| 'static'` | `'static'` | `FRONTEND_MODE` | `proxy`는 업스트림 전달, `static`은 디스크 서빙 |
+| `path` | `string` | 런타임 기본값 | `FRONTEND_PATH` | 프론트엔드 경로 |
+| `html_variables` | `Record<string, string>` | `{}` | - | HTML 템플릿 치환 변수 |
 
 :::note
 `DurationString` 형식: `"0"` (즉시), `"30s"` (초), `"30m"` (분), `"24h"` (시간), `"7d"` (일), `"1y"` (년)

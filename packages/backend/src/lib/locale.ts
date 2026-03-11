@@ -4,7 +4,7 @@
  * AVAILABLE_LOCALES: All locales the application CAN support (compile-time).
  *                    These have corresponding translation files.
  *
- * config.app.supported_languages: Locales ENABLED for a deployment (runtime).
+ * config.i18n.supported_languages: Locales ENABLED for a deployment (runtime).
  *                                  Must be a subset of AVAILABLE_LOCALES.
  */
 

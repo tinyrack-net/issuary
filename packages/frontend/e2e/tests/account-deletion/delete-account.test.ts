@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  createTestAppConfig,
+  createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 import { loginPasswordPage } from '#frontend-e2e/helpers/login.js';
@@ -14,9 +14,12 @@ import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
 
 const test = createScenarioFixture((backendPort) => ({
   ...E2E_BASE_CONFIG,
-  app: createTestAppConfig(backendPort, {
-    allowed_signup_emails: ['*'],
-    account_deletion: true,
+  ...createTestConfig(backendPort, {
+    registration: {
+      enabled: true,
+      allowed_email_patterns: ['*'],
+    },
+    account_deletion: { enabled: true },
   }),
 }));
 

@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { generateSpecs } from 'hono-openapi';
 import {
-  TinyAuthConfigsSchema,
-  type TinyAuthInputConfigs,
+  type TinyAuthRuntimeConfigInput,
+  TinyAuthRuntimeConfigSchema,
 } from '#backend/lib/config/index.js';
 import { createLogger } from '#backend/lib/logger.js';
 import { OPENAPI_DOCUMENTATION } from '#backend/lib/openapi.js';
@@ -20,11 +20,11 @@ export interface CreateAppOptions {
   /**
    * Application configuration for the backend runtime.
    */
-  config: TinyAuthInputConfigs;
+  config: TinyAuthRuntimeConfigInput;
 }
 
 export async function createApp(options: CreateAppOptions) {
-  const config = TinyAuthConfigsSchema.parse(options.config);
+  const config = TinyAuthRuntimeConfigSchema.parse(options.config);
 
   // Create root logger (use config.logging.level: 'silent' to suppress)
   const logger = createLogger({ logging: config.logging });
@@ -46,7 +46,7 @@ export async function createApp(options: CreateAppOptions) {
     .use(
       '*',
       cors({
-        origin: config.app.host,
+        origin: config.server.public_origin,
         credentials: true,
       }),
     )
@@ -54,10 +54,10 @@ export async function createApp(options: CreateAppOptions) {
       '*',
       sessionMiddleware(
         config.security.session_secret,
-        config.app.host.startsWith('https'),
+        config.server.public_origin.startsWith('https'),
       ),
     )
-    .use('*', trustedProxyGuard(config.app.trust_proxy))
+    .use('*', trustedProxyGuard(config.server.trust_proxy))
     .use('*', servicesMiddleware(services))
     .use('*', mikroOrmMiddleware)
     .route('/', routes)

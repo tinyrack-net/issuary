@@ -415,8 +415,8 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
         users: [TEST_USER_CONFIG],
         auth: {
           password: {
-            second_factor: {
-              required: true,
+            two_factor: {
+              enrollment_required: true,
             },
             totp: { enabled: true },
           },

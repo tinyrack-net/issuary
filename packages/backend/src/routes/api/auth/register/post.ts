@@ -82,15 +82,18 @@ export const authRegisterPost = new Hono<AppEnv>().post(
       throw new e.ValidationError.Error('Password authentication is disabled');
     }
 
-    const { allowed_signup_emails } = config.app;
+    const { enabled, allowed_email_patterns } = config.registration;
 
     // Check if signup is disabled entirely
-    if (allowed_signup_emails.length === 0) {
+    if (!enabled) {
       throw new e.RegistrationDisabled.Error();
     }
 
     // Check if the email matches allowed patterns
-    if (!isEmailAllowed(email, allowed_signup_emails)) {
+    if (
+      allowed_email_patterns.length > 0 &&
+      !isEmailAllowed(email, allowed_email_patterns)
+    ) {
       throw new e.RegistrationEmailNotAllowed.Error();
     }
 

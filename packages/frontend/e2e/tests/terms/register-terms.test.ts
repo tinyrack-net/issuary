@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  createTestAppConfig,
+  createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 import { registerPage } from '#frontend-e2e/helpers/register-page.js';
@@ -37,10 +37,13 @@ const TERMS_CONFIG = [
 
 const test = createScenarioFixture((backendPort) => ({
   ...E2E_BASE_CONFIG,
-  app: createTestAppConfig(backendPort, {
-    allowed_signup_emails: ['*@allowed.com'],
-    signup_implicit_terms: {
-      en: 'By signing up, you agree to receive marketing emails.',
+  ...createTestConfig(backendPort, {
+    registration: {
+      enabled: true,
+      allowed_email_patterns: ['*@allowed.com'],
+      signup_notice: {
+        en: 'By signing up, you agree to receive marketing emails.',
+      },
     },
   }),
   terms: [...TERMS_CONFIG],
@@ -73,7 +76,7 @@ test.describe('Registration with terms and email restriction', () => {
 
     await page.locator(registerPage.submitButton).click();
 
-    // Should navigate to profile (no SMTP, no 2FA)
+    // Should navigate to profile (no email verification, no 2FA)
     await page.waitForURL('**/profile');
     await expect(page).toHaveURL(/\/profile/);
   });

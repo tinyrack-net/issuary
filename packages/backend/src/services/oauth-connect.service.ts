@@ -2,7 +2,7 @@ import { decodeJwt } from 'jose';
 import z from 'zod';
 import type {
   IdentityProviderConfig,
-  TinyAuthConfigs,
+  TinyAuthRuntimeConfig,
 } from '#backend/lib/config/index.js';
 import { isEmailAllowed } from '#backend/lib/email-pattern.js';
 import { generatePKCE } from '#backend/lib/pkce.js';
@@ -98,12 +98,12 @@ export type OAuthCallbackResult =
 // but user-related config lookups have been removed since users are now synced to DB.
 
 export class OAuthConnectService {
-  private readonly config: TinyAuthConfigs;
+  private readonly config: TinyAuthRuntimeConfig;
   private readonly userService: UserService;
   private readonly mikro: MikroService;
   private readonly termsService: TermsService;
   public constructor(
-    config: TinyAuthConfigs,
+    config: TinyAuthRuntimeConfig,
     userService: UserService,
     mikro: MikroService,
     termsService: TermsService,
@@ -168,11 +168,15 @@ export class OAuthConnectService {
     // Check if this would be a new user
     const isNewUser = await this.isNewOAuthUser(provider, userInfo);
 
-    // For new users, check email allowlist
+    // For new users, check registration enabled and email allowlist
     if (isNewUser) {
-      const { allowed_signup_emails } = this.config.app;
-      if (!isEmailAllowed(userInfo.email, allowed_signup_emails)) {
-        const errorUrl = new URL('/login', this.config.app.host);
+      const { enabled, allowed_email_patterns } = this.config.registration;
+      if (
+        !enabled ||
+        (allowed_email_patterns.length > 0 &&
+          !isEmailAllowed(userInfo.email, allowed_email_patterns))
+      ) {
+        const errorUrl = new URL('/login', this.config.server.public_origin);
         errorUrl.searchParams.set(
           'oauth_error',
           'registration_email_not_allowed',
@@ -208,7 +212,7 @@ export class OAuthConnectService {
           expiresAt: new Date(Date.now() + 60 * 60 * 1000),
         });
 
-      const termsUrl = new URL('/terms', `${this.config.app.host}`);
+      const termsUrl = new URL('/terms', `${this.config.server.public_origin}`);
       termsUrl.searchParams.set('mode', 'complete_registration');
       termsUrl.searchParams.set('registration_token', pendingToken);
       if (oauthSession.returnUrl) {
@@ -259,7 +263,7 @@ export class OAuthConnectService {
         err instanceof TinyAuthError &&
         err.code === 'REGISTRATION_EMAIL_NOT_ALLOWED'
       ) {
-        const errorUrl = new URL('/login', this.config.app.host);
+        const errorUrl = new URL('/login', this.config.server.public_origin);
         errorUrl.searchParams.set(
           'oauth_error',
           'registration_email_not_allowed',
@@ -304,7 +308,9 @@ export class OAuthConnectService {
    * Get OAuth provider config by id
    */
   public getProvider(id: string): IdentityProviderConfig {
-    const provider = this.config.identity_providers.find((c) => c.id === id);
+    const provider = this.config.identity_providers.find(
+      (providerConfig) => providerConfig.id === id,
+    );
 
     if (!provider || !provider.enabled) {
       throw new e.OAuthProviderNotFound.Error();
@@ -330,7 +336,7 @@ export class OAuthConnectService {
 
     const params = new URLSearchParams({
       client_id: provider.client_id,
-      redirect_uri: `${this.config.app.host}/api/oauth/${providerId}/callback`,
+      redirect_uri: `${this.config.server.public_origin}/api/oauth/${providerId}/callback`,
       response_type: 'code',
       scope: provider.scopes.join(' '),
       state,
@@ -369,7 +375,7 @@ export class OAuthConnectService {
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: `${this.config.app.host}/api/oauth/${providerId}/callback`,
+      redirect_uri: `${this.config.server.public_origin}/api/oauth/${providerId}/callback`,
       client_id: provider.client_id,
       client_secret: provider.client_secret,
       code_verifier: codeVerifier,
@@ -566,9 +572,16 @@ export class OAuthConnectService {
       };
     }
 
-    // Check if the email is allowed for registration
+    // Check if registration is enabled and email is allowed
+    if (!this.config.registration.enabled) {
+      throw new e.RegistrationDisabled.Error();
+    }
     if (
-      !isEmailAllowed(userInfo.email, this.config.app.allowed_signup_emails)
+      this.config.registration.allowed_email_patterns.length > 0 &&
+      !isEmailAllowed(
+        userInfo.email,
+        this.config.registration.allowed_email_patterns,
+      )
     ) {
       throw new e.RegistrationEmailNotAllowed.Error();
     }
@@ -721,9 +734,16 @@ export class OAuthConnectService {
       };
     }
 
-    // Check if the email is allowed for registration
+    // Check if registration is enabled and email is allowed
+    if (!this.config.registration.enabled) {
+      throw new e.RegistrationDisabled.Error();
+    }
     if (
-      !isEmailAllowed(userInfo.email, this.config.app.allowed_signup_emails)
+      this.config.registration.allowed_email_patterns.length > 0 &&
+      !isEmailAllowed(
+        userInfo.email,
+        this.config.registration.allowed_email_patterns,
+      )
     ) {
       throw new e.RegistrationEmailNotAllowed.Error();
     }

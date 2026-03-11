@@ -3,19 +3,34 @@ title: Configuration Schema
 description: Complete config.yaml schema reference
 ---
 
-`app.frontend` and `app.html_variables` are standalone-only settings. They
-are parsed by `@tinyauth/standalone` and rejected by `@tinyauth/backend/config`.
+The current config model is organized by top-level groups:
 
-## `app.frontend`
+- `server`
+- `tokens`
+- `i18n`
+- `branding`
+- `registration`
+- `account_deletion`
+- `logging`
+- `security`
+- `database`
+- `auth`
+- `email`
+- `identity_providers`
+- `clients`
+- `users`
+- `terms`
+- `scheduler`
+- `cleanup`
+- `frontend` (standalone only)
+
+`frontend` and `frontend.html_variables` are standalone-only settings. They are parsed by `@tinyauth/standalone` and are not part of the backend's declarative config contract.
+
+## `frontend`
 
 | Field | Type | Default | Description |
 |------|------|--------|------|
 | `enabled` | `boolean` | `true` | Enables frontend serving. Set to `false` for API-only deployments. |
 | `mode` | `'proxy' \| 'static'` | `'static'` | `proxy` forwards non-API requests to an upstream URL. `static` serves built files from disk. |
-| `path` | `string` | runtime default | Optional in standalone config. Standalone applies `http://localhost:8081` for `proxy` mode and `/opt/tinyauth/frontend` for `static` mode. |
-
-## `app.html_variables`
-
-| Field | Type | Default | Description |
-|------|------|--------|------|
+| `path` | `string` | runtime default | Optional in standalone config. Standalone applies a runtime default based on the selected mode. |
 | `html_variables` | `Record<string, string>` | `{}` | Standalone-only HTML template variables used to replace `{{KEY}}` placeholders in served HTML. |

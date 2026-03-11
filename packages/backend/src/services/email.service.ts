@@ -5,8 +5,8 @@ import {
 import type { IEmailVerificationEntity } from '#backend/entities/email-verification.entity.js';
 import type { UserEntity } from '#backend/entities/user.entity.js';
 import type {
-  MailTransport,
-  TinyAuthConfigs,
+  EmailTransport,
+  TinyAuthRuntimeConfig,
 } from '#backend/lib/config/index.js';
 import { DEFAULT_LOCALE, type Locale } from '#backend/lib/locale.js';
 import type { Logger } from '#backend/lib/logger.js';
@@ -14,34 +14,34 @@ import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 
 export class EmailService {
-  private readonly transporter: Promise<MailTransport> | null;
+  private readonly transporter: Promise<EmailTransport> | null;
 
-  private readonly config: TinyAuthConfigs;
+  private readonly config: TinyAuthRuntimeConfig;
   private readonly mikro: MikroService;
   private readonly logger: Logger;
   public constructor(
-    config: TinyAuthConfigs,
+    config: TinyAuthRuntimeConfig,
     mikro: MikroService,
     logger: Logger,
   ) {
     this.config = config;
     this.mikro = mikro;
     this.logger = logger;
-    if (config.mail) {
-      this.transporter = config.mail.createTransport();
-      this.logger.info('Mail transport initialized');
+    if (config.email) {
+      this.transporter = config.email.createTransport();
+      this.logger.info('Email transport initialized');
     } else {
       this.transporter = null;
-      this.logger.warn('Mail disabled: no mail config');
+      this.logger.warn('Email disabled: no email config');
     }
   }
 
   /**
-   * Get the localized application name from app.title config.
+   * Get the localized application name from branding.title config.
    * Falls back through: specified locale -> fallback_language -> DEFAULT_LOCALE -> 'TinyAuth'
    */
   private getAppName(locale?: Locale): string {
-    const title = this.config.app.title;
+    const title = this.config.branding.title;
     if (!title) {
       return 'TinyAuth';
     }
@@ -49,7 +49,7 @@ export class EmailService {
     const localeKey = locale ?? DEFAULT_LOCALE;
     return (
       title[localeKey] ??
-      title[this.config.app.fallback_language] ??
+      title[this.config.i18n.fallback_language] ??
       title[DEFAULT_LOCALE] ??
       'TinyAuth'
     );
@@ -60,12 +60,12 @@ export class EmailService {
     token: string;
     locale?: Locale | undefined;
   }): Promise<void> {
-    if (!this.config.mail || !this.transporter) {
+    if (!this.config.email || !this.transporter) {
       throw new e.EmailNotActivated.Error();
     }
     const transporter = await this.transporter;
 
-    const verificationUrl = `${this.config.app.host}/verify/email?token=${params.token}`;
+    const verificationUrl = `${this.config.server.public_origin}/verify/email?token=${params.token}`;
 
     const { html, text, subject } = await renderVerificationEmail({
       verificationUrl,
@@ -75,7 +75,7 @@ export class EmailService {
     });
 
     await transporter.sendMail({
-      from: this.config.mail.from,
+      from: this.config.email.from,
       to: params.email,
       subject,
       text,
@@ -100,12 +100,12 @@ export class EmailService {
     token: string;
     locale?: Locale | undefined;
   }): Promise<void> {
-    if (!this.config.mail || !this.transporter) {
+    if (!this.config.email || !this.transporter) {
       throw new e.EmailNotActivated.Error();
     }
     const transporter = await this.transporter;
 
-    const resetUrl = `${this.config.app.host}/password/reset?token=${params.token}`;
+    const resetUrl = `${this.config.server.public_origin}/password/reset?token=${params.token}`;
 
     const { html, text, subject } = await renderPasswordResetEmail({
       resetUrl,
@@ -115,7 +115,7 @@ export class EmailService {
     });
 
     await transporter.sendMail({
-      from: this.config.mail.from,
+      from: this.config.email.from,
       to: params.email,
       subject,
       text,
@@ -148,7 +148,7 @@ export class EmailService {
     userSub: string;
     expiresInHours?: number;
   }): Promise<IEmailVerificationEntity> {
-    if (!this.config.mail) {
+    if (!this.config.email) {
       throw new e.EmailNotActivated.Error();
     }
     const token = await this.mikro.emailVerification.generateToken({
@@ -164,7 +164,7 @@ export class EmailService {
    * Throws EmailNotActivated if SMTP is not configured.
    */
   public async verifyEmail(token: string): Promise<UserEntity> {
-    if (!this.config.mail) {
+    if (!this.config.email) {
       throw new e.EmailNotActivated.Error();
     }
     const verification = await this.mikro.emailVerification.verifyToken(token);
@@ -188,7 +188,7 @@ export class EmailService {
   public async resendVerification(
     email: string,
   ): Promise<IEmailVerificationEntity> {
-    if (!this.config.mail) {
+    if (!this.config.email) {
       throw new e.EmailNotActivated.Error();
     }
     const user = await this.mikro.user.findOneOrFail(
@@ -210,7 +210,7 @@ export class EmailService {
    * Throws EmailNotActivated if SMTP is not configured.
    */
   public async hasPendingVerification(userSub: string): Promise<boolean> {
-    if (!this.config.mail) {
+    if (!this.config.email) {
       throw new e.EmailNotActivated.Error();
     }
     const count = await this.mikro.emailVerification.count({

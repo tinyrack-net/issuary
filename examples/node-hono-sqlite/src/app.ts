@@ -24,6 +24,7 @@ const HASH_SECRET = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
 
 export interface CreateNodeHonoSqliteExampleAppOptions {
   test?: boolean;
+  publicOrigin?: string;
 }
 
 async function ensureFrontendAssets(): Promise<void> {
@@ -44,7 +45,7 @@ async function ensureDataDirectory(): Promise<void> {
 export async function createNodeHonoSqliteExampleApp(
   options: CreateNodeHonoSqliteExampleAppOptions = {},
 ) {
-  const { test = false } = options;
+  const { test = false, publicOrigin = 'http://localhost:3000' } = options;
 
   await ensureFrontendAssets();
 
@@ -54,13 +55,13 @@ export async function createNodeHonoSqliteExampleApp(
 
   return createApp({
     config: {
-      app: {
-        allowed_signup_emails: ['*'],
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
+        email_verification_required: false,
       },
-      auth: {
-        password: {
-          email_verification: false,
-        },
+      server: {
+        public_origin: publicOrigin,
       },
       database: sqlite({
         path: sqlitePath,

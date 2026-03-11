@@ -26,7 +26,7 @@ export const serveCommand = new Command('serve')
       const server = serve(
         {
           fetch: app.fetch,
-          port: services.config.app.port,
+          port: services.config.server.listen_port,
           hostname: '0.0.0.0',
         },
         (info) => {

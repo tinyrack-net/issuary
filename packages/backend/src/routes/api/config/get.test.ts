@@ -4,7 +4,7 @@ import type { AppType } from '#backend/entrypoints/app.js';
 import { google } from '#backend/entrypoints/identity-providers/google.js';
 import {
   createTestApp,
-  createTestMailConfig,
+  createTestEmailConfig,
   MINIMAL_TEST_CONFIG,
 } from '#backend/test-utils/index.js';
 
@@ -12,11 +12,15 @@ let app: AppType;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  const mail = await createTestMailConfig();
+  const email = await createTestEmailConfig();
   const server = await createTestApp({
     config: {
       ...MINIMAL_TEST_CONFIG,
-      mail,
+      email,
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*@example.com'],
+      },
       identity_providers: [
         google({
           id: 'google',
@@ -54,12 +58,16 @@ describe('GET /api/config', () => {
 
     const json = await res.json();
 
-    // Verify app config structure
-    expect(json.app).toBeDefined();
-    expect(json.app.supported_languages).toBeInstanceOf(Array);
-    expect(json.app.default_language).toBeTypeOf('string');
-    expect(json.app.fallback_language).toBeTypeOf('string');
-    expect(json.app.theme_mode).toBeTypeOf('string');
+    expect(json.i18n).toBeDefined();
+    expect(json.i18n.supported_languages).toBeInstanceOf(Array);
+    expect(json.i18n.default_language).toBeTypeOf('string');
+    expect(json.i18n.fallback_language).toBeTypeOf('string');
+    expect(json.branding).toBeDefined();
+    expect(json.branding.theme_mode).toBeTypeOf('string');
+    expect(json.registration).toBeDefined();
+    expect(json.registration.public_registration).toBeTypeOf('boolean');
+    expect(json.registration.public_registration).toBe(true);
+    expect(json.registration.email_pattern_filter_enabled).toBe(true);
 
     // Verify database config structure
     expect(json.database).toBeDefined();
@@ -90,9 +98,11 @@ describe('GET /api/config', () => {
       max_length: 64,
     });
 
-    // Check second_factor configuration
-    if (json.auth.password.second_factor) {
-      expect(json.auth.password.second_factor.required).toBeTypeOf('boolean');
+    // Check two_factor configuration
+    if (json.auth.password.two_factor) {
+      expect(json.auth.password.two_factor.enrollment_required).toBeTypeOf(
+        'boolean',
+      );
     }
 
     // Check TOTP configuration
@@ -114,18 +124,28 @@ describe('GET /api/config', () => {
     // Check passkey auth method exists
     expect(json.auth.passkey).toBeDefined();
     expect(json.auth.passkey.enabled).toBeTypeOf('boolean');
-    expect(json.auth.passkey.email_verification).toBeTypeOf('boolean');
   });
 
-  test('should include smtp enabled flag', async () => {
+  test('should include email enabled flag', async () => {
     const client = testClient(app);
     const res = await client.api.config.$get();
 
     expect(res.status).toBe(200);
 
     const json = await res.json();
-    expect(json.smtp.enabled).toBeTypeOf('boolean');
-    expect(json.smtp.enabled).toBe(true);
+    expect(json.email.enabled).toBeTypeOf('boolean');
+    expect(json.email.enabled).toBe(true);
+  });
+
+  test('should expose registration filter metadata', async () => {
+    const client = testClient(app);
+    const res = await client.api.config.$get();
+
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+    expect(json.registration.public_registration).toBe(true);
+    expect(json.registration.email_pattern_filter_enabled).toBe(true);
   });
 
   test('should include identity providers', async () => {
@@ -140,9 +160,13 @@ describe('GET /api/config', () => {
     expect(Array.isArray(json.identity_providers)).toBe(true);
 
     // Find Google provider in the array (should be enabled in test config)
-    const googleProvider = json.identity_providers.find(
-      (m) => m.id === 'google',
-    );
+    let googleProvider: (typeof json.identity_providers)[number] | undefined;
+    for (const provider of json.identity_providers) {
+      if (provider.id === 'google') {
+        googleProvider = provider;
+        break;
+      }
+    }
     if (googleProvider) {
       expect(googleProvider.type).toBe('google');
       expect(googleProvider.display_name).toBeTypeOf('string');
@@ -161,32 +185,34 @@ describe('GET /api/config', () => {
   });
 });
 
-describe('GET /api/config (smtp disabled)', () => {
-  let appNoSmtp: AppType;
-  let cleanupNoSmtp: () => Promise<void>;
+describe('GET /api/config (email disabled)', () => {
+  let appNoEmail: AppType;
+  let cleanupNoEmail: () => Promise<void>;
 
   beforeAll(async () => {
-    const configWithoutSmtp = MINIMAL_TEST_CONFIG;
+    const configWithoutEmail = MINIMAL_TEST_CONFIG;
     const server = await createTestApp({
       config: {
-        ...configWithoutSmtp,
+        ...configWithoutEmail,
       },
     });
-    appNoSmtp = server.app;
-    cleanupNoSmtp = server.cleanup;
+    appNoEmail = server.app;
+    cleanupNoEmail = server.cleanup;
   });
 
   afterAll(async () => {
-    await cleanupNoSmtp();
+    await cleanupNoEmail();
   });
 
-  test('should expose smtp.enabled=false when smtp is not configured', async () => {
-    const client = testClient(appNoSmtp);
+  test('should expose email.enabled=false when email is not configured', async () => {
+    const client = testClient(appNoEmail);
     const res = await client.api.config.$get();
 
     expect(res.status).toBe(200);
 
     const json = await res.json();
-    expect(json.smtp.enabled).toBe(false);
+    expect(json.email.enabled).toBe(false);
+    expect(json.registration.public_registration).toBe(false);
+    expect(json.registration.email_pattern_filter_enabled).toBe(false);
   });
 });

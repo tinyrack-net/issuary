@@ -112,7 +112,7 @@ export const oidcConfigGet = new Hono<AppEnv>().get(
   }),
   async (c) => {
     const { config } = c.var.services;
-    const baseUrl = config.app.host;
+    const baseUrl = config.server.public_origin;
 
     const configuration = {
       issuer: baseUrl,
@@ -143,7 +143,7 @@ export const oidcConfigGet = new Hono<AppEnv>().get(
       code_challenge_methods_supported: ['S256', 'plain'],
       introspection_endpoint: `${baseUrl}/oauth/introspect`,
       revocation_endpoint: `${baseUrl}/oauth/revoke`,
-      ui_locales_supported: config.app.supported_languages,
+      ui_locales_supported: config.i18n.supported_languages,
     };
 
     // Set Cache-Control header

@@ -3,18 +3,22 @@ title: 회원가입
 description: Tinyauth용 PostgreSQL 데이터베이스 구성하기
 ---
 
-`tinyauth`는 기본적으로 화이트리스트 보안 정책을 가져요. 관리자의 명시적 '허가' 설정 없이는 새로운 사용자가 가입할 수 없어요. 그래서 `tinyauth`를 운영할 대상에 따라 가입을 허용할 이메일 필터를 지정해야 해요. 설정 예시는 다음과 같아요.
+`tinyauth`는 기본적으로 화이트리스트 보안 정책을 가져요. 관리자가 허용한 이메일 패턴이 없으면 새로운 사용자는 스스로 가입할 수 없어요. 그래서 운영 대상에 맞게 `registration.allowed_email_patterns`를 먼저 정해야 해요. 계정 삭제 기능은 `account_deletion`에서 별도로 제어해요.
 
 ```yaml
 # config.yaml
-app:
-  account_deletion: true
-  allowed_signup_emails:
+registration:
+  allowed_email_patterns:
     - '*'
+
+account_deletion:
+  enabled: true
+  retention: 30d
 ```
 
-- `allowed_signup_emails`: 등록을 허용할 이메일 패턴 목록이에요.
-- `account_deletion`: 사용자의 직접 탈퇴 기능을 허용할 지 여부에요.
+- `registration.allowed_email_patterns`: 등록을 허용할 이메일 패턴 목록이에요. `*`, `*@domain.com`, `user@example.com` 같은 값을 사용할 수 있어요. 빈 배열이면 자체 회원가입이 비활성화돼요.
+- `account_deletion.enabled`: 사용자의 직접 탈퇴 기능을 허용할지 여부예요.
+- `account_deletion.retention`: 탈퇴 요청 후 실제 영구 삭제까지의 유예 기간이에요.
 
 ---
 
@@ -24,19 +28,24 @@ app:
 
 ```yaml
 # config.yaml
-app:
-  allowed_signup_emails:
+registration:
+  allowed_email_patterns:
     - '*@tinyauth.net'
     - '*@tinyrack.net'
-  account_deletion: true
+
+account_deletion:
+  enabled: true
+  retention: 30d
 ```
 
 모든 이메일 도메인에서의 가입을 허용하고 회원 탈퇴 기능을 비활성화 하려면 다음과 같이 구성할 수 있어요.
 
 ```yaml
 # config.yaml
-app:
-  allowed_signup_emails:
+registration:
+  allowed_email_patterns:
     - '*'
-  account_deletion: false
+
+account_deletion:
+  enabled: false
 ```

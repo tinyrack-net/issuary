@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  createTestAppConfig,
+  createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 import { registerPage } from '#frontend-e2e/helpers/register-page.js';
@@ -50,10 +50,13 @@ const TERMS_CONFIG = [
 
 const test = createScenarioFixture((backendPort) => ({
   ...E2E_BASE_CONFIG,
-  app: createTestAppConfig(backendPort, {
-    allowed_signup_emails: ['*'],
-    signup_implicit_terms: {
-      en: 'By signing up, you agree to product analytics tracking.',
+  ...createTestConfig(backendPort, {
+    registration: {
+      enabled: true,
+      allowed_email_patterns: ['*'],
+      signup_notice: {
+        en: 'By signing up, you agree to product analytics tracking.',
+      },
     },
   }),
   terms: [...TERMS_CONFIG],

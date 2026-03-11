@@ -3,7 +3,7 @@ import { OAuthClientEntitySchema } from '#backend/entities/oauth-client.entity.j
 import { TermsEntitySchema } from '#backend/entities/terms.entity.js';
 import { TermsContentEntitySchema } from '#backend/entities/terms-content.entity.js';
 import { UserEntity } from '#backend/entities/user.entity.js';
-import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
 import type { SecurityService } from '#backend/services/security.service.js';
 
 /**
@@ -25,7 +25,7 @@ import type { SecurityService } from '#backend/services/security.service.js';
  */
 export async function seedConfig(
   em: EntityManager,
-  config: TinyAuthConfigs,
+  config: TinyAuthRuntimeConfig,
   securityService: SecurityService,
 ): Promise<void> {
   await syncTerms(em, config);
@@ -39,7 +39,7 @@ export async function seedConfig(
  */
 async function syncTerms(
   em: EntityManager,
-  config: TinyAuthConfigs,
+  config: TinyAuthRuntimeConfig,
 ): Promise<void> {
   const now = new Date();
   const configTerms = config.terms;
@@ -70,7 +70,11 @@ async function syncTerms(
     });
 
     // Insert new content for each language
-    for (const [lang, content] of Object.entries(term.content)) {
+    for (const lang of Object.keys(term.content)) {
+      const content = term.content[lang];
+      if (!content) {
+        continue;
+      }
       const contentEntity = em.create(TermsContentEntitySchema, {
         terms: term.id,
         lang,
@@ -85,7 +89,7 @@ async function syncTerms(
   await em.flush();
 
   // Remove config-managed terms that are no longer in config
-  const configTermIds = configTerms.map((t) => t.id);
+  const configTermIds = configTerms.map((term) => term.id);
   if (configTermIds.length > 0) {
     await em.nativeDelete(TermsEntitySchema, {
       managed_by: 'config',
@@ -103,7 +107,7 @@ async function syncTerms(
  */
 async function syncUsers(
   em: EntityManager,
-  config: TinyAuthConfigs,
+  config: TinyAuthRuntimeConfig,
   securityService: SecurityService,
 ): Promise<void> {
   const now = new Date();
@@ -137,7 +141,7 @@ async function syncUsers(
   }
 
   // Remove config-managed users that are no longer in config
-  const configUserSubs = config.users.map((u) => u.sub);
+  const configUserSubs = config.users.map((user) => user.sub);
   if (configUserSubs.length > 0) {
     await em.nativeDelete(UserEntity, {
       managed_by: 'config',
@@ -155,7 +159,7 @@ async function syncUsers(
  */
 async function syncOAuthClients(
   em: EntityManager,
-  config: TinyAuthConfigs,
+  config: TinyAuthRuntimeConfig,
   securityService: SecurityService,
 ): Promise<void> {
   const now = new Date();
@@ -195,7 +199,7 @@ async function syncOAuthClients(
   }
 
   // Remove config-managed clients that are no longer in config
-  const configClientIds = config.clients.map((c) => c.id);
+  const configClientIds = config.clients.map((client) => client.id);
   if (configClientIds.length > 0) {
     await em.nativeDelete(OAuthClientEntitySchema, {
       managed_by: 'config',

@@ -22,7 +22,6 @@ describe('POST /api/auth/passkey/options', () => {
         auth: {
           passkey: {
             enabled: true,
-            email_verification: true,
           },
         },
       },
@@ -136,13 +135,12 @@ describe('POST /api/auth/passkey/options - 2FA mode', () => {
         auth: {
           password: {
             enabled: true,
-            second_factor: {
-              required: true,
+            two_factor: {
+              enrollment_required: true,
             },
           },
           passkey: {
             enabled: true,
-            email_verification: true,
           },
         },
       },
@@ -227,7 +225,6 @@ describe('POST /api/auth/passkey/options - 2FA mode', () => {
         auth: {
           passkey: {
             enabled: true,
-            email_verification: true,
           },
         },
       },
@@ -260,7 +257,6 @@ describe('POST /api/auth/passkey/options - Passkey disabled', () => {
         auth: {
           passkey: {
             enabled: false,
-            email_verification: true,
           },
         },
       },
@@ -294,7 +290,6 @@ describe('POST /api/auth/passkey/options - Custom rpId', () => {
         auth: {
           passkey: {
             enabled: true,
-            email_verification: true,
             rp_id: 'custom.example.com',
           },
         },

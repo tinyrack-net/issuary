@@ -3,7 +3,7 @@ title: 작업 스케줄러
 description: Tinyauth의 데이터 정리 스케줄러 및 정리 정책 구성하기
 ---
 
-`tinyauth`는 만료된 토큰, 사용된 인증 코드, 삭제된 사용자 데이터 등을 주기적으로 정리하는 내장 스케줄러를 제공해요. 이를 통해 데이터베이스 크기를 관리하고 보안을 유지할 수 있어요.
+`tinyauth`는 만료된 토큰, 사용된 인증 코드, 이메일 인증 토큰 같은 임시 데이터를 주기적으로 정리하는 내장 스케줄러를 제공해요. 이 설정은 `scheduler`와 `cleanup` 최상위 섹션으로 구성돼요.
 
 ---
 
@@ -16,11 +16,11 @@ scheduler:
   cron: '0 2 * * *'
 ```
 
-- `enabled`: 내장 스케줄러를 활성화할지 여부예요. 기본값은 `true`예요.
-- `cron`: 정리 작업 실행 주기예요. 표준 5필드 cron 형식(`분 시 일 월 요일`)을 사용해요. 기본값은 `0 2 * * *`(매일 오전 2시)예요.
+- `scheduler.enabled`: 내장 스케줄러를 활성화할지 여부예요. 기본값은 `true`예요.
+- `scheduler.cron`: 정리 작업 실행 주기예요. 표준 5필드 cron 형식(`분 시 일 월 요일`)을 사용해요. 기본값은 `0 2 * * *`(매일 오전 2시)예요.
 
 :::note
-Kubernetes 환경에서는 내장 스케줄러 대신 CronJob을 사용하는 것이 좋아요. 이 경우 `enabled: false`로 설정하고, 외부에서 `tinyauth cleanup` CLI 명령을 실행하세요. 자세한 내용은 [Kubernetes 배포 가이드](/ko/deployment/kubernetes)를 참고해 주세요.
+Kubernetes 환경에서는 내장 스케줄러 대신 CronJob을 사용하는 것이 좋아요. 이 경우 `scheduler.enabled: false`로 설정하고, 외부에서 `tinyauth cleanup` CLI 명령을 실행하세요. 자세한 내용은 [Kubernetes 배포 가이드](/ko/deployment/kubernetes)를 참고해 주세요.
 :::
 
 ---
@@ -42,8 +42,6 @@ Kubernetes 환경에서는 내장 스케줄러 대신 CronJob을 사용하는 �
 | `"7d"` | 일 | 7일 |
 | `"1y"` | 년 (365일) | 1년 |
 
----
-
 ### 취소된 토큰 (`revoked_tokens`)
 
 ```yaml
@@ -54,7 +52,7 @@ cleanup:
 ```
 
 - `enabled`: 취소된 토큰 정리 활성화 여부예요. 기본값은 `true`예요.
-- `retention`: 토큰 만료 후 보존 기간이에요. 기본값은 `"0"` (만료 즉시 삭제)이에요.
+- `retention`: 토큰 만료 후 보존 기간이에요. 기본값은 `"0"`(만료 즉시 삭제)이에요.
 
 ### OAuth 인증 코드 (`oauth_codes`)
 
@@ -66,7 +64,7 @@ cleanup:
 ```
 
 - `enabled`: 인증 코드 정리 활성화 여부예요. 기본값은 `true`예요.
-- `consumed_retention`: 사용된 인증 코드의 보존 기간이에요. 기본값은 `"24h"`예요. 디버깅이나 감사 목적으로 짧은 기간 동안 보존할 수 있어요.
+- `consumed_retention`: 사용된 인증 코드의 보존 기간이에요. 기본값은 `"24h"`예요.
 
 ### 이메일 인증 (`email_verifications`)
 
@@ -92,31 +90,25 @@ cleanup:
 - `enabled`: 만료된 비밀번호 재설정 토큰 정리 활성화 여부예요. 기본값은 `true`예요.
 - `retention`: 만료 후 보존 기간이에요. 기본값은 `"0"`이에요.
 
-### 삭제된 사용자 (`deleted_users`)
+### 대기 중인 OAuth 가입 (`pending_oauth_registrations`)
 
 ```yaml
 cleanup:
-  deleted_users:
+  pending_oauth_registrations:
     enabled: true
-    retention: '30d'
+    retention: '0'
 ```
 
-- `enabled`: 소프트 삭제된 사용자의 영구 삭제 활성화 여부예요. 기본값은 `true`예요.
-- `retention`: 소프트 삭제 후 영구 삭제까지의 유예 기간이에요. 기본값은 `"30d"` (30일)이에요.
+- `enabled`: 중단된 OAuth 가입 흐름 정리 활성화 여부예요. 기본값은 `true`예요.
+- `retention`: 만료 후 보존 기간이에요. 기본값은 `"0"`이에요.
 
-:::note
-사용자 삭제는 먼저 소프트 삭제(삭제 표시)된 후, 보존 기간이 지나면 관련된 모든 데이터(OAuth 계정, TOTP, 패스키, 동의 기록 등)와 함께 영구 삭제돼요. 이 기능은 `app.account_deletion`이 `true`일 때만 동작해요.
-:::
+---
 
-### JWT 키 순환 (`jwt_keys`)
+## 관련 설정
 
-```yaml
-cleanup:
-  jwt_keys:
-    enabled: true
-```
-
-- `enabled`: 정리 작업 실행 시 JWT 키 순환을 함께 수행할지 여부예요. 기본값은 `true`예요. 실제 순환 동작은 `app.jwt_key_rotation_enabled`가 `true`일 때만 수행돼요.
+- `account_deletion.enabled`: 사용자가 스스로 계정 삭제를 요청할 수 있는지 결정해요.
+- `account_deletion.retention`: 삭제 요청 후 실제 영구 삭제까지의 유예 기간이에요. `tinyauth cleanup`이 실행될 때 이 정책이 적용돼요.
+- `tokens.key_rotation.*`: JWT 키 순환 정책이에요. 정리 작업과 같은 유지보수 시점에 함께 반영돼요.
 
 ---
 
@@ -124,6 +116,16 @@ cleanup:
 
 ```yaml
 # config.yaml
+tokens:
+  key_rotation:
+    enabled: true
+    interval_days: 30
+    overlap_days: 7
+
+account_deletion:
+  enabled: true
+  retention: 30d
+
 scheduler:
   enabled: true
   cron: '0 2 * * *'
@@ -141,11 +143,9 @@ cleanup:
   password_resets:
     enabled: true
     retention: '0'
-  deleted_users:
+  pending_oauth_registrations:
     enabled: true
-    retention: '30d'
-  jwt_keys:
-    enabled: true
+    retention: '0'
 ```
 
 ---

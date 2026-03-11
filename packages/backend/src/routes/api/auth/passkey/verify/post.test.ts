@@ -64,7 +64,6 @@ describe('POST /api/auth/passkey/verify', () => {
         auth: {
           passkey: {
             enabled: true,
-            email_verification: true,
           },
         },
       },
@@ -368,7 +367,6 @@ describe('POST /api/auth/passkey/verify - Success with mocked service', () => {
         auth: {
           passkey: {
             enabled: true,
-            email_verification: true,
           },
         },
       },
@@ -474,11 +472,11 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
         auth: {
           password: {
             enabled: true,
-            second_factor: {
-              required: true,
+            two_factor: {
+              enrollment_required: true,
             },
           },
-          passkey: { enabled: true, email_verification: true },
+          passkey: { enabled: true },
         },
       },
     });
@@ -692,7 +690,6 @@ describe('POST /api/auth/passkey/verify - Passkey disabled', () => {
         auth: {
           passkey: {
             enabled: false,
-            email_verification: true,
           },
         },
       },

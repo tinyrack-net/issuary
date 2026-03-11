@@ -6,7 +6,7 @@ import type { ServiceContainer } from '#backend/services/container.js';
 import {
   assertJsonBody,
   createTestApp,
-  createTestMailConfig,
+  createTestEmailConfig,
   expectError,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -31,13 +31,14 @@ describe('POST /api/auth/register', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const mail = await createTestMailConfig();
+    const mail = await createTestEmailConfig();
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        mail,
-        app: {
-          allowed_signup_emails: ['*'],
+        email: mail,
+        registration: {
+          enabled: true,
+          allowed_email_patterns: ['*'],
         },
         users: [TEST_USER_CONFIG],
         terms: TEST_TERMS_CONFIG,
@@ -203,8 +204,9 @@ describe('POST /api/auth/register', () => {
     const { app: customApp, cleanup: customCleanup } = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        app: {
-          allowed_signup_emails: ['*'],
+        registration: {
+          enabled: true,
+          allowed_email_patterns: ['*'],
         },
         auth: {
           password: {
@@ -358,8 +360,8 @@ describe('POST /api/auth/register (signup disabled)', () => {
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        app: {
-          allowed_signup_emails: [],
+        registration: {
+          enabled: false,
         },
         terms: TEST_TERMS_CONFIG,
       },
@@ -372,7 +374,7 @@ describe('POST /api/auth/register (signup disabled)', () => {
     await cleanup();
   });
 
-  test('should return 403 when signup is disabled (empty allowed_signup_emails)', async () => {
+  test('should return 403 when signup is disabled', async () => {
     const client = testClient(app);
 
     const res = await client.api.auth.register.$post({
@@ -388,6 +390,45 @@ describe('POST /api/auth/register (signup disabled)', () => {
   });
 });
 
+describe('POST /api/auth/register (open signup with no email patterns)', () => {
+  let app: AppType;
+  let cleanup: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createTestApp({
+      config: {
+        ...MINIMAL_TEST_CONFIG,
+        registration: {
+          enabled: true,
+        },
+        terms: TEST_TERMS_CONFIG,
+      },
+    });
+    app = server.app;
+    cleanup = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanup();
+  });
+
+  test('should allow registration when signup is enabled without a filter list', async () => {
+    const client = testClient(app);
+    const res = await client.api.auth.register.$post({
+      header: { 'accept-language': 'en' },
+      json: {
+        email: generateUniqueEmail('open-signup'),
+        password: VALID_PASSWORD,
+        consents: REQUIRED_CONSENTS,
+      },
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toHaveProperty('user');
+  });
+});
+
 describe('POST /api/auth/register (domain wildcard pattern)', () => {
   let app: AppType;
   let cleanup: () => Promise<void>;
@@ -396,8 +437,9 @@ describe('POST /api/auth/register (domain wildcard pattern)', () => {
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        app: {
-          allowed_signup_emails: ['*@allowed.com'],
+        registration: {
+          enabled: true,
+          allowed_email_patterns: ['*@allowed.com'],
         },
         terms: TEST_TERMS_CONFIG,
       },
@@ -453,8 +495,9 @@ describe('POST /api/auth/register (exact email pattern)', () => {
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        app: {
-          allowed_signup_emails: [exactEmail],
+        registration: {
+          enabled: true,
+          allowed_email_patterns: [exactEmail],
         },
         terms: TEST_TERMS_CONFIG,
       },
@@ -508,8 +551,9 @@ describe('POST /api/auth/register (multiple patterns)', () => {
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        app: {
-          allowed_signup_emails: ['*@company.com', 'special@other.com'],
+        registration: {
+          enabled: true,
+          allowed_email_patterns: ['*@company.com', 'special@other.com'],
         },
         terms: TEST_TERMS_CONFIG,
       },
@@ -575,9 +619,10 @@ describe('POST /api/auth/register (implicit consent mode)', () => {
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        app: {
-          allowed_signup_emails: ['*'],
-          signup_implicit_terms: {
+        registration: {
+          enabled: true,
+          allowed_email_patterns: ['*'],
+          signup_notice: {
             en: 'By signing up, you agree to our Terms.',
           },
         },
@@ -663,8 +708,9 @@ describe('POST /api/auth/register (no terms configured)', () => {
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        app: {
-          allowed_signup_emails: ['*'],
+        registration: {
+          enabled: true,
+          allowed_email_patterns: ['*'],
         },
         terms: [],
       },

@@ -1,15 +1,15 @@
 import { describe, expect, test } from 'vitest';
 import {
-  type TinyAuthConfigs,
-  TinyAuthConfigsSchema,
+  type TinyAuthRuntimeConfig,
+  TinyAuthRuntimeConfigSchema,
 } from '#backend/lib/config/index.js';
 import { MINIMAL_TEST_CONFIG } from '#backend/test-utils/setup.js';
 import { SecurityService } from './security.service.js';
 
 function createService(
-  securityOverride?: TinyAuthConfigs['security'],
+  securityOverride?: TinyAuthRuntimeConfig['security'],
 ): SecurityService {
-  const config = TinyAuthConfigsSchema.parse({
+  const config = TinyAuthRuntimeConfigSchema.parse({
     ...MINIMAL_TEST_CONFIG,
     ...(securityOverride ? { security: securityOverride } : {}),
   });

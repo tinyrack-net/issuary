@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  createTestAppConfig,
+  createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 import { getEmailToken } from '#frontend-e2e/helpers/email-token.js';
@@ -20,13 +20,16 @@ const TEST_PASSWORD = 'test-password-123';
 
 const test = createScenarioFixture((backendPort) => ({
   ...E2E_BASE_CONFIG,
-  app: createTestAppConfig(backendPort, {
-    allowed_signup_emails: ['*'],
+  ...createTestConfig(backendPort, {
+    registration: {
+      enabled: true,
+      allowed_email_patterns: ['*'],
+    },
   }),
-  mail: { test: true },
+  email: { test: true },
 }));
 
-test.describe('Email verification flow (DB user, SMTP enabled)', () => {
+test.describe('Email verification flow (DB user, email enabled)', () => {
   test('full email verification flow', async ({ page, baseURL }) => {
     const email = uniqueEmail('full');
     const client = getTestApiClient({ baseUrl: String(baseURL) });

@@ -25,10 +25,12 @@ describe('POST /api/user/passkeys/register/options', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
+        registration: {
+          email_verification_required: true,
+        },
         auth: {
           passkey: {
             enabled: true,
-            email_verification: true,
           },
         },
       },
@@ -374,10 +376,12 @@ describe('POST /api/user/passkeys/register/options - Passkey disabled', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
+        registration: {
+          email_verification_required: true,
+        },
         auth: {
           passkey: {
             enabled: false,
-            email_verification: true,
           },
         },
       },

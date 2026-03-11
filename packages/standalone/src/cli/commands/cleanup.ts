@@ -3,7 +3,7 @@ import {
   type ServiceContainer,
 } from '@tinyauth/backend/services';
 import { Command } from 'commander';
-import { loadResolvedConfig } from '#standalone/lib/load-config.js';
+import { loadConfig, resolveConfig } from '#standalone/lib/load-config.js';
 import { createLogger } from '#standalone/lib/logger.js';
 
 /**
@@ -36,7 +36,7 @@ export const cleanupCommand = new Command('cleanup')
       let cleanup: (() => Promise<void>) | undefined;
 
       try {
-        const resolved = await loadResolvedConfig({ configPath });
+        const resolved = await resolveConfig(loadConfig(configPath));
         const logger = createLogger({
           logging: {
             ...resolved.logging,

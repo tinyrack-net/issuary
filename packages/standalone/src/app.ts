@@ -12,31 +12,30 @@ export interface CreateStandaloneAppOptions {
 
 export async function createStandaloneApp(options: CreateStandaloneAppOptions) {
   const config = await resolveStandaloneConfig(options.config);
-  const { frontend, html_variables, ...backendAppConfig } = config.app;
+  const { frontend, ...backendConfig } = config;
 
   let frontendHandler: FrontendConfig | undefined;
 
   if (frontend.enabled) {
-    const hasVariables = Object.keys(html_variables).length > 0;
+    const hasVariables = Object.keys(frontend.html_variables).length > 0;
 
     frontendHandler =
       frontend.mode === 'proxy'
         ? createProxyHandler({
             upstream: frontend.path,
             onResponse: hasVariables
-              ? (res) => interpolateHtmlResponse(res, html_variables)
+              ? (res) => interpolateHtmlResponse(res, frontend.html_variables)
               : undefined,
           })
         : createStaticHandler({
             publicPath: frontend.path,
-            htmlVariables: html_variables,
+            htmlVariables: frontend.html_variables,
           });
   }
 
   return createApp({
     config: {
-      ...config,
-      app: backendAppConfig,
+      ...backendConfig,
       frontend: frontendHandler,
     },
   });

@@ -76,7 +76,7 @@ export const userDelete = new Hono<AppEnv>().delete(
     const { config, mikro } = c.var.services;
     const session = c.var.session;
 
-    if (!config.app.account_deletion) {
+    if (!config.account_deletion.enabled) {
       throw new e.AccountDeletionDisabled.Error();
     }
     const { user: userEntity } = c.var.verifiedUser;
@@ -96,7 +96,7 @@ export const userDelete = new Hono<AppEnv>().delete(
 
     const permanentDeletionDate = calculatePermanentDeletionDate(
       userEntity.deleted_at,
-      config.cleanup.deleted_users.retention,
+      config.account_deletion.retention,
     );
 
     return c.json(

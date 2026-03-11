@@ -53,11 +53,11 @@ function LoginPassword() {
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
 
   const customTitle =
-    configData.app.title?.[lang] ??
-    configData.app.title?.[configData.app.fallback_language];
+    configData.branding.title?.[lang] ??
+    configData.branding.title?.[configData.i18n.fallback_language];
   const customSubtitle =
-    configData.app.subtitle?.[lang] ??
-    configData.app.subtitle?.[configData.app.fallback_language];
+    configData.branding.subtitle?.[lang] ??
+    configData.branding.subtitle?.[configData.i18n.fallback_language];
   const isPasswordAuthEnabled = configData.auth.password.enabled;
   const isPasskeyEnabled = configData.auth.passkey.enabled;
 
@@ -221,7 +221,7 @@ function LoginPassword() {
   return (
     <PageLayout cardPadding maxWidth="100">
       <PageHeader
-        iconUrl={configData.app.icon_url}
+        iconUrl={configData.branding.icon_url}
         subtitle={customSubtitle ?? t('login.selectMethod.subtitle')}
         title={customTitle ?? t('login.title')}
       />
@@ -246,7 +246,7 @@ function LoginPassword() {
             type="password"
           />
 
-          {configData.smtp.enabled && (
+          {configData.email.enabled && (
             <div className="flex items-center justify-end">
               <Link className="link text-sm" to="/password/forgot">
                 {t('login.link.forgotPassword')}
@@ -264,7 +264,7 @@ function LoginPassword() {
         </form>
       )}
 
-      {configData.app.public_registration && (
+      {configData.registration.public_registration && (
         <FooterLink
           as={Link}
           linkText={t('login.link.register')}

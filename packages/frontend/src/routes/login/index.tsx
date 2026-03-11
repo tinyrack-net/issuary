@@ -63,8 +63,8 @@ function Login() {
 
   // Get implicit notice from config for OAuth signup
   const implicitNotice =
-    configData.app.signup_implicit_terms?.[lang] ??
-    configData.app.signup_implicit_terms?.[configData.app.fallback_language];
+    configData.registration.signup_notice?.[lang] ??
+    configData.registration.signup_notice?.[configData.i18n.fallback_language];
   const oauthProviders = configData.identity_providers;
 
   const oauthError = search.oauth_error;
@@ -77,11 +77,11 @@ function Login() {
 
   // Config-based title/subtitle (overrides i18n defaults)
   const customTitle =
-    configData.app.title?.[lang] ??
-    configData.app.title?.[configData.app.fallback_language];
+    configData.branding.title?.[lang] ??
+    configData.branding.title?.[configData.i18n.fallback_language];
   const customSubtitle =
-    configData.app.subtitle?.[lang] ??
-    configData.app.subtitle?.[configData.app.fallback_language];
+    configData.branding.subtitle?.[lang] ??
+    configData.branding.subtitle?.[configData.i18n.fallback_language];
 
   const handlePasskeySuccess = async (data: AuthResponse) => {
     if (data.user) {
@@ -123,7 +123,7 @@ function Login() {
   return (
     <PageLayout cardPadding maxWidth="100">
       <PageHeader
-        iconUrl={configData.app.icon_url}
+        iconUrl={configData.branding.icon_url}
         subtitle={customSubtitle ?? t('login.selectMethod.subtitle')}
         title={customTitle ?? t('login.title')}
       />

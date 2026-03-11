@@ -1,24 +1,28 @@
 import { expect } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  createTestAppConfig,
+  createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 
 const test = createScenarioFixture((backendPort) => ({
   ...E2E_BASE_CONFIG,
-  app: createTestAppConfig(backendPort, {
-    supported_languages: ['en'],
-    default_language: 'en',
-    fallback_language: 'en',
-    theme_mode: 'light',
-    background_url: 'https://example.com/e2e-background.jpg',
-    icon_url: 'https://example.com/e2e-icon.svg',
-    title: {
-      en: 'E2E Brand Title',
+  ...createTestConfig(backendPort, {
+    i18n: {
+      supported_languages: ['en'],
+      default_language: 'en',
+      fallback_language: 'en',
     },
-    subtitle: {
-      en: 'E2E Brand Subtitle',
+    branding: {
+      theme_mode: 'light',
+      background_url: 'https://example.com/e2e-background.jpg',
+      icon_url: 'https://example.com/e2e-icon.svg',
+      title: {
+        en: 'E2E Brand Title',
+      },
+      subtitle: {
+        en: 'E2E Brand Subtitle',
+      },
     },
   }),
 }));

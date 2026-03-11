@@ -74,6 +74,6 @@ export { mockOAuthProviderFetch } from './oauth-mock.js';
 // Setup utilities
 export {
   createTestApp,
-  createTestMailConfig,
+  createTestEmailConfig,
   MINIMAL_TEST_CONFIG,
 } from './setup.js';

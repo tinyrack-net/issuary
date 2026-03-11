@@ -1,6 +1,6 @@
 import type z from 'zod';
 import { getRandomBytes, toBase64Url } from '#backend/lib/base64url.js';
-import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
 import { e } from '#backend/schemas/error.js';
 import type { f } from '#backend/schemas/field.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
@@ -51,13 +51,13 @@ export interface AuthorizeResult {
 }
 
 export class OAuthAuthorizeService {
-  private readonly config: TinyAuthConfigs;
+  private readonly config: TinyAuthRuntimeConfig;
   private readonly mikro: MikroService;
   private readonly oauthClientService: OAuthClientService;
   private readonly userConsentService: UserConsentService;
   private readonly securityService: SecurityService;
   public constructor(
-    config: TinyAuthConfigs,
+    config: TinyAuthRuntimeConfig,
     mikro: MikroService,
     oauthClientService: OAuthClientService,
     userConsentService: UserConsentService,
@@ -223,7 +223,7 @@ export class OAuthAuthorizeService {
    * Build login redirect URL
    */
   private buildLoginRedirectUrl(query: AuthorizeParams): string {
-    const loginUrl = new URL('/login', this.config.app.host);
+    const loginUrl = new URL('/login', this.config.server.public_origin);
     loginUrl.searchParams.set('client_id', query.client_id);
     loginUrl.searchParams.set('redirect_uri', query.redirect_uri);
     loginUrl.searchParams.set('response_type', query.response_type);
@@ -263,7 +263,7 @@ export class OAuthAuthorizeService {
    * Build consent redirect URL
    */
   private buildConsentRedirectUrl(query: AuthorizeParams): string {
-    const consentUrl = new URL('/consent', this.config.app.host);
+    const consentUrl = new URL('/consent', this.config.server.public_origin);
     consentUrl.searchParams.set('client_id', query.client_id);
     consentUrl.searchParams.set('redirect_uri', query.redirect_uri);
     consentUrl.searchParams.set('response_type', query.response_type);

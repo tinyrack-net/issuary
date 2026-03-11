@@ -39,7 +39,7 @@ export function PageLayout({
   } = useTheme();
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
 
-  const backgroundUrl = configData.app.background_url;
+  const backgroundUrl = configData.branding.background_url;
 
   const containerClass = responsivePadding ? 'p-4 md:p-8' : 'p-4';
   const cardClass = `${maxWidthClasses[maxWidth]}${cardPadding ? ' p-10' : ''}`;

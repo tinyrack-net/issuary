@@ -37,7 +37,7 @@ pnpm test       # Run all tests
 
 ### Import Conventions
 - Always include `.js` extension for local imports (ESM requirement)
-- **No barrel exports**: Import directly from the source file
+- **No barrel exports**: Import directly from the source file (exception: `packages/backend/src/lib/config/index.ts` serves as the public module boundary for `@tinyauth/backend/config`)
 
 ### TypeScript Configuration
 - **No type assertions or non-null assertions** (`as`, `!`)

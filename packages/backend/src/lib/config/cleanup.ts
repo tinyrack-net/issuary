@@ -1,5 +1,6 @@
 import z from 'zod';
 import { DurationString } from '#backend/lib/duration.js';
+import { zz } from '#backend/schemas/provider.js';
 
 const CLEANUP_REVOKED_TOKENS_CONFIG_DEFAULT = {
   enabled: true,
@@ -12,7 +13,8 @@ const CLEANUP_REVOKED_TOKENS_CONFIG_DEFAULT = {
 const CleanupRevokedTokensConfigSchema = z
   .object({
     enabled: z
-      .boolean()
+      .union([z.boolean(), z.string()])
+      .pipe(zz.COERCE_BOOLEAN)
       .default(CLEANUP_REVOKED_TOKENS_CONFIG_DEFAULT.enabled)
       .describe('Enable revoked tokens cleanup'),
     retention: DurationString.default(
@@ -34,7 +36,8 @@ const CLEANUP_OAUTH_CODES_CONFIG_DEFAULT = {
 const CleanupOAuthCodesConfigSchema = z
   .object({
     enabled: z
-      .boolean()
+      .union([z.boolean(), z.string()])
+      .pipe(zz.COERCE_BOOLEAN)
       .default(CLEANUP_OAUTH_CODES_CONFIG_DEFAULT.enabled)
       .describe('Enable OAuth codes cleanup'),
     consumed_retention: DurationString.default(
@@ -56,7 +59,8 @@ const CLEANUP_EMAIL_VERIFICATIONS_CONFIG_DEFAULT = {
 const CleanupEmailVerificationsConfigSchema = z
   .object({
     enabled: z
-      .boolean()
+      .union([z.boolean(), z.string()])
+      .pipe(zz.COERCE_BOOLEAN)
       .default(CLEANUP_EMAIL_VERIFICATIONS_CONFIG_DEFAULT.enabled)
       .describe('Enable email verification tokens cleanup'),
     retention: DurationString.default(
@@ -78,7 +82,8 @@ const CLEANUP_PASSWORD_RESETS_CONFIG_DEFAULT = {
 const CleanupPasswordResetsConfigSchema = z
   .object({
     enabled: z
-      .boolean()
+      .union([z.boolean(), z.string()])
+      .pipe(zz.COERCE_BOOLEAN)
       .default(CLEANUP_PASSWORD_RESETS_CONFIG_DEFAULT.enabled)
       .describe('Enable password reset tokens cleanup'),
     retention: DurationString.default(
@@ -88,28 +93,6 @@ const CleanupPasswordResetsConfigSchema = z
     ),
   })
   .describe('Password reset tokens cleanup settings');
-
-const CLEANUP_DELETED_USERS_CONFIG_DEFAULT = {
-  enabled: true,
-  retention: '30d',
-};
-
-/**
- * Configuration for deleted users cleanup (permanent deletion)
- */
-const CleanupDeletedUsersConfigSchema = z
-  .object({
-    enabled: z
-      .boolean()
-      .default(CLEANUP_DELETED_USERS_CONFIG_DEFAULT.enabled)
-      .describe('Enable deleted users cleanup'),
-    retention: DurationString.default(
-      CLEANUP_DELETED_USERS_CONFIG_DEFAULT.retention,
-    ).describe(
-      'How long to retain soft-deleted users before permanent deletion.',
-    ),
-  })
-  .describe('Deleted users cleanup settings');
 
 const CLEANUP_PENDING_OAUTH_REGISTRATIONS_CONFIG_DEFAULT = {
   enabled: true,
@@ -122,7 +105,8 @@ const CLEANUP_PENDING_OAUTH_REGISTRATIONS_CONFIG_DEFAULT = {
 const CleanupPendingOAuthRegistrationsConfigSchema = z
   .object({
     enabled: z
-      .boolean()
+      .union([z.boolean(), z.string()])
+      .pipe(zz.COERCE_BOOLEAN)
       .default(CLEANUP_PENDING_OAUTH_REGISTRATIONS_CONFIG_DEFAULT.enabled)
       .describe('Enable pending OAuth registrations cleanup'),
     retention: DurationString.default(
@@ -133,22 +117,6 @@ const CleanupPendingOAuthRegistrationsConfigSchema = z
   })
   .describe('Pending OAuth registrations cleanup settings');
 
-const CLEANUP_JWT_KEYS_CONFIG_DEFAULT = {
-  enabled: true,
-};
-
-/**
- * Configuration for JWT key rotation
- */
-const CleanupJwtKeysConfigSchema = z
-  .object({
-    enabled: z
-      .boolean()
-      .default(CLEANUP_JWT_KEYS_CONFIG_DEFAULT.enabled)
-      .describe('Enable JWT key rotation'),
-  })
-  .describe('JWT key rotation settings');
-
 /**
  * Default cleanup configuration
  */
@@ -157,13 +125,9 @@ export const CLEANUP_CONFIG_DEFAULT = {
   oauth_codes: CLEANUP_OAUTH_CODES_CONFIG_DEFAULT,
   email_verifications: CLEANUP_EMAIL_VERIFICATIONS_CONFIG_DEFAULT,
   password_resets: CLEANUP_PASSWORD_RESETS_CONFIG_DEFAULT,
-  deleted_users: CLEANUP_DELETED_USERS_CONFIG_DEFAULT,
   pending_oauth_registrations:
     CLEANUP_PENDING_OAUTH_REGISTRATIONS_CONFIG_DEFAULT,
-  jwt_keys: CLEANUP_JWT_KEYS_CONFIG_DEFAULT,
 };
-
-export const DEFAULT_CLEANUP_CONFIG = CLEANUP_CONFIG_DEFAULT;
 
 /**
  * Cleanup configuration
@@ -188,17 +152,12 @@ export const CleanupConfigSchema = z
     password_resets: CleanupPasswordResetsConfigSchema.default(
       CLEANUP_CONFIG_DEFAULT.password_resets,
     ),
-    deleted_users: CleanupDeletedUsersConfigSchema.default(
-      CLEANUP_CONFIG_DEFAULT.deleted_users,
-    ),
     pending_oauth_registrations:
       CleanupPendingOAuthRegistrationsConfigSchema.default(
         CLEANUP_CONFIG_DEFAULT.pending_oauth_registrations,
       ),
-    jwt_keys: CleanupJwtKeysConfigSchema.default(
-      CLEANUP_CONFIG_DEFAULT.jwt_keys,
-    ),
   })
+  .strict()
   .default(CLEANUP_CONFIG_DEFAULT)
   .describe('Cleanup configuration for maintenance tasks');
 

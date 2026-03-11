@@ -1,5 +1,10 @@
+import { randomBytes } from 'node:crypto';
 import * as fs from 'node:fs';
-import type { TinyAuthConfigs } from '@tinyauth/backend/config';
+import type {
+  TinyAuthDeclarativeDatabaseConfig,
+  TinyAuthDeclarativeIdentityProviderConfig,
+  TinyAuthRuntimeConfig,
+} from '@tinyauth/backend/config';
 import { postgres } from '@tinyauth/backend/database/postgres';
 import { sqlite } from '@tinyauth/backend/database/sqlite';
 import { apple } from '@tinyauth/backend/identity-providers/apple';
@@ -25,23 +30,27 @@ import { resolveAbsolutePath } from './resolve-path.js';
 export const DEFAULT_FRONTEND_PROXY_UPSTREAM = 'http://localhost:8081';
 export const DEFAULT_FRONTEND_STATIC_PATH = '/opt/tinyauth/frontend';
 
+function createEphemeralSecurityConfig() {
+  return {
+    session_secret: randomBytes(32).toString('hex'),
+    hash_secret: randomBytes(32).toString('base64url'),
+  };
+}
+
 function applyFrontendPathDefaults(config: StandaloneConfig): StandaloneConfig {
-  const { frontend } = config.app;
+  const { frontend } = config;
   if (!frontend.enabled || frontend.path !== undefined) {
     return config;
   }
 
   return {
     ...config,
-    app: {
-      ...config.app,
-      frontend: {
-        ...frontend,
-        path:
-          frontend.mode === 'proxy'
-            ? DEFAULT_FRONTEND_PROXY_UPSTREAM
-            : DEFAULT_FRONTEND_STATIC_PATH,
-      },
+    frontend: {
+      ...frontend,
+      path:
+        frontend.mode === 'proxy'
+          ? DEFAULT_FRONTEND_PROXY_UPSTREAM
+          : DEFAULT_FRONTEND_STATIC_PATH,
     },
   };
 }
@@ -49,22 +58,17 @@ function applyFrontendPathDefaults(config: StandaloneConfig): StandaloneConfig {
 function resolveStandaloneFrontendConfig(
   frontend: StandaloneFrontendConfig,
 ): ResolvedStandaloneFrontendConfig {
-  if (!frontend.enabled) {
-    return {
-      enabled: false,
-      mode: frontend.mode,
-      path: frontend.path ?? '',
-    };
-  }
+  const path =
+    frontend.path ??
+    (frontend.mode === 'proxy'
+      ? DEFAULT_FRONTEND_PROXY_UPSTREAM
+      : DEFAULT_FRONTEND_STATIC_PATH);
 
   return {
     enabled: frontend.enabled,
     mode: frontend.mode,
-    path:
-      frontend.path ??
-      (frontend.mode === 'proxy'
-        ? DEFAULT_FRONTEND_PROXY_UPSTREAM
-        : DEFAULT_FRONTEND_STATIC_PATH),
+    path: frontend.enabled ? path : '',
+    html_variables: frontend.html_variables,
   };
 }
 
@@ -73,13 +77,14 @@ export function parseConfig(input: unknown): StandaloneConfig {
   return applyFrontendPathDefaults(config);
 }
 
-const resolveMailConfig = async (
-  smtpInput: StandaloneConfig['smtp'],
-): Promise<TinyAuthConfigs['mail']> => {
-  if (!smtpInput) {
+async function resolveEmailConfig(
+  emailInput: StandaloneConfig['email'],
+): Promise<TinyAuthRuntimeConfig['email']> {
+  if (!emailInput) {
     return undefined;
   }
-  if (smtpInput.test) {
+
+  if (emailInput.transport === 'test') {
     const testAccount = await nm.createTestAccount();
     return nodemailer({
       host: testAccount.smtp.host,
@@ -87,16 +92,25 @@ const resolveMailConfig = async (
       secure: testAccount.smtp.secure,
       user: testAccount.user,
       password: testAccount.pass,
-      from: testAccount.user,
+      from: emailInput.from ?? testAccount.user,
       test: true,
     });
   }
-  return nodemailer(smtpInput);
-};
 
-const composeDatabaseConfig = (
-  database: StandaloneConfig['database'],
-): TinyAuthConfigs['database'] => {
+  return nodemailer({
+    host: emailInput.host,
+    port: emailInput.port,
+    secure: emailInput.secure,
+    user: emailInput.user,
+    password: emailInput.password,
+    from: emailInput.from,
+    test: false,
+  });
+}
+
+function composeDatabaseConfig(
+  database: TinyAuthDeclarativeDatabaseConfig,
+): TinyAuthRuntimeConfig['database'] {
   switch (database.type) {
     case 'postgres': {
       const { type: _, ...rest } = database;
@@ -107,11 +121,11 @@ const composeDatabaseConfig = (
       return sqlite(rest);
     }
   }
-};
+}
 
-const composeIdentityProvider = (
-  config: StandaloneConfig['identity_providers'][number],
-): TinyAuthConfigs['identity_providers'][number] => {
+function composeIdentityProvider(
+  config: TinyAuthDeclarativeIdentityProviderConfig,
+): TinyAuthRuntimeConfig['identity_providers'][number] {
   switch (config.type) {
     case 'github': {
       const { type: _, ...rest } = config;
@@ -130,40 +144,39 @@ const composeIdentityProvider = (
       return genericOAuth(rest);
     }
   }
-};
+}
 
-export async function resolveConfig(input: unknown): Promise<TinyAuthConfigs> {
+export async function resolveConfig(
+  input: unknown,
+): Promise<TinyAuthRuntimeConfig> {
   const parsed = parseConfig(input);
 
-  const mailConfig = await resolveMailConfig(parsed.smtp);
+  const emailConfig = await resolveEmailConfig(parsed.email);
   const databaseConfig = composeDatabaseConfig(parsed.database);
   const identityProvidersConfig = parsed.identity_providers.map(
     composeIdentityProvider,
   );
 
   const {
-    smtp: _smtp,
+    frontend: _frontend,
     database: _database,
-    identity_providers: _idp,
-    app: { frontend: _frontend, html_variables: _htmlVars, ...appRest },
+    email: _email,
+    identity_providers: _identityProviders,
     ...rest
   } = parsed;
 
   return {
     ...rest,
-    app: appRest,
     database: databaseConfig,
     identity_providers: identityProvidersConfig,
-    ...(mailConfig ? { mail: mailConfig } : {}),
+    ...(emailConfig ? { email: emailConfig } : {}),
   };
 }
 
 /**
  * Load configuration from a YAML config file.
  *
- * @param options - Configuration options
- * @param options.configPath - Path to the config file (required)
- * @param options.logger - Logger instance for config loading messages
+ * @param configPath - Path to the config file
  */
 export function loadConfig(configPath?: string | undefined): StandaloneConfig {
   const resolvedPath = configPath
@@ -175,33 +188,27 @@ export function loadConfig(configPath?: string | undefined): StandaloneConfig {
     const rawConfig = YAML.parse(file);
     const resolvedConfig = resolveEnvVariables(rawConfig);
     return parseConfig(resolvedConfig);
-  } else {
-    console.warn(`Config file not found at "${configPath}"`);
-    // TODO change
-    const defaultConfig: StandaloneConfigInput = {
-      app: {},
-      security: {
-        session_secret:
-          'e7e1f64d40b55fd8b5e529b5d85d62e39922d52b4364fc197546efaa72305d24',
-        hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
-      },
-    };
-    return parseConfig(defaultConfig);
   }
+
+  console.warn(
+    `Config file not found at "${resolvedPath}". Using schema defaults with ephemeral generated security secrets.`,
+  );
+  const defaultConfig: StandaloneConfigInput = {
+    security: createEphemeralSecurityConfig(),
+  };
+
+  return parseConfig(defaultConfig);
 }
 
 export async function resolveStandaloneConfig(
   input: StandaloneConfigInput | StandaloneConfig,
 ): Promise<ResolvedStandaloneConfig> {
   const parsed = parseConfig(input);
-  const backendConfig = await resolveConfig(input);
+  const backendConfig = await resolveConfig(parsed);
+
   return {
     ...backendConfig,
-    app: {
-      ...backendConfig.app,
-      frontend: resolveStandaloneFrontendConfig(parsed.app.frontend),
-      html_variables: parsed.app.html_variables,
-    },
+    frontend: resolveStandaloneFrontendConfig(parsed.frontend),
   };
 }
 

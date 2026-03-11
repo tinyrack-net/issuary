@@ -1,4 +1,4 @@
-import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
 import type { Logger } from '#backend/lib/logger.js';
 import { seedConfig } from '#backend/seeders/config.seeder.js';
 import { CleanupService } from '#backend/services/cleanup.service.js';
@@ -20,7 +20,7 @@ import { UserService } from '#backend/services/user.service.js';
 import { UserConsentService } from '#backend/services/user-consent.service.js';
 
 export interface ServiceContainer {
-  config: TinyAuthConfigs;
+  config: TinyAuthRuntimeConfig;
   securityService: SecurityService;
   mikro: MikroService;
   scheduler: SchedulerService;
@@ -46,7 +46,7 @@ export interface InitResult {
 }
 
 export async function initializeServices(
-  config: TinyAuthConfigs,
+  config: TinyAuthRuntimeConfig,
   logger: Logger,
 ): Promise<InitResult> {
   const securityService = new SecurityService(config);

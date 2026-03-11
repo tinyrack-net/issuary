@@ -2,7 +2,7 @@ import { expect } from '@playwright/test';
 import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  createTestAppConfig,
+  createTestConfig,
   E2E_BASE_CONFIG,
   E2E_TEST_CLIENT_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
@@ -64,8 +64,11 @@ const test = createScenarioFixture((backendPort) => {
 
   return {
     ...E2E_BASE_CONFIG,
-    app: createTestAppConfig(backendPort, {
-      allowed_signup_emails: ['*'],
+    ...createTestConfig(backendPort, {
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
+      },
     }),
     identity_providers: [
       genericOAuth({

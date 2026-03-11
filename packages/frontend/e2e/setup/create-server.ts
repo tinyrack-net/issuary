@@ -2,11 +2,12 @@ import type { AddressInfo } from 'node:net';
 import { createServer as createNetServer } from 'node:net';
 import { serve } from '@hono/node-server';
 import { createApp } from '@tinyauth/backend';
-import type {
-  TinyAuthConfigs,
-  TinyAuthInputConfigs,
+import {
+  type TinyAuthRuntimeConfig,
+  TinyAuthRuntimeConfigSchema,
 } from '@tinyauth/backend/config';
-import { resolveTestMailConfig } from '#frontend-e2e/setup/resolve-test-smtp.js';
+import type { E2EConfigInput } from '#frontend-e2e/fixtures/index.js';
+import { resolveTestEmailConfig } from '#frontend-e2e/setup/resolve-test-email.js';
 
 const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
 
@@ -174,9 +175,7 @@ function getFreePort(): Promise<number> {
   });
 }
 
-export type E2EConfigResult = Omit<TinyAuthInputConfigs, 'mail'> & {
-  mail?: { test: true } | TinyAuthInputConfigs['mail'];
-};
+export type E2EConfigResult = E2EConfigInput;
 
 type ConfigFactory = (
   backendPort: number,
@@ -202,6 +201,24 @@ function getSharedFrontendPort(): number {
   return frontendPort;
 }
 
+function isTestEmailConfig(
+  email: E2EConfigResult['email'],
+): email is { test: true } {
+  return (
+    typeof email === 'object' &&
+    email !== null &&
+    'test' in email &&
+    email['test'] === true &&
+    !('createTransport' in email)
+  );
+}
+
+function isResolvedEmailConfig(
+  email: E2EConfigResult['email'],
+): email is NonNullable<TinyAuthRuntimeConfig['email']> {
+  return email !== undefined && 'createTransport' in email;
+}
+
 /**
  * Creates and starts the backend server for an e2e test config
  * using a per-server backend port and shared frontend port.
@@ -216,31 +233,28 @@ export async function createE2EServer(configFactory: ConfigFactory) {
   const backendPort = await getFreePort();
   const frontendPort = getSharedFrontendPort();
 
-  const { mail: rawMail, ...restConfig } = configFactory(
+  const { email: rawEmail, ...restConfig } = configFactory(
     backendPort,
     frontendPort,
   );
 
-  // Resolve mail config: { test: true } shorthand into a real test mail config
-  let resolvedMail: TinyAuthConfigs['mail'];
-  if (
-    rawMail &&
-    'test' in rawMail &&
-    (rawMail as Record<string, unknown>).test === true &&
-    !('createTransport' in rawMail)
-  ) {
-    resolvedMail = await resolveTestMailConfig();
-  } else if (rawMail && 'createTransport' in rawMail) {
-    resolvedMail = rawMail as TinyAuthConfigs['mail'];
+  // Resolve email config: { test: true } shorthand into a real test email config
+  let resolvedEmail: TinyAuthRuntimeConfig['email'];
+  if (isTestEmailConfig(rawEmail)) {
+    resolvedEmail = await resolveTestEmailConfig();
+  } else if (isResolvedEmailConfig(rawEmail)) {
+    resolvedEmail = rawEmail;
   }
 
-  const config: TinyAuthInputConfigs = {
+  const config = {
     ...restConfig,
-    ...(resolvedMail ? { mail: resolvedMail } : {}),
+    ...(resolvedEmail ? { email: resolvedEmail } : {}),
   };
 
   // 1. Start backend
-  const { app, services, cleanup } = await createApp({ config });
+  const { app, services, cleanup } = await createApp({
+    config: TinyAuthRuntimeConfigSchema.parse(config),
+  });
 
   // 2. Register test-only API endpoints
   const testApp = app

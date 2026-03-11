@@ -3,7 +3,7 @@ import {
   toArrayBuffer,
   toBase64Url,
 } from '#backend/lib/base64url.js';
-import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
 import { validatePKCE } from '#backend/lib/pkce.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
@@ -95,14 +95,14 @@ export interface TokenResponse {
  * Supports both config-based and database-based users/clients.
  */
 export class OAuthTokenService {
-  private readonly config: TinyAuthConfigs;
+  private readonly config: TinyAuthRuntimeConfig;
   private readonly mikro: MikroService;
   private readonly userService: UserService;
   private readonly oauthClientService: OAuthClientService;
   private readonly jwtService: JwtService;
   private readonly securityService: SecurityService;
   constructor(
-    config: TinyAuthConfigs,
+    config: TinyAuthRuntimeConfig,
     mikro: MikroService,
     userService: UserService,
     oauthClientService: OAuthClientService,
@@ -501,7 +501,7 @@ export class OAuthTokenService {
     const response: TokenResponse = {
       access_token: accessToken,
       token_type: 'Bearer',
-      expires_in: this.config.app.jwt_access_token_ttl || 3600,
+      expires_in: this.config.tokens.access_token_ttl,
       refresh_token: refreshToken,
       scope: scopeString,
     };

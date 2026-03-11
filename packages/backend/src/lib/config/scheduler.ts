@@ -22,8 +22,6 @@ export const SCHEDULER_CONFIG_DEFAULT = {
   cron: '0 2 * * *', // Daily at 2 AM
 };
 
-export const DEFAULT_SCHEDULER_CONFIG = SCHEDULER_CONFIG_DEFAULT;
-
 /**
  * In-process scheduler configuration.
  *
@@ -44,6 +42,7 @@ export const SchedulerConfigSchema = z
       'Cron schedule for running all cleanup tasks. Default: daily at 2 AM.',
     ),
   })
+  .strict()
   .default(SCHEDULER_CONFIG_DEFAULT)
   .describe('In-process scheduler configuration for automated cleanup tasks');
 

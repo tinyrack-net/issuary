@@ -1,10 +1,35 @@
 import z from 'zod';
 
-export const StandaloneFrontendConfigSchema = z.object({
-  enabled: z.boolean().default(true),
-  mode: z.enum(['proxy', 'static']).default('static'),
-  path: z.string().optional(),
-});
+const StandaloneBooleanSchema = z
+  .union([z.boolean(), z.string()])
+  .transform((value) => {
+    if (typeof value === 'string') {
+      return value === 'true' || value === '1';
+    }
+    return value;
+  });
+
+export const STANDALONE_FRONTEND_CONFIG_DEFAULT = {
+  enabled: true,
+  mode: 'static',
+  html_variables: {},
+} as const;
+
+export const StandaloneFrontendConfigSchema = z
+  .object({
+    enabled: StandaloneBooleanSchema.default(
+      STANDALONE_FRONTEND_CONFIG_DEFAULT.enabled,
+    ),
+    mode: z
+      .enum(['proxy', 'static'])
+      .default(STANDALONE_FRONTEND_CONFIG_DEFAULT.mode),
+    path: z.string().optional(),
+    html_variables: z
+      .record(z.string(), z.string())
+      .default(STANDALONE_FRONTEND_CONFIG_DEFAULT.html_variables),
+  })
+  .strict()
+  .default(STANDALONE_FRONTEND_CONFIG_DEFAULT);
 
 export type StandaloneFrontendConfigInput = z.input<
   typeof StandaloneFrontendConfigSchema
@@ -17,4 +42,5 @@ export type ResolvedStandaloneFrontendConfig = {
   enabled: boolean;
   mode: 'proxy' | 'static';
   path: string;
+  html_variables: Record<string, string>;
 };

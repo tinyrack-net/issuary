@@ -1,5 +1,5 @@
 import { fromBase64Url } from '#backend/lib/base64url.js';
-import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
 import {
   derivePbkdf2Bytes,
   derivePurposeKeyBytes,
@@ -34,7 +34,7 @@ export class SecurityService {
   private readonly pbkdf2Iterations: number;
   private readonly purposeKeyCache = new Map<Purpose, Promise<Uint8Array>>();
 
-  public constructor(config: TinyAuthConfigs) {
+  public constructor(config: TinyAuthRuntimeConfig) {
     const decodedSecret = fromBase64Url(config.security.hash_secret);
     if (decodedSecret.length !== 32) {
       throw new Error('security.hash_secret must decode to 32 bytes.');

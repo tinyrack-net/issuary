@@ -1,40 +1,49 @@
 import z from 'zod';
-import { APP_CONFIG_DEFAULT, AppConfigSchema } from './app.js';
+import { AccountDeletionConfigSchema } from './account-deletion.js';
 import { AuthConfigSchema } from './auth.js';
+import { BrandingConfigSchema } from './branding.js';
 import { CleanupConfigSchema } from './cleanup.js';
 import { ClientConfigsSchema } from './client.js';
 import { DatabaseConfigSchema } from './database.js';
+import { EmailConfigSchema } from './email.js';
 import { FrontendConfigSchema } from './frontend.js';
+import { I18nConfigSchema } from './i18n.js';
 import { IdentityProviderConfigsSchema } from './identity-providers.js';
 import { LoggingConfigSchema } from './logging.js';
-import { MailConfigSchema } from './mail.js';
+import { RegistrationConfigSchema } from './registration.js';
 import { SchedulerConfigSchema } from './scheduler.js';
 import { SecurityConfigSchema } from './security.js';
+import { ServerConfigSchema } from './server.js';
 import { TermsConfigSchema } from './terms.js';
+import { TokensConfigSchema } from './tokens.js';
 import { UserConfigsSchema } from './user.js';
 
-/**
- * Fully resolved configuration type - use this at runtime.
- * All fields are guaranteed to be fully resolved:
- * - database: composed with MikroORM options
- * - smtp: fully resolved (no `{ test: true }` shorthand)
- * - identity_providers: resolved with endpoint URLs
- */
-export const TinyAuthConfigsSchema = z.object({
-  app: AppConfigSchema.default({ ...APP_CONFIG_DEFAULT }),
-  logging: LoggingConfigSchema,
-  auth: AuthConfigSchema,
-  security: SecurityConfigSchema,
-  cleanup: CleanupConfigSchema,
-  scheduler: SchedulerConfigSchema,
-  terms: TermsConfigSchema,
-  clients: ClientConfigsSchema,
-  users: UserConfigsSchema,
-  database: DatabaseConfigSchema,
-  frontend: FrontendConfigSchema,
-  mail: MailConfigSchema,
-  identity_providers: IdentityProviderConfigsSchema,
-});
+export const TinyAuthRuntimeConfigSchema = z
+  .object({
+    server: ServerConfigSchema,
+    tokens: TokensConfigSchema,
+    i18n: I18nConfigSchema,
+    branding: BrandingConfigSchema,
+    registration: RegistrationConfigSchema,
+    account_deletion: AccountDeletionConfigSchema,
+    logging: LoggingConfigSchema,
+    auth: AuthConfigSchema,
+    security: SecurityConfigSchema,
+    cleanup: CleanupConfigSchema,
+    scheduler: SchedulerConfigSchema,
+    terms: TermsConfigSchema,
+    clients: ClientConfigsSchema,
+    users: UserConfigsSchema,
+    database: DatabaseConfigSchema,
+    frontend: FrontendConfigSchema,
+    email: EmailConfigSchema,
+    identity_providers: IdentityProviderConfigsSchema,
+  })
+  .strict();
 
-export type TinyAuthInputConfigs = z.input<typeof TinyAuthConfigsSchema>;
-export type TinyAuthConfigs = z.infer<typeof TinyAuthConfigsSchema>;
+export type TinyAuthRuntimeConfigInput = z.input<
+  typeof TinyAuthRuntimeConfigSchema
+>;
+export type TinyAuthRuntimeConfig = z.output<
+  typeof TinyAuthRuntimeConfigSchema
+>;

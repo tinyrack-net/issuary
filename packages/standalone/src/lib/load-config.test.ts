@@ -2,10 +2,9 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, test } from 'vitest';
 import { loadConfig, loadResolvedConfig } from './load-config.js';
-
-const originalEnv = { ...process.env };
 
 async function writeConfigFile(
   dir: string,
@@ -18,22 +17,6 @@ async function writeConfigFile(
 }
 
 describe('load-config', () => {
-  beforeEach(() => {
-    for (const key of Object.keys(process.env)) {
-      delete process.env[key];
-    }
-    process.env['SESSION_SECRET'] =
-      '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b';
-    process.env['HASH_SECRET'] = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
-  });
-
-  afterEach(() => {
-    for (const key of Object.keys(process.env)) {
-      delete process.env[key];
-    }
-    Object.assign(process.env, originalEnv);
-  });
-
   test('loads config from the given configPath', async () => {
     const dir = await fs.promises.mkdtemp(
       path.join(os.tmpdir(), 'tinyauth-load-config-'),
@@ -42,7 +25,6 @@ describe('load-config', () => {
       dir,
       'config.yaml',
       [
-        'app: {}',
         'security:',
         '  session_secret: explicit-secret-1234567890',
         '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
@@ -63,10 +45,9 @@ describe('load-config', () => {
       dir,
       'proxy.yaml',
       [
-        'app:',
-        '  frontend:',
-        '    enabled: true',
-        '    mode: proxy',
+        'frontend:',
+        '  enabled: true',
+        '  mode: proxy',
         'security:',
         '  session_secret: proxy-secret-1234567890',
         '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
@@ -75,7 +56,7 @@ describe('load-config', () => {
 
     const config = await loadResolvedConfig({ configPath: configFile });
 
-    expect(config.app.frontend.path).toBe('http://localhost:8081');
+    expect(config.frontend.path).toBe('http://localhost:8081');
     await fs.promises.rm(dir, { recursive: true, force: true });
   });
 
@@ -87,9 +68,8 @@ describe('load-config', () => {
       dir,
       'disabled.yaml',
       [
-        'app:',
-        '  frontend:',
-        '    enabled: false',
+        'frontend:',
+        '  enabled: false',
         'security:',
         '  session_secret: disabled-secret-1234567890',
         '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
@@ -98,9 +78,58 @@ describe('load-config', () => {
 
     const config = await loadResolvedConfig({ configPath: configFile });
 
-    expect(config.app.frontend.enabled).toBe(false);
-    expect(config.app.frontend.path).toBe('');
+    expect(config.frontend.enabled).toBe(false);
+    expect(config.frontend.path).toBe('');
     await fs.promises.rm(dir, { recursive: true, force: true });
+  });
+
+  test('generates ephemeral secrets and keeps signup disabled when config file is missing', () => {
+    const missingPath = path.join(
+      os.tmpdir(),
+      `tinyauth-missing-${Date.now()}.yaml`,
+    );
+
+    const first = loadConfig(missingPath);
+    const second = loadConfig(missingPath);
+
+    expect(first.registration.enabled).toBe(false);
+    expect(first.registration.allowed_email_patterns).toEqual([]);
+    expect(first.security.session_secret).not.toBe(
+      second.security.session_secret,
+    );
+    expect(first.security.hash_secret).not.toBe(second.security.hash_secret);
+    expect(first.security.session_secret.length).toBeGreaterThanOrEqual(16);
+    expect(first.security.hash_secret).toMatch(/^[A-Za-z0-9_-]+$/);
+  });
+
+  test('loads the packaged config.example.yaml', () => {
+    const exampleConfigPath = fileURLToPath(
+      new URL('../../config.example.yaml', import.meta.url),
+    );
+    const exampleConfigContents = fs
+      .readFileSync(exampleConfigPath, 'utf-8')
+      .replace(
+        '${SESSION_SECRET}',
+        '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+      )
+      .replace('${HASH_SECRET}', 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY');
+    const tempConfigPath = path.join(
+      os.tmpdir(),
+      `tinyauth-example-${Date.now()}.yaml`,
+    );
+
+    fs.writeFileSync(tempConfigPath, exampleConfigContents, 'utf-8');
+    const config = (() => {
+      try {
+        return loadConfig(tempConfigPath);
+      } finally {
+        fs.rmSync(tempConfigPath, { force: true });
+      }
+    })();
+
+    expect(config.registration.enabled).toBe(false);
+    expect(config.identity_providers).toEqual([]);
+    expect(config.terms[0]?.content['en']?.type).toBe('text');
   });
 
   test('fails when security.session_secret is missing', async () => {
@@ -111,7 +140,6 @@ describe('load-config', () => {
       dir,
       'missing-security.yaml',
       [
-        'app: {}',
         'security:',
         '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       ].join('\n'),
@@ -140,9 +168,15 @@ describe('load-config', () => {
       ].join('\n'),
     );
 
-    await expect(
-      loadResolvedConfig({ configPath: configFile }),
-    ).rejects.toThrow('cookie_secret');
+    const errorMessage = await loadResolvedConfig({
+      configPath: configFile,
+    }).then(
+      () => '',
+      (error: unknown) => String(error),
+    );
+
+    expect(errorMessage).toContain('"app"');
+    expect(errorMessage).toContain('Unrecognized key');
 
     await fs.promises.rm(dir, { recursive: true, force: true });
   });

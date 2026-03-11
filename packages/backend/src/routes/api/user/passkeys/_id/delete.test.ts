@@ -27,10 +27,12 @@ describe('DELETE /api/user/passkeys/:id', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
+        registration: {
+          email_verification_required: true,
+        },
         auth: {
           passkey: {
             enabled: true,
-            email_verification: true,
           },
         },
       },
@@ -509,10 +511,12 @@ describe('DELETE /api/user/passkeys/:id - Last auth method protection', () => {
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
+        registration: {
+          email_verification_required: true,
+        },
         auth: {
           passkey: {
             enabled: true,
-            email_verification: true,
           },
         },
       },
@@ -658,10 +662,12 @@ describe('DELETE /api/user/passkeys/:id - Passkey disabled', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
+        registration: {
+          email_verification_required: true,
+        },
         auth: {
           passkey: {
             enabled: false,
-            email_verification: true,
           },
         },
       },
@@ -704,8 +710,8 @@ describe('DELETE /api/user/passkeys/:id - second_factor.required: true', () => {
         users: [TEST_USER_CONFIG],
         auth: {
           password: {
-            second_factor: {
-              required: true,
+            two_factor: {
+              enrollment_required: true,
             },
             totp: { enabled: true },
           },

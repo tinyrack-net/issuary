@@ -1,27 +1,33 @@
 import { expect } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  createTestAppConfig,
+  createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 
 const test = createScenarioFixture((backendPort) => ({
   ...E2E_BASE_CONFIG,
-  app: createTestAppConfig(backendPort, {
-    supported_languages: ['ko', 'en'],
-    default_language: 'ko',
-    fallback_language: 'en',
-    light_theme: 'cupcake',
-    dark_theme: 'forest',
-    theme_mode: 'system',
-    title: {
-      en: 'Theme System Title',
+  ...createTestConfig(backendPort, {
+    i18n: {
+      supported_languages: ['ko', 'en'],
+      default_language: 'ko',
+      fallback_language: 'en',
     },
-    subtitle: {
-      en: 'Theme System Subtitle',
+    branding: {
+      light_theme: 'cupcake',
+      dark_theme: 'forest',
+      theme_mode: 'system',
+      title: {
+        en: 'Theme System Title',
+      },
+      subtitle: {
+        en: 'Theme System Subtitle',
+      },
     },
-    signup_implicit_terms: {
-      en: 'Theme system <strong>implicit terms</strong> notice.',
+    registration: {
+      signup_notice: {
+        en: 'Theme system <strong>implicit terms</strong> notice.',
+      },
     },
   }),
 }));

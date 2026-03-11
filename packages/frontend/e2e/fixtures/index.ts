@@ -1,4 +1,7 @@
-import type { TinyAuthInputConfigs } from '@tinyauth/backend/config';
+import type {
+  TinyAuthRuntimeConfig,
+  TinyAuthRuntimeConfigInput,
+} from '@tinyauth/backend/config';
 import { sqlite } from '@tinyauth/backend/database/sqlite';
 
 /**
@@ -41,9 +44,57 @@ export const E2E_TEST_CLIENT_CONFIG = {
   response_types: ['code'],
   grant_types: ['authorization_code'],
   scope: 'openid profile email',
-} satisfies NonNullable<TinyAuthInputConfigs['clients']>[number];
+} satisfies NonNullable<TinyAuthRuntimeConfigInput['clients']>[number];
 
-export const E2E_BASE_CONFIG: Omit<TinyAuthInputConfigs, 'app'> = {
+type TestServerConfig = {
+  public_origin?: string;
+  listen_port?: number;
+  trust_proxy?: boolean | string | string[] | number;
+};
+
+type TestI18nConfig = {
+  supported_languages?: readonly string[];
+  default_language?: string;
+  fallback_language?: string;
+};
+
+type TestBrandingConfig = {
+  light_theme?: string;
+  dark_theme?: string;
+  theme_mode?: string;
+  background_url?: string;
+  icon_url?: string;
+  title?: Record<string, string>;
+  subtitle?: Record<string, string>;
+};
+
+type TestRegistrationConfig = {
+  enabled?: boolean;
+  allowed_email_patterns?: readonly string[];
+  email_verification_required?: boolean;
+  signup_notice?: Record<string, string>;
+};
+
+type TestAccountDeletionConfig = {
+  enabled?: boolean;
+  retention?: string;
+};
+
+export type TestEmailConfig =
+  | { test: true }
+  | NonNullable<TinyAuthRuntimeConfig['email']>;
+
+export type E2EConfigInput = {
+  [key: string]: unknown;
+  server?: TestServerConfig;
+  i18n?: TestI18nConfig;
+  branding?: TestBrandingConfig;
+  registration?: TestRegistrationConfig;
+  account_deletion?: TestAccountDeletionConfig;
+  email?: TestEmailConfig;
+};
+
+export const E2E_BASE_CONFIG: Omit<E2EConfigInput, 'server' | 'email'> = {
   security: {
     session_secret:
       '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
@@ -54,22 +105,42 @@ export const E2E_BASE_CONFIG: Omit<TinyAuthInputConfigs, 'app'> = {
   database: sqlite({ path: './test.db', test: true }),
 };
 
-type TestAppConfigInput = Omit<
-  NonNullable<TinyAuthInputConfigs['app']>,
-  'host' | 'port'
->;
+type TestConfigInput = {
+  [key: string]: unknown;
+  server?: TestServerConfig;
+  i18n?: TestI18nConfig;
+  branding?: TestBrandingConfig;
+  registration?: TestRegistrationConfig;
+  account_deletion?: TestAccountDeletionConfig;
+  email?: TestEmailConfig;
+};
+
+type TestConfigResult = {
+  [key: string]: unknown;
+  server: TestServerConfig;
+  i18n?: TestI18nConfig;
+  branding?: TestBrandingConfig;
+  registration?: TestRegistrationConfig;
+  account_deletion?: TestAccountDeletionConfig;
+  email?: TestEmailConfig;
+};
 
 /**
- * Creates the minimum app config every e2e server needs:
- * a concrete host and the worker-specific backend port.
+ * Creates the minimum backend config every e2e server needs:
+ * a concrete public origin and the worker-specific backend port.
  */
-export function createTestAppConfig(
+export function createTestConfig(
   backendPort: number,
-  overrides: TestAppConfigInput = {},
+  overrides: TestConfigInput = {},
 ) {
+  const { server, ...restOverrides } = overrides;
+
   return {
-    host: `http://localhost:${backendPort}`,
-    port: backendPort,
-    ...overrides,
-  } satisfies NonNullable<TinyAuthInputConfigs['app']>;
+    ...restOverrides,
+    server: {
+      public_origin: `http://localhost:${backendPort}`,
+      listen_port: backendPort,
+      ...(server ?? {}),
+    },
+  } satisfies TestConfigResult;
 }

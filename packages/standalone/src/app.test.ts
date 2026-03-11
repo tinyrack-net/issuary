@@ -7,7 +7,6 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createStandaloneApp } from './app.js';
 
 const BASE_CONFIG = {
-  app: {},
   logging: {
     level: 'silent',
     format: 'json',
@@ -43,13 +42,10 @@ describe('createStandaloneApp', () => {
       const server = await createStandaloneApp({
         config: {
           ...BASE_CONFIG,
-          app: {
-            ...BASE_CONFIG.app,
-            frontend: {
-              enabled: true,
-              mode: 'static',
-              path: publicPath,
-            },
+          frontend: {
+            enabled: true,
+            mode: 'static',
+            path: publicPath,
           },
         },
       });
@@ -103,13 +99,10 @@ describe('createStandaloneApp', () => {
       const server = await createStandaloneApp({
         config: {
           ...BASE_CONFIG,
-          app: {
-            ...BASE_CONFIG.app,
-            frontend: {
-              enabled: true,
-              mode: 'proxy',
-              path: upstreamBase,
-            },
+          frontend: {
+            enabled: true,
+            mode: 'proxy',
+            path: upstreamBase,
           },
         },
       });

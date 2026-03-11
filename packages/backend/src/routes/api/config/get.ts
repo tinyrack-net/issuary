@@ -45,31 +45,39 @@ export const configGet = new Hono<AppEnv>().get(
 
     return c.json(
       {
-        app: {
-          public_registration: config.app.allowed_signup_emails.length > 0,
-          supported_languages: config.app.supported_languages,
-          default_language: config.app.default_language,
-          fallback_language: config.app.fallback_language,
-          light_theme: config.app.light_theme,
-          dark_theme: config.app.dark_theme,
-          theme_mode: config.app.theme_mode,
-          background_url: config.app.background_url,
-          signup_implicit_terms: config.app.signup_implicit_terms,
-          icon_url: config.app.icon_url,
-          title: config.app.title,
-          subtitle: config.app.subtitle,
+        i18n: {
+          supported_languages: config.i18n.supported_languages,
+          default_language: config.i18n.default_language,
+          fallback_language: config.i18n.fallback_language,
+        },
+        branding: {
+          light_theme: config.branding.light_theme,
+          dark_theme: config.branding.dark_theme,
+          theme_mode: config.branding.theme_mode,
+          background_url: config.branding.background_url,
+          icon_url: config.branding.icon_url,
+          title: config.branding.title,
+          subtitle: config.branding.subtitle,
+        },
+        registration: {
+          public_registration: config.registration.enabled,
+          email_pattern_filter_enabled:
+            config.registration.allowed_email_patterns.length > 0,
+          email_verification_required:
+            config.registration.email_verification_required,
+          signup_notice: config.registration.signup_notice,
         },
         database: {
           enabled: !!config.database,
         },
-        smtp: {
-          enabled: !!config.mail,
+        email: {
+          enabled: !!config.email,
         },
         auth: config.auth,
         identity_providers: identityProviders,
         account_deletion: {
-          enabled: config.app.account_deletion,
-          retention_period: config.cleanup.deleted_users.retention,
+          enabled: config.account_deletion.enabled,
+          retention: config.account_deletion.retention,
         },
       },
       200,

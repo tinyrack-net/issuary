@@ -17,7 +17,7 @@ import {
   type IUserPasskeyEntity,
   UserPasskeyEntitySchema,
 } from '#backend/entities/user-passkey.entity.js';
-import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
 
@@ -44,33 +44,33 @@ export class PasskeyService {
   private readonly rpName: string = 'TinyRack Auth';
 
   private readonly mikro: MikroService;
-  private readonly config: TinyAuthConfigs;
-  public constructor(mikro: MikroService, config: TinyAuthConfigs) {
+  private readonly config: TinyAuthRuntimeConfig;
+  public constructor(mikro: MikroService, config: TinyAuthRuntimeConfig) {
     this.mikro = mikro;
     this.config = config;
   }
 
   /**
-   * Get rpId from config or extract from app.host hostname
+   * Get rpId from config or extract from server.public_origin hostname
    */
   private getRpId(): string {
     const passkeyConfig = this.config.auth.passkey;
     if (passkeyConfig.rp_id) {
       return passkeyConfig.rp_id;
     }
-    const hostUrl = new URL(this.config.app.host);
+    const hostUrl = new URL(this.config.server.public_origin);
     return hostUrl.hostname;
   }
 
   /**
-   * Get allowed origins from config or use app.host
+   * Get allowed origins from config or use server.public_origin
    */
   private getOrigins(): string[] {
     const passkeyConfig = this.config.auth.passkey;
     if (passkeyConfig.origins && passkeyConfig.origins.length > 0) {
       return passkeyConfig.origins;
     }
-    return [this.config.app.host];
+    return [this.config.server.public_origin];
   }
 
   /**

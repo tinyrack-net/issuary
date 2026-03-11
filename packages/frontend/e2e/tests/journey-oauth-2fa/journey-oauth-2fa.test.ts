@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  createTestAppConfig,
+  createTestConfig,
   E2E_BASE_CONFIG,
   E2E_TEST_CLIENT,
   E2E_TEST_CLIENT_CONFIG,
@@ -60,18 +60,21 @@ const TEST_PASSWORD = 'test-password-123';
 
 const test = createScenarioFixture((backendPort) => ({
   ...E2E_BASE_CONFIG,
-  app: createTestAppConfig(backendPort, {
-    allowed_signup_emails: ['*'],
+  ...createTestConfig(backendPort, {
+    registration: {
+      enabled: true,
+      allowed_email_patterns: ['*'],
+    },
   }),
   auth: {
     password: {
-      second_factor: { required: true },
+      two_factor: { enrollment_required: true },
       totp: { enabled: true },
     },
     passkey: { enabled: true },
   },
   clients: [E2E_TEST_CLIENT_CONFIG],
-  mail: { test: true },
+  email: { test: true },
 }));
 
 test.describe('OAuth continuation across email verification and 2FA', () => {

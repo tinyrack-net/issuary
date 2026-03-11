@@ -69,15 +69,16 @@ beforeAll(async () => {
   const server = await createTestApp({
     config: {
       ...MINIMAL_TEST_CONFIG,
-      app: {
-        allowed_signup_emails: ['*'],
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
+        email_verification_required: false,
       },
       auth: {
         password: {
           enabled: true,
-          email_verification: false,
-          second_factor: {
-            required: true,
+          two_factor: {
+            enrollment_required: true,
           },
           totp: {
             enabled: true,
@@ -86,7 +87,6 @@ beforeAll(async () => {
         },
         passkey: {
           enabled: true,
-          email_verification: true,
         },
       },
       identity_providers: [

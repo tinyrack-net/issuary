@@ -18,8 +18,8 @@ import {
 } from '#backend/entities/revoked-token.entity.js';
 import { UserEntity } from '#backend/entities/user.entity.js';
 import {
-  type TinyAuthConfigs,
-  TinyAuthConfigsSchema,
+  type TinyAuthRuntimeConfig,
+  TinyAuthRuntimeConfigSchema,
 } from '#backend/lib/config/index.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import { withMikroContext } from './helpers.js';
@@ -30,10 +30,11 @@ import { MINIMAL_TEST_CONFIG } from './setup.js';
  * Uses immediate retention (0) for faster test execution.
  */
 export const CLI_TEST_CONFIG = {
-  ...TinyAuthConfigsSchema.parse({
+  ...TinyAuthRuntimeConfigSchema.parse({
     ...MINIMAL_TEST_CONFIG,
-    app: {
-      account_deletion: true,
+    account_deletion: {
+      enabled: true,
+      retention: '0',
     },
     cleanup: {
       revoked_tokens: {
@@ -52,18 +53,18 @@ export const CLI_TEST_CONFIG = {
         enabled: true,
         retention: '0',
       },
-      deleted_users: {
-        enabled: true,
-        retention: '0',
-      },
       pending_oauth_registrations: {
         enabled: true,
         retention: '0',
       },
-      jwt_keys: { enabled: true },
+    },
+    tokens: {
+      key_rotation: {
+        enabled: true,
+      },
     },
   }),
-} satisfies TinyAuthConfigs;
+} satisfies TinyAuthRuntimeConfig;
 
 /**
  * Create a test user in the database.

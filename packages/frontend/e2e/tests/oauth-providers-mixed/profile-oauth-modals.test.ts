@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  createTestAppConfig,
+  createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 import { createMixedOauthProviders } from '#frontend-e2e/fragments/oauth-providers.js';
@@ -20,8 +20,11 @@ const test = createScenarioFixture((backendPort) => {
 
   return {
     ...E2E_BASE_CONFIG,
-    app: createTestAppConfig(backendPort, {
-      allowed_signup_emails: ['*@allowed.test'],
+    ...createTestConfig(backendPort, {
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*@allowed.test'],
+      },
     }),
     identity_providers: createMixedOauthProviders(host),
   };

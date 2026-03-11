@@ -16,8 +16,9 @@ vi.mock('nodemailer', () => ({
 }));
 
 const MINIMAL_CONFIG = {
-  app: {
-    allowed_signup_emails: ['*'],
+  registration: {
+    enabled: true,
+    allowed_email_patterns: ['*'],
   },
   security: {
     session_secret:
@@ -28,33 +29,29 @@ const MINIMAL_CONFIG = {
 };
 
 describe('resolveConfig', () => {
-  test('strips standalone-only fields (frontend, html_variables)', async () => {
+  test('strips standalone-only frontend fields from backend runtime config', async () => {
     const resolved = await resolveConfig({
       ...MINIMAL_CONFIG,
-      app: {
-        ...MINIMAL_CONFIG.app,
-        frontend: {
-          enabled: true,
-        },
+      frontend: {
+        enabled: true,
         html_variables: {
           TITLE: 'TinyAuth',
         },
       },
     });
 
-    expect(Object.hasOwn(resolved.app, 'frontend')).toBe(false);
-    expect(Object.hasOwn(resolved.app, 'html_variables')).toBe(false);
+    expect(Object.hasOwn(resolved, 'frontend')).toBe(false);
   });
 
-  test('resolves smtp test accounts', async () => {
+  test('resolves test email accounts', async () => {
     const resolved = await resolveConfig({
       ...MINIMAL_CONFIG,
-      smtp: { test: true },
+      email: { transport: 'test' },
     });
 
-    expect(resolved.mail).toBeDefined();
-    expect(resolved.mail?.from).toBeDefined();
-    expect(typeof resolved.mail?.createTransport).toBe('function');
+    expect(resolved.email).toBeDefined();
+    expect(resolved.email?.from).toBeDefined();
+    expect(typeof resolved.email?.createTransport).toBe('function');
   });
 
   test('returns composed database config', async () => {
@@ -96,17 +93,76 @@ describe('resolveConfig', () => {
     ).resolves.toBeDefined();
   });
 
-  test('rejects removed app.cookie_secret config', async () => {
+  test('coerces env-style scalar strings in declarative config', async () => {
     await expect(
       resolveConfig({
         ...MINIMAL_CONFIG,
-        app: {
-          ...MINIMAL_CONFIG.app,
-          cookie_secret:
-            '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+        auth: {
+          password: {
+            enabled: 'true',
+            two_factor: {
+              enrollment_required: 'false',
+            },
+            totp: {
+              enabled: 'false',
+            },
+            policy: {
+              min_length: '8',
+              max_length: '64',
+            },
+          },
+          passkey: {
+            enabled: 'false',
+          },
+        },
+        database: {
+          type: 'sqlite',
+          test: 'true',
+        },
+        email: {
+          transport: 'smtp',
+          host: 'smtp.example.com',
+          port: '465',
+          secure: 'true',
+          user: 'mailer',
+          password: 'secret',
+        },
+        cleanup: {
+          revoked_tokens: {
+            enabled: 'false',
+          },
+        },
+        identity_providers: [
+          {
+            id: 'github',
+            type: 'github',
+            enabled: 'true',
+            client_id: 'github-client-id',
+            client_secret: 'github-client-secret',
+          },
+        ],
+        frontend: {
+          enabled: 'true',
+          mode: 'static',
         },
       }),
-    ).rejects.toThrow('cookie_secret');
+    ).resolves.toBeDefined();
+  });
+
+  test('rejects removed app.cookie_secret config', async () => {
+    const errorMessage = await resolveConfig({
+      ...MINIMAL_CONFIG,
+      app: {
+        cookie_secret:
+          '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+      },
+    }).then(
+      () => '',
+      (error: unknown) => String(error),
+    );
+
+    expect(errorMessage).toContain('"app"');
+    expect(errorMessage).toContain('Unrecognized key');
   });
 
   test('rejects invalid hash_secret with wrong byte length', async () => {

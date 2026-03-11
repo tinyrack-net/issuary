@@ -1,7 +1,7 @@
 import type { Loaded } from '@mikro-orm/core';
 import type z from 'zod';
 import type { UserEntity } from '#backend/entities/user.entity.js';
-import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
 import type { Locale } from '#backend/lib/locale.js';
 import { e } from '#backend/schemas/error.js';
 import type { r } from '#backend/schemas/response.js';
@@ -12,13 +12,13 @@ import type { TermsService } from './terms.service.js';
 
 export class UserService {
   private readonly mikro: MikroService;
-  private readonly config: TinyAuthConfigs;
+  private readonly config: TinyAuthRuntimeConfig;
   private readonly emailService: EmailService;
   private readonly passwordAuthService: PasswordAuthService;
   private readonly termsService?: TermsService | undefined;
   public constructor(
     mikro: MikroService,
-    config: TinyAuthConfigs,
+    config: TinyAuthRuntimeConfig,
     emailService: EmailService,
     passwordAuthService: PasswordAuthService,
     termsService?: TermsService,
@@ -128,7 +128,7 @@ export class UserService {
     });
 
     // 3. Generate email verification token and send email
-    if (this.config.mail) {
+    if (this.config.email) {
       const verification = await this.emailService.generateToken({
         userSub: user.sub,
       });
@@ -203,7 +203,11 @@ export class UserService {
   public userEmailVerificationRequired(userLike: {
     managed_by: UserEntity['managed_by'];
   }): boolean {
-    return userLike.managed_by !== 'config' && !!this.config.mail;
+    return (
+      userLike.managed_by !== 'config' &&
+      this.config.registration.email_verification_required &&
+      !!this.config.email
+    );
   }
 
   /**
@@ -215,7 +219,7 @@ export class UserService {
     if (userLike.managed_by === 'config') {
       return false;
     }
-    return this.config.auth.password.second_factor.required;
+    return this.config.auth.password.two_factor.enrollment_required;
   }
 
   public async userRegistered2FAMethods(

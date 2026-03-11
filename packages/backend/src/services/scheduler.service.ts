@@ -1,16 +1,16 @@
 import { Cron } from 'croner';
-import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
 import type { Logger } from '#backend/lib/logger.js';
 import type { CleanupService } from '#backend/services/cleanup.service.js';
 
 export class SchedulerService {
   public cleanupJob: Cron | null = null;
 
-  private readonly config: TinyAuthConfigs;
+  private readonly config: TinyAuthRuntimeConfig;
   private readonly cleanupService: CleanupService;
   private readonly logger: Logger;
   public constructor(
-    config: TinyAuthConfigs,
+    config: TinyAuthRuntimeConfig,
     cleanupService: CleanupService,
     logger: Logger,
   ) {

@@ -1,7 +1,7 @@
 import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
 import qrcode from 'qrcode';
 import type { UserEntity } from '#backend/entities/user.entity.js';
-import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
 import { getRandomBytes } from '#backend/lib/crypto.js';
 import { e } from '#backend/schemas/error.js';
 import type { MikroService } from '#backend/services/mikro.service.js';
@@ -28,11 +28,11 @@ const RECOVERY_CODE_GROUP_LENGTH = 4;
 
 export class TotpService {
   private readonly mikro: MikroService;
-  private readonly config: TinyAuthConfigs;
+  private readonly config: TinyAuthRuntimeConfig;
   private readonly securityService: SecurityService;
   public constructor(
     mikro: MikroService,
-    config: TinyAuthConfigs,
+    config: TinyAuthRuntimeConfig,
     securityService: SecurityService,
   ) {
     this.mikro = mikro;
@@ -52,7 +52,9 @@ export class TotpService {
    */
   public generateOtpAuthUrl(email: string, secret: string): string {
     return generateURI({
-      issuer: this.config.auth.password.totp.issuer || this.config.app.host,
+      issuer:
+        this.config.auth.password.totp.issuer ||
+        this.config.server.public_origin,
       label: email,
       secret,
     });

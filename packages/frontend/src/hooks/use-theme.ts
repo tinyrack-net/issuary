@@ -76,9 +76,9 @@ export function useTheme() {
   const { data: config } = useSuspenseQuery(appConfigQueryOptions);
 
   // Get server defaults
-  const serverLightTheme = config.app.light_theme;
-  const serverDarkTheme = config.app.dark_theme;
-  const serverThemeMode = config.app.theme_mode;
+  const serverLightTheme = config.branding.light_theme;
+  const serverDarkTheme = config.branding.dark_theme;
+  const serverThemeMode = config.branding.theme_mode;
 
   // Theme toggle is only allowed when server theme_mode is 'system'
   const canToggleTheme = serverThemeMode === 'system';

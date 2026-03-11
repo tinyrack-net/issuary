@@ -14,7 +14,7 @@ import { UserPasskeyEntitySchema } from '#backend/entities/user-passkey.entity.j
 import { UserTermsConsentEntity } from '#backend/entities/user-terms-consent.entity.js';
 import { UserTotpEntitySchema } from '#backend/entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '#backend/entities/user-totp-recovery-code.entity.js';
-import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
 import {
   calculateCutoffDate,
   formatDuration,
@@ -95,11 +95,11 @@ export interface CleanupSummary {
  * - In-process scheduler (cron-based)
  */
 export class CleanupService {
-  private readonly config: TinyAuthConfigs;
+  private readonly config: TinyAuthRuntimeConfig;
   private readonly mikro: MikroService;
   private readonly jwtService: JwtService;
   constructor(
-    config: TinyAuthConfigs,
+    config: TinyAuthRuntimeConfig,
     mikro: MikroService,
     jwtService: JwtService,
   ) {
@@ -392,21 +392,16 @@ export class CleanupService {
    * 1. Deletes all user-related data (OAuth accounts, TOTP, passkeys, consents)
    * 2. Removes the user record permanently
    *
-   * The retention period is configured in cleanup.deleted_users.retention
+   * The retention period is configured in account_deletion.retention
    * (e.g., "30d", "90d").
    *
    * @param options - Cleanup options (dryRun)
    * @returns Cleanup result with deleted count and details
    */
   async cleanupDeletedUsers(options: CleanupOptions): Promise<CleanupResult> {
-    const config = this.config.cleanup.deleted_users;
+    const config = this.config.account_deletion;
 
     if (!config.enabled) {
-      return { deletedCount: 0, skipped: true, message: 'Disabled in config' };
-    }
-
-    // Check if account deletion feature is enabled
-    if (!this.config.app.account_deletion) {
       return {
         deletedCount: 0,
         skipped: true,
@@ -568,20 +563,14 @@ export class CleanupService {
    * @returns Cleanup result with rotation details
    */
   async rotateExpiredJwtKeys(options: CleanupOptions): Promise<CleanupResult> {
-    const config = this.config.cleanup.jwt_keys;
-
-    if (!config.enabled) {
-      return { deletedCount: 0, skipped: true, message: 'Disabled in config' };
-    }
-
-    // Check if JWT key rotation is enabled in app config
-    const rotationEnabled = this.config.app.jwt_key_rotation_enabled ?? true;
+    const rotationConfig = this.config.tokens.key_rotation;
+    const rotationEnabled = rotationConfig.enabled;
 
     if (!rotationEnabled) {
       return {
         deletedCount: 0,
         skipped: true,
-        message: 'JWT key rotation is disabled in app config',
+        message: 'JWT key rotation is disabled',
       };
     }
 
@@ -637,7 +626,7 @@ export class CleanupService {
     if (!nextKey) {
       // Generate new key
       const keyPair = await this.jwtService.generateKeyPair();
-      const rotationDays = this.config.app.jwt_key_rotation_days ?? 30;
+      const rotationDays = rotationConfig.interval_days;
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + rotationDays);
 
@@ -656,7 +645,7 @@ export class CleanupService {
     nextKey.activated_at = new Date();
 
     // 4. Retire old previous keys past overlap period
-    const overlapDays = this.config.app.jwt_key_overlap_days ?? 7;
+    const overlapDays = rotationConfig.overlap_days;
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - overlapDays);
 

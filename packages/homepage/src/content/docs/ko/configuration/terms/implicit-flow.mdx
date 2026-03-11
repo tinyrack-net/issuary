@@ -55,12 +55,12 @@ terms:
 
 ### 2. 안내 문구 설정
 
-`app.signup_implicit_terms` 항목에 사용자에게 표시할 안내 문구를 언어별로 설정해요. HTML 태그를 사용할 수 있어요.
+`registration.signup_notice` 항목에 사용자에게 표시할 안내 문구를 언어별로 설정해요. HTML 태그를 사용할 수 있어요.
 
 ```yaml
 # config.yaml
-app:
-  signup_implicit_terms:
+registration:
+  signup_notice:
     ko: >-
       계속하면 <a href="https://example.com/ko/terms" class="link">이용약관</a>
       및 <a href="https://example.com/ko/privacy" class="link">개인정보 처리방침</a>에
@@ -81,7 +81,7 @@ app:
 
 암시적 동의 플로우에서는 다음과 같이 동작해요.
 
-1. **로그인/회원가입 페이지**: `signup_implicit_terms`에 설정한 안내 문구가 표시돼요.
+1. **로그인/회원가입 페이지**: `registration.signup_notice`에 설정한 안내 문구가 표시돼요.
 2. **회원가입 시**: 사용자가 가입을 완료하면, 암시적 약관에 대한 동의가 자동으로 기록돼요. 별도의 체크박스나 사용자 조작이 필요 없어요.
 3. **OAuth 소셜 로그인 시**: 소셜 로그인 버튼을 누르는 행위 자체가 암시적 동의로 처리돼요.
 

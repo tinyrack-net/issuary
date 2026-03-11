@@ -26,10 +26,12 @@ describe('GET /api/user/passkeys', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
+        registration: {
+          email_verification_required: true,
+        },
         auth: {
           passkey: {
             enabled: true,
-            email_verification: true,
           },
         },
       },
@@ -325,10 +327,12 @@ describe('GET /api/user/passkeys - Passkey disabled', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
+        registration: {
+          email_verification_required: true,
+        },
         auth: {
           passkey: {
             enabled: false,
-            email_verification: true,
           },
         },
       },

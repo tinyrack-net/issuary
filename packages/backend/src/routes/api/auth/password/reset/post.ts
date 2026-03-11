@@ -61,7 +61,7 @@ export const authPasswordResetPost = new Hono<AppEnv>().post(
       throw new e.ValidationError.Error('Password authentication is disabled');
     }
 
-    if (!services.config.mail) {
+    if (!services.config.email) {
       throw new e.EmailNotActivated.Error();
     }
 

@@ -3,26 +3,31 @@ import {
   PASSWORD_POLICY_MAX_LENGTH,
   PASSWORD_POLICY_MIN_LENGTH,
 } from '#backend/lib/password-policy.js';
+import { zz } from '#backend/schemas/provider.js';
 
-const SECOND_FACTOR_CONFIG_DEFAULT = {
-  required: false,
+const PASSWORD_TWO_FACTOR_CONFIG_DEFAULT = {
+  enrollment_required: false,
 };
 
 /**
- * Second factor configuration for password authentication.
- * Determines if users must set up 2FA after registration.
+ * Two-factor configuration for password authentication.
+ * Determines if users must enroll a second factor after registration.
  */
-const SecondFactorConfigSchema = z
+const PasswordTwoFactorConfigSchema = z
   .object({
     /**
-     * Whether a second factor is required for password authentication.
-     * If true, users must set up at least one 2FA method (TOTP or passkey).
+     * Whether password users must enroll a second factor.
      */
-    required: z.boolean().default(SECOND_FACTOR_CONFIG_DEFAULT.required),
+    enrollment_required: zz.COERCE_BOOLEAN.default(
+      PASSWORD_TWO_FACTOR_CONFIG_DEFAULT.enrollment_required,
+    ),
   })
-  .default(SECOND_FACTOR_CONFIG_DEFAULT);
+  .strict()
+  .default(PASSWORD_TWO_FACTOR_CONFIG_DEFAULT);
 
-export type SecondFactorConfig = z.infer<typeof SecondFactorConfigSchema>;
+export type PasswordTwoFactorConfig = z.infer<
+  typeof PasswordTwoFactorConfigSchema
+>;
 
 export const PASSWORD_POLICY_CONFIG_DEFAULT = {
   min_length: PASSWORD_POLICY_MIN_LENGTH,
@@ -31,13 +36,13 @@ export const PASSWORD_POLICY_CONFIG_DEFAULT = {
 
 export const PasswordPolicyConfigSchema = z
   .object({
-    min_length: z
+    min_length: z.coerce
       .number()
       .int()
       .min(1)
       .max(PASSWORD_POLICY_MAX_LENGTH)
       .default(PASSWORD_POLICY_CONFIG_DEFAULT.min_length),
-    max_length: z
+    max_length: z.coerce
       .number()
       .int()
       .max(PASSWORD_POLICY_MAX_LENGTH)
@@ -63,8 +68,7 @@ const PASSWORD_AUTH_TOTP_CONFIG_DEFAULT = {
 
 export const PASSWORD_AUTH_CONFIG_DEFAULT = {
   enabled: true,
-  email_verification: true,
-  second_factor: SECOND_FACTOR_CONFIG_DEFAULT,
+  two_factor: PASSWORD_TWO_FACTOR_CONFIG_DEFAULT,
   totp: PASSWORD_AUTH_TOTP_CONFIG_DEFAULT,
   policy: PASSWORD_POLICY_CONFIG_DEFAULT,
 };
@@ -74,23 +78,23 @@ export const PASSWORD_AUTH_CONFIG_DEFAULT = {
  */
 export const PasswordAuthConfigSchema = z
   .object({
-    enabled: z.boolean().default(PASSWORD_AUTH_CONFIG_DEFAULT.enabled),
-    email_verification: z
-      .boolean()
-      .default(PASSWORD_AUTH_CONFIG_DEFAULT.email_verification),
+    enabled: zz.COERCE_BOOLEAN.default(PASSWORD_AUTH_CONFIG_DEFAULT.enabled),
     /**
-     * Second factor requirement configuration.
-     * Controls whether users must set up 2FA after registration.
+     * Controls whether users must enroll a second factor after registration.
      */
-    second_factor: SecondFactorConfigSchema,
+    two_factor: PasswordTwoFactorConfigSchema,
     totp: z
       .object({
-        enabled: z.boolean().default(PASSWORD_AUTH_TOTP_CONFIG_DEFAULT.enabled),
+        enabled: zz.COERCE_BOOLEAN.default(
+          PASSWORD_AUTH_TOTP_CONFIG_DEFAULT.enabled,
+        ),
         issuer: z.string().default(PASSWORD_AUTH_TOTP_CONFIG_DEFAULT.issuer),
       })
+      .strict()
       .default(PASSWORD_AUTH_TOTP_CONFIG_DEFAULT),
     policy: PasswordPolicyConfigSchema,
   })
+  .strict()
   .default(PASSWORD_AUTH_CONFIG_DEFAULT);
 
 export type PasswordAuthConfig = z.infer<typeof PasswordAuthConfigSchema>;
@@ -109,7 +113,6 @@ const rpIdDomainRegex =
 
 export const PASSKEY_AUTH_CONFIG_DEFAULT = {
   enabled: false,
-  email_verification: true,
 };
 
 /**
@@ -117,14 +120,11 @@ export const PASSKEY_AUTH_CONFIG_DEFAULT = {
  */
 export const PasskeyAuthConfigSchema = z
   .object({
-    enabled: z.boolean().default(PASSKEY_AUTH_CONFIG_DEFAULT.enabled),
-    email_verification: z
-      .boolean()
-      .default(PASSKEY_AUTH_CONFIG_DEFAULT.email_verification),
+    enabled: zz.COERCE_BOOLEAN.default(PASSKEY_AUTH_CONFIG_DEFAULT.enabled),
     /**
      * WebAuthn Relying Party ID (domain only, no protocol or port).
      * Must be current domain or a registrable parent domain.
-     * If not specified, extracted from app.host hostname.
+     * If not specified, extracted from server.public_origin hostname.
      * Use parent domain to share passkeys across subdomains.
      * Example: "example.com" or "localhost"
      */
@@ -138,11 +138,12 @@ export const PasskeyAuthConfigSchema = z
       .optional(),
     /**
      * Allowed origins for WebAuthn verification.
-     * If not specified, uses app.host.
+     * If not specified, uses server.public_origin.
      * Example: ["https://auth.example.com", "https://app.example.com"]
      */
     origins: z.array(z.url()).optional(),
   })
+  .strict()
   .default(PASSKEY_AUTH_CONFIG_DEFAULT);
 
 export type PasskeyAuthConfig = z.infer<typeof PasskeyAuthConfigSchema>;
@@ -160,6 +161,20 @@ export const AuthConfigSchema = z
   .object({
     password: PasswordAuthConfigSchema,
     passkey: PasskeyAuthConfigSchema,
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    if (
+      val.password.two_factor.enrollment_required &&
+      !val.password.totp.enabled &&
+      !val.passkey.enabled
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          'two_factor.enrollment_required is true but no 2FA method (totp or passkey) is enabled',
+      });
+    }
   })
   .default(AUTH_CONFIG_DEFAULT);
 

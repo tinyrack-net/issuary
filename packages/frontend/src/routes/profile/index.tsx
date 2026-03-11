@@ -171,7 +171,7 @@ function Profile() {
 
   // Account deletion settings
   const accountDeletionEnabled = appConfig.account_deletion.enabled;
-  const retentionPeriod = appConfig.account_deletion.retention_period;
+  const retentionPeriod = appConfig.account_deletion.retention;
 
   // Parse retention period to get days for display
   const retentionDays = (() => {

@@ -25,8 +25,8 @@ beforeAll(async () => {
       ...MINIMAL_TEST_CONFIG,
       auth: {
         password: {
-          second_factor: {
-            required: false,
+          two_factor: {
+            enrollment_required: false,
           },
           totp: { enabled: true },
         },

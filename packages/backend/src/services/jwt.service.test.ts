@@ -217,8 +217,8 @@ describe('JwtService', () => {
       const server = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
-          app: {
-            host: 'https://auth.example.com',
+          server: {
+            public_origin: 'https://auth.example.com',
           },
         },
       });

@@ -1,31 +1,16 @@
-import z from 'zod';
+import {
+  type DeclarativeDatabaseConfig,
+  DeclarativeDatabaseConfigSchema,
+  DeclarativeDatabasePostgresConfigSchema,
+  DeclarativeDatabaseSqliteConfigSchema,
+} from '@tinyauth/backend/config';
 
-export const StandaloneDatabaseSqliteConfigSchema = z.object({
-  type: z.literal('sqlite'),
-  path: z.string().default('./test.db'),
-  test: z.boolean().default(false),
-});
+export const StandaloneDatabaseSqliteConfigSchema =
+  DeclarativeDatabaseSqliteConfigSchema;
 
-export const StandaloneDatabasePostgresConfigSchema = z.object({
-  type: z.literal('postgres'),
-  host: z.string().default('localhost'),
-  port: z.number().int().min(1).max(65535).default(5432),
-  user: z.string().min(1).default('test'),
-  password: z.string().min(1).default('test'),
-  name: z.string().min(1).default('test'),
-});
+export const StandaloneDatabasePostgresConfigSchema =
+  DeclarativeDatabasePostgresConfigSchema;
 
-export const StandaloneDatabaseConfigSchema = z
-  .discriminatedUnion('type', [
-    StandaloneDatabaseSqliteConfigSchema,
-    StandaloneDatabasePostgresConfigSchema,
-  ])
-  .default({
-    type: 'sqlite',
-    path: './test.db',
-    test: false,
-  });
+export const StandaloneDatabaseConfigSchema = DeclarativeDatabaseConfigSchema;
 
-export type StandaloneDatabaseConfig = z.infer<
-  typeof StandaloneDatabaseConfigSchema
->;
+export type StandaloneDatabaseConfig = DeclarativeDatabaseConfig;

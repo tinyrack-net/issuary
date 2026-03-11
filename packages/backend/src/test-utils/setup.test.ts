@@ -28,8 +28,8 @@ describe('createTestApp', () => {
     const server = await createTestApp({
       config: {
         ...MINIMAL_TEST_CONFIG,
-        app: {
-          host: 'http://localhost:9090',
+        server: {
+          public_origin: 'http://localhost:9090',
         },
       },
     });

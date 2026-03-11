@@ -318,9 +318,7 @@ const AuthenticationResponseJSON = z
 const PublicPasswordAuth = z
   .object({
     enabled: PasswordAuthConfigSchema.unwrap().shape.enabled,
-    email_verification:
-      PasswordAuthConfigSchema.unwrap().shape.email_verification,
-    second_factor: PasswordAuthConfigSchema.unwrap().shape.second_factor,
+    two_factor: PasswordAuthConfigSchema.unwrap().shape.two_factor,
     totp: PasswordAuthConfigSchema.unwrap().shape.totp,
     policy: PasswordPolicyConfigSchema.describe('Password policy settings'),
   })
@@ -588,25 +586,20 @@ export const r = {
 
   // App config response
   ConfigResponse: z.object({
-    app: z.object({
-      public_registration: z
-        .boolean()
-        .describe('Whether public self-registration is enabled'),
+    i18n: z.object({
       supported_languages: z
         .array(z.string().min(2))
         .describe('Languages enabled for this deployment'),
       default_language: z.string().describe('Default UI language'),
       fallback_language: z.string().describe('Fallback UI language'),
+    }),
+    branding: z.object({
       light_theme: AppThemeSchema.describe('Theme preset used in light mode'),
       dark_theme: AppThemeSchema.describe('Theme preset used in dark mode'),
       theme_mode: z
         .enum(['light', 'dark', 'system'])
         .describe('Theme mode strategy'),
       background_url: z.url().optional().describe('Background image URL'),
-      signup_implicit_terms: z
-        .record(z.string(), z.string())
-        .optional()
-        .describe('Localized notice text for implicit consent terms'),
       icon_url: z
         .url()
         .optional()
@@ -620,13 +613,28 @@ export const r = {
         .optional()
         .describe('Localized subtitle text for login page'),
     }),
+    registration: z.object({
+      public_registration: z
+        .boolean()
+        .describe('Whether public self-registration is enabled'),
+      email_pattern_filter_enabled: z
+        .boolean()
+        .describe('Whether signup is restricted by configured email filters'),
+      email_verification_required: z
+        .boolean()
+        .describe('Whether newly registered users must verify email'),
+      signup_notice: z
+        .record(z.string(), z.string())
+        .optional()
+        .describe('Localized notice text for implicit consent terms'),
+    }),
     database: z.object({
       enabled: z
         .boolean()
         .describe('Whether database-backed features are enabled'),
     }),
-    smtp: z.object({
-      enabled: z.boolean().describe('Whether SMTP email delivery is enabled'),
+    email: z.object({
+      enabled: z.boolean().describe('Whether email delivery is enabled'),
     }),
     auth: BasicAuthenticationMethods.describe('Enabled authentication methods'),
     identity_providers: z
@@ -634,7 +642,7 @@ export const r = {
       .describe('Enabled external identity providers'),
     account_deletion: z.object({
       enabled: z.boolean().describe('Whether account deletion is enabled'),
-      retention_period: z
+      retention: z
         .string()
         .describe('Data retention period after deletion request'),
     }),

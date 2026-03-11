@@ -96,7 +96,7 @@ clients:
 등록된 클라이언트 애플리케이션은 `tinyauth`의 OIDC Discovery 엔드포인트를 사용하여 인증에 필요한 정보를 자동으로 가져올 수 있어요.
 
 ```
-{app.host}/.well-known/openid-configuration
+{server.public_origin}/.well-known/openid-configuration
 ```
 
 이 엔드포인트는 인증, 토큰, 사용자 정보, JWKS 등의 엔드포인트 URL을 반환해요. 대부분의 OIDC 클라이언트 라이브러리는 이 URL만으로 자동 설정이 가능해요.

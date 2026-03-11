@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
-  createTestAppConfig,
+  createTestConfig,
   E2E_BASE_CONFIG,
   E2E_TEST_USER,
   E2E_TEST_USER_CONFIG,
@@ -10,8 +10,8 @@ import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.js';
 
 const test = createScenarioFixture((backendPort) => ({
   ...E2E_BASE_CONFIG,
-  app: createTestAppConfig(backendPort, {
-    account_deletion: false,
+  ...createTestConfig(backendPort, {
+    account_deletion: { enabled: false },
   }),
   users: [E2E_TEST_USER_CONFIG],
 }));

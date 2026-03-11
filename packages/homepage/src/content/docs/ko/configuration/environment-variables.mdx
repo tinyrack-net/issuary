@@ -6,8 +6,8 @@ description: Tinyauth 환경 변수 참조
 `tinyauth` 의 `config.yaml`을 구성할 때, 특정 설정은 환경 변수를 참조하게 만들 수 있어요. 이는 민감한 정보를 다룰 때 유용하며, 컨테이너화된 배포나 클라우드 환경에서 민감한 설정을 관리하는 데 도움이 될 수 있어요. 간단한 사용 예시는 다음과 같아요.
 
 ```yaml
-app:
-  host: "${APP_HOST}"
+server:
+  public_origin: "${PUBLIC_ORIGIN}"
 security:
   session_secret: "$SESSION_SECRET"
   hash_secret: "$HASH_SECRET"
@@ -21,7 +21,7 @@ security:
 docker run \
   -p 8080:8080 \
   -v ./config.yaml:/opt/config.yaml \
-  -e APP_HOST=https://example.com \
+  -e PUBLIC_ORIGIN=https://example.com \
   -e SESSION_SECRET=your-session-secret \
   -e HASH_SECRET=your-base64url-hash-secret \
   ghcr.io/tinyrack/tinyauth
@@ -34,23 +34,27 @@ docker run \
 환경 변수가 있다면 사용하되, 없는 경우의 기본값을 지정하고 싶을 수 있어요. 그럴 땐 다음과 같이 사용할 수 있어요.
 
 ```yaml
-app:
-  host: "${APP_HOST:-https://default-tinyauth-domain.com}"
+server:
+  public_origin: "${PUBLIC_ORIGIN:-https://default-tinyauth-domain.com}"
 ```
 
-이 경우 `APP_HOST` 환경 변수가 설정돼 있으면 그 값을 사용하고, 설정되어 있지 않다면 `https://default-tinyauth-domain.com` 을 기본값으로 사용해요.
+이 경우 `PUBLIC_ORIGIN` 환경 변수가 설정돼 있으면 그 값을 사용하고, 설정되어 있지 않다면 `https://default-tinyauth-domain.com` 을 기본값으로 사용해요.
 
-`tinyauth`는 이미 설정의 많은 부분에서 환경 변수를 먼저 참조하도록 기본값이 구성되어 있어요. 예를 들어, `app` 섹션에서는 다음과 같은 환경 변수와 기본값이 할당되어 있어요.
+`tinyauth`는 이미 설정의 많은 부분에서 환경 변수를 먼저 참조하도록 기본값이 구성되어 있어요. 예를 들어 standalone 기본 설정에는 다음과 같은 환경 변수와 기본값이 자주 사용돼요.
 
 ```yaml
-app:
-  name: ${APP_NAME:-Tinyrack Auth}
-  host: ${APP_HOST:-http://localhost:8080}
-  jwt_access_token_ttl: ${JWT_ACCESS_TOKEN_TTL:-3600}
-  jwt_refresh_token_ttl: ${JWT_REFRESH_TOKEN_TTL:-2592000}
-  jwt_key_rotation_enabled: ${JWT_KEY_ROTATION_ENABLED:-true}
-  jwt_key_rotation_days: ${JWT_KEY_ROTATION_DAYS:-30}
-  jwt_key_overlap_days: ${JWT_KEY_OVERLAP_DAYS:-7}
+server:
+  public_origin: ${PUBLIC_ORIGIN:-http://localhost:8080}
+  listen_port: ${LISTEN_PORT:-8080}
+
+tokens:
+  access_token_ttl: ${ACCESS_TOKEN_TTL:-3600}
+  refresh_token_ttl: ${REFRESH_TOKEN_TTL:-2592000}
+  key_rotation:
+    enabled: ${JWT_KEY_ROTATION_ENABLED:-true}
+    interval_days: ${JWT_KEY_ROTATION_DAYS:-30}
+    overlap_days: ${JWT_KEY_OVERLAP_DAYS:-7}
+
 security:
   session_secret: ${SESSION_SECRET}
   hash_secret: ${HASH_SECRET}

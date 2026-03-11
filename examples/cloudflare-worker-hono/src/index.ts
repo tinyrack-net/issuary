@@ -54,7 +54,6 @@ function createAssetsHandler(assets: AssetFetcher): FrontendConfig {
 export async function createCloudflareExampleApp(assets: AssetFetcher) {
   const result = await createApp({
     config: {
-      app: {},
       database: sqlite({
         path: './test.db',
         test: true,

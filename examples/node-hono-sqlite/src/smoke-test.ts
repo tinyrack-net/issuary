@@ -33,8 +33,11 @@ function getFreePort(): Promise<number> {
 
 async function main(): Promise<void> {
   const port = await getFreePort();
-  const { app, cleanup } = await createNodeHonoSqliteExampleApp({ test: true });
   const baseUrl = `http://127.0.0.1:${port}`;
+  const { app, cleanup } = await createNodeHonoSqliteExampleApp({
+    test: true,
+    publicOrigin: baseUrl,
+  });
 
   const server = await new Promise<ReturnType<typeof serve>>((resolve) => {
     const instance = serve(
@@ -67,12 +70,18 @@ async function main(): Promise<void> {
     );
     assert.equal(discoveryResponse.status, 200);
 
-    const discoveryBody = await discoveryResponse.text();
-    assert.match(discoveryBody, /"issuer":"http:\/\/localhost:8080"/);
-    assert.match(
-      discoveryBody,
-      /"authorization_endpoint":"http:\/\/localhost:8080\/oauth\/authorize"/,
-    );
+    const discoveryBody = await discoveryResponse.json();
+    assert.equal(typeof discoveryBody, 'object');
+    assert.notEqual(discoveryBody, null);
+
+    const issuer = 'issuer' in discoveryBody ? discoveryBody.issuer : undefined;
+    const authorizationEndpoint =
+      'authorization_endpoint' in discoveryBody
+        ? discoveryBody.authorization_endpoint
+        : undefined;
+
+    assert.equal(issuer, baseUrl);
+    assert.equal(authorizationEndpoint, `${baseUrl}/oauth/authorize`);
 
     const registerResponse = await fetch(`${baseUrl}/api/auth/register`, {
       method: 'POST',
