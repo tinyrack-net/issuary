@@ -31,6 +31,9 @@ beforeAll(async () => {
   const server = await createTestApp({
     config: {
       ...MINIMAL_TEST_CONFIG,
+      app: {
+        allowed_signup_emails: ['*'],
+      },
       users: [TEST_USER_CONFIG],
       identity_providers: [
         apple({

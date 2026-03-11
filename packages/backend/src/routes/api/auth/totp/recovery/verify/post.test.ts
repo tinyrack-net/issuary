@@ -24,13 +24,11 @@ beforeAll(async () => {
     config: {
       ...MINIMAL_TEST_CONFIG,
       auth: {
-        ...MINIMAL_TEST_CONFIG.auth,
         password: {
-          ...MINIMAL_TEST_CONFIG.auth.password,
           second_factor: {
             required: false,
           },
-          totp: { ...MINIMAL_TEST_CONFIG.auth.password.totp, enabled: true },
+          totp: { enabled: true },
         },
       },
     },
@@ -480,10 +478,8 @@ describe('POST /api/auth/totp/recovery/verify - TOTP disabled', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
-          ...MINIMAL_TEST_CONFIG.auth,
           password: {
-            ...MINIMAL_TEST_CONFIG.auth.password,
-            totp: { ...MINIMAL_TEST_CONFIG.auth.password.totp, enabled: false },
+            totp: { enabled: false },
           },
         },
       },

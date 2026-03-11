@@ -57,7 +57,6 @@ describe('OAuthConnectService - auto_link strategy', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
-          ...MINIMAL_TEST_CONFIG.app,
           allowed_signup_emails: ['*'],
         },
         identity_providers: [
@@ -188,7 +187,6 @@ describe('OAuthConnectService - require_link strategy', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
-          ...MINIMAL_TEST_CONFIG.app,
           allowed_signup_emails: ['*'],
         },
         identity_providers: [
@@ -271,7 +269,6 @@ describe('OAuthConnectService - completeOAuthRegistration', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
-          ...MINIMAL_TEST_CONFIG.app,
           allowed_signup_emails: ['*'],
         },
         identity_providers: [

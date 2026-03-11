@@ -17,7 +17,10 @@ import {
   type TokenType,
 } from '#backend/entities/revoked-token.entity.js';
 import { UserEntity } from '#backend/entities/user.entity.js';
-import type { TinyAuthConfigs } from '#backend/lib/config/index.js';
+import {
+  type TinyAuthConfigs,
+  TinyAuthConfigsSchema,
+} from '#backend/lib/config/index.js';
 import type { ServiceContainer } from '#backend/services/container.js';
 import { withMikroContext } from './helpers.js';
 import { MINIMAL_TEST_CONFIG } from './setup.js';
@@ -27,39 +30,40 @@ import { MINIMAL_TEST_CONFIG } from './setup.js';
  * Uses immediate retention (0) for faster test execution.
  */
 export const CLI_TEST_CONFIG = {
-  ...MINIMAL_TEST_CONFIG,
-  app: {
-    ...MINIMAL_TEST_CONFIG.app,
-    account_deletion: true,
-  },
-  cleanup: {
-    revoked_tokens: {
-      enabled: true,
-      retention: '0',
+  ...TinyAuthConfigsSchema.parse({
+    ...MINIMAL_TEST_CONFIG,
+    app: {
+      account_deletion: true,
     },
-    oauth_codes: {
-      enabled: true,
-      consumed_retention: '0',
+    cleanup: {
+      revoked_tokens: {
+        enabled: true,
+        retention: '0',
+      },
+      oauth_codes: {
+        enabled: true,
+        consumed_retention: '0',
+      },
+      email_verifications: {
+        enabled: true,
+        retention: '0',
+      },
+      password_resets: {
+        enabled: true,
+        retention: '0',
+      },
+      deleted_users: {
+        enabled: true,
+        retention: '0',
+      },
+      pending_oauth_registrations: {
+        enabled: true,
+        retention: '0',
+      },
+      jwt_keys: { enabled: true },
     },
-    email_verifications: {
-      enabled: true,
-      retention: '0',
-    },
-    password_resets: {
-      enabled: true,
-      retention: '0',
-    },
-    deleted_users: {
-      enabled: true,
-      retention: '0',
-    },
-    pending_oauth_registrations: {
-      enabled: true,
-      retention: '0',
-    },
-    jwt_keys: { enabled: true },
-  },
-} as const satisfies TinyAuthConfigs;
+  }),
+} satisfies TinyAuthConfigs;
 
 /**
  * Create a test user in the database.

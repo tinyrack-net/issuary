@@ -123,7 +123,6 @@ describe('POST /api/user/passkeys/register/verify', () => {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
         auth: {
-          ...MINIMAL_TEST_CONFIG.auth,
           passkey: {
             enabled: true,
             email_verification: true,
@@ -761,7 +760,6 @@ describe('POST /api/user/passkeys/register/verify - Passkey disabled', () => {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
         auth: {
-          ...MINIMAL_TEST_CONFIG.auth,
           passkey: {
             enabled: false,
             email_verification: true,

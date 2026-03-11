@@ -18,7 +18,6 @@ describe('OAuthTokenService', () => {
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
-            ...MINIMAL_TEST_CONFIG.app,
             host: 'https://auth.test.com',
           },
         },

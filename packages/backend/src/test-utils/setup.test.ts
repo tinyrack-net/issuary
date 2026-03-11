@@ -29,7 +29,6 @@ describe('createTestApp', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
-          ...MINIMAL_TEST_CONFIG.app,
           host: 'http://localhost:9090',
         },
       },

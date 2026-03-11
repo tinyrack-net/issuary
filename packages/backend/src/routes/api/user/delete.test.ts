@@ -34,12 +34,10 @@ describe('DELETE /api/user', () => {
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
-            ...MINIMAL_TEST_CONFIG.app,
             account_deletion: true,
           },
           users: [TEST_USER_CONFIG],
           cleanup: {
-            ...MINIMAL_TEST_CONFIG.cleanup,
             deleted_users: {
               enabled: true,
               retention: '30d',
@@ -204,7 +202,6 @@ describe('DELETE /api/user', () => {
         config: {
           ...MINIMAL_TEST_CONFIG,
           app: {
-            ...MINIMAL_TEST_CONFIG.app,
             account_deletion: false,
           },
         },

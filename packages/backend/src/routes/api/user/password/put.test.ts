@@ -282,9 +282,7 @@ describe('PUT /api/user/password - password disabled', () => {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
         auth: {
-          ...MINIMAL_TEST_CONFIG.auth,
           password: {
-            ...MINIMAL_TEST_CONFIG.auth.password,
             enabled: false,
           },
         },

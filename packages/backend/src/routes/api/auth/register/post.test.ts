@@ -37,7 +37,6 @@ describe('POST /api/auth/register', () => {
         ...MINIMAL_TEST_CONFIG,
         mail,
         app: {
-          ...MINIMAL_TEST_CONFIG.app,
           allowed_signup_emails: ['*'],
         },
         users: [TEST_USER_CONFIG],
@@ -205,13 +204,10 @@ describe('POST /api/auth/register', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
-          ...MINIMAL_TEST_CONFIG.app,
           allowed_signup_emails: ['*'],
         },
         auth: {
-          ...MINIMAL_TEST_CONFIG.auth,
           password: {
-            ...MINIMAL_TEST_CONFIG.auth.password,
             policy: {
               min_length: 4,
               max_length: 6,
@@ -363,7 +359,6 @@ describe('POST /api/auth/register (signup disabled)', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
-          ...MINIMAL_TEST_CONFIG.app,
           allowed_signup_emails: [],
         },
         terms: TEST_TERMS_CONFIG,
@@ -402,7 +397,6 @@ describe('POST /api/auth/register (domain wildcard pattern)', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
-          ...MINIMAL_TEST_CONFIG.app,
           allowed_signup_emails: ['*@allowed.com'],
         },
         terms: TEST_TERMS_CONFIG,
@@ -460,7 +454,6 @@ describe('POST /api/auth/register (exact email pattern)', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
-          ...MINIMAL_TEST_CONFIG.app,
           allowed_signup_emails: [exactEmail],
         },
         terms: TEST_TERMS_CONFIG,
@@ -516,7 +509,6 @@ describe('POST /api/auth/register (multiple patterns)', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
-          ...MINIMAL_TEST_CONFIG.app,
           allowed_signup_emails: ['*@company.com', 'special@other.com'],
         },
         terms: TEST_TERMS_CONFIG,
@@ -584,7 +576,6 @@ describe('POST /api/auth/register (implicit consent mode)', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
-          ...MINIMAL_TEST_CONFIG.app,
           allowed_signup_emails: ['*'],
           signup_implicit_terms: {
             en: 'By signing up, you agree to our Terms.',
@@ -673,7 +664,6 @@ describe('POST /api/auth/register (no terms configured)', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         app: {
-          ...MINIMAL_TEST_CONFIG.app,
           allowed_signup_emails: ['*'],
         },
         terms: [],
@@ -716,9 +706,7 @@ describe('POST /api/auth/register (password disabled)', () => {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
         auth: {
-          ...MINIMAL_TEST_CONFIG.auth,
           password: {
-            ...MINIMAL_TEST_CONFIG.auth.password,
             enabled: false,
           },
         },

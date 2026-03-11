@@ -2,7 +2,10 @@ import nm from 'nodemailer';
 import { type CreateAppOptions, createApp } from '#backend/entrypoints/app.js';
 import { sqlite } from '#backend/entrypoints/database/sqlite.js';
 import { nodemailer } from '#backend/entrypoints/mail/nodemailer.js';
-import type { MailConfig, TinyAuthConfigs } from '#backend/lib/config/index.js';
+import type {
+  MailConfig,
+  TinyAuthInputConfigs,
+} from '#backend/lib/config/index.js';
 
 /**
  * Minimal test configuration as a fully resolved config.
@@ -26,10 +29,8 @@ import type { MailConfig, TinyAuthConfigs } from '#backend/lib/config/index.js';
  *     config: {
  *       ...MINIMAL_TEST_CONFIG,
  *       auth: {
- *         ...MINIMAL_TEST_CONFIG.auth,
  *         password: {
- *           ...MINIMAL_TEST_CONFIG.auth.password,
- *           totp: { ...MINIMAL_TEST_CONFIG.auth.password.totp, enabled: true },
+ *           totp: { enabled: true },
  *         },
  *       },
  *     },
@@ -42,62 +43,9 @@ import type { MailConfig, TinyAuthConfigs } from '#backend/lib/config/index.js';
  * ```
  */
 export const MINIMAL_TEST_CONFIG = {
-  app: {
-    host: 'http://localhost:8080',
-    port: 8080,
-    jwt_access_token_ttl: 3600,
-    jwt_refresh_token_ttl: 2592000,
-    jwt_key_rotation_enabled: true,
-    jwt_key_rotation_days: 30,
-    jwt_key_overlap_days: 7,
-    allowed_signup_emails: ['*'],
-    supported_languages: ['en', 'ko', 'ja'],
-    default_language: 'auto',
-    fallback_language: 'en',
-    light_theme: 'light',
-    dark_theme: 'dark',
-    theme_mode: 'system',
-    background_url:
-      'https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071',
-    trust_proxy: false,
-    signup_implicit_terms: {},
-    title: {
-      ko: 'Tinyauth',
-      en: 'Tinyauth',
-      ja: 'Tinyauth',
-    },
-    subtitle: {
-      ko: '가볍고 빠른 인증 솔루션',
-      en: 'Lightweight identity provider for your apps',
-      ja: '軽量でシンプルな認証ソリューション',
-    },
-    account_deletion: false,
-  },
   database: sqlite({ path: './test.db', test: true }),
   logging: {
-    level: 'silent' as const,
-    format: 'json' as const,
-  },
-  auth: {
-    password: {
-      enabled: true,
-      email_verification: true,
-      second_factor: {
-        required: false,
-      },
-      totp: {
-        enabled: false,
-        issuer: 'Tinyrack',
-      },
-      policy: {
-        min_length: 12,
-        max_length: 256,
-      },
-    },
-    passkey: {
-      enabled: false,
-      email_verification: true,
-    },
+    level: 'silent',
   },
   security: {
     session_secret:
@@ -105,44 +53,7 @@ export const MINIMAL_TEST_CONFIG = {
     hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
     pbkdf2_iterations: 1000,
   },
-  cleanup: {
-    revoked_tokens: {
-      enabled: true,
-      retention: '0',
-    },
-    oauth_codes: {
-      enabled: true,
-      consumed_retention: '24h',
-    },
-    email_verifications: {
-      enabled: true,
-      retention: '0',
-    },
-    password_resets: {
-      enabled: true,
-      retention: '0',
-    },
-    deleted_users: {
-      enabled: true,
-      retention: '30d',
-    },
-    pending_oauth_registrations: {
-      enabled: true,
-      retention: '0',
-    },
-    jwt_keys: {
-      enabled: true,
-    },
-  },
-  scheduler: {
-    enabled: true,
-    cron: '0 2 * * *',
-  },
-  terms: [],
-  clients: [],
-  users: [],
-  identity_providers: [],
-} as const satisfies TinyAuthConfigs;
+} as const satisfies TinyAuthInputConfigs;
 
 /**
  * Create a resolved SMTP config using nodemailer's test account.

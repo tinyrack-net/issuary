@@ -28,7 +28,6 @@ beforeAll(async () => {
       ...MINIMAL_TEST_CONFIG,
       mail,
       app: {
-        ...MINIMAL_TEST_CONFIG.app,
         allowed_signup_emails: ['*'],
       },
       users: [TEST_USER_CONFIG],
@@ -223,9 +222,7 @@ describe('POST /api/auth/password/forgot (password disabled)', () => {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
         auth: {
-          ...MINIMAL_TEST_CONFIG.auth,
           password: {
-            ...MINIMAL_TEST_CONFIG.auth.password,
             enabled: false,
           },
         },

@@ -365,7 +365,6 @@ describe('GET /api/terms', () => {
           config: {
             ...MINIMAL_TEST_CONFIG,
             app: {
-              ...MINIMAL_TEST_CONFIG.app,
               signup_implicit_terms: {
                 ko: '가입하시면 약관에 동의하는 것입니다.',
                 en: 'By signing up you agree to our terms.',

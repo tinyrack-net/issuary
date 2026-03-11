@@ -26,6 +26,9 @@ beforeAll(async () => {
     config: {
       ...MINIMAL_TEST_CONFIG,
       mail,
+      app: {
+        allowed_signup_emails: ['*'],
+      },
       terms: TEST_TERMS_CONFIG,
     },
   });

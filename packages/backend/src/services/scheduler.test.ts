@@ -19,7 +19,7 @@ describe('scheduler plugin', () => {
       ({ services, cleanup } = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
-          scheduler: { ...MINIMAL_TEST_CONFIG.scheduler, enabled: false },
+          scheduler: { enabled: false },
         },
       }));
     });
@@ -128,7 +128,7 @@ describe('scheduler plugin', () => {
       ({ services, cleanup } = await createTestApp({
         config: {
           ...MINIMAL_TEST_CONFIG,
-          scheduler: { ...MINIMAL_TEST_CONFIG.scheduler, enabled: true },
+          scheduler: { enabled: true },
         },
       }));
     });

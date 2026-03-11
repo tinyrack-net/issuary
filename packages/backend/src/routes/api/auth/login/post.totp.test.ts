@@ -75,14 +75,12 @@ describe('POST /api/auth/login - TOTP Required Mode', () => {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
         auth: {
-          ...MINIMAL_TEST_CONFIG.auth,
           password: {
-            ...MINIMAL_TEST_CONFIG.auth.password,
             email_verification: false,
             second_factor: {
               required: true,
             },
-            totp: { ...MINIMAL_TEST_CONFIG.auth.password.totp, enabled: true },
+            totp: { enabled: true },
           },
         },
       },
@@ -247,14 +245,12 @@ describe('POST /api/auth/login - TOTP Optional Mode', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
-          ...MINIMAL_TEST_CONFIG.auth,
           password: {
-            ...MINIMAL_TEST_CONFIG.auth.password,
             email_verification: false,
             second_factor: {
               required: false,
             },
-            totp: { ...MINIMAL_TEST_CONFIG.auth.password.totp, enabled: true },
+            totp: { enabled: true },
           },
         },
       },
@@ -368,14 +364,12 @@ describe('POST /api/auth/login - TOTP Disabled Mode', () => {
       config: {
         ...MINIMAL_TEST_CONFIG,
         auth: {
-          ...MINIMAL_TEST_CONFIG.auth,
           password: {
-            ...MINIMAL_TEST_CONFIG.auth.password,
             email_verification: false,
             second_factor: {
               required: false,
             },
-            totp: { ...MINIMAL_TEST_CONFIG.auth.password.totp, enabled: false },
+            totp: { enabled: false },
           },
         },
       },
@@ -457,14 +451,12 @@ describe('POST /api/auth/login - Email Verification + TOTP', () => {
         ...MINIMAL_TEST_CONFIG,
         mail,
         auth: {
-          ...MINIMAL_TEST_CONFIG.auth,
           password: {
-            ...MINIMAL_TEST_CONFIG.auth.password,
             email_verification: true,
             second_factor: {
               required: true,
             },
-            totp: { ...MINIMAL_TEST_CONFIG.auth.password.totp, enabled: true },
+            totp: { enabled: true },
           },
         },
       },
@@ -570,14 +562,12 @@ describe('POST /api/auth/login - Session State Verification', () => {
         ...MINIMAL_TEST_CONFIG,
         users: [TEST_USER_CONFIG],
         auth: {
-          ...MINIMAL_TEST_CONFIG.auth,
           password: {
-            ...MINIMAL_TEST_CONFIG.auth.password,
             email_verification: false,
             second_factor: {
               required: true,
             },
-            totp: { ...MINIMAL_TEST_CONFIG.auth.password.totp, enabled: true },
+            totp: { enabled: true },
           },
         },
       },

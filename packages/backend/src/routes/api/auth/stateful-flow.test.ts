@@ -69,23 +69,22 @@ beforeAll(async () => {
   const server = await createTestApp({
     config: {
       ...MINIMAL_TEST_CONFIG,
+      app: {
+        allowed_signup_emails: ['*'],
+      },
       auth: {
-        ...MINIMAL_TEST_CONFIG.auth,
         password: {
-          ...MINIMAL_TEST_CONFIG.auth.password,
           enabled: true,
           email_verification: false,
           second_factor: {
             required: true,
           },
           totp: {
-            ...MINIMAL_TEST_CONFIG.auth.password.totp,
             enabled: true,
             issuer: 'TinyAuthStatefulTest',
           },
         },
         passkey: {
-          ...MINIMAL_TEST_CONFIG.auth.passkey,
           enabled: true,
           email_verification: true,
         },

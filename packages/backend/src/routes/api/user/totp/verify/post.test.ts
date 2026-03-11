@@ -22,10 +22,8 @@ beforeAll(async () => {
     config: {
       ...MINIMAL_TEST_CONFIG,
       auth: {
-        ...MINIMAL_TEST_CONFIG.auth,
         password: {
-          ...MINIMAL_TEST_CONFIG.auth.password,
-          totp: { ...MINIMAL_TEST_CONFIG.auth.password.totp, enabled: true },
+          totp: { enabled: true },
         },
       },
     },

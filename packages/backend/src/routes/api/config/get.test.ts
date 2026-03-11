@@ -28,9 +28,7 @@ beforeAll(async () => {
         }),
       ],
       auth: {
-        ...MINIMAL_TEST_CONFIG.auth,
         password: {
-          ...MINIMAL_TEST_CONFIG.auth.password,
           policy: {
             min_length: 8,
             max_length: 64,
