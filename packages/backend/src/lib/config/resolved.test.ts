@@ -7,13 +7,13 @@ import { CLEANUP_CONFIG_DEFAULT } from './cleanup.js';
 import { CLIENT_CONFIGS_DEFAULT } from './client.js';
 import { I18N_CONFIG_DEFAULT } from './i18n.js';
 import { IDENTITY_PROVIDER_CONFIGS_DEFAULT } from './identity-providers.js';
+import type { SchedulerConfig } from './index.js';
 import { LOGGING_CONFIG_DEFAULT } from './logging.js';
 import { REGISTRATION_CONFIG_DEFAULT } from './registration.js';
 import {
   type TinyAuthRuntimeConfigInput,
   TinyAuthRuntimeConfigSchema,
 } from './resolved.js';
-import { SCHEDULER_CONFIG_DEFAULT } from './scheduler.js';
 import { SECURITY_CONFIG_DEFAULT } from './security.js';
 import { SERVER_CONFIG_DEFAULT } from './server.js';
 import { TERMS_CONFIG_DEFAULT } from './terms.js';
@@ -28,6 +28,19 @@ const MINIMAL_INPUT_CONFIG = {
     hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
   },
 } satisfies TinyAuthRuntimeConfigInput;
+
+function createSchedulerConfig(): SchedulerConfig {
+  return {
+    start() {
+      return {
+        stop() {},
+        getNextRunAt() {
+          return null;
+        },
+      };
+    },
+  };
+}
 
 describe('TinyAuthRuntimeConfigSchema', () => {
   test('parses the minimal unresolved config and applies omitted defaults', () => {
@@ -47,7 +60,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
       pbkdf2_iterations: SECURITY_CONFIG_DEFAULT.pbkdf2_iterations,
     });
     expect(parsed.cleanup).toEqual(CLEANUP_CONFIG_DEFAULT);
-    expect(parsed.scheduler).toEqual(SCHEDULER_CONFIG_DEFAULT);
+    expect(parsed.scheduler).toBeUndefined();
     expect(parsed.terms).toEqual(TERMS_CONFIG_DEFAULT);
     expect(parsed.clients).toEqual(CLIENT_CONFIGS_DEFAULT);
     expect(parsed.users).toEqual(USER_CONFIGS_DEFAULT);
@@ -109,5 +122,28 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     expect(parsed.registration.allowed_email_patterns).toEqual(
       REGISTRATION_CONFIG_DEFAULT.allowed_email_patterns,
     );
+  });
+
+  test('keeps a configured scheduler adapter by reference', () => {
+    const scheduler = createSchedulerConfig();
+
+    const parsed = TinyAuthRuntimeConfigSchema.parse({
+      ...MINIMAL_INPUT_CONFIG,
+      scheduler,
+    });
+
+    expect(parsed.scheduler).toBe(scheduler);
+  });
+
+  test('rejects legacy scheduler objects that are not adapters', () => {
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        scheduler: {
+          enabled: true,
+          cron: '0 2 * * *',
+        },
+      }),
+    ).toThrow('Invalid SchedulerConfig');
   });
 });

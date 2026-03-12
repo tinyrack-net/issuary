@@ -77,7 +77,7 @@ export async function createApp(options: CreateAppOptions) {
   });
 
   // Start scheduler
-  services.scheduler.start();
+  await services.scheduler.start();
 
   return { app, services, cleanup, logger };
 }

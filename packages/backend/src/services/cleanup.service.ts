@@ -92,7 +92,7 @@ export interface CleanupSummary {
  *
  * Can be invoked via:
  * - CLI command: `tinyauth cleanup`
- * - In-process scheduler (cron-based)
+ * - In-process scheduler adapter
  */
 export class CleanupService {
   private readonly config: TinyAuthRuntimeConfig;

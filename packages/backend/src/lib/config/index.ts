@@ -45,11 +45,12 @@ export type {
   TinyAuthRuntimeConfigInput,
 } from './resolved.js';
 export { TinyAuthRuntimeConfigSchema } from './resolved.js';
-export type { SchedulerConfig } from './scheduler.js';
-export {
-  SCHEDULER_CONFIG_DEFAULT,
-  SchedulerConfigSchema,
+export type {
+  SchedulerConfig,
+  SchedulerHandle,
+  SchedulerStartOptions,
 } from './scheduler.js';
+export { SchedulerConfigSchema } from './scheduler.js';
 export type { SecurityConfig } from './security.js';
 export { SecurityConfigSchema } from './security.js';
 export type { ServerConfig } from './server.js';

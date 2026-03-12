@@ -1,51 +1,83 @@
-import { Cron } from 'croner';
-import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
+import type {
+  SchedulerConfig,
+  SchedulerHandle,
+} from '#backend/lib/config/index.js';
 import type { Logger } from '#backend/lib/logger.js';
 import type { CleanupService } from '#backend/services/cleanup.service.js';
 
-export class SchedulerService {
-  public cleanupJob: Cron | null = null;
+export interface SchedulerController {
+  start(): Promise<void>;
+  stop(): Promise<void>;
+  isRunning(): boolean;
+  getNextRunAt(): Date | null;
+}
 
-  private readonly config: TinyAuthRuntimeConfig;
+export class SchedulerService implements SchedulerController {
   private readonly cleanupService: CleanupService;
   private readonly logger: Logger;
+  private readonly schedulerConfig: SchedulerConfig | undefined;
+
+  private handle: SchedulerHandle | null = null;
+
   public constructor(
-    config: TinyAuthRuntimeConfig,
+    schedulerConfig: SchedulerConfig | undefined,
     cleanupService: CleanupService,
     logger: Logger,
   ) {
-    this.config = config;
+    this.schedulerConfig = schedulerConfig;
     this.cleanupService = cleanupService;
     this.logger = logger;
     this.logger.info(
       {
-        enabled: this.config.scheduler.enabled,
-        cron: this.config.scheduler.cron,
+        enabled: this.schedulerConfig !== undefined,
       },
       'Scheduler initialized',
     );
   }
 
-  public start(): void {
-    const { enabled, cron } = this.config.scheduler;
-    if (!enabled || this.cleanupJob) return;
-    const job = new Cron(cron, async () => {
-      try {
-        await this.cleanupService.runAll({
-          dryRun: false,
-          verbose: false,
-        });
-      } catch (err) {
-        this.logger.error({ err }, 'Scheduled cleanup failed');
-      }
+  public async start(): Promise<void> {
+    if (!this.schedulerConfig || this.handle) {
+      return;
+    }
+
+    const handle = await this.schedulerConfig.start({
+      runCleanup: async () => {
+        try {
+          await this.cleanupService.runAll({
+            dryRun: false,
+            verbose: false,
+          });
+        } catch (err) {
+          this.logger.error({ err }, 'Scheduled cleanup failed');
+        }
+      },
     });
-    this.cleanupJob = job;
+
+    this.handle = handle;
+    this.logger.info(
+      {
+        nextRunAt: this.getNextRunAt(),
+      },
+      'Scheduler started',
+    );
   }
 
-  public stop(): void {
-    if (this.cleanupJob) {
-      this.cleanupJob.stop();
-      this.cleanupJob = null;
+  public async stop(): Promise<void> {
+    if (!this.handle) {
+      return;
     }
+
+    const handle = this.handle;
+    this.handle = null;
+    await handle.stop();
+    this.logger.info('Scheduler stopped');
+  }
+
+  public isRunning(): boolean {
+    return this.handle !== null;
+  }
+
+  public getNextRunAt(): Date | null {
+    return this.handle?.getNextRunAt?.() ?? null;
   }
 }

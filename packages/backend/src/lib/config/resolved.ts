@@ -41,7 +41,7 @@ export const TinyAuthRuntimeConfigSchema = z
     ),
     cleanup: CleanupConfigSchema.describe('Data cleanup settings.'),
     scheduler: SchedulerConfigSchema.describe(
-      'In-process cleanup scheduler settings.',
+      'In-process cleanup scheduler adapter.',
     ),
     terms: TermsConfigSchema.describe('Terms of service settings.'),
     clients: ClientConfigsSchema.describe(

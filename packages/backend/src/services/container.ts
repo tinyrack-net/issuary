@@ -12,6 +12,7 @@ import { OAuthTokenService } from '#backend/services/oauth-token.service.js';
 import { PasskeyService } from '#backend/services/passkey.service.js';
 import { PasswordAuthService } from '#backend/services/password-auth.service.js';
 import { PasswordResetService } from '#backend/services/password-reset.service.js';
+import type { SchedulerController } from '#backend/services/scheduler.service.js';
 import { SchedulerService } from '#backend/services/scheduler.service.js';
 import { SecurityService } from '#backend/services/security.service.js';
 import { TermsService } from '#backend/services/terms.service.js';
@@ -23,7 +24,7 @@ export interface ServiceContainer {
   config: TinyAuthRuntimeConfig;
   securityService: SecurityService;
   mikro: MikroService;
-  scheduler: SchedulerService;
+  scheduler: SchedulerController;
   emailService: EmailService;
   jwtService: JwtService;
   passwordAuthService: PasswordAuthService;
@@ -116,7 +117,7 @@ export async function initializeServices(
   // 4. Scheduler
   const schedulerLogger = logger.child({ service: 'scheduler' });
   const scheduler = new SchedulerService(
-    config,
+    config.scheduler,
     cleanupService,
     schedulerLogger,
   );
@@ -143,7 +144,7 @@ export async function initializeServices(
   };
 
   const cleanup = async () => {
-    scheduler.stop();
+    await scheduler.stop();
     await mikro.close();
   };
 

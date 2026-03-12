@@ -39,6 +39,10 @@
         "types": "./dist/entrypoints/mail/nodemailer.d.ts",
         "default": "./dist/entrypoints/mail/nodemailer.js"
       },
+      "./scheduler/croner": {
+        "types": "./dist/entrypoints/scheduler/croner.d.ts",
+        "default": "./dist/entrypoints/scheduler/croner.js"
+      },
       "./identity-providers/github": {
         "types": "./dist/entrypoints/identity-providers/github.d.ts",
         "default": "./dist/entrypoints/identity-providers/github.js"
@@ -105,6 +109,11 @@
       "@tinyauth/source": "./src/entrypoints/mail/nodemailer.ts",
       "types": "./dist/entrypoints/mail/nodemailer.d.ts",
       "default": "./dist/entrypoints/mail/nodemailer.js"
+    },
+    "./scheduler/croner": {
+      "@tinyauth/source": "./src/entrypoints/scheduler/croner.ts",
+      "types": "./dist/entrypoints/scheduler/croner.d.ts",
+      "default": "./dist/entrypoints/scheduler/croner.js"
     },
     "./identity-providers/github": {
       "@tinyauth/source": "./src/entrypoints/identity-providers/github.ts",
