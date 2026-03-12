@@ -26,6 +26,7 @@
     "test:unit:ui": "vitest --ui",
     "test:unit:preview": "VITEST_BROWSER_MODE=preview vitest",
     "test:e2e": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' playwright test",
+    "test:e2e:smoke": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' playwright test --project minimal:chromium",
     "test:e2e:ui": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' playwright test --ui"
   },
   "dependencies": {

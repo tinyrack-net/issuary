@@ -77,7 +77,7 @@ jobs:
         run: pnpm --filter @tinyauth/frontend exec playwright install --with-deps chromium
 
       - name: Frontend smoke E2E
-        run: pnpm --filter @tinyauth/frontend test:e2e -- --project minimal:chromium
+        run: pnpm --filter @tinyauth/frontend run test:e2e:smoke
 
   full:
     name: Full Matrix
