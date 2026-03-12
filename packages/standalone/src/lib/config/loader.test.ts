@@ -61,6 +61,33 @@ describe('resolveConfig', () => {
     expect(typeof resolved.database.initialize).toBe('function');
   });
 
+  test('composes a scheduler adapter from standalone defaults', async () => {
+    const resolved = await resolveConfig(MINIMAL_CONFIG);
+
+    expect(resolved.scheduler).toBeDefined();
+    if (!resolved.scheduler) {
+      throw new Error('Expected scheduler to be defined');
+    }
+
+    const handle = await resolved.scheduler.start({
+      runCleanup: async () => {},
+    });
+
+    expect(handle.getNextRunAt?.()).toBeInstanceOf(Date);
+    await handle.stop();
+  });
+
+  test('omits the scheduler adapter when standalone scheduler is disabled', async () => {
+    const resolved = await resolveConfig({
+      ...MINIMAL_CONFIG,
+      scheduler: {
+        enabled: false,
+      },
+    });
+
+    expect(resolved.scheduler).toBeUndefined();
+  });
+
   test('rejects password policy where max_length is less than min_length', async () => {
     await expect(
       resolveConfig({

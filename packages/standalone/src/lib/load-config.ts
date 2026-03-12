@@ -8,6 +8,7 @@ import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth
 import { github } from '@tinyauth/backend/identity-providers/github';
 import { google } from '@tinyauth/backend/identity-providers/google';
 import { nodemailer } from '@tinyauth/backend/mail/nodemailer';
+import { croner } from '@tinyauth/backend/scheduler/croner';
 import nm from 'nodemailer';
 import YAML from 'yaml';
 import type { StandaloneDatabaseConfig } from '#standalone/lib/config/database.js';
@@ -22,6 +23,7 @@ import {
   type StandaloneConfigInput,
   StandaloneConfigSchema,
 } from '#standalone/lib/config/resolved.js';
+import type { StandaloneSchedulerConfig } from '#standalone/lib/config/scheduler.js';
 import type { Logger } from '#standalone/lib/logger.js';
 import { DEFAULT_CONFIG_PATH } from './constants.js';
 import { resolveEnvVariables } from './interpolate-env.js';
@@ -146,6 +148,18 @@ function composeIdentityProvider(
   }
 }
 
+function composeSchedulerConfig(
+  scheduler: StandaloneSchedulerConfig,
+): TinyAuthRuntimeConfig['scheduler'] {
+  if (!scheduler.enabled) {
+    return undefined;
+  }
+
+  return croner({
+    cron: scheduler.cron,
+  });
+}
+
 export async function resolveConfig(
   input: unknown,
 ): Promise<TinyAuthRuntimeConfig> {
@@ -153,6 +167,7 @@ export async function resolveConfig(
 
   const emailConfig = await resolveEmailConfig(parsed.email);
   const databaseConfig = composeDatabaseConfig(parsed.database);
+  const schedulerConfig = composeSchedulerConfig(parsed.scheduler);
   const identityProvidersConfig = parsed.identity_providers.map(
     composeIdentityProvider,
   );
@@ -162,6 +177,7 @@ export async function resolveConfig(
     database: _database,
     email: _email,
     identity_providers: _identityProviders,
+    scheduler: _scheduler,
     ...rest
   } = parsed;
 
@@ -170,6 +186,7 @@ export async function resolveConfig(
     database: databaseConfig,
     identity_providers: identityProvidersConfig,
     ...(emailConfig ? { email: emailConfig } : {}),
+    ...(schedulerConfig ? { scheduler: schedulerConfig } : {}),
   };
 }
 

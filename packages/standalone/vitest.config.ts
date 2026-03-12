@@ -91,6 +91,15 @@ export default defineConfig({
         ),
       },
       {
+        find: /^@tinyauth\/backend\/scheduler\/croner$/,
+        replacement: fileURLToPath(
+          new URL(
+            '../backend/src/entrypoints/scheduler/croner.ts',
+            import.meta.url,
+          ),
+        ),
+      },
+      {
         find: /^@tinyauth\/backend\/frontend$/,
         replacement: fileURLToPath(
           new URL(

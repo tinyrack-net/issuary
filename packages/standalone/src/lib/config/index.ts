@@ -35,7 +35,10 @@ export type {
 } from './resolved.js';
 export { StandaloneConfigSchema } from './resolved.js';
 export type { StandaloneSchedulerConfig } from './scheduler.js';
-export { StandaloneSchedulerConfigSchema } from './scheduler.js';
+export {
+  STANDALONE_SCHEDULER_CONFIG_DEFAULT,
+  StandaloneSchedulerConfigSchema,
+} from './scheduler.js';
 export type { StandaloneSecurityConfig } from './security.js';
 export { StandaloneSecurityConfigSchema } from './security.js';
 export type { StandaloneTermsConfig } from './terms.js';

@@ -7,7 +7,6 @@ import {
   I18nConfigSchema,
   LoggingConfigSchema,
   RegistrationConfigSchema,
-  SchedulerConfigSchema,
   SecurityConfigSchema,
   ServerConfigSchema,
   TermsConfigSchema,
@@ -23,6 +22,7 @@ import {
   StandaloneFrontendConfigSchema,
 } from './frontend.js';
 import { StandaloneIdentityProviderConfigsSchema } from './identity-providers.js';
+import { StandaloneSchedulerConfigSchema } from './scheduler.js';
 import { StandaloneUserConfigsSchema } from './user.js';
 
 export const StandaloneConfigSchema = z
@@ -47,7 +47,7 @@ export const StandaloneConfigSchema = z
       'Security and cryptographic settings.',
     ),
     cleanup: CleanupConfigSchema.describe('Data cleanup settings.'),
-    scheduler: SchedulerConfigSchema.describe(
+    scheduler: StandaloneSchedulerConfigSchema.describe(
       'In-process cleanup scheduler settings.',
     ),
     terms: TermsConfigSchema.describe('Terms of service settings.'),
