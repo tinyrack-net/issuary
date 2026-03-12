@@ -37,7 +37,7 @@ export default defineConfig({
         {
           icon: 'github',
           label: 'GitHub',
-          href: 'https://github.com/tinyrack/auth',
+          href: 'https://github.com/tinyrack/tinyauth',
         },
       ],
       sidebar: [

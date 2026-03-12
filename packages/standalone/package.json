@@ -6,7 +6,7 @@
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": "https://git.winetree94.com/tinyrack/auth.git",
+    "url": "https://git.winetree94.com/tinyrack/tinyauth.git",
     "directory": "packages/standalone"
   },
   "files": [
