@@ -1,14 +1,11 @@
-import z from 'zod';
+import {
+  type UserConfig,
+  UserConfigSchema,
+  UserConfigsSchema,
+} from '@tinyauth/backend/config';
 
-export const StandaloneUserConfigSchema = z.object({
-  sub: z.string().min(1),
-  email: z.email(),
-  password: z.string().min(1).max(256),
-  role: z.enum(['user', 'admin']).default('user'),
-});
+export const StandaloneUserConfigSchema = UserConfigSchema;
 
-export const StandaloneUserConfigsSchema = z
-  .array(StandaloneUserConfigSchema)
-  .default([]);
+export const StandaloneUserConfigsSchema = UserConfigsSchema;
 
-export type StandaloneUserConfig = z.infer<typeof StandaloneUserConfigSchema>;
+export type StandaloneUserConfig = UserConfig;

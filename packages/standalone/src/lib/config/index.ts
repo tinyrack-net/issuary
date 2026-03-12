@@ -13,6 +13,8 @@ export {
   StandaloneDatabasePostgresConfigSchema,
   StandaloneDatabaseSqliteConfigSchema,
 } from './database.js';
+export type { StandaloneEmailConfig } from './email.js';
+export { StandaloneEmailConfigSchema } from './email.js';
 export type {
   ResolvedStandaloneFrontendConfig,
   StandaloneFrontendConfig,

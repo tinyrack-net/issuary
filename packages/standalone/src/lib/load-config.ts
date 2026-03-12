@@ -1,10 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import * as fs from 'node:fs';
-import type {
-  TinyAuthDeclarativeDatabaseConfig,
-  TinyAuthDeclarativeIdentityProviderConfig,
-  TinyAuthRuntimeConfig,
-} from '@tinyauth/backend/config';
+import type { TinyAuthRuntimeConfig } from '@tinyauth/backend/config';
 import { postgres } from '@tinyauth/backend/database/postgres';
 import { sqlite } from '@tinyauth/backend/database/sqlite';
 import { apple } from '@tinyauth/backend/identity-providers/apple';
@@ -14,14 +10,18 @@ import { google } from '@tinyauth/backend/identity-providers/google';
 import { nodemailer } from '@tinyauth/backend/mail/nodemailer';
 import nm from 'nodemailer';
 import YAML from 'yaml';
+import type { StandaloneDatabaseConfig } from '#standalone/lib/config/database.js';
+import type {
+  ResolvedStandaloneFrontendConfig,
+  StandaloneFrontendConfig,
+} from '#standalone/lib/config/frontend.js';
+import type { StandaloneIdentityProviderConfig } from '#standalone/lib/config/identity-providers.js';
 import {
   type ResolvedStandaloneConfig,
-  type ResolvedStandaloneFrontendConfig,
   type StandaloneConfig,
   type StandaloneConfigInput,
   StandaloneConfigSchema,
-  type StandaloneFrontendConfig,
-} from '#standalone/lib/config/index.js';
+} from '#standalone/lib/config/resolved.js';
 import type { Logger } from '#standalone/lib/logger.js';
 import { DEFAULT_CONFIG_PATH } from './constants.js';
 import { resolveEnvVariables } from './interpolate-env.js';
@@ -109,7 +109,7 @@ async function resolveEmailConfig(
 }
 
 function composeDatabaseConfig(
-  database: TinyAuthDeclarativeDatabaseConfig,
+  database: StandaloneDatabaseConfig,
 ): TinyAuthRuntimeConfig['database'] {
   switch (database.type) {
     case 'postgres': {
@@ -124,7 +124,7 @@ function composeDatabaseConfig(
 }
 
 function composeIdentityProvider(
-  config: TinyAuthDeclarativeIdentityProviderConfig,
+  config: StandaloneIdentityProviderConfig,
 ): TinyAuthRuntimeConfig['identity_providers'][number] {
   switch (config.type) {
     case 'github': {

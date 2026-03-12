@@ -1,13 +1,5 @@
 import z from 'zod';
-
-const StandaloneBooleanSchema = z
-  .union([z.boolean(), z.string()])
-  .transform((value) => {
-    if (typeof value === 'string') {
-      return value === 'true' || value === '1';
-    }
-    return value;
-  });
+import { StandaloneBooleanSchema } from './coerce.js';
 
 export const STANDALONE_FRONTEND_CONFIG_DEFAULT = {
   enabled: true,

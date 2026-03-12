@@ -13,19 +13,6 @@ export {
   PasswordAuthConfigSchema,
   PasswordPolicyConfigSchema,
 } from './auth.js';
-export type { DeclarativeDatabaseConfig } from './authoring-database.js';
-export {
-  DeclarativeDatabaseConfigSchema,
-  DeclarativeDatabasePostgresConfigSchema,
-  DeclarativeDatabaseSqliteConfigSchema,
-} from './authoring-database.js';
-export type { DeclarativeEmailConfig } from './authoring-email.js';
-export { DeclarativeEmailConfigSchema } from './authoring-email.js';
-export type { DeclarativeIdentityProviderConfig } from './authoring-identity-providers.js';
-export {
-  DeclarativeIdentityProviderConfigSchema,
-  DeclarativeIdentityProviderConfigsSchema,
-} from './authoring-identity-providers.js';
 export type { AppTheme, BrandingConfig } from './branding.js';
 export { AppThemeSchema, BrandingConfigSchema } from './branding.js';
 export type { CleanupConfig } from './cleanup.js';
@@ -34,14 +21,6 @@ export type { ClientConfig } from './client.js';
 export { ClientConfigSchema, ClientConfigsSchema } from './client.js';
 export type { DatabaseConfig } from './database.js';
 export { DatabaseConfigSchema } from './database.js';
-export type {
-  TinyAuthDeclarativeConfig,
-  TinyAuthDeclarativeConfigInput,
-  TinyAuthDeclarativeDatabaseConfig,
-  TinyAuthDeclarativeEmailConfig,
-  TinyAuthDeclarativeIdentityProviderConfig,
-} from './declarative.js';
-export { TinyAuthDeclarativeConfigSchema } from './declarative.js';
 export type {
   EmailConfig,
   EmailRuntimeConfig,
