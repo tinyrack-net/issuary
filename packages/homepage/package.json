@@ -8,7 +8,10 @@
     "generate:openapi": "NODE_OPTIONS='--conditions=@tinyauth/source' tsx node_modules/@tinyauth/standalone/src/cli.ts export:openapi public/openapi.json",
     "dev": "pnpm generate:openapi && astro dev",
     "build": "pnpm generate:openapi && astro check && astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "preview:worker": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:dry-run": "wrangler deploy --dry-run"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.37.6",
@@ -23,6 +26,7 @@
     "@astrojs/check": "^0.9.6",
     "@biomejs/biome": "catalog:",
     "@tinyauth/standalone": "workspace:*",
+    "wrangler": "catalog:",
     "tsx": "^4.21.0",
     "typescript": "catalog:"
   }

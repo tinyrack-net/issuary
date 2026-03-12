@@ -510,6 +510,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
+      wrangler:
+        specifier: 'catalog:'
+        version: 4.70.0
 
   packages/standalone:
     dependencies:

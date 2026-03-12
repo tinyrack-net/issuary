@@ -3,6 +3,7 @@ import starlight from '@astrojs/starlight';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
+  site: 'https://tinyauth.tinyrack.net',
   server: {
     host: '0.0.0.0',
     port: 8082,

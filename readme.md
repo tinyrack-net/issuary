@@ -44,7 +44,7 @@ basic_authentication_methods:
     enabled: true
 ```
 
-See [documentation](https://tinyauth.dev) for full configuration options.
+See [documentation](https://tinyauth.tinyrack.net) for full configuration options.
 
 ## Development
 
