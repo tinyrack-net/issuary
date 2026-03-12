@@ -65,9 +65,9 @@ export const exportOpenapiCommand = new Command('export:openapi')
       },
     } satisfies StandaloneConfigInput;
 
-    const { app, cleanup, logger } = await createApp({
-      config: await resolveConfig(config),
-    });
+    const { app, cleanup, logger } = await createApp(
+      await resolveConfig(config),
+    );
 
     try {
       const spec = await generateSpecs(app, {

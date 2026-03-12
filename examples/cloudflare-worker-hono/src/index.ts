@@ -53,18 +53,16 @@ function createAssetsHandler(assets: AssetFetcher): FrontendConfig {
 
 export async function createCloudflareExampleApp(assets: AssetFetcher) {
   const result = await createApp({
-    config: {
-      database: sqlite({
-        path: './test.db',
-        test: true,
-      }),
-      security: {
-        session_secret:
-          '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
-        hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
-      },
-      frontend: createAssetsHandler(assets),
+    database: sqlite({
+      path: './test.db',
+      test: true,
+    }),
+    security: {
+      session_secret:
+        '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+      hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
     },
+    frontend: createAssetsHandler(assets),
   });
 
   return result.app;

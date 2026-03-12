@@ -27,12 +27,10 @@ import { TinyAuthRuntimeConfigSchema } from '#backend/lib/config/index.js';
  *
  * beforeAll(async () => {
  *   ({ app, services, cleanup } = await createTestApp({
- *     config: {
- *       ...MINIMAL_TEST_CONFIG,
- *       auth: {
- *         password: {
- *           totp: { enabled: true },
- *         },
+ *     ...MINIMAL_TEST_CONFIG,
+ *     auth: {
+ *       password: {
+ *         totp: { enabled: true },
  *       },
  *     },
  *   }));
@@ -72,11 +70,9 @@ export async function createTestEmailConfig(): Promise<EmailConfig> {
   });
 }
 
-export async function createTestApp(options?: {
-  config?: TinyAuthRuntimeConfigInput;
-}) {
-  const config = options?.config
-    ? TinyAuthRuntimeConfigSchema.parse(options.config)
-    : TinyAuthRuntimeConfigSchema.parse(MINIMAL_TEST_CONFIG);
-  return createApp({ config });
+export async function createTestApp(config?: TinyAuthRuntimeConfigInput) {
+  const resolvedConfig = TinyAuthRuntimeConfigSchema.parse(
+    config ?? MINIMAL_TEST_CONFIG,
+  );
+  return createApp(resolvedConfig);
 }

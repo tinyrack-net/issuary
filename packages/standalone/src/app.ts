@@ -34,9 +34,7 @@ export async function createStandaloneApp(options: CreateStandaloneAppOptions) {
   }
 
   return createApp({
-    config: {
-      ...backendConfig,
-      frontend: frontendHandler,
-    },
+    ...backendConfig,
+    frontend: frontendHandler,
   });
 }

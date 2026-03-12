@@ -252,9 +252,9 @@ export async function createE2EServer(configFactory: ConfigFactory) {
   };
 
   // 1. Start backend
-  const { app, services, cleanup } = await createApp({
-    config: TinyAuthRuntimeConfigSchema.parse(config),
-  });
+  const { app, services, cleanup } = await createApp(
+    TinyAuthRuntimeConfigSchema.parse(config),
+  );
 
   // 2. Register test-only API endpoints
   const testApp = app

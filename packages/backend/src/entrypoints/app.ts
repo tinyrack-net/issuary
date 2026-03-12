@@ -16,15 +16,13 @@ import { routes } from '#backend/routes/index.js';
 import { e, TinyAuthError } from '#backend/schemas/error.js';
 import { initializeServices } from '#backend/services/container.js';
 
-export interface CreateAppOptions {
-  /**
-   * Application configuration for the backend runtime.
-   */
-  config: TinyAuthRuntimeConfigInput;
-}
+/**
+ * Application configuration for the backend runtime.
+ */
+export type CreateAppOptions = TinyAuthRuntimeConfigInput;
 
 export async function createApp(options: CreateAppOptions) {
-  const config = TinyAuthRuntimeConfigSchema.parse(options.config);
+  const config = TinyAuthRuntimeConfigSchema.parse(options);
 
   // Create root logger (use config.logging.level: 'silent' to suppress)
   const logger = createLogger({ logging: config.logging });

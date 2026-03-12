@@ -54,31 +54,29 @@ export async function createNodeHonoSqliteExampleApp(
   }
 
   return createApp({
-    config: {
-      registration: {
-        enabled: true,
-        allowed_email_patterns: ['*'],
-        email_verification_required: false,
-      },
-      server: {
-        public_origin: publicOrigin,
-      },
-      database: sqlite({
-        path: sqlitePath,
-        test,
-      }),
-      logging: {
-        level: test ? 'silent' : 'info',
-        format: test ? 'json' : 'pretty',
-      },
-      security: {
-        session_secret: SESSION_SECRET,
-        hash_secret: HASH_SECRET,
-      },
-      frontend: createStaticHandler({
-        publicPath: frontendPublicPath,
-        htmlVariables: HTML_VARIABLES,
-      }),
+    registration: {
+      enabled: true,
+      allowed_email_patterns: ['*'],
+      email_verification_required: false,
     },
+    server: {
+      public_origin: publicOrigin,
+    },
+    database: sqlite({
+      path: sqlitePath,
+      test,
+    }),
+    logging: {
+      level: test ? 'silent' : 'info',
+      format: test ? 'json' : 'pretty',
+    },
+    security: {
+      session_secret: SESSION_SECRET,
+      hash_secret: HASH_SECRET,
+    },
+    frontend: createStaticHandler({
+      publicPath: frontendPublicPath,
+      htmlVariables: HTML_VARIABLES,
+    }),
   });
 }

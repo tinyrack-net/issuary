@@ -7,6 +7,7 @@ export {
   type StandaloneFrontendConfig,
   type StandaloneFrontendConfigInput,
 } from '#standalone/lib/config/index.js';
+
 export {
   loadConfig,
   loadResolvedConfig,
