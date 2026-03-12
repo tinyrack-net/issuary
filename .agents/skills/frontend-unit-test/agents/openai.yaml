@@ -1,6 +1,0 @@
-interface:
-  display_name: "Frontend Unit Test"
-  short_description: "Build and debug frontend Vitest unit/component tests"
-  default_prompt: >-
-    Create, update, and debug Vitest browser-based unit/component tests for
-    the tinyauth frontend package.

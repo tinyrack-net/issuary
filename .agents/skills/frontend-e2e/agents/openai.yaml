@@ -1,4 +1,0 @@
-interface:
-  display_name: "Frontend E2E"
-  short_description: "Build and debug frontend Playwright E2E workflows"
-  default_prompt: "Create, update, and debug Playwright E2E tests, fixtures, and helpers for the tinyauth frontend package."
