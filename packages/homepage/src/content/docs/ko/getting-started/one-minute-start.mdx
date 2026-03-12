@@ -11,7 +11,7 @@ docker run \
   -p 8080:8080 \
   -e SESSION_SECRET="$(openssl rand -hex 32)" \
   -e HASH_SECRET="$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')" \
-  ghcr.io/tinyrack/tinyauth
+  ghcr.io/tinyrack-net/tinyauth
 ```
 
 ---
@@ -49,7 +49,7 @@ docker run \
   --rm \
   -p 8080:8080 \
   -v ./config.yaml:/opt/config.yaml \
-  ghcr.io/tinyrack/tinyauth
+  ghcr.io/tinyrack-net/tinyauth
 ```
 
 ### 방법 2: 사전 정의 사용자
@@ -74,7 +74,7 @@ docker run \
   --rm \
   -p 8080:8080 \
   -v ./config.yaml:/opt/config.yaml \
-  ghcr.io/tinyrack/tinyauth
+  ghcr.io/tinyrack-net/tinyauth
 ```
 
 ---

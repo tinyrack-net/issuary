@@ -65,7 +65,7 @@ docker run -d \
   -v tinyauth-data:/opt/tinyauth \
   -e NODE_ENV=production \
   --restart unless-stopped \
-  ghcr.io/tinyrack/tinyauth:latest
+  ghcr.io/tinyrack-net/tinyauth:latest
 ```
 
 ### Docker Compose
@@ -74,7 +74,7 @@ docker run -d \
 # docker-compose.yml
 services:
   tinyauth:
-    image: ghcr.io/tinyrack/tinyauth:latest
+    image: ghcr.io/tinyrack-net/tinyauth:latest
     container_name: tinyauth
     restart: unless-stopped
     ports:
@@ -137,7 +137,7 @@ database:
 # docker-compose.yml
 services:
   tinyauth:
-    image: ghcr.io/tinyrack/tinyauth:latest
+    image: ghcr.io/tinyrack-net/tinyauth:latest
     container_name: tinyauth
     restart: unless-stopped
     ports:
@@ -230,7 +230,7 @@ services:
       - npm-letsencrypt:/etc/letsencrypt
 
   tinyauth:
-    image: ghcr.io/tinyrack/tinyauth:latest
+    image: ghcr.io/tinyrack-net/tinyauth:latest
     container_name: tinyauth
     restart: unless-stopped
     expose:
@@ -327,7 +327,7 @@ services:
       - traefik-letsencrypt:/letsencrypt
 
   tinyauth:
-    image: ghcr.io/tinyrack/tinyauth:latest
+    image: ghcr.io/tinyrack-net/tinyauth:latest
     container_name: tinyauth
     restart: unless-stopped
     expose:

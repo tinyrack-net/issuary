@@ -1,6 +1,6 @@
 services:
   tinyauth:
-    image: tinyrack/tinyauth
+    image: tinyrack-net/tinyauth
     build:
       context: .
       dockerfile: Dockerfile

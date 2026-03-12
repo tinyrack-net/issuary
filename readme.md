@@ -15,7 +15,7 @@ A lightweight, self-hosted OpenID Connect (OIDC) Provider.
 ## Quick Start
 
 ```bash
-docker run -p 8080:8080 -v ./config.yaml:/opt/config.yaml ghcr.io/tinyrack/tinyauth
+docker run -p 8080:8080 -v ./config.yaml:/opt/config.yaml ghcr.io/tinyrack-net/tinyauth
 ```
 
 Visit `http://localhost:8080/.well-known/openid-configuration` to verify the server is running.
