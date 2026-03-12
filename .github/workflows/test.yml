@@ -38,8 +38,11 @@ jobs:
       - name: Backend tests
         run: pnpm --filter @tinyauth/backend test
 
+      - name: Install Playwright browsers for frontend unit tests
+        run: pnpm --filter @tinyauth/frontend exec playwright install --with-deps chromium firefox
+
       - name: Frontend unit tests
-        run: pnpm --filter @tinyauth/frontend test:unit -- --project unit --runInBand
+        run: pnpm --filter @tinyauth/frontend test:unit
 
       - name: Standalone tests
         run: pnpm --filter @tinyauth/standalone test
