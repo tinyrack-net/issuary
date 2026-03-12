@@ -8,10 +8,16 @@ export const SECURITY_CONFIG_DEFAULT = {
 
 export const SecurityConfigSchema = z
   .object({
-    session_secret: z.string().min(16),
+    session_secret: z
+      .string()
+      .min(16)
+      .describe(
+        'Secret key for signing session cookies. Must be at least 16 characters.',
+      ),
     hash_secret: z
       .string()
       .min(1)
+      .describe('Base64url-encoded 32-byte secret used for HMAC hashing.')
       .superRefine((value, ctx) => {
         try {
           const decoded = fromBase64Url(value);
@@ -31,8 +37,10 @@ export const SecurityConfigSchema = z
     pbkdf2_iterations: z
       .union([z.string(), z.number()])
       .pipe(zz.coerceInt().pipe(z.number().int().min(1)))
-      .default(SECURITY_CONFIG_DEFAULT.pbkdf2_iterations),
+      .default(SECURITY_CONFIG_DEFAULT.pbkdf2_iterations)
+      .describe('Number of PBKDF2 iterations for password hashing.'),
   })
-  .strict();
+  .strict()
+  .describe('Security configuration for secrets and cryptographic settings.');
 
 export type SecurityConfig = z.infer<typeof SecurityConfigSchema>;

@@ -20,26 +20,45 @@ import { UserConfigsSchema } from './user.js';
 
 export const TinyAuthRuntimeConfigSchema = z
   .object({
-    server: ServerConfigSchema,
-    tokens: TokensConfigSchema,
-    i18n: I18nConfigSchema,
-    branding: BrandingConfigSchema,
-    registration: RegistrationConfigSchema,
-    account_deletion: AccountDeletionConfigSchema,
-    logging: LoggingConfigSchema,
-    auth: AuthConfigSchema,
-    security: SecurityConfigSchema,
-    cleanup: CleanupConfigSchema,
-    scheduler: SchedulerConfigSchema,
-    terms: TermsConfigSchema,
-    clients: ClientConfigsSchema,
-    users: UserConfigsSchema,
-    database: DatabaseConfigSchema,
-    frontend: FrontendConfigSchema,
-    email: EmailConfigSchema,
-    identity_providers: IdentityProviderConfigsSchema,
+    server: ServerConfigSchema.describe('HTTP server settings.'),
+    tokens: TokensConfigSchema.describe(
+      'Token issuance and signing key settings.',
+    ),
+    i18n: I18nConfigSchema.describe('Internationalization settings.'),
+    branding: BrandingConfigSchema.describe(
+      'Branding and visual customization settings.',
+    ),
+    registration: RegistrationConfigSchema.describe(
+      'User self-registration settings.',
+    ),
+    account_deletion: AccountDeletionConfigSchema.describe(
+      'Account deletion settings.',
+    ),
+    logging: LoggingConfigSchema.describe('Logging settings.'),
+    auth: AuthConfigSchema.describe('Authentication methods settings.'),
+    security: SecurityConfigSchema.describe(
+      'Security and cryptographic settings.',
+    ),
+    cleanup: CleanupConfigSchema.describe('Data cleanup settings.'),
+    scheduler: SchedulerConfigSchema.describe(
+      'In-process cleanup scheduler settings.',
+    ),
+    terms: TermsConfigSchema.describe('Terms of service settings.'),
+    clients: ClientConfigsSchema.describe(
+      'Registered OAuth/OIDC client applications.',
+    ),
+    users: UserConfigsSchema.describe('Pre-provisioned user accounts.'),
+    database: DatabaseConfigSchema.describe('Database adapter settings.'),
+    frontend: FrontendConfigSchema.describe(
+      'Frontend handler for serving the UI.',
+    ),
+    email: EmailConfigSchema.describe('Email transport adapter settings.'),
+    identity_providers: IdentityProviderConfigsSchema.describe(
+      'External identity provider settings.',
+    ),
   })
-  .strict();
+  .strict()
+  .describe('TinyAuth runtime configuration.');
 
 export type TinyAuthRuntimeConfigInput = z.input<
   typeof TinyAuthRuntimeConfigSchema

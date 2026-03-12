@@ -20,10 +20,13 @@ const PasswordTwoFactorConfigSchema = z
      */
     enrollment_required: zz.COERCE_BOOLEAN.default(
       PASSWORD_TWO_FACTOR_CONFIG_DEFAULT.enrollment_required,
+    ).describe(
+      'Whether password users must enroll a second factor after registration.',
     ),
   })
   .strict()
-  .default(PASSWORD_TWO_FACTOR_CONFIG_DEFAULT);
+  .default(PASSWORD_TWO_FACTOR_CONFIG_DEFAULT)
+  .describe('Two-factor authentication enrollment settings.');
 
 export type PasswordTwoFactorConfig = z.infer<
   typeof PasswordTwoFactorConfigSchema
@@ -41,14 +44,17 @@ export const PasswordPolicyConfigSchema = z
       .int()
       .min(1)
       .max(PASSWORD_POLICY_MAX_LENGTH)
-      .default(PASSWORD_POLICY_CONFIG_DEFAULT.min_length),
+      .default(PASSWORD_POLICY_CONFIG_DEFAULT.min_length)
+      .describe('Minimum password length.'),
     max_length: z.coerce
       .number()
       .int()
       .max(PASSWORD_POLICY_MAX_LENGTH)
-      .default(PASSWORD_POLICY_CONFIG_DEFAULT.max_length),
+      .default(PASSWORD_POLICY_CONFIG_DEFAULT.max_length)
+      .describe('Maximum password length.'),
   })
   .default(PASSWORD_POLICY_CONFIG_DEFAULT)
+  .describe('Password policy settings.')
   .superRefine((value, ctx) => {
     if (value.min_length > value.max_length) {
       ctx.addIssue({
@@ -78,7 +84,9 @@ export const PASSWORD_AUTH_CONFIG_DEFAULT = {
  */
 export const PasswordAuthConfigSchema = z
   .object({
-    enabled: zz.COERCE_BOOLEAN.default(PASSWORD_AUTH_CONFIG_DEFAULT.enabled),
+    enabled: zz.COERCE_BOOLEAN.default(
+      PASSWORD_AUTH_CONFIG_DEFAULT.enabled,
+    ).describe('Whether password-based authentication is enabled.'),
     /**
      * Controls whether users must enroll a second factor after registration.
      */
@@ -87,15 +95,22 @@ export const PasswordAuthConfigSchema = z
       .object({
         enabled: zz.COERCE_BOOLEAN.default(
           PASSWORD_AUTH_TOTP_CONFIG_DEFAULT.enabled,
-        ),
-        issuer: z.string().default(PASSWORD_AUTH_TOTP_CONFIG_DEFAULT.issuer),
+        ).describe('Whether TOTP-based two-factor authentication is enabled.'),
+        issuer: z
+          .string()
+          .default(PASSWORD_AUTH_TOTP_CONFIG_DEFAULT.issuer)
+          .describe(
+            'Issuer name displayed in authenticator apps for TOTP enrollment.',
+          ),
       })
       .strict()
-      .default(PASSWORD_AUTH_TOTP_CONFIG_DEFAULT),
+      .default(PASSWORD_AUTH_TOTP_CONFIG_DEFAULT)
+      .describe('TOTP (Time-based One-Time Password) configuration.'),
     policy: PasswordPolicyConfigSchema,
   })
   .strict()
-  .default(PASSWORD_AUTH_CONFIG_DEFAULT);
+  .default(PASSWORD_AUTH_CONFIG_DEFAULT)
+  .describe('Password authentication configuration.');
 
 export type PasswordAuthConfig = z.infer<typeof PasswordAuthConfigSchema>;
 
@@ -120,7 +135,9 @@ export const PASSKEY_AUTH_CONFIG_DEFAULT = {
  */
 export const PasskeyAuthConfigSchema = z
   .object({
-    enabled: zz.COERCE_BOOLEAN.default(PASSKEY_AUTH_CONFIG_DEFAULT.enabled),
+    enabled: zz.COERCE_BOOLEAN.default(
+      PASSKEY_AUTH_CONFIG_DEFAULT.enabled,
+    ).describe('Whether passkey (WebAuthn) authentication is enabled.'),
     /**
      * WebAuthn Relying Party ID (domain only, no protocol or port).
      * Must be current domain or a registrable parent domain.
@@ -144,7 +161,8 @@ export const PasskeyAuthConfigSchema = z
     origins: z.array(z.url()).optional(),
   })
   .strict()
-  .default(PASSKEY_AUTH_CONFIG_DEFAULT);
+  .default(PASSKEY_AUTH_CONFIG_DEFAULT)
+  .describe('Passkey (WebAuthn) authentication configuration.');
 
 export type PasskeyAuthConfig = z.infer<typeof PasskeyAuthConfigSchema>;
 
@@ -159,8 +177,12 @@ export const AUTH_CONFIG_DEFAULT = {
  */
 export const AuthConfigSchema = z
   .object({
-    password: PasswordAuthConfigSchema,
-    passkey: PasskeyAuthConfigSchema,
+    password: PasswordAuthConfigSchema.describe(
+      'Password authentication settings.',
+    ),
+    passkey: PasskeyAuthConfigSchema.describe(
+      'Passkey (WebAuthn) authentication settings.',
+    ),
   })
   .strict()
   .superRefine((val, ctx) => {
@@ -176,6 +198,7 @@ export const AuthConfigSchema = z
       });
     }
   })
-  .default(AUTH_CONFIG_DEFAULT);
+  .default(AUTH_CONFIG_DEFAULT)
+  .describe('Authentication methods configuration.');
 
 export type AuthConfig = z.infer<typeof AuthConfigSchema>;

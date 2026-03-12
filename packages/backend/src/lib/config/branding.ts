@@ -60,21 +60,35 @@ export const BRANDING_CONFIG_DEFAULT = {
 
 export const BrandingConfigSchema = z
   .object({
-    light_theme: AppThemeSchema.default(BRANDING_CONFIG_DEFAULT.light_theme),
-    dark_theme: AppThemeSchema.default(BRANDING_CONFIG_DEFAULT.dark_theme),
+    light_theme: AppThemeSchema.default(
+      BRANDING_CONFIG_DEFAULT.light_theme,
+    ).describe('DaisyUI theme used in light mode.'),
+    dark_theme: AppThemeSchema.default(
+      BRANDING_CONFIG_DEFAULT.dark_theme,
+    ).describe('DaisyUI theme used in dark mode.'),
     theme_mode: z
       .enum(['light', 'dark', 'system'])
-      .default(BRANDING_CONFIG_DEFAULT.theme_mode),
-    background_url: z.url().default(BRANDING_CONFIG_DEFAULT.background_url),
-    icon_url: z.url().optional(),
+      .default(BRANDING_CONFIG_DEFAULT.theme_mode)
+      .describe('Theme mode. "system" follows the user\'s OS preference.'),
+    background_url: z
+      .url()
+      .default(BRANDING_CONFIG_DEFAULT.background_url)
+      .describe('Background image URL for the login page.'),
+    icon_url: z
+      .url()
+      .optional()
+      .describe('Logo icon URL displayed on the login page.'),
     title: z
       .record(z.string(), z.string())
-      .default(BRANDING_CONFIG_DEFAULT.title),
+      .default(BRANDING_CONFIG_DEFAULT.title)
+      .describe('Localized title text keyed by language code.'),
     subtitle: z
       .record(z.string(), z.string())
-      .default(BRANDING_CONFIG_DEFAULT.subtitle),
+      .default(BRANDING_CONFIG_DEFAULT.subtitle)
+      .describe('Localized subtitle text keyed by language code.'),
   })
   .strict()
-  .default(BRANDING_CONFIG_DEFAULT);
+  .default(BRANDING_CONFIG_DEFAULT)
+  .describe('Branding and visual customization configuration.');
 
 export type BrandingConfig = z.infer<typeof BrandingConfigSchema>;
