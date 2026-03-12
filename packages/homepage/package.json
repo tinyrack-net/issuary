@@ -27,7 +27,7 @@
     "@biomejs/biome": "catalog:",
     "@tinyauth/standalone": "workspace:*",
     "wrangler": "catalog:",
-    "tsx": "^4.21.0",
+    "tsx": "catalog:",
     "typescript": "catalog:"
   }
 }

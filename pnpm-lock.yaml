@@ -15,6 +15,27 @@ catalogs:
     '@hono/node-server':
       specifier: ^1.19.9
       version: 1.19.9
+    '@mikro-orm/cli':
+      specifier: ^7.0.0-rc.3
+      version: 7.0.0-rc.3
+    '@mikro-orm/core':
+      specifier: ^7.0.0-rc.3
+      version: 7.0.0-rc.3
+    '@mikro-orm/decorators':
+      specifier: ^7.0.0-rc.3
+      version: 7.0.0-rc.3
+    '@mikro-orm/migrations':
+      specifier: ^7.0.0-rc.3
+      version: 7.0.0-rc.3
+    '@mikro-orm/postgresql':
+      specifier: ^7.0.0-rc.3
+      version: 7.0.0-rc.3
+    '@mikro-orm/seeder':
+      specifier: ^7.0.0-rc.3
+      version: 7.0.0-rc.3
+    '@mikro-orm/sqlite':
+      specifier: ^7.0.0-rc.3
+      version: 7.0.0-rc.3
     '@tailwindcss/typography':
       specifier: ^0.5.19
       version: 0.5.19
@@ -33,6 +54,9 @@ catalogs:
     '@types/node':
       specifier: ^24.10.11
       version: 24.10.11
+    '@types/nodemailer':
+      specifier: ^7.0.9
+      version: 7.0.9
     '@types/react':
       specifier: ^19.2.13
       version: 19.2.13
@@ -48,6 +72,9 @@ catalogs:
     '@vitest/browser-preview':
       specifier: ^4.0.18
       version: 4.0.18
+    '@vitest/coverage-v8':
+      specifier: ^4.0.18
+      version: 4.0.18
     '@vitest/ui':
       specifier: ^4.0.18
       version: 4.0.18
@@ -60,9 +87,24 @@ catalogs:
     hono:
       specifier: ^4.11.9
       version: 4.11.9
+    hono-openapi:
+      specifier: ^1.2.0
+      version: 1.2.0
     jose:
       specifier: ^6.1.3
       version: 6.1.3
+    nodemailer:
+      specifier: ^8.0.0
+      version: 8.0.0
+    otplib:
+      specifier: ^13.2.1
+      version: 13.2.1
+    pino:
+      specifier: ^10.3.1
+      version: 10.3.1
+    pino-pretty:
+      specifier: ^13.1.3
+      version: 13.1.3
     react:
       specifier: ^19.2.4
       version: 19.2.4
@@ -72,12 +114,18 @@ catalogs:
     tailwindcss:
       specifier: ^4.1.18
       version: 4.1.18
+    tsx:
+      specifier: ^4.21.0
+      version: 4.21.0
     typescript:
       specifier: ^5.9.3
       version: 5.9.3
     vite:
       specifier: ^7.3.1
       version: 7.3.1
+    vite-tsconfig-paths:
+      specifier: ^6.0.5
+      version: 6.0.5
     vitest:
       specifier: ^4.0.18
       version: 4.0.18
@@ -177,7 +225,7 @@ importers:
         specifier: 'catalog:'
         version: 24.10.11
       tsx:
-        specifier: ^4.21.0
+        specifier: 'catalog:'
         version: 4.21.0
       typescript:
         specifier: 'catalog:'
@@ -241,25 +289,25 @@ importers:
         specifier: ^0.2.2
         version: 0.2.2(@standard-schema/spec@1.1.0)(hono@4.11.9)
       '@mikro-orm/cli':
-        specifier: ^7.0.0-rc.3
+        specifier: 'catalog:'
         version: 7.0.0-rc.3(dataloader@2.2.3)
       '@mikro-orm/core':
-        specifier: ^7.0.0-rc.3
+        specifier: 'catalog:'
         version: 7.0.0-rc.3(dataloader@2.2.3)
       '@mikro-orm/decorators':
-        specifier: ^7.0.0-rc.3
+        specifier: 'catalog:'
         version: 7.0.0-rc.3(@mikro-orm/core@7.0.0-rc.3(dataloader@2.2.3))(reflect-metadata@0.2.2)
       '@mikro-orm/migrations':
-        specifier: ^7.0.0-rc.3
+        specifier: 'catalog:'
         version: 7.0.0-rc.3(@mikro-orm/core@7.0.0-rc.3(dataloader@2.2.3))
       '@mikro-orm/postgresql':
-        specifier: ^7.0.0-rc.3
+        specifier: 'catalog:'
         version: 7.0.0-rc.3(@mikro-orm/core@7.0.0-rc.3(dataloader@2.2.3))
       '@mikro-orm/seeder':
-        specifier: ^7.0.0-rc.3
+        specifier: 'catalog:'
         version: 7.0.0-rc.3(@mikro-orm/core@7.0.0-rc.3(dataloader@2.2.3))
       '@mikro-orm/sqlite':
-        specifier: ^7.0.0-rc.3
+        specifier: 'catalog:'
         version: 7.0.0-rc.3(@mikro-orm/core@7.0.0-rc.3(dataloader@2.2.3))
       '@react-email/components':
         specifier: ^1.0.7
@@ -283,25 +331,25 @@ importers:
         specifier: 'catalog:'
         version: 4.11.9
       hono-openapi:
-        specifier: ^1.2.0
+        specifier: 'catalog:'
         version: 1.2.0(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.11.9))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(quansync@0.2.11)(zod-to-json-schema@3.25.1(zod@4.3.6))(zod@4.3.6))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(quansync@0.2.11)(zod-to-json-schema@3.25.1(zod@4.3.6))(zod@4.3.6))(@standard-schema/spec@1.1.0)(openapi-types@12.1.3)(zod@4.3.6))(@types/json-schema@7.0.15)(hono@4.11.9)(openapi-types@12.1.3)
       jose:
         specifier: 'catalog:'
         version: 6.1.3
       nodemailer:
-        specifier: ^8.0.0
+        specifier: 'catalog:'
         version: 8.0.0
       otplib:
-        specifier: ^13.2.1
+        specifier: 'catalog:'
         version: 13.2.1
       pg:
         specifier: ^8.18.0
         version: 8.18.0
       pino:
-        specifier: ^10.3.1
+        specifier: 'catalog:'
         version: 10.3.1
       pino-pretty:
-        specifier: ^13.1.3
+        specifier: 'catalog:'
         version: 13.1.3
       qrcode:
         specifier: ^1.5.4
@@ -326,7 +374,7 @@ importers:
         specifier: 'catalog:'
         version: 24.10.11
       '@types/nodemailer':
-        specifier: ^7.0.9
+        specifier: 'catalog:'
         version: 7.0.9
       '@types/pg':
         specifier: ^8.16.0
@@ -338,19 +386,19 @@ importers:
         specifier: 'catalog:'
         version: 19.2.13
       '@vitest/coverage-v8':
-        specifier: ^4.0.18
+        specifier: 'catalog:'
         version: 4.0.18(@vitest/browser@4.0.18(vite@7.3.1(@types/node@24.10.11)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))(vitest@4.0.18))(vitest@4.0.18)
       tsx:
-        specifier: ^4.21.0
+        specifier: 'catalog:'
         version: 4.21.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
       vite-tsconfig-paths:
-        specifier: ^6.0.5
+        specifier: 'catalog:'
         version: 6.0.5(typescript@5.9.3)(vite@7.3.1(@types/node@24.10.11)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))
       vitest:
-        specifier: ^4.0.18
+        specifier: 'catalog:'
         version: 4.0.18(@types/node@24.10.11)(@vitest/browser-playwright@4.0.18)(@vitest/browser-preview@4.0.18)(@vitest/ui@4.0.18)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/frontend:
@@ -417,7 +465,7 @@ importers:
         specifier: 'catalog:'
         version: 24.10.11
       '@types/nodemailer':
-        specifier: ^7.0.9
+        specifier: 'catalog:'
         version: 7.0.9
       '@types/react':
         specifier: 'catalog:'
@@ -435,7 +483,7 @@ importers:
         specifier: 'catalog:'
         version: 4.0.18(vite@7.3.1(@types/node@24.10.11)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))(vitest@4.0.18)
       '@vitest/coverage-v8':
-        specifier: ^4.0.18
+        specifier: 'catalog:'
         version: 4.0.18(@vitest/browser@4.0.18(vite@7.3.1(@types/node@24.10.11)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))(vitest@4.0.18))(vitest@4.0.18)
       '@vitest/ui':
         specifier: 'catalog:'
@@ -447,16 +495,16 @@ importers:
         specifier: 'catalog:'
         version: 5.5.18
       nodemailer:
-        specifier: ^8.0.0
+        specifier: 'catalog:'
         version: 8.0.0
       otplib:
-        specifier: ^13.2.1
+        specifier: 'catalog:'
         version: 13.2.1
       tailwindcss:
         specifier: 'catalog:'
         version: 4.1.18
       tsx:
-        specifier: ^4.21.0
+        specifier: 'catalog:'
         version: 4.21.0
       typescript:
         specifier: 'catalog:'
@@ -505,7 +553,7 @@ importers:
         specifier: workspace:*
         version: link:../standalone
       tsx:
-        specifier: ^4.21.0
+        specifier: 'catalog:'
         version: 4.21.0
       typescript:
         specifier: 'catalog:'
@@ -520,7 +568,7 @@ importers:
         specifier: 'catalog:'
         version: 1.19.9(hono@4.11.9)
       '@mikro-orm/cli':
-        specifier: ^7.0.0-rc.3
+        specifier: 'catalog:'
         version: 7.0.0-rc.3(dataloader@2.2.3)
       '@tinyauth/backend':
         specifier: workspace:*
@@ -535,16 +583,16 @@ importers:
         specifier: 'catalog:'
         version: 4.11.9
       hono-openapi:
-        specifier: ^1.2.0
+        specifier: 'catalog:'
         version: 1.2.0(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.11.9))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(quansync@0.2.11)(zod-to-json-schema@3.25.1(zod@4.3.6))(zod@4.3.6))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(quansync@0.2.11)(zod-to-json-schema@3.25.1(zod@4.3.6))(zod@4.3.6))(@standard-schema/spec@1.1.0)(openapi-types@12.1.3)(zod@4.3.6))(@types/json-schema@7.0.15)(hono@4.11.9)(openapi-types@12.1.3)
       nodemailer:
-        specifier: ^8.0.0
+        specifier: 'catalog:'
         version: 8.0.0
       pino:
-        specifier: ^10.3.1
+        specifier: 'catalog:'
         version: 10.3.1
       pino-pretty:
-        specifier: ^13.1.3
+        specifier: 'catalog:'
         version: 13.1.3
       yaml:
         specifier: ^2.8.2
@@ -560,22 +608,22 @@ importers:
         specifier: 'catalog:'
         version: 24.10.11
       '@types/nodemailer':
-        specifier: ^7.0.9
+        specifier: 'catalog:'
         version: 7.0.9
       '@vitest/coverage-v8':
-        specifier: ^4.0.18
+        specifier: 'catalog:'
         version: 4.0.18(@vitest/browser@4.0.18(vite@7.3.1(@types/node@24.10.11)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))(vitest@4.0.18))(vitest@4.0.18)
       tsx:
-        specifier: ^4.21.0
+        specifier: 'catalog:'
         version: 4.21.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
       vite-tsconfig-paths:
-        specifier: ^6.0.5
+        specifier: 'catalog:'
         version: 6.0.5(typescript@5.9.3)(vite@7.3.1(@types/node@24.10.11)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))
       vitest:
-        specifier: ^4.0.18
+        specifier: 'catalog:'
         version: 4.0.18(@types/node@24.10.11)(@vitest/browser-playwright@4.0.18)(@vitest/browser-preview@4.0.18)(@vitest/ui@4.0.18)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2)
 
 packages:
@@ -10310,7 +10358,7 @@ snapshots:
 
   tsx@4.21.0:
     dependencies:
-      esbuild: 0.27.2
+      esbuild: 0.27.3
       get-tsconfig: 4.13.0
     optionalDependencies:
       fsevents: 2.3.3
