@@ -30,7 +30,8 @@ description: Tinyrack Auth API 엔드포인트 레퍼런스
 
 ## OpenAPI 스펙
 
-원시 OpenAPI 3.0 스펙은 JSON 파일로 제공돼요.
+원시 OpenAPI 3.1 스펙은 JSON 파일로 제공돼요.
 
 - **정적 스펙**: [`/openapi.json`](/openapi.json) (빌드 시 번들)
-- **라이브 스펙** (서버 실행 중): `GET /api/docs/json`
+- **라이브 UI** (`openapi.enabled: true`로 서버 실행 중): `GET /api/docs`
+- **라이브 스펙** (`openapi.enabled: true`로 서버 실행 중): `GET /api/docs/json`

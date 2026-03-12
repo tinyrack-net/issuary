@@ -6,6 +6,7 @@ import {
   ClientConfigsSchema,
   I18nConfigSchema,
   LoggingConfigSchema,
+  OpenApiConfigSchema,
   RegistrationConfigSchema,
   SecurityConfigSchema,
   ServerConfigSchema,
@@ -42,6 +43,9 @@ export const StandaloneConfigSchema = z
       'Account deletion settings.',
     ),
     logging: LoggingConfigSchema.describe('Logging settings.'),
+    openapi: OpenApiConfigSchema.describe(
+      'OpenAPI and API reference settings.',
+    ),
     auth: AuthConfigSchema.describe('Authentication methods settings.'),
     security: SecurityConfigSchema.describe(
       'Security and cryptographic settings.',

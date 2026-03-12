@@ -6,7 +6,7 @@ import {
   TinyAuthRuntimeConfigSchema,
 } from '#backend/lib/config/index.js';
 import { createLogger } from '#backend/lib/logger.js';
-import { OPENAPI_DOCUMENTATION } from '#backend/lib/openapi.js';
+import { createOpenApiDocumentation } from '#backend/lib/openapi.js';
 import { loggerMiddleware } from '#backend/middleware/logger.js';
 import { mikroOrmMiddleware } from '#backend/middleware/mikro-orm.js';
 import { servicesMiddleware } from '#backend/middleware/services.js';
@@ -23,6 +23,7 @@ export type CreateAppOptions = TinyAuthRuntimeConfigInput;
 
 export async function createApp(options: CreateAppOptions) {
   const config = TinyAuthRuntimeConfigSchema.parse(options);
+  const openApiDocumentation = createOpenApiDocumentation(config.openapi);
 
   // Create root logger (use config.logging.level: 'silent' to suppress)
   const logger = createLogger({ logging: config.logging });
@@ -67,8 +68,12 @@ export async function createApp(options: CreateAppOptions) {
     });
 
   app.get('/api/docs/json', async (c) => {
+    if (!config.openapi.enabled) {
+      return c.json({ error: 'Not Found' }, 404);
+    }
+
     const spec = await generateSpecs(app, {
-      documentation: OPENAPI_DOCUMENTATION,
+      documentation: openApiDocumentation,
     });
 
     return c.json(spec);

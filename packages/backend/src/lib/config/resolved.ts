@@ -10,6 +10,7 @@ import { FrontendConfigSchema } from './frontend.js';
 import { I18nConfigSchema } from './i18n.js';
 import { IdentityProviderConfigsSchema } from './identity-providers.js';
 import { LoggingConfigSchema } from './logging.js';
+import { OpenApiConfigSchema } from './openapi.js';
 import { RegistrationConfigSchema } from './registration.js';
 import { SchedulerConfigSchema } from './scheduler.js';
 import { SecurityConfigSchema } from './security.js';
@@ -35,6 +36,9 @@ export const TinyAuthRuntimeConfigSchema = z
       'Account deletion settings.',
     ),
     logging: LoggingConfigSchema.describe('Logging settings.'),
+    openapi: OpenApiConfigSchema.describe(
+      'OpenAPI and API reference settings.',
+    ),
     auth: AuthConfigSchema.describe('Authentication methods settings.'),
     security: SecurityConfigSchema.describe(
       'Security and cryptographic settings.',

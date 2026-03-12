@@ -43,6 +43,25 @@ describe('resolveConfig', () => {
     expect(Object.hasOwn(resolved, 'frontend')).toBe(false);
   });
 
+  test('preserves openapi settings in backend runtime config', async () => {
+    const resolved = await resolveConfig({
+      ...MINIMAL_CONFIG,
+      openapi: {
+        enabled: false,
+        title: 'Custom API',
+        description: 'Custom description',
+        ui_title: 'Custom API Reference',
+      },
+    });
+
+    expect(resolved.openapi).toEqual({
+      enabled: false,
+      title: 'Custom API',
+      description: 'Custom description',
+      ui_title: 'Custom API Reference',
+    });
+  });
+
   test('resolves test email accounts', async () => {
     const resolved = await resolveConfig({
       ...MINIMAL_CONFIG,

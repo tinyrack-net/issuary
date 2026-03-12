@@ -6,51 +6,116 @@ import {
   MINIMAL_TEST_CONFIG,
 } from '#backend/test-utils/index.js';
 
-let app: AppType;
-let cleanup: () => Promise<void>;
+describe('OpenAPI docs when enabled', () => {
+  let app: AppType;
+  let cleanup: () => Promise<void>;
 
-beforeAll(async () => {
-  const server = await createTestApp({
-    ...MINIMAL_TEST_CONFIG,
+  beforeAll(async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+    });
+    app = server.app;
+    cleanup = server.cleanup;
   });
-  app = server.app;
-  cleanup = server.cleanup;
+
+  afterAll(async () => {
+    await cleanup();
+  });
+
+  describe('GET /api/docs/json', () => {
+    test('returns 200 with valid OpenAPI 3.1.0 JSON spec', async () => {
+      const res = await app.request('/api/docs/json', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body).toHaveProperty('openapi', '3.1.0');
+      expect(body).toHaveProperty('info');
+      expect(body.info).toHaveProperty('title', 'TinyAuth API');
+      expect(body.info).toHaveProperty('version', '1.0.0');
+      expect(body.info).toHaveProperty(
+        'description',
+        'OpenID Connect Provider API',
+      );
+    });
+
+    test('includes paths in the spec', async () => {
+      const res = await app.request('/api/docs/json', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body).toHaveProperty('paths');
+      expect(Object.keys(body.paths).length).toBeGreaterThan(0);
+    });
+
+    test('includes the health endpoint in paths', async () => {
+      const res = await app.request('/api/docs/json', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body.paths).toHaveProperty('/api/health');
+    });
+
+    test('includes security schemes for cookie and bearer auth', async () => {
+      const res = await app.request('/api/docs/json', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body.components).toBeDefined();
+      expect(body.components.securitySchemes).toBeDefined();
+      expect(body.components.securitySchemes).toHaveProperty(
+        'cookieSessionAuth',
+      );
+      expect(body.components.securitySchemes).toHaveProperty('bearerAuth');
+    });
+  });
+
+  describe('GET /api/docs', () => {
+    test('returns 200 with Scalar API reference HTML', async () => {
+      const client = testClient(app);
+      const res = await client.api.docs.$get();
+
+      expect(res.status).toBe(200);
+
+      const contentType = res.headers.get('content-type');
+      expect(contentType).toContain('text/html');
+    });
+  });
 });
 
-afterAll(async () => {
-  await cleanup();
-});
+describe('OpenAPI docs with custom metadata', () => {
+  let app: AppType;
+  let cleanup: () => Promise<void>;
 
-describe('GET /api/docs/json', () => {
-  // /api/docs/json is registered directly on the app, not in the typed
-  // route tree, so these tests use app.request().
-  test('should return 200 with valid OpenAPI 3.1.0 JSON spec', async () => {
-    const res = await app.request('/api/docs/json', {
-      method: 'GET',
+  beforeAll(async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      openapi: {
+        title: 'Custom API',
+        description: 'Custom API description',
+        ui_title: 'Custom API Reference',
+      },
     });
-
-    expect(res.status).toBe(200);
-
-    const body = await res.json();
-    expect(body).toHaveProperty('openapi', '3.1.0');
-    expect(body).toHaveProperty('info');
-    expect(body.info).toHaveProperty('title', 'TinyAuth API');
-    expect(body.info).toHaveProperty('version', '1.0.0');
+    app = server.app;
+    cleanup = server.cleanup;
   });
 
-  test('should include paths in the spec', async () => {
-    const res = await app.request('/api/docs/json', {
-      method: 'GET',
-    });
-
-    expect(res.status).toBe(200);
-
-    const body = await res.json();
-    expect(body).toHaveProperty('paths');
-    expect(Object.keys(body.paths).length).toBeGreaterThan(0);
+  afterAll(async () => {
+    await cleanup();
   });
 
-  test('should include health endpoint in paths', async () => {
+  test('uses configured title and description in the generated spec', async () => {
     const res = await app.request('/api/docs/json', {
       method: 'GET',
     });
@@ -58,32 +123,56 @@ describe('GET /api/docs/json', () => {
     expect(res.status).toBe(200);
 
     const body = await res.json();
-    expect(body.paths).toHaveProperty('/api/health');
+    expect(body.info).toMatchObject({
+      title: 'Custom API',
+      description: 'Custom API description',
+      version: '1.0.0',
+    });
   });
 
-  test('should include security schemes for cookie and bearer auth', async () => {
-    const res = await app.request('/api/docs/json', {
+  test('uses the configured UI title in the Scalar page', async () => {
+    const res = await app.request('/api/docs', {
       method: 'GET',
     });
 
     expect(res.status).toBe(200);
-
-    const body = await res.json();
-    expect(body.components).toBeDefined();
-    expect(body.components.securitySchemes).toBeDefined();
-    expect(body.components.securitySchemes).toHaveProperty('cookieSessionAuth');
-    expect(body.components.securitySchemes).toHaveProperty('bearerAuth');
+    await expect(res.text()).resolves.toContain('Custom API Reference');
   });
 });
 
-describe('GET /api/docs', () => {
-  test('should return 200 with Scalar API reference HTML', async () => {
+describe('OpenAPI docs when disabled', () => {
+  let app: AppType;
+  let cleanup: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      openapi: {
+        enabled: false,
+      },
+    });
+    app = server.app;
+    cleanup = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanup();
+  });
+
+  test('returns 404 for GET /api/docs/json', async () => {
+    const res = await app.request('/api/docs/json', {
+      method: 'GET',
+    });
+
+    expect(res.status).toBe(404);
+    await expect(res.json()).resolves.toEqual({ error: 'Not Found' });
+  });
+
+  test('returns 404 for GET /api/docs', async () => {
     const client = testClient(app);
     const res = await client.api.docs.$get();
 
-    expect(res.status).toBe(200);
-
-    const contentType = res.headers.get('content-type');
-    expect(contentType).toContain('text/html');
+    expect(res.status).toBe(404);
+    await expect(res.json()).resolves.toEqual({ error: 'Not Found' });
   });
 });

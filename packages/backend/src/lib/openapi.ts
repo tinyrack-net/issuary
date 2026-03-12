@@ -1,8 +1,6 @@
-const openApiInfo = {
-  title: 'TinyAuth API',
-  version: '1.0.0',
-  description: 'OpenID Connect Provider API',
-};
+import type { OpenApiConfig } from '#backend/lib/config/openapi.js';
+
+const OPENAPI_INFO_VERSION = '1.0.0';
 
 type OpenApiSecurityRequirements = Array<Record<string, string[]>>;
 
@@ -16,24 +14,33 @@ export const OPENAPI_SECURITY: {
   bearer: [{ bearerAuth: [] }],
 };
 
-export const OPENAPI_DOCUMENTATION = {
-  info: openApiInfo,
-  servers: [{ url: '/' }],
-  components: {
-    securitySchemes: {
-      cookieSessionAuth: {
-        type: 'apiKey' as const,
-        in: 'cookie' as const,
-        name: 'session',
-        description:
-          'Encrypted session cookie issued by TinyAuth after authentication.',
-      },
-      bearerAuth: {
-        type: 'http' as const,
-        scheme: 'bearer' as const,
-        bearerFormat: 'JWT',
-        description: 'Bearer access token for OAuth 2.0/OIDC protected routes.',
+export function createOpenApiDocumentation(
+  config: Pick<OpenApiConfig, 'title' | 'description'>,
+) {
+  return {
+    info: {
+      title: config.title,
+      version: OPENAPI_INFO_VERSION,
+      description: config.description,
+    },
+    servers: [{ url: '/' }],
+    components: {
+      securitySchemes: {
+        cookieSessionAuth: {
+          type: 'apiKey' as const,
+          in: 'cookie' as const,
+          name: 'session',
+          description:
+            'Encrypted session cookie issued by TinyAuth after authentication.',
+        },
+        bearerAuth: {
+          type: 'http' as const,
+          scheme: 'bearer' as const,
+          bearerFormat: 'JWT',
+          description:
+            'Bearer access token for OAuth 2.0/OIDC protected routes.',
+        },
       },
     },
-  },
-};
+  };
+}

@@ -9,6 +9,7 @@ import { I18N_CONFIG_DEFAULT } from './i18n.js';
 import { IDENTITY_PROVIDER_CONFIGS_DEFAULT } from './identity-providers.js';
 import type { SchedulerConfig } from './index.js';
 import { LOGGING_CONFIG_DEFAULT } from './logging.js';
+import { OPENAPI_CONFIG_DEFAULT } from './openapi.js';
 import { REGISTRATION_CONFIG_DEFAULT } from './registration.js';
 import {
   type TinyAuthRuntimeConfigInput,
@@ -54,6 +55,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     expect(parsed.registration).toEqual(REGISTRATION_CONFIG_DEFAULT);
     expect(parsed.account_deletion).toEqual(ACCOUNT_DELETION_CONFIG_DEFAULT);
     expect(parsed.logging).toEqual(LOGGING_CONFIG_DEFAULT);
+    expect(parsed.openapi).toEqual(OPENAPI_CONFIG_DEFAULT);
     expect(parsed.auth).toEqual(AUTH_CONFIG_DEFAULT);
     expect(parsed.security).toEqual({
       ...MINIMAL_INPUT_CONFIG.security,
@@ -92,6 +94,10 @@ describe('TinyAuthRuntimeConfigSchema', () => {
           en: 'Custom',
         },
       },
+      openapi: {
+        enabled: false,
+        title: 'Custom API',
+      },
     } satisfies TinyAuthRuntimeConfigInput;
 
     const parsed = TinyAuthRuntimeConfigSchema.parse(partialInput);
@@ -119,6 +125,11 @@ describe('TinyAuthRuntimeConfigSchema', () => {
       en: 'Custom',
     });
     expect(parsed.branding.subtitle).toEqual(BRANDING_CONFIG_DEFAULT.subtitle);
+    expect(parsed.openapi).toEqual({
+      ...OPENAPI_CONFIG_DEFAULT,
+      enabled: false,
+      title: 'Custom API',
+    });
     expect(parsed.registration.allowed_email_patterns).toEqual(
       REGISTRATION_CONFIG_DEFAULT.allowed_email_patterns,
     );

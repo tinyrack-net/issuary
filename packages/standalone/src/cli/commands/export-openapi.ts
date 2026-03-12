@@ -1,35 +1,10 @@
 import { writeFileSync } from 'node:fs';
-import { createApp } from '@tinyauth/backend';
+import { createApp, createOpenApiDocumentation } from '@tinyauth/backend';
+import { OPENAPI_CONFIG_DEFAULT } from '@tinyauth/backend/config';
 import { Command } from 'commander';
 import { generateSpecs } from 'hono-openapi';
 import type { StandaloneConfigInput } from '#standalone/lib/config/index.js';
 import { resolveConfig } from '#standalone/lib/load-config.js';
-
-const OPENAPI_DOCUMENTATION = {
-  info: {
-    title: 'TinyAuth API',
-    version: '1.0.0',
-    description: 'OpenID Connect Provider API',
-  },
-  servers: [{ url: '/' }],
-  components: {
-    securitySchemes: {
-      cookieSessionAuth: {
-        type: 'apiKey' as const,
-        in: 'cookie' as const,
-        name: 'session',
-        description:
-          'Encrypted session cookie issued by TinyAuth after authentication.',
-      },
-      bearerAuth: {
-        type: 'http' as const,
-        scheme: 'bearer' as const,
-        bearerFormat: 'JWT',
-        description: 'Bearer access token for OAuth 2.0/OIDC protected routes.',
-      },
-    },
-  },
-};
 
 /**
  * Export OpenAPI command
@@ -71,7 +46,7 @@ export const exportOpenapiCommand = new Command('export:openapi')
 
     try {
       const spec = await generateSpecs(app, {
-        documentation: OPENAPI_DOCUMENTATION,
+        documentation: createOpenApiDocumentation(OPENAPI_CONFIG_DEFAULT),
       });
 
       const json = JSON.stringify(spec, null, 2);

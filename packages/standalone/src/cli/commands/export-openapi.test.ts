@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 const exportState = vi.hoisted(() => ({
   cleanupMock: vi.fn(async () => {}),
   createAppMock: vi.fn(),
+  createOpenApiDocumentationMock: vi.fn(),
   generateSpecsMock: vi.fn(),
   logger: {
     info: vi.fn(),
@@ -15,6 +16,16 @@ const exportState = vi.hoisted(() => ({
 
 vi.mock('@tinyauth/backend', () => ({
   createApp: exportState.createAppMock,
+  createOpenApiDocumentation: exportState.createOpenApiDocumentationMock,
+}));
+
+vi.mock('@tinyauth/backend/config', () => ({
+  OPENAPI_CONFIG_DEFAULT: {
+    enabled: true,
+    title: 'TinyAuth API',
+    description: 'OpenID Connect Provider API',
+    ui_title: 'TinyAuth API Reference',
+  },
 }));
 
 vi.mock('hono-openapi', () => ({
@@ -29,6 +40,7 @@ describe('exportOpenapiCommand', () => {
   beforeEach(() => {
     exportState.cleanupMock.mockReset();
     exportState.createAppMock.mockReset();
+    exportState.createOpenApiDocumentationMock.mockReset();
     exportState.generateSpecsMock.mockReset();
     exportState.logger.info.mockReset();
     exportState.resolveConfigMock.mockReset();
@@ -40,6 +52,11 @@ describe('exportOpenapiCommand', () => {
       app: { openapi: true },
       cleanup: exportState.cleanupMock,
       logger: exportState.logger,
+    });
+    exportState.createOpenApiDocumentationMock.mockReturnValue({
+      info: {
+        title: 'TinyAuth API',
+      },
     });
     exportState.generateSpecsMock.mockResolvedValue({
       openapi: '3.1.0',
@@ -63,6 +80,12 @@ describe('exportOpenapiCommand', () => {
 
     expect(exportState.resolveConfigMock).toHaveBeenCalled();
     expect(exportState.createAppMock).toHaveBeenCalled();
+    expect(exportState.createOpenApiDocumentationMock).toHaveBeenCalledWith({
+      enabled: true,
+      title: 'TinyAuth API',
+      description: 'OpenID Connect Provider API',
+      ui_title: 'TinyAuth API Reference',
+    });
     expect(exportState.generateSpecsMock).toHaveBeenCalledWith(
       { openapi: true },
       expect.objectContaining({

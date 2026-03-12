@@ -38,6 +38,8 @@ export {
 } from './identity-providers.js';
 export type { LogFormat, LoggingConfig, LogLevel } from './logging.js';
 export { LoggingConfigSchema } from './logging.js';
+export type { OpenApiConfig } from './openapi.js';
+export { OPENAPI_CONFIG_DEFAULT, OpenApiConfigSchema } from './openapi.js';
 export type { RegistrationConfig } from './registration.js';
 export { RegistrationConfigSchema } from './registration.js';
 export type {

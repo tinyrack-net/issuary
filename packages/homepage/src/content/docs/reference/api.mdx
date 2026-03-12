@@ -30,7 +30,8 @@ The interactive documentation is powered by [Scalar](https://scalar.com) and inc
 
 ## OpenAPI Specification
 
-The raw OpenAPI 3.0 specification is available as a JSON file:
+The raw OpenAPI 3.1 specification is available as a JSON file:
 
 - **Static spec**: [`/openapi.json`](/openapi.json) (bundled at build time)
-- **Live spec** (when running the server): `GET /api/docs/json`
+- **Live UI** (when running the server with `openapi.enabled: true`): `GET /api/docs`
+- **Live spec** (when running the server with `openapi.enabled: true`): `GET /api/docs/json`

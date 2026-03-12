@@ -220,6 +220,15 @@ description: 전체 config.yaml 스키마 레퍼런스
 | `pending_oauth_registrations.enabled` | `boolean` | `true` | `CLEANUP_PENDING_OAUTH_REGISTRATIONS_ENABLED` | 중단된 OAuth 가입 정리 |
 | `pending_oauth_registrations.retention` | `DurationString` | `'0'` | `CLEANUP_PENDING_OAUTH_REGISTRATIONS_RETENTION` | 보존 기간 |
 
+## `openapi`
+
+| 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
+|------|------|--------|-----------|------|
+| `enabled` | `boolean` | `true` | - | 라이브 OpenAPI 라우트 `GET /api/docs`, `GET /api/docs/json` 노출 여부 |
+| `title` | `string` | `'TinyAuth API'` | - | OpenAPI 문서 제목 |
+| `description` | `string` | `'OpenID Connect Provider API'` | - | OpenAPI 문서 설명 |
+| `ui_title` | `string` | `'TinyAuth API Reference'` | - | 라이브 Scalar API 레퍼런스 UI의 브라우저 페이지 제목 |
+
 ## `frontend` (standalone only)
 
 | 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
