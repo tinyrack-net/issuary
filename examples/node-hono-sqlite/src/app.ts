@@ -71,9 +71,6 @@ export async function createNodeHonoSqliteExampleApp(
         level: test ? 'silent' : 'info',
         format: test ? 'json' : 'pretty',
       },
-      scheduler: {
-        enabled: false,
-      },
       security: {
         session_secret: SESSION_SECRET,
         hash_secret: HASH_SECRET,

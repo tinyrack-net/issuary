@@ -22,6 +22,21 @@ Then open `http://localhost:8080`.
 The `dev` and `start` scripts build `@tinyauth/frontend` first, so the bundled
 UI is available without an extra manual step.
 
+## Scheduler
+
+Library mode keeps the scheduler explicit. Omit `scheduler` to disable it, or
+enable it with:
+
+```ts
+import { croner } from '@tinyauth/backend/scheduler/croner';
+
+await createApp({
+  config: {
+    scheduler: croner({ cron: '0 2 * * *' }),
+  },
+});
+```
+
 ## Notes
 
 - This example is intentionally minimal and uses hardcoded demo secrets.
