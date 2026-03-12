@@ -22,7 +22,7 @@ in-memory test configuration instead of ad-hoc setup.
 
 2. Build test server setup once per file.
 - In `beforeAll`, call `createApp` with
-  `config: { ...MINIMAL_TEST_CONFIG, ...overrides }`.
+  `{ ...MINIMAL_TEST_CONFIG, ...overrides }`.
 - Keep module-level `app`, `services`, and `cleanup` variables.
 - In `afterAll`, always call `await cleanup()`.
 - Add only required config for the scenario (for example `users`,

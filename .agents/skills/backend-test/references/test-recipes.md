@@ -15,9 +15,7 @@ let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   ({ app, services, cleanup } = await createApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-    },
+    ...MINIMAL_TEST_CONFIG,
   }));
 });
 
