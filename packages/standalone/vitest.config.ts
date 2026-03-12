@@ -133,5 +133,11 @@ export default defineConfig({
     maxWorkers: '90%',
     testTimeout: 20000,
     exclude: ['./dist/*', './node_modules/*'],
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.test.ts'],
+      reporter: ['text', 'lcov'],
+    },
   },
 });

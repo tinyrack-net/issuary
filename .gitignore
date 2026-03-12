@@ -26,6 +26,7 @@ packages/backend/public
 
 .env
 tsconfig.tsbuildinfo
+coverage/
 
 # Database
 *.db

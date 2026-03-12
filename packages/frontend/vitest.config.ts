@@ -5,6 +5,7 @@ import { preview } from '@vitest/browser-preview';
 import { defineConfig } from 'vitest/config';
 
 const MODE = process.env['VITEST_BROWSER_MODE'] as string;
+const IS_COVERAGE = process.env['VITEST_COVERAGE'] === '1';
 
 export default defineConfig({
   server: {
@@ -12,6 +13,17 @@ export default defineConfig({
     allowedHosts: ['desktop.server.lan'],
   },
   test: {
+    coverage: {
+      provider: 'v8',
+      clean: true,
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/test-utils/**',
+        'src/routeTree.gen.ts',
+      ],
+      reporter: ['text', 'lcov'],
+    },
     projects: [
       {
         resolve: {
@@ -31,9 +43,14 @@ export default defineConfig({
           setupFiles: ['./src/test-utils/vitest-browser-setup.ts'],
           browser: {
             enabled: true,
+            api: {
+              host: '0.0.0.0',
+            },
             provider: MODE === 'preview' ? preview() : playwright(),
             headless: MODE !== 'preview',
-            instances: [{ browser: 'chromium' }, { browser: 'firefox' }],
+            instances: IS_COVERAGE
+              ? [{ browser: 'chromium' }]
+              : [{ browser: 'chromium' }, { browser: 'firefox' }],
           },
         },
       },

@@ -1,0 +1,122 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  core:
+    name: Core Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: pnpm
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Backend tests
+        run: pnpm --filter @tinyauth/backend test
+
+      - name: Frontend unit tests
+        run: pnpm --filter @tinyauth/frontend test:unit -- --project unit --runInBand
+
+      - name: Standalone tests
+        run: pnpm --filter @tinyauth/standalone test
+
+      - name: Lint
+        run: pnpm biome check .
+
+  smoke-e2e:
+    name: Smoke E2E
+    needs: core
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: pnpm
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @tinyauth/frontend exec playwright install --with-deps chromium
+
+      - name: Frontend smoke E2E
+        run: pnpm --filter @tinyauth/frontend test:e2e -- --project minimal:chromium
+
+  full:
+    name: Full Matrix
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: core
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: pnpm
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Backend coverage
+        run: pnpm --filter @tinyauth/backend test:coverage
+
+      - name: Frontend unit coverage
+        run: pnpm --filter @tinyauth/frontend test:coverage
+
+      - name: Standalone coverage
+        run: pnpm --filter @tinyauth/standalone test:coverage
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @tinyauth/frontend exec playwright install --with-deps chromium firefox
+
+      - name: Full frontend E2E
+        run: pnpm --filter @tinyauth/frontend test:e2e
+
+      - name: Node example smoke test
+        run: pnpm --filter @tinyauth/example-node-hono-sqlite test
+
+      - name: Cloudflare example tests
+        run: pnpm --filter @tinyauth/example-cloudflare-worker-hono test
