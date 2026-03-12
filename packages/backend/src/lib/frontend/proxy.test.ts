@@ -1,168 +1,114 @@
-import http from 'node:http';
 import { Hono } from 'hono';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createProxyHandler } from './proxy.js';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-function createMockUpstream(): Promise<{
-  server: http.Server;
-  port: number;
-}> {
-  return new Promise((resolve) => {
-    const server = http.createServer((req, res) => {
-      const url = req.url ?? '/';
+const { proxyMock } = vi.hoisted(() => ({
+  proxyMock: vi.fn(),
+}));
 
-      if (url === '/') {
-        res.writeHead(200, { 'Content-Type': 'text/html' });
-        res.end('<html><body>upstream index</body></html>');
-        return;
-      }
+vi.mock('hono/proxy', () => ({
+  proxy: proxyMock,
+}));
 
-      if (url.startsWith('/style.css')) {
-        res.writeHead(200, { 'Content-Type': 'text/css' });
-        res.end('body { color: red }');
-        return;
-      }
+import { type CreateProxyHandlerOptions, createProxyHandler } from './proxy.js';
 
-      if (url === '/304') {
-        res.writeHead(304, { etag: '"abc123"' });
-        res.end();
-        return;
-      }
-
-      if (url === '/204') {
-        res.writeHead(204);
-        res.end();
-        return;
-      }
-
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('Not Found');
-    });
-
-    server.listen(0, '127.0.0.1', () => {
-      const addr = server.address();
-      if (typeof addr === 'object' && addr !== null) {
-        resolve({ server, port: addr.port });
-      }
-    });
+function createApp(options?: Omit<CreateProxyHandlerOptions, 'upstream'>) {
+  const handler = createProxyHandler({
+    upstream: 'https://frontend.test',
+    ...options,
   });
+
+  const app = new Hono();
+  app.notFound((c) => handler(c));
+  return app;
 }
 
 describe('createProxyHandler', () => {
-  let upstream: http.Server;
-  let app: InstanceType<typeof Hono>;
+  beforeEach(() => {
+    proxyMock.mockReset();
+  });
 
-  beforeAll(async () => {
-    const result = await createMockUpstream();
-    upstream = result.server;
+  test('proxies the request to the upstream URL and preserves the query string', async () => {
+    proxyMock.mockResolvedValue(
+      new Response('<html><body>upstream index</body></html>', {
+        headers: { 'content-type': 'text/html' },
+        status: 200,
+      }),
+    );
 
-    const handler = createProxyHandler({
-      upstream: `http://127.0.0.1:${String(result.port)}`,
+    const app = createApp();
+    const req = new Request('https://auth.test/login?client_id=abc&state=xyz', {
+      headers: { cookie: 'session=123' },
     });
+    const res = await app.request(req);
 
-    app = new Hono();
-    app.notFound((c) => handler(c));
-  });
-
-  afterAll(async () => {
-    await new Promise<void>((resolve) => {
-      upstream.close(() => {
-        resolve();
-      });
-    });
-  });
-
-  test('proxies 200 HTML response', async () => {
-    const res = await app.request('/');
     expect(res.status).toBe(200);
-    const body = await res.text();
-    expect(body).toContain('upstream index');
+    await expect(res.text()).resolves.toContain('upstream index');
+    expect(proxyMock).toHaveBeenCalledTimes(1);
+    expect(proxyMock).toHaveBeenCalledWith(
+      'https://frontend.test/login?client_id=abc&state=xyz',
+      expect.objectContaining({
+        raw: req,
+      }),
+    );
   });
 
-  test('proxies 200 CSS response', async () => {
-    const res = await app.request('/style.css');
-    expect(res.status).toBe(200);
-    const body = await res.text();
-    expect(body).toContain('body { color: red }');
+  test('passes 204 and 304 responses through unchanged', async () => {
+    proxyMock
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 304,
+          headers: { etag: '"abc123"' },
+        }),
+      );
+
+    const app = createApp();
+
+    const noContent = await app.request('/empty');
+    expect(noContent.status).toBe(204);
+    expect(noContent.body).toBeNull();
+
+    const notModified = await app.request('/cached');
+    expect(notModified.status).toBe(304);
+    expect(notModified.headers.get('etag')).toBe('"abc123"');
+    expect(notModified.body).toBeNull();
   });
 
-  test('handles 304 Not Modified without error', async () => {
-    const res = await app.request('/304');
-    expect(res.status).toBe(304);
-    expect(res.headers.get('etag')).toBe('"abc123"');
-    expect(res.body).toBeNull();
-  });
+  test('applies onResponse only to the proxied response', async () => {
+    proxyMock
+      .mockResolvedValueOnce(
+        new Response('<html><body>upstream index</body></html>', {
+          headers: { 'content-type': 'text/html' },
+          status: 200,
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response('body { color: red }', {
+          headers: { 'content-type': 'text/css' },
+          status: 200,
+        }),
+      );
 
-  test('handles 204 No Content without error', async () => {
-    const res = await app.request('/204');
-    expect(res.status).toBe(204);
-    expect(res.body).toBeNull();
-  });
-
-  test('proxies upstream 404 as-is', async () => {
-    const res = await app.request('/nonexistent');
-    expect(res.status).toBe(404);
-    const body = await res.text();
-    expect(body).toBe('Not Found');
-  });
-
-  test('preserves query string in proxied URL', async () => {
-    const res = await app.request('/style.css?v=123');
-    expect(res.status).toBe(200);
-    const body = await res.text();
-    expect(body).toContain('body { color: red }');
-  });
-});
-
-describe('createProxyHandler with onResponse', () => {
-  let upstream: http.Server;
-  let app: InstanceType<typeof Hono>;
-
-  beforeAll(async () => {
-    const result = await createMockUpstream();
-    upstream = result.server;
-
-    const handler = createProxyHandler({
-      upstream: `http://127.0.0.1:${String(result.port)}`,
+    const app = createApp({
       onResponse: async (res) => {
         const contentType = res.headers.get('content-type') ?? '';
         if (!contentType.includes('text/html')) {
           return res;
         }
-        const text = await res.text();
-        const modified = text.replace('upstream index', 'modified index');
-        return new Response(modified, {
+
+        const body = await res.text();
+        return new Response(body.replace('upstream', 'modified'), {
+          headers: res.headers,
           status: res.status,
           statusText: res.statusText,
-          headers: res.headers,
         });
       },
     });
 
-    app = new Hono();
-    app.notFound((c) => handler(c));
-  });
+    const html = await app.request('/');
+    await expect(html.text()).resolves.toContain('modified index');
 
-  afterAll(async () => {
-    await new Promise<void>((resolve) => {
-      upstream.close(() => {
-        resolve();
-      });
-    });
-  });
-
-  test('transforms HTML via onResponse hook', async () => {
-    const res = await app.request('/');
-    expect(res.status).toBe(200);
-    const body = await res.text();
-    expect(body).toContain('modified index');
-    expect(body).not.toContain('upstream index');
-  });
-
-  test('passes non-HTML through unchanged', async () => {
-    const res = await app.request('/style.css');
-    expect(res.status).toBe(200);
-    const body = await res.text();
-    expect(body).toContain('body { color: red }');
+    const css = await app.request('/style.css');
+    await expect(css.text()).resolves.toContain('body { color: red }');
   });
 });

@@ -1,10 +1,8 @@
 import fs from 'node:fs';
-import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createStandaloneApp } from './app.js';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 
 const BASE_CONFIG = {
   logging: {
@@ -24,6 +22,12 @@ const BASE_CONFIG = {
 } satisfies StandaloneConfigInput;
 
 describe('createStandaloneApp', () => {
+  let createStandaloneApp: typeof import('./app.js').createStandaloneApp;
+
+  beforeAll(async () => {
+    ({ createStandaloneApp } = await import('./app.js'));
+  });
+
   describe('static frontend mode', () => {
     let publicPath = '';
     let cleanup = async () => {};
@@ -35,7 +39,7 @@ describe('createStandaloneApp', () => {
       );
       await fs.promises.writeFile(
         path.join(publicPath, 'index.html'),
-        '<!doctype html><html><body>standalone static app</body></html>',
+        '<!doctype html><html><body>{{APP_NAME}}</body></html>',
         'utf-8',
       );
 
@@ -46,6 +50,9 @@ describe('createStandaloneApp', () => {
             enabled: true,
             mode: 'static',
             path: publicPath,
+            html_variables: {
+              APP_NAME: 'standalone static app',
+            },
           },
         },
       });
@@ -74,27 +81,18 @@ describe('createStandaloneApp', () => {
   });
 
   describe('proxy frontend mode', () => {
-    let upstream: http.Server;
-    let upstreamBase = '';
     let cleanup = async () => {};
     let app: Awaited<ReturnType<typeof createStandaloneApp>>['app'];
+    let fetchSpy: ReturnType<typeof vi.spyOn>;
 
     beforeAll(async () => {
-      upstream = await new Promise<http.Server>((resolve) => {
-        const server = http.createServer((_req, res) => {
-          res.writeHead(200, { 'Content-Type': 'text/html' });
-          res.end('<html><body>standalone proxy app</body></html>');
-        });
-        server.listen(0, '127.0.0.1', () => {
-          resolve(server);
+      fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+        return new Response('<html><body>{{APP_NAME}}</body></html>', {
+          headers: {
+            'content-type': 'text/html',
+          },
         });
       });
-
-      const address = upstream.address();
-      if (typeof address !== 'object' || address === null) {
-        throw new Error('Failed to determine upstream address');
-      }
-      upstreamBase = `http://127.0.0.1:${String(address.port)}`;
 
       const server = await createStandaloneApp({
         config: {
@@ -102,7 +100,10 @@ describe('createStandaloneApp', () => {
           frontend: {
             enabled: true,
             mode: 'proxy',
-            path: upstreamBase,
+            path: 'https://frontend.example.test',
+            html_variables: {
+              APP_NAME: 'standalone proxy app',
+            },
           },
         },
       });
@@ -112,11 +113,7 @@ describe('createStandaloneApp', () => {
 
     afterAll(async () => {
       await cleanup();
-      await new Promise<void>((resolve) => {
-        upstream.close(() => {
-          resolve();
-        });
-      });
+      fetchSpy.mockRestore();
     });
 
     test('proxies frontend requests through the standalone app', async () => {
@@ -124,6 +121,25 @@ describe('createStandaloneApp', () => {
 
       expect(res.status).toBe(200);
       await expect(res.text()).resolves.toContain('standalone proxy app');
+    });
+
+    test('proxies requests to the configured upstream URL', async () => {
+      await app.request('/register');
+
+      const firstInput = fetchSpy.mock.calls[0]?.[0];
+
+      if (!firstInput) {
+        throw new Error('Expected fetch to be called');
+      }
+
+      const upstreamUrl =
+        typeof firstInput === 'string'
+          ? firstInput
+          : firstInput instanceof URL
+            ? firstInput.toString()
+            : firstInput.url;
+
+      expect(upstreamUrl).toBe('https://frontend.example.test/register');
     });
   });
 });
