@@ -27,5 +27,12 @@
       "#frontend-e2e/*": ["./e2e/*"]
     }
   },
-  "include": ["e2e/tests", "e2e/helpers", "e2e/fixtures"]
+  "include": [
+    "playwright.config.ts",
+    "e2e/tests",
+    "e2e/helpers",
+    "e2e/fixtures",
+    "e2e/setup",
+    "e2e/configs"
+  ]
 }

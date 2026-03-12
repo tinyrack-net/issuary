@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.src.json",
+  "compilerOptions": {
+    "customConditions": [],
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.src.build.tsbuildinfo"
+  }
+}

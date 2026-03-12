@@ -17,7 +17,7 @@
   "scripts": {
     "dev": "vite",
     "dev:build": "vite build --watch",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b tsconfig.build.json && tsc -p tsconfig.e2e.json && vite build",
     "preview": "vite preview",
     "test": "pnpm run test:unit && pnpm run test:e2e",
     "test:unit": "vitest --project unit",
