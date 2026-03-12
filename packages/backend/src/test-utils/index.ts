@@ -71,6 +71,7 @@ export type {
   OAuthProviderFetchMockOptions,
 } from './oauth-mock.js';
 export { mockOAuthProviderFetch } from './oauth-mock.js';
+export type { TestEmailMessage } from './setup.js';
 // Setup utilities
 export {
   createTestApp,

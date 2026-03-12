@@ -7,9 +7,7 @@ import { apple } from '@tinyauth/backend/identity-providers/apple';
 import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth';
 import { github } from '@tinyauth/backend/identity-providers/github';
 import { google } from '@tinyauth/backend/identity-providers/google';
-import { nodemailer } from '@tinyauth/backend/mail/nodemailer';
 import { croner } from '@tinyauth/backend/scheduler/croner';
-import nm from 'nodemailer';
 import YAML from 'yaml';
 import type { StandaloneDatabaseConfig } from '#standalone/lib/config/database.js';
 import type {
@@ -31,6 +29,7 @@ import { resolveAbsolutePath } from './resolve-path.js';
 
 export const DEFAULT_FRONTEND_PROXY_UPSTREAM = 'http://localhost:8081';
 export const DEFAULT_FRONTEND_STATIC_PATH = '/opt/tinyauth/frontend';
+const TEST_EMAIL_FROM = 'no-reply@test.local';
 
 function createEphemeralSecurityConfig() {
   return {
@@ -87,27 +86,39 @@ async function resolveEmailConfig(
   }
 
   if (emailInput.transport === 'test') {
-    const testAccount = await nm.createTestAccount();
-    return nodemailer({
-      host: testAccount.smtp.host,
-      port: testAccount.smtp.port,
-      secure: testAccount.smtp.secure,
-      user: testAccount.user,
-      password: testAccount.pass,
-      from: emailInput.from ?? testAccount.user,
-      test: true,
-    });
+    return {
+      from: emailInput.from ?? TEST_EMAIL_FROM,
+      createTransport: async () => ({
+        sendMail: async (message) => ({
+          accepted: [message.to],
+          envelope: {
+            from: message.from ?? emailInput.from ?? TEST_EMAIL_FROM,
+            to: [message.to],
+          },
+          messageId: 'standalone-test-email',
+        }),
+      }),
+    };
   }
 
-  return nodemailer({
-    host: emailInput.host,
-    port: emailInput.port,
-    secure: emailInput.secure,
-    user: emailInput.user,
-    password: emailInput.password,
+  return {
     from: emailInput.from,
-    test: false,
-  });
+    createTransport: async () => {
+      const { default: nm } = await import('nodemailer');
+      const transport = nm.createTransport({
+        host: emailInput.host,
+        port: emailInput.port,
+        secure: emailInput.secure,
+        auth: {
+          user: emailInput.user,
+          pass: emailInput.password,
+        },
+      });
+      return {
+        sendMail: (message) => transport.sendMail(message),
+      };
+    },
+  };
 }
 
 function composeDatabaseConfig(

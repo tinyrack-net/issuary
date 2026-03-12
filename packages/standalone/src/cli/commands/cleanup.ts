@@ -34,6 +34,7 @@ export const cleanupCommand = new Command('cleanup')
 
       let services: ServiceContainer | undefined;
       let cleanup: (() => Promise<void>) | undefined;
+      let exitCode = 0;
 
       try {
         const resolved = await resolveConfig(loadConfig(configPath));
@@ -117,8 +118,7 @@ export const cleanupCommand = new Command('cleanup')
 
         // Exit with error code if any task failed
         if (summary.totalFailed > 0) {
-          await cleanup();
-          process.exit(1);
+          exitCode = 1;
         }
       } catch (err) {
         // Use console.error as fallback since logger
@@ -132,6 +132,6 @@ export const cleanupCommand = new Command('cleanup')
 
       // Graceful shutdown
       await cleanup();
-      process.exit(0);
+      process.exit(exitCode);
     },
   );

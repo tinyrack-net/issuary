@@ -1,7 +1,5 @@
-import nm from 'nodemailer';
 import { createApp } from '#backend/entrypoints/app.js';
 import { sqlite } from '#backend/entrypoints/database/sqlite.js';
-import { nodemailer } from '#backend/entrypoints/mail/nodemailer.js';
 import type {
   EmailConfig,
   TinyAuthRuntimeConfigInput,
@@ -53,21 +51,41 @@ export const MINIMAL_TEST_CONFIG = {
   },
 } as const satisfies TinyAuthRuntimeConfigInput;
 
+export interface TestEmailMessage {
+  from?: string | undefined;
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+}
+
 /**
- * Create a resolved SMTP config using nodemailer's test account.
+ * Create a deterministic in-memory email config for tests.
  * Call this in `beforeAll` for tests that need email functionality.
  */
-export async function createTestEmailConfig(): Promise<EmailConfig> {
-  const testAccount = await nm.createTestAccount();
-  return nodemailer({
-    host: testAccount.smtp.host,
-    port: testAccount.smtp.port,
-    secure: testAccount.smtp.secure,
-    user: testAccount.user,
-    password: testAccount.pass,
-    from: testAccount.user,
-    test: true,
-  });
+export async function createTestEmailConfig(options?: {
+  from?: string | undefined;
+  sentMessages?: TestEmailMessage[] | undefined;
+}): Promise<EmailConfig> {
+  const sentMessages = options?.sentMessages;
+  return {
+    from: options?.from ?? 'no-reply@test.local',
+    createTransport: async () => ({
+      sendMail: async (message) => {
+        if (sentMessages) {
+          sentMessages.push(message);
+        }
+        return {
+          accepted: [message.to],
+          envelope: {
+            from: message.from ?? options?.from ?? 'no-reply@test.local',
+            to: [message.to],
+          },
+          messageId: `test-email-${String(sentMessages?.length ?? 0)}`,
+        };
+      },
+    }),
+  };
 }
 
 export async function createTestApp(config?: TinyAuthRuntimeConfigInput) {
