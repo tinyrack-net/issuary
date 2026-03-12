@@ -24,12 +24,10 @@ describe('DELETE /api/user/totp', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        auth: {
-          password: {
-            totp: { enabled: true },
-          },
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        password: {
+          totp: { enabled: true },
         },
       },
     });
@@ -410,18 +408,16 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        users: [TEST_USER_CONFIG],
-        auth: {
-          password: {
-            two_factor: {
-              enrollment_required: true,
-            },
-            totp: { enabled: true },
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      auth: {
+        password: {
+          two_factor: {
+            enrollment_required: true,
           },
-          passkey: { enabled: true },
+          totp: { enabled: true },
         },
+        passkey: { enabled: true },
       },
     });
     appWith2FARequired = server.app;

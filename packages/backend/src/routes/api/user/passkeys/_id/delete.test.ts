@@ -24,16 +24,14 @@ describe('DELETE /api/user/passkeys/:id', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        users: [TEST_USER_CONFIG],
-        registration: {
-          email_verification_required: true,
-        },
-        auth: {
-          passkey: {
-            enabled: true,
-          },
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      registration: {
+        email_verification_required: true,
+      },
+      auth: {
+        passkey: {
+          enabled: true,
         },
       },
     });
@@ -509,15 +507,13 @@ describe('DELETE /api/user/passkeys/:id - Last auth method protection', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        registration: {
-          email_verification_required: true,
-        },
-        auth: {
-          passkey: {
-            enabled: true,
-          },
+      ...MINIMAL_TEST_CONFIG,
+      registration: {
+        email_verification_required: true,
+      },
+      auth: {
+        passkey: {
+          enabled: true,
         },
       },
     });
@@ -659,16 +655,14 @@ describe('DELETE /api/user/passkeys/:id - Passkey disabled', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        users: [TEST_USER_CONFIG],
-        registration: {
-          email_verification_required: true,
-        },
-        auth: {
-          passkey: {
-            enabled: false,
-          },
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      registration: {
+        email_verification_required: true,
+      },
+      auth: {
+        passkey: {
+          enabled: false,
         },
       },
     });
@@ -705,18 +699,16 @@ describe('DELETE /api/user/passkeys/:id - second_factor.required: true', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        users: [TEST_USER_CONFIG],
-        auth: {
-          password: {
-            two_factor: {
-              enrollment_required: true,
-            },
-            totp: { enabled: true },
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      auth: {
+        password: {
+          two_factor: {
+            enrollment_required: true,
           },
-          passkey: { enabled: true },
+          totp: { enabled: true },
         },
+        passkey: { enabled: true },
       },
     });
     appWith2FARequired = server.app;

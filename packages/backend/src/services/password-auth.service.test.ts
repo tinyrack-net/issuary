@@ -12,9 +12,7 @@ describe('PasswordAuthService', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createTestApp({
-      config: MINIMAL_TEST_CONFIG,
-    });
+    const server = await createTestApp(MINIMAL_TEST_CONFIG);
     services = server.services;
     cleanup = server.cleanup;
   });
@@ -360,14 +358,12 @@ describe('PasswordAuthService with custom password policy', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        auth: {
-          password: {
-            policy: {
-              min_length: 4,
-              max_length: 6,
-            },
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        password: {
+          policy: {
+            min_length: 4,
+            max_length: 6,
           },
         },
       },

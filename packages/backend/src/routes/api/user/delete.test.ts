@@ -31,14 +31,12 @@ describe('DELETE /api/user', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          account_deletion: {
-            enabled: true,
-            retention: '30d',
-          },
-          users: [TEST_USER_CONFIG],
+        ...MINIMAL_TEST_CONFIG,
+        account_deletion: {
+          enabled: true,
+          retention: '30d',
         },
+        users: [TEST_USER_CONFIG],
       });
       app = server.app;
       services = server.services;
@@ -194,11 +192,9 @@ describe('DELETE /api/user', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          account_deletion: {
-            enabled: false,
-          },
+        ...MINIMAL_TEST_CONFIG,
+        account_deletion: {
+          enabled: false,
         },
       });
       app = server.app;

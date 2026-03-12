@@ -21,12 +21,10 @@ let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   const server = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      auth: {
-        password: {
-          totp: { enabled: true },
-        },
+    ...MINIMAL_TEST_CONFIG,
+    auth: {
+      password: {
+        totp: { enabled: true },
       },
     },
   });

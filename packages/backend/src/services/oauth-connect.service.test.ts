@@ -54,23 +54,21 @@ describe('OAuthConnectService - auto_link strategy', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        registration: {
-          enabled: true,
-          allowed_email_patterns: ['*'],
-        },
-        identity_providers: [
-          google({
-            id: 'google',
-            enabled: true,
-            display_name: 'Google',
-            client_id: 'test-google-client-id',
-            client_secret: 'test-google-client-secret',
-            email_conflict_strategy: 'auto_link',
-          }),
-        ],
+      ...MINIMAL_TEST_CONFIG,
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
       },
+      identity_providers: [
+        google({
+          id: 'google',
+          enabled: true,
+          display_name: 'Google',
+          client_id: 'test-google-client-id',
+          client_secret: 'test-google-client-secret',
+          email_conflict_strategy: 'auto_link',
+        }),
+      ],
     });
     services = server.services;
     cleanup = server.cleanup;
@@ -185,23 +183,21 @@ describe('OAuthConnectService - require_link strategy', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        registration: {
-          enabled: true,
-          allowed_email_patterns: ['*'],
-        },
-        identity_providers: [
-          google({
-            id: 'google',
-            enabled: true,
-            display_name: 'Google',
-            client_id: 'test-google-client-id',
-            client_secret: 'test-google-client-secret',
-            email_conflict_strategy: 'require_link',
-          }),
-        ],
+      ...MINIMAL_TEST_CONFIG,
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
       },
+      identity_providers: [
+        google({
+          id: 'google',
+          enabled: true,
+          display_name: 'Google',
+          client_id: 'test-google-client-id',
+          client_secret: 'test-google-client-secret',
+          email_conflict_strategy: 'require_link',
+        }),
+      ],
     });
     services = server.services;
     cleanup = server.cleanup;
@@ -268,23 +264,21 @@ describe('OAuthConnectService - completeOAuthRegistration', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        registration: {
-          enabled: true,
-          allowed_email_patterns: ['*'],
-        },
-        identity_providers: [
-          google({
-            id: 'google',
-            enabled: true,
-            display_name: 'Google',
-            client_id: 'test-google-client-id',
-            client_secret: 'test-google-client-secret',
-            email_conflict_strategy: 'auto_link',
-          }),
-        ],
+      ...MINIMAL_TEST_CONFIG,
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
       },
+      identity_providers: [
+        google({
+          id: 'google',
+          enabled: true,
+          display_name: 'Google',
+          client_id: 'test-google-client-id',
+          client_secret: 'test-google-client-secret',
+          email_conflict_strategy: 'auto_link',
+        }),
+      ],
     });
     services = server.services;
     cleanup = server.cleanup;
@@ -325,19 +319,17 @@ describe('OAuthConnectService - fetchUserInfo', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          identity_providers: [
-            github({
-              id: 'github',
-              enabled: true,
-              display_name: 'GitHub',
-              client_id: 'test-github-client-id',
-              client_secret: 'test-github-client-secret',
-              email_conflict_strategy: 'auto_link',
-            }),
-          ],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        identity_providers: [
+          github({
+            id: 'github',
+            enabled: true,
+            display_name: 'GitHub',
+            client_id: 'test-github-client-id',
+            client_secret: 'test-github-client-secret',
+            email_conflict_strategy: 'auto_link',
+          }),
+        ],
       });
       services = server.services;
       cleanup = server.cleanup;
@@ -476,19 +468,17 @@ describe('OAuthConnectService - fetchUserInfo', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          identity_providers: [
-            apple({
-              id: 'apple',
-              enabled: true,
-              display_name: 'Apple',
-              client_id: 'test-apple-client-id',
-              client_secret: 'test-apple-client-secret',
-              email_conflict_strategy: 'auto_link',
-            }),
-          ],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        identity_providers: [
+          apple({
+            id: 'apple',
+            enabled: true,
+            display_name: 'Apple',
+            client_id: 'test-apple-client-id',
+            client_secret: 'test-apple-client-secret',
+            email_conflict_strategy: 'auto_link',
+          }),
+        ],
       });
       services = server.services;
       cleanup = server.cleanup;

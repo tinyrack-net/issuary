@@ -17,12 +17,10 @@ describe('POST /api/auth/passkey/options', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        auth: {
-          passkey: {
-            enabled: true,
-          },
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        passkey: {
+          enabled: true,
         },
       },
     });
@@ -130,18 +128,16 @@ describe('POST /api/auth/passkey/options - 2FA mode', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        auth: {
-          password: {
-            enabled: true,
-            two_factor: {
-              enrollment_required: true,
-            },
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        password: {
+          enabled: true,
+          two_factor: {
+            enrollment_required: true,
           },
-          passkey: {
-            enabled: true,
-          },
+        },
+        passkey: {
+          enabled: true,
         },
       },
     });
@@ -220,12 +216,10 @@ describe('POST /api/auth/passkey/options - 2FA mode', () => {
   test('should return empty allowCredentials for passwordless mode', async () => {
     // Create a new app instance just to get options without session
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        auth: {
-          passkey: {
-            enabled: true,
-          },
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        passkey: {
+          enabled: true,
         },
       },
     });
@@ -252,12 +246,10 @@ describe('POST /api/auth/passkey/options - Passkey disabled', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        auth: {
-          passkey: {
-            enabled: false,
-          },
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        passkey: {
+          enabled: false,
         },
       },
     });
@@ -285,13 +277,11 @@ describe('POST /api/auth/passkey/options - Custom rpId', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        auth: {
-          passkey: {
-            enabled: true,
-            rp_id: 'custom.example.com',
-          },
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        passkey: {
+          enabled: true,
+          rp_id: 'custom.example.com',
         },
       },
     });

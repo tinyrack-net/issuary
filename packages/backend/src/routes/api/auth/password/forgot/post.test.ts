@@ -24,16 +24,14 @@ const REGISTERED_USER_PASSWORD = 'password123!';
 beforeAll(async () => {
   const mail = await createTestEmailConfig();
   const server = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      email: mail,
-      registration: {
-        enabled: true,
-        allowed_email_patterns: ['*'],
-      },
-      users: [TEST_USER_CONFIG],
-      terms: TEST_TERMS_CONFIG,
+    ...MINIMAL_TEST_CONFIG,
+    email: mail,
+    registration: {
+      enabled: true,
+      allowed_email_patterns: ['*'],
     },
+    users: [TEST_USER_CONFIG],
+    terms: TEST_TERMS_CONFIG,
   });
   app = server.app;
   services = server.services;
@@ -187,10 +185,8 @@ describe('POST /api/auth/password/forgot (smtp disabled)', () => {
   beforeAll(async () => {
     const configWithoutSmtp = MINIMAL_TEST_CONFIG;
     const server = await createTestApp({
-      config: {
-        ...configWithoutSmtp,
-        users: [TEST_USER_CONFIG],
-      },
+      ...configWithoutSmtp,
+      users: [TEST_USER_CONFIG],
     });
     appNoSmtp = server.app;
     cleanupNoSmtp = server.cleanup;
@@ -219,13 +215,11 @@ describe('POST /api/auth/password/forgot (password disabled)', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        users: [TEST_USER_CONFIG],
-        auth: {
-          password: {
-            enabled: false,
-          },
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      auth: {
+        password: {
+          enabled: false,
         },
       },
     });

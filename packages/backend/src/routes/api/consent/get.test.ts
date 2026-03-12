@@ -16,11 +16,9 @@ let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   const server = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      users: [TEST_USER_CONFIG],
-      clients: [TEST_OAUTH_CLIENT_CONFIG],
-    },
+    ...MINIMAL_TEST_CONFIG,
+    users: [TEST_USER_CONFIG],
+    clients: [TEST_OAUTH_CLIENT_CONFIG],
   });
   app = server.app;
   cleanup = server.cleanup;

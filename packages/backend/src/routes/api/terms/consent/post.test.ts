@@ -23,11 +23,9 @@ describe('POST /api/terms/consent', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [...TEST_TERMS_CONFIG],
-          users: [TEST_USER_CONFIG],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [...TEST_TERMS_CONFIG],
+        users: [TEST_USER_CONFIG],
       });
       app = server.app;
       cleanup = server.cleanup;
@@ -72,11 +70,9 @@ describe('POST /api/terms/consent', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [...TEST_TERMS_CONFIG],
-          users: [TEST_USER_CONFIG],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [...TEST_TERMS_CONFIG],
+        users: [TEST_USER_CONFIG],
       });
       app = server.app;
       cleanup = server.cleanup;
@@ -220,10 +216,8 @@ describe('POST /api/terms/consent', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [...TEST_TERMS_CONFIG],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [...TEST_TERMS_CONFIG],
       });
       app = server.app;
       services = server.services;
@@ -346,37 +340,35 @@ describe('POST /api/terms/consent', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [
-            {
-              id: 'tos',
-              required: true,
-              consent_mode: 'explicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Terms',
-                  type: 'link',
-                  content: 'https://example.com/terms',
-                },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [
+          {
+            id: 'tos',
+            required: true,
+            consent_mode: 'explicit',
+            version: '1.0.0',
+            content: {
+              en: {
+                title: 'Terms',
+                type: 'link',
+                content: 'https://example.com/terms',
               },
             },
-            {
-              id: 'marketing',
-              required: false,
-              consent_mode: 'explicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Marketing',
-                  type: 'text',
-                  content: 'Receive marketing emails',
-                },
+          },
+          {
+            id: 'marketing',
+            required: false,
+            consent_mode: 'explicit',
+            version: '1.0.0',
+            content: {
+              en: {
+                title: 'Marketing',
+                type: 'text',
+                content: 'Receive marketing emails',
               },
             },
-          ],
-        },
+          },
+        ],
       });
       app = server.app;
       services = server.services;
@@ -480,10 +472,8 @@ describe('POST /api/terms/consent', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [...TEST_TERMS_CONFIG],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [...TEST_TERMS_CONFIG],
       });
       app = server.app;
       services = server.services;
@@ -542,10 +532,8 @@ describe('POST /api/terms/consent', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [...TEST_TERMS_CONFIG],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [...TEST_TERMS_CONFIG],
       });
       app = server.app;
       services = server.services;
@@ -596,10 +584,8 @@ describe('POST /api/terms/consent', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [...TEST_TERMS_CONFIG],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [...TEST_TERMS_CONFIG],
       });
       app = server.app;
       services = server.services;
@@ -730,24 +716,22 @@ describe('POST /api/terms/consent', () => {
 
       beforeAll(async () => {
         const server = await createTestApp({
-          config: {
-            ...MINIMAL_TEST_CONFIG,
-            terms: [
-              {
-                id: 'tos',
-                required: true,
-                consent_mode: 'explicit',
-                version: '1.0.0',
-                content: {
-                  en: {
-                    title: 'Terms',
-                    type: 'link',
-                    content: 'https://example.com/terms',
-                  },
+          ...MINIMAL_TEST_CONFIG,
+          terms: [
+            {
+              id: 'tos',
+              required: true,
+              consent_mode: 'explicit',
+              version: '1.0.0',
+              content: {
+                en: {
+                  title: 'Terms',
+                  type: 'link',
+                  content: 'https://example.com/terms',
                 },
               },
-            ],
-          },
+            },
+          ],
         });
         app = server.app;
         services = server.services;
@@ -795,24 +779,22 @@ describe('POST /api/terms/consent', () => {
 
       beforeAll(async () => {
         const server = await createTestApp({
-          config: {
-            ...MINIMAL_TEST_CONFIG,
-            terms: [
-              {
-                id: 'tos',
-                required: true,
-                consent_mode: 'implicit',
-                version: '1.0.0',
-                content: {
-                  en: {
-                    title: 'Terms',
-                    type: 'link',
-                    content: 'https://example.com/terms',
-                  },
+          ...MINIMAL_TEST_CONFIG,
+          terms: [
+            {
+              id: 'tos',
+              required: true,
+              consent_mode: 'implicit',
+              version: '1.0.0',
+              content: {
+                en: {
+                  title: 'Terms',
+                  type: 'link',
+                  content: 'https://example.com/terms',
                 },
               },
-            ],
-          },
+            },
+          ],
         });
         app = server.app;
         services = server.services;
@@ -861,10 +843,8 @@ describe('POST /api/terms/consent', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [...TEST_TERMS_CONFIG],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [...TEST_TERMS_CONFIG],
       });
       app = server.app;
       services = server.services;
@@ -927,11 +907,9 @@ describe('POST /api/terms/consent', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [...TEST_TERMS_CONFIG],
-          users: [TEST_USER_CONFIG],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [...TEST_TERMS_CONFIG],
+        users: [TEST_USER_CONFIG],
       });
       app = server.app;
       services = server.services;
@@ -1041,10 +1019,8 @@ describe('POST /api/terms/consent', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [],
       });
       app = server.app;
       services = server.services;
@@ -1089,10 +1065,8 @@ describe('POST /api/terms/consent', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [...TEST_TERMS_CONFIG],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [...TEST_TERMS_CONFIG],
       });
       app = server.app;
       services = server.services;

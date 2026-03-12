@@ -21,13 +21,11 @@ let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   const server = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      users: [TEST_USER_CONFIG],
-      auth: {
-        password: {
-          totp: { enabled: true },
-        },
+    ...MINIMAL_TEST_CONFIG,
+    users: [TEST_USER_CONFIG],
+    auth: {
+      password: {
+        totp: { enabled: true },
       },
     },
   });
@@ -259,13 +257,11 @@ describe('POST /api/user/totp/setup - TOTP disabled', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        users: [TEST_USER_CONFIG],
-        auth: {
-          password: {
-            totp: { enabled: false },
-          },
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      auth: {
+        password: {
+          totp: { enabled: false },
         },
       },
     });

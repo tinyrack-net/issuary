@@ -67,39 +67,37 @@ let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   const server = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      registration: {
-        enabled: true,
-        allowed_email_patterns: ['*'],
-        email_verification_required: false,
-      },
-      auth: {
-        password: {
-          enabled: true,
-          two_factor: {
-            enrollment_required: true,
-          },
-          totp: {
-            enabled: true,
-            issuer: 'TinyAuthStatefulTest',
-          },
-        },
-        passkey: {
-          enabled: true,
-        },
-      },
-      identity_providers: [
-        google({
-          id: 'google',
-          enabled: true,
-          display_name: 'Google',
-          client_id: 'test-google-client-id',
-          client_secret: 'test-google-client-secret',
-          email_conflict_strategy: 'auto_link',
-        }),
-      ],
+    ...MINIMAL_TEST_CONFIG,
+    registration: {
+      enabled: true,
+      allowed_email_patterns: ['*'],
+      email_verification_required: false,
     },
+    auth: {
+      password: {
+        enabled: true,
+        two_factor: {
+          enrollment_required: true,
+        },
+        totp: {
+          enabled: true,
+          issuer: 'TinyAuthStatefulTest',
+        },
+      },
+      passkey: {
+        enabled: true,
+      },
+    },
+    identity_providers: [
+      google({
+        id: 'google',
+        enabled: true,
+        display_name: 'Google',
+        client_id: 'test-google-client-id',
+        client_secret: 'test-google-client-secret',
+        email_conflict_strategy: 'auto_link',
+      }),
+    ],
   });
   app = server.app;
   services = server.services;

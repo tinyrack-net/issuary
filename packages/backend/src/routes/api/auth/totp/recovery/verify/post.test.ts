@@ -21,15 +21,13 @@ let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   const server = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      auth: {
-        password: {
-          two_factor: {
-            enrollment_required: false,
-          },
-          totp: { enabled: true },
+    ...MINIMAL_TEST_CONFIG,
+    auth: {
+      password: {
+        two_factor: {
+          enrollment_required: false,
         },
+        totp: { enabled: true },
       },
     },
   });
@@ -475,12 +473,10 @@ describe('POST /api/auth/totp/recovery/verify - TOTP disabled', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        auth: {
-          password: {
-            totp: { enabled: false },
-          },
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        password: {
+          totp: { enabled: false },
         },
       },
     });

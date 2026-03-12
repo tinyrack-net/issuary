@@ -66,14 +66,14 @@ beforeEach(() => {
   createAppMock.mockReset();
   createAppMock.mockImplementation(
     async (options: {
-      config: { frontend?: (c: Context) => Response | Promise<Response> };
+      frontend?: (c: Context) => Response | Promise<Response>;
     }) => {
       const app = new Hono();
       app.get('/api/health/live', (c) => {
         return c.json({ status: 'ok' });
       });
 
-      const frontendHandler = options.config.frontend;
+      const frontendHandler = options.frontend;
       app.notFound(async (c) => {
         if (frontendHandler) {
           return frontendHandler(c);

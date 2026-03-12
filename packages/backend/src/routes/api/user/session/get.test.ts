@@ -22,10 +22,8 @@ let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   const server = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      users: [TEST_USER_CONFIG],
-    },
+    ...MINIMAL_TEST_CONFIG,
+    users: [TEST_USER_CONFIG],
   });
   app = server.app;
   services = server.services;

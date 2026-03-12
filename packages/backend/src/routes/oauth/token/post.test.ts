@@ -23,11 +23,9 @@ let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   ({ app, services, cleanup } = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      users: [TEST_USER_CONFIG],
-      clients: [TEST_OAUTH_CLIENT_CONFIG],
-    },
+    ...MINIMAL_TEST_CONFIG,
+    users: [TEST_USER_CONFIG],
+    clients: [TEST_OAUTH_CLIENT_CONFIG],
   }));
 
   await services.mikro.em.fork().transactional(async (em) => {

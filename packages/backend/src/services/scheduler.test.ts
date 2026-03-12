@@ -69,9 +69,7 @@ describe('scheduler service', () => {
 
   describe('when scheduler is omitted', () => {
     beforeEach(async () => {
-      ({ services, cleanup } = await createTestApp({
-        config: MINIMAL_TEST_CONFIG,
-      }));
+      ({ services, cleanup } = await createTestApp(MINIMAL_TEST_CONFIG));
     });
 
     it('does not start a cleanup job', () => {
@@ -89,10 +87,8 @@ describe('scheduler service', () => {
       });
 
       ({ services, cleanup } = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          scheduler: driver.config,
-        },
+        ...MINIMAL_TEST_CONFIG,
+        scheduler: driver.config,
       }));
     });
 

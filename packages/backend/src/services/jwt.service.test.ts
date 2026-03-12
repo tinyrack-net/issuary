@@ -29,9 +29,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createTestApp({
-        config: MINIMAL_TEST_CONFIG,
-      });
+      const server = await createTestApp(MINIMAL_TEST_CONFIG);
       jwtService = server.services.jwtService;
       cleanup = server.cleanup;
     });
@@ -91,9 +89,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createTestApp({
-        config: MINIMAL_TEST_CONFIG,
-      });
+      const server = await createTestApp(MINIMAL_TEST_CONFIG);
       jwtService = server.services.jwtService;
       cleanup = server.cleanup;
     });
@@ -122,9 +118,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createTestApp({
-        config: CLI_TEST_CONFIG,
-      });
+      const server = await createTestApp(CLI_TEST_CONFIG);
       services = server.services;
       cleanup = server.cleanup;
     });
@@ -215,11 +209,9 @@ describe('JwtService', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          server: {
-            public_origin: 'https://auth.example.com',
-          },
+        ...MINIMAL_TEST_CONFIG,
+        server: {
+          public_origin: 'https://auth.example.com',
         },
       });
       services = server.services;
@@ -408,9 +400,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createTestApp({
-        config: MINIMAL_TEST_CONFIG,
-      });
+      const server = await createTestApp(MINIMAL_TEST_CONFIG);
       services = server.services;
       cleanup = server.cleanup;
     });
@@ -450,9 +440,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createTestApp({
-        config: MINIMAL_TEST_CONFIG,
-      });
+      const server = await createTestApp(MINIMAL_TEST_CONFIG);
       services = server.services;
       cleanup = server.cleanup;
     });
@@ -494,9 +482,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createTestApp({
-        config: CLI_TEST_CONFIG,
-      });
+      const server = await createTestApp(CLI_TEST_CONFIG);
       services = server.services;
       cleanup = server.cleanup;
     });
@@ -572,9 +558,7 @@ describe('JwtService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createTestApp({
-        config: MINIMAL_TEST_CONFIG,
-      });
+      const server = await createTestApp(MINIMAL_TEST_CONFIG);
       services = server.services;
       cleanup = server.cleanup;
     });

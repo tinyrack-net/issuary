@@ -33,16 +33,14 @@ describe('POST /api/auth/register', () => {
   beforeAll(async () => {
     const mail = await createTestEmailConfig();
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        email: mail,
-        registration: {
-          enabled: true,
-          allowed_email_patterns: ['*'],
-        },
-        users: [TEST_USER_CONFIG],
-        terms: TEST_TERMS_CONFIG,
+      ...MINIMAL_TEST_CONFIG,
+      email: mail,
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
       },
+      users: [TEST_USER_CONFIG],
+      terms: TEST_TERMS_CONFIG,
     });
     app = server.app;
     services = server.services;
@@ -202,18 +200,16 @@ describe('POST /api/auth/register', () => {
 
   test('should honor a custom configured password policy', async () => {
     const { app: customApp, cleanup: customCleanup } = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        registration: {
-          enabled: true,
-          allowed_email_patterns: ['*'],
-        },
-        auth: {
-          password: {
-            policy: {
-              min_length: 4,
-              max_length: 6,
-            },
+      ...MINIMAL_TEST_CONFIG,
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
+      },
+      auth: {
+        password: {
+          policy: {
+            min_length: 4,
+            max_length: 6,
           },
         },
       },
@@ -358,13 +354,11 @@ describe('POST /api/auth/register (signup disabled)', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        registration: {
-          enabled: false,
-        },
-        terms: TEST_TERMS_CONFIG,
+      ...MINIMAL_TEST_CONFIG,
+      registration: {
+        enabled: false,
       },
+      terms: TEST_TERMS_CONFIG,
     });
     app = server.app;
     cleanup = server.cleanup;
@@ -396,13 +390,11 @@ describe('POST /api/auth/register (open signup with no email patterns)', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        registration: {
-          enabled: true,
-        },
-        terms: TEST_TERMS_CONFIG,
+      ...MINIMAL_TEST_CONFIG,
+      registration: {
+        enabled: true,
       },
+      terms: TEST_TERMS_CONFIG,
     });
     app = server.app;
     cleanup = server.cleanup;
@@ -435,14 +427,12 @@ describe('POST /api/auth/register (domain wildcard pattern)', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        registration: {
-          enabled: true,
-          allowed_email_patterns: ['*@allowed.com'],
-        },
-        terms: TEST_TERMS_CONFIG,
+      ...MINIMAL_TEST_CONFIG,
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*@allowed.com'],
       },
+      terms: TEST_TERMS_CONFIG,
     });
     app = server.app;
     cleanup = server.cleanup;
@@ -493,14 +483,12 @@ describe('POST /api/auth/register (exact email pattern)', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        registration: {
-          enabled: true,
-          allowed_email_patterns: [exactEmail],
-        },
-        terms: TEST_TERMS_CONFIG,
+      ...MINIMAL_TEST_CONFIG,
+      registration: {
+        enabled: true,
+        allowed_email_patterns: [exactEmail],
       },
+      terms: TEST_TERMS_CONFIG,
     });
     app = server.app;
     cleanup = server.cleanup;
@@ -549,14 +537,12 @@ describe('POST /api/auth/register (multiple patterns)', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        registration: {
-          enabled: true,
-          allowed_email_patterns: ['*@company.com', 'special@other.com'],
-        },
-        terms: TEST_TERMS_CONFIG,
+      ...MINIMAL_TEST_CONFIG,
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*@company.com', 'special@other.com'],
       },
+      terms: TEST_TERMS_CONFIG,
     });
     app = server.app;
     cleanup = server.cleanup;
@@ -617,31 +603,29 @@ describe('POST /api/auth/register (implicit consent mode)', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        registration: {
-          enabled: true,
-          allowed_email_patterns: ['*'],
-          signup_notice: {
-            en: 'By signing up, you agree to our Terms.',
-          },
+      ...MINIMAL_TEST_CONFIG,
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
+        signup_notice: {
+          en: 'By signing up, you agree to our Terms.',
         },
-        terms: [
-          {
-            id: 'tos',
-            required: true,
-            consent_mode: 'implicit',
-            version: '1.0.0',
-            content: {
-              en: {
-                title: 'Terms',
-                type: 'link',
-                content: 'https://example.com/terms',
-              },
+      },
+      terms: [
+        {
+          id: 'tos',
+          required: true,
+          consent_mode: 'implicit',
+          version: '1.0.0',
+          content: {
+            en: {
+              title: 'Terms',
+              type: 'link',
+              content: 'https://example.com/terms',
             },
           },
-        ],
-      },
+        },
+      ],
     });
     app = server.app;
     services = server.services;
@@ -706,14 +690,12 @@ describe('POST /api/auth/register (no terms configured)', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        registration: {
-          enabled: true,
-          allowed_email_patterns: ['*'],
-        },
-        terms: [],
+      ...MINIMAL_TEST_CONFIG,
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
       },
+      terms: [],
     });
     app = server.app;
     cleanup = server.cleanup;
@@ -748,16 +730,14 @@ describe('POST /api/auth/register (password disabled)', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        users: [TEST_USER_CONFIG],
-        auth: {
-          password: {
-            enabled: false,
-          },
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      auth: {
+        password: {
+          enabled: false,
         },
-        terms: TEST_TERMS_CONFIG,
       },
+      terms: TEST_TERMS_CONFIG,
     });
     app = server.app;
     cleanup = server.cleanup;

@@ -59,12 +59,10 @@ describe('POST /api/auth/passkey/verify', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        auth: {
-          passkey: {
-            enabled: true,
-          },
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        passkey: {
+          enabled: true,
         },
       },
     });
@@ -362,12 +360,10 @@ describe('POST /api/auth/passkey/verify - Success with mocked service', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        auth: {
-          passkey: {
-            enabled: true,
-          },
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        passkey: {
+          enabled: true,
         },
       },
     });
@@ -467,17 +463,15 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        auth: {
-          password: {
-            enabled: true,
-            two_factor: {
-              enrollment_required: true,
-            },
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        password: {
+          enabled: true,
+          two_factor: {
+            enrollment_required: true,
           },
-          passkey: { enabled: true },
         },
+        passkey: { enabled: true },
       },
     });
     app2FA = server.app;
@@ -685,12 +679,10 @@ describe('POST /api/auth/passkey/verify - Passkey disabled', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        auth: {
-          passkey: {
-            enabled: false,
-          },
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        passkey: {
+          enabled: false,
         },
       },
     });

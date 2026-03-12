@@ -22,11 +22,9 @@ let cleanup: () => Promise<void>;
 beforeAll(async () => {
   const mail = await createTestEmailConfig();
   const server = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      email: mail,
-      users: [TEST_USER_CONFIG],
-    },
+    ...MINIMAL_TEST_CONFIG,
+    email: mail,
+    users: [TEST_USER_CONFIG],
   });
   app = server.app;
   services = server.services;
@@ -199,10 +197,8 @@ describe('POST /api/auth/email/resend (smtp disabled)', () => {
   beforeAll(async () => {
     const configWithoutSmtp = MINIMAL_TEST_CONFIG;
     const server = await createTestApp({
-      config: {
-        ...configWithoutSmtp,
-        users: [TEST_USER_CONFIG],
-      },
+      ...configWithoutSmtp,
+      users: [TEST_USER_CONFIG],
     });
     appNoSmtp = server.app;
     cleanupNoSmtp = server.cleanup;

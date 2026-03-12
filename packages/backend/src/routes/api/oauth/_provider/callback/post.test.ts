@@ -29,25 +29,23 @@ let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   const server = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      registration: {
-        enabled: true,
-        allowed_email_patterns: ['*'],
-      },
-      users: [TEST_USER_CONFIG],
-      identity_providers: [
-        apple({
-          id: 'apple',
-          enabled: true,
-          display_name: 'Apple',
-          client_id: 'test-apple-client-id',
-          client_secret: 'test-apple-client-secret',
-          email_conflict_strategy: 'auto_link',
-        }),
-      ],
-      terms: [],
+    ...MINIMAL_TEST_CONFIG,
+    registration: {
+      enabled: true,
+      allowed_email_patterns: ['*'],
     },
+    users: [TEST_USER_CONFIG],
+    identity_providers: [
+      apple({
+        id: 'apple',
+        enabled: true,
+        display_name: 'Apple',
+        client_id: 'test-apple-client-id',
+        client_secret: 'test-apple-client-secret',
+        email_conflict_strategy: 'auto_link',
+      }),
+    ],
+    terms: [],
   });
   app = server.app;
   cleanup = server.cleanup;

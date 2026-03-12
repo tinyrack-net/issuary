@@ -23,16 +23,14 @@ describe('GET /api/user/passkeys', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        users: [TEST_USER_CONFIG],
-        registration: {
-          email_verification_required: true,
-        },
-        auth: {
-          passkey: {
-            enabled: true,
-          },
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      registration: {
+        email_verification_required: true,
+      },
+      auth: {
+        passkey: {
+          enabled: true,
         },
       },
     });
@@ -324,16 +322,14 @@ describe('GET /api/user/passkeys - Passkey disabled', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        users: [TEST_USER_CONFIG],
-        registration: {
-          email_verification_required: true,
-        },
-        auth: {
-          passkey: {
-            enabled: false,
-          },
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      registration: {
+        email_verification_required: true,
+      },
+      auth: {
+        passkey: {
+          enabled: false,
         },
       },
     });

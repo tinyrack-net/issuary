@@ -22,15 +22,13 @@ let cleanup: () => Promise<void>;
 beforeAll(async () => {
   const mail = await createTestEmailConfig();
   const server = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      email: mail,
-      registration: {
-        enabled: true,
-        allowed_email_patterns: ['*'],
-      },
-      terms: TEST_TERMS_CONFIG,
+    ...MINIMAL_TEST_CONFIG,
+    email: mail,
+    registration: {
+      enabled: true,
+      allowed_email_patterns: ['*'],
     },
+    terms: TEST_TERMS_CONFIG,
   });
   app = server.app;
   services = server.services;
@@ -302,9 +300,7 @@ describe('POST /api/auth/password/reset (smtp disabled)', () => {
   beforeAll(async () => {
     const configWithoutSmtp = MINIMAL_TEST_CONFIG;
     const server = await createTestApp({
-      config: {
-        ...configWithoutSmtp,
-      },
+      ...configWithoutSmtp,
     });
     appNoSmtp = server.app;
     cleanupNoSmtp = server.cleanup;
@@ -333,12 +329,10 @@ describe('POST /api/auth/password/reset (password disabled)', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        auth: {
-          password: {
-            enabled: false,
-          },
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        password: {
+          enabled: false,
         },
       },
     });

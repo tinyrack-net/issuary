@@ -19,10 +19,8 @@ let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   const server = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      users: [TEST_USER_CONFIG],
-    },
+    ...MINIMAL_TEST_CONFIG,
+    users: [TEST_USER_CONFIG],
   });
   app = server.app;
   services = server.services;
@@ -409,22 +407,18 @@ describe('DELETE /api/user/password - password disabled', () => {
 
   beforeAll(async () => {
     const sessionServer = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        users: [TEST_USER_CONFIG],
-      },
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
     });
     appSession = sessionServer.app;
     cleanupSession = sessionServer.cleanup;
 
     const disabledServer = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        users: [TEST_USER_CONFIG],
-        auth: {
-          password: {
-            enabled: false,
-          },
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      auth: {
+        password: {
+          enabled: false,
         },
       },
     });

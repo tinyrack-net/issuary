@@ -44,9 +44,7 @@ describe('CleanupService', () => {
     let clientId: string;
 
     beforeAll(async () => {
-      const server = await createTestApp({
-        config: CLI_TEST_CONFIG,
-      });
+      const server = await createTestApp(CLI_TEST_CONFIG);
       services = server.services;
       cleanup = server.cleanup;
 
@@ -69,12 +67,10 @@ describe('CleanupService', () => {
 
     test('should skip when disabled in config', async () => {
       const disabledServer = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          cleanup: {
-            revoked_tokens: {
-              enabled: false,
-            },
+        ...MINIMAL_TEST_CONFIG,
+        cleanup: {
+          revoked_tokens: {
+            enabled: false,
           },
         },
       });
@@ -185,11 +181,9 @@ describe('CleanupService', () => {
     test('should respect retention period configuration', async () => {
       // Create app with 1 hour retention
       const retentionServer = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          cleanup: {
-            revoked_tokens: { enabled: true, retention: '1h' },
-          },
+        ...MINIMAL_TEST_CONFIG,
+        cleanup: {
+          revoked_tokens: { enabled: true, retention: '1h' },
         },
       });
 
@@ -254,16 +248,14 @@ describe('CleanupService', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...CLI_TEST_CONFIG,
-          tokens: {
-            ...CLI_TEST_CONFIG.tokens,
-            key_rotation: {
-              ...CLI_TEST_CONFIG.tokens.key_rotation,
-              enabled: true,
-              interval_days: 30,
-              overlap_days: 7,
-            },
+        ...CLI_TEST_CONFIG,
+        tokens: {
+          ...CLI_TEST_CONFIG.tokens,
+          key_rotation: {
+            ...CLI_TEST_CONFIG.tokens.key_rotation,
+            enabled: true,
+            interval_days: 30,
+            overlap_days: 7,
           },
         },
       });
@@ -287,11 +279,9 @@ describe('CleanupService', () => {
 
     test('should skip when disabled in config', async () => {
       const disabledServer = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          tokens: {
-            key_rotation: { enabled: false },
-          },
+        ...MINIMAL_TEST_CONFIG,
+        tokens: {
+          key_rotation: { enabled: false },
         },
       });
 
@@ -311,11 +301,9 @@ describe('CleanupService', () => {
 
     test('should skip when jwt_key_rotation_enabled is false', async () => {
       const noRotationServer = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          tokens: {
-            key_rotation: { enabled: false },
-          },
+        ...MINIMAL_TEST_CONFIG,
+        tokens: {
+          key_rotation: { enabled: false },
         },
       });
 
@@ -558,9 +546,7 @@ describe('CleanupService', () => {
     let clientId: string;
 
     beforeAll(async () => {
-      const server = await createTestApp({
-        config: CLI_TEST_CONFIG,
-      });
+      const server = await createTestApp(CLI_TEST_CONFIG);
       services = server.services;
       cleanup = server.cleanup;
 
@@ -582,12 +568,10 @@ describe('CleanupService', () => {
 
     test('should skip when disabled in config', async () => {
       const disabledServer = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          cleanup: {
-            oauth_codes: {
-              enabled: false,
-            },
+        ...MINIMAL_TEST_CONFIG,
+        cleanup: {
+          oauth_codes: {
+            enabled: false,
           },
         },
       });
@@ -666,11 +650,9 @@ describe('CleanupService', () => {
     test('should not delete recently consumed codes within retention', async () => {
       // Create app with 1 hour consumed retention
       const retentionServer = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          cleanup: {
-            oauth_codes: { enabled: true, consumed_retention: '1h' },
-          },
+        ...MINIMAL_TEST_CONFIG,
+        cleanup: {
+          oauth_codes: { enabled: true, consumed_retention: '1h' },
         },
       });
 
@@ -784,9 +766,7 @@ describe('CleanupService', () => {
     let userSub: string;
 
     beforeAll(async () => {
-      const server = await createTestApp({
-        config: CLI_TEST_CONFIG,
-      });
+      const server = await createTestApp(CLI_TEST_CONFIG);
       services = server.services;
       cleanup = server.cleanup;
 
@@ -806,12 +786,10 @@ describe('CleanupService', () => {
 
     test('should skip when disabled in config', async () => {
       const disabledServer = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          cleanup: {
-            email_verifications: {
-              enabled: false,
-            },
+        ...MINIMAL_TEST_CONFIG,
+        cleanup: {
+          email_verifications: {
+            enabled: false,
           },
         },
       });
@@ -918,9 +896,7 @@ describe('CleanupService', () => {
     let userSub: string;
 
     beforeAll(async () => {
-      const server = await createTestApp({
-        config: CLI_TEST_CONFIG,
-      });
+      const server = await createTestApp(CLI_TEST_CONFIG);
       services = server.services;
       cleanup = server.cleanup;
 
@@ -940,12 +916,10 @@ describe('CleanupService', () => {
 
     test('should skip when disabled in config', async () => {
       const disabledServer = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          cleanup: {
-            password_resets: {
-              enabled: false,
-            },
+        ...MINIMAL_TEST_CONFIG,
+        cleanup: {
+          password_resets: {
+            enabled: false,
           },
         },
       });
@@ -1049,9 +1023,7 @@ describe('CleanupService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createTestApp({
-        config: CLI_TEST_CONFIG,
-      });
+      const server = await createTestApp(CLI_TEST_CONFIG);
       services = server.services;
       cleanup = server.cleanup;
     });
@@ -1069,11 +1041,9 @@ describe('CleanupService', () => {
 
     test('should skip when disabled in config', async () => {
       const disabledServer = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          account_deletion: {
-            enabled: false,
-          },
+        ...MINIMAL_TEST_CONFIG,
+        account_deletion: {
+          enabled: false,
         },
       });
 
@@ -1093,11 +1063,9 @@ describe('CleanupService', () => {
 
     test('should skip when account_deletion feature is disabled', async () => {
       const noAccountDeletionServer = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          account_deletion: {
-            enabled: false,
-          },
+        ...MINIMAL_TEST_CONFIG,
+        account_deletion: {
+          enabled: false,
         },
       });
 
@@ -1209,9 +1177,7 @@ describe('CleanupService', () => {
     let cleanup: () => Promise<void>;
 
     beforeAll(async () => {
-      const server = await createTestApp({
-        config: CLI_TEST_CONFIG,
-      });
+      const server = await createTestApp(CLI_TEST_CONFIG);
       services = server.services;
       cleanup = server.cleanup;
     });
@@ -1229,12 +1195,10 @@ describe('CleanupService', () => {
 
     test('should skip when disabled in config', async () => {
       const disabledServer = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          cleanup: {
-            pending_oauth_registrations: {
-              enabled: false,
-            },
+        ...MINIMAL_TEST_CONFIG,
+        cleanup: {
+          pending_oauth_registrations: {
+            enabled: false,
           },
         },
       });
@@ -1341,13 +1305,11 @@ describe('CleanupService', () => {
 
     test('should respect retention period configuration', async () => {
       const retentionServer = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          cleanup: {
-            pending_oauth_registrations: {
-              enabled: true,
-              retention: '1h',
-            },
+        ...MINIMAL_TEST_CONFIG,
+        cleanup: {
+          pending_oauth_registrations: {
+            enabled: true,
+            retention: '1h',
           },
         },
       });

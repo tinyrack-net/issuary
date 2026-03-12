@@ -26,11 +26,9 @@ describe('createTestApp', () => {
 
   test('accepts overridden resolved config', async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        server: {
-          public_origin: 'http://localhost:9090',
-        },
+      ...MINIMAL_TEST_CONFIG,
+      server: {
+        public_origin: 'http://localhost:9090',
       },
     });
 

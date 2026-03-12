@@ -18,10 +18,8 @@ describe('GET /api/terms', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [...TEST_TERMS_CONFIG],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [...TEST_TERMS_CONFIG],
       });
       app = server.app;
       cleanup = server.cleanup;
@@ -101,10 +99,8 @@ describe('GET /api/terms', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [...TEST_TERMS_CONFIG],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [...TEST_TERMS_CONFIG],
       });
       app = server.app;
       cleanup = server.cleanup;
@@ -173,10 +169,8 @@ describe('GET /api/terms', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [...TEST_TERMS_CONFIG],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [...TEST_TERMS_CONFIG],
       });
       app = server.app;
       services = server.services;
@@ -332,10 +326,8 @@ describe('GET /api/terms', () => {
 
       beforeAll(async () => {
         const server = await createTestApp({
-          config: {
-            ...MINIMAL_TEST_CONFIG,
-            terms: [...TEST_TERMS_CONFIG],
-          },
+          ...MINIMAL_TEST_CONFIG,
+          terms: [...TEST_TERMS_CONFIG],
         });
         app = server.app;
         cleanup = server.cleanup;
@@ -362,30 +354,28 @@ describe('GET /api/terms', () => {
 
       beforeAll(async () => {
         const server = await createTestApp({
-          config: {
-            ...MINIMAL_TEST_CONFIG,
-            registration: {
-              signup_notice: {
-                ko: '가입하시면 약관에 동의하는 것입니다.',
-                en: 'By signing up you agree to our terms.',
-              },
+          ...MINIMAL_TEST_CONFIG,
+          registration: {
+            signup_notice: {
+              ko: '가입하시면 약관에 동의하는 것입니다.',
+              en: 'By signing up you agree to our terms.',
             },
-            terms: [
-              {
-                id: 'tos',
-                required: true,
-                consent_mode: 'implicit',
-                version: '1.0.0',
-                content: {
-                  en: {
-                    title: 'Terms',
-                    type: 'link',
-                    content: 'https://example.com/terms',
-                  },
+          },
+          terms: [
+            {
+              id: 'tos',
+              required: true,
+              consent_mode: 'implicit',
+              version: '1.0.0',
+              content: {
+                en: {
+                  title: 'Terms',
+                  type: 'link',
+                  content: 'https://example.com/terms',
                 },
               },
-            ],
-          },
+            },
+          ],
         });
         app = server.app;
         cleanup = server.cleanup;
@@ -413,50 +403,48 @@ describe('GET /api/terms', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [
-            {
-              id: 'tos',
-              required: true,
-              consent_mode: 'explicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Terms',
-                  type: 'link',
-                  content: 'https://example.com/terms',
-                },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [
+          {
+            id: 'tos',
+            required: true,
+            consent_mode: 'explicit',
+            version: '1.0.0',
+            content: {
+              en: {
+                title: 'Terms',
+                type: 'link',
+                content: 'https://example.com/terms',
               },
             },
-            {
-              id: 'privacy',
-              required: true,
-              consent_mode: 'explicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Privacy',
-                  type: 'link',
-                  content: 'https://example.com/privacy',
-                },
+          },
+          {
+            id: 'privacy',
+            required: true,
+            consent_mode: 'explicit',
+            version: '1.0.0',
+            content: {
+              en: {
+                title: 'Privacy',
+                type: 'link',
+                content: 'https://example.com/privacy',
               },
             },
-            {
-              id: 'marketing',
-              required: false,
-              consent_mode: 'explicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Marketing',
-                  type: 'text',
-                  content: 'Receive marketing emails',
-                },
+          },
+          {
+            id: 'marketing',
+            required: false,
+            consent_mode: 'explicit',
+            version: '1.0.0',
+            content: {
+              en: {
+                title: 'Marketing',
+                type: 'text',
+                content: 'Receive marketing emails',
               },
             },
-          ],
-        },
+          },
+        ],
       });
       app = server.app;
       cleanup = server.cleanup;
@@ -516,37 +504,35 @@ describe('GET /api/terms', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [
-            {
-              id: 'with-link',
-              required: true,
-              consent_mode: 'explicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Terms with Link',
-                  type: 'link',
-                  content: 'https://example.com/terms',
-                },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [
+          {
+            id: 'with-link',
+            required: true,
+            consent_mode: 'explicit',
+            version: '1.0.0',
+            content: {
+              en: {
+                title: 'Terms with Link',
+                type: 'link',
+                content: 'https://example.com/terms',
               },
             },
-            {
-              id: 'with-text',
-              required: true,
-              consent_mode: 'explicit',
-              version: '1.0.0',
-              content: {
-                en: {
-                  title: 'Terms with Text',
-                  type: 'text',
-                  content: 'This is the full terms content inline.',
-                },
+          },
+          {
+            id: 'with-text',
+            required: true,
+            consent_mode: 'explicit',
+            version: '1.0.0',
+            content: {
+              en: {
+                title: 'Terms with Text',
+                type: 'text',
+                content: 'This is the full terms content inline.',
               },
             },
-          ],
-        },
+          },
+        ],
       });
       app = server.app;
       cleanup = server.cleanup;
@@ -596,10 +582,8 @@ describe('GET /api/terms', () => {
 
       beforeAll(async () => {
         const server = await createTestApp({
-          config: {
-            ...MINIMAL_TEST_CONFIG,
-            terms: [],
-          },
+          ...MINIMAL_TEST_CONFIG,
+          terms: [],
         });
         app = server.app;
         cleanup = server.cleanup;
@@ -627,10 +611,8 @@ describe('GET /api/terms', () => {
 
       beforeAll(async () => {
         const server = await createTestApp({
-          config: {
-            ...MINIMAL_TEST_CONFIG,
-            terms: [...TEST_TERMS_CONFIG],
-          },
+          ...MINIMAL_TEST_CONFIG,
+          terms: [...TEST_TERMS_CONFIG],
         });
         app = server.app;
         cleanup = server.cleanup;
@@ -665,10 +647,8 @@ describe('GET /api/terms', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          terms: [...TEST_TERMS_CONFIG],
-        },
+        ...MINIMAL_TEST_CONFIG,
+        terms: [...TEST_TERMS_CONFIG],
       });
       app = server.app;
       services = server.services;

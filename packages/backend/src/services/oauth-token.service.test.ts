@@ -15,11 +15,9 @@ describe('OAuthTokenService', () => {
 
     beforeAll(async () => {
       const server = await createTestApp({
-        config: {
-          ...MINIMAL_TEST_CONFIG,
-          server: {
-            public_origin: 'https://auth.test.com',
-          },
+        ...MINIMAL_TEST_CONFIG,
+        server: {
+          public_origin: 'https://auth.test.com',
         },
       });
       services = server.services;

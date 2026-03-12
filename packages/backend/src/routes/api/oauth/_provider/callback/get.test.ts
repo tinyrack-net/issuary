@@ -37,33 +37,31 @@ let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   const server = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      registration: {
-        enabled: true,
-        allowed_email_patterns: ['*'],
-      },
-      users: [TEST_USER_CONFIG],
-      identity_providers: [
-        google({
-          id: 'google',
-          enabled: true,
-          display_name: 'Google',
-          client_id: 'test-google-client-id',
-          client_secret: 'test-google-client-secret',
-          email_conflict_strategy: 'auto_link',
-        }),
-        github({
-          id: 'github',
-          enabled: true,
-          display_name: 'GitHub',
-          client_id: 'test-github-client-id',
-          client_secret: 'test-github-client-secret',
-          email_conflict_strategy: 'auto_link',
-        }),
-      ],
-      terms: [],
+    ...MINIMAL_TEST_CONFIG,
+    registration: {
+      enabled: true,
+      allowed_email_patterns: ['*'],
     },
+    users: [TEST_USER_CONFIG],
+    identity_providers: [
+      google({
+        id: 'google',
+        enabled: true,
+        display_name: 'Google',
+        client_id: 'test-google-client-id',
+        client_secret: 'test-google-client-secret',
+        email_conflict_strategy: 'auto_link',
+      }),
+      github({
+        id: 'github',
+        enabled: true,
+        display_name: 'GitHub',
+        client_id: 'test-github-client-id',
+        client_secret: 'test-github-client-secret',
+        email_conflict_strategy: 'auto_link',
+      }),
+    ],
+    terms: [],
   });
   app = server.app;
   services = server.services;

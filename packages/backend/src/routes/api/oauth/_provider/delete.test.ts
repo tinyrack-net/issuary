@@ -21,20 +21,18 @@ let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   const server = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      users: [TEST_USER_CONFIG],
-      identity_providers: [
-        google({
-          id: 'google',
-          enabled: true,
-          display_name: 'Google',
-          client_id: 'test-google-client-id',
-          client_secret: 'test-google-client-secret',
-          email_conflict_strategy: 'auto_link',
-        }),
-      ],
-    },
+    ...MINIMAL_TEST_CONFIG,
+    users: [TEST_USER_CONFIG],
+    identity_providers: [
+      google({
+        id: 'google',
+        enabled: true,
+        display_name: 'Google',
+        client_id: 'test-google-client-id',
+        client_secret: 'test-google-client-secret',
+        email_conflict_strategy: 'auto_link',
+      }),
+    ],
   });
   app = server.app;
   services = server.services;

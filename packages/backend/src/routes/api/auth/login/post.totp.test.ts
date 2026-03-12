@@ -71,19 +71,17 @@ describe('POST /api/auth/login - TOTP Required Mode', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        users: [TEST_USER_CONFIG],
-        registration: {
-          email_verification_required: false,
-        },
-        auth: {
-          password: {
-            two_factor: {
-              enrollment_required: true,
-            },
-            totp: { enabled: true },
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      registration: {
+        email_verification_required: false,
+      },
+      auth: {
+        password: {
+          two_factor: {
+            enrollment_required: true,
           },
+          totp: { enabled: true },
         },
       },
     });
@@ -244,18 +242,16 @@ describe('POST /api/auth/login - TOTP Optional Mode', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        registration: {
-          email_verification_required: false,
-        },
-        auth: {
-          password: {
-            two_factor: {
-              enrollment_required: false,
-            },
-            totp: { enabled: true },
+      ...MINIMAL_TEST_CONFIG,
+      registration: {
+        email_verification_required: false,
+      },
+      auth: {
+        password: {
+          two_factor: {
+            enrollment_required: false,
           },
+          totp: { enabled: true },
         },
       },
     });
@@ -365,18 +361,16 @@ describe('POST /api/auth/login - TOTP Disabled Mode', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        registration: {
-          email_verification_required: false,
-        },
-        auth: {
-          password: {
-            two_factor: {
-              enrollment_required: false,
-            },
-            totp: { enabled: false },
+      ...MINIMAL_TEST_CONFIG,
+      registration: {
+        email_verification_required: false,
+      },
+      auth: {
+        password: {
+          two_factor: {
+            enrollment_required: false,
           },
+          totp: { enabled: false },
         },
       },
     });
@@ -453,19 +447,17 @@ describe('POST /api/auth/login - Email Verification + TOTP', () => {
   beforeAll(async () => {
     const mail = await createTestEmailConfig();
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        email: mail,
-        registration: {
-          email_verification_required: true,
-        },
-        auth: {
-          password: {
-            two_factor: {
-              enrollment_required: true,
-            },
-            totp: { enabled: true },
+      ...MINIMAL_TEST_CONFIG,
+      email: mail,
+      registration: {
+        email_verification_required: true,
+      },
+      auth: {
+        password: {
+          two_factor: {
+            enrollment_required: true,
           },
+          totp: { enabled: true },
         },
       },
     });
@@ -566,19 +558,17 @@ describe('POST /api/auth/login - Session State Verification', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        users: [TEST_USER_CONFIG],
-        registration: {
-          email_verification_required: false,
-        },
-        auth: {
-          password: {
-            two_factor: {
-              enrollment_required: true,
-            },
-            totp: { enabled: true },
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      registration: {
+        email_verification_required: false,
+      },
+      auth: {
+        password: {
+          two_factor: {
+            enrollment_required: true,
           },
+          totp: { enabled: true },
         },
       },
     });

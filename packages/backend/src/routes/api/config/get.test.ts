@@ -14,29 +14,27 @@ let cleanup: () => Promise<void>;
 beforeAll(async () => {
   const email = await createTestEmailConfig();
   const server = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      email,
-      registration: {
+    ...MINIMAL_TEST_CONFIG,
+    email,
+    registration: {
+      enabled: true,
+      allowed_email_patterns: ['*@example.com'],
+    },
+    identity_providers: [
+      google({
+        id: 'google',
         enabled: true,
-        allowed_email_patterns: ['*@example.com'],
-      },
-      identity_providers: [
-        google({
-          id: 'google',
-          enabled: true,
-          display_name: 'Google',
-          client_id: 'test-google-client-id',
-          client_secret: 'test-google-client-secret',
-          email_conflict_strategy: 'auto_link',
-        }),
-      ],
-      auth: {
-        password: {
-          policy: {
-            min_length: 8,
-            max_length: 64,
-          },
+        display_name: 'Google',
+        client_id: 'test-google-client-id',
+        client_secret: 'test-google-client-secret',
+        email_conflict_strategy: 'auto_link',
+      }),
+    ],
+    auth: {
+      password: {
+        policy: {
+          min_length: 8,
+          max_length: 64,
         },
       },
     },
@@ -192,9 +190,7 @@ describe('GET /api/config (email disabled)', () => {
   beforeAll(async () => {
     const configWithoutEmail = MINIMAL_TEST_CONFIG;
     const server = await createTestApp({
-      config: {
-        ...configWithoutEmail,
-      },
+      ...configWithoutEmail,
     });
     appNoEmail = server.app;
     cleanupNoEmail = server.cleanup;

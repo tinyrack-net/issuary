@@ -11,7 +11,7 @@ describe('createApp', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createTestApp({ config: MINIMAL_TEST_CONFIG });
+    const server = await createTestApp(MINIMAL_TEST_CONFIG);
     app = server.app;
     cleanup = server.cleanup;
   });
@@ -41,10 +41,8 @@ describe('createApp with frontend config', () => {
 
   beforeAll(async () => {
     const server = await createTestApp({
-      config: {
-        ...MINIMAL_TEST_CONFIG,
-        frontend: () => new Response('frontend', { status: 200 }),
-      },
+      ...MINIMAL_TEST_CONFIG,
+      frontend: () => new Response('frontend', { status: 200 }),
     });
     app = server.app;
     cleanup = server.cleanup;

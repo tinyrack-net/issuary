@@ -19,44 +19,42 @@ let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   const server = await createTestApp({
-    config: {
-      ...MINIMAL_TEST_CONFIG,
-      users: [TEST_USER_CONFIG],
-      identity_providers: [
-        google({
-          id: 'google',
-          enabled: true,
-          display_name: 'Google',
-          client_id: 'test-google-client-id',
-          client_secret: 'test-google-client-secret',
-          email_conflict_strategy: 'auto_link',
-        }),
-        github({
-          id: 'github',
-          enabled: true,
-          display_name: 'GitHub',
-          client_id: 'test-github-client-id',
-          client_secret: 'test-github-client-secret',
-          email_conflict_strategy: 'auto_link',
-        }),
-        apple({
-          id: 'apple',
-          enabled: true,
-          display_name: 'Apple',
-          client_id: 'test-apple-client-id',
-          client_secret: 'test-apple-client-secret',
-          email_conflict_strategy: 'auto_link',
-        }),
-        github({
-          id: 'disabled-github',
-          enabled: false,
-          display_name: 'Disabled GitHub',
-          client_id: 'test-disabled-github-client-id',
-          client_secret: 'test-disabled-github-client-secret',
-          email_conflict_strategy: 'auto_link',
-        }),
-      ],
-    },
+    ...MINIMAL_TEST_CONFIG,
+    users: [TEST_USER_CONFIG],
+    identity_providers: [
+      google({
+        id: 'google',
+        enabled: true,
+        display_name: 'Google',
+        client_id: 'test-google-client-id',
+        client_secret: 'test-google-client-secret',
+        email_conflict_strategy: 'auto_link',
+      }),
+      github({
+        id: 'github',
+        enabled: true,
+        display_name: 'GitHub',
+        client_id: 'test-github-client-id',
+        client_secret: 'test-github-client-secret',
+        email_conflict_strategy: 'auto_link',
+      }),
+      apple({
+        id: 'apple',
+        enabled: true,
+        display_name: 'Apple',
+        client_id: 'test-apple-client-id',
+        client_secret: 'test-apple-client-secret',
+        email_conflict_strategy: 'auto_link',
+      }),
+      github({
+        id: 'disabled-github',
+        enabled: false,
+        display_name: 'Disabled GitHub',
+        client_id: 'test-disabled-github-client-id',
+        client_secret: 'test-disabled-github-client-secret',
+        email_conflict_strategy: 'auto_link',
+      }),
+    ],
   });
   app = server.app;
   cleanup = server.cleanup;
