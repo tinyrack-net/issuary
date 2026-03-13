@@ -4,6 +4,12 @@
   "type": "module",
   "private": true,
   "license": "AGPL-3.0-only",
+  "imports": {
+    "#homepage/*": {
+      "types": "./src/*",
+      "default": "./src/*"
+    }
+  },
   "scripts": {
     "generate:openapi": "NODE_OPTIONS='--conditions=@tinyauth/source' tsx node_modules/@tinyauth/standalone/src/cli.ts export:openapi public/openapi.json",
     "dev": "pnpm generate:openapi && astro dev",

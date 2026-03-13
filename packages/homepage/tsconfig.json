@@ -2,7 +2,11 @@
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
     "strictNullChecks": true,
-    "erasableSyntaxOnly": true
+    "erasableSyntaxOnly": true,
+    "baseUrl": ".",
+    "paths": {
+      "#homepage/*": ["./src/*"]
+    }
   },
   "include": [".astro/types.d.ts", "src/**/*", "astro.config.mjs"],
   "exclude": ["node_modules", "dist"]
