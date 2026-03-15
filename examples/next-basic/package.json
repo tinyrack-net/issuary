@@ -14,11 +14,11 @@
   },
   "dependencies": {
     "jose": "catalog:",
-    "next": "16.1.6",
+    "next": "catalog:",
     "react": "catalog:"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.1",
+    "@tailwindcss/postcss": "catalog:",
     "@tailwindcss/typography": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",

@@ -77,14 +77,14 @@
     "@tinyauth/backend": "workspace:*",
     "@hono/node-server": "catalog:",
     "@mikro-orm/cli": "catalog:",
-    "commander": "^14.0.3",
-    "dotenv": "^17.3.1",
+    "commander": "catalog:",
+    "dotenv": "catalog:",
     "hono": "catalog:",
     "hono-openapi": "catalog:",
     "nodemailer": "catalog:",
     "pino": "catalog:",
     "pino-pretty": "catalog:",
-    "yaml": "^2.8.2",
+    "yaml": "catalog:",
     "zod": "catalog:"
   }
 }
