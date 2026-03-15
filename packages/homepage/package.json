@@ -20,16 +20,16 @@
     "deploy:dry-run": "wrangler deploy --dry-run"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.37.6",
-    "@astrojs/starlight-tailwind": "^4.0.2",
-    "@scalar/astro": "^0.1.16",
+    "@astrojs/starlight": "^0.38.1",
+    "@astrojs/starlight-tailwind": "^5.0.0",
+    "@scalar/astro": "^0.2.3",
     "@tailwindcss/vite": "catalog:",
-    "astro": "^5.17.1",
+    "astro": "^6.0.4",
     "sharp": "^0.34.5",
     "tailwindcss": "catalog:"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.6",
+    "@astrojs/check": "^0.9.7",
     "@biomejs/biome": "catalog:",
     "@tinyauth/standalone": "workspace:*",
     "wrangler": "catalog:",

@@ -94,7 +94,7 @@ export class PasskeyService {
       // Prevent re-registering existing credentials
       excludeCredentials: existingPasskeys.map((passkey) => ({
         id: passkey.credential_id,
-        transports: passkey.transports ?? undefined,
+        ...(passkey.transports ? { transports: passkey.transports } : {}),
       })),
       authenticatorSelection: {
         // Prefer resident keys for passwordless authentication
@@ -239,7 +239,7 @@ export class PasskeyService {
     return passkeys.map((p) => ({
       id: p.id,
       credential_id: p.credential_id,
-      name: p.name,
+      name: p.name ?? null,
       device_type: p.device_type,
       backed_up: p.backed_up,
       created_at: p.created_at,

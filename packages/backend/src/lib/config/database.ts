@@ -2,7 +2,7 @@ import type { MikroORM, Options } from '@mikro-orm/core';
 import z from 'zod';
 
 export type DatabaseConfig = {
-  getMikroOrmOptions: () => Promise<Options>;
+  getMikroOrmOptions: () => Promise<Partial<Options>>;
   initialize: (orm: MikroORM) => Promise<void>;
 };
 

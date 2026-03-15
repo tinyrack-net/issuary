@@ -1,7 +1,8 @@
 import path from 'node:path';
+import babel from '@rolldown/plugin-babel';
 import tailwindcss from '@tailwindcss/vite';
 import tanstackRouter from '@tanstack/router-plugin/vite';
-import react from '@vitejs/plugin-react';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
@@ -10,11 +11,9 @@ export default defineConfig({
       routesDirectory: './src/routes',
       generatedRouteTree: './src/routeTree.gen.ts',
     }),
-    react({
-      babel: {
-        plugins: [['babel-plugin-react-compiler']],
-      },
-    }),
+    react(),
+    // @ts-expect-error @rolldown/plugin-babel PluginOptions type incorrectly marks optional babel properties as required
+    babel({ presets: [reactCompilerPreset()] }),
     tailwindcss(),
   ],
   build: {

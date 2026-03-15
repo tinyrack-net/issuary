@@ -18,9 +18,7 @@ export const docsGet = new Hono<AppEnv>().get('/docs', async (c) => {
     '/api/docs',
     apiReference({
       pageTitle: openapi.ui_title,
-      spec: {
-        url: '/api/docs/json',
-      },
+      url: '/api/docs/json',
     }),
   );
 

@@ -132,44 +132,42 @@ describe('POST /api/auth/totp/recovery/verify', () => {
     expect(body.user).toHaveProperty('email');
   });
 
-  test(
-    'should invalidate recovery code after single use',
-    { timeout: 30000 },
-    async () => {
-      const { pending2FACookie, recoveryCodes, email, password } =
-        await createUserWithTotpAndRecoveryCodes('recovery-single-use');
+  test('should invalidate recovery code after single use', {
+    timeout: 30000,
+  }, async () => {
+    const { pending2FACookie, recoveryCodes, email, password } =
+      await createUserWithTotpAndRecoveryCodes('recovery-single-use');
 
-      const code = recoveryCodes[0] ?? '';
+    const code = recoveryCodes[0] ?? '';
 
-      // First use should succeed
-      const client = testClient(app);
-      const res1 = await client.api.auth.totp.recovery.verify.$post(
-        {
-          json: { code },
-        },
-        { headers: { Cookie: `session=${pending2FACookie}` } },
-      );
-      expect(res1.status).toBe(200);
+    // First use should succeed
+    const client = testClient(app);
+    const res1 = await client.api.auth.totp.recovery.verify.$post(
+      {
+        json: { code },
+      },
+      { headers: { Cookie: `session=${pending2FACookie}` } },
+    );
+    expect(res1.status).toBe(200);
 
-      // Login again to get a new pending 2FA session
-      const loginClient = testClient(app);
-      const loginRes = await loginClient.api.auth.login.$post({
-        json: { email, password },
-      });
-      expect(loginRes.status).toBe(200);
-      const newCookie = extractCookie(loginRes, 'session');
+    // Login again to get a new pending 2FA session
+    const loginClient = testClient(app);
+    const loginRes = await loginClient.api.auth.login.$post({
+      json: { email, password },
+    });
+    expect(loginRes.status).toBe(200);
+    const newCookie = extractCookie(loginRes, 'session');
 
-      // Second use of same code should fail
-      const newClient = testClient(app);
-      const res2 = await newClient.api.auth.totp.recovery.verify.$post(
-        {
-          json: { code },
-        },
-        { headers: { Cookie: `session=${newCookie}` } },
-      );
-      await expectError(res2, e.InvalidRecoveryCode);
-    },
-  );
+    // Second use of same code should fail
+    const newClient = testClient(app);
+    const res2 = await newClient.api.auth.totp.recovery.verify.$post(
+      {
+        json: { code },
+      },
+      { headers: { Cookie: `session=${newCookie}` } },
+    );
+    await expectError(res2, e.InvalidRecoveryCode);
+  });
 
   test('should reject invalid recovery code', { timeout: 30000 }, async () => {
     const { pending2FACookie } =
