@@ -90,50 +90,48 @@ beforeEach(() => {
   );
 });
 
-describe('createCloudflareExampleApp', () => {
-  test('preserves backend routes', async () => {
-    const { createCloudflareExampleApp } = await import('./index.js');
-    const assets = createAssetsFetcher();
-    const app = await createCloudflareExampleApp(
-      assets,
-      createMockD1Database(),
-    );
+describe('cloudflare worker', () => {
+  function createEnv(assets = createAssetsFetcher(), db = createMockD1Database()) {
+    return { ASSETS: assets, DB: db };
+  }
 
-    const response = await app.fetch(
+  test('preserves backend routes', async () => {
+    const worker = (await import('./index.js')).default;
+    const env = createEnv();
+
+    const response = await worker.fetch(
       new Request('https://auth.example.com/api/health/live'),
+      env,
+      {} as never,
     );
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ status: 'ok' });
-    expect(assets.fetch).not.toHaveBeenCalled();
+    expect(env.ASSETS.fetch).not.toHaveBeenCalled();
   });
 
   test('delegates unknown backend routes to frontend handler', async () => {
-    const { createCloudflareExampleApp } = await import('./index.js');
-    const assets = createAssetsFetcher();
-    const app = await createCloudflareExampleApp(
-      assets,
-      createMockD1Database(),
-    );
+    const worker = (await import('./index.js')).default;
+    const env = createEnv();
 
-    const response = await app.fetch(
+    const response = await worker.fetch(
       new Request('https://auth.example.com/api/unknown'),
+      env,
+      {} as never,
     );
 
     expect(response.status).toBe(404);
-    expect(assets.fetch).toHaveBeenCalled();
+    expect(env.ASSETS.fetch).toHaveBeenCalled();
   });
 
   test('serves interpolated frontend html for app routes', async () => {
-    const { createCloudflareExampleApp } = await import('./index.js');
-    const assets = createAssetsFetcher();
-    const app = await createCloudflareExampleApp(
-      assets,
-      createMockD1Database(),
-    );
+    const worker = (await import('./index.js')).default;
+    const env = createEnv();
 
-    const response = await app.fetch(
+    const response = await worker.fetch(
       new Request('https://auth.example.com/login'),
+      env,
+      {} as never,
     );
 
     expect(response.status).toBe(200);
@@ -144,15 +142,13 @@ describe('createCloudflareExampleApp', () => {
   });
 
   test('does not return spa html for missing file-like requests', async () => {
-    const { createCloudflareExampleApp } = await import('./index.js');
-    const assets = createAssetsFetcher();
-    const app = await createCloudflareExampleApp(
-      assets,
-      createMockD1Database(),
-    );
+    const worker = (await import('./index.js')).default;
+    const env = createEnv();
 
-    const response = await app.fetch(
+    const response = await worker.fetch(
       new Request('https://auth.example.com/missing.js'),
+      env,
+      {} as never,
     );
 
     expect(response.status).toBe(404);
