@@ -9,7 +9,6 @@ import { google } from '@tinyauth/backend/identity-providers/google';
 import { croner } from '@tinyauth/backend/scheduler/croner';
 import YAML from 'yaml';
 import type { StandaloneDatabaseConfig } from '#standalone/lib/config/database.js';
-import { deepMerge } from '#standalone/lib/deep-merge.js';
 import { STANDALONE_CONFIG_DEFAULTS } from '#standalone/lib/config/defaults.js';
 import type {
   ResolvedStandaloneFrontendConfig,
@@ -23,6 +22,7 @@ import {
   StandaloneConfigSchema,
 } from '#standalone/lib/config/resolved.js';
 import type { StandaloneSchedulerConfig } from '#standalone/lib/config/scheduler.js';
+import { deepMerge } from '#standalone/lib/deep-merge.js';
 import type { Logger } from '#standalone/lib/logger.js';
 import { DEFAULT_CONFIG_PATH } from './constants.js';
 import { resolveEnvVariables } from './interpolate-env.js';
