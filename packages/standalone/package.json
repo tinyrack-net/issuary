@@ -68,15 +68,16 @@
     "@types/node": "catalog:",
     "@types/nodemailer": "catalog:",
     "@vitest/coverage-v8": "catalog:",
+    "execa": "^9.6.1",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vite-tsconfig-paths": "catalog:",
     "vitest": "catalog:"
   },
   "dependencies": {
-    "@tinyauth/backend": "workspace:*",
     "@hono/node-server": "catalog:",
     "@mikro-orm/cli": "catalog:",
+    "@tinyauth/backend": "workspace:*",
     "commander": "catalog:",
     "dotenv": "catalog:",
     "hono": "catalog:",
