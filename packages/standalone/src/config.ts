@@ -1,6 +1,4 @@
 export {
-  type ResolvedStandaloneConfig,
-  type ResolvedStandaloneFrontendConfig,
   type StandaloneConfig,
   type StandaloneConfigInput,
   StandaloneConfigSchema,
@@ -8,10 +6,4 @@ export {
   type StandaloneFrontendConfigInput,
 } from '#standalone/lib/config/index.js';
 
-export {
-  loadConfig,
-  loadResolvedConfig,
-  parseConfig,
-  resolveConfig,
-  resolveStandaloneConfig,
-} from '#standalone/lib/load-config.js';
+export { loadConfig, resolveConfig } from '#standalone/lib/load-config.js';

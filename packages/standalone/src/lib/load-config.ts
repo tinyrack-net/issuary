@@ -2,6 +2,8 @@ import * as fs from 'node:fs';
 import type { TinyAuthRuntimeConfig } from '@tinyauth/backend/config';
 import { postgres } from '@tinyauth/backend/database/postgres';
 import { sqlite } from '@tinyauth/backend/database/sqlite';
+import { createProxyHandler } from '@tinyauth/backend/frontend/proxy';
+import { createStaticHandler } from '@tinyauth/backend/frontend/static';
 import { apple } from '@tinyauth/backend/identity-providers/apple';
 import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth';
 import { github } from '@tinyauth/backend/identity-providers/github';
@@ -10,65 +12,19 @@ import { croner } from '@tinyauth/backend/scheduler/croner';
 import YAML from 'yaml';
 import type { StandaloneDatabaseConfig } from '#standalone/lib/config/database.js';
 import { STANDALONE_CONFIG_DEFAULTS } from '#standalone/lib/config/defaults.js';
-import type {
-  ResolvedStandaloneFrontendConfig,
-  StandaloneFrontendConfig,
-} from '#standalone/lib/config/frontend.js';
+import type { StandaloneFrontendConfig } from '#standalone/lib/config/frontend.js';
 import type { StandaloneIdentityProviderConfig } from '#standalone/lib/config/identity-providers.js';
 import {
-  type ResolvedStandaloneConfig,
   type StandaloneConfig,
-  type StandaloneConfigInput,
   StandaloneConfigSchema,
 } from '#standalone/lib/config/resolved.js';
 import type { StandaloneSchedulerConfig } from '#standalone/lib/config/scheduler.js';
 import { deepMerge } from '#standalone/lib/deep-merge.js';
-import type { Logger } from '#standalone/lib/logger.js';
 import { DEFAULT_CONFIG_PATH } from './constants.js';
 import { resolveEnvVariables } from './interpolate-env.js';
 import { resolveAbsolutePath } from './resolve-path.js';
 
-function applyFrontendPathDefaults(config: StandaloneConfig): StandaloneConfig {
-  const { frontend } = config;
-  if (!frontend.enabled || frontend.path !== undefined) {
-    return config;
-  }
-
-  return {
-    ...config,
-    frontend: {
-      ...frontend,
-      path:
-        frontend.mode === 'proxy'
-          ? STANDALONE_CONFIG_DEFAULTS.FRONTEND_PROXY_UPSTREAM
-          : STANDALONE_CONFIG_DEFAULTS.FRONTEND_STATIC_PATH,
-    },
-  };
-}
-
-function resolveStandaloneFrontendConfig(
-  frontend: StandaloneFrontendConfig,
-): ResolvedStandaloneFrontendConfig {
-  const path =
-    frontend.path ??
-    (frontend.mode === 'proxy'
-      ? STANDALONE_CONFIG_DEFAULTS.FRONTEND_PROXY_UPSTREAM
-      : STANDALONE_CONFIG_DEFAULTS.FRONTEND_STATIC_PATH);
-
-  return {
-    enabled: frontend.enabled,
-    mode: frontend.mode,
-    path: frontend.enabled ? path : '',
-    html_variables: frontend.html_variables,
-  };
-}
-
-export function parseConfig(input: unknown): StandaloneConfig {
-  const config = StandaloneConfigSchema.parse(input);
-  return applyFrontendPathDefaults(config);
-}
-
-async function resolveEmailConfig(
+async function composeEmailConfig(
   emailInput: StandaloneConfig['email'],
 ): Promise<TinyAuthRuntimeConfig['email']> {
   if (!emailInput) {
@@ -161,17 +117,30 @@ function composeSchedulerConfig(
   });
 }
 
+function composeFrontendConfig(
+  frontend: StandaloneFrontendConfig,
+): TinyAuthRuntimeConfig['frontend'] {
+  if (!frontend.enabled) {
+    return undefined;
+  }
+
+  return frontend.mode === 'proxy'
+    ? createProxyHandler({
+        upstream:
+          frontend.path ?? STANDALONE_CONFIG_DEFAULTS.FRONTEND_PROXY_UPSTREAM,
+        htmlVariables: frontend.html_variables,
+      })
+    : createStaticHandler({
+        publicPath:
+          frontend.path ?? STANDALONE_CONFIG_DEFAULTS.FRONTEND_STATIC_PATH,
+        htmlVariables: frontend.html_variables,
+      });
+}
+
 export async function resolveConfig(
   input: unknown,
 ): Promise<TinyAuthRuntimeConfig> {
-  const parsed = parseConfig(input);
-
-  const emailConfig = await resolveEmailConfig(parsed.email);
-  const databaseConfig = composeDatabaseConfig(parsed.database);
-  const schedulerConfig = composeSchedulerConfig(parsed.scheduler);
-  const identityProvidersConfig = parsed.identity_providers.map(
-    composeIdentityProvider,
-  );
+  const parsed = StandaloneConfigSchema.parse(input);
 
   const {
     frontend: _frontend,
@@ -184,10 +153,13 @@ export async function resolveConfig(
 
   return {
     ...rest,
-    database: databaseConfig,
-    identity_providers: identityProvidersConfig,
-    ...(emailConfig ? { email: emailConfig } : {}),
-    ...(schedulerConfig ? { scheduler: schedulerConfig } : {}),
+    frontend: composeFrontendConfig(parsed.frontend),
+    database: composeDatabaseConfig(parsed.database),
+    identity_providers: parsed.identity_providers.map(composeIdentityProvider),
+    ...(parsed.email ? { email: await composeEmailConfig(parsed.email) } : {}),
+    ...(parsed.scheduler.enabled
+      ? { scheduler: composeSchedulerConfig(parsed.scheduler) }
+      : {}),
   };
 }
 
@@ -220,24 +192,5 @@ export function loadConfig(configPath?: string | undefined): StandaloneConfig {
   const resolved = resolveEnvVariables(merged);
 
   // 4. Parse with Zod (fails if required fields like security secrets are missing)
-  return parseConfig(resolved);
-}
-
-export async function resolveStandaloneConfig(
-  input: StandaloneConfigInput | StandaloneConfig,
-): Promise<ResolvedStandaloneConfig> {
-  const parsed = parseConfig(input);
-  const backendConfig = await resolveConfig(parsed);
-
-  return {
-    ...backendConfig,
-    frontend: resolveStandaloneFrontendConfig(parsed.frontend),
-  };
-}
-
-export async function loadResolvedConfig(options: {
-  configPath: string;
-  logger?: Logger | undefined;
-}): Promise<ResolvedStandaloneConfig> {
-  return resolveStandaloneConfig(loadConfig(options.configPath));
+  return StandaloneConfigSchema.parse(resolved);
 }

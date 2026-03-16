@@ -29,7 +29,7 @@ const MINIMAL_CONFIG = {
 };
 
 describe('resolveConfig', () => {
-  test('strips standalone-only frontend fields from backend runtime config', async () => {
+  test('resolves frontend handler from standalone frontend config', async () => {
     const resolved = await resolveConfig({
       ...MINIMAL_CONFIG,
       frontend: {
@@ -40,7 +40,7 @@ describe('resolveConfig', () => {
       },
     });
 
-    expect(Object.hasOwn(resolved, 'frontend')).toBe(false);
+    expect(typeof resolved.frontend).toBe('function');
   });
 
   test('preserves openapi settings in backend runtime config', async () => {

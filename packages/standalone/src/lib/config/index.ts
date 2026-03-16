@@ -16,7 +16,6 @@ export {
 export type { StandaloneEmailConfig } from './email.js';
 export { StandaloneEmailConfigSchema } from './email.js';
 export type {
-  ResolvedStandaloneFrontendConfig,
   StandaloneFrontendConfig,
   StandaloneFrontendConfigInput,
 } from './frontend.js';
@@ -28,11 +27,7 @@ export {
 } from './identity-providers.js';
 export type { StandaloneLoggingConfig } from './logging.js';
 export { StandaloneLoggingConfigSchema } from './logging.js';
-export type {
-  ResolvedStandaloneConfig,
-  StandaloneConfig,
-  StandaloneConfigInput,
-} from './resolved.js';
+export type { StandaloneConfig, StandaloneConfigInput } from './resolved.js';
 export { StandaloneConfigSchema } from './resolved.js';
 export type { StandaloneSchedulerConfig } from './scheduler.js';
 export {

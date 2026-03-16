@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
-import { loadConfig, loadResolvedConfig } from './load-config.js';
+import { loadConfig, resolveConfig } from './load-config.js';
 
 async function writeConfigFile(
   dir: string,
@@ -54,9 +54,10 @@ describe('load-config', () => {
       ].join('\n'),
     );
 
-    const config = await loadResolvedConfig({ configPath: configFile });
+    const config = await resolveConfig(loadConfig(configFile));
 
-    expect(config.frontend.path).toBe('http://localhost:8081');
+    expect(config.frontend).toBeDefined();
+    expect(typeof config.frontend).toBe('function');
     await fs.promises.rm(dir, { recursive: true, force: true });
   });
 
@@ -76,10 +77,9 @@ describe('load-config', () => {
       ].join('\n'),
     );
 
-    const config = await loadResolvedConfig({ configPath: configFile });
+    const config = await resolveConfig(loadConfig(configFile));
 
-    expect(config.frontend.enabled).toBe(false);
-    expect(config.frontend.path).toBe('');
+    expect(config.frontend).toBeUndefined();
     await fs.promises.rm(dir, { recursive: true, force: true });
   });
 
@@ -161,15 +161,8 @@ describe('load-config', () => {
       ].join('\n'),
     );
 
-    const errorMessage = await loadResolvedConfig({
-      configPath: configFile,
-    }).then(
-      () => '',
-      (error: unknown) => String(error),
-    );
-
-    expect(errorMessage).toContain('"app"');
-    expect(errorMessage).toContain('Unrecognized key');
+    expect(() => loadConfig(configFile)).toThrow('Unrecognized key');
+    expect(() => loadConfig(configFile)).toThrow('"app"');
 
     await fs.promises.rm(dir, { recursive: true, force: true });
   });
@@ -189,9 +182,7 @@ describe('load-config', () => {
       ].join('\n'),
     );
 
-    await expect(
-      loadResolvedConfig({ configPath: configFile }),
-    ).rejects.toThrow('hash_master_secret_version');
+    expect(() => loadConfig(configFile)).toThrow('hash_master_secret_version');
 
     await fs.promises.rm(dir, { recursive: true, force: true });
   });

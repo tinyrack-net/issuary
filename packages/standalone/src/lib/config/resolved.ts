@@ -11,14 +11,12 @@ import {
   SecurityConfigSchema,
   ServerConfigSchema,
   TermsConfigSchema,
-  type TinyAuthRuntimeConfig,
   TokensConfigSchema,
 } from '@tinyauth/backend/config';
 import z from 'zod';
 import { StandaloneDatabaseConfigSchema } from './database.js';
 import { StandaloneEmailConfigSchema } from './email.js';
 import {
-  type ResolvedStandaloneFrontendConfig,
   STANDALONE_FRONTEND_CONFIG_DEFAULT,
   StandaloneFrontendConfigSchema,
 } from './frontend.js';
@@ -78,10 +76,3 @@ export const StandaloneConfigSchema = z
 
 export type StandaloneConfigInput = z.input<typeof StandaloneConfigSchema>;
 export type StandaloneConfig = z.infer<typeof StandaloneConfigSchema>;
-
-export type ResolvedStandaloneConfig = Omit<
-  TinyAuthRuntimeConfig,
-  'frontend'
-> & {
-  frontend: ResolvedStandaloneFrontendConfig;
-};
