@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto';
 import * as fs from 'node:fs';
 import type { TinyAuthRuntimeConfig } from '@tinyauth/backend/config';
 import { postgres } from '@tinyauth/backend/database/postgres';
@@ -10,6 +9,8 @@ import { google } from '@tinyauth/backend/identity-providers/google';
 import { croner } from '@tinyauth/backend/scheduler/croner';
 import YAML from 'yaml';
 import type { StandaloneDatabaseConfig } from '#standalone/lib/config/database.js';
+import { deepMerge } from '#standalone/lib/config/deep-merge.js';
+import { STANDALONE_CONFIG_DEFAULTS } from '#standalone/lib/config/defaults.js';
 import type {
   ResolvedStandaloneFrontendConfig,
   StandaloneFrontendConfig,
@@ -27,17 +28,6 @@ import { DEFAULT_CONFIG_PATH } from './constants.js';
 import { resolveEnvVariables } from './interpolate-env.js';
 import { resolveAbsolutePath } from './resolve-path.js';
 
-export const DEFAULT_FRONTEND_PROXY_UPSTREAM = 'http://localhost:8081';
-export const DEFAULT_FRONTEND_STATIC_PATH = '/opt/tinyauth/frontend';
-const TEST_EMAIL_FROM = 'no-reply@test.local';
-
-function createEphemeralSecurityConfig() {
-  return {
-    session_secret: randomBytes(32).toString('hex'),
-    hash_secret: randomBytes(32).toString('base64url'),
-  };
-}
-
 function applyFrontendPathDefaults(config: StandaloneConfig): StandaloneConfig {
   const { frontend } = config;
   if (!frontend.enabled || frontend.path !== undefined) {
@@ -50,8 +40,8 @@ function applyFrontendPathDefaults(config: StandaloneConfig): StandaloneConfig {
       ...frontend,
       path:
         frontend.mode === 'proxy'
-          ? DEFAULT_FRONTEND_PROXY_UPSTREAM
-          : DEFAULT_FRONTEND_STATIC_PATH,
+          ? STANDALONE_CONFIG_DEFAULTS.FRONTEND_PROXY_UPSTREAM
+          : STANDALONE_CONFIG_DEFAULTS.FRONTEND_STATIC_PATH,
     },
   };
 }
@@ -62,8 +52,8 @@ function resolveStandaloneFrontendConfig(
   const path =
     frontend.path ??
     (frontend.mode === 'proxy'
-      ? DEFAULT_FRONTEND_PROXY_UPSTREAM
-      : DEFAULT_FRONTEND_STATIC_PATH);
+      ? STANDALONE_CONFIG_DEFAULTS.FRONTEND_PROXY_UPSTREAM
+      : STANDALONE_CONFIG_DEFAULTS.FRONTEND_STATIC_PATH);
 
   return {
     enabled: frontend.enabled,
@@ -87,12 +77,12 @@ async function resolveEmailConfig(
 
   if (emailInput.transport === 'test') {
     return {
-      from: emailInput.from ?? TEST_EMAIL_FROM,
+      from: emailInput.from,
       createTransport: async () => ({
         sendMail: async (message) => ({
           accepted: [message.to],
           envelope: {
-            from: message.from ?? emailInput.from ?? TEST_EMAIL_FROM,
+            from: message.from ?? emailInput.from,
             to: [message.to],
           },
           messageId: 'standalone-test-email',
@@ -211,21 +201,26 @@ export function loadConfig(configPath?: string | undefined): StandaloneConfig {
     ? resolveAbsolutePath(configPath)
     : DEFAULT_CONFIG_PATH;
 
+  // 1. Start with defaults template (env-var patterns with fallbacks)
+  const {
+    FRONTEND_PROXY_UPSTREAM: _,
+    FRONTEND_STATIC_PATH: __,
+    ...configTemplate
+  } = STANDALONE_CONFIG_DEFAULTS;
+  let merged: Record<string, unknown> = structuredClone(configTemplate);
+
+  // 2. If config file exists, deep-merge user values on top
   if (fs.existsSync(resolvedPath)) {
     const file = fs.readFileSync(resolvedPath, 'utf8');
-    const rawConfig = YAML.parse(file);
-    const resolvedConfig = resolveEnvVariables(rawConfig);
-    return parseConfig(resolvedConfig);
+    const rawConfig = YAML.parse(file) as Record<string, unknown>;
+    merged = deepMerge(merged, rawConfig);
   }
 
-  console.warn(
-    `Config file not found at "${resolvedPath}". Using schema defaults with ephemeral generated security secrets.`,
-  );
-  const defaultConfig: StandaloneConfigInput = {
-    security: createEphemeralSecurityConfig(),
-  };
+  // 3. Resolve env vars (both from defaults template and user YAML)
+  const resolved = resolveEnvVariables(merged);
 
-  return parseConfig(defaultConfig);
+  // 4. Parse with Zod (fails if required fields like security secrets are missing)
+  return parseConfig(resolved);
 }
 
 export async function resolveStandaloneConfig(

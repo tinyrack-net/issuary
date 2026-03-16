@@ -2,37 +2,37 @@
 
 server:
   # Public origin used for redirects, cookies, emails, and OIDC issuer metadata.
-  public_origin: ${PUBLIC_ORIGIN:-http://localhost:8080}
+  public_origin: ${TINYAUTH_PUBLIC_ORIGIN:-http://localhost:8080}
 
   # Local listen port for the standalone server.
-  listen_port: ${LISTEN_PORT:-8080}
+  listen_port: ${TINYAUTH_LISTEN_PORT:-8080}
 
   # Reverse proxy trust configuration.
   # Examples: false, true, 1, "127.0.0.1", ["10.0.0.0/8", "192.168.0.0/16"]
-  trust_proxy: ${TRUST_PROXY:-false}
+  trust_proxy: ${TINYAUTH_TRUST_PROXY:-false}
 
 tokens:
-  access_token_ttl: ${ACCESS_TOKEN_TTL:-3600}
-  refresh_token_ttl: ${REFRESH_TOKEN_TTL:-2592000}
+  access_token_ttl: ${TINYAUTH_ACCESS_TOKEN_TTL:-3600}
+  refresh_token_ttl: ${TINYAUTH_REFRESH_TOKEN_TTL:-2592000}
   key_rotation:
-    enabled: ${JWT_KEY_ROTATION_ENABLED:-true}
-    interval_days: ${JWT_KEY_ROTATION_DAYS:-30}
-    overlap_days: ${JWT_KEY_OVERLAP_DAYS:-7}
+    enabled: ${TINYAUTH_JWT_KEY_ROTATION_ENABLED:-true}
+    interval_days: ${TINYAUTH_JWT_KEY_ROTATION_DAYS:-30}
+    overlap_days: ${TINYAUTH_JWT_KEY_OVERLAP_DAYS:-7}
 
 i18n:
   supported_languages:
     - ko
     - en
     - ja
-  default_language: ${DEFAULT_LANGUAGE:-auto}
-  fallback_language: ${FALLBACK_LANGUAGE:-en}
+  default_language: ${TINYAUTH_DEFAULT_LANGUAGE:-auto}
+  fallback_language: ${TINYAUTH_FALLBACK_LANGUAGE:-en}
 
 branding:
-  light_theme: ${LIGHT_THEME:-light}
-  dark_theme: ${DARK_THEME:-dark}
-  theme_mode: ${THEME_MODE:-system}
-  background_url: ${BACKGROUND_URL:-https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071}
-  # icon_url: ${ICON_URL:-https://example.com/icon.png}
+  light_theme: ${TINYAUTH_LIGHT_THEME:-light}
+  dark_theme: ${TINYAUTH_DARK_THEME:-dark}
+  theme_mode: ${TINYAUTH_THEME_MODE:-system}
+  background_url: ${TINYAUTH_BACKGROUND_URL:-https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071}
+  # icon_url: ${TINYAUTH_ICON_URL:-https://example.com/icon.png}
   title:
     ko: Tinyauth
     en: Tinyauth
@@ -44,68 +44,68 @@ branding:
 
 registration:
   # Self-registration is disabled by default.
-  enabled: ${REGISTRATION_ENABLED:-false}
+  enabled: ${TINYAUTH_REGISTRATION_ENABLED:-false}
   # Optional email filters used only when registration.enabled is true.
   # Leave this empty for unrestricted signup, or add patterns such as:
   # allowed_email_patterns:
   #   - '*@example.com'
   allowed_email_patterns: []
-  email_verification_required: ${EMAIL_VERIFICATION_REQUIRED:-true}
+  email_verification_required: ${TINYAUTH_EMAIL_VERIFICATION_REQUIRED:-true}
   signup_notice:
     ko: 계속하면 <a href="https://example.com/terms/ko" target="_blank">이용약관</a> 및 <a href="https://example.com/privacy/ko" target="_blank">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
     en: By continuing, you agree to our <a href="https://example.com/terms/en" target="_blank">Terms of Service</a> and <a href="https://example.com/privacy/en" target="_blank">Privacy Policy</a>.
     ja: 続行することで、<a href="https://example.com/terms/ja" target="_blank">利用規約</a>および<a href="https://example.com/privacy/ja" target="_blank">プライバシーポリシー</a>に同意したものとみなされます。
 
 account_deletion:
-  enabled: ${ACCOUNT_DELETION_ENABLED:-false}
-  retention: ${ACCOUNT_DELETION_RETENTION:-30d}
+  enabled: ${TINYAUTH_ACCOUNT_DELETION_ENABLED:-false}
+  retention: ${TINYAUTH_ACCOUNT_DELETION_RETENTION:-30d}
 
 # Standalone-only frontend serving.
 frontend:
-  enabled: ${FRONTEND_ENABLED:-true}
-  mode: ${FRONTEND_MODE:-static}
-  path: ${FRONTEND_PATH:-/opt/tinyauth/frontend}
+  enabled: ${TINYAUTH_FRONTEND_ENABLED:-true}
+  mode: ${TINYAUTH_FRONTEND_MODE:-static}
+  path: ${TINYAUTH_FRONTEND_PATH:-/opt/tinyauth/frontend}
   html_variables:
     APP_NAME: TinyAuth
 
 logging:
-  level: ${LOG_LEVEL:-info}
-  format: ${LOG_FORMAT:-pretty}
+  level: ${TINYAUTH_LOG_LEVEL:-info}
+  format: ${TINYAUTH_LOG_FORMAT:-pretty}
 
 database:
   # sqlite | postgres
-  type: ${DATABASE_TYPE:-sqlite}
+  type: ${TINYAUTH_DATABASE_TYPE:-sqlite}
 
   # sqlite settings
-  path: ${DATABASE_PATH:-/opt/tinyauth/database.db}
-  test: ${DATABASE_TEST:-false}
+  path: ${TINYAUTH_DATABASE_PATH:-/opt/tinyauth/database.db}
+  test: ${TINYAUTH_DATABASE_TEST:-false}
 
   # postgres settings
-  # host: ${DATABASE_HOST:-localhost}
-  # port: ${DATABASE_PORT:-5432}
-  # user: ${DATABASE_USER:-postgres}
-  # password: ${DATABASE_PASSWORD:-postgres}
-  # name: ${DATABASE_NAME:-tinyauth}
+  # host: ${TINYAUTH_DATABASE_HOST:-localhost}
+  # port: ${TINYAUTH_DATABASE_PORT:-5432}
+  # user: ${TINYAUTH_DATABASE_USER:-postgres}
+  # password: ${TINYAUTH_DATABASE_PASSWORD:-postgres}
+  # name: ${TINYAUTH_DATABASE_NAME:-tinyauth}
 
 security:
-  session_secret: ${SESSION_SECRET}
-  hash_secret: ${HASH_SECRET}
-  pbkdf2_iterations: ${PBKDF2_ITERATIONS:-600000}
+  session_secret: ${TINYAUTH_SESSION_SECRET}
+  hash_secret: ${TINYAUTH_HASH_SECRET}
+  pbkdf2_iterations: ${TINYAUTH_PBKDF2_ITERATIONS:-600000}
 
 auth:
   password:
-    enabled: ${PASSWORD_AUTH_ENABLED:-true}
+    enabled: ${TINYAUTH_PASSWORD_ENABLED:-true}
     two_factor:
-      enrollment_required: ${PASSWORD_2FA_ENROLLMENT_REQUIRED:-false}
+      enrollment_required: ${TINYAUTH_PASSWORD_2FA_ENROLLMENT_REQUIRED:-false}
     totp:
-      enabled: ${PASSWORD_TOTP_ENABLED:-false}
-      issuer: ${PASSWORD_TOTP_ISSUER:-TinyAuth}
+      enabled: ${TINYAUTH_PASSWORD_TOTP_ENABLED:-false}
+      issuer: ${TINYAUTH_PASSWORD_TOTP_ISSUER:-TinyAuth}
     policy:
-      min_length: ${PASSWORD_MIN_LENGTH:-8}
-      max_length: ${PASSWORD_MAX_LENGTH:-128}
+      min_length: ${TINYAUTH_PASSWORD_MIN_LENGTH:-8}
+      max_length: ${TINYAUTH_PASSWORD_MAX_LENGTH:-128}
   passkey:
-    enabled: ${PASSKEY_ENABLED:-false}
-    # rp_id: ${PASSKEY_RP_ID:-example.com}
+    enabled: ${TINYAUTH_PASSKEY_ENABLED:-false}
+    # rp_id: ${TINYAUTH_PASSKEY_RP_ID:-example.com}
     # origins:
     #   - https://auth.example.com
     #   - https://app.example.com
@@ -114,38 +114,38 @@ auth:
 # and password reset emails.
 # email:
 #   transport: smtp
-#   host: ${EMAIL_HOST:-smtp.example.com}
-#   port: ${EMAIL_PORT:-465}
-#   secure: ${EMAIL_SECURE:-true}
-#   user: ${EMAIL_USER}
-#   password: ${EMAIL_PASSWORD}
-#   from: ${EMAIL_FROM:-no-reply@example.com}
+#   host: ${TINYAUTH_EMAIL_HOST:-smtp.example.com}
+#   port: ${TINYAUTH_EMAIL_PORT:-465}
+#   secure: ${TINYAUTH_EMAIL_SECURE:-true}
+#   user: ${TINYAUTH_EMAIL_USER}
+#   password: ${TINYAUTH_EMAIL_PASSWORD}
+#   from: ${TINYAUTH_EMAIL_FROM:-no-reply@example.com}
 #
 # Test transport example:
 # email:
 #   transport: test
-#   from: ${EMAIL_FROM:-no-reply@example.com}
+#   from: ${TINYAUTH_EMAIL_FROM:-no-reply@example.com}
 
 scheduler:
-  enabled: ${SCHEDULER_ENABLED:-true}
-  cron: ${SCHEDULER_CRON:-0 2 * * *}
+  enabled: ${TINYAUTH_SCHEDULER_ENABLED:-true}
+  cron: ${TINYAUTH_SCHEDULER_CRON:-0 2 * * *}
 
 cleanup:
   revoked_tokens:
-    enabled: ${CLEANUP_REVOKED_TOKENS_ENABLED:-true}
-    retention: ${CLEANUP_REVOKED_TOKENS_RETENTION:-0}
+    enabled: ${TINYAUTH_CLEANUP_REVOKED_TOKENS_ENABLED:-true}
+    retention: ${TINYAUTH_CLEANUP_REVOKED_TOKENS_RETENTION:-0}
   oauth_codes:
-    enabled: ${CLEANUP_OAUTH_CODES_ENABLED:-true}
-    consumed_retention: ${CLEANUP_OAUTH_CODES_RETENTION:-24h}
+    enabled: ${TINYAUTH_CLEANUP_OAUTH_CODES_ENABLED:-true}
+    consumed_retention: ${TINYAUTH_CLEANUP_OAUTH_CODES_RETENTION:-24h}
   email_verifications:
-    enabled: ${CLEANUP_EMAIL_VERIFICATIONS_ENABLED:-true}
-    retention: ${CLEANUP_EMAIL_VERIFICATIONS_RETENTION:-0}
+    enabled: ${TINYAUTH_CLEANUP_EMAIL_VERIFICATIONS_ENABLED:-true}
+    retention: ${TINYAUTH_CLEANUP_EMAIL_VERIFICATIONS_RETENTION:-0}
   password_resets:
-    enabled: ${CLEANUP_PASSWORD_RESETS_ENABLED:-true}
-    retention: ${CLEANUP_PASSWORD_RESETS_RETENTION:-0}
+    enabled: ${TINYAUTH_CLEANUP_PASSWORD_RESETS_ENABLED:-true}
+    retention: ${TINYAUTH_CLEANUP_PASSWORD_RESETS_RETENTION:-0}
   pending_oauth_registrations:
-    enabled: ${CLEANUP_PENDING_OAUTH_REGISTRATIONS_ENABLED:-true}
-    retention: ${CLEANUP_PENDING_OAUTH_REGISTRATIONS_RETENTION:-0}
+    enabled: ${TINYAUTH_CLEANUP_PENDING_OAUTH_REGISTRATIONS_ENABLED:-true}
+    retention: ${TINYAUTH_CLEANUP_PENDING_OAUTH_REGISTRATIONS_RETENTION:-0}
 
 terms:
   - id: tos
@@ -172,8 +172,8 @@ terms:
 clients:
   - id: example-client
     name: Example Web App
-    client_id: ${CLIENT_ID:-example-client}
-    client_secret: ${CLIENT_SECRET:-example-secret}
+    client_id: ${TINYAUTH_CLIENT_ID:-example-client}
+    client_secret: ${TINYAUTH_CLIENT_SECRET:-example-secret}
     redirect_uris:
       - http://localhost:3000/callback
     response_types:
@@ -186,7 +186,7 @@ clients:
 users:
   - sub: admin-user
     email: admin@example.com
-    password: ${ADMIN_PASSWORD:-changeme}
+    password: ${TINYAUTH_ADMIN_PASSWORD:-changeme}
     role: admin
 
 identity_providers: []
@@ -195,8 +195,8 @@ identity_providers: []
 #   - id: google
 #     type: google
 #     enabled: true
-#     client_id: ${GOOGLE_CLIENT_ID}
-#     client_secret: ${GOOGLE_CLIENT_SECRET}
+#     client_id: ${TINYAUTH_GOOGLE_CLIENT_ID}
+#     client_secret: ${TINYAUTH_GOOGLE_CLIENT_SECRET}
 #     scopes:
 #       - openid
 #       - profile

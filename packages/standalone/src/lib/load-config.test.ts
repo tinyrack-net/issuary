@@ -83,23 +83,13 @@ describe('load-config', () => {
     await fs.promises.rm(dir, { recursive: true, force: true });
   });
 
-  test('generates ephemeral secrets and keeps signup disabled when config file is missing', () => {
+  test('throws when security secrets are missing and config file does not exist', () => {
     const missingPath = path.join(
       os.tmpdir(),
       `tinyauth-missing-${Date.now()}.yaml`,
     );
 
-    const first = loadConfig(missingPath);
-    const second = loadConfig(missingPath);
-
-    expect(first.registration.enabled).toBe(false);
-    expect(first.registration.allowed_email_patterns).toEqual([]);
-    expect(first.security.session_secret).not.toBe(
-      second.security.session_secret,
-    );
-    expect(first.security.hash_secret).not.toBe(second.security.hash_secret);
-    expect(first.security.session_secret.length).toBeGreaterThanOrEqual(16);
-    expect(first.security.hash_secret).toMatch(/^[A-Za-z0-9_-]+$/);
+    expect(() => loadConfig(missingPath)).toThrow();
   });
 
   test('loads the packaged config.example.yaml', () => {
@@ -109,10 +99,13 @@ describe('load-config', () => {
     const exampleConfigContents = fs
       .readFileSync(exampleConfigPath, 'utf-8')
       .replace(
-        '${SESSION_SECRET}',
+        '${TINYAUTH_SESSION_SECRET}',
         '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
       )
-      .replace('${HASH_SECRET}', 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY');
+      .replace(
+        '${TINYAUTH_HASH_SECRET}',
+        'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+      );
     const tempConfigPath = path.join(
       os.tmpdir(),
       `tinyauth-example-${Date.now()}.yaml`,
@@ -132,7 +125,7 @@ describe('load-config', () => {
     expect(config.terms[0]?.content['en']?.type).toBe('text');
   });
 
-  test('fails when security.session_secret is missing', async () => {
+  test('throws when session_secret is missing from YAML', async () => {
     const dir = await fs.promises.mkdtemp(
       path.join(os.tmpdir(), 'tinyauth-load-config-missing-security-'),
     );
@@ -145,11 +138,11 @@ describe('load-config', () => {
       ].join('\n'),
     );
 
-    await expect(
-      loadResolvedConfig({ configPath: configFile }),
-    ).rejects.toThrow('security');
-
-    await fs.promises.rm(dir, { recursive: true, force: true });
+    try {
+      expect(() => loadConfig(configFile)).toThrow();
+    } finally {
+      await fs.promises.rm(dir, { recursive: true, force: true });
+    }
   });
 
   test('rejects removed app.cookie_secret config', async () => {
@@ -201,5 +194,126 @@ describe('load-config', () => {
     ).rejects.toThrow('hash_master_secret_version');
 
     await fs.promises.rm(dir, { recursive: true, force: true });
+  });
+
+  test('loads config from env vars alone (no config file)', () => {
+    const missingPath = path.join(
+      os.tmpdir(),
+      `tinyauth-envonly-${Date.now()}.yaml`,
+    );
+
+    const originalSession = process.env['TINYAUTH_SESSION_SECRET'];
+    const originalHash = process.env['TINYAUTH_HASH_SECRET'];
+    try {
+      process.env['TINYAUTH_SESSION_SECRET'] =
+        'env-session-secret-1234567890abcdef';
+      process.env['TINYAUTH_HASH_SECRET'] =
+        'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
+
+      const config = loadConfig(missingPath);
+
+      expect(config.security.session_secret).toBe(
+        'env-session-secret-1234567890abcdef',
+      );
+      expect(config.security.hash_secret).toBe(
+        'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+      );
+      expect(config.server.listen_port).toBe(8080);
+      expect(config.database.type).toBe('sqlite');
+    } finally {
+      if (originalSession === undefined)
+        delete process.env['TINYAUTH_SESSION_SECRET'];
+      else process.env['TINYAUTH_SESSION_SECRET'] = originalSession;
+      if (originalHash === undefined)
+        delete process.env['TINYAUTH_HASH_SECRET'];
+      else process.env['TINYAUTH_HASH_SECRET'] = originalHash;
+    }
+  });
+
+  test('env var overrides default fallback', () => {
+    const missingPath = path.join(
+      os.tmpdir(),
+      `tinyauth-envoverride-${Date.now()}.yaml`,
+    );
+
+    const originalPort = process.env['TINYAUTH_LISTEN_PORT'];
+    const originalSession = process.env['TINYAUTH_SESSION_SECRET'];
+    const originalHash = process.env['TINYAUTH_HASH_SECRET'];
+    try {
+      process.env['TINYAUTH_LISTEN_PORT'] = '3000';
+      process.env['TINYAUTH_SESSION_SECRET'] =
+        'env-session-secret-1234567890abcdef';
+      process.env['TINYAUTH_HASH_SECRET'] =
+        'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
+
+      const config = loadConfig(missingPath);
+
+      expect(config.server.listen_port).toBe(3000);
+    } finally {
+      if (originalPort === undefined)
+        delete process.env['TINYAUTH_LISTEN_PORT'];
+      else process.env['TINYAUTH_LISTEN_PORT'] = originalPort;
+      if (originalSession === undefined)
+        delete process.env['TINYAUTH_SESSION_SECRET'];
+      else process.env['TINYAUTH_SESSION_SECRET'] = originalSession;
+      if (originalHash === undefined)
+        delete process.env['TINYAUTH_HASH_SECRET'];
+      else process.env['TINYAUTH_HASH_SECRET'] = originalHash;
+    }
+  });
+
+  test('partial YAML with env var overrides', async () => {
+    const dir = await fs.promises.mkdtemp(
+      path.join(os.tmpdir(), 'tinyauth-partial-yaml-'),
+    );
+    const configFile = await writeConfigFile(
+      dir,
+      'partial.yaml',
+      [
+        'security:',
+        '  session_secret: yaml-session-secret-1234567890',
+        '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+      ].join('\n'),
+    );
+
+    const originalPort = process.env['TINYAUTH_LISTEN_PORT'];
+    try {
+      process.env['TINYAUTH_LISTEN_PORT'] = '9090';
+
+      const config = loadConfig(configFile);
+
+      expect(config.security.session_secret).toBe(
+        'yaml-session-secret-1234567890',
+      );
+      expect(config.server.listen_port).toBe(9090);
+    } finally {
+      if (originalPort === undefined)
+        delete process.env['TINYAUTH_LISTEN_PORT'];
+      else process.env['TINYAUTH_LISTEN_PORT'] = originalPort;
+      await fs.promises.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('throws when no env var and no config file', () => {
+    const missingPath = path.join(
+      os.tmpdir(),
+      `tinyauth-noenv-${Date.now()}.yaml`,
+    );
+
+    const originalSession = process.env['TINYAUTH_SESSION_SECRET'];
+    const originalHash = process.env['TINYAUTH_HASH_SECRET'];
+    try {
+      delete process.env['TINYAUTH_SESSION_SECRET'];
+      delete process.env['TINYAUTH_HASH_SECRET'];
+
+      expect(() => loadConfig(missingPath)).toThrow();
+    } finally {
+      if (originalSession === undefined)
+        delete process.env['TINYAUTH_SESSION_SECRET'];
+      else process.env['TINYAUTH_SESSION_SECRET'] = originalSession;
+      if (originalHash === undefined)
+        delete process.env['TINYAUTH_HASH_SECRET'];
+      else process.env['TINYAUTH_HASH_SECRET'] = originalHash;
+    }
   });
 });

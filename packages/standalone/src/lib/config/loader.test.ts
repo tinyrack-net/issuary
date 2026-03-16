@@ -69,7 +69,7 @@ describe('resolveConfig', () => {
     });
 
     expect(resolved.email).toBeDefined();
-    expect(resolved.email?.from).toBeDefined();
+    expect(resolved.email?.from).toBeUndefined();
     expect(typeof resolved.email?.createTransport).toBe('function');
   });
 
