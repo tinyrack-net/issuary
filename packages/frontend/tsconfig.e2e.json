@@ -1,28 +1,8 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2023",
-    "lib": ["ES2023", "DOM"],
-    "module": "ESNext",
     "types": ["node"],
-    "skipLibCheck": true,
-    "strictNullChecks": true,
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "resolvePackageJsonImports": true,
-    "customConditions": ["@tinyauth/source"],
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
-    "noEmit": true,
-    "jsx": "react-jsx",
-    /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true,
     "tsBuildInfoFile": "./node_modules/.cache/tsconfig.e2e.tsbuildinfo",
-    "baseUrl": ".",
     "paths": {
       "#frontend-e2e/*": ["./e2e/*"]
     }

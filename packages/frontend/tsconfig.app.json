@@ -1,31 +1,12 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
-    "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
     "types": ["vite/client"],
-    "skipLibCheck": true,
-    "strictNullChecks": true,
+    "useDefineForClassFields": true,
     "sourceMap": true,
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "resolvePackageJsonImports": true,
-    "customConditions": ["@tinyauth/source"],
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
-    "noEmit": true,
-    "jsx": "react-jsx",
-    /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true,
-    "erasableSyntaxOnly": true,
     "tsBuildInfoFile": "./node_modules/.cache/tsconfig.app.tsbuildinfo",
-    "baseUrl": ".",
     "paths": {
       "#frontend/*": ["./src/*"]
     }
