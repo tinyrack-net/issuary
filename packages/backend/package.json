@@ -168,8 +168,8 @@
     }
   },
   "scripts": {
-    "test": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' vitest",
-    "test:coverage": "rm -rf coverage && NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' vitest run --coverage --maxWorkers=1",
+    "test": "NODE_OPTIONS='--conditions=@tinyauth/source' vitest",
+    "test:coverage": "rm -rf coverage && NODE_OPTIONS='--conditions=@tinyauth/source' vitest run --coverage --maxWorkers=1",
     "clean": "rm -rf dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo publish",
     "build": "npm run clean && tsc -b tsconfig.json",
     "build:watch": "tsc -b -w tsconfig.json",
@@ -193,7 +193,6 @@
     "@vitest/coverage-v8": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
-    "vite-tsconfig-paths": "catalog:",
     "vitest": "catalog:",
     "wrangler": "catalog:"
   },

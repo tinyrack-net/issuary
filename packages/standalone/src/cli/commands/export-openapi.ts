@@ -17,10 +17,6 @@ export const exportOpenapiCommand = new Command('export:openapi')
   .argument('[output-path]', 'Write spec to file instead of stdout')
   .action(async (outputPath?: string) => {
     const config = {
-      registration: {
-        enabled: true,
-        allowed_email_patterns: ['*'],
-      },
       logging: {
         level: 'silent',
         format: 'json',
@@ -34,9 +30,6 @@ export const exportOpenapiCommand = new Command('export:openapi')
           '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
         hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
         pbkdf2_iterations: 1000,
-      },
-      email: {
-        transport: 'test',
       },
     } satisfies StandaloneConfigInput;
 

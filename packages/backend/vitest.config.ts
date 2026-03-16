@@ -1,8 +1,11 @@
-import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  resolve: {
+    alias: {
+      '#backend': './src/',
+    },
+  },
   test: {
     maxWorkers: '90%',
     testTimeout: 20000,
