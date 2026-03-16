@@ -3,9 +3,8 @@
   "compilerOptions": {
     "composite": true,
     "noEmit": true,
-    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.test.tsbuildinfo"
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.e2e.tsbuildinfo"
   },
   "references": [{ "path": "./tsconfig.src.json" }],
-  "include": ["src/**/*.test.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["e2e/**/*"]
 }

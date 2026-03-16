@@ -57,7 +57,7 @@
     "dev:cli": "CONFIG_PATH=./config.dev.yaml NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/cli.ts",
     "test": "NODE_OPTIONS='--conditions=@tinyauth/source' vitest",
     "test:coverage": "NODE_OPTIONS='--conditions=@tinyauth/source' vitest run --coverage",
-    "clean": "rm -rf dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.src.build.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo",
+    "clean": "rm -rf dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.src.build.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo node_modules/.cache/tsconfig.e2e.tsbuildinfo",
     "build": "npm run clean && tsc -b tsconfig.build.json",
     "build:watch": "tsc -b -w tsconfig.json",
     "cli": "node dist/cli.js",

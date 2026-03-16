@@ -1,11 +1,9 @@
 import { fileURLToPath } from 'node:url';
 import { execaNode } from 'execa';
 
-const CLI_PATH = fileURLToPath(
-  new URL('../../../../src/cli.ts', import.meta.url),
-);
+const CLI_PATH = fileURLToPath(new URL('../../src/cli.ts', import.meta.url));
 
-const CWD = fileURLToPath(new URL('../../../../', import.meta.url));
+const CWD = fileURLToPath(new URL('../../', import.meta.url));
 
 const NODE_OPTIONS = ['--conditions=@tinyauth/source', '--import', 'tsx'];
 
