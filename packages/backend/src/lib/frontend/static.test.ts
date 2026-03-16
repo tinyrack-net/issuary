@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import type { CreateStaticHandlerOptions } from './static.js';
 import { createStaticHandler } from './static.js';
 
 const INDEX_HTML = [
@@ -22,10 +23,10 @@ const TEST_HTML = [
 
 function createTestApp(
   publicPath: string,
-  htmlVariables: Record<string, string>,
+  options?: Omit<CreateStaticHandlerOptions, 'publicPath'>,
 ) {
   const app = new Hono();
-  const handler = createStaticHandler({ publicPath, htmlVariables });
+  const handler = createStaticHandler({ publicPath, ...options });
   app.notFound((c) => handler(c));
   return app;
 }
@@ -64,9 +65,11 @@ describe('createStaticHandler', () => {
       );
 
       app = createTestApp(publicPath, {
-        PAGE_TITLE: 'Test App',
-        USER_NAME: 'Alice',
-        APP_TITLE: 'My App',
+        htmlVariables: {
+          PAGE_TITLE: 'Test App',
+          USER_NAME: 'Alice',
+          APP_TITLE: 'My App',
+        },
       });
     });
 
@@ -128,6 +131,46 @@ describe('createStaticHandler', () => {
     });
   });
 
+  describe('with default htmlVariables', () => {
+    let app: InstanceType<typeof Hono>;
+    let publicPath = '';
+
+    const DEFAULT_INDEX = [
+      '<!doctype html>',
+      '<html><head><title>{{TITLE}}</title>',
+      '<meta name="description" content="{{DESCRIPTION}}">',
+      '<link rel="icon" href="{{FAVICON_URL}}">',
+      '</head><body></body></html>',
+    ].join('\n');
+
+    beforeAll(async () => {
+      publicPath = await fs.promises.mkdtemp(
+        path.join(os.tmpdir(), 'tinyauth-static-defaults-'),
+      );
+      await fs.promises.writeFile(
+        path.join(publicPath, 'index.html'),
+        DEFAULT_INDEX,
+        'utf-8',
+      );
+
+      app = createTestApp(publicPath);
+    });
+
+    afterAll(async () => {
+      await fs.promises.rm(publicPath, { recursive: true, force: true });
+    });
+
+    test('applies default variables when none are provided', async () => {
+      const res = await app.request('/');
+
+      expect(res.status).toBe(200);
+      const body = await res.text();
+      expect(body).toContain('<title>Tinyrack</title>');
+      expect(body).toContain('content="OIDC Provider for everyone"');
+      expect(body).toContain('href="/vite.svg"');
+    });
+  });
+
   describe('without htmlVariables', () => {
     let app: InstanceType<typeof Hono>;
     let publicPath = '';
@@ -147,7 +190,7 @@ describe('createStaticHandler', () => {
         'utf-8',
       );
 
-      app = createTestApp(publicPath, {});
+      app = createTestApp(publicPath);
     });
 
     afterAll(async () => {
@@ -177,6 +220,71 @@ describe('createStaticHandler', () => {
       const body = await res.text();
       expect(body).toContain('<!doctype html>');
       expect(body).not.toContain('"name"');
+    });
+  });
+
+  describe('with onResponse', () => {
+    let app: InstanceType<typeof Hono>;
+    let publicPath = '';
+
+    beforeAll(async () => {
+      publicPath = await fs.promises.mkdtemp(
+        path.join(os.tmpdir(), 'tinyauth-static-onresponse-'),
+      );
+      await fs.promises.writeFile(
+        path.join(publicPath, 'index.html'),
+        INDEX_HTML,
+        'utf-8',
+      );
+      await fs.promises.writeFile(
+        path.join(publicPath, 'test.svg'),
+        '<svg></svg>',
+        'utf-8',
+      );
+
+      app = createTestApp(publicPath, {
+        htmlVariables: { APP_TITLE: 'Before Hook' },
+        onResponse: async (res) => {
+          const ct = res.headers.get('content-type') ?? '';
+          if (!ct.includes('text/html')) {
+            return res;
+          }
+          const body = await res.text();
+          return new Response(body.replace('Before Hook', 'After Hook'), {
+            headers: res.headers,
+            status: res.status,
+          });
+        },
+      });
+    });
+
+    afterAll(async () => {
+      await fs.promises.rm(publicPath, { recursive: true, force: true });
+    });
+
+    test('onResponse receives the already-interpolated HTML', async () => {
+      const res = await app.request('/');
+
+      expect(res.status).toBe(200);
+      const body = await res.text();
+      expect(body).toContain('After Hook');
+      expect(body).not.toContain('Before Hook');
+      expect(body).not.toContain('{{APP_TITLE}}');
+    });
+
+    test('onResponse is called for non-HTML files', async () => {
+      const res = await app.request('/test.svg');
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('image/svg+xml');
+    });
+
+    test('onResponse is called for SPA fallback', async () => {
+      const res = await app.request('/nonexistent');
+
+      expect(res.status).toBe(200);
+      const body = await res.text();
+      expect(body).toContain('After Hook');
     });
   });
 });

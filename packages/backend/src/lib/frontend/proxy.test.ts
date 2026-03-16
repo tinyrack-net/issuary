@@ -111,4 +111,103 @@ describe('createProxyHandler', () => {
     const css = await app.request('/style.css');
     await expect(css.text()).resolves.toContain('body { color: red }');
   });
+
+  test('interpolates htmlVariables in HTML responses', async () => {
+    proxyMock.mockResolvedValue(
+      new Response('<html><head><title>{{APP_TITLE}}</title></head></html>', {
+        headers: { 'content-type': 'text/html' },
+        status: 200,
+      }),
+    );
+
+    const app = createApp({
+      htmlVariables: { APP_TITLE: 'My App' },
+    });
+
+    const res = await app.request('/');
+    expect(res.status).toBe(200);
+    const body = await res.text();
+    expect(body).toContain('<title>My App</title>');
+    expect(body).not.toContain('{{APP_TITLE}}');
+  });
+
+  test('does not interpolate htmlVariables in non-HTML responses', async () => {
+    proxyMock.mockResolvedValue(
+      new Response('body { content: "{{APP_TITLE}}" }', {
+        headers: { 'content-type': 'text/css' },
+        status: 200,
+      }),
+    );
+
+    const app = createApp({
+      htmlVariables: { APP_TITLE: 'My App' },
+    });
+
+    const res = await app.request('/style.css');
+    const body = await res.text();
+    expect(body).toContain('{{APP_TITLE}}');
+  });
+
+  test('applies default htmlVariables when none are provided', async () => {
+    proxyMock.mockResolvedValue(
+      new Response(
+        '<html><head><title>{{TITLE}}</title><meta content="{{DESCRIPTION}}"><link href="{{FAVICON_URL}}"></head></html>',
+        {
+          headers: { 'content-type': 'text/html' },
+          status: 200,
+        },
+      ),
+    );
+
+    const app = createApp();
+
+    const res = await app.request('/');
+    const body = await res.text();
+    expect(body).toContain('<title>Tinyrack</title>');
+    expect(body).toContain('content="OIDC Provider for everyone"');
+    expect(body).toContain('href="/vite.svg"');
+  });
+
+  test('user htmlVariables override defaults', async () => {
+    proxyMock.mockResolvedValue(
+      new Response('<html><title>{{TITLE}}</title></html>', {
+        headers: { 'content-type': 'text/html' },
+        status: 200,
+      }),
+    );
+
+    const app = createApp({
+      htmlVariables: { TITLE: 'Custom Title' },
+    });
+
+    const res = await app.request('/');
+    const body = await res.text();
+    expect(body).toContain('<title>Custom Title</title>');
+  });
+
+  test('applies htmlVariables before onResponse', async () => {
+    proxyMock.mockResolvedValue(
+      new Response('<html><title>{{APP_TITLE}}</title></html>', {
+        headers: { 'content-type': 'text/html' },
+        status: 200,
+      }),
+    );
+
+    const app = createApp({
+      htmlVariables: { APP_TITLE: 'Original' },
+      onResponse: async (res) => {
+        const body = await res.text();
+        return new Response(body.replace('Original', 'Overridden'), {
+          headers: res.headers,
+          status: res.status,
+        });
+      },
+    });
+
+    const res = await app.request('/');
+    const body = await res.text();
+    expect(body).toContain('Overridden');
+    expect(body).not.toContain('Original');
+    expect(body).not.toContain('{{APP_TITLE}}');
+  });
 });

@@ -1,3 +1,6 @@
 export type { FrontendConfig } from '#backend/lib/config/frontend.js';
-export { interpolateHtml } from '#backend/lib/frontend/interpolate-html.js';
-export { interpolateHtmlResponse } from '#backend/lib/frontend/interpolate-html-response.js';
+export {
+  DEFAULT_HTML_VARIABLES,
+  interpolateHtml,
+  interpolateHtmlResponse,
+} from '#backend/lib/interpolate-html.js';

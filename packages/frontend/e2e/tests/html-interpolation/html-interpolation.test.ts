@@ -1,5 +1,4 @@
 import { expect } from '@playwright/test';
-import { interpolateHtmlResponse } from '@tinyauth/backend/frontend';
 import { createProxyHandler } from '@tinyauth/backend/frontend/proxy';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
@@ -14,12 +13,11 @@ const test = createScenarioFixture((backendPort, frontendPort) => ({
   users: [E2E_TEST_USER_CONFIG],
   frontend: createProxyHandler({
     upstream: `http://localhost:${frontendPort}`,
-    onResponse: (res) =>
-      interpolateHtmlResponse(res, {
-        TITLE: 'E2E Interpolated Title',
-        DESCRIPTION: 'E2E interpolated description text',
-        FAVICON_URL: '/e2e-test-favicon.ico',
-      }),
+    htmlVariables: {
+      TITLE: 'E2E Interpolated Title',
+      DESCRIPTION: 'E2E interpolated description text',
+      FAVICON_URL: '/e2e-test-favicon.ico',
+    },
   }),
 }));
 
@@ -50,20 +48,19 @@ const testPartial = createScenarioFixture((backendPort, frontendPort) => ({
   users: [E2E_TEST_USER_CONFIG],
   frontend: createProxyHandler({
     upstream: `http://localhost:${frontendPort}`,
-    onResponse: (res) =>
-      interpolateHtmlResponse(res, {
-        TITLE: 'Partial Interpolation',
-      }),
+    htmlVariables: {
+      TITLE: 'Partial Interpolation',
+    },
   }),
 }));
 
 testPartial.describe('HTML interpolation - partial variables', () => {
-  testPartial('unset variables remain as placeholders', async ({ page }) => {
+  testPartial('user-provided variables override defaults', async ({ page }) => {
     await page.goto('/login');
     await expect(page).toHaveTitle('Partial Interpolation');
     const content = await page
       .locator('meta[name="description"]')
       .getAttribute('content');
-    expect(content).toBe('{{DESCRIPTION}}');
+    expect(content).toBe('OIDC Provider for everyone');
   });
 });

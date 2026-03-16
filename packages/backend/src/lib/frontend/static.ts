@@ -3,11 +3,26 @@ import path from 'node:path';
 import type { Context } from 'hono';
 import { getMimeType } from 'hono/utils/mime';
 import type { FrontendConfig } from '#backend/lib/config/frontend.js';
-import { interpolateHtml } from './interpolate-html.js';
+import {
+  DEFAULT_HTML_VARIABLES,
+  interpolateHtml,
+} from '#backend/lib/interpolate-html.js';
 
 export interface CreateStaticHandlerOptions {
-  htmlVariables: Record<string, string>;
+  /**
+   * HTML variable map for `{{VAR}}` interpolation in HTML responses.
+   * Defaults to `{}` (no interpolation).
+   */
+  htmlVariables?: Record<string, string> | undefined;
   publicPath: string;
+  /**
+   * Optional response interceptor.
+   * Called with the (already-interpolated) Response before it is
+   * returned. Return a modified Response or the original as-is.
+   */
+  onResponse?:
+    | ((response: Response) => Response | Promise<Response>)
+    | undefined;
 }
 
 /**
@@ -19,7 +34,10 @@ export function createStaticHandler(
 ): FrontendConfig {
   const publicPath = path.resolve(options.publicPath);
   const rootIndexPath = path.join(publicPath, 'index.html');
-  const { htmlVariables } = options;
+  const htmlVariables = {
+    ...DEFAULT_HTML_VARIABLES,
+    ...options.htmlVariables,
+  };
   const hasVariables = Object.keys(htmlVariables).length > 0;
   const htmlCache = new Map<string, string>();
   let cachedRootIndex: string | undefined;
@@ -49,15 +67,24 @@ export function createStaticHandler(
     );
   }
 
+  async function applyOnResponse(res: Response): Promise<Response> {
+    if (options.onResponse) {
+      return options.onResponse(res);
+    }
+    return res;
+  }
+
   return async (c: Context): Promise<Response> => {
     const urlPath = c.req.path;
 
     const resolved = path.resolve(publicPath, `.${urlPath}`);
     if (!isSafePath(resolved)) {
-      return c.html(
-        hasVariables
-          ? await getInterpolatedHtml(rootIndexPath)
-          : await getRootIndex(),
+      return applyOnResponse(
+        c.html(
+          hasVariables
+            ? await getInterpolatedHtml(rootIndexPath)
+            : await getRootIndex(),
+        ),
       );
     }
 
@@ -67,13 +94,15 @@ export function createStaticHandler(
       if (stats.isFile()) {
         if (hasVariables && resolved.endsWith('.html')) {
           const html = await getInterpolatedHtml(resolved);
-          return c.html(html);
+          return applyOnResponse(c.html(html));
         }
         const content = await fs.promises.readFile(resolved);
         const mimeType = getMimeType(resolved) ?? 'application/octet-stream';
-        return new Response(content, {
-          headers: { 'Content-Type': mimeType },
-        });
+        return applyOnResponse(
+          new Response(content, {
+            headers: { 'Content-Type': mimeType },
+          }),
+        );
       }
 
       if (stats.isDirectory()) {
@@ -81,10 +110,10 @@ export function createStaticHandler(
         try {
           if (hasVariables) {
             const html = await getInterpolatedHtml(indexPath);
-            return c.html(html);
+            return applyOnResponse(c.html(html));
           }
           const content = await fs.promises.readFile(indexPath, 'utf-8');
-          return c.html(content);
+          return applyOnResponse(c.html(content));
         } catch {
           // No index.html in directory, fall through.
         }
@@ -95,13 +124,14 @@ export function createStaticHandler(
 
     if (hasVariables) {
       const html = await getInterpolatedHtml(rootIndexPath);
-      return c.html(html);
+      return applyOnResponse(c.html(html));
     }
+
     try {
       const content = await getRootIndex();
-      return c.html(content);
+      return applyOnResponse(c.html(content));
     } catch {
-      return c.json({ error: 'Not Found' }, 404);
+      return applyOnResponse(c.json({ error: 'Not Found' }, 404));
     }
   };
 }

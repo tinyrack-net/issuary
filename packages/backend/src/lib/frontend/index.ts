@@ -1,5 +1,8 @@
-export { interpolateHtml } from './interpolate-html.js';
-export { interpolateHtmlResponse } from './interpolate-html-response.js';
+export {
+  DEFAULT_HTML_VARIABLES,
+  interpolateHtml,
+  interpolateHtmlResponse,
+} from '#backend/lib/interpolate-html.js';
 export { type CreateProxyHandlerOptions, createProxyHandler } from './proxy.js';
 export {
   type CreateStaticHandlerOptions,
