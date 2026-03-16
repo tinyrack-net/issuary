@@ -92,6 +92,7 @@ export type E2EConfigInput = {
   registration?: TestRegistrationConfig;
   account_deletion?: TestAccountDeletionConfig;
   email?: TestEmailConfig;
+  html_variables?: Record<string, string>;
 };
 
 export const E2E_BASE_CONFIG: Omit<E2EConfigInput, 'server' | 'email'> = {

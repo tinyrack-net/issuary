@@ -6,6 +6,7 @@ import {
   type TinyAuthRuntimeConfig,
   TinyAuthRuntimeConfigSchema,
 } from '@tinyauth/backend/config';
+import { interpolateHtmlResponse } from '@tinyauth/backend/frontend';
 import type { E2EConfigInput } from '#frontend-e2e/fixtures/index.js';
 import { resolveTestEmailConfig } from '#frontend-e2e/setup/resolve-test-email.js';
 
@@ -233,10 +234,11 @@ export async function createE2EServer(configFactory: ConfigFactory) {
   const backendPort = await getFreePort();
   const frontendPort = getSharedFrontendPort();
 
-  const { email: rawEmail, ...restConfig } = configFactory(
-    backendPort,
-    frontendPort,
-  );
+  const {
+    email: rawEmail,
+    html_variables,
+    ...restConfig
+  } = configFactory(backendPort, frontendPort);
 
   // Resolve email config: { test: true } shorthand into a real test email config
   let resolvedEmail: TinyAuthRuntimeConfig['email'];
@@ -496,10 +498,14 @@ export async function createE2EServer(configFactory: ConfigFactory) {
       }
       const upstream = `http://localhost:${frontendPort}${url.pathname}${url.search}`;
       const res = await fetch(upstream, { headers: c.req.raw.headers });
-      return new Response(res.body, {
+      const proxied = new Response(res.body, {
         status: res.status,
         headers: res.headers,
       });
+      if (html_variables) {
+        return interpolateHtmlResponse(proxied, html_variables);
+      }
+      return proxied;
     });
 
   const backendServer = serve({

@@ -93,6 +93,10 @@ const configs = [
     name: 'oauth-providers-specific',
     testDir: './e2e/tests/oauth-providers-specific',
   },
+  {
+    name: 'html-interpolation',
+    testDir: './e2e/tests/html-interpolation',
+  },
 ];
 
 const browsers = [
