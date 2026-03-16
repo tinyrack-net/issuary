@@ -19,6 +19,7 @@ import { UserTermsConsentEntitySchema } from '#backend/entities/user-terms-conse
 import { UserTotpEntitySchema } from '#backend/entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '#backend/entities/user-totp-recovery-code.entity.js';
 import type { DatabaseConfig } from '#backend/lib/config/index.js';
+import compiledFunctions from './compiled-functions.js';
 
 export function postgres(database: {
   host: string;
@@ -31,6 +32,7 @@ export function postgres(database: {
     getMikroOrmOptions: async () => {
       return defineConfig({
         driver: PostgreSqlDriver,
+        compiledFunctions: compiledFunctions,
         entities: [
           UserEntitySchema,
           OAuthClientEntitySchema,

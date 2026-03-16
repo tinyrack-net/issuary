@@ -14,6 +14,10 @@ vi.mock('@tinyauth/backend', () => {
   };
 });
 
+function createMockD1Database() {
+  return {} as D1Database;
+}
+
 function createAssetsFetcher() {
   return {
     fetch: vi.fn(async (input: RequestInfo | URL) => {
@@ -90,7 +94,10 @@ describe('createCloudflareExampleApp', () => {
   test('preserves backend routes', async () => {
     const { createCloudflareExampleApp } = await import('./index.js');
     const assets = createAssetsFetcher();
-    const app = await createCloudflareExampleApp(assets);
+    const app = await createCloudflareExampleApp(
+      assets,
+      createMockD1Database(),
+    );
 
     const response = await app.fetch(
       new Request('https://auth.example.com/api/health/live'),
@@ -104,7 +111,10 @@ describe('createCloudflareExampleApp', () => {
   test('delegates unknown backend routes to frontend handler', async () => {
     const { createCloudflareExampleApp } = await import('./index.js');
     const assets = createAssetsFetcher();
-    const app = await createCloudflareExampleApp(assets);
+    const app = await createCloudflareExampleApp(
+      assets,
+      createMockD1Database(),
+    );
 
     const response = await app.fetch(
       new Request('https://auth.example.com/api/unknown'),
@@ -117,7 +127,10 @@ describe('createCloudflareExampleApp', () => {
   test('serves interpolated frontend html for app routes', async () => {
     const { createCloudflareExampleApp } = await import('./index.js');
     const assets = createAssetsFetcher();
-    const app = await createCloudflareExampleApp(assets);
+    const app = await createCloudflareExampleApp(
+      assets,
+      createMockD1Database(),
+    );
 
     const response = await app.fetch(
       new Request('https://auth.example.com/login'),
@@ -133,7 +146,10 @@ describe('createCloudflareExampleApp', () => {
   test('does not return spa html for missing file-like requests', async () => {
     const { createCloudflareExampleApp } = await import('./index.js');
     const assets = createAssetsFetcher();
-    const app = await createCloudflareExampleApp(assets);
+    const app = await createCloudflareExampleApp(
+      assets,
+      createMockD1Database(),
+    );
 
     const response = await app.fetch(
       new Request('https://auth.example.com/missing.js'),

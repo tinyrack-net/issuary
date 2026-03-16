@@ -1,5 +1,5 @@
 import { createApp } from '#backend/entrypoints/app.js';
-import { sqlite } from '#backend/entrypoints/database/sqlite.js';
+import { sqlite } from '#backend/entrypoints/database/sqlite/sqlite.js';
 import type {
   EmailConfig,
   TinyAuthRuntimeConfigInput,

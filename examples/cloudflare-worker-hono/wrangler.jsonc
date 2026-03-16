@@ -3,7 +3,14 @@
   "name": "tinyauth-cloudflare-worker-hono-example",
   "main": "src/index.ts",
   "compatibility_date": "2026-02-06",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": ["nodejs_compat", "allow_insecure_inefficient_logged_eval"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tinyauth-db",
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ],
   "assets": {
     "directory": "../../packages/backend/public",
     "binding": "ASSETS",

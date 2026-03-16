@@ -1,7 +1,7 @@
+/// <reference types="@cloudflare/workers-types" />
 import { defineConfig, type MikroORM } from '@mikro-orm/core';
-import { Migrator } from '@mikro-orm/migrations';
-import { SeedManager } from '@mikro-orm/seeder';
 import { SqliteDriver } from '@mikro-orm/sqlite';
+import { D1Dialect } from 'kysely-d1';
 import { EmailVerificationEntitySchema } from '#backend/entities/email-verification.entity.js';
 import { JwtKeyEntitySchema } from '#backend/entities/jwt-key.entity.js';
 import { OAuthClientEntitySchema } from '#backend/entities/oauth-client.entity.js';
@@ -19,16 +19,17 @@ import { UserTermsConsentEntitySchema } from '#backend/entities/user-terms-conse
 import { UserTotpEntitySchema } from '#backend/entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '#backend/entities/user-totp-recovery-code.entity.js';
 import type { DatabaseConfig } from '#backend/lib/config/index.js';
+// import compiledFunctions from './compiled-functions.js';
 
-export function sqlite(database: {
-  path: string;
-  test: boolean;
-}): DatabaseConfig {
+export function d1(database: { database: D1Database }): DatabaseConfig {
   return {
     getMikroOrmOptions: async () => {
       return defineConfig({
         driver: SqliteDriver,
-        dbName: database.test ? ':memory:' : database.path,
+        // compiledFunctions: compiledFunctions,
+        dbName: 'd1',
+        driverOptions: new D1Dialect({ database: database.database }),
+        implicitTransactions: false,
         entities: [
           UserEntitySchema,
           OAuthClientEntitySchema,
@@ -47,15 +48,24 @@ export function sqlite(database: {
           UserTotpRecoveryCodeEntitySchema,
           UserTotpEntitySchema,
         ],
-        extensions: [SeedManager, Migrator],
         debug: false,
       });
     },
-    initialize: async (orm: MikroORM) => {
-      if (database.test) {
-        await orm.schema.refresh();
-      } else {
-        await orm.migrator.up();
+    initialize: async (_orm: MikroORM) => {
+      const schemaSQL = _orm.schema
+        .getCreateSchemaSQL({ wrap: false })
+        .then((sql) =>
+          sql
+            .split(';')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0),
+        );
+      for (const statement of await schemaSQL) {
+        try {
+          await database.database.exec(statement);
+        } catch {
+          // ignore "table already exists" errors
+        }
       }
     },
   };

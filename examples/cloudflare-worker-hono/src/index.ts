@@ -1,5 +1,5 @@
 import { type AppType, createApp } from '@tinyauth/backend';
-import { sqlite } from '@tinyauth/backend/database/sqlite';
+import { d1 } from '@tinyauth/backend/database/d1';
 import {
   type FrontendConfig,
   interpolateHtmlResponse,
@@ -11,6 +11,7 @@ interface AssetFetcher {
 
 interface Env {
   ASSETS: AssetFetcher;
+  DB: D1Database;
 }
 
 const HTML_VARIABLES: Record<string, string> = {
@@ -51,12 +52,12 @@ function createAssetsHandler(assets: AssetFetcher): FrontendConfig {
   };
 }
 
-export async function createCloudflareExampleApp(assets: AssetFetcher) {
+export async function createCloudflareExampleApp(
+  assets: AssetFetcher,
+  db: D1Database,
+) {
   const result = await createApp({
-    database: sqlite({
-      path: './test.db',
-      test: true,
-    }),
+    database: d1({ database: db }),
     security: {
       session_secret:
         '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
@@ -76,7 +77,7 @@ const worker = {
     env: Env,
     executionContext: AppExecutionContext,
   ) {
-    const app = await createCloudflareExampleApp(env.ASSETS);
+    const app = await createCloudflareExampleApp(env.ASSETS, env.DB);
     return app.fetch(request, env, executionContext);
   },
 };

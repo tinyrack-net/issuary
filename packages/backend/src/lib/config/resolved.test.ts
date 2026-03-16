@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { sqlite } from '#backend/entrypoints/database/sqlite.js';
+import { sqlite } from '#backend/entrypoints/database/sqlite/sqlite.js';
 import { ACCOUNT_DELETION_CONFIG_DEFAULT } from './account-deletion.js';
 import { AUTH_CONFIG_DEFAULT } from './auth.js';
 import { BRANDING_CONFIG_DEFAULT } from './branding.js';

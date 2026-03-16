@@ -28,12 +28,16 @@
         "default": "./dist/entrypoints/services.js"
       },
       "./database/postgres": {
-        "types": "./dist/entrypoints/database/postgres.d.ts",
-        "default": "./dist/entrypoints/database/postgres.js"
+        "types": "./dist/entrypoints/database/postgres/postgres.d.ts",
+        "default": "./dist/entrypoints/database/postgres/postgres.js"
       },
       "./database/sqlite": {
-        "types": "./dist/entrypoints/database/sqlite.d.ts",
-        "default": "./dist/entrypoints/database/sqlite.js"
+        "types": "./dist/entrypoints/database/sqlite/sqlite.d.ts",
+        "default": "./dist/entrypoints/database/sqlite/sqlite.js"
+      },
+      "./database/d1": {
+        "types": "./dist/entrypoints/database/d1/d1.d.ts",
+        "default": "./dist/entrypoints/database/d1/d1.js"
       },
       "./mail/nodemailer": {
         "types": "./dist/entrypoints/mail/nodemailer.d.ts",
@@ -96,14 +100,19 @@
       "default": "./dist/entrypoints/services.js"
     },
     "./database/postgres": {
-      "@tinyauth/source": "./src/entrypoints/database/postgres.ts",
-      "types": "./dist/entrypoints/database/postgres.d.ts",
-      "default": "./dist/entrypoints/database/postgres.js"
+      "@tinyauth/source": "./src/entrypoints/database/postgres/postgres.ts",
+      "types": "./dist/entrypoints/database/postgres/postgres.d.ts",
+      "default": "./dist/entrypoints/database/postgres/postgres.js"
     },
     "./database/sqlite": {
-      "@tinyauth/source": "./src/entrypoints/database/sqlite.ts",
-      "types": "./dist/entrypoints/database/sqlite.d.ts",
-      "default": "./dist/entrypoints/database/sqlite.js"
+      "@tinyauth/source": "./src/entrypoints/database/sqlite/sqlite.ts",
+      "types": "./dist/entrypoints/database/sqlite/sqlite.d.ts",
+      "default": "./dist/entrypoints/database/sqlite/sqlite.js"
+    },
+    "./database/d1": {
+      "@tinyauth/source": "./src/entrypoints/database/d1/d1.ts",
+      "types": "./dist/entrypoints/database/d1/d1.d.ts",
+      "default": "./dist/entrypoints/database/d1/d1.js"
     },
     "./mail/nodemailer": {
       "@tinyauth/source": "./src/entrypoints/mail/nodemailer.ts",
@@ -165,10 +174,12 @@
     "build": "npm run clean && tsc -b tsconfig.json",
     "build:watch": "tsc -b -w tsconfig.json",
     "email:preview": "email dev --dir src/emails/templates --port 3001",
-    "mikro-orm": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm",
-    "mikro-orm:compile": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm compile",
-    "mikro-orm:debug": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm debug",
-    "mikro-orm:schema:create": "NODE_OPTIONS='--conditions=@tinyauth/source --import tsx' mikro-orm migration:create --initial"
+    "mikro-orm": "mikro-orm",
+    "mikro-orm:compile:postgres": "mikro-orm compile --config ./src/entrypoints/database/postgres/cli.ts",
+    "mikro-orm:compile:sqlite": "mikro-orm compile --config ./src/entrypoints/database/sqlite/cli.ts",
+    "mikro-orm:compile:d1": "mikro-orm compile --config ./src/entrypoints/database/d1/cli.ts",
+    "mikro-orm:debug": "mikro-orm debug",
+    "mikro-orm:schema:create": "mikro-orm migration:create --initial"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
@@ -177,12 +188,14 @@
     "@types/nodemailer": "catalog:",
     "@types/pg": "catalog:",
     "@types/qrcode": "catalog:",
+    "@cloudflare/workers-types": "catalog:",
     "@types/react": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vite-tsconfig-paths": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "wrangler": "catalog:"
   },
   "dependencies": {
     "@hono/standard-validator": "catalog:",
@@ -202,6 +215,8 @@
     "hono": "catalog:",
     "hono-openapi": "catalog:",
     "jose": "catalog:",
+    "kysely": "catalog:",
+    "kysely-d1": "catalog:",
     "pino-pretty": "catalog:",
     "react-email": "catalog:",
     "nodemailer": "catalog:",
@@ -214,8 +229,7 @@
   },
   "mikro-orm": {
     "configPaths": [
-      "./src/entrypoints/database/cli.ts",
-      "./dist/entrypoints/database/cli.js"
+      "./src/entrypoints/database/sqlite/cli.ts"
     ]
   }
 }

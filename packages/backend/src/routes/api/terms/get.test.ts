@@ -671,13 +671,15 @@ describe('GET /api/terms', () => {
       // Record multiple consents (simulating version upgrades)
       await withMikroContext(services, async () => {
         // Old consent
-        await services.mikro.userTermsConsent.recordConsent({
+        const oldConsent = await services.mikro.userTermsConsent.recordConsent({
           userSub,
           termsId: 'tos',
           termsVersion: '0.9.0',
           agreed: true,
           consentType: 'implicit',
         });
+        oldConsent.agreedAt = new Date('2020-01-01');
+        await services.mikro.em.flush();
 
         // New consent
         await services.mikro.userTermsConsent.recordConsent({
