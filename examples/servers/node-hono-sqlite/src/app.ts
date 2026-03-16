@@ -11,46 +11,20 @@ const frontendIndexPath = path.join(frontendPublicPath, 'index.html');
 const dataDir = path.join(exampleRoot, 'data');
 const sqlitePath = path.join(dataDir, 'tinyauth.db');
 
-const HTML_VARIABLES = {
-  TITLE: 'TinyAuth Hono Example',
-  DESCRIPTION:
-    'TinyAuth running in library mode with Hono, Node.js, and SQLite',
-  FAVICON_URL: '/vite.svg',
-} as const;
+export async function createNodeHonoSqliteExampleApp(
+  options: { test?: boolean; publicOrigin?: string } = {},
+) {
+  const { test = false, publicOrigin = 'http://localhost:3000' } = options;
 
-const SESSION_SECRET =
-  '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
-const HASH_SECRET = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
-
-export interface CreateNodeHonoSqliteExampleAppOptions {
-  test?: boolean;
-  publicOrigin?: string;
-}
-
-async function ensureFrontendAssets(): Promise<void> {
-  try {
-    await fs.promises.access(frontendIndexPath, fs.constants.R_OK);
-  } catch {
+  await fs.promises.access(frontendIndexPath, fs.constants.R_OK).catch(() => {
     throw new Error(
       `TinyAuth frontend assets were not found at ${frontendIndexPath}. ` +
         'Run `pnpm --filter @tinyauth/frontend build` first.',
     );
-  }
-}
-
-async function ensureDataDirectory(): Promise<void> {
-  await fs.promises.mkdir(dataDir, { recursive: true });
-}
-
-export async function createNodeHonoSqliteExampleApp(
-  options: CreateNodeHonoSqliteExampleAppOptions = {},
-) {
-  const { test = false, publicOrigin = 'http://localhost:3000' } = options;
-
-  await ensureFrontendAssets();
+  });
 
   if (!test) {
-    await ensureDataDirectory();
+    await fs.promises.mkdir(dataDir, { recursive: true });
   }
 
   return createApp({
@@ -71,12 +45,18 @@ export async function createNodeHonoSqliteExampleApp(
       format: test ? 'json' : 'pretty',
     },
     security: {
-      session_secret: SESSION_SECRET,
-      hash_secret: HASH_SECRET,
+      session_secret:
+        '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+      hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
     },
     frontend: createStaticHandler({
       publicPath: frontendPublicPath,
-      htmlVariables: HTML_VARIABLES,
+      htmlVariables: {
+        TITLE: 'TinyAuth Hono Example',
+        DESCRIPTION:
+          'TinyAuth running in library mode with Hono, Node.js, and SQLite',
+        FAVICON_URL: '/vite.svg',
+      },
     }),
   });
 }
