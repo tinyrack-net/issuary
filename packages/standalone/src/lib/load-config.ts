@@ -9,7 +9,7 @@ import { google } from '@tinyauth/backend/identity-providers/google';
 import { croner } from '@tinyauth/backend/scheduler/croner';
 import YAML from 'yaml';
 import type { StandaloneDatabaseConfig } from '#standalone/lib/config/database.js';
-import { deepMerge } from '#standalone/lib/config/deep-merge.js';
+import { deepMerge } from '#standalone/lib/deep-merge.js';
 import { STANDALONE_CONFIG_DEFAULTS } from '#standalone/lib/config/defaults.js';
 import type {
   ResolvedStandaloneFrontendConfig,
