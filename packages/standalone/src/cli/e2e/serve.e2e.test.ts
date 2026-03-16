@@ -1,29 +1,10 @@
-import type { ExecaChildProcess } from 'execa';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createTestConfigFile } from './helpers/config-factory.js';
 import { runCli, startCli } from './helpers/spawn-cli.js';
-
-async function waitForReady(
-  port: number,
-  options?: { attempts?: number; intervalMs?: number },
-): Promise<Response> {
-  const { attempts = 30, intervalMs = 500 } = options ?? {};
-  const url = `http://localhost:${port}/.well-known/openid-configuration`;
-
-  for (let i = 0; i < attempts; i++) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) return res;
-    } catch {
-      // not ready yet
-    }
-    await new Promise((r) => setTimeout(r, intervalMs));
-  }
-  throw new Error(`Server did not become ready on port ${port}`);
-}
+import { waitForReady } from './helpers/wait-for-ready.js';
 
 describe('serve e2e', { timeout: 30_000 }, () => {
-  let cliProcess: ExecaChildProcess<{ reject: false }> | undefined;
+  let cliProcess: ReturnType<typeof startCli> | undefined;
   let configCleanup: (() => Promise<void>) | undefined;
 
   afterEach(async () => {
