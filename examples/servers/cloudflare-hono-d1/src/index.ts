@@ -3,7 +3,9 @@ import { d1 } from '@tinyauth/backend/database/d1';
 import { interpolateHtmlResponse } from '@tinyauth/backend/frontend';
 
 interface Env {
-  ASSETS: { fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> };
+  ASSETS: {
+    fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
+  };
   DB: D1Database;
 }
 
@@ -21,9 +23,17 @@ export default {
       frontend: async (c) => {
         const pathname = new URL(c.req.url).pathname;
         const response = await env.ASSETS.fetch(c.req.raw);
-        const isHtml = response.headers.get('content-type')?.toLowerCase().includes('text/html') ?? false;
+        const isHtml =
+          response.headers
+            .get('content-type')
+            ?.toLowerCase()
+            .includes('text/html') ?? false;
 
-        if (pathname !== '/index.html' && /\/[^/]+\.[^/]+$/.test(pathname) && isHtml) {
+        if (
+          pathname !== '/index.html' &&
+          /\/[^/]+\.[^/]+$/.test(pathname) &&
+          isHtml
+        ) {
           return c.text('Not Found', 404);
         }
 

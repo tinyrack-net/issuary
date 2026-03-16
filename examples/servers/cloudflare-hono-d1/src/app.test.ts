@@ -91,7 +91,10 @@ beforeEach(() => {
 });
 
 describe('cloudflare worker', () => {
-  function createEnv(assets = createAssetsFetcher(), db = createMockD1Database()) {
+  function createEnv(
+    assets = createAssetsFetcher(),
+    db = createMockD1Database(),
+  ) {
     return { ASSETS: assets, DB: db };
   }
 
