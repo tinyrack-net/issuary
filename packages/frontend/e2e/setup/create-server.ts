@@ -2,11 +2,8 @@ import type { AddressInfo } from 'node:net';
 import { createServer as createNetServer } from 'node:net';
 import { serve } from '@hono/node-server';
 import { createApp } from '@tinyauth/backend';
-import {
-  type TinyAuthRuntimeConfig,
-  TinyAuthRuntimeConfigSchema,
-} from '@tinyauth/backend/config';
-import { interpolateHtmlResponse } from '@tinyauth/backend/frontend';
+import type { TinyAuthRuntimeConfig } from '@tinyauth/backend/config';
+import { createProxyHandler } from '@tinyauth/backend/frontend/proxy';
 import type { E2EConfigInput } from '#frontend-e2e/fixtures/index.js';
 import { resolveTestEmailConfig } from '#frontend-e2e/setup/resolve-test-email.js';
 
@@ -234,11 +231,10 @@ export async function createE2EServer(configFactory: ConfigFactory) {
   const backendPort = await getFreePort();
   const frontendPort = getSharedFrontendPort();
 
-  const {
-    email: rawEmail,
-    html_variables,
-    ...restConfig
-  } = configFactory(backendPort, frontendPort);
+  const { email: rawEmail, ...restConfig } = configFactory(
+    backendPort,
+    frontendPort,
+  );
 
   // Resolve email config: { test: true } shorthand into a real test email config
   let resolvedEmail: TinyAuthRuntimeConfig['email'];
@@ -248,15 +244,18 @@ export async function createE2EServer(configFactory: ConfigFactory) {
     resolvedEmail = rawEmail;
   }
 
+  const defaultFrontend = createProxyHandler({
+    upstream: `http://localhost:${frontendPort}`,
+  });
+
   const config = {
     ...restConfig,
     ...(resolvedEmail ? { email: resolvedEmail } : {}),
+    frontend: restConfig.frontend ?? defaultFrontend,
   };
 
   // 1. Start backend
-  const { app, services, cleanup } = await createApp(
-    TinyAuthRuntimeConfigSchema.parse(config),
-  );
+  const { app, services, cleanup } = await createApp(config);
 
   // 2. Register test-only API endpoints
   const testApp = app
@@ -485,27 +484,6 @@ export async function createE2EServer(configFactory: ConfigFactory) {
 
       const profile = getOAuthStubProfile(provider);
       return c.json(profile);
-    })
-    .notFound(async (c) => {
-      const url = new URL(c.req.url);
-      if (
-        url.pathname.startsWith('/api') ||
-        url.pathname.startsWith('/oauth') ||
-        url.pathname.startsWith('/.well-known') ||
-        url.pathname.startsWith('/test')
-      ) {
-        return c.json({ error: 'Not Found' }, 404);
-      }
-      const upstream = `http://localhost:${frontendPort}${url.pathname}${url.search}`;
-      const res = await fetch(upstream, { headers: c.req.raw.headers });
-      const proxied = new Response(res.body, {
-        status: res.status,
-        headers: res.headers,
-      });
-      if (html_variables) {
-        return interpolateHtmlResponse(proxied, html_variables);
-      }
-      return proxied;
     });
 
   const backendServer = serve({

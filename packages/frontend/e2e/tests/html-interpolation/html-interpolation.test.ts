@@ -1,4 +1,6 @@
 import { expect } from '@playwright/test';
+import { interpolateHtmlResponse } from '@tinyauth/backend/frontend';
+import { createProxyHandler } from '@tinyauth/backend/frontend/proxy';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
 import {
   createTestConfig,
@@ -6,15 +8,19 @@ import {
   E2E_TEST_USER_CONFIG,
 } from '#frontend-e2e/fixtures/index.js';
 
-const test = createScenarioFixture((backendPort) => ({
+const test = createScenarioFixture((backendPort, frontendPort) => ({
   ...E2E_BASE_CONFIG,
   ...createTestConfig(backendPort),
   users: [E2E_TEST_USER_CONFIG],
-  html_variables: {
-    TITLE: 'E2E Interpolated Title',
-    DESCRIPTION: 'E2E interpolated description text',
-    FAVICON_URL: '/e2e-test-favicon.ico',
-  },
+  frontend: createProxyHandler({
+    upstream: `http://localhost:${frontendPort}`,
+    onResponse: (res) =>
+      interpolateHtmlResponse(res, {
+        TITLE: 'E2E Interpolated Title',
+        DESCRIPTION: 'E2E interpolated description text',
+        FAVICON_URL: '/e2e-test-favicon.ico',
+      }),
+  }),
 }));
 
 test.describe('HTML interpolation', () => {
@@ -38,13 +44,17 @@ test.describe('HTML interpolation', () => {
   });
 });
 
-const testPartial = createScenarioFixture((backendPort) => ({
+const testPartial = createScenarioFixture((backendPort, frontendPort) => ({
   ...E2E_BASE_CONFIG,
   ...createTestConfig(backendPort),
   users: [E2E_TEST_USER_CONFIG],
-  html_variables: {
-    TITLE: 'Partial Interpolation',
-  },
+  frontend: createProxyHandler({
+    upstream: `http://localhost:${frontendPort}`,
+    onResponse: (res) =>
+      interpolateHtmlResponse(res, {
+        TITLE: 'Partial Interpolation',
+      }),
+  }),
 }));
 
 testPartial.describe('HTML interpolation - partial variables', () => {

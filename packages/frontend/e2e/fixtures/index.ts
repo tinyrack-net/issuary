@@ -46,53 +46,12 @@ export const E2E_TEST_CLIENT_CONFIG = {
   scope: 'openid profile email',
 } satisfies NonNullable<TinyAuthRuntimeConfigInput['clients']>[number];
 
-type TestServerConfig = {
-  public_origin?: string;
-  listen_port?: number;
-  trust_proxy?: boolean | string | string[] | number;
-};
-
-type TestI18nConfig = {
-  supported_languages?: readonly string[];
-  default_language?: string;
-  fallback_language?: string;
-};
-
-type TestBrandingConfig = {
-  light_theme?: string;
-  dark_theme?: string;
-  theme_mode?: string;
-  background_url?: string;
-  icon_url?: string;
-  title?: Record<string, string>;
-  subtitle?: Record<string, string>;
-};
-
-type TestRegistrationConfig = {
-  enabled?: boolean;
-  allowed_email_patterns?: readonly string[];
-  email_verification_required?: boolean;
-  signup_notice?: Record<string, string>;
-};
-
-type TestAccountDeletionConfig = {
-  enabled?: boolean;
-  retention?: string;
-};
-
 export type TestEmailConfig =
   | { test: true }
   | NonNullable<TinyAuthRuntimeConfig['email']>;
 
-export type E2EConfigInput = {
-  [key: string]: unknown;
-  server?: TestServerConfig;
-  i18n?: TestI18nConfig;
-  branding?: TestBrandingConfig;
-  registration?: TestRegistrationConfig;
-  account_deletion?: TestAccountDeletionConfig;
+export type E2EConfigInput = Omit<TinyAuthRuntimeConfigInput, 'email'> & {
   email?: TestEmailConfig;
-  html_variables?: Record<string, string>;
 };
 
 export const E2E_BASE_CONFIG: Omit<E2EConfigInput, 'server' | 'email'> = {
@@ -106,33 +65,13 @@ export const E2E_BASE_CONFIG: Omit<E2EConfigInput, 'server' | 'email'> = {
   database: sqlite({ path: './test.db', test: true }),
 };
 
-type TestConfigInput = {
-  [key: string]: unknown;
-  server?: TestServerConfig;
-  i18n?: TestI18nConfig;
-  branding?: TestBrandingConfig;
-  registration?: TestRegistrationConfig;
-  account_deletion?: TestAccountDeletionConfig;
-  email?: TestEmailConfig;
-};
-
-type TestConfigResult = {
-  [key: string]: unknown;
-  server: TestServerConfig;
-  i18n?: TestI18nConfig;
-  branding?: TestBrandingConfig;
-  registration?: TestRegistrationConfig;
-  account_deletion?: TestAccountDeletionConfig;
-  email?: TestEmailConfig;
-};
-
 /**
  * Creates the minimum backend config every e2e server needs:
  * a concrete public origin and the worker-specific backend port.
  */
 export function createTestConfig(
   backendPort: number,
-  overrides: TestConfigInput = {},
+  overrides: Partial<E2EConfigInput> = {},
 ) {
   const { server, ...restOverrides } = overrides;
 
@@ -143,5 +82,5 @@ export function createTestConfig(
       listen_port: backendPort,
       ...(server ?? {}),
     },
-  } satisfies TestConfigResult;
+  };
 }
