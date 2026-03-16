@@ -249,32 +249,7 @@ importers:
         specifier: 'catalog:'
         version: 2.4.7
 
-  examples/cloudflare-worker-hono:
-    dependencies:
-      '@tinyauth/backend':
-        specifier: workspace:*
-        version: link:../../packages/backend
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: 'catalog:'
-        version: 4.20260316.1
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.10.11
-      hono:
-        specifier: 'catalog:'
-        version: 4.12.8
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.0(@types/node@24.10.11)(@vitest/browser-playwright@4.1.0)(@vitest/browser-preview@4.1.0)(@vitest/ui@4.1.0)(vite@8.0.0(@types/node@24.10.11)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
-      wrangler:
-        specifier: 'catalog:'
-        version: 4.73.0(@cloudflare/workers-types@4.20260316.1)
-
-  examples/next-basic:
+  examples/clients/nextjs-ssr:
     dependencies:
       jose:
         specifier: 'catalog:'
@@ -308,29 +283,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
-  examples/node-hono-sqlite:
-    dependencies:
-      '@hono/node-server':
-        specifier: 'catalog:'
-        version: 1.19.11(hono@4.12.8)
-      '@tinyauth/backend':
-        specifier: workspace:*
-        version: link:../../packages/backend
-      hono:
-        specifier: 'catalog:'
-        version: 4.12.8
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.10.11
-      tsx:
-        specifier: 'catalog:'
-        version: 4.21.0
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  examples/react-spa:
+  examples/clients/react-spa:
     dependencies:
       '@tanstack/react-query':
         specifier: 'catalog:'
@@ -381,6 +334,53 @@ importers:
       vite:
         specifier: 'catalog:'
         version: 8.0.0(@types/node@24.10.11)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
+
+  examples/servers/cloudflare-hono-d1:
+    dependencies:
+      '@tinyauth/backend':
+        specifier: workspace:*
+        version: link:../../../packages/backend
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: 'catalog:'
+        version: 4.20260316.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.10.11
+      hono:
+        specifier: 'catalog:'
+        version: 4.12.8
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.0(@types/node@24.10.11)(@vitest/browser-playwright@4.1.0)(@vitest/browser-preview@4.1.0)(@vitest/ui@4.1.0)(vite@8.0.0(@types/node@24.10.11)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
+      wrangler:
+        specifier: 'catalog:'
+        version: 4.73.0(@cloudflare/workers-types@4.20260316.1)
+
+  examples/servers/node-hono-sqlite:
+    dependencies:
+      '@hono/node-server':
+        specifier: 'catalog:'
+        version: 1.19.11(hono@4.12.8)
+      '@tinyauth/backend':
+        specifier: workspace:*
+        version: link:../../../packages/backend
+      hono:
+        specifier: 'catalog:'
+        version: 4.12.8
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.10.11
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
 
   packages/backend:
     dependencies:

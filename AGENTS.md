@@ -21,8 +21,8 @@ This is a monorepo with the following packages:
 - `packages/frontend` - React frontend using TanStack Router and Daisy UI
 
 Example applications for testing OIDC flows:
-- `examples/next-basic` - Next.js OIDC test client (server-side token handling)
-- `examples/react-spa` - React SPA OIDC test client (client-side PKCE flow)
+- `examples/clients/nextjs-ssr` - Next.js OIDC test client (server-side token handling)
+- `examples/clients/react-spa` - React SPA OIDC test client (client-side PKCE flow)
 
 ## Build, Lint, and Test Commands
 

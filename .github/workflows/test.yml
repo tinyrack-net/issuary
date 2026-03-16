@@ -119,7 +119,7 @@ jobs:
         run: pnpm --filter @tinyauth/frontend test:e2e
 
       - name: Node example smoke test
-        run: pnpm --filter @tinyauth/example-node-hono-sqlite test
+        run: pnpm --filter @tinyauth-examples/node-hono-sqlite test
 
       - name: Cloudflare example tests
-        run: pnpm --filter @tinyauth/example-cloudflare-worker-hono test
+        run: pnpm --filter @tinyauth-examples/cloudflare-hono-d1 test

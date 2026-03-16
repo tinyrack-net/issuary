@@ -1,0 +1,29 @@
+{
+  "name": "@tinyauth-client-examples/nextjs-ssr",
+  "version": "0.1.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "imports": {
+    "#example-nextjs-ssr/*": "./*"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "jose": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "catalog:",
+    "@tailwindcss/typography": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -55,10 +55,10 @@ pnpm dev
 
 ## Examples
 
-- `examples/next-basic` - Next.js OIDC client
-- `examples/react-spa` - React SPA PKCE client
-- `examples/cloudflare-worker-hono` - Cloudflare Worker deployment of `@tinyauth/backend` with the bundled TinyAuth frontend
-- `examples/node-hono-sqlite` - Node.js library-mode deployment of `@tinyauth/backend` with Hono, SQLite, and the bundled TinyAuth frontend
+- `examples/clients/nextjs-ssr` - Next.js OIDC client
+- `examples/clients/react-spa` - React SPA PKCE client
+- `examples/servers/cloudflare-hono-d1` - Cloudflare Worker deployment of `@tinyauth/backend` with the bundled TinyAuth frontend
+- `examples/servers/node-hono-sqlite` - Node.js library-mode deployment of `@tinyauth/backend` with Hono, SQLite, and the bundled TinyAuth frontend
 
 ## License
 

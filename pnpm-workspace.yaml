@@ -1,6 +1,7 @@
 packages:
   - packages/*
-  - examples/*
+  - examples/clients/*
+  - examples/servers/*
 
 catalog:
   "@astrojs/check": ^0.9.7
