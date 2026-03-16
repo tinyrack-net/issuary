@@ -31,7 +31,7 @@ export default defineConfig({
         find: /^@tinyauth\/backend\/database\/postgres$/,
         replacement: fileURLToPath(
           new URL(
-            '../backend/src/entrypoints/database/postgres.ts',
+            '../backend/src/entrypoints/database/postgres/postgres.ts',
             import.meta.url,
           ),
         ),
@@ -40,7 +40,7 @@ export default defineConfig({
         find: /^@tinyauth\/backend\/database\/sqlite$/,
         replacement: fileURLToPath(
           new URL(
-            '../backend/src/entrypoints/database/sqlite.ts',
+            '../backend/src/entrypoints/database/sqlite/sqlite.ts',
             import.meta.url,
           ),
         ),
