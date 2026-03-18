@@ -31,6 +31,11 @@ export async function createApp(options: CreateAppOptions) {
   // Initialize all services (DB, mail, scheduler, etc.)
   const { services, cleanup } = await initializeServices(config, logger);
 
+  const frontendHandler = config.frontend?.({
+    branding: config.branding,
+    server: config.server,
+  });
+
   const app = new Hono()
     .onError((err, c) => {
       if (err instanceof TinyAuthError) {
@@ -61,8 +66,8 @@ export async function createApp(options: CreateAppOptions) {
     .use('*', mikroOrmMiddleware)
     .route('/', routes)
     .notFound(async (c) => {
-      if (config.frontend) {
-        return config.frontend(c);
+      if (frontendHandler) {
+        return frontendHandler(c);
       }
       return c.json({ error: 'Not Found' }, 404);
     });

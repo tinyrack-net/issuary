@@ -27,7 +27,11 @@ export type {
   EmailTransport,
 } from './email.js';
 export { EmailConfigSchema } from './email.js';
-export type { FrontendConfig } from './frontend.js';
+export type {
+  FrontendConfig,
+  FrontendHandler,
+  FrontendRuntimeContext,
+} from './frontend.js';
 export { FrontendConfigSchema } from './frontend.js';
 export type { I18nConfig } from './i18n.js';
 export { I18nConfigSchema, LocaleSchema } from './i18n.js';

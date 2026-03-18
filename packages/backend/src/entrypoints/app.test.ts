@@ -42,7 +42,7 @@ describe('createApp with frontend config', () => {
   beforeAll(async () => {
     const server = await createTestApp({
       ...MINIMAL_TEST_CONFIG,
-      frontend: () => new Response('frontend', { status: 200 }),
+      frontend: () => () => new Response('frontend', { status: 200 }),
     });
     app = server.app;
     cleanup = server.cleanup;

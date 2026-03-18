@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'vitest';
+import { BrandingConfigSchema } from '#backend/lib/config/branding.js';
+import { ServerConfigSchema } from '#backend/lib/config/server.js';
 import {
+  DEFAULT_HTML_VARIABLES,
   interpolateHtml,
   interpolateHtmlResponse,
+  resolveHtmlVariables,
 } from './interpolate-html.js';
 
 describe('interpolateHtml', () => {
@@ -145,6 +149,51 @@ describe('interpolateHtml', () => {
       });
       expect(result).toBe('{{B}}');
     });
+  });
+});
+
+describe('resolveHtmlVariables', () => {
+  test('returns built-in defaults when no runtime values are provided', () => {
+    expect(resolveHtmlVariables({})).toEqual(DEFAULT_HTML_VARIABLES);
+  });
+
+  test('derives variables from branding and server config', () => {
+    const variables = resolveHtmlVariables({
+      branding: BrandingConfigSchema.parse({
+        theme_mode: 'dark',
+        icon_url: 'https://example.com/icon.png',
+      }),
+      server: ServerConfigSchema.parse({
+        public_origin: 'https://auth.example.com',
+      }),
+    });
+
+    expect(variables['COLOR_SCHEME']).toBe('dark');
+    expect(variables['FAVICON_URL']).toBe('https://example.com/icon.png');
+    expect(variables['APPLE_TOUCH_ICON_URL']).toBe(
+      'https://example.com/icon.png',
+    );
+    expect(variables['OG_URL']).toBe('https://auth.example.com');
+  });
+
+  test('user overrides win over defaults and derived values', () => {
+    const variables = resolveHtmlVariables({
+      branding: BrandingConfigSchema.parse({
+        theme_mode: 'light',
+        icon_url: 'https://example.com/default-icon.png',
+      }),
+      overrides: {
+        TITLE: 'Custom Title',
+        COLOR_SCHEME: 'dark',
+        FAVICON_URL: 'https://example.com/custom-icon.png',
+      },
+    });
+
+    expect(variables['TITLE']).toBe('Custom Title');
+    expect(variables['COLOR_SCHEME']).toBe('dark');
+    expect(variables['FAVICON_URL']).toBe(
+      'https://example.com/custom-icon.png',
+    );
   });
 });
 

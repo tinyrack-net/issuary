@@ -26,7 +26,7 @@ function createTestApp(
   options?: Omit<CreateStaticHandlerOptions, 'publicPath'>,
 ) {
   const app = new Hono();
-  const handler = createStaticHandler({ publicPath, ...options });
+  const handler = createStaticHandler({ publicPath, ...options })({});
   app.notFound((c) => handler(c));
   return app;
 }
@@ -220,6 +220,48 @@ describe('createStaticHandler', () => {
       const body = await res.text();
       expect(body).toContain('<!doctype html>');
       expect(body).not.toContain('"name"');
+    });
+  });
+
+  describe('request methods', () => {
+    let app: InstanceType<typeof Hono>;
+    let publicPath = '';
+
+    beforeAll(async () => {
+      publicPath = await fs.promises.mkdtemp(
+        path.join(os.tmpdir(), 'tinyauth-static-methods-'),
+      );
+      await fs.promises.writeFile(
+        path.join(publicPath, 'index.html'),
+        INDEX_HTML,
+        'utf-8',
+      );
+
+      app = createTestApp(publicPath, {
+        htmlVariables: { APP_TITLE: 'Method Guard App' },
+      });
+    });
+
+    afterAll(async () => {
+      await fs.promises.rm(publicPath, { recursive: true, force: true });
+    });
+
+    test('serves HEAD requests like static GET requests', async () => {
+      const res = await app.request('/', {
+        method: 'HEAD',
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('text/html');
+    });
+
+    test('returns JSON 404 for non-GET non-HEAD requests', async () => {
+      const res = await app.request('/nonexistent-route', {
+        method: 'POST',
+      });
+
+      expect(res.status).toBe(404);
+      await expect(res.json()).resolves.toEqual({ error: 'Not Found' });
     });
   });
 

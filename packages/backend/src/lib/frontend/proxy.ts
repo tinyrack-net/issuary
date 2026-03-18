@@ -1,10 +1,10 @@
-import type { Context } from 'hono';
 import { proxy } from 'hono/proxy';
 
 import type { FrontendConfig } from '#backend/lib/config/frontend.js';
+import type { HtmlVariables } from '#backend/lib/interpolate-html.js';
 import {
-  DEFAULT_HTML_VARIABLES,
   interpolateHtmlResponse,
+  resolveHtmlVariables,
 } from '#backend/lib/interpolate-html.js';
 
 export interface CreateProxyHandlerOptions {
@@ -15,9 +15,8 @@ export interface CreateProxyHandlerOptions {
   upstream: string;
   /**
    * HTML variable map for `{{VAR}}` interpolation in HTML responses.
-   * Non-HTML responses are passed through unchanged.
    */
-  htmlVariables?: Record<string, string> | undefined;
+  htmlVariables?: HtmlVariables | undefined;
   /**
    * Optional response interceptor.
    * Called with the (already-interpolated) Response before it is
@@ -34,28 +33,45 @@ export interface CreateProxyHandlerOptions {
 export function createProxyHandler(
   options: CreateProxyHandlerOptions,
 ): FrontendConfig {
-  const htmlVariables = {
-    ...DEFAULT_HTML_VARIABLES,
-    ...options.htmlVariables,
-  };
-  const hasVariables = Object.keys(htmlVariables).length > 0;
-
-  return async (c: Context): Promise<Response> => {
-    const reqUrl = new URL(c.req.url);
-    const targetUrl = `${options.upstream}${reqUrl.pathname}${reqUrl.search}`;
-
-    let res = await proxy(targetUrl, {
-      raw: c.req.raw,
+  return ({ branding, server }) => {
+    const htmlVariables = resolveHtmlVariables({
+      branding,
+      server,
+      overrides: options.htmlVariables,
     });
 
-    if (hasVariables) {
-      res = await interpolateHtmlResponse(res, htmlVariables);
+    function buildTargetUrl(requestUrl: string): string {
+      const upstreamUrl = new URL(options.upstream);
+      const incomingUrl = new URL(requestUrl);
+      const upstreamPath = upstreamUrl.pathname.endsWith('/')
+        ? upstreamUrl.pathname.slice(0, -1)
+        : upstreamUrl.pathname;
+
+      upstreamUrl.pathname = `${upstreamPath}${incomingUrl.pathname}`;
+      upstreamUrl.search = incomingUrl.search;
+
+      return upstreamUrl.toString();
     }
 
-    if (options.onResponse) {
-      return options.onResponse(res);
+    async function finalizeResponse(response: Response): Promise<Response> {
+      const interpolated = await interpolateHtmlResponse(
+        response,
+        htmlVariables,
+      );
+
+      if (options.onResponse) {
+        return options.onResponse(interpolated);
+      }
+
+      return interpolated;
     }
 
-    return res;
+    return async (c): Promise<Response> => {
+      const response = await proxy(buildTargetUrl(c.req.url), {
+        raw: c.req.raw,
+      });
+
+      return finalizeResponse(response);
+    };
   };
 }

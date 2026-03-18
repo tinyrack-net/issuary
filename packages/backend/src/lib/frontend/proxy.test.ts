@@ -15,7 +15,7 @@ function createApp(options?: Omit<CreateProxyHandlerOptions, 'upstream'>) {
   const handler = createProxyHandler({
     upstream: 'https://frontend.test',
     ...options,
-  });
+  })({});
 
   const app = new Hono();
   app.notFound((c) => handler(c));
@@ -49,6 +49,28 @@ describe('createProxyHandler', () => {
       expect.objectContaining({
         raw: req,
       }),
+    );
+  });
+
+  test('joins upstream paths without producing duplicate slashes', async () => {
+    proxyMock.mockResolvedValue(
+      new Response('<html><body>upstream index</body></html>', {
+        headers: { 'content-type': 'text/html' },
+        status: 200,
+      }),
+    );
+
+    const handler = createProxyHandler({
+      upstream: 'https://frontend.test/app/',
+    })({});
+    const customApp = new Hono();
+    customApp.notFound((c) => handler(c));
+
+    await customApp.request('/login?client_id=abc');
+
+    expect(proxyMock).toHaveBeenCalledWith(
+      'https://frontend.test/app/login?client_id=abc',
+      expect.anything(),
     );
   });
 

@@ -1,4 +1,3 @@
-import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
@@ -70,14 +69,17 @@ beforeEach(() => {
   createAppMock.mockReset();
   createAppMock.mockImplementation(
     async (options: {
-      frontend?: (c: Context) => Response | Promise<Response>;
+      frontend?: (runtime: {
+        branding?: unknown;
+        server?: unknown;
+      }) => (c: import('hono').Context) => Response | Promise<Response>;
     }) => {
       const app = new Hono();
       app.get('/api/health/live', (c) => {
         return c.json({ status: 'ok' });
       });
 
-      const frontendHandler = options.frontend;
+      const frontendHandler = options.frontend?.({});
       app.notFound(async (c) => {
         if (frontendHandler) {
           return frontendHandler(c);

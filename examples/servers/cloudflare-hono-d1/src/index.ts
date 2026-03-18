@@ -1,6 +1,9 @@
 import { type AppType, createApp } from '@tinyauth/backend';
 import { d1 } from '@tinyauth/backend/database/d1';
-import { interpolateHtmlResponse } from '@tinyauth/backend/frontend';
+import {
+  interpolateHtmlResponse,
+  resolveHtmlVariables,
+} from '@tinyauth/backend/frontend';
 
 interface Env {
   ASSETS: {
@@ -20,32 +23,40 @@ export default {
           '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
         hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       },
-      frontend: async (c) => {
-        const pathname = new URL(c.req.url).pathname;
-        const response = await env.ASSETS.fetch(c.req.raw);
-        const isHtml =
-          response.headers
-            .get('content-type')
-            ?.toLowerCase()
-            .includes('text/html') ?? false;
-
-        if (
-          pathname !== '/index.html' &&
-          /\/[^/]+\.[^/]+$/.test(pathname) &&
-          isHtml
-        ) {
-          return c.text('Not Found', 404);
-        }
-
-        if (c.req.method !== 'GET') {
-          return response;
-        }
-
-        return interpolateHtmlResponse(response, {
-          TITLE: 'TinyAuth',
-          DESCRIPTION: 'OIDC for everyone',
-          FAVICON_URL: '/vite.svg',
+      frontend: ({ branding, server }) => {
+        const htmlVariables = resolveHtmlVariables({
+          branding,
+          server,
+          overrides: {
+            TITLE: 'TinyAuth',
+            DESCRIPTION: 'OIDC for everyone',
+            FAVICON_URL: '/vite.svg',
+          },
         });
+
+        return async (c) => {
+          const pathname = new URL(c.req.url).pathname;
+          const response = await env.ASSETS.fetch(c.req.raw);
+          const isHtml =
+            response.headers
+              .get('content-type')
+              ?.toLowerCase()
+              .includes('text/html') ?? false;
+
+          if (
+            pathname !== '/index.html' &&
+            /\/[^/]+\.[^/]+$/.test(pathname) &&
+            isHtml
+          ) {
+            return c.text('Not Found', 404);
+          }
+
+          if (c.req.method !== 'GET') {
+            return response;
+          }
+
+          return interpolateHtmlResponse(response, htmlVariables);
+        };
       },
     });
 

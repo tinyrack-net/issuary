@@ -3,17 +3,17 @@ import path from 'node:path';
 import type { Context } from 'hono';
 import { getMimeType } from 'hono/utils/mime';
 import type { FrontendConfig } from '#backend/lib/config/frontend.js';
+import type { HtmlVariables } from '#backend/lib/interpolate-html.js';
 import {
-  DEFAULT_HTML_VARIABLES,
   interpolateHtml,
+  resolveHtmlVariables,
 } from '#backend/lib/interpolate-html.js';
 
 export interface CreateStaticHandlerOptions {
   /**
    * HTML variable map for `{{VAR}}` interpolation in HTML responses.
-   * Defaults to `{}` (no interpolation).
    */
-  htmlVariables?: Record<string, string> | undefined;
+  htmlVariables?: HtmlVariables | undefined;
   publicPath: string;
   /**
    * Optional response interceptor.
@@ -25,6 +25,11 @@ export interface CreateStaticHandlerOptions {
     | undefined;
 }
 
+type StaticTarget =
+  | { kind: 'html'; absolutePath: string }
+  | { kind: 'file'; absolutePath: string }
+  | { kind: 'spa' };
+
 /**
  * Create a FrontendConfig that serves static files from a directory.
  * Supports HTML variable interpolation and SPA fallback to index.html.
@@ -32,106 +37,123 @@ export interface CreateStaticHandlerOptions {
 export function createStaticHandler(
   options: CreateStaticHandlerOptions,
 ): FrontendConfig {
-  const publicPath = path.resolve(options.publicPath);
-  const rootIndexPath = path.join(publicPath, 'index.html');
-  const htmlVariables = {
-    ...DEFAULT_HTML_VARIABLES,
-    ...options.htmlVariables,
-  };
-  const hasVariables = Object.keys(htmlVariables).length > 0;
-  const htmlCache = new Map<string, string>();
-  let cachedRootIndex: string | undefined;
+  return ({ branding, server }) => {
+    const publicPath = path.resolve(options.publicPath);
+    const rootIndexPath = path.join(publicPath, 'index.html');
+    const htmlVariables = resolveHtmlVariables({
+      branding,
+      server,
+      overrides: options.htmlVariables,
+    });
+    const htmlCache = new Map<string, string>();
 
-  async function getInterpolatedHtml(absolutePath: string): Promise<string> {
-    const cached = htmlCache.get(absolutePath);
-    if (cached !== undefined) {
-      return cached;
+    async function statIfExists(targetPath: string) {
+      try {
+        return await fs.promises.stat(targetPath);
+      } catch {
+        return undefined;
+      }
     }
-    const raw = await fs.promises.readFile(absolutePath, 'utf-8');
-    const result = interpolateHtml(raw, htmlVariables);
-    htmlCache.set(absolutePath, result);
-    return result;
-  }
 
-  async function getRootIndex(): Promise<string> {
-    if (cachedRootIndex !== undefined) {
-      return cachedRootIndex;
+    async function readInterpolatedHtml(absolutePath: string): Promise<string> {
+      const cached = htmlCache.get(absolutePath);
+      if (cached !== undefined) {
+        return cached;
+      }
+
+      const raw = await fs.promises.readFile(absolutePath, 'utf-8');
+      const result = interpolateHtml(raw, htmlVariables);
+      htmlCache.set(absolutePath, result);
+      return result;
     }
-    cachedRootIndex = await fs.promises.readFile(rootIndexPath, 'utf-8');
-    return cachedRootIndex;
-  }
 
-  function isSafePath(resolved: string): boolean {
-    return (
-      resolved === publicPath || resolved.startsWith(`${publicPath}${path.sep}`)
-    );
-  }
-
-  async function applyOnResponse(res: Response): Promise<Response> {
-    if (options.onResponse) {
-      return options.onResponse(res);
-    }
-    return res;
-  }
-
-  return async (c: Context): Promise<Response> => {
-    const urlPath = c.req.path;
-
-    const resolved = path.resolve(publicPath, `.${urlPath}`);
-    if (!isSafePath(resolved)) {
-      return applyOnResponse(
-        c.html(
-          hasVariables
-            ? await getInterpolatedHtml(rootIndexPath)
-            : await getRootIndex(),
-        ),
+    function isSafePath(resolved: string): boolean {
+      return (
+        resolved === publicPath ||
+        resolved.startsWith(`${publicPath}${path.sep}`)
       );
     }
 
-    try {
-      const stats = await fs.promises.stat(resolved);
+    async function applyOnResponse(response: Response): Promise<Response> {
+      if (options.onResponse) {
+        return options.onResponse(response);
+      }
+      return response;
+    }
+
+    async function serveHtml(
+      c: Context,
+      absolutePath: string,
+    ): Promise<Response> {
+      const html = await readInterpolatedHtml(absolutePath);
+      return applyOnResponse(await c.html(html));
+    }
+
+    async function serveFile(absolutePath: string): Promise<Response> {
+      const content = await fs.promises.readFile(absolutePath);
+      const mimeType = getMimeType(absolutePath) ?? 'application/octet-stream';
+      return applyOnResponse(
+        new Response(content, {
+          headers: { 'Content-Type': mimeType },
+        }),
+      );
+    }
+
+    async function notFound(c: Context): Promise<Response> {
+      return applyOnResponse(await c.json({ error: 'Not Found' }, 404));
+    }
+
+    async function serveSpaFallback(c: Context): Promise<Response> {
+      try {
+        return await serveHtml(c, rootIndexPath);
+      } catch {
+        return notFound(c);
+      }
+    }
+
+    async function resolveTarget(urlPath: string): Promise<StaticTarget> {
+      const resolved = path.resolve(publicPath, `.${urlPath}`);
+      if (!isSafePath(resolved)) {
+        return { kind: 'spa' };
+      }
+
+      const stats = await statIfExists(resolved);
+      if (!stats) {
+        return { kind: 'spa' };
+      }
 
       if (stats.isFile()) {
-        if (hasVariables && resolved.endsWith('.html')) {
-          const html = await getInterpolatedHtml(resolved);
-          return applyOnResponse(c.html(html));
-        }
-        const content = await fs.promises.readFile(resolved);
-        const mimeType = getMimeType(resolved) ?? 'application/octet-stream';
-        return applyOnResponse(
-          new Response(content, {
-            headers: { 'Content-Type': mimeType },
-          }),
-        );
+        return resolved.endsWith('.html')
+          ? { kind: 'html', absolutePath: resolved }
+          : { kind: 'file', absolutePath: resolved };
       }
 
       if (stats.isDirectory()) {
         const indexPath = path.join(resolved, 'index.html');
-        try {
-          if (hasVariables) {
-            const html = await getInterpolatedHtml(indexPath);
-            return applyOnResponse(c.html(html));
-          }
-          const content = await fs.promises.readFile(indexPath, 'utf-8');
-          return applyOnResponse(c.html(content));
-        } catch {
-          // No index.html in directory, fall through.
+        const indexStats = await statIfExists(indexPath);
+        if (indexStats?.isFile()) {
+          return { kind: 'html', absolutePath: indexPath };
         }
       }
-    } catch {
-      // File doesn't exist, fall through to SPA fallback.
+
+      return { kind: 'spa' };
     }
 
-    if (hasVariables) {
-      const html = await getInterpolatedHtml(rootIndexPath);
-      return applyOnResponse(c.html(html));
-    }
+    return async (c): Promise<Response> => {
+      if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
+        return notFound(c);
+      }
 
-    try {
-      const content = await getRootIndex();
-      return applyOnResponse(c.html(content));
-    } catch {
-      return applyOnResponse(c.json({ error: 'Not Found' }, 404));
-    }
+      const target = await resolveTarget(c.req.path);
+
+      switch (target.kind) {
+        case 'html':
+          return serveHtml(c, target.absolutePath);
+        case 'file':
+          return serveFile(target.absolutePath);
+        case 'spa':
+          return serveSpaFallback(c);
+      }
+    };
   };
 }
