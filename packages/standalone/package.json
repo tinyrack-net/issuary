@@ -62,6 +62,9 @@
         "**/*.js"
       ]
     },
+    "plugins": [
+      "@oclif/plugin-autocomplete"
+    ],
     "topicSeparator": ":"
   },
   "scripts": {
@@ -89,7 +92,7 @@
     "@hono/node-server": "catalog:",
     "@mikro-orm/cli": "catalog:",
     "@oclif/core": "^4.9.0",
-
+    "@oclif/plugin-autocomplete": "^3.2.41",
     "@tinyauth/backend": "workspace:*",
     "dotenv": "catalog:",
     "hono": "catalog:",

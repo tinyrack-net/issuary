@@ -678,6 +678,9 @@ importers:
       '@oclif/core':
         specifier: ^4.9.0
         version: 4.9.0
+      '@oclif/plugin-autocomplete':
+        specifier: ^3.2.41
+        version: 3.2.41
       '@tinyauth/backend':
         specifier: workspace:*
         version: link:../backend
@@ -1843,6 +1846,10 @@ packages:
 
   '@oclif/core@4.9.0':
     resolution: {integrity: sha512-k/ntRgDcUprTT+aaNoF+whk3cY3f9fRD2lkF6ul7JeCUg2MaMXVXZXfbRhJCfsiX51X8/5Pqo0LGdO9SLYXNHg==}
+    engines: {node: '>=18.0.0'}
+
+  '@oclif/plugin-autocomplete@3.2.41':
+    resolution: {integrity: sha512-s8IcxohWtnbYCOA1nC6cUGWFGLBG3MjNWfCBTTa5pUyh4tGsjC5ihLeLCs8WJgGnFkPhVVQ+CfmKOIVmVGYMvA==}
     engines: {node: '>=18.0.0'}
 
   '@oslojs/encoding@1.1.0':
@@ -6821,6 +6828,15 @@ snapshots:
       widest-line: 3.1.0
       wordwrap: 1.0.0
       wrap-ansi: 7.0.0
+
+  '@oclif/plugin-autocomplete@3.2.41':
+    dependencies:
+      '@oclif/core': 4.9.0
+      ansis: 3.17.0
+      debug: 4.4.3(supports-color@8.1.1)
+      ejs: 3.1.10
+    transitivePeerDependencies:
+      - supports-color
 
   '@oslojs/encoding@1.1.0': {}
 
