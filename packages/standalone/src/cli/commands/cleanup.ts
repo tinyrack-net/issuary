@@ -3,8 +3,10 @@ import {
   initializeServices,
   type ServiceContainer,
 } from '@tinyauth/backend/services';
+import z from 'zod';
 import { loadConfig, resolveConfig } from '#standalone/lib/load-config.js';
 import { createLogger } from '#standalone/lib/logger.js';
+import { zodFlag } from '#standalone/lib/oclif/zod-flag.js';
 
 /**
  * Cleanup command
@@ -23,11 +25,17 @@ export default class CleanupCommand extends Command {
   static override description = 'Run all cleanup and maintenance tasks';
 
   static override flags = {
-    'config-path': Flags.string({
-      char: 'c',
-      description: 'Path to config file',
-      required: true,
-    }),
+    'config-path': zodFlag(
+      z
+        .string()
+        .trim()
+        .min(1, 'must not be empty')
+        .describe('Path to config file'),
+      {
+        char: 'c',
+        label: 'config-path',
+      },
+    ),
     'dry-run': Flags.boolean({
       char: 'n',
       description: 'Show what would be cleaned without deleting',

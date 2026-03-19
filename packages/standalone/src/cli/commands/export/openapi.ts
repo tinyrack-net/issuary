@@ -1,10 +1,12 @@
 import { writeFileSync } from 'node:fs';
-import { Args, Command } from '@oclif/core';
+import { Command } from '@oclif/core';
 import { createApp, createOpenApiDocumentation } from '@tinyauth/backend';
 import { OPENAPI_CONFIG_DEFAULT } from '@tinyauth/backend/config';
 import { generateSpecs } from 'hono-openapi';
+import z from 'zod';
 import type { StandaloneConfigInput } from '#standalone/lib/config/index.js';
 import { resolveConfig } from '#standalone/lib/load-config.js';
+import { zodArg } from '#standalone/lib/oclif/zod-arg.js';
 
 /**
  * Export OpenAPI command
@@ -16,10 +18,17 @@ export default class ExportOpenapiCommand extends Command {
   static override description = 'Export the OpenAPI spec as JSON';
 
   static override args = {
-    'output-path': Args.string({
-      description: 'Write spec to file instead of stdout',
-      required: false,
-    }),
+    'output-path': zodArg(
+      z
+        .string()
+        .trim()
+        .min(1, 'must not be empty')
+        .optional()
+        .describe('Write spec to file instead of stdout'),
+      {
+        label: 'output-path',
+      },
+    ),
   };
 
   async run(): Promise<void> {

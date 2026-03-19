@@ -1,7 +1,9 @@
 import { serve } from '@hono/node-server';
-import { Command, Flags } from '@oclif/core';
+import { Command } from '@oclif/core';
+import z from 'zod';
 import { createStandaloneApp } from '#standalone/app.js';
 import { loadConfig } from '#standalone/lib/load-config.js';
+import { zodFlag } from '#standalone/lib/oclif/zod-flag.js';
 
 /**
  * Serve command
@@ -17,10 +19,18 @@ export default class ServeCommand extends Command {
   static override description = 'Start the TinyAuth server';
 
   static override flags = {
-    'config-path': Flags.string({
-      char: 'c',
-      description: 'Path to config file',
-    }),
+    'config-path': zodFlag(
+      z
+        .string()
+        .trim()
+        .min(1, 'must not be empty')
+        .optional()
+        .describe('Path to config file'),
+      {
+        char: 'c',
+        label: 'config-path',
+      },
+    ),
   };
 
   async run(): Promise<void> {
