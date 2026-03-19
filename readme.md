@@ -62,4 +62,4 @@ pnpm dev
 
 ## License
 
-[MIT](LICENSE)
+[GNU AGPL v3](LICENSE)
