@@ -48,11 +48,11 @@ describe('cleanup e2e', { timeout: 20_000 }, () => {
     expect(output).toContain('Duration:');
   });
 
-  it('missing --config-path exits 1', async () => {
+  it('missing --config-path exits with non-zero code', async () => {
     const result = await runCli({
       args: ['cleanup'],
     });
 
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).not.toBe(0);
   });
 });

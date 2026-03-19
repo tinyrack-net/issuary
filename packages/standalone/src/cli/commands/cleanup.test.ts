@@ -28,7 +28,7 @@ vi.mock('#standalone/lib/logger.js', () => ({
   createLogger: cleanupState.createLoggerMock,
 }));
 
-describe('cleanupCommand', () => {
+describe('CleanupCommand', () => {
   beforeEach(() => {
     cleanupState.cleanupMock.mockReset();
     cleanupState.createLoggerMock.mockReset();
@@ -86,13 +86,10 @@ describe('cleanupCommand', () => {
     });
 
     vi.resetModules();
-    const { cleanupCommand } = await import('./cleanup.js');
+    const { default: CleanupCommand } = await import('./cleanup.js');
 
     await expect(
-      cleanupCommand.parseAsync(
-        ['--config-path', '/tmp/tinyauth.yaml', '--verbose'],
-        { from: 'user' },
-      ),
+      CleanupCommand.run(['--config-path', '/tmp/tinyauth.yaml', '--verbose']),
     ).rejects.toThrow('process.exit:0');
 
     expect(cleanupState.loadConfigMock).toHaveBeenCalledWith(
@@ -136,12 +133,10 @@ describe('cleanupCommand', () => {
     });
 
     vi.resetModules();
-    const { cleanupCommand } = await import('./cleanup.js');
+    const { default: CleanupCommand } = await import('./cleanup.js');
 
     await expect(
-      cleanupCommand.parseAsync(['--config-path', '/tmp/tinyauth.yaml'], {
-        from: 'user',
-      }),
+      CleanupCommand.run(['--config-path', '/tmp/tinyauth.yaml']),
     ).rejects.toThrow('process.exit:1');
 
     expect(cleanupState.logger.error).toHaveBeenCalledWith(

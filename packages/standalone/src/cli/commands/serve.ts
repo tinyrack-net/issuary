@@ -1,5 +1,5 @@
 import { serve } from '@hono/node-server';
-import { Command } from 'commander';
+import { Command, Flags } from '@oclif/core';
 import { createStandaloneApp } from '#standalone/app.js';
 import { loadConfig } from '#standalone/lib/load-config.js';
 
@@ -13,12 +13,21 @@ import { loadConfig } from '#standalone/lib/load-config.js';
  * run: `tinyauth cleanup` as a separate process or
  * Kubernetes CronJob.
  */
-export const serveCommand = new Command('serve')
-  .description('Start the TinyAuth server')
-  .option('-c, --config-path <path>', 'Path to config file')
-  .action(async (options: { configPath?: string | undefined }) => {
+export default class ServeCommand extends Command {
+  static override description = 'Start the TinyAuth server';
+
+  static override flags = {
+    'config-path': Flags.string({
+      char: 'c',
+      description: 'Path to config file',
+    }),
+  };
+
+  async run(): Promise<void> {
+    const { flags } = await this.parse(ServeCommand);
+
     try {
-      const config = loadConfig(options.configPath);
+      const config = loadConfig(flags['config-path']);
       const { app, cleanup, services, logger } = await createStandaloneApp({
         config,
       });
@@ -52,4 +61,5 @@ export const serveCommand = new Command('serve')
       console.error(err);
       process.exit(1);
     }
-  });
+  }
+}

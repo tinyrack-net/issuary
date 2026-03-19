@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs';
+import { Args, Command } from '@oclif/core';
 import { createApp, createOpenApiDocumentation } from '@tinyauth/backend';
 import { OPENAPI_CONFIG_DEFAULT } from '@tinyauth/backend/config';
-import { Command } from 'commander';
 import { generateSpecs } from 'hono-openapi';
 import type { StandaloneConfigInput } from '#standalone/lib/config/index.js';
 import { resolveConfig } from '#standalone/lib/load-config.js';
@@ -12,10 +12,20 @@ import { resolveConfig } from '#standalone/lib/load-config.js';
  * Generates the OpenAPI spec as JSON.
  * Outputs to stdout by default, or to a file if output-path is provided.
  */
-export const exportOpenapiCommand = new Command('export:openapi')
-  .description('Export the OpenAPI spec as JSON')
-  .argument('[output-path]', 'Write spec to file instead of stdout')
-  .action(async (outputPath?: string) => {
+export default class ExportOpenapiCommand extends Command {
+  static override description = 'Export the OpenAPI spec as JSON';
+
+  static override args = {
+    'output-path': Args.string({
+      description: 'Write spec to file instead of stdout',
+      required: false,
+    }),
+  };
+
+  async run(): Promise<void> {
+    const { args } = await this.parse(ExportOpenapiCommand);
+    const outputPath = args['output-path'];
+
     const config = {
       logging: {
         level: 'silent',
@@ -53,4 +63,5 @@ export const exportOpenapiCommand = new Command('export:openapi')
     } finally {
       await cleanup();
     }
-  });
+  }
+}

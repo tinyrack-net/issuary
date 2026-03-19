@@ -24,7 +24,7 @@ function mockProcessExit() {
   });
 }
 
-describe('serveCommand', () => {
+describe('ServeCommand', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -77,11 +77,9 @@ describe('serveCommand', () => {
     });
 
     const exitSpy = mockProcessExit();
-    const { serveCommand } = await import('./serve.js');
+    const { default: ServeCommand } = await import('./serve.js');
 
-    await serveCommand.parseAsync(['--config-path', '/tmp/config.yaml'], {
-      from: 'user',
-    });
+    await ServeCommand.run(['--config-path', '/tmp/config.yaml']);
 
     expect(serveMocks.serve).toHaveBeenCalledWith(
       {
@@ -117,12 +115,10 @@ describe('serveCommand', () => {
       .spyOn(console, 'error')
       .mockImplementation(() => {});
     const exitSpy = mockProcessExit();
-    const { serveCommand } = await import('./serve.js');
+    const { default: ServeCommand } = await import('./serve.js');
 
     await expect(
-      serveCommand.parseAsync(['--config-path', '/tmp/config.yaml'], {
-        from: 'user',
-      }),
+      ServeCommand.run(['--config-path', '/tmp/config.yaml']),
     ).rejects.toThrow('process.exit:1');
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(expect.any(Error));

@@ -36,7 +36,7 @@ vi.mock('#standalone/lib/load-config.js', () => ({
   resolveConfig: exportState.resolveConfigMock,
 }));
 
-describe('exportOpenapiCommand', () => {
+describe('ExportOpenapiCommand', () => {
   beforeEach(() => {
     exportState.cleanupMock.mockReset();
     exportState.createAppMock.mockReset();
@@ -74,9 +74,9 @@ describe('exportOpenapiCommand', () => {
       .mockImplementation(() => true);
 
     vi.resetModules();
-    const { exportOpenapiCommand } = await import('./export-openapi.js');
+    const { default: ExportOpenapiCommand } = await import('./openapi.js');
 
-    await exportOpenapiCommand.parseAsync([], { from: 'user' });
+    await ExportOpenapiCommand.run([]);
 
     expect(exportState.resolveConfigMock).toHaveBeenCalled();
     expect(exportState.createAppMock).toHaveBeenCalled();
@@ -116,9 +116,9 @@ describe('exportOpenapiCommand', () => {
     const outputPath = path.join(tempDir, 'openapi.json');
 
     vi.resetModules();
-    const { exportOpenapiCommand } = await import('./export-openapi.js');
+    const { default: ExportOpenapiCommand } = await import('./openapi.js');
 
-    await exportOpenapiCommand.parseAsync([outputPath], { from: 'user' });
+    await ExportOpenapiCommand.run([outputPath]);
 
     const written = await fs.promises.readFile(outputPath, 'utf-8');
     expect(JSON.parse(written)).toEqual({
