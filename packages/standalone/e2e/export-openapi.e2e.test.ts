@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { runCli } from './helpers/spawn-cli.js';
 
-describe('export:openapi e2e', { timeout: 30_000 }, () => {
+describe('export openapi e2e', { timeout: 30_000 }, () => {
   let tmpDir: string | undefined;
 
   afterEach(async () => {
@@ -15,7 +15,7 @@ describe('export:openapi e2e', { timeout: 30_000 }, () => {
 
   it('outputs valid OpenAPI JSON to stdout', async () => {
     const result = await runCli({
-      args: ['export:openapi'],
+      args: ['export', 'openapi'],
       timeout: 25_000,
     });
 
@@ -32,7 +32,7 @@ describe('export:openapi e2e', { timeout: 30_000 }, () => {
     const outputPath = path.join(tmpDir, 'openapi.json');
 
     const result = await runCli({
-      args: ['export:openapi', outputPath],
+      args: ['export', 'openapi', outputPath],
       timeout: 25_000,
     });
 

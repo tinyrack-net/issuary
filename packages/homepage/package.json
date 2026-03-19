@@ -11,7 +11,7 @@
     }
   },
   "scripts": {
-    "generate:openapi": "NODE_OPTIONS='--conditions=@tinyauth/source' tsx node_modules/@tinyauth/standalone/src/cli.ts export:openapi public/openapi.json",
+    "generate:openapi": "NODE_OPTIONS='--conditions=@tinyauth/source' tsx node_modules/@tinyauth/standalone/src/cli.ts export openapi public/openapi.json",
     "dev": "pnpm generate:openapi && astro dev",
     "build": "pnpm generate:openapi && astro check && astro build",
     "preview": "astro preview",

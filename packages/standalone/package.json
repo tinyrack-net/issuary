@@ -56,16 +56,16 @@
     "bin": "tinyauth",
     "dirname": "tinyauth",
     "commands": {
-      "strategy": "pattern",
-      "target": "./dist/cli/commands",
-      "globPatterns": [
-        "**/*.js"
-      ]
+      "strategy": "explicit",
+      "target": "./dist/cli/commands/index.js"
     },
     "plugins": [
       "@oclif/plugin-autocomplete"
     ],
-    "topicSeparator": ":"
+    "topicSeparator": " ",
+    "additionalHelpFlags": [
+      "-h"
+    ]
   },
   "scripts": {
     "dev": "NODE_OPTIONS='--conditions=@tinyauth/source' tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve --config-path='./config.dev.yaml'",
@@ -76,7 +76,7 @@
     "build": "npm run clean && tsc -b tsconfig.build.json",
     "build:watch": "tsc -b -w tsconfig.json",
     "cli": "node dist/cli.js",
-    "export:openapi": "NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/cli.ts export:openapi"
+    "export:openapi": "NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/cli.ts export openapi"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
