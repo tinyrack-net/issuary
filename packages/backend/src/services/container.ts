@@ -12,7 +12,6 @@ import { OAuthTokenService } from '#backend/services/oauth-token.service.js';
 import { PasskeyService } from '#backend/services/passkey.service.js';
 import { PasswordAuthService } from '#backend/services/password-auth.service.js';
 import { PasswordResetService } from '#backend/services/password-reset.service.js';
-import type { SchedulerController } from '#backend/services/scheduler.service.js';
 import { SchedulerService } from '#backend/services/scheduler.service.js';
 import { SecurityService } from '#backend/services/security.service.js';
 import { TermsService } from '#backend/services/terms.service.js';
@@ -20,36 +19,10 @@ import { TotpService } from '#backend/services/totp.service.js';
 import { UserService } from '#backend/services/user.service.js';
 import { UserConsentService } from '#backend/services/user-consent.service.js';
 
-export interface ServiceContainer {
-  config: TinyAuthRuntimeConfig;
-  securityService: SecurityService;
-  mikro: MikroService;
-  scheduler: SchedulerController;
-  emailService: EmailService;
-  jwtService: JwtService;
-  passwordAuthService: PasswordAuthService;
-  passwordResetService: PasswordResetService;
-  termsService: TermsService;
-  userConsentService: UserConsentService;
-  oauthClientService: OAuthClientService;
-  totpService: TotpService;
-  passkeyService: PasskeyService;
-  userService: UserService;
-  oauthAuthorizeService: OAuthAuthorizeService;
-  oauthConnectService: OAuthConnectService;
-  oauthTokenService: OAuthTokenService;
-  cleanupService: CleanupService;
-}
-
-export interface InitResult {
-  services: ServiceContainer;
-  cleanup: () => Promise<void>;
-}
-
 export async function initializeServices(
   config: TinyAuthRuntimeConfig,
   logger: Logger,
-): Promise<InitResult> {
+) {
   const securityService = new SecurityService(config);
 
   // 1. Initialize MikroORM
@@ -122,7 +95,7 @@ export async function initializeServices(
     schedulerLogger,
   );
 
-  const services: ServiceContainer = {
+  const services = {
     config,
     securityService,
     mikro,
@@ -150,3 +123,6 @@ export async function initializeServices(
 
   return { services, cleanup };
 }
+
+export type InitResult = Awaited<ReturnType<typeof initializeServices>>;
+export type ServiceContainer = InitResult['services'];

@@ -5,14 +5,7 @@ import type {
 import type { Logger } from '#backend/lib/logger.js';
 import type { CleanupService } from '#backend/services/cleanup.service.js';
 
-export interface SchedulerController {
-  start(): Promise<void>;
-  stop(): Promise<void>;
-  isRunning(): boolean;
-  getNextRunAt(): Date | null;
-}
-
-export class SchedulerService implements SchedulerController {
+export class SchedulerService {
   private readonly cleanupService: CleanupService;
   private readonly logger: Logger;
   private readonly schedulerConfig: SchedulerConfig | undefined;
