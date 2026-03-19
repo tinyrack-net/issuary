@@ -89,7 +89,10 @@ describe('CleanupCommand', () => {
     const { default: CleanupCommand } = await import('./cleanup.js');
 
     await expect(
-      CleanupCommand.run(['--config-path', '/tmp/tinyauth.yaml', '--verbose']),
+      CleanupCommand.run(
+        ['--config-path', '/tmp/tinyauth.yaml', '--verbose'],
+        import.meta.url,
+      ),
     ).rejects.toThrow('process.exit:0');
 
     expect(cleanupState.loadConfigMock).toHaveBeenCalledWith(
@@ -136,7 +139,10 @@ describe('CleanupCommand', () => {
     const { default: CleanupCommand } = await import('./cleanup.js');
 
     await expect(
-      CleanupCommand.run(['--config-path', '/tmp/tinyauth.yaml']),
+      CleanupCommand.run(
+        ['--config-path', '/tmp/tinyauth.yaml'],
+        import.meta.url,
+      ),
     ).rejects.toThrow('process.exit:1');
 
     expect(cleanupState.logger.error).toHaveBeenCalledWith(

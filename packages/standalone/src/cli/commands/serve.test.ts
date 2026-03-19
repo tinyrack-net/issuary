@@ -79,7 +79,10 @@ describe('ServeCommand', () => {
     const exitSpy = mockProcessExit();
     const { default: ServeCommand } = await import('./serve.js');
 
-    await ServeCommand.run(['--config-path', '/tmp/config.yaml']);
+    await ServeCommand.run(
+      ['--config-path', '/tmp/config.yaml'],
+      import.meta.url,
+    );
 
     expect(serveMocks.serve).toHaveBeenCalledWith(
       {
@@ -118,7 +121,7 @@ describe('ServeCommand', () => {
     const { default: ServeCommand } = await import('./serve.js');
 
     await expect(
-      ServeCommand.run(['--config-path', '/tmp/config.yaml']),
+      ServeCommand.run(['--config-path', '/tmp/config.yaml'], import.meta.url),
     ).rejects.toThrow('process.exit:1');
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(expect.any(Error));
