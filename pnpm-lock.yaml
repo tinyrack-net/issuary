@@ -31,26 +31,26 @@ catalogs:
       specifier: ^5.2.2
       version: 5.2.2
     '@mikro-orm/cli':
-      specifier: ^7.0.2
-      version: 7.0.2
+      specifier: ^7.0.3
+      version: 7.0.3
     '@mikro-orm/core':
-      specifier: ^7.0.2
-      version: 7.0.2
+      specifier: ^7.0.3
+      version: 7.0.3
     '@mikro-orm/decorators':
-      specifier: ^7.0.2
-      version: 7.0.2
+      specifier: ^7.0.3
+      version: 7.0.3
     '@mikro-orm/migrations':
-      specifier: ^7.0.2
-      version: 7.0.2
+      specifier: ^7.0.3
+      version: 7.0.3
     '@mikro-orm/postgresql':
-      specifier: ^7.0.2
-      version: 7.0.2
+      specifier: ^7.0.3
+      version: 7.0.3
     '@mikro-orm/seeder':
-      specifier: ^7.0.2
-      version: 7.0.2
+      specifier: ^7.0.3
+      version: 7.0.3
     '@mikro-orm/sqlite':
-      specifier: ^7.0.2
-      version: 7.0.2
+      specifier: ^7.0.3
+      version: 7.0.3
     '@phosphor-icons/react':
       specifier: ^2.1.10
       version: 2.1.10
@@ -383,25 +383,25 @@ importers:
         version: 0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.8)
       '@mikro-orm/cli':
         specifier: 'catalog:'
-        version: 7.0.2(dataloader@2.2.3)
+        version: 7.0.3(dataloader@2.2.3)
       '@mikro-orm/core':
         specifier: 'catalog:'
-        version: 7.0.2(dataloader@2.2.3)
+        version: 7.0.3(dataloader@2.2.3)
       '@mikro-orm/decorators':
         specifier: 'catalog:'
-        version: 7.0.2(@mikro-orm/core@7.0.2(dataloader@2.2.3))(reflect-metadata@0.2.2)
+        version: 7.0.3(@mikro-orm/core@7.0.3(dataloader@2.2.3))(reflect-metadata@0.2.2)
       '@mikro-orm/migrations':
         specifier: 'catalog:'
-        version: 7.0.2(@mikro-orm/core@7.0.2(dataloader@2.2.3))
+        version: 7.0.3(@mikro-orm/core@7.0.3(dataloader@2.2.3))
       '@mikro-orm/postgresql':
         specifier: 'catalog:'
-        version: 7.0.2(@mikro-orm/core@7.0.2(dataloader@2.2.3))
+        version: 7.0.3(@mikro-orm/core@7.0.3(dataloader@2.2.3))
       '@mikro-orm/seeder':
         specifier: 'catalog:'
-        version: 7.0.2(@mikro-orm/core@7.0.2(dataloader@2.2.3))
+        version: 7.0.3(@mikro-orm/core@7.0.3(dataloader@2.2.3))
       '@mikro-orm/sqlite':
         specifier: 'catalog:'
-        version: 7.0.2(@mikro-orm/core@7.0.2(dataloader@2.2.3))
+        version: 7.0.3(@mikro-orm/core@7.0.3(dataloader@2.2.3))
       '@react-email/components':
         specifier: 'catalog:'
         version: 1.0.9(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -674,7 +674,7 @@ importers:
         version: 1.19.11(hono@4.12.8)
       '@mikro-orm/cli':
         specifier: 'catalog:'
-        version: 7.0.2(dataloader@2.2.3)
+        version: 7.0.3(dataloader@2.2.3)
       '@oclif/core':
         specifier: ^4.9.0
         version: 4.9.0
@@ -1728,13 +1728,13 @@ packages:
   '@mdx-js/mdx@3.1.1':
     resolution: {integrity: sha512-f6ZO2ifpwAQIpzGWaBQT2TXxPv6z3RBzQKpVftEWN78Vl/YweF1uwussDx8ECAXVtr3Rs89fKyG9YlzUs9DyGQ==}
 
-  '@mikro-orm/cli@7.0.2':
-    resolution: {integrity: sha512-l0KAogc0JshsGW65sgRTPOYcGZePaaykG7XOhdmjT8FxGq/cmrjSh6L+gstlm7jXuOmEXKRSgqW/OeV3TrWXLg==}
+  '@mikro-orm/cli@7.0.3':
+    resolution: {integrity: sha512-z7NTqRKoLP40P3TNKEfmBKVBOa47Dx1QM6X1rbVrDkWGQXPuGkVvDzPtTRHh4r6EfbfrR4Re5xnHSYUYoXLIsA==}
     engines: {node: '>= 22.17.0'}
     hasBin: true
 
-  '@mikro-orm/core@7.0.2':
-    resolution: {integrity: sha512-OzbvkyPiJnQhLpdbWcYQPh41v1jmv1KKrtJm9Irf1H7e55Kk5W2fogy74OOPIQN2mWpBz7VP6iz+o/ncEX29PQ==}
+  '@mikro-orm/core@7.0.3':
+    resolution: {integrity: sha512-DEXjpJWq316b2H4nKxwDzfu/5tXRXeKroXCORPPA5+ARRR4TrLwc7t+HgUYkGJ0XCt9eU5AwZ8jeuyrBbeVJSg==}
     engines: {node: '>= 22.17.0'}
     peerDependencies:
       dataloader: 2.2.3
@@ -1742,45 +1742,45 @@ packages:
       dataloader:
         optional: true
 
-  '@mikro-orm/decorators@7.0.2':
-    resolution: {integrity: sha512-La38yXtp+Xt9+hu8GPKaKC/zoAzdUG/hYwSquxFgm0jU3Sy8FaBL6GzbX7gb7RxMOr88j9MFQfUsko3r7lO7zg==}
+  '@mikro-orm/decorators@7.0.3':
+    resolution: {integrity: sha512-5zEPQqydZRKRVaIg/mfrwKROC+khqDQ1GCcDi9aKT4vmgGdY3TFrmnl8+v6vOayFnXCrAjECKQlmo59Y08D0BQ==}
     engines: {node: '>= 22.17.0'}
     peerDependencies:
-      '@mikro-orm/core': 7.0.2
+      '@mikro-orm/core': 7.0.3
       reflect-metadata: ^0.1.0 || ^0.2.0
     peerDependenciesMeta:
       reflect-metadata:
         optional: true
 
-  '@mikro-orm/migrations@7.0.2':
-    resolution: {integrity: sha512-b1+dTm3O4BqojcxNPfJQiLPjOnN5CfrsRWAfjxI03eDiMDZ6sN4F4aMyw9ex5F5PzLfouCItstR9arI7hT/Qfw==}
+  '@mikro-orm/migrations@7.0.3':
+    resolution: {integrity: sha512-Ph9CU2MYJjARYSHZH/flbr/o+XxucJAKtPv3CPb6F+g814Z54nXWPKEN7f/ch+XpbRlrAqEjxD9QfAdQ16GJBg==}
     engines: {node: '>= 22.17.0'}
     peerDependencies:
-      '@mikro-orm/core': 7.0.2
+      '@mikro-orm/core': 7.0.3
 
-  '@mikro-orm/postgresql@7.0.2':
-    resolution: {integrity: sha512-x3eZbkbmAa4BcYeE85/I1VIB/xtnLrCtsOLxr/TPwXg1FrnSWTz+ba+p/Qn5u1PvW6/uAjfK1SZgCckoEjCKsA==}
+  '@mikro-orm/postgresql@7.0.3':
+    resolution: {integrity: sha512-g/BEo7OwiKKGZGKeVyf+zs5wI9Cx6GShjiDPVAAM9cK16E+vj6YWS0bty38taUaEsxuXEdHP5QU2sLu8Plpdjw==}
     engines: {node: '>= 22.17.0'}
     peerDependencies:
-      '@mikro-orm/core': 7.0.2
+      '@mikro-orm/core': 7.0.3
 
-  '@mikro-orm/seeder@7.0.2':
-    resolution: {integrity: sha512-0Re5yWMRqa48Hebmnp4xudzD76pmWtJ1mR2dEXgzg99uGr/+h+OJX5iuHPzzFZqVhj6GsW28uF4w7iCG4b8TGA==}
+  '@mikro-orm/seeder@7.0.3':
+    resolution: {integrity: sha512-VAcxbBcinCU7jmH6eOlA3Q5pYw+yTsCNAmYuMtXzRk4J3pcJI8SCzBSocsYDCV5KFrAP8OofAZgIIYdfIXBPTQ==}
     engines: {node: '>= 22.17.0'}
     peerDependencies:
-      '@mikro-orm/core': 7.0.2
+      '@mikro-orm/core': 7.0.3
 
-  '@mikro-orm/sql@7.0.2':
-    resolution: {integrity: sha512-qWCtHdjgvDYHIaJDvgY0uEu4O3hzlTJn6nrfyGxHC2d3VGbAdx8UNSq8icNmb40CO8IK4MjbwOssUqcaDLwStQ==}
+  '@mikro-orm/sql@7.0.3':
+    resolution: {integrity: sha512-j0GxaojyZp5j0ENHKuU/7zrVjPryLwAOqqQIXPEvAJRzjnGmSFhzHuONcU4mVUKDwlxwHyKRq1BtcmNbblc12w==}
     engines: {node: '>= 22.17.0'}
     peerDependencies:
-      '@mikro-orm/core': 7.0.2
+      '@mikro-orm/core': 7.0.3
 
-  '@mikro-orm/sqlite@7.0.2':
-    resolution: {integrity: sha512-wOskJG/ZVpvfKqzdYsewo/jpg+W+EYFMW7REG9Dnor1GLX+QDGQRm0KkdL8gl/OYFujwKrZUeMJRfmqXFr2tZw==}
+  '@mikro-orm/sqlite@7.0.3':
+    resolution: {integrity: sha512-H9q1ovrVkBbPSdqkxYohXEmu2p/TCD6vaOGx23M+okqFH01JFzfcWJj4cP+XdKpPLDcBkaufYYxHoXVjkHzLyw==}
     engines: {node: '>= 22.17.0'}
     peerDependencies:
-      '@mikro-orm/core': 7.0.2
+      '@mikro-orm/core': 7.0.3
 
   '@napi-rs/wasm-runtime@1.1.1':
     resolution: {integrity: sha512-p64ah1M1ld8xjWv3qbvFwHiFVWrq1yFvV4f7w+mzaqiR4IlSgkqhcRdHwsGgomwzBH51sRY4NEowLxnaBjcW/A==}
@@ -4348,8 +4348,8 @@ packages:
   micromark@4.0.2:
     resolution: {integrity: sha512-zpe98Q6kvavpCr1NPVSCMebCKfD7CA2NqZ+rykeNhONIJBpc1tFKt9hucLGwha3jNTNI8lHpctWJWoimVF4PfA==}
 
-  mikro-orm@7.0.2:
-    resolution: {integrity: sha512-ZG8s9F6dV6MNsWp4XJpmmdNmH0/RYJhtHupouzjoenXS0IyWPRykYpLGVulCbXYOrqIZXomqhjt2PBqJQBQ4fA==}
+  mikro-orm@7.0.3:
+    resolution: {integrity: sha512-FHcZGMskX2EDczI2EDhNbiJ5r9B6G3Ww6v8fUj1JyUXN91S9lze28zZWVCjlC9R29U6Fs64M6nEi7TovR/VhTA==}
     engines: {node: '>= 22.17.0'}
 
   mime-db@1.52.0:
@@ -6721,33 +6721,33 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@mikro-orm/cli@7.0.2(dataloader@2.2.3)':
+  '@mikro-orm/cli@7.0.3(dataloader@2.2.3)':
     dependencies:
-      '@mikro-orm/core': 7.0.2(dataloader@2.2.3)
-      mikro-orm: 7.0.2
+      '@mikro-orm/core': 7.0.3(dataloader@2.2.3)
+      mikro-orm: 7.0.3
       yargs: 17.7.2
     transitivePeerDependencies:
       - dataloader
 
-  '@mikro-orm/core@7.0.2(dataloader@2.2.3)':
+  '@mikro-orm/core@7.0.3(dataloader@2.2.3)':
     optionalDependencies:
       dataloader: 2.2.3
 
-  '@mikro-orm/decorators@7.0.2(@mikro-orm/core@7.0.2(dataloader@2.2.3))(reflect-metadata@0.2.2)':
+  '@mikro-orm/decorators@7.0.3(@mikro-orm/core@7.0.3(dataloader@2.2.3))(reflect-metadata@0.2.2)':
     dependencies:
-      '@mikro-orm/core': 7.0.2(dataloader@2.2.3)
+      '@mikro-orm/core': 7.0.3(dataloader@2.2.3)
     optionalDependencies:
       reflect-metadata: 0.2.2
 
-  '@mikro-orm/migrations@7.0.2(@mikro-orm/core@7.0.2(dataloader@2.2.3))':
+  '@mikro-orm/migrations@7.0.3(@mikro-orm/core@7.0.3(dataloader@2.2.3))':
     dependencies:
-      '@mikro-orm/core': 7.0.2(dataloader@2.2.3)
-      '@mikro-orm/sql': 7.0.2(@mikro-orm/core@7.0.2(dataloader@2.2.3))
+      '@mikro-orm/core': 7.0.3(dataloader@2.2.3)
+      '@mikro-orm/sql': 7.0.3(@mikro-orm/core@7.0.3(dataloader@2.2.3))
 
-  '@mikro-orm/postgresql@7.0.2(@mikro-orm/core@7.0.2(dataloader@2.2.3))':
+  '@mikro-orm/postgresql@7.0.3(@mikro-orm/core@7.0.3(dataloader@2.2.3))':
     dependencies:
-      '@mikro-orm/core': 7.0.2(dataloader@2.2.3)
-      '@mikro-orm/sql': 7.0.2(@mikro-orm/core@7.0.2(dataloader@2.2.3))
+      '@mikro-orm/core': 7.0.3(dataloader@2.2.3)
+      '@mikro-orm/sql': 7.0.3(@mikro-orm/core@7.0.3(dataloader@2.2.3))
       kysely: 0.28.12
       pg: 8.20.0
       pg-cursor: 2.19.0(pg@8.20.0)
@@ -6757,19 +6757,19 @@ snapshots:
     transitivePeerDependencies:
       - pg-native
 
-  '@mikro-orm/seeder@7.0.2(@mikro-orm/core@7.0.2(dataloader@2.2.3))':
+  '@mikro-orm/seeder@7.0.3(@mikro-orm/core@7.0.3(dataloader@2.2.3))':
     dependencies:
-      '@mikro-orm/core': 7.0.2(dataloader@2.2.3)
+      '@mikro-orm/core': 7.0.3(dataloader@2.2.3)
 
-  '@mikro-orm/sql@7.0.2(@mikro-orm/core@7.0.2(dataloader@2.2.3))':
+  '@mikro-orm/sql@7.0.3(@mikro-orm/core@7.0.3(dataloader@2.2.3))':
     dependencies:
-      '@mikro-orm/core': 7.0.2(dataloader@2.2.3)
+      '@mikro-orm/core': 7.0.3(dataloader@2.2.3)
       kysely: 0.28.12
 
-  '@mikro-orm/sqlite@7.0.2(@mikro-orm/core@7.0.2(dataloader@2.2.3))':
+  '@mikro-orm/sqlite@7.0.3(@mikro-orm/core@7.0.3(dataloader@2.2.3))':
     dependencies:
-      '@mikro-orm/core': 7.0.2(dataloader@2.2.3)
-      '@mikro-orm/sql': 7.0.2(@mikro-orm/core@7.0.2(dataloader@2.2.3))
+      '@mikro-orm/core': 7.0.3(dataloader@2.2.3)
+      '@mikro-orm/sql': 7.0.3(@mikro-orm/core@7.0.3(dataloader@2.2.3))
       better-sqlite3: 12.8.0
       kysely: 0.28.12
 
@@ -9711,7 +9711,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  mikro-orm@7.0.2: {}
+  mikro-orm@7.0.3: {}
 
   mime-db@1.52.0: {}
 
