@@ -1,6 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 import { defineConfig, type MikroORM } from '@mikro-orm/core';
-import { SqliteDriver } from '@mikro-orm/sqlite';
+import { SqliteDriver } from '@mikro-orm/sql';
 import { D1Dialect } from 'kysely-d1';
 import { EmailVerificationEntitySchema } from '#backend/entities/email-verification.entity.js';
 import { JwtKeyEntitySchema } from '#backend/entities/jwt-key.entity.js';
@@ -19,14 +19,14 @@ import { UserTermsConsentEntitySchema } from '#backend/entities/user-terms-conse
 import { UserTotpEntitySchema } from '#backend/entities/user-totp.entity.js';
 import { UserTotpRecoveryCodeEntitySchema } from '#backend/entities/user-totp-recovery-code.entity.js';
 import type { DatabaseConfig } from '#backend/lib/config/index.js';
-// import compiledFunctions from './compiled-functions.js';
+import compiledFunctions from './compiled-functions.js';
 
 export function d1(database: { database: D1Database }): DatabaseConfig {
   return {
     getMikroOrmOptions: async () => {
       return defineConfig({
         driver: SqliteDriver,
-        // compiledFunctions: compiledFunctions,
+        compiledFunctions: compiledFunctions,
         dbName: 'd1',
         driverOptions: new D1Dialect({ database: database.database }),
         implicitTransactions: false,

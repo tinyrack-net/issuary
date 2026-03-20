@@ -1,7 +1,7 @@
 import { defineConfig, type MikroORM } from '@mikro-orm/core';
 import { Migrator } from '@mikro-orm/migrations';
 import { SeedManager } from '@mikro-orm/seeder';
-import { SqliteDriver } from '@mikro-orm/sqlite';
+import { NodeSqliteDialect, SqliteDriver } from '@mikro-orm/sql';
 import { EmailVerificationEntitySchema } from '#backend/entities/email-verification.entity.js';
 import { JwtKeyEntitySchema } from '#backend/entities/jwt-key.entity.js';
 import { OAuthClientEntitySchema } from '#backend/entities/oauth-client.entity.js';
@@ -25,11 +25,14 @@ export function sqlite(database: {
   path: string;
   test: boolean;
 }): DatabaseConfig {
+  const dbName = database.test ? ':memory:' : database.path;
+
   return {
     getMikroOrmOptions: async () => {
       return defineConfig({
         driver: SqliteDriver,
-        dbName: database.test ? ':memory:' : database.path,
+        dbName: dbName,
+        driverOptions: new NodeSqliteDialect(dbName),
         compiledFunctions: compiledFunctions,
         entities: [
           UserEntitySchema,
