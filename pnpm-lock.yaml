@@ -334,6 +334,9 @@ importers:
       '@tinyauth/backend':
         specifier: workspace:*
         version: link:../../../packages/backend
+      hono:
+        specifier: 'catalog:'
+        version: 4.12.8
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
@@ -341,9 +344,6 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.11
-      hono:
-        specifier: 'catalog:'
-        version: 4.12.8
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
