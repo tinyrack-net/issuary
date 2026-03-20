@@ -18,7 +18,7 @@ catalog:
   "@mikro-orm/migrations": ^7.0.3
   "@mikro-orm/postgresql": ^7.0.3
   "@mikro-orm/seeder": ^7.0.3
-  "@mikro-orm/sqlite": ^7.0.3
+  "@mikro-orm/sql": ^7.0.3
   "@phosphor-icons/react": ^2.1.10
   "@playwright/test": ^1.58.2
   "@react-email/components": ^1.0.9
@@ -83,7 +83,6 @@ catalog:
   zod: ^4.3.6
 
 onlyBuiltDependencies:
-  - better-sqlite3
   - esbuild
   - libsql
   - sharp
