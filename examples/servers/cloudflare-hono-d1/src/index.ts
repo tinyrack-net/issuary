@@ -1,9 +1,10 @@
-import { type AppType, createApp } from '@tinyauth/backend';
-import { d1 } from '@tinyauth/backend/database/d1';
 import {
-  interpolateHtmlResponse,
-  resolveHtmlVariables,
-} from '@tinyauth/backend/frontend';
+  type AppType,
+  type CreateAppOptions,
+  createApp,
+} from '@tinyauth/backend';
+import { d1 } from '@tinyauth/backend/database/d1';
+import { createCloudflareAssetsHandler } from '@tinyauth/backend/frontend/cloudflare';
 
 interface Env {
   ASSETS: {
@@ -14,51 +15,40 @@ interface Env {
 
 type AppExecutionContext = Parameters<AppType['fetch']>[2];
 
+function createWorkerOptions(request: Request, env: Env): CreateAppOptions {
+  return {
+    server: {
+      public_origin: new URL(request.url).origin,
+    },
+    registration: {
+      enabled: true,
+      allowed_email_patterns: ['*'],
+      email_verification_required: false,
+    },
+    database: d1({ database: env.DB }),
+    logging: {
+      level: 'info',
+      format: 'json',
+    },
+    security: {
+      session_secret:
+        '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+      hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+    },
+    frontend: createCloudflareAssetsHandler({
+      assets: env.ASSETS,
+      htmlVariables: {
+        TITLE: 'TinyAuth',
+        DESCRIPTION: 'OIDC for everyone',
+        FAVICON_URL: '/vite.svg',
+      },
+    }),
+  };
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: AppExecutionContext) {
-    const { app } = await createApp({
-      database: d1({ database: env.DB }),
-      security: {
-        session_secret:
-          '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
-        hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
-      },
-      frontend: ({ branding, server }) => {
-        const htmlVariables = resolveHtmlVariables({
-          branding,
-          server,
-          overrides: {
-            TITLE: 'TinyAuth',
-            DESCRIPTION: 'OIDC for everyone',
-            FAVICON_URL: '/vite.svg',
-          },
-        });
-
-        return async (c) => {
-          const pathname = new URL(c.req.url).pathname;
-          const response = await env.ASSETS.fetch(c.req.raw);
-          const isHtml =
-            response.headers
-              .get('content-type')
-              ?.toLowerCase()
-              .includes('text/html') ?? false;
-
-          if (
-            pathname !== '/index.html' &&
-            /\/[^/]+\.[^/]+$/.test(pathname) &&
-            isHtml
-          ) {
-            return c.text('Not Found', 404);
-          }
-
-          if (c.req.method !== 'GET') {
-            return response;
-          }
-
-          return interpolateHtmlResponse(response, htmlVariables);
-        };
-      },
-    });
+    const { app } = await createApp(createWorkerOptions(request, env));
 
     return app.fetch(request, env, ctx);
   },

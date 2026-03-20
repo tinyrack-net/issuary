@@ -1,49 +1,59 @@
 # Cloudflare Hono D1 Example
 
-This example deploys `@tinyauth/backend` to Cloudflare Workers with Hono and
-serves the existing TinyAuth frontend from `packages/backend/public`.
+This example runs `@tinyauth/backend` in library mode on Cloudflare Workers with
+Hono, D1, and the bundled TinyAuth frontend assets.
 
 ## Scope
 
 - Runtime: Cloudflare Workers
 - HTTP app: Hono
-- Database: PostgreSQL only
-- Frontend: built from `@tinyauth/frontend`
-- SMTP: disabled in this example
-- D1: not supported yet
+- Database: Cloudflare D1
+- Frontend: built from `@tinyauth/frontend` into `packages/backend/public`
+- Auth: self-signup enabled, no seeded users, no SMTP
 
 ## Prerequisites
 
-- PostgreSQL database reachable from Cloudflare Workers
+- Cloudflare D1 database bound as `DB`
 - Cloudflare account with Workers enabled
 - `pnpm install`
+- `pnpm --filter @tinyauth/frontend build`
 
 ## Configuration
 
-All configuration values are hardcoded in `src/config.ts`. Edit that file
-directly to change the database connection, secrets, or other settings.
+The Worker builds its TinyAuth runtime config directly in
+`src/index.ts` using the current backend option shape:
+
+- `server.public_origin` is derived from each incoming request
+- `registration` enables open self-signup for local testing
+- `database` uses `d1({ database: env.DB })`
+- `frontend` uses `createCloudflareAssetsHandler()` from
+  `@tinyauth/backend/frontend/cloudflare`
+
+Replace the demo secrets before deploying anywhere outside development.
 
 ## Local Development
 
-Run `pnpm --filter @tinyauth-examples/cloudflare-hono-d1 dev`
+Run `pnpm --filter @tinyauth-server-examples/cloudflare-hono-d1 dev`
 
-The `dev` script rebuilds `@tinyauth/frontend` into `packages/backend/public`
-before starting the Worker dev server. If you change frontend code while
-working on the example, rerun the command or keep a separate
+If you change frontend code while working on the example, rerun
+`pnpm --filter @tinyauth/frontend build` or keep a separate
 `pnpm --filter @tinyauth/frontend build --watch` process running.
 
 ## Build And Deploy
 
 ```bash
-pnpm --filter @tinyauth-examples/cloudflare-hono-d1 build
-pnpm --filter @tinyauth-examples/cloudflare-hono-d1 deploy
+pnpm --filter @tinyauth-server-examples/cloudflare-hono-d1 build
+pnpm --filter @tinyauth-server-examples/cloudflare-hono-d1 deploy
 ```
 
 ## Notes
 
 - The Worker handles backend routes first and serves static frontend assets for
   everything else.
+- The example sets `server.public_origin` from the request origin so redirects,
+  cookies, and CORS match the Worker hostname.
 - HTML responses are interpolated at runtime for `TITLE`, `DESCRIPTION`, and
   `FAVICON_URL`.
 - Unknown file-like requests such as `/missing.js` return `404` instead of the
   SPA shell.
+- This example is not production-safe as written.

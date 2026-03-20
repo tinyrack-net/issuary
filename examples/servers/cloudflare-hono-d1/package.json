@@ -12,12 +12,12 @@
     "test": "NODE_OPTIONS='--conditions=@tinyauth/source' vitest run"
   },
   "dependencies": {
-    "@tinyauth/backend": "workspace:*"
+    "@tinyauth/backend": "workspace:*",
+    "hono": "catalog:"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
     "@types/node": "catalog:",
-    "hono": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "wrangler": "catalog:"
