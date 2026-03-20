@@ -74,6 +74,10 @@
       "./frontend/proxy": {
         "types": "./dist/entrypoints/frontend/proxy.d.ts",
         "default": "./dist/entrypoints/frontend/proxy.js"
+      },
+      "./frontend/cloudflare": {
+        "types": "./dist/entrypoints/frontend/cloudflare.d.ts",
+        "default": "./dist/entrypoints/frontend/cloudflare.js"
       }
     },
     "imports": {
@@ -158,6 +162,11 @@
       "@tinyauth/source": "./src/entrypoints/frontend/proxy.ts",
       "types": "./dist/entrypoints/frontend/proxy.d.ts",
       "default": "./dist/entrypoints/frontend/proxy.js"
+    },
+    "./frontend/cloudflare": {
+      "@tinyauth/source": "./src/entrypoints/frontend/cloudflare.ts",
+      "types": "./dist/entrypoints/frontend/cloudflare.d.ts",
+      "default": "./dist/entrypoints/frontend/cloudflare.js"
     }
   },
   "imports": {
