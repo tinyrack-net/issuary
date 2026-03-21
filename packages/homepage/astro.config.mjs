@@ -4,6 +4,9 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   site: 'https://tinyauth.tinyrack.net',
+  redirects: {
+    '/': '/en/',
+  },
   server: {
     host: '0.0.0.0',
     port: 8082,
@@ -18,9 +21,9 @@ export default defineConfig({
       description: 'OpenID Connect (OIDC) Provider Documentation',
       plugins: [],
       customCss: ['./src/styles/global.css'],
-      defaultLocale: 'root',
+      defaultLocale: 'en',
       locales: {
-        root: {
+        en: {
           label: 'English',
           lang: 'en',
         },
@@ -28,10 +31,10 @@ export default defineConfig({
           label: '한국어',
           lang: 'ko',
         },
-        // ja: {
-        //   label: '日本語',
-        //   lang: 'ja',
-        // },
+        ja: {
+          label: '日本語',
+          lang: 'ja',
+        },
       },
       social: [
         {
