@@ -13,33 +13,11 @@
     "dist"
   ],
   "publishConfig": {
-    "exports": {
-      "./config": {
-        "types": "./dist/config.d.ts",
-        "default": "./dist/config.js"
-      },
-      "./app": {
-        "types": "./dist/app.d.ts",
-        "default": "./dist/app.js"
-      }
-    },
     "imports": {
       "#standalone/*": {
         "types": "./dist/*",
         "default": "./dist/*"
       }
-    }
-  },
-  "exports": {
-    "./config": {
-      "@tinyauth/source": "./src/config.ts",
-      "types": "./dist/config.d.ts",
-      "default": "./dist/config.js"
-    },
-    "./app": {
-      "@tinyauth/source": "./src/app.ts",
-      "types": "./dist/app.d.ts",
-      "default": "./dist/app.js"
     }
   },
   "imports": {

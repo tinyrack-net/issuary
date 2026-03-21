@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import type { StandaloneConfigInput } from '@tinyauth/standalone/config';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import type { StandaloneConfigInput } from './lib/config/index.js';
 
 const BASE_CONFIG = {
   logging: {
