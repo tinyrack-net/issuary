@@ -32,7 +32,6 @@ export default defineConfig({
         },
         plugins: [
           react(),
-          // @ts-expect-error @rolldown/plugin-babel PluginOptions type incorrectly marks optional babel properties as required
           babel({ presets: [reactCompilerPreset()] }),
           tailwindcss(),
         ],
