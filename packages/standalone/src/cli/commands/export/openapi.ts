@@ -1,12 +1,12 @@
 import { writeFileSync } from 'node:fs';
-import { Command } from '@oclif/core';
+import { buildCommand } from '@stricli/core';
 import { createApp, createOpenApiDocumentation } from '@tinyauth/backend';
 import { OPENAPI_CONFIG_DEFAULT } from '@tinyauth/backend/config';
 import { generateSpecs } from 'hono-openapi';
 import z from 'zod';
 import type { StandaloneConfigInput } from '#standalone/lib/config/index.js';
 import { resolveConfig } from '#standalone/lib/load-config.js';
-import { zodArg } from '#standalone/lib/oclif/zod-arg.js';
+import { parseWithZod } from '../../../lib/cli/parse-with-zod.js';
 
 /**
  * Export OpenAPI command
@@ -14,63 +14,78 @@ import { zodArg } from '#standalone/lib/oclif/zod-arg.js';
  * Generates the OpenAPI spec as JSON.
  * Outputs to stdout by default, or to a file if output-path is provided.
  */
-export default class ExportOpenapiCommand extends Command {
-  static override description = 'Export the OpenAPI spec as JSON';
+type ExportOpenapiArgs = [outputPath?: string];
+type ExportOpenapiFlags = Record<string, never>;
 
-  static override args = {
-    'output-path': zodArg(
-      z
-        .string()
-        .trim()
-        .min(1, 'must not be empty')
-        .optional()
-        .describe('Write spec to file instead of stdout'),
-      {
-        label: 'output-path',
-      },
-    ),
-  };
+const outputPathSchema = z.string().trim().min(1, 'must not be empty');
 
-  async run(): Promise<void> {
-    const { args } = await this.parse(ExportOpenapiCommand);
-    const outputPath = args['output-path'];
+export async function runExportOpenapiCommand(
+  _flags: ExportOpenapiFlags,
+  outputPath?: string,
+): Promise<void> {
+  const config = {
+    logging: {
+      level: 'silent',
+      format: 'json',
+    },
+    database: {
+      type: 'sqlite',
+      test: true,
+    },
+    security: {
+      session_secret:
+        '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
+      hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+      pbkdf2_iterations: 1000,
+    },
+  } satisfies StandaloneConfigInput;
 
-    const config = {
-      logging: {
-        level: 'silent',
-        format: 'json',
-      },
-      database: {
-        type: 'sqlite',
-        test: true,
-      },
-      security: {
-        session_secret:
-          '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
-        hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
-        pbkdf2_iterations: 1000,
-      },
-    } satisfies StandaloneConfigInput;
+  const { app, cleanup, logger } = await createApp(await resolveConfig(config));
 
-    const { app, cleanup, logger } = await createApp(
-      await resolveConfig(config),
-    );
+  try {
+    const spec = await generateSpecs(app, {
+      documentation: createOpenApiDocumentation(OPENAPI_CONFIG_DEFAULT),
+    });
 
-    try {
-      const spec = await generateSpecs(app, {
-        documentation: createOpenApiDocumentation(OPENAPI_CONFIG_DEFAULT),
-      });
+    const json = JSON.stringify(spec, null, 2);
 
-      const json = JSON.stringify(spec, null, 2);
-
-      if (outputPath) {
-        writeFileSync(outputPath, json, 'utf-8');
-        logger.info({ outputPath }, 'OpenAPI spec written');
-      } else {
-        process.stdout.write(json);
-      }
-    } finally {
-      await cleanup();
+    if (outputPath) {
+      writeFileSync(outputPath, json, 'utf-8');
+      logger.info({ outputPath }, 'OpenAPI spec written');
+    } else {
+      process.stdout.write(json);
     }
+  } finally {
+    await cleanup();
   }
 }
+
+export const exportOpenapiCommand = buildCommand<
+  ExportOpenapiFlags,
+  ExportOpenapiArgs
+>({
+  parameters: {
+    flags: {},
+    positional: {
+      kind: 'tuple',
+      parameters: [
+        {
+          brief: 'Write spec to file instead of stdout',
+          optional: true,
+          parse: async (input) =>
+            await parseWithZod(input, {
+              label: 'output-path',
+              schema: outputPathSchema,
+            }),
+        },
+      ],
+    },
+  },
+  docs: {
+    brief: 'Export the OpenAPI spec as JSON',
+    fullDescription: 'Export the OpenAPI spec as JSON',
+  },
+  func: runExportOpenapiCommand,
+});
+
+export default exportOpenapiCommand;

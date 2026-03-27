@@ -1,4 +1,4 @@
-import { Command, Flags } from '@oclif/core';
+import { buildCommand } from '@stricli/core';
 import {
   initializeServices,
   type ServiceContainer,
@@ -6,7 +6,7 @@ import {
 import z from 'zod';
 import { loadConfig, resolveConfig } from '#standalone/lib/load-config.js';
 import { createLogger } from '#standalone/lib/logger.js';
-import { zodFlag } from '#standalone/lib/oclif/zod-flag.js';
+import { parseWithZod } from '../../lib/cli/parse-with-zod.js';
 
 /**
  * Cleanup command
@@ -21,134 +21,140 @@ import { zodFlag } from '#standalone/lib/oclif/zod-flag.js';
  *   tinyauth cleanup --verbose    # Show detailed
  *                                   progress
  */
-export default class CleanupCommand extends Command {
-  static override description = 'Run all cleanup and maintenance tasks';
+type CleanupFlags = {
+  configPath: string;
+  dryRun: boolean;
+  verbose: boolean;
+};
 
-  static override flags = {
-    'config-path': zodFlag(
-      z
-        .string()
-        .trim()
-        .min(1, 'must not be empty')
-        .describe('Path to config file'),
-      {
-        char: 'c',
-        label: 'config-path',
+const configPathSchema = z.string().trim().min(1, 'must not be empty');
+
+export async function runCleanupCommand(flags: CleanupFlags): Promise<void> {
+  const { configPath, dryRun, verbose } = flags;
+
+  let services: ServiceContainer | undefined;
+  let cleanup: (() => Promise<void>) | undefined;
+  let exitCode = 0;
+
+  try {
+    const resolved = await resolveConfig(loadConfig(configPath));
+    const logger = createLogger({
+      logging: {
+        ...resolved.logging,
+        level: verbose ? 'debug' : 'info',
       },
-    ),
-    'dry-run': Flags.boolean({
-      char: 'n',
-      description: 'Show what would be cleaned without deleting',
-      default: false,
-    }),
-    verbose: Flags.boolean({
-      char: 'v',
-      description: 'Show detailed progress for each task',
-      default: false,
-    }),
-  };
+    });
 
-  async run(): Promise<void> {
-    const { flags } = await this.parse(CleanupCommand);
-    const configPath = flags['config-path'];
-    const dryRun = flags['dry-run'];
-    const { verbose } = flags;
-
-    let services: ServiceContainer | undefined;
-    let cleanup: (() => Promise<void>) | undefined;
-    let exitCode = 0;
-
-    try {
-      const resolved = await resolveConfig(loadConfig(configPath));
-      const logger = createLogger({
-        logging: {
-          ...resolved.logging,
-          level: verbose ? 'debug' : 'info',
-        },
-      });
-
-      logger.info('TinyAuth Cleanup');
-      if (dryRun) {
-        logger.warn('[DRY RUN] No changes will be made');
-      }
-      if (verbose) {
-        logger.debug('Initializing services...');
-      }
-
-      const result = await initializeServices(resolved, logger);
-      services = result.services;
-      cleanup = result.cleanup;
-
-      const summary = await services.cleanupService.runAll({
-        dryRun,
-        verbose,
-      });
-
-      // Print results for each task
-      const totalTasks = summary.tasks.length;
-      for (let i = 0; i < summary.tasks.length; i++) {
-        const taskResult = summary.tasks[i];
-        if (!taskResult) continue;
-        const { description, result: taskRes, error, durationMs } = taskResult;
-        const index = i + 1;
-        const prefix = `[${index}/${totalTasks}]`;
-
-        if (error) {
-          logger.error(`${prefix} ${description}: ${error.message}`);
-        } else if (taskRes.skipped) {
-          if (verbose) {
-            logger.debug(
-              `${prefix} ${description}: Skipped - ${taskRes.message || 'Disabled'}`,
-            );
-          }
-        } else {
-          if (taskRes.deletedCount > 0) {
-            const action = dryRun ? 'Would delete' : 'Deleted';
-            const suffix = taskRes.message ? ` (${taskRes.message})` : '';
-            logger.info(
-              `${prefix} ${description}: ${action} ${taskRes.deletedCount}${suffix}`,
-            );
-          } else {
-            logger.info(
-              `${prefix} ${description}: ${taskRes.message || 'Nothing to clean'}`,
-            );
-          }
-          if (verbose) {
-            logger.debug(`  Duration: ${durationMs}ms`);
-          }
-        }
-      }
-
-      // Print summary
-      const verb = dryRun ? 'would be cleaned' : 'cleaned';
-      logger.info(`Summary: ${summary.totalDeleted} items ${verb}`);
-
-      if (summary.totalSkipped > 0 && verbose) {
-        logger.debug(`         ${summary.totalSkipped} tasks skipped`);
-      }
-
-      if (summary.totalFailed > 0) {
-        logger.error(`         ${summary.totalFailed} tasks failed`);
-      }
-
-      logger.info(`Duration: ${summary.totalDurationMs}ms`);
-
-      // Exit with error code if any task failed
-      if (summary.totalFailed > 0) {
-        exitCode = 1;
-      }
-    } catch (err) {
-      // Use console.error as fallback since logger
-      // may not be initialized
-      console.error('Cleanup failed:', err);
-      if (cleanup) {
-        await cleanup();
-      }
-      process.exit(1);
+    logger.info('TinyAuth Cleanup');
+    if (dryRun) {
+      logger.warn('[DRY RUN] No changes will be made');
+    }
+    if (verbose) {
+      logger.debug('Initializing services...');
     }
 
-    // Graceful shutdown
-    await cleanup();
-    process.exit(exitCode);
+    const result = await initializeServices(resolved, logger);
+    services = result.services;
+    cleanup = result.cleanup;
+
+    const summary = await services.cleanupService.runAll({
+      dryRun,
+      verbose,
+    });
+
+    const totalTasks = summary.tasks.length;
+    for (let i = 0; i < summary.tasks.length; i++) {
+      const taskResult = summary.tasks[i];
+      if (!taskResult) continue;
+      const { description, result: taskRes, error, durationMs } = taskResult;
+      const index = i + 1;
+      const prefix = `[${index}/${totalTasks}]`;
+
+      if (error) {
+        logger.error(`${prefix} ${description}: ${error.message}`);
+      } else if (taskRes.skipped) {
+        if (verbose) {
+          logger.debug(
+            `${prefix} ${description}: Skipped - ${taskRes.message || 'Disabled'}`,
+          );
+        }
+      } else {
+        if (taskRes.deletedCount > 0) {
+          const action = dryRun ? 'Would delete' : 'Deleted';
+          const suffix = taskRes.message ? ` (${taskRes.message})` : '';
+          logger.info(
+            `${prefix} ${description}: ${action} ${taskRes.deletedCount}${suffix}`,
+          );
+        } else {
+          logger.info(
+            `${prefix} ${description}: ${taskRes.message || 'Nothing to clean'}`,
+          );
+        }
+        if (verbose) {
+          logger.debug(`  Duration: ${durationMs}ms`);
+        }
+      }
+    }
+
+    const verb = dryRun ? 'would be cleaned' : 'cleaned';
+    logger.info(`Summary: ${summary.totalDeleted} items ${verb}`);
+
+    if (summary.totalSkipped > 0 && verbose) {
+      logger.debug(`         ${summary.totalSkipped} tasks skipped`);
+    }
+
+    if (summary.totalFailed > 0) {
+      logger.error(`         ${summary.totalFailed} tasks failed`);
+      exitCode = 1;
+    }
+
+    logger.info(`Duration: ${summary.totalDurationMs}ms`);
+  } catch (err) {
+    console.error('Cleanup failed:', err);
+    exitCode = 1;
+  } finally {
+    await cleanup?.();
+  }
+
+  if (exitCode > 0) {
+    process.exitCode = exitCode;
   }
 }
+
+export const cleanupCommand = buildCommand<CleanupFlags>({
+  parameters: {
+    flags: {
+      configPath: {
+        kind: 'parsed',
+        brief: 'Path to config file',
+        parse: async (input) =>
+          await parseWithZod(input, {
+            label: 'config-path',
+            schema: configPathSchema,
+          }),
+      },
+      dryRun: {
+        kind: 'boolean',
+        brief: 'Show what would be cleaned without deleting',
+        default: false,
+      },
+      verbose: {
+        kind: 'boolean',
+        brief: 'Show detailed progress for each task',
+        default: false,
+      },
+    },
+    aliases: {
+      c: 'configPath',
+      n: 'dryRun',
+      v: 'verbose',
+    },
+  },
+  docs: {
+    brief: 'Run all cleanup and maintenance tasks',
+    fullDescription: 'Run all cleanup and maintenance tasks',
+  },
+  func: runCleanupCommand,
+});
+
+export default cleanupCommand;

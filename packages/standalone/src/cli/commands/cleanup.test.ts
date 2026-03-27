@@ -59,6 +59,7 @@ describe('CleanupCommand', () => {
   });
 
   afterEach(() => {
+    process.exitCode = undefined;
     vi.restoreAllMocks();
   });
 
@@ -81,19 +82,14 @@ describe('CleanupCommand', () => {
       totalSkipped: 0,
     });
 
-    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((code) => {
-      throw new Error(`process.exit:${String(code)}`);
-    });
-
     vi.resetModules();
-    const { default: CleanupCommand } = await import('./cleanup.js');
+    const { runCleanupCommand } = await import('./cleanup.js');
 
-    await expect(
-      CleanupCommand.run(
-        ['--config-path', '/tmp/tinyauth.yaml', '--verbose'],
-        import.meta.url,
-      ),
-    ).rejects.toThrow('process.exit:0');
+    await runCleanupCommand({
+      configPath: '/tmp/tinyauth.yaml',
+      dryRun: false,
+      verbose: true,
+    });
 
     expect(cleanupState.loadConfigMock).toHaveBeenCalledWith(
       '/tmp/tinyauth.yaml',
@@ -109,7 +105,7 @@ describe('CleanupCommand', () => {
       '[1/1] Expired tokens: Deleted 2 (Cleaned expired entries)',
     );
     expect(cleanupState.cleanupMock).toHaveBeenCalledTimes(1);
-    expect(exitSpy).toHaveBeenCalledWith(0);
+    expect(process.exitCode).toBeUndefined();
   });
 
   test('exits 1 and logs task errors when any cleanup task fails', async () => {
@@ -131,19 +127,14 @@ describe('CleanupCommand', () => {
       totalSkipped: 0,
     });
 
-    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((code) => {
-      throw new Error(`process.exit:${String(code)}`);
-    });
-
     vi.resetModules();
-    const { default: CleanupCommand } = await import('./cleanup.js');
+    const { runCleanupCommand } = await import('./cleanup.js');
 
-    await expect(
-      CleanupCommand.run(
-        ['--config-path', '/tmp/tinyauth.yaml'],
-        import.meta.url,
-      ),
-    ).rejects.toThrow('process.exit:1');
+    await runCleanupCommand({
+      configPath: '/tmp/tinyauth.yaml',
+      dryRun: false,
+      verbose: false,
+    });
 
     expect(cleanupState.logger.error).toHaveBeenCalledWith(
       '[1/1] JWT key rotation: database unavailable',
@@ -152,6 +143,6 @@ describe('CleanupCommand', () => {
       '         1 tasks failed',
     );
     expect(cleanupState.cleanupMock).toHaveBeenCalledTimes(1);
-    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(process.exitCode).toBe(1);
   });
 });

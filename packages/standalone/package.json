@@ -30,21 +30,6 @@
   "bin": {
     "tinyauth": "./dist/cli.js"
   },
-  "oclif": {
-    "bin": "tinyauth",
-    "dirname": "tinyauth",
-    "commands": {
-      "strategy": "explicit",
-      "target": "./dist/cli/commands/index.js"
-    },
-    "plugins": [
-      "@oclif/plugin-autocomplete"
-    ],
-    "topicSeparator": " ",
-    "additionalHelpFlags": [
-      "-h"
-    ]
-  },
   "scripts": {
     "dev": "NODE_OPTIONS='--conditions=@tinyauth/source' tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve --config-path='./config.dev.yaml'",
     "dev:cli": "CONFIG_PATH=./config.dev.yaml NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/cli.ts",
@@ -69,8 +54,7 @@
   "dependencies": {
     "@hono/node-server": "catalog:",
     "@mikro-orm/cli": "catalog:",
-    "@oclif/core": "^4.9.0",
-    "@oclif/plugin-autocomplete": "^3.2.41",
+    "@stricli/core": "^1.2.6",
     "@tinyauth/backend": "workspace:*",
     "dotenv": "catalog:",
     "hono": "catalog:",

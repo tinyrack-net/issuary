@@ -77,12 +77,11 @@ describe('ServeCommand', () => {
     });
 
     const exitSpy = mockProcessExit();
-    const { default: ServeCommand } = await import('./serve.js');
+    const { runServeCommand } = await import('./serve.js');
 
-    await ServeCommand.run(
-      ['--config-path', '/tmp/config.yaml'],
-      import.meta.url,
-    );
+    await runServeCommand({
+      configPath: '/tmp/config.yaml',
+    });
 
     expect(serveMocks.serve).toHaveBeenCalledWith(
       {
@@ -114,17 +113,12 @@ describe('ServeCommand', () => {
       new Error('startup failed'),
     );
 
-    const consoleErrorSpy = vi
-      .spyOn(console, 'error')
-      .mockImplementation(() => {});
-    const exitSpy = mockProcessExit();
-    const { default: ServeCommand } = await import('./serve.js');
+    const { runServeCommand } = await import('./serve.js');
 
     await expect(
-      ServeCommand.run(['--config-path', '/tmp/config.yaml'], import.meta.url),
-    ).rejects.toThrow('process.exit:1');
-
-    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.any(Error));
-    expect(exitSpy).toHaveBeenCalledWith(1);
+      runServeCommand({
+        configPath: '/tmp/config.yaml',
+      }),
+    ).rejects.toThrow('startup failed');
   });
 });

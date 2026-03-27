@@ -1,4 +1,17 @@
 #!/usr/bin/env node
-import { execute } from '@oclif/core';
+import { run } from '@stricli/core';
+import { app } from './cli/app.js';
 
-await execute({ dir: import.meta.url });
+const strictProcess = {
+  env: process.env,
+  get exitCode() {
+    return process.exitCode ?? null;
+  },
+  set exitCode(value) {
+    process.exitCode = value ?? undefined;
+  },
+  stderr: process.stderr,
+  stdout: process.stdout,
+};
+
+await run(app, process.argv.slice(2), { process: strictProcess });
