@@ -1,10 +1,10 @@
 import { defineEntity, type InferEntity, p } from '@mikro-orm/core';
-import { UserRepository } from '#backend/repositories/user.repository.js';
-import { BaseSchema } from './base.entity.js';
-import { UserOAuthEntitySchema } from './user-oauth.entity.js';
-import { UserPasskeyEntitySchema } from './user-passkey.entity.js';
-import { UserTotpEntitySchema } from './user-totp.entity.js';
-import { UserTotpRecoveryCodeEntitySchema } from './user-totp-recovery-code.entity.js';
+import { UserRepository } from '../repositories/user.repository.ts';
+import { BaseSchema } from './base.entity.ts';
+import { UserOAuthEntitySchema } from './user-oauth.entity.ts';
+import { UserPasskeyEntitySchema } from './user-passkey.entity.ts';
+import { UserTotpEntitySchema } from './user-totp.entity.ts';
+import { UserTotpRecoveryCodeEntitySchema } from './user-totp-recovery-code.entity.ts';
 
 export const UserEntitySchema = defineEntity({
   name: 'UserEntity',

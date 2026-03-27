@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { isEmailAllowed } from './email-pattern.js';
+import { isEmailAllowed } from './email-pattern.ts';
 
 describe('isEmailAllowed', () => {
   describe('empty patterns (signup disabled)', () => {

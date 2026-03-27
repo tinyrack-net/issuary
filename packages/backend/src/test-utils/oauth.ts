@@ -1,8 +1,8 @@
 import { testClient } from 'hono/testing';
 import type * as jose from 'jose';
-import type { AppType } from '#backend/entrypoints/app.js';
-import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT } from './fixtures.js';
-import { createAuthenticatedSession, grantConsent } from './helpers.js';
+import type { AppType } from '../entrypoints/app.ts';
+import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT } from './fixtures.ts';
+import { createAuthenticatedSession, grantConsent } from './helpers.ts';
 
 /**
  * Parameters for getting authorization code

@@ -1,15 +1,15 @@
 /** @jsxImportSource react */
 import { render } from '@react-email/render';
-import type { Locale } from '#backend/lib/locale.js';
-import { getTranslations } from './i18n/index.js';
+import type { Locale } from '../lib/locale.ts';
+import { getTranslations } from './i18n/index.ts';
 import {
   PasswordResetEmail,
   type PasswordResetEmailProps,
-} from './templates/password-reset.js';
+} from './templates/password-reset.tsx';
 import {
   VerificationEmail,
   type VerificationEmailProps,
-} from './templates/verification.js';
+} from './templates/verification.tsx';
 
 export interface RenderedEmail {
   html: string;

@@ -1,5 +1,5 @@
 import { serve } from '@hono/node-server';
-import { createNodeHonoSqliteExampleApp } from './app.js';
+import { createNodeHonoSqliteExampleApp } from './app.ts';
 
 const { app, cleanup, logger, services } =
   await createNodeHonoSqliteExampleApp();

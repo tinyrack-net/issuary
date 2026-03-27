@@ -19,12 +19,12 @@ vi.mock('@tinyauth/backend/services', () => ({
   initializeServices: cleanupState.initializeServicesMock,
 }));
 
-vi.mock('#standalone/lib/load-config.js', () => ({
+vi.mock('../../lib/load-config.ts', () => ({
   loadConfig: cleanupState.loadConfigMock,
   resolveConfig: cleanupState.resolveConfigMock,
 }));
 
-vi.mock('#standalone/lib/logger.js', () => ({
+vi.mock('../../lib/logger.ts', () => ({
   createLogger: cleanupState.createLoggerMock,
 }));
 
@@ -83,7 +83,7 @@ describe('CleanupCommand', () => {
     });
 
     vi.resetModules();
-    const { runCleanupCommand } = await import('./cleanup.js');
+    const { runCleanupCommand } = await import('./cleanup.ts');
 
     await runCleanupCommand({
       configPath: '/tmp/tinyauth.yaml',
@@ -128,7 +128,7 @@ describe('CleanupCommand', () => {
     });
 
     vi.resetModules();
-    const { runCleanupCommand } = await import('./cleanup.js');
+    const { runCleanupCommand } = await import('./cleanup.ts');
 
     await runCleanupCommand({
       configPath: '/tmp/tinyauth.yaml',

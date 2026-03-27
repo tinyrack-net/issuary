@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import type { AppEnv } from '#backend/lib/app-env.js';
-import { termsConsentPost } from './consent/post.js';
-import { termsGet } from './get.js';
+import type { AppEnv } from '../../../lib/app-env.ts';
+import { termsConsentPost } from './consent/post.ts';
+import { termsGet } from './get.ts';
 
 export const termsRoutes = new Hono<AppEnv>()
   .route('/', termsGet)

@@ -1,5 +1,5 @@
 import { EntityRepository } from '@mikro-orm/core';
-import type { IUserPasskeyEntity } from '#backend/entities/user-passkey.entity.js';
+import type { IUserPasskeyEntity } from '../entities/user-passkey.entity.ts';
 
 export class UserPasskeyRepository extends EntityRepository<IUserPasskeyEntity> {
   /**

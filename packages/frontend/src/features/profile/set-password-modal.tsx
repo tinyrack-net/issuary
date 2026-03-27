@@ -9,11 +9,11 @@ import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod';
-import { AlertBanner } from '#frontend/components/ui/alert-banner.js';
-import { Modal, ModalActions } from '#frontend/components/ui/modal.js';
-import { appConfigQueryOptions } from '#frontend/queries/config.js';
-import { setPasswordMutationOptions } from '#frontend/queries/password.js';
-import { getSessionQueryOptions } from '#frontend/queries/session.js';
+import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
+import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
+import { appConfigQueryOptions } from '#frontend/queries/config.ts';
+import { setPasswordMutationOptions } from '#frontend/queries/password.ts';
+import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 
 interface SetPasswordModalProps {
   isOpen: boolean;

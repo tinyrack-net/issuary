@@ -1,8 +1,8 @@
 import { createMiddleware } from 'hono/factory';
-import type { UserEntity } from '#backend/entities/user.entity.js';
-import { e, TinyAuthError } from '#backend/schemas/error.js';
-import type { ServicesEnv } from './services.js';
-import type { SessionData, SessionEnv } from './session.js';
+import type { UserEntity } from '../entities/user.entity.ts';
+import { e, TinyAuthError } from '../schemas/error.ts';
+import type { ServicesEnv } from './services.ts';
+import type { SessionData, SessionEnv } from './session.ts';
 
 export interface VerifiedAuth {
   user: UserEntity;

@@ -2,7 +2,7 @@ import { test as base } from '@playwright/test';
 import {
   createE2EServer,
   type E2EConfigResult,
-} from '#frontend-e2e/setup/create-server.js';
+} from '#frontend-e2e/setup/create-server.ts';
 
 type ConfigFactory = (
   backendPort: number,

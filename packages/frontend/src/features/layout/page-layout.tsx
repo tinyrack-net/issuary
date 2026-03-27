@@ -1,8 +1,8 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { ThemeToggle } from '#frontend/components/ui/theme-toggle.js';
-import { LanguageSelector } from '#frontend/features/layout/language-selector.js';
-import { useTheme } from '#frontend/hooks/use-theme.js';
-import { appConfigQueryOptions } from '#frontend/queries/config.js';
+import { ThemeToggle } from '#frontend/components/ui/theme-toggle.tsx';
+import { LanguageSelector } from '#frontend/features/layout/language-selector.tsx';
+import { useTheme } from '#frontend/hooks/use-theme.ts';
+import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 
 type PageLayoutProps = {
   children: React.ReactNode;

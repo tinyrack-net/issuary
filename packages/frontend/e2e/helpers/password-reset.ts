@@ -1,4 +1,4 @@
-import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
 /**
  * Selectors for the forgot password page (/password/forgot).

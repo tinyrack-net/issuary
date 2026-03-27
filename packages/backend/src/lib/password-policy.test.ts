@@ -3,7 +3,7 @@ import {
   assertPasswordPolicy,
   DEFAULT_PASSWORD_POLICY,
   getPasswordPolicyError,
-} from './password-policy.js';
+} from './password-policy.ts';
 
 describe('password-policy', () => {
   test('enforces the default policy boundaries', () => {

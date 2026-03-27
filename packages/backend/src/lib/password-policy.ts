@@ -1,4 +1,4 @@
-import { e } from '#backend/schemas/error.js';
+import { e } from '../schemas/error.ts';
 
 /** Configuration for password length constraints. */
 export interface PasswordPolicy {

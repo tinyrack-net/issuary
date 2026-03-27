@@ -1,8 +1,8 @@
-import type { IPasswordResetEntity } from '#backend/entities/password-reset.entity.js';
-import type { UserEntity } from '#backend/entities/user.entity.js';
-import { e } from '#backend/schemas/error.js';
-import type { MikroService } from '#backend/services/mikro.service.js';
-import type { PasswordAuthService } from './password-auth.service.js';
+import type { IPasswordResetEntity } from '../entities/password-reset.entity.ts';
+import type { UserEntity } from '../entities/user.entity.ts';
+import { e } from '../schemas/error.ts';
+import type { MikroService } from './mikro.service.ts';
+import type { PasswordAuthService } from './password-auth.service.ts';
 
 export class PasswordResetService {
   private readonly mikro: MikroService;

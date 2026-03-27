@@ -1,21 +1,21 @@
 import { Hono } from 'hono';
-import type { AppEnv } from '#backend/lib/app-env.js';
-import { userDelete } from './delete.js';
-import { userOauthAccountsGet } from './oauth-accounts/get.js';
-import { userPasskeyIdDelete } from './passkeys/_id/delete.js';
-import { userPasskeyIdPatch } from './passkeys/_id/patch.js';
-import { userPasskeysGet } from './passkeys/get.js';
-import { userPasskeyRegisterOptionsPost } from './passkeys/register/options/post.js';
-import { userPasskeyRegisterVerifyPost } from './passkeys/register/verify/post.js';
-import { userPasswordDelete } from './password/delete.js';
-import { userPasswordPost } from './password/post.js';
-import { userPasswordPut } from './password/put.js';
-import { userSessionGet } from './session/get.js';
-import { userTotpConfirmPost } from './totp/confirm/post.js';
-import { userTotpDelete } from './totp/delete.js';
-import { userTotpRecoveryRegeneratePost } from './totp/recovery/regenerate/post.js';
-import { userTotpSetupPost } from './totp/setup/post.js';
-import { userTotpVerifyPost } from './totp/verify/post.js';
+import type { AppEnv } from '../../../lib/app-env.ts';
+import { userDelete } from './delete.ts';
+import { userOauthAccountsGet } from './oauth-accounts/get.ts';
+import { userPasskeyIdDelete } from './passkeys/_id/delete.ts';
+import { userPasskeyIdPatch } from './passkeys/_id/patch.ts';
+import { userPasskeysGet } from './passkeys/get.ts';
+import { userPasskeyRegisterOptionsPost } from './passkeys/register/options/post.ts';
+import { userPasskeyRegisterVerifyPost } from './passkeys/register/verify/post.ts';
+import { userPasswordDelete } from './password/delete.ts';
+import { userPasswordPost } from './password/post.ts';
+import { userPasswordPut } from './password/put.ts';
+import { userSessionGet } from './session/get.ts';
+import { userTotpConfirmPost } from './totp/confirm/post.ts';
+import { userTotpDelete } from './totp/delete.ts';
+import { userTotpRecoveryRegeneratePost } from './totp/recovery/regenerate/post.ts';
+import { userTotpSetupPost } from './totp/setup/post.ts';
+import { userTotpVerifyPost } from './totp/verify/post.ts';
 
 export const userRoutes = new Hono<AppEnv>()
   .route('/', userDelete)

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
-import type { StandaloneConfigInput } from './lib/config/index.js';
+import type { StandaloneConfigInput } from './lib/config/index.ts';
 
 const BASE_CONFIG = {
   logging: {
@@ -22,10 +22,10 @@ const BASE_CONFIG = {
 } satisfies StandaloneConfigInput;
 
 describe('createStandaloneApp', () => {
-  let createStandaloneApp: typeof import('./app.js').createStandaloneApp;
+  let createStandaloneApp: typeof import('./app.ts').createStandaloneApp;
 
   beforeAll(async () => {
-    ({ createStandaloneApp } = await import('./app.js'));
+    ({ createStandaloneApp } = await import('./app.ts'));
   });
 
   describe('static frontend mode', () => {

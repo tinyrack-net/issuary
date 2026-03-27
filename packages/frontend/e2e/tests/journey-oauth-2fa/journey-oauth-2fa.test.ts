@@ -1,11 +1,11 @@
 import { expect } from '@playwright/test';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
   E2E_TEST_CLIENT,
   E2E_TEST_CLIENT_CONFIG,
-} from '#frontend-e2e/fixtures/index.js';
+} from '#frontend-e2e/fixtures/index.ts';
 import {
   allowConsentAndExpectRedirect,
   buildAuthEntryUrl,
@@ -16,15 +16,15 @@ import {
   denyConsentAndExpectRedirect,
   expectOAuthParamsPresent,
   type JourneyOAuthParams,
-} from '#frontend-e2e/helpers/journey.js';
+} from '#frontend-e2e/helpers/journey.ts';
 import {
   emailVerifyPage,
   loginPasswordPage,
-} from '#frontend-e2e/helpers/login.js';
-import { registerPage } from '#frontend-e2e/helpers/register-page.js';
-import { interceptTotpSecret } from '#frontend-e2e/helpers/totp.js';
-import { enableVirtualAuthenticator } from '#frontend-e2e/helpers/webauthn.js';
-import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/helpers/login.ts';
+import { registerPage } from '#frontend-e2e/helpers/register-page.ts';
+import { interceptTotpSecret } from '#frontend-e2e/helpers/totp.ts';
+import { enableVirtualAuthenticator } from '#frontend-e2e/helpers/webauthn.ts';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
 function uniqueEmail(suffix: string): string {
   const ts = Date.now();

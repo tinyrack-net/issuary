@@ -6,24 +6,24 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { FooterLink } from '#frontend/components/auth/footer-link.js';
-import { PageHeader } from '#frontend/components/auth/page-header.js';
-import { SubmitButton } from '#frontend/components/auth/submit-button.js';
+import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
+import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import {
   PinInput,
   type PinInputRef,
-} from '#frontend/components/ui/pin-input.js';
-import { PageLayout } from '#frontend/features/layout/page-layout.js';
-import { TinyAuthError } from '#frontend/libs/error.js';
+} from '#frontend/components/ui/pin-input.tsx';
+import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { TinyAuthError } from '#frontend/libs/error.ts';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
-} from '#frontend/libs/oauth-search.js';
-import { tick } from '#frontend/libs/promise.js';
-import { getSessionQueryOptions } from '#frontend/queries/session.js';
-import { verifyTotpLoginMutationOptions } from '#frontend/queries/totp.js';
+} from '#frontend/libs/oauth-search.ts';
+import { tick } from '#frontend/libs/promise.ts';
+import { getSessionQueryOptions } from '#frontend/queries/session.ts';
+import { verifyTotpLoginMutationOptions } from '#frontend/queries/totp.ts';
 
 /** Error codes from backend */
 const ERROR_CODES = {

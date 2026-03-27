@@ -11,25 +11,25 @@ import {
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { LoginMethodButton } from '#frontend/components/auth/login-method-button.js';
-import { LoginMethodList } from '#frontend/components/auth/login-method-list.js';
-import { PageHeader } from '#frontend/components/auth/page-header.js';
-import { Alert } from '#frontend/components/ui/alert.js';
-import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.js';
-import { PageLayout } from '#frontend/features/layout/page-layout.js';
+import { LoginMethodButton } from '#frontend/components/auth/login-method-button.tsx';
+import { LoginMethodList } from '#frontend/components/auth/login-method-list.tsx';
+import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { Alert } from '#frontend/components/ui/alert.tsx';
+import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
+import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
-} from '#frontend/libs/oauth-search.js';
-import { tick } from '#frontend/libs/promise.js';
-import { appConfigQueryOptions } from '#frontend/queries/config.js';
-import { authenticateWithPasskeyMutationOptions } from '#frontend/queries/passkey.js';
+} from '#frontend/libs/oauth-search.ts';
+import { tick } from '#frontend/libs/promise.ts';
+import { appConfigQueryOptions } from '#frontend/queries/config.ts';
+import { authenticateWithPasskeyMutationOptions } from '#frontend/queries/passkey.ts';
 import {
   type AuthResponse,
   getSessionQueryOptions,
-} from '#frontend/queries/session.js';
+} from '#frontend/queries/session.ts';
 
 const SearchSchema = OAuthSearchSchema.extend({
   oauth_error: z.string().optional(),

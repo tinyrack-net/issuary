@@ -1,12 +1,12 @@
 import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import type { z } from 'zod';
-import type { AppEnv } from '#backend/lib/app-env.js';
-import { OPENAPI_SECURITY } from '#backend/lib/openapi.js';
-import { TAGS } from '#backend/lib/swagger-tags.js';
-import { e } from '#backend/schemas/error.js';
-import { h } from '#backend/schemas/header.js';
-import { r } from '#backend/schemas/response.js';
+import type { AppEnv } from '../../../lib/app-env.ts';
+import { OPENAPI_SECURITY } from '../../../lib/openapi.ts';
+import { TAGS } from '../../../lib/swagger-tags.ts';
+import { e } from '../../../schemas/error.ts';
+import { h } from '../../../schemas/header.ts';
+import { r } from '../../../schemas/response.ts';
 
 type UserInfoResponse = z.infer<typeof r.UserInfoResponse>;
 

@@ -1,8 +1,8 @@
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
 import type { AuthenticatorTransportFuture } from '@simplewebauthn/server';
-import { UserPasskeyRepository } from '#backend/repositories/user-passkey.repository.js';
-import { BaseSchema } from './base.entity.js';
-import { UserEntity } from './user.entity.js';
+import { UserPasskeyRepository } from '../repositories/user-passkey.repository.ts';
+import { BaseSchema } from './base.entity.ts';
+import { UserEntity } from './user.entity.ts';
 
 export const UserPasskeyEntitySchema = defineEntity({
   name: 'UserPasskeyEntity',

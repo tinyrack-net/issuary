@@ -4,9 +4,9 @@ import {
   type ServiceContainer,
 } from '@tinyauth/backend/services';
 import z from 'zod';
-import { loadConfig, resolveConfig } from '#standalone/lib/load-config.js';
-import { createLogger } from '#standalone/lib/logger.js';
-import { parseWithZod } from '../../lib/cli/parse-with-zod.js';
+import { parseWithZod } from '../../lib/cli/parse-with-zod.ts';
+import { loadConfig, resolveConfig } from '../../lib/load-config.ts';
+import { createLogger } from '../../lib/logger.ts';
 
 /**
  * Cleanup command

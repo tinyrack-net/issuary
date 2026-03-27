@@ -2,21 +2,21 @@ export type {
   FrontendConfig,
   FrontendHandler,
   FrontendRuntimeContext,
-} from '#backend/lib/config/frontend.js';
+} from '../../lib/config/frontend.ts';
 export type {
   CloudflareAssetsBinding,
   CreateCloudflareAssetsHandlerOptions,
-} from '#backend/lib/frontend/cloudflare.js';
-export { createCloudflareAssetsHandler } from '#backend/lib/frontend/cloudflare.js';
+} from '../../lib/frontend/cloudflare.ts';
+export { createCloudflareAssetsHandler } from '../../lib/frontend/cloudflare.ts';
 export type {
   BuiltInHtmlVariableKey,
   BuiltInHtmlVariables,
   HtmlVariables,
   ResolveHtmlVariablesOptions,
-} from '#backend/lib/interpolate-html.js';
+} from '../../lib/interpolate-html.ts';
 export {
   DEFAULT_HTML_VARIABLES,
   interpolateHtml,
   interpolateHtmlResponse,
   resolveHtmlVariables,
-} from '#backend/lib/interpolate-html.js';
+} from '../../lib/interpolate-html.ts';

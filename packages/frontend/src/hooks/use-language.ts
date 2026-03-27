@@ -5,8 +5,8 @@ import {
   detectBrowserLanguage,
   getAvailableLanguages,
   LANGUAGE_STORAGE_KEY,
-} from '#frontend/i18n/index.js';
-import { appConfigQueryOptions } from '#frontend/queries/config.js';
+} from '#frontend/i18n/index.ts';
+import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 
 /**
  * Subscribe to localStorage changes for language preference

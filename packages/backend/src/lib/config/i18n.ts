@@ -1,9 +1,5 @@
 import z from 'zod';
-import {
-  AVAILABLE_LOCALES,
-  DEFAULT_LOCALE,
-  type Locale,
-} from '#backend/lib/locale.js';
+import { AVAILABLE_LOCALES, DEFAULT_LOCALE, type Locale } from '../locale.ts';
 
 export const LocaleSchema = z.enum(AVAILABLE_LOCALES);
 

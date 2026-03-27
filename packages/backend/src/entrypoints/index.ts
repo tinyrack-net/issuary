@@ -1,2 +1,2 @@
-export { createOpenApiDocumentation } from '#backend/lib/openapi.js';
-export * from './app.js';
+export { createOpenApiDocumentation } from '../lib/openapi.ts';
+export * from './app.ts';

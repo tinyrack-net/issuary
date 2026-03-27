@@ -1,12 +1,12 @@
 import type z from 'zod';
-import { getRandomBytes, toBase64Url } from '#backend/lib/base64url.js';
-import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
-import { e } from '#backend/schemas/error.js';
-import type { f } from '#backend/schemas/field.js';
-import type { MikroService } from '#backend/services/mikro.service.js';
-import type { SecurityService } from '#backend/services/security.service.js';
-import type { OAuthClientService } from './oauth-client.service.js';
-import type { UserConsentService } from './user-consent.service.js';
+import { getRandomBytes, toBase64Url } from '../lib/base64url.ts';
+import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import { e } from '../schemas/error.ts';
+import type { f } from '../schemas/field.ts';
+import type { MikroService } from './mikro.service.ts';
+import type { OAuthClientService } from './oauth-client.service.ts';
+import type { SecurityService } from './security.service.ts';
+import type { UserConsentService } from './user-consent.service.ts';
 
 /**
  * OAuth authorization request parameters (RFC 6749 §4.1.1)

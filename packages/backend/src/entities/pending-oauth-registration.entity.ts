@@ -1,6 +1,6 @@
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
-import { PendingOAuthRegistrationRepository } from '#backend/repositories/pending-oauth-registration.repository.js';
-import { BaseSchema } from './base.entity.js';
+import { PendingOAuthRegistrationRepository } from '../repositories/pending-oauth-registration.repository.ts';
+import { BaseSchema } from './base.entity.ts';
 
 /**
  * Stores pending OAuth registration data server-side.

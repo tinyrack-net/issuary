@@ -8,12 +8,7 @@ import {
   test,
   vi,
 } from 'vitest';
-import {
-  JwtKeyEntity,
-  JwtKeyStatus,
-} from '#backend/entities/jwt-key.entity.js';
-import type { ServiceContainer } from '#backend/services/container.js';
-import type { JwtService } from '#backend/services/jwt.service.js';
+import { JwtKeyEntity, JwtKeyStatus } from '../entities/jwt-key.entity.ts';
 import {
   CLI_TEST_CONFIG,
   createTestApp,
@@ -21,7 +16,9 @@ import {
   createTestUser,
   MINIMAL_TEST_CONFIG,
   withMikroContext,
-} from '#backend/test-utils/index.js';
+} from '../test-utils/index.ts';
+import type { ServiceContainer } from './container.ts';
+import type { JwtService } from './jwt.service.ts';
 
 describe('JwtService', () => {
   describe('extractBearerToken', () => {

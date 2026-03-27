@@ -101,7 +101,7 @@ describe('cloudflare worker', () => {
   }
 
   test('preserves backend routes', async () => {
-    const worker = (await import('./index.js')).default;
+    const worker = (await import('./index.ts')).default;
     const env = createEnv();
 
     const response = await worker.fetch(
@@ -116,7 +116,7 @@ describe('cloudflare worker', () => {
   });
 
   test('delegates unknown backend routes to frontend handler', async () => {
-    const worker = (await import('./index.js')).default;
+    const worker = (await import('./index.ts')).default;
     const env = createEnv();
 
     const response = await worker.fetch(
@@ -130,7 +130,7 @@ describe('cloudflare worker', () => {
   });
 
   test('serves interpolated frontend html for app routes', async () => {
-    const worker = (await import('./index.js')).default;
+    const worker = (await import('./index.ts')).default;
     const env = createEnv();
 
     const response = await worker.fetch(
@@ -147,7 +147,7 @@ describe('cloudflare worker', () => {
   });
 
   test('does not return spa html for missing file-like requests', async () => {
-    const worker = (await import('./index.js')).default;
+    const worker = (await import('./index.ts')).default;
     const env = createEnv();
 
     const response = await worker.fetch(

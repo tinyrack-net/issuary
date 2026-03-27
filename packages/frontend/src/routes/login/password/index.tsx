@@ -10,27 +10,27 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { FooterLink } from '#frontend/components/auth/footer-link.js';
-import { IconInput } from '#frontend/components/auth/icon-input.js';
-import { PageHeader } from '#frontend/components/auth/page-header.js';
-import { SubmitButton } from '#frontend/components/auth/submit-button.js';
-import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.js';
-import { PageLayout } from '#frontend/features/layout/page-layout.js';
+import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
+import { IconInput } from '#frontend/components/auth/icon-input.tsx';
+import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
+import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
+import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
   type SecondFactorMethod,
-} from '#frontend/libs/oauth-search.js';
-import { tick } from '#frontend/libs/promise.js';
-import { appConfigQueryOptions } from '#frontend/queries/config.js';
-import { loginMutationOptions } from '#frontend/queries/login.js';
-import { startConditionalPasskeyAuth } from '#frontend/queries/passkey.js';
+} from '#frontend/libs/oauth-search.ts';
+import { tick } from '#frontend/libs/promise.ts';
+import { appConfigQueryOptions } from '#frontend/queries/config.ts';
+import { loginMutationOptions } from '#frontend/queries/login.ts';
+import { startConditionalPasskeyAuth } from '#frontend/queries/passkey.ts';
 import {
   type AuthResponse,
   getSessionQueryOptions,
-} from '#frontend/queries/session.js';
+} from '#frontend/queries/session.ts';
 
 const SearchSchema = OAuthSearchSchema;
 

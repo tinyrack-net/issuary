@@ -1,4 +1,4 @@
-import { postgres } from './postgres.js';
+import { postgres } from './postgres.ts';
 
 export default await postgres({
   host: 'localhost',

@@ -8,27 +8,27 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FooterLink } from '#frontend/components/auth/footer-link.js';
-import { PageHeader } from '#frontend/components/auth/page-header.js';
-import { QrStep } from '#frontend/components/totp/qr-step.js';
-import { RecoveryCodesStep } from '#frontend/components/totp/recovery-codes-step.js';
-import { VerifyStep } from '#frontend/components/totp/verify-step.js';
-import { Alert } from '#frontend/components/ui/alert.js';
-import { PageLayout } from '#frontend/features/layout/page-layout.js';
-import { useTotpSetup } from '#frontend/features/totp/use-totp-setup.js';
-import { TinyAuthError } from '#frontend/libs/error.js';
+import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
+import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { QrStep } from '#frontend/components/totp/qr-step.tsx';
+import { RecoveryCodesStep } from '#frontend/components/totp/recovery-codes-step.tsx';
+import { VerifyStep } from '#frontend/components/totp/verify-step.tsx';
+import { Alert } from '#frontend/components/ui/alert.tsx';
+import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { useTotpSetup } from '#frontend/features/totp/use-totp-setup.ts';
+import { TinyAuthError } from '#frontend/libs/error.ts';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
-} from '#frontend/libs/oauth-search.js';
-import { tick } from '#frontend/libs/promise.js';
-import { getSessionQueryOptions } from '#frontend/queries/session.js';
+} from '#frontend/libs/oauth-search.ts';
+import { tick } from '#frontend/libs/promise.ts';
+import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 import type {
   TotpConfirmResponse,
   TotpSetupVerifyResponse,
-} from '#frontend/queries/totp.js';
+} from '#frontend/queries/totp.ts';
 
 /** Error codes from backend */
 const ERROR_CODES = {

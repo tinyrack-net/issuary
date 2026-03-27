@@ -1,13 +1,13 @@
 import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
-import type { AppEnv } from '#backend/lib/app-env.js';
-import { isEmailAllowed } from '#backend/lib/email-pattern.js';
-import { TAGS } from '#backend/lib/swagger-tags.js';
-import { e } from '#backend/schemas/error.js';
-import { f } from '#backend/schemas/field.js';
-import { r } from '#backend/schemas/response.js';
-import { termsSchema } from '#backend/schemas/terms.js';
+import type { AppEnv } from '../../../../lib/app-env.ts';
+import { isEmailAllowed } from '../../../../lib/email-pattern.ts';
+import { TAGS } from '../../../../lib/swagger-tags.ts';
+import { e } from '../../../../schemas/error.ts';
+import { f } from '../../../../schemas/field.ts';
+import { r } from '../../../../schemas/response.ts';
+import { termsSchema } from '../../../../schemas/terms.ts';
 
 export const authRegisterPost = new Hono<AppEnv>().post(
   '/auth/register',

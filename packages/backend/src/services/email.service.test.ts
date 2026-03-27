@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { ServiceContainer } from '#backend/services/container.js';
 import {
   createTestApp,
   createTestEmailConfig,
   MINIMAL_TEST_CONFIG,
-} from '#backend/test-utils/index.js';
-import type { TestEmailMessage } from '#backend/test-utils/setup.js';
+} from '../test-utils/index.ts';
+import type { TestEmailMessage } from '../test-utils/setup.ts';
+import type { ServiceContainer } from './container.ts';
 
 describe('EmailService', () => {
   describe('with email enabled', () => {

@@ -1,6 +1,6 @@
 import { EntityRepository, type Loaded } from '@mikro-orm/core';
-import type { UserEntity } from '#backend/entities/user.entity.js';
-import { e } from '#backend/schemas/error.js';
+import type { UserEntity } from '../entities/user.entity.ts';
+import { e } from '../schemas/error.ts';
 
 export class UserRepository extends EntityRepository<UserEntity> {
   /**

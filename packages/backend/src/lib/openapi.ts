@@ -1,4 +1,4 @@
-import type { OpenApiConfig } from '#backend/lib/config/openapi.js';
+import type { OpenApiConfig } from './config/openapi.ts';
 
 const OPENAPI_INFO_VERSION = '1.0.0';
 

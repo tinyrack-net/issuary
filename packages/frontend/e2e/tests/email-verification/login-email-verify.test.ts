@@ -1,12 +1,12 @@
 import { expect } from '@playwright/test';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
-} from '#frontend-e2e/fixtures/index.js';
-import { getEmailToken } from '#frontend-e2e/helpers/email-token.js';
-import { emailVerifyPage, performLogin } from '#frontend-e2e/helpers/login.js';
-import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/fixtures/index.ts';
+import { getEmailToken } from '#frontend-e2e/helpers/email-token.ts';
+import { emailVerifyPage, performLogin } from '#frontend-e2e/helpers/login.ts';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
 /**
  * Generates a unique test email for each test to avoid collisions.

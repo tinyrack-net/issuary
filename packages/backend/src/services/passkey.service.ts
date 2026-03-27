@@ -12,14 +12,14 @@ import {
   verifyRegistrationResponse,
 } from '@simplewebauthn/server';
 import { isoBase64URL } from '@simplewebauthn/server/helpers';
-import type { UserEntity } from '#backend/entities/user.entity.js';
+import type { UserEntity } from '../entities/user.entity.ts';
 import {
   type IUserPasskeyEntity,
   UserPasskeyEntitySchema,
-} from '#backend/entities/user-passkey.entity.js';
-import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
-import { e } from '#backend/schemas/error.js';
-import type { MikroService } from '#backend/services/mikro.service.js';
+} from '../entities/user-passkey.entity.ts';
+import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import { e } from '../schemas/error.ts';
+import type { MikroService } from './mikro.service.ts';
 
 /**
  * Passkey information for user passkey list

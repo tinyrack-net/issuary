@@ -3,15 +3,15 @@ import z from 'zod';
 import type {
   IdentityProviderConfig,
   TinyAuthRuntimeConfig,
-} from '#backend/lib/config/index.js';
-import { isEmailAllowed } from '#backend/lib/email-pattern.js';
-import { generatePKCE } from '#backend/lib/pkce.js';
-import { e, TinyAuthError } from '#backend/schemas/error.js';
-import type { f } from '#backend/schemas/field.js';
-import type { r } from '#backend/schemas/response.js';
-import type { MikroService } from '#backend/services/mikro.service.js';
-import type { TermsService } from './terms.service.js';
-import type { UserService } from './user.service.js';
+} from '../lib/config/index.ts';
+import { isEmailAllowed } from '../lib/email-pattern.ts';
+import { generatePKCE } from '../lib/pkce.ts';
+import { e, TinyAuthError } from '../schemas/error.ts';
+import type { f } from '../schemas/field.ts';
+import type { r } from '../schemas/response.ts';
+import type { MikroService } from './mikro.service.ts';
+import type { TermsService } from './terms.service.ts';
+import type { UserService } from './user.service.ts';
 
 /**
  * OAuth user info returned from provider

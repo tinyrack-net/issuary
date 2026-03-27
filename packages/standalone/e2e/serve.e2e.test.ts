@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { createTestConfigFile } from './helpers/config-factory.js';
-import { runCli, startCli } from './helpers/spawn-cli.js';
-import { waitForReady } from './helpers/wait-for-ready.js';
+import { createTestConfigFile } from './helpers/config-factory.ts';
+import { runCli, startCli } from './helpers/spawn-cli.ts';
+import { waitForReady } from './helpers/wait-for-ready.ts';
 
 describe('serve e2e', { timeout: 30_000 }, () => {
   let cliProcess: ReturnType<typeof startCli> | undefined;

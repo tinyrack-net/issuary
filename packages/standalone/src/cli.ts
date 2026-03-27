@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { run } from '@stricli/core';
-import { app } from './cli/app.js';
+import { app } from './cli/app.ts';
 
 const strictProcess = {
   env: process.env,

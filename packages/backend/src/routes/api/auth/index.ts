@@ -1,16 +1,16 @@
 import { Hono } from 'hono';
-import type { AppEnv } from '#backend/lib/app-env.js';
-import { authEmailResendPost } from './email/resend/post.js';
-import { authEmailVerifyPost } from './email/verify/post.js';
-import { authLoginPost } from './login/post.js';
-import { authLogoutPost } from './logout/post.js';
-import { authPasskeyOptionsPost } from './passkey/options/post.js';
-import { authPasskeyVerifyPost } from './passkey/verify/post.js';
-import { authPasswordForgotPost } from './password/forgot/post.js';
-import { authPasswordResetPost } from './password/reset/post.js';
-import { authRegisterPost } from './register/post.js';
-import { authTotpRecoveryVerifyPost } from './totp/recovery/verify/post.js';
-import { authTotpVerifyPost } from './totp/verify/post.js';
+import type { AppEnv } from '../../../lib/app-env.ts';
+import { authEmailResendPost } from './email/resend/post.ts';
+import { authEmailVerifyPost } from './email/verify/post.ts';
+import { authLoginPost } from './login/post.ts';
+import { authLogoutPost } from './logout/post.ts';
+import { authPasskeyOptionsPost } from './passkey/options/post.ts';
+import { authPasskeyVerifyPost } from './passkey/verify/post.ts';
+import { authPasswordForgotPost } from './password/forgot/post.ts';
+import { authPasswordResetPost } from './password/reset/post.ts';
+import { authRegisterPost } from './register/post.ts';
+import { authTotpRecoveryVerifyPost } from './totp/recovery/verify/post.ts';
+import { authTotpVerifyPost } from './totp/verify/post.ts';
 
 export const authRoutes = new Hono<AppEnv>()
   .route('/', authLoginPost)

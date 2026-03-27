@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import z from 'zod';
-import { parseWithZod } from './parse-with-zod.js';
+import { parseWithZod } from './parse-with-zod.ts';
 
 describe('parseWithZod', () => {
   test('parses trimmed string values', async () => {

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import {
   type CloudflareAssetsBinding,
   createCloudflareAssetsHandler,
-} from './cloudflare.js';
+} from './cloudflare.ts';
 
 function createAssetsFetcher(): CloudflareAssetsBinding {
   return {

@@ -6,11 +6,11 @@ import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod';
-import { AlertBanner } from '#frontend/components/ui/alert-banner.js';
-import { Modal, ModalActions } from '#frontend/components/ui/modal.js';
-import { tick } from '#frontend/libs/promise.js';
-import { deleteAccountMutationOptions } from '#frontend/queries/account.js';
-import { getSessionQueryOptions } from '#frontend/queries/session.js';
+import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
+import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
+import { tick } from '#frontend/libs/promise.ts';
+import { deleteAccountMutationOptions } from '#frontend/queries/account.ts';
+import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 
 interface DeleteAccountModalProps {
   isOpen: boolean;

@@ -14,6 +14,7 @@
   ],
   "publishConfig": {
     "imports": {
+      "#standalone/*.ts": "./dist/*.js",
       "#standalone/*": {
         "types": "./dist/*",
         "default": "./dist/*"
@@ -21,6 +22,11 @@
     }
   },
   "imports": {
+    "#standalone/*.ts": {
+      "@tinyauth/source": "./src/*.ts",
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    },
     "#standalone/*": {
       "@tinyauth/source": "./src/*",
       "types": "./dist/*",

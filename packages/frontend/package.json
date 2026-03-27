@@ -5,9 +5,25 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "imports": {
+    "#frontend/*.ts": {
+      "types": "./src/*.ts",
+      "default": "./src/*.ts"
+    },
+    "#frontend/*.tsx": {
+      "types": "./src/*.tsx",
+      "default": "./src/*.tsx"
+    },
     "#frontend/*": {
       "types": "./src/*",
       "default": "./src/*"
+    },
+    "#frontend-e2e/*.ts": {
+      "types": "./e2e/*.ts",
+      "default": "./e2e/*.ts"
+    },
+    "#frontend-e2e/*.tsx": {
+      "types": "./e2e/*.tsx",
+      "default": "./e2e/*.tsx"
     },
     "#frontend-e2e/*": {
       "types": "./e2e/*",

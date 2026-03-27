@@ -1,7 +1,7 @@
 import { beforeAll, beforeEach, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
-import i18n from '#frontend/i18n/index.js';
-import { initTestI18n } from '#frontend/test-utils/i18n.js';
+import i18n from '#frontend/i18n/index.ts';
+import { initTestI18n } from '#frontend/test-utils/i18n.ts';
 
 const { useSuspenseQueryMock } = vi.hoisted(() => ({
   useSuspenseQueryMock: vi.fn(),
@@ -17,8 +17,8 @@ vi.mock('@tanstack/react-query', async () => {
   };
 });
 
-import { LANGUAGE_STORAGE_KEY } from '#frontend/i18n/index.js';
-import { useLanguage } from './use-language.js';
+import { LANGUAGE_STORAGE_KEY } from '#frontend/i18n/index.ts';
+import { useLanguage } from './use-language.ts';
 
 function LanguageHarness() {
   const {

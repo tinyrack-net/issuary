@@ -2,12 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { Context } from 'hono';
 import { getMimeType } from 'hono/utils/mime';
-import type { FrontendConfig } from '#backend/lib/config/frontend.js';
-import type { HtmlVariables } from '#backend/lib/interpolate-html.js';
-import {
-  interpolateHtml,
-  resolveHtmlVariables,
-} from '#backend/lib/interpolate-html.js';
+import type { FrontendConfig } from '../config/frontend.ts';
+import type { HtmlVariables } from '../interpolate-html.ts';
+import { interpolateHtml, resolveHtmlVariables } from '../interpolate-html.ts';
 
 export interface CreateStaticHandlerOptions {
   /**

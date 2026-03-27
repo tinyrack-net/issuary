@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { generatePKCE, validatePKCE } from './pkce.js';
+import { generatePKCE, validatePKCE } from './pkce.ts';
 
 describe('generatePKCE', () => {
   test('should generate a valid PKCE pair with default length', async () => {

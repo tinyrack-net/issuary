@@ -1,6 +1,6 @@
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import type { InferRequestType, InferResponseType } from 'hono/client';
-import { client, jsonOk } from '#frontend/libs/api.js';
+import { client, jsonOk } from '#frontend/libs/api.ts';
 import { queryKeys } from './keys';
 
 export type TermsResponse = InferResponseType<

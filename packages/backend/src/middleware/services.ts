@@ -1,5 +1,5 @@
 import { createMiddleware } from 'hono/factory';
-import type { ServiceContainer } from '#backend/services/container.js';
+import type { ServiceContainer } from '../services/container.ts';
 
 export type ServicesEnv = { Variables: { services: ServiceContainer } };
 

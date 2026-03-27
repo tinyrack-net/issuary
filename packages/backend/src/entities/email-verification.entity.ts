@@ -1,7 +1,7 @@
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
-import { EmailVerificationRepository } from '#backend/repositories/email-verification.repository.js';
-import { BaseSchema } from './base.entity.js';
-import { UserEntity } from './user.entity.js';
+import { EmailVerificationRepository } from '../repositories/email-verification.repository.ts';
+import { BaseSchema } from './base.entity.ts';
+import { UserEntity } from './user.entity.ts';
 
 export const EmailVerificationEntitySchema = defineEntity({
   name: 'EmailVerificationEntity',

@@ -15,9 +15,9 @@ export {
   createTestOAuthClient,
   createTestUser,
   getJwtKey,
-} from './cli.js';
+} from './cli.ts';
 // Type-safe test client
-export { assertJsonBody } from './client.js';
+export { assertJsonBody } from './client.ts';
 // Test fixtures and constants
 export {
   DEFAULT_SCOPES,
@@ -29,9 +29,9 @@ export {
   TEST_TERMS_CONFIG,
   TEST_USER,
   TEST_USER_CONFIG,
-} from './fixtures.js';
+} from './fixtures.ts';
 // Types
-export type { ErrorDefinition } from './helpers.js';
+export type { ErrorDefinition } from './helpers.ts';
 // Common helper functions
 export {
   createAuthenticatedSession,
@@ -44,7 +44,7 @@ export {
   grantConsent,
   registerUser,
   withMikroContext,
-} from './helpers.js';
+} from './helpers.ts';
 export type {
   AuthorizationCodeResult,
   ExchangeCodeParams,
@@ -53,7 +53,7 @@ export type {
   IntrospectTokenParams,
   RefreshTokenParams,
   RevokeTokenParams,
-} from './oauth.js';
+} from './oauth.ts';
 // OAuth-specific helpers
 export {
   exchangeCodeForTokens,
@@ -64,17 +64,17 @@ export {
   parseJwks,
   refreshAccessToken,
   revokeToken,
-} from './oauth.js';
+} from './oauth.ts';
 export type {
   OAuthMockTokens,
   OAuthMockUserInfo,
   OAuthProviderFetchMockOptions,
-} from './oauth-mock.js';
-export { mockOAuthProviderFetch } from './oauth-mock.js';
-export type { TestEmailMessage } from './setup.js';
+} from './oauth-mock.ts';
+export { mockOAuthProviderFetch } from './oauth-mock.ts';
+export type { TestEmailMessage } from './setup.ts';
 // Setup utilities
 export {
   createTestApp,
   createTestEmailConfig,
   MINIMAL_TEST_CONFIG,
-} from './setup.js';
+} from './setup.ts';

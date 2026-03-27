@@ -2,7 +2,7 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { runCli } from './helpers/spawn-cli.js';
+import { runCli } from './helpers/spawn-cli.ts';
 
 describe('export openapi e2e', { timeout: 30_000 }, () => {
   let tmpDir: string | undefined;

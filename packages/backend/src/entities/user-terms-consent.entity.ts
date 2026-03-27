@@ -1,8 +1,8 @@
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
-import { UserTermsConsentRepository } from '#backend/repositories/user-terms-consent.repository.js';
-import { BaseSchema } from './base.entity.js';
-import { TermsEntitySchema } from './terms.entity.js';
-import { UserEntitySchema } from './user.entity.js';
+import { UserTermsConsentRepository } from '../repositories/user-terms-consent.repository.ts';
+import { BaseSchema } from './base.entity.ts';
+import { TermsEntitySchema } from './terms.entity.ts';
+import { UserEntitySchema } from './user.entity.ts';
 
 /**
  * UserTermsConsentEntity stores user consent records for terms of service.

@@ -6,7 +6,7 @@ import type {
   OpenIDConfiguration,
   TokenResponse,
   UserInfo,
-} from '#example-react-spa/types/oidc.js';
+} from '#example-react-spa/types/oidc.ts';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;

@@ -4,6 +4,8 @@
   "private": true,
   "license": "AGPL-3.0-only",
   "imports": {
+    "#example-nextjs-ssr/*.ts": "./*.ts",
+    "#example-nextjs-ssr/*.tsx": "./*.tsx",
     "#example-nextjs-ssr/*": "./*"
   },
   "scripts": {

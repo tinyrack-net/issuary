@@ -9,7 +9,7 @@ vi.mock('hono/proxy', () => ({
   proxy: proxyMock,
 }));
 
-import { type CreateProxyHandlerOptions, createProxyHandler } from './proxy.js';
+import { type CreateProxyHandlerOptions, createProxyHandler } from './proxy.ts';
 
 function createApp(options?: Omit<CreateProxyHandlerOptions, 'upstream'>) {
   const handler = createProxyHandler({

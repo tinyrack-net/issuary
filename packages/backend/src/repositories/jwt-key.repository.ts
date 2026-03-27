@@ -1,8 +1,5 @@
 import { EntityRepository } from '@mikro-orm/core';
-import {
-  type JwtKeyEntity,
-  JwtKeyStatus,
-} from '#backend/entities/jwt-key.entity.js';
+import { type JwtKeyEntity, JwtKeyStatus } from '../entities/jwt-key.entity.ts';
 
 /**
  * Repository for JWT Key management

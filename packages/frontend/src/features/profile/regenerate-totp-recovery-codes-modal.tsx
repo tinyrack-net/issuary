@@ -7,18 +7,18 @@ import {
 import { useRouter } from '@tanstack/react-router';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RecoveryCodesStep } from '#frontend/components/totp/recovery-codes-step.js';
-import { VerifyStep } from '#frontend/components/totp/verify-step.js';
-import { AlertBanner } from '#frontend/components/ui/alert-banner.js';
-import { Modal } from '#frontend/components/ui/modal.js';
-import { TinyAuthError } from '#frontend/libs/error.js';
-import { tick } from '#frontend/libs/promise.js';
-import { appConfigQueryOptions } from '#frontend/queries/config.js';
-import { getSessionQueryOptions } from '#frontend/queries/session.js';
+import { RecoveryCodesStep } from '#frontend/components/totp/recovery-codes-step.tsx';
+import { VerifyStep } from '#frontend/components/totp/verify-step.tsx';
+import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
+import { Modal } from '#frontend/components/ui/modal.tsx';
+import { TinyAuthError } from '#frontend/libs/error.ts';
+import { tick } from '#frontend/libs/promise.ts';
+import { appConfigQueryOptions } from '#frontend/queries/config.ts';
+import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 import {
   type RegenerateTotpRecoveryCodesResponse,
   regenerateTotpRecoveryCodesMutationOptions,
-} from '#frontend/queries/totp.js';
+} from '#frontend/queries/totp.ts';
 
 interface RegenerateTotpRecoveryCodesModalProps {
   isOpen: boolean;

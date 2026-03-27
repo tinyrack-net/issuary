@@ -1,4 +1,4 @@
-import { Modal } from '#frontend/components/ui/modal.js';
+import { Modal } from '#frontend/components/ui/modal.tsx';
 
 type TermsContentModalProps = {
   isOpen: boolean;

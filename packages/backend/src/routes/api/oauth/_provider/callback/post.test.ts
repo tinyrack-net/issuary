@@ -9,8 +9,8 @@ import {
   test,
   vi,
 } from 'vitest';
-import type { AppType } from '#backend/entrypoints/app.js';
-import { apple } from '#backend/entrypoints/identity-providers/apple.js';
+import type { AppType } from '../../../../../entrypoints/app.ts';
+import { apple } from '../../../../../entrypoints/identity-providers/apple.ts';
 import {
   assertJsonBody,
   createTestApp,
@@ -20,7 +20,7 @@ import {
   MINIMAL_TEST_CONFIG,
   mockOAuthProviderFetch,
   TEST_USER_CONFIG,
-} from '#backend/test-utils/index.js';
+} from '../../../../../test-utils/index.ts';
 
 const APPLE_TOKEN_URL = 'https://appleid.apple.com/auth/token';
 

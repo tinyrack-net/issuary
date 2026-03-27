@@ -1,11 +1,11 @@
 import { expect } from '@playwright/test';
 import { createProxyHandler } from '@tinyauth/backend/frontend/proxy';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
   E2E_TEST_USER_CONFIG,
-} from '#frontend-e2e/fixtures/index.js';
+} from '#frontend-e2e/fixtures/index.ts';
 
 const test = createScenarioFixture((backendPort, frontendPort) => ({
   ...E2E_BASE_CONFIG,

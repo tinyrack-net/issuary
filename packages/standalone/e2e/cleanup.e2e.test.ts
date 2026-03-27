@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { createTestConfigFile } from './helpers/config-factory.js';
-import { runCli } from './helpers/spawn-cli.js';
+import { createTestConfigFile } from './helpers/config-factory.ts';
+import { runCli } from './helpers/spawn-cli.ts';
 
 describe('cleanup e2e', { timeout: 20_000 }, () => {
   let configCleanup: (() => Promise<void>) | undefined;

@@ -23,12 +23,12 @@ vi.mock('@tinyauth/backend/services', () => ({
   initializeServices: appState.initializeServicesMock,
 }));
 
-vi.mock('#standalone/lib/load-config.js', () => ({
+vi.mock('../lib/load-config.ts', () => ({
   loadConfig: appState.loadConfigMock,
   resolveConfig: appState.resolveConfigMock,
 }));
 
-vi.mock('#standalone/lib/logger.js', () => ({
+vi.mock('../lib/logger.ts', () => ({
   createLogger: appState.createLoggerMock,
 }));
 
@@ -125,7 +125,7 @@ describe('standalone Stricli app', () => {
     });
 
     vi.resetModules();
-    const { runCli } = await import('./app.js');
+    const { runCli } = await import('./app.ts');
     const mockProcess = createMockProcess();
 
     await runCli(['cleanup', '-c', '/tmp/tinyauth.yaml', '--verbose'], {
@@ -141,7 +141,7 @@ describe('standalone Stricli app', () => {
 
   test('routes nested export openapi command', async () => {
     vi.resetModules();
-    const { runCli } = await import('./app.js');
+    const { runCli } = await import('./app.ts');
     const mockProcess = createMockProcess();
     const writeSpy = vi
       .spyOn(process.stdout, 'write')
@@ -165,7 +165,7 @@ describe('standalone Stricli app', () => {
 
   test('prints version at the root route', async () => {
     vi.resetModules();
-    const { runCli } = await import('./app.js');
+    const { runCli } = await import('./app.ts');
     const mockProcess = createMockProcess();
 
     await runCli(['--version'], {

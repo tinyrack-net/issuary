@@ -1,6 +1,6 @@
 import { mutationOptions } from '@tanstack/react-query';
 import type { InferRequestType, InferResponseType } from 'hono/client';
-import { client, jsonOk } from '#frontend/libs/api.js';
+import { client, jsonOk } from '#frontend/libs/api.ts';
 
 export type TotpSetupResponse = InferResponseType<
   (typeof client.api.user.totp.setup)['$post'],

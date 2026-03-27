@@ -10,8 +10,8 @@ import {
   useWatch,
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { TermItem } from '#frontend/queries/terms.js';
-import { TermsContentModal } from './terms-content-modal.js';
+import type { TermItem } from '#frontend/queries/terms.ts';
+import { TermsContentModal } from './terms-content-modal.tsx';
 
 export type TermsConsentsField = {
   termsConsents: Record<string, boolean>;

@@ -1,17 +1,17 @@
 import { expect } from '@playwright/test';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
   E2E_TEST_USER,
   E2E_TEST_USER_CONFIG,
-} from '#frontend-e2e/fixtures/index.js';
-import { createMixedOauthProviders } from '#frontend-e2e/fragments/oauth-providers.js';
+} from '#frontend-e2e/fixtures/index.ts';
+import { createMixedOauthProviders } from '#frontend-e2e/fragments/oauth-providers.ts';
 import {
   expectOAuthError,
   startOAuthLogin,
-} from '#frontend-e2e/helpers/oauth.js';
-import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.js';
+} from '#frontend-e2e/helpers/oauth.ts';
+import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.ts';
 
 const test = createScenarioFixture((backendPort) => {
   const host = `http://localhost:${backendPort}`;

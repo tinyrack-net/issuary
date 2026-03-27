@@ -10,19 +10,19 @@ import { github } from '@tinyauth/backend/identity-providers/github';
 import { google } from '@tinyauth/backend/identity-providers/google';
 import { croner } from '@tinyauth/backend/scheduler/croner';
 import YAML from 'yaml';
-import type { StandaloneDatabaseConfig } from '#standalone/lib/config/database.js';
-import { STANDALONE_CONFIG_DEFAULTS } from '#standalone/lib/config/defaults.js';
-import type { StandaloneFrontendConfig } from '#standalone/lib/config/frontend.js';
-import type { StandaloneIdentityProviderConfig } from '#standalone/lib/config/identity-providers.js';
+import type { StandaloneDatabaseConfig } from './config/database.ts';
+import { STANDALONE_CONFIG_DEFAULTS } from './config/defaults.ts';
+import type { StandaloneFrontendConfig } from './config/frontend.ts';
+import type { StandaloneIdentityProviderConfig } from './config/identity-providers.ts';
 import {
   type StandaloneConfig,
   StandaloneConfigSchema,
-} from '#standalone/lib/config/resolved.js';
-import type { StandaloneSchedulerConfig } from '#standalone/lib/config/scheduler.js';
-import { deepMerge } from '#standalone/lib/deep-merge.js';
-import { DEFAULT_CONFIG_PATH } from './constants.js';
-import { resolveEnvVariables } from './interpolate-env.js';
-import { resolveAbsolutePath } from './resolve-path.js';
+} from './config/resolved.ts';
+import type { StandaloneSchedulerConfig } from './config/scheduler.ts';
+import { DEFAULT_CONFIG_PATH } from './constants.ts';
+import { deepMerge } from './deep-merge.ts';
+import { resolveEnvVariables } from './interpolate-env.ts';
+import { resolveAbsolutePath } from './resolve-path.ts';
 
 async function composeEmailConfig(
   emailInput: StandaloneConfig['email'],

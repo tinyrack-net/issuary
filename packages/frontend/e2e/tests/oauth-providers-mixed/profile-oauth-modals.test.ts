@@ -1,17 +1,17 @@
 import { expect } from '@playwright/test';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
-} from '#frontend-e2e/fixtures/index.js';
-import { createMixedOauthProviders } from '#frontend-e2e/fragments/oauth-providers.js';
+} from '#frontend-e2e/fixtures/index.ts';
+import { createMixedOauthProviders } from '#frontend-e2e/fragments/oauth-providers.ts';
 import {
   modal,
   removePasswordModal,
   setPasswordModal,
   unlinkOAuthModal,
-} from '#frontend-e2e/helpers/profile-page.js';
-import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/helpers/profile-page.ts';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
 const TEST_PASSWORD = 'test-password-123';
 

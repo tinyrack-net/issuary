@@ -81,6 +81,8 @@
       }
     },
     "imports": {
+      "#backend/*.ts": "./dist/*.js",
+      "#backend/*.tsx": "./dist/*.js",
       "#backend/*": {
         "types": "./dist/*",
         "default": "./dist/*"
@@ -170,6 +172,16 @@
     }
   },
   "imports": {
+    "#backend/*.ts": {
+      "@tinyauth/source": "./src/*.ts",
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    },
+    "#backend/*.tsx": {
+      "@tinyauth/source": "./src/*.tsx",
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    },
     "#backend/*": {
       "@tinyauth/source": "./src/*",
       "types": "./dist/*",

@@ -10,20 +10,20 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { FooterLink } from '#frontend/components/auth/footer-link.js';
-import { PageHeader } from '#frontend/components/auth/page-header.js';
-import { SubmitButton } from '#frontend/components/auth/submit-button.js';
-import { Alert } from '#frontend/components/ui/alert.js';
-import { PageLayout } from '#frontend/features/layout/page-layout.js';
+import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
+import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
+import { Alert } from '#frontend/components/ui/alert.tsx';
+import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
-} from '#frontend/libs/oauth-search.js';
-import { tick } from '#frontend/libs/promise.js';
-import { registerPasskeyMutationOptions } from '#frontend/queries/passkey.js';
-import { getSessionQueryOptions } from '#frontend/queries/session.js';
+} from '#frontend/libs/oauth-search.ts';
+import { tick } from '#frontend/libs/promise.ts';
+import { registerPasskeyMutationOptions } from '#frontend/queries/passkey.ts';
+import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 
 const SearchSchema = OAuthSearchSchema.extend({
   passkey_name: z.string().optional(),

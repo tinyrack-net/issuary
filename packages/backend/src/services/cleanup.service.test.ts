@@ -6,17 +6,13 @@ import {
   expect,
   test,
 } from 'vitest';
-import { EmailVerificationEntitySchema } from '#backend/entities/email-verification.entity.js';
-import {
-  JwtKeyEntity,
-  JwtKeyStatus,
-} from '#backend/entities/jwt-key.entity.js';
-import { OAuthCodeEntitySchema } from '#backend/entities/oauth-code.entity.js';
-import { PasswordResetEntitySchema } from '#backend/entities/password-reset.entity.js';
-import { PendingOAuthRegistrationEntitySchema } from '#backend/entities/pending-oauth-registration.entity.js';
-import { RevokedTokenEntitySchema } from '#backend/entities/revoked-token.entity.js';
-import { UserEntity } from '#backend/entities/user.entity.js';
-import type { ServiceContainer } from '#backend/services/container.js';
+import { EmailVerificationEntitySchema } from '../entities/email-verification.entity.ts';
+import { JwtKeyEntity, JwtKeyStatus } from '../entities/jwt-key.entity.ts';
+import { OAuthCodeEntitySchema } from '../entities/oauth-code.entity.ts';
+import { PasswordResetEntitySchema } from '../entities/password-reset.entity.ts';
+import { PendingOAuthRegistrationEntitySchema } from '../entities/pending-oauth-registration.entity.ts';
+import { RevokedTokenEntitySchema } from '../entities/revoked-token.entity.ts';
+import { UserEntity } from '../entities/user.entity.ts';
 import {
   CLI_TEST_CONFIG,
   countEntities,
@@ -29,12 +25,13 @@ import {
   createTestOAuthClient,
   createTestUser,
   getJwtKey,
-} from '#backend/test-utils/cli.js';
+} from '../test-utils/cli.ts';
 import {
   createTestApp,
   MINIMAL_TEST_CONFIG,
   withMikroContext,
-} from '#backend/test-utils/index.js';
+} from '../test-utils/index.ts';
+import type { ServiceContainer } from './container.ts';
 
 describe('CleanupService', () => {
   describe('cleanupRevokedTokens', () => {

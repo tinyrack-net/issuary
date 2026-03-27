@@ -1,25 +1,25 @@
 import { describe, expect, test } from 'vitest';
-import { sqlite } from '#backend/entrypoints/database/sqlite/sqlite.js';
-import { ACCOUNT_DELETION_CONFIG_DEFAULT } from './account-deletion.js';
-import { AUTH_CONFIG_DEFAULT } from './auth.js';
-import { BRANDING_CONFIG_DEFAULT } from './branding.js';
-import { CLEANUP_CONFIG_DEFAULT } from './cleanup.js';
-import { CLIENT_CONFIGS_DEFAULT } from './client.js';
-import { I18N_CONFIG_DEFAULT } from './i18n.js';
-import { IDENTITY_PROVIDER_CONFIGS_DEFAULT } from './identity-providers.js';
-import type { SchedulerConfig } from './index.js';
-import { LOGGING_CONFIG_DEFAULT } from './logging.js';
-import { OPENAPI_CONFIG_DEFAULT } from './openapi.js';
-import { REGISTRATION_CONFIG_DEFAULT } from './registration.js';
+import { sqlite } from '../../entrypoints/database/sqlite/sqlite.ts';
+import { ACCOUNT_DELETION_CONFIG_DEFAULT } from './account-deletion.ts';
+import { AUTH_CONFIG_DEFAULT } from './auth.ts';
+import { BRANDING_CONFIG_DEFAULT } from './branding.ts';
+import { CLEANUP_CONFIG_DEFAULT } from './cleanup.ts';
+import { CLIENT_CONFIGS_DEFAULT } from './client.ts';
+import { I18N_CONFIG_DEFAULT } from './i18n.ts';
+import { IDENTITY_PROVIDER_CONFIGS_DEFAULT } from './identity-providers.ts';
+import type { SchedulerConfig } from './index.ts';
+import { LOGGING_CONFIG_DEFAULT } from './logging.ts';
+import { OPENAPI_CONFIG_DEFAULT } from './openapi.ts';
+import { REGISTRATION_CONFIG_DEFAULT } from './registration.ts';
 import {
   type TinyAuthRuntimeConfigInput,
   TinyAuthRuntimeConfigSchema,
-} from './resolved.js';
-import { SECURITY_CONFIG_DEFAULT } from './security.js';
-import { SERVER_CONFIG_DEFAULT } from './server.js';
-import { TERMS_CONFIG_DEFAULT } from './terms.js';
-import { TOKENS_CONFIG_DEFAULT } from './tokens.js';
-import { USER_CONFIGS_DEFAULT } from './user.js';
+} from './resolved.ts';
+import { SECURITY_CONFIG_DEFAULT } from './security.ts';
+import { SERVER_CONFIG_DEFAULT } from './server.ts';
+import { TERMS_CONFIG_DEFAULT } from './terms.ts';
+import { TOKENS_CONFIG_DEFAULT } from './tokens.ts';
+import { USER_CONFIGS_DEFAULT } from './user.ts';
 
 const MINIMAL_INPUT_CONFIG = {
   database: sqlite({ path: './test.db', test: true }),

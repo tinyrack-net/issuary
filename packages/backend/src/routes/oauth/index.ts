@@ -1,12 +1,12 @@
 import { Hono } from 'hono';
-import type { AppEnv } from '#backend/lib/app-env.js';
-import { jwksGet } from './.well-known/jwks/get.js';
-import { oidcConfigGet } from './.well-known/openid-configuration/get.js';
-import { authorizeGet } from './authorize/get.js';
-import { introspectPost } from './introspect/post.js';
-import { revokePost } from './revoke/post.js';
-import { tokenPost } from './token/post.js';
-import { userinfoGet } from './userinfo/get.js';
+import type { AppEnv } from '../../lib/app-env.ts';
+import { jwksGet } from './.well-known/jwks/get.ts';
+import { oidcConfigGet } from './.well-known/openid-configuration/get.ts';
+import { authorizeGet } from './authorize/get.ts';
+import { introspectPost } from './introspect/post.ts';
+import { revokePost } from './revoke/post.ts';
+import { tokenPost } from './token/post.ts';
+import { userinfoGet } from './userinfo/get.ts';
 
 export const oauthApplicationRoutes = new Hono<AppEnv>()
   .route('/', authorizeGet)

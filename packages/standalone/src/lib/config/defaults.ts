@@ -1,4 +1,4 @@
-import { envDefault } from './env-default.js';
+import { envDefault } from './env-default.ts';
 
 /**
  * Defaults template for standalone configuration.

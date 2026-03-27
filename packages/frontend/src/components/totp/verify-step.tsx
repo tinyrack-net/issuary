@@ -3,11 +3,11 @@ import { useCallback, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { SubmitButton } from '#frontend/components/auth/submit-button.js';
+import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import {
   PinInput,
   type PinInputRef,
-} from '#frontend/components/ui/pin-input.js';
+} from '#frontend/components/ui/pin-input.tsx';
 
 export interface VerifyStepProps {
   onSubmit: (code: string) => Promise<void>;

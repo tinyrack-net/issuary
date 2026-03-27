@@ -7,7 +7,7 @@ import {
   expectTypeOf,
   test,
 } from 'vitest';
-import { interpolateEnv, resolveEnvVariables } from './interpolate-env.js';
+import { interpolateEnv, resolveEnvVariables } from './interpolate-env.ts';
 
 describe('interpolateEnv', () => {
   const originalEnv = { ...process.env };

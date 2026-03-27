@@ -2,9 +2,9 @@ import { describe, expect, test } from 'vitest';
 import {
   type TinyAuthRuntimeConfig,
   TinyAuthRuntimeConfigSchema,
-} from '#backend/lib/config/index.js';
-import { MINIMAL_TEST_CONFIG } from '#backend/test-utils/setup.js';
-import { SecurityService } from './security.service.js';
+} from '../lib/config/index.ts';
+import { MINIMAL_TEST_CONFIG } from '../test-utils/setup.ts';
+import { SecurityService } from './security.service.ts';
 
 function createService(
   securityOverride?: TinyAuthRuntimeConfig['security'],

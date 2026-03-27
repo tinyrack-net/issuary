@@ -1,5 +1,5 @@
 import z from 'zod';
-import { zz } from '#backend/schemas/provider.js';
+import { zz } from '../../schemas/provider.ts';
 
 export const SERVER_CONFIG_DEFAULT = {
   public_origin: 'http://localhost:8080',

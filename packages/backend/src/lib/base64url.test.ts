@@ -9,7 +9,7 @@ import {
   stringToBytes,
   toArrayBuffer,
   toBase64Url,
-} from './base64url.js';
+} from './base64url.ts';
 
 describe('toBase64Url / fromBase64Url', () => {
   test('should encode empty array', () => {

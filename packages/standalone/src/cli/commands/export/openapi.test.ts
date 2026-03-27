@@ -32,7 +32,7 @@ vi.mock('hono-openapi', () => ({
   generateSpecs: exportState.generateSpecsMock,
 }));
 
-vi.mock('#standalone/lib/load-config.js', () => ({
+vi.mock('../../../lib/load-config.ts', () => ({
   resolveConfig: exportState.resolveConfigMock,
 }));
 
@@ -74,7 +74,7 @@ describe('ExportOpenapiCommand', () => {
       .mockImplementation(() => true);
 
     vi.resetModules();
-    const { runExportOpenapiCommand } = await import('./openapi.js');
+    const { runExportOpenapiCommand } = await import('./openapi.ts');
 
     await runExportOpenapiCommand({});
 
@@ -116,7 +116,7 @@ describe('ExportOpenapiCommand', () => {
     const outputPath = path.join(tempDir, 'openapi.json');
 
     vi.resetModules();
-    const { runExportOpenapiCommand } = await import('./openapi.js');
+    const { runExportOpenapiCommand } = await import('./openapi.ts');
 
     await runExportOpenapiCommand({}, outputPath);
 

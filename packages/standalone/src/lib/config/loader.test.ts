@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { resolveConfig } from '#standalone/lib/load-config.js';
+import { resolveConfig } from '../load-config.ts';
 
 vi.mock('nodemailer', () => ({
   default: {

@@ -1,8 +1,8 @@
 import { LinkBreakIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertBanner } from '#frontend/components/ui/alert-banner.js';
-import { Modal, ModalActions } from '#frontend/components/ui/modal.js';
+import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
+import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
 
 interface UnlinkOAuthModalProps {
   isOpen: boolean;

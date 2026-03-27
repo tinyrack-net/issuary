@@ -3,19 +3,19 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FooterLink } from '#frontend/components/auth/footer-link.js';
-import { PageHeader } from '#frontend/components/auth/page-header.js';
-import { Alert } from '#frontend/components/ui/alert.js';
-import { PageLayout } from '#frontend/features/layout/page-layout.js';
-import { TinyAuthError } from '#frontend/libs/error.js';
+import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
+import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { Alert } from '#frontend/components/ui/alert.tsx';
+import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { TinyAuthError } from '#frontend/libs/error.ts';
 import {
   buildAuthorizeUrl,
   isOAuthFlow,
   OAuthSearchSchema,
-} from '#frontend/libs/oauth-search.js';
-import { tick } from '#frontend/libs/promise.js';
-import { authenticateWithPasskeyMutationOptions } from '#frontend/queries/passkey.js';
-import { getSessionQueryOptions } from '#frontend/queries/session.js';
+} from '#frontend/libs/oauth-search.ts';
+import { tick } from '#frontend/libs/promise.ts';
+import { authenticateWithPasskeyMutationOptions } from '#frontend/queries/passkey.ts';
+import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 
 const SearchSchema = OAuthSearchSchema;
 

@@ -2,13 +2,13 @@ import { FingerprintIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { FooterLink } from '#frontend/components/auth/footer-link.js';
-import { PageHeader } from '#frontend/components/auth/page-header.js';
-import { Alert } from '#frontend/components/ui/alert.js';
-import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.js';
-import { PageLayout } from '#frontend/features/layout/page-layout.js';
-import { extractOAuthParams } from '#frontend/libs/oauth-search.js';
-import { appConfigQueryOptions } from '#frontend/queries/config.js';
+import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
+import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { Alert } from '#frontend/components/ui/alert.tsx';
+import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
+import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { extractOAuthParams } from '#frontend/libs/oauth-search.ts';
+import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 
 export const Route = createFileRoute('/setup/2fa/')({
   component: Setup2FA,

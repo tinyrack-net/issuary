@@ -1,21 +1,21 @@
 import { expect } from '@playwright/test';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
   E2E_TEST_CLIENT_CONFIG,
-} from '#frontend-e2e/fixtures/index.js';
-import { consentPage } from '#frontend-e2e/helpers/consent.js';
-import { loginPasswordPage } from '#frontend-e2e/helpers/login.js';
+} from '#frontend-e2e/fixtures/index.ts';
+import { consentPage } from '#frontend-e2e/helpers/consent.ts';
+import { loginPasswordPage } from '#frontend-e2e/helpers/login.ts';
 import {
   allowConsentAndCaptureCode,
   buildAuthorizePath,
   buildOAuthFlowInput,
   exchangeAuthorizationCode,
   expectOAuthParamsInCurrentUrl,
-} from '#frontend-e2e/helpers/oauth-client-flow.js';
-import { registerPage } from '#frontend-e2e/helpers/register-page.js';
-import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/helpers/oauth-client-flow.ts';
+import { registerPage } from '#frontend-e2e/helpers/register-page.ts';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
 const TERMS_CONFIG = [
   {

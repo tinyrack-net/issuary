@@ -1,8 +1,8 @@
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
-import { UserConsentRepository } from '#backend/repositories/user-consent.repository.js';
-import { BaseSchema } from './base.entity.js';
-import { OAuthClientEntitySchema } from './oauth-client.entity.js';
-import { UserEntitySchema } from './user.entity.js';
+import { UserConsentRepository } from '../repositories/user-consent.repository.ts';
+import { BaseSchema } from './base.entity.ts';
+import { OAuthClientEntitySchema } from './oauth-client.entity.ts';
+import { UserEntitySchema } from './user.entity.ts';
 
 /**
  * UserConsentEntity stores user consent decisions for OAuth clients.

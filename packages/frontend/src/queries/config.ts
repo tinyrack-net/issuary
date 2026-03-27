@@ -1,7 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import type { InferResponseType } from 'hono/client';
-import { client, jsonOk } from '#frontend/libs/api.js';
-import type { SecondFactorMethod } from '#frontend/libs/oauth-search.js';
+import { client, jsonOk } from '#frontend/libs/api.ts';
+import type { SecondFactorMethod } from '#frontend/libs/oauth-search.ts';
 import { queryKeys } from './keys';
 
 export type AppConfigs = InferResponseType<

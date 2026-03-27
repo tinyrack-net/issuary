@@ -3,9 +3,9 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import YAML from 'yaml';
-import { createTestConfigFile, getFreePort } from './helpers/config-factory.js';
-import { startCli } from './helpers/spawn-cli.js';
-import { waitForReady } from './helpers/wait-for-ready.js';
+import { createTestConfigFile, getFreePort } from './helpers/config-factory.ts';
+import { startCli } from './helpers/spawn-cli.ts';
+import { waitForReady } from './helpers/wait-for-ready.ts';
 
 async function createCustomConfigFile(
   config: Record<string, unknown>,

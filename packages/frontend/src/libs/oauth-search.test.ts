@@ -3,7 +3,7 @@ import {
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
-} from './oauth-search.js';
+} from './oauth-search.ts';
 
 describe('oauth-search helpers', () => {
   beforeEach(() => {

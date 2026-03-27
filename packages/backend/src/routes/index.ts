@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
-import type { AppEnv } from '#backend/lib/app-env.js';
-import { wellKnownRoutes } from './.well-known/index.js';
-import { apiRoutes } from './api/index.js';
-import { oauthApplicationRoutes } from './oauth/index.js';
+import type { AppEnv } from '../lib/app-env.ts';
+import { wellKnownRoutes } from './.well-known/index.ts';
+import { apiRoutes } from './api/index.ts';
+import { oauthApplicationRoutes } from './oauth/index.ts';
 
 export const routes = new Hono<AppEnv>()
   .route('/api', apiRoutes)

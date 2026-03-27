@@ -1,28 +1,25 @@
-import { EmailVerificationEntitySchema } from '#backend/entities/email-verification.entity.js';
-import {
-  JwtKeyEntity,
-  JwtKeyStatus,
-} from '#backend/entities/jwt-key.entity.js';
-import { OAuthCodeEntitySchema } from '#backend/entities/oauth-code.entity.js';
-import { PasswordResetEntitySchema } from '#backend/entities/password-reset.entity.js';
-import { PendingOAuthRegistrationEntitySchema } from '#backend/entities/pending-oauth-registration.entity.js';
-import { RevokedTokenEntitySchema } from '#backend/entities/revoked-token.entity.js';
-import { UserEntity } from '#backend/entities/user.entity.js';
-import { UserConsentEntity } from '#backend/entities/user-consent.entity.js';
-import { UserOAuthEntitySchema } from '#backend/entities/user-oauth.entity.js';
-import { UserPasskeyEntitySchema } from '#backend/entities/user-passkey.entity.js';
-import { UserTermsConsentEntity } from '#backend/entities/user-terms-consent.entity.js';
-import { UserTotpEntitySchema } from '#backend/entities/user-totp.entity.js';
-import { UserTotpRecoveryCodeEntitySchema } from '#backend/entities/user-totp-recovery-code.entity.js';
-import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
+import { EmailVerificationEntitySchema } from '../entities/email-verification.entity.ts';
+import { JwtKeyEntity, JwtKeyStatus } from '../entities/jwt-key.entity.ts';
+import { OAuthCodeEntitySchema } from '../entities/oauth-code.entity.ts';
+import { PasswordResetEntitySchema } from '../entities/password-reset.entity.ts';
+import { PendingOAuthRegistrationEntitySchema } from '../entities/pending-oauth-registration.entity.ts';
+import { RevokedTokenEntitySchema } from '../entities/revoked-token.entity.ts';
+import { UserEntity } from '../entities/user.entity.ts';
+import { UserConsentEntity } from '../entities/user-consent.entity.ts';
+import { UserOAuthEntitySchema } from '../entities/user-oauth.entity.ts';
+import { UserPasskeyEntitySchema } from '../entities/user-passkey.entity.ts';
+import { UserTermsConsentEntity } from '../entities/user-terms-consent.entity.ts';
+import { UserTotpEntitySchema } from '../entities/user-totp.entity.ts';
+import { UserTotpRecoveryCodeEntitySchema } from '../entities/user-totp-recovery-code.entity.ts';
+import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
 import {
   calculateCutoffDate,
   formatDuration,
   parseDurationToMs,
-} from '#backend/lib/duration.js';
-import type { JwtKeyRepository } from '#backend/repositories/jwt-key.repository.js';
-import type { MikroService } from '#backend/services/mikro.service.js';
-import type { JwtService } from './jwt.service.js';
+} from '../lib/duration.ts';
+import type { JwtKeyRepository } from '../repositories/jwt-key.repository.ts';
+import type { JwtService } from './jwt.service.ts';
+import type { MikroService } from './mikro.service.ts';
 
 /**
  * Result of a cleanup operation.

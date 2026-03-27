@@ -6,15 +6,15 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { FooterLink } from '#frontend/components/auth/footer-link.js';
-import { IconInput } from '#frontend/components/auth/icon-input.js';
-import { PageHeader } from '#frontend/components/auth/page-header.js';
-import { SubmitButton } from '#frontend/components/auth/submit-button.js';
-import { Alert } from '#frontend/components/ui/alert.js';
-import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.js';
-import { PageLayout } from '#frontend/features/layout/page-layout.js';
-import { appConfigQueryOptions } from '#frontend/queries/config.js';
-import { forgotPasswordMutationOptions } from '#frontend/queries/password-reset.js';
+import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
+import { IconInput } from '#frontend/components/auth/icon-input.tsx';
+import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
+import { Alert } from '#frontend/components/ui/alert.tsx';
+import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
+import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { appConfigQueryOptions } from '#frontend/queries/config.ts';
+import { forgotPasswordMutationOptions } from '#frontend/queries/password-reset.ts';
 
 export const Route = createFileRoute('/password/forgot/')({
   component: ForgotPassword,

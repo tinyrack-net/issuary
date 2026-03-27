@@ -14,27 +14,27 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { IconInput } from '#frontend/components/auth/icon-input.js';
-import { PageHeader } from '#frontend/components/auth/page-header.js';
-import { SubmitButton } from '#frontend/components/auth/submit-button.js';
-import { Alert } from '#frontend/components/ui/alert.js';
-import { Divider } from '#frontend/components/ui/divider.js';
-import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.js';
-import { PageLayout } from '#frontend/features/layout/page-layout.js';
+import { IconInput } from '#frontend/components/auth/icon-input.tsx';
+import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
+import { Alert } from '#frontend/components/ui/alert.tsx';
+import { Divider } from '#frontend/components/ui/divider.tsx';
+import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
+import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
   type SecondFactorMethod,
-} from '#frontend/libs/oauth-search.js';
-import { tick } from '#frontend/libs/promise.js';
-import { appConfigQueryOptions } from '#frontend/queries/config.js';
-import { getSessionQueryOptions } from '#frontend/queries/session.js';
+} from '#frontend/libs/oauth-search.ts';
+import { tick } from '#frontend/libs/promise.ts';
+import { appConfigQueryOptions } from '#frontend/queries/config.ts';
+import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 import {
   resendVerificationMutationOptions,
   verifyEmailMutationOptions,
-} from '#frontend/queries/verify-email.js';
+} from '#frontend/queries/verify-email.ts';
 
 const SearchSchema = z.object({
   ...OAuthSearchSchema.shape,

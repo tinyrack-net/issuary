@@ -1,4 +1,4 @@
-import type { IDTokenPayload } from '#example-react-spa/types/oidc.js';
+import type { IDTokenPayload } from '#example-react-spa/types/oidc.ts';
 
 interface UserInfoProps {
   payload: IDTokenPayload;

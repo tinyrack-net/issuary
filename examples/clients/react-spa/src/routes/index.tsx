@@ -1,15 +1,15 @@
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
-import { env } from '#example-react-spa/libs/env.js';
+import { env } from '#example-react-spa/libs/env.ts';
 import {
   buildAuthorizationUrl,
   getOIDCConfig,
-} from '#example-react-spa/libs/oidc-client.js';
+} from '#example-react-spa/libs/oidc-client.ts';
 import {
   generateNonce,
   generatePKCEPair,
   generateState,
-} from '#example-react-spa/libs/pkce.js';
-import { saveAuthState } from '#example-react-spa/libs/token-storage.js';
+} from '#example-react-spa/libs/pkce.ts';
+import { saveAuthState } from '#example-react-spa/libs/token-storage.ts';
 
 export const Route = createFileRoute('/')({
   component: HomePage,

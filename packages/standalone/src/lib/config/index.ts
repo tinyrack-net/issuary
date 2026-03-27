@@ -1,45 +1,45 @@
-export type { StandaloneAuthConfig } from './auth.js';
-export { StandaloneAuthConfigSchema } from './auth.js';
-export type { StandaloneCleanupConfig } from './cleanup.js';
-export { StandaloneCleanupConfigSchema } from './cleanup.js';
-export type { StandaloneClientConfig } from './client.js';
+export type { StandaloneAuthConfig } from './auth.ts';
+export { StandaloneAuthConfigSchema } from './auth.ts';
+export type { StandaloneCleanupConfig } from './cleanup.ts';
+export { StandaloneCleanupConfigSchema } from './cleanup.ts';
+export type { StandaloneClientConfig } from './client.ts';
 export {
   StandaloneClientConfigSchema,
   StandaloneClientConfigsSchema,
-} from './client.js';
-export type { StandaloneDatabaseConfig } from './database.js';
+} from './client.ts';
+export type { StandaloneDatabaseConfig } from './database.ts';
 export {
   StandaloneDatabaseConfigSchema,
   StandaloneDatabasePostgresConfigSchema,
   StandaloneDatabaseSqliteConfigSchema,
-} from './database.js';
-export type { StandaloneEmailConfig } from './email.js';
-export { StandaloneEmailConfigSchema } from './email.js';
+} from './database.ts';
+export type { StandaloneEmailConfig } from './email.ts';
+export { StandaloneEmailConfigSchema } from './email.ts';
 export type {
   StandaloneFrontendConfig,
   StandaloneFrontendConfigInput,
-} from './frontend.js';
-export { StandaloneFrontendConfigSchema } from './frontend.js';
-export type { StandaloneIdentityProviderConfig } from './identity-providers.js';
+} from './frontend.ts';
+export { StandaloneFrontendConfigSchema } from './frontend.ts';
+export type { StandaloneIdentityProviderConfig } from './identity-providers.ts';
 export {
   StandaloneIdentityProviderConfigSchema,
   StandaloneIdentityProviderConfigsSchema,
-} from './identity-providers.js';
-export type { StandaloneLoggingConfig } from './logging.js';
-export { StandaloneLoggingConfigSchema } from './logging.js';
-export type { StandaloneConfig, StandaloneConfigInput } from './resolved.js';
-export { StandaloneConfigSchema } from './resolved.js';
-export type { StandaloneSchedulerConfig } from './scheduler.js';
+} from './identity-providers.ts';
+export type { StandaloneLoggingConfig } from './logging.ts';
+export { StandaloneLoggingConfigSchema } from './logging.ts';
+export type { StandaloneConfig, StandaloneConfigInput } from './resolved.ts';
+export { StandaloneConfigSchema } from './resolved.ts';
+export type { StandaloneSchedulerConfig } from './scheduler.ts';
 export {
   STANDALONE_SCHEDULER_CONFIG_DEFAULT,
   StandaloneSchedulerConfigSchema,
-} from './scheduler.js';
-export type { StandaloneSecurityConfig } from './security.js';
-export { StandaloneSecurityConfigSchema } from './security.js';
-export type { StandaloneTermsConfig } from './terms.js';
-export { StandaloneTermsConfigSchema } from './terms.js';
-export type { StandaloneUserConfig } from './user.js';
+} from './scheduler.ts';
+export type { StandaloneSecurityConfig } from './security.ts';
+export { StandaloneSecurityConfigSchema } from './security.ts';
+export type { StandaloneTermsConfig } from './terms.ts';
+export { StandaloneTermsConfigSchema } from './terms.ts';
+export type { StandaloneUserConfig } from './user.ts';
 export {
   StandaloneUserConfigSchema,
   StandaloneUserConfigsSchema,
-} from './user.js';
+} from './user.ts';

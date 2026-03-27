@@ -3,7 +3,7 @@ import {
   detectBrowserLanguage,
   getAvailableLanguages,
   LANGUAGE_STORAGE_KEY,
-} from './index.js';
+} from './index.ts';
 
 function setNavigatorLanguage(language: string) {
   Object.defineProperty(window.navigator, 'language', {

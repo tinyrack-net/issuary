@@ -2,7 +2,7 @@ import { EntityRepository } from '@mikro-orm/core';
 import type {
   IOAuthCodeEntity,
   OAuthCodeChallengeMethods,
-} from '#backend/entities/oauth-code.entity.js';
+} from '../entities/oauth-code.entity.ts';
 
 export class OAuthCodeRepository extends EntityRepository<IOAuthCodeEntity> {
   async createAuthorizationCode(params: {

@@ -8,7 +8,7 @@ import {
   isTrustedProxy,
   parseIPv4,
   parseIPv6,
-} from './ip-utils.js';
+} from './ip-utils.ts';
 
 describe('ip-utils', () => {
   describe('parseIPv4', () => {

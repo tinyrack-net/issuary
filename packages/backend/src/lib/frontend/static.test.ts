@@ -3,8 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { CreateStaticHandlerOptions } from './static.js';
-import { createStaticHandler } from './static.js';
+import type { CreateStaticHandlerOptions } from './static.ts';
+import { createStaticHandler } from './static.ts';
 
 const INDEX_HTML = [
   '<!doctype html>',

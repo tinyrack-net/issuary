@@ -8,17 +8,17 @@ import {
   test,
   vi,
 } from 'vitest';
-import { apple } from '#backend/entrypoints/identity-providers/apple.js';
-import { github } from '#backend/entrypoints/identity-providers/github.js';
-import { google } from '#backend/entrypoints/identity-providers/google.js';
-import type { ServiceContainer } from '#backend/services/container.js';
+import { apple } from '../entrypoints/identity-providers/apple.ts';
+import { github } from '../entrypoints/identity-providers/github.ts';
+import { google } from '../entrypoints/identity-providers/google.ts';
 import {
   createTestApp,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   mockOAuthProviderFetch,
   withMikroContext,
-} from '#backend/test-utils/index.js';
+} from '../test-utils/index.ts';
+import type { ServiceContainer } from './container.ts';
 
 /**
  * Tests for OAuthConnectService.authenticateWithOAuth()

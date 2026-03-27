@@ -1,9 +1,9 @@
 import { serve } from '@hono/node-server';
 import { buildCommand } from '@stricli/core';
 import z from 'zod';
-import { createStandaloneApp } from '#standalone/app.js';
-import { loadConfig } from '#standalone/lib/load-config.js';
-import { parseWithZod } from '../../lib/cli/parse-with-zod.js';
+import { createStandaloneApp } from '../../app.ts';
+import { parseWithZod } from '../../lib/cli/parse-with-zod.ts';
+import { loadConfig } from '../../lib/load-config.ts';
 
 /**
  * Serve command

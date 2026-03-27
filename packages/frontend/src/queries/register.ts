@@ -1,6 +1,6 @@
 import { mutationOptions } from '@tanstack/react-query';
 import type { InferResponseType } from 'hono/client';
-import { client, jsonOk } from '#frontend/libs/api.js';
+import { client, jsonOk } from '#frontend/libs/api.ts';
 import type { TermsConsentItem } from './terms';
 
 export type RegisterParams = {

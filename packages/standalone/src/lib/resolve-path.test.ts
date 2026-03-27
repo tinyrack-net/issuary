@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { resolveAbsolutePath } from './resolve-path.js';
+import { resolveAbsolutePath } from './resolve-path.ts';
 
 describe('resolveAbsolutePath', () => {
   const MOCK_CWD = '/mock/cwd';

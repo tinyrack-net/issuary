@@ -8,11 +8,11 @@ import {
   test,
   vi,
 } from 'vitest';
-import type { AppType } from '#backend/entrypoints/app.js';
-import { github } from '#backend/entrypoints/identity-providers/github.js';
-import { google } from '#backend/entrypoints/identity-providers/google.js';
-import { e } from '#backend/schemas/error.js';
-import type { ServiceContainer } from '#backend/services/container.js';
+import type { AppType } from '../../../../../entrypoints/app.ts';
+import { github } from '../../../../../entrypoints/identity-providers/github.ts';
+import { google } from '../../../../../entrypoints/identity-providers/google.ts';
+import { e } from '../../../../../schemas/error.ts';
+import type { ServiceContainer } from '../../../../../services/container.ts';
 import {
   assertJsonBody,
   createAuthenticatedSession,
@@ -24,7 +24,7 @@ import {
   MINIMAL_TEST_CONFIG,
   mockOAuthProviderFetch,
   TEST_USER_CONFIG,
-} from '#backend/test-utils/index.js';
+} from '../../../../../test-utils/index.ts';
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_USERINFO_URL = 'https://openidconnect.googleapis.com/v1/userinfo';

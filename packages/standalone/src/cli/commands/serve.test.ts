@@ -10,11 +10,11 @@ vi.mock('@hono/node-server', () => ({
   serve: serveMocks.serve,
 }));
 
-vi.mock('#standalone/app.js', () => ({
+vi.mock('../../app.ts', () => ({
   createStandaloneApp: serveMocks.createStandaloneApp,
 }));
 
-vi.mock('#standalone/lib/load-config.js', () => ({
+vi.mock('../../lib/load-config.ts', () => ({
   loadConfig: serveMocks.loadConfig,
 }));
 
@@ -77,7 +77,7 @@ describe('ServeCommand', () => {
     });
 
     const exitSpy = mockProcessExit();
-    const { runServeCommand } = await import('./serve.js');
+    const { runServeCommand } = await import('./serve.ts');
 
     await runServeCommand({
       configPath: '/tmp/config.yaml',
@@ -113,7 +113,7 @@ describe('ServeCommand', () => {
       new Error('startup failed'),
     );
 
-    const { runServeCommand } = await import('./serve.js');
+    const { runServeCommand } = await import('./serve.ts');
 
     await expect(
       runServeCommand({

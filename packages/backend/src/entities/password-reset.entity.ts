@@ -1,7 +1,7 @@
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
-import { PasswordResetRepository } from '#backend/repositories/password-reset.repository.js';
-import { BaseSchema } from './base.entity.js';
-import { UserEntity } from './user.entity.js';
+import { PasswordResetRepository } from '../repositories/password-reset.repository.ts';
+import { BaseSchema } from './base.entity.ts';
+import { UserEntity } from './user.entity.ts';
 
 export const PasswordResetEntitySchema = defineEntity({
   name: 'PasswordResetEntity',

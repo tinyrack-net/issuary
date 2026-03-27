@@ -1,5 +1,5 @@
 import { EntityRepository } from '@mikro-orm/core';
-import type { IUserTotpRecoveryCodeEntity } from '#backend/entities/user-totp-recovery-code.entity.js';
+import type { IUserTotpRecoveryCodeEntity } from '../entities/user-totp-recovery-code.entity.ts';
 
 export class UserTotpRecoveryCodeRepository extends EntityRepository<IUserTotpRecoveryCodeEntity> {
   async findUnusedByUserSubAndCodeHash(userSub: string, codeHash: string) {

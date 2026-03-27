@@ -1,15 +1,15 @@
 import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
-import type { AppEnv } from '#backend/lib/app-env.js';
-import { OPENAPI_SECURITY } from '#backend/lib/openapi.js';
-import { TAGS } from '#backend/lib/swagger-tags.js';
+import type { AppEnv } from '../../../../../lib/app-env.ts';
+import { OPENAPI_SECURITY } from '../../../../../lib/openapi.ts';
+import { TAGS } from '../../../../../lib/swagger-tags.ts';
 import {
   verifyAuth,
   verifyPending2FASetupUser,
-} from '#backend/middleware/auth.js';
-import { e } from '#backend/schemas/error.js';
-import { r } from '#backend/schemas/response.js';
+} from '../../../../../middleware/auth.ts';
+import { e } from '../../../../../schemas/error.ts';
+import { r } from '../../../../../schemas/response.ts';
 
 /**
  * POST /api/user/totp/confirm

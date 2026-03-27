@@ -1,13 +1,13 @@
 import { expect } from '@playwright/test';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
-} from '#frontend-e2e/fixtures/index.js';
+} from '#frontend-e2e/fixtures/index.ts';
 import {
   performRegister,
   registerPage,
-} from '#frontend-e2e/helpers/register-page.js';
+} from '#frontend-e2e/helpers/register-page.ts';
 
 const test = createScenarioFixture((backendPort) => ({
   ...E2E_BASE_CONFIG,

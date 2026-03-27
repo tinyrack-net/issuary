@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { TinyAuthError } from './error.js';
+import { TinyAuthError } from './error.ts';
 
 describe('TinyAuthError.fromResponse', () => {
   test('uses the server code and message when the response body is JSON', async () => {

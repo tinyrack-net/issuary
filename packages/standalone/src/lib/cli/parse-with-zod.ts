@@ -1,5 +1,5 @@
 import type z from 'zod';
-import { formatZodError } from './format-zod-error.js';
+import { formatZodError } from './format-zod-error.ts';
 
 export type ZodParserOptions<T> = {
   coerce?: (input: string) => Promise<unknown> | unknown;

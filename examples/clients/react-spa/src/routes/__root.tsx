@@ -1,6 +1,6 @@
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
 import { Suspense } from 'react';
-import type { AppRouterContext } from '#example-react-spa/libs/router.js';
+import type { AppRouterContext } from '#example-react-spa/libs/router.ts';
 
 function RootComponent() {
   return (

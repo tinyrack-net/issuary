@@ -1,17 +1,17 @@
 import {
   renderPasswordResetEmail,
   renderVerificationEmail,
-} from '#backend/emails/render.js';
-import type { IEmailVerificationEntity } from '#backend/entities/email-verification.entity.js';
-import type { UserEntity } from '#backend/entities/user.entity.js';
+} from '../emails/render.tsx';
+import type { IEmailVerificationEntity } from '../entities/email-verification.entity.ts';
+import type { UserEntity } from '../entities/user.entity.ts';
 import type {
   EmailTransport,
   TinyAuthRuntimeConfig,
-} from '#backend/lib/config/index.js';
-import { DEFAULT_LOCALE, type Locale } from '#backend/lib/locale.js';
-import type { Logger } from '#backend/lib/logger.js';
-import { e } from '#backend/schemas/error.js';
-import type { MikroService } from '#backend/services/mikro.service.js';
+} from '../lib/config/index.ts';
+import { DEFAULT_LOCALE, type Locale } from '../lib/locale.ts';
+import type { Logger } from '../lib/logger.ts';
+import { e } from '../schemas/error.ts';
+import type { MikroService } from './mikro.service.ts';
 
 export class EmailService {
   private readonly transporter: Promise<EmailTransport> | null;

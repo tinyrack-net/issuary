@@ -3,27 +3,24 @@
  * Provides helper functions for creating test data with specific states.
  */
 
-import { EmailVerificationEntitySchema } from '#backend/entities/email-verification.entity.js';
-import {
-  JwtKeyEntity,
-  JwtKeyStatus,
-} from '#backend/entities/jwt-key.entity.js';
-import { OAuthClientEntitySchema } from '#backend/entities/oauth-client.entity.js';
-import { OAuthCodeEntitySchema } from '#backend/entities/oauth-code.entity.js';
-import { PasswordResetEntitySchema } from '#backend/entities/password-reset.entity.js';
-import { PendingOAuthRegistrationEntitySchema } from '#backend/entities/pending-oauth-registration.entity.js';
+import { EmailVerificationEntitySchema } from '../entities/email-verification.entity.ts';
+import { JwtKeyEntity, JwtKeyStatus } from '../entities/jwt-key.entity.ts';
+import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.ts';
+import { OAuthCodeEntitySchema } from '../entities/oauth-code.entity.ts';
+import { PasswordResetEntitySchema } from '../entities/password-reset.entity.ts';
+import { PendingOAuthRegistrationEntitySchema } from '../entities/pending-oauth-registration.entity.ts';
 import {
   RevokedTokenEntitySchema,
   type TokenType,
-} from '#backend/entities/revoked-token.entity.js';
-import { UserEntity } from '#backend/entities/user.entity.js';
+} from '../entities/revoked-token.entity.ts';
+import { UserEntity } from '../entities/user.entity.ts';
 import {
   type TinyAuthRuntimeConfig,
   TinyAuthRuntimeConfigSchema,
-} from '#backend/lib/config/index.js';
-import type { ServiceContainer } from '#backend/services/container.js';
-import { withMikroContext } from './helpers.js';
-import { MINIMAL_TEST_CONFIG } from './setup.js';
+} from '../lib/config/index.ts';
+import type { ServiceContainer } from '../services/container.ts';
+import { withMikroContext } from './helpers.ts';
+import { MINIMAL_TEST_CONFIG } from './setup.ts';
 
 /**
  * Minimal CLI test configuration with cleanup enabled.

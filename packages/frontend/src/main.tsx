@@ -3,7 +3,7 @@ import { RouterProvider } from '@tanstack/react-router';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Component, memo, StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import i18n, { initI18n } from '#frontend/i18n/index.js';
+import i18n, { initI18n } from '#frontend/i18n/index.ts';
 import './index.css';
 import { GlobalQueryClient } from './libs/query-client';
 import { AppRouter } from './libs/router';

@@ -1,10 +1,10 @@
 import type { EntityManager } from '@mikro-orm/core';
-import { OAuthClientEntitySchema } from '#backend/entities/oauth-client.entity.js';
-import { TermsEntitySchema } from '#backend/entities/terms.entity.js';
-import { TermsContentEntitySchema } from '#backend/entities/terms-content.entity.js';
-import { UserEntity } from '#backend/entities/user.entity.js';
-import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
-import type { SecurityService } from '#backend/services/security.service.js';
+import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.ts';
+import { TermsEntitySchema } from '../entities/terms.entity.ts';
+import { TermsContentEntitySchema } from '../entities/terms-content.entity.ts';
+import { UserEntity } from '../entities/user.entity.ts';
+import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import type { SecurityService } from '../services/security.service.ts';
 
 /**
  * ConfigSeeder

@@ -1,7 +1,7 @@
 import { buildRouteMap } from '@stricli/core';
-import { cleanupCommand } from './cleanup.js';
-import { exportCommand } from './export/index.js';
-import { serveCommand } from './serve.js';
+import { cleanupCommand } from './cleanup.ts';
+import { exportCommand } from './export/index.ts';
+import { serveCommand } from './serve.ts';
 
 export const commands = buildRouteMap({
   routes: {

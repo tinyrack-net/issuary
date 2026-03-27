@@ -1,23 +1,23 @@
-import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
-import type { Logger } from '#backend/lib/logger.js';
-import { seedConfig } from '#backend/seeders/config.seeder.js';
-import { CleanupService } from '#backend/services/cleanup.service.js';
-import { EmailService } from '#backend/services/email.service.js';
-import { JwtService } from '#backend/services/jwt.service.js';
-import { MikroService } from '#backend/services/mikro.service.js';
-import { OAuthAuthorizeService } from '#backend/services/oauth-authorize.service.js';
-import { OAuthClientService } from '#backend/services/oauth-client.service.js';
-import { OAuthConnectService } from '#backend/services/oauth-connect.service.js';
-import { OAuthTokenService } from '#backend/services/oauth-token.service.js';
-import { PasskeyService } from '#backend/services/passkey.service.js';
-import { PasswordAuthService } from '#backend/services/password-auth.service.js';
-import { PasswordResetService } from '#backend/services/password-reset.service.js';
-import { SchedulerService } from '#backend/services/scheduler.service.js';
-import { SecurityService } from '#backend/services/security.service.js';
-import { TermsService } from '#backend/services/terms.service.js';
-import { TotpService } from '#backend/services/totp.service.js';
-import { UserService } from '#backend/services/user.service.js';
-import { UserConsentService } from '#backend/services/user-consent.service.js';
+import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import type { Logger } from '../lib/logger.ts';
+import { seedConfig } from '../seeders/config.seeder.ts';
+import { CleanupService } from './cleanup.service.ts';
+import { EmailService } from './email.service.ts';
+import { JwtService } from './jwt.service.ts';
+import { MikroService } from './mikro.service.ts';
+import { OAuthAuthorizeService } from './oauth-authorize.service.ts';
+import { OAuthClientService } from './oauth-client.service.ts';
+import { OAuthConnectService } from './oauth-connect.service.ts';
+import { OAuthTokenService } from './oauth-token.service.ts';
+import { PasskeyService } from './passkey.service.ts';
+import { PasswordAuthService } from './password-auth.service.ts';
+import { PasswordResetService } from './password-reset.service.ts';
+import { SchedulerService } from './scheduler.service.ts';
+import { SecurityService } from './security.service.ts';
+import { TermsService } from './terms.service.ts';
+import { TotpService } from './totp.service.ts';
+import { UserService } from './user.service.ts';
+import { UserConsentService } from './user-consent.service.ts';
 
 export async function initializeServices(
   config: TinyAuthRuntimeConfig,

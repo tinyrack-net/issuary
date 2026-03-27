@@ -5,7 +5,7 @@ import {
   type StricliDynamicCommandContext,
 } from '@stricli/core';
 import packageJson from '../../package.json' with { type: 'json' };
-import { commands } from './commands/index.js';
+import { commands } from './commands/index.ts';
 
 export type TinyAuthCliContext = CommandContext;
 

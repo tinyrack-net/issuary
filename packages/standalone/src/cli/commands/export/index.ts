@@ -1,5 +1,5 @@
 import { buildRouteMap } from '@stricli/core';
-import { exportOpenapiCommand } from './openapi.js';
+import { exportOpenapiCommand } from './openapi.ts';
 
 export const exportCommand = buildRouteMap({
   routes: {

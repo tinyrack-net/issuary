@@ -1,9 +1,9 @@
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
-import { OAuthClientRepository } from '#backend/repositories/oauth-client.repository.js';
-import { BaseSchema } from './base.entity.js';
-import { OAuthCodeEntitySchema } from './oauth-code.entity.js';
-import { RevokedTokenEntitySchema } from './revoked-token.entity.js';
-import { UserConsentEntitySchema } from './user-consent.entity.js';
+import { OAuthClientRepository } from '../repositories/oauth-client.repository.ts';
+import { BaseSchema } from './base.entity.ts';
+import { OAuthCodeEntitySchema } from './oauth-code.entity.ts';
+import { RevokedTokenEntitySchema } from './revoked-token.entity.ts';
+import { UserConsentEntitySchema } from './user-consent.entity.ts';
 
 export const OAuthClientEntitySchema = defineEntity({
   name: 'OAuthClientEntity',

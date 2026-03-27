@@ -1,13 +1,13 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '#backend/entrypoints/app.js';
+import type { AppType } from '../../../../entrypoints/app.ts';
 import {
   assertJsonBody,
   createTestApp,
   MINIMAL_TEST_CONFIG,
   TEST_USER,
   TEST_USER_CONFIG,
-} from '#backend/test-utils/index.js';
+} from '../../../../test-utils/index.ts';
 
 let app: AppType;
 let cleanup: () => Promise<void>;

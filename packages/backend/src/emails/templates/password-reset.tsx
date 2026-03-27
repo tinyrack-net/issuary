@@ -1,8 +1,8 @@
 /** @jsxImportSource react */
 import { Button, Heading, Link, Section, Text } from '@react-email/components';
-import type { Locale } from '#backend/lib/locale.js';
-import { EmailLayout } from '../components/email-layout.js';
-import { getTranslations } from '../i18n/index.js';
+import type { Locale } from '../../lib/locale.ts';
+import { EmailLayout } from '../components/email-layout.tsx';
+import { getTranslations } from '../i18n/index.ts';
 
 export interface PasswordResetEmailProps {
   resetUrl: string;

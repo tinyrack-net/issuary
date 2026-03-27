@@ -5,6 +5,14 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "imports": {
+    "#example-react-spa/*.ts": {
+      "types": "./src/*.ts",
+      "default": "./src/*.ts"
+    },
+    "#example-react-spa/*.tsx": {
+      "types": "./src/*.tsx",
+      "default": "./src/*.tsx"
+    },
     "#example-react-spa/*": {
       "types": "./src/*",
       "default": "./src/*"

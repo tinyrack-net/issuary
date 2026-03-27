@@ -1,6 +1,6 @@
 import z from 'zod';
-import { DurationString } from '#backend/lib/duration.js';
-import { zz } from '#backend/schemas/provider.js';
+import { zz } from '../../schemas/provider.ts';
+import { DurationString } from '../duration.ts';
 
 const CLEANUP_REVOKED_TOKENS_CONFIG_DEFAULT = {
   enabled: true,

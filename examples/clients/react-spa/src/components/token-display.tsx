@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { TokenResponse } from '#example-react-spa/types/oidc.js';
+import type { TokenResponse } from '#example-react-spa/types/oidc.ts';
 
 interface TokenDisplayProps {
   tokens: TokenResponse;

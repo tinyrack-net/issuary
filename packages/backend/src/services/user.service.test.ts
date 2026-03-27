@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { ServiceContainer } from '#backend/services/container.js';
 import {
   createTestApp,
   createTestEmailConfig,
   MINIMAL_TEST_CONFIG,
-} from '#backend/test-utils/index.js';
+} from '../test-utils/index.ts';
+import type { ServiceContainer } from './container.ts';
 
 describe('UserService', () => {
   let services: ServiceContainer;

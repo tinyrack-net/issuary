@@ -2,7 +2,7 @@ import { EntityRepository } from '@mikro-orm/core';
 import type {
   IRevokedTokenEntity,
   TokenType,
-} from '#backend/entities/revoked-token.entity.js';
+} from '../entities/revoked-token.entity.ts';
 
 /**
  * Repository for managing revoked tokens

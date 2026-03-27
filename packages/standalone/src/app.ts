@@ -1,6 +1,6 @@
 import { createApp } from '@tinyauth/backend';
-import type { StandaloneConfigInput } from './lib/config/index.js';
-import { resolveConfig } from './lib/load-config.js';
+import type { StandaloneConfigInput } from './lib/config/index.ts';
+import { resolveConfig } from './lib/load-config.ts';
 
 export interface CreateStandaloneAppOptions {
   config: StandaloneConfigInput;

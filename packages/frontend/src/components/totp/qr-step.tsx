@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { TotpSetupData } from '#frontend/features/totp/use-totp-setup.js';
+import type { TotpSetupData } from '#frontend/features/totp/use-totp-setup.ts';
 
 export interface QrStepProps {
   setupData: TotpSetupData;

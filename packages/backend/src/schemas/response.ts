@@ -4,9 +4,9 @@ import {
   PasskeyAuthConfigSchema,
   PasswordAuthConfigSchema,
   PasswordPolicyConfigSchema,
-} from '#backend/lib/config/index.js';
-import { f } from './field.js';
-import { oauthSchema } from './oauth.js';
+} from '../lib/config/index.ts';
+import { f } from './field.ts';
+import { oauthSchema } from './oauth.ts';
 
 // Base schemas
 const UserSession = z

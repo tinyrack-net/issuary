@@ -10,7 +10,7 @@ import {
   MS_PER_SECOND,
   MS_PER_YEAR,
   parseDurationToMs,
-} from './duration.js';
+} from './duration.ts';
 
 describe('Duration Constants', () => {
   it('should have correct MS_PER_SECOND value', () => {

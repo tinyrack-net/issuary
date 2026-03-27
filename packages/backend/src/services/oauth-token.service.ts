@@ -1,20 +1,16 @@
-import {
-  stringToBytes,
-  toArrayBuffer,
-  toBase64Url,
-} from '#backend/lib/base64url.js';
-import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
-import { validatePKCE } from '#backend/lib/pkce.js';
-import { e } from '#backend/schemas/error.js';
-import type { MikroService } from '#backend/services/mikro.service.js';
-import type { SecurityService } from '#backend/services/security.service.js';
+import { stringToBytes, toArrayBuffer, toBase64Url } from '../lib/base64url.ts';
+import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import { validatePKCE } from '../lib/pkce.ts';
+import { e } from '../schemas/error.ts';
 import type {
   AccessTokenPayload,
   JwtService,
   RefreshTokenPayload,
-} from './jwt.service.js';
-import type { OAuthClientService } from './oauth-client.service.js';
-import type { UserService } from './user.service.js';
+} from './jwt.service.ts';
+import type { MikroService } from './mikro.service.ts';
+import type { OAuthClientService } from './oauth-client.service.ts';
+import type { SecurityService } from './security.service.ts';
+import type { UserService } from './user.service.ts';
 
 /**
  * Parameters for authorization code grant (RFC 6749 §4.1.3)

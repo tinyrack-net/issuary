@@ -2,7 +2,7 @@ import type { AppType } from '@tinyauth/backend';
 import type { ClientResponse } from 'hono/client';
 import { hc } from 'hono/client';
 import type { StatusCode, SuccessStatusCode } from 'hono/utils/http-status';
-import i18n from '#frontend/i18n/index.js';
+import i18n from '#frontend/i18n/index.ts';
 import { TinyAuthError } from './error';
 
 /**

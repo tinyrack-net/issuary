@@ -1,11 +1,11 @@
 import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
 import qrcode from 'qrcode';
-import type { UserEntity } from '#backend/entities/user.entity.js';
-import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
-import { getRandomBytes } from '#backend/lib/crypto.js';
-import { e } from '#backend/schemas/error.js';
-import type { MikroService } from '#backend/services/mikro.service.js';
-import type { SecurityService } from '#backend/services/security.service.js';
+import type { UserEntity } from '../entities/user.entity.ts';
+import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import { getRandomBytes } from '../lib/crypto.ts';
+import { e } from '../schemas/error.ts';
+import type { MikroService } from './mikro.service.ts';
+import type { SecurityService } from './security.service.ts';
 
 /**
  * TOTP setup data returned when initiating 2FA setup

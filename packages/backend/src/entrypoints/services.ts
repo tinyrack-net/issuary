@@ -1,5 +1,5 @@
 export type {
   InitResult,
   ServiceContainer,
-} from '#backend/services/container.js';
-export { initializeServices } from '#backend/services/container.js';
+} from '../services/container.ts';
+export { initializeServices } from '../services/container.ts';

@@ -1,6 +1,6 @@
 import { EntityRepository, ref } from '@mikro-orm/core';
-import { UserEntity } from '#backend/entities/user.entity.js';
-import type { UserTermsConsentEntity } from '#backend/entities/user-terms-consent.entity.js';
+import { UserEntity } from '../entities/user.entity.ts';
+import type { UserTermsConsentEntity } from '../entities/user-terms-consent.entity.ts';
 
 export class UserTermsConsentRepository extends EntityRepository<UserTermsConsentEntity> {
   /**

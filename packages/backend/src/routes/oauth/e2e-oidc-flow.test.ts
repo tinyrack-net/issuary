@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { testClient } from 'hono/testing';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '#backend/entrypoints/app.js';
+import type { AppType } from '../../entrypoints/app.ts';
 import {
   assertJsonBody,
   createAuthenticatedSession,
@@ -17,7 +17,7 @@ import {
   TEST_PKCE,
   TEST_USER,
   TEST_USER_CONFIG,
-} from '#backend/test-utils/index.js';
+} from '../../test-utils/index.ts';
 
 let app: AppType;
 let cleanup: () => Promise<void>;

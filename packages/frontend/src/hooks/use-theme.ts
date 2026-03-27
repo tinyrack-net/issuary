@@ -4,7 +4,7 @@ import {
   appConfigQueryOptions,
   type Theme,
   type ThemeMode,
-} from '#frontend/queries/config.js';
+} from '#frontend/queries/config.ts';
 
 const THEME_MODE_STORAGE_KEY = 'tinyauth-theme-mode';
 

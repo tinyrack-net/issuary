@@ -1,11 +1,11 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '#backend/entrypoints/app.js';
+import type { AppType } from '../entrypoints/app.ts';
 import {
   createTestApp,
   createTestEmailConfig,
   MINIMAL_TEST_CONFIG,
-} from './setup.js';
+} from './setup.ts';
 
 describe('createTestApp', () => {
   let app: AppType;

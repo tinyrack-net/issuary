@@ -4,9 +4,9 @@ import { createApp, createOpenApiDocumentation } from '@tinyauth/backend';
 import { OPENAPI_CONFIG_DEFAULT } from '@tinyauth/backend/config';
 import { generateSpecs } from 'hono-openapi';
 import z from 'zod';
-import type { StandaloneConfigInput } from '#standalone/lib/config/index.js';
-import { resolveConfig } from '#standalone/lib/load-config.js';
-import { parseWithZod } from '../../../lib/cli/parse-with-zod.js';
+import { parseWithZod } from '../../../lib/cli/parse-with-zod.ts';
+import type { StandaloneConfigInput } from '../../../lib/config/index.ts';
+import { resolveConfig } from '../../../lib/load-config.ts';
 
 /**
  * Export OpenAPI command

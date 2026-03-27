@@ -1,1 +1,1 @@
-export * from '#backend/lib/config/index.js';
+export * from '../../lib/config/index.ts';

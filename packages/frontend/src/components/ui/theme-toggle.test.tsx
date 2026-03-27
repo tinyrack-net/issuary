@@ -1,6 +1,6 @@
 import { beforeAll, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
-import { initTestI18n } from '#frontend/test-utils/i18n.js';
+import { initTestI18n } from '#frontend/test-utils/i18n.ts';
 import { ThemeToggle } from './theme-toggle';
 
 beforeAll(() => {

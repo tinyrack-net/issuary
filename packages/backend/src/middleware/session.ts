@@ -1,6 +1,6 @@
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { createMiddleware } from 'hono/factory';
-import { decrypt, encrypt } from '#backend/lib/crypto.js';
+import { decrypt, encrypt } from '../lib/crypto.ts';
 
 export type SessionEnv = { Variables: { session: SessionHelper } };
 

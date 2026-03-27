@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import z from 'zod';
-import type { BrandingConfig } from './branding.js';
-import type { ServerConfig } from './server.js';
+import type { BrandingConfig } from './branding.ts';
+import type { ServerConfig } from './server.ts';
 
 export type FrontendHandler = (c: Context) => Response | Promise<Response>;
 

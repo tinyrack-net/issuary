@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { describeRoute, resolver } from 'hono-openapi';
 import type { z } from 'zod';
-import type { AppEnv } from '#backend/lib/app-env.js';
-import { r } from '#backend/schemas/response.js';
+import type { AppEnv } from '../../../lib/app-env.ts';
+import { r } from '../../../schemas/response.ts';
 
 type OAuthAuthenticationMethod = z.infer<typeof r.OAuthAuthenticationMethod>;
 

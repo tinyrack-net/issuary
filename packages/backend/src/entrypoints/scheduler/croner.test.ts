@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { croner } from '#backend/entrypoints/scheduler/croner.js';
+import { croner } from './croner.ts';
 
 afterEach(() => {
   vi.useRealTimers();

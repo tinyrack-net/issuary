@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { BrandingConfigSchema } from '#backend/lib/config/branding.js';
-import { ServerConfigSchema } from '#backend/lib/config/server.js';
+import { BrandingConfigSchema } from './config/branding.ts';
+import { ServerConfigSchema } from './config/server.ts';
 import {
   DEFAULT_HTML_VARIABLES,
   interpolateHtml,
   interpolateHtmlResponse,
   resolveHtmlVariables,
-} from './interpolate-html.js';
+} from './interpolate-html.ts';
 
 describe('interpolateHtml', () => {
   describe('basic replacement', () => {

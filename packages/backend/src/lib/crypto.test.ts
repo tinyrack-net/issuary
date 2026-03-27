@@ -5,7 +5,7 @@ import {
   getRandomBytes,
   stringToBytes,
   toBase64Url,
-} from './base64url.js';
+} from './base64url.ts';
 import {
   decrypt,
   derivePbkdf2Bytes,
@@ -17,7 +17,7 @@ import {
   parsePbkdf2Hash,
   signOpaqueValue,
   timingSafeEqualBytes,
-} from './crypto.js';
+} from './crypto.ts';
 
 // A valid 256-bit key (64 hex chars)
 const TEST_KEY = bytesToHex(getRandomBytes(32));

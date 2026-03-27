@@ -1,12 +1,12 @@
 import type { Loaded } from '@mikro-orm/core';
-import type { UserEntity } from '#backend/entities/user.entity.js';
+import type { UserEntity } from '../entities/user.entity.ts';
 import {
   assertPasswordPolicy,
   type PasswordPolicy,
-} from '#backend/lib/password-policy.js';
-import { e } from '#backend/schemas/error.js';
-import type { MikroService } from '#backend/services/mikro.service.js';
-import type { SecurityService } from '#backend/services/security.service.js';
+} from '../lib/password-policy.ts';
+import { e } from '../schemas/error.ts';
+import type { MikroService } from './mikro.service.ts';
+import type { SecurityService } from './security.service.ts';
 
 export class PasswordAuthService {
   private readonly mikro: MikroService;

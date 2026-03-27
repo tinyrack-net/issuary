@@ -6,17 +6,17 @@ import {
 } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { PageHeader } from '#frontend/components/auth/page-header.js';
-import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.js';
-import { PageLayout } from '#frontend/features/layout/page-layout.js';
+import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
+import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import {
   buildAuthorizeUrl,
   OAuthSearchSchema,
-} from '#frontend/libs/oauth-search.js';
+} from '#frontend/libs/oauth-search.ts';
 import {
   consentDecisionMutationOptions,
   getConsentInfoQueryOptions,
-} from '#frontend/queries/consent.js';
+} from '#frontend/queries/consent.ts';
 
 const ConsentSearchSchema = OAuthSearchSchema.extend({
   client_id: z.string(),

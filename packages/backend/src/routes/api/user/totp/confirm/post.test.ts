@@ -1,8 +1,8 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '#backend/entrypoints/app.js';
-import { e } from '#backend/schemas/error.js';
-import type { ServiceContainer } from '#backend/services/container.js';
+import type { AppType } from '../../../../../entrypoints/app.ts';
+import { e } from '../../../../../schemas/error.ts';
+import type { ServiceContainer } from '../../../../../services/container.ts';
 import {
   assertJsonBody,
   createDbUserWithSession,
@@ -11,7 +11,7 @@ import {
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   withMikroContext,
-} from '#backend/test-utils/index.js';
+} from '../../../../../test-utils/index.ts';
 
 let app: AppType;
 let services: ServiceContainer;

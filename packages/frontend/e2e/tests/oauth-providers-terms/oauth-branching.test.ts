@@ -1,14 +1,14 @@
 import { expect } from '@playwright/test';
 import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth';
 import { z } from 'zod';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
-} from '#frontend-e2e/fixtures/index.js';
-import { startOAuthLogin } from '#frontend-e2e/helpers/oauth.js';
-import { registerPage } from '#frontend-e2e/helpers/register-page.js';
-import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/fixtures/index.ts';
+import { startOAuthLogin } from '#frontend-e2e/helpers/oauth.ts';
+import { registerPage } from '#frontend-e2e/helpers/register-page.ts';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
 const TEST_PASSWORD = 'test-password-123';
 const EXISTING_COMPLETE_EMAIL = 'oauth-stub-existing-complete@allowed.test';

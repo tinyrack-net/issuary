@@ -1,21 +1,21 @@
 import { expect } from '@playwright/test';
 import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
   E2E_TEST_CLIENT_CONFIG,
-} from '#frontend-e2e/fixtures/index.js';
-import { consentPage } from '#frontend-e2e/helpers/consent.js';
-import { startOAuthLogin } from '#frontend-e2e/helpers/oauth.js';
+} from '#frontend-e2e/fixtures/index.ts';
+import { consentPage } from '#frontend-e2e/helpers/consent.ts';
+import { startOAuthLogin } from '#frontend-e2e/helpers/oauth.ts';
 import {
   buildAuthorizePath,
   buildOAuthFlowInput,
   captureClientRedirectAfterAction,
   exchangeAuthorizationCode,
   expectOAuthParamsInCurrentUrl,
-} from '#frontend-e2e/helpers/oauth-client-flow.js';
-import { registerPage } from '#frontend-e2e/helpers/register-page.js';
+} from '#frontend-e2e/helpers/oauth-client-flow.ts';
+import { registerPage } from '#frontend-e2e/helpers/register-page.ts';
 
 const TERMS_CONFIG = [
   {

@@ -1,5 +1,5 @@
-import type { BrandingConfig } from '#backend/lib/config/branding.js';
-import type { ServerConfig } from '#backend/lib/config/server.js';
+import type { BrandingConfig } from './config/branding.ts';
+import type { ServerConfig } from './config/server.ts';
 
 export type HtmlVariables = Record<string, string>;
 

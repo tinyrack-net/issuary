@@ -2,7 +2,7 @@ import { Cron } from 'croner';
 import type {
   SchedulerConfig,
   SchedulerHandle,
-} from '#backend/lib/config/index.js';
+} from '../../lib/config/index.ts';
 
 const DEFAULT_CRON = '0 2 * * *';
 

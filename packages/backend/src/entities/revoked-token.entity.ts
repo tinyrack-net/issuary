@@ -1,8 +1,8 @@
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
-import { RevokedTokenRepository } from '#backend/repositories/revoked-token.repository.js';
-import { BaseSchema } from './base.entity.js';
-import { OAuthClientEntitySchema } from './oauth-client.entity.js';
-import { UserEntitySchema } from './user.entity.js';
+import { RevokedTokenRepository } from '../repositories/revoked-token.repository.ts';
+import { BaseSchema } from './base.entity.ts';
+import { OAuthClientEntitySchema } from './oauth-client.entity.ts';
+import { UserEntitySchema } from './user.entity.ts';
 
 /**
  * Token types that can be revoked

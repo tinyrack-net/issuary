@@ -1,6 +1,6 @@
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
-import { JwtKeyRepository } from '#backend/repositories/jwt-key.repository.js';
-import { BaseSchema } from './base.entity.js';
+import { JwtKeyRepository } from '../repositories/jwt-key.repository.ts';
+import { BaseSchema } from './base.entity.ts';
 
 /**
  * JWT Key status for rotation lifecycle

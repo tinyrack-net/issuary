@@ -1,12 +1,12 @@
 import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
-import type { AppEnv } from '#backend/lib/app-env.js';
-import { TAGS } from '#backend/lib/swagger-tags.js';
-import { verifyAuth, verifyOAuth } from '#backend/middleware/auth.js';
-import { e } from '#backend/schemas/error.js';
-import { f } from '#backend/schemas/field.js';
-import { r } from '#backend/schemas/response.js';
+import type { AppEnv } from '../../../../../lib/app-env.ts';
+import { TAGS } from '../../../../../lib/swagger-tags.ts';
+import { verifyAuth, verifyOAuth } from '../../../../../middleware/auth.ts';
+import { e } from '../../../../../schemas/error.ts';
+import { f } from '../../../../../schemas/field.ts';
+import { r } from '../../../../../schemas/response.ts';
 
 export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
   '/oauth/:provider/callback',

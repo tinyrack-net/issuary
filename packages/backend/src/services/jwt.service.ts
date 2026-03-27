@@ -10,14 +10,11 @@ import {
   jwtVerify,
   SignJWT,
 } from 'jose';
-import {
-  type JwtKeyEntity,
-  JwtKeyStatus,
-} from '#backend/entities/jwt-key.entity.js';
-import { bytesToString, fromBase64Url } from '#backend/lib/base64url.js';
-import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
-import { e } from '#backend/schemas/error.js';
-import type { MikroService } from '#backend/services/mikro.service.js';
+import { type JwtKeyEntity, JwtKeyStatus } from '../entities/jwt-key.entity.ts';
+import { bytesToString, fromBase64Url } from '../lib/base64url.ts';
+import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import { e } from '../schemas/error.ts';
+import type { MikroService } from './mikro.service.ts';
 
 // ---------------------------------------------------------------------------
 // Key Management Types

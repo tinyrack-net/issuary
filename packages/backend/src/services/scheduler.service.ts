@@ -1,9 +1,6 @@
-import type {
-  SchedulerConfig,
-  SchedulerHandle,
-} from '#backend/lib/config/index.js';
-import type { Logger } from '#backend/lib/logger.js';
-import type { CleanupService } from '#backend/services/cleanup.service.js';
+import type { SchedulerConfig, SchedulerHandle } from '../lib/config/index.ts';
+import type { Logger } from '../lib/logger.ts';
+import type { CleanupService } from './cleanup.service.ts';
 
 export class SchedulerService {
   private readonly cleanupService: CleanupService;

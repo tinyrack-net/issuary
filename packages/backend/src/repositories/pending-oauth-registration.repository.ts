@@ -1,5 +1,5 @@
 import { EntityRepository } from '@mikro-orm/core';
-import type { IPendingOAuthRegistrationEntity } from '#backend/entities/pending-oauth-registration.entity.js';
+import type { IPendingOAuthRegistrationEntity } from '../entities/pending-oauth-registration.entity.ts';
 
 export interface CreatePendingRegistrationParams {
   providerId: string;

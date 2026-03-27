@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 import { describeRoute, resolver } from 'hono-openapi';
-import type { AppEnv } from '#backend/lib/app-env.js';
-import { TAGS } from '#backend/lib/swagger-tags.js';
-import { verifyPending2FAUser } from '#backend/middleware/auth.js';
-import { e } from '#backend/schemas/error.js';
-import { r } from '#backend/schemas/response.js';
+import type { AppEnv } from '../../../../../lib/app-env.ts';
+import { TAGS } from '../../../../../lib/swagger-tags.ts';
+import { verifyPending2FAUser } from '../../../../../middleware/auth.ts';
+import { e } from '../../../../../schemas/error.ts';
+import { r } from '../../../../../schemas/response.ts';
 
 export const authPasskeyOptionsPost = new Hono<AppEnv>().post(
   '/auth/passkey/options',

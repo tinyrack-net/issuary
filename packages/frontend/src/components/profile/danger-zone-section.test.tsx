@@ -1,7 +1,7 @@
 import { beforeAll, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
-import { initTestI18n } from '#frontend/test-utils/i18n.js';
-import { DangerZoneSection } from './danger-zone-section.js';
+import { initTestI18n } from '#frontend/test-utils/i18n.ts';
+import { DangerZoneSection } from './danger-zone-section.tsx';
 
 beforeAll(() => {
   initTestI18n();

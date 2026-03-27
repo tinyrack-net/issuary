@@ -3,8 +3,8 @@ import {
   DEFAULT_LOCALE,
   isAvailableLocale,
   type Locale,
-} from '#backend/lib/locale.js';
-import { PASSWORD_POLICY_MAX_LENGTH } from '#backend/lib/password-policy.js';
+} from '../lib/locale.ts';
+import { PASSWORD_POLICY_MAX_LENGTH } from '../lib/password-policy.ts';
 
 export const f = {
   // Common fields

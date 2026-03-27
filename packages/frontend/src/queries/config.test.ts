@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import type { AppConfigs } from './config.js';
-import { appConfigQueryOptions } from './config.js';
+import type { AppConfigs } from './config.ts';
+import { appConfigQueryOptions } from './config.ts';
 
 const baseConfig = {
   i18n: {

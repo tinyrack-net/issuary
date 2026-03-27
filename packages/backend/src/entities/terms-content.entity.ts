@@ -1,7 +1,7 @@
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
-import { TermsContentRepository } from '#backend/repositories/terms-content.repository.js';
-import { BaseSchema } from './base.entity.js';
-import { TermsEntitySchema } from './terms.entity.js';
+import { TermsContentRepository } from '../repositories/terms-content.repository.ts';
+import { BaseSchema } from './base.entity.ts';
+import { TermsEntitySchema } from './terms.entity.ts';
 
 /**
  * Content type for terms content.

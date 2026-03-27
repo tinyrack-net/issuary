@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { parseScopesWithDescriptions } from './scopes.js';
+import { parseScopesWithDescriptions } from './scopes.ts';
 
 describe('parseScopesWithDescriptions', () => {
   test('should parse multiple scopes', () => {

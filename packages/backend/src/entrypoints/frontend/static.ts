@@ -1,4 +1,4 @@
 export {
   type CreateStaticHandlerOptions,
   createStaticHandler,
-} from '#backend/lib/frontend/static.js';
+} from '../../lib/frontend/static.ts';

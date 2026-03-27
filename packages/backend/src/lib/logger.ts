@@ -1,8 +1,5 @@
 import pino from 'pino';
-import {
-  type LoggingConfig,
-  LoggingConfigSchema,
-} from '#backend/lib/config/index.js';
+import { type LoggingConfig, LoggingConfigSchema } from './config/index.ts';
 
 export type { Logger } from 'pino';
 

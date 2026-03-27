@@ -1,9 +1,9 @@
 import z from 'zod';
+import { zz } from '../../schemas/provider.ts';
 import {
   PASSWORD_POLICY_MAX_LENGTH,
   PASSWORD_POLICY_MIN_LENGTH,
-} from '#backend/lib/password-policy.js';
-import { zz } from '#backend/schemas/provider.js';
+} from '../password-policy.ts';
 
 const PASSWORD_TWO_FACTOR_CONFIG_DEFAULT = {
   enrollment_required: false,

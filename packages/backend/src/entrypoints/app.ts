@@ -4,17 +4,17 @@ import { generateSpecs } from 'hono-openapi';
 import {
   type TinyAuthRuntimeConfigInput,
   TinyAuthRuntimeConfigSchema,
-} from '#backend/lib/config/index.js';
-import { createLogger } from '#backend/lib/logger.js';
-import { createOpenApiDocumentation } from '#backend/lib/openapi.js';
-import { loggerMiddleware } from '#backend/middleware/logger.js';
-import { mikroOrmMiddleware } from '#backend/middleware/mikro-orm.js';
-import { servicesMiddleware } from '#backend/middleware/services.js';
-import { sessionMiddleware } from '#backend/middleware/session.js';
-import { trustedProxyGuard } from '#backend/middleware/trusted-proxy-guard.js';
-import { routes } from '#backend/routes/index.js';
-import { e, TinyAuthError } from '#backend/schemas/error.js';
-import { initializeServices } from '#backend/services/container.js';
+} from '../lib/config/index.ts';
+import { createLogger } from '../lib/logger.ts';
+import { createOpenApiDocumentation } from '../lib/openapi.ts';
+import { loggerMiddleware } from '../middleware/logger.ts';
+import { mikroOrmMiddleware } from '../middleware/mikro-orm.ts';
+import { servicesMiddleware } from '../middleware/services.ts';
+import { sessionMiddleware } from '../middleware/session.ts';
+import { trustedProxyGuard } from '../middleware/trusted-proxy-guard.ts';
+import { routes } from '../routes/index.ts';
+import { e, TinyAuthError } from '../schemas/error.ts';
+import { initializeServices } from '../services/container.ts';
 
 /**
  * Application configuration for the backend runtime.

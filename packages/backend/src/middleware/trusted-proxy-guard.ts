@@ -1,7 +1,7 @@
 import type { ConnInfo } from 'hono/conninfo';
 import { createMiddleware } from 'hono/factory';
-import { isTrustedProxy } from '#backend/lib/ip-utils.js';
-import { e } from '#backend/schemas/error.js';
+import { isTrustedProxy } from '../lib/ip-utils.ts';
+import { e } from '../schemas/error.ts';
 
 /**
  * Creates a trusted proxy guard middleware.

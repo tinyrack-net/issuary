@@ -1,10 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '#backend/entrypoints/app.js';
-import {
-  createTestApp,
-  MINIMAL_TEST_CONFIG,
-} from '#backend/test-utils/index.js';
+import { createTestApp, MINIMAL_TEST_CONFIG } from '../test-utils/index.ts';
+import type { AppType } from './app.ts';
 
 describe('createApp', () => {
   let app: AppType;

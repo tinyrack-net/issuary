@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SchedulerConfig } from '#backend/lib/config/index.js';
-import type { CleanupSummary } from '#backend/services/cleanup.service.js';
-import type { ServiceContainer } from '#backend/services/container.js';
-import { createTestApp } from '#backend/test-utils/index.js';
-import { MINIMAL_TEST_CONFIG } from '#backend/test-utils/setup.js';
+import type { SchedulerConfig } from '../lib/config/index.ts';
+import { createTestApp } from '../test-utils/index.ts';
+import { MINIMAL_TEST_CONFIG } from '../test-utils/setup.ts';
+import type { CleanupSummary } from './cleanup.service.ts';
+import type { ServiceContainer } from './container.ts';
 
 interface FakeSchedulerDriver {
   config: SchedulerConfig;

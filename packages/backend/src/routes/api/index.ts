@@ -1,13 +1,13 @@
 import { Hono } from 'hono';
-import type { AppEnv } from '#backend/lib/app-env.js';
-import { authRoutes } from './auth/index.js';
-import { configRoutes } from './config/index.js';
-import { consentRoutes } from './consent/index.js';
-import { docsRoutes } from './docs/index.js';
-import { healthRoutes } from './health/index.js';
-import { oauthRoutes } from './oauth/index.js';
-import { termsRoutes } from './terms/index.js';
-import { userRoutes } from './user/index.js';
+import type { AppEnv } from '../../lib/app-env.ts';
+import { authRoutes } from './auth/index.ts';
+import { configRoutes } from './config/index.ts';
+import { consentRoutes } from './consent/index.ts';
+import { docsRoutes } from './docs/index.ts';
+import { healthRoutes } from './health/index.ts';
+import { oauthRoutes } from './oauth/index.ts';
+import { termsRoutes } from './terms/index.ts';
+import { userRoutes } from './user/index.ts';
 
 export const apiRoutes = new Hono<AppEnv>()
   .route('/', authRoutes)

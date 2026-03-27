@@ -1,12 +1,12 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { OAuthClientEntitySchema } from '#backend/entities/oauth-client.entity.js';
-import type { ServiceContainer } from '#backend/services/container.js';
+import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.ts';
 import {
   createTestApp,
   createTestOAuthClient,
   MINIMAL_TEST_CONFIG,
   withMikroContext,
-} from '#backend/test-utils/index.js';
+} from '../test-utils/index.ts';
+import type { ServiceContainer } from './container.ts';
 
 describe('OAuthClientService', () => {
   let services: ServiceContainer;

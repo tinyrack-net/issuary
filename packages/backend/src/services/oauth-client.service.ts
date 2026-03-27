@@ -1,8 +1,8 @@
 import type z from 'zod';
-import { e } from '#backend/schemas/error.js';
-import type { r } from '#backend/schemas/response.js';
-import type { MikroService } from '#backend/services/mikro.service.js';
-import type { SecurityService } from '#backend/services/security.service.js';
+import { e } from '../schemas/error.ts';
+import type { r } from '../schemas/response.ts';
+import type { MikroService } from './mikro.service.ts';
+import type { SecurityService } from './security.service.ts';
 
 export class OAuthClientService {
   private readonly mikro: MikroService;

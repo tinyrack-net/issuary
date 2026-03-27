@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { ServiceContainer } from '#backend/services/container.js';
 import {
   createTestApp,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   withMikroContext,
-} from '#backend/test-utils/index.js';
+} from '../test-utils/index.ts';
+import type { ServiceContainer } from './container.ts';
 
 describe('PasswordAuthService', () => {
   let services: ServiceContainer;

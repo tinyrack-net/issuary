@@ -5,11 +5,11 @@ import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod';
-import { AlertBanner } from '#frontend/components/ui/alert-banner.js';
-import { Modal, ModalActions } from '#frontend/components/ui/modal.js';
-import { TinyAuthError } from '#frontend/libs/error.js';
-import { getSessionQueryOptions } from '#frontend/queries/session.js';
-import { disableTotpMutationOptions } from '#frontend/queries/totp.js';
+import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
+import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
+import { TinyAuthError } from '#frontend/libs/error.ts';
+import { getSessionQueryOptions } from '#frontend/queries/session.ts';
+import { disableTotpMutationOptions } from '#frontend/queries/totp.ts';
 
 interface DisableTotpModalProps {
   isOpen: boolean;

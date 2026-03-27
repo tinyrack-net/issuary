@@ -1,5 +1,5 @@
-import { fromBase64Url } from '#backend/lib/base64url.js';
-import type { TinyAuthRuntimeConfig } from '#backend/lib/config/index.js';
+import { fromBase64Url } from '../lib/base64url.ts';
+import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
 import {
   derivePbkdf2Bytes,
   derivePurposeKeyBytes,
@@ -9,7 +9,7 @@ import {
   parsePbkdf2Hash,
   signOpaqueValue,
   timingSafeEqualBytes,
-} from '#backend/lib/crypto.js';
+} from '../lib/crypto.ts';
 
 const PBKDF2_ALGORITHM = 'pbkdf2-sha256';
 const HMAC_ALGORITHM = 'hmac-sha256';

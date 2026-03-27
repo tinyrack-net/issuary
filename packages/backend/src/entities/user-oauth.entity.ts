@@ -3,9 +3,9 @@ import {
   type InferEntity,
   type RequiredNullable,
 } from '@mikro-orm/core';
-import { UserOAuthRepository } from '#backend/repositories/user-oauth.repository.js';
-import { BaseSchema } from './base.entity.js';
-import { UserEntity } from './user.entity.js';
+import { UserOAuthRepository } from '../repositories/user-oauth.repository.ts';
+import { BaseSchema } from './base.entity.ts';
+import { UserEntity } from './user.entity.ts';
 
 export const UserOAuthEntitySchema = defineEntity({
   name: 'UserOAuthEntity',

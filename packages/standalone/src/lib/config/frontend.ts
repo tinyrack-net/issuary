@@ -1,5 +1,5 @@
 import z from 'zod';
-import { StandaloneBooleanSchema } from './coerce.js';
+import { StandaloneBooleanSchema } from './coerce.ts';
 
 export const STANDALONE_FRONTEND_CONFIG_DEFAULT = {
   enabled: true,

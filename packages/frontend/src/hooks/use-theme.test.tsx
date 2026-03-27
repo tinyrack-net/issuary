@@ -25,7 +25,7 @@ vi.mock('@tanstack/react-query', async () => {
   };
 });
 
-import { useTheme } from './use-theme.js';
+import { useTheme } from './use-theme.ts';
 
 function ThemeProbe() {
   const {

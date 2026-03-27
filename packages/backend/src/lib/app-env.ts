@@ -1,6 +1,6 @@
-import type { LoggerEnv } from '#backend/middleware/logger.js';
-import type { ServicesEnv } from '#backend/middleware/services.js';
-import type { SessionEnv } from '#backend/middleware/session.js';
+import type { LoggerEnv } from '../middleware/logger.ts';
+import type { ServicesEnv } from '../middleware/services.ts';
+import type { SessionEnv } from '../middleware/session.ts';
 
 /**
  * AppEnv is derived from the intersection of

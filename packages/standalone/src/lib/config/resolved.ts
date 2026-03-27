@@ -14,15 +14,15 @@ import {
   TokensConfigSchema,
 } from '@tinyauth/backend/config';
 import z from 'zod';
-import { StandaloneDatabaseConfigSchema } from './database.js';
-import { StandaloneEmailConfigSchema } from './email.js';
+import { StandaloneDatabaseConfigSchema } from './database.ts';
+import { StandaloneEmailConfigSchema } from './email.ts';
 import {
   STANDALONE_FRONTEND_CONFIG_DEFAULT,
   StandaloneFrontendConfigSchema,
-} from './frontend.js';
-import { StandaloneIdentityProviderConfigsSchema } from './identity-providers.js';
-import { StandaloneSchedulerConfigSchema } from './scheduler.js';
-import { StandaloneUserConfigsSchema } from './user.js';
+} from './frontend.ts';
+import { StandaloneIdentityProviderConfigsSchema } from './identity-providers.ts';
+import { StandaloneSchedulerConfigSchema } from './scheduler.ts';
+import { StandaloneUserConfigsSchema } from './user.ts';
 
 export const StandaloneConfigSchema = z
   .object({

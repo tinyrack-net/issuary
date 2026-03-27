@@ -1,4 +1,4 @@
-import { sqlite } from './sqlite.js';
+import { sqlite } from './sqlite.ts';
 
 export default await sqlite({
   path: '/path/some',

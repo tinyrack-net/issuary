@@ -1,6 +1,6 @@
 import z from 'zod';
-import { DurationString } from '#backend/lib/duration.js';
-import { zz } from '#backend/schemas/provider.js';
+import { zz } from '../../schemas/provider.ts';
+import { DurationString } from '../duration.ts';
 
 export const ACCOUNT_DELETION_CONFIG_DEFAULT = {
   enabled: false,

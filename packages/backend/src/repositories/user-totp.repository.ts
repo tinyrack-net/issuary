@@ -1,5 +1,5 @@
 import { EntityRepository } from '@mikro-orm/core';
-import type { IUserTotpEntity } from '#backend/entities/user-totp.entity.js';
+import type { IUserTotpEntity } from '../entities/user-totp.entity.ts';
 
 export class UserTotpRepository extends EntityRepository<IUserTotpEntity> {
   /**

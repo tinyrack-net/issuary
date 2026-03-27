@@ -1,8 +1,8 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { UserEntity } from '#backend/entities/user.entity.js';
-import type { AppType } from '#backend/entrypoints/app.js';
-import type { ServiceContainer } from '#backend/services/container.js';
+import { UserEntity } from '../../../../entities/user.entity.ts';
+import type { AppType } from '../../../../entrypoints/app.ts';
+import type { ServiceContainer } from '../../../../services/container.ts';
 import {
   assertJsonBody,
   createAuthenticatedSession,
@@ -14,7 +14,7 @@ import {
   TEST_USER,
   TEST_USER_CONFIG,
   withMikroContext,
-} from '#backend/test-utils/index.js';
+} from '../../../../test-utils/index.ts';
 
 let app: AppType;
 let services: ServiceContainer;

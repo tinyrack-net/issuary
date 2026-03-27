@@ -1,12 +1,12 @@
 import { ShieldCheckIcon } from '@phosphor-icons/react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { QrStep } from '#frontend/components/totp/qr-step.js';
-import { RecoveryCodesStep } from '#frontend/components/totp/recovery-codes-step.js';
-import { VerifyStep } from '#frontend/components/totp/verify-step.js';
-import { AlertBanner } from '#frontend/components/ui/alert-banner.js';
-import { Modal, ModalActions } from '#frontend/components/ui/modal.js';
-import { useTotpSetup } from '#frontend/features/totp/use-totp-setup.js';
+import { QrStep } from '#frontend/components/totp/qr-step.tsx';
+import { RecoveryCodesStep } from '#frontend/components/totp/recovery-codes-step.tsx';
+import { VerifyStep } from '#frontend/components/totp/verify-step.tsx';
+import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
+import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
+import { useTotpSetup } from '#frontend/features/totp/use-totp-setup.ts';
 
 interface SetupTotpModalProps {
   isOpen: boolean;

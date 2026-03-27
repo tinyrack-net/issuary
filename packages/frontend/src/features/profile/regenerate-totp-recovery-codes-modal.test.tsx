@@ -1,9 +1,9 @@
 import { beforeAll, beforeEach, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
-import { TinyAuthError } from '#frontend/libs/error.js';
-import { getSessionQueryOptions } from '#frontend/queries/session.js';
-import { initTestI18n } from '#frontend/test-utils/i18n.js';
-import { RegenerateTotpRecoveryCodesModal } from './regenerate-totp-recovery-codes-modal.js';
+import { TinyAuthError } from '#frontend/libs/error.ts';
+import { getSessionQueryOptions } from '#frontend/queries/session.ts';
+import { initTestI18n } from '#frontend/test-utils/i18n.ts';
+import { RegenerateTotpRecoveryCodesModal } from './regenerate-totp-recovery-codes-modal.tsx';
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),

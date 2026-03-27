@@ -1,4 +1,4 @@
-import type { IdentityProviderConfig } from '#backend/lib/config/index.js';
+import type { IdentityProviderConfig } from '../../lib/config/index.ts';
 
 export interface GenericOAuthConfig {
   id: string;

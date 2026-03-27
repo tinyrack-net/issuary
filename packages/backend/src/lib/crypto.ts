@@ -7,9 +7,9 @@ import {
   stringToBytes,
   toArrayBuffer,
   toBase64Url,
-} from './base64url.js';
+} from './base64url.ts';
 
-export { getRandomBytes } from './base64url.js';
+export { getRandomBytes } from './base64url.ts';
 
 const ALGORITHM = 'AES-GCM';
 const IV_LENGTH = 12;

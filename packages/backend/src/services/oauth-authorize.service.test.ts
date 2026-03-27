@@ -1,6 +1,4 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { ServiceContainer } from '#backend/services/container.js';
-import type { AuthorizeParams } from '#backend/services/oauth-authorize.service.js';
 import {
   createTestApp,
   createTestUser,
@@ -8,7 +6,9 @@ import {
   TEST_OAUTH_CLIENT,
   TEST_OAUTH_CLIENT_CONFIG,
   withMikroContext,
-} from '#backend/test-utils/index.js';
+} from '../test-utils/index.ts';
+import type { ServiceContainer } from './container.ts';
+import type { AuthorizeParams } from './oauth-authorize.service.ts';
 
 describe('OAuthAuthorizeService', () => {
   let services: ServiceContainer;

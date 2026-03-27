@@ -1,11 +1,11 @@
 import { proxy } from 'hono/proxy';
 
-import type { FrontendConfig } from '#backend/lib/config/frontend.js';
-import type { HtmlVariables } from '#backend/lib/interpolate-html.js';
+import type { FrontendConfig } from '../config/frontend.ts';
+import type { HtmlVariables } from '../interpolate-html.ts';
 import {
   interpolateHtmlResponse,
   resolveHtmlVariables,
-} from '#backend/lib/interpolate-html.js';
+} from '../interpolate-html.ts';
 
 export interface CreateProxyHandlerOptions {
   /**

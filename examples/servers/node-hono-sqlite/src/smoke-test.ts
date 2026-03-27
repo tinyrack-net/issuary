@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createServer as createNetServer } from 'node:net';
 import { serve } from '@hono/node-server';
-import { createNodeHonoSqliteExampleApp } from './app.js';
+import { createNodeHonoSqliteExampleApp } from './app.ts';
 
 const port = await new Promise<number>((resolve, reject) => {
   const probe = createNetServer();

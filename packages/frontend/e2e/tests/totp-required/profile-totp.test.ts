@@ -1,24 +1,24 @@
 import { expect } from '@playwright/test';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.js';
+import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
-} from '#frontend-e2e/fixtures/index.js';
-import { performLogin } from '#frontend-e2e/helpers/login.js';
-import { fillPinInput } from '#frontend-e2e/helpers/pin-input.js';
+} from '#frontend-e2e/fixtures/index.ts';
+import { performLogin } from '#frontend-e2e/helpers/login.ts';
+import { fillPinInput } from '#frontend-e2e/helpers/pin-input.ts';
 import {
   disableTotpModal,
   modal,
   profilePage,
   regenerateTotpModal,
-} from '#frontend-e2e/helpers/profile-page.js';
+} from '#frontend-e2e/helpers/profile-page.ts';
 import {
   generateTotpCode,
   interceptRegeneratedRecoveryCodes,
   setupTotpViaTestApi,
   setupTotpWithRecoveryViaTestApi,
-} from '#frontend-e2e/helpers/totp.js';
-import { getTestApiClient } from '#frontend-e2e/setup/api-client.js';
+} from '#frontend-e2e/helpers/totp.ts';
+import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
 /**
  * Generates a unique test email for each test to avoid collisions.

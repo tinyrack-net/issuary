@@ -1,10 +1,10 @@
-import { createApp } from '#backend/entrypoints/app.js';
-import { sqlite } from '#backend/entrypoints/database/sqlite/sqlite.js';
+import { createApp } from '../entrypoints/app.ts';
+import { sqlite } from '../entrypoints/database/sqlite/sqlite.ts';
 import type {
   EmailConfig,
   TinyAuthRuntimeConfigInput,
-} from '#backend/lib/config/index.js';
-import { TinyAuthRuntimeConfigSchema } from '#backend/lib/config/index.js';
+} from '../lib/config/index.ts';
+import { TinyAuthRuntimeConfigSchema } from '../lib/config/index.ts';
 
 /**
  * Minimal test configuration as a fully resolved config.
@@ -15,9 +15,9 @@ import { TinyAuthRuntimeConfigSchema } from '#backend/lib/config/index.js';
  *
  * @example
  * ```typescript
- * import { createTestApp, MINIMAL_TEST_CONFIG } from '#backend/test-utils/setup.js';
- * import type { AppType } from '#backend/entrypoints/app.js';
- * import type { ServiceContainer } from '#backend/services/container.js';
+ * import { createTestApp, MINIMAL_TEST_CONFIG } from './setup.ts';
+ * import type { AppType } from '../entrypoints/app.ts';
+ * import type { ServiceContainer } from '../services/container.ts';
  *
  * let app: AppType;
  * let services: ServiceContainer;

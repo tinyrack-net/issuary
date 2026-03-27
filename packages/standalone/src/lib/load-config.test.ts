@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
-import { loadConfig, resolveConfig } from './load-config.js';
+import { loadConfig, resolveConfig } from './load-config.ts';
 
 async function writeConfigFile(
   dir: string,

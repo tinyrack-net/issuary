@@ -1,4 +1,4 @@
 import { EntityRepository } from '@mikro-orm/core';
-import type { ITermsContentEntity } from '#backend/entities/terms-content.entity.js';
+import type { ITermsContentEntity } from '../entities/terms-content.entity.ts';
 
 export class TermsContentRepository extends EntityRepository<ITermsContentEntity> {}

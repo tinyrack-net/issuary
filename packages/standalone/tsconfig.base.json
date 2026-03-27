@@ -22,7 +22,7 @@
     "noFallthroughCasesInSwitch": true,
     "noPropertyAccessFromIndexSignature": true,
     "strictNullChecks": true,
-    "allowImportingTsExtensions": false,
+    "allowImportingTsExtensions": true,
     "strict": true,
     "verbatimModuleSyntax": true,
     "isolatedModules": true,

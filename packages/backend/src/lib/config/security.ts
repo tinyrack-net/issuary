@@ -1,6 +1,6 @@
 import z from 'zod';
-import { fromBase64Url } from '#backend/lib/base64url.js';
-import { zz } from '#backend/schemas/provider.js';
+import { zz } from '../../schemas/provider.ts';
+import { fromBase64Url } from '../base64url.ts';
 
 export const SECURITY_CONFIG_DEFAULT = {
   pbkdf2_iterations: 600000,

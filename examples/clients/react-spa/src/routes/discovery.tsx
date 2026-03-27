@@ -1,15 +1,15 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { env } from '#example-react-spa/libs/env.js';
+import { env } from '#example-react-spa/libs/env.ts';
 import {
   fetchJWKS,
   fetchOpenIDConfiguration,
   isOIDCConfigInitialized,
-} from '#example-react-spa/libs/oidc-client.js';
+} from '#example-react-spa/libs/oidc-client.ts';
 import type {
   JWKS,
   OpenIDConfiguration,
-} from '#example-react-spa/types/oidc.js';
+} from '#example-react-spa/types/oidc.ts';
 
 export const Route = createFileRoute('/discovery')({
   component: DiscoveryPage,

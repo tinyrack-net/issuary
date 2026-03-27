@@ -6,7 +6,7 @@ import type {
   OIDCConfig,
   OpenIDConfiguration,
   TokenResponse,
-} from '#example-react-spa/types/oidc.js';
+} from '#example-react-spa/types/oidc.ts';
 import { env } from './env';
 import {
   assertIDTokenPayload,

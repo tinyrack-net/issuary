@@ -1,23 +1,23 @@
 import z from 'zod';
-import { AccountDeletionConfigSchema } from './account-deletion.js';
-import { AuthConfigSchema } from './auth.js';
-import { BrandingConfigSchema } from './branding.js';
-import { CleanupConfigSchema } from './cleanup.js';
-import { ClientConfigsSchema } from './client.js';
-import { DatabaseConfigSchema } from './database.js';
-import { EmailConfigSchema } from './email.js';
-import { FrontendConfigSchema } from './frontend.js';
-import { I18nConfigSchema } from './i18n.js';
-import { IdentityProviderConfigsSchema } from './identity-providers.js';
-import { LoggingConfigSchema } from './logging.js';
-import { OpenApiConfigSchema } from './openapi.js';
-import { RegistrationConfigSchema } from './registration.js';
-import { SchedulerConfigSchema } from './scheduler.js';
-import { SecurityConfigSchema } from './security.js';
-import { ServerConfigSchema } from './server.js';
-import { TermsConfigSchema } from './terms.js';
-import { TokensConfigSchema } from './tokens.js';
-import { UserConfigsSchema } from './user.js';
+import { AccountDeletionConfigSchema } from './account-deletion.ts';
+import { AuthConfigSchema } from './auth.ts';
+import { BrandingConfigSchema } from './branding.ts';
+import { CleanupConfigSchema } from './cleanup.ts';
+import { ClientConfigsSchema } from './client.ts';
+import { DatabaseConfigSchema } from './database.ts';
+import { EmailConfigSchema } from './email.ts';
+import { FrontendConfigSchema } from './frontend.ts';
+import { I18nConfigSchema } from './i18n.ts';
+import { IdentityProviderConfigsSchema } from './identity-providers.ts';
+import { LoggingConfigSchema } from './logging.ts';
+import { OpenApiConfigSchema } from './openapi.ts';
+import { RegistrationConfigSchema } from './registration.ts';
+import { SchedulerConfigSchema } from './scheduler.ts';
+import { SecurityConfigSchema } from './security.ts';
+import { ServerConfigSchema } from './server.ts';
+import { TermsConfigSchema } from './terms.ts';
+import { TokensConfigSchema } from './tokens.ts';
+import { UserConfigsSchema } from './user.ts';
 
 export const TinyAuthRuntimeConfigSchema = z
   .object({

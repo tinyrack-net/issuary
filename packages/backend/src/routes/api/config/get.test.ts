@@ -1,12 +1,12 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '#backend/entrypoints/app.js';
-import { google } from '#backend/entrypoints/identity-providers/google.js';
+import type { AppType } from '../../../entrypoints/app.ts';
+import { google } from '../../../entrypoints/identity-providers/google.ts';
 import {
   createTestApp,
   createTestEmailConfig,
   MINIMAL_TEST_CONFIG,
-} from '#backend/test-utils/index.js';
+} from '../../../test-utils/index.ts';
 
 let app: AppType;
 let cleanup: () => Promise<void>;

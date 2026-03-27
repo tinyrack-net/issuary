@@ -1,7 +1,7 @@
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
-import { UserTotpRepository } from '#backend/repositories/user-totp.repository.js';
-import { BaseSchema } from './base.entity.js';
-import { UserEntitySchema } from './user.entity.js';
+import { UserTotpRepository } from '../repositories/user-totp.repository.ts';
+import { BaseSchema } from './base.entity.ts';
+import { UserEntitySchema } from './user.entity.ts';
 
 export const UserTotpEntitySchema = defineEntity({
   name: 'UserTotpEntity',

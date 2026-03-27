@@ -1,5 +1,5 @@
 import z from 'zod';
-import { StandaloneBooleanSchema, StandalonePortSchema } from './coerce.js';
+import { StandaloneBooleanSchema, StandalonePortSchema } from './coerce.ts';
 
 export const StandaloneSmtpEmailConfigSchema = z
   .object({
