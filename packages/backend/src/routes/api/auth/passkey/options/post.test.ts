@@ -1,10 +1,12 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../../../../entrypoints/app.ts';
+import { e } from '../../../../../schemas/error.ts';
 import type { ServiceContainer } from '../../../../../services/container.ts';
 import {
   assertJsonBody,
   createTestApp,
+  expectError,
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
@@ -265,9 +267,7 @@ describe('POST /api/auth/passkey/options - Passkey disabled', () => {
     const client = testClient(appDisabled);
     const res = await client.api.auth.passkey.options.$post();
 
-    // Route is registered but validation rejects missing body (400)
-    // before handler can check passkey config
-    expect(res.status).toBe(400);
+    await expectError(res, e.PasskeyNotEnabled);
   });
 });
 

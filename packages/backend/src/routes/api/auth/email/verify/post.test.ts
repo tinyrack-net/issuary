@@ -8,6 +8,7 @@ import {
   createTestApp,
   createTestEmailConfig,
   expectError,
+  extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   registerUser,
@@ -92,6 +93,16 @@ describe('POST /api/auth/email/verify', () => {
 
     // 5. Check that session was created
     expect(verifyRes.headers.get('set-cookie')).toBeDefined();
+
+    const sessionCookie = extractCookie(verifyRes, 'session');
+    const sessionClient = testClient(app);
+    const sessionRes = await sessionClient.api.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+    const sessionBody = await assertJsonBody(sessionRes);
+    expect(sessionBody.user).not.toBeNull();
+    expect(sessionBody.user?.email).toBe(uniqueEmail);
   });
 
   test('should fail with invalid token', async () => {
@@ -196,6 +207,83 @@ describe('POST /api/auth/email/verify', () => {
 });
 
 // Note: Email resend tests are in the dedicated resend/post.test.ts file
+
+describe('POST /api/auth/email/verify - pending 2FA setup', () => {
+  let app2FA: AppType;
+  let services2FA: ServiceContainer;
+  let cleanup2FA: () => Promise<void>;
+
+  beforeAll(async () => {
+    const mail = await createTestEmailConfig();
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      email: mail,
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
+      },
+      auth: {
+        password: {
+          enabled: true,
+          two_factor: {
+            enrollment_required: true,
+          },
+          totp: {
+            enabled: true,
+            issuer: 'TinyAuthEmailVerifyTest',
+          },
+        },
+      },
+      terms: TEST_TERMS_CONFIG,
+    });
+    app2FA = server.app;
+    services2FA = server.services;
+    cleanup2FA = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanup2FA();
+  });
+
+  test('should create a pending 2FA setup session when enrollment is required', async () => {
+    const uniqueEmail = generateUniqueEmail('verify-2fa-setup');
+    await registerUser(app2FA, {
+      email: uniqueEmail,
+      password: REGISTERED_USER_PASSWORD,
+    });
+
+    const token = await withMikroContext(services2FA, async () => {
+      const user = await services2FA.mikro.user.findOneOrFail({
+        email: uniqueEmail,
+      });
+      const verification =
+        await services2FA.mikro.emailVerification.findOneOrFail({
+          user,
+          verified: false,
+        });
+      return verification.token;
+    });
+
+    const client = testClient(app2FA);
+    const verifyRes = await client.api.auth.email.verify.$post({
+      json: { token },
+    });
+
+    const verifyBody = await assertJsonBody(verifyRes);
+    expect(verifyBody.user.email).toBe(uniqueEmail);
+    expect(verifyBody.user.second_factor_required).toBe(true);
+    expect(verifyBody.user.totp_registered).toBe(false);
+    expect(verifyBody.user.passkey_count).toBe(0);
+
+    const sessionCookie = extractCookie(verifyRes, 'session');
+    const sessionRes = await client.api.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+    const sessionBody = await assertJsonBody(sessionRes);
+    expect(sessionBody.user).toBeNull();
+  });
+});
 
 describe('POST /api/auth/email/verify (smtp disabled)', () => {
   let appNoSmtp: AppType;

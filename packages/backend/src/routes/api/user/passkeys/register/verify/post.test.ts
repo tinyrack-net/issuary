@@ -139,6 +139,85 @@ describe('POST /api/user/passkeys/register/verify', () => {
     await cleanup();
   });
 
+  test('should persist a passkey and return setup completion false on success', async () => {
+    const email = generateUniqueEmail('passkey-verify-success');
+    const password = 'testPassword123!';
+    const credentialId = `registered-credential-${crypto.randomUUID()}`;
+
+    const { sessionCookie, userSub } = await createDbUserWithSessionHelper(
+      app,
+      services,
+      email,
+      password,
+    );
+
+    const client = testClient(app);
+    const optionsRes = await client.api.user.passkeys.register.options.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+    const optionsBody = await assertJsonBody(optionsRes);
+    const optionsCookie = extractCookie(optionsRes, 'session');
+
+    const verifyRegistration = vi
+      .spyOn(services.passkeyService, 'verifyRegistration')
+      .mockImplementationOnce(
+        async (user, _response, expectedChallenge, name) => {
+          expect(user.sub).toBe(userSub);
+          expect(expectedChallenge).toBe(optionsBody.options.challenge);
+          expect(name).toBe('My Laptop');
+
+          const passkey = services.mikro.userPasskey.create({
+            user: user.sub,
+            credential_id: credentialId,
+            public_key: 'test-public-key-base64url',
+            counter: 0,
+            device_type: 'multiDevice',
+            backed_up: true,
+            transports: ['internal'],
+            name: name ?? null,
+            aaguid: 'test-aaguid',
+          });
+          await services.mikro.em.persist(passkey).flush();
+          return passkey;
+        },
+      );
+
+    const verifyRes = await client.api.user.passkeys.register.verify.$post(
+      {
+        json: {
+          response: createMockRegistrationResponse({
+            id: credentialId,
+            rawId: credentialId,
+          }),
+          name: 'My Laptop',
+        },
+      },
+      { headers: { Cookie: `session=${optionsCookie}` } },
+    );
+
+    const verifyBody = await assertJsonBody(verifyRes);
+    expect(verifyBody).toEqual({
+      ok: true,
+      second_factor_setup_completed: false,
+    });
+
+    const passkeysRes = await client.api.user.passkeys.$get(
+      {},
+      { headers: { Cookie: `session=${optionsCookie}` } },
+    );
+    const passkeysBody = await assertJsonBody(passkeysRes);
+    expect(passkeysBody.passkeys).toHaveLength(1);
+    const firstPasskey = passkeysBody.passkeys[0];
+    if (!firstPasskey) {
+      throw new Error('Expected one saved passkey');
+    }
+    expect(firstPasskey.credential_id).toBe(credentialId);
+    expect(firstPasskey.name).toBe('My Laptop');
+
+    verifyRegistration.mockRestore();
+  });
+
   test('should return 400 when not authenticated (no challenge in session)', async () => {
     const client = testClient(app);
     const res = await client.api.user.passkeys.register.verify.$post({
@@ -751,10 +830,26 @@ describe('POST /api/user/passkeys/register/verify', () => {
 });
 
 describe('POST /api/user/passkeys/register/verify - Passkey disabled', () => {
+  let appChallenge: AppType;
+  let servicesChallenge: ServiceContainer;
+  let cleanupChallenge: () => Promise<void>;
   let appDisabled: AppType;
   let cleanupDisabled: () => Promise<void>;
 
   beforeAll(async () => {
+    const challengeServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      auth: {
+        passkey: {
+          enabled: true,
+        },
+      },
+    });
+    appChallenge = challengeServer.app;
+    servicesChallenge = challengeServer.services;
+    cleanupChallenge = challengeServer.cleanup;
+
     const server = await createTestApp({
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
@@ -772,11 +867,28 @@ describe('POST /api/user/passkeys/register/verify - Passkey disabled', () => {
   });
 
   afterAll(async () => {
+    await cleanupChallenge();
     await cleanupDisabled();
   });
 
-  test('should return 400 when passkey is disabled in config', async () => {
-    const sessionCookie = await createAuthenticatedSession(appDisabled);
+  test('should return PASSKEY_NOT_ENABLED when passkey is disabled in config', async () => {
+    const email = generateUniqueEmail('passkey-disabled-verify');
+    const password = 'testPassword123!';
+
+    const { sessionCookie } = await createDbUserWithSessionHelper(
+      appChallenge,
+      servicesChallenge,
+      email,
+      password,
+    );
+
+    const challengeClient = testClient(appChallenge);
+    const optionsRes =
+      await challengeClient.api.user.passkeys.register.options.$post(
+        {},
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+    const challengeCookie = extractCookie(optionsRes, 'session');
 
     const client = testClient(appDisabled);
     const res = await client.api.user.passkeys.register.verify.$post(
@@ -785,10 +897,120 @@ describe('POST /api/user/passkeys/register/verify - Passkey disabled', () => {
           response: createMockRegistrationResponse(),
         },
       },
-      { headers: { Cookie: `session=${sessionCookie}` } },
+      { headers: { Cookie: `session=${challengeCookie}` } },
     );
 
-    // When passkey is disabled, the route returns 400
-    expect(res.status).toBe(400);
+    await expectError(res, e.PasskeyNotEnabled);
+  });
+});
+
+describe('POST /api/user/passkeys/register/verify - Pending 2FA setup', () => {
+  let app2FA: AppType;
+  let services2FA: ServiceContainer;
+  let cleanup2FA: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        password: {
+          enabled: true,
+          two_factor: {
+            enrollment_required: true,
+          },
+        },
+        passkey: {
+          enabled: true,
+        },
+      },
+    });
+    app2FA = server.app;
+    services2FA = server.services;
+    cleanup2FA = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanup2FA();
+  });
+
+  test('should promote pending setup session to full session after successful verification', async () => {
+    const email = generateUniqueEmail('passkey-pending-setup-success');
+    const password = 'testPassword123!';
+    const credentialId = `pending-setup-${crypto.randomUUID()}`;
+
+    await withMikroContext(services2FA, async () => {
+      const passwordHash =
+        await services2FA.securityService.hashPassword(password);
+      const user = services2FA.mikro.user.create({
+        email,
+        password_hash: passwordHash,
+      });
+      user.email_verified = true;
+      await services2FA.mikro.em.persist(user).flush();
+    });
+
+    const client = testClient(app2FA);
+    const loginRes = await client.api.auth.login.$post({
+      json: { email, password },
+    });
+    const pendingCookie = extractCookie(loginRes, 'session');
+
+    const optionsRes = await client.api.user.passkeys.register.options.$post(
+      {},
+      { headers: { Cookie: `session=${pendingCookie}` } },
+    );
+    const optionsBody = await assertJsonBody(optionsRes);
+    const optionsCookie = extractCookie(optionsRes, 'session');
+
+    const verifyRegistration = vi
+      .spyOn(services2FA.passkeyService, 'verifyRegistration')
+      .mockImplementationOnce(async (user, _response, expectedChallenge) => {
+        expect(expectedChallenge).toBe(optionsBody.options.challenge);
+        const passkey = services2FA.mikro.userPasskey.create({
+          user: user.sub,
+          credential_id: credentialId,
+          public_key: 'test-public-key-base64url',
+          counter: 0,
+          device_type: 'multiDevice',
+          backed_up: true,
+          transports: ['internal'],
+          name: 'Setup Passkey',
+          aaguid: 'test-aaguid',
+        });
+        await services2FA.mikro.em.persist(passkey).flush();
+        return passkey;
+      });
+
+    const verifyRes = await client.api.user.passkeys.register.verify.$post(
+      {
+        json: {
+          response: createMockRegistrationResponse({
+            id: credentialId,
+            rawId: credentialId,
+          }),
+        },
+      },
+      { headers: { Cookie: `session=${optionsCookie}` } },
+    );
+
+    const verifyBody = await assertJsonBody(verifyRes);
+    expect(verifyBody.ok).toBe(true);
+    expect(verifyBody.second_factor_setup_completed).toBe(true);
+    if (!('user' in verifyBody)) {
+      throw new Error('Expected promoted user session in response');
+    }
+    expect(verifyBody.user.email).toBe(email);
+
+    const fullSessionCookie = extractCookie(verifyRes, 'session');
+    const sessionRes = await client.api.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${fullSessionCookie}` } },
+    );
+    const sessionBody = await assertJsonBody(sessionRes);
+    expect(sessionBody.user).not.toBeNull();
+    expect(sessionBody.user?.email).toBe(email);
+    expect(sessionBody.user?.passkey_count).toBe(1);
+
+    verifyRegistration.mockRestore();
   });
 });

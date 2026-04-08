@@ -1,6 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../../../entrypoints/app.ts';
+import { google } from '../../../../entrypoints/identity-providers/google.ts';
 import { e } from '../../../../schemas/error.ts';
 import type { ServiceContainer } from '../../../../services/container.ts';
 import {
@@ -9,6 +10,7 @@ import {
   createDbUserWithSession,
   createTestApp,
   expectError,
+  extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_TERMS_CONFIG,
@@ -1127,6 +1129,191 @@ describe('POST /api/terms/consent', () => {
       expect(tosAfter?.userConsent?.agreed).toBe(true);
       expect(tosAfter?.userConsent?.agreedVersion).toBe('1.0.0');
       expect(tosAfter?.userConsent?.requiresUpdate).toBe(false);
+    });
+  });
+});
+
+describe('POST /api/terms/consent - pending OAuth registration', () => {
+  let app: AppType;
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
+      },
+      identity_providers: [
+        google({
+          id: 'google',
+          enabled: true,
+          display_name: 'Google',
+          client_id: 'test-google-client-id',
+          client_secret: 'test-google-client-secret',
+          email_conflict_strategy: 'auto_link',
+        }),
+      ],
+      terms: [...TEST_TERMS_CONFIG],
+    });
+    app = server.app;
+    services = server.services;
+    cleanup = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanup();
+  });
+
+  test('should complete pending OAuth registration, consume token, and create a session', async () => {
+    const email = generateUniqueEmail('oauth-terms-complete');
+    let registrationToken = '';
+
+    await withMikroContext(services, async () => {
+      registrationToken =
+        await services.mikro.pendingOAuthRegistration.createPendingRegistration(
+          {
+            providerId: 'google',
+            accessToken: `test-access-token-${Date.now()}`,
+            refreshToken: `test-refresh-token-${Date.now()}`,
+            expiresIn: 3600,
+            tokenType: 'Bearer',
+            userInfo: {
+              id: `provider-user-${Date.now()}`,
+              email,
+              email_verified: true,
+              name: 'OAuth Terms User',
+            },
+            returnUrl: '/profile',
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+          },
+        );
+    });
+
+    const client = testClient(app);
+    const res = await client.api.terms.consent.$post({
+      json: {
+        registrationToken,
+        consents: [
+          { termsId: 'tos', agreed: true },
+          { termsId: 'privacy', agreed: true },
+        ],
+      },
+    });
+
+    const body = await assertJsonBody(res);
+    expect(body).toEqual({
+      ok: true,
+      recorded: 2,
+      registered: true,
+    });
+
+    const sessionCookie = extractCookie(res, 'session');
+    const sessionRes = await client.api.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+    const sessionBody = await assertJsonBody(sessionRes);
+    expect(sessionBody.user).not.toBeNull();
+    expect(sessionBody.user?.email).toBe(email);
+
+    await withMikroContext(services, async () => {
+      const pending = await services.mikro.pendingOAuthRegistration.findOne({
+        token: registrationToken,
+      });
+      expect(pending).toBeNull();
+
+      const user = await services.mikro.user.findOneOrFail({ email });
+      const consents = await services.mikro.userTermsConsent.findAllConsents(
+        user.sub,
+      );
+      expect(consents).toHaveLength(2);
+    });
+  });
+
+  test('should return OAuthSessionExpired for an expired registration token', async () => {
+    let registrationToken = '';
+
+    await withMikroContext(services, async () => {
+      registrationToken =
+        await services.mikro.pendingOAuthRegistration.createPendingRegistration(
+          {
+            providerId: 'google',
+            accessToken: `expired-access-token-${Date.now()}`,
+            refreshToken: `expired-refresh-token-${Date.now()}`,
+            expiresIn: 3600,
+            tokenType: 'Bearer',
+            userInfo: {
+              id: `expired-provider-user-${Date.now()}`,
+              email: generateUniqueEmail('oauth-terms-expired'),
+              email_verified: true,
+              name: 'Expired OAuth Terms User',
+            },
+            expiresAt: new Date(Date.now() - 1000),
+          },
+        );
+    });
+
+    const client = testClient(app);
+    const res = await client.api.terms.consent.$post({
+      json: {
+        registrationToken,
+        consents: [
+          { termsId: 'tos', agreed: true },
+          { termsId: 'privacy', agreed: true },
+        ],
+      },
+    });
+
+    await expectError(res, e.OAuthSessionExpired);
+  });
+
+  test('should reject missing required terms without consuming the registration token', async () => {
+    const email = generateUniqueEmail('oauth-terms-invalid');
+    let registrationToken = '';
+
+    await withMikroContext(services, async () => {
+      registrationToken =
+        await services.mikro.pendingOAuthRegistration.createPendingRegistration(
+          {
+            providerId: 'google',
+            accessToken: `invalid-access-token-${Date.now()}`,
+            refreshToken: `invalid-refresh-token-${Date.now()}`,
+            expiresIn: 3600,
+            tokenType: 'Bearer',
+            userInfo: {
+              id: `invalid-provider-user-${Date.now()}`,
+              email,
+              email_verified: true,
+              name: 'Invalid OAuth Terms User',
+            },
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+          },
+        );
+    });
+
+    const client = testClient(app);
+    const res = await client.api.terms.consent.$post({
+      json: {
+        registrationToken,
+        consents: [{ termsId: 'tos', agreed: true }],
+      },
+    });
+
+    const body = await assertJsonBody(res, 400);
+    expect(body.code).toBe('VALIDATION_ERROR');
+    expect(body.data).toMatch(/privacy/i);
+    expect(res.headers.get('set-cookie')).toBeNull();
+
+    await withMikroContext(services, async () => {
+      const pending = await services.mikro.pendingOAuthRegistration.findOne({
+        token: registrationToken,
+      });
+      expect(pending).not.toBeNull();
+
+      const user = await services.mikro.user.findOne({ email });
+      expect(user).toBeNull();
     });
   });
 });

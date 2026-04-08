@@ -184,9 +184,7 @@ describe('POST /api/auth/email/resend', () => {
       },
     });
 
-    // Config user is pre-verified, so should return EMAIL_ALREADY_VERIFIED or USER_NOT_FOUND
-    // depending on implementation (config users may not be in email verification flow)
-    expect([400, 404]).toContain(res.status);
+    await expectError(res, e.EmailAlreadyVerified);
   });
 });
 

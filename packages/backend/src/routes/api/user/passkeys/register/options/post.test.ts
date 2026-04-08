@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { AppType } from '../../../../../../entrypoints/app.ts';
 import { e } from '../../../../../../schemas/error.ts';
 import type { ServiceContainer } from '../../../../../../services/container.ts';
@@ -10,10 +10,31 @@ import {
   createPasskeyForUser,
   createTestApp,
   expectError,
+  extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
+  withMikroContext,
 } from '../../../../../../test-utils/index.ts';
+
+function createMockRegistrationResponse() {
+  return {
+    id: 'mock-credential-id',
+    rawId: 'mock-credential-id',
+    response: {
+      clientDataJSON: Buffer.from(
+        JSON.stringify({
+          type: 'webauthn.create',
+          challenge: 'mock-challenge',
+          origin: 'http://localhost:8080',
+        }),
+      ).toString('base64url'),
+      attestationObject: 'mock-attestation-object',
+    },
+    type: 'public-key' as const,
+    clientExtensionResults: {},
+  };
+}
 
 describe('POST /api/user/passkeys/register/options', () => {
   let app: AppType;
@@ -241,11 +262,29 @@ describe('POST /api/user/passkeys/register/options', () => {
     );
 
     const body = await assertJsonBody(res);
+    const optionsCookie = extractCookie(res, 'session');
 
-    // The challenge should be stored in session for later verification
-    // We can't directly test session, but we verify through the verify endpoint
-    // that the challenge matches
-    expect(body.options.challenge).toBeDefined();
+    let verifyRegistrationCalled = false;
+    const verifyRegistration = vi
+      .spyOn(services.passkeyService, 'verifyRegistration')
+      .mockImplementationOnce(async (_user, _response, expectedChallenge) => {
+        verifyRegistrationCalled = true;
+        expect(expectedChallenge).toBe(body.options.challenge);
+        throw new e.PasskeyVerificationFailed.Error();
+      });
+
+    const verifyRes = await client.api.user.passkeys.register.verify.$post(
+      {
+        json: {
+          response: createMockRegistrationResponse(),
+        },
+      },
+      { headers: { Cookie: `session=${optionsCookie}` } },
+    );
+
+    expect(verifyRegistrationCalled).toBe(true);
+    await expectError(verifyRes, e.PasskeyVerificationFailed);
+    verifyRegistration.mockRestore();
   });
 
   test('should return 403 for config-managed users', async () => {
@@ -399,7 +438,67 @@ describe('POST /api/user/passkeys/register/options - Passkey disabled', () => {
       { headers: { Cookie: `session=${sessionCookie}` } },
     );
 
-    // When passkey is disabled, the route returns 400
-    expect(res.status).toBe(400);
+    await expectError(res, e.PasskeyNotEnabled);
+  });
+});
+
+describe('POST /api/user/passkeys/register/options - Pending 2FA setup', () => {
+  let app2FA: AppType;
+  let services2FA: ServiceContainer;
+  let cleanup2FA: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        password: {
+          enabled: true,
+          two_factor: {
+            enrollment_required: true,
+          },
+        },
+        passkey: {
+          enabled: true,
+        },
+      },
+    });
+    app2FA = server.app;
+    services2FA = server.services;
+    cleanup2FA = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanup2FA();
+  });
+
+  test('should allow registration options for a pending 2FA setup session', async () => {
+    const email = generateUniqueEmail('passkey-options-pending-setup');
+    const password = 'testPassword123!';
+
+    await withMikroContext(services2FA, async () => {
+      const passwordHash =
+        await services2FA.securityService.hashPassword(password);
+      const user = services2FA.mikro.user.create({
+        email,
+        password_hash: passwordHash,
+      });
+      user.email_verified = true;
+      await services2FA.mikro.em.persist(user).flush();
+    });
+
+    const client = testClient(app2FA);
+    const loginRes = await client.api.auth.login.$post({
+      json: { email, password },
+    });
+    const sessionCookie = extractCookie(loginRes, 'session');
+
+    const optionsRes = await client.api.user.passkeys.register.options.$post(
+      {},
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+
+    const body = await assertJsonBody(optionsRes);
+    expect(body.options.user.name).toBe(email);
+    expect(body.options.challenge).toBeDefined();
   });
 });

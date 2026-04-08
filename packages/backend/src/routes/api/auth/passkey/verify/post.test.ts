@@ -1,6 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { AppType } from '../../../../../entrypoints/app.ts';
+import { decrypt } from '../../../../../lib/crypto.ts';
 import { e } from '../../../../../schemas/error.ts';
 import type { ServiceContainer } from '../../../../../services/container.ts';
 import {
@@ -13,6 +14,35 @@ import {
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '../../../../../test-utils/index.ts';
+
+async function decodeSessionCookie(cookie: string): Promise<{
+  user?: {
+    sub: string;
+    authenticated_at: number;
+  };
+  pending2FAUser?: {
+    sub: string;
+    authenticated_at: number;
+  };
+}> {
+  const decrypted = await decrypt(
+    cookie,
+    MINIMAL_TEST_CONFIG.security.session_secret,
+  );
+  if (!decrypted) {
+    throw new Error('Failed to decrypt session cookie');
+  }
+  return JSON.parse(decrypted) as {
+    user?: {
+      sub: string;
+      authenticated_at: number;
+    };
+    pending2FAUser?: {
+      sub: string;
+      authenticated_at: number;
+    };
+  };
+}
 
 /**
  * Create a mock WebAuthn authentication response
@@ -451,6 +481,17 @@ describe('POST /api/auth/passkey/verify - Success with mocked service', () => {
     const newSessionCookie = res.headers.get('set-cookie');
     expect(newSessionCookie).toBeDefined();
 
+    const authenticatedSessionCookie = extractCookie(res, 'session');
+    const sessionClient = testClient(app);
+    const sessionRes = await sessionClient.api.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${authenticatedSessionCookie}` } },
+    );
+    const sessionBody = await assertJsonBody(sessionRes);
+    expect(sessionBody.user).toBeDefined();
+    expect(sessionBody.user?.sub).toBe(userSub);
+    expect(sessionBody.user?.email).toBe(email);
+
     // Cleanup
     mockVerifyAuthentication.mockRestore();
   });
@@ -622,6 +663,8 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
     expect(loginRes.status).toBe(200);
 
     const sessionCookie = extractCookie(loginRes, 'session');
+    const pendingSessionData = await decodeSessionCookie(sessionCookie);
+    expect(pendingSessionData.pending2FAUser?.sub).toBe(userSub);
 
     // Get passkey options
     const authedClient = testClient(app2FA);
@@ -669,15 +712,35 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
     expect(sessionBody.user).toBeDefined();
     expect(sessionBody).toHaveProperty('user.sub', userSub);
 
+    const fullSessionData = await decodeSessionCookie(newSessionCookie);
+    expect(fullSessionData.pending2FAUser).toBeUndefined();
+    expect(fullSessionData.user?.sub).toBe(userSub);
+    expect(fullSessionData.user?.authenticated_at).toBe(
+      pendingSessionData.pending2FAUser?.authenticated_at,
+    );
+
     mockVerifyAuthentication.mockRestore();
   });
 });
 
 describe('POST /api/auth/passkey/verify - Passkey disabled', () => {
+  let appChallenge: AppType;
+  let cleanupChallenge: () => Promise<void>;
   let appDisabled: AppType;
   let cleanupDisabled: () => Promise<void>;
 
   beforeAll(async () => {
+    const challengeServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        passkey: {
+          enabled: true,
+        },
+      },
+    });
+    appChallenge = challengeServer.app;
+    cleanupChallenge = challengeServer.cleanup;
+
     const server = await createTestApp({
       ...MINIMAL_TEST_CONFIG,
       auth: {
@@ -691,18 +754,25 @@ describe('POST /api/auth/passkey/verify - Passkey disabled', () => {
   });
 
   afterAll(async () => {
+    await cleanupChallenge();
     await cleanupDisabled();
   });
 
-  test('should return 400 when passkey is disabled', async () => {
-    const client = testClient(appDisabled);
-    const res = await client.api.auth.passkey.verify.$post({
-      json: {
-        response: createMockAuthenticationResponse(),
-      },
-    });
+  test('should return PASSKEY_NOT_ENABLED when passkey is disabled', async () => {
+    const challengeClient = testClient(appChallenge);
+    const optionsRes = await challengeClient.api.auth.passkey.options.$post();
+    const sessionCookie = extractCookie(optionsRes, 'session');
 
-    // Route is registered but handler rejects when passkey is disabled
-    expect(res.status).toBe(400);
+    const client = testClient(appDisabled);
+    const res = await client.api.auth.passkey.verify.$post(
+      {
+        json: {
+          response: createMockAuthenticationResponse(),
+        },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+
+    await expectError(res, e.PasskeyNotEnabled);
   });
 });

@@ -154,9 +154,7 @@ describe('GET /api/consent', () => {
       { headers: { Cookie: `session=${sessionCookie}` } },
     );
 
-    // Zod validation fails - either 400 or 500 (serialization error)
-    // due to the response schema not matching validation error format
-    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(res.status).toBe(400);
   });
 
   test('should return error for invalid client_id', async () => {

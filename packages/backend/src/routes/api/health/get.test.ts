@@ -1,12 +1,14 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
+import type { ServiceContainer } from '../../../services/container.ts';
 import {
   createTestApp,
   MINIMAL_TEST_CONFIG,
 } from '../../../test-utils/index.ts';
 
 let app: AppType;
+let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
@@ -14,6 +16,7 @@ beforeAll(async () => {
     ...MINIMAL_TEST_CONFIG,
   });
   app = server.app;
+  services = server.services;
   cleanup = server.cleanup;
 });
 
@@ -62,5 +65,30 @@ describe('GET /api/health', () => {
         database: expect.any(String),
       },
     });
+  });
+
+  test('should return 503 with error details when database check fails', async () => {
+    const executeSpy = vi
+      .spyOn(services.mikro.em.getConnection(), 'execute')
+      .mockRejectedValueOnce(new Error('database unavailable'));
+
+    const client = testClient(app);
+    const res = await client.api.health.$get();
+
+    expect(res.status).toBe(503);
+
+    const body = await res.json();
+    expect(body).toMatchObject({
+      status: 'error',
+      checks: {
+        database: 'error',
+      },
+    });
+    if (!('error' in body)) {
+      throw new Error('Expected health error response');
+    }
+    expect(body.error).toContain('database unavailable');
+
+    executeSpy.mockRestore();
   });
 });

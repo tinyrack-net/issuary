@@ -274,7 +274,13 @@ describe('POST /api/auth/register', () => {
       },
     });
 
-    expect(res.status).toBe(200);
+    const body = await assertJsonBody(res);
+    expect(body.user.email_verification_required).toBe(true);
+    expect(res.headers.get('set-cookie')).toBeNull();
+
+    const sessionRes = await client.api.user.session.$get();
+    const sessionBody = await assertJsonBody(sessionRes);
+    expect(sessionBody.user).toBeNull();
   });
 
   test('should generate verification token after registration', async () => {
