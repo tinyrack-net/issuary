@@ -3,7 +3,7 @@
   "name": "tinyauth-cloudflare-hono-d1-example",
   "main": "src/index.ts",
   "compatibility_date": "2026-02-06",
-  "compatibility_flags": ["nodejs_compat", "allow_insecure_inefficient_logged_eval"],
+  "compatibility_flags": ["nodejs_compat"],
   "d1_databases": [
     {
       "binding": "DB",
