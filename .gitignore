@@ -12,7 +12,7 @@ node_modules
 dist
 dist-ssr
 *.local
-packages/backend/public
+packages/server/public
 
 # Editor directories and files
 .vscode/*

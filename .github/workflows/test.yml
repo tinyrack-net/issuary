@@ -36,16 +36,16 @@ jobs:
         run: pnpm build
 
       - name: Backend tests
-        run: pnpm --filter @tinyauth/backend test
+        run: pnpm --filter @tinyrack/tinyauth-server test
 
       - name: Install Playwright browsers for frontend unit tests
-        run: pnpm --filter @tinyauth/frontend exec playwright install --with-deps chromium firefox
+        run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install --with-deps chromium firefox
 
       - name: Frontend unit tests
-        run: pnpm --filter @tinyauth/frontend test:unit
+        run: pnpm --filter @tinyrack/tinyauth-frontend test:unit
 
       - name: Standalone tests
-        run: pnpm --filter @tinyauth/standalone test
+        run: pnpm --filter @tinyrack/tinyauth-standalone test
 
       - name: Lint
         run: pnpm biome check .
@@ -74,10 +74,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright Chromium
-        run: pnpm --filter @tinyauth/frontend exec playwright install --with-deps chromium
+        run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install --with-deps chromium
 
       - name: Frontend smoke E2E
-        run: pnpm --filter @tinyauth/frontend run test:e2e:smoke
+        run: pnpm --filter @tinyrack/tinyauth-frontend run test:e2e:smoke
 
   full:
     name: Full Matrix
@@ -104,19 +104,19 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Backend coverage
-        run: pnpm --filter @tinyauth/backend test:coverage
+        run: pnpm --filter @tinyrack/tinyauth-server test:coverage
 
       - name: Frontend unit coverage
-        run: pnpm --filter @tinyauth/frontend test:coverage
+        run: pnpm --filter @tinyrack/tinyauth-frontend test:coverage
 
       - name: Standalone coverage
-        run: pnpm --filter @tinyauth/standalone test:coverage
+        run: pnpm --filter @tinyrack/tinyauth-standalone test:coverage
 
       - name: Install Playwright browsers
-        run: pnpm --filter @tinyauth/frontend exec playwright install --with-deps chromium firefox
+        run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install --with-deps chromium firefox
 
       - name: Full frontend E2E
-        run: pnpm --filter @tinyauth/frontend test:e2e
+        run: pnpm --filter @tinyrack/tinyauth-frontend test:e2e
 
       - name: Node example smoke test
         run: pnpm --filter @tinyauth-examples/node-hono-sqlite test

@@ -17,7 +17,7 @@ This project is an **OpenID Connect (OIDC) Provider** implementation that provid
 ## Project Structure
 
 This is a monorepo with the following packages:
-- `packages/backend` - Fastify-based OAuth2/OIDC authentication server
+- `packages/server` - Fastify-based OAuth2/OIDC authentication server
 - `packages/frontend` - React frontend using TanStack Router and Daisy UI
 
 Example applications for testing OIDC flows:
@@ -37,7 +37,7 @@ pnpm test       # Run all tests
 
 ### Import Conventions
 - Always include `.js` extension for local imports (ESM requirement)
-- **No barrel exports**: Import directly from the source file (exception: `packages/backend/src/lib/config/index.ts` serves as the public module boundary for `@tinyauth/backend/config`)
+- **No barrel exports**: Import directly from the source file (exception: `packages/server/src/lib/config/index.ts` serves as the public module boundary for `@tinyrack/tinyauth-server/config`)
 
 ### TypeScript Configuration
 - **No type assertions or non-null assertions** (`as`, `!`)
