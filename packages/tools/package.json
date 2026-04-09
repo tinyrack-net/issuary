@@ -1,0 +1,39 @@
+{
+  "name": "@tinyauth/tools",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "bin": {
+    "tinyauth-tools": "./src/cli.ts"
+  },
+  "imports": {
+    "#tools/*.ts": {
+      "types": "./src/*.ts",
+      "default": "./src/*.ts"
+    },
+    "#tools/*": {
+      "types": "./src/*",
+      "default": "./src/*"
+    }
+  },
+  "scripts": {
+    "dev": "node --conditions=@tinyauth/source src/cli.ts",
+    "test": "NODE_OPTIONS='--conditions=@tinyauth/source' vitest",
+    "test:coverage": "NODE_OPTIONS='--conditions=@tinyauth/source' vitest run --coverage",
+    "build": "tsc -p tsconfig.build.json",
+    "build:watch": "tsc -p tsconfig.build.json --watch"
+  },
+  "dependencies": {
+    "@stricli/core": "^1.2.6",
+    "consola": "^3.4.2",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
