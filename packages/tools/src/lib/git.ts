@@ -52,12 +52,17 @@ export async function createCommit(
   await runGit(['commit', '-m', message], { cwd: repoRoot });
 }
 
-export async function createAnnotatedTag(
+export async function createTag(
   repoRoot: string,
   tag: string,
   message: string,
+  options?: {
+    sign: boolean;
+  },
 ): Promise<void> {
-  await runGit(['tag', '-a', tag, '-m', message], { cwd: repoRoot });
+  const tagMode = options?.sign === false ? '-a' : '-s';
+
+  await runGit(['tag', tagMode, tag, '-m', message], { cwd: repoRoot });
 }
 
 async function runGit(

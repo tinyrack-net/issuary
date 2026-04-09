@@ -1,8 +1,8 @@
 import path from 'node:path';
 import z from 'zod';
 import {
-  createAnnotatedTag,
   createCommit,
+  createTag,
   getRepoRoot,
   getWorktreeStatus,
   hasTag,
@@ -44,6 +44,7 @@ type PerformReleaseOptions = {
   dryRun: boolean;
   logger: ReleaseLogger;
   releaseType: ReleaseType;
+  signTag?: boolean;
 };
 
 export async function performRelease(
@@ -125,9 +126,12 @@ export async function performRelease(
   await stageFiles(repoRoot, RELEASE_TARGETS);
 
   const commitMessage = `chore: release ${nextTag}`;
+  const tagMessage = `release: ${nextTag}`;
 
   await createCommit(repoRoot, commitMessage);
-  await createAnnotatedTag(repoRoot, nextTag, nextTag);
+  await createTag(repoRoot, nextTag, tagMessage, {
+    sign: options.signTag !== false,
+  });
 
   return {
     dryRun: false,
