@@ -1,4 +1,3 @@
-/** @jsxImportSource react */
 import { Button, Heading, Link, Section, Text } from '@react-email/components';
 import type { Locale } from '../../lib/locale.ts';
 import { EmailLayout } from '../components/email-layout.tsx';
