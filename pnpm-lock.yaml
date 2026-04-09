@@ -242,6 +242,9 @@ importers:
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.4.10
+      '@tinyauth/tools':
+        specifier: workspace:*
+        version: link:packages/tools
 
   examples/clients/nextjs-ssr:
     dependencies:
@@ -724,6 +727,34 @@ importers:
       tsx:
         specifier: 'catalog:'
         version: 4.21.0
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.3(@types/node@25.5.2)(@vitest/browser-playwright@4.1.3)(@vitest/browser-preview@4.1.3)(@vitest/coverage-v8@4.1.3)(@vitest/ui@4.1.3)(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+
+  packages/tools:
+    dependencies:
+      '@stricli/core':
+        specifier: ^1.2.6
+        version: 1.2.6
+      consola:
+        specifier: ^3.4.2
+        version: 3.4.2
+      zod:
+        specifier: 'catalog:'
+        version: 4.3.6
+    devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.10
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.5.2
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 4.1.3(@vitest/browser@4.1.3)(vitest@4.1.3)
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -7288,7 +7319,7 @@ snapshots:
 
   '@types/sax@1.2.7':
     dependencies:
-      '@types/node': 24.12.2
+      '@types/node': 25.5.2
 
   '@types/unist@2.0.11': {}
 
