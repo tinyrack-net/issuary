@@ -1,0 +1,29 @@
+import { describe, expect, test } from 'vitest';
+import {
+  bumpVersion,
+  formatVersion,
+  formatVersionTag,
+  parseVersionTag,
+} from './version.ts';
+
+describe('version helpers', () => {
+  test('parses release tags', () => {
+    expect(parseVersionTag('v0.0.3')).toEqual({
+      major: 0,
+      minor: 0,
+      patch: 3,
+    });
+  });
+
+  test('bumps versions by release type', () => {
+    const version = parseVersionTag('v0.0.3');
+
+    expect(formatVersion(bumpVersion(version, 'patch'))).toBe('0.0.4');
+    expect(formatVersion(bumpVersion(version, 'minor'))).toBe('0.1.0');
+    expect(formatVersionTag(bumpVersion(version, 'major'))).toBe('v1.0.0');
+  });
+
+  test('rejects invalid tags', () => {
+    expect(() => parseVersionTag('1.2.3')).toThrow('Invalid release tag');
+  });
+});
