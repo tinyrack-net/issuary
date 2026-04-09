@@ -1,7 +1,7 @@
 {
   "name": "@tinyauth/frontend",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.0.4",
   "license": "AGPL-3.0-only",
   "type": "module",
   "imports": {

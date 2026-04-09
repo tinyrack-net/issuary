@@ -1,6 +1,6 @@
 {
   "name": "@tinyauth/backend",
-  "version": "1.0.0",
+  "version": "0.0.4",
   "type": "module",
   "description": "OpenID Connect Provider with OAuth2 support",
   "license": "AGPL-3.0-only",

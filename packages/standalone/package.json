@@ -1,6 +1,6 @@
 {
   "name": "@tinyauth/standalone",
-  "version": "1.0.0",
+  "version": "0.0.4",
   "type": "module",
   "description": "TinyAuth standalone CLI server",
   "license": "AGPL-3.0-only",
