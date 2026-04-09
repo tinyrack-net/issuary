@@ -27,6 +27,7 @@ describe('performRelease', () => {
       dryRun: false,
       logger: TEST_LOGGER,
       releaseType: 'minor',
+      signTag: false,
     });
 
     expect(result).toEqual({
@@ -49,6 +50,9 @@ describe('performRelease', () => {
     await expect(git(repoRoot, ['tag', '--list', 'v0.1.0'])).resolves.toBe(
       'v0.1.0',
     );
+    await expect(
+      git(repoRoot, ['tag', '--list', '--format=%(contents)', 'v0.1.0']),
+    ).resolves.toBe('release: v0.1.0');
     await expect(git(repoRoot, ['log', '-1', '--pretty=%s'])).resolves.toBe(
       'chore: release v0.1.0',
     );
@@ -63,6 +67,7 @@ describe('performRelease', () => {
         dryRun: false,
         logger: TEST_LOGGER,
         releaseType: 'minor',
+        signTag: false,
       }),
     ).rejects.toThrow('Git worktree must be clean before releasing');
   });
@@ -76,6 +81,7 @@ describe('performRelease', () => {
         dryRun: true,
         logger: TEST_LOGGER,
         releaseType: 'minor',
+        signTag: false,
       }),
     ).resolves.toEqual({
       dryRun: true,
@@ -96,6 +102,7 @@ describe('performRelease', () => {
         dryRun: false,
         logger: TEST_LOGGER,
         releaseType: 'minor',
+        signTag: false,
       }),
     ).rejects.toThrow('Release targets must share the same version');
 
@@ -117,6 +124,7 @@ describe('performRelease', () => {
       dryRun: true,
       logger: TEST_LOGGER,
       releaseType: 'minor',
+      signTag: false,
     });
 
     expect(result).toEqual({
@@ -153,6 +161,7 @@ describe('performRelease', () => {
           dryRun: false,
           logger: TEST_LOGGER,
           releaseType: 'minor',
+          signTag: false,
         }),
       ).rejects.toThrow('No release tag found');
     } finally {

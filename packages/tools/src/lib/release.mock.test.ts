@@ -6,12 +6,12 @@ const hasTag = vi.fn();
 const listVersionTags = vi.fn();
 const stageFiles = vi.fn();
 const createCommit = vi.fn();
-const createAnnotatedTag = vi.fn();
+const createTag = vi.fn();
 const readPackageVersion = vi.fn();
 const writePackageVersion = vi.fn();
 
 vi.mock('./git.ts', () => ({
-  createAnnotatedTag,
+  createTag,
   createCommit,
   getRepoRoot,
   getWorktreeStatus,
@@ -33,7 +33,7 @@ describe('performRelease mocked safety checks', () => {
     listVersionTags.mockReset();
     stageFiles.mockReset();
     createCommit.mockReset();
-    createAnnotatedTag.mockReset();
+    createTag.mockReset();
     readPackageVersion.mockReset();
     writePackageVersion.mockReset();
 
@@ -64,6 +64,29 @@ describe('performRelease mocked safety checks', () => {
     expect(writePackageVersion).not.toHaveBeenCalled();
     expect(stageFiles).not.toHaveBeenCalled();
     expect(createCommit).not.toHaveBeenCalled();
-    expect(createAnnotatedTag).not.toHaveBeenCalled();
+    expect(createTag).not.toHaveBeenCalled();
+  });
+
+  test('creates a signed tag by default', async () => {
+    const { performRelease } = await import('./release.ts');
+
+    await performRelease({
+      cwd: '/repo',
+      dryRun: false,
+      logger: {
+        info: () => {},
+        start: () => {},
+      },
+      releaseType: 'minor',
+    });
+
+    expect(createTag).toHaveBeenCalledWith(
+      '/repo',
+      'v0.1.0',
+      'release: v0.1.0',
+      {
+        sign: true,
+      },
+    );
   });
 });
