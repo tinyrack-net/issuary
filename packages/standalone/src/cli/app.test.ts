@@ -1,5 +1,6 @@
 import type { StricliProcess } from '@stricli/core';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import packageJson from '../../package.json' with { type: 'json' };
 
 const appState = vi.hoisted(() => ({
   cleanupMock: vi.fn(async () => {}),
@@ -172,6 +173,8 @@ describe('standalone Stricli app', () => {
       process: mockProcess,
     });
 
-    expect(mockProcess.stdout.write).toHaveBeenCalledWith('1.0.0\n');
+    expect(mockProcess.stdout.write).toHaveBeenCalledWith(
+      `${packageJson.version}\n`,
+    );
   });
 });
