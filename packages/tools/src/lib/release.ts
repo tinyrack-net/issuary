@@ -6,7 +6,6 @@ import {
   getRepoRoot,
   getWorktreeStatus,
   hasTag,
-  listVersionTags,
   stageFiles,
 } from './git.ts';
 import { readPackageVersion, writePackageVersion } from './package-json.ts';
@@ -14,7 +13,7 @@ import {
   bumpVersion,
   formatVersion,
   formatVersionTag,
-  parseVersionTag,
+  parseVersion,
 } from './version.ts';
 
 const RELEASE_TARGETS = [
@@ -57,22 +56,6 @@ export async function performRelease(
     throw new Error('Git worktree must be clean before releasing');
   }
 
-  const tags = await listVersionTags(repoRoot);
-  const latestTag = tags[0];
-
-  if (!latestTag) {
-    throw new Error('No release tag found. Create a v* tag first.');
-  }
-
-  const currentVersion = parseVersionTag(latestTag);
-  const nextVersion = bumpVersion(currentVersion, options.releaseType);
-  const nextTag = formatVersionTag(nextVersion);
-  const nextVersionText = formatVersion(nextVersion);
-
-  if (await hasTag(repoRoot, nextTag)) {
-    throw new Error(`Release tag already exists: ${nextTag}`);
-  }
-
   const currentPackageVersions = await Promise.all(
     RELEASE_TARGETS.map(async (targetPath) => {
       const absolutePath = path.join(repoRoot, targetPath);
@@ -96,8 +79,18 @@ export async function performRelease(
     );
   }
 
+  const currentVersion = parseVersion(expectedVersion);
+  const currentTag = formatVersionTag(currentVersion);
+  const nextVersion = bumpVersion(currentVersion, options.releaseType);
+  const nextTag = formatVersionTag(nextVersion);
+  const nextVersionText = formatVersion(nextVersion);
+
+  if (await hasTag(repoRoot, nextTag)) {
+    throw new Error(`Release tag already exists: ${nextTag}`);
+  }
+
   if (options.dryRun) {
-    options.logger.start(`Dry run for ${nextTag} from ${latestTag}`);
+    options.logger.start(`Dry run for ${nextTag} from ${currentTag}`);
     if (worktreeStatus.length > 0) {
       options.logger.info(
         'Worktree is dirty; dry run will not modify files or git state',
@@ -109,13 +102,13 @@ export async function performRelease(
 
     return {
       dryRun: true,
-      previousTag: latestTag,
+      previousTag: currentTag,
       tag: nextTag,
       version: nextVersionText,
     };
   }
 
-  options.logger.start(`Releasing ${nextTag} from ${latestTag}`);
+  options.logger.start(`Releasing ${nextTag} from ${currentTag}`);
 
   for (const targetPath of RELEASE_TARGETS) {
     const absolutePath = path.join(repoRoot, targetPath);
@@ -135,7 +128,7 @@ export async function performRelease(
 
   return {
     dryRun: false,
-    previousTag: latestTag,
+    previousTag: currentTag,
     tag: nextTag,
     version: nextVersionText,
   };

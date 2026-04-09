@@ -4,7 +4,22 @@ export type Version = {
   patch: number;
 };
 
+const VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)$/;
 const VERSION_TAG_PATTERN = /^v(\d+)\.(\d+)\.(\d+)$/;
+
+export function parseVersion(version: string): Version {
+  const match = VERSION_PATTERN.exec(version);
+
+  if (!match) {
+    throw new Error(`Invalid version: ${version}`);
+  }
+
+  const major = Number(match[1]);
+  const minor = Number(match[2]);
+  const patch = Number(match[3]);
+
+  return { major, minor, patch };
+}
 
 export function parseVersionTag(tag: string): Version {
   const match = VERSION_TAG_PATTERN.exec(tag);

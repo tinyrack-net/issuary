@@ -3,12 +3,21 @@ import {
   bumpVersion,
   formatVersion,
   formatVersionTag,
+  parseVersion,
   parseVersionTag,
 } from './version.ts';
 
 describe('version helpers', () => {
   test('parses release tags', () => {
     expect(parseVersionTag('v0.0.3')).toEqual({
+      major: 0,
+      minor: 0,
+      patch: 3,
+    });
+  });
+
+  test('parses versions', () => {
+    expect(parseVersion('0.0.3')).toEqual({
       major: 0,
       minor: 0,
       patch: 3,
@@ -25,5 +34,9 @@ describe('version helpers', () => {
 
   test('rejects invalid tags', () => {
     expect(() => parseVersionTag('1.2.3')).toThrow('Invalid release tag');
+  });
+
+  test('rejects invalid versions', () => {
+    expect(() => parseVersion('v1.2.3')).toThrow('Invalid version');
   });
 });

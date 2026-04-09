@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 const getRepoRoot = vi.fn();
 const getWorktreeStatus = vi.fn();
 const hasTag = vi.fn();
-const listVersionTags = vi.fn();
 const stageFiles = vi.fn();
 const createCommit = vi.fn();
 const createTag = vi.fn();
@@ -16,7 +15,6 @@ vi.mock('./git.ts', () => ({
   getRepoRoot,
   getWorktreeStatus,
   hasTag,
-  listVersionTags,
   stageFiles,
 }));
 
@@ -30,7 +28,6 @@ describe('performRelease mocked safety checks', () => {
     getRepoRoot.mockReset();
     getWorktreeStatus.mockReset();
     hasTag.mockReset();
-    listVersionTags.mockReset();
     stageFiles.mockReset();
     createCommit.mockReset();
     createTag.mockReset();
@@ -39,9 +36,8 @@ describe('performRelease mocked safety checks', () => {
 
     getRepoRoot.mockResolvedValue('/repo');
     getWorktreeStatus.mockResolvedValue('');
-    listVersionTags.mockResolvedValue(['v0.0.3']);
     hasTag.mockResolvedValue(false);
-    readPackageVersion.mockResolvedValue('1.0.0');
+    readPackageVersion.mockResolvedValue('0.0.3');
   });
 
   test('fails when the computed next tag already exists', async () => {
@@ -84,6 +80,32 @@ describe('performRelease mocked safety checks', () => {
       '/repo',
       'v0.1.0',
       'release: v0.1.0',
+      {
+        sign: true,
+      },
+    );
+  });
+
+  test('bumps from the current package version when tags lag behind', async () => {
+    const { performRelease } = await import('./release.ts');
+
+    readPackageVersion.mockResolvedValue('0.0.4');
+
+    await performRelease({
+      cwd: '/repo',
+      dryRun: false,
+      logger: {
+        info: () => {},
+        start: () => {},
+      },
+      releaseType: 'patch',
+    });
+
+    expect(createCommit).toHaveBeenCalledWith('/repo', 'chore: release v0.0.5');
+    expect(createTag).toHaveBeenCalledWith(
+      '/repo',
+      'v0.0.5',
+      'release: v0.0.5',
       {
         sign: true,
       },
