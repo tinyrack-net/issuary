@@ -18,7 +18,7 @@ import {
 } from './version.ts';
 
 const RELEASE_TARGETS = [
-  'packages/backend/package.json',
+  'packages/server/package.json',
   'packages/frontend/package.json',
   'packages/standalone/package.json',
 ] as const;

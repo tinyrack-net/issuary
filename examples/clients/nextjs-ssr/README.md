@@ -132,7 +132,7 @@ pnpm start
 
 1. **Start Backend OIDC Provider**
    ```bash
-   cd packages/backend
+   cd packages/server
    pnpm dev
    ```
 
@@ -277,4 +277,3 @@ This implementation follows:
 - [RFC 7636 - PKCE](https://datatracker.ietf.org/doc/html/rfc7636)
 - [RFC 7662 - Token Introspection](https://datatracker.ietf.org/doc/html/rfc7662)
 - [RFC 7009 - Token Revocation](https://datatracker.ietf.org/doc/html/rfc7009)
-

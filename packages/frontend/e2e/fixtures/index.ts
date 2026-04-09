@@ -1,8 +1,8 @@
 import type {
   TinyAuthRuntimeConfig,
   TinyAuthRuntimeConfigInput,
-} from '@tinyauth/backend/config';
-import { sqlite } from '@tinyauth/backend/database/sqlite';
+} from '@tinyrack/tinyauth-server/config';
+import { sqlite } from '@tinyrack/tinyauth-server/database/sqlite';
 
 /**
  * Test user credentials for e2e tests.

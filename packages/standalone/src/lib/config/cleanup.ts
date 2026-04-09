@@ -1,4 +1,4 @@
-import { CleanupConfigSchema } from '@tinyauth/backend/config';
+import { CleanupConfigSchema } from '@tinyrack/tinyauth-server/config';
 import type z from 'zod';
 
 export const StandaloneCleanupConfigSchema = CleanupConfigSchema;

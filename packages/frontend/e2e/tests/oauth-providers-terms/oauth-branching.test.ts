@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth';
+import { genericOAuth } from '@tinyrack/tinyauth-server/identity-providers/generic-oauth';
 import { z } from 'zod';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {

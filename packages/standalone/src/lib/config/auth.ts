@@ -1,4 +1,4 @@
-import { AuthConfigSchema } from '@tinyauth/backend/config';
+import { AuthConfigSchema } from '@tinyrack/tinyauth-server/config';
 import type z from 'zod';
 
 export const StandaloneAuthConfigSchema = AuthConfigSchema;

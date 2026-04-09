@@ -20,7 +20,7 @@ const appState = vi.hoisted(() => ({
   runAllMock: vi.fn(),
 }));
 
-vi.mock('@tinyauth/backend/services', () => ({
+vi.mock('@tinyrack/tinyauth-server/services', () => ({
   initializeServices: appState.initializeServicesMock,
 }));
 
@@ -33,12 +33,12 @@ vi.mock('../lib/logger.ts', () => ({
   createLogger: appState.createLoggerMock,
 }));
 
-vi.mock('@tinyauth/backend', () => ({
+vi.mock('@tinyrack/tinyauth-server', () => ({
   createApp: appState.createAppMock,
   createOpenApiDocumentation: appState.createOpenApiDocumentationMock,
 }));
 
-vi.mock('@tinyauth/backend/config', () => ({
+vi.mock('@tinyrack/tinyauth-server/config', () => ({
   OPENAPI_CONFIG_DEFAULT: {
     enabled: true,
     title: 'TinyAuth API',

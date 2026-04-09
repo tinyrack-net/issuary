@@ -1,5 +1,5 @@
 {
-  "name": "@tinyauth/standalone",
+  "name": "@tinyrack/tinyauth-standalone",
   "version": "0.0.4",
   "type": "module",
   "description": "TinyAuth standalone CLI server",
@@ -62,7 +62,7 @@
     "@hono/node-server": "catalog:",
     "@mikro-orm/cli": "catalog:",
     "@stricli/core": "^1.2.6",
-    "@tinyauth/backend": "workspace:*",
+    "@tinyrack/tinyauth-server": "workspace:*",
     "dotenv": "catalog:",
     "hono": "catalog:",
     "hono-openapi": "catalog:",

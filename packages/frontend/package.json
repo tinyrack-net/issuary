@@ -1,5 +1,5 @@
 {
-  "name": "@tinyauth/frontend",
+  "name": "@tinyrack/tinyauth-frontend",
   "private": true,
   "version": "0.0.4",
   "license": "AGPL-3.0-only",
@@ -67,7 +67,7 @@
     "@rolldown/plugin-babel": "catalog:",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/router-plugin": "catalog:",
-    "@tinyauth/backend": "workspace:*",
+    "@tinyrack/tinyauth-server": "workspace:*",
     "@types/node": "catalog:",
     "@types/nodemailer": "catalog:",
     "@types/react": "catalog:",

@@ -2,7 +2,7 @@ import {
   type UserConfig,
   UserConfigSchema,
   UserConfigsSchema,
-} from '@tinyauth/backend/config';
+} from '@tinyrack/tinyauth-server/config';
 
 export const StandaloneUserConfigSchema = UserConfigSchema;
 

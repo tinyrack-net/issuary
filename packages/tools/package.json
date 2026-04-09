@@ -1,5 +1,5 @@
 {
-  "name": "@tinyauth/tools",
+  "name": "@tinyrack/tinyauth-tools",
   "private": true,
   "version": "1.0.0",
   "type": "module",

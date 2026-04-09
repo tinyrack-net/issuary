@@ -1,6 +1,6 @@
-import { genericOAuth } from '@tinyauth/backend/identity-providers/generic-oauth';
-import { github } from '@tinyauth/backend/identity-providers/github';
-import { google } from '@tinyauth/backend/identity-providers/google';
+import { genericOAuth } from '@tinyrack/tinyauth-server/identity-providers/generic-oauth';
+import { github } from '@tinyrack/tinyauth-server/identity-providers/github';
+import { google } from '@tinyrack/tinyauth-server/identity-providers/google';
 
 export function createOauthProviders() {
   return [

@@ -15,7 +15,7 @@ const cleanupState = vi.hoisted(() => ({
   runAllMock: vi.fn(),
 }));
 
-vi.mock('@tinyauth/backend/services', () => ({
+vi.mock('@tinyrack/tinyauth-server/services', () => ({
   initializeServices: cleanupState.initializeServicesMock,
 }));
 

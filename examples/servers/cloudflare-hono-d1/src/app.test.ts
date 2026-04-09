@@ -7,7 +7,7 @@ const { createAppMock } = vi.hoisted(() => {
   };
 });
 
-vi.mock('@tinyauth/backend', () => {
+vi.mock('@tinyrack/tinyauth-server', () => {
   return {
     createApp: createAppMock,
   };

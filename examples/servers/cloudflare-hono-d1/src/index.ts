@@ -2,9 +2,9 @@ import {
   type AppType,
   type CreateAppOptions,
   createApp,
-} from '@tinyauth/backend';
-import { d1 } from '@tinyauth/backend/database/d1';
-import { createCloudflareAssetsHandler } from '@tinyauth/backend/frontend/cloudflare';
+} from '@tinyrack/tinyauth-server';
+import { d1 } from '@tinyrack/tinyauth-server/database/d1';
+import { createCloudflareAssetsHandler } from '@tinyrack/tinyauth-server/frontend/cloudflare';
 
 interface Env {
   ASSETS: {

@@ -12,7 +12,7 @@ import {
   ServerConfigSchema,
   TermsConfigSchema,
   TokensConfigSchema,
-} from '@tinyauth/backend/config';
+} from '@tinyrack/tinyauth-server/config';
 import z from 'zod';
 import { StandaloneDatabaseConfigSchema } from './database.ts';
 import { StandaloneEmailConfigSchema } from './email.ts';

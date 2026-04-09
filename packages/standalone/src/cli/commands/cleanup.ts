@@ -2,7 +2,7 @@ import { buildCommand } from '@stricli/core';
 import {
   initializeServices,
   type ServiceContainer,
-} from '@tinyauth/backend/services';
+} from '@tinyrack/tinyauth-server/services';
 import z from 'zod';
 import { parseWithZod } from '../../lib/cli/parse-with-zod.ts';
 import { loadConfig, resolveConfig } from '../../lib/load-config.ts';

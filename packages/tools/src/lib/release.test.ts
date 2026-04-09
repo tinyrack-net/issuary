@@ -37,7 +37,7 @@ describe('performRelease', () => {
     });
 
     await expect(
-      readVersion(repoRoot, 'packages/backend/package.json'),
+      readVersion(repoRoot, 'packages/server/package.json'),
     ).resolves.toBe('0.1.0');
     await expect(
       readVersion(repoRoot, 'packages/frontend/package.json'),
@@ -100,7 +100,7 @@ describe('performRelease', () => {
     ).rejects.toThrow('Release targets must share the same version');
 
     await expect(
-      readVersion(repoRoot, 'packages/backend/package.json'),
+      readVersion(repoRoot, 'packages/server/package.json'),
     ).resolves.toBe('1.0.0');
     await expect(
       readVersion(repoRoot, 'packages/frontend/package.json'),
@@ -127,7 +127,7 @@ describe('performRelease', () => {
     });
 
     await expect(
-      readVersion(repoRoot, 'packages/backend/package.json'),
+      readVersion(repoRoot, 'packages/server/package.json'),
     ).resolves.toBe('1.0.0');
     await expect(git(repoRoot, ['tag', '--list', 'v0.1.0'])).resolves.toBe('');
     await expect(git(repoRoot, ['log', '-1', '--pretty=%s'])).resolves.toBe(
@@ -168,11 +168,11 @@ async function setupRepository(repoRoot: string): Promise<void> {
   await git(repoRoot, ['config', 'commit.gpgSign', 'false']);
   await git(repoRoot, ['config', 'tag.gpgSign', 'false']);
 
-  await writePackageJson(repoRoot, 'packages/backend/package.json', '1.0.0');
+  await writePackageJson(repoRoot, 'packages/server/package.json', '1.0.0');
   await writePackageJson(repoRoot, 'packages/frontend/package.json', '1.0.0');
   await writePackageJson(repoRoot, 'packages/standalone/package.json', '1.0.0');
 
-  await git(repoRoot, ['add', 'packages/backend/package.json']);
+  await git(repoRoot, ['add', 'packages/server/package.json']);
   await git(repoRoot, ['add', 'packages/frontend/package.json']);
   await git(repoRoot, ['add', 'packages/standalone/package.json']);
   await git(repoRoot, ['commit', '-m', 'chore: seed release fixtures']);

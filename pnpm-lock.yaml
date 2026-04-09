@@ -242,7 +242,7 @@ importers:
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.4.10
-      '@tinyauth/tools':
+      '@tinyrack/tinyauth-tools':
         specifier: workspace:*
         version: link:packages/tools
 
@@ -334,9 +334,9 @@ importers:
 
   examples/servers/cloudflare-hono-d1:
     dependencies:
-      '@tinyauth/backend':
+      '@tinyrack/tinyauth-server':
         specifier: workspace:*
-        version: link:../../../packages/backend
+        version: link:../../../packages/server
       hono:
         specifier: 'catalog:'
         version: 4.12.12
@@ -362,9 +362,9 @@ importers:
       '@hono/node-server':
         specifier: 'catalog:'
         version: 1.19.13(hono@4.12.12)
-      '@tinyauth/backend':
+      '@tinyrack/tinyauth-server':
         specifier: workspace:*
-        version: link:../../../packages/backend
+        version: link:../../../packages/server
       hono:
         specifier: 'catalog:'
         version: 4.12.12
@@ -379,7 +379,171 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
-  packages/backend:
+  packages/frontend:
+    dependencies:
+      '@hookform/resolvers':
+        specifier: 'catalog:'
+        version: 5.2.2(react-hook-form@7.72.1(react@19.2.4))
+      '@phosphor-icons/react':
+        specifier: 'catalog:'
+        version: 2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@simplewebauthn/browser':
+        specifier: 'catalog:'
+        version: 13.3.0
+      '@tailwindcss/typography':
+        specifier: 'catalog:'
+        version: 0.5.19(tailwindcss@4.2.2)
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.96.2(react@19.2.4)
+      '@tanstack/react-router':
+        specifier: 'catalog:'
+        version: 1.168.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      hono:
+        specifier: 'catalog:'
+        version: 4.12.12
+      i18next:
+        specifier: 'catalog:'
+        version: 26.0.4(typescript@5.9.3)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.4
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.4(react@19.2.4)
+      react-hook-form:
+        specifier: 'catalog:'
+        version: 7.72.1(react@19.2.4)
+      react-i18next:
+        specifier: 'catalog:'
+        version: 17.0.2(i18next@26.0.4(typescript@5.9.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+      zod:
+        specifier: 'catalog:'
+        version: 4.3.6
+    devDependencies:
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.10
+      '@hono/node-server':
+        specifier: 'catalog:'
+        version: 1.19.13(hono@4.12.12)
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.59.1
+      '@rolldown/plugin-babel':
+        specifier: 'catalog:'
+        version: 0.2.2(@babel/core@7.29.0)(@babel/runtime@7.29.2)(rolldown@1.0.0-rc.13)(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+      '@tailwindcss/vite':
+        specifier: 'catalog:'
+        version: 4.2.2(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+      '@tanstack/router-plugin':
+        specifier: 'catalog:'
+        version: 1.167.12(@tanstack/react-router@1.168.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+      '@tinyrack/tinyauth-server':
+        specifier: workspace:*
+        version: link:../server
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.5.2
+      '@types/nodemailer':
+        specifier: 'catalog:'
+        version: 8.0.0
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.2.3(@types/react@19.2.14)
+      '@vitejs/plugin-react':
+        specifier: 'catalog:'
+        version: 6.0.1(@rolldown/plugin-babel@0.2.2(@babel/core@7.29.0)(@babel/runtime@7.29.2)(rolldown@1.0.0-rc.13)(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)))(babel-plugin-react-compiler@1.0.0)(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+      '@vitest/browser-playwright':
+        specifier: 'catalog:'
+        version: 4.1.3(playwright@1.59.1)(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))(vitest@4.1.3)
+      '@vitest/browser-preview':
+        specifier: 'catalog:'
+        version: 4.1.3(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))(vitest@4.1.3)
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 4.1.3(@vitest/browser@4.1.3)(vitest@4.1.3)
+      '@vitest/ui':
+        specifier: 'catalog:'
+        version: 4.1.3(vitest@4.1.3)
+      babel-plugin-react-compiler:
+        specifier: 'catalog:'
+        version: 1.0.0
+      daisyui:
+        specifier: 'catalog:'
+        version: 5.5.19
+      nodemailer:
+        specifier: 'catalog:'
+        version: 8.0.5
+      otplib:
+        specifier: 'catalog:'
+        version: 13.4.0
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.2.2
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vite:
+        specifier: 'catalog:'
+        version: 8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.3(@types/node@25.5.2)(@vitest/browser-playwright@4.1.3)(@vitest/browser-preview@4.1.3)(@vitest/coverage-v8@4.1.3)(@vitest/ui@4.1.3)(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+      vitest-browser-react:
+        specifier: 'catalog:'
+        version: 2.2.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@4.1.3)
+
+  packages/homepage:
+    dependencies:
+      '@astrojs/starlight':
+        specifier: 'catalog:'
+        version: 0.38.3(astro@6.1.5(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.60.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3))
+      '@astrojs/starlight-tailwind':
+        specifier: 'catalog:'
+        version: 5.0.0(@astrojs/starlight@0.38.3(astro@6.1.5(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.60.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)))(tailwindcss@4.2.2)
+      '@scalar/astro':
+        specifier: 'catalog:'
+        version: 0.2.6(astro@6.1.5(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.60.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3))
+      '@tailwindcss/vite':
+        specifier: 'catalog:'
+        version: 4.2.2(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+      astro:
+        specifier: 'catalog:'
+        version: 6.1.5(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.60.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      sharp:
+        specifier: 'catalog:'
+        version: 0.34.5
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.2.2
+    devDependencies:
+      '@astrojs/check':
+        specifier: 'catalog:'
+        version: 0.9.8(prettier@3.8.1)(typescript@5.9.3)
+      '@biomejs/biome':
+        specifier: 'catalog:'
+        version: 2.4.10
+      '@tinyrack/tinyauth-standalone':
+        specifier: workspace:*
+        version: link:../standalone
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      wrangler:
+        specifier: 'catalog:'
+        version: 4.81.0(@cloudflare/workers-types@4.20260408.1)
+
+  packages/server:
     dependencies:
       '@hono/standard-validator':
         specifier: 'catalog:'
@@ -506,170 +670,6 @@ importers:
         specifier: 'catalog:'
         version: 4.81.0(@cloudflare/workers-types@4.20260408.1)
 
-  packages/frontend:
-    dependencies:
-      '@hookform/resolvers':
-        specifier: 'catalog:'
-        version: 5.2.2(react-hook-form@7.72.1(react@19.2.4))
-      '@phosphor-icons/react':
-        specifier: 'catalog:'
-        version: 2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@simplewebauthn/browser':
-        specifier: 'catalog:'
-        version: 13.3.0
-      '@tailwindcss/typography':
-        specifier: 'catalog:'
-        version: 0.5.19(tailwindcss@4.2.2)
-      '@tanstack/react-query':
-        specifier: 'catalog:'
-        version: 5.96.2(react@19.2.4)
-      '@tanstack/react-router':
-        specifier: 'catalog:'
-        version: 1.168.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      hono:
-        specifier: 'catalog:'
-        version: 4.12.12
-      i18next:
-        specifier: 'catalog:'
-        version: 26.0.4(typescript@5.9.3)
-      react:
-        specifier: 'catalog:'
-        version: 19.2.4
-      react-dom:
-        specifier: 'catalog:'
-        version: 19.2.4(react@19.2.4)
-      react-hook-form:
-        specifier: 'catalog:'
-        version: 7.72.1(react@19.2.4)
-      react-i18next:
-        specifier: 'catalog:'
-        version: 17.0.2(i18next@26.0.4(typescript@5.9.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
-      zod:
-        specifier: 'catalog:'
-        version: 4.3.6
-    devDependencies:
-      '@biomejs/biome':
-        specifier: 'catalog:'
-        version: 2.4.10
-      '@hono/node-server':
-        specifier: 'catalog:'
-        version: 1.19.13(hono@4.12.12)
-      '@playwright/test':
-        specifier: 'catalog:'
-        version: 1.59.1
-      '@rolldown/plugin-babel':
-        specifier: 'catalog:'
-        version: 0.2.2(@babel/core@7.29.0)(@babel/runtime@7.29.2)(rolldown@1.0.0-rc.13)(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-      '@tailwindcss/vite':
-        specifier: 'catalog:'
-        version: 4.2.2(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-      '@tanstack/router-plugin':
-        specifier: 'catalog:'
-        version: 1.167.12(@tanstack/react-router@1.168.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-      '@tinyauth/backend':
-        specifier: workspace:*
-        version: link:../backend
-      '@types/node':
-        specifier: 'catalog:'
-        version: 25.5.2
-      '@types/nodemailer':
-        specifier: 'catalog:'
-        version: 8.0.0
-      '@types/react':
-        specifier: 'catalog:'
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: 'catalog:'
-        version: 19.2.3(@types/react@19.2.14)
-      '@vitejs/plugin-react':
-        specifier: 'catalog:'
-        version: 6.0.1(@rolldown/plugin-babel@0.2.2(@babel/core@7.29.0)(@babel/runtime@7.29.2)(rolldown@1.0.0-rc.13)(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)))(babel-plugin-react-compiler@1.0.0)(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-      '@vitest/browser-playwright':
-        specifier: 'catalog:'
-        version: 4.1.3(playwright@1.59.1)(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))(vitest@4.1.3)
-      '@vitest/browser-preview':
-        specifier: 'catalog:'
-        version: 4.1.3(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))(vitest@4.1.3)
-      '@vitest/coverage-v8':
-        specifier: 'catalog:'
-        version: 4.1.3(@vitest/browser@4.1.3)(vitest@4.1.3)
-      '@vitest/ui':
-        specifier: 'catalog:'
-        version: 4.1.3(vitest@4.1.3)
-      babel-plugin-react-compiler:
-        specifier: 'catalog:'
-        version: 1.0.0
-      daisyui:
-        specifier: 'catalog:'
-        version: 5.5.19
-      nodemailer:
-        specifier: 'catalog:'
-        version: 8.0.5
-      otplib:
-        specifier: 'catalog:'
-        version: 13.4.0
-      tailwindcss:
-        specifier: 'catalog:'
-        version: 4.2.2
-      tsx:
-        specifier: 'catalog:'
-        version: 4.21.0
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-      vite:
-        specifier: 'catalog:'
-        version: 8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.3(@types/node@25.5.2)(@vitest/browser-playwright@4.1.3)(@vitest/browser-preview@4.1.3)(@vitest/coverage-v8@4.1.3)(@vitest/ui@4.1.3)(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-      vitest-browser-react:
-        specifier: 'catalog:'
-        version: 2.2.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vitest@4.1.3)
-
-  packages/homepage:
-    dependencies:
-      '@astrojs/starlight':
-        specifier: 'catalog:'
-        version: 0.38.3(astro@6.1.5(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.60.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3))
-      '@astrojs/starlight-tailwind':
-        specifier: 'catalog:'
-        version: 5.0.0(@astrojs/starlight@0.38.3(astro@6.1.5(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.60.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)))(tailwindcss@4.2.2)
-      '@scalar/astro':
-        specifier: 'catalog:'
-        version: 0.2.6(astro@6.1.5(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.60.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3))
-      '@tailwindcss/vite':
-        specifier: 'catalog:'
-        version: 4.2.2(vite@8.0.7(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-      astro:
-        specifier: 'catalog:'
-        version: 6.1.5(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.60.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
-      sharp:
-        specifier: 'catalog:'
-        version: 0.34.5
-      tailwindcss:
-        specifier: 'catalog:'
-        version: 4.2.2
-    devDependencies:
-      '@astrojs/check':
-        specifier: 'catalog:'
-        version: 0.9.8(prettier@3.8.1)(typescript@5.9.3)
-      '@biomejs/biome':
-        specifier: 'catalog:'
-        version: 2.4.10
-      '@tinyauth/standalone':
-        specifier: workspace:*
-        version: link:../standalone
-      tsx:
-        specifier: 'catalog:'
-        version: 4.21.0
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-      wrangler:
-        specifier: 'catalog:'
-        version: 4.81.0(@cloudflare/workers-types@4.20260408.1)
-
   packages/standalone:
     dependencies:
       '@hono/node-server':
@@ -681,9 +681,9 @@ importers:
       '@stricli/core':
         specifier: ^1.2.6
         version: 1.2.6
-      '@tinyauth/backend':
+      '@tinyrack/tinyauth-server':
         specifier: workspace:*
-        version: link:../backend
+        version: link:../server
       dotenv:
         specifier: 'catalog:'
         version: 17.4.1
@@ -5843,7 +5843,7 @@ snapshots:
     dependencies:
       '@babel/code-frame': 7.29.0
       '@babel/generator': 7.29.1
-      '@babel/parser': 7.27.0
+      '@babel/parser': 7.29.2
       '@babel/template': 7.28.6
       '@babel/types': 7.29.0
       debug: 4.4.3

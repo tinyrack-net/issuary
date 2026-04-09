@@ -14,12 +14,12 @@ const exportState = vi.hoisted(() => ({
   resolveConfigMock: vi.fn(),
 }));
 
-vi.mock('@tinyauth/backend', () => ({
+vi.mock('@tinyrack/tinyauth-server', () => ({
   createApp: exportState.createAppMock,
   createOpenApiDocumentation: exportState.createOpenApiDocumentationMock,
 }));
 
-vi.mock('@tinyauth/backend/config', () => ({
+vi.mock('@tinyrack/tinyauth-server/config', () => ({
   OPENAPI_CONFIG_DEFAULT: {
     enabled: true,
     title: 'TinyAuth API',

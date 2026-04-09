@@ -6,121 +6,118 @@ export default defineConfig({
     tsconfigPaths: true,
     alias: [
       {
-        find: /^@tinyauth\/backend$/,
+        find: /^@tinyrack\/tinyauth-server$/,
         replacement: fileURLToPath(
-          new URL('../backend/src/entrypoints/index.ts', import.meta.url),
+          new URL('../server/src/entrypoints/index.ts', import.meta.url),
         ),
       },
       {
-        find: /^@tinyauth\/backend\/config$/,
+        find: /^@tinyrack\/tinyauth-server\/config$/,
+        replacement: fileURLToPath(
+          new URL('../server/src/entrypoints/config/index.ts', import.meta.url),
+        ),
+      },
+      {
+        find: /^@tinyrack\/tinyauth-server\/services$/,
+        replacement: fileURLToPath(
+          new URL('../server/src/entrypoints/services.ts', import.meta.url),
+        ),
+      },
+      {
+        find: /^@tinyrack\/tinyauth-server\/database\/postgres$/,
         replacement: fileURLToPath(
           new URL(
-            '../backend/src/entrypoints/config/index.ts',
+            '../server/src/entrypoints/database/postgres/postgres.ts',
             import.meta.url,
           ),
         ),
       },
       {
-        find: /^@tinyauth\/backend\/services$/,
-        replacement: fileURLToPath(
-          new URL('../backend/src/entrypoints/services.ts', import.meta.url),
-        ),
-      },
-      {
-        find: /^@tinyauth\/backend\/database\/postgres$/,
+        find: /^@tinyrack\/tinyauth-server\/database\/sqlite$/,
         replacement: fileURLToPath(
           new URL(
-            '../backend/src/entrypoints/database/postgres/postgres.ts',
+            '../server/src/entrypoints/database/sqlite/sqlite.ts',
             import.meta.url,
           ),
         ),
       },
       {
-        find: /^@tinyauth\/backend\/database\/sqlite$/,
+        find: /^@tinyrack\/tinyauth-server\/identity-providers\/apple$/,
         replacement: fileURLToPath(
           new URL(
-            '../backend/src/entrypoints/database/sqlite/sqlite.ts',
+            '../server/src/entrypoints/identity-providers/apple.ts',
             import.meta.url,
           ),
         ),
       },
       {
-        find: /^@tinyauth\/backend\/identity-providers\/apple$/,
+        find: /^@tinyrack\/tinyauth-server\/identity-providers\/generic-oauth$/,
         replacement: fileURLToPath(
           new URL(
-            '../backend/src/entrypoints/identity-providers/apple.ts',
+            '../server/src/entrypoints/identity-providers/generic-oauth.ts',
             import.meta.url,
           ),
         ),
       },
       {
-        find: /^@tinyauth\/backend\/identity-providers\/generic-oauth$/,
+        find: /^@tinyrack\/tinyauth-server\/identity-providers\/github$/,
         replacement: fileURLToPath(
           new URL(
-            '../backend/src/entrypoints/identity-providers/generic-oauth.ts',
+            '../server/src/entrypoints/identity-providers/github.ts',
             import.meta.url,
           ),
         ),
       },
       {
-        find: /^@tinyauth\/backend\/identity-providers\/github$/,
+        find: /^@tinyrack\/tinyauth-server\/identity-providers\/google$/,
         replacement: fileURLToPath(
           new URL(
-            '../backend/src/entrypoints/identity-providers/github.ts',
+            '../server/src/entrypoints/identity-providers/google.ts',
             import.meta.url,
           ),
         ),
       },
       {
-        find: /^@tinyauth\/backend\/identity-providers\/google$/,
+        find: /^@tinyrack\/tinyauth-server\/mail\/nodemailer$/,
         replacement: fileURLToPath(
           new URL(
-            '../backend/src/entrypoints/identity-providers/google.ts',
+            '../server/src/entrypoints/mail/nodemailer.ts',
             import.meta.url,
           ),
         ),
       },
       {
-        find: /^@tinyauth\/backend\/mail\/nodemailer$/,
+        find: /^@tinyrack\/tinyauth-server\/scheduler\/croner$/,
         replacement: fileURLToPath(
           new URL(
-            '../backend/src/entrypoints/mail/nodemailer.ts',
+            '../server/src/entrypoints/scheduler/croner.ts',
             import.meta.url,
           ),
         ),
       },
       {
-        find: /^@tinyauth\/backend\/scheduler\/croner$/,
+        find: /^@tinyrack\/tinyauth-server\/frontend$/,
         replacement: fileURLToPath(
           new URL(
-            '../backend/src/entrypoints/scheduler/croner.ts',
+            '../server/src/entrypoints/frontend/index.ts',
             import.meta.url,
           ),
         ),
       },
       {
-        find: /^@tinyauth\/backend\/frontend$/,
+        find: /^@tinyrack\/tinyauth-server\/frontend\/proxy$/,
         replacement: fileURLToPath(
           new URL(
-            '../backend/src/entrypoints/frontend/index.ts',
+            '../server/src/entrypoints/frontend/proxy.ts',
             import.meta.url,
           ),
         ),
       },
       {
-        find: /^@tinyauth\/backend\/frontend\/proxy$/,
+        find: /^@tinyrack\/tinyauth-server\/frontend\/static$/,
         replacement: fileURLToPath(
           new URL(
-            '../backend/src/entrypoints/frontend/proxy.ts',
-            import.meta.url,
-          ),
-        ),
-      },
-      {
-        find: /^@tinyauth\/backend\/frontend\/static$/,
-        replacement: fileURLToPath(
-          new URL(
-            '../backend/src/entrypoints/frontend/static.ts',
+            '../server/src/entrypoints/frontend/static.ts',
             import.meta.url,
           ),
         ),

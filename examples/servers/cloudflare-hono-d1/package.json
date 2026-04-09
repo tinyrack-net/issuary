@@ -12,7 +12,7 @@
     "test": "NODE_OPTIONS='--conditions=@tinyauth/source' vitest run"
   },
   "dependencies": {
-    "@tinyauth/backend": "workspace:*",
+    "@tinyrack/tinyauth-server": "workspace:*",
     "hono": "catalog:"
   },
   "devDependencies": {

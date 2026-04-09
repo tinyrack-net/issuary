@@ -1,9 +1,9 @@
 import type { AddressInfo } from 'node:net';
 import { createServer as createNetServer } from 'node:net';
 import { serve } from '@hono/node-server';
-import { createApp } from '@tinyauth/backend';
-import type { TinyAuthRuntimeConfig } from '@tinyauth/backend/config';
-import { createProxyHandler } from '@tinyauth/backend/frontend/proxy';
+import { createApp } from '@tinyrack/tinyauth-server';
+import type { TinyAuthRuntimeConfig } from '@tinyrack/tinyauth-server/config';
+import { createProxyHandler } from '@tinyrack/tinyauth-server/frontend/proxy';
 import type { E2EConfigInput } from '#frontend-e2e/fixtures/index.ts';
 import { resolveTestEmailConfig } from '#frontend-e2e/setup/resolve-test-email.ts';
 

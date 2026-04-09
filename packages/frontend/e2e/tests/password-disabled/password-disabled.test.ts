@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { google } from '@tinyauth/backend/identity-providers/google';
+import { google } from '@tinyrack/tinyauth-server/identity-providers/google';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,

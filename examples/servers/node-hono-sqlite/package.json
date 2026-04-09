@@ -5,14 +5,14 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @tinyauth/frontend build && NODE_OPTIONS='--conditions=@tinyauth/source' tsx watch src/index.ts",
-    "start": "pnpm --filter @tinyauth/frontend build && NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/index.ts",
+    "dev": "pnpm --filter @tinyrack/tinyauth-frontend build && NODE_OPTIONS='--conditions=@tinyauth/source' tsx watch src/index.ts",
+    "start": "pnpm --filter @tinyrack/tinyauth-frontend build && NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/index.ts",
     "build": "tsc --noEmit",
-    "test": "pnpm --filter @tinyauth/frontend build && NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/smoke-test.ts"
+    "test": "pnpm --filter @tinyrack/tinyauth-frontend build && NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/smoke-test.ts"
   },
   "dependencies": {
     "@hono/node-server": "catalog:",
-    "@tinyauth/backend": "workspace:*",
+    "@tinyrack/tinyauth-server": "workspace:*",
     "hono": "catalog:"
   },
   "devDependencies": {

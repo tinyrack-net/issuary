@@ -1,4 +1,4 @@
-import type { TinyAuthRuntimeConfig } from '@tinyauth/backend/config';
+import type { TinyAuthRuntimeConfig } from '@tinyrack/tinyauth-server/config';
 
 export async function resolveTestEmailConfig(): Promise<
   NonNullable<TinyAuthRuntimeConfig['email']>

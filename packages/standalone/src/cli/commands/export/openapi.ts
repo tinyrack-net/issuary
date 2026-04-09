@@ -1,7 +1,10 @@
 import { writeFileSync } from 'node:fs';
 import { buildCommand } from '@stricli/core';
-import { createApp, createOpenApiDocumentation } from '@tinyauth/backend';
-import { OPENAPI_CONFIG_DEFAULT } from '@tinyauth/backend/config';
+import {
+  createApp,
+  createOpenApiDocumentation,
+} from '@tinyrack/tinyauth-server';
+import { OPENAPI_CONFIG_DEFAULT } from '@tinyrack/tinyauth-server/config';
 import { generateSpecs } from 'hono-openapi';
 import z from 'zod';
 import { parseWithZod } from '../../../lib/cli/parse-with-zod.ts';

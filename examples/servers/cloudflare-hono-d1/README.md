@@ -1,6 +1,6 @@
 # Cloudflare Hono D1 Example
 
-This example runs `@tinyauth/backend` in library mode on Cloudflare Workers with
+This example runs `@tinyrack/tinyauth-server` in library mode on Cloudflare Workers with
 Hono, D1, and the bundled TinyAuth frontend assets.
 
 ## Scope
@@ -8,7 +8,7 @@ Hono, D1, and the bundled TinyAuth frontend assets.
 - Runtime: Cloudflare Workers
 - HTTP app: Hono
 - Database: Cloudflare D1
-- Frontend: built from `@tinyauth/frontend` into `packages/backend/public`
+- Frontend: built from `@tinyrack/tinyauth-frontend` into `packages/server/public`
 - Auth: self-signup enabled, no seeded users, no SMTP
 
 ## Prerequisites
@@ -16,7 +16,7 @@ Hono, D1, and the bundled TinyAuth frontend assets.
 - Cloudflare D1 database bound as `DB`
 - Cloudflare account with Workers enabled
 - `pnpm install`
-- `pnpm --filter @tinyauth/frontend build`
+- `pnpm --filter @tinyrack/tinyauth-frontend build`
 
 ## Configuration
 
@@ -27,7 +27,7 @@ The Worker builds its TinyAuth runtime config directly in
 - `registration` enables open self-signup for local testing
 - `database` uses `d1({ database: env.DB })`
 - `frontend` uses `createCloudflareAssetsHandler()` from
-  `@tinyauth/backend/frontend/cloudflare`
+  `@tinyrack/tinyauth-server/frontend/cloudflare`
 
 Replace the demo secrets before deploying anywhere outside development.
 
@@ -36,8 +36,8 @@ Replace the demo secrets before deploying anywhere outside development.
 Run `pnpm --filter @tinyauth-server-examples/cloudflare-hono-d1 dev`
 
 If you change frontend code while working on the example, rerun
-`pnpm --filter @tinyauth/frontend build` or keep a separate
-`pnpm --filter @tinyauth/frontend build --watch` process running.
+`pnpm --filter @tinyrack/tinyauth-frontend build` or keep a separate
+`pnpm --filter @tinyrack/tinyauth-frontend build --watch` process running.
 
 ## Build And Deploy
 

@@ -1,12 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { createApp } from '@tinyauth/backend';
-import { sqlite } from '@tinyauth/backend/database/sqlite';
-import { createStaticHandler } from '@tinyauth/backend/frontend/static';
+import { createApp } from '@tinyrack/tinyauth-server';
+import { sqlite } from '@tinyrack/tinyauth-server/database/sqlite';
+import { createStaticHandler } from '@tinyrack/tinyauth-server/frontend/static';
 
 const exampleRoot = process.cwd();
 const repoRoot = path.resolve(exampleRoot, '../../..');
-const frontendPublicPath = path.resolve(repoRoot, 'packages/backend/public');
+const frontendPublicPath = path.resolve(repoRoot, 'packages/server/public');
 const frontendIndexPath = path.join(frontendPublicPath, 'index.html');
 const dataDir = path.join(exampleRoot, 'data');
 const sqlitePath = path.join(dataDir, 'tinyauth.db');
@@ -19,7 +19,7 @@ export async function createNodeHonoSqliteExampleApp(
   await fs.promises.access(frontendIndexPath, fs.constants.R_OK).catch(() => {
     throw new Error(
       `TinyAuth frontend assets were not found at ${frontendIndexPath}. ` +
-        'Run `pnpm --filter @tinyauth/frontend build` first.',
+        'Run `pnpm --filter @tinyrack/tinyauth-frontend build` first.',
     );
   });
 
