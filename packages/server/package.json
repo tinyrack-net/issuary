@@ -1,5 +1,5 @@
 {
-  "name": "@tinyauth/backend",
+  "name": "@tinyrack/tinyauth-server",
   "version": "0.0.4",
   "type": "module",
   "description": "OpenID Connect Provider with OAuth2 support",
@@ -7,7 +7,7 @@
   "repository": {
     "type": "git",
     "url": "https://git.winetree94.com/tinyrack/tinyauth.git",
-    "directory": "packages/backend"
+    "directory": "packages/server"
   },
   "files": [
     "public",
@@ -81,9 +81,9 @@
       }
     },
     "imports": {
-      "#backend/*.ts": "./dist/*.js",
-      "#backend/*.tsx": "./dist/*.js",
-      "#backend/*": {
+      "#server/*.ts": "./dist/*.js",
+      "#server/*.tsx": "./dist/*.js",
+      "#server/*": {
         "types": "./dist/*",
         "default": "./dist/*"
       }
@@ -172,17 +172,17 @@
     }
   },
   "imports": {
-    "#backend/*.ts": {
+    "#server/*.ts": {
       "@tinyauth/source": "./src/*.ts",
       "types": "./dist/*.d.ts",
       "default": "./dist/*.js"
     },
-    "#backend/*.tsx": {
+    "#server/*.tsx": {
       "@tinyauth/source": "./src/*.tsx",
       "types": "./dist/*.d.ts",
       "default": "./dist/*.js"
     },
-    "#backend/*": {
+    "#server/*": {
       "@tinyauth/source": "./src/*",
       "types": "./dist/*",
       "default": "./dist/*"

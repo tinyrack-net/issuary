@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import type { AppType } from '#backend/entrypoints/app.js';
+import type { AppType } from '#server/entrypoints/app.js';
 import {
   createTestApp,
   MINIMAL_TEST_CONFIG,
-} from '#backend/test-utils/index.js';
+} from '#server/test-utils/index.js';
 
 let app: AppType;
 let cleanup: () => Promise<void>;

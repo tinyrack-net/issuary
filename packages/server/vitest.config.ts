@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     alias: {
-      '#backend': './src/',
+      '#server': './src/',
     },
   },
   test: {

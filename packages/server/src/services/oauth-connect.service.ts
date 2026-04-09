@@ -312,7 +312,7 @@ export class OAuthConnectService {
       (providerConfig) => providerConfig.id === id,
     );
 
-    if (!provider || !provider.enabled) {
+    if (!provider?.enabled) {
       throw new e.OAuthProviderNotFound.Error();
     }
 

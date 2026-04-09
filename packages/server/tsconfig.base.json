@@ -4,7 +4,7 @@
     "allowJs": true,
     "checkJs": false,
     "paths": {
-      "#backend/*": ["./src/*"]
+      "#server/*": ["./src/*"]
     },
     "module": "NodeNext",
     "moduleResolution": "nodenext",

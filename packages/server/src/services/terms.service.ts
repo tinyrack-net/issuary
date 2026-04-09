@@ -272,7 +272,7 @@ export class TermsService {
 
     for (const term of requiredExplicitTerms) {
       const consent = consentsMap.get(term.id);
-      if (!consent || !consent.agreed) {
+      if (!consent?.agreed) {
         missingTerms.push(term.id);
       }
     }

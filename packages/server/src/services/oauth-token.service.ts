@@ -367,7 +367,7 @@ export class OAuthTokenService {
     // Decode the token to get metadata (without full verification)
     const decoded = this.jwtService.decodeToken(token);
 
-    if (!decoded || !decoded.jti || !decoded.sub || !decoded.exp) {
+    if (!decoded?.jti || !decoded.sub || !decoded.exp) {
       // RFC 7009 §2.1: "The authorization server responds with HTTP status
       // code 200 if the token has been revoked successfully or if the client
       // submitted an invalid token."

@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { describeRoute, resolver } from 'hono-openapi';
 import { z } from 'zod';
-import type { AppEnv } from '#backend/lib/app-env.js';
-import { TAGS } from '#backend/lib/swagger-tags.js';
+import type { AppEnv } from '#server/lib/app-env.js';
+import { TAGS } from '#server/lib/swagger-tags.js';
 
 export const jwksGet = new Hono<AppEnv>().get(
   '/.well-known/jwks',

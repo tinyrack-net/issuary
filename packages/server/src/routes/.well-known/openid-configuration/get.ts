@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import type { AppEnv } from '#backend/lib/app-env.js';
+import type { AppEnv } from '#server/lib/app-env.js';
 
 /**
  * Standard OIDC Discovery endpoint at /.well-known/openid-configuration
