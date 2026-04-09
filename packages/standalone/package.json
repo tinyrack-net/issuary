@@ -39,6 +39,7 @@
   "scripts": {
     "dev": "NODE_OPTIONS='--conditions=@tinyauth/source' tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve --config-path='./config.dev.yaml'",
     "dev:cli": "CONFIG_PATH=./config.dev.yaml NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/cli.ts",
+    "docker:build": "docker build -f ./Dockerfile ../.. -t tinyauth:local",
     "test": "NODE_OPTIONS='--conditions=@tinyauth/source' vitest",
     "test:coverage": "NODE_OPTIONS='--conditions=@tinyauth/source' vitest run --coverage",
     "clean": "rm -rf dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.src.build.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo node_modules/.cache/tsconfig.e2e.tsbuildinfo",

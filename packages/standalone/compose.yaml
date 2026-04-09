@@ -2,13 +2,13 @@ services:
   tinyauth:
     image: tinyrack-net/tinyauth
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: packages/standalone/Dockerfile
     init: true
     ports:
       - "8080:8080"
     volumes:
-      - ./packages/standalone/config.dev.yaml:/config/config.dev.yaml:ro
+      - ./config.dev.yaml:/config/config.dev.yaml:ro
       - tinyauth-data:/opt/tinyauth/data
 
 volumes:
