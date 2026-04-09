@@ -71,7 +71,7 @@ export const releaseCommand = buildCommand<ReleaseCommandFlags, ReleaseArgs>({
   docs: {
     brief: 'Release backend, frontend, and standalone packages',
     fullDescription:
-      'Bump release versions from the latest v* tag and create a commit and annotated tag.',
+      'Bump release versions from the latest v* tag and create a commit and signed tag.',
   },
   func: runReleaseCommand,
 });
