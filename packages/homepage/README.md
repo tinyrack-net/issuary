@@ -36,26 +36,26 @@ Set these repository secrets before enabling automatic deploys from `main`:
 Use Astro for content and layout work:
 
 ```bash
-pnpm --filter @tinyauth/homepage dev
+pnpm --filter @tinyrack/tinyauth-homepage dev
 ```
 
 Use Wrangler to preview the built static bundle exactly as Cloudflare Workers will serve it:
 
 ```bash
-pnpm --filter @tinyauth/homepage preview:worker
+pnpm --filter @tinyrack/tinyauth-homepage preview:worker
 ```
 
 ## Build And Deploy
 
 ```bash
-pnpm --filter @tinyauth/homepage build
-pnpm --filter @tinyauth/homepage deploy
+pnpm --filter @tinyrack/tinyauth-homepage build
+pnpm --filter @tinyrack/tinyauth-homepage deploy
 ```
 
 To validate the Worker packaging without publishing:
 
 ```bash
-pnpm --filter @tinyauth/homepage deploy:dry-run
+pnpm --filter @tinyrack/tinyauth-homepage deploy:dry-run
 ```
 
 ## Notes
