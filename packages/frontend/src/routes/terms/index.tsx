@@ -16,7 +16,10 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
-import { TermsCheckboxList } from '#frontend/components/terms/terms-checkbox-list.tsx';
+import {
+  TermsCheckboxList,
+  type TermsConsentsField,
+} from '#frontend/components/terms/terms-checkbox-list.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
@@ -128,7 +131,7 @@ function Terms() {
     [t, explicitTerms],
   );
 
-  type TermsFormValues = z.infer<typeof termsSchema>;
+  type TermsFormValues = TermsConsentsField;
 
   const {
     handleSubmit,
