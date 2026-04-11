@@ -25,8 +25,8 @@
     "build:watch": "tsc -p tsconfig.build.json --watch"
   },
   "dependencies": {
-    "@stricli/core": "^1.2.6",
-    "consola": "^3.4.2",
+    "@stricli/core": "catalog:",
+    "consola": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

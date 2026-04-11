@@ -53,7 +53,7 @@
     "@types/node": "catalog:",
     "@types/nodemailer": "catalog:",
     "@vitest/coverage-v8": "catalog:",
-    "execa": "^9.6.1",
+    "execa": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
@@ -61,7 +61,7 @@
   "dependencies": {
     "@hono/node-server": "catalog:",
     "@mikro-orm/cli": "catalog:",
-    "@stricli/core": "^1.2.6",
+    "@stricli/core": "catalog:",
     "@tinyrack/tinyauth-server": "workspace:*",
     "dotenv": "catalog:",
     "hono": "catalog:",
