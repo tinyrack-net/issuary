@@ -37,3 +37,4 @@ coverage/
 .aider*
 .astro
 __screenshots__
+.opencode/
