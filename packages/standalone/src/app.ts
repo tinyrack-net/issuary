@@ -6,7 +6,9 @@ export interface CreateStandaloneAppOptions {
   config: StandaloneConfigInput;
 }
 
-export async function createStandaloneApp(options: CreateStandaloneAppOptions) {
+export async function createStandaloneApp(
+  options: CreateStandaloneAppOptions,
+): Promise<Awaited<ReturnType<typeof createApp>>> {
   const config = await resolveConfig(options.config);
   return createApp(config);
 }
