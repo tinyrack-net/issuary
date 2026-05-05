@@ -6,6 +6,12 @@ export default defineConfig({
     tsconfigPaths: true,
     alias: [
       {
+        find: '#server',
+        replacement: fileURLToPath(
+          new URL('../server/src', import.meta.url),
+        ),
+      },
+      {
         find: /^@tinyrack\/tinyauth-server$/,
         replacement: fileURLToPath(
           new URL('../server/src/entrypoints/index.ts', import.meta.url),
