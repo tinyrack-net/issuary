@@ -7,9 +7,7 @@ export default defineConfig({
     alias: [
       {
         find: '#server',
-        replacement: fileURLToPath(
-          new URL('../server/src', import.meta.url),
-        ),
+        replacement: fileURLToPath(new URL('../server/src', import.meta.url)),
       },
       {
         find: /^@tinyrack\/tinyauth-server$/,
