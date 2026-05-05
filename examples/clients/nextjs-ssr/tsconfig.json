@@ -14,8 +14,6 @@
     "isolatedModules": true,
     "erasableSyntaxOnly": true,
     "jsx": "react-jsx",
-    "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
     "paths": {
       "#example-nextjs-ssr/*": ["./*"]
     },
