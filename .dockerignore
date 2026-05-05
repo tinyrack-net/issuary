@@ -6,3 +6,4 @@ node_modules
 *.md
 .claude
 examples
+!examples/servers/cloudflare-hono-d1/wrangler.jsonc
