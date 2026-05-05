@@ -4,65 +4,65 @@ packages:
   - examples/servers/*
 
 catalog:
-  "@astrojs/check": ^0.9.8
-  "@astrojs/starlight": ^0.38.3
+  "@astrojs/check": ^0.9.9
+  "@astrojs/starlight": ^0.38.4
   "@astrojs/starlight-tailwind": ^5.0.0
-  "@biomejs/biome": 2.4.11
-  "@cloudflare/workers-types": ^4.20260411.1
-  "@hono/node-server": ^1.19.13
+  "@biomejs/biome": ^2.4.14
+  "@cloudflare/workers-types": ^4.20260505.1
+  "@hono/node-server": ^2.0.1
   "@hono/standard-validator": ^0.2.2
   "@hookform/resolvers": ^5.2.2
-  "@mikro-orm/cli": ^7.0.10
-  "@mikro-orm/core": ^7.0.10
-  "@mikro-orm/decorators": ^7.0.10
-  "@mikro-orm/migrations": ^7.0.10
-  "@mikro-orm/postgresql": ^7.0.10
-  "@mikro-orm/seeder": ^7.0.10
-  "@mikro-orm/sql": ^7.0.10
+  "@mikro-orm/cli": ^7.0.14
+  "@mikro-orm/core": ^7.0.14
+  "@mikro-orm/decorators": ^7.0.14
+  "@mikro-orm/migrations": ^7.0.14
+  "@mikro-orm/postgresql": ^7.0.14
+  "@mikro-orm/seeder": ^7.0.14
+  "@mikro-orm/sql": ^7.0.14
   "@phosphor-icons/react": ^2.1.10
   "@playwright/test": ^1.59.1
   "@react-email/components": ^1.0.12
-  "@react-email/preview-server": 5.2.10
-  "@react-email/render": ^2.0.6
+  "@react-email/preview-server": ^5.2.10
+  "@react-email/render": ^2.0.8
   "@react-email/tailwind": ^2.0.7
-  "@rolldown/plugin-babel": ^0.2.2
-  "@scalar/astro": ^0.2.7
-  "@scalar/hono-api-reference": ^0.10.7
+  "@rolldown/plugin-babel": ^0.2.3
+  "@scalar/astro": ^0.2.14
+  "@scalar/hono-api-reference": ^0.10.14
   "@simplewebauthn/browser": ^13.3.0
   "@simplewebauthn/server": ^13.3.0
   "@stricli/core": ^1.2.6
-  "@tailwindcss/postcss": ^4.2.2
-  "@tailwindcss/typography": ^0.5.19
-  "@tailwindcss/vite": ^4.2.2
-  "@tanstack/react-query": ^5.97.0
-  "@tanstack/react-router": ^1.168.13
-  "@tanstack/router-plugin": ^1.167.12
-  "@types/node": ^25.6.0
+  "@tailwindcss/postcss": 4.2.2
+  "@tailwindcss/typography": 0.5.16
+  "@tailwindcss/vite": 4.2.2
+  "@tanstack/react-query": ^5.100.9
+  "@tanstack/react-router": ^1.169.1
+  "@tanstack/router-plugin": ^1.167.33
+  "@types/node": ^24.12.2
   "@types/nodemailer": ^8.0.0
   "@types/pg": ^8.20.0
   "@types/qrcode": ^1.5.6
   "@types/react": ^19.2.14
   "@types/react-dom": ^19.2.3
   "@vitejs/plugin-react": ^6.0.1
-  "@vitest/browser-playwright": ^4.1.4
-  "@vitest/browser-preview": ^4.1.4
-  "@vitest/coverage-v8": ^4.1.4
-  "@vitest/ui": ^4.1.4
-  astro: ^6.1.5
+  "@vitest/browser-playwright": ^4.1.5
+  "@vitest/browser-preview": ^4.1.5
+  "@vitest/coverage-v8": ^4.1.5
+  "@vitest/ui": ^4.1.5
+  astro: ^6.2.2
   babel-plugin-react-compiler: ^1.0.0
   consola: ^3.4.2
   croner: ^10.0.1
   daisyui: ^5.5.19
-  dotenv: ^17.4.1
+  dotenv: ^17.4.2
   execa: ^9.6.1
-  hono: ^4.12.12
+  hono: ^4.12.17
   hono-openapi: ^1.3.0
-  i18next: ^26.0.4
-  jose: ^6.2.2
-  kysely: ^0.28.16
+  i18next: ^26.0.8
+  jose: ^6.2.3
+  kysely: ^0.28.17
   kysely-d1: ^0.4.0
-  next: 16.2.3
-  nodemailer: ^8.0.5
+  next: ^16.2.4
+  nodemailer: ^8.0.7
   otplib: ^13.4.0
   pg: ^8.20.0
   pino: ^10.3.1
@@ -70,19 +70,19 @@ catalog:
   qrcode: ^1.5.4
   react: ^19.2.5
   react-dom: ^19.2.5
-  react-email: ^5.2.10
-  react-hook-form: ^7.72.1
-  react-i18next: ^17.0.2
+  react-email: ^6.0.8
+  react-hook-form: ^7.75.0
+  react-i18next: ^17.0.6
   sharp: ^0.34.5
-  tailwindcss: ^4.2.2
+  tailwindcss: 4.2.2
   tsx: ^4.21.0
-  typescript: ^5.9.3
-  vite: ^8.0.8
-  vitest: ^4.1.4
+  typescript: ^6.0.3
+  vite: ^8.0.10
+  vitest: ^4.1.5
   vitest-browser-react: ^2.2.0
-  wrangler: ^4.81.1
-  yaml: ^2.8.3
-  zod: ^4.3.6
+  wrangler: ^4.87.0
+  yaml: ^2.8.4
+  zod: ^4.4.3
 
 onlyBuiltDependencies:
   - esbuild

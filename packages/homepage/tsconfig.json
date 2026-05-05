@@ -3,6 +3,7 @@
   "compilerOptions": {
     "strictNullChecks": true,
     "erasableSyntaxOnly": true,
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "#homepage/*": ["./src/*"]
