@@ -19,9 +19,8 @@ COPY packages/frontend/ packages/frontend/
 COPY packages/server/ packages/server/
 COPY packages/standalone/ packages/standalone/
 
-RUN pnpm --filter @tinyrack/tinyauth-frontend build
-
 RUN pnpm --filter @tinyrack/tinyauth-server build
+RUN pnpm --filter @tinyrack/tinyauth-frontend build
 RUN pnpm --filter @tinyrack/tinyauth-standalone build
 RUN pnpm --filter @tinyrack/tinyauth-standalone deploy --prod --legacy /app/deploy
 
