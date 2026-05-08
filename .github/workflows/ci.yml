@@ -175,6 +175,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
 
     steps:
       - name: Check out repository
@@ -198,16 +199,5 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Validate npm configuration
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "::error::Missing npm configuration. Set NPM_TOKEN as a repository secret."
-            exit 1
-          fi
-
       - name: Publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: pnpm --filter @tinyrack/tinyauth-server publish --access public --no-git-checks
+        run: npm publish ./packages/server --access public
