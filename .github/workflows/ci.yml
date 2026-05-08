@@ -198,8 +198,5 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Set version from tag
-        run: pnpm --filter @tinyrack/tinyauth-server version --no-git-tag-version "${GITHUB_REF_NAME#v}"
-
       - name: Publish
         run: pnpm --filter @tinyrack/tinyauth-server publish --access public --no-git-checks
