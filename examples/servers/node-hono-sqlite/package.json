@@ -2,7 +2,7 @@
   "name": "@tinyauth-server-examples/node-hono-sqlite",
   "private": true,
   "version": "1.0.0",
-  "license": "AGPL-3.0-only",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter @tinyrack/tinyauth-frontend build && NODE_OPTIONS='--conditions=@tinyauth/source' tsx watch src/index.ts",

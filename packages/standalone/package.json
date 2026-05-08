@@ -3,7 +3,7 @@
   "version": "0.0.9",
   "type": "module",
   "description": "TinyAuth standalone CLI server",
-  "license": "AGPL-3.0-only",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://git.winetree94.com/tinyrack/tinyauth.git",

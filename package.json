@@ -10,7 +10,7 @@
     "tools": "tinyauth-tools"
   },
   "author": "",
-  "license": "AGPL-3.0-only",
+  "license": "MIT",
   "description": "",
   "devDependencies": {
     "@biomejs/biome": "catalog:",

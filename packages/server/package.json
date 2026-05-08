@@ -3,7 +3,7 @@
   "version": "0.0.9",
   "type": "module",
   "description": "OpenID Connect Provider with OAuth2 support",
-  "license": "AGPL-3.0-only",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tinyrack-net/tinyauth.git",

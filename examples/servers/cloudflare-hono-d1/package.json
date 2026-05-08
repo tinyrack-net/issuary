@@ -2,7 +2,7 @@
   "name": "@tinyauth-server-examples/cloudflare-hono-d1",
   "private": true,
   "version": "1.0.0",
-  "license": "AGPL-3.0-only",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
