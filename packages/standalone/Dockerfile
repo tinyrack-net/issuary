@@ -9,6 +9,7 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/server/package.json packages/server/package.json
 COPY packages/frontend/package.json packages/frontend/package.json
 COPY packages/standalone/package.json packages/standalone/package.json
+COPY packages/tools/package.json packages/tools/package.json
 
 RUN pnpm install --frozen-lockfile
 
@@ -18,6 +19,7 @@ FROM base AS build
 COPY packages/frontend/ packages/frontend/
 COPY packages/server/ packages/server/
 COPY packages/standalone/ packages/standalone/
+COPY packages/tools/ packages/tools/
 
 RUN pnpm --filter @tinyrack/tinyauth-server build
 RUN pnpm --filter @tinyrack/tinyauth-frontend build
