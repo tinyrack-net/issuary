@@ -29,10 +29,7 @@ export default defineConfig({
         resolve: {
           conditions: ['@tinyauth/source'],
         },
-        plugins: [
-          react(),
-          tailwindcss(),
-        ],
+        plugins: [react(), tailwindcss()],
         test: {
           name: 'unit',
           include: ['src/**/*.test.{ts,tsx}'],
