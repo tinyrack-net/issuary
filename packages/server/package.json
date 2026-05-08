@@ -1,6 +1,6 @@
 {
   "name": "@tinyrack/tinyauth-server",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "type": "module",
   "description": "OpenID Connect Provider with OAuth2 support",
   "license": "AGPL-3.0-only",
