@@ -5,10 +5,10 @@ packages:
 
 catalog:
   "@astrojs/check": ^0.9.9
-  "@astrojs/starlight": ^0.38.4
+  "@astrojs/starlight": ^0.39.2
   "@astrojs/starlight-tailwind": ^5.0.0
   "@biomejs/biome": ^2.4.14
-  "@cloudflare/workers-types": ^4.20260505.1
+  "@cloudflare/workers-types": ^4.20260508.1
   "@hono/node-server": ^2.0.1
   "@hono/standard-validator": ^0.2.2
   "@hookform/resolvers": ^5.2.2
@@ -31,13 +31,13 @@ catalog:
   "@simplewebauthn/browser": ^13.3.0
   "@simplewebauthn/server": ^13.3.0
   "@stricli/core": ^1.2.6
-  "@tailwindcss/postcss": 4.2.2
+  "@tailwindcss/postcss": 4.2.4
   "@tailwindcss/typography": 0.5.16
-  "@tailwindcss/vite": 4.2.2
+  "@tailwindcss/vite": 4.2.4
   "@tanstack/react-query": ^5.100.9
-  "@tanstack/react-router": ^1.169.1
+  "@tanstack/react-router": ^1.169.2
   "@tanstack/router-plugin": ^1.167.33
-  "@types/node": ^24.12.2
+  "@types/node": ^24.12.3
   "@types/nodemailer": ^8.0.0
   "@types/pg": ^8.20.0
   "@types/qrcode": ^1.5.6
@@ -48,20 +48,20 @@ catalog:
   "@vitest/browser-preview": ^4.1.5
   "@vitest/coverage-v8": ^4.1.5
   "@vitest/ui": ^4.1.5
-  astro: ^6.2.2
+  astro: ^6.3.1
   babel-plugin-react-compiler: ^1.0.0
   consola: ^3.4.2
   croner: ^10.0.1
   daisyui: ^5.5.19
   dotenv: ^17.4.2
   execa: ^9.6.1
-  hono: ^4.12.17
+  hono: ^4.12.18
   hono-openapi: ^1.3.0
-  i18next: ^26.0.8
+  i18next: ^26.0.10
   jose: ^6.2.3
   kysely: ^0.28.17
   kysely-d1: ^0.4.0
-  next: ^16.2.4
+  next: ^16.2.6
   nodemailer: ^8.0.7
   otplib: ^13.4.0
   pg: ^8.20.0
@@ -70,17 +70,17 @@ catalog:
   qrcode: ^1.5.4
   react: ^19.2.5
   react-dom: ^19.2.5
-  react-email: ^6.0.8
+  react-email: ^6.1.1
   react-hook-form: ^7.75.0
-  react-i18next: ^17.0.6
+  react-i18next: ^17.0.7
   sharp: ^0.34.5
-  tailwindcss: 4.2.2
+  tailwindcss: 4.2.4
   tsx: ^4.21.0
   typescript: ^6.0.3
   vite: ^7.2.7
   vitest: ^4.1.5
   vitest-browser-react: ^2.2.0
-  wrangler: ^4.87.0
+  wrangler: ^4.90.0
   yaml: ^2.8.4
   zod: ^4.4.3
 
