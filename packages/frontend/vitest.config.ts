@@ -1,6 +1,5 @@
-import babel from '@rolldown/plugin-babel';
 import tailwindcss from '@tailwindcss/vite';
-import react, { reactCompilerPreset } from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import { preview } from '@vitest/browser-preview';
 import { defineConfig } from 'vitest/config';
@@ -32,7 +31,6 @@ export default defineConfig({
         },
         plugins: [
           react(),
-          babel({ presets: [reactCompilerPreset()] }),
           tailwindcss(),
         ],
         test: {

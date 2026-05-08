@@ -1,6 +1,5 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
-import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   site: 'https://tinyauth.tinyrack.net',
@@ -11,9 +10,6 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 8082,
     allowedHosts: ['desktop.server.lan'],
-  },
-  vite: {
-    plugins: [tailwindcss()],
   },
   integrations: [
     starlight({
