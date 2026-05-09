@@ -222,5 +222,8 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Copy README to package
+        run: cp readme.md packages/server/readme.md
+
       - name: Publish
         run: npm publish ./packages/server --access public
