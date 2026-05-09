@@ -14,6 +14,7 @@ import {
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
+  type TestResponse,
   withMikroContext,
 } from '../../../../test-utils/index.ts';
 
@@ -486,7 +487,7 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
   /**
    * Extract session cookie from response
    */
-  function extractSessionCookie(res: Response): string {
+  function extractSessionCookie(res: TestResponse): string {
     const setCookie = res.headers.get('set-cookie');
     if (!setCookie) return '';
     const match = setCookie.match(/session=([^;]+)/);

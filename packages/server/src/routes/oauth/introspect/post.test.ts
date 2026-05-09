@@ -40,8 +40,7 @@ describe('POST /oauth/introspect', () => {
 
       const res = await introspectToken(app, { token: access_token });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       expect(json.active).toBe(true);
       expect(json.scope).toBe('openid profile email');
@@ -64,8 +63,7 @@ describe('POST /oauth/introspect', () => {
         tokenTypeHint: 'access_token',
       });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.active).toBe(true);
     });
 
@@ -97,8 +95,7 @@ describe('POST /oauth/introspect', () => {
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.active).toBe(true);
     });
   });
@@ -112,8 +109,7 @@ describe('POST /oauth/introspect', () => {
 
       const res = await introspectToken(app, { token: refresh_token });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       expect(json.active).toBe(true);
       expect(json.scope).toBe('openid profile email');
@@ -136,8 +132,7 @@ describe('POST /oauth/introspect', () => {
         tokenTypeHint: 'refresh_token',
       });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.active).toBe(true);
     });
   });
@@ -148,8 +143,7 @@ describe('POST /oauth/introspect', () => {
         token: 'invalid-token-that-is-not-a-jwt',
       });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       expect(json.active).toBe(false);
       expect(json.scope).toBeUndefined();
@@ -166,8 +160,7 @@ describe('POST /oauth/introspect', () => {
         token: 'header.payload', // Only 2 parts instead of 3
       });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.active).toBe(false);
     });
 
@@ -178,8 +171,7 @@ describe('POST /oauth/introspect', () => {
 
       const res = await introspectToken(app, { token: fakeToken });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.active).toBe(false);
     });
 
@@ -209,8 +201,7 @@ describe('POST /oauth/introspect', () => {
         tokenTypeHint: 'refresh_token',
       });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       // Should still verify correctly (fallback to trying both types)
       expect(json.active).toBe(true);
     });
@@ -228,8 +219,7 @@ describe('POST /oauth/introspect', () => {
         clientId: 'invalid-client-id',
       });
 
-      expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 400);
       expect(json.code).toBe('OAUTH_CLIENT_NOT_FOUND');
     });
 
@@ -244,8 +234,7 @@ describe('POST /oauth/introspect', () => {
         clientSecret: 'wrong-secret',
       });
 
-      expect(res.status).toBe(401);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
     });
 
@@ -261,8 +250,7 @@ describe('POST /oauth/introspect', () => {
       });
 
       // Will fail at client lookup or disabled check
-      expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 400);
       expect(['OAUTH_CLIENT_NOT_FOUND', 'OAUTH_CLIENT_DISABLED']).toContain(
         json.code,
       );
@@ -278,8 +266,7 @@ describe('POST /oauth/introspect', () => {
 
       const res = await introspectToken(app, { token: access_token });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       // RFC 7662 §2.2 - Introspection Response (active)
       expect(json).toHaveProperty('active');
@@ -300,8 +287,7 @@ describe('POST /oauth/introspect', () => {
     test('should return proper inactive response format', async () => {
       const res = await introspectToken(app, { token: 'invalid' });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       // RFC 7662 §2.2 - Introspection Response (inactive)
       expect(json).toHaveProperty('active');
@@ -324,8 +310,7 @@ describe('POST /oauth/introspect', () => {
 
       const res = await introspectToken(app, { token: access_token });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.active).toBe(true);
       expect(json.scope).toBe('openid profile');
     });
@@ -341,8 +326,7 @@ describe('POST /oauth/introspect', () => {
 
       const res = await introspectToken(app, { token: access_token });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.active).toBe(true);
       expect(json.scope).toBe('profile email');
     });
@@ -370,8 +354,7 @@ describe('POST /oauth/introspect', () => {
 
       // Token should now be inactive
       const afterRes = await introspectToken(app, { token: access_token });
-      expect(afterRes.status).toBe(200);
-      const json = await afterRes.json();
+      const json = await assertJsonBody(afterRes, 200);
       expect(json.active).toBe(false);
     });
 
@@ -396,8 +379,7 @@ describe('POST /oauth/introspect', () => {
 
       // Token should now be inactive
       const afterRes = await introspectToken(app, { token: refresh_token });
-      expect(afterRes.status).toBe(200);
-      const json = await afterRes.json();
+      const json = await assertJsonBody(afterRes, 200);
       expect(json.active).toBe(false);
     });
   });
@@ -420,8 +402,7 @@ describe('POST /oauth/introspect', () => {
 
       const res = await introspectToken(app, { token: longToken });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.active).toBe(false);
     });
 
@@ -430,8 +411,7 @@ describe('POST /oauth/introspect', () => {
 
       const res = await introspectToken(app, { token: specialToken });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.active).toBe(false);
     });
   });

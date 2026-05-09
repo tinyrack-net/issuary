@@ -3,6 +3,7 @@ import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../entrypoints/app.ts';
 import {
+  assertDefined,
   createAuthenticatedSession,
   createTestApp,
   exchangeCodeForTokens,
@@ -187,7 +188,7 @@ describe('Multi-Client Isolation', () => {
       });
       const tokens1 = await tokenRes1.json();
       const { payload: payload1 } = await jose.jwtVerify(
-        tokens1.id_token,
+        assertDefined(tokens1.id_token),
         JWKS,
       );
 
@@ -207,7 +208,7 @@ describe('Multi-Client Isolation', () => {
       });
       const tokens2 = await tokenRes2.json();
       const { payload: payload2 } = await jose.jwtVerify(
-        tokens2.id_token,
+        assertDefined(tokens2.id_token),
         JWKS,
       );
 

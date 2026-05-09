@@ -3,6 +3,7 @@ import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../entrypoints/app.ts';
 import {
+  assertDefined,
   assertJsonBody,
   createAuthenticatedSession,
   createTestApp,
@@ -296,8 +297,8 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         clientSecret: 'wrong-secret',
       });
 
-      expect(refreshRes.status).toBe(401);
-      expect((await refreshRes.json()).code).toBe('INVALID_CLIENT_CREDENTIALS');
+      const json = await assertJsonBody(refreshRes, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
     });
   });
 
@@ -317,8 +318,8 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
 
-      expect(introspectRes.status).toBe(200);
-      expect((await introspectRes.json()).active).toBe(true);
+      const json = await assertJsonBody(introspectRes, 200);
+      expect(json.active).toBe(true);
     });
 
     test('should introspect with client_secret_basic', async () => {
@@ -465,14 +466,14 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       expect(tokens.id_token).toBeDefined();
 
       const accessDecoded = jose.decodeJwt(tokens.access_token);
-      const idDecoded = jose.decodeJwt(tokens.id_token);
+      const idDecoded = jose.decodeJwt(assertDefined(tokens.id_token));
 
       expect(accessDecoded['client_id']).toBe(TEST_OAUTH_CLIENT.clientId);
       expect(idDecoded.aud).toBe(TEST_OAUTH_CLIENT.clientId);
 
       const userInfoRes = await getUserInfo(app, tokens.access_token);
-      expect(userInfoRes.status).toBe(200);
-      expect((await userInfoRes.json()).email).toBe(TEST_USER.email);
+      const json = await assertJsonBody(userInfoRes, 200);
+      expect(json.email).toBe(TEST_USER.email);
 
       const refreshRes = await refreshAccessToken(app, {
         refreshToken: tokens.refresh_token,
@@ -583,9 +584,9 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
-      const { id_token } = await tokenRes.json();
+      const tokens = await tokenRes.json();
 
-      const decoded = jose.decodeJwt(id_token);
+      const decoded = jose.decodeJwt(assertDefined(tokens.id_token));
       expect(decoded.aud).toBe(TEST_OAUTH_CLIENT.clientId);
     });
 
@@ -600,9 +601,9 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
-      const { id_token } = await tokenRes.json();
+      const tokens = await tokenRes.json();
 
-      const decoded = jose.decodeJwt(id_token);
+      const decoded = jose.decodeJwt(assertDefined(tokens.id_token));
       expect(decoded.sub).toBeDefined();
       expect(decoded.iss).toBeDefined();
       expect(decoded.aud).toBe(TEST_OAUTH_CLIENT.clientId);
@@ -666,7 +667,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const tokens = await tokenRes.json();
       expect(tokens.scope).toBe('openid profile');
 
-      const decoded = jose.decodeJwt(tokens.id_token);
+      const decoded = jose.decodeJwt(assertDefined(tokens.id_token));
       expect(decoded['name']).toBeDefined();
       expect(decoded['email']).toBeUndefined();
     });
@@ -684,7 +685,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       });
 
       const tokens = await tokenRes.json();
-      const decoded = jose.decodeJwt(tokens.id_token);
+      const decoded = jose.decodeJwt(assertDefined(tokens.id_token));
       expect(decoded['name']).toBeDefined();
       expect(decoded['email']).toBeDefined();
       expect(decoded['email_verified']).toBeDefined();

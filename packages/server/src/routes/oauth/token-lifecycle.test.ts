@@ -3,6 +3,8 @@ import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../entrypoints/app.ts';
 import {
+  assertDefined,
+  assertJsonBody,
   createAuthenticatedSession,
   createTestApp,
   exchangeCodeForTokens,
@@ -107,8 +109,8 @@ describe('Token Lifecycle and Rotation', () => {
       });
 
       // Refresh token rotation: old token should be rejected
-      expect(replayRes.status).toBe(400);
-      expect((await replayRes.json()).code).toBe('INVALID_REFRESH_TOKEN');
+      const json = await assertJsonBody(replayRes, 400);
+      expect(json.code).toBe('INVALID_REFRESH_TOKEN');
     });
 
     test('should maintain token chain through multiple refreshes', async () => {
@@ -376,7 +378,7 @@ describe('Token Lifecycle and Rotation', () => {
 
       const tokens = await tokenRes.json();
       const accessDecoded = jose.decodeJwt(tokens.access_token);
-      const idDecoded = jose.decodeJwt(tokens.id_token);
+      const idDecoded = jose.decodeJwt(assertDefined(tokens.id_token));
       const now = Math.floor(Date.now() / 1000);
 
       // Tokens should have valid exp
@@ -536,8 +538,8 @@ describe('Token Lifecycle and Rotation', () => {
         refreshToken: tokens.refresh_token,
       });
 
-      expect(refresh2.status).toBe(400);
-      expect((await refresh2.json()).code).toBe('INVALID_REFRESH_TOKEN');
+      const json = await assertJsonBody(refresh2, 400);
+      expect(json.code).toBe('INVALID_REFRESH_TOKEN');
     });
 
     test('should allow chained refresh token usage', async () => {

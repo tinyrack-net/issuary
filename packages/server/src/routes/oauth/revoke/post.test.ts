@@ -171,8 +171,8 @@ describe('POST /oauth/revoke', () => {
         refreshToken: refresh_token,
       });
 
-      expect(refreshRes.status).toBe(400);
-      expect((await refreshRes.json()).code).toBe('INVALID_REFRESH_TOKEN');
+      const json = await assertJsonBody(refreshRes, 400);
+      expect(json.code).toBe('INVALID_REFRESH_TOKEN');
     });
   });
 

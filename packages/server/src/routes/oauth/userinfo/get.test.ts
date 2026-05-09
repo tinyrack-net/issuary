@@ -2,6 +2,7 @@ import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
 import {
+  assertDefined,
   assertJsonBody,
   createAuthenticatedSession,
   createTestApp,
@@ -40,8 +41,7 @@ describe('GET /oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       // OIDC Core §5.3.2 - Standard Claims
       expect(json.sub).toBeDefined(); // Always present
@@ -63,8 +63,7 @@ describe('GET /oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       // Should have sub (always) and email claims
       expect(json.sub).toBeDefined();
@@ -84,8 +83,7 @@ describe('GET /oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       // Should have sub (always) and profile claims
       expect(json.sub).toBeDefined();
@@ -104,8 +102,7 @@ describe('GET /oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       // Should only have sub claim
       expect(json.sub).toBeDefined();
@@ -125,8 +122,7 @@ describe('GET /oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       // Should have all claims based on scopes
       expect(json.sub).toBeDefined();
@@ -141,8 +137,7 @@ describe('GET /oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       // Sub should be a valid UUID or user ID
       expect(json.sub).toBeDefined();
@@ -157,8 +152,7 @@ describe('GET /oauth/userinfo', () => {
         // No Authorization header
       });
 
-      expect(res.status).toBe(401);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('MISSING_AUTHORIZATION_HEADER');
     });
 
@@ -191,16 +185,14 @@ describe('GET /oauth/userinfo', () => {
     test('should reject request with invalid access token', async () => {
       const res = await getUserInfo(app, 'invalid-token-that-is-not-a-jwt');
 
-      expect(res.status).toBe(401);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_ACCESS_TOKEN');
     });
 
     test('should reject request with malformed JWT', async () => {
       const res = await getUserInfo(app, 'not.a.valid.jwt.format');
 
-      expect(res.status).toBe(401);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_ACCESS_TOKEN');
     });
 
@@ -212,8 +204,7 @@ describe('GET /oauth/userinfo', () => {
 
       const res = await getUserInfo(app, fakeExpiredToken);
 
-      expect(res.status).toBe(401);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_ACCESS_TOKEN');
     });
 
@@ -230,8 +221,7 @@ describe('GET /oauth/userinfo', () => {
       // Try to use refresh token for userinfo (should fail)
       const res = await getUserInfo(app, refresh_token);
 
-      expect(res.status).toBe(401);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_ACCESS_TOKEN');
     });
   });
@@ -244,8 +234,7 @@ describe('GET /oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       // Only sub should be present
       const keys = Object.keys(json);
@@ -260,8 +249,7 @@ describe('GET /oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       expect(json.email_verified).toBeDefined();
       expect(typeof json.email_verified).toBe('boolean');
@@ -274,8 +262,7 @@ describe('GET /oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       // Should NOT have email claims
       expect(json).not.toHaveProperty('email');
@@ -321,8 +308,7 @@ describe('GET /oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       // OIDC standard claims (snake_case)
       expect(json).toHaveProperty('sub');
@@ -337,8 +323,7 @@ describe('GET /oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       // All values should be defined (not null/undefined)
       for (const [_key, value] of Object.entries(json)) {
@@ -397,8 +382,7 @@ describe('GET /oauth/userinfo', () => {
 
       const res = await getUserInfo(app, accessToken);
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       // §5.3.2 - sub claim is REQUIRED
       expect(json.sub).toBeDefined();
@@ -420,15 +404,18 @@ describe('GET /oauth/userinfo', () => {
 
       // Exchange code for tokens
       const tokenRes = await exchangeCodeForTokens(app, { code });
-      const { access_token, id_token } = await tokenRes.json();
+      const tokens = await tokenRes.json();
 
       // Get userinfo
-      const userinfoRes = await getUserInfo(app, access_token);
+      const userinfoRes = await getUserInfo(app, tokens.access_token);
       const userinfo = await userinfoRes.json();
 
       // Decode ID token (without verification, just for comparison)
       const idTokenPayload = JSON.parse(
-        Buffer.from(id_token.split('.')[1] || '', 'base64').toString(),
+        Buffer.from(
+          assertDefined(tokens.id_token).split('.')[1] || '',
+          'base64',
+        ).toString(),
       );
 
       // Sub claim should match
@@ -509,8 +496,7 @@ describe('GET /oauth/userinfo', () => {
 
       // Token should now be rejected
       const revokedRes = await getUserInfo(app, access_token);
-      expect(revokedRes.status).toBe(401);
-      const json = await revokedRes.json();
+      const json = await assertJsonBody(revokedRes, 401);
       expect(json.code).toBe('INVALID_ACCESS_TOKEN');
     });
   });

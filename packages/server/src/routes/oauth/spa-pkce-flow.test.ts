@@ -3,6 +3,7 @@ import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../entrypoints/app.ts';
 import {
+  assertDefined,
   assertJsonBody,
   createAuthenticatedSession,
   createTestApp,
@@ -116,8 +117,8 @@ describe('SPA PKCE Authentication Flow', () => {
 
       // Step 5: Use access token to get user info
       const userInfoRes = await getUserInfo(app, tokens.access_token);
-      expect(userInfoRes.status).toBe(200);
-      expect((await userInfoRes.json()).sub).toBeDefined();
+      const json = await assertJsonBody(userInfoRes, 200);
+      expect(json.sub).toBeDefined();
     });
 
     test('should work with dynamically generated PKCE values', async () => {
@@ -137,8 +138,8 @@ describe('SPA PKCE Authentication Flow', () => {
         codeVerifier,
       });
 
-      expect(tokenRes.status).toBe(200);
-      expect((await tokenRes.json()).access_token).toBeDefined();
+      const json = await assertJsonBody(tokenRes, 200);
+      expect(json.access_token).toBeDefined();
     });
 
     test('should support minimum length code verifier (43 chars)', async () => {
@@ -248,8 +249,8 @@ describe('SPA PKCE Authentication Flow', () => {
         codeVerifier: wrongVerifier,
       });
 
-      expect(tokenRes.status).toBe(400);
-      expect((await tokenRes.json()).code).toBe('INVALID_PKCE_VERIFIER');
+      const json = await assertJsonBody(tokenRes, 400);
+      expect(json.code).toBe('INVALID_PKCE_VERIFIER');
     });
 
     test('should reject when code_verifier is missing but challenge was provided', async () => {
@@ -590,10 +591,10 @@ describe('SPA PKCE Authentication Flow', () => {
         code,
         codeVerifier,
       });
-      const { id_token } = await tokenRes.json();
+      const tokens = await tokenRes.json();
 
       // Verify nonce in ID token
-      const decoded = jose.decodeJwt(id_token);
+      const decoded = jose.decodeJwt(assertDefined(tokens.id_token));
       expect(decoded['nonce']).toBe(nonce);
     });
 
@@ -612,7 +613,7 @@ describe('SPA PKCE Authentication Flow', () => {
         code,
         codeVerifier,
       });
-      const { id_token, access_token } = await tokenRes.json();
+      const tokens = await tokenRes.json();
 
       // Get JWKS (SPA would fetch this)
       const jwksClient = testClient(app);
@@ -620,17 +621,21 @@ describe('SPA PKCE Authentication Flow', () => {
       const jwks = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
       // Verify ID token signature
-      const { payload } = await jose.jwtVerify(id_token, jwks, {
-        audience: TEST_OAUTH_CLIENT.clientId,
-      });
+      const { payload } = await jose.jwtVerify(
+        assertDefined(tokens.id_token),
+        jwks,
+        {
+          audience: TEST_OAUTH_CLIENT.clientId,
+        },
+      );
 
       expect(payload.sub).toBeDefined();
       expect(payload.aud).toBe(TEST_OAUTH_CLIENT.clientId);
 
       // Verify access token is valid
-      const userInfoRes = await getUserInfo(app, access_token);
-      expect(userInfoRes.status).toBe(200);
-      expect((await userInfoRes.json()).sub).toBe(payload.sub);
+      const userInfoRes = await getUserInfo(app, tokens.access_token);
+      const json = await assertJsonBody(userInfoRes, 200);
+      expect(json.sub).toBe(payload.sub);
     });
   });
 
@@ -644,8 +649,8 @@ describe('SPA PKCE Authentication Flow', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      expect(res.status).toBe(400);
-      expect((await res.json()).code).toBe('INVALID_AUTHORIZATION_CODE');
+      const json = await assertJsonBody(res, 400);
+      expect(json.code).toBe('INVALID_AUTHORIZATION_CODE');
     });
   });
 

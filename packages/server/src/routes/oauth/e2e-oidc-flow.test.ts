@@ -4,6 +4,7 @@ import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../entrypoints/app.ts';
 import {
+  assertDefined,
   assertJsonBody,
   createAuthenticatedSession,
   createTestApp,
@@ -106,7 +107,7 @@ describe('End-to-End OIDC Flow', () => {
 
       // Step 5: Verify ID token signature using JWKS
       const { payload: idTokenPayload, protectedHeader: idTokenHeader } =
-        await jose.jwtVerify(tokens.id_token, JWKS, {
+        await jose.jwtVerify(assertDefined(tokens.id_token), JWKS, {
           issuer: config.issuer,
           audience: TEST_OAUTH_CLIENT.clientId,
         });
@@ -171,7 +172,9 @@ describe('End-to-End OIDC Flow', () => {
       const tokens = await tokenRes.json();
 
       // Decode tokens to check kid
-      const idTokenHeader = jose.decodeProtectedHeader(tokens.id_token);
+      const idTokenHeader = jose.decodeProtectedHeader(
+        assertDefined(tokens.id_token),
+      );
       const accessTokenHeader = jose.decodeProtectedHeader(tokens.access_token);
 
       // Verify kid exists in JWKS
@@ -202,7 +205,10 @@ describe('End-to-End OIDC Flow', () => {
       });
 
       const tokens = await tokenRes.json();
-      const { payload } = await jose.jwtVerify(tokens.id_token, JWKS);
+      const { payload } = await jose.jwtVerify(
+        assertDefined(tokens.id_token),
+        JWKS,
+      );
 
       // Required claims per OIDC Core 1.0 Section 2
       expect(payload.iss).toBeDefined();
@@ -240,7 +246,10 @@ describe('End-to-End OIDC Flow', () => {
       });
 
       const tokens = await tokenRes.json();
-      const { payload } = await jose.jwtVerify(tokens.id_token, JWKS);
+      const { payload } = await jose.jwtVerify(
+        assertDefined(tokens.id_token),
+        JWKS,
+      );
 
       // OIDC Core 1.0 §3.1.3.6: at_hash should be present
       expect(payload['at_hash']).toBeDefined();
@@ -265,7 +274,10 @@ describe('End-to-End OIDC Flow', () => {
       });
 
       const tokens = await tokenRes.json();
-      const { payload } = await jose.jwtVerify(tokens.id_token, JWKS);
+      const { payload } = await jose.jwtVerify(
+        assertDefined(tokens.id_token),
+        JWKS,
+      );
 
       // Compute at_hash manually to verify
       // OIDC Core 1.0 §3.1.3.6: at_hash = base64url(left_half(sha256(access_token)))
@@ -295,7 +307,10 @@ describe('End-to-End OIDC Flow', () => {
       });
 
       const tokens = await tokenRes.json();
-      const { payload } = await jose.jwtVerify(tokens.id_token, JWKS);
+      const { payload } = await jose.jwtVerify(
+        assertDefined(tokens.id_token),
+        JWKS,
+      );
 
       // Profile scope claims
       // (may or may not be in ID token - implementation specific)
@@ -482,7 +497,7 @@ describe('End-to-End OIDC Flow', () => {
 
       const tokens = await tokenRes.json();
       const { payload: idTokenClaims } = await jose.jwtVerify(
-        tokens.id_token,
+        assertDefined(tokens.id_token),
         JWKS,
       );
 
@@ -589,11 +604,16 @@ describe('End-to-End OIDC Flow', () => {
       const tokens = await tokenRes.json();
 
       // Verify using the imported key
-      const tokenHeader = jose.decodeProtectedHeader(tokens.id_token);
+      const tokenHeader = jose.decodeProtectedHeader(
+        assertDefined(tokens.id_token),
+      );
 
       // Only verify if the token was signed with this key
       if (tokenHeader.kid === key.kid) {
-        const { payload } = await jose.jwtVerify(tokens.id_token, publicKey);
+        const { payload } = await jose.jwtVerify(
+          assertDefined(tokens.id_token),
+          publicKey,
+        );
         expect(payload.sub).toBeDefined();
       }
     });
@@ -780,7 +800,7 @@ describe('End-to-End OIDC Flow', () => {
 
       // Verify with wrong issuer should fail
       await expect(
-        jose.jwtVerify(tokens.id_token, JWKS, {
+        jose.jwtVerify(assertDefined(tokens.id_token), JWKS, {
           issuer: 'https://wrong-issuer.example.com',
         }),
       ).rejects.toThrow();
@@ -807,7 +827,7 @@ describe('End-to-End OIDC Flow', () => {
 
       // Verify with wrong audience should fail
       await expect(
-        jose.jwtVerify(tokens.id_token, JWKS, {
+        jose.jwtVerify(assertDefined(tokens.id_token), JWKS, {
           audience: 'wrong-client-id',
         }),
       ).rejects.toThrow();

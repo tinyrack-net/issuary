@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
 import type { ServiceContainer } from '../../../services/container.ts';
 import {
+  assertDefined,
   assertJsonBody,
   createAuthenticatedSession,
   createTestApp,
@@ -80,8 +81,7 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       expect(json.access_token).toBeDefined();
       expect(json.token_type).toBe('Bearer');
@@ -100,8 +100,7 @@ describe('POST /oauth/token', () => {
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.access_token).toBeDefined();
     });
 
@@ -118,8 +117,7 @@ describe('POST /oauth/token', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.access_token).toBeDefined();
     });
 
@@ -137,8 +135,7 @@ describe('POST /oauth/token', () => {
         codeVerifier: plainVerifier,
       });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.access_token).toBeDefined();
     });
 
@@ -151,8 +148,7 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.access_token).toBeDefined();
       expect(json.refresh_token).toBeDefined();
       expect(json.id_token).toBeUndefined(); // No openid scope
@@ -168,8 +164,7 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.scope).toBe('openid profile');
     });
   });
@@ -184,8 +179,7 @@ describe('POST /oauth/token', () => {
         clientId: 'invalid-client-id',
       });
 
-      expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 400);
       expect(json.code).toBe('OAUTH_CLIENT_NOT_FOUND');
     });
 
@@ -198,8 +192,7 @@ describe('POST /oauth/token', () => {
         clientId: 'non-existent-client',
       });
 
-      expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 400);
       expect(json.code).toBe('OAUTH_CLIENT_NOT_FOUND');
     });
 
@@ -212,8 +205,7 @@ describe('POST /oauth/token', () => {
         clientSecret: 'wrong-secret',
       });
 
-      expect(res.status).toBe(401);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
     });
 
@@ -238,8 +230,7 @@ describe('POST /oauth/token', () => {
         code: 'invalid-code-123',
       });
 
-      expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 400);
       expect(json.code).toBe('INVALID_AUTHORIZATION_CODE');
     });
 
@@ -253,8 +244,7 @@ describe('POST /oauth/token', () => {
 
       // Try to use the same code again (should fail - codes are single-use)
       const res2 = await exchangeCode({ code });
-      expect(res2.status).toBe(400);
-      const json = await res2.json();
+      const json = await assertJsonBody(res2, 400);
       expect(json.code).toBe('INVALID_AUTHORIZATION_CODE');
     });
 
@@ -302,8 +292,7 @@ describe('POST /oauth/token', () => {
         redirectUri: 'http://evil.com/callback', // Different from authorization request
       });
 
-      expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 400);
       expect(json.code).toBe('REDIRECT_URI_MISMATCH');
     });
   });
@@ -321,8 +310,7 @@ describe('POST /oauth/token', () => {
         // code_verifier missing
       });
 
-      expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 400);
       expect(json.code).toBe('MISSING_CODE_VERIFIER');
     });
 
@@ -338,8 +326,7 @@ describe('POST /oauth/token', () => {
         codeVerifier: 'wrong-verifier-that-does-not-match-the-challenge',
       });
 
-      expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 400);
       expect(json.code).toBe('INVALID_PKCE_VERIFIER');
     });
 
@@ -373,8 +360,7 @@ describe('POST /oauth/token', () => {
       // Now refresh the token
       const res = await refreshToken({ refreshToken: refresh_token });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.access_token).toBeDefined();
       expect(json.token_type).toBe('Bearer');
       expect(json.expires_in).toBe(3600);
@@ -414,8 +400,7 @@ describe('POST /oauth/token', () => {
 
       const res = await refreshToken({ refreshToken: refresh_token });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.scope).toBe('openid profile');
     });
   });
@@ -440,8 +425,7 @@ describe('POST /oauth/token', () => {
         refreshToken: 'invalid-refresh-token',
       });
 
-      expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 400);
       expect(json.code).toBe('INVALID_REFRESH_TOKEN');
     });
 
@@ -458,8 +442,7 @@ describe('POST /oauth/token', () => {
         clientId: 'different-client-id',
       });
 
-      expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 400);
       // Will fail at client lookup first, or at client_id mismatch check
       expect(['OAUTH_CLIENT_NOT_FOUND', 'CLIENT_ID_MISMATCH']).toContain(
         json.code,
@@ -477,8 +460,7 @@ describe('POST /oauth/token', () => {
         clientSecret: 'wrong-secret',
       });
 
-      expect(res.status).toBe(401);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
     });
   });
@@ -509,8 +491,7 @@ describe('POST /oauth/token', () => {
       const refreshRes2 = await refreshToken({
         refreshToken: firstRefreshToken,
       });
-      expect(refreshRes2.status).toBe(400);
-      const json = await refreshRes2.json();
+      const json = await assertJsonBody(refreshRes2, 400);
       expect(json.code).toBe('INVALID_REFRESH_TOKEN');
     });
 
@@ -646,8 +627,7 @@ describe('POST /oauth/token', () => {
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       // RFC 6749 §5.1 - Successful Response
       expect(json).toHaveProperty('access_token');
@@ -678,7 +658,7 @@ describe('POST /oauth/token', () => {
       // JWT format: header.payload.signature (3 parts separated by dots)
       expect(json.access_token.split('.')).toHaveLength(3);
       expect(json.refresh_token.split('.')).toHaveLength(3);
-      expect(json.id_token.split('.')).toHaveLength(3);
+      expect(assertDefined(json.id_token).split('.')).toHaveLength(3);
     });
   });
 
@@ -686,8 +666,7 @@ describe('POST /oauth/token', () => {
     test('should return proper error format for invalid code', async () => {
       const res = await exchangeCode({ code: 'invalid' });
 
-      expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 400);
 
       // Error response format
       expect(json).toHaveProperty('code');
@@ -705,8 +684,7 @@ describe('POST /oauth/token', () => {
         clientSecret: 'wrong',
       });
 
-      expect(res.status).toBe(401);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
     });
 
@@ -728,12 +706,11 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
       expect(json.id_token).toBeDefined();
 
       // Decode and verify nonce claim
-      const decoded = jose.decodeJwt(json.id_token);
+      const decoded = jose.decodeJwt(assertDefined(json.id_token));
       expect(decoded['nonce']).toBe(testNonce);
     });
 
@@ -746,10 +723,9 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
-      const decoded = jose.decodeJwt(json.id_token);
+      const decoded = jose.decodeJwt(assertDefined(json.id_token));
       expect(decoded['nonce']).toBeUndefined();
     });
 
@@ -759,10 +735,9 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
-      const decoded = jose.decodeJwt(json.id_token);
+      const decoded = jose.decodeJwt(assertDefined(json.id_token));
       expect(decoded.aud).toBe(TEST_OAUTH_CLIENT.clientId);
     });
 
@@ -772,10 +747,9 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
-      const decoded = jose.decodeJwt(json.id_token);
+      const decoded = jose.decodeJwt(assertDefined(json.id_token));
       expect(decoded.sub).toBeDefined();
       expect(typeof decoded.sub).toBe('string');
       // sub should be a non-empty string (can be UUID or config-based ID)
@@ -790,10 +764,9 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
-      const decoded = jose.decodeJwt(json.id_token);
+      const decoded = jose.decodeJwt(assertDefined(json.id_token));
       expect(decoded.iss).toBeDefined();
       expect(typeof decoded.iss).toBe('string');
     });
@@ -804,10 +777,9 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
-      const decoded = jose.decodeJwt(json.id_token);
+      const decoded = jose.decodeJwt(assertDefined(json.id_token));
       expect(decoded.iat).toBeDefined();
       expect(decoded.exp).toBeDefined();
       expect(typeof decoded.iat).toBe('number');
@@ -829,10 +801,9 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
-      const decoded = jose.decodeJwt(json.id_token);
+      const decoded = jose.decodeJwt(assertDefined(json.id_token));
       expect(decoded['email']).toBeDefined();
       expect(typeof decoded['email']).toBe('string');
       expect(decoded['email_verified']).toBeDefined();
@@ -848,10 +819,9 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
-      const decoded = jose.decodeJwt(json.id_token);
+      const decoded = jose.decodeJwt(assertDefined(json.id_token));
       expect(decoded['email']).toBeUndefined();
       expect(decoded['email_verified']).toBeUndefined();
     });
@@ -865,10 +835,9 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
-      const decoded = jose.decodeJwt(json.id_token);
+      const decoded = jose.decodeJwt(assertDefined(json.id_token));
       expect(decoded['name']).toBeDefined();
       expect(typeof decoded['name']).toBe('string');
     });
@@ -882,10 +851,9 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
-      const decoded = jose.decodeJwt(json.id_token);
+      const decoded = jose.decodeJwt(assertDefined(json.id_token));
       expect(decoded['name']).toBeUndefined();
     });
 
@@ -900,10 +868,9 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
-      const decoded = jose.decodeJwt(json.id_token);
+      const decoded = jose.decodeJwt(assertDefined(json.id_token));
 
       // Required OIDC claims
       expect(decoded.iss).toBeDefined();
@@ -931,8 +898,7 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       const decoded = jose.decodeJwt(json.access_token);
 
@@ -953,11 +919,14 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       // Decode header to check kid
-      const [headerPart] = json.access_token.split('.');
+      const parts = json.access_token.split('.');
+      const headerPart = parts[0];
+      if (!headerPart) {
+        throw new Error('Invalid JWT format');
+      }
       const header = JSON.parse(
         Buffer.from(headerPart, 'base64url').toString(),
       );
@@ -975,8 +944,7 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       const decoded = jose.decodeJwt(json.refresh_token);
 
@@ -997,8 +965,7 @@ describe('POST /oauth/token', () => {
 
       const res = await exchangeCode({ code });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = await assertJsonBody(res, 200);
 
       const accessDecoded = jose.decodeJwt(json.access_token);
       const refreshDecoded = jose.decodeJwt(json.refresh_token);

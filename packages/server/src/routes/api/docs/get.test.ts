@@ -2,6 +2,7 @@ import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
 import {
+  assertJsonBody,
   createTestApp,
   MINIMAL_TEST_CONFIG,
 } from '../../../test-utils/index.ts';
@@ -28,9 +29,7 @@ describe('OpenAPI docs when enabled', () => {
         method: 'GET',
       });
 
-      expect(res.status).toBe(200);
-
-      const body = await res.json();
+      const body = await assertJsonBody(res);
       expect(body).toHaveProperty('openapi', '3.1.0');
       expect(body).toHaveProperty('info');
       expect(body.info).toHaveProperty('title', 'TinyAuth API');
@@ -46,9 +45,7 @@ describe('OpenAPI docs when enabled', () => {
         method: 'GET',
       });
 
-      expect(res.status).toBe(200);
-
-      const body = await res.json();
+      const body = await assertJsonBody(res);
       expect(body).toHaveProperty('paths');
       expect(Object.keys(body.paths).length).toBeGreaterThan(0);
     });
@@ -58,9 +55,7 @@ describe('OpenAPI docs when enabled', () => {
         method: 'GET',
       });
 
-      expect(res.status).toBe(200);
-
-      const body = await res.json();
+      const body = await assertJsonBody(res);
       expect(body.paths).toHaveProperty('/api/health');
     });
 
@@ -69,9 +64,7 @@ describe('OpenAPI docs when enabled', () => {
         method: 'GET',
       });
 
-      expect(res.status).toBe(200);
-
-      const body = await res.json();
+      const body = await assertJsonBody(res);
       expect(body.components).toBeDefined();
       expect(body.components.securitySchemes).toBeDefined();
       expect(body.components.securitySchemes).toHaveProperty(
@@ -120,9 +113,7 @@ describe('OpenAPI docs with custom metadata', () => {
       method: 'GET',
     });
 
-    expect(res.status).toBe(200);
-
-    const body = await res.json();
+    const body = await assertJsonBody(res);
     expect(body.info).toMatchObject({
       title: 'Custom API',
       description: 'Custom API description',
