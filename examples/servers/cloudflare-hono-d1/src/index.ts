@@ -11,14 +11,16 @@ interface Env {
     fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
   };
   DB: D1Database;
+  PUBLIC_ORIGIN?: string;
 }
 
 type AppExecutionContext = Parameters<AppType['fetch']>[2];
+type AppResult = Awaited<ReturnType<typeof createApp>>;
 
 function createWorkerOptions(request: Request, env: Env): CreateAppOptions {
   return {
     server: {
-      public_origin: new URL(request.url).origin,
+      public_origin: env.PUBLIC_ORIGIN ?? new URL(request.url).origin,
     },
     registration: {
       enabled: true,
@@ -46,9 +48,28 @@ function createWorkerOptions(request: Request, env: Env): CreateAppOptions {
   };
 }
 
+let appPromise: Promise<AppResult> | undefined;
+
+function getApp(request: Request, env: Env): Promise<AppResult> {
+  if (appPromise) {
+    return appPromise;
+  }
+
+  const nextAppPromise = createApp(createWorkerOptions(request, env));
+  appPromise = nextAppPromise;
+
+  nextAppPromise.catch(() => {
+    if (appPromise === nextAppPromise) {
+      appPromise = undefined;
+    }
+  });
+
+  return nextAppPromise;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: AppExecutionContext) {
-    const { app } = await createApp(createWorkerOptions(request, env));
+    const { app } = await getApp(request, env);
 
     return app.fetch(request, env, ctx);
   },

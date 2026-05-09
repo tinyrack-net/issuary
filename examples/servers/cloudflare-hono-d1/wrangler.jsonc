@@ -4,6 +4,9 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-02-06",
   "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "PUBLIC_ORIGIN": "https://auth.example.com"
+  },
   "d1_databases": [
     {
       "binding": "DB",

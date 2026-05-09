@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
@@ -66,6 +67,7 @@ function createAssetsFetcher() {
 }
 
 beforeEach(() => {
+  vi.resetModules();
   createAppMock.mockReset();
   createAppMock.mockImplementation(
     async (options: {
@@ -97,7 +99,11 @@ describe('cloudflare worker', () => {
     assets = createAssetsFetcher(),
     db = createMockD1Database(),
   ) {
-    return { ASSETS: assets, DB: db };
+    return {
+      ASSETS: assets,
+      DB: db,
+      PUBLIC_ORIGIN: 'https://auth.example.com',
+    };
   }
 
   test('preserves backend routes', async () => {
@@ -113,6 +119,93 @@ describe('cloudflare worker', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ status: 'ok' });
     expect(env.ASSETS.fetch).not.toHaveBeenCalled();
+  });
+
+  test('initializes TinyAuth once per worker isolate', async () => {
+    const worker = (await import('./index.ts')).default;
+    const env = createEnv();
+
+    await worker.fetch(
+      new Request('https://auth.example.com/api/health/live'),
+      env,
+      {} as never,
+    );
+    await worker.fetch(
+      new Request('https://auth.example.com/api/health/live'),
+      env,
+      {} as never,
+    );
+
+    expect(createAppMock).toHaveBeenCalledOnce();
+  });
+
+  test('shares in-flight TinyAuth initialization across concurrent requests', async () => {
+    const worker = (await import('./index.ts')).default;
+    const env = createEnv();
+
+    await Promise.all([
+      worker.fetch(
+        new Request('https://auth.example.com/api/health/live'),
+        env,
+        {} as never,
+      ),
+      worker.fetch(
+        new Request('https://auth.example.com/login'),
+        env,
+        {} as never,
+      ),
+    ]);
+
+    expect(createAppMock).toHaveBeenCalledOnce();
+  });
+
+  test('retries TinyAuth initialization after a failure', async () => {
+    createAppMock.mockRejectedValueOnce(new Error('init failed'));
+    const worker = (await import('./index.ts')).default;
+    const env = createEnv();
+
+    await expect(
+      worker.fetch(
+        new Request('https://auth.example.com/api/health/live'),
+        env,
+        {} as never,
+      ),
+    ).rejects.toThrow('init failed');
+
+    const response = await worker.fetch(
+      new Request('https://auth.example.com/api/health/live'),
+      env,
+      {} as never,
+    );
+
+    expect(response.status).toBe(200);
+    expect(createAppMock).toHaveBeenCalledTimes(2);
+  });
+
+  test('uses configured public origin when building TinyAuth options', async () => {
+    const worker = (await import('./index.ts')).default;
+    const env = createEnv();
+
+    await worker.fetch(
+      new Request('https://preview.example.net/api/health/live'),
+      env,
+      {} as never,
+    );
+
+    expect(createAppMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        server: { public_origin: 'https://auth.example.com' },
+      }),
+    );
+  });
+
+  test('does not configure Wrangler-owned D1 migrations', () => {
+    const wranglerConfig = readFileSync(
+      new URL('../wrangler.jsonc', import.meta.url),
+      'utf8',
+    );
+
+    expect(wranglerConfig).not.toContain('"migrations_dir"');
   });
 
   test('delegates unknown backend routes to frontend handler', async () => {

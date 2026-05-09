@@ -23,11 +23,15 @@ Hono, D1, and the bundled TinyAuth frontend assets.
 The Worker builds its TinyAuth runtime config directly in
 `src/index.ts` using the current backend option shape:
 
-- `server.public_origin` is derived from each incoming request
+- `server.public_origin` uses `PUBLIC_ORIGIN`, with request-origin fallback for
+  local development
+- `PUBLIC_ORIGIN` can pin the canonical production origin and should be set
+  before deployment
 - `registration` enables open self-signup for local testing
 - `database` uses `d1({ database: env.DB })`
 - `frontend` uses `createCloudflareAssetsHandler()` from
   `@tinyrack/tinyauth-server/frontend/cloudflare`
+- D1 migrations are applied by TinyAuth through MikroORM during startup
 
 Replace the demo secrets before deploying anywhere outside development.
 
@@ -50,8 +54,12 @@ pnpm --filter @tinyauth-server-examples/cloudflare-hono-d1 deploy
 
 - The Worker handles backend routes first and serves static frontend assets for
   everything else.
-- The example sets `server.public_origin` from the request origin so redirects,
-  cookies, and CORS match the Worker hostname.
+- The example uses `PUBLIC_ORIGIN` for redirects, cookies, and CORS. When it is
+  omitted, local development falls back to the request origin.
+- D1 schema migration is handled by the TinyAuth D1 adapter through MikroORM,
+  not by Wrangler SQL migrations.
+- The Worker caches TinyAuth initialization per isolate so MikroORM, services,
+  and config seeding are not rebuilt on every request.
 - HTML responses are interpolated at runtime for `TITLE`, `DESCRIPTION`, and
   `FAVICON_URL`.
 - Unknown file-like requests such as `/missing.js` return `404` instead of the
