@@ -3,7 +3,7 @@ import { testClient } from 'hono/testing';
 import { expect } from 'vitest';
 import type { AppType } from '../entrypoints/app.ts';
 import type { ServiceContainer } from '../services/container.ts';
-import { assertJsonBody } from './client.ts';
+import { assertJsonBody, type TestResponse } from './client.ts';
 import { generateUniqueEmail, TEST_CONSENTS, TEST_USER } from './fixtures.ts';
 
 /**
@@ -16,7 +16,7 @@ import { generateUniqueEmail, TEST_CONSENTS, TEST_USER } from './fixtures.ts';
  * @returns Cookie value
  * @throws Error if cookie is not found
  */
-export function extractCookie(res: Response, name: string): string {
+export function extractCookie(res: TestResponse, name: string): string {
   const setCookie = res.headers.get('set-cookie');
   if (!setCookie) {
     throw new Error(`Cookie '${name}' not found in response`);
@@ -104,7 +104,7 @@ export interface ErrorDefinition {
  * ```
  */
 export async function expectError(
-  res: Response,
+  res: TestResponse,
   errorDef: ErrorDefinition,
 ): Promise<void> {
   expect(res.status).toBe(errorDef.Status);
@@ -333,7 +333,7 @@ export async function grantConsent(
  * @returns Location header value
  * @throws Error if Location header is missing
  */
-export function getLocationHeader(res: Response): string {
+export function getLocationHeader(res: TestResponse): string {
   const location = res.headers.get('location');
   if (!location) {
     throw new Error('Expected Location header in response');
@@ -351,7 +351,7 @@ export async function registerUser(
       agreed: boolean;
     }>;
   } = {},
-): Promise<Response> {
+) {
   const {
     email = generateUniqueEmail('test'),
     password = 'password123!',

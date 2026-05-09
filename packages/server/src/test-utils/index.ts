@@ -16,8 +16,9 @@ export {
   createTestUser,
   getJwtKey,
 } from './cli.ts';
+export type { TestResponse } from './client.ts';
 // Type-safe test client
-export { assertJsonBody } from './client.ts';
+export { assertDefined, assertJsonBody } from './client.ts';
 // Test fixtures and constants
 export {
   DEFAULT_SCOPES,

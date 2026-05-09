@@ -2,6 +2,35 @@ import type { StatusCode } from 'hono/utils/http-status';
 import { expect } from 'vitest';
 
 /**
+ * Common response interface used in tests.
+ * This is assignable from both the standard global `Response`
+ * and Hono's `ClientResponse`, avoiding type incompatibilities
+ * caused by ambient type augmentations (e.g. `@cloudflare/workers-types`
+ * adding `webSocket` to `Response`).
+ */
+export interface TestResponse {
+  headers: Headers;
+  status: number;
+  json(): Promise<unknown>;
+  text(): Promise<string>;
+}
+
+/**
+ * Assert that a value is not undefined and return it.
+ * Useful for narrowing optional properties in test assertions.
+ *
+ * @param value - Value that may be undefined
+ * @returns The value, guaranteed to be defined
+ * @throws Error if the value is undefined
+ */
+export function assertDefined<T>(value: T | undefined): T {
+  if (value === undefined) {
+    throw new Error('Expected value to be defined');
+  }
+  return value;
+}
+
+/**
  * Permissive JSON body type used as fallback when the exact
  * response type cannot be inferred from the route handler.
  *

@@ -1,6 +1,7 @@
 import { testClient } from 'hono/testing';
 import type * as jose from 'jose';
 import type { AppType } from '../entrypoints/app.ts';
+import type { TestResponse } from './client.ts';
 import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT } from './fixtures.ts';
 import { createAuthenticatedSession, grantConsent } from './helpers.ts';
 
@@ -148,7 +149,7 @@ export interface ExchangeCodeParams {
 export async function exchangeCodeForTokens(
   app: AppType,
   params: ExchangeCodeParams,
-): Promise<Response> {
+) {
   const {
     code,
     clientId = TEST_OAUTH_CLIENT.clientId,
@@ -189,7 +190,7 @@ export interface RefreshTokenParams {
 export async function refreshAccessToken(
   app: AppType,
   params: RefreshTokenParams,
-): Promise<Response> {
+) {
   const {
     refreshToken,
     clientId = TEST_OAUTH_CLIENT.clientId,
@@ -276,10 +277,7 @@ export async function getAccessToken(
  * @param accessToken - Access token
  * @returns UserInfo response
  */
-export async function getUserInfo(
-  app: AppType,
-  accessToken: string,
-): Promise<Response> {
+export async function getUserInfo(app: AppType, accessToken: string) {
   const client = testClient(app);
   return client.oauth.userinfo.$get({
     header: {
@@ -315,7 +313,7 @@ export interface IntrospectTokenParams {
 export async function introspectToken(
   app: AppType,
   params: IntrospectTokenParams,
-): Promise<Response> {
+) {
   const {
     token,
     tokenTypeHint,
@@ -357,10 +355,7 @@ export interface RevokeTokenParams {
  * expect(res.status).toBe(200);
  * ```
  */
-export async function revokeToken(
-  app: AppType,
-  params: RevokeTokenParams,
-): Promise<Response> {
+export async function revokeToken(app: AppType, params: RevokeTokenParams) {
   const {
     token,
     tokenTypeHint,
@@ -387,7 +382,9 @@ export async function revokeToken(
  * @returns Typed JWKS object
  * @throws Error if the response is not a valid JWKS structure
  */
-export async function parseJwks(res: Response): Promise<jose.JSONWebKeySet> {
+export async function parseJwks(
+  res: TestResponse,
+): Promise<jose.JSONWebKeySet> {
   const json: unknown = await res.json();
   if (
     typeof json === 'object' &&
