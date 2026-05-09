@@ -226,4 +226,4 @@ jobs:
         run: cp readme.md packages/server/readme.md
 
       - name: Publish
-        run: npm publish ./packages/server --access public
+        run: pnpm publish --filter @tinyrack/tinyauth-server --access public --no-git-checks
