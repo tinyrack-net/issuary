@@ -1,7 +1,8 @@
 /// <reference types="@cloudflare/workers-types" />
+import type { Options } from '@mikro-orm/core';
 import { d1 } from './d1.ts';
 
-export default await d1({
+const options = await d1({
   database: {
     exec: async () => ({
       results: [],
@@ -36,3 +37,13 @@ export default await d1({
     },
   } as unknown as D1Database,
 }).getMikroOrmOptions();
+
+const config: Partial<Options> = {
+  ...options,
+  migrations: {
+    ...options.migrations,
+    path: './src/migrations/d1',
+  },
+};
+
+export default config;

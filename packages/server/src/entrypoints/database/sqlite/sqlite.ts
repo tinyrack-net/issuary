@@ -8,6 +8,7 @@ import {
   getDatabaseEntities,
   getDatabaseEntitiesWithMetadata,
 } from '../../../lib/database/entities.ts';
+import { SQLITE_MIGRATIONS } from '../../../migrations/sqlite/index.ts';
 import compiledFunctions from './compiled-functions.js';
 
 export function sqlite(database: {
@@ -28,6 +29,9 @@ export function sqlite(database: {
         ),
         entities: [...getDatabaseEntities()],
         extensions: [SeedManager, Migrator],
+        migrations: {
+          migrationsList: SQLITE_MIGRATIONS,
+        },
         debug: false,
       });
     },

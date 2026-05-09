@@ -8,6 +8,7 @@ import {
   getDatabaseEntities,
   getDatabaseEntitiesWithMetadata,
 } from '../../../lib/database/entities.ts';
+import { POSTGRES_MIGRATIONS } from '../../../migrations/postgres/index.ts';
 import compiledFunctions from './compiled-functions.js';
 
 export function postgres(database: {
@@ -32,10 +33,11 @@ export function postgres(database: {
         user: database.user,
         password: database.password,
         extensions: [SeedManager, Migrator],
+        migrations: {
+          migrationsList: POSTGRES_MIGRATIONS,
+        },
         driverOptions: {
-          connection: {
-            ssl: true,
-          },
+          ssl: true,
         },
         debug: false,
       });

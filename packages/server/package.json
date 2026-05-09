@@ -196,12 +196,17 @@
     "build:watch": "tsc -b -w tsconfig.json",
     "email:preview": "email dev --dir src/emails/templates --port 3001",
     "mikro-orm": "mikro-orm",
+    "mikro-orm:postgres": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/postgres/cli.ts",
+    "mikro-orm:sqlite": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/sqlite/cli.ts",
+    "mikro-orm:d1": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/d1/cli.ts",
     "mikro-orm:compile": "pnpm run mikro-orm:compile:postgres && pnpm run mikro-orm:compile:sqlite && pnpm run mikro-orm:compile:d1",
     "mikro-orm:compile:postgres": "mikro-orm compile --config ./src/entrypoints/database/postgres/cli.ts",
     "mikro-orm:compile:sqlite": "mikro-orm compile --config ./src/entrypoints/database/sqlite/cli.ts",
     "mikro-orm:compile:d1": "mikro-orm compile --config ./src/entrypoints/database/d1/cli.ts",
     "mikro-orm:debug": "mikro-orm debug",
-    "mikro-orm:schema:create": "mikro-orm migration:create --initial"
+    "mikro-orm:migration:create:postgres": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/postgres/cli.ts migration:create",
+    "mikro-orm:migration:create:sqlite": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/sqlite/cli.ts migration:create",
+    "mikro-orm:migration:create:d1": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/d1/cli.ts migration:create"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
