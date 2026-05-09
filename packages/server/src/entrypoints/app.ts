@@ -14,14 +14,21 @@ import { sessionMiddleware } from '../middleware/session.ts';
 import { trustedProxyGuard } from '../middleware/trusted-proxy-guard.ts';
 import { routes } from '../routes/index.ts';
 import { e, TinyAuthError } from '../schemas/error.ts';
-import { initializeServices } from '../services/container.ts';
+import {
+  type InitializeServicesOptions,
+  initializeServices,
+} from '../services/container.ts';
 
 /**
  * Application configuration for the backend runtime.
  */
 export type CreateAppOptions = TinyAuthRuntimeConfigInput;
+export type CreateAppRuntimeOptions = InitializeServicesOptions;
 
-export async function createApp(options: CreateAppOptions) {
+export async function createApp(
+  options: CreateAppOptions,
+  runtimeOptions: CreateAppRuntimeOptions = {},
+) {
   const config = TinyAuthRuntimeConfigSchema.parse(options);
   const openApiDocumentation = createOpenApiDocumentation(config.openapi);
 
@@ -29,7 +36,11 @@ export async function createApp(options: CreateAppOptions) {
   const logger = createLogger({ logging: config.logging });
 
   // Initialize all services (DB, mail, scheduler, etc.)
-  const { services, cleanup } = await initializeServices(config, logger);
+  const { services, cleanup } = await initializeServices(
+    config,
+    logger,
+    runtimeOptions,
+  );
 
   const frontendHandler = config.frontend?.({
     branding: config.branding,

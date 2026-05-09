@@ -1,6 +1,9 @@
 import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
 import type { Logger } from '../lib/logger.ts';
-import { seedConfig } from '../seeders/config.seeder.ts';
+import {
+  type ConfigSeedMode,
+  seedConfigIfNeeded,
+} from '../seeders/config.seeder.ts';
 import { CleanupService } from './cleanup.service.ts';
 import { EmailService } from './email.service.ts';
 import { JwtService } from './jwt.service.ts';
@@ -19,9 +22,14 @@ import { TotpService } from './totp.service.ts';
 import { UserService } from './user.service.ts';
 import { UserConsentService } from './user-consent.service.ts';
 
+export interface InitializeServicesOptions {
+  seedConfig?: ConfigSeedMode;
+}
+
 export async function initializeServices(
   config: TinyAuthRuntimeConfig,
   logger: Logger,
+  options: InitializeServicesOptions = {},
 ) {
   const securityService = new SecurityService(config);
 
@@ -30,11 +38,17 @@ export async function initializeServices(
   const mikro = await MikroService.initialize(config, mikroLogger);
 
   // 2. Bootstrap: seed config users/clients
-  await seedConfig(mikro.orm.em.fork(), config, securityService);
+  const seeded = await seedConfigIfNeeded(
+    mikro.orm.em.fork(),
+    config,
+    securityService,
+    options.seedConfig,
+  );
   logger.info(
     {
       users: config.users.length,
       clients: config.clients.length,
+      seeded,
     },
     'Bootstrap complete',
   );

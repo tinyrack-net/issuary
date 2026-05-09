@@ -1,4 +1,5 @@
 export type {
+  InitializeServicesOptions,
   InitResult,
   ServiceContainer,
 } from '../services/container.ts';

@@ -1,4 +1,5 @@
 import type { EntityName } from '@mikro-orm/core';
+import { BootstrapStateEntitySchema } from '../../entities/bootstrap-state.entity.ts';
 import { EmailVerificationEntitySchema } from '../../entities/email-verification.entity.ts';
 import { JwtKeyEntitySchema } from '../../entities/jwt-key.entity.ts';
 import { OAuthClientEntitySchema } from '../../entities/oauth-client.entity.ts';
@@ -41,6 +42,7 @@ function createDatabaseEntities() {
     UserTermsConsentEntitySchema,
     UserTotpRecoveryCodeEntitySchema,
     UserTotpEntitySchema,
+    BootstrapStateEntitySchema,
   ];
 }
 

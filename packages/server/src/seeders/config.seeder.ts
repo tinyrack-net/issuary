@@ -1,10 +1,151 @@
 import type { EntityManager } from '@mikro-orm/core';
+import { BootstrapStateEntitySchema } from '../entities/bootstrap-state.entity.ts';
 import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.ts';
 import { TermsEntitySchema } from '../entities/terms.entity.ts';
 import { TermsContentEntitySchema } from '../entities/terms-content.entity.ts';
 import { UserEntity } from '../entities/user.entity.ts';
+import {
+  fromBase64Url,
+  stringToBytes,
+  toArrayBuffer,
+  toBase64Url,
+} from '../lib/base64url.ts';
 import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
 import type { SecurityService } from '../services/security.service.ts';
+
+const CONFIG_SEED_STATE_ID = 'config-seed';
+const CONFIG_SEED_FINGERPRINT_VERSION = 1;
+
+export type ConfigSeedMode = 'if-changed' | 'always' | 'skip';
+
+function canonicalJson(value: unknown): string {
+  if (value === null) {
+    return 'null';
+  }
+
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
+    return JSON.stringify(value);
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => canonicalJson(item)).join(',')}]`;
+  }
+
+  if (typeof value === 'object') {
+    const entries = Object.entries(value)
+      .filter((entry) => entry[1] !== undefined)
+      .sort(([left], [right]) => left.localeCompare(right));
+
+    return `{${entries
+      .map(
+        ([key, entryValue]) =>
+          `${JSON.stringify(key)}:${canonicalJson(entryValue)}`,
+      )
+      .join(',')}}`;
+  }
+
+  return 'null';
+}
+
+async function createConfigSeedFingerprint(
+  config: TinyAuthRuntimeConfig,
+): Promise<string> {
+  const payload = canonicalJson({
+    version: CONFIG_SEED_FINGERPRINT_VERSION,
+    pbkdf2_iterations: config.security.pbkdf2_iterations,
+    terms: config.terms,
+    users: config.users,
+    clients: config.clients,
+  });
+  const keyBytes = fromBase64Url(config.security.hash_secret);
+  const key = await crypto.subtle.importKey(
+    'raw',
+    toArrayBuffer(keyBytes),
+    {
+      name: 'HMAC',
+      hash: 'SHA-256',
+    },
+    false,
+    ['sign'],
+  );
+  const signature = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    toArrayBuffer(stringToBytes(payload)),
+  );
+
+  return `v${CONFIG_SEED_FINGERPRINT_VERSION}:${toBase64Url(
+    new Uint8Array(signature),
+  )}`;
+}
+
+function isMissingBootstrapStateTableError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  const normalized = message.toLowerCase();
+
+  return (
+    normalized.includes('bootstrap_state') &&
+    (normalized.includes('no such table') ||
+      normalized.includes('does not exist') ||
+      normalized.includes('not found'))
+  );
+}
+
+export async function seedConfigIfNeeded(
+  em: EntityManager,
+  config: TinyAuthRuntimeConfig,
+  securityService: SecurityService,
+  mode: ConfigSeedMode = 'if-changed',
+): Promise<boolean> {
+  if (mode === 'skip') {
+    return false;
+  }
+
+  if (mode === 'always') {
+    await seedConfig(em, config, securityService);
+    return true;
+  }
+
+  const fingerprint = await createConfigSeedFingerprint(config);
+
+  try {
+    const state = await em.findOne(BootstrapStateEntitySchema, {
+      id: CONFIG_SEED_STATE_ID,
+    });
+    if (state?.value === fingerprint) {
+      return false;
+    }
+  } catch (err) {
+    if (!isMissingBootstrapStateTableError(err)) {
+      throw err;
+    }
+
+    await seedConfig(em, config, securityService);
+    return true;
+  }
+
+  await seedConfig(em, config, securityService);
+  await em.upsert(
+    BootstrapStateEntitySchema,
+    {
+      id: CONFIG_SEED_STATE_ID,
+      value: fingerprint,
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
+    {
+      onConflictFields: ['id'],
+      onConflictAction: 'merge',
+      onConflictExcludeFields: ['id', 'created_at'],
+    },
+  );
+
+  return true;
+}
 
 /**
  * ConfigSeeder
