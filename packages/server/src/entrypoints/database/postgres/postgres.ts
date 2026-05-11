@@ -1,4 +1,4 @@
-import { defineConfig, type MikroORM } from '@mikro-orm/core';
+import { defineConfig, type MikroORM, type Options } from '@mikro-orm/core';
 import { Migrator } from '@mikro-orm/migrations';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { SeedManager } from '@mikro-orm/seeder';
@@ -7,13 +7,17 @@ import { getDatabaseEntities } from '../../../lib/database/entities.ts';
 import { POSTGRES_MIGRATIONS } from '../../../migrations/postgres/index.ts';
 import compiledFunctions from './compiled-functions.js';
 
-export function postgres(database: {
+type PostgresDatabaseConfig = {
   host: string;
   port: number;
   user: string;
   password: string;
   name: string;
-}): DatabaseConfig {
+  driverOptions?: Options['driverOptions'];
+  debug?: Options['debug'];
+};
+
+export function postgres(database: PostgresDatabaseConfig): DatabaseConfig {
   return {
     getMikroOrmOptions: async () => {
       return defineConfig({
@@ -29,10 +33,10 @@ export function postgres(database: {
         migrations: {
           migrationsList: POSTGRES_MIGRATIONS,
         },
-        driverOptions: {
+        driverOptions: database.driverOptions ?? {
           ssl: true,
         },
-        debug: false,
+        debug: database.debug ?? false,
       });
     },
     initialize: async (orm: MikroORM) => {

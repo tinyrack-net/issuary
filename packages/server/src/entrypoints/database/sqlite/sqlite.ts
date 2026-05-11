@@ -1,4 +1,4 @@
-import { defineConfig, type MikroORM } from '@mikro-orm/core';
+import { defineConfig, type MikroORM, type Options } from '@mikro-orm/core';
 import { Migrator } from '@mikro-orm/migrations';
 import { SeedManager } from '@mikro-orm/seeder';
 import { NodeSqliteDialect, SqliteDriver } from '@mikro-orm/sql';
@@ -7,10 +7,13 @@ import { getDatabaseEntities } from '../../../lib/database/entities.ts';
 import { SQLITE_MIGRATIONS } from '../../../migrations/sqlite/index.ts';
 import compiledFunctions from './compiled-functions.js';
 
-export function sqlite(database: {
+type SqliteDatabaseConfig = {
   path: string;
   test: boolean;
-}): DatabaseConfig {
+  debug?: Options['debug'];
+};
+
+export function sqlite(database: SqliteDatabaseConfig): DatabaseConfig {
   const dbName = database.test ? ':memory:' : database.path;
 
   return {
@@ -25,7 +28,7 @@ export function sqlite(database: {
         migrations: {
           migrationsList: SQLITE_MIGRATIONS,
         },
-        debug: false,
+        debug: database.debug ?? false,
       });
     },
     initialize: async (orm: MikroORM) => {

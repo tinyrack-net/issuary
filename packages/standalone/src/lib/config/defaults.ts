@@ -47,6 +47,7 @@ export const STANDALONE_CONFIG_DEFAULTS = {
     type: envDefault('TINYAUTH_DATABASE_TYPE', 'sqlite'),
     path: envDefault('TINYAUTH_DATABASE_PATH', '/opt/tinyauth/database.db'),
     test: envDefault('TINYAUTH_DATABASE_TEST', 'false'),
+    debug: envDefault('TINYAUTH_DATABASE_DEBUG', 'false'),
   },
 
   logging: {

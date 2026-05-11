@@ -79,6 +79,7 @@ database:
   # sqlite settings
   path: ${TINYAUTH_DATABASE_PATH:-/opt/tinyauth/database.db}
   test: ${TINYAUTH_DATABASE_TEST:-false}
+  debug: ${TINYAUTH_DATABASE_DEBUG:-false}
 
   # postgres settings
   # host: ${TINYAUTH_DATABASE_HOST:-localhost}
@@ -86,6 +87,8 @@ database:
   # user: ${TINYAUTH_DATABASE_USER:-postgres}
   # password: ${TINYAUTH_DATABASE_PASSWORD:-postgres}
   # name: ${TINYAUTH_DATABASE_NAME:-tinyauth}
+  # driver_options:
+  #   ssl: true
 
 security:
   session_secret: ${TINYAUTH_SESSION_SECRET}

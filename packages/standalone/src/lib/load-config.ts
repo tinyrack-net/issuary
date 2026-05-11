@@ -72,8 +72,11 @@ function composeDatabaseConfig(
 ): TinyAuthRuntimeConfig['database'] {
   switch (database.type) {
     case 'postgres': {
-      const { type: _, ...rest } = database;
-      return postgres(rest);
+      const { type: _, driver_options: driverOptions, ...rest } = database;
+      return postgres({
+        ...rest,
+        ...(driverOptions ? { driverOptions } : {}),
+      });
     }
     case 'sqlite': {
       const { type: _, ...rest } = database;
