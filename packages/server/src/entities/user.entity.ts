@@ -14,9 +14,9 @@ export const UserEntitySchema = defineEntity({
   repository: () => UserRepository,
   properties: {
     sub: p
-      .uuid()
+      .string()
       .primary()
-      .comment('Subject identifier as UUID')
+      .comment('Subject identifier')
       .onCreate(() => crypto.randomUUID()),
     email: p.string().comment('User email address'),
     email_verified: p

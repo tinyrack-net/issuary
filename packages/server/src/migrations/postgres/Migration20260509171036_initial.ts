@@ -66,13 +66,13 @@ export class Migration20260509171036_initial extends Migration {
     );
 
     this.addSql(
-      `create table "oauth_client" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "client_id" varchar(255) not null, "client_secret_hash" varchar(255) null, "name" varchar(255) not null, "grant_types" jsonb not null default '[]', "response_types" jsonb not null default '[]', "scopes" jsonb not null default '[]', "redirect_uris" jsonb not null default '[]', "enabled" boolean not null default true, "managed_by" varchar(255) not null default 'database', "logo_uri" varchar(255) null, primary key ("id"));`,
+      `create table "oauth_client" ("id" varchar(255) not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "client_id" varchar(255) not null, "client_secret_hash" varchar(255) null, "name" varchar(255) not null, "grant_types" jsonb not null default '[]', "response_types" jsonb not null default '[]', "scopes" jsonb not null default '[]', "redirect_uris" jsonb not null default '[]', "enabled" boolean not null default true, "managed_by" varchar(255) not null default 'database', "logo_uri" varchar(255) null, primary key ("id"));`,
     );
     this.addSql(
       `comment on table "oauth_client" is 'Registered OAuth clients';`,
     );
     this.addSql(
-      `comment on column "oauth_client"."id" is 'Primary key as UUID';`,
+      `comment on column "oauth_client"."id" is 'Config/internal client identifier';`,
     );
     this.addSql(
       `comment on column "oauth_client"."created_at" is 'Timestamp when the entity was created';`,
@@ -227,12 +227,10 @@ export class Migration20260509171036_initial extends Migration {
     );
 
     this.addSql(
-      `create table "user" ("sub" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "email" varchar(255) not null, "email_verified" boolean not null default false, "password_hash" varchar(255) null, "managed_by" varchar(255) not null default 'database', "role" varchar(255) not null default 'user', "deleted_at" timestamptz null, primary key ("sub"));`,
+      `create table "user" ("sub" varchar(255) not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "email" varchar(255) not null, "email_verified" boolean not null default false, "password_hash" varchar(255) null, "managed_by" varchar(255) not null default 'database', "role" varchar(255) not null default 'user', "deleted_at" timestamptz null, primary key ("sub"));`,
     );
     this.addSql(`comment on table "user" is 'Registered users';`);
-    this.addSql(
-      `comment on column "user"."sub" is 'Subject identifier as UUID';`,
-    );
+    this.addSql(`comment on column "user"."sub" is 'Subject identifier';`);
     this.addSql(
       `comment on column "user"."created_at" is 'Timestamp when the entity was created';`,
     );
@@ -259,7 +257,7 @@ export class Migration20260509171036_initial extends Migration {
     this.addSql(`create index "user_deleted_at_idx" on "user" ("deleted_at");`);
 
     this.addSql(
-      `create table "user_consent" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" uuid not null, "client_id" uuid not null, "scopes" jsonb not null default '[]', "granted_at" timestamptz not null, "revoked_at" timestamptz null, primary key ("id"));`,
+      `create table "user_consent" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" varchar(255) not null, "client_id" varchar(255) not null, "scopes" jsonb not null default '[]', "granted_at" timestamptz not null, "revoked_at" timestamptz null, primary key ("id"));`,
     );
     this.addSql(
       `comment on table "user_consent" is 'User consent decisions for OAuth clients';`,
@@ -299,7 +297,7 @@ export class Migration20260509171036_initial extends Migration {
     );
 
     this.addSql(
-      `create table "revoked_tokens" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "jti" varchar(255) not null, "token_type" text not null, "client_id" uuid not null, "user_sub" uuid not null, "expires_at" timestamptz not null, "revoked_at" timestamptz not null, primary key ("id"));`,
+      `create table "revoked_tokens" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "jti" varchar(255) not null, "token_type" text not null, "client_id" varchar(255) not null, "user_sub" varchar(255) not null, "expires_at" timestamptz not null, "revoked_at" timestamptz not null, primary key ("id"));`,
     );
     this.addSql(
       `comment on table "revoked_tokens" is 'Revoked OAuth tokens for invalidation before expiry';`,
@@ -348,7 +346,7 @@ export class Migration20260509171036_initial extends Migration {
     );
 
     this.addSql(
-      `create table "password_reset" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" uuid not null, "token" varchar(255) not null, "expires_at" timestamptz not null, "used" boolean not null default false, "used_at" timestamptz null, primary key ("id"));`,
+      `create table "password_reset" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" varchar(255) not null, "token" varchar(255) not null, "expires_at" timestamptz not null, "used" boolean not null default false, "used_at" timestamptz null, primary key ("id"));`,
     );
     this.addSql(
       `comment on table "password_reset" is 'Password reset tokens for user password recovery';`,
@@ -385,7 +383,7 @@ export class Migration20260509171036_initial extends Migration {
     );
 
     this.addSql(
-      `create table "oauth_code" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "code_hash" varchar(255) not null, "client_id" uuid not null, "user_sub" uuid not null, "redirect_uri" varchar(255) null, "scope" jsonb not null default '[]', "nonce" varchar(255) not null, "code_challenge" varchar(255) not null, "code_challenge_method" text not null default 'S256', "expired_at" timestamptz not null, "consumed_at" timestamptz null, "auth_time" int null, primary key ("id"));`,
+      `create table "oauth_code" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "code_hash" varchar(255) not null, "client_id" varchar(255) not null, "user_sub" varchar(255) not null, "redirect_uri" varchar(255) null, "scope" jsonb not null default '[]', "nonce" varchar(255) not null, "code_challenge" varchar(255) not null, "code_challenge_method" text not null default 'S256', "expired_at" timestamptz not null, "consumed_at" timestamptz null, "auth_time" int null, primary key ("id"));`,
     );
     this.addSql(
       `comment on table "oauth_code" is 'Issued OAuth authorization codes';`,
@@ -449,7 +447,7 @@ export class Migration20260509171036_initial extends Migration {
     );
 
     this.addSql(
-      `create table "email_verification" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" uuid not null, "token" varchar(255) not null, "expires_at" timestamptz not null, "verified" boolean not null default false, "verified_at" timestamptz null, primary key ("id"));`,
+      `create table "email_verification" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" varchar(255) not null, "token" varchar(255) not null, "expires_at" timestamptz not null, "verified" boolean not null default false, "verified_at" timestamptz null, primary key ("id"));`,
     );
     this.addSql(
       `comment on table "email_verification" is 'Email verification tokens for user registration';`,
@@ -486,7 +484,7 @@ export class Migration20260509171036_initial extends Migration {
     );
 
     this.addSql(
-      `create table "user_oauth" ("id" bigserial primary key, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" uuid not null, "provider_name" varchar(255) not null, "provider_user_id" varchar(255) not null, "access_token" varchar(255) not null, "refresh_token" varchar(255) not null, "expires_at" timestamptz null);`,
+      `create table "user_oauth" ("id" bigserial primary key, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" varchar(255) not null, "provider_name" varchar(255) not null, "provider_user_id" varchar(255) not null, "access_token" varchar(255) not null, "refresh_token" varchar(255) not null, "expires_at" timestamptz null);`,
     );
     this.addSql(
       `comment on table "user_oauth" is 'OAuth accounts linked to users';`,
@@ -529,7 +527,7 @@ export class Migration20260509171036_initial extends Migration {
     );
 
     this.addSql(
-      `create table "user_passkey" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" uuid not null, "credential_id" varchar(255) not null, "public_key" text not null, "counter" int not null default 0, "device_type" varchar(255) not null default 'singleDevice', "backed_up" boolean not null default false, "transports" jsonb null, "name" varchar(255) null, "aaguid" varchar(255) null, primary key ("id"));`,
+      `create table "user_passkey" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" varchar(255) not null, "credential_id" varchar(255) not null, "public_key" text not null, "counter" int not null default 0, "device_type" varchar(255) not null default 'singleDevice', "backed_up" boolean not null default false, "transports" jsonb null, "name" varchar(255) null, "aaguid" varchar(255) null, primary key ("id"));`,
     );
     this.addSql(
       `comment on table "user_passkey" is 'User passkeys for WebAuthn authentication';`,
@@ -578,7 +576,7 @@ export class Migration20260509171036_initial extends Migration {
     );
 
     this.addSql(
-      `create table "user_terms_consent" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" uuid not null, "terms_id" varchar(255) not null, "terms_version" varchar(255) not null, "agreed" boolean not null, "consent_type" varchar(255) not null, "agreed_at" timestamptz not null, primary key ("id"));`,
+      `create table "user_terms_consent" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" varchar(255) not null, "terms_id" varchar(255) not null, "terms_version" varchar(255) not null, "agreed" boolean not null, "consent_type" varchar(255) not null, "agreed_at" timestamptz not null, primary key ("id"));`,
     );
     this.addSql(
       `comment on table "user_terms_consent" is 'User consent records for terms of service';`,
@@ -621,7 +619,7 @@ export class Migration20260509171036_initial extends Migration {
     );
 
     this.addSql(
-      `create table "user_totp" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" uuid not null, "secret" varchar(255) not null, "verified" boolean not null default false, "recovery_confirmed" boolean not null default false, primary key ("id"));`,
+      `create table "user_totp" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" varchar(255) not null, "secret" varchar(255) not null, "verified" boolean not null default false, "recovery_confirmed" boolean not null default false, primary key ("id"));`,
     );
     this.addSql(
       `comment on table "user_totp" is 'User TOTP secrets for two-factor authentication';`,
@@ -650,7 +648,7 @@ export class Migration20260509171036_initial extends Migration {
     );
 
     this.addSql(
-      `create table "user_totp_recovery_code" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" uuid not null, "code_hash" varchar(255) not null, "used" boolean not null default false, "used_at" timestamptz null, primary key ("id"));`,
+      `create table "user_totp_recovery_code" ("id" uuid not null, "created_at" timestamptz not null, "updated_at" timestamptz not null, "user_sub" varchar(255) not null, "code_hash" varchar(255) not null, "used" boolean not null default false, "used_at" timestamptz null, primary key ("id"));`,
     );
     this.addSql(
       `comment on table "user_totp_recovery_code" is 'One-time recovery codes for TOTP two-factor authentication';`,

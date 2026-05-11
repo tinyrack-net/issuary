@@ -6,7 +6,11 @@ import z from 'zod';
  */
 export const ClientConfigSchema = z
   .object({
-    id: z.string().describe('Internal identifier for the client.'),
+    id: z
+      .string()
+      .min(1)
+      .max(255)
+      .describe('Internal identifier for the client.'),
     name: z
       .string()
       .describe('Human-readable name for the client application.'),

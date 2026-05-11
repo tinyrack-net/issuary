@@ -2,7 +2,11 @@ import z from 'zod';
 
 export const UserConfigSchema = z
   .object({
-    sub: z.string().describe('Unique subject identifier for the user.'),
+    sub: z
+      .string()
+      .min(1)
+      .max(255)
+      .describe('Unique subject identifier for the user.'),
     email: z.string().describe('Email address for the user account.'),
     password: z.string().describe('Plain-text password (hashed at startup).'),
     role: z

@@ -146,6 +146,86 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     expect(parsed.scheduler).toBe(scheduler);
   });
 
+  test('caps config-authored user and client identifiers at 255 characters', () => {
+    const maxLengthId = 'x'.repeat(255);
+    const tooLongId = 'x'.repeat(256);
+
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        users: [
+          {
+            sub: maxLengthId,
+            email: 'user@example.com',
+            password: 'password',
+            role: 'user',
+          },
+        ],
+        clients: [
+          {
+            id: maxLengthId,
+            name: 'Client',
+            client_id: 'oauth-client-id',
+            redirect_uris: ['http://localhost/callback'],
+            response_types: ['code'],
+            grant_types: ['authorization_code'],
+            scope: 'openid',
+          },
+        ],
+      }),
+    ).not.toThrow();
+
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        users: [
+          {
+            sub: tooLongId,
+            email: 'user@example.com',
+            password: 'password',
+            role: 'user',
+          },
+        ],
+      }),
+    ).toThrow();
+
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          {
+            id: tooLongId,
+            name: 'Client',
+            client_id: 'oauth-client-id',
+            redirect_uris: ['http://localhost/callback'],
+            response_types: ['code'],
+            grant_types: ['authorization_code'],
+            scope: 'openid',
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  test('does not apply the config id cap to OAuth client_id', () => {
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          {
+            id: 'client-config-id',
+            name: 'Client',
+            client_id: 'x'.repeat(256),
+            redirect_uris: ['http://localhost/callback'],
+            response_types: ['code'],
+            grant_types: ['authorization_code'],
+            scope: 'openid',
+          },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
   test('rejects legacy scheduler objects that are not adapters', () => {
     expect(() =>
       TinyAuthRuntimeConfigSchema.parse({

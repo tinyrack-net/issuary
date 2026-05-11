@@ -18,7 +18,7 @@ const TokenIntrospectionResult = z.object({
   /** Issued-at timestamp in seconds (only if active) */
   iat: z.number().int().optional().describe('Issued-at timestamp (seconds)'),
   /** Subject identifier - user ID (only if active) */
-  sub: z.string().uuid().optional().describe('Subject identifier (UUID)'),
+  sub: z.string().optional().describe('Subject identifier'),
   /** Issuer identifier (only if active) */
   iss: z.string().url().optional().describe('Token issuer URL'),
 });

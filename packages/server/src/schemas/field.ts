@@ -11,7 +11,7 @@ export const f = {
   uuid: z.uuid().describe('Entity UUID'),
 
   // User fields
-  userSub: z.uuid().describe('User subject identifier (UUID)'),
+  userSub: z.string().min(1).max(255).describe('User subject identifier'),
   userEmail: z.email().describe('User email address'),
   userPassword: z
     .string()
@@ -27,6 +27,11 @@ export const f = {
 
   // OAuth fields
   clientId: z.string().min(1).max(1000).describe('OAuth client ID'),
+  clientConfigId: z
+    .string()
+    .min(1)
+    .max(255)
+    .describe('OAuth client config/internal ID'),
   clientSecret: z.string().min(1).max(1000).describe('OAuth client secret'),
   redirectUri: z.url().max(1000).describe('OAuth redirect URI'),
   scope: z.string().max(1000).describe('Space-delimited list of OAuth scopes'),

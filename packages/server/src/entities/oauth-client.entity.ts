@@ -13,9 +13,9 @@ export const OAuthClientEntitySchema = defineEntity({
   repository: () => OAuthClientRepository,
   properties: (p) => ({
     id: p
-      .uuid()
+      .string()
       .primary()
-      .comment('Primary key as UUID')
+      .comment('Config/internal client identifier')
       .onCreate(() => crypto.randomUUID()),
     clientId: p.string().comment('Public client identifier'),
     clientSecretHash: p

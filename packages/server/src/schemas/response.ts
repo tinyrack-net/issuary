@@ -41,7 +41,7 @@ const UserSession = z
 
 const OAuthClient = z
   .object({
-    id: f.uuid.describe('OAuth client internal UUID'),
+    id: f.clientConfigId.describe('OAuth client config/internal ID'),
     clientId: f.clientId.describe('OAuth client ID exposed to clients'),
     name: z.string().describe('Display name of the OAuth client'),
     managed_by: z
@@ -61,7 +61,7 @@ const OAuthClient = z
 
 const ConsentClient = z
   .object({
-    id: f.uuid.describe('OAuth client internal UUID'),
+    id: f.clientConfigId.describe('OAuth client config/internal ID'),
     clientId: f.clientId.describe('OAuth client ID'),
     name: z.string().describe('OAuth client display name'),
   })
