@@ -4,11 +4,6 @@ export type {
   FrontendRuntimeContext,
 } from '../../lib/config/frontend.ts';
 export type {
-  CloudflareAssetsBinding,
-  CreateCloudflareAssetsHandlerOptions,
-} from '../../lib/frontend/cloudflare.ts';
-export { createCloudflareAssetsHandler } from '../../lib/frontend/cloudflare.ts';
-export type {
   BuiltInHtmlVariableKey,
   BuiltInHtmlVariables,
   HtmlVariables,

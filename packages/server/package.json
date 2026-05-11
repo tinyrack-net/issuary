@@ -35,10 +35,6 @@
         "types": "./dist/entrypoints/database/sqlite/sqlite.d.ts",
         "default": "./dist/entrypoints/database/sqlite/sqlite.js"
       },
-      "./database/d1": {
-        "types": "./dist/entrypoints/database/d1/d1.d.ts",
-        "default": "./dist/entrypoints/database/d1/d1.js"
-      },
       "./mail/nodemailer": {
         "types": "./dist/entrypoints/mail/nodemailer.d.ts",
         "default": "./dist/entrypoints/mail/nodemailer.js"
@@ -74,10 +70,6 @@
       "./frontend/proxy": {
         "types": "./dist/entrypoints/frontend/proxy.d.ts",
         "default": "./dist/entrypoints/frontend/proxy.js"
-      },
-      "./frontend/cloudflare": {
-        "types": "./dist/entrypoints/frontend/cloudflare.d.ts",
-        "default": "./dist/entrypoints/frontend/cloudflare.js"
       }
     },
     "imports": {
@@ -114,11 +106,6 @@
       "@tinyauth/source": "./src/entrypoints/database/sqlite/sqlite.ts",
       "types": "./dist/entrypoints/database/sqlite/sqlite.d.ts",
       "default": "./dist/entrypoints/database/sqlite/sqlite.js"
-    },
-    "./database/d1": {
-      "@tinyauth/source": "./src/entrypoints/database/d1/d1.ts",
-      "types": "./dist/entrypoints/database/d1/d1.d.ts",
-      "default": "./dist/entrypoints/database/d1/d1.js"
     },
     "./mail/nodemailer": {
       "@tinyauth/source": "./src/entrypoints/mail/nodemailer.ts",
@@ -164,11 +151,6 @@
       "@tinyauth/source": "./src/entrypoints/frontend/proxy.ts",
       "types": "./dist/entrypoints/frontend/proxy.d.ts",
       "default": "./dist/entrypoints/frontend/proxy.js"
-    },
-    "./frontend/cloudflare": {
-      "@tinyauth/source": "./src/entrypoints/frontend/cloudflare.ts",
-      "types": "./dist/entrypoints/frontend/cloudflare.d.ts",
-      "default": "./dist/entrypoints/frontend/cloudflare.js"
     }
   },
   "imports": {
@@ -198,15 +180,12 @@
     "mikro-orm": "mikro-orm",
     "mikro-orm:postgres": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/postgres/cli.ts",
     "mikro-orm:sqlite": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/sqlite/cli.ts",
-    "mikro-orm:d1": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/d1/cli.ts",
-    "mikro-orm:compile": "pnpm run mikro-orm:compile:postgres && pnpm run mikro-orm:compile:sqlite && pnpm run mikro-orm:compile:d1",
+    "mikro-orm:compile": "pnpm run mikro-orm:compile:postgres && pnpm run mikro-orm:compile:sqlite",
     "mikro-orm:compile:postgres": "mikro-orm compile --config ./src/entrypoints/database/postgres/cli.ts",
     "mikro-orm:compile:sqlite": "mikro-orm compile --config ./src/entrypoints/database/sqlite/cli.ts",
-    "mikro-orm:compile:d1": "mikro-orm compile --config ./src/entrypoints/database/d1/cli.ts",
     "mikro-orm:debug": "mikro-orm debug",
     "mikro-orm:migration:create:postgres": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/postgres/cli.ts migration:create",
-    "mikro-orm:migration:create:sqlite": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/sqlite/cli.ts migration:create",
-    "mikro-orm:migration:create:d1": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/d1/cli.ts migration:create"
+    "mikro-orm:migration:create:sqlite": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/sqlite/cli.ts migration:create"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
@@ -215,13 +194,11 @@
     "@types/nodemailer": "catalog:",
     "@types/pg": "catalog:",
     "@types/qrcode": "catalog:",
-    "@cloudflare/workers-types": "catalog:",
     "@types/react": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:",
-    "wrangler": "catalog:"
+    "vitest": "catalog:"
   },
   "dependencies": {
     "@hono/standard-validator": "catalog:",
@@ -242,7 +219,6 @@
     "hono-openapi": "catalog:",
     "jose": "catalog:",
     "kysely": "catalog:",
-    "kysely-d1": "catalog:",
     "pino-pretty": "catalog:",
     "react-email": "catalog:",
     "nodemailer": "catalog:",

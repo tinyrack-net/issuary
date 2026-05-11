@@ -18,9 +18,6 @@ catalogs:
     '@biomejs/biome':
       specifier: ^2.4.14
       version: 2.4.14
-    '@cloudflare/workers-types':
-      specifier: ^4.20260508.1
-      version: 4.20260508.1
     '@hono/node-server':
       specifier: ^2.0.1
       version: 2.0.1
@@ -174,9 +171,6 @@ catalogs:
     kysely:
       specifier: ^0.28.17
       version: 0.28.17
-    kysely-d1:
-      specifier: ^0.4.0
-      version: 0.4.0
     next:
       specifier: ^16.2.6
       version: 16.2.6
@@ -340,31 +334,6 @@ importers:
       vite:
         specifier: 'catalog:'
         version: 7.3.2(@types/node@24.12.3)(jiti@2.6.1)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.8.4)
-
-  examples/servers/cloudflare-hono-d1:
-    dependencies:
-      '@tinyrack/tinyauth-server':
-        specifier: workspace:*
-        version: link:../../../packages/server
-      hono:
-        specifier: 'catalog:'
-        version: 4.12.18
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: 'catalog:'
-        version: 4.20260508.1
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.12.3
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.5(@types/node@24.12.3)(@vitest/browser-playwright@4.1.5)(@vitest/browser-preview@4.1.5)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(vite@8.0.10(@types/node@24.12.3)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.4))
-      wrangler:
-        specifier: 'catalog:'
-        version: 4.90.0(@cloudflare/workers-types@4.20260508.1)
 
   examples/servers/node-hono-sqlite:
     dependencies:
@@ -608,9 +577,6 @@ importers:
       kysely:
         specifier: 'catalog:'
         version: 0.28.17
-      kysely-d1:
-        specifier: 'catalog:'
-        version: 0.4.0(kysely@0.28.17)
       nodemailer:
         specifier: 'catalog:'
         version: 8.0.7
@@ -642,9 +608,6 @@ importers:
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.4.14
-      '@cloudflare/workers-types':
-        specifier: 'catalog:'
-        version: 4.20260508.1
       '@react-email/preview-server':
         specifier: 'catalog:'
         version: 5.2.10(@playwright/test@1.59.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -675,9 +638,6 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.5(@types/node@24.12.3)(@vitest/browser-playwright@4.1.5)(@vitest/browser-preview@4.1.5)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(vite@8.0.10(@types/node@24.12.3)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.4))
-      wrangler:
-        specifier: 'catalog:'
-        version: 4.90.0(@cloudflare/workers-types@4.20260508.1)
 
   packages/standalone:
     dependencies:
@@ -4070,11 +4030,6 @@ packages:
     resolution: {integrity: sha512-dhG34DXATL5hSxJbIexCft8FChFXtmskoZYnoPWjXQuebWYCNkVeV3KkGegCK9CP1oswI/vQibS2GY7Em/sJJA==}
     engines: {node: '>= 8'}
 
-  kysely-d1@0.4.0:
-    resolution: {integrity: sha512-wUcVvQNtm30OTfuo7Ad5vYJ1qHqPXOCZc+zWchVKNyuvqY3u8OuGw4gmUx1Ypdx2wRVFLHVQC9I7v0pTmF7Nkw==}
-    peerDependencies:
-      kysely: '*'
-
   kysely@0.28.17:
     resolution: {integrity: sha512-nbD8lB9EB3wNdMhOCdx5Li8DxnLbvKByylRLcJ1h+4SkrowVeECAyZlyiKMThF7xFdRz0jSQ2MoJr+wXux2y0Q==}
     engines: {node: '>=20.0.0'}
@@ -6199,7 +6154,8 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260507.1':
     optional: true
 
-  '@cloudflare/workers-types@4.20260508.1': {}
+  '@cloudflare/workers-types@4.20260508.1':
+    optional: true
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -7839,9 +7795,9 @@ snapshots:
       obug: 2.1.1
       std-env: 4.1.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.5(@types/node@24.12.3)(@vitest/browser-playwright@4.1.5)(@vitest/browser-preview@4.1.5)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(vite@8.0.10(@types/node@24.12.3)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.4))
+      vitest: 4.1.5(@types/node@24.12.3)(@vitest/browser-playwright@4.1.5)(@vitest/browser-preview@4.1.5)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(vite@7.3.2(@types/node@24.12.3)(jiti@2.6.1)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.8.4))
     optionalDependencies:
-      '@vitest/browser': 4.1.5(vite@8.0.10(@types/node@24.12.3)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.4))(vitest@4.1.5)
+      '@vitest/browser': 4.1.5(vite@7.3.2(@types/node@24.12.3)(jiti@2.6.1)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.8.4))(vitest@4.1.5)
 
   '@vitest/expect@4.1.5':
     dependencies:
@@ -7895,7 +7851,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.16
       tinyrainbow: 3.1.0
-      vitest: 4.1.5(@types/node@24.12.3)(@vitest/browser-playwright@4.1.5)(@vitest/browser-preview@4.1.5)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(vite@8.0.10(@types/node@24.12.3)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.4))
+      vitest: 4.1.5(@types/node@24.12.3)(@vitest/browser-playwright@4.1.5)(@vitest/browser-preview@4.1.5)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(vite@7.3.2(@types/node@24.12.3)(jiti@2.6.1)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.8.4))
 
   '@vitest/utils@4.1.5':
     dependencies:
@@ -9051,10 +9007,6 @@ snapshots:
   kleur@4.1.5: {}
 
   klona@2.0.6: {}
-
-  kysely-d1@0.4.0(kysely@0.28.17):
-    dependencies:
-      kysely: 0.28.17
 
   kysely@0.28.17: {}
 

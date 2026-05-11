@@ -8,7 +8,6 @@ catalog:
   "@astrojs/starlight": ^0.39.2
   "@astrojs/starlight-tailwind": ^5.0.0
   "@biomejs/biome": ^2.4.14
-  "@cloudflare/workers-types": ^4.20260508.1
   "@hono/node-server": ^2.0.1
   "@hono/standard-validator": ^0.2.2
   "@hookform/resolvers": ^5.2.2
@@ -60,7 +59,6 @@ catalog:
   i18next: ^26.0.10
   jose: ^6.2.3
   kysely: ^0.28.17
-  kysely-d1: ^0.4.0
   next: ^16.2.6
   nodemailer: ^8.0.7
   otplib: ^13.4.0
