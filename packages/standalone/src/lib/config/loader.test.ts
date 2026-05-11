@@ -80,6 +80,29 @@ describe('resolveConfig', () => {
     expect(typeof resolved.database.initialize).toBe('function');
   });
 
+  test('composes postgres driver options from standalone config', async () => {
+    const resolved = await resolveConfig({
+      ...MINIMAL_CONFIG,
+      database: {
+        type: 'postgres',
+        host: 'localhost',
+        port: 5432,
+        user: 'postgres',
+        password: 'postgres',
+        name: 'tinyauth',
+        debug: 'true',
+        driver_options: {
+          ssl: false,
+        },
+      },
+    });
+
+    const options = await resolved.database.getMikroOrmOptions();
+
+    expect(options.debug).toBe(true);
+    expect(options.driverOptions).toEqual({ ssl: false });
+  });
+
   test('composes a scheduler adapter from standalone defaults', async () => {
     const resolved = await resolveConfig(MINIMAL_CONFIG);
 
@@ -164,6 +187,7 @@ describe('resolveConfig', () => {
         database: {
           type: 'sqlite',
           test: 'true',
+          debug: 'true',
         },
         email: {
           transport: 'smtp',

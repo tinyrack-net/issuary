@@ -20,6 +20,25 @@ describe('database migrations', () => {
     expect(options.migrations?.migrationsList).toBe(POSTGRES_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
     expect(options.migrations?.pathTs).toBeUndefined();
+    expect(options.driverOptions).toEqual({ ssl: true });
+    expect(options.debug).toBe(false);
+  });
+
+  test('postgres accepts custom driver options', async () => {
+    const options = await postgres({
+      host: 'localhost',
+      name: 'tinyauth',
+      password: 'tinyauth',
+      port: 5432,
+      user: 'tinyauth',
+      driverOptions: {
+        ssl: false,
+      },
+      debug: true,
+    }).getMikroOrmOptions();
+
+    expect(options.driverOptions).toEqual({ ssl: false });
+    expect(options.debug).toBe(true);
   });
 
   test('sqlite uses explicit migration imports', async () => {
@@ -32,5 +51,16 @@ describe('database migrations', () => {
     expect(options.migrations?.migrationsList).toBe(SQLITE_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
     expect(options.migrations?.pathTs).toBeUndefined();
+    expect(options.debug).toBe(false);
+  });
+
+  test('sqlite accepts custom debug option', async () => {
+    const options = await sqlite({
+      path: './test.db',
+      test: false,
+      debug: true,
+    }).getMikroOrmOptions();
+
+    expect(options.debug).toBe(true);
   });
 });
