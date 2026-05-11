@@ -3,11 +3,7 @@ import { Migrator } from '@mikro-orm/migrations';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { SeedManager } from '@mikro-orm/seeder';
 import type { DatabaseConfig } from '../../../lib/config/index.ts';
-import { resolveCompiledFunctionsForEntities } from '../../../lib/database/compiled-functions.ts';
-import {
-  getDatabaseEntities,
-  getDatabaseEntitiesWithMetadata,
-} from '../../../lib/database/entities.ts';
+import { getDatabaseEntities } from '../../../lib/database/entities.ts';
 import { POSTGRES_MIGRATIONS } from '../../../migrations/postgres/index.ts';
 import compiledFunctions from './compiled-functions.js';
 
@@ -22,10 +18,7 @@ export function postgres(database: {
     getMikroOrmOptions: async () => {
       return defineConfig({
         driver: PostgreSqlDriver,
-        compiledFunctions: resolveCompiledFunctionsForEntities(
-          getDatabaseEntitiesWithMetadata(),
-          compiledFunctions,
-        ),
+        compiledFunctions: compiledFunctions,
         entities: [...getDatabaseEntities()],
         host: database.host,
         port: database.port,
