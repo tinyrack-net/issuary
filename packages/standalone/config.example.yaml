@@ -138,6 +138,8 @@ scheduler:
   # for every replica/process that runs the scheduler.
   poll_interval_ms: ${TINYAUTH_SCHEDULER_POLL_INTERVAL_MS:-5000}
   lock_ttl_ms: ${TINYAUTH_SCHEDULER_LOCK_TTL_MS:-60000}
+  background_retry_delay_ms: ${TINYAUTH_SCHEDULER_BACKGROUND_RETRY_DELAY_MS:-1000}
+  background_max_attempts: ${TINYAUTH_SCHEDULER_BACKGROUND_MAX_ATTEMPTS:-3}
   instance_id: ${TINYAUTH_SCHEDULER_INSTANCE_ID:-}
 
 cleanup:

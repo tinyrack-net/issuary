@@ -126,6 +126,8 @@ function composeSchedulerConfig(
         cleanupCron: scheduler.cleanup_cron,
         pollIntervalMs: scheduler.poll_interval_ms,
         lockTtlMs: scheduler.lock_ttl_ms,
+        backgroundRetryDelayMs: scheduler.background_retry_delay_ms,
+        backgroundMaxAttempts: scheduler.background_max_attempts,
         instanceId: scheduler.instance_id,
       });
   }

@@ -13,6 +13,17 @@ const PositiveIntegerSchema = z
   })
   .pipe(z.number().int().positive());
 
+const PositiveNumberSchema = z
+  .union([z.string(), z.number()])
+  .transform((value) => {
+    if (typeof value === 'string') {
+      return Number(value);
+    }
+
+    return value;
+  })
+  .pipe(z.number().finite().positive());
+
 function isValidCronExpression(expression: string): boolean {
   let job: Cron | undefined;
   try {
@@ -37,6 +48,8 @@ interface StandaloneSchedulerConfigDefault {
   cleanup_cron: string;
   poll_interval_ms: number;
   lock_ttl_ms: number;
+  background_retry_delay_ms: number;
+  background_max_attempts: number;
 }
 
 export const STANDALONE_SCHEDULER_CONFIG_DEFAULT: StandaloneSchedulerConfigDefault =
@@ -46,6 +59,8 @@ export const STANDALONE_SCHEDULER_CONFIG_DEFAULT: StandaloneSchedulerConfigDefau
     cleanup_cron: '0 2 * * *',
     poll_interval_ms: 5000,
     lock_ttl_ms: 60000,
+    background_retry_delay_ms: 1000,
+    background_max_attempts: 3,
   };
 
 export const StandaloneSchedulerConfigSchema = z
@@ -68,6 +83,14 @@ export const StandaloneSchedulerConfigSchema = z
     lock_ttl_ms: PositiveIntegerSchema.default(
       STANDALONE_SCHEDULER_CONFIG_DEFAULT.lock_ttl_ms,
     ).describe('Database scheduler lease duration in milliseconds.'),
+    background_retry_delay_ms: PositiveNumberSchema.default(
+      STANDALONE_SCHEDULER_CONFIG_DEFAULT.background_retry_delay_ms,
+    ).describe(
+      'Database scheduler background job retry delay in milliseconds.',
+    ),
+    background_max_attempts: PositiveIntegerSchema.default(
+      STANDALONE_SCHEDULER_CONFIG_DEFAULT.background_max_attempts,
+    ).describe('Database scheduler background job maximum attempts.'),
     instance_id: z
       .string()
       .transform((value) => (value === '' ? undefined : value))

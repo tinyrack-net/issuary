@@ -107,6 +107,112 @@ describe('database scheduler factory', () => {
     );
   });
 
+  test('rejects non JSON-safe background job payloads when enqueueing', async () => {
+    const result = await createTestApp(MINIMAL_TEST_CONFIG);
+    cleanup = result.cleanup;
+    const services = result.services;
+    const scheduler = database({
+      pollIntervalMs: 1000,
+      lockTtlMs: 1000,
+      instanceId: 'background-json-safe-a',
+      mikro: services.mikro,
+    });
+    const handle = await scheduler.start({
+      scheduledJobs: [],
+      backgroundJobs: [
+        {
+          id: 'background-json-safe-test',
+          name: 'Background JSON Safe Test',
+          handler: async () => {},
+        },
+      ],
+    });
+    const enqueue = handle.enqueue;
+    if (!enqueue) {
+      throw new Error('Expected background enqueue handle');
+    }
+
+    const circularPayload: { child?: unknown } = {};
+    circularPayload.child = circularPayload;
+    const nonEnumerableToJsonPayload = { value: 'visible' };
+    Object.defineProperty(nonEnumerableToJsonPayload, 'toJSON', {
+      value: () => 'hidden',
+    });
+    const sparseArrayPayload = [1];
+    delete sparseArrayPayload[0];
+
+    try {
+      await expect(
+        enqueue({
+          jobId: 'background-json-safe-test',
+          // @ts-expect-error Runtime validation rejects invalid callers.
+          payload: undefined,
+        }),
+      ).rejects.toThrow('Background job payload must be JSON-safe');
+      await expect(
+        enqueue({
+          jobId: 'background-json-safe-test',
+          payload: Number.NaN,
+        }),
+      ).rejects.toThrow('Background job payload must be JSON-safe');
+      await expect(
+        enqueue({
+          jobId: 'background-json-safe-test',
+          payload: Number.POSITIVE_INFINITY,
+        }),
+      ).rejects.toThrow('Background job payload must be JSON-safe');
+      await expect(
+        enqueue({
+          jobId: 'background-json-safe-test',
+          // @ts-expect-error Runtime validation rejects invalid callers.
+          payload: circularPayload,
+        }),
+      ).rejects.toThrow('Background job payload must be JSON-safe');
+      await expect(
+        enqueue({
+          jobId: 'background-json-safe-test',
+          // @ts-expect-error Runtime validation rejects invalid callers.
+          payload: 1n,
+        }),
+      ).rejects.toThrow('Background job payload must be JSON-safe');
+      await expect(
+        enqueue({
+          jobId: 'background-json-safe-test',
+          // @ts-expect-error Runtime validation rejects invalid callers.
+          payload: { nested: undefined },
+        }),
+      ).rejects.toThrow('Background job payload must be JSON-safe');
+      await expect(
+        enqueue({
+          jobId: 'background-json-safe-test',
+          payload: sparseArrayPayload,
+        }),
+      ).rejects.toThrow('Background job payload must be JSON-safe');
+      await expect(
+        enqueue({
+          jobId: 'background-json-safe-test',
+          // @ts-expect-error Runtime validation rejects invalid callers.
+          payload: new Date(),
+        }),
+      ).rejects.toThrow('Background job payload must be JSON-safe');
+      await expect(
+        enqueue({
+          jobId: 'background-json-safe-test',
+          // @ts-expect-error Runtime validation rejects invalid callers.
+          payload: { value: 'visible', toJSON: () => 'hidden' },
+        }),
+      ).rejects.toThrow('Background job payload must be JSON-safe');
+      await expect(
+        enqueue({
+          jobId: 'background-json-safe-test',
+          payload: nonEnumerableToJsonPayload,
+        }),
+      ).rejects.toThrow('Background job payload must be JSON-safe');
+    } finally {
+      await handle.stop();
+    }
+  });
+
   test('runs a due cleanup job once and advances the schedule', async () => {
     const services = await createScheduledServices();
     const runAllSpy = vi

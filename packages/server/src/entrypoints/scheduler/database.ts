@@ -31,6 +31,7 @@ const DEFAULT_LOCK_TTL_MS = 60000;
 const DEFAULT_BACKGROUND_RETRY_DELAY_MS = 1000;
 const DEFAULT_BACKGROUND_MAX_ATTEMPTS = 3;
 const MAX_ERROR_LENGTH = 2000;
+const JSON_SAFE_PAYLOAD_ERROR = 'Background job payload must be JSON-safe';
 
 export interface DatabaseSchedulerOptions {
   cleanupCron?: string | undefined;
@@ -90,6 +91,83 @@ function resolvePositiveInteger(
 function errorToMessage(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err);
   return message.slice(0, MAX_ERROR_LENGTH);
+}
+
+function validateJsonSafePayload(
+  value: unknown,
+  path: string,
+  seen: WeakSet<object>,
+): void {
+  if (value === null) {
+    return;
+  }
+
+  switch (typeof value) {
+    case 'boolean':
+    case 'string':
+      return;
+    case 'number':
+      if (!Number.isFinite(value)) {
+        throw new Error(`${JSON_SAFE_PAYLOAD_ERROR}: ${path} must be finite`);
+      }
+      return;
+    case 'undefined':
+      throw new Error(`${JSON_SAFE_PAYLOAD_ERROR}: ${path} is undefined`);
+    case 'bigint':
+    case 'function':
+    case 'symbol':
+      throw new Error(
+        `${JSON_SAFE_PAYLOAD_ERROR}: ${path} has unsupported type ${typeof value}`,
+      );
+  }
+
+  if (seen.has(value)) {
+    throw new Error(`${JSON_SAFE_PAYLOAD_ERROR}: ${path} contains a cycle`);
+  }
+
+  if (Object.hasOwn(value, 'toJSON')) {
+    throw new Error(
+      `${JSON_SAFE_PAYLOAD_ERROR}: ${path} must not define toJSON`,
+    );
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  if (
+    !Array.isArray(value) &&
+    prototype !== Object.prototype &&
+    prototype !== null
+  ) {
+    throw new Error(
+      `${JSON_SAFE_PAYLOAD_ERROR}: ${path} must be a plain object`,
+    );
+  }
+
+  seen.add(value);
+  if (Array.isArray(value)) {
+    for (let index = 0; index < value.length; index += 1) {
+      if (!(index in value)) {
+        throw new Error(
+          `${JSON_SAFE_PAYLOAD_ERROR}: ${path}[${index}] is undefined`,
+        );
+      }
+      validateJsonSafePayload(value[index], `${path}[${index}]`, seen);
+    }
+  } else {
+    for (const [key, child] of Object.entries(value)) {
+      validateJsonSafePayload(child, `${path}.${key}`, seen);
+    }
+  }
+  seen.delete(value);
+}
+
+function stringifyJsonSafePayload(payload: JobPayload): string {
+  validateJsonSafePayload(payload, 'payload', new WeakSet<object>());
+  const serialized = JSON.stringify(payload);
+  if (serialized === undefined) {
+    throw new Error(`${JSON_SAFE_PAYLOAD_ERROR}: payload is undefined`);
+  }
+
+  return serialized;
 }
 
 function resolveOptions(
@@ -306,7 +384,7 @@ class DatabaseBackgroundJobStore implements DistributedBackgroundJobStore {
     const job = em.create(BackgroundJobEntitySchema, {
       id,
       jobId: input.jobId,
-      payload: JSON.stringify(input.payload),
+      payload: stringifyJsonSafePayload(input.payload),
       status: 'pending',
       availableAt: input.availableAt,
       lockedBy: null,

@@ -125,6 +125,63 @@ describe('load-config', () => {
     expect(config.terms[0]?.content['en']?.type).toBe('text');
   });
 
+  test('loads database scheduler retry options from env-style strings', async () => {
+    const dir = await fs.promises.mkdtemp(
+      path.join(os.tmpdir(), 'tinyauth-load-config-scheduler-retry-'),
+    );
+    const configFile = await writeConfigFile(
+      dir,
+      'scheduler-retry.yaml',
+      [
+        'scheduler:',
+        '  enabled: true',
+        '  mode: database',
+        '  background_retry_delay_ms: "2500"',
+        '  background_max_attempts: "5"',
+        'security:',
+        '  session_secret: scheduler-retry-secret-1234567890',
+        '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+      ].join('\n'),
+    );
+
+    try {
+      const config = loadConfig(configFile);
+      await expect(resolveConfig(config)).resolves.toMatchObject({
+        scheduler: expect.any(Function),
+      });
+
+      expect(config.scheduler.background_retry_delay_ms).toBe(2500);
+      expect(config.scheduler.background_max_attempts).toBe(5);
+    } finally {
+      await fs.promises.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('uses database scheduler retry defaults matching server scheduler', () => {
+    const originalSession = process.env['TINYAUTH_SESSION_SECRET'];
+    const originalHash = process.env['TINYAUTH_HASH_SECRET'];
+    try {
+      process.env['TINYAUTH_SESSION_SECRET'] =
+        'env-session-secret-1234567890abcdef';
+      process.env['TINYAUTH_HASH_SECRET'] =
+        'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
+
+      const config = loadConfig(
+        path.join(os.tmpdir(), `tinyauth-defaults-${Date.now()}.yaml`),
+      );
+
+      expect(config.scheduler.background_retry_delay_ms).toBe(1000);
+      expect(config.scheduler.background_max_attempts).toBe(3);
+    } finally {
+      if (originalSession === undefined)
+        delete process.env['TINYAUTH_SESSION_SECRET'];
+      else process.env['TINYAUTH_SESSION_SECRET'] = originalSession;
+      if (originalHash === undefined)
+        delete process.env['TINYAUTH_HASH_SECRET'];
+      else process.env['TINYAUTH_HASH_SECRET'] = originalHash;
+    }
+  });
+
   test('throws when session_secret is missing from YAML', async () => {
     const dir = await fs.promises.mkdtemp(
       path.join(os.tmpdir(), 'tinyauth-load-config-missing-security-'),
