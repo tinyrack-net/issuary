@@ -31,6 +31,12 @@ describe('croner scheduler factory', () => {
     await handle.stop();
   });
 
+  test('rejects invalid cleanup cron expressions', () => {
+    expect(() => croner({ cleanupCron: 'not a cron' })).toThrow(
+      'Invalid cron expression',
+    );
+  });
+
   test('uses each scheduled job cron expression', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-12T00:05:00.000Z'));

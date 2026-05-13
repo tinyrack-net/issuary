@@ -165,6 +165,18 @@ describe('resolveConfig', () => {
     expect(typeof resolved.scheduler).toBe('function');
   });
 
+  test('rejects invalid standalone scheduler cron expressions', async () => {
+    await expect(
+      resolveConfig({
+        ...MINIMAL_CONFIG,
+        scheduler: {
+          enabled: true,
+          cleanup_cron: 'not a cron',
+        },
+      }),
+    ).rejects.toThrow('Invalid cron expression');
+  });
+
   test('rejects password policy where max_length is less than min_length', async () => {
     await expect(
       resolveConfig({

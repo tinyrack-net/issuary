@@ -1,4 +1,3 @@
-import { Cron } from 'croner';
 import type {
   BackgroundJobConfig,
   EnqueueBackgroundJobOptions,
@@ -7,6 +6,7 @@ import type {
   SchedulerHandle,
 } from '../../lib/config/index.ts';
 import type { Logger } from '../../lib/logger.ts';
+import { getNextCronRunAt } from './cron.ts';
 
 const MAX_ERROR_LENGTH = 2000;
 
@@ -80,6 +80,7 @@ export interface DistributedSchedulerStore {
     jobId: string,
     instanceId: string,
     lockedUntil: Date,
+    now: Date,
   ) => Promise<boolean>;
   completeJobSuccess: (input: SchedulerCompletionInput) => Promise<boolean>;
   completeJobFailure: (
@@ -99,6 +100,7 @@ export interface DistributedBackgroundJobStore {
     id: string,
     instanceId: string,
     lockedUntil: Date,
+    now: Date,
   ) => Promise<boolean>;
   completeJobSuccess: (input: BackgroundJobCompletionInput) => Promise<boolean>;
   completeJobFailure: (
@@ -126,18 +128,6 @@ interface DistributedBackgroundJobRunnerOptions {
   jobs: readonly BackgroundJobConfig[];
   logger?: Logger | undefined;
   store: DistributedBackgroundJobStore;
-}
-
-function getNextRunAt(cron: string, from: Date): Date {
-  const job = new Cron(cron, { paused: true });
-  const nextRunAt = job.nextRun(from) ?? null;
-  job.stop();
-
-  if (!nextRunAt) {
-    throw new Error(`Cron expression has no future run: ${cron}`);
-  }
-
-  return nextRunAt;
 }
 
 function errorToMessage(err: unknown): string {
@@ -252,10 +242,16 @@ export class DistributedSchedulerRunner {
 
   private startLeaseRenewal(jobId: string): () => void {
     const renewIntervalMs = Math.max(1, Math.floor(this.lockTtlMs / 2));
+    let renewInFlight = false;
     const interval = setInterval(() => {
-      const lockedUntil = new Date(Date.now() + this.lockTtlMs);
+      if (renewInFlight) {
+        return;
+      }
+      renewInFlight = true;
+      const now = new Date();
+      const lockedUntil = new Date(now.getTime() + this.lockTtlMs);
       void this.store
-        .renewLease(jobId, this.instanceId, lockedUntil)
+        .renewLease(jobId, this.instanceId, lockedUntil, now)
         .then((renewed) => {
           if (!renewed) {
             this.logger?.warn(
@@ -269,6 +265,9 @@ export class DistributedSchedulerRunner {
             { err, jobId },
             `${this.name} scheduler lease renewal failed`,
           );
+        })
+        .finally(() => {
+          renewInFlight = false;
         });
     }, renewIntervalMs);
 
@@ -280,7 +279,7 @@ export class DistributedSchedulerRunner {
     err?: unknown,
   ): Promise<void> {
     const now = new Date();
-    const nextRunAt = getNextRunAt(job.cron, now);
+    const nextRunAt = getNextCronRunAt(job.cron, now);
     const runCount = job.runCount + 1;
 
     const completed =
@@ -426,10 +425,16 @@ export class DistributedBackgroundJobRunner {
 
   private startLeaseRenewal(id: string): () => void {
     const renewIntervalMs = Math.max(1, Math.floor(this.lockTtlMs / 2));
+    let renewInFlight = false;
     const interval = setInterval(() => {
-      const lockedUntil = new Date(Date.now() + this.lockTtlMs);
+      if (renewInFlight) {
+        return;
+      }
+      renewInFlight = true;
+      const now = new Date();
+      const lockedUntil = new Date(now.getTime() + this.lockTtlMs);
       void this.store
-        .renewLease(id, this.instanceId, lockedUntil)
+        .renewLease(id, this.instanceId, lockedUntil, now)
         .then((renewed) => {
           if (!renewed) {
             this.logger?.warn(
@@ -443,6 +448,9 @@ export class DistributedBackgroundJobRunner {
             { err, id },
             `${this.name} background job lease renewal failed`,
           );
+        })
+        .finally(() => {
+          renewInFlight = false;
         });
     }, renewIntervalMs);
 
@@ -486,5 +494,5 @@ export function getDistributedSchedulerNextRunAt(
   cron: string,
   from: Date,
 ): Date {
-  return getNextRunAt(cron, from);
+  return getNextCronRunAt(cron, from);
 }

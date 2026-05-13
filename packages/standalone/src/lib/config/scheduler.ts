@@ -1,3 +1,4 @@
+import { Cron } from 'croner';
 import z from 'zod';
 import { StandaloneBooleanSchema } from './coerce.ts';
 
@@ -12,9 +13,22 @@ const PositiveIntegerSchema = z
   })
   .pipe(z.number().int().positive());
 
+function isValidCronExpression(expression: string): boolean {
+  let job: Cron | undefined;
+  try {
+    job = new Cron(expression, { paused: true });
+    return job.nextRun(new Date()) !== null;
+  } catch {
+    return false;
+  } finally {
+    job?.stop();
+  }
+}
+
 const CronExpressionSchema = z
   .string()
   .min(9)
+  .refine(isValidCronExpression, 'Invalid cron expression')
   .describe('Cron expression in 5-field format.');
 
 interface StandaloneSchedulerConfigDefault {

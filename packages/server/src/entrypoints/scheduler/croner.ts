@@ -3,6 +3,7 @@ import type {
   SchedulerConfig,
   SchedulerHandle,
 } from '../../lib/config/index.ts';
+import { validateCronExpression } from './cron.ts';
 
 const DEFAULT_CRON = '0 2 * * *';
 
@@ -11,7 +12,9 @@ export interface CronerSchedulerOptions {
 }
 
 export function croner(options: CronerSchedulerOptions = {}): SchedulerConfig {
-  const cleanupCron = options.cleanupCron ?? DEFAULT_CRON;
+  const cleanupCron = validateCronExpression(
+    options.cleanupCron ?? DEFAULT_CRON,
+  );
 
   return {
     cleanupCron,

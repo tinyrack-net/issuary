@@ -2,6 +2,12 @@ import { defineEntity, type InferEntity } from '@mikro-orm/core';
 import { BackgroundJobRepository } from '../repositories/background-job.repository.ts';
 import { BaseSchema } from './base.entity.ts';
 
+export type BackgroundJobStatus =
+  | 'pending'
+  | 'running'
+  | 'succeeded'
+  | 'failed';
+
 export const BackgroundJobEntitySchema = defineEntity({
   name: 'BackgroundJobEntity',
   tableName: 'background_jobs',

@@ -8,6 +8,7 @@ import type {
   SchedulerRuntimeConfig,
 } from '../../lib/config/index.ts';
 import type { MikroService } from '../../services/mikro.service.ts';
+import { validateCronExpression } from './cron.ts';
 import {
   type AcquiredBackgroundJob,
   type AcquiredSchedulerJob,
@@ -95,7 +96,9 @@ function resolveOptions(
   options: DatabaseSchedulerOptions,
 ): ResolvedDatabaseSchedulerOptions {
   return {
-    cleanupCron: options.cleanupCron ?? DEFAULT_CLEANUP_CRON,
+    cleanupCron: validateCronExpression(
+      options.cleanupCron ?? DEFAULT_CLEANUP_CRON,
+    ),
     pollIntervalMs: resolvePositiveNumber(
       'pollIntervalMs',
       options.pollIntervalMs,
@@ -214,11 +217,16 @@ class DatabaseSchedulerStore implements DistributedSchedulerStore {
     jobId: string,
     instanceId: string,
     lockedUntil: Date,
+    now: Date,
   ): Promise<boolean> {
     const em = this.mikro.em.fork();
     const repo = em.getRepository(SchedulerJobEntitySchema);
     const updated = await repo.nativeUpdate(
-      { id: jobId, lockedBy: instanceId },
+      {
+        id: jobId,
+        lockedBy: instanceId,
+        lockedUntil: { $gt: now, $lt: lockedUntil },
+      },
       { lockedUntil },
     );
 
@@ -229,7 +237,11 @@ class DatabaseSchedulerStore implements DistributedSchedulerStore {
     const em = this.mikro.em.fork();
     const repo = em.getRepository(SchedulerJobEntitySchema);
     const updated = await repo.nativeUpdate(
-      { id: input.jobId, lockedBy: input.instanceId },
+      {
+        id: input.jobId,
+        lockedBy: input.instanceId,
+        lockedUntil: { $gt: input.now },
+      },
       {
         lockedBy: null,
         lockedUntil: null,
@@ -248,7 +260,11 @@ class DatabaseSchedulerStore implements DistributedSchedulerStore {
     const em = this.mikro.em.fork();
     const repo = em.getRepository(SchedulerJobEntitySchema);
     const updated = await repo.nativeUpdate(
-      { id: input.jobId, lockedBy: input.instanceId },
+      {
+        id: input.jobId,
+        lockedBy: input.instanceId,
+        lockedUntil: { $gt: input.now },
+      },
       {
         lockedBy: null,
         lockedUntil: null,
@@ -386,7 +402,7 @@ class DatabaseBackgroundJobStore implements DistributedBackgroundJobStore {
           },
         );
 
-        return null;
+        continue;
       }
 
       return {
@@ -403,11 +419,17 @@ class DatabaseBackgroundJobStore implements DistributedBackgroundJobStore {
     id: string,
     instanceId: string,
     lockedUntil: Date,
+    now: Date,
   ): Promise<boolean> {
     const em = this.mikro.em.fork();
     const repo = em.getRepository(BackgroundJobEntitySchema);
     const updated = await repo.nativeUpdate(
-      { id, lockedBy: instanceId, status: 'running' },
+      {
+        id,
+        lockedBy: instanceId,
+        status: 'running',
+        lockedUntil: { $gt: now, $lt: lockedUntil },
+      },
       { lockedUntil },
     );
 
@@ -420,7 +442,12 @@ class DatabaseBackgroundJobStore implements DistributedBackgroundJobStore {
     const em = this.mikro.em.fork();
     const repo = em.getRepository(BackgroundJobEntitySchema);
     const updated = await repo.nativeUpdate(
-      { id: input.id, lockedBy: input.instanceId, status: 'running' },
+      {
+        id: input.id,
+        lockedBy: input.instanceId,
+        status: 'running',
+        lockedUntil: { $gt: input.now },
+      },
       {
         status: 'succeeded',
         lockedBy: null,
@@ -438,7 +465,12 @@ class DatabaseBackgroundJobStore implements DistributedBackgroundJobStore {
     const em = this.mikro.em.fork();
     const repo = em.getRepository(BackgroundJobEntitySchema);
     const updated = await repo.nativeUpdate(
-      { id: input.id, lockedBy: input.instanceId, status: 'running' },
+      {
+        id: input.id,
+        lockedBy: input.instanceId,
+        status: 'running',
+        lockedUntil: { $gt: input.now },
+      },
       {
         status: input.retryAt ? 'pending' : 'failed',
         availableAt: input.retryAt ?? input.now,

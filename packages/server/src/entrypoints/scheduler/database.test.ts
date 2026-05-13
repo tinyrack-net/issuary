@@ -101,6 +101,12 @@ describe('database scheduler factory', () => {
     );
   });
 
+  test('rejects invalid cleanup cron expressions', () => {
+    expect(() => database({ cleanupCron: 'not a cron' })).toThrow(
+      'Invalid cron expression',
+    );
+  });
+
   test('runs a due cleanup job once and advances the schedule', async () => {
     const services = await createScheduledServices();
     const runAllSpy = vi
@@ -430,6 +436,58 @@ describe('database scheduler factory', () => {
     expect(job?.lastError).toBeNull();
   });
 
+  test('does not record scheduled completion after its lease expires', async () => {
+    const result = await createTestApp(MINIMAL_TEST_CONFIG);
+    cleanup = result.cleanup;
+    const services = result.services;
+    const started = createDeferred();
+    const release = createDeferred();
+    const handler = vi.fn(async () => {
+      started.resolve();
+      await release.promise;
+    });
+    const scheduler = database({
+      cleanupCron: '* * * * *',
+      pollIntervalMs: 5,
+      lockTtlMs: 10000,
+      instanceId: 'expired-completion-a',
+      mikro: services.mikro,
+    });
+    const handle = await scheduler.start({
+      scheduledJobs: [
+        {
+          id: 'expired-completion',
+          name: 'Expired Completion',
+          schedule: { type: 'cron', expression: '* * * * *' },
+          handler: async () => handler(),
+        },
+      ],
+      backgroundJobs: [],
+    });
+
+    try {
+      await services.mikro.schedulerJob.nativeUpdate(
+        { id: 'expired-completion' },
+        { nextRunAt: new Date(Date.now() - 1000) },
+      );
+      await started.promise;
+      await services.mikro.schedulerJob.nativeUpdate(
+        { id: 'expired-completion' },
+        { lockedUntil: new Date(Date.now() - 1000) },
+      );
+
+      release.resolve();
+      await handle.stop();
+    } finally {
+      release.resolve();
+    }
+
+    const job = await findJob(services, 'expired-completion');
+    expect(job?.lockedBy).toBe('expired-completion-a');
+    expect(job?.runCount).toBe(0);
+    expect(job?.lastSuccessAt).toBeNull();
+  });
+
   test('renews leases so long-running jobs are not acquired twice', async () => {
     const result = await createTestApp(MINIMAL_TEST_CONFIG);
     cleanup = result.cleanup;
@@ -553,6 +611,61 @@ describe('database scheduler factory', () => {
     }
   });
 
+  test('does not record background completion after its lease expires', async () => {
+    const result = await createTestApp(MINIMAL_TEST_CONFIG);
+    cleanup = result.cleanup;
+    const services = result.services;
+    const started = createDeferred();
+    const release = createDeferred();
+    const handler = vi.fn(async () => {
+      started.resolve();
+      await release.promise;
+    });
+    const scheduler = database({
+      pollIntervalMs: 5,
+      lockTtlMs: 10000,
+      instanceId: 'background-expired-completion-a',
+      mikro: services.mikro,
+    });
+    const handle = await scheduler.start({
+      scheduledJobs: [],
+      backgroundJobs: [
+        {
+          id: 'background-expired-completion-test',
+          name: 'Background Expired Completion Test',
+          handler,
+        },
+      ],
+    });
+
+    try {
+      const id = await handle.enqueue?.({
+        jobId: 'background-expired-completion-test',
+        payload: null,
+      });
+      if (!id) {
+        throw new Error('Expected background job id');
+      }
+
+      await started.promise;
+      await services.mikro.backgroundJob.nativeUpdate(
+        { id },
+        { lockedUntil: new Date(Date.now() - 1000) },
+      );
+
+      release.resolve();
+      await handle.stop();
+
+      const job = await findBackgroundJob(services, id);
+      expect(job?.status).toBe('running');
+      expect(job?.lockedBy).toBe('background-expired-completion-a');
+      expect(job?.attemptCount).toBe(1);
+      expect(job?.completedAt).toBeNull();
+    } finally {
+      release.resolve();
+    }
+  });
+
   test('records durable background job failures and stops retrying', async () => {
     const result = await createTestApp(MINIMAL_TEST_CONFIG);
     cleanup = result.cleanup;
@@ -657,6 +770,86 @@ describe('database scheduler factory', () => {
       expect(persistedJob?.attemptCount).toBe(1);
       expect(persistedJob?.lastError).toContain('JSON');
       expect(persistedJob?.completedAt).toBeInstanceOf(Date);
+    } finally {
+      await handle.stop();
+    }
+  });
+
+  test('continues to due background jobs after invalid payloads', async () => {
+    const result = await createTestApp(MINIMAL_TEST_CONFIG);
+    cleanup = result.cleanup;
+    const services = result.services;
+    const handler = vi.fn(async () => {});
+    const now = new Date();
+    const invalidId = crypto.randomUUID();
+    const runnableId = crypto.randomUUID();
+    const em = services.mikro.em.fork();
+    em.persist(
+      em.create(BackgroundJobEntitySchema, {
+        id: invalidId,
+        jobId: 'background-invalid-continue-test',
+        payload: '{invalid-json',
+        status: 'pending',
+        availableAt: new Date(now.getTime() - 1000),
+        lockedBy: null,
+        lockedUntil: null,
+        attemptCount: 0,
+        maxAttempts: 3,
+        lastError: null,
+        completedAt: null,
+        created_at: now,
+        updated_at: now,
+      }),
+    );
+    em.persist(
+      em.create(BackgroundJobEntitySchema, {
+        id: runnableId,
+        jobId: 'background-invalid-continue-test',
+        payload: JSON.stringify({ value: 'next' }),
+        status: 'pending',
+        availableAt: now,
+        lockedBy: null,
+        lockedUntil: null,
+        attemptCount: 0,
+        maxAttempts: 3,
+        lastError: null,
+        completedAt: null,
+        created_at: now,
+        updated_at: now,
+      }),
+    );
+    await em.flush();
+
+    const scheduler = database({
+      pollIntervalMs: 1000,
+      lockTtlMs: 1000,
+      instanceId: 'background-invalid-continue-a',
+      mikro: services.mikro,
+    });
+    const handle = await scheduler.start({
+      scheduledJobs: [],
+      backgroundJobs: [
+        {
+          id: 'background-invalid-continue-test',
+          name: 'Background Invalid Continue Test',
+          handler,
+        },
+      ],
+    });
+
+    try {
+      await vi.waitFor(async () => {
+        const invalid = await findBackgroundJob(services, invalidId);
+        const runnable = await findBackgroundJob(services, runnableId);
+        expect(invalid?.status).toBe('failed');
+        expect(runnable?.status).toBe('succeeded');
+      });
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith(
+        { value: 'next' },
+        expect.anything(),
+      );
     } finally {
       await handle.stop();
     }
