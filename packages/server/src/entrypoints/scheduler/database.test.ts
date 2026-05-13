@@ -436,6 +436,63 @@ describe('database scheduler factory', () => {
     expect(job?.lastError).toBeNull();
   });
 
+  test('does not overwrite a reconciled cron schedule with stale completion data', async () => {
+    const result = await createTestApp(MINIMAL_TEST_CONFIG);
+    cleanup = result.cleanup;
+    const services = result.services;
+    const started = createDeferred();
+    const release = createDeferred();
+    const handler = vi.fn(async () => {
+      started.resolve();
+      await release.promise;
+    });
+    const scheduler = database({
+      cleanupCron: '* * * * *',
+      pollIntervalMs: 5,
+      lockTtlMs: 10000,
+      instanceId: 'cron-change-a',
+      mikro: services.mikro,
+    });
+    const handle = await scheduler.start({
+      scheduledJobs: [
+        {
+          id: 'cron-change',
+          name: 'Cron Change',
+          schedule: { type: 'cron', expression: '* * * * *' },
+          handler: async () => handler(),
+        },
+      ],
+      backgroundJobs: [],
+    });
+
+    const reconciledNextRunAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    try {
+      await services.mikro.schedulerJob.nativeUpdate(
+        { id: 'cron-change' },
+        { nextRunAt: new Date(Date.now() - 1000) },
+      );
+      await started.promise;
+      await services.mikro.schedulerJob.nativeUpdate(
+        { id: 'cron-change' },
+        {
+          cron: '0 0 * * *',
+          nextRunAt: reconciledNextRunAt,
+        },
+      );
+
+      release.resolve();
+      await handle.stop();
+    } finally {
+      release.resolve();
+    }
+
+    const job = await findJob(services, 'cron-change');
+    expect(job?.cron).toBe('0 0 * * *');
+    expect(job?.nextRunAt?.getTime()).toBe(reconciledNextRunAt.getTime());
+    expect(job?.runCount).toBe(0);
+    expect(job?.lastSuccessAt).toBeNull();
+  });
+
   test('does not record scheduled completion after its lease expires', async () => {
     const result = await createTestApp(MINIMAL_TEST_CONFIG);
     cleanup = result.cleanup;

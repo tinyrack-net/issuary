@@ -33,6 +33,7 @@ export interface AcquiredBackgroundJob {
 
 export interface SchedulerCompletionInput {
   jobId: string;
+  cron: string;
   instanceId: string;
   nextRunAt: Date;
   now: Date;
@@ -286,6 +287,7 @@ export class DistributedSchedulerRunner {
       err === undefined
         ? await this.store.completeJobSuccess({
             jobId: job.id,
+            cron: job.cron,
             instanceId: this.instanceId,
             nextRunAt,
             now,
@@ -293,6 +295,7 @@ export class DistributedSchedulerRunner {
           })
         : await this.store.completeJobFailure({
             jobId: job.id,
+            cron: job.cron,
             instanceId: this.instanceId,
             nextRunAt,
             now,

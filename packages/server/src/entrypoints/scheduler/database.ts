@@ -239,6 +239,7 @@ class DatabaseSchedulerStore implements DistributedSchedulerStore {
     const updated = await repo.nativeUpdate(
       {
         id: input.jobId,
+        cron: input.cron,
         lockedBy: input.instanceId,
         lockedUntil: { $gt: input.now },
       },
@@ -262,6 +263,7 @@ class DatabaseSchedulerStore implements DistributedSchedulerStore {
     const updated = await repo.nativeUpdate(
       {
         id: input.jobId,
+        cron: input.cron,
         lockedBy: input.instanceId,
         lockedUntil: { $gt: input.now },
       },
@@ -390,7 +392,12 @@ class DatabaseBackgroundJobStore implements DistributedBackgroundJobStore {
         payload = JSON.parse(candidate.payload);
       } catch (err) {
         await repo.nativeUpdate(
-          { id: candidate.id, lockedBy: instanceId, status: 'running' },
+          {
+            id: candidate.id,
+            lockedBy: instanceId,
+            status: 'running',
+            lockedUntil: { $gt: now },
+          },
           {
             status: 'failed',
             availableAt: now,
