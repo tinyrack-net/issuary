@@ -160,9 +160,8 @@ class DatabaseSchedulerStore implements DistributedSchedulerStore {
       );
     }
 
-    if (jobIds.length > 0) {
-      await repo.nativeUpdate({ id: { $nin: jobIds } }, { enabled: false });
-    }
+    const staleJobFilter = jobIds.length > 0 ? { id: { $nin: jobIds } } : {};
+    await repo.nativeUpdate(staleJobFilter, { enabled: false });
   }
 
   async acquireDueJob(
@@ -327,56 +326,77 @@ class DatabaseBackgroundJobStore implements DistributedBackgroundJobStore {
         },
       ],
     };
-    const candidate = await repo.findOne(eligibleFilter, {
-      orderBy: { availableAt: 'ASC' },
-    });
+    while (true) {
+      const candidate = await repo.findOne(eligibleFilter, {
+        orderBy: { availableAt: 'ASC' },
+      });
 
-    if (!candidate) {
-      return null;
-    }
+      if (!candidate) {
+        return null;
+      }
 
-    const attemptCount = candidate.attemptCount + 1;
-    const updated = await repo.nativeUpdate(
-      { id: candidate.id, ...eligibleFilter },
-      {
-        status: 'running',
-        lockedBy: instanceId,
-        lockedUntil,
-        attemptCount,
-      },
-    );
+      if (
+        candidate.status === 'running' &&
+        candidate.attemptCount >= candidate.maxAttempts
+      ) {
+        await repo.nativeUpdate(
+          { id: candidate.id, ...eligibleFilter },
+          {
+            status: 'failed',
+            availableAt: now,
+            lockedBy: null,
+            lockedUntil: null,
+            lastError: 'Background job exceeded maximum attempts',
+            completedAt: now,
+          },
+        );
 
-    if (updated !== 1) {
-      return null;
-    }
+        continue;
+      }
 
-    let payload: JobPayload;
-    try {
-      payload = JSON.parse(candidate.payload);
-    } catch (err) {
-      await repo.nativeUpdate(
-        { id: candidate.id, lockedBy: instanceId, status: 'running' },
+      const attemptCount = candidate.attemptCount + 1;
+      const updated = await repo.nativeUpdate(
+        { id: candidate.id, ...eligibleFilter },
         {
-          status: 'failed',
-          availableAt: now,
-          lockedBy: null,
-          lockedUntil: null,
+          status: 'running',
+          lockedBy: instanceId,
+          lockedUntil,
           attemptCount,
-          lastError: errorToMessage(err),
-          completedAt: now,
         },
       );
 
-      return null;
-    }
+      if (updated !== 1) {
+        return null;
+      }
 
-    return {
-      id: candidate.id,
-      jobId: candidate.jobId,
-      payload,
-      attemptCount,
-      maxAttempts: candidate.maxAttempts,
-    };
+      let payload: JobPayload;
+      try {
+        payload = JSON.parse(candidate.payload);
+      } catch (err) {
+        await repo.nativeUpdate(
+          { id: candidate.id, lockedBy: instanceId, status: 'running' },
+          {
+            status: 'failed',
+            availableAt: now,
+            lockedBy: null,
+            lockedUntil: null,
+            attemptCount,
+            lastError: errorToMessage(err),
+            completedAt: now,
+          },
+        );
+
+        return null;
+      }
+
+      return {
+        id: candidate.id,
+        jobId: candidate.jobId,
+        payload,
+        attemptCount,
+        maxAttempts: candidate.maxAttempts,
+      };
+    }
   }
 
   async renewLease(

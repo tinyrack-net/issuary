@@ -13,14 +13,27 @@ description: Tinyauth의 데이터 정리 스케줄러 및 정리 정책 구성�
 # config.yaml
 scheduler:
   enabled: true
+  mode: croner
   cleanup_cron: '0 2 * * *'
+  # mode: database 를 사용할 때만 적용돼요.
+  poll_interval_ms: 5000
+  lock_ttl_ms: 60000
+  instance_id: ''
 ```
 
 - `scheduler.enabled`: 내장 스케줄러를 활성화할지 여부예요. 기본값은 `true`예요.
+- `scheduler.mode`: 스케줄러 백엔드예요. `croner`는 단일 프로세스용 인메모리 스케줄러이고, `database`는 DB lease를 사용해 여러 인스턴스 중 하나만 작업을 획득하도록 하는 분산 스케줄러예요. 기본값은 `croner`예요.
 - `scheduler.cleanup_cron`: 내장 정리 작업 실행 주기예요. 표준 5필드 cron 형식(`분 시 일 월 요일`)을 사용해요. 기본값은 `0 2 * * *`(매일 오전 2시)예요.
+- `scheduler.poll_interval_ms`: `database` 모드에서 due job을 확인하는 주기예요. 기본값은 `5000`이에요.
+- `scheduler.lock_ttl_ms`: `database` 모드에서 job lease가 유효한 시간이에요. 작업이 오래 걸리면 실행 중 lease가 자동 갱신돼요. 기본값은 `60000`이에요.
+- `scheduler.instance_id`: `database` 모드에서 lease 소유자를 식별하는 값이에요. 비워두면 프로세스마다 고유한 값이 자동 생성돼요. 직접 지정할 경우 replica/process마다 반드시 고유해야 해요.
 
 :::note
-Kubernetes 환경에서는 내장 스케줄러 대신 CronJob을 사용하는 것이 좋아요. 이 경우 `scheduler.enabled: false`로 설정하고, 외부에서 `tinyauth cleanup` CLI 명령을 실행하세요. 자세한 내용은 [Kubernetes 배포 가이드](/ko/deployment/kubernetes)를 참고해 주세요.
+Kubernetes 환경에서는 단일 실행 보장이 필요하면 `scheduler.mode: database`를 사용하거나, 내장 스케줄러 대신 CronJob을 사용하는 것이 좋아요. CronJob을 사용할 경우 `scheduler.enabled: false`로 설정하고 외부에서 `tinyauth cleanup` CLI 명령을 실행하세요. 자세한 내용은 [Kubernetes 배포 가이드](/ko/deployment/kubernetes)를 참고해 주세요.
+:::
+
+:::caution
+`database` 모드에서 모든 작업은 at-least-once 방식으로 실행돼요. lease가 만료되면 다른 인스턴스가 같은 작업을 다시 획득할 수 있으므로 scheduled/background job handler는 가능하면 멱등적으로 작성하세요.
 :::
 
 ---
@@ -128,6 +141,7 @@ account_deletion:
 
 scheduler:
   enabled: true
+  mode: croner
   cleanup_cron: '0 2 * * *'
 
 cleanup:

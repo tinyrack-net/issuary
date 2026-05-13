@@ -133,6 +133,9 @@ scheduler:
   enabled: ${TINYAUTH_SCHEDULER_ENABLED:-true}
   mode: ${TINYAUTH_SCHEDULER_MODE:-croner}
   cleanup_cron: ${TINYAUTH_SCHEDULER_CLEANUP_CRON:-0 2 * * *}
+  # Database scheduler mode only. Leave instance_id empty to generate a
+  # unique per-process id automatically; if set manually, it must be unique
+  # for every replica/process that runs the scheduler.
   poll_interval_ms: ${TINYAUTH_SCHEDULER_POLL_INTERVAL_MS:-5000}
   lock_ttl_ms: ${TINYAUTH_SCHEDULER_LOCK_TTL_MS:-60000}
   instance_id: ${TINYAUTH_SCHEDULER_INSTANCE_ID:-}
