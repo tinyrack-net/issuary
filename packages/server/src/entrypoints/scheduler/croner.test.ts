@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
+import { createLogger } from '../../lib/logger.ts';
 import { croner } from './croner.ts';
 
 afterEach(() => {
@@ -70,5 +71,38 @@ describe('croner scheduler factory', () => {
     ).rejects.toThrow('Background jobs require a durable scheduler backend');
 
     await handle.stop();
+  });
+
+  test('logs scheduled job failures without rejecting the cron callback', async () => {
+    const logger = createLogger({ logging: { level: 'silent' } });
+    const errorSpy = vi.spyOn(logger, 'error');
+    const handle = await croner().start({
+      scheduledJobs: [
+        {
+          id: 'failing-job',
+          name: 'Failing Job',
+          schedule: { type: 'cron', expression: '* * * * * *' },
+          handler: async () => {
+            throw new Error('scheduled boom');
+          },
+        },
+      ],
+      backgroundJobs: [],
+      logger,
+    });
+
+    try {
+      await vi.waitFor(
+        () => {
+          expect(errorSpy).toHaveBeenCalledWith(
+            { err: expect.any(Error), jobId: 'failing-job' },
+            'Scheduled job failed',
+          );
+        },
+        { timeout: 1500 },
+      );
+    } finally {
+      await handle.stop();
+    }
   });
 });

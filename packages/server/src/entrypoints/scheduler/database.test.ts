@@ -83,6 +83,24 @@ describe('database scheduler factory', () => {
     expect(job?.nextRunAt).toBeInstanceOf(Date);
   });
 
+  test('rejects invalid runtime interval options', () => {
+    expect(() => database({ pollIntervalMs: 0 })).toThrow(
+      'pollIntervalMs must be a positive number',
+    );
+    expect(() => database({ lockTtlMs: -1 })).toThrow(
+      'lockTtlMs must be a positive number',
+    );
+    expect(() => database({ backgroundRetryDelayMs: Number.NaN })).toThrow(
+      'backgroundRetryDelayMs must be a positive number',
+    );
+    expect(() => database({ backgroundMaxAttempts: 0 })).toThrow(
+      'backgroundMaxAttempts must be a positive number',
+    );
+    expect(() => database({ backgroundMaxAttempts: 1.5 })).toThrow(
+      'backgroundMaxAttempts must be a positive integer',
+    );
+  });
+
   test('runs a due cleanup job once and advances the schedule', async () => {
     const services = await createScheduledServices();
     const runAllSpy = vi
@@ -541,6 +559,67 @@ describe('database scheduler factory', () => {
       expect(job?.attemptCount).toBe(2);
       expect(job?.lastError).toContain('background failed');
       expect(job?.completedAt).toBeInstanceOf(Date);
+    } finally {
+      await handle.stop();
+    }
+  });
+
+  test('marks background jobs with invalid persisted payloads as failed', async () => {
+    const result = await createTestApp(MINIMAL_TEST_CONFIG);
+    cleanup = result.cleanup;
+    const services = result.services;
+    const handler = vi.fn(async () => {});
+    const scheduler = database({
+      pollIntervalMs: 5,
+      lockTtlMs: 1000,
+      instanceId: 'background-invalid-payload-a',
+      mikro: services.mikro,
+    });
+    const handle = await scheduler.start({
+      scheduledJobs: [],
+      backgroundJobs: [
+        {
+          id: 'background-invalid-payload-test',
+          name: 'Background Invalid Payload Test',
+          handler,
+        },
+      ],
+    });
+
+    try {
+      const now = new Date();
+      const id = crypto.randomUUID();
+      const em = services.mikro.em.fork();
+      const job = em.create(BackgroundJobEntitySchema, {
+        id,
+        jobId: 'background-invalid-payload-test',
+        payload: '{invalid-json',
+        status: 'pending',
+        availableAt: now,
+        lockedBy: null,
+        lockedUntil: null,
+        attemptCount: 0,
+        maxAttempts: 3,
+        lastError: null,
+        completedAt: null,
+        created_at: now,
+        updated_at: now,
+      });
+      em.persist(job);
+      await em.flush();
+
+      await vi.waitFor(async () => {
+        const persistedJob = await findBackgroundJob(services, id);
+        expect(persistedJob?.status).toBe('failed');
+      });
+
+      const persistedJob = await findBackgroundJob(services, id);
+      expect(handler).not.toHaveBeenCalled();
+      expect(persistedJob?.lockedBy).toBeNull();
+      expect(persistedJob?.lockedUntil).toBeNull();
+      expect(persistedJob?.attemptCount).toBe(1);
+      expect(persistedJob?.lastError).toContain('JSON');
+      expect(persistedJob?.completedAt).toBeInstanceOf(Date);
     } finally {
       await handle.stop();
     }

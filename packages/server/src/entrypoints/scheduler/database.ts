@@ -29,6 +29,7 @@ const DEFAULT_POLL_INTERVAL_MS = 5000;
 const DEFAULT_LOCK_TTL_MS = 60000;
 const DEFAULT_BACKGROUND_RETRY_DELAY_MS = 1000;
 const DEFAULT_BACKGROUND_MAX_ATTEMPTS = 3;
+const MAX_ERROR_LENGTH = 2000;
 
 export interface DatabaseSchedulerOptions {
   cleanupCron?: string | undefined;
@@ -57,17 +58,64 @@ function createInstanceId(instanceId: string | undefined): string {
   return instanceId ?? `${os.hostname()}:${process.pid}:${crypto.randomUUID()}`;
 }
 
+function resolvePositiveNumber(
+  name: string,
+  value: number | undefined,
+  defaultValue: number,
+): number {
+  const resolved = value ?? defaultValue;
+
+  if (!Number.isFinite(resolved) || resolved <= 0) {
+    throw new Error(`${name} must be a positive number`);
+  }
+
+  return resolved;
+}
+
+function resolvePositiveInteger(
+  name: string,
+  value: number | undefined,
+  defaultValue: number,
+): number {
+  const resolved = resolvePositiveNumber(name, value, defaultValue);
+
+  if (!Number.isInteger(resolved)) {
+    throw new Error(`${name} must be a positive integer`);
+  }
+
+  return resolved;
+}
+
+function errorToMessage(err: unknown): string {
+  const message = err instanceof Error ? err.message : String(err);
+  return message.slice(0, MAX_ERROR_LENGTH);
+}
+
 function resolveOptions(
   options: DatabaseSchedulerOptions,
 ): ResolvedDatabaseSchedulerOptions {
   return {
     cleanupCron: options.cleanupCron ?? DEFAULT_CLEANUP_CRON,
-    pollIntervalMs: options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS,
-    lockTtlMs: options.lockTtlMs ?? DEFAULT_LOCK_TTL_MS,
-    backgroundRetryDelayMs:
-      options.backgroundRetryDelayMs ?? DEFAULT_BACKGROUND_RETRY_DELAY_MS,
-    backgroundMaxAttempts:
-      options.backgroundMaxAttempts ?? DEFAULT_BACKGROUND_MAX_ATTEMPTS,
+    pollIntervalMs: resolvePositiveNumber(
+      'pollIntervalMs',
+      options.pollIntervalMs,
+      DEFAULT_POLL_INTERVAL_MS,
+    ),
+    lockTtlMs: resolvePositiveNumber(
+      'lockTtlMs',
+      options.lockTtlMs,
+      DEFAULT_LOCK_TTL_MS,
+    ),
+    backgroundRetryDelayMs: resolvePositiveNumber(
+      'backgroundRetryDelayMs',
+      options.backgroundRetryDelayMs,
+      DEFAULT_BACKGROUND_RETRY_DELAY_MS,
+    ),
+    backgroundMaxAttempts: resolvePositiveInteger(
+      'backgroundMaxAttempts',
+      options.backgroundMaxAttempts,
+      DEFAULT_BACKGROUND_MAX_ATTEMPTS,
+    ),
     instanceId: createInstanceId(options.instanceId),
   };
 }
@@ -302,7 +350,25 @@ class DatabaseBackgroundJobStore implements DistributedBackgroundJobStore {
       return null;
     }
 
-    const payload: JobPayload = JSON.parse(candidate.payload);
+    let payload: JobPayload;
+    try {
+      payload = JSON.parse(candidate.payload);
+    } catch (err) {
+      await repo.nativeUpdate(
+        { id: candidate.id, lockedBy: instanceId, status: 'running' },
+        {
+          status: 'failed',
+          availableAt: now,
+          lockedBy: null,
+          lockedUntil: null,
+          attemptCount,
+          lastError: errorToMessage(err),
+          completedAt: now,
+        },
+      );
+
+      return null;
+    }
 
     return {
       id: candidate.id,

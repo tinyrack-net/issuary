@@ -19,7 +19,11 @@ export function croner(options: CronerSchedulerOptions = {}): SchedulerConfig {
       const cronJobs = scheduledJobs.map(
         (job) =>
           new Cron(job.schedule.expression, async () => {
-            await job.handler({ logger });
+            try {
+              await job.handler({ logger });
+            } catch (err) {
+              logger?.error({ err, jobId: job.id }, 'Scheduled job failed');
+            }
           }),
       );
 
