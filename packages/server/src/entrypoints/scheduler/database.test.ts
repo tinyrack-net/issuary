@@ -34,6 +34,7 @@ describe('database scheduler factory', () => {
       await cleanup();
       cleanup = undefined;
     }
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -716,6 +717,69 @@ describe('database scheduler factory', () => {
     expect(job?.lastSuccessAt).toBeNull();
   });
 
+  test('aborts a running scheduled job when lease renewal loses ownership', async () => {
+    const result = await createTestApp(MINIMAL_TEST_CONFIG);
+    cleanup = result.cleanup;
+    const services = result.services;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-13T00:00:00.000Z'));
+    const started = createDeferred();
+    const release = createDeferred();
+    let signal: AbortSignal | undefined;
+    let abortFired = false;
+    const handler = vi.fn(async (context) => {
+      signal = context.signal;
+      context.signal?.addEventListener('abort', () => {
+        abortFired = true;
+      });
+      started.resolve();
+      await release.promise;
+    });
+    const scheduler = database({
+      cleanupCron: '* * * * *',
+      pollIntervalMs: 10,
+      lockTtlMs: 20,
+      instanceId: 'scheduled-lease-loss-a',
+      mikro: services.mikro,
+    });
+    const handle = await scheduler.start({
+      scheduledJobs: [
+        {
+          id: 'scheduled-lease-loss',
+          name: 'Scheduled Lease Loss',
+          schedule: { type: 'cron', expression: '* * * * *' },
+          handler,
+        },
+      ],
+      backgroundJobs: [],
+    });
+
+    try {
+      await services.mikro.schedulerJob.nativeUpdate(
+        { id: 'scheduled-lease-loss' },
+        { nextRunAt: new Date(Date.now() - 1000) },
+      );
+      await vi.advanceTimersByTimeAsync(10);
+      await started.promise;
+      await services.mikro.schedulerJob.nativeUpdate(
+        { id: 'scheduled-lease-loss' },
+        { lockedBy: 'scheduled-lease-loss-b' },
+      );
+
+      await vi.advanceTimersByTimeAsync(10);
+
+      if (!signal) {
+        throw new Error('Expected scheduled job AbortSignal');
+      }
+      expect(signal).toBeInstanceOf(AbortSignal);
+      expect(signal.aborted).toBe(true);
+      expect(abortFired).toBe(true);
+    } finally {
+      release.resolve();
+      await handle.stop();
+    }
+  });
+
   test('renews leases so long-running jobs are not acquired twice', async () => {
     const result = await createTestApp(MINIMAL_TEST_CONFIG);
     cleanup = result.cleanup;
@@ -891,6 +955,71 @@ describe('database scheduler factory', () => {
       expect(job?.completedAt).toBeNull();
     } finally {
       release.resolve();
+    }
+  });
+
+  test('aborts a running background job when lease renewal loses ownership', async () => {
+    const result = await createTestApp(MINIMAL_TEST_CONFIG);
+    cleanup = result.cleanup;
+    const services = result.services;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-13T00:00:00.000Z'));
+    const started = createDeferred();
+    const release = createDeferred();
+    let signal: AbortSignal | undefined;
+    let abortFired = false;
+    const handler = vi.fn(async (_payload, context) => {
+      signal = context.signal;
+      context.signal?.addEventListener('abort', () => {
+        abortFired = true;
+      });
+      started.resolve();
+      await release.promise;
+    });
+    const scheduler = database({
+      pollIntervalMs: 10,
+      lockTtlMs: 20,
+      instanceId: 'background-lease-loss-a',
+      mikro: services.mikro,
+    });
+    const handle = await scheduler.start({
+      scheduledJobs: [],
+      backgroundJobs: [
+        {
+          id: 'background-lease-loss-test',
+          name: 'Background Lease Loss Test',
+          handler,
+        },
+      ],
+    });
+
+    try {
+      const id = await handle.enqueue?.({
+        jobId: 'background-lease-loss-test',
+        payload: null,
+      });
+      if (!id) {
+        throw new Error('Expected background job id');
+      }
+
+      await vi.advanceTimersByTimeAsync(10);
+      await started.promise;
+      await services.mikro.backgroundJob.nativeUpdate(
+        { id },
+        { lockedBy: 'background-lease-loss-b' },
+      );
+
+      await vi.advanceTimersByTimeAsync(10);
+
+      if (!signal) {
+        throw new Error('Expected background job AbortSignal');
+      }
+      expect(signal).toBeInstanceOf(AbortSignal);
+      expect(signal.aborted).toBe(true);
+      expect(abortFired).toBe(true);
+    } finally {
+      release.resolve();
+      await handle.stop();
     }
   });
 

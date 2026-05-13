@@ -232,9 +232,15 @@ export class DistributedSchedulerRunner {
         continue;
       }
 
-      const stopLeaseRenewal = this.startLeaseRenewal(acquired.id);
+      const abortController = new AbortController();
+      const stopLeaseRenewal = this.startLeaseRenewal(acquired.id, () => {
+        abortController.abort();
+      });
       try {
-        await job.handler({ logger: this.logger });
+        await job.handler({
+          logger: this.logger,
+          signal: abortController.signal,
+        });
         await this.completeJob(acquired);
       } catch (err) {
         await this.completeJob(acquired, err);
@@ -244,7 +250,10 @@ export class DistributedSchedulerRunner {
     }
   }
 
-  private startLeaseRenewal(jobId: string): () => void {
+  private startLeaseRenewal(
+    jobId: string,
+    onLeaseLost: () => void,
+  ): () => void {
     const renewIntervalMs = Math.max(1, Math.floor(this.lockTtlMs / 2));
     let renewInFlight = false;
     const interval = setInterval(() => {
@@ -262,6 +271,7 @@ export class DistributedSchedulerRunner {
               { jobId, instanceId: this.instanceId },
               `${this.name} scheduler lease renewal skipped because lease was lost`,
             );
+            onLeaseLost();
           }
         })
         .catch((err) => {
@@ -427,9 +437,15 @@ export class DistributedBackgroundJobRunner {
         continue;
       }
 
-      const stopLeaseRenewal = this.startLeaseRenewal(acquired.id);
+      const abortController = new AbortController();
+      const stopLeaseRenewal = this.startLeaseRenewal(acquired.id, () => {
+        abortController.abort();
+      });
       try {
-        await job.handler(acquired.payload, { logger: this.logger });
+        await job.handler(acquired.payload, {
+          logger: this.logger,
+          signal: abortController.signal,
+        });
         await this.completeJob(acquired);
       } catch (err) {
         await this.completeJob(acquired, err);
@@ -454,7 +470,7 @@ export class DistributedBackgroundJobRunner {
     this.nextCleanupAt = now.getTime() + this.cleanupIntervalMs;
   }
 
-  private startLeaseRenewal(id: string): () => void {
+  private startLeaseRenewal(id: string, onLeaseLost: () => void): () => void {
     const renewIntervalMs = Math.max(1, Math.floor(this.lockTtlMs / 2));
     let renewInFlight = false;
     const interval = setInterval(() => {
@@ -472,6 +488,7 @@ export class DistributedBackgroundJobRunner {
               { id, instanceId: this.instanceId },
               `${this.name} background job lease renewal skipped because lease was lost`,
             );
+            onLeaseLost();
           }
         })
         .catch((err) => {
