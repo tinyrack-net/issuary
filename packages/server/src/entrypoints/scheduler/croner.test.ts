@@ -12,7 +12,15 @@ describe('croner scheduler factory', () => {
 
     const scheduler = croner();
     const handle = await scheduler.start({
-      runCleanup: async () => {},
+      scheduledJobs: [
+        {
+          id: 'cleanup.run-all',
+          name: 'Run cleanup tasks',
+          schedule: { type: 'cron', expression: scheduler.cleanupCron ?? '' },
+          handler: async () => {},
+        },
+      ],
+      backgroundJobs: [],
     });
 
     const nextRunAt = handle.getNextRunAt?.() ?? null;
@@ -22,29 +30,45 @@ describe('croner scheduler factory', () => {
     await handle.stop();
   });
 
-  test('supports overriding the cron schedule', async () => {
+  test('uses each scheduled job cron expression', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-12T00:05:00.000Z'));
 
-    const defaultHandle = await croner().start({
-      runCleanup: async () => {},
+    const handle = await croner().start({
+      scheduledJobs: [
+        {
+          id: 'daily',
+          name: 'Daily',
+          schedule: { type: 'cron', expression: '0 2 * * *' },
+          handler: async () => {},
+        },
+        {
+          id: 'frequent',
+          name: 'Frequent',
+          schedule: { type: 'cron', expression: '*/30 * * * *' },
+          handler: async () => {},
+        },
+      ],
+      backgroundJobs: [],
     });
-    const customHandle = await croner({
-      cron: '*/30 * * * *',
-    }).start({
-      runCleanup: async () => {},
+
+    const nextRunAt = handle.getNextRunAt?.() ?? null;
+
+    expect(nextRunAt).toEqual(new Date('2026-03-12T00:30:00.000Z'));
+
+    await handle.stop();
+  });
+
+  test('rejects background enqueue because croner is not durable', async () => {
+    const handle = await croner().start({
+      scheduledJobs: [],
+      backgroundJobs: [],
     });
 
-    const defaultNextRun = defaultHandle.getNextRunAt?.() ?? null;
-    const customNextRun = customHandle.getNextRunAt?.() ?? null;
+    await expect(
+      handle.enqueue?.({ jobId: 'example', payload: null }),
+    ).rejects.toThrow('Background jobs require a durable scheduler backend');
 
-    expect(defaultNextRun).toBeInstanceOf(Date);
-    expect(customNextRun).toBeInstanceOf(Date);
-    expect(customNextRun?.getTime()).toBeLessThan(
-      defaultNextRun?.getTime() ?? 0,
-    );
-
-    await defaultHandle.stop();
-    await customHandle.stop();
+    await handle.stop();
   });
 });

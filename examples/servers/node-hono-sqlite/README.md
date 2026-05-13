@@ -31,7 +31,7 @@ enable it with:
 import { croner } from '@tinyrack/tinyauth-server/scheduler/croner';
 
 await createApp({
-  scheduler: croner({ cron: '0 2 * * *' }),
+  scheduler: croner({ cleanupCron: '0 2 * * *' }),
 });
 ```
 

@@ -1,4 +1,5 @@
 import { MikroORM } from '@mikro-orm/core';
+import { BackgroundJobEntitySchema } from '../entities/background-job.entity.ts';
 import { EmailVerificationEntitySchema } from '../entities/email-verification.entity.ts';
 import { JwtKeyEntity } from '../entities/jwt-key.entity.ts';
 import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.ts';
@@ -6,6 +7,7 @@ import { OAuthCodeEntitySchema } from '../entities/oauth-code.entity.ts';
 import { PasswordResetEntitySchema } from '../entities/password-reset.entity.ts';
 import { PendingOAuthRegistrationEntitySchema } from '../entities/pending-oauth-registration.entity.ts';
 import { RevokedTokenEntitySchema } from '../entities/revoked-token.entity.ts';
+import { SchedulerJobEntitySchema } from '../entities/scheduler-job.entity.ts';
 import { TermsEntitySchema } from '../entities/terms.entity.ts';
 import { TermsContentEntitySchema } from '../entities/terms-content.entity.ts';
 import { UserEntity } from '../entities/user.entity.ts';
@@ -17,6 +19,7 @@ import { UserTotpEntitySchema } from '../entities/user-totp.entity.ts';
 import { UserTotpRecoveryCodeEntitySchema } from '../entities/user-totp-recovery-code.entity.ts';
 import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
 import type { Logger } from '../lib/logger.ts';
+import type { BackgroundJobRepository } from '../repositories/background-job.repository.ts';
 import type { EmailVerificationRepository } from '../repositories/email-verification.repository.ts';
 import type { JwtKeyRepository } from '../repositories/jwt-key.repository.ts';
 import type { OAuthClientRepository } from '../repositories/oauth-client.repository.ts';
@@ -24,6 +27,7 @@ import type { OAuthCodeRepository } from '../repositories/oauth-code.repository.
 import type { PasswordResetRepository } from '../repositories/password-reset.repository.ts';
 import type { PendingOAuthRegistrationRepository } from '../repositories/pending-oauth-registration.repository.ts';
 import type { RevokedTokenRepository } from '../repositories/revoked-token.repository.ts';
+import type { SchedulerJobRepository } from '../repositories/scheduler-job.repository.ts';
 import type { TermsRepository } from '../repositories/terms.repository.ts';
 import type { TermsContentRepository } from '../repositories/terms-content.repository.ts';
 import type { UserRepository } from '../repositories/user.repository.ts';
@@ -46,6 +50,8 @@ export class MikroService {
   public readonly pendingOAuthRegistration: PendingOAuthRegistrationRepository;
   public readonly jwtKey: JwtKeyRepository;
   public readonly revokedToken: RevokedTokenRepository;
+  public readonly backgroundJob: BackgroundJobRepository;
+  public readonly schedulerJob: SchedulerJobRepository;
   public readonly userConsent: UserConsentRepository;
   public readonly userTermsConsent: UserTermsConsentRepository;
   public readonly userTotp: UserTotpRepository;
@@ -70,6 +76,8 @@ export class MikroService {
     );
     this.jwtKey = orm.em.getRepository(JwtKeyEntity);
     this.revokedToken = orm.em.getRepository(RevokedTokenEntitySchema);
+    this.backgroundJob = orm.em.getRepository(BackgroundJobEntitySchema);
+    this.schedulerJob = orm.em.getRepository(SchedulerJobEntitySchema);
     this.userConsent = orm.em.getRepository(UserConsentEntity);
     this.userTermsConsent = orm.em.getRepository(UserTermsConsentEntity);
     this.userTotp = orm.em.getRepository(UserTotpEntitySchema);

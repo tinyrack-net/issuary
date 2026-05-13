@@ -131,7 +131,11 @@ auth:
 
 scheduler:
   enabled: ${TINYAUTH_SCHEDULER_ENABLED:-true}
-  cron: ${TINYAUTH_SCHEDULER_CRON:-0 2 * * *}
+  mode: ${TINYAUTH_SCHEDULER_MODE:-croner}
+  cleanup_cron: ${TINYAUTH_SCHEDULER_CLEANUP_CRON:-0 2 * * *}
+  poll_interval_ms: ${TINYAUTH_SCHEDULER_POLL_INTERVAL_MS:-5000}
+  lock_ttl_ms: ${TINYAUTH_SCHEDULER_LOCK_TTL_MS:-60000}
+  instance_id: ${TINYAUTH_SCHEDULER_INSTANCE_ID:-}
 
 cleanup:
   revoked_tokens:

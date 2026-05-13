@@ -1,4 +1,7 @@
-import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import {
+  isSchedulerConfigResolver,
+  type TinyAuthRuntimeConfig,
+} from '../lib/config/index.ts';
 import type { Logger } from '../lib/logger.ts';
 import {
   type ConfigSeedMode,
@@ -103,8 +106,13 @@ export async function initializeServices(
 
   // 4. Scheduler
   const schedulerLogger = logger.child({ service: 'scheduler' });
+  const schedulerConfig = config.scheduler
+    ? isSchedulerConfigResolver(config.scheduler)
+      ? config.scheduler({ mikro })
+      : config.scheduler
+    : undefined;
   const scheduler = new SchedulerService(
-    config.scheduler,
+    schedulerConfig,
     cleanupService,
     schedulerLogger,
   );

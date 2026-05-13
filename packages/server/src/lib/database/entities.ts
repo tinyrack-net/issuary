@@ -1,4 +1,5 @@
 import type { EntityName } from '@mikro-orm/core';
+import { BackgroundJobEntitySchema } from '../../entities/background-job.entity.ts';
 import { BootstrapStateEntitySchema } from '../../entities/bootstrap-state.entity.ts';
 import { EmailVerificationEntitySchema } from '../../entities/email-verification.entity.ts';
 import { JwtKeyEntitySchema } from '../../entities/jwt-key.entity.ts';
@@ -7,6 +8,7 @@ import { OAuthCodeEntitySchema } from '../../entities/oauth-code.entity.ts';
 import { PasswordResetEntitySchema } from '../../entities/password-reset.entity.ts';
 import { PendingOAuthRegistrationEntitySchema } from '../../entities/pending-oauth-registration.entity.ts';
 import { RevokedTokenEntitySchema } from '../../entities/revoked-token.entity.ts';
+import { SchedulerJobEntitySchema } from '../../entities/scheduler-job.entity.ts';
 import { TermsEntitySchema } from '../../entities/terms.entity.ts';
 import { TermsContentEntitySchema } from '../../entities/terms-content.entity.ts';
 import { UserEntitySchema } from '../../entities/user.entity.ts';
@@ -34,6 +36,8 @@ function createDatabaseEntities() {
     PasswordResetEntitySchema,
     PendingOAuthRegistrationEntitySchema,
     RevokedTokenEntitySchema,
+    BackgroundJobEntitySchema,
+    SchedulerJobEntitySchema,
     TermsEntitySchema,
     TermsContentEntitySchema,
     UserConsentEntitySchema,

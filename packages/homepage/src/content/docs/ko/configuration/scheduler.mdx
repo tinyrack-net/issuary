@@ -13,11 +13,11 @@ description: Tinyauth의 데이터 정리 스케줄러 및 정리 정책 구성�
 # config.yaml
 scheduler:
   enabled: true
-  cron: '0 2 * * *'
+  cleanup_cron: '0 2 * * *'
 ```
 
 - `scheduler.enabled`: 내장 스케줄러를 활성화할지 여부예요. 기본값은 `true`예요.
-- `scheduler.cron`: 정리 작업 실행 주기예요. 표준 5필드 cron 형식(`분 시 일 월 요일`)을 사용해요. 기본값은 `0 2 * * *`(매일 오전 2시)예요.
+- `scheduler.cleanup_cron`: 내장 정리 작업 실행 주기예요. 표준 5필드 cron 형식(`분 시 일 월 요일`)을 사용해요. 기본값은 `0 2 * * *`(매일 오전 2시)예요.
 
 :::note
 Kubernetes 환경에서는 내장 스케줄러 대신 CronJob을 사용하는 것이 좋아요. 이 경우 `scheduler.enabled: false`로 설정하고, 외부에서 `tinyauth cleanup` CLI 명령을 실행하세요. 자세한 내용은 [Kubernetes 배포 가이드](/ko/deployment/kubernetes)를 참고해 주세요.
@@ -128,7 +128,7 @@ account_deletion:
 
 scheduler:
   enabled: true
-  cron: '0 2 * * *'
+  cleanup_cron: '0 2 * * *'
 
 cleanup:
   revoked_tokens:

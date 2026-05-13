@@ -9,6 +9,7 @@ import { genericOAuth } from '@tinyrack/tinyauth-server/identity-providers/gener
 import { github } from '@tinyrack/tinyauth-server/identity-providers/github';
 import { google } from '@tinyrack/tinyauth-server/identity-providers/google';
 import { croner } from '@tinyrack/tinyauth-server/scheduler/croner';
+import { database as databaseScheduler } from '@tinyrack/tinyauth-server/scheduler/database';
 import YAML from 'yaml';
 import type { StandaloneDatabaseConfig } from './config/database.ts';
 import { STANDALONE_CONFIG_DEFAULTS } from './config/defaults.ts';
@@ -115,9 +116,19 @@ function composeSchedulerConfig(
     return undefined;
   }
 
-  return croner({
-    cron: scheduler.cron,
-  });
+  switch (scheduler.mode) {
+    case 'croner':
+      return croner({
+        cleanupCron: scheduler.cleanup_cron,
+      });
+    case 'database':
+      return databaseScheduler({
+        cleanupCron: scheduler.cleanup_cron,
+        pollIntervalMs: scheduler.poll_interval_ms,
+        lockTtlMs: scheduler.lock_ttl_ms,
+        instanceId: scheduler.instance_id,
+      });
+  }
 }
 
 function composeFrontendConfig(
