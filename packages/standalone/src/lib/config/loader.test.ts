@@ -177,6 +177,19 @@ describe('resolveConfig', () => {
     ).rejects.toThrow('Invalid cron expression');
   });
 
+  test('rejects invalid standalone scheduler background retention', async () => {
+    await expect(
+      resolveConfig({
+        ...MINIMAL_CONFIG,
+        scheduler: {
+          enabled: true,
+          mode: 'database',
+          background_retention_ms: '0',
+        },
+      }),
+    ).rejects.toThrow('background_retention_ms');
+  });
+
   test('rejects password policy where max_length is less than min_length', async () => {
     await expect(
       resolveConfig({

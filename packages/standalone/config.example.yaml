@@ -140,6 +140,9 @@ scheduler:
   lock_ttl_ms: ${TINYAUTH_SCHEDULER_LOCK_TTL_MS:-60000}
   background_retry_delay_ms: ${TINYAUTH_SCHEDULER_BACKGROUND_RETRY_DELAY_MS:-1000}
   background_max_attempts: ${TINYAUTH_SCHEDULER_BACKGROUND_MAX_ATTEMPTS:-3}
+  # Retains terminal background jobs (succeeded/failed) for 7 days by default.
+  # Pending/running jobs are never deleted by this retention cleanup.
+  background_retention_ms: ${TINYAUTH_SCHEDULER_BACKGROUND_RETENTION_MS:-604800000}
   instance_id: ${TINYAUTH_SCHEDULER_INSTANCE_ID:-}
 
 cleanup:

@@ -50,6 +50,7 @@ interface StandaloneSchedulerConfigDefault {
   lock_ttl_ms: number;
   background_retry_delay_ms: number;
   background_max_attempts: number;
+  background_retention_ms: number;
 }
 
 export const STANDALONE_SCHEDULER_CONFIG_DEFAULT: StandaloneSchedulerConfigDefault =
@@ -61,6 +62,7 @@ export const STANDALONE_SCHEDULER_CONFIG_DEFAULT: StandaloneSchedulerConfigDefau
     lock_ttl_ms: 60000,
     background_retry_delay_ms: 1000,
     background_max_attempts: 3,
+    background_retention_ms: 7 * 24 * 60 * 60 * 1000,
   };
 
 export const StandaloneSchedulerConfigSchema = z
@@ -91,6 +93,11 @@ export const StandaloneSchedulerConfigSchema = z
     background_max_attempts: PositiveIntegerSchema.default(
       STANDALONE_SCHEDULER_CONFIG_DEFAULT.background_max_attempts,
     ).describe('Database scheduler background job maximum attempts.'),
+    background_retention_ms: PositiveNumberSchema.default(
+      STANDALONE_SCHEDULER_CONFIG_DEFAULT.background_retention_ms,
+    ).describe(
+      'Database scheduler completed background job retention in milliseconds.',
+    ),
     instance_id: z
       .string()
       .transform((value) => (value === '' ? undefined : value))

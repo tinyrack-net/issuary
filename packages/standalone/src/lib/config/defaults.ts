@@ -111,6 +111,10 @@ export const STANDALONE_CONFIG_DEFAULTS = {
       'TINYAUTH_SCHEDULER_BACKGROUND_MAX_ATTEMPTS',
       '3',
     ),
+    background_retention_ms: envDefault(
+      'TINYAUTH_SCHEDULER_BACKGROUND_RETENTION_MS',
+      String(7 * 24 * 60 * 60 * 1000),
+    ),
     instance_id: envDefault('TINYAUTH_SCHEDULER_INSTANCE_ID', ''),
   },
 

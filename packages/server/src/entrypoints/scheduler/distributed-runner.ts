@@ -9,6 +9,7 @@ import type { Logger } from '../../lib/logger.ts';
 import { getNextCronRunAt } from './cron.ts';
 
 const MAX_ERROR_LENGTH = 2000;
+const MAX_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 export interface PersistedSchedulerJobDefinition {
   id: string;
@@ -107,6 +108,7 @@ export interface DistributedBackgroundJobStore {
   completeJobFailure: (
     input: BackgroundJobFailureCompletionInput,
   ) => Promise<boolean>;
+  cleanupCompletedJobs?: (before: Date) => Promise<number>;
 }
 
 interface DistributedSchedulerRunnerOptions {
@@ -125,6 +127,7 @@ interface DistributedBackgroundJobRunnerOptions {
   lockTtlMs: number;
   retryDelayMs: number;
   maxAttempts: number;
+  retentionMs: number;
   instanceId: string;
   jobs: readonly BackgroundJobConfig[];
   logger?: Logger | undefined;
@@ -321,6 +324,8 @@ export class DistributedBackgroundJobRunner {
   private readonly lockTtlMs: number;
   private readonly retryDelayMs: number;
   private readonly maxAttempts: number;
+  private readonly retentionMs: number;
+  private readonly cleanupIntervalMs: number;
   private readonly instanceId: string;
   private readonly jobs: ReadonlyMap<string, BackgroundJobConfig>;
   private readonly logger: Logger | undefined;
@@ -328,6 +333,7 @@ export class DistributedBackgroundJobRunner {
 
   private interval: ReturnType<typeof setInterval> | null = null;
   private runningTick: Promise<void> | null = null;
+  private nextCleanupAt = 0;
   private stopped = false;
 
   constructor(options: DistributedBackgroundJobRunnerOptions) {
@@ -336,6 +342,11 @@ export class DistributedBackgroundJobRunner {
     this.lockTtlMs = options.lockTtlMs;
     this.retryDelayMs = options.retryDelayMs;
     this.maxAttempts = options.maxAttempts;
+    this.retentionMs = options.retentionMs;
+    this.cleanupIntervalMs = Math.min(
+      this.retentionMs,
+      MAX_CLEANUP_INTERVAL_MS,
+    );
     this.instanceId = options.instanceId;
     this.jobs = new Map(options.jobs.map((job) => [job.id, job]));
     this.logger = options.logger;
@@ -393,6 +404,8 @@ export class DistributedBackgroundJobRunner {
   }
 
   private async runTick(): Promise<void> {
+    await this.cleanupCompletedJobs();
+
     while (!this.stopped) {
       const now = new Date();
       const lockedUntil = new Date(now.getTime() + this.lockTtlMs);
@@ -424,6 +437,21 @@ export class DistributedBackgroundJobRunner {
         stopLeaseRenewal();
       }
     }
+  }
+
+  private async cleanupCompletedJobs(): Promise<void> {
+    if (!this.store.cleanupCompletedJobs) {
+      return;
+    }
+
+    const now = new Date();
+    if (now.getTime() < this.nextCleanupAt) {
+      return;
+    }
+
+    const before = new Date(now.getTime() - this.retentionMs);
+    await this.store.cleanupCompletedJobs(before);
+    this.nextCleanupAt = now.getTime() + this.cleanupIntervalMs;
   }
 
   private startLeaseRenewal(id: string): () => void {

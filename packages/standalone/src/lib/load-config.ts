@@ -128,6 +128,7 @@ function composeSchedulerConfig(
         lockTtlMs: scheduler.lock_ttl_ms,
         backgroundRetryDelayMs: scheduler.background_retry_delay_ms,
         backgroundMaxAttempts: scheduler.background_max_attempts,
+        backgroundRetentionMs: scheduler.background_retention_ms,
         instanceId: scheduler.instance_id,
       });
   }

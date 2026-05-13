@@ -209,6 +209,7 @@ description: 전체 config.yaml 스키마 레퍼런스
 | `lock_ttl_ms` | `number` | `60000` | `SCHEDULER_LOCK_TTL_MS` | `database` 모드 lease TTL(ms) |
 | `background_retry_delay_ms` | `number` | `1000` | `SCHEDULER_BACKGROUND_RETRY_DELAY_MS` | `database` 모드 background job 재시도 대기 시간(ms) |
 | `background_max_attempts` | `integer` | `3` | `SCHEDULER_BACKGROUND_MAX_ATTEMPTS` | `database` 모드 background job 최대 시도 횟수 |
+| `background_retention_ms` | `number` | `604800000` | `SCHEDULER_BACKGROUND_RETENTION_MS` | 완료된 background job(`succeeded`/`failed`) 보존 기간(ms). `pending`/`running` job은 삭제하지 않음 |
 | `instance_id` | `string` | 자동 생성 | `SCHEDULER_INSTANCE_ID` | `database` 모드 lease 소유자 식별자 |
 
 ## `cleanup`

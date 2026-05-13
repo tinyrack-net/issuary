@@ -125,7 +125,7 @@ describe('load-config', () => {
     expect(config.terms[0]?.content['en']?.type).toBe('text');
   });
 
-  test('loads database scheduler retry options from env-style strings', async () => {
+  test('loads database scheduler background options from env-style strings', async () => {
     const dir = await fs.promises.mkdtemp(
       path.join(os.tmpdir(), 'tinyauth-load-config-scheduler-retry-'),
     );
@@ -138,6 +138,7 @@ describe('load-config', () => {
         '  mode: database',
         '  background_retry_delay_ms: "2500"',
         '  background_max_attempts: "5"',
+        '  background_retention_ms: "3600000"',
         'security:',
         '  session_secret: scheduler-retry-secret-1234567890',
         '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
@@ -152,12 +153,47 @@ describe('load-config', () => {
 
       expect(config.scheduler.background_retry_delay_ms).toBe(2500);
       expect(config.scheduler.background_max_attempts).toBe(5);
+      expect(config.scheduler.background_retention_ms).toBe(3600000);
     } finally {
       await fs.promises.rm(dir, { recursive: true, force: true });
     }
   });
 
-  test('uses database scheduler retry defaults matching server scheduler', () => {
+  test('loads database scheduler retention from env vars', () => {
+    const missingPath = path.join(
+      os.tmpdir(),
+      `tinyauth-retention-env-${Date.now()}.yaml`,
+    );
+    const originalSession = process.env['TINYAUTH_SESSION_SECRET'];
+    const originalHash = process.env['TINYAUTH_HASH_SECRET'];
+    const originalRetention =
+      process.env['TINYAUTH_SCHEDULER_BACKGROUND_RETENTION_MS'];
+    try {
+      process.env['TINYAUTH_SESSION_SECRET'] =
+        'env-session-secret-1234567890abcdef';
+      process.env['TINYAUTH_HASH_SECRET'] =
+        'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
+      process.env['TINYAUTH_SCHEDULER_BACKGROUND_RETENTION_MS'] = '60000';
+
+      const config = loadConfig(missingPath);
+
+      expect(config.scheduler.background_retention_ms).toBe(60000);
+    } finally {
+      if (originalSession === undefined)
+        delete process.env['TINYAUTH_SESSION_SECRET'];
+      else process.env['TINYAUTH_SESSION_SECRET'] = originalSession;
+      if (originalHash === undefined)
+        delete process.env['TINYAUTH_HASH_SECRET'];
+      else process.env['TINYAUTH_HASH_SECRET'] = originalHash;
+      if (originalRetention === undefined)
+        delete process.env['TINYAUTH_SCHEDULER_BACKGROUND_RETENTION_MS'];
+      else
+        process.env['TINYAUTH_SCHEDULER_BACKGROUND_RETENTION_MS'] =
+          originalRetention;
+    }
+  });
+
+  test('uses database scheduler background defaults matching server scheduler', () => {
     const originalSession = process.env['TINYAUTH_SESSION_SECRET'];
     const originalHash = process.env['TINYAUTH_HASH_SECRET'];
     try {
@@ -172,6 +208,9 @@ describe('load-config', () => {
 
       expect(config.scheduler.background_retry_delay_ms).toBe(1000);
       expect(config.scheduler.background_max_attempts).toBe(3);
+      expect(config.scheduler.background_retention_ms).toBe(
+        7 * 24 * 60 * 60 * 1000,
+      );
     } finally {
       if (originalSession === undefined)
         delete process.env['TINYAUTH_SESSION_SECRET'];

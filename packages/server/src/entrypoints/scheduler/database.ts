@@ -30,6 +30,7 @@ const DEFAULT_POLL_INTERVAL_MS = 5000;
 const DEFAULT_LOCK_TTL_MS = 60000;
 const DEFAULT_BACKGROUND_RETRY_DELAY_MS = 1000;
 const DEFAULT_BACKGROUND_MAX_ATTEMPTS = 3;
+const DEFAULT_BACKGROUND_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_ERROR_LENGTH = 2000;
 const JSON_SAFE_PAYLOAD_ERROR = 'Background job payload must be JSON-safe';
 
@@ -39,6 +40,7 @@ export interface DatabaseSchedulerOptions {
   lockTtlMs?: number | undefined;
   backgroundRetryDelayMs?: number | undefined;
   backgroundMaxAttempts?: number | undefined;
+  backgroundRetentionMs?: number | undefined;
   instanceId?: string | undefined;
 }
 
@@ -53,6 +55,7 @@ interface ResolvedDatabaseSchedulerOptions {
   lockTtlMs: number;
   backgroundRetryDelayMs: number;
   backgroundMaxAttempts: number;
+  backgroundRetentionMs: number;
   instanceId: string;
 }
 
@@ -197,11 +200,16 @@ function resolveOptions(
       options.backgroundMaxAttempts,
       DEFAULT_BACKGROUND_MAX_ATTEMPTS,
     ),
+    backgroundRetentionMs: resolvePositiveNumber(
+      'backgroundRetentionMs',
+      options.backgroundRetentionMs,
+      DEFAULT_BACKGROUND_RETENTION_MS,
+    ),
     instanceId: createInstanceId(options.instanceId),
   };
 }
 
-class DatabaseSchedulerStore implements DistributedSchedulerStore {
+export class DatabaseSchedulerStore implements DistributedSchedulerStore {
   private readonly mikro: MikroService;
 
   constructor(mikro: MikroService) {
@@ -252,43 +260,52 @@ class DatabaseSchedulerStore implements DistributedSchedulerStore {
   ): Promise<AcquiredSchedulerJob | null> {
     const em = this.mikro.em.fork();
     const repo = em.getRepository(SchedulerJobEntitySchema);
-    const candidate = await repo.findOne(
-      {
-        enabled: true,
-        nextRunAt: { $lte: now },
-        $or: [{ lockedUntil: null }, { lockedUntil: { $lte: now } }],
-      },
-      { orderBy: { nextRunAt: 'ASC' } },
-    );
-
-    if (!candidate) {
-      return null;
-    }
-
-    const updated = await repo.nativeUpdate(
-      {
-        id: candidate.id,
-        enabled: true,
-        nextRunAt: { $lte: now },
-        $or: [{ lockedUntil: null }, { lockedUntil: { $lte: now } }],
-      },
-      {
-        lockedBy: instanceId,
-        lockedUntil,
-        lastRunAt: now,
-      },
-    );
-
-    if (updated !== 1) {
-      return null;
-    }
-
-    return {
-      id: candidate.id,
-      cron: candidate.cron,
-      runCount: candidate.runCount,
-      failureCount: candidate.failureCount,
+    const seenCandidateIds: string[] = [];
+    const eligibleFilter = {
+      enabled: true,
+      nextRunAt: { $lte: now },
+      $or: [{ lockedUntil: null }, { lockedUntil: { $lte: now } }],
     };
+
+    while (true) {
+      const candidateFilter = {
+        ...eligibleFilter,
+        ...(seenCandidateIds.length > 0
+          ? { id: { $nin: seenCandidateIds } }
+          : {}),
+      };
+      const candidate = await repo.findOne(candidateFilter, {
+        orderBy: { nextRunAt: 'ASC' },
+      });
+
+      if (!candidate) {
+        return null;
+      }
+
+      const updated = await repo.nativeUpdate(
+        {
+          id: candidate.id,
+          ...eligibleFilter,
+        },
+        {
+          lockedBy: instanceId,
+          lockedUntil,
+          lastRunAt: now,
+        },
+      );
+
+      if (updated !== 1) {
+        seenCandidateIds.push(candidate.id);
+        continue;
+      }
+
+      return {
+        id: candidate.id,
+        cron: candidate.cron,
+        runCount: candidate.runCount,
+        failureCount: candidate.failureCount,
+      };
+    }
   }
 
   async renewLease(
@@ -371,7 +388,9 @@ class DatabaseSchedulerStore implements DistributedSchedulerStore {
   }
 }
 
-class DatabaseBackgroundJobStore implements DistributedBackgroundJobStore {
+export class DatabaseBackgroundJobStore
+  implements DistributedBackgroundJobStore
+{
   private readonly mikro: MikroService;
 
   constructor(mikro: MikroService) {
@@ -410,6 +429,7 @@ class DatabaseBackgroundJobStore implements DistributedBackgroundJobStore {
   ): Promise<AcquiredBackgroundJob | null> {
     const em = this.mikro.em.fork();
     const repo = em.getRepository(BackgroundJobEntitySchema);
+    const seenCandidateIds: string[] = [];
     const eligibleFilter = {
       $or: [
         {
@@ -423,7 +443,13 @@ class DatabaseBackgroundJobStore implements DistributedBackgroundJobStore {
       ],
     };
     while (true) {
-      const candidate = await repo.findOne(eligibleFilter, {
+      const candidateFilter = {
+        ...eligibleFilter,
+        ...(seenCandidateIds.length > 0
+          ? { id: { $nin: seenCandidateIds } }
+          : {}),
+      };
+      const candidate = await repo.findOne(candidateFilter, {
         orderBy: { availableAt: 'ASC' },
       });
 
@@ -462,7 +488,8 @@ class DatabaseBackgroundJobStore implements DistributedBackgroundJobStore {
       );
 
       if (updated !== 1) {
-        return null;
+        seenCandidateIds.push(candidate.id);
+        continue;
       }
 
       let payload: JobPayload;
@@ -569,6 +596,16 @@ class DatabaseBackgroundJobStore implements DistributedBackgroundJobStore {
 
     return updated === 1;
   }
+
+  async cleanupCompletedJobs(before: Date): Promise<number> {
+    const em = this.mikro.em.fork();
+    const repo = em.getRepository(BackgroundJobEntitySchema);
+
+    return repo.nativeDelete({
+      status: { $in: ['succeeded', 'failed'] },
+      completedAt: { $lte: before },
+    });
+  }
 }
 
 function createDatabaseSchedulerConfig(
@@ -593,6 +630,7 @@ function createDatabaseSchedulerConfig(
         lockTtlMs: options.lockTtlMs,
         retryDelayMs: options.backgroundRetryDelayMs,
         maxAttempts: options.backgroundMaxAttempts,
+        retentionMs: options.backgroundRetentionMs,
         instanceId: options.instanceId,
         jobs: backgroundJobs,
         logger,

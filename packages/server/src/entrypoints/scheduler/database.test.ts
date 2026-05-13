@@ -1,3 +1,4 @@
+import { EntityRepository } from '@mikro-orm/core';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { BackgroundJobEntitySchema } from '../../entities/background-job.entity.ts';
 import { SchedulerJobEntitySchema } from '../../entities/scheduler-job.entity.ts';
@@ -5,7 +6,11 @@ import type { SchedulerHandle } from '../../lib/config/index.ts';
 import type { ServiceContainer } from '../../services/container.ts';
 import { createTestApp } from '../../test-utils/index.ts';
 import { MINIMAL_TEST_CONFIG } from '../../test-utils/setup.ts';
-import { database } from './database.ts';
+import {
+  DatabaseBackgroundJobStore,
+  DatabaseSchedulerStore,
+  database,
+} from './database.ts';
 
 interface Deferred {
   promise: Promise<void>;
@@ -429,6 +434,66 @@ describe('database scheduler factory', () => {
 
     const job = await findJob(services, 'contend-test');
     expect(job?.runCount).toBe(1);
+  });
+
+  test('continues to another scheduled job after a CAS miss', async () => {
+    const result = await createTestApp(MINIMAL_TEST_CONFIG);
+    cleanup = result.cleanup;
+    const services = result.services;
+    const now = new Date();
+    const em = services.mikro.em.fork();
+    em.persist(
+      em.create(SchedulerJobEntitySchema, {
+        id: 'scheduled-cas-first',
+        name: 'Scheduled CAS First',
+        enabled: true,
+        cron: '* * * * *',
+        nextRunAt: new Date(now.getTime() - 2000),
+        lastRunAt: null,
+        lastSuccessAt: null,
+        lastErrorAt: null,
+        lastError: null,
+        lockedBy: null,
+        lockedUntil: null,
+        runCount: 0,
+        failureCount: 0,
+        created_at: now,
+        updated_at: now,
+      }),
+    );
+    em.persist(
+      em.create(SchedulerJobEntitySchema, {
+        id: 'scheduled-cas-second',
+        name: 'Scheduled CAS Second',
+        enabled: true,
+        cron: '* * * * *',
+        nextRunAt: new Date(now.getTime() - 1000),
+        lastRunAt: null,
+        lastSuccessAt: null,
+        lastErrorAt: null,
+        lastError: null,
+        lockedBy: null,
+        lockedUntil: null,
+        runCount: 0,
+        failureCount: 0,
+        created_at: now,
+        updated_at: now,
+      }),
+    );
+    await em.flush();
+
+    vi.spyOn(EntityRepository.prototype, 'nativeUpdate').mockResolvedValueOnce(
+      0,
+    );
+
+    const store = new DatabaseSchedulerStore(services.mikro);
+    const acquired = await store.acquireDueJob(
+      now,
+      new Date(now.getTime() + 1000),
+      'scheduled-cas-a',
+    );
+
+    expect(acquired?.id).toBe('scheduled-cas-second');
   });
 
   test('does not record success when completion lost the lease', async () => {
@@ -1285,5 +1350,147 @@ describe('database scheduler factory', () => {
       release.resolve();
       await Promise.all([handleA.stop(), handleB.stop()]);
     }
+  });
+
+  test('continues to another background job after a CAS miss', async () => {
+    const result = await createTestApp(MINIMAL_TEST_CONFIG);
+    cleanup = result.cleanup;
+    const services = result.services;
+    const now = new Date();
+    const firstId = crypto.randomUUID();
+    const secondId = crypto.randomUUID();
+    const em = services.mikro.em.fork();
+    em.persist(
+      em.create(BackgroundJobEntitySchema, {
+        id: firstId,
+        jobId: 'background-cas-test',
+        payload: JSON.stringify({ value: 'first' }),
+        status: 'pending',
+        availableAt: new Date(now.getTime() - 2000),
+        lockedBy: null,
+        lockedUntil: null,
+        attemptCount: 0,
+        maxAttempts: 3,
+        lastError: null,
+        completedAt: null,
+        created_at: now,
+        updated_at: now,
+      }),
+    );
+    em.persist(
+      em.create(BackgroundJobEntitySchema, {
+        id: secondId,
+        jobId: 'background-cas-test',
+        payload: JSON.stringify({ value: 'second' }),
+        status: 'pending',
+        availableAt: new Date(now.getTime() - 1000),
+        lockedBy: null,
+        lockedUntil: null,
+        attemptCount: 0,
+        maxAttempts: 3,
+        lastError: null,
+        completedAt: null,
+        created_at: now,
+        updated_at: now,
+      }),
+    );
+    await em.flush();
+
+    vi.spyOn(EntityRepository.prototype, 'nativeUpdate').mockResolvedValueOnce(
+      0,
+    );
+
+    const store = new DatabaseBackgroundJobStore(services.mikro);
+    const acquired = await store.acquireDueJob(
+      now,
+      new Date(now.getTime() + 1000),
+      'background-cas-a',
+    );
+
+    expect(acquired).toMatchObject({
+      id: secondId,
+      jobId: 'background-cas-test',
+      payload: { value: 'second' },
+      attemptCount: 1,
+      maxAttempts: 3,
+    });
+  });
+
+  test('cleans up only old completed background jobs', async () => {
+    const result = await createTestApp(MINIMAL_TEST_CONFIG);
+    cleanup = result.cleanup;
+    const services = result.services;
+    const now = new Date();
+    const oldCompletedAt = new Date(now.getTime() - 1000);
+    const recentCompletedAt = new Date(now.getTime() + 1000);
+    const oldSucceededId = crypto.randomUUID();
+    const oldFailedId = crypto.randomUUID();
+    const oldPendingId = crypto.randomUUID();
+    const oldRunningId = crypto.randomUUID();
+    const recentSucceededId = crypto.randomUUID();
+    const em = services.mikro.em.fork();
+    const baseJob = {
+      jobId: 'background-retention-test',
+      payload: JSON.stringify(null),
+      availableAt: oldCompletedAt,
+      lockedBy: null,
+      lockedUntil: null,
+      attemptCount: 1,
+      maxAttempts: 3,
+      lastError: null,
+      created_at: oldCompletedAt,
+      updated_at: oldCompletedAt,
+    };
+
+    for (const job of [
+      {
+        ...baseJob,
+        id: oldSucceededId,
+        status: 'succeeded',
+        completedAt: oldCompletedAt,
+      },
+      {
+        ...baseJob,
+        id: oldFailedId,
+        status: 'failed',
+        completedAt: oldCompletedAt,
+      },
+      { ...baseJob, id: oldPendingId, status: 'pending', completedAt: null },
+      {
+        ...baseJob,
+        id: oldRunningId,
+        status: 'running',
+        completedAt: null,
+      },
+      {
+        ...baseJob,
+        id: recentSucceededId,
+        status: 'succeeded',
+        completedAt: recentCompletedAt,
+      },
+    ]) {
+      em.persist(em.create(BackgroundJobEntitySchema, job));
+    }
+    await em.flush();
+
+    const store = new DatabaseBackgroundJobStore(services.mikro);
+    const deleted = await store.cleanupCompletedJobs(now);
+
+    expect(deleted).toBe(2);
+    await expect(
+      findBackgroundJob(services, oldSucceededId),
+    ).resolves.toBeNull();
+    await expect(findBackgroundJob(services, oldFailedId)).resolves.toBeNull();
+    await expect(
+      findBackgroundJob(services, oldPendingId),
+    ).resolves.toMatchObject({
+      status: 'pending',
+    });
+    await expect(
+      findBackgroundJob(services, oldRunningId),
+    ).resolves.toMatchObject({ status: 'running' });
+    await expect(
+      findBackgroundJob(services, recentSucceededId),
+    ).resolves.toMatchObject({ status: 'succeeded' });
   });
 });
