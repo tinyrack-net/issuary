@@ -43,6 +43,10 @@
         "types": "./dist/entrypoints/scheduler/croner.d.ts",
         "default": "./dist/entrypoints/scheduler/croner.js"
       },
+      "./scheduler/database": {
+        "types": "./dist/entrypoints/scheduler/database.d.ts",
+        "default": "./dist/entrypoints/scheduler/database.js"
+      },
       "./identity-providers/github": {
         "types": "./dist/entrypoints/identity-providers/github.d.ts",
         "default": "./dist/entrypoints/identity-providers/github.js"
@@ -116,6 +120,11 @@
       "@tinyauth/source": "./src/entrypoints/scheduler/croner.ts",
       "types": "./dist/entrypoints/scheduler/croner.d.ts",
       "default": "./dist/entrypoints/scheduler/croner.js"
+    },
+    "./scheduler/database": {
+      "@tinyauth/source": "./src/entrypoints/scheduler/database.ts",
+      "types": "./dist/entrypoints/scheduler/database.d.ts",
+      "default": "./dist/entrypoints/scheduler/database.js"
     },
     "./identity-providers/github": {
       "@tinyauth/source": "./src/entrypoints/identity-providers/github.ts",

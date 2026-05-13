@@ -63,6 +63,7 @@
     "@mikro-orm/cli": "catalog:",
     "@stricli/core": "catalog:",
     "@tinyrack/tinyauth-server": "workspace:*",
+    "croner": "catalog:",
     "dotenv": "catalog:",
     "hono": "catalog:",
     "hono-openapi": "catalog:",

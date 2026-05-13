@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import { POSTGRES_MIGRATIONS } from '../../migrations/postgres/index.ts';
 import { Migration20260509171036_initial as PostgresInitialMigration } from '../../migrations/postgres/Migration20260509171036_initial.ts';
+import { Migration20260512120000_add_scheduler_jobs as PostgresSchedulerJobsMigration } from '../../migrations/postgres/Migration20260512120000_add_scheduler_jobs.ts';
 import { SQLITE_MIGRATIONS } from '../../migrations/sqlite/index.ts';
 import { Migration20260509171226_initial as SqliteInitialMigration } from '../../migrations/sqlite/Migration20260509171226_initial.ts';
+import { Migration20260512120000_add_scheduler_jobs as SqliteSchedulerJobsMigration } from '../../migrations/sqlite/Migration20260512120000_add_scheduler_jobs.ts';
 import { postgres } from './postgres/postgres.ts';
 import { sqlite } from './sqlite/sqlite.ts';
 
@@ -16,7 +18,10 @@ describe('database migrations', () => {
       user: 'tinyauth',
     }).getMikroOrmOptions();
 
-    expect(POSTGRES_MIGRATIONS).toEqual([PostgresInitialMigration]);
+    expect(POSTGRES_MIGRATIONS).toEqual([
+      PostgresInitialMigration,
+      PostgresSchedulerJobsMigration,
+    ]);
     expect(options.migrations?.migrationsList).toBe(POSTGRES_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
     expect(options.migrations?.pathTs).toBeUndefined();
@@ -47,7 +52,10 @@ describe('database migrations', () => {
       test: false,
     }).getMikroOrmOptions();
 
-    expect(SQLITE_MIGRATIONS).toEqual([SqliteInitialMigration]);
+    expect(SQLITE_MIGRATIONS).toEqual([
+      SqliteInitialMigration,
+      SqliteSchedulerJobsMigration,
+    ]);
     expect(options.migrations?.migrationsList).toBe(SQLITE_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
     expect(options.migrations?.pathTs).toBeUndefined();

@@ -52,11 +52,22 @@ export type {
 } from './resolved.ts';
 export { TinyAuthRuntimeConfigSchema } from './resolved.ts';
 export type {
+  BackgroundJobConfig,
+  EnqueueBackgroundJobOptions,
+  JobPayload,
+  JobRunContext,
+  ScheduledJobConfig,
   SchedulerConfig,
+  SchedulerConfigResolver,
   SchedulerHandle,
+  SchedulerRuntimeConfig,
+  SchedulerRuntimeContext,
   SchedulerStartOptions,
 } from './scheduler.ts';
-export { SchedulerConfigSchema } from './scheduler.ts';
+export {
+  isSchedulerConfigResolver,
+  SchedulerConfigSchema,
+} from './scheduler.ts';
 export type { SecurityConfig } from './security.ts';
 export { SecurityConfigSchema } from './security.ts';
 export type { ServerConfig } from './server.ts';

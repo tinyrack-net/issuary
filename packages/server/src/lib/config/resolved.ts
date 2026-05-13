@@ -44,9 +44,7 @@ export const TinyAuthRuntimeConfigSchema = z
       'Security and cryptographic settings.',
     ),
     cleanup: CleanupConfigSchema.describe('Data cleanup settings.'),
-    scheduler: SchedulerConfigSchema.describe(
-      'In-process cleanup scheduler adapter.',
-    ),
+    scheduler: SchedulerConfigSchema.describe('Cleanup scheduler adapter.'),
     terms: TermsConfigSchema.describe('Terms of service settings.'),
     clients: ClientConfigsSchema.describe(
       'Registered OAuth/OIDC client applications.',

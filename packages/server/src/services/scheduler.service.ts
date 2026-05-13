@@ -1,6 +1,14 @@
-import type { SchedulerConfig, SchedulerHandle } from '../lib/config/index.ts';
+import type {
+  BackgroundJobConfig,
+  JobPayload,
+  ScheduledJobConfig,
+  SchedulerConfig,
+  SchedulerHandle,
+} from '../lib/config/index.ts';
 import type { Logger } from '../lib/logger.ts';
 import type { CleanupService } from './cleanup.service.ts';
+
+const DEFAULT_CLEANUP_CRON = '0 2 * * *';
 
 export class SchedulerService {
   private readonly cleanupService: CleanupService;
@@ -31,16 +39,9 @@ export class SchedulerService {
     }
 
     const handle = await this.schedulerConfig.start({
-      runCleanup: async () => {
-        try {
-          await this.cleanupService.runAll({
-            dryRun: false,
-            verbose: false,
-          });
-        } catch (err) {
-          this.logger.error({ err }, 'Scheduled cleanup failed');
-        }
-      },
+      scheduledJobs: this.createScheduledJobs(),
+      backgroundJobs: this.createBackgroundJobs(),
+      logger: this.logger,
     });
 
     this.handle = handle;
@@ -69,5 +70,52 @@ export class SchedulerService {
 
   public getNextRunAt(): Date | null {
     return this.handle?.getNextRunAt?.() ?? null;
+  }
+
+  public async enqueue<TPayload extends JobPayload>(
+    jobId: string,
+    payload: TPayload,
+    options: { runAt?: Date | undefined } = {},
+  ): Promise<string> {
+    if (!this.handle) {
+      throw new Error('Scheduler is not running');
+    }
+    if (!this.handle.enqueue) {
+      throw new Error('Scheduler backend does not support background jobs');
+    }
+
+    return this.handle.enqueue({
+      jobId,
+      payload,
+      runAt: options.runAt,
+    });
+  }
+
+  private createScheduledJobs(): readonly ScheduledJobConfig[] {
+    return [
+      {
+        id: 'cleanup.run-all',
+        name: 'Run cleanup tasks',
+        schedule: {
+          type: 'cron',
+          expression: this.schedulerConfig?.cleanupCron ?? DEFAULT_CLEANUP_CRON,
+        },
+        handler: async () => {
+          try {
+            await this.cleanupService.runAll({
+              dryRun: false,
+              verbose: false,
+            });
+          } catch (err) {
+            this.logger.error({ err }, 'Scheduled cleanup failed');
+            throw err;
+          }
+        },
+      },
+    ];
+  }
+
+  private createBackgroundJobs(): readonly BackgroundJobConfig[] {
+    return [];
   }
 }

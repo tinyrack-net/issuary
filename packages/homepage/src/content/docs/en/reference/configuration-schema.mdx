@@ -77,6 +77,20 @@ Within each localized `content` item, `type` must be `link` or `text`.
 | `description` | `string` | `'OpenID Connect Provider API'` | OpenAPI document description. |
 | `ui_title` | `string` | `'TinyAuth API Reference'` | Browser page title for the live Scalar API reference UI. |
 
+## `scheduler`
+
+| Field | Type | Default | Description |
+|------|------|--------|------|
+| `enabled` | `boolean` | `true` | Enables the internal scheduler. |
+| `mode` | `'croner' \| 'database'` | `'croner'` | Scheduler backend. Use `database` for multi-instance lease-based execution. |
+| `cleanup_cron` | `string` | `'0 2 * * *'` | Cron expression for built-in cleanup jobs. |
+| `poll_interval_ms` | `number` | `5000` | Database scheduler polling interval in milliseconds. |
+| `lock_ttl_ms` | `number` | `60000` | Database scheduler lease TTL in milliseconds. |
+| `background_retry_delay_ms` | `number` | `1000` | Database scheduler retry delay for failed background jobs in milliseconds. |
+| `background_max_attempts` | `integer` | `3` | Database scheduler maximum attempts before a background job is marked failed. |
+| `background_retention_ms` | `number` | `604800000` | Retention for terminal background jobs (`succeeded`/`failed`) in milliseconds. Pending/running jobs are not deleted by this cleanup. |
+| `instance_id` | `string` | generated | Database scheduler lease owner id. Leave empty to generate a unique per-process id. |
+
 ## `frontend`
 
 | Field | Type | Default | Description |

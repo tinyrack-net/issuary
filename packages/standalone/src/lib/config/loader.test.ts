@@ -110,9 +110,23 @@ describe('resolveConfig', () => {
     if (!resolved.scheduler) {
       throw new Error('Expected scheduler to be defined');
     }
+    if (typeof resolved.scheduler === 'function') {
+      throw new Error('Expected direct scheduler adapter');
+    }
 
     const handle = await resolved.scheduler.start({
-      runCleanup: async () => {},
+      scheduledJobs: [
+        {
+          id: 'cleanup.run-all',
+          name: 'Run cleanup tasks',
+          schedule: {
+            type: 'cron',
+            expression: resolved.scheduler.cleanupCron ?? '',
+          },
+          handler: async () => {},
+        },
+      ],
+      backgroundJobs: [],
     });
 
     expect(handle.getNextRunAt?.()).toBeInstanceOf(Date);
@@ -128,6 +142,52 @@ describe('resolveConfig', () => {
     });
 
     expect(resolved.scheduler).toBeUndefined();
+  });
+
+  test('composes a database scheduler adapter from standalone config', async () => {
+    const resolved = await resolveConfig({
+      ...MINIMAL_CONFIG,
+      scheduler: {
+        enabled: true,
+        mode: 'database',
+        cleanup_cron: '* * * * *',
+        poll_interval_ms: '25',
+        lock_ttl_ms: '1000',
+        instance_id: 'standalone-test',
+      },
+    });
+
+    expect(resolved.scheduler).toBeDefined();
+    if (!resolved.scheduler) {
+      throw new Error('Expected scheduler to be defined');
+    }
+
+    expect(typeof resolved.scheduler).toBe('function');
+  });
+
+  test('rejects invalid standalone scheduler cron expressions', async () => {
+    await expect(
+      resolveConfig({
+        ...MINIMAL_CONFIG,
+        scheduler: {
+          enabled: true,
+          cleanup_cron: 'not a cron',
+        },
+      }),
+    ).rejects.toThrow('Invalid cron expression');
+  });
+
+  test('rejects invalid standalone scheduler background retention', async () => {
+    await expect(
+      resolveConfig({
+        ...MINIMAL_CONFIG,
+        scheduler: {
+          enabled: true,
+          mode: 'database',
+          background_retention_ms: '0',
+        },
+      }),
+    ).rejects.toThrow('background_retention_ms');
   });
 
   test('rejects password policy where max_length is less than min_length', async () => {

@@ -203,7 +203,14 @@ description: 전체 config.yaml 스키마 레퍼런스
 | 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
 |------|------|--------|-----------|------|
 | `enabled` | `boolean` | `true` | `SCHEDULER_ENABLED` | 내장 스케줄러 활성화 |
-| `cron` | `string` | `'0 2 * * *'` | `SCHEDULER_CRON` | cron 표현식 |
+| `mode` | `'croner' \| 'database'` | `'croner'` | `SCHEDULER_MODE` | 스케줄러 백엔드 |
+| `cleanup_cron` | `string` | `'0 2 * * *'` | `SCHEDULER_CLEANUP_CRON` | 정리 작업 cron 표현식 |
+| `poll_interval_ms` | `number` | `5000` | `SCHEDULER_POLL_INTERVAL_MS` | `database` 모드 polling 주기(ms) |
+| `lock_ttl_ms` | `number` | `60000` | `SCHEDULER_LOCK_TTL_MS` | `database` 모드 lease TTL(ms) |
+| `background_retry_delay_ms` | `number` | `1000` | `SCHEDULER_BACKGROUND_RETRY_DELAY_MS` | `database` 모드 background job 재시도 대기 시간(ms) |
+| `background_max_attempts` | `integer` | `3` | `SCHEDULER_BACKGROUND_MAX_ATTEMPTS` | `database` 모드 background job 최대 시도 횟수 |
+| `background_retention_ms` | `number` | `604800000` | `SCHEDULER_BACKGROUND_RETENTION_MS` | 완료된 background job(`succeeded`/`failed`) 보존 기간(ms). `pending`/`running` job은 삭제하지 않음 |
+| `instance_id` | `string` | 자동 생성 | `SCHEDULER_INSTANCE_ID` | `database` 모드 lease 소유자 식별자 |
 
 ## `cleanup`
 

@@ -100,6 +100,15 @@ export default defineConfig({
         ),
       },
       {
+        find: /^@tinyrack\/tinyauth-server\/scheduler\/database$/,
+        replacement: fileURLToPath(
+          new URL(
+            '../server/src/entrypoints/scheduler/database.ts',
+            import.meta.url,
+          ),
+        ),
+      },
+      {
         find: /^@tinyrack\/tinyauth-server\/frontend$/,
         replacement: fileURLToPath(
           new URL(

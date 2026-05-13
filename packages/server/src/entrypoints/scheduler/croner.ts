@@ -3,28 +3,56 @@ import type {
   SchedulerConfig,
   SchedulerHandle,
 } from '../../lib/config/index.ts';
+import { validateCronExpression } from './cron.ts';
 
 const DEFAULT_CRON = '0 2 * * *';
 
 export interface CronerSchedulerOptions {
-  cron?: string | undefined;
+  cleanupCron?: string | undefined;
 }
 
 export function croner(options: CronerSchedulerOptions = {}): SchedulerConfig {
-  const cron = options.cron ?? DEFAULT_CRON;
+  const cleanupCron = validateCronExpression(
+    options.cleanupCron ?? DEFAULT_CRON,
+  );
 
   return {
-    start({ runCleanup }) {
-      const job = new Cron(cron, async () => {
-        await runCleanup();
-      });
+    cleanupCron,
+    start({ scheduledJobs, logger }) {
+      const cronJobs = scheduledJobs.map(
+        (job) =>
+          new Cron(job.schedule.expression, async () => {
+            try {
+              await job.handler({ logger });
+            } catch (err) {
+              logger?.error({ err, jobId: job.id }, 'Scheduled job failed');
+            }
+          }),
+      );
 
       const handle: SchedulerHandle = {
         stop() {
-          job.stop();
+          for (const cronJob of cronJobs) {
+            cronJob.stop();
+          }
         },
         getNextRunAt() {
-          return job.nextRun() ?? null;
+          const nextRuns = cronJobs
+            .map((cronJob) => cronJob.nextRun() ?? null)
+            .filter((nextRun) => nextRun !== null);
+
+          return nextRuns.reduce<Date | null>((earliest, nextRun) => {
+            if (!earliest || nextRun.getTime() < earliest.getTime()) {
+              return nextRun;
+            }
+
+            return earliest;
+          }, null);
+        },
+        async enqueue() {
+          throw new Error(
+            'Background jobs require a durable scheduler backend',
+          );
         },
       };
 

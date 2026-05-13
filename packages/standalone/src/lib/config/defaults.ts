@@ -99,7 +99,23 @@ export const STANDALONE_CONFIG_DEFAULTS = {
 
   scheduler: {
     enabled: envDefault('TINYAUTH_SCHEDULER_ENABLED', 'true'),
-    cron: envDefault('TINYAUTH_SCHEDULER_CRON', '0 2 * * *'),
+    mode: envDefault('TINYAUTH_SCHEDULER_MODE', 'croner'),
+    cleanup_cron: envDefault('TINYAUTH_SCHEDULER_CLEANUP_CRON', '0 2 * * *'),
+    poll_interval_ms: envDefault('TINYAUTH_SCHEDULER_POLL_INTERVAL_MS', '5000'),
+    lock_ttl_ms: envDefault('TINYAUTH_SCHEDULER_LOCK_TTL_MS', '60000'),
+    background_retry_delay_ms: envDefault(
+      'TINYAUTH_SCHEDULER_BACKGROUND_RETRY_DELAY_MS',
+      '1000',
+    ),
+    background_max_attempts: envDefault(
+      'TINYAUTH_SCHEDULER_BACKGROUND_MAX_ATTEMPTS',
+      '3',
+    ),
+    background_retention_ms: envDefault(
+      'TINYAUTH_SCHEDULER_BACKGROUND_RETENTION_MS',
+      String(7 * 24 * 60 * 60 * 1000),
+    ),
+    instance_id: envDefault('TINYAUTH_SCHEDULER_INSTANCE_ID', ''),
   },
 
   cleanup: {

@@ -131,7 +131,19 @@ auth:
 
 scheduler:
   enabled: ${TINYAUTH_SCHEDULER_ENABLED:-true}
-  cron: ${TINYAUTH_SCHEDULER_CRON:-0 2 * * *}
+  mode: ${TINYAUTH_SCHEDULER_MODE:-croner}
+  cleanup_cron: ${TINYAUTH_SCHEDULER_CLEANUP_CRON:-0 2 * * *}
+  # Database scheduler mode only. Leave instance_id empty to generate a
+  # unique per-process id automatically; if set manually, it must be unique
+  # for every replica/process that runs the scheduler.
+  poll_interval_ms: ${TINYAUTH_SCHEDULER_POLL_INTERVAL_MS:-5000}
+  lock_ttl_ms: ${TINYAUTH_SCHEDULER_LOCK_TTL_MS:-60000}
+  background_retry_delay_ms: ${TINYAUTH_SCHEDULER_BACKGROUND_RETRY_DELAY_MS:-1000}
+  background_max_attempts: ${TINYAUTH_SCHEDULER_BACKGROUND_MAX_ATTEMPTS:-3}
+  # Retains terminal background jobs (succeeded/failed) for 7 days by default.
+  # Pending/running jobs are never deleted by this retention cleanup.
+  background_retention_ms: ${TINYAUTH_SCHEDULER_BACKGROUND_RETENTION_MS:-604800000}
+  instance_id: ${TINYAUTH_SCHEDULER_INSTANCE_ID:-}
 
 cleanup:
   revoked_tokens:

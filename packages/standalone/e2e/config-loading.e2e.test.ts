@@ -71,7 +71,7 @@ describe('config combinations', { timeout: 30_000 }, () => {
 
   it('starts with scheduler enabled', async () => {
     const { configPath, port, cleanup } = await createTestConfigFile({
-      scheduler: { enabled: true, cron: '0 3 * * *' },
+      scheduler: { enabled: true, cleanup_cron: '0 3 * * *' },
     });
     configCleanup = cleanup;
 
