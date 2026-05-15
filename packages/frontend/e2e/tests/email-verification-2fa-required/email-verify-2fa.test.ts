@@ -5,13 +5,13 @@ import {
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import { getEmailToken } from '#frontend-e2e/helpers/email-token.ts';
+import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
 import { performLogin } from '#frontend-e2e/helpers/login.ts';
 import { performRegister } from '#frontend-e2e/helpers/register-page.ts';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
 function uniqueEmail(suffix: string): string {
-  const ts = Date.now();
-  return `email-verify-2fa-${suffix}-${ts}@example.com`;
+  return createUniqueEmail(test.info(), `email-verify-2fa-${suffix}`);
 }
 
 const TEST_PASSWORD = 'test-password-123';

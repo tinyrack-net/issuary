@@ -7,6 +7,7 @@ export interface AppleOAuthConfig {
   icon_url?: string | undefined;
   client_id: string;
   client_secret: string;
+  unsafe_jwks_url_for_tests?: string | undefined;
   scopes?: string[] | undefined;
   response_mode?: 'query' | 'fragment' | 'form_post' | undefined;
   email_conflict_strategy: 'auto_link' | 'require_link';
@@ -24,6 +25,7 @@ export function apple(config: AppleOAuthConfig): IdentityProviderConfig {
     authorization_url: 'https://appleid.apple.com/auth/authorize',
     token_url: 'https://appleid.apple.com/auth/token',
     userinfo_url: null,
+    jwks_url: config.unsafe_jwks_url_for_tests,
     scopes: config.scopes || ['openid', 'email', 'name'],
     response_mode: config.response_mode || 'form_post',
     email_conflict_strategy: config.email_conflict_strategy,

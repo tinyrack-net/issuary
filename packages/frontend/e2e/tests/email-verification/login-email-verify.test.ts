@@ -5,6 +5,7 @@ import {
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import { getEmailToken } from '#frontend-e2e/helpers/email-token.ts';
+import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
 import { emailVerifyPage, performLogin } from '#frontend-e2e/helpers/login.ts';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
@@ -12,8 +13,7 @@ import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
  * Generates a unique test email for each test to avoid collisions.
  */
 function uniqueEmail(suffix: string): string {
-  const ts = Date.now();
-  return `email-verify-${suffix}-${ts}@example.com`;
+  return createUniqueEmail(test.info(), `email-verify-${suffix}`);
 }
 
 const TEST_PASSWORD = 'test-password-123';

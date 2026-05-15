@@ -27,6 +27,7 @@ export function sqlite(database: SqliteDatabaseConfig): DatabaseConfig {
         extensions: [SeedManager, Migrator],
         migrations: {
           migrationsList: SQLITE_MIGRATIONS,
+          snapshot: false,
         },
         debug: database.debug ?? false,
       });

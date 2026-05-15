@@ -103,6 +103,14 @@ export const f = {
     .string()
     .min(1)
     .max(2000)
+    .refine(
+      (value) =>
+        value.startsWith('/') &&
+        !value.startsWith('//') &&
+        !value.includes('\r') &&
+        !value.includes('\n'),
+      { message: 'Return URL must be a local path' },
+    )
     .describe('Return URL or path to redirect after completion'),
 
   // i18n fields

@@ -1,7 +1,10 @@
 import { testClient } from 'hono/testing';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { OAuthClientEntitySchema } from '../../entities/oauth-client.entity.ts';
+import { UserEntity } from '../../entities/user.entity.ts';
 import type { AppType } from '../../entrypoints/app.ts';
+import type { ServiceContainer } from '../../services/container.ts';
 import {
   assertDefined,
   assertJsonBody,
@@ -22,10 +25,11 @@ import {
 } from '../../test-utils/index.ts';
 
 let app: AppType;
+let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  ({ app, cleanup } = await createTestApp({
+  ({ app, services, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
     clients: [TEST_OAUTH_CLIENT_CONFIG],
@@ -35,6 +39,40 @@ beforeAll(async () => {
 afterAll(async () => {
   await cleanup();
 });
+
+async function issueRefreshableTokens() {
+  const sessionCookie = await createAuthenticatedSession(app);
+  const { code } = await getAuthorizationCode(app, {
+    sessionCookie,
+    codeChallenge: TEST_PKCE.codeChallenge,
+    codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
+  });
+
+  const tokenRes = await exchangeCodeForTokens(app, {
+    code,
+    codeVerifier: TEST_PKCE.codeVerifier,
+  });
+
+  return assertJsonBody(tokenRes, 200);
+}
+
+async function setTestUserDeletedAt(deletedAt: Date | null) {
+  const em = services.mikro.em.fork();
+  await em.nativeUpdate(
+    UserEntity,
+    { sub: TEST_USER_CONFIG.sub },
+    { deleted_at: deletedAt },
+  );
+}
+
+async function setTestClientEnabled(enabled: boolean) {
+  const em = services.mikro.em.fork();
+  await em.nativeUpdate(
+    OAuthClientEntitySchema,
+    { clientId: TEST_OAUTH_CLIENT.clientId },
+    { enabled },
+  );
+}
 
 /**
  * Token Lifecycle and Rotation Tests
@@ -475,6 +513,88 @@ describe('Token Lifecycle and Rotation', () => {
   });
 
   describe('Concurrent Refresh Handling', () => {
+    test('should allow only one concurrent refresh request to consume a token', async () => {
+      const tokens = await issueRefreshableTokens();
+
+      const refreshResults = await Promise.all(
+        Array.from({ length: 3 }, () =>
+          refreshAccessToken(app, {
+            refreshToken: tokens.refresh_token,
+          }),
+        ),
+      );
+
+      const successCount = refreshResults.filter(
+        (result) => result.status === 200,
+      ).length;
+      const rejectedResults = refreshResults.filter(
+        (result) => result.status !== 200,
+      );
+
+      expect(successCount).toBe(1);
+      expect(rejectedResults).toHaveLength(2);
+
+      for (const result of rejectedResults) {
+        const json = await assertJsonBody(result, 400);
+        expect(json.code).toBe('INVALID_REFRESH_TOKEN');
+      }
+    });
+
+    test('documents replay policy without invalidating the current descendant refresh token', async () => {
+      const tokens = await issueRefreshableTokens();
+
+      const firstRefresh = await refreshAccessToken(app, {
+        refreshToken: tokens.refresh_token,
+      });
+      const rotatedTokens = await assertJsonBody(firstRefresh, 200);
+
+      const replayRes = await refreshAccessToken(app, {
+        refreshToken: tokens.refresh_token,
+      });
+      const replayJson = await assertJsonBody(replayRes, 400);
+      expect(replayJson.code).toBe('INVALID_REFRESH_TOKEN');
+
+      const descendantRefresh = await refreshAccessToken(app, {
+        refreshToken: rotatedTokens.refresh_token,
+      });
+
+      expect(descendantRefresh.status).toBe(200);
+    });
+
+    test('should reject refresh token after user deletion', async () => {
+      const tokens = await issueRefreshableTokens();
+
+      await setTestUserDeletedAt(new Date());
+
+      try {
+        const refreshRes = await refreshAccessToken(app, {
+          refreshToken: tokens.refresh_token,
+        });
+
+        const json = await assertJsonBody(refreshRes, 400);
+        expect(json.code).toBe('INVALID_REFRESH_TOKEN');
+      } finally {
+        await setTestUserDeletedAt(null);
+      }
+    });
+
+    test('should reject refresh token after client is disabled', async () => {
+      const tokens = await issueRefreshableTokens();
+
+      await setTestClientEnabled(false);
+
+      try {
+        const refreshRes = await refreshAccessToken(app, {
+          refreshToken: tokens.refresh_token,
+        });
+
+        const json = await assertJsonBody(refreshRes, 400);
+        expect(json.code).toBe('OAUTH_CLIENT_DISABLED');
+      } finally {
+        await setTestClientEnabled(true);
+      }
+    });
+
     test('should handle concurrent refresh attempts with rotation', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {

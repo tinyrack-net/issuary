@@ -21,11 +21,47 @@ let app: AppType;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
+const QUERY_REDIRECT_CLIENT = {
+  clientId: 'query-redirect-client',
+  clientSecret: 'query-redirect-client-secret',
+  redirectUri: 'http://example.com/callback?tenant=alpha',
+};
+
+const QUERY_REDIRECT_CLIENT_CONFIG = {
+  id: 'query-redirect-client-config',
+  name: 'Query Redirect Client',
+  client_id: QUERY_REDIRECT_CLIENT.clientId,
+  client_secret: QUERY_REDIRECT_CLIENT.clientSecret,
+  redirect_uris: [QUERY_REDIRECT_CLIENT.redirectUri],
+  response_types: ['code'],
+  grant_types: ['authorization_code'],
+  scope: 'openid profile email',
+};
+
+const PUBLIC_OAUTH_CLIENT = {
+  clientId: 'authorize-public-pkce-client',
+  redirectUri: 'http://localhost:8080/authorize-public-callback',
+};
+
+const PUBLIC_OAUTH_CLIENT_CONFIG = {
+  id: 'authorize-public-pkce-client-config',
+  name: 'Authorize Public PKCE Client',
+  client_id: PUBLIC_OAUTH_CLIENT.clientId,
+  redirect_uris: [PUBLIC_OAUTH_CLIENT.redirectUri],
+  response_types: ['code'],
+  grant_types: ['authorization_code'],
+  scope: 'openid profile email',
+};
+
 beforeAll(async () => {
   ({ app, services, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
-    clients: [TEST_OAUTH_CLIENT_CONFIG],
+    clients: [
+      TEST_OAUTH_CLIENT_CONFIG,
+      QUERY_REDIRECT_CLIENT_CONFIG,
+      PUBLIC_OAUTH_CLIENT_CONFIG,
+    ],
   }));
 });
 
@@ -315,6 +351,110 @@ describe('GET /oauth/authorize', () => {
   });
 
   describe('Redirect URI Validation', () => {
+    test('should reject redirect_uri with fragment', async () => {
+      const client = testClient(app);
+      const res = await client.oauth.authorize.$get({
+        query: {
+          ...validParams,
+          redirect_uri: `${TEST_OAUTH_CLIENT.redirectUri}#access_token=leak`,
+        },
+      });
+
+      const body = await assertJsonBody(res, 400);
+      expect(res.headers.get('location')).toBeNull();
+      expect(body.error).toBe('invalid_request');
+      expect(body.error_description).toContain('redirect URI');
+    });
+
+    test('should reject redirect_uri with userinfo component', async () => {
+      const client = testClient(app);
+      const res = await client.oauth.authorize.$get({
+        query: {
+          ...validParams,
+          redirect_uri: 'http://attacker@localhost:8080/callback',
+        },
+      });
+
+      const body = await assertJsonBody(res, 400);
+      expect(res.headers.get('location')).toBeNull();
+      expect(body.error).toBe('invalid_request');
+      expect(body.error_description).toContain('redirect URI');
+    });
+
+    test('should reject default-port normalization mismatch', async () => {
+      const client = testClient(app);
+      const res = await client.oauth.authorize.$get({
+        query: {
+          ...validParams,
+          client_id: QUERY_REDIRECT_CLIENT.clientId,
+          redirect_uri: 'http://example.com:80/callback?tenant=alpha',
+        },
+      });
+
+      const body = await assertJsonBody(res, 400);
+      expect(res.headers.get('location')).toBeNull();
+      expect(body.error).toBe('invalid_request');
+      expect(body.error_description).toContain('redirect URI');
+    });
+
+    test('should reject percent-encoded path mismatch', async () => {
+      const client = testClient(app);
+      const res = await client.oauth.authorize.$get({
+        query: {
+          ...validParams,
+          redirect_uri: 'http://localhost:8080/%63allback',
+        },
+      });
+
+      const body = await assertJsonBody(res, 400);
+      expect(res.headers.get('location')).toBeNull();
+      expect(body.error).toBe('invalid_request');
+      expect(body.error_description).toContain('redirect URI');
+    });
+
+    test('should reject duplicate query parameter ambiguity', async () => {
+      const client = testClient(app);
+      const res = await client.oauth.authorize.$get({
+        query: {
+          ...validParams,
+          client_id: QUERY_REDIRECT_CLIENT.clientId,
+          redirect_uri:
+            'http://example.com/callback?tenant=alpha&tenant=attacker',
+        },
+      });
+
+      const body = await assertJsonBody(res, 400);
+      expect(res.headers.get('location')).toBeNull();
+      expect(body.error).toBe('invalid_request');
+      expect(body.error_description).toContain('redirect URI');
+    });
+
+    test('should preserve exact registered redirect_uri query string', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const params = {
+        ...validParams,
+        client_id: QUERY_REDIRECT_CLIENT.clientId,
+        redirect_uri: QUERY_REDIRECT_CLIENT.redirectUri,
+        scope: 'openid',
+        state: 'query-redirect-state',
+      };
+
+      await grantConsent(app, sessionCookie, params);
+
+      const { code, location, statusCode } = await getAuthorizationCode(
+        params,
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      expect(code).toBeDefined();
+      expect(location.origin + location.pathname).toBe(
+        'http://example.com/callback',
+      );
+      expect(location.searchParams.get('tenant')).toBe('alpha');
+      expect(location.searchParams.get('state')).toBe('query-redirect-state');
+    });
+
     test('should return 400 for unregistered redirect_uri', async () => {
       const client = testClient(app);
       const res = await client.oauth.authorize.$get({
@@ -504,6 +644,58 @@ describe('GET /oauth/authorize', () => {
 
       const { code, statusCode } = await getAuthorizationCodeWithConsent(
         validParams,
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      expect(code).toBeDefined();
+    });
+
+    test('should reject public client authorization without code_challenge', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+
+      const { location, statusCode } = await getAuthorizationCodeWithConsent(
+        {
+          ...validParams,
+          client_id: PUBLIC_OAUTH_CLIENT.clientId,
+          redirect_uri: PUBLIC_OAUTH_CLIENT.redirectUri,
+        },
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      expectRedirectError(location, 'invalid_request');
+    });
+
+    test('should reject public client authorization with plain code_challenge_method', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+
+      const { location, statusCode } = await getAuthorizationCodeWithConsent(
+        {
+          ...validParams,
+          client_id: PUBLIC_OAUTH_CLIENT.clientId,
+          redirect_uri: PUBLIC_OAUTH_CLIENT.redirectUri,
+          code_challenge: 'plain-challenge',
+          code_challenge_method: 'plain',
+        },
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      expectRedirectError(location, 'invalid_request');
+    });
+
+    test('should allow public client authorization with S256 code_challenge_method', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+
+      const { code, statusCode } = await getAuthorizationCodeWithConsent(
+        {
+          ...validParams,
+          client_id: PUBLIC_OAUTH_CLIENT.clientId,
+          redirect_uri: PUBLIC_OAUTH_CLIENT.redirectUri,
+          code_challenge: TEST_PKCE.codeChallenge,
+          code_challenge_method: 'S256',
+        },
         sessionCookie,
       );
 

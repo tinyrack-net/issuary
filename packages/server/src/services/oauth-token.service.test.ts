@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import {
   createTestApp,
+  createTestOAuthClient,
+  createTestUser,
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '../test-utils/index.ts';
@@ -12,6 +14,8 @@ describe('OAuthTokenService', () => {
     let cleanup: () => Promise<void>;
     let accessToken: string;
     let refreshToken: string;
+    let tokenSubject: string;
+    const tokenClientId = 'client-introspect';
 
     beforeAll(async () => {
       const server = await createTestApp({
@@ -22,20 +26,22 @@ describe('OAuthTokenService', () => {
       });
       services = server.services;
       cleanup = server.cleanup;
+      tokenSubject = await createTestUser(services);
+      await createTestOAuthClient(services, { clientId: tokenClientId });
 
       // Sign test tokens once for all introspection tests
       await withMikroContext(services, async () => {
         accessToken = await services.jwtService.signAccessToken({
           typ: 'access_token',
-          sub: 'user-introspect',
-          client_id: 'client-introspect',
+          sub: tokenSubject,
+          client_id: tokenClientId,
           scope: 'openid email',
         });
 
         refreshToken = await services.jwtService.signRefreshToken({
           typ: 'refresh_token',
-          sub: 'user-introspect',
-          client_id: 'client-introspect',
+          sub: tokenSubject,
+          client_id: tokenClientId,
           scope: 'openid email',
         });
       });
@@ -54,9 +60,9 @@ describe('OAuthTokenService', () => {
 
         expect(result.active).toBe(true);
         expect(result.scope).toBe('openid email');
-        expect(result.client_id).toBe('client-introspect');
+        expect(result.client_id).toBe(tokenClientId);
         expect(result.token_type).toBe('Bearer');
-        expect(result.sub).toBe('user-introspect');
+        expect(result.sub).toBe(tokenSubject);
         expect(result.iss).toBe('https://auth.test.com');
         expect(result.exp).toBeDefined();
         expect(result.iat).toBeDefined();
@@ -72,8 +78,8 @@ describe('OAuthTokenService', () => {
 
         expect(result.active).toBe(true);
         expect(result.scope).toBe('openid email');
-        expect(result.client_id).toBe('client-introspect');
-        expect(result.sub).toBe('user-introspect');
+        expect(result.client_id).toBe(tokenClientId);
+        expect(result.sub).toBe(tokenSubject);
       });
     });
 
@@ -87,7 +93,7 @@ describe('OAuthTokenService', () => {
         );
 
         expect(result.active).toBe(true);
-        expect(result.sub).toBe('user-introspect');
+        expect(result.sub).toBe(tokenSubject);
       });
     });
 
@@ -101,7 +107,7 @@ describe('OAuthTokenService', () => {
         );
 
         expect(result.active).toBe(true);
-        expect(result.sub).toBe('user-introspect');
+        expect(result.sub).toBe(tokenSubject);
       });
     });
 
@@ -111,7 +117,7 @@ describe('OAuthTokenService', () => {
           await services.oauthTokenService.introspectToken(accessToken);
 
         expect(result.active).toBe(true);
-        expect(result.sub).toBe('user-introspect');
+        expect(result.sub).toBe(tokenSubject);
       });
     });
 

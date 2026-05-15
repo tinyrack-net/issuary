@@ -135,6 +135,14 @@ const StandaloneGenericIdentityProviderConfigSchema = z
     authorization_url: z.url().describe('OAuth authorization endpoint URL.'),
     token_url: z.url().describe('OAuth token endpoint URL.'),
     userinfo_url: z.url().nullish().describe('OAuth userinfo endpoint URL.'),
+    jwks_url: z
+      .url()
+      .optional()
+      .describe('JWKS endpoint URL for providers that verify ID tokens.'),
+    issuer: z
+      .url()
+      .optional()
+      .describe('Expected issuer for ID tokens verified with JWKS.'),
     email_url: z
       .url()
       .optional()
@@ -183,6 +191,20 @@ const StandaloneGenericIdentityProviderConfigSchema = z
       })
       .strict()
       .describe('Mapping of userinfo response fields to user attributes.'),
+  })
+  .superRefine((provider, ctx) => {
+    if (
+      provider.userinfo_url == null &&
+      provider.jwks_url &&
+      !provider.issuer
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['issuer'],
+        message:
+          'Issuer is required for generic ID-token-only providers with JWKS.',
+      });
+    }
   })
   .strict()
   .describe('Generic OAuth identity provider configuration.');

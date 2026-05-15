@@ -114,6 +114,12 @@ async function startOAuthFlow(
   return { sessionCookie: cookie, state };
 }
 
+function expectOAuthSessionCleared(res: Response): void {
+  const setCookie = res.headers.get('set-cookie');
+  expect(setCookie).toContain('session=');
+  expect(setCookie).toContain('Max-Age=0');
+}
+
 describe('GET /api/oauth/:provider/callback', () => {
   describe('Success Flows', () => {
     test('should complete login mode callback and create authenticated session', async () => {
@@ -420,6 +426,25 @@ describe('GET /api/oauth/:provider/callback', () => {
       await expectError(res, e.OAuthStateMismatch);
     });
 
+    test('should clear OAuth session when state does not match', async () => {
+      const { sessionCookie } = await startOAuthFlow('google');
+
+      const client = testClient(app);
+      const res = await client.api.oauth[':provider'].callback.$get(
+        {
+          param: { provider: 'google' },
+          query: {
+            code: 'test-code',
+            state: 'wrong-state-value',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      await expectError(res, e.OAuthStateMismatch);
+      expectOAuthSessionCleared(res);
+    });
+
     test('should return error when state is empty', async () => {
       const { sessionCookie } = await startOAuthFlow('google');
 
@@ -574,6 +599,30 @@ describe('GET /api/oauth/:provider/callback', () => {
 
       expect(res.status).toBe(502);
       await expectError(res, e.OAuthTokenExchangeFailed);
+      exchangeSpy.mockRestore();
+    });
+
+    test('should clear OAuth session when token exchange fails', async () => {
+      const { sessionCookie, state } = await startOAuthFlow('google');
+
+      const exchangeSpy = vi
+        .spyOn(services.oauthConnectService, 'exchangeCodeForTokens')
+        .mockRejectedValueOnce(new e.OAuthTokenExchangeFailed.Error());
+
+      const client = testClient(app);
+      const res = await client.api.oauth[':provider'].callback.$get(
+        {
+          param: { provider: 'google' },
+          query: {
+            code: 'invalid-authorization-code',
+            state,
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      await expectError(res, e.OAuthTokenExchangeFailed);
+      expectOAuthSessionCleared(res);
       exchangeSpy.mockRestore();
     });
   });

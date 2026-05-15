@@ -1,3 +1,4 @@
+import { createSign, generateKeyPairSync } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import { createServer as createNetServer } from 'node:net';
 import { serve } from '@hono/node-server';
@@ -8,13 +9,11 @@ import type { E2EConfigInput } from '#frontend-e2e/fixtures/index.ts';
 import { resolveTestEmailConfig } from '#frontend-e2e/setup/resolve-test-email.ts';
 
 const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
+const APPLE_STUB_KEY_ID = 'tinyauth-e2e-apple-stub-key';
 
 export type TestHonoApp = Awaited<ReturnType<typeof createE2EServer>>['app'];
 
-/**
- * Base64url encode a string (no padding).
- */
-function base64url(input: string): string {
+function base64url(input: string | Buffer): string {
   return Buffer.from(input)
     .toString('base64')
     .replace(/\+/g, '-')
@@ -22,15 +21,58 @@ function base64url(input: string): string {
     .replace(/=+$/, '');
 }
 
-/**
- * Create an unsigned JWT (alg: "none") with the given claims.
- * Used to simulate Apple-style ID tokens in OAuth stubs.
- * The backend's decodeJwt() decodes without signature verification.
- */
-function createUnsignedJwt(claims: Record<string, unknown>): string {
-  const header = base64url(JSON.stringify({ alg: 'none', typ: 'JWT' }));
-  const payload = base64url(JSON.stringify(claims));
-  return `${header}.${payload}.`;
+function createAppleStubKeys() {
+  const { privateKey, publicKey } = generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+  });
+  const publicJwk = publicKey.export({ format: 'jwk' });
+
+  return {
+    privateKey,
+    jwks: {
+      keys: [
+        {
+          ...publicJwk,
+          alg: 'RS256',
+          kid: APPLE_STUB_KEY_ID,
+          use: 'sig',
+        },
+      ],
+    },
+  };
+}
+
+let appleStubKeys: ReturnType<typeof createAppleStubKeys> | undefined;
+
+function getAppleStubKeys() {
+  appleStubKeys ??= createAppleStubKeys();
+  return appleStubKeys;
+}
+
+function createAppleStubIdToken(provider: string): string {
+  const { privateKey } = getAppleStubKeys();
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64url(
+    JSON.stringify({ alg: 'RS256', kid: APPLE_STUB_KEY_ID, typ: 'JWT' }),
+  );
+  const payload = base64url(
+    JSON.stringify({
+      aud: `${provider}-client-id`,
+      email: `oauth-${provider}@allowed.test`,
+      email_verified: true,
+      exp: now + 3600,
+      iat: now,
+      iss: 'https://appleid.apple.com',
+      sub: `oauth-${provider}`,
+    }),
+  );
+  const signingInput = `${header}.${payload}`;
+  const signature = createSign('RSA-SHA256')
+    .update(signingInput)
+    .end()
+    .sign(privateKey);
+
+  return `${signingInput}.${base64url(signature)}`;
 }
 
 /**
@@ -62,11 +104,8 @@ function getOAuthStubProfile(provider: string): Record<string, unknown> {
     };
   }
 
-  // Apple-style: should not reach userinfo endpoint
   if (provider.startsWith('apple-stub')) {
-    throw new Error(
-      `Apple stub '${provider}' should not call userinfo endpoint`,
-    );
+    throw new Error('Apple OAuth stubs must use ID tokens, not userinfo');
   }
 
   return {
@@ -455,15 +494,19 @@ export async function createE2EServer(configFactory: ConfigFactory) {
 
       // Apple-style: include id_token with user claims
       if (provider.startsWith('apple-stub')) {
-        tokenResponse['id_token'] = createUnsignedJwt({
-          iss: 'https://appleid.apple.com',
-          sub: `oauth-${provider}`,
-          email: `oauth-${provider}@allowed.test`,
-          email_verified: true,
-        });
+        tokenResponse['id_token'] = createAppleStubIdToken(provider);
       }
 
       return c.json(tokenResponse);
+    })
+    .get('/test/oauth-stub/:provider/jwks', async (c) => {
+      const provider = c.req.param('provider');
+
+      if (!provider.startsWith('apple-stub')) {
+        return c.json({ error: 'JWKS not available for provider' }, 404);
+      }
+
+      return c.json(getAppleStubKeys().jwks);
     })
     .get('/test/oauth-stub/:provider/userinfo', async (c) => {
       const provider = c.req.param('provider');

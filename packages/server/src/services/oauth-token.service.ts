@@ -166,6 +166,12 @@ export class OAuthTokenService {
 
     // 5. Validate PKCE if code_challenge was used (RFC 7636 §4.6)
     // PKCE protects against authorization code interception for public clients
+    const isPublicClient =
+      await this.oauthClientService.isPublicClient(clientId);
+    if (isPublicClient && !codeEntity.codeChallenge) {
+      throw new e.InvalidPKCEVerifier.Error();
+    }
+
     if (codeEntity.codeChallenge) {
       if (!codeVerifier) {
         throw new e.MissingCodeVerifier.Error();
@@ -278,6 +284,7 @@ export class OAuthTokenService {
   async introspectToken(
     token: string,
     tokenTypeHint?: 'access_token' | 'refresh_token',
+    requestingClientId?: string,
   ): Promise<TokenIntrospectionResult> {
     // Try to verify the token based on hint or both types
     let payload: AccessTokenPayload | RefreshTokenPayload | null = null;
@@ -327,6 +334,10 @@ export class OAuthTokenService {
 
     // 3. If verification succeeded, return active response
     if (payload && tokenType) {
+      if (requestingClientId && payload.client_id !== requestingClientId) {
+        return { active: false };
+      }
+
       return {
         active: true,
         scope: payload.scope,
@@ -363,33 +374,29 @@ export class OAuthTokenService {
   async revokeToken(
     token: string,
     tokenTypeHint?: 'access_token' | 'refresh_token',
+    requestingClientId?: string,
   ): Promise<void> {
-    // Decode the token to get metadata (without full verification)
-    const decoded = this.jwtService.decodeToken(token);
+    const verification = await this.verifyTokenForRevocation(
+      token,
+      tokenTypeHint,
+    );
 
-    if (!decoded?.jti || !decoded.sub || !decoded.exp) {
-      // RFC 7009 §2.1: "The authorization server responds with HTTP status
-      // code 200 if the token has been revoked successfully or if the client
-      // submitted an invalid token."
+    if (!verification) {
       return;
     }
 
-    const jti = decoded.jti;
-    const userSub = decoded.sub;
-    const rawClientId = decoded['client_id'];
-    const clientId = typeof rawClientId === 'string' ? rawClientId : undefined;
-    const rawTyp = decoded['typ'];
-    const tokenType =
-      (rawTyp === 'access_token' || rawTyp === 'refresh_token'
-        ? rawTyp
-        : undefined) ||
-      tokenTypeHint ||
-      'access_token';
-    const expiresAt = new Date(decoded.exp * 1000);
+    const { payload, tokenType } = verification;
 
-    if (!clientId) {
+    if (requestingClientId && payload.client_id !== requestingClientId) {
       return;
     }
+
+    const { jti, exp } = payload;
+    if (!jti || !exp) {
+      return;
+    }
+
+    const expiresAt = new Date(exp * 1000);
 
     // Check if already revoked
     const isAlreadyRevoked = await this.mikro.revokedToken.isRevoked(jti);
@@ -399,8 +406,10 @@ export class OAuthTokenService {
 
     // Look up user and client entities to get primary keys
     // Note: clientId from token is the business key, we need the entity's primary key
-    const userEntity = await this.mikro.user.findOne({ sub: userSub });
-    const clientEntity = await this.mikro.oauthClient.findOne({ clientId });
+    const userEntity = await this.mikro.user.findOne({ sub: payload.sub });
+    const clientEntity = await this.mikro.oauthClient.findOne({
+      clientId: payload.client_id,
+    });
 
     if (!userEntity || !clientEntity) {
       // User or client no longer exists, but we still return success per RFC 7009
@@ -424,6 +433,47 @@ export class OAuthTokenService {
     // Since we can't enumerate all access tokens issued for this refresh token,
     // the revocation check happens at token verification time via jti lookup.
     // Access tokens will be rejected when their jti is in the revoked_tokens table.
+  }
+
+  private async verifyTokenForRevocation(
+    token: string,
+    tokenTypeHint?: 'access_token' | 'refresh_token',
+  ): Promise<
+    | {
+        payload: AccessTokenPayload | RefreshTokenPayload;
+        tokenType: 'access_token' | 'refresh_token';
+      }
+    | undefined
+  > {
+    const verifyAccessToken = async (): Promise<{
+      payload: AccessTokenPayload;
+      tokenType: 'access_token';
+    }> => ({
+      payload: await this.jwtService.verifyAccessToken(token),
+      tokenType: 'access_token',
+    });
+    const verifyRefreshToken = async (): Promise<{
+      payload: RefreshTokenPayload;
+      tokenType: 'refresh_token';
+    }> => ({
+      payload: await this.jwtService.verifyRefreshToken(token),
+      tokenType: 'refresh_token',
+    });
+
+    const attempts =
+      tokenTypeHint === 'refresh_token'
+        ? [verifyRefreshToken, verifyAccessToken]
+        : [verifyAccessToken, verifyRefreshToken];
+
+    for (const attempt of attempts) {
+      try {
+        return await attempt();
+      } catch {
+        // RFC 7009 returns success for invalid, unknown, or already revoked tokens.
+      }
+    }
+
+    return undefined;
   }
 
   /**

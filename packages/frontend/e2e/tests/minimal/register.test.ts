@@ -4,6 +4,7 @@ import {
   createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
+import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
 import {
   performRegister,
   registerPage,
@@ -23,8 +24,7 @@ const test = createScenarioFixture((backendPort) => ({
  * Generates a unique test email for each test to avoid collisions.
  */
 function uniqueEmail(suffix: string): string {
-  const ts = Date.now();
-  return `register-minimal-${suffix}-${ts}@example.com`;
+  return createUniqueEmail(test.info(), `register-minimal-${suffix}`);
 }
 
 const TEST_PASSWORD = 'test-password-123';

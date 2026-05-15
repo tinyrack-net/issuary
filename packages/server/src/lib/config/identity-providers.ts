@@ -1,5 +1,35 @@
 import z from 'zod';
 
+const JwksUrlSchema = z
+  .string()
+  .url()
+  .refine(
+    (value) => {
+      try {
+        const { hostname, protocol } = new URL(value);
+
+        if (protocol === 'https:') {
+          return true;
+        }
+
+        return protocol === 'http:' && isLocalHttpHostname(hostname);
+      } catch {
+        return false;
+      }
+    },
+    { message: 'JWKS URL must use HTTPS or local HTTP.' },
+  );
+
+function isLocalHttpHostname(hostname: string): boolean {
+  return (
+    hostname === 'localhost' ||
+    hostname.endsWith('.localhost') ||
+    hostname === '127.0.0.1' ||
+    hostname === '[::1]' ||
+    hostname === '::1'
+  );
+}
+
 const UserinfoMappingConfigSchema = z
   .object({
     id: z
@@ -50,6 +80,14 @@ export const IdentityProviderConfigSchema = z
       .string()
       .nullable()
       .describe('OAuth userinfo endpoint URL.'),
+    jwks_url: JwksUrlSchema.optional().describe(
+      'JWKS endpoint URL for providers that verify ID tokens.',
+    ),
+    issuer: z
+      .string()
+      .url()
+      .optional()
+      .describe('Expected issuer for ID tokens verified with JWKS.'),
     email_url: z
       .string()
       .optional()
@@ -68,6 +106,21 @@ export const IdentityProviderConfigSchema = z
           '"auto_link" links automatically, "require_link" requires user confirmation.',
       ),
     userinfo_mapping: UserinfoMappingConfigSchema,
+  })
+  .superRefine((provider, ctx) => {
+    if (
+      provider.type === 'generic_oauth' &&
+      provider.userinfo_url === null &&
+      provider.jwks_url &&
+      !provider.issuer
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['issuer'],
+        message:
+          'Issuer is required for generic ID-token-only providers with JWKS.',
+      });
+    }
   })
   .strict()
   .describe('Resolved identity provider configuration.');

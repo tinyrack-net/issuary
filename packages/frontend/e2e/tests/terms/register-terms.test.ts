@@ -4,6 +4,7 @@ import {
   createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
+import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
 import { registerPage } from '#frontend-e2e/helpers/register-page.ts';
 
 const TERMS_CONFIG = [
@@ -53,8 +54,11 @@ const test = createScenarioFixture((backendPort) => ({
  * Generates a unique test email with the allowed domain.
  */
 function allowedEmail(suffix: string): string {
-  const ts = Date.now();
-  return `register-terms-${suffix}-${ts}@allowed.com`;
+  return createUniqueEmail(
+    test.info(),
+    `register-terms-${suffix}`,
+    'allowed.com',
+  );
 }
 
 const TEST_PASSWORD = 'test-password-123';

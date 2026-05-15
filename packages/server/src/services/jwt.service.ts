@@ -583,6 +583,8 @@ export class JwtService {
         }
       }
 
+      await this.ensureActiveTokenSubjectAndClient(payload);
+
       return payload;
     } catch {
       throw new e.InvalidAccessToken.Error();
@@ -610,6 +612,8 @@ export class JwtService {
         }
       }
 
+      await this.ensureActiveTokenSubjectAndClient(payload);
+
       return payload;
     } catch {
       throw new e.InvalidRefreshToken.Error();
@@ -629,30 +633,44 @@ export class JwtService {
       bytesToString(fromBase64Url(headerPart)),
     );
     const kid = typeof header['kid'] === 'string' ? header['kid'] : undefined;
+    const alg = typeof header['alg'] === 'string' ? header['alg'] : undefined;
 
-    // If kid is present, find specific key
-    if (kid) {
-      const key = await this.getKeyByKid(kid);
-
-      if (key?.isVerificationKey()) {
-        const publicKey = await importSPKI(key.public_key, key.algorithm);
-        const { payload } = await jwtVerify(token, publicKey);
-        return payload;
-      }
+    if (!kid) {
+      throw new Error('Missing token kid');
     }
 
-    // Fallback: try all verification keys
-    const keys = await this.getVerificationKeys();
+    const key = await this.getKeyByKid(kid);
 
-    for (const key of keys) {
-      try {
-        const publicKey = await importSPKI(key.public_key, key.algorithm);
-        const { payload } = await jwtVerify(token, publicKey);
-        return payload;
-      } catch {}
+    if (!key?.isVerificationKey()) {
+      throw new Error('Token kid is not valid for verification');
     }
 
-    throw new Error('Token verification failed with all available keys');
+    if (alg !== key.algorithm) {
+      throw new Error('Token algorithm does not match key algorithm');
+    }
+
+    const publicKey = await importSPKI(key.public_key, key.algorithm);
+    const { payload } = await jwtVerify(token, publicKey, {
+      algorithms: [key.algorithm],
+      issuer: this.config.server.public_origin,
+    });
+    return payload;
+  }
+
+  private async ensureActiveTokenSubjectAndClient(
+    payload: AccessTokenPayload | RefreshTokenPayload,
+  ): Promise<void> {
+    const user = await this.mikro.user.findOne({ sub: payload.sub });
+    if (!user || user.deleted_at) {
+      throw new Error('Token subject is not active');
+    }
+
+    const client = await this.mikro.oauthClient.findOne({
+      clientId: payload.client_id,
+    });
+    if (!client?.enabled) {
+      throw new Error('Token client is not active');
+    }
   }
 
   /**

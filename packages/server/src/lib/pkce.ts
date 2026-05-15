@@ -1,10 +1,12 @@
 import { base64url } from 'jose';
 import { e } from '../schemas/error.ts';
 
+const CODE_VERIFIER_PATTERN = /^[A-Za-z0-9._~-]{43,128}$/;
+
 function generateVerifier(length: number): string {
   const buffer = new Uint8Array(length);
   crypto.getRandomValues(buffer);
-  return base64url.encode(buffer);
+  return base64url.encode(buffer).slice(0, length);
 }
 
 async function generateChallenge(verifier: string, method: 'S256' | 'plain') {
@@ -52,6 +54,10 @@ export async function validatePKCE(
   challenge: string,
   method: 'S256' | 'plain' = 'S256',
 ) {
+  if (!CODE_VERIFIER_PATTERN.test(verifier)) {
+    return false;
+  }
+
   const generatedChallenge = await generateChallenge(verifier, method);
   // timing safe equals?
   return generatedChallenge === challenge;

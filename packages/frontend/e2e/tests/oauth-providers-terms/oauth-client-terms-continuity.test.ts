@@ -7,6 +7,7 @@ import {
   E2E_TEST_CLIENT_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import { consentPage } from '#frontend-e2e/helpers/consent.ts';
+import { uniqueTestId } from '#frontend-e2e/helpers/identity.ts';
 import { startOAuthLogin } from '#frontend-e2e/helpers/oauth.ts';
 import {
   buildAuthorizePath,
@@ -103,11 +104,11 @@ test.describe('OAuth client continuity through complete-registration terms', () 
     request,
     baseURL,
   }) => {
-    const oauth = buildOAuthFlowInput(`oauth-providers-terms-${Date.now()}`);
+    const oauth = buildOAuthFlowInput(
+      uniqueTestId(test.info(), 'oauth-providers-terms'),
+    );
 
-    await page.goto(buildAuthorizePath(oauth.authorizeParams), {
-      waitUntil: 'networkidle',
-    });
+    await page.goto(buildAuthorizePath(oauth.authorizeParams));
     await page.waitForURL('**/login**');
     expectOAuthParamsInCurrentUrl(page, oauth.authorizeParams);
 
@@ -123,7 +124,7 @@ test.describe('OAuth client continuity through complete-registration terms', () 
     if (!redirect) {
       throw new Error('Expected redirect parameter on complete registration');
     }
-    const redirectUrl = new URL(redirect);
+    const redirectUrl = new URL(redirect, page.url());
     expect(redirectUrl.pathname).toBe('/oauth/authorize');
     expect(redirectUrl.searchParams.get('state')).toBe(
       oauth.authorizeParams.state,
@@ -158,12 +159,10 @@ test.describe('OAuth client continuity through complete-registration terms', () 
     page,
   }) => {
     const oauth = buildOAuthFlowInput(
-      `oauth-providers-terms-invalid-token-${Date.now()}`,
+      uniqueTestId(test.info(), 'oauth-providers-terms-invalid-token'),
     );
 
-    await page.goto(buildAuthorizePath(oauth.authorizeParams), {
-      waitUntil: 'networkidle',
-    });
+    await page.goto(buildAuthorizePath(oauth.authorizeParams));
     await page.waitForURL('**/login**');
 
     await startOAuthLogin(page, 'Stub New User OIDC');
@@ -193,7 +192,7 @@ test.describe('OAuth client continuity through complete-registration terms', () 
     );
     expect(retryTermsUrl.searchParams.get('redirect')).toBe(redirect);
 
-    const redirectUrl = new URL(redirect);
+    const redirectUrl = new URL(redirect, page.url());
     expect(redirectUrl.pathname).toBe('/oauth/authorize');
     expect(redirectUrl.searchParams.get('state')).toBe(
       oauth.authorizeParams.state,

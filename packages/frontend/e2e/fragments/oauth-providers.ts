@@ -1,3 +1,4 @@
+import { apple } from '@tinyrack/tinyauth-server/identity-providers/apple';
 import { genericOAuth } from '@tinyrack/tinyauth-server/identity-providers/generic-oauth';
 import { github } from '@tinyrack/tinyauth-server/identity-providers/github';
 import { google } from '@tinyrack/tinyauth-server/identity-providers/google';
@@ -140,24 +141,22 @@ export function createSpecificOauthProviders(host: string) {
         picture: 'avatar_url',
       },
     }),
-    genericOAuth({
-      id: 'apple-stub',
-      enabled: true,
-      display_name: 'Apple Stub',
-      icon_url: 'https://example.com/apple-stub.svg',
-      client_id: 'apple-stub-client-id',
-      client_secret: 'apple-stub-client-secret',
+    {
+      ...apple({
+        id: 'apple-stub',
+        enabled: true,
+        display_name: 'Apple Stub',
+        icon_url: 'https://example.com/apple-stub.svg',
+        client_id: 'apple-stub-client-id',
+        client_secret: 'apple-stub-client-secret',
+        unsafe_jwks_url_for_tests: `${host}/test/oauth-stub/apple-stub/jwks`,
+        scopes: ['openid', 'email', 'name'],
+        response_mode: 'form_post',
+        email_conflict_strategy: 'auto_link',
+      }),
       authorization_url: `${host}/test/oauth-stub/apple-stub/authorize`,
       token_url: `${host}/test/oauth-stub/apple-stub/token`,
-      scopes: ['openid', 'email', 'name'],
-      response_mode: 'form_post',
-      email_conflict_strategy: 'auto_link',
-      userinfo_mapping: {
-        id: 'sub',
-        email: 'email',
-        email_verified: 'email_verified',
-      },
-    }),
+    },
     genericOAuth({
       id: 'google-stub',
       enabled: true,
@@ -178,24 +177,21 @@ export function createSpecificOauthProviders(host: string) {
         picture: 'picture',
       },
     }),
-    genericOAuth({
-      id: 'apple-denied-stub',
-      enabled: true,
-      display_name: 'Apple Denied Stub',
-      icon_url: 'https://example.com/apple-denied-stub.svg',
-      client_id: 'apple-denied-stub-client-id',
-      client_secret: 'apple-denied-stub-client-secret',
+    {
+      ...apple({
+        id: 'apple-denied-stub',
+        enabled: true,
+        display_name: 'Apple Denied Stub',
+        icon_url: 'https://example.com/apple-denied-stub.svg',
+        client_id: 'apple-denied-stub-client-id',
+        client_secret: 'apple-denied-stub-client-secret',
+        scopes: ['openid', 'email', 'name'],
+        response_mode: 'form_post',
+        email_conflict_strategy: 'auto_link',
+      }),
       authorization_url: `${host}/test/oauth-stub/apple-denied-stub/authorize?scenario=denied`,
       token_url: `${host}/test/oauth-stub/apple-denied-stub/token`,
-      scopes: ['openid', 'email', 'name'],
-      response_mode: 'form_post',
-      email_conflict_strategy: 'auto_link',
-      userinfo_mapping: {
-        id: 'sub',
-        email: 'email',
-        email_verified: 'email_verified',
-      },
-    }),
+    },
     genericOAuth({
       id: 'server-error-stub',
       enabled: true,

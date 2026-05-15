@@ -5,30 +5,124 @@ import {
   assertJsonBody,
   createAuthenticatedSession,
   createTestApp,
-  exchangeCodeForTokens,
+  exchangeCodeForTokens as exchangeCodeForTokensRequest,
   getAuthorizationCode,
-  introspectToken,
+  introspectToken as introspectTokenRequest,
   MINIMAL_TEST_CONFIG,
-  revokeToken,
+  revokeToken as revokeTokenRequest,
   TEST_OAUTH_CLIENT,
   TEST_OAUTH_CLIENT_CONFIG,
+  TEST_PKCE,
   TEST_USER_CONFIG,
 } from '../../../test-utils/index.ts';
 
 let app: AppType;
 let cleanup: () => Promise<void>;
 
+const PUBLIC_OAUTH_CLIENT = {
+  clientId: 'public-introspection-client',
+  redirectUri: 'http://localhost:8080/public-introspection-callback',
+} as const;
+
+const PUBLIC_OAUTH_CLIENT_CONFIG = {
+  id: 'public-introspection-client-config',
+  name: 'Public Introspection Client',
+  client_id: PUBLIC_OAUTH_CLIENT.clientId,
+  redirect_uris: [PUBLIC_OAUTH_CLIENT.redirectUri],
+  response_types: ['code'],
+  grant_types: ['authorization_code', 'refresh_token'],
+  scope: 'openid profile email',
+};
+
 beforeAll(async () => {
   ({ app, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
-    clients: [TEST_OAUTH_CLIENT_CONFIG],
+    clients: [TEST_OAUTH_CLIENT_CONFIG, PUBLIC_OAUTH_CLIENT_CONFIG],
   }));
 });
 
 afterAll(async () => {
   await cleanup();
 });
+
+async function introspectToken(
+  honoApp: AppType,
+  params: {
+    token: string;
+    tokenTypeHint?: 'access_token' | 'refresh_token';
+    clientId?: string;
+    clientSecret?: string;
+  },
+) {
+  const clientId = params.clientId ?? TEST_OAUTH_CLIENT.clientId;
+  const clientSecret =
+    params.clientSecret ??
+    (clientId === TEST_OAUTH_CLIENT.clientId
+      ? TEST_OAUTH_CLIENT.clientSecret
+      : undefined);
+
+  return introspectTokenRequest(honoApp, {
+    ...params,
+    clientId,
+    ...(clientSecret != null ? { clientSecret } : {}),
+  });
+}
+
+async function exchangeCodeForTokens(
+  honoApp: AppType,
+  params: {
+    code: string;
+    clientId?: string;
+    clientSecret?: string;
+    redirectUri?: string;
+    codeVerifier?: string;
+  },
+) {
+  return exchangeCodeForTokensRequest(honoApp, {
+    clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+    ...params,
+  });
+}
+
+async function revokeToken(
+  honoApp: AppType,
+  params: {
+    token: string;
+    tokenTypeHint?: 'access_token' | 'refresh_token';
+    clientId?: string;
+    clientSecret?: string;
+  },
+) {
+  return revokeTokenRequest(honoApp, {
+    clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+    ...params,
+  });
+}
+
+async function createPublicClientTokens() {
+  const sessionCookie = await createAuthenticatedSession(app);
+  const { code } = await getAuthorizationCode(app, {
+    sessionCookie,
+    clientId: PUBLIC_OAUTH_CLIENT.clientId,
+    redirectUri: PUBLIC_OAUTH_CLIENT.redirectUri,
+    codeChallenge: TEST_PKCE.codeChallenge,
+    codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
+  });
+
+  const client = testClient(app);
+  const tokenRes = await client.oauth.token.$post({
+    form: {
+      grant_type: 'authorization_code',
+      code,
+      client_id: PUBLIC_OAUTH_CLIENT.clientId,
+      redirect_uri: PUBLIC_OAUTH_CLIENT.redirectUri,
+      code_verifier: TEST_PKCE.codeVerifier,
+    },
+  });
+
+  return assertJsonBody(tokenRes, 200);
+}
 
 describe('POST /oauth/introspect', () => {
   describe('Valid Token Introspection - Access Token', () => {
@@ -67,7 +161,7 @@ describe('POST /oauth/introspect', () => {
       expect(json.active).toBe(true);
     });
 
-    test('should work without client_id and client_secret', async () => {
+    test('should reject introspection without client identity', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
       const tokenRes = await exchangeCodeForTokens(app, { code });
@@ -80,8 +174,8 @@ describe('POST /oauth/introspect', () => {
         },
       });
 
-      const json = await assertJsonBody(res);
-      expect(json.active).toBe(true);
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
     });
 
     test('should work with client_secret authentication', async () => {
@@ -208,6 +302,57 @@ describe('POST /oauth/introspect', () => {
   });
 
   describe('Client Authentication', () => {
+    test('should reject confidential client introspection without client_secret', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const tokenRes = await exchangeCodeForTokens(app, {
+        code,
+        clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+      });
+      const { access_token } = await tokenRes.json();
+
+      const client = testClient(app);
+      const res = await client.oauth.introspect.$post({
+        form: {
+          token: access_token,
+          client_id: TEST_OAUTH_CLIENT.clientId,
+        },
+      });
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+    });
+
+    test('should reject public client introspection without client_secret', async () => {
+      const { access_token } = await createPublicClientTokens();
+
+      const client = testClient(app);
+      const res = await client.oauth.introspect.$post({
+        form: {
+          token: access_token,
+          client_id: PUBLIC_OAUTH_CLIENT.clientId,
+        },
+      });
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+    });
+
+    test('should not expose active token metadata to another client', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const { access_token } = await assertJsonBody(tokenRes, 200);
+
+      const res = await introspectToken(app, {
+        token: access_token,
+        clientId: PUBLIC_OAUTH_CLIENT.clientId,
+      });
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+    });
+
     test('should reject invalid client_id', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
@@ -236,6 +381,94 @@ describe('POST /oauth/introspect', () => {
 
       const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+    });
+
+    test('should reject malformed Basic auth instead of using body credentials', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const { access_token } = await tokenRes.json();
+
+      const client = testClient(app);
+      const res = await client.oauth.introspect.$post(
+        {
+          form: {
+            token: access_token,
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            client_secret: TEST_OAUTH_CLIENT.clientSecret,
+          },
+        },
+        {
+          headers: {
+            Authorization: 'Basic malformed',
+          },
+        },
+      );
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+    });
+
+    test('should reject non-canonical Basic base64 and include a Basic challenge', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const { access_token } = await tokenRes.json();
+
+      const credentials = Buffer.from(
+        `${TEST_OAUTH_CLIENT.clientId}:${TEST_OAUTH_CLIENT.clientSecret}`,
+        'utf8',
+      ).toString('base64');
+      const client = testClient(app);
+      const res = await client.oauth.introspect.$post(
+        {
+          form: {
+            token: access_token,
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            client_secret: TEST_OAUTH_CLIENT.clientSecret,
+          },
+        },
+        {
+          headers: {
+            Authorization: `Basic ${credentials}$$`,
+          },
+        },
+      );
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+      expect(res.headers.get('WWW-Authenticate')).toBe(
+        'Basic realm="tinyauth"',
+      );
+    });
+
+    test('should reject unsupported Authorization schemes instead of using body credentials', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const { access_token } = await tokenRes.json();
+
+      const client = testClient(app);
+      const res = await client.oauth.introspect.$post(
+        {
+          form: {
+            token: access_token,
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            client_secret: TEST_OAUTH_CLIENT.clientSecret,
+          },
+        },
+        {
+          headers: {
+            Authorization: 'Bearer access-token',
+          },
+        },
+      );
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+      expect(res.headers.get('WWW-Authenticate')).toBe(
+        'Basic realm="tinyauth"',
+      );
     });
 
     test('should reject disabled client', async () => {

@@ -6,6 +6,7 @@ import {
   E2E_TEST_CLIENT_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import { consentPage } from '#frontend-e2e/helpers/consent.ts';
+import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
 import {
   loginMethodPage,
   loginPasswordPage,
@@ -36,8 +37,7 @@ const test = createScenarioFixture((backendPort) => ({
 const TEST_PASSWORD = 'test-password-123';
 
 function uniqueEmail(suffix: string): string {
-  const ts = Date.now();
-  return `oauth-client-${suffix}-${ts}@example.com`;
+  return createUniqueEmail(test.info(), `oauth-client-${suffix}`);
 }
 
 async function registerUserByApi(
@@ -74,12 +74,13 @@ test.describe('OAuth client authentication flow', () => {
   }) => {
     const oauth = buildOAuthFlowInput('oauth-unauthenticated');
 
-    await page.goto(buildAuthorizePath(oauth.authorizeParams), {
-      waitUntil: 'networkidle',
-    });
+    await page.goto(buildAuthorizePath(oauth.authorizeParams));
 
     await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
+    await expect(
+      page.locator(loginMethodPage.passwordMethodLink),
+    ).toBeVisible();
     expectOAuthParamsInCurrentUrl(page, oauth.authorizeParams);
   });
 
@@ -92,11 +93,12 @@ test.describe('OAuth client authentication flow', () => {
     await registerUserByApi(String(baseURL), email, TEST_PASSWORD);
 
     const oauth = buildOAuthFlowInput('oauth-login');
-    await page.goto(buildAuthorizePath(oauth.authorizeParams), {
-      waitUntil: 'networkidle',
-    });
+    await page.goto(buildAuthorizePath(oauth.authorizeParams));
 
     await page.waitForURL('**/login**');
+    await expect(
+      page.locator(loginMethodPage.passwordMethodLink),
+    ).toBeVisible();
     expectOAuthParamsInCurrentUrl(page, oauth.authorizeParams);
 
     await loginThroughPasswordForm(page, email, TEST_PASSWORD);
@@ -123,11 +125,12 @@ test.describe('OAuth client authentication flow', () => {
     const email = uniqueEmail('signup');
     const oauth = buildOAuthFlowInput('oauth-signup');
 
-    await page.goto(buildAuthorizePath(oauth.authorizeParams), {
-      waitUntil: 'networkidle',
-    });
+    await page.goto(buildAuthorizePath(oauth.authorizeParams));
 
     await page.waitForURL('**/login**');
+    await expect(
+      page.locator(loginMethodPage.passwordMethodLink),
+    ).toBeVisible();
     expectOAuthParamsInCurrentUrl(page, oauth.authorizeParams);
 
     await page.goto(
@@ -167,9 +170,11 @@ test.describe('OAuth client authentication flow', () => {
 
     await firstPage.goto(
       `${String(baseURL)}${buildAuthorizePath(initialFlow.authorizeParams)}`,
-      { waitUntil: 'networkidle' },
     );
     await firstPage.waitForURL('**/login**');
+    await expect(
+      firstPage.locator(loginMethodPage.passwordMethodLink),
+    ).toBeVisible();
     await loginThroughPasswordForm(firstPage, email, TEST_PASSWORD);
     await firstPage.waitForURL('**/consent**');
 
@@ -188,9 +193,11 @@ test.describe('OAuth client authentication flow', () => {
 
     await secondPage.goto(
       `${String(baseURL)}${buildAuthorizePath(secondFlow.authorizeParams)}`,
-      { waitUntil: 'networkidle' },
     );
     await secondPage.waitForURL('**/login**');
+    await expect(
+      secondPage.locator(loginMethodPage.passwordMethodLink),
+    ).toBeVisible();
 
     await secondPage.locator(loginMethodPage.passwordMethodLink).click();
     await secondPage.waitForURL('**/login/password**');
@@ -235,11 +242,12 @@ test.describe('OAuth client authentication flow', () => {
     await registerUserByApi(String(baseURL), email, TEST_PASSWORD);
 
     const oauth = buildOAuthFlowInput('oauth-deny');
-    await page.goto(buildAuthorizePath(oauth.authorizeParams), {
-      waitUntil: 'networkidle',
-    });
+    await page.goto(buildAuthorizePath(oauth.authorizeParams));
 
     await page.waitForURL('**/login**');
+    await expect(
+      page.locator(loginMethodPage.passwordMethodLink),
+    ).toBeVisible();
     await loginThroughPasswordForm(page, email, TEST_PASSWORD);
 
     await page.waitForURL('**/consent**');
@@ -257,11 +265,12 @@ test.describe('OAuth client authentication flow', () => {
     await registerUserByApi(String(baseURL), email, TEST_PASSWORD);
 
     const oauth = buildOAuthFlowInput('oauth-invalid-pkce');
-    await page.goto(buildAuthorizePath(oauth.authorizeParams), {
-      waitUntil: 'networkidle',
-    });
+    await page.goto(buildAuthorizePath(oauth.authorizeParams));
 
     await page.waitForURL('**/login**');
+    await expect(
+      page.locator(loginMethodPage.passwordMethodLink),
+    ).toBeVisible();
     await loginThroughPasswordForm(page, email, TEST_PASSWORD);
     await page.waitForURL('**/consent**');
 
@@ -273,6 +282,7 @@ test.describe('OAuth client authentication flow', () => {
         code,
         redirect_uri: oauth.authorizeParams.redirect_uri,
         client_id: oauth.authorizeParams.client_id,
+        client_secret: E2E_TEST_CLIENT_CONFIG.client_secret,
         code_verifier: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       },
     });

@@ -1,4 +1,4 @@
-import { generateKeyPair, SignJWT } from 'jose';
+import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import {
   afterAll,
   afterEach,
@@ -19,6 +19,7 @@ import {
   withMikroContext,
 } from '../test-utils/index.ts';
 import type { ServiceContainer } from './container.ts';
+import type { OAuthTokens } from './oauth-connect.service.ts';
 
 /**
  * Tests for OAuthConnectService.authenticateWithOAuth()
@@ -26,10 +27,62 @@ import type { ServiceContainer } from './container.ts';
  * and email_verified validation.
  */
 
-const MOCK_TOKENS = {
+const MOCK_TOKENS: Pick<OAuthTokens, 'access_token' | 'token_type'> = {
   access_token: 'mock-access-token',
   token_type: 'Bearer',
 };
+
+async function createAppleIdToken(claims: Record<string, unknown>) {
+  const { privateKey } = await generateKeyPair('RS256');
+  return new SignJWT(claims)
+    .setProtectedHeader({ alg: 'RS256' })
+    .setIssuedAt()
+    .sign(privateKey);
+}
+
+async function createTrustedAppleIdToken(
+  claims: Record<string, unknown>,
+  jwksUrl = 'https://appleid.apple.com/auth/keys',
+) {
+  const { privateKey, publicKey } = await generateKeyPair('RS256');
+  const jwk = await exportJWK(publicKey);
+  const kid = `apple-test-${crypto.randomUUID()}`;
+
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const url =
+      typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
+
+    if (url === jwksUrl) {
+      return new Response(
+        JSON.stringify({
+          keys: [
+            {
+              ...jwk,
+              kid,
+              alg: 'RS256',
+              use: 'sig',
+            },
+          ],
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        },
+      );
+    }
+
+    return new Response(null, { status: 404 });
+  });
+
+  return new SignJWT(claims)
+    .setProtectedHeader({ alg: 'RS256', kid })
+    .setIssuedAt()
+    .sign(privateKey);
+}
 
 /**
  * Helper to assert that a promise rejects with an error
@@ -312,6 +365,100 @@ describe('OAuthConnectService - completeOAuthRegistration', () => {
   });
 });
 
+describe('OAuthConnectService - provider token responses', () => {
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      identity_providers: [
+        google({
+          id: 'google',
+          enabled: true,
+          display_name: 'Google',
+          client_id: 'test-google-client-id',
+          client_secret: 'test-google-client-secret',
+          email_conflict_strategy: 'auto_link',
+        }),
+      ],
+    });
+    services = server.services;
+    cleanup = server.cleanup;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterAll(async () => {
+    await cleanup();
+  });
+
+  test('should reject non-Bearer token_type from provider', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          access_token: 'mock-access-token',
+          token_type: 'mac',
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        },
+      ),
+    );
+
+    await expect(
+      services.oauthConnectService.exchangeCodeForTokens(
+        'google',
+        'auth-code',
+        'code-verifier',
+      ),
+    ).rejects.toHaveProperty('code', 'OAUTH_TOKEN_EXCHANGE_FAILED');
+  });
+
+  test('should accept lowercase bearer token_type from provider', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          access_token: 'mock-access-token',
+          token_type: 'bearer',
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        },
+      ),
+    );
+
+    const tokens = await services.oauthConnectService.exchangeCodeForTokens(
+      'google',
+      'auth-code',
+      'code-verifier',
+    );
+
+    expect(tokens.token_type).toBe('Bearer');
+  });
+
+  test('should map invalid JSON token responses to token exchange failure', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('{invalid-json', {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+
+    await expect(
+      services.oauthConnectService.exchangeCodeForTokens(
+        'google',
+        'auth-code',
+        'code-verifier',
+      ),
+    ).rejects.toHaveProperty('code', 'OAUTH_TOKEN_EXCHANGE_FAILED');
+  });
+});
+
 describe('OAuthConnectService - fetchUserInfo', () => {
   describe('GitHub field mapping', () => {
     let services: ServiceContainer;
@@ -460,6 +607,76 @@ describe('OAuthConnectService - fetchUserInfo', () => {
         oauthMock.restore();
       }
     });
+
+    test('should map invalid JSON userinfo responses to userinfo failure', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response('{invalid-json', {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+
+      await expect(
+        services.oauthConnectService.fetchUserInfo(
+          'github',
+          'unused-access-token',
+        ),
+      ).rejects.toHaveProperty('code', 'OAUTH_USERINFO_FAILED');
+    });
+  });
+
+  describe('Google field mapping', () => {
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
+
+    beforeAll(async () => {
+      const server = await createTestApp({
+        ...MINIMAL_TEST_CONFIG,
+        identity_providers: [
+          google({
+            id: 'google',
+            enabled: true,
+            display_name: 'Google',
+            client_id: 'test-google-client-id',
+            client_secret: 'test-google-client-secret',
+            email_conflict_strategy: 'auto_link',
+          }),
+        ],
+      });
+      services = server.services;
+      cleanup = server.cleanup;
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    afterAll(async () => {
+      await cleanup();
+    });
+
+    test('should parse string email_verified "false" as false', async () => {
+      const oauthMock = mockOAuthProviderFetch({
+        tokenUrl: 'https://oauth2.googleapis.com/token',
+        userInfoUrl: 'https://openidconnect.googleapis.com/v1/userinfo',
+        rawUserInfoResponse: {
+          sub: 'google-string-false',
+          email: 'string-false@google.example',
+          email_verified: 'false',
+        },
+      });
+
+      try {
+        const userInfo = await services.oauthConnectService.fetchUserInfo(
+          'google',
+          oauthMock.tokens.access_token,
+        );
+
+        expect(userInfo.email_verified).toBe(false);
+      } finally {
+        oauthMock.restore();
+      }
+    });
   });
 
   describe('Apple ID token decoding', () => {
@@ -488,16 +705,19 @@ describe('OAuthConnectService - fetchUserInfo', () => {
       await cleanup();
     });
 
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
     test('should extract user info from ID token when userinfo_url is null', async () => {
-      const { privateKey } = await generateKeyPair('RS256');
-      const idToken = await new SignJWT({
+      const idToken = await createTrustedAppleIdToken({
         sub: 'apple-user-001',
         email: 'user@icloud.com',
         email_verified: true,
-      })
-        .setProtectedHeader({ alg: 'RS256' })
-        .setIssuedAt()
-        .sign(privateKey);
+        iss: 'https://appleid.apple.com',
+        aud: 'test-apple-client-id',
+        exp: Math.floor(Date.now() / 1000) + 60,
+      });
 
       const userInfo = await services.oauthConnectService.fetchUserInfo(
         'apple',
@@ -510,16 +730,76 @@ describe('OAuthConnectService - fetchUserInfo', () => {
       expect(userInfo.email_verified).toBe(true);
     });
 
+    test('should use configured Apple JWKS URL when verifying ID tokens', async () => {
+      const server = await createTestApp({
+        ...MINIMAL_TEST_CONFIG,
+        identity_providers: [
+          apple({
+            id: 'apple-custom-jwks',
+            enabled: true,
+            display_name: 'Apple Custom JWKS',
+            client_id: 'test-apple-custom-jwks-client-id',
+            client_secret: 'test-apple-custom-jwks-client-secret',
+            unsafe_jwks_url_for_tests: 'https://apple.test/keys',
+            email_conflict_strategy: 'auto_link',
+          }),
+        ],
+      });
+
+      try {
+        const idToken = await createTrustedAppleIdToken(
+          {
+            sub: 'apple-user-custom-jwks',
+            email: 'custom-jwks@icloud.com',
+            email_verified: true,
+            iss: 'https://appleid.apple.com',
+            aud: 'test-apple-custom-jwks-client-id',
+            exp: Math.floor(Date.now() / 1000) + 60,
+          },
+          'https://apple.test/keys',
+        );
+
+        const userInfo =
+          await server.services.oauthConnectService.fetchUserInfo(
+            'apple-custom-jwks',
+            'unused-access-token',
+            idToken,
+          );
+
+        expect(userInfo.email).toBe('custom-jwks@icloud.com');
+      } finally {
+        await server.cleanup();
+      }
+    });
+
+    test('should reject invalid Apple unsafe JWKS URL config', async () => {
+      await expect(
+        createTestApp({
+          ...MINIMAL_TEST_CONFIG,
+          identity_providers: [
+            apple({
+              id: 'apple-invalid-jwks',
+              enabled: true,
+              display_name: 'Apple Invalid JWKS',
+              client_id: 'test-apple-invalid-jwks-client-id',
+              client_secret: 'test-apple-invalid-jwks-client-secret',
+              unsafe_jwks_url_for_tests: 'not-a-url',
+              email_conflict_strategy: 'auto_link',
+            }),
+          ],
+        }),
+      ).rejects.toThrow();
+    });
+
     test('should handle Apple ID token with email_verified as string "true"', async () => {
-      const { privateKey } = await generateKeyPair('RS256');
-      const idToken = await new SignJWT({
+      const idToken = await createTrustedAppleIdToken({
         sub: 'apple-user-002',
         email: 'user2@icloud.com',
         email_verified: 'true',
-      })
-        .setProtectedHeader({ alg: 'RS256' })
-        .setIssuedAt()
-        .sign(privateKey);
+        iss: 'https://appleid.apple.com',
+        aud: 'test-apple-client-id',
+        exp: Math.floor(Date.now() / 1000) + 60,
+      });
 
       const userInfo = await services.oauthConnectService.fetchUserInfo(
         'apple',
@@ -528,6 +808,32 @@ describe('OAuthConnectService - fetchUserInfo', () => {
       );
 
       expect(userInfo.email_verified).toBe(true);
+    });
+
+    test('should reject Apple ID token signed by an untrusted key', async () => {
+      const idToken = await createTrustedAppleIdToken({
+        sub: 'apple-untrusted-key',
+        email: 'untrusted@icloud.com',
+        email_verified: true,
+        iss: 'https://appleid.apple.com',
+        aud: 'test-apple-client-id',
+        exp: Math.floor(Date.now() / 1000) + 60,
+      });
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ keys: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+
+      await expect(
+        services.oauthConnectService.fetchUserInfo(
+          'apple',
+          'unused-access-token',
+          idToken,
+        ),
+      ).rejects.toHaveProperty('code', 'OAUTH_USERINFO_FAILED');
     });
 
     test('should throw when no ID token is provided for Apple', async () => {
@@ -541,15 +847,14 @@ describe('OAuthConnectService - fetchUserInfo', () => {
     });
 
     test('should throw when ID token is missing sub claim', async () => {
-      const { privateKey } = await generateKeyPair('RS256');
-      const idToken = await new SignJWT({
+      const idToken = await createTrustedAppleIdToken({
         // sub is missing
         email: 'nosub@icloud.com',
         email_verified: true,
-      })
-        .setProtectedHeader({ alg: 'RS256' })
-        .setIssuedAt()
-        .sign(privateKey);
+        iss: 'https://appleid.apple.com',
+        aud: 'test-apple-client-id',
+        exp: Math.floor(Date.now() / 1000) + 60,
+      });
 
       await expect(
         services.oauthConnectService.fetchUserInfo(
@@ -561,15 +866,14 @@ describe('OAuthConnectService - fetchUserInfo', () => {
     });
 
     test('should throw when ID token is missing email claim', async () => {
-      const { privateKey } = await generateKeyPair('RS256');
-      const idToken = await new SignJWT({
+      const idToken = await createTrustedAppleIdToken({
         sub: 'apple-user-noemail',
         // email is missing
         email_verified: true,
-      })
-        .setProtectedHeader({ alg: 'RS256' })
-        .setIssuedAt()
-        .sign(privateKey);
+        iss: 'https://appleid.apple.com',
+        aud: 'test-apple-client-id',
+        exp: Math.floor(Date.now() / 1000) + 60,
+      });
 
       await expect(
         services.oauthConnectService.fetchUserInfo(
@@ -579,5 +883,327 @@ describe('OAuthConnectService - fetchUserInfo', () => {
         ),
       ).rejects.toHaveProperty('code', 'OAUTH_USERINFO_FAILED');
     });
+
+    test('should reject Apple ID token with wrong issuer', async () => {
+      const idToken = await createTrustedAppleIdToken({
+        sub: 'apple-wrong-issuer',
+        email: 'wrong-issuer@icloud.com',
+        email_verified: true,
+        iss: 'https://example.com',
+        aud: 'test-apple-client-id',
+        exp: Math.floor(Date.now() / 1000) + 60,
+      });
+
+      await expect(
+        services.oauthConnectService.fetchUserInfo(
+          'apple',
+          'unused-access-token',
+          idToken,
+        ),
+      ).rejects.toHaveProperty('code', 'OAUTH_USERINFO_FAILED');
+    });
+
+    test('should reject Apple ID token with wrong audience', async () => {
+      const idToken = await createTrustedAppleIdToken({
+        sub: 'apple-wrong-audience',
+        email: 'wrong-audience@icloud.com',
+        email_verified: true,
+        iss: 'https://appleid.apple.com',
+        aud: 'different-client-id',
+        exp: Math.floor(Date.now() / 1000) + 60,
+      });
+
+      await expect(
+        services.oauthConnectService.fetchUserInfo(
+          'apple',
+          'unused-access-token',
+          idToken,
+        ),
+      ).rejects.toHaveProperty('code', 'OAUTH_USERINFO_FAILED');
+    });
+
+    test('should reject expired Apple ID token', async () => {
+      const idToken = await createAppleIdToken({
+        sub: 'apple-expired',
+        email: 'expired@icloud.com',
+        email_verified: true,
+        iss: 'https://appleid.apple.com',
+        aud: 'test-apple-client-id',
+        exp: Math.floor(Date.now() / 1000) - 60,
+      });
+
+      await expect(
+        services.oauthConnectService.fetchUserInfo(
+          'apple',
+          'unused-access-token',
+          idToken,
+        ),
+      ).rejects.toHaveProperty('code', 'OAUTH_USERINFO_FAILED');
+    });
+  });
+
+  describe('Non-Apple ID token fallback', () => {
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
+
+    beforeAll(async () => {
+      const server = await createTestApp({
+        ...MINIMAL_TEST_CONFIG,
+        identity_providers: [
+          {
+            id: 'generic-no-userinfo',
+            type: 'generic_oauth',
+            enabled: true,
+            display_name: 'Generic No Userinfo',
+            client_id: 'generic-client-id',
+            client_secret: 'generic-client-secret',
+            authorization_url: 'https://generic.example/authorize',
+            token_url: 'https://generic.example/token',
+            userinfo_url: null,
+            scopes: ['openid', 'email'],
+            email_conflict_strategy: 'auto_link',
+            userinfo_mapping: {
+              id: 'sub',
+              email: 'email',
+              email_verified: 'email_verified',
+            },
+          },
+          {
+            id: 'generic-no-userinfo-jwks',
+            type: 'generic_oauth',
+            enabled: true,
+            display_name: 'Generic No Userinfo JWKS',
+            client_id: 'generic-jwks-client-id',
+            client_secret: 'generic-jwks-client-secret',
+            authorization_url: 'https://generic.example/authorize',
+            token_url: 'https://generic.example/token',
+            userinfo_url: null,
+            jwks_url: 'https://generic.example/jwks',
+            issuer: 'https://generic.example',
+            scopes: ['openid', 'email'],
+            email_conflict_strategy: 'auto_link',
+            userinfo_mapping: {
+              id: 'sub',
+              email: 'email',
+              email_verified: 'email_verified',
+            },
+          },
+        ],
+      });
+      services = server.services;
+      cleanup = server.cleanup;
+    });
+
+    afterAll(async () => {
+      await cleanup();
+    });
+
+    test('should reject unsigned ID token for non-Apple provider without userinfo_url', async () => {
+      const header = Buffer.from(JSON.stringify({ alg: 'none' })).toString(
+        'base64url',
+      );
+      const payload = Buffer.from(
+        JSON.stringify({
+          sub: 'generic-user',
+          email: 'generic@example.com',
+          email_verified: true,
+        }),
+      ).toString('base64url');
+      const idToken = `${header}.${payload}.`;
+
+      await expect(
+        services.oauthConnectService.fetchUserInfo(
+          'generic-no-userinfo',
+          'unused-access-token',
+          idToken,
+        ),
+      ).rejects.toHaveProperty('code', 'OAUTH_USERINFO_FAILED');
+    });
+
+    test('should verify signed ID token with expected issuer for generic provider without userinfo_url', async () => {
+      const idToken = await createTrustedAppleIdToken(
+        {
+          sub: 'generic-jwks-user',
+          email: 'generic-jwks@example.com',
+          email_verified: true,
+          iss: 'https://generic.example',
+          aud: 'generic-jwks-client-id',
+          exp: Math.floor(Date.now() / 1000) + 60,
+        },
+        'https://generic.example/jwks',
+      );
+
+      const userInfo = await services.oauthConnectService.fetchUserInfo(
+        'generic-no-userinfo-jwks',
+        'unused-access-token',
+        idToken,
+      );
+
+      expect(userInfo).toEqual({
+        id: 'generic-jwks-user',
+        email: 'generic-jwks@example.com',
+        email_verified: true,
+      });
+    });
+
+    test('should reject signed ID token with wrong issuer for generic provider without userinfo_url', async () => {
+      const idToken = await createTrustedAppleIdToken(
+        {
+          sub: 'generic-jwks-user',
+          email: 'generic-jwks@example.com',
+          email_verified: true,
+          iss: 'https://evil.example',
+          aud: 'generic-jwks-client-id',
+          exp: Math.floor(Date.now() / 1000) + 60,
+        },
+        'https://generic.example/jwks',
+      );
+
+      await expect(
+        services.oauthConnectService.fetchUserInfo(
+          'generic-no-userinfo-jwks',
+          'unused-access-token',
+          idToken,
+        ),
+      ).rejects.toHaveProperty('code', 'OAUTH_USERINFO_FAILED');
+    });
+  });
+});
+
+describe('OAuthConnectService - OAuth account linking', () => {
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      identity_providers: [
+        google({
+          id: 'google',
+          enabled: true,
+          display_name: 'Google',
+          client_id: 'test-google-client-id',
+          client_secret: 'test-google-client-secret',
+          email_conflict_strategy: 'auto_link',
+        }),
+      ],
+    });
+    services = server.services;
+    cleanup = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanup();
+  });
+
+  test('should reject linking the same provider account to a different user', async () => {
+    const users = await withMikroContext(services, async () => {
+      const firstUser = services.mikro.user.create({
+        email: generateUniqueEmail('oauth-link-first'),
+        password_hash: null,
+      });
+      firstUser.email_verified = true;
+
+      const secondUser = services.mikro.user.create({
+        email: generateUniqueEmail('oauth-link-second'),
+        password_hash: null,
+      });
+      secondUser.email_verified = true;
+
+      await services.mikro.em.persist([firstUser, secondUser]).flush();
+      return {
+        firstUserSub: firstUser.sub,
+        secondUserSub: secondUser.sub,
+      };
+    });
+
+    await withMikroContext(services, () =>
+      services.oauthConnectService.linkOAuthAccount(
+        users.firstUserSub,
+        'google',
+        MOCK_TOKENS,
+        {
+          id: 'shared-provider-account',
+          email: generateUniqueEmail('oauth-link-provider'),
+          email_verified: true,
+        },
+      ),
+    );
+
+    await expectApiError(
+      withMikroContext(services, () =>
+        services.oauthConnectService.linkOAuthAccount(
+          users.secondUserSub,
+          'google',
+          MOCK_TOKENS,
+          {
+            id: 'shared-provider-account',
+            email: generateUniqueEmail('oauth-link-provider'),
+            email_verified: true,
+          },
+        ),
+      ),
+      'OAUTH_ACCOUNT_ALREADY_LINKED',
+    );
+  });
+
+  test('should deterministically allow only one concurrent link for the same provider account', async () => {
+    const users = await withMikroContext(services, async () => {
+      const firstUser = services.mikro.user.create({
+        email: generateUniqueEmail('oauth-link-race-first'),
+        password_hash: null,
+      });
+      firstUser.email_verified = true;
+
+      const secondUser = services.mikro.user.create({
+        email: generateUniqueEmail('oauth-link-race-second'),
+        password_hash: null,
+      });
+      secondUser.email_verified = true;
+
+      await services.mikro.em.persist([firstUser, secondUser]).flush();
+      return {
+        firstUserSub: firstUser.sub,
+        secondUserSub: secondUser.sub,
+      };
+    });
+
+    const providerUserId = `shared-provider-account-${crypto.randomUUID()}`;
+    const results = await Promise.allSettled([
+      withMikroContext(services, () =>
+        services.oauthConnectService.linkOAuthAccount(
+          users.firstUserSub,
+          'google',
+          MOCK_TOKENS,
+          {
+            id: providerUserId,
+            email: generateUniqueEmail('oauth-link-race-provider'),
+            email_verified: true,
+          },
+        ),
+      ),
+      withMikroContext(services, () =>
+        services.oauthConnectService.linkOAuthAccount(
+          users.secondUserSub,
+          'google',
+          MOCK_TOKENS,
+          {
+            id: providerUserId,
+            email: generateUniqueEmail('oauth-link-race-provider'),
+            email_verified: true,
+          },
+        ),
+      ),
+    ]);
+
+    const fulfilledCount = results.filter(
+      (result) => result.status === 'fulfilled',
+    ).length;
+    const rejectedCount = results.filter(
+      (result) => result.status === 'rejected',
+    ).length;
+
+    expect(fulfilledCount).toBe(1);
+    expect(rejectedCount).toBe(1);
   });
 });

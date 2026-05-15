@@ -7,6 +7,10 @@ import {
   E2E_TEST_CLIENT_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import {
+  uniqueEmail as createUniqueEmail,
+  uniqueTestId,
+} from '#frontend-e2e/helpers/identity.ts';
+import {
   allowConsentAndExpectRedirect,
   buildAuthEntryUrl,
   buildJourneyOAuthParams,
@@ -27,13 +31,13 @@ import { enableVirtualAuthenticator } from '#frontend-e2e/helpers/webauthn.ts';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
 function uniqueEmail(suffix: string): string {
-  const ts = Date.now();
-  return `journey-oauth-2fa-${suffix}-${ts}@example.com`;
+  return createUniqueEmail(test.info(), `journey-oauth-2fa-${suffix}`);
 }
 
 function uniqueOauthParams(suffix: string): JourneyOAuthParams {
-  const ts = Date.now();
-  return buildJourneyOAuthParams(`journey-${suffix}-${ts}`);
+  return buildJourneyOAuthParams(
+    uniqueTestId(test.info(), `journey-${suffix}`),
+  );
 }
 
 async function submitRegisterForm(

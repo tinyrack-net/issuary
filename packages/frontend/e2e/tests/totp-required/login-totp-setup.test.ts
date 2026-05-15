@@ -6,6 +6,7 @@ import {
   E2E_TEST_USER,
   E2E_TEST_USER_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
+import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
 import { performLogin, totpSetupPage } from '#frontend-e2e/helpers/login.ts';
 import { fillPinInput } from '#frontend-e2e/helpers/pin-input.ts';
 import {
@@ -18,8 +19,7 @@ import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
  * Generates a unique test email for each test to avoid collisions.
  */
 function uniqueEmail(suffix: string): string {
-  const ts = Date.now();
-  return `totp-setup-${suffix}-${ts}@example.com`;
+  return createUniqueEmail(test.info(), `totp-setup-${suffix}`);
 }
 
 const TEST_PASSWORD = 'test-password-123';

@@ -53,10 +53,8 @@ test.describe('Standalone terms page', () => {
       E2E_TEST_USER.password,
     );
 
-    // Navigate to terms page
-    await page.goto('/terms', { waitUntil: 'networkidle' });
-
-    // Should show the terms heading
+    // Navigate to terms page and wait for deterministic UI readiness.
+    await page.goto('/terms');
     await expect(
       page.getByRole('heading', { name: 'Terms of Service' }),
     ).toBeVisible();
@@ -110,9 +108,9 @@ test.describe('Standalone terms page', () => {
       E2E_TEST_USER.password,
     );
 
-    await page.goto('/terms', { waitUntil: 'networkidle' });
+    await page.goto('/terms');
 
-    // Wait for page to load
+    // Wait for deterministic UI readiness.
     await expect(
       page.getByRole('heading', { name: 'Terms of Service' }),
     ).toBeVisible();

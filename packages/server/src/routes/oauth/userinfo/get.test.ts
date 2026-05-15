@@ -1,6 +1,9 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { OAuthClientEntitySchema } from '../../../entities/oauth-client.entity.ts';
+import { UserEntity } from '../../../entities/user.entity.ts';
 import type { AppType } from '../../../entrypoints/app.ts';
+import type { ServiceContainer } from '../../../services/container.ts';
 import {
   assertDefined,
   assertJsonBody,
@@ -12,16 +15,18 @@ import {
   getUserInfo,
   MINIMAL_TEST_CONFIG,
   revokeToken,
+  TEST_OAUTH_CLIENT,
   TEST_OAUTH_CLIENT_CONFIG,
   TEST_USER,
   TEST_USER_CONFIG,
 } from '../../../test-utils/index.ts';
 
 let app: AppType;
+let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  ({ app, cleanup } = await createTestApp({
+  ({ app, services, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
     clients: [TEST_OAUTH_CLIENT_CONFIG],
@@ -31,6 +36,24 @@ beforeAll(async () => {
 afterAll(async () => {
   await cleanup();
 });
+
+async function setTestUserDeletedAt(deletedAt: Date | null) {
+  const em = services.mikro.em.fork();
+  await em.nativeUpdate(
+    UserEntity,
+    { sub: TEST_USER_CONFIG.sub },
+    { deleted_at: deletedAt },
+  );
+}
+
+async function setTestClientEnabled(enabled: boolean) {
+  const em = services.mikro.em.fork();
+  await em.nativeUpdate(
+    OAuthClientEntitySchema,
+    { clientId: TEST_OAUTH_CLIENT.clientId },
+    { enabled },
+  );
+}
 
 describe('GET /oauth/userinfo', () => {
   describe('Success Cases', () => {
@@ -223,6 +246,40 @@ describe('GET /oauth/userinfo', () => {
 
       const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_ACCESS_TOKEN');
+    });
+
+    test('should reject access token for deleted user', async () => {
+      const accessToken = await getAccessToken(app, {
+        scope: 'openid profile email',
+      });
+
+      await setTestUserDeletedAt(new Date());
+
+      try {
+        const res = await getUserInfo(app, accessToken);
+
+        const json = await assertJsonBody(res, 401);
+        expect(json.code).toBe('INVALID_ACCESS_TOKEN');
+      } finally {
+        await setTestUserDeletedAt(null);
+      }
+    });
+
+    test('should reject access token for disabled client', async () => {
+      const accessToken = await getAccessToken(app, {
+        scope: 'openid profile email',
+      });
+
+      await setTestClientEnabled(false);
+
+      try {
+        const res = await getUserInfo(app, accessToken);
+
+        const json = await assertJsonBody(res, 401);
+        expect(json.code).toBe('INVALID_ACCESS_TOKEN');
+      } finally {
+        await setTestClientEnabled(true);
+      }
     });
   });
 

@@ -414,6 +414,7 @@ describe('End-to-End OIDC Flow', () => {
           grant_type: 'refresh_token',
           refresh_token: tokens.refresh_token,
           client_id: TEST_OAUTH_CLIENT.clientId,
+          client_secret: TEST_OAUTH_CLIENT.clientSecret,
         },
       });
 
@@ -462,6 +463,7 @@ describe('End-to-End OIDC Flow', () => {
           grant_type: 'refresh_token',
           refresh_token: tokens.refresh_token,
           client_id: TEST_OAUTH_CLIENT.clientId,
+          client_secret: TEST_OAUTH_CLIENT.clientSecret,
         },
       });
 
@@ -694,6 +696,7 @@ describe('End-to-End OIDC Flow', () => {
             grant_type: 'refresh_token',
             refresh_token: tokens.refresh_token,
             client_id: TEST_OAUTH_CLIENT.clientId,
+            client_secret: TEST_OAUTH_CLIENT.clientSecret,
           },
         });
 

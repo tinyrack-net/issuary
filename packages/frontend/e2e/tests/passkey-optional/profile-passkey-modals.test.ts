@@ -1,9 +1,11 @@
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
+import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
+import { loginMethodPage, performLogin } from '#frontend-e2e/helpers/login.ts';
 import {
   loginAndGoToProfile,
   managePasskeysModal,
@@ -14,11 +16,21 @@ import { enableVirtualAuthenticator } from '#frontend-e2e/helpers/webauthn.ts';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
 function uniqueEmail(suffix: string): string {
-  const ts = Date.now();
-  return `passkey-modal-${suffix}-${ts}@example.com`;
+  return createUniqueEmail(test.info(), `passkey-modal-${suffix}`);
 }
 
 const TEST_PASSWORD = 'test-password-123';
+
+async function logoutFromProfile(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Log out' }).click();
+  await page.waitForURL('**/login');
+}
+
+async function loginWithPasskeyFromMethodPage(page: Page): Promise<void> {
+  await page.goto('/login');
+  await expect(page.locator(loginMethodPage.passkeyMethodButton)).toBeVisible();
+  await page.locator(loginMethodPage.passkeyMethodButton).click();
+}
 
 const test = createScenarioFixture((backendPort) => ({
   ...E2E_BASE_CONFIG,
@@ -244,7 +256,7 @@ test.describe('ManagePasskeysModal (profile)', () => {
     }
   });
 
-  test('delete passkey with inline confirmation', async ({
+  test('delete passkey with inline confirmation and prevent passkey login', async ({
     page,
     baseURL,
     browserName,
@@ -255,6 +267,11 @@ test.describe('ManagePasskeysModal (profile)', () => {
     try {
       const email = uniqueEmail('manage-delete');
       await setupPasskeyForUser(page, email, TEST_PASSWORD, String(baseURL));
+
+      await logoutFromProfile(page);
+      await loginWithPasskeyFromMethodPage(page);
+      await page.waitForURL('**/profile');
+      await expect(page.getByTestId('profile-user-email')).toHaveText(email);
 
       await page.getByRole('button', { name: 'Manage' }).click();
       await expect(page.locator(modal.openModal)).toBeVisible();
@@ -270,6 +287,28 @@ test.describe('ManagePasskeysModal (profile)', () => {
 
       // Passkey should be removed - show empty state
       await expect(page.locator(managePasskeysModal.emptyState)).toBeVisible();
+
+      await page.locator(managePasskeysModal.closeButton).click();
+      await expect(page.locator(modal.openModal)).not.toBeVisible();
+
+      await logoutFromProfile(page);
+      const deletedCredentialFailure = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/auth/passkey/verify') &&
+          response.request().method() === 'POST' &&
+          response.status() >= 400,
+      );
+      await loginWithPasskeyFromMethodPage(page);
+      await expect(deletedCredentialFailure).resolves.toBeDefined();
+
+      await expect(
+        page.locator(loginMethodPage.passkeyMethodButton),
+      ).toBeEnabled();
+      await expect(page).toHaveURL(/\/login/);
+
+      await performLogin(page, email, TEST_PASSWORD);
+      await page.waitForURL('**/profile');
+      await expect(page.getByTestId('profile-user-email')).toHaveText(email);
     } finally {
       await virtualAuth.teardown();
     }

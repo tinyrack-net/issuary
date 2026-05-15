@@ -1,4 +1,4 @@
-import { decodeJwt, decodeProtectedHeader } from 'jose';
+import { decodeJwt, decodeProtectedHeader, importPKCS8, SignJWT } from 'jose';
 import {
   afterAll,
   beforeAll,
@@ -203,6 +203,8 @@ describe('JwtService', () => {
   describe('token signing and verification', () => {
     let services: ServiceContainer;
     let cleanup: () => Promise<void>;
+    let tokenSubject: string;
+    const tokenClientId = 'jwt-service-token-client';
 
     beforeAll(async () => {
       const server = await createTestApp({
@@ -213,6 +215,8 @@ describe('JwtService', () => {
       });
       services = server.services;
       cleanup = server.cleanup;
+      tokenSubject = await createTestUser(services);
+      await createTestOAuthClient(services, { clientId: tokenClientId });
     });
 
     afterAll(async () => {
@@ -223,8 +227,8 @@ describe('JwtService', () => {
       await withMikroContext(services, async () => {
         const token = await services.jwtService.signAccessToken({
           typ: 'access_token',
-          sub: 'user-123',
-          client_id: 'test-client',
+          sub: tokenSubject,
+          client_id: tokenClientId,
           scope: 'openid email',
         });
 
@@ -233,8 +237,8 @@ describe('JwtService', () => {
 
         const payload = await services.jwtService.verifyAccessToken(token);
         expect(payload.typ).toBe('access_token');
-        expect(payload.sub).toBe('user-123');
-        expect(payload.client_id).toBe('test-client');
+        expect(payload.sub).toBe(tokenSubject);
+        expect(payload.client_id).toBe(tokenClientId);
         expect(payload.scope).toBe('openid email');
         expect(payload.iss).toBe('https://auth.example.com');
         expect(payload.jti).toBeDefined();
@@ -247,15 +251,15 @@ describe('JwtService', () => {
       await withMikroContext(services, async () => {
         const token = await services.jwtService.signRefreshToken({
           typ: 'refresh_token',
-          sub: 'user-456',
-          client_id: 'test-client',
+          sub: tokenSubject,
+          client_id: tokenClientId,
           scope: 'openid',
         });
 
         const payload = await services.jwtService.verifyRefreshToken(token);
         expect(payload.typ).toBe('refresh_token');
-        expect(payload.sub).toBe('user-456');
-        expect(payload.client_id).toBe('test-client');
+        expect(payload.sub).toBe(tokenSubject);
+        expect(payload.client_id).toBe(tokenClientId);
       });
     });
 
@@ -306,8 +310,8 @@ describe('JwtService', () => {
       await withMikroContext(services, async () => {
         const token = await services.jwtService.signAccessToken({
           typ: 'access_token',
-          sub: 'user-123',
-          client_id: 'test-client',
+          sub: tokenSubject,
+          client_id: tokenClientId,
           scope: 'openid',
         });
 
@@ -322,8 +326,8 @@ describe('JwtService', () => {
       await withMikroContext(services, async () => {
         const token = await services.jwtService.signAccessToken({
           typ: 'access_token',
-          sub: 'user-123',
-          client_id: 'test-client',
+          sub: tokenSubject,
+          client_id: tokenClientId,
           scope: 'openid',
         });
 
@@ -337,8 +341,8 @@ describe('JwtService', () => {
       await withMikroContext(services, async () => {
         const token = await services.jwtService.signRefreshToken({
           typ: 'refresh_token',
-          sub: 'user-123',
-          client_id: 'test-client',
+          sub: tokenSubject,
+          client_id: tokenClientId,
           scope: 'openid',
         });
 
@@ -356,16 +360,41 @@ describe('JwtService', () => {
       });
     });
 
+    test('should reject access token with wrong issuer signed by active key', async () => {
+      await withMikroContext(services, async () => {
+        const activeKey = await services.jwtService.getActiveKey();
+        const privateKey = await importPKCS8(activeKey.private_key, 'RS256');
+        const token = await new SignJWT({
+          typ: 'access_token',
+          sub: tokenSubject,
+          client_id: tokenClientId,
+          scope: 'openid',
+        })
+          .setProtectedHeader({ alg: 'RS256', typ: 'JWT', kid: activeKey.kid })
+          .setIssuedAt()
+          .setExpirationTime('5m')
+          .setIssuer('https://wrong-issuer.example.com')
+          .sign(privateKey);
+
+        await expect(
+          services.jwtService.verifyAccessToken(token),
+        ).rejects.toThrow();
+      });
+    });
+
     test('should reject revoked access token', async () => {
       // Create real user and client for FK constraints
       const userSub = await createTestUser(services);
-      const clientId = await createTestOAuthClient(services);
+      const revokedTokenClientId = `revoked-token-client-${crypto.randomUUID()}`;
+      const clientId = await createTestOAuthClient(services, {
+        clientId: revokedTokenClientId,
+      });
 
       await withMikroContext(services, async () => {
         const token = await services.jwtService.signAccessToken({
           typ: 'access_token',
           sub: userSub,
-          client_id: 'test-client',
+          client_id: revokedTokenClientId,
           scope: 'openid',
         });
 
@@ -432,6 +461,54 @@ describe('JwtService', () => {
     });
   });
 
+  describe('active subject and client policy', () => {
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
+    const activePolicyClientId = 'jwt-active-policy-client';
+
+    beforeAll(async () => {
+      const server = await createTestApp(MINIMAL_TEST_CONFIG);
+      services = server.services;
+      cleanup = server.cleanup;
+      await createTestOAuthClient(services, { clientId: activePolicyClientId });
+    });
+
+    afterAll(async () => {
+      await cleanup();
+    });
+
+    test('should reject access token when subject no longer exists', async () => {
+      await withMikroContext(services, async () => {
+        const token = await services.jwtService.signAccessToken({
+          typ: 'access_token',
+          sub: 'missing-token-subject',
+          client_id: activePolicyClientId,
+          scope: 'openid',
+        });
+
+        await expect(
+          services.jwtService.verifyAccessToken(token),
+        ).rejects.toThrow();
+      });
+    });
+
+    test('should reject refresh token when client no longer exists', async () => {
+      const userSub = await createTestUser(services);
+      await withMikroContext(services, async () => {
+        const token = await services.jwtService.signRefreshToken({
+          typ: 'refresh_token',
+          sub: userSub,
+          client_id: 'missing-token-client',
+          scope: 'openid',
+        });
+
+        await expect(
+          services.jwtService.verifyRefreshToken(token),
+        ).rejects.toThrow();
+      });
+    });
+  });
+
   describe('convertToJWK and getJWKS', () => {
     let services: ServiceContainer;
     let cleanup: () => Promise<void>;
@@ -477,11 +554,15 @@ describe('JwtService', () => {
   describe('key rotation', () => {
     let services: ServiceContainer;
     let cleanup: () => Promise<void>;
+    let tokenSubject: string;
+    const tokenClientId = 'jwt-key-rotation-client';
 
     beforeAll(async () => {
       const server = await createTestApp(CLI_TEST_CONFIG);
       services = server.services;
       cleanup = server.cleanup;
+      tokenSubject = await createTestUser(services);
+      await createTestOAuthClient(services, { clientId: tokenClientId });
     });
 
     afterAll(async () => {
@@ -523,8 +604,8 @@ describe('JwtService', () => {
         // Sign a token with current key
         const token = await services.jwtService.signAccessToken({
           typ: 'access_token',
-          sub: 'user-rotate',
-          client_id: 'test-client',
+          sub: tokenSubject,
+          client_id: tokenClientId,
           scope: 'openid',
         });
 
@@ -534,7 +615,7 @@ describe('JwtService', () => {
 
         // Token signed with now-previous key should still verify
         const payload = await services.jwtService.verifyAccessToken(token);
-        expect(payload.sub).toBe('user-rotate');
+        expect(payload.sub).toBe(tokenSubject);
       });
     });
 
@@ -550,14 +631,187 @@ describe('JwtService', () => {
     });
   });
 
+  describe('JWT/JWKS edge security policy', () => {
+    let services: ServiceContainer;
+    let cleanup: () => Promise<void>;
+
+    beforeAll(async () => {
+      const server = await createTestApp(CLI_TEST_CONFIG);
+      services = server.services;
+      cleanup = server.cleanup;
+    });
+
+    afterAll(async () => {
+      await cleanup();
+    });
+
+    beforeEach(async () => {
+      await withMikroContext(services, async () => {
+        const em = services.mikro.em.fork();
+        await em.nativeDelete(JwtKeyEntity, {});
+      });
+      services.jwtService.clearActiveKeyCache();
+    });
+
+    test('should exclude retired keys from JWKS', async () => {
+      await withMikroContext(services, async () => {
+        const retiredKey = await services.jwtService.createAndActivateKey();
+        await services.jwtService.createNextKey();
+        await services.jwtService.rotateKeys();
+
+        retiredKey.status = JwtKeyStatus.RETIRED;
+        retiredKey.retired_at = new Date();
+        await services.mikro.em.flush();
+
+        const jwks = await services.jwtService.getJWKS();
+        const jwksKids = jwks.keys.map((key) => key.kid);
+
+        expect(jwksKids).not.toContain(retiredKey.kid);
+      });
+    });
+
+    test('should reject token signed with a retired key', async () => {
+      await withMikroContext(services, async () => {
+        const retiredKey = await services.jwtService.createAndActivateKey();
+        const privateKey = await importPKCS8(retiredKey.private_key, 'RS256');
+        const token = await new SignJWT({
+          typ: 'access_token',
+          sub: 'retired-key-user',
+          client_id: 'test-client',
+          scope: 'openid',
+        })
+          .setProtectedHeader({ alg: 'RS256', typ: 'JWT', kid: retiredKey.kid })
+          .setIssuedAt()
+          .setExpirationTime('5m')
+          .sign(privateKey);
+
+        retiredKey.status = JwtKeyStatus.RETIRED;
+        retiredKey.retired_at = new Date();
+        await services.mikro.em.flush();
+        services.jwtService.clearActiveKeyCache();
+
+        await expect(
+          services.jwtService.verifyAccessToken(token),
+        ).rejects.toThrow();
+      });
+    });
+
+    test('should reject signed token with missing kid', async () => {
+      await withMikroContext(services, async () => {
+        const activeKey = await services.jwtService.createAndActivateKey();
+        const privateKey = await importPKCS8(activeKey.private_key, 'RS256');
+        const token = await new SignJWT({
+          typ: 'access_token',
+          sub: 'missing-kid-user',
+          client_id: 'test-client',
+          scope: 'openid',
+        })
+          .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
+          .setIssuedAt()
+          .setExpirationTime('5m')
+          .sign(privateKey);
+
+        await expect(
+          services.jwtService.verifyAccessToken(token),
+        ).rejects.toThrow();
+      });
+    });
+
+    test('should reject signed token with unknown kid instead of falling back to other keys', async () => {
+      await withMikroContext(services, async () => {
+        const activeKey = await services.jwtService.createAndActivateKey();
+        const privateKey = await importPKCS8(activeKey.private_key, 'RS256');
+        const token = await new SignJWT({
+          typ: 'access_token',
+          sub: 'unknown-kid-user',
+          client_id: 'test-client',
+          scope: 'openid',
+        })
+          .setProtectedHeader({ alg: 'RS256', typ: 'JWT', kid: 'unknown-kid' })
+          .setIssuedAt()
+          .setExpirationTime('5m')
+          .sign(privateKey);
+
+        await expect(
+          services.jwtService.verifyAccessToken(token),
+        ).rejects.toThrow();
+      });
+    });
+
+    test('should reject alg none token', async () => {
+      await withMikroContext(services, async () => {
+        const activeKey = await services.jwtService.createAndActivateKey();
+        const header = Buffer.from(
+          JSON.stringify({ alg: 'none', typ: 'JWT', kid: activeKey.kid }),
+        ).toString('base64url');
+        const payload = Buffer.from(
+          JSON.stringify({
+            typ: 'access_token',
+            sub: 'alg-none-user',
+            client_id: 'test-client',
+            scope: 'openid',
+          }),
+        ).toString('base64url');
+        const token = `${header}.${payload}.`;
+
+        await expect(
+          services.jwtService.verifyAccessToken(token),
+        ).rejects.toThrow();
+      });
+    });
+
+    test('should reject HS256 token with an RSA key kid', async () => {
+      await withMikroContext(services, async () => {
+        const activeKey = await services.jwtService.createAndActivateKey();
+        const secret = crypto.getRandomValues(new Uint8Array(32));
+        const token = await new SignJWT({
+          typ: 'access_token',
+          sub: 'hs256-user',
+          client_id: 'test-client',
+          scope: 'openid',
+        })
+          .setProtectedHeader({ alg: 'HS256', typ: 'JWT', kid: activeKey.kid })
+          .setIssuedAt()
+          .setExpirationTime('5m')
+          .sign(secret);
+
+        await expect(
+          services.jwtService.verifyAccessToken(token),
+        ).rejects.toThrow();
+      });
+    });
+
+    test('should not create duplicate active keys under concurrent initialization', async () => {
+      await withMikroContext(services, async () => {
+        const keys = await Promise.all([
+          services.jwtService.getActiveKey(),
+          services.jwtService.getActiveKey(),
+          services.jwtService.getActiveKey(),
+          services.jwtService.getActiveKey(),
+        ]);
+        const uniqueKids = new Set(keys.map((key) => key.kid));
+        const activeKeys = await services.mikro.jwtKey.find({
+          status: JwtKeyStatus.ACTIVE,
+        });
+
+        expect(uniqueKids.size).toBe(1);
+        expect(activeKeys).toHaveLength(1);
+      });
+    });
+  });
+
   describe('validateBearerToken', () => {
     let services: ServiceContainer;
     let cleanup: () => Promise<void>;
+    let tokenSubject: string;
+    const tokenClientId = 'jwt-bearer-token-client';
 
     beforeAll(async () => {
       const server = await createTestApp(MINIMAL_TEST_CONFIG);
       services = server.services;
       cleanup = server.cleanup;
+      tokenSubject = await createTestUser(services);
+      await createTestOAuthClient(services, { clientId: tokenClientId });
     });
 
     afterAll(async () => {
@@ -568,8 +822,8 @@ describe('JwtService', () => {
       await withMikroContext(services, async () => {
         const token = await services.jwtService.signAccessToken({
           typ: 'access_token',
-          sub: 'user-e2e',
-          client_id: 'test-client',
+          sub: tokenSubject,
+          client_id: tokenClientId,
           scope: 'openid email',
         });
 
@@ -577,8 +831,8 @@ describe('JwtService', () => {
           headers: { authorization: `Bearer ${token}` },
         });
 
-        expect(payload.sub).toBe('user-e2e');
-        expect(payload.client_id).toBe('test-client');
+        expect(payload.sub).toBe(tokenSubject);
+        expect(payload.client_id).toBe(tokenClientId);
         expect(payload.scope).toBe('openid email');
       });
     });

@@ -4,9 +4,10 @@ import { z } from 'zod';
 import type { AppEnv } from '../../../../../lib/app-env.ts';
 import { TAGS } from '../../../../../lib/swagger-tags.ts';
 import { verifyAuth, verifyOAuth } from '../../../../../middleware/auth.ts';
-import { e } from '../../../../../schemas/error.ts';
+import { e, TinyAuthError } from '../../../../../schemas/error.ts';
 import { f } from '../../../../../schemas/field.ts';
 import { r } from '../../../../../schemas/response.ts';
+import type { OAuthCallbackResult } from '../../../../../services/oauth-connect.service.ts';
 
 export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
   '/oauth/:provider/callback',
@@ -137,16 +138,24 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
       throw new e.OAuthSessionExpired.Error();
     }
 
-    const result = await oauthConnectService.processOAuthCallback({
-      provider,
-      code,
-      state,
-      oauthSession,
-      userSub: c.var.verifiedUser?.user.sub,
-      requestUrl: c.req.url,
-    });
+    let result: OAuthCallbackResult;
+    try {
+      result = await oauthConnectService.processOAuthCallback({
+        provider,
+        code,
+        state,
+        oauthSession,
+        userSub: c.var.verifiedUser?.user.sub,
+        requestUrl: c.req.url,
+      });
+    } catch (err) {
+      session.set('oauth', undefined);
+      if (err instanceof TinyAuthError) {
+        return c.json(err.toJson(), err.status);
+      }
+      throw err;
+    }
 
-    // Clear OAuth session for all outcomes
     session.set('oauth', undefined);
 
     switch (result.action) {

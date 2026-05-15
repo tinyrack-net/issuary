@@ -195,6 +195,7 @@ export class PasskeyService {
   public async verifyAuthentication(
     response: AuthenticationResponseJSON,
     expectedChallenge: string,
+    expectedUserSub?: string,
   ): Promise<UserEntity> {
     // Find the passkey by credential ID
     const passkey = await this.mikro.userPasskey.findByCredentialId(
@@ -224,11 +225,21 @@ export class PasskeyService {
       throw new e.PasskeyVerificationFailed.Error();
     }
 
+    const passkeyUser = passkey.user.getEntity();
+    if (expectedUserSub && passkeyUser.sub !== expectedUserSub) {
+      throw new e.PasskeyUserMismatch.Error();
+    }
+
+    const newCounter = verification.authenticationInfo.newCounter;
+    if (newCounter < passkey.counter) {
+      throw new e.PasskeyVerificationFailed.Error();
+    }
+
     // Update counter for replay attack prevention
-    passkey.counter = verification.authenticationInfo.newCounter;
+    passkey.counter = newCounter;
     await this.mikro.em.flush();
 
-    return passkey.user.getEntity();
+    return passkeyUser;
   }
 
   /**

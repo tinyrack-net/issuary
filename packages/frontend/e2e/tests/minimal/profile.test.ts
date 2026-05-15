@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
@@ -6,6 +6,8 @@ import {
   E2E_TEST_USER,
   E2E_TEST_USER_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
+import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
+import { loginPasswordPage } from '#frontend-e2e/helpers/login.ts';
 import {
   changePasswordModal,
   loginAndGoToProfile,
@@ -28,11 +30,40 @@ const test = createScenarioFixture((backendPort) => ({
  * Generates a unique test email for each test to avoid collisions.
  */
 function uniqueEmail(suffix: string): string {
-  const ts = Date.now();
-  return `profile-${suffix}-${ts}@example.com`;
+  return createUniqueEmail(test.info(), `profile-${suffix}`);
 }
 
 const TEST_PASSWORD = 'test-password-123';
+const NEW_PASSWORD = 'new-password-456';
+
+async function expectPasswordLoginRejected(
+  page: Page,
+  email: string,
+  password: string,
+): Promise<void> {
+  await page.goto('/login/password');
+  await page.locator(loginPasswordPage.emailInput).fill(email);
+  await page.locator(loginPasswordPage.passwordInput).fill(password);
+  await page.locator(loginPasswordPage.submitButton).click();
+
+  await expect(page.locator(loginPasswordPage.fieldError).first()).toHaveText(
+    'Login failed. Please check your email and password.',
+  );
+  await expect(page).toHaveURL(/\/login\/password/);
+}
+
+async function expectPasswordLoginSucceeds(
+  page: Page,
+  email: string,
+  password: string,
+): Promise<void> {
+  await page.goto('/login/password');
+  await page.locator(loginPasswordPage.emailInput).fill(email);
+  await page.locator(loginPasswordPage.passwordInput).fill(password);
+  await page.locator(loginPasswordPage.submitButton).click();
+  await page.waitForURL('**/profile');
+  await expect(page.getByText(email).first()).toBeVisible();
+}
 
 test.describe('Profile page', () => {
   test('displays user email and account info', async ({ page, baseURL }) => {
@@ -99,7 +130,10 @@ test.describe('Profile page', () => {
 });
 
 test.describe('Change password', () => {
-  test('successful password change closes modal', async ({ page, baseURL }) => {
+  test('successful password change updates subsequent login behavior', async ({
+    page,
+    baseURL,
+  }) => {
     const email = uniqueEmail('change-pw-ok');
     const client = getTestApiClient({ baseUrl: String(baseURL) });
     const registerRes = await client.api.auth.register.$post({
@@ -119,18 +153,20 @@ test.describe('Change password', () => {
 
     // Fill in current and new passwords
     await page.locator(changePasswordModal.currentPassword).fill(TEST_PASSWORD);
-    await page
-      .locator(changePasswordModal.newPassword)
-      .fill('new-password-456');
-    await page
-      .locator(changePasswordModal.confirmPassword)
-      .fill('new-password-456');
+    await page.locator(changePasswordModal.newPassword).fill(NEW_PASSWORD);
+    await page.locator(changePasswordModal.confirmPassword).fill(NEW_PASSWORD);
 
     // Submit
     await page.locator(changePasswordModal.submitButton).click();
 
     // Modal should close
     await expect(page.locator(modal.openModal)).not.toBeVisible();
+
+    await page.getByRole('button', { name: 'Log out' }).click();
+    await page.waitForURL('**/login');
+
+    await expectPasswordLoginRejected(page, email, TEST_PASSWORD);
+    await expectPasswordLoginSucceeds(page, email, NEW_PASSWORD);
   });
 
   test('wrong current password shows error', async ({ page, baseURL }) => {

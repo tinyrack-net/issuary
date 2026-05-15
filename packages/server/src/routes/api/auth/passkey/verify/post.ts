@@ -86,6 +86,7 @@ export const authPasskeyVerifyPost = new Hono<AppEnv>().post(
     const passkeyUser = await passkeyService.verifyAuthentication(
       authResponse,
       challenge,
+      pending2FA?.user.sub,
     );
 
     if (pending2FA && passkeyUser.sub !== pending2FA.user.sub) {

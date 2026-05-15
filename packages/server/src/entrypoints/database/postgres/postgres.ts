@@ -32,6 +32,7 @@ export function postgres(database: PostgresDatabaseConfig): DatabaseConfig {
         extensions: [SeedManager, Migrator],
         migrations: {
           migrationsList: POSTGRES_MIGRATIONS,
+          snapshot: false,
         },
         driverOptions: database.driverOptions ?? {
           ssl: true,

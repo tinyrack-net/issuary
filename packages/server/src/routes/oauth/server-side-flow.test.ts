@@ -138,14 +138,13 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       expect(tokens.access_token).toBeDefined();
     });
 
-    test('should reject missing client_id in body even with Basic auth', async () => {
+    test('should reject Basic auth with invalid client secret', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
       const client = testClient(app);
       const tokenRes = await client.oauth.token.$post(
         {
-          // @ts-expect-error testing validation with invalid input
           form: {
             grant_type: 'authorization_code',
             code,
@@ -162,10 +161,10 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         },
       );
 
-      expect(tokenRes.status).toBe(400);
+      expect(tokenRes.status).toBe(401);
     });
 
-    test('should use body credentials regardless of Basic auth header', async () => {
+    test('should reject mixed Basic auth and body client_secret', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
@@ -190,12 +189,12 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         },
       );
 
-      expect(tokenRes.status).toBe(200);
+      expect(tokenRes.status).toBe(401);
     });
   });
 
   describe('Authentication Method Priority', () => {
-    test('should use body credentials when both body and header provided', async () => {
+    test('should reject body credentials when Basic auth is also provided', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
@@ -220,7 +219,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         },
       );
 
-      expect(tokenRes.status).toBe(200);
+      expect(tokenRes.status).toBe(401);
     });
   });
 

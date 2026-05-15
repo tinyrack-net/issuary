@@ -31,7 +31,7 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 10.33.2
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -66,7 +66,7 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 10.33.2
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -93,6 +93,9 @@ jobs:
 
       - name: Standalone tests
         run: pnpm --filter @tinyrack/tinyauth-standalone test
+
+      - name: Standalone dist tests
+        run: pnpm --filter @tinyrack/tinyauth-standalone test:dist
 
       - name: Frontend smoke E2E
         run: pnpm --filter @tinyrack/tinyauth-frontend run test:e2e:smoke
@@ -207,7 +210,7 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 10.33.2
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

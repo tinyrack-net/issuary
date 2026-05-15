@@ -107,6 +107,8 @@ export function sessionMiddleware(cookieSecret: string, isSecure: boolean) {
       setUserSession(userSub: string, authenticatedAt?: number): void {
         delete data.pending2FAUser;
         delete data.pending2FASetup;
+        delete data.oauth;
+        delete data.passkey_challenge;
         data.user = {
           sub: userSub,
           authenticated_at: authenticatedAt ?? Math.floor(Date.now() / 1000),

@@ -1,9 +1,15 @@
-import { expect } from '@playwright/test';
+import { type APIRequestContext, expect } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
+import { getEmailToken } from '#frontend-e2e/helpers/email-token.ts';
+import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
+import {
+  loginPasswordPage,
+  performLogin,
+} from '#frontend-e2e/helpers/login.ts';
 import {
   getPasswordResetToken,
   resetPasswordPage,
@@ -14,8 +20,7 @@ import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
  * Generates a unique test email for each test to avoid collisions.
  */
 function uniqueEmail(suffix: string): string {
-  const ts = Date.now();
-  return `reset-pw-${suffix}-${ts}@example.com`;
+  return createUniqueEmail(test.info(), `reset-pw-${suffix}`);
 }
 
 const TEST_PASSWORD = 'test-password-123';
@@ -49,10 +54,24 @@ async function requestResetToken(
   return getPasswordResetToken(baseURL, email);
 }
 
+async function verifyEmail(
+  request: APIRequestContext,
+  baseURL: string,
+  email: string,
+): Promise<void> {
+  const token = await getEmailToken(baseURL, email);
+  const verifyRes = await request.post(`${baseURL}/api/auth/email/verify`, {
+    data: { token },
+  });
+
+  expect(verifyRes.ok()).toBe(true);
+}
+
 test.describe('Reset password flow', () => {
   test('full flow: forgot -> token -> reset -> success', async ({
     page,
     baseURL,
+    request,
   }) => {
     const email = uniqueEmail('full-flow');
     const client = getTestApiClient({ baseUrl: String(baseURL) });
@@ -63,6 +82,7 @@ test.describe('Reset password flow', () => {
     if (!registerRes.ok) {
       throw new Error(`Failed to register user: ${registerRes.status}`);
     }
+    await verifyEmail(request, String(baseURL), email);
 
     // Request password reset
     const token = await requestResetToken(page, String(baseURL), email);
@@ -81,6 +101,18 @@ test.describe('Reset password flow', () => {
 
     // Success view should appear
     await expect(page.getByText('Password reset!')).toBeVisible();
+
+    await performLogin(page, email, TEST_PASSWORD);
+    await expect(
+      page.locator(loginPasswordPage.fieldError).first(),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/\/login\/password/);
+
+    await page.locator(loginPasswordPage.emailInput).fill(email);
+    await page.locator(loginPasswordPage.passwordInput).fill(NEW_PASSWORD);
+    await page.locator(loginPasswordPage.submitButton).click();
+    await page.waitForURL('**/profile');
+    await expect(page).toHaveURL(/\/profile/);
   });
 
   test('password reset token cannot be reused after success', async ({

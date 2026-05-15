@@ -1,4 +1,9 @@
-import { describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test } from 'vitest';
+import {
+  mockJsonSuccess,
+  queryFunctionContext,
+  resetFetchMock,
+} from '#frontend/test-utils/query-test-utils.ts';
 import type { AppConfigs } from './config.ts';
 import { appConfigQueryOptions } from './config.ts';
 
@@ -93,5 +98,28 @@ describe('appConfigQueryOptions.select', () => {
     });
 
     expect(config.available_2fa_setup_methods).toEqual([]);
+  });
+});
+
+describe('appConfigQueryOptions.queryFn', () => {
+  afterEach(() => {
+    resetFetchMock();
+  });
+
+  test('loads app config from the expected API endpoint', async () => {
+    const fetchMock = mockJsonSuccess(baseConfig);
+
+    if (typeof appConfigQueryOptions.queryFn !== 'function') {
+      throw new Error('Expected appConfigQueryOptions.queryFn to be defined');
+    }
+
+    await expect(
+      appConfigQueryOptions.queryFn(
+        queryFunctionContext(appConfigQueryOptions.queryKey),
+      ),
+    ).resolves.toEqual(baseConfig);
+    expect(fetchMock.requests).toHaveLength(1);
+    expect(fetchMock.requests[0]?.url).toBe('/api/config');
+    expect(fetchMock.requests[0]?.method).toBe('GET');
   });
 });

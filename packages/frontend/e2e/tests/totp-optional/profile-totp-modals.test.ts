@@ -4,6 +4,7 @@ import {
   createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
+import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
 import { performLogin } from '#frontend-e2e/helpers/login.ts';
 import { fillPinInput } from '#frontend-e2e/helpers/pin-input.ts';
 import {
@@ -20,8 +21,7 @@ import {
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
 function uniqueEmail(suffix: string): string {
-  const ts = Date.now();
-  return `profile-totp-modal-${suffix}-${ts}@example.com`;
+  return createUniqueEmail(test.info(), `profile-totp-modal-${suffix}`);
 }
 
 const TEST_PASSWORD = 'test-password-123';
@@ -264,7 +264,7 @@ test.describe('SetupTotpModal (profile)', () => {
 });
 
 test.describe('DisableTotpModal (profile, optional 2FA)', () => {
-  test('successfully disable TOTP with valid code', async ({
+  test('successfully disable TOTP and next login does not require TOTP', async ({
     page,
     baseURL,
   }) => {
@@ -308,6 +308,13 @@ test.describe('DisableTotpModal (profile, optional 2FA)', () => {
 
     // Enable button should be visible again
     await expect(page.getByRole('button', { name: 'Enable' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Log out' }).click();
+    await page.waitForURL('**/login');
+
+    await performLogin(page, email, TEST_PASSWORD);
+    await page.waitForURL('**/profile');
+    await expect(page.getByText(email).first()).toBeVisible();
   });
 
   test('cancel closes modal without disabling', async ({ page, baseURL }) => {

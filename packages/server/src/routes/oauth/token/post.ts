@@ -6,13 +6,18 @@ import { TAGS } from '../../../lib/swagger-tags.ts';
 import { e } from '../../../schemas/error.ts';
 import { f } from '../../../schemas/field.ts';
 import { r } from '../../../schemas/response.ts';
+import {
+  parseBasicClientCredentials,
+  setBasicClientAuthChallengeIfInvalidClientCredentials,
+  throwInvalidClientCredentialsWithBasicChallenge,
+} from '../client-auth.js';
 
 const TokenRequestBody = z
   .object({
     grant_type: f.grantType,
     code: f.authorizationCode.optional(),
     redirect_uri: f.redirectUri.optional(),
-    client_id: f.clientId,
+    client_id: f.clientId.optional(),
     client_secret: f.clientSecret.optional(),
     code_verifier: f.codeVerifier.optional(),
     refresh_token: f.token.optional(),
@@ -67,22 +72,48 @@ export const tokenPost = new Hono<AppEnv>().post(
     const body = c.req.valid('form');
     const { oauthClientService, oauthTokenService } = c.var.services;
 
+    const authorizationHeader = c.req.header('authorization');
+    const basicCredentials = parseBasicClientCredentials(authorizationHeader);
+
+    if (basicCredentials === null) {
+      throwInvalidClientCredentialsWithBasicChallenge(c);
+    }
+
+    if (basicCredentials && body.client_secret) {
+      throwInvalidClientCredentialsWithBasicChallenge(c);
+    }
+
+    if (basicCredentials && body.client_id) {
+      if (basicCredentials.clientId !== body.client_id) {
+        throwInvalidClientCredentialsWithBasicChallenge(c);
+      }
+    }
+
+    const clientId = basicCredentials?.clientId ?? body.client_id;
+    if (!clientId) {
+      throw new e.InvalidClientCredentials.Error();
+    }
+
     // 1. Validate client
-    const client = await oauthClientService.findByClientId(body.client_id);
+    const client = await oauthClientService.findByClientId(clientId);
 
     if (!client.enabled) {
       throw new e.OAuthClientDisabled.Error();
     }
 
-    // 2. Validate client secret if provided
-    if (body.client_secret) {
-      const isValid = await oauthClientService.verifyClientSecret(
-        body.client_id,
-        body.client_secret,
+    // 2. Confidential clients must authenticate; public clients must not.
+    const clientSecret = basicCredentials?.clientSecret ?? body.client_secret;
+
+    try {
+      await oauthClientService.validateClientSecretIfRequired(
+        clientId,
+        clientSecret,
       );
-      if (!isValid) {
-        throw new e.InvalidClientCredentials.Error();
+    } catch (err) {
+      if (authorizationHeader) {
+        setBasicClientAuthChallengeIfInvalidClientCredentials(c, err);
       }
+      throw err;
     }
 
     // 3. Handle grant type
@@ -97,7 +128,7 @@ export const tokenPost = new Hono<AppEnv>().post(
       const tokens = await oauthTokenService.exchangeAuthorizationCode({
         code: body.code,
         redirectUri: body.redirect_uri,
-        clientId: body.client_id,
+        clientId,
         codeVerifier: body.code_verifier ?? undefined,
       });
 
@@ -111,7 +142,7 @@ export const tokenPost = new Hono<AppEnv>().post(
 
       const tokens = await oauthTokenService.refreshAccessToken({
         refreshToken: body.refresh_token,
-        clientId: body.client_id,
+        clientId,
       });
 
       return c.json(tokens, 200);

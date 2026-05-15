@@ -4,7 +4,7 @@ import { playwright } from '@vitest/browser-playwright';
 import { preview } from '@vitest/browser-preview';
 import { defineConfig } from 'vitest/config';
 
-const MODE = process.env['VITEST_BROWSER_MODE'] as string;
+const MODE = process.env['VITEST_BROWSER_MODE'];
 const IS_COVERAGE = process.env['VITEST_COVERAGE'] === '1';
 
 export default defineConfig({
@@ -22,6 +22,12 @@ export default defineConfig({
         'src/test-utils/**',
         'src/routeTree.gen.ts',
       ],
+      thresholds: {
+        lines: 35,
+        branches: 25,
+        functions: 30,
+        statements: 35,
+      },
       reporter: ['text', 'lcov'],
     },
     projects: [

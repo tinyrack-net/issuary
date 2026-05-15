@@ -117,4 +117,50 @@ export class OAuthClientService {
       clientSecret,
     );
   }
+
+  public async validateClientSecretIfRequired(
+    clientId: string,
+    clientSecret: string | undefined,
+  ): Promise<void> {
+    const client = await this.mikro.oauthClient.findOne(
+      { clientId },
+      { populate: ['clientSecretHash'] },
+    );
+
+    if (!client) {
+      throw new e.OAuthClientNotFound.Error();
+    }
+
+    if (!client.clientSecretHash) {
+      if (clientSecret) {
+        throw new e.InvalidClientCredentials.Error();
+      }
+      return;
+    }
+
+    if (!clientSecret) {
+      throw new e.InvalidClientCredentials.Error();
+    }
+
+    const isValid = await this.securityService.verifyClientSecret(
+      client.clientSecretHash,
+      clientSecret,
+    );
+
+    if (!isValid) {
+      throw new e.InvalidClientCredentials.Error();
+    }
+  }
+
+  public async isPublicClient(clientId: string): Promise<boolean> {
+    const client = await this.mikro.oauthClient.findOneOrFail(
+      { clientId },
+      {
+        failHandler: () => new e.OAuthClientNotFound.Error(),
+        populate: ['clientSecretHash'],
+      },
+    );
+
+    return !client.clientSecretHash;
+  }
 }

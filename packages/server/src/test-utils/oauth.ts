@@ -153,10 +153,14 @@ export async function exchangeCodeForTokens(
   const {
     code,
     clientId = TEST_OAUTH_CLIENT.clientId,
-    clientSecret,
     redirectUri = TEST_OAUTH_CLIENT.redirectUri,
     codeVerifier,
   } = params;
+  const clientSecret =
+    params.clientSecret ??
+    (clientId === TEST_OAUTH_CLIENT.clientId
+      ? TEST_OAUTH_CLIENT.clientSecret
+      : undefined);
 
   const client = testClient(app);
   return client.oauth.token.$post({
@@ -191,11 +195,12 @@ export async function refreshAccessToken(
   app: AppType,
   params: RefreshTokenParams,
 ) {
-  const {
-    refreshToken,
-    clientId = TEST_OAUTH_CLIENT.clientId,
-    clientSecret,
-  } = params;
+  const { refreshToken, clientId = TEST_OAUTH_CLIENT.clientId } = params;
+  const clientSecret =
+    params.clientSecret ??
+    (clientId === TEST_OAUTH_CLIENT.clientId
+      ? TEST_OAUTH_CLIENT.clientSecret
+      : undefined);
 
   const client = testClient(app);
   return client.oauth.token.$post({
@@ -318,8 +323,12 @@ export async function introspectToken(
     token,
     tokenTypeHint,
     clientId = TEST_OAUTH_CLIENT.clientId,
-    clientSecret,
   } = params;
+  const clientSecret =
+    params.clientSecret ??
+    (clientId === TEST_OAUTH_CLIENT.clientId
+      ? TEST_OAUTH_CLIENT.clientSecret
+      : undefined);
 
   const client = testClient(app);
   return client.oauth.introspect.$post({
@@ -360,8 +369,12 @@ export async function revokeToken(app: AppType, params: RevokeTokenParams) {
     token,
     tokenTypeHint,
     clientId = TEST_OAUTH_CLIENT.clientId,
-    clientSecret,
   } = params;
+  const clientSecret =
+    params.clientSecret ??
+    (clientId === TEST_OAUTH_CLIENT.clientId
+      ? TEST_OAUTH_CLIENT.clientSecret
+      : undefined);
 
   const client = testClient(app);
   return client.oauth.revoke.$post({

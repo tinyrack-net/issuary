@@ -15,14 +15,27 @@ import {
   MINIMAL_TEST_CONFIG,
   parseJwks,
   refreshAccessToken,
-  TEST_OAUTH_CLIENT,
-  TEST_OAUTH_CLIENT_CONFIG,
   TEST_PKCE,
   TEST_USER_CONFIG,
 } from '../../test-utils/index.ts';
 
 let app: AppType;
 let cleanup: () => Promise<void>;
+
+const TEST_OAUTH_CLIENT = {
+  clientId: 'spa-public-pkce-client',
+  redirectUri: 'http://localhost:8080/spa-callback',
+};
+
+const TEST_OAUTH_CLIENT_CONFIG = {
+  id: 'spa-public-pkce-client-config',
+  name: 'SPA Public PKCE Client',
+  client_id: TEST_OAUTH_CLIENT.clientId,
+  redirect_uris: [TEST_OAUTH_CLIENT.redirectUri],
+  response_types: ['code'],
+  grant_types: ['authorization_code', 'refresh_token'],
+  scope: 'openid profile email',
+};
 
 beforeAll(async () => {
   ({ app, cleanup } = await createTestApp({
@@ -86,6 +99,8 @@ describe('SPA PKCE Authentication Flow', () => {
 
       // Step 3: Get authorization code with PKCE
       const { code, location } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge,
         codeChallengeMethod: 'S256',
@@ -128,12 +143,16 @@ describe('SPA PKCE Authentication Flow', () => {
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge,
         codeChallengeMethod: 'S256',
       });
 
       const tokenRes = await exchangeCodeForTokens(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         code,
         codeVerifier,
       });
@@ -148,12 +167,16 @@ describe('SPA PKCE Authentication Flow', () => {
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge,
         codeChallengeMethod: 'S256',
       });
 
       const tokenRes = await exchangeCodeForTokens(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         code,
         codeVerifier,
       });
@@ -167,12 +190,16 @@ describe('SPA PKCE Authentication Flow', () => {
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge,
         codeChallengeMethod: 'S256',
       });
 
       const tokenRes = await exchangeCodeForTokens(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         code,
         codeVerifier,
       });
@@ -188,6 +215,8 @@ describe('SPA PKCE Authentication Flow', () => {
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge,
         codeChallengeMethod: 'S256',
@@ -213,6 +242,8 @@ describe('SPA PKCE Authentication Flow', () => {
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge,
         codeChallengeMethod: 'S256',
@@ -239,12 +270,16 @@ describe('SPA PKCE Authentication Flow', () => {
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge,
         codeChallengeMethod: 'S256',
       });
 
       const tokenRes = await exchangeCodeForTokens(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         code,
         codeVerifier: wrongVerifier,
       });
@@ -259,6 +294,8 @@ describe('SPA PKCE Authentication Flow', () => {
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge,
         codeChallengeMethod: 'S256',
@@ -285,12 +322,16 @@ describe('SPA PKCE Authentication Flow', () => {
     test('should work with S256 challenge method', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge: TEST_PKCE.codeChallenge,
         codeChallengeMethod: 'S256',
       });
 
       const tokenRes = await exchangeCodeForTokens(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         code,
         codeVerifier: TEST_PKCE.codeVerifier,
       });
@@ -298,22 +339,38 @@ describe('SPA PKCE Authentication Flow', () => {
       expect(tokenRes.status).toBe(200);
     });
 
-    test('should work with plain challenge method', async () => {
+    test('should reject plain challenge method for public client', async () => {
       const plainVerifier = generateCodeVerifier();
 
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, {
-        sessionCookie,
-        codeChallenge: plainVerifier, // Plain = verifier is the challenge
-        codeChallengeMethod: 'plain',
+      await grantConsent(app, sessionCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: 'openid profile email',
+        code_challenge: plainVerifier,
+        code_challenge_method: 'plain',
       });
 
-      const tokenRes = await exchangeCodeForTokens(app, {
-        code,
-        codeVerifier: plainVerifier,
-      });
+      const authClient = testClient(app);
+      const res = await authClient.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: 'openid profile email',
+            code_challenge: plainVerifier,
+            code_challenge_method: 'plain',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
 
-      expect(tokenRes.status).toBe(200);
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
+
+      expect(res.status).toBe(302);
+      expect(location.searchParams.get('error')).toBe('invalid_request');
+      expect(location.searchParams.has('code')).toBe(false);
     });
 
     test('should default to S256 when method not specified', async () => {
@@ -352,6 +409,8 @@ describe('SPA PKCE Authentication Flow', () => {
 
       // Should work with S256 verifier
       const tokenRes = await exchangeCodeForTokens(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         code,
         codeVerifier: TEST_PKCE.codeVerifier,
       });
@@ -366,6 +425,8 @@ describe('SPA PKCE Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
       const { location } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge: TEST_PKCE.codeChallenge,
         codeChallengeMethod: 'S256',
@@ -380,7 +441,11 @@ describe('SPA PKCE Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
       const { location } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
+        codeChallenge: TEST_PKCE.codeChallenge,
+        codeChallengeMethod: 'S256',
         state,
       });
 
@@ -398,7 +463,11 @@ describe('SPA PKCE Authentication Flow', () => {
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { location } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
+        codeChallenge: TEST_PKCE.codeChallenge,
+        codeChallengeMethod: 'S256',
         state,
       });
 
@@ -450,6 +519,8 @@ describe('SPA PKCE Authentication Flow', () => {
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge,
         codeChallengeMethod: 'S256',
@@ -457,6 +528,8 @@ describe('SPA PKCE Authentication Flow', () => {
 
       // Get initial tokens
       const tokenRes = await exchangeCodeForTokens(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         code,
         codeVerifier,
       });
@@ -484,19 +557,26 @@ describe('SPA PKCE Authentication Flow', () => {
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge,
         codeChallengeMethod: 'S256',
       });
 
       const tokenRes = await exchangeCodeForTokens(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         code,
         codeVerifier,
       });
       const { refresh_token: rt1 } = await tokenRes.json();
 
       // First refresh
-      const refreshRes1 = await refreshAccessToken(app, { refreshToken: rt1 });
+      const refreshRes1 = await refreshAccessToken(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        refreshToken: rt1,
+      });
       expect(refreshRes1.status).toBe(200);
       const { refresh_token: rt2 } = await refreshRes1.json();
 
@@ -504,7 +584,10 @@ describe('SPA PKCE Authentication Flow', () => {
       expect(rt2).toBeDefined();
 
       // Second refresh with new token
-      const refreshRes2 = await refreshAccessToken(app, { refreshToken: rt2 });
+      const refreshRes2 = await refreshAccessToken(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        refreshToken: rt2,
+      });
       expect(refreshRes2.status).toBe(200);
     });
   });
@@ -515,11 +598,15 @@ describe('SPA PKCE Authentication Flow', () => {
 
       // First, complete a normal flow to establish consent
       const { code: firstCode } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge: TEST_PKCE.codeChallenge,
         codeChallengeMethod: 'S256',
       });
       await exchangeCodeForTokens(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         code: firstCode,
         codeVerifier: TEST_PKCE.codeVerifier,
       });
@@ -581,6 +668,8 @@ describe('SPA PKCE Authentication Flow', () => {
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge,
         codeChallengeMethod: 'S256',
@@ -588,6 +677,8 @@ describe('SPA PKCE Authentication Flow', () => {
       });
 
       const tokenRes = await exchangeCodeForTokens(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         code,
         codeVerifier,
       });
@@ -604,12 +695,16 @@ describe('SPA PKCE Authentication Flow', () => {
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge,
         codeChallengeMethod: 'S256',
       });
 
       const tokenRes = await exchangeCodeForTokens(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         code,
         codeVerifier,
       });
@@ -645,6 +740,8 @@ describe('SPA PKCE Authentication Flow', () => {
     test('should handle expired authorization code gracefully', async () => {
       // Use a fake/expired code
       const res = await exchangeCodeForTokens(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         code: 'expired-or-invalid-code',
         codeVerifier: TEST_PKCE.codeVerifier,
       });
@@ -655,35 +752,38 @@ describe('SPA PKCE Authentication Flow', () => {
   });
 
   describe('SPA Token Introspection', () => {
-    test('should allow token introspection without client_secret', async () => {
+    test('should reject token introspection without client_secret', async () => {
       const codeVerifier = generateCodeVerifier();
       const codeChallenge = await generateS256Challenge(codeVerifier);
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge,
         codeChallengeMethod: 'S256',
       });
 
       const tokenRes = await exchangeCodeForTokens(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         code,
         codeVerifier,
       });
       const { access_token } = await tokenRes.json();
 
-      // Introspect without client_secret
       const introspectClient = testClient(app);
       const introspectRes = await introspectClient.oauth.introspect.$post({
         form: {
           token: access_token,
+          client_id: TEST_OAUTH_CLIENT.clientId,
           // No client_secret
         },
       });
 
-      const result = await assertJsonBody(introspectRes);
-      expect(result.active).toBe(true);
-      expect(result.client_id).toBe(TEST_OAUTH_CLIENT.clientId);
+      const result = await assertJsonBody(introspectRes, 401);
+      expect(result.code).toBe('INVALID_CLIENT_CREDENTIALS');
     });
   });
 
@@ -694,6 +794,8 @@ describe('SPA PKCE Authentication Flow', () => {
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge,
         codeChallengeMethod: 'S256',
@@ -701,6 +803,8 @@ describe('SPA PKCE Authentication Flow', () => {
       });
 
       const tokenRes = await exchangeCodeForTokens(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         code,
         codeVerifier,
       });
@@ -717,6 +821,8 @@ describe('SPA PKCE Authentication Flow', () => {
 
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
         codeChallenge,
         codeChallengeMethod: 'S256',
@@ -724,6 +830,8 @@ describe('SPA PKCE Authentication Flow', () => {
       });
 
       const tokenRes = await exchangeCodeForTokens(app, {
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         code,
         codeVerifier,
       });

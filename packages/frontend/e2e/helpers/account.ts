@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
 export type RegisterUserInput = {
@@ -16,9 +17,8 @@ export function createUniqueEmail(
   prefix: string,
   domain = 'example.com',
 ): string {
-  const ts = Date.now();
-  const random = Math.random().toString(36).slice(2, 8);
-  return `${prefix}-${ts}-${random}@${domain}`;
+  const suffix = randomUUID().replaceAll('-', '').slice(0, 12);
+  return `${prefix}-${suffix}@${domain}`;
 }
 
 /**

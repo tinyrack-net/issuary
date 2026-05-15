@@ -5,6 +5,11 @@ import type { AppEnv } from '../../../lib/app-env.ts';
 import { TAGS } from '../../../lib/swagger-tags.ts';
 import { e } from '../../../schemas/error.ts';
 import { f } from '../../../schemas/field.ts';
+import {
+  parseBasicClientCredentials,
+  setBasicClientAuthChallengeIfInvalidClientCredentials,
+  throwInvalidClientCredentialsWithBasicChallenge,
+} from '../client-auth.js';
 
 const RevokeRequestBody = z
   .object({
@@ -67,28 +72,53 @@ export const revokePost = new Hono<AppEnv>().post(
   async (c) => {
     const body = c.req.valid('form');
     const { oauthClientService, oauthTokenService } = c.var.services;
+    const authorizationHeader = c.req.header('authorization');
+    const basicCredentials = parseBasicClientCredentials(authorizationHeader);
 
-    // 1. Validate client credentials if provided
-    if (body.client_id) {
-      const client = await oauthClientService.findByClientId(body.client_id);
+    if (basicCredentials === null) {
+      throwInvalidClientCredentialsWithBasicChallenge(c);
+    }
 
-      if (!client.enabled) {
-        throw new e.OAuthClientDisabled.Error();
-      }
+    if (basicCredentials && body.client_secret) {
+      throwInvalidClientCredentialsWithBasicChallenge(c);
+    }
 
-      if (body.client_secret) {
-        const isValid = await oauthClientService.verifyClientSecret(
-          body.client_id,
-          body.client_secret,
-        );
-        if (!isValid) {
-          throw new e.InvalidClientCredentials.Error();
-        }
+    if (basicCredentials && body.client_id) {
+      if (basicCredentials.clientId !== body.client_id) {
+        throwInvalidClientCredentialsWithBasicChallenge(c);
       }
     }
 
-    // 3. Revoke the token
-    await oauthTokenService.revokeToken(body.token, body.token_type_hint);
+    const clientId = basicCredentials?.clientId ?? body.client_id;
+    if (!clientId) {
+      throw new e.InvalidClientCredentials.Error();
+    }
+
+    const client = await oauthClientService.findByClientId(clientId);
+
+    if (!client.enabled) {
+      throw new e.OAuthClientDisabled.Error();
+    }
+
+    const clientSecret = basicCredentials?.clientSecret ?? body.client_secret;
+
+    try {
+      await oauthClientService.validateClientSecretIfRequired(
+        clientId,
+        clientSecret,
+      );
+    } catch (err) {
+      if (authorizationHeader) {
+        setBasicClientAuthChallengeIfInvalidClientCredentials(c, err);
+      }
+      throw err;
+    }
+
+    await oauthTokenService.revokeToken(
+      body.token,
+      body.token_type_hint,
+      clientId,
+    );
 
     return c.json({}, 200);
   },

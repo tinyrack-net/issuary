@@ -7,8 +7,10 @@ import {
   assertDefined,
   assertJsonBody,
   createAuthenticatedSession,
+  createDbUserWithSession,
   createTestApp,
   exchangeCodeForTokens,
+  generateUniqueEmail,
   getAuthorizationCode,
   MINIMAL_TEST_CONFIG,
   refreshAccessToken,
@@ -16,17 +18,33 @@ import {
   TEST_OAUTH_CLIENT_CONFIG,
   TEST_PKCE,
   TEST_USER_CONFIG,
+  withMikroContext,
 } from '../../../test-utils/index.ts';
 
 let app: AppType;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
+const PUBLIC_OAUTH_CLIENT = {
+  clientId: 'public-pkce-client',
+  redirectUri: 'http://localhost:8080/public-callback',
+} as const;
+
+const PUBLIC_OAUTH_CLIENT_CONFIG = {
+  id: 'public-pkce-client-config',
+  name: 'Public PKCE Client',
+  client_id: PUBLIC_OAUTH_CLIENT.clientId,
+  redirect_uris: [PUBLIC_OAUTH_CLIENT.redirectUri],
+  response_types: ['code'],
+  grant_types: ['authorization_code', 'refresh_token'],
+  scope: 'openid profile email',
+};
+
 beforeAll(async () => {
   ({ app, services, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
-    clients: [TEST_OAUTH_CLIENT_CONFIG],
+    clients: [TEST_OAUTH_CLIENT_CONFIG, PUBLIC_OAUTH_CLIENT_CONFIG],
   }));
 
   await services.mikro.em.fork().transactional(async (em) => {
@@ -59,7 +77,10 @@ async function exchangeCode(params: {
   redirectUri?: string;
   codeVerifier?: string;
 }) {
-  return exchangeCodeForTokens(app, params);
+  return exchangeCodeForTokens(app, {
+    clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+    ...params,
+  });
 }
 
 /**
@@ -70,7 +91,20 @@ async function refreshToken(params: {
   clientId?: string;
   clientSecret?: string;
 }) {
-  return refreshAccessToken(app, params);
+  return refreshAccessToken(app, {
+    clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+    ...params,
+  });
+}
+
+function basicAuthHeader(clientId: string, clientSecret: string) {
+  const encodedClientId = encodeURIComponent(clientId);
+  const encodedClientSecret = encodeURIComponent(clientSecret);
+  const credentials = Buffer.from(
+    `${encodedClientId}:${encodedClientSecret}`,
+    'utf8',
+  ).toString('base64');
+  return `Basic ${credentials}`;
 }
 
 describe('POST /oauth/token', () => {
@@ -99,6 +133,88 @@ describe('POST /oauth/token', () => {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
+
+      const json = await assertJsonBody(res, 200);
+      expect(json.access_token).toBeDefined();
+    });
+
+    test('should exchange authorization code with Basic-only confidential client authentication', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const client = testClient(app);
+      const res = await client.oauth.token.$post(
+        {
+          form: {
+            grant_type: 'authorization_code',
+            code,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          },
+        },
+        {
+          headers: {
+            Authorization: basicAuthHeader(
+              TEST_OAUTH_CLIENT.clientId,
+              TEST_OAUTH_CLIENT.clientSecret,
+            ),
+          },
+        },
+      );
+
+      const json = await assertJsonBody(res, 200);
+      expect(json.access_token).toBeDefined();
+    });
+
+    test('should decode form-encoded Basic credentials', async () => {
+      const encodedClient = {
+        clientId: 'basic encoded client',
+        clientSecret: 'secret:with space',
+        redirectUri: 'http://localhost:8080/basic-encoded-callback',
+      };
+      await services.mikro.em.fork().transactional(async (em) => {
+        const clientSecretHash =
+          await services.securityService.hashClientSecret(
+            encodedClient.clientSecret,
+          );
+        const oauthClient = services.mikro.oauthClient.create({
+          clientId: encodedClient.clientId,
+          clientSecretHash,
+          name: 'Basic Encoded Client',
+          redirectUris: [encodedClient.redirectUri],
+          responseTypes: ['code'],
+          grantTypes: ['authorization_code'],
+          scopes: ['openid', 'profile', 'email'],
+          enabled: true,
+          managed_by: 'database',
+        });
+        await em.persist(oauthClient).flush();
+      });
+
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        clientId: encodedClient.clientId,
+        redirectUri: encodedClient.redirectUri,
+      });
+
+      const client = testClient(app);
+      const res = await client.oauth.token.$post(
+        {
+          form: {
+            grant_type: 'authorization_code',
+            code,
+            redirect_uri: encodedClient.redirectUri,
+          },
+        },
+        {
+          headers: {
+            Authorization: basicAuthHeader(
+              encodedClient.clientId,
+              encodedClient.clientSecret,
+            ),
+          },
+        },
+      );
 
       const json = await assertJsonBody(res, 200);
       expect(json.access_token).toBeDefined();
@@ -170,6 +286,24 @@ describe('POST /oauth/token', () => {
   });
 
   describe('Authorization Code Grant - Client Validation', () => {
+    test('should reject confidential client token request without client_secret', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const client = testClient(app);
+      const res = await client.oauth.token.$post({
+        form: {
+          grant_type: 'authorization_code',
+          code,
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        },
+      });
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+    });
+
     test('should reject invalid client_id', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
@@ -207,6 +341,150 @@ describe('POST /oauth/token', () => {
 
       const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+    });
+
+    test('should reject mixed Basic and body client_secret authentication', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const client = testClient(app);
+      const res = await client.oauth.token.$post(
+        {
+          form: {
+            grant_type: 'authorization_code',
+            code,
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            client_secret: TEST_OAUTH_CLIENT.clientSecret,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          },
+        },
+        {
+          headers: {
+            Authorization: basicAuthHeader(
+              TEST_OAUTH_CLIENT.clientId,
+              TEST_OAUTH_CLIENT.clientSecret,
+            ),
+          },
+        },
+      );
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+    });
+
+    test('should reject conflicting Basic and body client_id', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const client = testClient(app);
+      const res = await client.oauth.token.$post(
+        {
+          form: {
+            grant_type: 'authorization_code',
+            code,
+            client_id: PUBLIC_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          },
+        },
+        {
+          headers: {
+            Authorization: basicAuthHeader(
+              TEST_OAUTH_CLIENT.clientId,
+              TEST_OAUTH_CLIENT.clientSecret,
+            ),
+          },
+        },
+      );
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+    });
+
+    test('should reject malformed Basic auth instead of using body credentials', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const client = testClient(app);
+      const res = await client.oauth.token.$post(
+        {
+          form: {
+            grant_type: 'authorization_code',
+            code,
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            client_secret: TEST_OAUTH_CLIENT.clientSecret,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          },
+        },
+        {
+          headers: {
+            Authorization: 'Basic malformed',
+          },
+        },
+      );
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+    });
+
+    test('should reject non-canonical Basic base64 and include a Basic challenge', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const client = testClient(app);
+      const res = await client.oauth.token.$post(
+        {
+          form: {
+            grant_type: 'authorization_code',
+            code,
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            client_secret: TEST_OAUTH_CLIENT.clientSecret,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          },
+        },
+        {
+          headers: {
+            Authorization: `${basicAuthHeader(
+              TEST_OAUTH_CLIENT.clientId,
+              TEST_OAUTH_CLIENT.clientSecret,
+            )}$$`,
+          },
+        },
+      );
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+      expect(res.headers.get('WWW-Authenticate')).toBe(
+        'Basic realm="tinyauth"',
+      );
+    });
+
+    test('should reject unsupported Authorization schemes instead of using body credentials', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const client = testClient(app);
+      const res = await client.oauth.token.$post(
+        {
+          form: {
+            grant_type: 'authorization_code',
+            code,
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            client_secret: TEST_OAUTH_CLIENT.clientSecret,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          },
+        },
+        {
+          headers: {
+            Authorization: 'Bearer access-token',
+          },
+        },
+      );
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+      expect(res.headers.get('WWW-Authenticate')).toBe(
+        'Basic realm="tinyauth"',
+      );
     });
 
     test('should reject disabled client', async () => {
@@ -254,6 +532,7 @@ describe('POST /oauth/token', () => {
         form: {
           grant_type: 'authorization_code',
           client_id: TEST_OAUTH_CLIENT.clientId,
+          client_secret: TEST_OAUTH_CLIENT.clientSecret,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
           // code missing
         },
@@ -275,6 +554,7 @@ describe('POST /oauth/token', () => {
           grant_type: 'authorization_code',
           code,
           client_id: TEST_OAUTH_CLIENT.clientId,
+          client_secret: TEST_OAUTH_CLIENT.clientSecret,
           // redirect_uri missing
         },
       });
@@ -330,6 +610,31 @@ describe('POST /oauth/token', () => {
       expect(json.code).toBe('INVALID_PKCE_VERIFIER');
     });
 
+    test('should consume authorization code after failed PKCE verification', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        codeChallenge: TEST_PKCE.codeChallenge,
+        codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const invalidPkceRes = await exchangeCode({
+        code,
+        codeVerifier: 'wrong-verifier-that-does-not-match-the-challenge',
+      });
+
+      const invalidPkceJson = await assertJsonBody(invalidPkceRes, 400);
+      expect(invalidPkceJson.code).toBe('INVALID_PKCE_VERIFIER');
+
+      const retryRes = await exchangeCode({
+        code,
+        codeVerifier: TEST_PKCE.codeVerifier,
+      });
+
+      const retryJson = await assertJsonBody(retryRes, 400);
+      expect(retryJson.code).toBe('INVALID_AUTHORIZATION_CODE');
+    });
+
     test('should accept request without code_verifier when PKCE was not used', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
@@ -343,6 +648,43 @@ describe('POST /oauth/token', () => {
       });
 
       expect(res.status).toBe(200);
+    });
+
+    test('should reject legacy public-client authorization code without stored code_challenge', async () => {
+      const legacyCode = `legacy-public-code-${crypto.randomUUID()}`;
+      const codeHash = await services.securityService.hashOpaqueToken(
+        'oauth-code',
+        legacyCode,
+      );
+      const { userSub } = await createDbUserWithSession(
+        app,
+        services,
+        generateUniqueEmail('legacy-public-code'),
+        'password123!',
+      );
+      await withMikroContext(services, async () => {
+        const publicClient = await services.oauthClientService.findByClientId(
+          PUBLIC_OAUTH_CLIENT.clientId,
+        );
+
+        await services.mikro.oauthCode.createAuthorizationCode({
+          clientId: publicClient.id,
+          userSub,
+          codeHash,
+          redirectUri: PUBLIC_OAUTH_CLIENT.redirectUri,
+          scope: ['openid', 'profile', 'email'],
+        });
+      });
+
+      const res = await exchangeCodeForTokens(app, {
+        code: legacyCode,
+        clientId: PUBLIC_OAUTH_CLIENT.clientId,
+        redirectUri: PUBLIC_OAUTH_CLIENT.redirectUri,
+        codeVerifier: TEST_PKCE.codeVerifier,
+      });
+
+      const json = await assertJsonBody(res, 400);
+      expect(json.code).toBe('INVALID_PKCE_VERIFIER');
     });
   });
 
@@ -406,12 +748,67 @@ describe('POST /oauth/token', () => {
   });
 
   describe('Refresh Token Grant - Validation', () => {
+    test('should reject confidential client refresh without client_secret', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const tokenRes = await exchangeCode({ code });
+      const { refresh_token } = await tokenRes.json();
+
+      const client = testClient(app);
+      const res = await client.oauth.token.$post({
+        form: {
+          grant_type: 'refresh_token',
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          refresh_token,
+        },
+      });
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+    });
+
+    test('should allow public client authorization code and refresh without client_secret', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        clientId: PUBLIC_OAUTH_CLIENT.clientId,
+        redirectUri: PUBLIC_OAUTH_CLIENT.redirectUri,
+        codeChallenge: TEST_PKCE.codeChallenge,
+        codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const client = testClient(app);
+      const tokenRes = await client.oauth.token.$post({
+        form: {
+          grant_type: 'authorization_code',
+          code,
+          client_id: PUBLIC_OAUTH_CLIENT.clientId,
+          redirect_uri: PUBLIC_OAUTH_CLIENT.redirectUri,
+          code_verifier: TEST_PKCE.codeVerifier,
+        },
+      });
+      const tokenJson = await assertJsonBody(tokenRes, 200);
+      expect(tokenJson.refresh_token).toBeDefined();
+
+      const refreshRes = await client.oauth.token.$post({
+        form: {
+          grant_type: 'refresh_token',
+          client_id: PUBLIC_OAUTH_CLIENT.clientId,
+          refresh_token: tokenJson.refresh_token,
+        },
+      });
+
+      const refreshJson = await assertJsonBody(refreshRes, 200);
+      expect(refreshJson.access_token).toBeDefined();
+    });
+
     test('should reject missing refresh_token', async () => {
       const client = testClient(app);
       const res = await client.oauth.token.$post({
         form: {
           grant_type: 'refresh_token',
           client_id: TEST_OAUTH_CLIENT.clientId,
+          client_secret: TEST_OAUTH_CLIENT.clientSecret,
           // refresh_token missing
         },
       });
@@ -578,6 +975,7 @@ describe('POST /oauth/token', () => {
           grant_type: 'authorization_code',
           code: code1,
           client_id: TEST_OAUTH_CLIENT.clientId,
+          client_secret: TEST_OAUTH_CLIENT.clientSecret,
           redirect_uri: 'http://wrong.com/callback',
         },
       });

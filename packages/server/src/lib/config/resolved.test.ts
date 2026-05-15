@@ -226,6 +226,138 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     ).not.toThrow();
   });
 
+  test('allows HTTPS and local HTTP JWKS URLs for OIDC providers', () => {
+    const parsed = TinyAuthRuntimeConfigSchema.parse({
+      ...MINIMAL_INPUT_CONFIG,
+      identity_providers: [
+        {
+          id: 'https-jwks-provider',
+          type: 'generic_oauth',
+          enabled: true,
+          display_name: 'HTTPS JWKS Provider',
+          client_id: 'https-jwks-client-id',
+          client_secret: 'https-jwks-client-secret',
+          authorization_url: 'https://vendor.example/authorize',
+          token_url: 'https://vendor.example/token',
+          userinfo_url: null,
+          jwks_url: 'https://vendor.example/.well-known/jwks.json',
+          issuer: 'https://vendor.example',
+          scopes: ['openid', 'email'],
+          email_conflict_strategy: 'auto_link',
+          userinfo_mapping: {
+            id: 'sub',
+            email: 'email',
+            email_verified: 'email_verified',
+          },
+        },
+        {
+          id: 'local-jwks-provider',
+          type: 'generic_oauth',
+          enabled: true,
+          display_name: 'Local JWKS Provider',
+          client_id: 'local-jwks-client-id',
+          client_secret: 'local-jwks-client-secret',
+          authorization_url: 'http://localhost:1234/authorize',
+          token_url: 'http://localhost:1234/token',
+          userinfo_url: null,
+          jwks_url: 'http://localhost:1234/jwks',
+          issuer: 'http://localhost:1234',
+          scopes: ['openid', 'email'],
+          email_conflict_strategy: 'auto_link',
+          userinfo_mapping: {
+            id: 'sub',
+            email: 'email',
+            email_verified: 'email_verified',
+          },
+        },
+      ],
+    });
+
+    expect(
+      parsed.identity_providers.map((provider) => provider.jwks_url),
+    ).toEqual([
+      'https://vendor.example/.well-known/jwks.json',
+      'http://localhost:1234/jwks',
+    ]);
+    expect(
+      parsed.identity_providers.map((provider) => provider.issuer),
+    ).toEqual(['https://vendor.example', 'http://localhost:1234']);
+  });
+
+  test('requires issuer for generic ID-token-only JWKS providers', () => {
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        identity_providers: [
+          {
+            id: 'generic-id-token-provider',
+            type: 'generic_oauth',
+            enabled: true,
+            display_name: 'Generic ID Token Provider',
+            client_id: 'generic-id-token-client-id',
+            client_secret: 'generic-id-token-client-secret',
+            authorization_url: 'https://vendor.example/authorize',
+            token_url: 'https://vendor.example/token',
+            userinfo_url: null,
+            jwks_url: 'https://vendor.example/.well-known/jwks.json',
+            scopes: ['openid', 'email'],
+            email_conflict_strategy: 'auto_link',
+            userinfo_mapping: {
+              id: 'sub',
+              email: 'email',
+              email_verified: 'email_verified',
+            },
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  test('rejects invalid and insecure remote JWKS URLs', () => {
+    const providerConfig = {
+      id: 'bad-jwks-provider',
+      type: 'generic_oauth',
+      enabled: true,
+      display_name: 'Bad JWKS Provider',
+      client_id: 'bad-jwks-client-id',
+      client_secret: 'bad-jwks-client-secret',
+      authorization_url: 'https://vendor.example/authorize',
+      token_url: 'https://vendor.example/token',
+      userinfo_url: null,
+      scopes: ['openid', 'email'],
+      email_conflict_strategy: 'auto_link',
+      userinfo_mapping: {
+        id: 'sub',
+        email: 'email',
+        email_verified: 'email_verified',
+      },
+    };
+
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        identity_providers: [
+          {
+            ...providerConfig,
+            jwks_url: 'http://example.com/jwks',
+          },
+        ],
+      }),
+    ).toThrow();
+
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        identity_providers: [
+          {
+            ...providerConfig,
+            jwks_url: 'not-a-url',
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
   test('rejects legacy scheduler objects that are not adapters', () => {
     expect(() =>
       TinyAuthRuntimeConfigSchema.parse({

@@ -189,6 +189,7 @@ describe('OAuth Security Tests', () => {
         form: {
           token: "'; DROP TABLE tokens; --",
           client_id: TEST_OAUTH_CLIENT.clientId,
+          client_secret: TEST_OAUTH_CLIENT.clientSecret,
         },
       });
 

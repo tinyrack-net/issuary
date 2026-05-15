@@ -4,6 +4,7 @@ import {
   createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
+import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
 import { registerPage } from '#frontend-e2e/helpers/register-page.ts';
 
 const TERMS_CONFIG = [
@@ -65,8 +66,11 @@ const test = createScenarioFixture((backendPort) => ({
 const TEST_PASSWORD = 'test-password-123';
 
 function allowedEmail(suffix: string): string {
-  const ts = Date.now();
-  return `oauth-providers-terms-${suffix}-${ts}@allowed.test`;
+  return createUniqueEmail(
+    test.info(),
+    `oauth-providers-terms-${suffix}`,
+    'allowed.test',
+  );
 }
 
 test.describe('Password registration terms UX', () => {

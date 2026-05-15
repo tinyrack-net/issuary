@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { generateKeyPair, SignJWT } from 'jose';
+import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import {
   afterAll,
   afterEach,
@@ -11,9 +11,11 @@ import {
 } from 'vitest';
 import type { AppType } from '../../../../../entrypoints/app.ts';
 import { apple } from '../../../../../entrypoints/identity-providers/apple.ts';
+import { e } from '../../../../../schemas/error.ts';
 import {
   assertJsonBody,
   createTestApp,
+  expectError,
   extractCookie,
   generateUniqueEmail,
   getLocationHeader,
@@ -23,6 +25,7 @@ import {
 } from '../../../../../test-utils/index.ts';
 
 const APPLE_TOKEN_URL = 'https://appleid.apple.com/auth/token';
+const APPLE_JWKS_URL = 'https://appleid.apple.com/auth/keys';
 
 let app: AppType;
 let cleanup: () => Promise<void>;
@@ -100,16 +103,41 @@ async function createAppleIdToken(claims: {
   sub: string;
   email: string;
   email_verified?: boolean;
-}): Promise<string> {
-  const { privateKey } = await generateKeyPair('RS256');
-  return new SignJWT({
+}): Promise<{ idToken: string; jwks: unknown }> {
+  const { privateKey, publicKey } = await generateKeyPair('RS256');
+  const jwk = await exportJWK(publicKey);
+  const kid = `apple-callback-${crypto.randomUUID()}`;
+  const idToken = await new SignJWT({
     sub: claims.sub,
     email: claims.email,
     email_verified: claims.email_verified ?? true,
+    iss: 'https://appleid.apple.com',
+    aud: 'test-apple-client-id',
+    exp: Math.floor(Date.now() / 1000) + 60,
   })
-    .setProtectedHeader({ alg: 'RS256' })
+    .setProtectedHeader({ alg: 'RS256', kid })
     .setIssuedAt()
     .sign(privateKey);
+
+  return {
+    idToken,
+    jwks: {
+      keys: [
+        {
+          ...jwk,
+          kid,
+          alg: 'RS256',
+          use: 'sig',
+        },
+      ],
+    },
+  };
+}
+
+function expectOAuthSessionCleared(res: Response): void {
+  const setCookie = res.headers.get('set-cookie');
+  expect(setCookie).toContain('session=');
+  expect(setCookie).toContain('Max-Age=0');
 }
 
 describe('POST /api/oauth/:provider/callback', () => {
@@ -120,7 +148,7 @@ describe('POST /api/oauth/:provider/callback', () => {
         mode: 'login',
       });
 
-      const idToken = await createAppleIdToken({
+      const { idToken, jwks } = await createAppleIdToken({
         sub: `apple-user-${Date.now()}`,
         email: oauthEmail,
         email_verified: true,
@@ -132,6 +160,8 @@ describe('POST /api/oauth/:provider/callback', () => {
         tokens: {
           id_token: idToken,
         },
+        jwksUrl: APPLE_JWKS_URL,
+        jwks,
       });
 
       try {
@@ -164,9 +194,40 @@ describe('POST /api/oauth/:provider/callback', () => {
         const sessionBody = await assertJsonBody(sessionRes);
         expect(sessionBody.user).not.toBeNull();
         expect(sessionBody.user?.email).toBe(oauthEmail);
+
+        const replayRes = await client.api.oauth[':provider'].callback.$post(
+          {
+            param: { provider: 'apple' },
+            form: {
+              code: 'apple-auth-code',
+              state,
+            },
+          },
+          { headers: { Cookie: `session=${callbackCookie}` } },
+        );
+        await expectError(replayRes, e.OAuthSessionExpired);
       } finally {
         oauthMock.restore();
       }
+    });
+
+    test('should validate Apple form_post state and clear OAuth session on mismatch', async () => {
+      const { sessionCookie } = await startAppleOAuthFlow();
+
+      const client = testClient(app);
+      const res = await client.api.oauth[':provider'].callback.$post(
+        {
+          param: { provider: 'apple' },
+          form: {
+            code: 'apple-auth-code',
+            state: 'wrong-state-value',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      await expectError(res, e.OAuthStateMismatch);
+      expectOAuthSessionCleared(res);
     });
 
     test('should handle Apple OAuth error via POST', async () => {

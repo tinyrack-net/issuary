@@ -113,8 +113,9 @@ function Login() {
     let oauthUrl = `/api/oauth/${providerId}/authorize?mode=login`;
 
     if (isOAuthFlow(search)) {
-      const authUrl = buildAuthorizeUrl(search);
-      oauthUrl += `&return_url=${encodeURIComponent(authUrl)}`;
+      const authUrl = new URL(buildAuthorizeUrl(search));
+      const returnUrl = `${authUrl.pathname}${authUrl.search}${authUrl.hash}`;
+      oauthUrl += `&return_url=${encodeURIComponent(returnUrl)}`;
     }
 
     return oauthUrl;

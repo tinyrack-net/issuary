@@ -49,9 +49,7 @@ test.describe('Provider-specific OAuth flows', () => {
     ).toBeVisible();
   });
 
-  test('Apple stub login via form_post callback with ID token', async ({
-    page,
-  }) => {
+  test('Apple stub login via form_post callback', async ({ page }) => {
     await page.goto('/login');
     await startOAuthLogin(page, 'Apple Stub');
 

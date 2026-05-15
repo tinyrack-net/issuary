@@ -6,6 +6,7 @@ import {
   E2E_TEST_CLIENT_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import { consentPage } from '#frontend-e2e/helpers/consent.ts';
+import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
 import { loginPasswordPage } from '#frontend-e2e/helpers/login.ts';
 import {
   allowConsentAndCaptureCode,
@@ -65,8 +66,7 @@ const REQUIRED_CONSENTS = [
 ];
 
 function allowedEmail(suffix: string): string {
-  const ts = Date.now();
-  return `oauth-terms-${suffix}-${ts}@allowed.com`;
+  return createUniqueEmail(test.info(), `oauth-terms-${suffix}`, 'allowed.com');
 }
 
 async function registerUserByApiWithTerms(
@@ -109,9 +109,7 @@ test.describe('OAuth client auth flow with explicit terms', () => {
   }) => {
     const oauth = buildOAuthFlowInput('terms-unauthenticated');
 
-    await page.goto(buildAuthorizePath(oauth.authorizeParams), {
-      waitUntil: 'networkidle',
-    });
+    await page.goto(buildAuthorizePath(oauth.authorizeParams));
 
     await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
@@ -127,9 +125,7 @@ test.describe('OAuth client auth flow with explicit terms', () => {
     await registerUserByApiWithTerms(String(baseURL), email, TEST_PASSWORD);
 
     const oauth = buildOAuthFlowInput('terms-login');
-    await page.goto(buildAuthorizePath(oauth.authorizeParams), {
-      waitUntil: 'networkidle',
-    });
+    await page.goto(buildAuthorizePath(oauth.authorizeParams));
 
     await openPasswordLogin(page);
     await page.locator(loginPasswordPage.emailInput).fill(email);
@@ -157,9 +153,7 @@ test.describe('OAuth client auth flow with explicit terms', () => {
     const email = allowedEmail('signup-terms-checked');
     const oauth = buildOAuthFlowInput('terms-signup-checked');
 
-    await page.goto(buildAuthorizePath(oauth.authorizeParams), {
-      waitUntil: 'networkidle',
-    });
+    await page.goto(buildAuthorizePath(oauth.authorizeParams));
 
     await page.waitForURL('**/login**');
     await page.goto(
@@ -192,9 +186,7 @@ test.describe('OAuth client auth flow with explicit terms', () => {
     const email = allowedEmail('signup-terms-missing');
     const oauth = buildOAuthFlowInput('terms-signup-missing');
 
-    await page.goto(buildAuthorizePath(oauth.authorizeParams), {
-      waitUntil: 'networkidle',
-    });
+    await page.goto(buildAuthorizePath(oauth.authorizeParams));
 
     await page.waitForURL('**/login**');
     await page.goto(

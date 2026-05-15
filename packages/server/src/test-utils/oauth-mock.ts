@@ -29,6 +29,8 @@ export interface OAuthProviderFetchMockOptions {
    * When omitted, a Google-style response is returned.
    */
   rawUserInfoResponse?: Record<string, unknown>;
+  jwksUrl?: string;
+  jwks?: unknown;
 }
 
 export interface OAuthProviderFetchMock {
@@ -120,6 +122,10 @@ export function mockOAuthProviderFetch(
         };
 
         return jsonResponse(body);
+      }
+
+      if (options.jwksUrl && url === options.jwksUrl) {
+        return jsonResponse(options.jwks ?? { keys: [] });
       }
 
       throw new Error(`Unexpected OAuth mock fetch request: ${url}`);

@@ -5,6 +5,7 @@ import type { Page } from '@playwright/test';
  */
 export const loginMethodPage = {
   passwordMethodLink: 'a[href^="/login/password"]',
+  passkeyMethodButton: 'button:has-text("Passkey")',
 } as const;
 
 /**

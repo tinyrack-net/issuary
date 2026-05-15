@@ -1,28 +1,51 @@
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { execaNode } from 'execa';
 
 const CLI_PATH = fileURLToPath(new URL('../../src/cli.ts', import.meta.url));
 
+const DIST_CLI_PATH = fileURLToPath(
+  new URL('../../dist/cli.js', import.meta.url),
+);
+
 const CWD = fileURLToPath(new URL('../../', import.meta.url));
 
-const NODE_OPTIONS = ['--conditions=@tinyauth/source', '--import', 'tsx'];
+const require = createRequire(import.meta.url);
+const TSX_IMPORT = require.resolve('tsx');
+const NODE_OPTIONS = ['--conditions=@tinyauth/source', '--import', TSX_IMPORT];
 
 interface SpawnCliOptions {
   args: string[];
+  cwd?: string;
   env?: Record<string, string>;
   timeout?: number;
 }
 
 function spawnCli(options: SpawnCliOptions) {
-  const { args, env, timeout = 15_000 } = options;
+  const { args, cwd = CWD, env, timeout = 15_000 } = options;
   return execaNode(CLI_PATH, args, {
     reject: false,
     timeout,
-    cwd: CWD,
+    cwd,
     nodeOptions: NODE_OPTIONS,
     env: {
       ...env,
       CONFIG_PATH: '',
+      NODE_OPTIONS: '',
+    },
+  });
+}
+
+function spawnBuiltCli(options: SpawnCliOptions) {
+  const { args, cwd = CWD, env, timeout = 15_000 } = options;
+  return execaNode(DIST_CLI_PATH, args, {
+    reject: false,
+    timeout,
+    cwd,
+    env: {
+      ...env,
+      CONFIG_PATH: '',
+      NODE_OPTIONS: '',
     },
   });
 }
@@ -34,10 +57,18 @@ export async function runCli(options: SpawnCliOptions) {
   return await spawnCli(options);
 }
 
+export async function runBuiltCli(options: SpawnCliOptions) {
+  return await spawnBuiltCli(options);
+}
+
 /**
  * Start a long-lived CLI command (e.g. serve).
  * Returns the subprocess handle — caller manages lifecycle.
  */
 export function startCli(options: SpawnCliOptions) {
   return spawnCli(options);
+}
+
+export function startBuiltCli(options: SpawnCliOptions) {
+  return spawnBuiltCli(options);
 }

@@ -7,6 +7,7 @@ import {
   E2E_TEST_CLIENT_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import { buildOAuthAuthorizeUrl } from '#frontend-e2e/helpers/consent.ts';
+import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
 import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.ts';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
@@ -25,8 +26,7 @@ const test = createScenarioFixture((backendPort) => ({
  * Generates a unique test email for each test to avoid session conflicts.
  */
 function uniqueEmail(suffix: string): string {
-  const ts = Date.now();
-  return `consent-${suffix}-${ts}@example.com`;
+  return createUniqueEmail(test.info(), `consent-${suffix}`);
 }
 
 const TEST_PASSWORD = 'test-password-123';
@@ -39,7 +39,7 @@ async function gotoConsentPage(
   page: import('@playwright/test').Page,
   authorizeUrl: string,
 ): Promise<void> {
-  await page.goto(authorizeUrl, { waitUntil: 'networkidle' });
+  await page.goto(authorizeUrl);
 
   // If the consent page didn't load (e.g. under heavy parallel load),
   // retry the navigation once.
@@ -48,7 +48,8 @@ async function gotoConsentPage(
     .isVisible()
     .catch(() => false);
   if (!hasConsentContent) {
-    await page.goto(authorizeUrl, { waitUntil: 'networkidle' });
+    await page.goto(authorizeUrl);
+    await expect(page.getByRole('button', { name: 'Allow' })).toBeVisible();
   }
 }
 
@@ -163,7 +164,7 @@ test.describe('OAuth consent flow', () => {
 
   test('unauthenticated consent redirects to login', async ({ page }) => {
     const authorizeUrl = buildOAuthAuthorizeUrl();
-    await page.goto(authorizeUrl, { waitUntil: 'networkidle' });
+    await page.goto(authorizeUrl);
 
     // Should redirect to login
     await page.waitForURL('**/login**');

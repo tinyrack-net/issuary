@@ -51,6 +51,23 @@ describe('validatePKCE', () => {
     expect(isValid).toBe(true);
   });
 
+  test('should accept RFC7636 unreserved verifier characters', async () => {
+    const verifier =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+    const isValid = await validatePKCE(verifier, verifier, 'plain');
+    expect(isValid).toBe(true);
+  });
+
+  test.each([
+    ['space', 'test-verifier-with-space-character-that is-invalid-value'],
+    ['unicode', 'test-verifier-with-unicode-character-that-is-invalid-가'],
+    ['slash', 'test-verifier-with-slash-character-that-is-invalid/'],
+    ['plus', 'test-verifier-with-plus-character-that-is-invalid+'],
+  ])('should reject verifier containing %s', async (_label, verifier) => {
+    const isValid = await validatePKCE(verifier, verifier, 'plain');
+    expect(isValid).toBe(false);
+  });
+
   test('should reject wrong verifier', async () => {
     const pkce = await generatePKCE();
     const isValid = await validatePKCE(

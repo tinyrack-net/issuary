@@ -10,6 +10,8 @@ export interface GenericOAuthConfig {
   authorization_url: string;
   token_url: string;
   userinfo_url?: string | null | undefined;
+  jwks_url?: string | undefined;
+  issuer?: string | undefined;
   email_url?: string | undefined;
   scopes: string[];
   response_mode?: 'query' | 'fragment' | 'form_post' | undefined;
@@ -37,6 +39,8 @@ export function genericOAuth(
     authorization_url: config.authorization_url,
     token_url: config.token_url,
     userinfo_url: config.userinfo_url ?? null,
+    jwks_url: config.jwks_url,
+    issuer: config.issuer,
     email_url: config.email_url,
     scopes: config.scopes,
     response_mode: config.response_mode,

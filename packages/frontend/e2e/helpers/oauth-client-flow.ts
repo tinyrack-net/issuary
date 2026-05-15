@@ -136,6 +136,7 @@ export async function exchangeAuthorizationCode(
     codeVerifier: string;
     redirectUri?: string;
     clientId?: string;
+    clientSecret?: string;
   },
 ): Promise<z.infer<typeof tokenResponseSchema>> {
   const response = await request.post(`${baseURL}/oauth/token`, {
@@ -144,6 +145,7 @@ export async function exchangeAuthorizationCode(
       code: options.code,
       redirect_uri: options.redirectUri ?? E2E_TEST_CLIENT.redirectUri,
       client_id: options.clientId ?? E2E_TEST_CLIENT.clientId,
+      client_secret: options.clientSecret ?? E2E_TEST_CLIENT.clientSecret,
       code_verifier: options.codeVerifier,
     },
   });

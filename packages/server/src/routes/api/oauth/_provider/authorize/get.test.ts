@@ -286,6 +286,42 @@ describe('GET /api/oauth/:provider/authorize', () => {
   });
 
   describe('Security', () => {
+    test('should reject external absolute return_url', async () => {
+      const client = testClient(app);
+      const res = await client.api.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: {
+          return_url: 'https://evil.example/phish',
+        },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    test('should reject protocol-relative return_url', async () => {
+      const client = testClient(app);
+      const res = await client.api.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: {
+          return_url: '//evil.example/phish',
+        },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    test('should reject return_url containing CRLF', async () => {
+      const client = testClient(app);
+      const res = await client.api.oauth[':provider'].authorize.$get({
+        param: { provider: 'google' },
+        query: {
+          return_url: '/profile\r\nSet-Cookie: session=attacker',
+        },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
     test('should use S256 for PKCE code challenge method', async () => {
       const client = testClient(app);
       const res = await client.api.oauth[':provider'].authorize.$get({

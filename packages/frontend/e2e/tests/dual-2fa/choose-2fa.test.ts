@@ -4,12 +4,12 @@ import {
   createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
+import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
 import { performLogin } from '#frontend-e2e/helpers/login.ts';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
 function uniqueEmail(suffix: string): string {
-  const ts = Date.now();
-  return `dual-2fa-${suffix}-${ts}@example.com`;
+  return createUniqueEmail(test.info(), `dual-2fa-${suffix}`);
 }
 
 const TEST_PASSWORD = 'test-password-123';

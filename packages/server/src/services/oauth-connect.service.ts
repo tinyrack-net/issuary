@@ -1,4 +1,4 @@
-import { decodeJwt } from 'jose';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import z from 'zod';
 import type {
   IdentityProviderConfig,
@@ -30,15 +30,33 @@ export interface OAuthUserInfo {
   picture?: string | undefined;
 }
 
+function parseEmailVerified(value: unknown): boolean {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    return normalized === 'true';
+  }
+
+  return false;
+}
+
 /**
  * Token response from OAuth provider
  * Standard OAuth 2.0 token response structure
  */
+const OAuthTokenTypeSchema = z
+  .string()
+  .refine((value) => value.toLowerCase() === 'bearer')
+  .transform(() => 'Bearer');
+
 const OAuthTokensSchema = z.object({
   access_token: z.string(),
   refresh_token: z.string().optional(),
   expires_in: z.number().optional(),
-  token_type: z.string(),
+  token_type: OAuthTokenTypeSchema,
   id_token: z.string().optional(),
 });
 
@@ -394,9 +412,12 @@ export class OAuthConnectService {
       throw new e.OAuthTokenExchangeFailed.Error();
     }
 
-    const json: unknown = await response.json();
-    const tokens = OAuthTokensSchema.parse(json);
-    return tokens;
+    try {
+      const json: unknown = await response.json();
+      return OAuthTokensSchema.parse(json);
+    } catch {
+      throw new e.OAuthTokenExchangeFailed.Error();
+    }
   }
 
   /**
@@ -426,26 +447,110 @@ export class OAuthConnectService {
       throw new e.OAuthUserInfoFailed.Error();
     }
 
-    const data = z.record(z.string(), z.unknown()).parse(await response.json());
-    return this.mapUserInfo(provider, data);
+    try {
+      const json: unknown = await response.json();
+      const data = z.record(z.string(), z.unknown()).parse(json);
+      return this.mapUserInfo(provider, data);
+    } catch {
+      throw new e.OAuthUserInfoFailed.Error();
+    }
   }
 
   /**
-   * Extract user info from an ID token JWT (used by Apple).
-   * Decodes without verification since the token was received directly
-   * from the provider's token endpoint over TLS.
+   * Extract user info from an ID token JWT for providers with trusted JWKS.
    */
-  private extractUserInfoFromIdToken(
+  private async extractUserInfoFromIdToken(
     provider: IdentityProviderConfig,
     idToken?: string,
-  ): OAuthUserInfo {
+  ): Promise<OAuthUserInfo> {
     if (!idToken) {
       throw new e.OAuthUserInfoFailed.Error();
     }
 
-    const claims = decodeJwt(idToken);
-    const data = claims as Record<string, unknown>;
-    return this.mapUserInfo(provider, data);
+    try {
+      const claims =
+        provider.type === 'apple'
+          ? await this.verifyAppleIdToken(provider, idToken)
+          : await this.verifyGenericIdToken(provider, idToken);
+      this.validateProviderIdTokenClaims(provider, claims);
+      return this.mapUserInfo(provider, claims);
+    } catch {
+      throw new e.OAuthUserInfoFailed.Error();
+    }
+  }
+
+  private async verifyAppleIdToken(
+    provider: IdentityProviderConfig,
+    idToken: string,
+  ) {
+    const jwksUrl = provider.jwks_url ?? 'https://appleid.apple.com/auth/keys';
+    const jwks = createRemoteJWKSet(new URL(jwksUrl));
+    const { payload } = await jwtVerify(idToken, jwks, {
+      issuer: 'https://appleid.apple.com',
+      audience: provider.client_id,
+      algorithms: ['RS256'],
+    });
+
+    const issuedAt = payload.iat;
+    if (issuedAt !== undefined && typeof issuedAt !== 'number') {
+      throw new e.OAuthUserInfoFailed.Error();
+    }
+
+    return payload;
+  }
+
+  private async verifyGenericIdToken(
+    provider: IdentityProviderConfig,
+    idToken: string,
+  ) {
+    if (!provider.jwks_url) {
+      throw new e.OAuthUserInfoFailed.Error();
+    }
+    if (!provider.issuer) {
+      throw new e.OAuthUserInfoFailed.Error();
+    }
+
+    const jwks = createRemoteJWKSet(new URL(provider.jwks_url));
+    const { payload } = await jwtVerify(idToken, jwks, {
+      issuer: provider.issuer,
+      audience: provider.client_id,
+    });
+
+    return payload;
+  }
+
+  private validateProviderIdTokenClaims(
+    provider: IdentityProviderConfig,
+    claims: Record<string, unknown>,
+  ): void {
+    if (provider.type !== 'apple') {
+      return;
+    }
+
+    if (claims['iss'] !== 'https://appleid.apple.com') {
+      throw new e.OAuthUserInfoFailed.Error();
+    }
+
+    const audience = claims['aud'];
+    if (typeof audience === 'string') {
+      if (audience !== provider.client_id) {
+        throw new e.OAuthUserInfoFailed.Error();
+      }
+    } else if (Array.isArray(audience)) {
+      const hasClientId = audience.some(
+        (value) => value === provider.client_id,
+      );
+      if (!hasClientId) {
+        throw new e.OAuthUserInfoFailed.Error();
+      }
+    } else {
+      throw new e.OAuthUserInfoFailed.Error();
+    }
+
+    const expiresAt = claims['exp'];
+    if (typeof expiresAt !== 'number' || expiresAt * 1000 <= Date.now()) {
+      throw new e.OAuthUserInfoFailed.Error();
+    }
   }
 
   /**
@@ -467,7 +572,7 @@ export class OAuthConnectService {
     // Extract email
     const email = String(data[mapping.email] ?? '');
     const emailVerified = mapping.email_verified
-      ? Boolean(data[mapping.email_verified])
+      ? parseEmailVerified(data[mapping.email_verified])
       : true; // Default to true for OAuth providers
 
     if (!email) {

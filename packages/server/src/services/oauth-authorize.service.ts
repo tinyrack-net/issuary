@@ -102,7 +102,15 @@ export class OAuthAuthorizeService {
     this.oauthClientService.validateScopes(client, requestedScopes);
 
     // 6. Validate PKCE
-    if (query.code_challenge) {
+    const isPublicClient = await this.oauthClientService.isPublicClient(
+      query.client_id,
+    );
+    if (isPublicClient) {
+      this.validatePublicClientPKCE(
+        query.code_challenge,
+        query.code_challenge_method,
+      );
+    } else if (query.code_challenge) {
       this.validatePKCE(query.code_challenge_method || 'S256');
     }
 
@@ -215,6 +223,15 @@ export class OAuthAuthorizeService {
    */
   private validatePKCE(codeChallengeMethod: string): void {
     if (codeChallengeMethod !== 'S256' && codeChallengeMethod !== 'plain') {
+      throw new e.InvalidCodeChallengeMethod.Error();
+    }
+  }
+
+  private validatePublicClientPKCE(
+    codeChallenge: string | undefined,
+    codeChallengeMethod: string | undefined,
+  ): void {
+    if (!codeChallenge || codeChallengeMethod !== 'S256') {
       throw new e.InvalidCodeChallengeMethod.Error();
     }
   }
