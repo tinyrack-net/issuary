@@ -44,6 +44,7 @@ export const authorizeGet = new Hono<AppEnv>().get(
       nonce: f.nonce.optional(),
       prompt: f.prompt.optional(),
       max_age: f.maxAge.optional(),
+      reauthenticated: z.literal('1').optional(),
       display: f.display.optional(),
     }),
   ),
@@ -144,6 +145,14 @@ export const authorizeGet = new Hono<AppEnv>().get(
       }
 
       if (error instanceof e.InvalidCodeChallengeMethod.Error) {
+        return redirectWithError(
+          'invalid_request',
+          error.message,
+          query.redirect_uri,
+        );
+      }
+
+      if (error instanceof e.InvalidPrompt.Error) {
         return redirectWithError(
           'invalid_request',
           error.message,

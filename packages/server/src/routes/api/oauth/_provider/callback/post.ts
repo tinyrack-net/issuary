@@ -1,13 +1,25 @@
 import { Hono } from 'hono';
+import { deleteCookie, getCookie } from 'hono/cookie';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../../lib/app-env.ts';
+import { decrypt } from '../../../../../lib/crypto.ts';
 import { TAGS } from '../../../../../lib/swagger-tags.ts';
 import { verifyAuth, verifyOAuth } from '../../../../../middleware/auth.ts';
 import { e, TinyAuthError } from '../../../../../schemas/error.ts';
 import { f } from '../../../../../schemas/field.ts';
 import { r } from '../../../../../schemas/response.ts';
 import type { OAuthCallbackResult } from '../../../../../services/oauth-connect.service.ts';
+
+const OAuthStateCookieSchema = z
+  .object({
+    state: z.string(),
+    codeVerifier: z.string(),
+    providerId: z.string(),
+    mode: f.oauthConnectMode,
+    returnUrl: z.string().optional(),
+  })
+  .strict();
 
 const OAuthProviderCallbackFormBody = z
   .object({
@@ -114,7 +126,25 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
     const { code, state, error, error_description } = c.req.valid('form');
     const { session } = c.var;
     const { config, oauthConnectService } = c.var.services;
-    const oauthSession = c.var.verifiedOAuth;
+    let oauthSession = c.var.verifiedOAuth;
+    const oauthStateCookiePath = `/api/oauth/${provider}/callback`;
+
+    if (!oauthSession) {
+      const oauthStateCookie = getCookie(c, 'oauth_state');
+      if (oauthStateCookie) {
+        const decrypted = await decrypt(
+          oauthStateCookie,
+          config.security.session_secret,
+        );
+        if (decrypted) {
+          try {
+            oauthSession = OAuthStateCookieSchema.parse(JSON.parse(decrypted));
+          } catch {
+            oauthSession = undefined;
+          }
+        }
+      }
+    }
 
     // Handle OAuth error response
     if (error) {
@@ -127,6 +157,7 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
         errorUrl.searchParams.set('redirect', oauthSession.returnUrl);
       }
       session.set('oauth', undefined);
+      deleteCookie(c, 'oauth_state', { path: oauthStateCookiePath });
       return c.redirect(errorUrl.toString());
     }
 
@@ -151,6 +182,7 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
       });
     } catch (err) {
       session.set('oauth', undefined);
+      deleteCookie(c, 'oauth_state', { path: oauthStateCookiePath });
       if (err instanceof TinyAuthError) {
         return c.json(err.toJson(), err.status);
       }
@@ -158,6 +190,7 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
     }
 
     session.set('oauth', undefined);
+    deleteCookie(c, 'oauth_state', { path: oauthStateCookiePath });
 
     switch (result.action) {
       case 'error_redirect':

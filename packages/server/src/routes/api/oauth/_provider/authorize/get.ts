@@ -1,7 +1,9 @@
 import { Hono } from 'hono';
+import { setCookie } from 'hono/cookie';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../../lib/app-env.ts';
+import { encrypt } from '../../../../../lib/crypto.ts';
 import { OPENAPI_SECURITY } from '../../../../../lib/openapi.ts';
 import { TAGS } from '../../../../../lib/swagger-tags.ts';
 import { verifyAuth } from '../../../../../middleware/auth.ts';
@@ -57,7 +59,7 @@ export const oauthProviderAuthorizeGet = new Hono<AppEnv>().get(
     const { provider } = params;
     const { mode, return_url } = query;
     const session = c.var.session;
-    const { oauthConnectService } = c.var.services;
+    const { config, oauthConnectService } = c.var.services;
 
     // Link mode requires authenticated user
     if (mode === 'link') {
@@ -76,6 +78,25 @@ export const oauthProviderAuthorizeGet = new Hono<AppEnv>().get(
 
     // Store OAuth session data in secure session
     session.set('oauth', sessionData);
+
+    const providerConfig = oauthConnectService.getProvider(provider);
+    if (providerConfig.response_mode === 'form_post') {
+      setCookie(
+        c,
+        'oauth_state',
+        await encrypt(
+          JSON.stringify(sessionData),
+          config.security.session_secret,
+        ),
+        {
+          path: `/api/oauth/${provider}/callback`,
+          httpOnly: true,
+          secure: true,
+          sameSite: 'None',
+          maxAge: 600,
+        },
+      );
+    }
 
     // Redirect to OAuth provider
     return c.redirect(url);

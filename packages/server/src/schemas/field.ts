@@ -58,6 +58,10 @@ export const f = {
     .string()
     .min(43)
     .max(128)
+    .regex(
+      /^[A-Za-z0-9._~-]+$/,
+      'PKCE code verifier must use unreserved characters',
+    )
     .describe('PKCE code verifier (43-128 characters)'),
   grantType: z
     .enum(['authorization_code', 'refresh_token'])
@@ -76,9 +80,7 @@ export const f = {
     .describe('Hint about the type of token'),
 
   // OIDC fields
-  prompt: z
-    .enum(['none', 'login', 'consent', 'select_account'])
-    .describe('OIDC prompt parameter'),
+  prompt: z.string().min(1).max(100).describe('OIDC prompt parameter'),
   display: z
     .enum(['page', 'popup', 'touch', 'wap'])
     .describe('OIDC display parameter'),

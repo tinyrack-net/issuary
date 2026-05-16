@@ -102,6 +102,7 @@ async function authenticateWithRecoveryCode(
     headers: {
       'Content-Type': 'application/json',
       Cookie: `session=${sessionCookie}`,
+      'Sec-Fetch-Site': 'same-origin',
     },
     body: JSON.stringify({
       code: recoveryCode,

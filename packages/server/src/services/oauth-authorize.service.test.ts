@@ -5,6 +5,7 @@ import {
   MINIMAL_TEST_CONFIG,
   TEST_OAUTH_CLIENT,
   TEST_OAUTH_CLIENT_CONFIG,
+  TEST_PKCE,
   withMikroContext,
 } from '../test-utils/index.ts';
 import type { ServiceContainer } from './container.ts';
@@ -21,9 +22,22 @@ describe('OAuthAuthorizeService', () => {
     scope: 'openid email',
     state: 'oauth-state-123',
     nonce: 'nonce-123',
-    code_challenge: 'challenge-123',
-    code_challenge_method: 'S256',
+    code_challenge: TEST_PKCE.codeChallenge,
+    code_challenge_method: TEST_PKCE.codeChallengeMethod,
   } satisfies AuthorizeParams;
+
+  async function grantBaseConsent(userSub: string): Promise<void> {
+    await withMikroContext(services, async () => {
+      const client = await services.oauthClientService.findByClientId(
+        TEST_OAUTH_CLIENT.clientId,
+      );
+      await services.userConsentService.grantConsent({
+        userSub,
+        clientId: client.id,
+        scopes: ['openid', 'email'],
+      });
+    });
+  }
 
   beforeAll(async () => {
     const server = await createTestApp({
@@ -110,16 +124,7 @@ describe('OAuthAuthorizeService', () => {
   test('issues an authorization code once consent already exists', async () => {
     const userSub = await createTestUser(services);
 
-    await withMikroContext(services, async () => {
-      const client = await services.oauthClientService.findByClientId(
-        TEST_OAUTH_CLIENT.clientId,
-      );
-      await services.userConsentService.grantConsent({
-        userSub,
-        clientId: client.id,
-        scopes: ['openid', 'email'],
-      });
-    });
+    await grantBaseConsent(userSub);
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
@@ -139,5 +144,101 @@ describe('OAuthAuthorizeService', () => {
     );
     expect(redirect.searchParams.get('code')).toBeTruthy();
     expect(redirect.searchParams.get('state')).toBe(baseQuery.state);
+  });
+
+  test('redirects an existing session to login when prompt=login is requested', async () => {
+    const userSub = await createTestUser(services);
+    await grantBaseConsent(userSub);
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          prompt: 'login',
+        },
+        userSession: {
+          sub: userSub,
+          authenticated_at: Math.floor(Date.now() / 1000),
+        },
+      }),
+    );
+
+    const redirect = new URL(result.url);
+
+    expect(redirect.pathname).toBe('/login');
+    expect(redirect.searchParams.get('prompt')).toBe('login');
+    expect(redirect.searchParams.has('code')).toBe(false);
+  });
+
+  test('redirects an existing session to login when max_age=0 is requested', async () => {
+    const userSub = await createTestUser(services);
+    await grantBaseConsent(userSub);
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          max_age: 0,
+        },
+        userSession: {
+          sub: userSub,
+          authenticated_at: Math.floor(Date.now() / 1000) - 1,
+        },
+      }),
+    );
+
+    const redirect = new URL(result.url);
+
+    expect(redirect.pathname).toBe('/login');
+    expect(redirect.searchParams.get('max_age')).toBe('0');
+    expect(redirect.searchParams.has('code')).toBe(false);
+  });
+
+  test('issues a code when the existing session is newer than max_age', async () => {
+    const userSub = await createTestUser(services);
+    await grantBaseConsent(userSub);
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          max_age: 300,
+        },
+        userSession: {
+          sub: userSub,
+          authenticated_at: Math.floor(Date.now() / 1000) - 30,
+        },
+      }),
+    );
+
+    const redirect = new URL(result.url);
+
+    expect(redirect.searchParams.get('code')).toBeTruthy();
+    expect(redirect.searchParams.has('error')).toBe(false);
+  });
+
+  test('returns login_required for prompt=none when the existing session is stale', async () => {
+    const userSub = await createTestUser(services);
+    await grantBaseConsent(userSub);
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          prompt: 'none',
+          max_age: 300,
+        },
+        userSession: {
+          sub: userSub,
+          authenticated_at: Math.floor(Date.now() / 1000) - 600,
+        },
+      }),
+    );
+
+    const redirect = new URL(result.url);
+
+    expect(redirect.searchParams.get('error')).toBe('login_required');
+    expect(redirect.searchParams.get('state')).toBe(baseQuery.state);
+    expect(redirect.searchParams.has('code')).toBe(false);
   });
 });

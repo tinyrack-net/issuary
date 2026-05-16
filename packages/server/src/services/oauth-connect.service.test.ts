@@ -9,6 +9,7 @@ import {
   vi,
 } from 'vitest';
 import { apple } from '../entrypoints/identity-providers/apple.ts';
+import { genericOAuth } from '../entrypoints/identity-providers/generic-oauth.ts';
 import { github } from '../entrypoints/identity-providers/github.ts';
 import { google } from '../entrypoints/identity-providers/google.ts';
 import {
@@ -563,6 +564,120 @@ describe('OAuthConnectService - fetchUserInfo', () => {
       }
     });
 
+    test('should use verified primary email from GitHub email_url when user email is null', async () => {
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+
+        if (url === 'https://api.github.com/user') {
+          const authorization = new Headers(init?.headers).get('authorization');
+          if (authorization !== 'Bearer github-access-token') {
+            return new Response(JSON.stringify({ error: 'invalid_token' }), {
+              status: 401,
+              headers: { 'content-type': 'application/json' },
+            });
+          }
+
+          return new Response(
+            JSON.stringify({
+              id: 333,
+              email: null,
+              name: 'Primary Email User',
+            }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          );
+        }
+
+        if (url === 'https://api.github.com/user/emails') {
+          const authorization = new Headers(init?.headers).get('authorization');
+          if (authorization !== 'Bearer github-access-token') {
+            return new Response(JSON.stringify({ error: 'invalid_token' }), {
+              status: 401,
+              headers: { 'content-type': 'application/json' },
+            });
+          }
+
+          return new Response(
+            JSON.stringify([
+              {
+                email: 'secondary@github.example',
+                primary: false,
+                verified: true,
+              },
+              {
+                email: 'primary@github.example',
+                primary: true,
+                verified: true,
+              },
+            ]),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          );
+        }
+
+        throw new Error(`Unexpected fetch: ${url}`);
+      });
+
+      const userInfo = await services.oauthConnectService.fetchUserInfo(
+        'github',
+        'github-access-token',
+      );
+
+      expect(userInfo.email).toBe('primary@github.example');
+      expect(userInfo.email_verified).toBe(true);
+    });
+
+    test('should fail closed when GitHub has no verified primary email', async () => {
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+
+        if (url === 'https://api.github.com/user') {
+          return new Response(
+            JSON.stringify({
+              id: 444,
+              email: null,
+            }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          );
+        }
+
+        if (url === 'https://api.github.com/user/emails') {
+          return new Response(
+            JSON.stringify([
+              {
+                email: 'unverified-primary@github.example',
+                primary: true,
+                verified: false,
+              },
+              {
+                email: 'verified-secondary@github.example',
+                primary: false,
+                verified: true,
+              },
+            ]),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          );
+        }
+
+        throw new Error(`Unexpected fetch: ${url}`);
+      });
+
+      await expect(
+        services.oauthConnectService.fetchUserInfo(
+          'github',
+          'github-access-token',
+        ),
+      ).rejects.toHaveProperty('code', 'OAUTH_USERINFO_FAILED');
+    });
+
     test('should throw when mapped id field is missing from response', async () => {
       const oauthMock = mockOAuthProviderFetch({
         tokenUrl: 'https://github.com/login/oauth/access_token',
@@ -675,6 +790,114 @@ describe('OAuthConnectService - fetchUserInfo', () => {
         expect(userInfo.email_verified).toBe(false);
       } finally {
         oauthMock.restore();
+      }
+    });
+  });
+
+  describe('Generic OAuth field mapping', () => {
+    test('should support dotted paths in userinfo mappings', async () => {
+      const server = await createTestApp({
+        ...MINIMAL_TEST_CONFIG,
+        identity_providers: [
+          genericOAuth({
+            id: 'generic-dotted',
+            enabled: true,
+            display_name: 'Generic Dotted',
+            client_id: 'generic-dotted-client-id',
+            client_secret: 'generic-dotted-client-secret',
+            authorization_url: 'https://generic.example/authorize',
+            token_url: 'https://generic.example/token',
+            userinfo_url: 'https://generic.example/userinfo',
+            scopes: ['openid', 'email', 'profile'],
+            email_conflict_strategy: 'auto_link',
+            userinfo_mapping: {
+              id: 'account.id',
+              email: 'profile.email',
+              email_verified: 'profile.email_verified',
+              name: 'profile.name',
+              picture: 'profile.avatar.url',
+            },
+          }),
+        ],
+      });
+
+      const oauthMock = mockOAuthProviderFetch({
+        tokenUrl: 'https://generic.example/token',
+        userInfoUrl: 'https://generic.example/userinfo',
+        rawUserInfoResponse: {
+          account: { id: 'nested-user-id' },
+          profile: {
+            email: 'nested@example.com',
+            email_verified: true,
+            name: 'Nested User',
+            avatar: { url: 'https://generic.example/avatar.png' },
+          },
+        },
+      });
+
+      try {
+        const userInfo =
+          await server.services.oauthConnectService.fetchUserInfo(
+            'generic-dotted',
+            oauthMock.tokens.access_token,
+          );
+
+        expect(userInfo).toEqual({
+          id: 'nested-user-id',
+          email: 'nested@example.com',
+          email_verified: true,
+          name: 'Nested User',
+          picture: 'https://generic.example/avatar.png',
+        });
+      } finally {
+        oauthMock.restore();
+        await server.cleanup();
+      }
+    });
+
+    test('should not mark generic provider email verified without explicit mapping', async () => {
+      const server = await createTestApp({
+        ...MINIMAL_TEST_CONFIG,
+        identity_providers: [
+          genericOAuth({
+            id: 'generic-no-verified-mapping',
+            enabled: true,
+            display_name: 'Generic No Verified Mapping',
+            client_id: 'generic-no-verified-client-id',
+            client_secret: 'generic-no-verified-client-secret',
+            authorization_url: 'https://generic.example/authorize',
+            token_url: 'https://generic.example/token',
+            userinfo_url: 'https://generic.example/userinfo',
+            scopes: ['openid', 'email'],
+            email_conflict_strategy: 'auto_link',
+            userinfo_mapping: {
+              id: 'sub',
+              email: 'email',
+            },
+          }),
+        ],
+      });
+
+      const oauthMock = mockOAuthProviderFetch({
+        tokenUrl: 'https://generic.example/token',
+        userInfoUrl: 'https://generic.example/userinfo',
+        rawUserInfoResponse: {
+          sub: 'generic-untrusted-email',
+          email: 'untrusted@example.com',
+        },
+      });
+
+      try {
+        const userInfo =
+          await server.services.oauthConnectService.fetchUserInfo(
+            'generic-no-verified-mapping',
+            oauthMock.tokens.access_token,
+          );
+
+        expect(userInfo.email_verified).toBe(false);
+      } finally {
+        oauthMock.restore();
+        await server.cleanup();
       }
     });
   });

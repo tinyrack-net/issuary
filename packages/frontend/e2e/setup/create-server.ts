@@ -78,7 +78,8 @@ function createAppleStubIdToken(provider: string): string {
 /**
  * Returns the stub profile for the given provider.
  * GitHub-style providers return a GitHub-shaped response (numeric id,
- * avatar_url, no email_verified).
+ * avatar_url) with a verified test email so hardened generic OAuth
+ * validation can fail closed for real unverified profiles.
  * Apple-style providers should not call userinfo (they use ID tokens).
  * All others return standard OIDC-shaped responses.
  */
@@ -93,11 +94,12 @@ function getOAuthStubProfile(provider: string): Record<string, unknown> {
     };
   }
 
-  // GitHub-style: numeric id, avatar_url, no email_verified
+  // GitHub-style: numeric id, avatar_url, verified test email
   if (provider.startsWith('github-stub')) {
     return {
       id: 42,
       email: `oauth-${provider}@allowed.test`,
+      email_verified: true,
       name: `GitHub ${provider}`,
       avatar_url: `https://example.com/${provider}.png`,
       login: 'octocat',

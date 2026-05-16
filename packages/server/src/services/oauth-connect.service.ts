@@ -43,6 +43,30 @@ function parseEmailVerified(value: unknown): boolean {
   return false;
 }
 
+function getMappedValue(data: Record<string, unknown>, path: string): unknown {
+  let value: unknown = data;
+
+  for (const segment of path.split('.')) {
+    const object = z.record(z.string(), z.unknown()).safeParse(value);
+    if (!object.success) {
+      return undefined;
+    }
+
+    value = object.data[segment];
+  }
+
+  return value;
+}
+
+function getMappedString(data: Record<string, unknown>, path: string): string {
+  const value = getMappedValue(data, path);
+  if (value === undefined || value === null) {
+    return '';
+  }
+
+  return String(value);
+}
+
 /**
  * Token response from OAuth provider
  * Standard OAuth 2.0 token response structure
@@ -61,6 +85,14 @@ const OAuthTokensSchema = z.object({
 });
 
 export type OAuthTokens = z.infer<typeof OAuthTokensSchema>;
+
+const GitHubEmailResponseSchema = z.array(
+  z.object({
+    email: z.string().email(),
+    primary: z.boolean(),
+    verified: z.boolean(),
+  }),
+);
 
 /**
  * OAuth session data stored in secure session
@@ -450,10 +482,59 @@ export class OAuthConnectService {
     try {
       const json: unknown = await response.json();
       const data = z.record(z.string(), z.unknown()).parse(json);
-      return this.mapUserInfo(provider, data);
+      const userInfoData = await this.addGitHubEmailFromEmailEndpoint(
+        provider,
+        data,
+        accessToken,
+      );
+      return this.mapUserInfo(provider, userInfoData);
     } catch {
       throw new e.OAuthUserInfoFailed.Error();
     }
+  }
+
+  private async addGitHubEmailFromEmailEndpoint(
+    provider: IdentityProviderConfig,
+    data: Record<string, unknown>,
+    accessToken: string,
+  ): Promise<Record<string, unknown>> {
+    if (provider.type !== 'github') {
+      return data;
+    }
+
+    const mappedEmail = getMappedString(data, provider.userinfo_mapping.email);
+    if (mappedEmail) {
+      return data;
+    }
+
+    if (!provider.email_url) {
+      throw new e.OAuthUserInfoFailed.Error();
+    }
+
+    const response = await fetch(provider.email_url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new e.OAuthUserInfoFailed.Error();
+    }
+
+    const emails = GitHubEmailResponseSchema.parse(await response.json());
+    const primaryVerifiedEmail = emails.find(
+      (email) => email.primary && email.verified,
+    );
+
+    if (!primaryVerifiedEmail) {
+      throw new e.OAuthUserInfoFailed.Error();
+    }
+
+    return {
+      ...data,
+      [provider.userinfo_mapping.email]: primaryVerifiedEmail.email,
+    };
   }
 
   /**
@@ -564,24 +645,24 @@ export class OAuthConnectService {
     const mapping = provider.userinfo_mapping;
 
     // Extract user ID
-    const id = String(data[mapping.id] ?? '');
+    const id = getMappedString(data, mapping.id);
     if (!id) {
       throw new e.OAuthUserInfoFailed.Error();
     }
 
     // Extract email
-    const email = String(data[mapping.email] ?? '');
+    const email = getMappedString(data, mapping.email);
     const emailVerified = mapping.email_verified
-      ? parseEmailVerified(data[mapping.email_verified])
-      : true; // Default to true for OAuth providers
+      ? parseEmailVerified(getMappedValue(data, mapping.email_verified))
+      : provider.type !== 'generic_oauth';
 
     if (!email) {
       throw new e.OAuthUserInfoFailed.Error();
     }
 
-    const name = mapping.name ? String(data[mapping.name] ?? '') : undefined;
+    const name = mapping.name ? getMappedString(data, mapping.name) : undefined;
     const picture = mapping.picture
-      ? String(data[mapping.picture] ?? '')
+      ? getMappedString(data, mapping.picture)
       : undefined;
 
     return {

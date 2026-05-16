@@ -1,34 +1,13 @@
 import z from 'zod';
+import { isHttpsOrLocalHttpUrl } from './url-policy.js';
 
-const JwksUrlSchema = z
-  .string()
-  .url()
-  .refine(
-    (value) => {
-      try {
-        const { hostname, protocol } = new URL(value);
+const SecureEndpointUrlSchema = z.string().refine(isHttpsOrLocalHttpUrl, {
+  message: 'URL must use HTTPS or local HTTP.',
+});
 
-        if (protocol === 'https:') {
-          return true;
-        }
-
-        return protocol === 'http:' && isLocalHttpHostname(hostname);
-      } catch {
-        return false;
-      }
-    },
-    { message: 'JWKS URL must use HTTPS or local HTTP.' },
-  );
-
-function isLocalHttpHostname(hostname: string): boolean {
-  return (
-    hostname === 'localhost' ||
-    hostname.endsWith('.localhost') ||
-    hostname === '127.0.0.1' ||
-    hostname === '[::1]' ||
-    hostname === '::1'
-  );
-}
+const JwksUrlSchema = SecureEndpointUrlSchema.describe(
+  'JWKS endpoint URL for providers that verify ID tokens.',
+);
 
 const UserinfoMappingConfigSchema = z
   .object({
@@ -74,24 +53,22 @@ export const IdentityProviderConfigSchema = z
     client_secret: z
       .string()
       .describe('OAuth client secret from the provider.'),
-    authorization_url: z.string().describe('OAuth authorization endpoint URL.'),
-    token_url: z.string().describe('OAuth token endpoint URL.'),
-    userinfo_url: z
-      .string()
-      .nullable()
-      .describe('OAuth userinfo endpoint URL.'),
-    jwks_url: JwksUrlSchema.optional().describe(
-      'JWKS endpoint URL for providers that verify ID tokens.',
+    authorization_url: SecureEndpointUrlSchema.describe(
+      'OAuth authorization endpoint URL.',
     ),
+    token_url: SecureEndpointUrlSchema.describe('OAuth token endpoint URL.'),
+    userinfo_url: SecureEndpointUrlSchema.nullable().describe(
+      'OAuth userinfo endpoint URL.',
+    ),
+    jwks_url: JwksUrlSchema.optional(),
     issuer: z
       .string()
       .url()
       .optional()
       .describe('Expected issuer for ID tokens verified with JWKS.'),
-    email_url: z
-      .string()
-      .optional()
-      .describe('Separate endpoint URL for fetching user email.'),
+    email_url: SecureEndpointUrlSchema.optional().describe(
+      'Separate endpoint URL for fetching user email.',
+    ),
     scopes: z
       .array(z.string())
       .describe('OAuth scopes to request from the provider.'),

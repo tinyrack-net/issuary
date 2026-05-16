@@ -36,7 +36,7 @@ const TokenResponse = z.object({
   /** Access token lifetime in seconds */
   expires_in: z.number().int().describe('Access token lifetime in seconds'),
   /** Refresh token for obtaining new access tokens */
-  refresh_token: z.string().describe('Refresh token'),
+  refresh_token: z.string().optional().describe('Refresh token'),
   /** OpenID Connect ID Token (JWT format, only if openid scope requested) */
   id_token: z.string().optional().describe('OpenID Connect ID token (JWT)'),
   /** Space-separated list of granted scopes */

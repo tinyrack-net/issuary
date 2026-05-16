@@ -45,16 +45,17 @@ describe('validatePKCE', () => {
     expect(isValid).toBe(true);
   });
 
-  test('should validate plain method', async () => {
+  test('should reject plain method', async () => {
     const verifier = 'test-plain-verifier-that-is-long-enough-for-pkce-minimum';
     const isValid = await validatePKCE(verifier, verifier, 'plain');
-    expect(isValid).toBe(true);
+    expect(isValid).toBe(false);
   });
 
   test('should accept RFC7636 unreserved verifier characters', async () => {
     const verifier =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
-    const isValid = await validatePKCE(verifier, verifier, 'plain');
+    const challenge = 'RZ77XZltYSfl0BLxuGd8pHGJ4EoMoVDVuSWHgNq3RY8';
+    const isValid = await validatePKCE(verifier, challenge, 'S256');
     expect(isValid).toBe(true);
   });
 
@@ -64,7 +65,7 @@ describe('validatePKCE', () => {
     ['slash', 'test-verifier-with-slash-character-that-is-invalid/'],
     ['plus', 'test-verifier-with-plus-character-that-is-invalid+'],
   ])('should reject verifier containing %s', async (_label, verifier) => {
-    const isValid = await validatePKCE(verifier, verifier, 'plain');
+    const isValid = await validatePKCE(verifier, verifier, 'S256');
     expect(isValid).toBe(false);
   });
 

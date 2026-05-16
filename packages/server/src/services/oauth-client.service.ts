@@ -63,6 +63,15 @@ export class OAuthClientService {
     }
   }
 
+  public validateGrantType(
+    client: z.infer<typeof r.OAuthClient>,
+    grantType: string,
+  ): void {
+    if (!client.grantTypes.includes(grantType)) {
+      throw new e.UnsupportedGrantType.Error();
+    }
+  }
+
   /**
    * Validate scopes
    */

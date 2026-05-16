@@ -96,6 +96,35 @@ async function startAppleOAuthFlow(options?: {
   return { sessionCookie: cookie, state };
 }
 
+async function startAppleFormPostOAuthFlow(): Promise<{
+  oauthStateCookie: string;
+  state: string;
+}> {
+  const client = testClient(app);
+
+  const res = await client.api.oauth[':provider'].authorize.$get({
+    param: { provider: 'apple' },
+    query: { mode: 'login' },
+  });
+
+  expect(res.status).toBe(302);
+  const setCookie = res.headers.get('set-cookie');
+  expect(setCookie).toContain('oauth_state=');
+  expect(setCookie).toContain('SameSite=None');
+  expect(setCookie).toContain('Secure');
+
+  const location = new URL(getLocationHeader(res));
+  const state = location.searchParams.get('state');
+  if (!state) {
+    throw new Error('Expected state parameter in OAuth redirect');
+  }
+
+  return {
+    oauthStateCookie: extractCookie(res, 'oauth_state'),
+    state,
+  };
+}
+
 /**
  * Create a signed JWT that mimics Apple's ID token.
  */
@@ -142,6 +171,54 @@ function expectOAuthSessionCleared(res: Response): void {
 
 describe('POST /api/oauth/:provider/callback', () => {
   describe('Apple form_post Callback', () => {
+    test('should complete Apple form_post callback with only the cross-site OAuth state cookie', async () => {
+      const oauthEmail = generateUniqueEmail('apple-form-post-state-cookie');
+      const { oauthStateCookie, state } = await startAppleFormPostOAuthFlow();
+
+      const { idToken, jwks } = await createAppleIdToken({
+        sub: `apple-form-post-${Date.now()}`,
+        email: oauthEmail,
+        email_verified: true,
+      });
+
+      const oauthMock = mockOAuthProviderFetch({
+        tokenUrl: APPLE_TOKEN_URL,
+        userInfoUrl: null,
+        tokens: {
+          id_token: idToken,
+        },
+        jwksUrl: APPLE_JWKS_URL,
+        jwks,
+      });
+
+      try {
+        const client = testClient(app);
+        const callbackRes = await client.api.oauth[':provider'].callback.$post(
+          {
+            param: { provider: 'apple' },
+            form: {
+              code: 'apple-auth-code',
+              state,
+            },
+          },
+          { headers: { Cookie: `oauth_state=${oauthStateCookie}` } },
+        );
+
+        expect(callbackRes.status).toBe(302);
+        expect(callbackRes.headers.get('set-cookie')).toContain('oauth_state=');
+
+        const callbackCookie = extractCookie(callbackRes, 'session');
+        const sessionRes = await client.api.user.session.$get(
+          {},
+          { headers: { Cookie: `session=${callbackCookie}` } },
+        );
+        const sessionBody = await assertJsonBody(sessionRes);
+        expect(sessionBody.user?.email).toBe(oauthEmail);
+      } finally {
+        oauthMock.restore();
+      }
+    });
+
     test('should complete Apple login via POST form_post callback', async () => {
       const oauthEmail = generateUniqueEmail('apple-callback');
       const { sessionCookie, state } = await startAppleOAuthFlow({

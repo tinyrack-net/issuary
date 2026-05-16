@@ -137,6 +137,7 @@ export function createSpecificOauthProviders(host: string) {
       userinfo_mapping: {
         id: 'id',
         email: 'email',
+        email_verified: 'email_verified',
         name: 'name',
         picture: 'avatar_url',
       },

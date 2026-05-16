@@ -1,5 +1,21 @@
 import { z } from 'zod';
 
+const PROMPT_VALUES = new Set(['none', 'login', 'consent', 'select_account']);
+
+function isValidPrompt(prompt: string): boolean {
+  const values = prompt.split(' ');
+  const seen = new Set<string>();
+
+  for (const value of values) {
+    if (!PROMPT_VALUES.has(value) || seen.has(value)) {
+      return false;
+    }
+    seen.add(value);
+  }
+
+  return !(seen.has('none') && seen.size > 1);
+}
+
 /**
  * OIDC/OAuth 플로우에서 사용되는 쿼리 파라미터 스키마
  * 로그인, 회원가입, 이메일 인증 페이지에서 공통으로 사용
@@ -13,8 +29,9 @@ export const OAuthSearchSchema = z.object({
   nonce: z.string().optional(),
   code_challenge: z.string().optional(),
   code_challenge_method: z.enum(['S256', 'plain']).optional(),
-  prompt: z.enum(['none', 'login', 'consent', 'select_account']).optional(),
+  prompt: z.string().min(1).max(100).refine(isValidPrompt).optional(),
   max_age: z.string().optional(),
+  reauthenticated: z.literal('1').optional(),
   display: z.enum(['page', 'popup', 'touch', 'wap']).optional(),
   lang: z.string().optional(),
 });
@@ -56,6 +73,13 @@ export function buildAuthorizeUrl(search: OAuthSearch): string {
     );
   if (search.prompt) authUrl.searchParams.set('prompt', search.prompt);
   if (search.max_age) authUrl.searchParams.set('max_age', search.max_age);
+  if (
+    search.reauthenticated ||
+    search.prompt?.split(' ').includes('login') ||
+    search.max_age === '0'
+  ) {
+    authUrl.searchParams.set('reauthenticated', '1');
+  }
   if (search.display) authUrl.searchParams.set('display', search.display);
 
   return authUrl.toString();

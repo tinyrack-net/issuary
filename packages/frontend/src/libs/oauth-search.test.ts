@@ -3,6 +3,7 @@ import {
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
+  OAuthSearchSchema,
 } from './oauth-search.ts';
 
 describe('oauth-search helpers', () => {
@@ -54,6 +55,27 @@ describe('oauth-search helpers', () => {
     );
     expect(parsed.searchParams.get('prompt')).toBe('login');
     expect(parsed.searchParams.get('max_age')).toBe('300');
+  });
+
+  test('accepts and preserves valid multi-value prompt combinations', () => {
+    const search = OAuthSearchSchema.parse({
+      client_id: 'web-client',
+      redirect_uri: 'https://client.example.com/callback',
+      prompt: 'login consent',
+    });
+
+    const parsed = new URL(buildAuthorizeUrl(search));
+
+    expect(parsed.searchParams.get('prompt')).toBe('login consent');
+  });
+
+  test.each([
+    'invalid',
+    'login invalid',
+    'none login',
+    'none consent',
+  ])('rejects invalid prompt value %s', (prompt) => {
+    expect(OAuthSearchSchema.safeParse({ prompt }).success).toBe(false);
   });
 
   test('extractOAuthParams removes only undefined values', () => {

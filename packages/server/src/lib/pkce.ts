@@ -54,6 +54,10 @@ export async function validatePKCE(
   challenge: string,
   method: 'S256' | 'plain' = 'S256',
 ) {
+  if (method !== 'S256') {
+    return false;
+  }
+
   if (!CODE_VERIFIER_PATTERN.test(verifier)) {
     return false;
   }

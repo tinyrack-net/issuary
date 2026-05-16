@@ -167,6 +167,11 @@ export const e = {
     'INVALID_CODE_CHALLENGE_METHOD',
     'The code challenge method must be S256 or plain.',
   ),
+  InvalidPrompt: createError(
+    400,
+    'INVALID_PROMPT',
+    'The prompt parameter is invalid.',
+  ),
   OAuthServerError: createError(
     500,
     'OAUTH_SERVER_ERROR',
@@ -275,6 +280,11 @@ export const e = {
 
   // Token Introspection Errors (RFC 7662)
   MissingToken: createError(400, 'MISSING_TOKEN', 'Missing token parameter.'),
+  InsufficientScope: createError(
+    403,
+    'insufficient_scope',
+    'The access token does not have the required scope.',
+  ),
 
   // Consent Errors (OIDC Core 1.0)
   ConsentRequired: createError(
@@ -536,5 +546,10 @@ export const e = {
     403,
     'UNTRUSTED_PROXY',
     'Request rejected: connection from untrusted source.',
+  ),
+  CsrfViolation: createError(
+    403,
+    'CSRF_VIOLATION',
+    'Request rejected: CSRF validation failed.',
   ),
 };

@@ -61,7 +61,7 @@ export function buildOAuthFlowInput(
     client_id: E2E_TEST_CLIENT.clientId,
     redirect_uri: E2E_TEST_CLIENT.redirectUri,
     response_type: 'code',
-    scope: 'openid profile email',
+    scope: 'openid profile email offline_access',
     state,
     nonce: `nonce-${state}`,
     code_challenge: pkce.codeChallenge,

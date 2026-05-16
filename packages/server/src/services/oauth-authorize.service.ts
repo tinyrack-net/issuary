@@ -8,6 +8,9 @@ import type { OAuthClientService } from './oauth-client.service.ts';
 import type { SecurityService } from './security.service.ts';
 import type { UserConsentService } from './user-consent.service.ts';
 
+type PromptValue = 'none' | 'login' | 'consent' | 'select_account';
+const REAUTHENTICATION_CONTINUATION_MAX_AGE_SECONDS = 60;
+
 /**
  * OAuth authorization request parameters (RFC 6749 §4.1.1)
  * Also includes OpenID Connect parameters (OIDC Core 1.0 §3.1.2.1)
@@ -35,6 +38,8 @@ export interface AuthorizeParams {
   prompt?: z.infer<typeof f.prompt> | undefined;
   /** OIDC max authentication age in seconds */
   max_age?: number | undefined;
+  /** Internal marker added after completing an interactive reauthentication. */
+  reauthenticated?: '1' | undefined;
   /** OIDC display mode for authentication UI */
   display?: z.infer<typeof f.display> | undefined;
 }
@@ -101,23 +106,28 @@ export class OAuthAuthorizeService {
     const requestedScopes = query.scope ? query.scope.split(' ') : [];
     this.oauthClientService.validateScopes(client, requestedScopes);
 
+    const prompts = this.parsePrompt(query.prompt);
+
     // 6. Validate PKCE
-    const isPublicClient = await this.oauthClientService.isPublicClient(
-      query.client_id,
-    );
-    if (isPublicClient) {
-      this.validatePublicClientPKCE(
-        query.code_challenge,
-        query.code_challenge_method,
-      );
-    } else if (query.code_challenge) {
-      this.validatePKCE(query.code_challenge_method || 'S256');
-    }
+    this.validatePKCE(query.code_challenge, query.code_challenge_method);
 
     // 7. Check user session
-    if (!userSession?.sub) {
+    const hasFreshReauthentication = userSession
+      ? this.hasFreshReauthentication(
+          query.reauthenticated,
+          userSession.authenticated_at,
+        )
+      : false;
+    const shouldPromptLogin =
+      prompts.includes('login') && !hasFreshReauthentication;
+    const shouldRefreshSession =
+      userSession &&
+      this.isSessionStale(userSession.authenticated_at, query.max_age) &&
+      !(query.max_age === 0 && hasFreshReauthentication);
+
+    if (!userSession?.sub || shouldPromptLogin || shouldRefreshSession) {
       // Handle prompt=none - must return error if not logged in
-      if (query.prompt === 'none') {
+      if (prompts.includes('none')) {
         return {
           type: 'redirect',
           url: this.buildErrorRedirectUrl(
@@ -148,12 +158,12 @@ export class OAuthAuthorizeService {
       userSub: userSession.sub,
       clientId: client.id,
       requestedScopes,
-      prompt: query.prompt,
+      prompt: prompts.includes('consent') ? 'consent' : undefined,
     });
 
     if (requiresConsent) {
       // Handle prompt=none - must return error if consent is required
-      if (query.prompt === 'none') {
+      if (prompts.includes('none')) {
         return {
           type: 'redirect',
           url: this.buildErrorRedirectUrl(
@@ -218,20 +228,81 @@ export class OAuthAuthorizeService {
     };
   }
 
+  private parsePrompt(prompt: string | undefined): PromptValue[] {
+    if (!prompt) {
+      return [];
+    }
+
+    const prompts: PromptValue[] = [];
+    const seenPrompts = new Set<string>();
+    for (const value of prompt.split(' ')) {
+      if (seenPrompts.has(value)) {
+        throw new e.InvalidPrompt.Error();
+      }
+
+      if (
+        value === 'none' ||
+        value === 'login' ||
+        value === 'consent' ||
+        value === 'select_account'
+      ) {
+        prompts.push(value);
+        seenPrompts.add(value);
+        continue;
+      }
+
+      throw new e.InvalidPrompt.Error();
+    }
+
+    if (prompts.includes('none') && prompts.length > 1) {
+      throw new e.InvalidPrompt.Error();
+    }
+
+    return prompts;
+  }
+
+  private isSessionStale(
+    authenticatedAt: number,
+    maxAge: number | undefined,
+  ): boolean {
+    if (maxAge === undefined) {
+      return false;
+    }
+
+    if (maxAge === 0) {
+      return true;
+    }
+
+    return Math.floor(Date.now() / 1000) - authenticatedAt > maxAge;
+  }
+
+  private hasFreshReauthentication(
+    reauthenticated: '1' | undefined,
+    authenticatedAt: number,
+  ): boolean {
+    if (reauthenticated !== '1') {
+      return false;
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    return (
+      authenticatedAt <= now &&
+      now - authenticatedAt <= REAUTHENTICATION_CONTINUATION_MAX_AGE_SECONDS
+    );
+  }
+
   /**
    * Validate PKCE parameters
    */
-  private validatePKCE(codeChallengeMethod: string): void {
-    if (codeChallengeMethod !== 'S256' && codeChallengeMethod !== 'plain') {
-      throw new e.InvalidCodeChallengeMethod.Error();
-    }
-  }
-
-  private validatePublicClientPKCE(
+  private validatePKCE(
     codeChallenge: string | undefined,
     codeChallengeMethod: string | undefined,
   ): void {
     if (!codeChallenge || codeChallengeMethod !== 'S256') {
+      throw new e.InvalidCodeChallengeMethod.Error();
+    }
+
+    if (!/^[A-Za-z0-9._~-]{43,128}$/.test(codeChallenge)) {
       throw new e.InvalidCodeChallengeMethod.Error();
     }
   }
@@ -268,6 +339,9 @@ export class OAuthAuthorizeService {
     }
     if (query.max_age !== undefined) {
       loginUrl.searchParams.set('max_age', query.max_age.toString());
+    }
+    if (query.reauthenticated) {
+      loginUrl.searchParams.set('reauthenticated', query.reauthenticated);
     }
     if (query.display) {
       loginUrl.searchParams.set('display', query.display);
@@ -308,6 +382,9 @@ export class OAuthAuthorizeService {
     }
     if (query.max_age !== undefined) {
       consentUrl.searchParams.set('max_age', query.max_age.toString());
+    }
+    if (query.reauthenticated) {
+      consentUrl.searchParams.set('reauthenticated', query.reauthenticated);
     }
     if (query.display) {
       consentUrl.searchParams.set('display', query.display);

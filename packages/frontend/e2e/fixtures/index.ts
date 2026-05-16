@@ -42,8 +42,8 @@ export const E2E_TEST_CLIENT_CONFIG = {
   client_secret: E2E_TEST_CLIENT.clientSecret,
   redirect_uris: [E2E_TEST_CLIENT.redirectUri],
   response_types: ['code'],
-  grant_types: ['authorization_code'],
-  scope: 'openid profile email',
+  grant_types: ['authorization_code', 'refresh_token'],
+  scope: 'openid profile email offline_access',
 } satisfies NonNullable<TinyAuthRuntimeConfigInput['clients']>[number];
 
 export type TestEmailConfig =

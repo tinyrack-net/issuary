@@ -1,6 +1,8 @@
 import { testClient } from 'hono/testing';
+import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
+import { encrypt } from '../../../lib/crypto.ts';
 import type { ServiceContainer } from '../../../services/container.ts';
 import {
   assertJsonBody,
@@ -24,7 +26,7 @@ let cleanup: () => Promise<void>;
 const QUERY_REDIRECT_CLIENT = {
   clientId: 'query-redirect-client',
   clientSecret: 'query-redirect-client-secret',
-  redirectUri: 'http://example.com/callback?tenant=alpha',
+  redirectUri: 'http://localhost:3002/callback?tenant=alpha',
 };
 
 const QUERY_REDIRECT_CLIENT_CONFIG = {
@@ -105,6 +107,9 @@ async function getAuthorizationCode(
         }
       : {}),
     ...(params['max_age'] != null ? { max_age: params['max_age'] } : {}),
+    ...(params['reauthenticated'] != null
+      ? { reauthenticated: params['reauthenticated'] }
+      : {}),
     ...(params['display'] != null
       ? {
           display: params['display'] as 'page' | 'popup' | 'touch' | 'wap',
@@ -209,6 +214,20 @@ async function getAuthorizationCodeWithConsent(
   return getAuthorizationCode(params, sessionCookie);
 }
 
+async function createSessionCookieWithAuthTime(
+  authenticatedAt: number,
+): Promise<string> {
+  return encrypt(
+    JSON.stringify({
+      user: {
+        sub: TEST_USER_CONFIG.sub,
+        authenticated_at: authenticatedAt,
+      },
+    }),
+    MINIMAL_TEST_CONFIG.security.session_secret,
+  );
+}
+
 describe('GET /oauth/authorize', () => {
   const validParams = {
     response_type: 'code',
@@ -216,6 +235,8 @@ describe('GET /oauth/authorize', () => {
     redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
     scope: 'openid profile email',
     state: 'random-state-string',
+    code_challenge: TEST_PKCE.codeChallenge,
+    code_challenge_method: TEST_PKCE.codeChallengeMethod,
   };
 
   describe('Success Cases', () => {
@@ -449,7 +470,7 @@ describe('GET /oauth/authorize', () => {
       expect(statusCode).toBe(302);
       expect(code).toBeDefined();
       expect(location.origin + location.pathname).toBe(
-        'http://example.com/callback',
+        'http://localhost:3002/callback',
       );
       expect(location.searchParams.get('tenant')).toBe('alpha');
       expect(location.searchParams.get('state')).toBe('query-redirect-state');
@@ -608,20 +629,21 @@ describe('GET /oauth/authorize', () => {
       expect(code).toBeDefined();
     });
 
-    test('should accept plain code_challenge_method', async () => {
+    test('should reject confidential client authorization with plain code_challenge_method', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
+      const plainVerifier = 'plain-verifier-string-for-testing-purposes-123';
 
-      const { code, statusCode } = await getAuthorizationCodeWithConsent(
+      const { location, statusCode } = await getAuthorizationCodeWithConsent(
         {
           ...validParams,
-          code_challenge: 'plain-challenge',
+          code_challenge: plainVerifier,
           code_challenge_method: 'plain',
         },
         sessionCookie,
       );
 
       expect(statusCode).toBe(302);
-      expect(code).toBeDefined();
+      expectRedirectError(location, 'invalid_request');
     });
 
     test('should default to S256 when method not specified', async () => {
@@ -639,27 +661,60 @@ describe('GET /oauth/authorize', () => {
       expect(code).toBeDefined();
     });
 
-    test('should allow authorization without PKCE', async () => {
+    test('should reject confidential client authorization without code_challenge', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
+      const paramsWithoutPkce = {
+        response_type: 'code',
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: 'openid profile email',
+        state: 'random-state-string',
+      };
 
-      const { code, statusCode } = await getAuthorizationCodeWithConsent(
-        validParams,
+      const { location, statusCode } = await getAuthorizationCodeWithConsent(
+        paramsWithoutPkce,
         sessionCookie,
       );
 
       expect(statusCode).toBe(302);
-      expect(code).toBeDefined();
+      expectRedirectError(location, 'invalid_request');
     });
 
-    test('should reject public client authorization without code_challenge', async () => {
+    test.each([
+      ['short', 'short-code-challenge'],
+      ['long', 'a'.repeat(129)],
+      [
+        'non-unreserved',
+        'invalid-code-challenge-with-/-character-value-1234567890',
+      ],
+    ])('should reject %s code_challenge format', async (_label, codeChallenge) => {
       const sessionCookie = await createAuthenticatedSession(app);
 
       const { location, statusCode } = await getAuthorizationCodeWithConsent(
         {
           ...validParams,
-          client_id: PUBLIC_OAUTH_CLIENT.clientId,
-          redirect_uri: PUBLIC_OAUTH_CLIENT.redirectUri,
+          code_challenge: codeChallenge,
+          code_challenge_method: 'S256',
         },
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      expectRedirectError(location, 'invalid_request');
+    });
+
+    test('should reject public client authorization without code_challenge', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const paramsWithoutPkce = {
+        response_type: 'code',
+        client_id: PUBLIC_OAUTH_CLIENT.clientId,
+        redirect_uri: PUBLIC_OAUTH_CLIENT.redirectUri,
+        scope: 'openid profile email',
+        state: 'random-state-string',
+      };
+
+      const { location, statusCode } = await getAuthorizationCodeWithConsent(
+        paramsWithoutPkce,
         sessionCookie,
       );
 
@@ -938,6 +993,249 @@ describe('GET /oauth/authorize', () => {
       expect(location.searchParams.get('client_id')).toBe(
         TEST_OAUTH_CLIENT.clientId,
       );
+    });
+
+    test('should redirect to login page when prompt=login and user is already authenticated', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+
+      await grantConsent(app, sessionCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        response_type: 'code',
+        scope: validParams.scope,
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const { location, statusCode } = await getAuthorizationCode(
+        {
+          ...validParams,
+          prompt: 'login',
+        },
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      expect(location.pathname).toBe('/login');
+      expect(location.searchParams.get('prompt')).toBe('login');
+      expect(location.searchParams.has('code')).toBe(false);
+    });
+
+    test('should continue after prompt=login has just reauthenticated the user', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+
+      await grantConsent(app, sessionCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        response_type: 'code',
+        scope: validParams.scope,
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const { code, location, statusCode } = await getAuthorizationCode(
+        {
+          ...validParams,
+          prompt: 'login',
+          reauthenticated: '1',
+        },
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      expect(code).toBeDefined();
+      expect(location.origin + location.pathname).toBe(
+        validParams.redirect_uri,
+      );
+    });
+  });
+
+  describe('OIDC Authentication Freshness', () => {
+    test('should redirect to login when max_age=0 makes the session stale', async () => {
+      const authenticatedAt = Math.floor(Date.now() / 1000) - 1;
+      const sessionCookie =
+        await createSessionCookieWithAuthTime(authenticatedAt);
+
+      await grantConsent(app, sessionCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        response_type: 'code',
+        scope: validParams.scope,
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const { location, statusCode } = await getAuthorizationCode(
+        {
+          ...validParams,
+          max_age: '0',
+        },
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      expect(location.pathname).toBe('/login');
+      expect(location.searchParams.get('max_age')).toBe('0');
+      expect(location.searchParams.has('code')).toBe(false);
+    });
+
+    test('should continue after max_age=0 has just reauthenticated the user', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+
+      await grantConsent(app, sessionCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        response_type: 'code',
+        scope: validParams.scope,
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const { code, location, statusCode } = await getAuthorizationCode(
+        {
+          ...validParams,
+          max_age: '0',
+          reauthenticated: '1',
+        },
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      expect(code).toBeDefined();
+      expect(location.origin + location.pathname).toBe(
+        validParams.redirect_uri,
+      );
+    });
+
+    test('should not accept stale reauthentication markers', async () => {
+      const authenticatedAt = Math.floor(Date.now() / 1000) - 120;
+      const sessionCookie =
+        await createSessionCookieWithAuthTime(authenticatedAt);
+
+      await grantConsent(app, sessionCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        response_type: 'code',
+        scope: validParams.scope,
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const { location, statusCode } = await getAuthorizationCode(
+        {
+          ...validParams,
+          prompt: 'login',
+          reauthenticated: '1',
+        },
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      expect(location.pathname).toBe('/login');
+      expect(location.searchParams.has('code')).toBe(false);
+    });
+
+    test('should return login_required when prompt=none and max_age marks the session stale', async () => {
+      const authenticatedAt = Math.floor(Date.now() / 1000) - 600;
+      const sessionCookie =
+        await createSessionCookieWithAuthTime(authenticatedAt);
+
+      await grantConsent(app, sessionCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        response_type: 'code',
+        scope: validParams.scope,
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const { location, statusCode } = await getAuthorizationCode(
+        {
+          ...validParams,
+          prompt: 'none',
+          max_age: '300',
+        },
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      expectRedirectError(
+        location,
+        'login_required',
+        'End-User authentication',
+      );
+      expect(location.searchParams.get('state')).toBe(validParams.state);
+    });
+
+    test('should include the session authentication time in ID Token after a max_age request', async () => {
+      const authenticatedAt = Math.floor(Date.now() / 1000) - 30;
+      const sessionCookie =
+        await createSessionCookieWithAuthTime(authenticatedAt);
+
+      await grantConsent(app, sessionCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        response_type: 'code',
+        scope: validParams.scope,
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const { code, statusCode } = await getAuthorizationCode(
+        {
+          ...validParams,
+          nonce: 'freshness-nonce',
+          max_age: '300',
+        },
+        sessionCookie,
+      );
+      expect(statusCode).toBe(302);
+      if (!code) {
+        throw new Error('Expected authorization code');
+      }
+
+      const client = testClient(app);
+      const tokenRes = await client.oauth.token.$post({
+        form: {
+          grant_type: 'authorization_code',
+          code,
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          client_secret: TEST_OAUTH_CLIENT.clientSecret,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          code_verifier: TEST_PKCE.codeVerifier,
+        },
+      });
+      const tokens = await tokenRes.json();
+      const idToken = tokens.id_token;
+      if (typeof idToken !== 'string') {
+        throw new Error('Expected ID Token');
+      }
+
+      const decoded = jose.decodeJwt(idToken);
+      expect(decoded['auth_time']).toBe(authenticatedAt);
+      expect(decoded['nonce']).toBe('freshness-nonce');
+    });
+
+    test('should redirect invalid prompt combinations as invalid_request', async () => {
+      const url = new URL('/oauth/authorize', 'http://localhost');
+      url.searchParams.set('response_type', 'code');
+      url.searchParams.set('client_id', TEST_OAUTH_CLIENT.clientId);
+      url.searchParams.set('redirect_uri', TEST_OAUTH_CLIENT.redirectUri);
+      url.searchParams.set('scope', validParams.scope);
+      url.searchParams.set('state', validParams.state);
+      url.searchParams.set('code_challenge', TEST_PKCE.codeChallenge);
+      url.searchParams.set(
+        'code_challenge_method',
+        TEST_PKCE.codeChallengeMethod,
+      );
+      url.searchParams.set('prompt', 'none login');
+
+      const res = await app.request(`${url.pathname}${url.search}`);
+
+      expect(res.status).toBe(302);
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
+      expectRedirectError(location, 'invalid_request', 'prompt');
+      expect(location.searchParams.get('state')).toBe(validParams.state);
     });
   });
 

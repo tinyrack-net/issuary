@@ -1,4 +1,10 @@
+import { createHash } from 'node:crypto';
 import type { Page } from '@playwright/test';
+
+const DEFAULT_CODE_VERIFIER = 'e2e-consent-flow-code-verifier-0123456789abcdef';
+const DEFAULT_CODE_CHALLENGE = createHash('sha256')
+  .update(DEFAULT_CODE_VERIFIER)
+  .digest('base64url');
 
 /**
  * Selectors for the OAuth consent page (/consent).
@@ -23,6 +29,9 @@ export const DEFAULT_OAUTH_PARAMS = {
   redirect_uri: 'http://localhost:18080/callback',
   scope: 'openid profile email',
   state: 'test-state-123',
+  nonce: 'test-nonce-123',
+  code_challenge: DEFAULT_CODE_CHALLENGE,
+  code_challenge_method: 'S256',
 } as const;
 
 /**
