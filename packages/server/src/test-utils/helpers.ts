@@ -296,7 +296,12 @@ export async function grantConsent(
         decision: 'allow',
       },
     },
-    { headers: { Cookie: `session=${sessionCookie}` } },
+    {
+      headers: {
+        Cookie: `session=${sessionCookie}`,
+        'Sec-Fetch-Site': 'same-origin',
+      },
+    },
   );
 
   if (res.status !== 200) {

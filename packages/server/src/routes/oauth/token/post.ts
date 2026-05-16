@@ -116,6 +116,8 @@ export const tokenPost = new Hono<AppEnv>().post(
       throw err;
     }
 
+    oauthClientService.validateGrantType(client, body.grant_type);
+
     // 3. Handle grant type
     if (body.grant_type === 'authorization_code') {
       if (!body.code) {

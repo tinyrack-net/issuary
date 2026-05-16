@@ -62,6 +62,10 @@ export const userinfoGet = new Hono<AppEnv>().get(
     // Parse scopes from token
     const scopes = tokenPayload.scope.split(' ');
 
+    if (!scopes.includes('openid')) {
+      throw new e.InsufficientScope.Error();
+    }
+
     // Build response based on granted scopes
     const userInfo: UserInfoResponse = {
       sub: userData.sub,

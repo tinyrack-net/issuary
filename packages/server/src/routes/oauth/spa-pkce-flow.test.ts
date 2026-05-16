@@ -34,8 +34,10 @@ const TEST_OAUTH_CLIENT_CONFIG = {
   redirect_uris: [TEST_OAUTH_CLIENT.redirectUri],
   response_types: ['code'],
   grant_types: ['authorization_code', 'refresh_token'],
-  scope: 'openid profile email',
+  scope: 'openid profile email offline_access',
 };
+
+const REFRESHABLE_SCOPE = 'openid profile email offline_access';
 
 beforeAll(async () => {
   ({ app, cleanup } = await createTestApp({
@@ -126,7 +128,7 @@ describe('SPA PKCE Authentication Flow', () => {
       const tokens = await assertJsonBody(tokenRes);
 
       expect(tokens.access_token).toBeDefined();
-      expect(tokens.refresh_token).toBeDefined();
+      expect(tokens.refresh_token).toBeUndefined();
       expect(tokens.id_token).toBeDefined();
       expect(tokens.token_type).toBe('Bearer');
 
@@ -522,6 +524,7 @@ describe('SPA PKCE Authentication Flow', () => {
         clientId: TEST_OAUTH_CLIENT.clientId,
         redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
+        scope: REFRESHABLE_SCOPE,
         codeChallenge,
         codeChallengeMethod: 'S256',
       });
@@ -540,7 +543,7 @@ describe('SPA PKCE Authentication Flow', () => {
       const refreshRes = await refreshClient.oauth.token.$post({
         form: {
           grant_type: 'refresh_token',
-          refresh_token,
+          refresh_token: assertDefined(refresh_token),
           client_id: TEST_OAUTH_CLIENT.clientId,
           // No client_secret
         },
@@ -560,6 +563,7 @@ describe('SPA PKCE Authentication Flow', () => {
         clientId: TEST_OAUTH_CLIENT.clientId,
         redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         sessionCookie,
+        scope: REFRESHABLE_SCOPE,
         codeChallenge,
         codeChallengeMethod: 'S256',
       });

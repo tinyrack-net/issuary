@@ -30,6 +30,14 @@ const PUBLIC_OAUTH_CLIENT = {
   redirectUri: 'http://localhost:8080/public-callback',
 } as const;
 
+const REFRESHABLE_SCOPE = 'openid profile email offline_access';
+
+const TOKEN_TEST_OAUTH_CLIENT_CONFIG = {
+  ...TEST_OAUTH_CLIENT_CONFIG,
+  grant_types: ['authorization_code', 'refresh_token'],
+  scope: 'openid profile email offline_access id_token',
+};
+
 const PUBLIC_OAUTH_CLIENT_CONFIG = {
   id: 'public-pkce-client-config',
   name: 'Public PKCE Client',
@@ -37,14 +45,53 @@ const PUBLIC_OAUTH_CLIENT_CONFIG = {
   redirect_uris: [PUBLIC_OAUTH_CLIENT.redirectUri],
   response_types: ['code'],
   grant_types: ['authorization_code', 'refresh_token'],
-  scope: 'openid profile email',
+  scope: REFRESHABLE_SCOPE,
+};
+
+const AUTH_CODE_ONLY_OAUTH_CLIENT = {
+  clientId: 'auth-code-only-client',
+  clientSecret: 'auth-code-only-secret',
+  redirectUri: 'http://localhost:8080/auth-code-only-callback',
+} as const;
+
+const AUTH_CODE_ONLY_OAUTH_CLIENT_CONFIG = {
+  id: 'auth-code-only-client-config',
+  name: 'Authorization Code Only Client',
+  client_id: AUTH_CODE_ONLY_OAUTH_CLIENT.clientId,
+  client_secret: AUTH_CODE_ONLY_OAUTH_CLIENT.clientSecret,
+  redirect_uris: [AUTH_CODE_ONLY_OAUTH_CLIENT.redirectUri],
+  response_types: ['code'],
+  grant_types: ['authorization_code'],
+  scope: REFRESHABLE_SCOPE,
+};
+
+const REFRESH_ONLY_OAUTH_CLIENT = {
+  clientId: 'refresh-only-client',
+  clientSecret: 'refresh-only-secret',
+  redirectUri: 'http://localhost:8080/refresh-only-callback',
+} as const;
+
+const REFRESH_ONLY_OAUTH_CLIENT_CONFIG = {
+  id: 'refresh-only-client-config',
+  name: 'Refresh Only Client',
+  client_id: REFRESH_ONLY_OAUTH_CLIENT.clientId,
+  client_secret: REFRESH_ONLY_OAUTH_CLIENT.clientSecret,
+  redirect_uris: [REFRESH_ONLY_OAUTH_CLIENT.redirectUri],
+  response_types: ['code'],
+  grant_types: ['refresh_token'],
+  scope: REFRESHABLE_SCOPE,
 };
 
 beforeAll(async () => {
   ({ app, services, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
-    clients: [TEST_OAUTH_CLIENT_CONFIG, PUBLIC_OAUTH_CLIENT_CONFIG],
+    clients: [
+      TOKEN_TEST_OAUTH_CLIENT_CONFIG,
+      PUBLIC_OAUTH_CLIENT_CONFIG,
+      AUTH_CODE_ONLY_OAUTH_CLIENT_CONFIG,
+      REFRESH_ONLY_OAUTH_CLIENT_CONFIG,
+    ],
   }));
 
   await services.mikro.em.fork().transactional(async (em) => {
@@ -79,6 +126,7 @@ async function exchangeCode(params: {
 }) {
   return exchangeCodeForTokens(app, {
     clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+    codeVerifier: TEST_PKCE.codeVerifier,
     ...params,
   });
 }
@@ -87,12 +135,25 @@ async function exchangeCode(params: {
  * Helper: Refresh access token (wrapper)
  */
 async function refreshToken(params: {
-  refreshToken: string;
+  refreshToken: string | undefined;
   clientId?: string;
   clientSecret?: string;
 }) {
   return refreshAccessToken(app, {
     clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+    ...params,
+  });
+}
+
+async function getRefreshableAuthorizationCode(params: {
+  sessionCookie: string;
+  clientId?: string;
+  redirectUri?: string;
+  codeChallenge?: string;
+  codeChallengeMethod?: 'S256' | 'plain';
+}) {
+  return getAuthorizationCode(app, {
+    scope: REFRESHABLE_SCOPE,
     ...params,
   });
 }
@@ -120,7 +181,7 @@ describe('POST /oauth/token', () => {
       expect(json.access_token).toBeDefined();
       expect(json.token_type).toBe('Bearer');
       expect(json.expires_in).toBe(3600);
-      expect(json.refresh_token).toBeDefined();
+      expect(json.refresh_token).toBeUndefined();
       expect(json.id_token).toBeDefined(); // openid scope requested
       expect(json.scope).toBe('openid profile email');
     });
@@ -149,6 +210,7 @@ describe('POST /oauth/token', () => {
             grant_type: 'authorization_code',
             code,
             redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            code_verifier: TEST_PKCE.codeVerifier,
           },
         },
         {
@@ -204,6 +266,7 @@ describe('POST /oauth/token', () => {
             grant_type: 'authorization_code',
             code,
             redirect_uri: encodedClient.redirectUri,
+            code_verifier: TEST_PKCE.codeVerifier,
           },
         },
         {
@@ -237,18 +300,70 @@ describe('POST /oauth/token', () => {
       expect(json.access_token).toBeDefined();
     });
 
-    test('should work with PKCE (plain)', async () => {
+    test('should reject authorization request with PKCE plain method', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const plainVerifier = 'plain-verifier-string-for-testing-purposes-123';
+      const client = testClient(app);
+
+      const res = await client.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: REFRESHABLE_SCOPE,
+            code_challenge: plainVerifier,
+            code_challenge_method: 'plain',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      const location = new URL(
+        res.headers.get('location') || '',
+        'http://localhost:8080',
+      );
+
+      expect(res.status).toBe(302);
+      expect(location.searchParams.get('error')).toBe('invalid_request');
+    });
+
+    test('should reject confidential client authorization without PKCE', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const client = testClient(app);
+
+      const res = await client.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: REFRESHABLE_SCOPE,
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      const location = new URL(
+        res.headers.get('location') || '',
+        'http://localhost:8080',
+      );
+
+      expect(res.status).toBe(302);
+      expect(location.searchParams.get('error')).toBe('invalid_request');
+    });
+
+    test('should exchange authorization code with S256 PKCE for confidential client', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
         sessionCookie,
-        codeChallenge: plainVerifier,
-        codeChallengeMethod: 'plain',
+        codeChallenge: TEST_PKCE.codeChallenge,
+        codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
       });
 
       const res = await exchangeCode({
         code,
-        codeVerifier: plainVerifier,
+        codeVerifier: TEST_PKCE.codeVerifier,
       });
 
       const json = await assertJsonBody(res, 200);
@@ -266,7 +381,7 @@ describe('POST /oauth/token', () => {
 
       const json = await assertJsonBody(res, 200);
       expect(json.access_token).toBeDefined();
-      expect(json.refresh_token).toBeDefined();
+      expect(json.refresh_token).toBeUndefined();
       expect(json.id_token).toBeUndefined(); // No openid scope
       expect(json.scope).toBe('profile email');
     });
@@ -585,9 +700,9 @@ describe('POST /oauth/token', () => {
         codeChallenge: TEST_PKCE.codeChallenge,
       });
 
-      const res = await exchangeCode({
+      const res = await exchangeCodeForTokens(app, {
         code,
-        // code_verifier missing
+        clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
 
       const json = await assertJsonBody(res, 400);
@@ -635,22 +750,7 @@ describe('POST /oauth/token', () => {
       expect(retryJson.code).toBe('INVALID_AUTHORIZATION_CODE');
     });
 
-    test('should accept request without code_verifier when PKCE was not used', async () => {
-      const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, {
-        sessionCookie,
-        // No code_challenge
-      });
-
-      const res = await exchangeCode({
-        code,
-        // No code_verifier
-      });
-
-      expect(res.status).toBe(200);
-    });
-
-    test('should reject legacy public-client authorization code without stored code_challenge', async () => {
+    test('should reject legacy authorization code without stored code_challenge', async () => {
       const legacyCode = `legacy-public-code-${crypto.randomUUID()}`;
       const codeHash = await services.securityService.hashOpaqueToken(
         'oauth-code',
@@ -663,23 +763,24 @@ describe('POST /oauth/token', () => {
         'password123!',
       );
       await withMikroContext(services, async () => {
-        const publicClient = await services.oauthClientService.findByClientId(
-          PUBLIC_OAUTH_CLIENT.clientId,
+        const oauthClient = await services.oauthClientService.findByClientId(
+          TEST_OAUTH_CLIENT.clientId,
         );
 
         await services.mikro.oauthCode.createAuthorizationCode({
-          clientId: publicClient.id,
+          clientId: oauthClient.id,
           userSub,
           codeHash,
-          redirectUri: PUBLIC_OAUTH_CLIENT.redirectUri,
+          redirectUri: TEST_OAUTH_CLIENT.redirectUri,
           scope: ['openid', 'profile', 'email'],
         });
       });
 
       const res = await exchangeCodeForTokens(app, {
         code: legacyCode,
-        clientId: PUBLIC_OAUTH_CLIENT.clientId,
-        redirectUri: PUBLIC_OAUTH_CLIENT.redirectUri,
+        clientId: TEST_OAUTH_CLIENT.clientId,
+        clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
@@ -692,7 +793,7 @@ describe('POST /oauth/token', () => {
     test('should refresh access token using refresh token', async () => {
       // First, get initial tokens
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getRefreshableAuthorizationCode({ sessionCookie });
       const tokenRes = await exchangeCode({ code });
       expect(tokenRes.status).toBe(200);
 
@@ -707,7 +808,7 @@ describe('POST /oauth/token', () => {
       expect(json.token_type).toBe('Bearer');
       expect(json.expires_in).toBe(3600);
       expect(json.refresh_token).toBeDefined();
-      expect(json.scope).toBe('openid profile email');
+      expect(json.scope).toBe(REFRESHABLE_SCOPE);
 
       // Refresh token flow doesn't include id_token unless explicitly requested
       // But since original request had openid scope, it should be included
@@ -716,7 +817,7 @@ describe('POST /oauth/token', () => {
 
     test('should work with client_secret authentication', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getRefreshableAuthorizationCode({ sessionCookie });
       const tokenRes = await exchangeCode({
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
@@ -735,7 +836,7 @@ describe('POST /oauth/token', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
         sessionCookie,
-        scope: 'openid profile', // Limited scopes
+        scope: 'openid profile offline_access', // Limited scopes
       });
       const tokenRes = await exchangeCode({ code });
       const { refresh_token } = await tokenRes.json();
@@ -743,14 +844,14 @@ describe('POST /oauth/token', () => {
       const res = await refreshToken({ refreshToken: refresh_token });
 
       const json = await assertJsonBody(res, 200);
-      expect(json.scope).toBe('openid profile');
+      expect(json.scope).toBe('openid profile offline_access');
     });
   });
 
   describe('Refresh Token Grant - Validation', () => {
     test('should reject confidential client refresh without client_secret', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getRefreshableAuthorizationCode({ sessionCookie });
       const tokenRes = await exchangeCode({ code });
       const { refresh_token } = await tokenRes.json();
 
@@ -759,7 +860,7 @@ describe('POST /oauth/token', () => {
         form: {
           grant_type: 'refresh_token',
           client_id: TEST_OAUTH_CLIENT.clientId,
-          refresh_token,
+          refresh_token: assertDefined(refresh_token),
         },
       });
 
@@ -773,6 +874,7 @@ describe('POST /oauth/token', () => {
         sessionCookie,
         clientId: PUBLIC_OAUTH_CLIENT.clientId,
         redirectUri: PUBLIC_OAUTH_CLIENT.redirectUri,
+        scope: REFRESHABLE_SCOPE,
         codeChallenge: TEST_PKCE.codeChallenge,
         codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
       });
@@ -794,7 +896,7 @@ describe('POST /oauth/token', () => {
         form: {
           grant_type: 'refresh_token',
           client_id: PUBLIC_OAUTH_CLIENT.clientId,
-          refresh_token: tokenJson.refresh_token,
+          refresh_token: assertDefined(tokenJson.refresh_token),
         },
       });
 
@@ -829,7 +931,7 @@ describe('POST /oauth/token', () => {
     test('should reject client_id mismatch', async () => {
       // Get tokens with client A
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getRefreshableAuthorizationCode({ sessionCookie });
       const tokenRes = await exchangeCode({ code });
       const { refresh_token } = await tokenRes.json();
 
@@ -848,7 +950,7 @@ describe('POST /oauth/token', () => {
 
     test('should reject invalid client_secret in refresh flow', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getRefreshableAuthorizationCode({ sessionCookie });
       const tokenRes = await exchangeCode({ code });
       const { refresh_token } = await tokenRes.json();
 
@@ -866,7 +968,7 @@ describe('POST /oauth/token', () => {
     test('should reject previously used refresh token (token rotation)', async () => {
       // Get initial tokens
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getRefreshableAuthorizationCode({ sessionCookie });
       const tokenRes = await exchangeCode({ code });
       expect(tokenRes.status).toBe(200);
 
@@ -895,7 +997,7 @@ describe('POST /oauth/token', () => {
     test('should allow using new refresh token after rotation', async () => {
       // Get initial tokens
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getRefreshableAuthorizationCode({ sessionCookie });
       const tokenRes = await exchangeCode({ code });
       const { refresh_token: firstRefreshToken } = await tokenRes.json();
 
@@ -922,7 +1024,7 @@ describe('POST /oauth/token', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
         sessionCookie,
-        scope: 'openid profile', // Limited scopes
+        scope: 'openid profile offline_access', // Limited scopes
       });
       const tokenRes = await exchangeCode({ code });
       const { refresh_token, scope: originalScope } = await tokenRes.json();
@@ -939,7 +1041,7 @@ describe('POST /oauth/token', () => {
     test('should preserve user identity after token rotation', async () => {
       // Get initial tokens
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getRefreshableAuthorizationCode({ sessionCookie });
       const tokenRes = await exchangeCode({ code });
       const { refresh_token, access_token: firstAccessToken } =
         await tokenRes.json();
@@ -993,6 +1095,76 @@ describe('POST /oauth/token', () => {
   });
 
   describe('Grant Type Validation', () => {
+    test('should reject refresh_token grant when client is not allowed to use it', async () => {
+      const res = await refreshToken({
+        refreshToken: 'dummy-refresh-token',
+        clientId: AUTH_CODE_ONLY_OAUTH_CLIENT.clientId,
+        clientSecret: AUTH_CODE_ONLY_OAUTH_CLIENT.clientSecret,
+      });
+
+      const json = await assertJsonBody(res, 400);
+      expect(json.code).toBe('UNSUPPORTED_GRANT_TYPE');
+    });
+
+    test('should reject authorization_code grant when client is not allowed to use it', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        clientId: REFRESH_ONLY_OAUTH_CLIENT.clientId,
+        redirectUri: REFRESH_ONLY_OAUTH_CLIENT.redirectUri,
+      });
+
+      const res = await exchangeCode({
+        code,
+        clientId: REFRESH_ONLY_OAUTH_CLIENT.clientId,
+        clientSecret: REFRESH_ONLY_OAUTH_CLIENT.clientSecret,
+        redirectUri: REFRESH_ONLY_OAUTH_CLIENT.redirectUri,
+      });
+
+      const json = await assertJsonBody(res, 400);
+      expect(json.code).toBe('UNSUPPORTED_GRANT_TYPE');
+    });
+
+    test('should not issue refresh token when client cannot use refresh_token grant', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        clientId: AUTH_CODE_ONLY_OAUTH_CLIENT.clientId,
+        redirectUri: AUTH_CODE_ONLY_OAUTH_CLIENT.redirectUri,
+        scope: REFRESHABLE_SCOPE,
+      });
+
+      const res = await exchangeCode({
+        code,
+        clientId: AUTH_CODE_ONLY_OAUTH_CLIENT.clientId,
+        clientSecret: AUTH_CODE_ONLY_OAUTH_CLIENT.clientSecret,
+        redirectUri: AUTH_CODE_ONLY_OAUTH_CLIENT.redirectUri,
+      });
+
+      const json = await assertJsonBody(res, 200);
+      expect(json.refresh_token).toBeUndefined();
+    });
+
+    test('should not issue refresh token without offline_access scope', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const res = await exchangeCode({ code });
+
+      const json = await assertJsonBody(res, 200);
+      expect(json.refresh_token).toBeUndefined();
+    });
+
+    test('should issue refresh token with offline_access scope and client grant permission', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getRefreshableAuthorizationCode({ sessionCookie });
+
+      const res = await exchangeCode({ code });
+
+      const json = await assertJsonBody(res, 200);
+      expect(json.refresh_token).toBeDefined();
+    });
+
     test('should reject unsupported grant_type', async () => {
       const client = testClient(app);
       const res = await client.oauth.token.$post({
@@ -1022,7 +1194,7 @@ describe('POST /oauth/token', () => {
   describe('Token Response Format', () => {
     test('should return valid token response format', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getRefreshableAuthorizationCode({ sessionCookie });
       const res = await exchangeCode({ code });
 
       const json = await assertJsonBody(res, 200);
@@ -1048,14 +1220,14 @@ describe('POST /oauth/token', () => {
 
     test('should return tokens as JWTs', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getRefreshableAuthorizationCode({ sessionCookie });
       const res = await exchangeCode({ code });
 
       const json = await res.json();
 
       // JWT format: header.payload.signature (3 parts separated by dots)
       expect(json.access_token.split('.')).toHaveLength(3);
-      expect(json.refresh_token.split('.')).toHaveLength(3);
+      expect(assertDefined(json.refresh_token).split('.')).toHaveLength(3);
       expect(assertDefined(json.id_token).split('.')).toHaveLength(3);
     });
   });
@@ -1338,19 +1510,19 @@ describe('POST /oauth/token', () => {
   describe('Refresh Token Claims Validation', () => {
     test('should include required claims in refresh token', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getRefreshableAuthorizationCode({ sessionCookie });
 
       const res = await exchangeCode({ code });
 
       const json = await assertJsonBody(res, 200);
 
-      const decoded = jose.decodeJwt(json.refresh_token);
+      const decoded = jose.decodeJwt(assertDefined(json.refresh_token));
 
       // Required claims
       expect(decoded['typ']).toBe('refresh_token');
       expect(decoded.sub).toBeDefined();
       expect(decoded['client_id']).toBe(TEST_OAUTH_CLIENT.clientId);
-      expect(decoded['scope']).toBe('openid profile email');
+      expect(decoded['scope']).toBe(REFRESHABLE_SCOPE);
       expect(decoded.iss).toBeDefined();
       expect(decoded.iat).toBeDefined();
       expect(decoded.exp).toBeDefined();
@@ -1359,14 +1531,14 @@ describe('POST /oauth/token', () => {
 
     test('should have longer expiration than access token', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getRefreshableAuthorizationCode({ sessionCookie });
 
       const res = await exchangeCode({ code });
 
       const json = await assertJsonBody(res, 200);
 
       const accessDecoded = jose.decodeJwt(json.access_token);
-      const refreshDecoded = jose.decodeJwt(json.refresh_token);
+      const refreshDecoded = jose.decodeJwt(assertDefined(json.refresh_token));
 
       // Refresh token should expire after access token
       expect(refreshDecoded.exp).toBeGreaterThan(accessDecoded.exp as number);

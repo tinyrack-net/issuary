@@ -15,6 +15,7 @@ import {
   refreshAccessToken,
   TEST_OAUTH_CLIENT,
   TEST_OAUTH_CLIENT_CONFIG,
+  TEST_PKCE,
   TEST_USER,
   TEST_USER_CONFIG,
 } from '../../test-utils/index.ts';
@@ -22,11 +23,19 @@ import {
 let app: AppType;
 let cleanup: () => Promise<void>;
 
+const REFRESHABLE_SCOPE = 'openid profile email offline_access';
+
+const SERVER_SIDE_OAUTH_CLIENT_CONFIG = {
+  ...TEST_OAUTH_CLIENT_CONFIG,
+  grant_types: ['authorization_code', 'refresh_token'],
+  scope: 'openid profile email offline_access id_token',
+};
+
 beforeAll(async () => {
   ({ app, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
-    clients: [TEST_OAUTH_CLIENT_CONFIG],
+    clients: [SERVER_SIDE_OAUTH_CLIENT_CONFIG],
   }));
 });
 
@@ -51,7 +60,10 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
   describe('Client Secret Post Authentication', () => {
     test('should exchange code with client_secret in request body', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: REFRESHABLE_SCOPE,
+      });
 
       const client = testClient(app);
       const tokenRes = await client.oauth.token.$post({
@@ -61,6 +73,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
           client_id: TEST_OAUTH_CLIENT.clientId,
           client_secret: TEST_OAUTH_CLIENT.clientSecret,
           redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          code_verifier: TEST_PKCE.codeVerifier,
         },
       });
 
@@ -122,6 +135,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
             code,
             client_id: TEST_OAUTH_CLIENT.clientId,
             redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            code_verifier: TEST_PKCE.codeVerifier,
           },
         },
         {
@@ -226,11 +240,15 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
   describe('Refresh Token with Client Authentication', () => {
     test('should refresh token with client_secret_post', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: REFRESHABLE_SCOPE,
+      });
 
       const tokenRes = await exchangeCodeForTokens(app, {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+        codeVerifier: TEST_PKCE.codeVerifier,
       });
       const { refresh_token } = await tokenRes.json();
 
@@ -238,7 +256,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const refreshRes = await refreshClient.oauth.token.$post({
         form: {
           grant_type: 'refresh_token',
-          refresh_token,
+          refresh_token: assertDefined(refresh_token),
           client_id: TEST_OAUTH_CLIENT.clientId,
           client_secret: TEST_OAUTH_CLIENT.clientSecret,
         },
@@ -250,11 +268,15 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
 
     test('should refresh token with client_secret_basic', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: REFRESHABLE_SCOPE,
+      });
 
       const tokenRes = await exchangeCodeForTokens(app, {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+        codeVerifier: TEST_PKCE.codeVerifier,
       });
       const { refresh_token } = await tokenRes.json();
 
@@ -263,7 +285,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
         {
           form: {
             grant_type: 'refresh_token',
-            refresh_token,
+            refresh_token: assertDefined(refresh_token),
             client_id: TEST_OAUTH_CLIENT.clientId,
           },
         },
@@ -283,11 +305,15 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
 
     test('should reject refresh with wrong client_secret', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: REFRESHABLE_SCOPE,
+      });
 
       const tokenRes = await exchangeCodeForTokens(app, {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+        codeVerifier: TEST_PKCE.codeVerifier,
       });
       const { refresh_token } = await tokenRes.json();
 
@@ -309,6 +335,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const tokenRes = await exchangeCodeForTokens(app, {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+        codeVerifier: TEST_PKCE.codeVerifier,
       });
       const { access_token } = await tokenRes.json();
 
@@ -328,6 +355,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const tokenRes = await exchangeCodeForTokens(app, {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+        codeVerifier: TEST_PKCE.codeVerifier,
       });
       const { access_token } = await tokenRes.json();
 
@@ -354,7 +382,10 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const tokenRes = await exchangeCodeForTokens(app, {
+        code,
+        codeVerifier: TEST_PKCE.codeVerifier,
+      });
       const { access_token } = await tokenRes.json();
 
       const introspectRes = await introspectToken(app, {
@@ -374,6 +405,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const tokenRes = await exchangeCodeForTokens(app, {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+        codeVerifier: TEST_PKCE.codeVerifier,
       });
       const { access_token } = await tokenRes.json();
 
@@ -399,6 +431,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const tokenRes = await exchangeCodeForTokens(app, {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+        codeVerifier: TEST_PKCE.codeVerifier,
       });
       const { access_token } = await tokenRes.json();
 
@@ -424,7 +457,10 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
-      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const tokenRes = await exchangeCodeForTokens(app, {
+        code,
+        codeVerifier: TEST_PKCE.codeVerifier,
+      });
       const { access_token } = await tokenRes.json();
 
       const revokeClient = testClient(app);
@@ -446,6 +482,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
 
       const { code, location } = await getAuthorizationCode(app, {
         sessionCookie,
+        scope: REFRESHABLE_SCOPE,
         state: 'server-side-state',
       });
 
@@ -455,6 +492,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const tokenRes = await exchangeCodeForTokens(app, {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+        codeVerifier: TEST_PKCE.codeVerifier,
       });
 
       expect(tokenRes.status).toBe(200);
@@ -582,6 +620,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const tokenRes = await exchangeCodeForTokens(app, {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+        codeVerifier: TEST_PKCE.codeVerifier,
       });
       const tokens = await tokenRes.json();
 
@@ -599,6 +638,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const tokenRes = await exchangeCodeForTokens(app, {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+        codeVerifier: TEST_PKCE.codeVerifier,
       });
       const tokens = await tokenRes.json();
 
@@ -660,6 +700,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const tokenRes = await exchangeCodeForTokens(app, {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+        codeVerifier: TEST_PKCE.codeVerifier,
       });
 
       expect(tokenRes.status).toBe(200);
@@ -681,6 +722,7 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
       const tokenRes = await exchangeCodeForTokens(app, {
         code,
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+        codeVerifier: TEST_PKCE.codeVerifier,
       });
 
       const tokens = await tokenRes.json();

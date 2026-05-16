@@ -59,6 +59,8 @@ export interface TokenIntrospectionResult {
   sub?: string | undefined;
   /** Issuer identifier (only if active) */
   iss?: string | undefined;
+  /** Audience identifier (only if active) */
+  aud?: string | undefined;
 }
 
 /**
@@ -74,7 +76,7 @@ export interface TokenResponse {
   /** Access token lifetime in seconds */
   expires_in: number;
   /** Refresh token for obtaining new access tokens */
-  refresh_token: string;
+  refresh_token?: string | undefined;
   /** OpenID Connect ID Token (JWT format, only if openid scope requested) */
   id_token?: string | undefined;
   /** Space-separated list of granted scopes */
@@ -97,6 +99,7 @@ export class OAuthTokenService {
   private readonly oauthClientService: OAuthClientService;
   private readonly jwtService: JwtService;
   private readonly securityService: SecurityService;
+  private readonly refreshRotationLocks = new Map<string, Promise<void>>();
   constructor(
     config: TinyAuthRuntimeConfig,
     mikro: MikroService,
@@ -164,28 +167,26 @@ export class OAuthTokenService {
       throw new e.RedirectUriMismatch.Error();
     }
 
-    // 5. Validate PKCE if code_challenge was used (RFC 7636 §4.6)
-    // PKCE protects against authorization code interception for public clients
-    const isPublicClient =
-      await this.oauthClientService.isPublicClient(clientId);
-    if (isPublicClient && !codeEntity.codeChallenge) {
+    // 5. Validate S256 PKCE for every authorization code (OAuth 2.1 / Security BCP)
+    if (
+      !codeEntity.codeChallenge ||
+      codeEntity.codeChallengeMethod !== 'S256'
+    ) {
       throw new e.InvalidPKCEVerifier.Error();
     }
 
-    if (codeEntity.codeChallenge) {
-      if (!codeVerifier) {
-        throw new e.MissingCodeVerifier.Error();
-      }
+    if (!codeVerifier) {
+      throw new e.MissingCodeVerifier.Error();
+    }
 
-      const isPKCEValid = await validatePKCE(
-        codeVerifier,
-        codeEntity.codeChallenge,
-        codeEntity.codeChallengeMethod,
-      );
+    const isPKCEValid = await validatePKCE(
+      codeVerifier,
+      codeEntity.codeChallenge,
+      codeEntity.codeChallengeMethod,
+    );
 
-      if (!isPKCEValid) {
-        throw new e.InvalidPKCEVerifier.Error();
-      }
+    if (!isPKCEValid) {
+      throw new e.InvalidPKCEVerifier.Error();
     }
 
     // 6. Get user data from relation (load via Ref)
@@ -201,6 +202,9 @@ export class OAuthTokenService {
       userEmailVerified: user.email_verified,
       clientId: client.clientId,
       scope: codeEntity.scope,
+      issueRefreshToken:
+        client.grantTypes.includes('refresh_token') &&
+        codeEntity.scope.includes('offline_access'),
       nonce: codeEntity.nonce,
       // Pass OIDC authentication metadata from the authorization code
       // Only include when defined and non-null (exactOptionalPropertyTypes)
@@ -227,11 +231,34 @@ export class OAuthTokenService {
    * @throws {ClientIdMismatch} - Client ID doesn't match original token request
    */
   async refreshAccessToken(params: RefreshTokenGrantParams) {
+    const decodedRefreshToken = this.jwtService.decodeToken(
+      params.refreshToken,
+    );
+    const refreshTokenJti =
+      typeof decodedRefreshToken?.jti === 'string'
+        ? decodedRefreshToken.jti
+        : undefined;
+
+    if (refreshTokenJti) {
+      return this.withRefreshTokenRotationLock(refreshTokenJti, () =>
+        this.refreshAccessTokenLocked(params),
+      );
+    }
+
+    return this.refreshAccessTokenLocked(params);
+  }
+
+  private async refreshAccessTokenLocked(params: RefreshTokenGrantParams) {
     const { refreshToken, clientId } = params;
 
     // 1. Verify refresh token (also checks revocation)
-    const refreshPayload =
-      await this.jwtService.verifyRefreshToken(refreshToken);
+    let refreshPayload: RefreshTokenPayload;
+    try {
+      refreshPayload = await this.jwtService.verifyRefreshToken(refreshToken);
+    } catch (error) {
+      await this.revokeRefreshTokenFamilyIfReused(refreshToken, clientId);
+      throw error;
+    }
 
     // 2. Validate client_id matches (RFC 6749 §6)
     // Refresh token is bound to the client that obtained it
@@ -250,14 +277,23 @@ export class OAuthTokenService {
     // This is a security best practice per OAuth 2.0 Security BCP §4.14.2
     // If an attacker tries to use a stolen refresh token after the legitimate
     // user has already used it, the token will be rejected as revoked.
-    if (refreshPayload.jti && refreshPayload.exp) {
-      await this.mikro.revokedToken.revokeToken({
+    if (!refreshPayload.jti || !refreshPayload.exp) {
+      throw new e.InvalidRefreshToken.Error();
+    }
+
+    const didRevokeRefreshToken = await this.mikro.revokedToken.revokeTokenOnce(
+      {
         jti: refreshPayload.jti,
         token_type: 'refresh_token',
         clientId: client.id, // Use entity primary key
         userSub: userData.sub,
         expires_at: new Date(refreshPayload.exp * 1000),
-      });
+      },
+    );
+
+    if (!didRevokeRefreshToken) {
+      await this.revokeRefreshTokenFamily(refreshPayload, client.id);
+      throw new e.InvalidRefreshToken.Error();
     }
 
     // 6. Build token response with new access and refresh tokens
@@ -268,6 +304,8 @@ export class OAuthTokenService {
       userEmailVerified: userData.email_verified,
       clientId: client.clientId,
       scope: refreshPayload.scope.split(' '),
+      issueRefreshToken: true,
+      grantId: refreshPayload.grant_id,
     });
   }
 
@@ -347,6 +385,7 @@ export class OAuthTokenService {
         ...(payload.iat !== undefined && { iat: payload.iat }),
         sub: payload.sub,
         ...(payload.iss !== undefined && { iss: payload.iss }),
+        ...(payload.aud !== undefined && { aud: payload.aud }),
       };
     }
 
@@ -425,6 +464,10 @@ export class OAuthTokenService {
       expires_at: expiresAt,
     });
 
+    if (tokenType === 'refresh_token') {
+      await this.revokeRefreshTokenFamily(payload, clientEntity.id);
+    }
+
     // RFC 7009 §2.1: "If the particular token is a refresh token and the
     // authorization server supports the revocation of access tokens, then
     // the authorization server SHOULD also invalidate all access tokens
@@ -433,6 +476,78 @@ export class OAuthTokenService {
     // Since we can't enumerate all access tokens issued for this refresh token,
     // the revocation check happens at token verification time via jti lookup.
     // Access tokens will be rejected when their jti is in the revoked_tokens table.
+  }
+
+  private async withRefreshTokenRotationLock<T>(
+    refreshTokenJti: string,
+    operation: () => Promise<T>,
+  ): Promise<T> {
+    const previousLock = this.refreshRotationLocks.get(refreshTokenJti);
+    let releaseLock: () => void = () => {};
+    const currentLock = new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+
+    this.refreshRotationLocks.set(refreshTokenJti, currentLock);
+
+    if (previousLock) {
+      await previousLock;
+    }
+
+    try {
+      return await operation();
+    } finally {
+      releaseLock();
+      if (this.refreshRotationLocks.get(refreshTokenJti) === currentLock) {
+        this.refreshRotationLocks.delete(refreshTokenJti);
+      }
+    }
+  }
+
+  private async revokeRefreshTokenFamilyIfReused(
+    refreshToken: string,
+    clientId: string,
+  ): Promise<void> {
+    try {
+      const refreshPayload =
+        await this.jwtService.verifyRefreshTokenForReuseDetection(refreshToken);
+
+      if (refreshPayload.client_id !== clientId || !refreshPayload.jti) {
+        return;
+      }
+
+      const isRefreshTokenRevoked = await this.mikro.revokedToken.isRevoked(
+        refreshPayload.jti,
+      );
+      if (!isRefreshTokenRevoked) {
+        return;
+      }
+
+      const client = await this.oauthClientService.findByClientId(clientId);
+      await this.revokeRefreshTokenFamily(refreshPayload, client.id);
+    } catch {
+      // Invalid, expired, or malformed refresh tokens do not identify a family.
+    }
+  }
+
+  private async revokeRefreshTokenFamily(
+    payload: AccessTokenPayload | RefreshTokenPayload,
+    clientEntityId: string,
+  ): Promise<void> {
+    if (!payload.grant_id || !payload.exp) {
+      return;
+    }
+
+    const tokenExpiresAt = payload.exp * 1000;
+    const familyExpiresAt =
+      Date.now() + this.config.tokens.refresh_token_ttl * 1000;
+
+    await this.mikro.revokedToken.revokeGrant({
+      grantId: payload.grant_id,
+      clientId: clientEntityId,
+      userSub: payload.sub,
+      expires_at: new Date(Math.max(tokenExpiresAt, familyExpiresAt)),
+    });
   }
 
   private async verifyTokenForRevocation(
@@ -512,6 +627,8 @@ export class OAuthTokenService {
     userEmailVerified: boolean;
     clientId: string;
     scope: string[];
+    issueRefreshToken: boolean;
+    grantId?: string | undefined;
     nonce?: string;
     /** OIDC: Time when End-User authentication occurred (Unix timestamp) */
     authTime?: number;
@@ -522,6 +639,8 @@ export class OAuthTokenService {
       userEmailVerified,
       clientId,
       scope,
+      issueRefreshToken,
+      grantId = crypto.randomUUID(),
       nonce,
       authTime,
     } = params;
@@ -534,23 +653,26 @@ export class OAuthTokenService {
       sub: userSub,
       client_id: clientId,
       scope: scopeString,
-    });
-
-    // Generate refresh token (RFC 6749 §1.5)
-    const refreshToken = await this.jwtService.signRefreshToken({
-      typ: 'refresh_token',
-      sub: userSub,
-      client_id: clientId,
-      scope: scopeString,
+      aud: this.config.server.public_origin,
+      grant_id: grantId,
     });
 
     const response: TokenResponse = {
       access_token: accessToken,
       token_type: 'Bearer',
       expires_in: this.config.tokens.access_token_ttl,
-      refresh_token: refreshToken,
       scope: scopeString,
     };
+
+    if (issueRefreshToken) {
+      response.refresh_token = await this.jwtService.signRefreshToken({
+        typ: 'refresh_token',
+        sub: userSub,
+        client_id: clientId,
+        scope: scopeString,
+        grant_id: grantId,
+      });
+    }
 
     // Generate ID token if OIDC (openid scope present)
     if (scope.includes('openid')) {

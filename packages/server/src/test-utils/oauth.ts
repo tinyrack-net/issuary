@@ -1,8 +1,8 @@
 import { testClient } from 'hono/testing';
 import type * as jose from 'jose';
 import type { AppType } from '../entrypoints/app.ts';
-import type { TestResponse } from './client.ts';
-import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT } from './fixtures.ts';
+import { assertDefined, type TestResponse } from './client.ts';
+import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT, TEST_PKCE } from './fixtures.ts';
 import { createAuthenticatedSession, grantConsent } from './helpers.ts';
 
 /**
@@ -46,8 +46,8 @@ export async function getAuthorizationCode(
     redirectUri = TEST_OAUTH_CLIENT.redirectUri,
     scope = DEFAULT_SCOPES,
     state = 'test-state',
-    codeChallenge,
-    codeChallengeMethod,
+    codeChallenge = TEST_PKCE.codeChallenge,
+    codeChallengeMethod = TEST_PKCE.codeChallengeMethod,
     nonce,
     sessionCookie,
   } = params;
@@ -179,7 +179,7 @@ export async function exchangeCodeForTokens(
  * Parameters for refresh token request
  */
 export interface RefreshTokenParams {
-  refreshToken: string;
+  refreshToken: string | undefined;
   clientId?: string | undefined;
   clientSecret?: string | undefined;
 }
@@ -206,7 +206,7 @@ export async function refreshAccessToken(
   return client.oauth.token.$post({
     form: {
       grant_type: 'refresh_token',
-      refresh_token: refreshToken,
+      refresh_token: assertDefined(refreshToken),
       client_id: clientId,
       ...(clientSecret != null ? { client_secret: clientSecret } : {}),
     },
@@ -239,9 +239,9 @@ export async function getAccessToken(
   const {
     scope = DEFAULT_SCOPES,
     sessionCookie: providedSession,
-    codeChallenge,
-    codeChallengeMethod,
-    codeVerifier,
+    codeChallenge = TEST_PKCE.codeChallenge,
+    codeChallengeMethod = TEST_PKCE.codeChallengeMethod,
+    codeVerifier = TEST_PKCE.codeVerifier,
   } = params;
 
   // Create session if not provided
@@ -282,11 +282,14 @@ export async function getAccessToken(
  * @param accessToken - Access token
  * @returns UserInfo response
  */
-export async function getUserInfo(app: AppType, accessToken: string) {
+export async function getUserInfo(
+  app: AppType,
+  accessToken: string | undefined,
+) {
   const client = testClient(app);
   return client.oauth.userinfo.$get({
     header: {
-      authorization: `Bearer ${accessToken}`,
+      authorization: `Bearer ${assertDefined(accessToken)}`,
     },
   });
 }
@@ -295,7 +298,7 @@ export async function getUserInfo(app: AppType, accessToken: string) {
  * Parameters for token introspection
  */
 export interface IntrospectTokenParams {
-  token: string;
+  token: string | undefined;
   tokenTypeHint?: 'access_token' | 'refresh_token';
   clientId?: string;
   clientSecret?: string;
@@ -333,7 +336,7 @@ export async function introspectToken(
   const client = testClient(app);
   return client.oauth.introspect.$post({
     form: {
-      token,
+      token: assertDefined(token),
       ...(tokenTypeHint != null ? { token_type_hint: tokenTypeHint } : {}),
       ...(clientId != null ? { client_id: clientId } : {}),
       ...(clientSecret != null ? { client_secret: clientSecret } : {}),
@@ -345,7 +348,7 @@ export async function introspectToken(
  * Parameters for token revocation
  */
 export interface RevokeTokenParams {
-  token: string;
+  token: string | undefined;
   tokenTypeHint?: 'access_token' | 'refresh_token';
   clientId?: string;
   clientSecret?: string;
@@ -379,7 +382,7 @@ export async function revokeToken(app: AppType, params: RevokeTokenParams) {
   const client = testClient(app);
   return client.oauth.revoke.$post({
     form: {
-      token,
+      token: assertDefined(token),
       ...(tokenTypeHint != null ? { token_type_hint: tokenTypeHint } : {}),
       ...(clientId != null ? { client_id: clientId } : {}),
       ...(clientSecret != null ? { client_secret: clientSecret } : {}),

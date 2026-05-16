@@ -1,4 +1,5 @@
 import { testClient } from 'hono/testing';
+import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { OAuthClientEntitySchema } from '../../../entities/oauth-client.entity.ts';
 import { UserEntity } from '../../../entities/user.entity.ts';
@@ -17,6 +18,7 @@ import {
   revokeToken,
   TEST_OAUTH_CLIENT,
   TEST_OAUTH_CLIENT_CONFIG,
+  TEST_PKCE,
   TEST_USER,
   TEST_USER_CONFIG,
 } from '../../../test-utils/index.ts';
@@ -29,7 +31,13 @@ beforeAll(async () => {
   ({ app, services, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
-    clients: [TEST_OAUTH_CLIENT_CONFIG],
+    clients: [
+      {
+        ...TEST_OAUTH_CLIENT_CONFIG,
+        grant_types: ['authorization_code', 'refresh_token'],
+        scope: 'openid profile email offline_access id_token',
+      },
+    ],
   }));
 });
 
@@ -138,19 +146,18 @@ describe('GET /oauth/userinfo', () => {
       expect(json.picture).toBeUndefined();
     });
 
-    test('should work with OAuth2 flow (no openid scope)', async () => {
+    test('should reject access token without openid scope', async () => {
       const accessToken = await getAccessToken(app, {
         scope: 'profile email', // No openid scope
       });
 
       const res = await getUserInfo(app, accessToken);
 
-      const json = await assertJsonBody(res, 200);
-
-      // Should have all claims based on scopes
-      expect(json.sub).toBeDefined();
-      expect(json.email).toBe(TEST_USER.email);
-      expect(json.name).toBeDefined();
+      const json = await assertJsonBody(res, 403);
+      expect(json.code).toBe('insufficient_scope');
+      expect(res.headers.get('www-authenticate')).toContain(
+        'error="insufficient_scope"',
+      );
     });
 
     test('should return valid user ID in sub claim', async () => {
@@ -236,9 +243,12 @@ describe('GET /oauth/userinfo', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
         sessionCookie,
-        scope: 'openid',
+        scope: 'openid offline_access',
       });
-      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const tokenRes = await exchangeCodeForTokens(app, {
+        code,
+        codeVerifier: TEST_PKCE.codeVerifier,
+      });
       const { refresh_token } = await tokenRes.json();
 
       // Try to use refresh token for userinfo (should fail)
@@ -284,6 +294,17 @@ describe('GET /oauth/userinfo', () => {
   });
 
   describe('Scope-based Claims Filtering', () => {
+    test('should require openid scope for UserInfo access', async () => {
+      const accessToken = await getAccessToken(app, {
+        scope: 'email',
+      });
+
+      const res = await getUserInfo(app, accessToken);
+
+      const json = await assertJsonBody(res, 403);
+      expect(json.code).toBe('insufficient_scope');
+    });
+
     test('should respect scope limitations', async () => {
       const accessToken = await getAccessToken(app, {
         scope: 'openid', // Minimal scope
@@ -432,6 +453,16 @@ describe('GET /oauth/userinfo', () => {
   });
 
   describe('OIDC Compliance', () => {
+    test('should mint access tokens with auth server audience', async () => {
+      const accessToken = await getAccessToken(app, {
+        scope: 'openid',
+      });
+
+      const decoded = jose.decodeJwt(accessToken);
+
+      expect(decoded.aud).toBe(services.config.server.public_origin);
+    });
+
     test('should comply with OIDC Core §5.3 UserInfo endpoint', async () => {
       const accessToken = await getAccessToken(app, {
         scope: 'openid profile email',
@@ -460,7 +491,10 @@ describe('GET /oauth/userinfo', () => {
       });
 
       // Exchange code for tokens
-      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const tokenRes = await exchangeCodeForTokens(app, {
+        code,
+        codeVerifier: TEST_PKCE.codeVerifier,
+      });
       const tokens = await tokenRes.json();
 
       // Get userinfo
@@ -538,7 +572,10 @@ describe('GET /oauth/userinfo', () => {
         sessionCookie,
         scope: 'openid profile email',
       });
-      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const tokenRes = await exchangeCodeForTokens(app, {
+        code,
+        codeVerifier: TEST_PKCE.codeVerifier,
+      });
       const { access_token } = await tokenRes.json();
 
       // Verify token works before revocation

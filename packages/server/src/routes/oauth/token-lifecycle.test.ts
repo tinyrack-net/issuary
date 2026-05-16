@@ -11,7 +11,8 @@ import {
   createAuthenticatedSession,
   createTestApp,
   exchangeCodeForTokens,
-  getAuthorizationCode,
+  type GetAuthorizationCodeParams,
+  getAuthorizationCode as getAuthorizationCodeBase,
   getUserInfo,
   introspectToken,
   MINIMAL_TEST_CONFIG,
@@ -28,17 +29,35 @@ let app: AppType;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
+const REFRESHABLE_SCOPE = 'openid profile email offline_access';
+
+const LIFECYCLE_TEST_OAUTH_CLIENT_CONFIG = {
+  ...TEST_OAUTH_CLIENT_CONFIG,
+  grant_types: ['authorization_code', 'refresh_token'],
+  scope: 'openid profile email offline_access id_token',
+};
+
 beforeAll(async () => {
   ({ app, services, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
-    clients: [TEST_OAUTH_CLIENT_CONFIG],
+    clients: [LIFECYCLE_TEST_OAUTH_CLIENT_CONFIG],
   }));
 });
 
 afterAll(async () => {
   await cleanup();
 });
+
+async function getAuthorizationCode(
+  app: AppType,
+  params: GetAuthorizationCodeParams,
+) {
+  return getAuthorizationCodeBase(app, {
+    scope: REFRESHABLE_SCOPE,
+    ...params,
+  });
+}
 
 async function issueRefreshableTokens() {
   const sessionCookie = await createAuthenticatedSession(app);
@@ -540,7 +559,7 @@ describe('Token Lifecycle and Rotation', () => {
       }
     });
 
-    test('documents replay policy without invalidating the current descendant refresh token', async () => {
+    test('replayed refresh token invalidates the current descendant refresh token', async () => {
       const tokens = await issueRefreshableTokens();
 
       const firstRefresh = await refreshAccessToken(app, {
@@ -557,8 +576,14 @@ describe('Token Lifecycle and Rotation', () => {
       const descendantRefresh = await refreshAccessToken(app, {
         refreshToken: rotatedTokens.refresh_token,
       });
+      const descendantJson = await assertJsonBody(descendantRefresh, 400);
+      expect(descendantJson.code).toBe('INVALID_REFRESH_TOKEN');
 
-      expect(descendantRefresh.status).toBe(200);
+      const introspectRes = await introspectToken(app, {
+        token: rotatedTokens.access_token,
+      });
+      const introspectJson = await assertJsonBody(introspectRes, 200);
+      expect(introspectJson.active).toBe(false);
     });
 
     test('should reject refresh token after user deletion', async () => {
@@ -695,7 +720,7 @@ describe('Token Lifecycle and Rotation', () => {
   describe('Token Scope Preservation', () => {
     test('should preserve scope through token refresh', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const requestedScope = 'openid profile email';
+      const requestedScope = REFRESHABLE_SCOPE;
 
       const { code } = await getAuthorizationCode(app, {
         sessionCookie,

@@ -2,6 +2,7 @@ import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
 import {
+  assertDefined,
   assertJsonBody,
   createAuthenticatedSession,
   createTestApp,
@@ -34,11 +35,38 @@ const PUBLIC_OAUTH_CLIENT_CONFIG = {
   scope: 'openid profile email',
 };
 
+const TEST_OAUTH_CLIENT_CONFIG_WITH_REFRESH = {
+  ...TEST_OAUTH_CLIENT_CONFIG,
+  grant_types: ['authorization_code', 'refresh_token'],
+  scope: 'openid profile email id_token offline_access',
+};
+
+const REFRESH_CASCADE_CLIENT = {
+  clientId: 'refresh-cascade-revoke-client',
+  clientSecret: 'refresh-cascade-revoke-secret',
+  redirectUri: 'http://localhost:8080/refresh-cascade-revoke-callback',
+};
+
+const REFRESH_CASCADE_CLIENT_CONFIG = {
+  id: 'refresh-cascade-revoke-client-config',
+  name: 'Refresh Cascade Revoke Client',
+  client_id: REFRESH_CASCADE_CLIENT.clientId,
+  client_secret: REFRESH_CASCADE_CLIENT.clientSecret,
+  redirect_uris: [REFRESH_CASCADE_CLIENT.redirectUri],
+  response_types: ['code'],
+  grant_types: ['authorization_code', 'refresh_token'],
+  scope: 'openid profile email offline_access',
+};
+
 beforeAll(async () => {
   ({ app, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
-    clients: [TEST_OAUTH_CLIENT_CONFIG, PUBLIC_OAUTH_CLIENT_CONFIG],
+    clients: [
+      TEST_OAUTH_CLIENT_CONFIG_WITH_REFRESH,
+      PUBLIC_OAUTH_CLIENT_CONFIG,
+      REFRESH_CASCADE_CLIENT_CONFIG,
+    ],
   }));
 });
 
@@ -50,7 +78,7 @@ afterAll(async () => {
  * Helper: Revoke a token
  */
 async function revokeToken(params: {
-  token: string;
+  token: string | undefined;
   tokenTypeHint?: 'access_token' | 'refresh_token';
   clientId?: string;
   clientSecret?: string;
@@ -64,7 +92,7 @@ async function revokeToken(params: {
   const client = testClient(app);
   return client.oauth.revoke.$post({
     form: {
-      token: params.token,
+      token: assertDefined(params.token),
       ...(params.tokenTypeHint != null
         ? { token_type_hint: params.tokenTypeHint }
         : {}),
@@ -77,13 +105,18 @@ async function revokeToken(params: {
 /**
  * Helper: Introspect a token
  */
-async function introspectToken(token: string) {
+async function introspectToken(
+  token: string | undefined,
+  params: { clientId?: string; clientSecret?: string } = {},
+) {
+  const clientId = params.clientId ?? TEST_OAUTH_CLIENT.clientId;
+  const clientSecret = params.clientSecret ?? TEST_OAUTH_CLIENT.clientSecret;
   const client = testClient(app);
   return client.oauth.introspect.$post({
     form: {
-      token,
-      client_id: TEST_OAUTH_CLIENT.clientId,
-      client_secret: TEST_OAUTH_CLIENT.clientSecret,
+      token: assertDefined(token),
+      client_id: clientId,
+      client_secret: clientSecret,
     },
   });
 }
@@ -100,6 +133,7 @@ async function exchangeCodeForTokens(
 ) {
   return exchangeCodeForTokensRequest(honoApp, {
     clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+    codeVerifier: TEST_PKCE.codeVerifier,
     ...params,
   });
 }
@@ -132,7 +166,10 @@ describe('POST /oauth/revoke', () => {
   describe('Access Token Revocation', () => {
     test('should revoke valid access token', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = await tokenRes.json();
 
@@ -153,7 +190,10 @@ describe('POST /oauth/revoke', () => {
 
     test('should revoke access token with token_type_hint', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = await tokenRes.json();
 
@@ -171,7 +211,10 @@ describe('POST /oauth/revoke', () => {
 
     test('should return 200 for already revoked access token', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = await tokenRes.json();
 
@@ -187,7 +230,10 @@ describe('POST /oauth/revoke', () => {
   describe('Refresh Token Revocation', () => {
     test('should revoke valid refresh token', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { refresh_token } = await tokenRes.json();
 
@@ -207,7 +253,10 @@ describe('POST /oauth/revoke', () => {
 
     test('should revoke refresh token with token_type_hint', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { refresh_token } = await tokenRes.json();
 
@@ -225,7 +274,10 @@ describe('POST /oauth/revoke', () => {
 
     test('should prevent token refresh after revocation', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { refresh_token } = await tokenRes.json();
 
@@ -289,7 +341,10 @@ describe('POST /oauth/revoke', () => {
   describe('Client Authentication', () => {
     test('should reject revocation without client identity and leave token active', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = await tokenRes.json();
 
@@ -310,7 +365,10 @@ describe('POST /oauth/revoke', () => {
 
     test('should not revoke another client token', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = await assertJsonBody(tokenRes, 200);
 
@@ -339,7 +397,10 @@ describe('POST /oauth/revoke', () => {
 
     test('should reject confidential client revocation without client_secret', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = await tokenRes.json();
 
@@ -361,7 +422,10 @@ describe('POST /oauth/revoke', () => {
 
     test('should work with valid client_id and client_secret', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = await tokenRes.json();
 
@@ -533,7 +597,10 @@ describe('POST /oauth/revoke', () => {
 
     test('should handle refresh token with access_token hint', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { refresh_token } = await tokenRes.json();
 
@@ -579,6 +646,46 @@ describe('POST /oauth/revoke', () => {
   });
 
   describe('Integration with Other Endpoints', () => {
+    test('revoking refresh token should invalidate related access token', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        clientId: REFRESH_CASCADE_CLIENT.clientId,
+        redirectUri: REFRESH_CASCADE_CLIENT.redirectUri,
+        scope: 'openid profile email offline_access',
+        codeChallenge: TEST_PKCE.codeChallenge,
+        codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
+      });
+      const tokenRes = await exchangeCodeForTokens(app, {
+        code,
+        clientId: REFRESH_CASCADE_CLIENT.clientId,
+        clientSecret: REFRESH_CASCADE_CLIENT.clientSecret,
+        redirectUri: REFRESH_CASCADE_CLIENT.redirectUri,
+        codeVerifier: TEST_PKCE.codeVerifier,
+      });
+      const { access_token, refresh_token } = await assertJsonBody(
+        tokenRes,
+        200,
+      );
+
+      const revokeRes = await revokeToken({
+        token: refresh_token,
+        clientId: REFRESH_CASCADE_CLIENT.clientId,
+        clientSecret: REFRESH_CASCADE_CLIENT.clientSecret,
+      });
+      expect(revokeRes.status).toBe(200);
+
+      const introspectRes = await introspectToken(access_token, {
+        clientId: REFRESH_CASCADE_CLIENT.clientId,
+        clientSecret: REFRESH_CASCADE_CLIENT.clientSecret,
+      });
+      const introspectJson = await assertJsonBody(introspectRes, 200);
+      expect(introspectJson.active).toBe(false);
+
+      const userinfoRes = await getUserInfo(app, access_token);
+      expect(userinfoRes.status).toBe(401);
+    });
+
     test('revoked access token should fail userinfo request', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
@@ -596,7 +703,10 @@ describe('POST /oauth/revoke', () => {
 
     test('revoked token should show as inactive in introspection', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token, refresh_token } = await tokenRes.json();
 

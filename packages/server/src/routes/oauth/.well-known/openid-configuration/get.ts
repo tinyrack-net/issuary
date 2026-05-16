@@ -36,6 +36,12 @@ export const oidcConfigGet = new Hono<AppEnv>().get(
                   .describe(
                     'JSON array containing a list of the OAuth 2.0 response_type values',
                   ),
+                response_modes_supported: z
+                  .array(z.string())
+                  .optional()
+                  .describe(
+                    'JSON array containing a list of supported response_mode values',
+                  ),
                 subject_types_supported: z
                   .array(z.string())
                   .describe(
@@ -102,6 +108,20 @@ export const oidcConfigGet = new Hono<AppEnv>().get(
                   .describe(
                     'Languages and scripts supported for the user interface',
                   ),
+                request_parameter_supported: z
+                  .boolean()
+                  .optional()
+                  .describe('Whether request object by value is supported'),
+                request_uri_parameter_supported: z
+                  .boolean()
+                  .optional()
+                  .describe('Whether request object by reference is supported'),
+                claims_parameter_supported: z
+                  .boolean()
+                  .optional()
+                  .describe(
+                    'Whether the claims request parameter is supported',
+                  ),
               }),
             ),
           },
@@ -118,8 +138,9 @@ export const oidcConfigGet = new Hono<AppEnv>().get(
       issuer: baseUrl,
       authorization_endpoint: `${baseUrl}/oauth/authorize`,
       token_endpoint: `${baseUrl}/oauth/token`,
-      jwks_uri: `${baseUrl}/oauth/jwks`,
+      jwks_uri: `${baseUrl}/oauth/.well-known/jwks`,
       response_types_supported: ['code'],
+      response_modes_supported: ['query'],
       subject_types_supported: ['public'],
       id_token_signing_alg_values_supported: ['RS256'],
       userinfo_endpoint: `${baseUrl}/oauth/userinfo`,
@@ -131,6 +152,8 @@ export const oidcConfigGet = new Hono<AppEnv>().get(
         'exp',
         'iat',
         'nonce',
+        'auth_time',
+        'at_hash',
         'email',
         'email_verified',
         'name',
@@ -139,11 +162,15 @@ export const oidcConfigGet = new Hono<AppEnv>().get(
       token_endpoint_auth_methods_supported: [
         'client_secret_basic',
         'client_secret_post',
+        'none',
       ],
-      code_challenge_methods_supported: ['S256', 'plain'],
+      code_challenge_methods_supported: ['S256'],
       introspection_endpoint: `${baseUrl}/oauth/introspect`,
       revocation_endpoint: `${baseUrl}/oauth/revoke`,
       ui_locales_supported: config.i18n.supported_languages,
+      request_parameter_supported: false,
+      request_uri_parameter_supported: false,
+      claims_parameter_supported: false,
     };
 
     // Set Cache-Control header

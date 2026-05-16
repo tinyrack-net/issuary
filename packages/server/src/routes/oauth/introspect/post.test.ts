@@ -34,11 +34,20 @@ const PUBLIC_OAUTH_CLIENT_CONFIG = {
   scope: 'openid profile email',
 };
 
+const TEST_OAUTH_CLIENT_CONFIG_WITH_REFRESH = {
+  ...TEST_OAUTH_CLIENT_CONFIG,
+  grant_types: ['authorization_code', 'refresh_token'],
+  scope: 'openid profile email id_token offline_access',
+};
+
 beforeAll(async () => {
   ({ app, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
-    clients: [TEST_OAUTH_CLIENT_CONFIG, PUBLIC_OAUTH_CLIENT_CONFIG],
+    clients: [
+      TEST_OAUTH_CLIENT_CONFIG_WITH_REFRESH,
+      PUBLIC_OAUTH_CLIENT_CONFIG,
+    ],
   }));
 });
 
@@ -49,7 +58,7 @@ afterAll(async () => {
 async function introspectToken(
   honoApp: AppType,
   params: {
-    token: string;
+    token: string | undefined;
     tokenTypeHint?: 'access_token' | 'refresh_token';
     clientId?: string;
     clientSecret?: string;
@@ -81,6 +90,7 @@ async function exchangeCodeForTokens(
 ) {
   return exchangeCodeForTokensRequest(honoApp, {
     clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+    codeVerifier: TEST_PKCE.codeVerifier,
     ...params,
   });
 }
@@ -88,7 +98,7 @@ async function exchangeCodeForTokens(
 async function revokeToken(
   honoApp: AppType,
   params: {
-    token: string;
+    token: string | undefined;
     tokenTypeHint?: 'access_token' | 'refresh_token';
     clientId?: string;
     clientSecret?: string;
@@ -128,7 +138,10 @@ describe('POST /oauth/introspect', () => {
   describe('Valid Token Introspection - Access Token', () => {
     test('should return active=true for valid access token', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = await tokenRes.json();
 
@@ -137,7 +150,7 @@ describe('POST /oauth/introspect', () => {
       const json = await assertJsonBody(res, 200);
 
       expect(json.active).toBe(true);
-      expect(json.scope).toBe('openid profile email');
+      expect(json.scope).toBe('openid profile email offline_access');
       expect(json.client_id).toBe(TEST_OAUTH_CLIENT.clientId);
       expect(json.token_type).toBe('Bearer');
       expect(json.exp).toBeDefined();
@@ -148,7 +161,10 @@ describe('POST /oauth/introspect', () => {
 
     test('should work with token_type_hint=access_token', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = await tokenRes.json();
 
@@ -197,7 +213,10 @@ describe('POST /oauth/introspect', () => {
   describe('Valid Token Introspection - Refresh Token', () => {
     test('should return active=true for valid refresh token', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { refresh_token } = await tokenRes.json();
 
@@ -206,7 +225,7 @@ describe('POST /oauth/introspect', () => {
       const json = await assertJsonBody(res, 200);
 
       expect(json.active).toBe(true);
-      expect(json.scope).toBe('openid profile email');
+      expect(json.scope).toBe('openid profile email offline_access');
       expect(json.client_id).toBe(TEST_OAUTH_CLIENT.clientId);
       expect(json.token_type).toBe('Bearer');
       expect(json.exp).toBeDefined();
@@ -217,7 +236,10 @@ describe('POST /oauth/introspect', () => {
 
     test('should work with token_type_hint=refresh_token', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { refresh_token } = await tokenRes.json();
 
@@ -570,7 +592,7 @@ describe('POST /oauth/introspect', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
         sessionCookie,
-        scope: 'openid profile email',
+        scope: 'openid profile email offline_access',
       });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { access_token } = await tokenRes.json();
@@ -595,7 +617,7 @@ describe('POST /oauth/introspect', () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
         sessionCookie,
-        scope: 'openid profile email',
+        scope: 'openid profile email offline_access',
       });
       const tokenRes = await exchangeCodeForTokens(app, { code });
       const { refresh_token } = await tokenRes.json();

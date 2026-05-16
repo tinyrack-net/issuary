@@ -1,4 +1,7 @@
-import { EntityRepository } from '@mikro-orm/core';
+import {
+  EntityRepository,
+  UniqueConstraintViolationException,
+} from '@mikro-orm/core';
 import type {
   IRevokedTokenEntity,
   TokenType,
@@ -12,6 +15,10 @@ import type {
  * by user/client combination.
  */
 export class RevokedTokenRepository extends EntityRepository<IRevokedTokenEntity> {
+  private grantRevocationJti(grantId: string): string {
+    return `grant:${grantId}`;
+  }
+
   /**
    * Revoke a single token by its JTI
    *
@@ -44,6 +51,57 @@ export class RevokedTokenRepository extends EntityRepository<IRevokedTokenEntity
   }
 
   /**
+   * Revoke a single token only if it has not already been revoked.
+   *
+   * @returns true when this call created the revocation entry.
+   */
+  async revokeTokenOnce(params: {
+    jti: string;
+    token_type: TokenType;
+    clientId: string;
+    userSub: string;
+    expires_at: Date;
+  }): Promise<boolean> {
+    const existing = await this.findOne({ jti: params.jti });
+    if (existing) {
+      return false;
+    }
+
+    const entity = this.create({
+      jti: params.jti,
+      token_type: params.token_type,
+      client: params.clientId,
+      user: params.userSub,
+      expires_at: params.expires_at,
+    });
+
+    try {
+      await this.getEntityManager().persist(entity).flush();
+      return true;
+    } catch (error) {
+      if (error instanceof UniqueConstraintViolationException) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  async revokeGrant(params: {
+    grantId: string;
+    clientId: string;
+    userSub: string;
+    expires_at: Date;
+  }): Promise<IRevokedTokenEntity> {
+    return this.revokeToken({
+      jti: this.grantRevocationJti(params.grantId),
+      token_type: 'refresh_token',
+      clientId: params.clientId,
+      userSub: params.userSub,
+      expires_at: params.expires_at,
+    });
+  }
+
+  /**
    * Check if a token is revoked by its JTI
    *
    * @param jti - JWT ID to check
@@ -52,5 +110,9 @@ export class RevokedTokenRepository extends EntityRepository<IRevokedTokenEntity
   async isRevoked(jti: string): Promise<boolean> {
     const count = await this.count({ jti });
     return count > 0;
+  }
+
+  async isGrantRevoked(grantId: string): Promise<boolean> {
+    return this.isRevoked(this.grantRevocationJti(grantId));
   }
 }

@@ -58,7 +58,9 @@ describe('GET /oauth/.well-known/openid-configuration', () => {
       expect(res.status).toBe(200);
       const json = await res.json();
 
-      expect(json.jwks_uri).toContain('/oauth/jwks');
+      expect(json.jwks_uri).toBe(
+        'http://localhost:8080/oauth/.well-known/jwks',
+      );
     });
   });
 
@@ -100,6 +102,9 @@ describe('GET /oauth/.well-known/openid-configuration', () => {
       expect(json.claims_supported).toContain('email');
       expect(json.claims_supported).toContain('email_verified');
       expect(json.claims_supported).toContain('name');
+      expect(json.claims_supported).toContain('nonce');
+      expect(json.claims_supported).toContain('auth_time');
+      expect(json.claims_supported).toContain('at_hash');
     });
 
     test('should support authorization_code grant type', async () => {
@@ -122,8 +127,7 @@ describe('GET /oauth/.well-known/openid-configuration', () => {
       expect(res.status).toBe(200);
       const json = await res.json();
 
-      expect(json.code_challenge_methods_supported).toContain('S256');
-      expect(json.code_challenge_methods_supported).toContain('plain');
+      expect(json.code_challenge_methods_supported).toEqual(['S256']);
     });
 
     test('should support client authentication methods', async () => {
@@ -140,6 +144,7 @@ describe('GET /oauth/.well-known/openid-configuration', () => {
       expect(json.token_endpoint_auth_methods_supported).toContain(
         'client_secret_post',
       );
+      expect(json.token_endpoint_auth_methods_supported).toContain('none');
     });
   });
 
@@ -154,6 +159,20 @@ describe('GET /oauth/.well-known/openid-configuration', () => {
 
       expect(json.introspection_endpoint).toBeDefined();
       expect(json.introspection_endpoint).toContain('/introspect');
+    });
+
+    test('should explicitly document OIDF Basic OP conformance-relevant optional capabilities', async () => {
+      const client = testClient(app);
+      const res =
+        await client.oauth['.well-known']['openid-configuration'].$get();
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+
+      expect(json.response_modes_supported).toEqual(['query']);
+      expect(json.request_parameter_supported).toBe(false);
+      expect(json.request_uri_parameter_supported).toBe(false);
+      expect(json.claims_parameter_supported).toBe(false);
     });
   });
 
@@ -175,10 +194,10 @@ describe('GET /oauth/.well-known/openid-configuration', () => {
       const configRes =
         await client.oauth['.well-known']['openid-configuration'].$get();
       expect(configRes.status).toBe(200);
-      await configRes.json();
+      const config = await configRes.json();
 
-      // JWKS endpoint should be accessible
-      const jwksRes = await client.oauth['.well-known'].jwks.$get();
+      const jwksUri = new URL(config.jwks_uri);
+      const jwksRes = await app.request(`${jwksUri.pathname}${jwksUri.search}`);
 
       expect(jwksRes.status).toBe(200);
       const jwks = await jwksRes.json();

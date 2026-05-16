@@ -37,7 +37,15 @@ const SECOND_OAUTH_CLIENT_CONFIG = {
   redirect_uris: [SECOND_OAUTH_CLIENT.redirectUri],
   response_types: ['code'],
   grant_types: ['authorization_code', 'refresh_token'],
-  scope: 'openid profile email',
+  scope: 'openid profile email offline_access',
+};
+
+const REFRESHABLE_SCOPE = 'openid profile email offline_access';
+
+const REFRESHABLE_TEST_OAUTH_CLIENT_CONFIG = {
+  ...TEST_OAUTH_CLIENT_CONFIG,
+  grant_types: ['authorization_code', 'refresh_token'],
+  scope: 'openid profile email offline_access id_token',
 };
 
 let app: AppType;
@@ -47,7 +55,7 @@ beforeAll(async () => {
   ({ app, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
-    clients: [TEST_OAUTH_CLIENT_CONFIG, SECOND_OAUTH_CLIENT_CONFIG],
+    clients: [REFRESHABLE_TEST_OAUTH_CLIENT_CONFIG, SECOND_OAUTH_CLIENT_CONFIG],
   }));
 });
 
@@ -101,7 +109,8 @@ describe('Multi-Client Isolation', () => {
       const tokens2 = await tokenRes2.json();
 
       expect(tokens1.access_token).not.toBe(tokens2.access_token);
-      expect(tokens1.refresh_token).not.toBe(tokens2.refresh_token);
+      expect(tokens1.refresh_token).toBeUndefined();
+      expect(tokens2.refresh_token).toBeUndefined();
       expect(tokens1.id_token).not.toBe(tokens2.id_token);
     });
 
@@ -231,6 +240,7 @@ describe('Multi-Client Isolation', () => {
         sessionCookie,
         clientId: TEST_OAUTH_CLIENT.clientId,
         redirectUri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: REFRESHABLE_SCOPE,
         codeChallenge: TEST_PKCE.codeChallenge,
         codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
       });
@@ -247,7 +257,7 @@ describe('Multi-Client Isolation', () => {
       const refreshRes = await refreshClient.oauth.token.$post({
         form: {
           grant_type: 'refresh_token',
-          refresh_token: tokens.refresh_token,
+          refresh_token: assertDefined(tokens.refresh_token),
           client_id: SECOND_OAUTH_CLIENT.clientId,
           client_secret: SECOND_OAUTH_CLIENT.clientSecret,
         },
@@ -568,6 +578,7 @@ describe('Multi-Client Isolation', () => {
         sessionCookie,
         clientId: TEST_OAUTH_CLIENT.clientId,
         redirectUri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: REFRESHABLE_SCOPE,
         codeChallenge: TEST_PKCE.codeChallenge,
         codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
       });
@@ -584,6 +595,7 @@ describe('Multi-Client Isolation', () => {
         sessionCookie,
         clientId: SECOND_OAUTH_CLIENT.clientId,
         redirectUri: SECOND_OAUTH_CLIENT.redirectUri,
+        scope: REFRESHABLE_SCOPE,
         codeChallenge: TEST_PKCE.codeChallenge,
         codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
       });

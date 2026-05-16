@@ -3,6 +3,7 @@ import { testClient } from 'hono/testing';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../entrypoints/app.ts';
+import { encrypt } from '../../lib/crypto.ts';
 import {
   assertDefined,
   assertJsonBody,
@@ -11,8 +12,10 @@ import {
   exchangeCodeForTokens,
   getAuthorizationCode,
   getUserInfo,
+  grantConsent,
   MINIMAL_TEST_CONFIG,
   parseJwks,
+  refreshAccessToken,
   TEST_OAUTH_CLIENT,
   TEST_OAUTH_CLIENT_CONFIG,
   TEST_PKCE,
@@ -23,17 +26,72 @@ import {
 let app: AppType;
 let cleanup: () => Promise<void>;
 
+const REFRESHABLE_SCOPE = 'openid profile email offline_access';
+
+const E2E_REFRESHABLE_CLIENT = {
+  clientId: 'e2e-refreshable-client',
+  clientSecret: 'e2e-refreshable-secret',
+  redirectUri: 'http://localhost:8080/e2e-refreshable-callback',
+};
+
+const E2E_REFRESHABLE_CLIENT_CONFIG = {
+  id: 'e2e-refreshable-client-config',
+  name: 'E2E Refreshable Client',
+  client_id: E2E_REFRESHABLE_CLIENT.clientId,
+  client_secret: E2E_REFRESHABLE_CLIENT.clientSecret,
+  redirect_uris: [E2E_REFRESHABLE_CLIENT.redirectUri],
+  response_types: ['code'],
+  grant_types: ['authorization_code', 'refresh_token'],
+  scope: 'openid profile email offline_access id_token',
+};
+
 beforeAll(async () => {
   ({ app, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
-    clients: [TEST_OAUTH_CLIENT_CONFIG],
+    clients: [TEST_OAUTH_CLIENT_CONFIG, E2E_REFRESHABLE_CLIENT_CONFIG],
   }));
 });
 
 afterAll(async () => {
   await cleanup();
 });
+
+async function issueRefreshableTokens() {
+  const sessionCookie = await createAuthenticatedSession(app);
+  const { code } = await getAuthorizationCode(app, {
+    clientId: E2E_REFRESHABLE_CLIENT.clientId,
+    redirectUri: E2E_REFRESHABLE_CLIENT.redirectUri,
+    sessionCookie,
+    scope: REFRESHABLE_SCOPE,
+    codeChallenge: TEST_PKCE.codeChallenge,
+    codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
+  });
+
+  const tokenRes = await exchangeCodeForTokens(app, {
+    code,
+    clientId: E2E_REFRESHABLE_CLIENT.clientId,
+    clientSecret: E2E_REFRESHABLE_CLIENT.clientSecret,
+    redirectUri: E2E_REFRESHABLE_CLIENT.redirectUri,
+    codeVerifier: TEST_PKCE.codeVerifier,
+  });
+
+  return assertJsonBody(tokenRes, 200);
+}
+
+async function createSessionCookieWithAuthTime(
+  authenticatedAt: number,
+): Promise<string> {
+  return encrypt(
+    JSON.stringify({
+      user: {
+        sub: TEST_USER_CONFIG.sub,
+        authenticated_at: authenticatedAt,
+      },
+    }),
+    MINIMAL_TEST_CONFIG.security.session_secret,
+  );
+}
 
 /**
  * End-to-End OIDC Flow Tests
@@ -50,6 +108,159 @@ afterAll(async () => {
  * the discovery-first approach as recommended by the spec.
  */
 describe('End-to-End OIDC Flow', () => {
+  describe('Phase 10 Protocol Regression Suite', () => {
+    test('should complete discovery-driven S256 OIDC flow with nonce and at_hash verification', async () => {
+      const client = testClient(app);
+      const configRes =
+        await client.oauth['.well-known']['openid-configuration'].$get();
+      const config = await assertJsonBody(configRes, 200);
+
+      const jwksPath = new URL(config.jwks_uri).pathname;
+      const jwksRes = await app.request(jwksPath);
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
+
+      const sessionCookie = await createAuthenticatedSession(app);
+      const nonce = crypto.randomUUID();
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        nonce,
+        codeChallenge: TEST_PKCE.codeChallenge,
+        codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const tokenRes = await exchangeCodeForTokens(app, {
+        code,
+        codeVerifier: TEST_PKCE.codeVerifier,
+      });
+      const tokens = await assertJsonBody(tokenRes, 200);
+
+      const { payload } = await jose.jwtVerify(
+        assertDefined(tokens.id_token),
+        JWKS,
+        {
+          issuer: config.issuer,
+          audience: TEST_OAUTH_CLIENT.clientId,
+        },
+      );
+
+      const hash = createHash('sha256').update(tokens.access_token).digest();
+      const expectedAtHash = hash
+        .subarray(0, hash.length / 2)
+        .toString('base64url');
+
+      expect(payload['nonce']).toBe(nonce);
+      expect(payload['at_hash']).toBe(expectedAtHash);
+
+      const userInfoRes = await getUserInfo(app, tokens.access_token);
+      const userInfo = await assertJsonBody(userInfoRes, 200);
+      expect(userInfo.sub).toBe(payload.sub);
+    });
+
+    test('should issue refresh tokens only for offline_access on a refresh-enabled client', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email',
+        codeChallenge: TEST_PKCE.codeChallenge,
+        codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const tokenRes = await exchangeCodeForTokens(app, {
+        code,
+        codeVerifier: TEST_PKCE.codeVerifier,
+      });
+      const tokens = await assertJsonBody(tokenRes, 200);
+      expect(tokens.refresh_token).toBeUndefined();
+
+      const refreshableTokens = await issueRefreshableTokens();
+      expect(refreshableTokens.refresh_token).toBeDefined();
+
+      const refreshRes = await refreshAccessToken(app, {
+        refreshToken: refreshableTokens.refresh_token,
+        clientId: E2E_REFRESHABLE_CLIENT.clientId,
+        clientSecret: E2E_REFRESHABLE_CLIENT.clientSecret,
+      });
+      const refreshedTokens = await assertJsonBody(refreshRes, 200);
+      expect(refreshedTokens.access_token).toBeDefined();
+      expect(refreshedTokens.refresh_token).toBeDefined();
+    });
+
+    test('should invalidate the refresh token family after replay over HTTP', async () => {
+      const firstTokens = await issueRefreshableTokens();
+
+      const rotatedRes = await refreshAccessToken(app, {
+        refreshToken: firstTokens.refresh_token,
+        clientId: E2E_REFRESHABLE_CLIENT.clientId,
+        clientSecret: E2E_REFRESHABLE_CLIENT.clientSecret,
+      });
+      const rotatedTokens = await assertJsonBody(rotatedRes, 200);
+
+      const replayRes = await refreshAccessToken(app, {
+        refreshToken: firstTokens.refresh_token,
+        clientId: E2E_REFRESHABLE_CLIENT.clientId,
+        clientSecret: E2E_REFRESHABLE_CLIENT.clientSecret,
+      });
+      const replayJson = await assertJsonBody(replayRes, 400);
+      expect(replayJson.code).toBe('INVALID_REFRESH_TOKEN');
+
+      const newestRefreshRes = await refreshAccessToken(app, {
+        refreshToken: rotatedTokens.refresh_token,
+        clientId: E2E_REFRESHABLE_CLIENT.clientId,
+        clientSecret: E2E_REFRESHABLE_CLIENT.clientSecret,
+      });
+      const newestRefreshJson = await assertJsonBody(newestRefreshRes, 400);
+      expect(newestRefreshJson.code).toBe('INVALID_REFRESH_TOKEN');
+
+      const userInfoRes = await getUserInfo(app, rotatedTokens.access_token);
+      expect(userInfoRes.status).toBe(401);
+    });
+
+    test('should return an OIDC login_required redirect for prompt=none stale sessions', async () => {
+      const authenticatedAt = Math.floor(Date.now() / 1000) - 600;
+      const sessionCookie =
+        await createSessionCookieWithAuthTime(authenticatedAt);
+
+      await grantConsent(app, sessionCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        response_type: 'code',
+        scope: 'openid profile email',
+        state: 'phase-10-stale-session',
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const client = testClient(app);
+      const res = await client.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'code',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            scope: 'openid profile email',
+            state: 'phase-10-stale-session',
+            code_challenge: TEST_PKCE.codeChallenge,
+            code_challenge_method: TEST_PKCE.codeChallengeMethod,
+            prompt: 'none',
+            max_age: '300',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      expect(res.status).toBe(302);
+      const locationHeader = res.headers.get('location');
+      if (!locationHeader) {
+        throw new Error('Expected prompt=none response to include Location');
+      }
+      const location = new URL(locationHeader, 'http://localhost:8080');
+      expect(location.pathname).toBe('/callback');
+      expect(location.searchParams.get('error')).toBe('login_required');
+      expect(location.searchParams.get('state')).toBe('phase-10-stale-session');
+      expect(location.searchParams.has('code')).toBe(false);
+    });
+  });
+
   describe('Complete Discovery-Based Flow', () => {
     test('should complete full OIDC flow with signature verification', async () => {
       // Step 1: Discover OIDC configuration
@@ -101,7 +312,7 @@ describe('End-to-End OIDC Flow', () => {
 
       expect(tokens.access_token).toBeDefined();
       expect(tokens.id_token).toBeDefined();
-      expect(tokens.refresh_token).toBeDefined();
+      expect(tokens.refresh_token).toBeUndefined();
       expect(tokens.token_type).toBe('Bearer');
       expect(tokens.expires_in).toBeDefined();
 
@@ -393,29 +604,13 @@ describe('End-to-End OIDC Flow', () => {
       const jwksRes = await jwksClient.oauth['.well-known'].jwks.$get();
       const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
-      const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, {
-        sessionCookie,
-        codeChallenge: TEST_PKCE.codeChallenge,
-        codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
-      });
-
-      const tokenRes = await exchangeCodeForTokens(app, {
-        code,
-        codeVerifier: TEST_PKCE.codeVerifier,
-      });
-
-      const tokens = await tokenRes.json();
+      const tokens = await issueRefreshableTokens();
 
       // Refresh the token
-      const tokenClient = testClient(app);
-      const refreshRes = await tokenClient.oauth.token.$post({
-        form: {
-          grant_type: 'refresh_token',
-          refresh_token: tokens.refresh_token,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          client_secret: TEST_OAUTH_CLIENT.clientSecret,
-        },
+      const refreshRes = await refreshAccessToken(app, {
+        refreshToken: tokens.refresh_token,
+        clientId: E2E_REFRESHABLE_CLIENT.clientId,
+        clientSecret: E2E_REFRESHABLE_CLIENT.clientSecret,
       });
 
       const newTokens = await assertJsonBody(refreshRes);
@@ -438,33 +633,17 @@ describe('End-to-End OIDC Flow', () => {
       const jwksRes = await jwksClient.oauth['.well-known'].jwks.$get();
       const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
 
-      const sessionCookie = await createAuthenticatedSession(app);
-      const { code } = await getAuthorizationCode(app, {
-        sessionCookie,
-        codeChallenge: TEST_PKCE.codeChallenge,
-        codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
-      });
-
-      const tokenRes = await exchangeCodeForTokens(app, {
-        code,
-        codeVerifier: TEST_PKCE.codeVerifier,
-      });
-
-      const tokens = await tokenRes.json();
+      const tokens = await issueRefreshableTokens();
       const { payload: originalPayload } = await jose.jwtVerify(
         tokens.access_token,
         JWKS,
       );
 
       // Refresh the token
-      const tokenClient = testClient(app);
-      const refreshRes = await tokenClient.oauth.token.$post({
-        form: {
-          grant_type: 'refresh_token',
-          refresh_token: tokens.refresh_token,
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          client_secret: TEST_OAUTH_CLIENT.clientSecret,
-        },
+      const refreshRes = await refreshAccessToken(app, {
+        refreshToken: tokens.refresh_token,
+        clientId: E2E_REFRESHABLE_CLIENT.clientId,
+        clientSecret: E2E_REFRESHABLE_CLIENT.clientSecret,
       });
 
       const newTokens = await assertJsonBody(refreshRes);
@@ -676,28 +855,11 @@ describe('End-to-End OIDC Flow', () => {
 
       // Test refresh_token grant
       if (config.grant_types_supported?.includes('refresh_token')) {
-        const sessionCookie = await createAuthenticatedSession(app);
-        const { code } = await getAuthorizationCode(app, {
-          sessionCookie,
-          codeChallenge: TEST_PKCE.codeChallenge,
-          codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
-        });
-
-        const tokenRes = await exchangeCodeForTokens(app, {
-          code,
-          codeVerifier: TEST_PKCE.codeVerifier,
-        });
-
-        const tokens = await tokenRes.json();
-
-        const tokenClient = testClient(app);
-        const refreshRes = await tokenClient.oauth.token.$post({
-          form: {
-            grant_type: 'refresh_token',
-            refresh_token: tokens.refresh_token,
-            client_id: TEST_OAUTH_CLIENT.clientId,
-            client_secret: TEST_OAUTH_CLIENT.clientSecret,
-          },
+        const tokens = await issueRefreshableTokens();
+        const refreshRes = await refreshAccessToken(app, {
+          refreshToken: tokens.refresh_token,
+          clientId: E2E_REFRESHABLE_CLIENT.clientId,
+          clientSecret: E2E_REFRESHABLE_CLIENT.clientSecret,
         });
 
         expect(refreshRes.status).toBe(200);

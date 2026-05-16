@@ -80,6 +80,8 @@ interface BaseJWTPayload {
   exp?: number | undefined;
   /** Issuer - identifies the principal that issued the JWT */
   iss?: string | undefined;
+  /** Authorization grant/family identifier shared by related tokens */
+  grant_id?: string | undefined;
 }
 
 /**
@@ -483,18 +485,24 @@ export class JwtService {
     const privateKey = await importPKCS8(key.private_key, key.algorithm);
     const jti = crypto.randomUUID();
 
-    const jwt = await new SignJWT({
+    const jwtBuilder = new SignJWT({
       typ: 'access_token',
       sub: payload.sub,
       client_id: payload.client_id,
       scope: payload.scope,
+      ...(payload.grant_id ? { grant_id: payload.grant_id } : {}),
     })
       .setProtectedHeader({ alg: key.algorithm, typ: 'JWT', kid: key.kid })
       .setJti(jti)
       .setIssuedAt()
       .setExpirationTime(`${ttl}s`)
-      .setIssuer(this.config.server.public_origin)
-      .sign(privateKey);
+      .setIssuer(this.config.server.public_origin);
+
+    if (payload.aud) {
+      jwtBuilder.setAudience(payload.aud);
+    }
+
+    const jwt = await jwtBuilder.sign(privateKey);
 
     return jwt;
   }
@@ -513,6 +521,7 @@ export class JwtService {
       sub: payload.sub,
       client_id: payload.client_id,
       scope: payload.scope,
+      ...(payload.grant_id ? { grant_id: payload.grant_id } : {}),
     })
       .setProtectedHeader({ alg: key.algorithm, typ: 'JWT', kid: key.kid })
       .setJti(jti)
@@ -575,13 +584,7 @@ export class JwtService {
         throw new Error('Invalid access token payload structure');
       }
 
-      // Check if token is revoked
-      if (payload.jti) {
-        const isRevoked = await this.mikro.revokedToken.isRevoked(payload.jti);
-        if (isRevoked) {
-          throw new Error('Token has been revoked');
-        }
-      }
+      await this.ensureTokenNotRevoked(payload);
 
       await this.ensureActiveTokenSubjectAndClient(payload);
 
@@ -597,6 +600,19 @@ export class JwtService {
    * @throws {InvalidRefreshToken} When token is invalid, expired, or revoked
    */
   async verifyRefreshToken(token: string): Promise<RefreshTokenPayload> {
+    return this.verifyRefreshTokenWithRevocationOption(token, true);
+  }
+
+  async verifyRefreshTokenForReuseDetection(
+    token: string,
+  ): Promise<RefreshTokenPayload> {
+    return this.verifyRefreshTokenWithRevocationOption(token, false);
+  }
+
+  private async verifyRefreshTokenWithRevocationOption(
+    token: string,
+    checkRevocation: boolean,
+  ): Promise<RefreshTokenPayload> {
     try {
       const payload = await this.verifyToken(token);
 
@@ -604,12 +620,8 @@ export class JwtService {
         throw new Error('Invalid refresh token payload structure');
       }
 
-      // Check if token is revoked
-      if (payload.jti) {
-        const isRevoked = await this.mikro.revokedToken.isRevoked(payload.jti);
-        if (isRevoked) {
-          throw new Error('Token has been revoked');
-        }
+      if (checkRevocation) {
+        await this.ensureTokenNotRevoked(payload);
       }
 
       await this.ensureActiveTokenSubjectAndClient(payload);
@@ -617,6 +629,26 @@ export class JwtService {
       return payload;
     } catch {
       throw new e.InvalidRefreshToken.Error();
+    }
+  }
+
+  private async ensureTokenNotRevoked(
+    payload: AccessTokenPayload | RefreshTokenPayload,
+  ): Promise<void> {
+    if (payload.jti) {
+      const isRevoked = await this.mikro.revokedToken.isRevoked(payload.jti);
+      if (isRevoked) {
+        throw new Error('Token has been revoked');
+      }
+    }
+
+    if (payload.grant_id) {
+      const isGrantRevoked = await this.mikro.revokedToken.isGrantRevoked(
+        payload.grant_id,
+      );
+      if (isGrantRevoked) {
+        throw new Error('Token family has been revoked');
+      }
     }
   }
 
