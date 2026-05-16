@@ -7,6 +7,7 @@ import {
 } from '../lib/config/index.ts';
 import { createLogger } from '../lib/logger.ts';
 import { createOpenApiDocumentation } from '../lib/openapi.ts';
+import { csrfProtection } from '../middleware/csrf.ts';
 import { loggerMiddleware } from '../middleware/logger.ts';
 import { mikroOrmMiddleware } from '../middleware/mikro-orm.ts';
 import { servicesMiddleware } from '../middleware/services.ts';
@@ -50,6 +51,13 @@ export async function createApp(
   const app = new Hono()
     .onError((err, c) => {
       if (err instanceof TinyAuthError) {
+        if (err.code === 'insufficient_scope') {
+          c.header(
+            'WWW-Authenticate',
+            'Bearer error="insufficient_scope", scope="openid"',
+          );
+        }
+
         return c.json(err.toJson(), err.status);
       }
 
@@ -73,6 +81,7 @@ export async function createApp(
       ),
     )
     .use('*', trustedProxyGuard(config.server.trust_proxy))
+    .use('/api/*', csrfProtection(config.server.public_origin))
     .use('*', servicesMiddleware(services))
     .use('*', mikroOrmMiddleware)
     .route('/', routes)

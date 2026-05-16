@@ -8,6 +8,25 @@ import { Migration20260512120000_add_scheduler_jobs as SqliteSchedulerJobsMigrat
 import { postgres } from './postgres/postgres.ts';
 import { sqlite } from './sqlite/sqlite.ts';
 
+type MigrationClass =
+  | typeof PostgresInitialMigration
+  | typeof PostgresSchedulerJobsMigration
+  | typeof SqliteInitialMigration
+  | typeof SqliteSchedulerJobsMigration;
+
+interface MigrationLike {
+  up(): void | Promise<void>;
+  getQueries(): Array<{ toString(): string }>;
+}
+
+async function collectMigrationQueries(
+  MigrationConstructor: MigrationClass,
+): Promise<string[]> {
+  const migration: MigrationLike = Reflect.construct(MigrationConstructor, []);
+  await migration.up();
+  return migration.getQueries().map((query) => query.toString());
+}
+
 describe('database migrations', () => {
   test('postgres uses explicit migration imports', async () => {
     const options = await postgres({
@@ -70,5 +89,70 @@ describe('database migrations', () => {
     }).getMikroOrmOptions();
 
     expect(options.debug).toBe(true);
+  });
+
+  test('postgres initial migration creates core auth tables and constraints', async () => {
+    const queries = await collectMigrationQueries(PostgresInitialMigration);
+    expect(queries).toContain(
+      `alter table "jwt_key" add constraint "jwt_key_status_check" check ("status" in ('next', 'active', 'previous', 'retired'));`,
+    );
+    expect(queries).toContain(
+      `alter table "oauth_code" add constraint "oauth_code_code_challenge_method_check" check ("code_challenge_method" in ('S256', 'plain'));`,
+    );
+    expect(queries).toContain(
+      `alter table "revoked_tokens" add constraint "revoked_tokens_token_type_check" check ("token_type" in ('access_token', 'refresh_token'));`,
+    );
+    expect(
+      queries.some((query) => query.includes('create table "user_totp"')),
+    ).toBe(true);
+    expect(
+      queries.some((query) =>
+        query.includes('create table "pending_oauth_registration"'),
+      ),
+    ).toBe(true);
+  });
+
+  test('sqlite initial migration creates core auth tables and constraints', async () => {
+    const queries = await collectMigrationQueries(SqliteInitialMigration);
+    expect(queries).toContain(
+      `create table \`jwt_key\` (\`kid\` text not null primary key, \`created_at\` datetime not null, \`updated_at\` datetime not null, \`private_key\` text not null, \`public_key\` text not null, \`algorithm\` text not null default 'RS256', \`status\` text check (\`status\` in ('next', 'active', 'previous', 'retired')) not null default 'next', \`activated_at\` datetime null, \`deactivated_at\` datetime null, \`retired_at\` datetime null, \`expires_at\` datetime null) /* RSA key pairs for JWT signing (RS256) */;`,
+    );
+    expect(queries).toContain(
+      `create table \`oauth_code\` (\`id\` text not null primary key, \`created_at\` datetime not null, \`updated_at\` datetime not null, \`code_hash\` text not null, \`client_id\` text not null, \`user_sub\` text not null, \`redirect_uri\` text null, \`scope\` json not null default '[]', \`nonce\` text not null, \`code_challenge\` text not null, \`code_challenge_method\` text check (\`code_challenge_method\` in ('S256', 'plain')) not null default 'S256', \`expired_at\` datetime not null, \`consumed_at\` datetime null, \`auth_time\` integer null, constraint \`oauth_code_client_id_foreign\` foreign key (\`client_id\`) references \`oauth_client\` (\`id\`), constraint \`oauth_code_user_sub_foreign\` foreign key (\`user_sub\`) references \`user\` (\`sub\`)) /* Issued OAuth authorization codes */;`,
+    );
+    expect(
+      queries.some((query) => query.includes('create table `user_totp`')),
+    ).toBe(true);
+    expect(
+      queries.some((query) =>
+        query.includes('create table `pending_oauth_registration`'),
+      ),
+    ).toBe(true);
+  });
+
+  test('scheduler migrations create durable lease and queue tables', async () => {
+    const postgresQueries = await collectMigrationQueries(
+      PostgresSchedulerJobsMigration,
+    );
+    const sqliteQueries = await collectMigrationQueries(
+      SqliteSchedulerJobsMigration,
+    );
+
+    expect(postgresQueries).toContain(
+      `create index "background_jobs_status_available_at_idx" on "background_jobs" ("status", "available_at");`,
+    );
+    expect(sqliteQueries).toContain(
+      `create index \`background_jobs_status_available_at_idx\` on \`background_jobs\` (\`status\`, \`available_at\`);`,
+    );
+    expect(
+      postgresQueries.some((query) =>
+        query.includes('"locked_until" timestamptz null'),
+      ),
+    ).toBe(true);
+    expect(
+      sqliteQueries.some((query) =>
+        query.includes('`locked_until` datetime null'),
+      ),
+    ).toBe(true);
   });
 });

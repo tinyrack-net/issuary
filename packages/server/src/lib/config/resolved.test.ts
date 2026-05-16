@@ -43,6 +43,55 @@ function createSchedulerConfig(): SchedulerConfig {
   };
 }
 
+function createClientConfig(redirectUris: string[]) {
+  return {
+    id: 'client-config-id',
+    name: 'Client',
+    client_id: 'oauth-client-id',
+    redirect_uris: redirectUris,
+    response_types: ['code'],
+    grant_types: ['authorization_code'],
+    scope: 'openid',
+  };
+}
+
+function createIdentityProviderConfig(
+  overrides: Record<string, string | string[] | null>,
+) {
+  return {
+    id: 'generic-provider',
+    type: 'generic_oauth',
+    enabled: true,
+    display_name: 'Generic Provider',
+    client_id: 'generic-client-id',
+    client_secret: 'generic-client-secret',
+    authorization_url: 'https://vendor.example/authorize',
+    token_url: 'https://vendor.example/token',
+    userinfo_url: 'https://vendor.example/userinfo',
+    scopes: ['openid', 'email'],
+    email_conflict_strategy: 'auto_link',
+    userinfo_mapping: {
+      id: 'sub',
+      email: 'email',
+      email_verified: 'email_verified',
+    },
+    ...overrides,
+  };
+}
+
+function expectConfigIssue(input: unknown, expectedPath: string) {
+  const result = TinyAuthRuntimeConfigSchema.safeParse(input);
+
+  expect(result.success).toBe(false);
+  if (result.success) {
+    throw new Error('Expected config parsing to fail.');
+  }
+
+  expect(result.error.issues.map((issue) => issue.path.join('.'))).toContain(
+    expectedPath,
+  );
+}
+
 describe('TinyAuthRuntimeConfigSchema', () => {
   test('parses the minimal unresolved config and applies omitted defaults', () => {
     const parsed = TinyAuthRuntimeConfigSchema.parse(MINIMAL_INPUT_CONFIG);
@@ -226,6 +275,50 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     ).not.toThrow();
   });
 
+  test('rejects insecure remote OAuth client redirect URIs', () => {
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [createClientConfig(['http://example.com/callback'])],
+      },
+      'clients.0.redirect_uris.0',
+    );
+  });
+
+  test('allows HTTPS and local HTTP OAuth client redirect URIs', () => {
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          createClientConfig([
+            'https://app.example/callback',
+            'http://localhost:3000/callback',
+            'http://127.0.0.1:3000/callback',
+            'http://[::1]:3000/callback',
+          ]),
+        ],
+      }),
+    ).not.toThrow();
+  });
+
+  test('rejects redirect URIs with fragments or wildcards', () => {
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [createClientConfig(['https://app.example/callback#token'])],
+      },
+      'clients.0.redirect_uris.0',
+    );
+
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [createClientConfig(['https://app.example/*'])],
+      },
+      'clients.0.redirect_uris.0',
+    );
+  });
+
   test('allows HTTPS and local HTTP JWKS URLs for OIDC providers', () => {
     const parsed = TinyAuthRuntimeConfigSchema.parse({
       ...MINIMAL_INPUT_CONFIG,
@@ -311,6 +404,72 @@ describe('TinyAuthRuntimeConfigSchema', () => {
         ],
       }),
     ).toThrow();
+  });
+
+  test('rejects insecure remote identity provider endpoint URLs', () => {
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        identity_providers: [
+          createIdentityProviderConfig({
+            authorization_url: 'http://example.com/authorize',
+          }),
+        ],
+      },
+      'identity_providers.0.authorization_url',
+    );
+
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        identity_providers: [
+          createIdentityProviderConfig({
+            token_url: 'http://example.com/token',
+          }),
+        ],
+      },
+      'identity_providers.0.token_url',
+    );
+
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        identity_providers: [
+          createIdentityProviderConfig({
+            userinfo_url: 'http://example.com/userinfo',
+          }),
+        ],
+      },
+      'identity_providers.0.userinfo_url',
+    );
+
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        identity_providers: [
+          createIdentityProviderConfig({
+            email_url: 'http://example.com/emails',
+          }),
+        ],
+      },
+      'identity_providers.0.email_url',
+    );
+  });
+
+  test('allows local HTTP identity provider endpoint URLs', () => {
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        identity_providers: [
+          createIdentityProviderConfig({
+            authorization_url: 'http://localhost:3000/authorize',
+            token_url: 'http://127.0.0.1:3000/token',
+            userinfo_url: 'http://[::1]:3000/userinfo',
+            email_url: 'http://localhost:3000/emails',
+          }),
+        ],
+      }),
+    ).not.toThrow();
   });
 
   test('rejects invalid and insecure remote JWKS URLs', () => {

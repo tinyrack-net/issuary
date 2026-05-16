@@ -947,6 +947,7 @@ describe('POST /api/terms/consent', () => {
         {
           headers: {
             Cookie: `session=${sessionCookie}`,
+            'Sec-Fetch-Site': 'same-origin',
             'User-Agent': longUserAgent,
           },
         },

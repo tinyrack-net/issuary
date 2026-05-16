@@ -1,4 +1,10 @@
 import z from 'zod';
+import { isSecureRedirectUri } from './url-policy.js';
+
+const RedirectUriSchema = z.string().refine(isSecureRedirectUri, {
+  message:
+    'Redirect URI must use HTTPS or local HTTP and must not contain fragments or wildcards.',
+});
 
 /**
  * OAuth/OIDC client configuration.
@@ -28,7 +34,7 @@ export const ClientConfigSchema = z
         'OAuth client_secret for confidential clients. Omit for public clients.',
       ),
     redirect_uris: z
-      .array(z.string())
+      .array(RedirectUriSchema)
       .describe('Allowed redirect URIs after authorization.'),
     response_types: z
       .array(z.string())

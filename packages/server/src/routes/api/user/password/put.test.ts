@@ -209,6 +209,65 @@ describe('PUT /api/user/password', () => {
     expect(oldPasswordLoginRes.status).toBe(401);
   });
 
+  test('should reject cross-site cookie-authenticated password changes', async () => {
+    const email = generateUniqueEmail('password-put-cross-site');
+    const currentPassword = 'currentPassword123!';
+
+    const sessionCookie = await createUserWithPasswordAndSession(
+      email,
+      currentPassword,
+    );
+
+    const client = testClient(app);
+    const res = await client.api.user.password.$put(
+      {
+        json: {
+          current_password: currentPassword,
+          new_password: 'newPassword123!',
+        },
+      },
+      {
+        headers: {
+          Cookie: `session=${sessionCookie}`,
+          Origin: 'https://evil.example.test',
+        },
+      },
+    );
+
+    const body = await assertJsonBody(res, 403);
+    expect(body.code).toBe('CSRF_VIOLATION');
+  });
+
+  test('should allow same-origin cookie-authenticated password changes', async () => {
+    const email = generateUniqueEmail('password-put-same-origin');
+    const currentPassword = 'currentPassword123!';
+    const newPassword = 'newPassword123!';
+
+    const sessionCookie = await createUserWithPasswordAndSession(
+      email,
+      currentPassword,
+    );
+
+    const client = testClient(app);
+    const res = await client.api.user.password.$put(
+      {
+        json: {
+          current_password: currentPassword,
+          new_password: newPassword,
+        },
+      },
+      {
+        headers: {
+          Cookie: `session=${sessionCookie}`,
+          Origin: 'http://localhost:8080',
+        },
+      },
+    );
+
+    const body = await assertJsonBody(res);
+    expect(body.ok).toBe(true);
+  });
+
   test('should reject new password exceeding maximum length', async () => {
     const email = generateUniqueEmail('password-put-too-long');
     const password = 'validPassword123!';
