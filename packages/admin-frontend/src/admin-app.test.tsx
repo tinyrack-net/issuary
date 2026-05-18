@@ -56,7 +56,8 @@ const configProvider = {
   updated_at: '1970-01-01T00:00:00.000Z',
 };
 
-afterEach(() => {
+afterEach(async () => {
+  await page.viewport(1024, 768);
   resetFetchMock();
 });
 
@@ -137,6 +138,8 @@ describe('admin routes', () => {
   });
 
   test('renders a responsive drawer navigation shell', async () => {
+    await page.viewport(390, 844);
+
     mockJsonResponses({
       url: '/admin/api/session',
       method: 'GET',

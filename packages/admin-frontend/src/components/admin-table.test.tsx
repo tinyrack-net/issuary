@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { page } from 'vitest/browser';
 import { render } from 'vitest-browser-react';
 import { AdminTable } from './admin-table.js';
 
@@ -8,12 +9,17 @@ const columns = [
 ];
 
 describe('AdminTable', () => {
-  test('renders rows inside a horizontally scrollable DaisyUI table', async () => {
+  test('renders rows inside desktop table and optional mobile cards', async () => {
+    await page.viewport(1024, 768);
+
     const screen = await render(
       <AdminTable
         ariaLabel="Users"
         columns={columns}
         getRowKey={(user) => user.email}
+        renderMobileCard={(user) => (
+          <article className="card">{user.email}</article>
+        )}
         renderRow={(user) => (
           <tr>
             <td>{user.email}</td>
@@ -30,6 +36,39 @@ describe('AdminTable', () => {
     await expect.element(screen.getByText('user@example.com')).toBeVisible();
     expect(document.querySelector('.overflow-x-auto')).not.toBeNull();
     expect(document.querySelector('table')?.className).toContain('table');
+    expect(document.querySelector('ul[aria-label="Users"]')).toBeNull();
+  });
+
+  test('renders mobile cards instead of a clipped table on small screens', async () => {
+    await page.viewport(390, 844);
+
+    const screen = await render(
+      <AdminTable
+        ariaLabel="Users"
+        columns={columns}
+        getRowKey={(user) => user.email}
+        renderMobileCard={(user) => (
+          <article className="card">{user.email}</article>
+        )}
+        renderRow={(user) => (
+          <tr>
+            <td>{user.email}</td>
+            <td>{user.role}</td>
+          </tr>
+        )}
+        rows={[{ email: 'user@example.com', role: 'admin' }]}
+      />,
+    );
+
+    await expect
+      .element(screen.getByRole('list', { name: 'Users' }))
+      .toBeVisible();
+    await expect
+      .element(screen.getByRole('listitem').getByText('user@example.com'))
+      .toBeVisible();
+    expect(document.querySelector('ul[aria-label="Users"]')).not.toBeNull();
+    expect(document.querySelector('article.card')).not.toBeNull();
+    expect(document.querySelector('table')).toBeNull();
   });
 
   test('renders empty, loading, and error states with DaisyUI classes', async () => {

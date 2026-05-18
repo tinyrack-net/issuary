@@ -63,29 +63,40 @@ export function UsersPage() {
 
       <search>
         <form
-          className="card flex flex-col gap-2 border border-base-300 bg-base-100 p-3 shadow-sm sm:flex-row sm:p-4"
+          className="card border border-base-300 bg-base-100 shadow-sm"
           onSubmit={(event) => {
             event.preventDefault();
             setParams({ ...params, offset: 0, search: searchInput.trim() });
           }}
         >
-          <input
-            aria-label={t('users.search')}
-            className="input input-bordered min-w-0 flex-1"
-            onChange={(event) => {
-              setSearchInput(event.currentTarget.value);
-            }}
-            placeholder={t('users.searchPlaceholder')}
-            type="search"
-            value={searchInput}
-          />
-          <button
-            aria-label={t('users.search')}
-            className="btn btn-outline"
-            type="submit"
-          >
-            {t('common.search')}
-          </button>
+          <div className="card-body p-3 sm:p-4">
+            <label className="form-control w-full">
+              <span className="label pt-0 pb-2">
+                <span className="label-text font-medium">
+                  {t('users.search')}
+                </span>
+              </span>
+              <div className="md:join flex flex-col gap-2 md:flex-row md:gap-0">
+                <input
+                  aria-label={t('users.search')}
+                  className="input input-bordered md:join-item w-full min-w-0 md:flex-1"
+                  onChange={(event) => {
+                    setSearchInput(event.currentTarget.value);
+                  }}
+                  placeholder={t('users.searchPlaceholder')}
+                  type="search"
+                  value={searchInput}
+                />
+                <button
+                  aria-label={t('users.search')}
+                  className="btn btn-primary md:join-item"
+                  type="submit"
+                >
+                  {t('common.search')}
+                </button>
+              </div>
+            </label>
+          </div>
         </form>
       </search>
 
@@ -102,6 +113,117 @@ export function UsersPage() {
         ]}
         emptyMessage={t('users.empty')}
         getRowKey={(user) => user.sub}
+        renderMobileCard={(user) => {
+          const nextRole = user.role === 'admin' ? 'user' : 'admin';
+          const roleActionDisabled =
+            user.managed_by === 'config' ||
+            user.sub === session.user.sub ||
+            updateRoleMutation.isPending;
+          const emailVerificationDisabled =
+            user.managed_by === 'config' ||
+            updateEmailVerificationMutation.isPending;
+
+          return (
+            <article className="card card-compact border border-base-300 bg-base-100 shadow-sm">
+              <div className="card-body gap-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="card-title break-all text-base">
+                      {user.email}
+                    </h2>
+                    <p className="break-all font-mono text-base-content/60 text-xs">
+                      {user.sub}
+                    </p>
+                  </div>
+                  <span className="badge badge-primary badge-outline shrink-0">
+                    {user.role}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <span className="badge badge-ghost">{user.managed_by}</span>
+                  <span
+                    className={`badge ${user.email_verified ? 'badge-success' : 'badge-warning badge-outline'}`}
+                  >
+                    {user.email_verified
+                      ? t('users.emailVerified')
+                      : t('users.emailUnverified')}
+                  </span>
+                </div>
+
+                <div className="divider my-0" />
+
+                <dl className="grid gap-2 text-sm">
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-base-content/60">
+                      {t('users.created')}
+                    </dt>
+                    <dd className="text-right">
+                      {formatDateTime(user.created_at, t('common.unknown'))}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-base-content/60">
+                      {t('users.updated')}
+                    </dt>
+                    <dd className="text-right">
+                      {formatDateTime(user.updated_at, t('common.unknown'))}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="rounded-box bg-base-200/70 p-3">
+                  <label className="label cursor-pointer justify-between gap-3 p-0">
+                    <span className="label-text">
+                      {user.email_verified
+                        ? t('users.emailVerified')
+                        : t('users.emailUnverified')}
+                    </span>
+                    <input
+                      aria-label={t('users.emailVerificationToggle', {
+                        email: user.email,
+                      })}
+                      checked={user.email_verified}
+                      className="toggle toggle-primary toggle-sm"
+                      disabled={emailVerificationDisabled}
+                      onChange={(event) => {
+                        updateEmailVerificationMutation.mutate({
+                          email_verified: event.currentTarget.checked,
+                          sub: user.sub,
+                        });
+                      }}
+                      type="checkbox"
+                    />
+                  </label>
+                </div>
+
+                <button
+                  aria-label={`${userRoleActionLabel(user)} for ${user.email}`}
+                  className="btn btn-outline btn-sm w-full"
+                  disabled={roleActionDisabled}
+                  onClick={() => {
+                    updateRoleMutation.mutate({
+                      role: nextRole,
+                      sub: user.sub,
+                    });
+                  }}
+                  title={
+                    roleActionDisabled
+                      ? t('users.roleActionUnavailable')
+                      : t('users.roleAction')
+                  }
+                  type="button"
+                >
+                  {updateRoleMutation.isPending
+                    ? t('users.updatingRole')
+                    : nextRole === 'admin'
+                      ? t('users.makeAdmin')
+                      : t('users.makeUser')}
+                </button>
+              </div>
+            </article>
+          );
+        }}
         renderRow={(user) => {
           const nextRole = user.role === 'admin' ? 'user' : 'admin';
           const roleActionDisabled =

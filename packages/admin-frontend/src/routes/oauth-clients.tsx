@@ -112,47 +112,58 @@ export function OAuthClientsPage() {
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <PageHeader
-          subtitle={t('oauthClients.subtitle')}
-          title={t('oauthClients.title')}
-        />
-        <button
-          className="btn btn-primary"
-          onClick={() => {
-            setModal({ mode: 'create', form: emptyClientForm });
-          }}
-          type="button"
-        >
-          {t('oauthClients.addClient')}
-        </button>
-      </div>
+      <PageHeader
+        action={
+          <button
+            className="btn btn-primary w-full sm:w-auto"
+            onClick={() => {
+              setModal({ mode: 'create', form: emptyClientForm });
+            }}
+            type="button"
+          >
+            {t('oauthClients.addClient')}
+          </button>
+        }
+        subtitle={t('oauthClients.subtitle')}
+        title={t('oauthClients.title')}
+      />
 
       <search>
         <form
-          className="card flex flex-col gap-2 border border-base-300 bg-base-100 p-3 shadow-sm sm:flex-row sm:p-4"
+          className="card border border-base-300 bg-base-100 shadow-sm"
           onSubmit={(event) => {
             event.preventDefault();
             setParams({ ...params, offset: 0, search: searchInput.trim() });
           }}
         >
-          <input
-            aria-label={t('oauthClients.search')}
-            className="input input-bordered min-w-0 flex-1"
-            onChange={(event) => {
-              setSearchInput(event.currentTarget.value);
-            }}
-            placeholder={t('oauthClients.searchPlaceholder')}
-            type="search"
-            value={searchInput}
-          />
-          <button
-            aria-label={t('oauthClients.search')}
-            className="btn btn-outline"
-            type="submit"
-          >
-            {t('common.search')}
-          </button>
+          <div className="card-body p-3 sm:p-4">
+            <label className="form-control w-full">
+              <span className="label pt-0 pb-2">
+                <span className="label-text font-medium">
+                  {t('oauthClients.search')}
+                </span>
+              </span>
+              <div className="md:join flex flex-col gap-2 md:flex-row md:gap-0">
+                <input
+                  aria-label={t('oauthClients.search')}
+                  className="input input-bordered md:join-item w-full min-w-0 md:flex-1"
+                  onChange={(event) => {
+                    setSearchInput(event.currentTarget.value);
+                  }}
+                  placeholder={t('oauthClients.searchPlaceholder')}
+                  type="search"
+                  value={searchInput}
+                />
+                <button
+                  aria-label={t('oauthClients.search')}
+                  className="btn btn-primary md:join-item"
+                  type="submit"
+                >
+                  {t('common.search')}
+                </button>
+              </div>
+            </label>
+          </div>
         </form>
       </search>
 
@@ -171,6 +182,113 @@ export function OAuthClientsPage() {
         ]}
         emptyMessage={t('oauthClients.empty')}
         getRowKey={(client) => client.id}
+        renderMobileCard={(client) => {
+          const displayName = displayNameForClient(client);
+          const editable = client.managed_by === 'database';
+
+          return (
+            <article className="card card-compact border border-base-300 bg-base-100 shadow-sm">
+              <div className="card-body gap-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="card-title break-words text-base">
+                      {displayName}
+                    </h2>
+                    <p className="break-all font-mono text-base-content/60 text-xs">
+                      {client.client_id}
+                    </p>
+                  </div>
+                  <span
+                    className={`badge shrink-0 ${client.enabled ? 'badge-success' : 'badge-ghost'}`}
+                  >
+                    {client.enabled
+                      ? t('oauthClients.enabled')
+                      : t('oauthClients.disabled')}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <span className="badge badge-outline">
+                    {client.managed_by === 'config'
+                      ? t('oauthClients.readOnlyConfig')
+                      : t('oauthClients.databaseManaged')}
+                  </span>
+                  <span className="badge badge-ghost">
+                    {t('oauthClients.redirectUriCount', {
+                      count: client.redirect_uris.length,
+                    })}
+                  </span>
+                </div>
+
+                <div className="rounded-box bg-base-200/70 p-3 text-sm">
+                  <dl className="grid gap-2">
+                    <div className="grid gap-1">
+                      <dt className="text-base-content/60">
+                        {t('oauthClients.grantTypes')}
+                      </dt>
+                      <dd className="break-words">
+                        {client.grant_types.join(', ') || t('common.unknown')}
+                      </dd>
+                    </div>
+                    <div className="grid gap-1">
+                      <dt className="text-base-content/60">
+                        {t('oauthClients.scope')}
+                      </dt>
+                      <dd className="break-all font-mono text-xs">
+                        {client.scope}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-base-content/60">
+                        {t('oauthClients.updated')}
+                      </dt>
+                      <dd className="text-right">
+                        {client.updated_at ?? t('common.unknown')}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <div className="join w-full">
+                  <button
+                    className="btn btn-outline join-item btn-sm flex-1"
+                    disabled={!editable}
+                    onClick={() => {
+                      setModal({
+                        mode: 'edit',
+                        client,
+                        form: formFromClient(client),
+                      });
+                    }}
+                    title={
+                      editable
+                        ? t('oauthClients.editAction')
+                        : t('oauthClients.readOnlyAction')
+                    }
+                    type="button"
+                  >
+                    {t('oauthClients.editClient', { name: displayName })}
+                  </button>
+                  <button
+                    className="btn btn-error btn-outline join-item btn-sm flex-1"
+                    disabled={!editable || deleteMutation.isPending}
+                    onClick={() => {
+                      setModal({ mode: 'delete', client });
+                    }}
+                    title={
+                      editable
+                        ? t('oauthClients.deleteAction')
+                        : t('oauthClients.readOnlyAction')
+                    }
+                    type="button"
+                  >
+                    {t('oauthClients.deleteClient', { name: displayName })}
+                  </button>
+                </div>
+              </div>
+            </article>
+          );
+        }}
         renderRow={(client) => {
           const displayName = displayNameForClient(client);
           const editable = client.managed_by === 'database';

@@ -201,47 +201,58 @@ export function OAuthProvidersPage() {
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <PageHeader
-          subtitle={t('oauthProviders.subtitle')}
-          title={t('oauthProviders.title')}
-        />
-        <button
-          className="btn btn-primary"
-          onClick={() => {
-            setModal({ mode: 'create', form: emptyProviderForm });
-          }}
-          type="button"
-        >
-          {t('oauthProviders.addProvider')}
-        </button>
-      </div>
+      <PageHeader
+        action={
+          <button
+            className="btn btn-primary w-full sm:w-auto"
+            onClick={() => {
+              setModal({ mode: 'create', form: emptyProviderForm });
+            }}
+            type="button"
+          >
+            {t('oauthProviders.addProvider')}
+          </button>
+        }
+        subtitle={t('oauthProviders.subtitle')}
+        title={t('oauthProviders.title')}
+      />
 
       <search>
         <form
-          className="card flex flex-col gap-2 border border-base-300 bg-base-100 p-3 shadow-sm sm:flex-row sm:p-4"
+          className="card border border-base-300 bg-base-100 shadow-sm"
           onSubmit={(event) => {
             event.preventDefault();
             setParams({ ...params, offset: 0, search: searchInput.trim() });
           }}
         >
-          <input
-            aria-label={t('oauthProviders.search')}
-            className="input input-bordered min-w-0 flex-1"
-            onChange={(event) => {
-              setSearchInput(event.currentTarget.value);
-            }}
-            placeholder={t('oauthProviders.searchPlaceholder')}
-            type="search"
-            value={searchInput}
-          />
-          <button
-            aria-label={t('oauthProviders.search')}
-            className="btn btn-outline"
-            type="submit"
-          >
-            {t('common.search')}
-          </button>
+          <div className="card-body p-3 sm:p-4">
+            <label className="form-control w-full">
+              <span className="label pt-0 pb-2">
+                <span className="label-text font-medium">
+                  {t('oauthProviders.search')}
+                </span>
+              </span>
+              <div className="md:join flex flex-col gap-2 md:flex-row md:gap-0">
+                <input
+                  aria-label={t('oauthProviders.search')}
+                  className="input input-bordered md:join-item w-full min-w-0 md:flex-1"
+                  onChange={(event) => {
+                    setSearchInput(event.currentTarget.value);
+                  }}
+                  placeholder={t('oauthProviders.searchPlaceholder')}
+                  type="search"
+                  value={searchInput}
+                />
+                <button
+                  aria-label={t('oauthProviders.search')}
+                  className="btn btn-primary md:join-item"
+                  type="submit"
+                >
+                  {t('common.search')}
+                </button>
+              </div>
+            </label>
+          </div>
         </form>
       </search>
 
@@ -258,6 +269,94 @@ export function OAuthProvidersPage() {
         ]}
         emptyMessage={t('oauthProviders.empty')}
         getRowKey={(provider) => provider.id}
+        renderMobileCard={(provider) => {
+          const editable = provider.managed_by === 'database';
+
+          return (
+            <article className="card card-compact border border-base-300 bg-base-100 shadow-sm">
+              <div className="card-body gap-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="card-title break-words text-base">
+                      {provider.display_name}
+                    </h2>
+                    <p className="break-all font-mono text-base-content/60 text-xs">
+                      {provider.id}
+                    </p>
+                    <p className="break-all font-mono text-base-content/60 text-xs">
+                      {provider.client_id}
+                    </p>
+                  </div>
+                  <span
+                    className={`badge shrink-0 ${provider.enabled ? 'badge-success' : 'badge-ghost'}`}
+                  >
+                    {provider.enabled
+                      ? t('oauthProviders.enabled')
+                      : t('oauthProviders.disabled')}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <span className="badge badge-primary badge-outline">
+                    {provider.type}
+                  </span>
+                  <span className="badge badge-outline">
+                    {provider.managed_by === 'config'
+                      ? t('oauthProviders.readOnlyConfig')
+                      : t('oauthProviders.databaseManaged')}
+                  </span>
+                  <span
+                    className={`badge ${provider.has_client_secret ? 'badge-ghost' : 'badge-warning badge-outline'}`}
+                  >
+                    {provider.has_client_secret
+                      ? t('oauthProviders.secretConfigured')
+                      : t('oauthProviders.secretMissing')}
+                  </span>
+                </div>
+
+                <dl className="rounded-box bg-base-200/70 p-3 text-sm">
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-base-content/60">
+                      {t('oauthProviders.updated')}
+                    </dt>
+                    <dd className="text-right">{provider.updated_at}</dd>
+                  </div>
+                </dl>
+
+                <div className="join w-full">
+                  <button
+                    className="btn btn-outline join-item btn-sm flex-1"
+                    disabled={!editable}
+                    onClick={() => {
+                      setModal({
+                        mode: 'edit',
+                        provider,
+                        form: formFromProvider(provider),
+                      });
+                    }}
+                    type="button"
+                  >
+                    {t('oauthProviders.editProvider', {
+                      name: provider.display_name,
+                    })}
+                  </button>
+                  <button
+                    className="btn btn-error btn-outline join-item btn-sm flex-1"
+                    disabled={!editable || deleteMutation.isPending}
+                    onClick={() => {
+                      setModal({ mode: 'delete', provider });
+                    }}
+                    type="button"
+                  >
+                    {t('oauthProviders.deleteProvider', {
+                      name: provider.display_name,
+                    })}
+                  </button>
+                </div>
+              </div>
+            </article>
+          );
+        }}
         renderRow={(provider) => {
           const editable = provider.managed_by === 'database';
           return (

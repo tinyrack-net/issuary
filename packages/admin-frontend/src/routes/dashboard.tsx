@@ -13,36 +13,34 @@ export function DashboardPage() {
         subtitle={t('dashboard.subtitle')}
         title={t('dashboard.title')}
       />
-      <div className="grid gap-4 md:grid-cols-3">
-        <article className="card border border-base-300 bg-base-100 shadow-sm">
-          <div className="card-body">
-            <h2 className="font-semibold text-base-content/70 text-sm uppercase tracking-wide">
-              {t('dashboard.currentAdmin')}
-            </h2>
-            <p className="break-all font-semibold text-lg">
-              {session.user.email}
-            </p>
-            <p className="break-all text-base-content/60 text-sm">
-              {session.user.sub}
-            </p>
+      <div className="stats stats-vertical lg:stats-horizontal w-full border border-base-300 bg-base-100 shadow-sm">
+        <article className="stat gap-2">
+          <div className="stat-title font-semibold uppercase tracking-wide">
+            {t('dashboard.currentAdmin')}
+          </div>
+          <div className="stat-value whitespace-normal break-all text-lg">
+            {session.user.email}
+          </div>
+          <div className="stat-desc break-all font-mono text-xs">
+            {session.user.sub}
           </div>
         </article>
-        <article className="card border border-base-300 bg-base-100 shadow-sm">
-          <div className="card-body">
-            <h2 className="font-semibold text-base-content/70 text-sm uppercase tracking-wide">
-              {t('dashboard.sessionState')}
-            </h2>
-            <span className="badge badge-success w-fit">
+        <article className="stat gap-2">
+          <div className="stat-title font-semibold uppercase tracking-wide">
+            {t('dashboard.sessionState')}
+          </div>
+          <div className="stat-value text-lg">
+            <span className="badge badge-success badge-lg">
               {t('dashboard.verifiedAdmin')}
             </span>
           </div>
         </article>
-        <article className="card border border-base-300 bg-base-100 shadow-sm">
-          <div className="card-body">
-            <h2 className="font-semibold text-base-content/70 text-sm uppercase tracking-wide">
-              {t('dashboard.managedBy')}
-            </h2>
-            <span className="badge badge-outline w-fit">
+        <article className="stat gap-2">
+          <div className="stat-title font-semibold uppercase tracking-wide">
+            {t('dashboard.managedBy')}
+          </div>
+          <div className="stat-value text-lg">
+            <span className="badge badge-outline badge-lg">
               {session.user.managed_by}
             </span>
           </div>

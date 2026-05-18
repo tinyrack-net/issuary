@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, type ReactNode, useEffect, useState } from 'react';
 
 type AdminTableColumn = {
   header: ReactNode;
@@ -13,9 +13,12 @@ type AdminTableProps<Row> = {
   getRowKey: (row: Row) => string;
   isLoading?: boolean;
   loadingMessage?: ReactNode;
+  renderMobileCard?: (row: Row) => ReactNode;
   renderRow: (row: Row) => ReactNode;
   rows: Row[];
 };
+
+const DESKTOP_MEDIA_QUERY = '(min-width: 768px)';
 
 export function AdminTable<Row>({
   ariaLabel,
@@ -25,9 +28,37 @@ export function AdminTable<Row>({
   getRowKey,
   isLoading = false,
   loadingMessage,
+  renderMobileCard,
   renderRow,
   rows,
 }: AdminTableProps<Row>) {
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (!renderMobileCard || typeof window === 'undefined') {
+      return true;
+    }
+
+    return window.matchMedia(DESKTOP_MEDIA_QUERY).matches;
+  });
+
+  useEffect(() => {
+    if (!renderMobileCard) {
+      setIsDesktop(true);
+      return;
+    }
+
+    const mediaQuery = window.matchMedia(DESKTOP_MEDIA_QUERY);
+    const updateDesktopState = () => {
+      setIsDesktop(mediaQuery.matches);
+    };
+
+    updateDesktopState();
+    mediaQuery.addEventListener('change', updateDesktopState);
+
+    return () => {
+      mediaQuery.removeEventListener('change', updateDesktopState);
+    };
+  }, [renderMobileCard]);
+
   if (errorMessage) {
     return <div className="alert alert-error">{errorMessage}</div>;
   }
@@ -47,13 +78,25 @@ export function AdminTable<Row>({
     return <div className="alert">{emptyMessage}</div>;
   }
 
+  if (renderMobileCard && !isDesktop) {
+    return (
+      <ul aria-label={ariaLabel} className="grid gap-3 md:hidden">
+        {rows.map((row) => (
+          <li className="list-none" key={getRowKey(row)}>
+            {renderMobileCard(row)}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
   return (
     <div className="overflow-x-auto rounded-box border border-base-300 bg-base-100 shadow-sm">
       <table
         aria-label={ariaLabel}
-        className="table-zebra table-sm sm:table-md table min-w-max"
+        className="table-zebra table-pin-rows table-sm lg:table-md table min-w-max"
       >
-        <thead>
+        <thead className="bg-base-200 text-base-content">
           <tr>
             {columns.map((column) => (
               <th key={column.key} scope="col">
