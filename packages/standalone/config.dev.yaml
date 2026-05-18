@@ -2,6 +2,11 @@ frontend:
   mode: proxy
   path: http://localhost:8081
 
+admin:
+  enabled: true
+  frontend_mode: proxy
+  frontend_path: http://localhost:8082
+
 registration:
   enabled: true
   allowed_email_patterns: []

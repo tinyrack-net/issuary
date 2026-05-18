@@ -170,6 +170,25 @@ export async function resolveConfig(
 
   return {
     ...rest,
+    admin: {
+      ...parsed.admin,
+      ...(parsed.admin.enabled
+        ? {
+            frontend:
+              parsed.admin.frontend_mode === 'proxy'
+                ? createProxyHandler({
+                    upstream:
+                      parsed.admin.frontend_path ??
+                      STANDALONE_CONFIG_DEFAULTS.ADMIN_FRONTEND_PROXY_UPSTREAM,
+                  })
+                : createStaticHandler({
+                    publicPath:
+                      parsed.admin.frontend_path ??
+                      STANDALONE_CONFIG_DEFAULTS.ADMIN_FRONTEND_STATIC_PATH,
+                  }),
+          }
+        : {}),
+    },
     frontend: composeFrontendConfig(parsed.frontend),
     database: composeDatabaseConfig(parsed.database),
     identity_providers: parsed.identity_providers.map(composeIdentityProvider),
@@ -192,6 +211,8 @@ export function loadConfig(configPath?: string | undefined): StandaloneConfig {
 
   // 1. Start with defaults template (env-var patterns with fallbacks)
   const {
+    ADMIN_FRONTEND_STATIC_PATH: ___,
+    ADMIN_FRONTEND_PROXY_UPSTREAM: ____,
     FRONTEND_PROXY_UPSTREAM: _,
     FRONTEND_STATIC_PATH: __,
     ...configTemplate

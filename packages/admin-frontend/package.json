@@ -1,0 +1,61 @@
+{
+  "name": "@tinyrack/tinyauth-admin-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "imports": {
+    "#admin/*.ts": {
+      "types": "./src/*.ts",
+      "default": "./src/*.ts"
+    },
+    "#admin/*.tsx": {
+      "types": "./src/*.tsx",
+      "default": "./src/*.tsx"
+    },
+    "#admin/*": {
+      "types": "./src/*",
+      "default": "./src/*"
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b tsconfig.build.json && vite build",
+    "preview": "vite preview",
+    "test": "pnpm run test:unit",
+    "test:unit": "vitest --project unit",
+    "test:unit:coverage": "VITEST_COVERAGE=1 vitest run --project unit --coverage"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "catalog:",
+    "@phosphor-icons/react": "catalog:",
+    "@tailwindcss/typography": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "@tanstack/react-router": "catalog:",
+    "i18next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-hook-form": "catalog:",
+    "react-i18next": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "@vitest/browser-preview": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "@vitest/ui": "catalog:",
+    "babel-plugin-react-compiler": "catalog:",
+    "daisyui": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:",
+    "vitest-browser-react": "catalog:"
+  }
+}

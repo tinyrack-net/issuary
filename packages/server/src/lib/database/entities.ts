@@ -1,4 +1,5 @@
 import type { EntityName } from '@mikro-orm/core';
+import { AdminAuditEventEntitySchema } from '../../entities/admin-audit-event.entity.ts';
 import { BackgroundJobEntitySchema } from '../../entities/background-job.entity.ts';
 import { BootstrapStateEntitySchema } from '../../entities/bootstrap-state.entity.ts';
 import { EmailVerificationEntitySchema } from '../../entities/email-verification.entity.ts';
@@ -47,6 +48,7 @@ function createDatabaseEntities() {
     UserTotpRecoveryCodeEntitySchema,
     UserTotpEntitySchema,
     BootstrapStateEntitySchema,
+    AdminAuditEventEntitySchema,
   ];
 }
 

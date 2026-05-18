@@ -1,5 +1,7 @@
 export type { AccountDeletionConfig } from './account-deletion.ts';
 export { AccountDeletionConfigSchema } from './account-deletion.ts';
+export type { AdminConfig } from './admin.ts';
+export { ADMIN_CONFIG_DEFAULT, AdminConfigSchema } from './admin.ts';
 export type {
   AuthConfig,
   PasskeyAuthConfig,

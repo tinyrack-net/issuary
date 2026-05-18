@@ -18,6 +18,8 @@ import { envDefault } from './env-default.ts';
 export const STANDALONE_CONFIG_DEFAULTS = {
   FRONTEND_PROXY_UPSTREAM: 'http://localhost:8081',
   FRONTEND_STATIC_PATH: '/opt/tinyauth/frontend',
+  ADMIN_FRONTEND_PROXY_UPSTREAM: 'http://localhost:8082',
+  ADMIN_FRONTEND_STATIC_PATH: '/opt/tinyauth/admin-frontend',
   server: {
     public_origin: envDefault(
       'TINYAUTH_PUBLIC_ORIGIN',
@@ -91,6 +93,13 @@ export const STANDALONE_CONFIG_DEFAULTS = {
   account_deletion: {
     enabled: envDefault('TINYAUTH_ACCOUNT_DELETION_ENABLED', 'false'),
     retention: envDefault('TINYAUTH_ACCOUNT_DELETION_RETENTION', '30d'),
+  },
+
+  admin: {
+    enabled: envDefault('TINYAUTH_ADMIN_ENABLED', 'false'),
+    mode: envDefault('TINYAUTH_ADMIN_MODE', 'same-port'),
+    mount_path: envDefault('TINYAUTH_ADMIN_MOUNT_PATH', '/admin'),
+    bind_host: envDefault('TINYAUTH_ADMIN_BIND_HOST', '127.0.0.1'),
   },
 
   openapi: {

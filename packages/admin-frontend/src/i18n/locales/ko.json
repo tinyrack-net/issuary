@@ -1,0 +1,84 @@
+{
+  "app": {
+    "title": "TinyAuth 관리자",
+    "subtitle": "사용자, OAuth 클라이언트, 감사 이벤트를 관리합니다."
+  },
+  "auth": {
+    "loginRequired": {
+      "title": "로그인이 필요합니다",
+      "description": "계속하려면 관리자 계정으로 로그인하세요."
+    },
+    "accessDenied": {
+      "title": "접근이 거부되었습니다",
+      "description": "이 계정에는 관리자 권한이 없습니다."
+    },
+    "unavailable": {
+      "title": "관리자 기능을 사용할 수 없습니다",
+      "description": "관리자 세션을 확인할 수 없습니다."
+    }
+  },
+  "nav": {
+    "label": "관리자 탐색",
+    "dashboard": "대시보드",
+    "users": "사용자",
+    "oauthClients": "OAuth 클라이언트",
+    "auditEvents": "감사 이벤트"
+  },
+  "dashboard": {
+    "title": "관리자 대시보드",
+    "subtitle": "이 TinyAuth 인스턴스의 운영 개요입니다.",
+    "currentAdmin": "현재 관리자",
+    "sessionState": "세션 상태",
+    "verifiedAdmin": "확인된 관리자",
+    "managedBy": "관리 주체"
+  },
+  "users": {
+    "title": "사용자",
+    "subtitle": "계정 상태와 역할 할당을 확인합니다.",
+    "empty": "관리자 API에서 반환된 사용자가 없습니다.",
+    "email": "이메일",
+    "emailVerified": "이메일 확인됨",
+    "emailUnverified": "이메일 미확인",
+    "role": "역할",
+    "managedBy": "관리 주체",
+    "status": "상태",
+    "action": "작업",
+    "roleAction": "이 사용자의 역할을 변경합니다.",
+    "roleActionUnavailable": "이 사용자 역할은 여기에서 변경할 수 없습니다.",
+    "makeAdmin": "관리자로 변경",
+    "makeUser": "사용자로 변경",
+    "updatingRole": "변경 중"
+  },
+  "oauthClients": {
+    "title": "OAuth 클라이언트",
+    "subtitle": "클라이언트 시크릿을 노출하지 않고 등록된 클라이언트를 확인합니다.",
+    "empty": "관리자 API에서 반환된 OAuth 클라이언트가 없습니다.",
+    "createTitle": "OAuth 클라이언트 생성",
+    "name": "이름",
+    "clientId": "클라이언트 ID",
+    "redirectUris": "리디렉션 URI",
+    "scope": "범위",
+    "enabled": "활성화",
+    "nameFor": "{{name}} 이름",
+    "redirectUrisFor": "{{name}} 리디렉션 URI",
+    "createClient": "클라이언트 생성",
+    "saveClient": "{{name}} 저장",
+    "deleteClient": "{{name}} 삭제"
+  },
+  "auditEvents": {
+    "title": "감사 이벤트",
+    "subtitle": "최근 관리자 활동입니다.",
+    "empty": "관리자 API에서 반환된 감사 이벤트가 없습니다.",
+    "action": "작업",
+    "actor": "행위자",
+    "target": "대상",
+    "ip": "IP",
+    "userAgent": "사용자 에이전트",
+    "metadata": "메타데이터",
+    "createdAt": "생성 시각"
+  },
+  "common": {
+    "loading": "로딩 중",
+    "unknown": "알 수 없음"
+  }
+}

@@ -1,4 +1,5 @@
 import { MikroORM } from '@mikro-orm/core';
+import { AdminAuditEventEntitySchema } from '../entities/admin-audit-event.entity.ts';
 import { BackgroundJobEntitySchema } from '../entities/background-job.entity.ts';
 import { EmailVerificationEntitySchema } from '../entities/email-verification.entity.ts';
 import { JwtKeyEntity } from '../entities/jwt-key.entity.ts';
@@ -19,6 +20,7 @@ import { UserTotpEntitySchema } from '../entities/user-totp.entity.ts';
 import { UserTotpRecoveryCodeEntitySchema } from '../entities/user-totp-recovery-code.entity.ts';
 import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
 import type { Logger } from '../lib/logger.ts';
+import type { AdminAuditEventRepository } from '../repositories/admin-audit-event.repository.ts';
 import type { BackgroundJobRepository } from '../repositories/background-job.repository.ts';
 import type { EmailVerificationRepository } from '../repositories/email-verification.repository.ts';
 import type { JwtKeyRepository } from '../repositories/jwt-key.repository.ts';
@@ -59,6 +61,7 @@ export class MikroService {
   public readonly userPasskey: UserPasskeyRepository;
   public readonly terms: TermsRepository;
   public readonly termsContent: TermsContentRepository;
+  public readonly adminAuditEvent: AdminAuditEventRepository;
 
   private constructor(orm: MikroORM) {
     this.orm = orm;
@@ -87,6 +90,7 @@ export class MikroService {
     this.userPasskey = orm.em.getRepository(UserPasskeyEntitySchema);
     this.terms = orm.em.getRepository(TermsEntitySchema);
     this.termsContent = orm.em.getRepository(TermsContentEntitySchema);
+    this.adminAuditEvent = orm.em.getRepository(AdminAuditEventEntitySchema);
   }
 
   public static async initialize(

@@ -61,6 +61,57 @@ describe('load-config', () => {
     await fs.promises.rm(dir, { recursive: true, force: true });
   });
 
+  test('wires an admin frontend handler when admin is enabled', async () => {
+    const dir = await fs.promises.mkdtemp(
+      path.join(os.tmpdir(), 'tinyauth-load-config-admin-'),
+    );
+    const configFile = await writeConfigFile(
+      dir,
+      'admin.yaml',
+      [
+        'admin:',
+        '  enabled: true',
+        'security:',
+        '  session_secret: admin-secret-1234567890',
+        '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+      ].join('\n'),
+    );
+
+    const config = await resolveConfig(loadConfig(configFile));
+
+    expect(config.admin.frontend).toBeDefined();
+    expect(typeof config.admin.frontend).toBe('function');
+    await fs.promises.rm(dir, { recursive: true, force: true });
+  });
+
+  test('supports proxy-mode admin frontend during standalone resolution', async () => {
+    const dir = await fs.promises.mkdtemp(
+      path.join(os.tmpdir(), 'tinyauth-load-config-admin-proxy-'),
+    );
+    const configFile = await writeConfigFile(
+      dir,
+      'admin-proxy.yaml',
+      [
+        'admin:',
+        '  enabled: true',
+        '  frontend_mode: proxy',
+        '  frontend_path: http://localhost:8082',
+        'security:',
+        '  session_secret: admin-proxy-secret-1234567890',
+        '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+      ].join('\n'),
+    );
+
+    const loaded = loadConfig(configFile);
+    expect(loaded.admin.frontend_mode).toBe('proxy');
+    expect(loaded.admin.frontend_path).toBe('http://localhost:8082');
+
+    const config = await resolveConfig(loaded);
+    expect(config.admin.frontend).toBeDefined();
+    expect(typeof config.admin.frontend).toBe('function');
+    await fs.promises.rm(dir, { recursive: true, force: true });
+  });
+
   test('preserves disabled frontend without requiring path', async () => {
     const dir = await fs.promises.mkdtemp(
       path.join(os.tmpdir(), 'tinyauth-load-config-disabled-'),

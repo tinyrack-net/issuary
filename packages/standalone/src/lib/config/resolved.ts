@@ -1,5 +1,6 @@
 import {
   AccountDeletionConfigSchema,
+  AdminConfigSchema,
   AuthConfigSchema,
   BrandingConfigSchema,
   CleanupConfigSchema,
@@ -40,6 +41,7 @@ export const StandaloneConfigSchema = z
     account_deletion: AccountDeletionConfigSchema.describe(
       'Account deletion settings.',
     ),
+    admin: AdminConfigSchema.describe('Admin UI and API settings.'),
     logging: LoggingConfigSchema.describe('Logging settings.'),
     openapi: OpenApiConfigSchema.describe(
       'OpenAPI and API reference settings.',

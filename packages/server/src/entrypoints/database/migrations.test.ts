@@ -2,17 +2,21 @@ import { describe, expect, test } from 'vitest';
 import { POSTGRES_MIGRATIONS } from '../../migrations/postgres/index.ts';
 import { Migration20260509171036_initial as PostgresInitialMigration } from '../../migrations/postgres/Migration20260509171036_initial.ts';
 import { Migration20260512120000_add_scheduler_jobs as PostgresSchedulerJobsMigration } from '../../migrations/postgres/Migration20260512120000_add_scheduler_jobs.ts';
+import { Migration20260517120000_add_admin_audit_event as PostgresAdminAuditEventMigration } from '../../migrations/postgres/Migration20260517120000_add_admin_audit_event.ts';
 import { SQLITE_MIGRATIONS } from '../../migrations/sqlite/index.ts';
 import { Migration20260509171226_initial as SqliteInitialMigration } from '../../migrations/sqlite/Migration20260509171226_initial.ts';
 import { Migration20260512120000_add_scheduler_jobs as SqliteSchedulerJobsMigration } from '../../migrations/sqlite/Migration20260512120000_add_scheduler_jobs.ts';
+import { Migration20260517120000_add_admin_audit_event as SqliteAdminAuditEventMigration } from '../../migrations/sqlite/Migration20260517120000_add_admin_audit_event.ts';
 import { postgres } from './postgres/postgres.ts';
 import { sqlite } from './sqlite/sqlite.ts';
 
 type MigrationClass =
   | typeof PostgresInitialMigration
   | typeof PostgresSchedulerJobsMigration
+  | typeof PostgresAdminAuditEventMigration
   | typeof SqliteInitialMigration
-  | typeof SqliteSchedulerJobsMigration;
+  | typeof SqliteSchedulerJobsMigration
+  | typeof SqliteAdminAuditEventMigration;
 
 interface MigrationLike {
   up(): void | Promise<void>;
@@ -40,6 +44,7 @@ describe('database migrations', () => {
     expect(POSTGRES_MIGRATIONS).toEqual([
       PostgresInitialMigration,
       PostgresSchedulerJobsMigration,
+      PostgresAdminAuditEventMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(POSTGRES_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -74,6 +79,7 @@ describe('database migrations', () => {
     expect(SQLITE_MIGRATIONS).toEqual([
       SqliteInitialMigration,
       SqliteSchedulerJobsMigration,
+      SqliteAdminAuditEventMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(SQLITE_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();

@@ -1,0 +1,84 @@
+{
+  "app": {
+    "title": "TinyAuth Admin",
+    "subtitle": "Manage users, OAuth clients, and audit events."
+  },
+  "auth": {
+    "loginRequired": {
+      "title": "Login required",
+      "description": "Sign in with an admin account to continue."
+    },
+    "accessDenied": {
+      "title": "Access denied",
+      "description": "Your account does not have admin access."
+    },
+    "unavailable": {
+      "title": "Admin unavailable",
+      "description": "The admin session could not be verified."
+    }
+  },
+  "nav": {
+    "label": "Admin navigation",
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "oauthClients": "OAuth clients",
+    "auditEvents": "Audit events"
+  },
+  "dashboard": {
+    "title": "Admin dashboard",
+    "subtitle": "Operational overview for this TinyAuth instance.",
+    "currentAdmin": "Current admin",
+    "sessionState": "Session state",
+    "verifiedAdmin": "Verified admin",
+    "managedBy": "Managed by"
+  },
+  "users": {
+    "title": "Users",
+    "subtitle": "Review account status and role assignments.",
+    "empty": "No users were returned by the admin API.",
+    "email": "Email",
+    "emailVerified": "Email verified",
+    "emailUnverified": "Email unverified",
+    "role": "Role",
+    "managedBy": "Managed by",
+    "status": "Status",
+    "action": "Action",
+    "roleAction": "Update this user's role.",
+    "roleActionUnavailable": "This user role cannot be changed here.",
+    "makeAdmin": "Make admin",
+    "makeUser": "Make user",
+    "updatingRole": "Updating"
+  },
+  "oauthClients": {
+    "title": "OAuth clients",
+    "subtitle": "Inspect registered clients without exposing client secrets.",
+    "empty": "No OAuth clients were returned by the admin API.",
+    "createTitle": "Create OAuth client",
+    "name": "Name",
+    "clientId": "Client ID",
+    "redirectUris": "Redirect URIs",
+    "scope": "Scope",
+    "enabled": "Enabled",
+    "nameFor": "Name for {{name}}",
+    "redirectUrisFor": "Redirect URIs for {{name}}",
+    "createClient": "Create client",
+    "saveClient": "Save {{name}}",
+    "deleteClient": "Delete {{name}}"
+  },
+  "auditEvents": {
+    "title": "Audit events",
+    "subtitle": "Recent administrative activity.",
+    "empty": "No audit events were returned by the admin API.",
+    "action": "Action",
+    "actor": "Actor",
+    "target": "Target",
+    "ip": "IP",
+    "userAgent": "User agent",
+    "metadata": "Metadata",
+    "createdAt": "Created"
+  },
+  "common": {
+    "loading": "Loading",
+    "unknown": "Unknown"
+  }
+}

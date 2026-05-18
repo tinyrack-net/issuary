@@ -319,6 +319,26 @@ export const e = {
     'USER_NOT_EDITABLE',
     'This user account cannot be modified.',
   ),
+  SelfDemotionNotAllowed: createError(
+    403,
+    'SELF_DEMOTION_NOT_ALLOWED',
+    'Admins cannot remove their own admin role.',
+  ),
+  LastAdminRequired: createError(
+    409,
+    'LAST_ADMIN_REQUIRED',
+    'At least one admin user must remain.',
+  ),
+  UserDeleteNotImplemented: createError(
+    501,
+    'USER_DELETE_NOT_IMPLEMENTED',
+    'Admin user deletion is not implemented.',
+  ),
+  OAuthClientNotEditable: createError(
+    403,
+    'OAUTH_CLIENT_NOT_EDITABLE',
+    'This OAuth client cannot be modified.',
+  ),
 
   // OAuth Connect Errors (Social Login)
   OAuthProviderNotFound: createError(
@@ -380,6 +400,11 @@ export const e = {
     401,
     'UNAUTHORIZED',
     'You must be logged in to perform this action.',
+  ),
+  Forbidden: createError(
+    403,
+    'FORBIDDEN',
+    'You do not have permission to perform this action.',
   ),
 
   // Password Management Errors
