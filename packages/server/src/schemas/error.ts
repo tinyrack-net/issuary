@@ -339,6 +339,21 @@ export const e = {
     'OAUTH_CLIENT_NOT_EDITABLE',
     'This OAuth client cannot be modified.',
   ),
+  OAuthClientAlreadyExists: createError(
+    409,
+    'OAUTH_CLIENT_ALREADY_EXISTS',
+    'The OAuth client already exists.',
+  ),
+  OAuthProviderAlreadyExists: createError(
+    409,
+    'OAUTH_PROVIDER_ALREADY_EXISTS',
+    'The OAuth provider already exists.',
+  ),
+  OAuthProviderNotEditable: createError(
+    403,
+    'OAUTH_PROVIDER_NOT_EDITABLE',
+    'This OAuth provider cannot be modified.',
+  ),
 
   // OAuth Connect Errors (Social Login)
   OAuthProviderNotFound: createError(

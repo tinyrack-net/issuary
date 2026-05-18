@@ -10,15 +10,16 @@ import type { i18n as I18nInstance } from 'i18next';
 import { AccessState } from '#admin/components/access-state.js';
 import { AdminLayout } from '#admin/features/layout/admin-layout.js';
 import i18n from '#admin/i18n/index.js';
+import { parseAdminListSearch } from '#admin/libs/admin-list-search.js';
 import {
   adminSessionQueryOptions,
   adminUsersQueryOptions,
-  auditEventsQueryOptions,
   oauthClientsQueryOptions,
+  oauthProvidersQueryOptions,
 } from '#admin/queries/admin.js';
-import { AuditEventsPage } from '#admin/routes/audit-events.js';
 import { DashboardPage } from '#admin/routes/dashboard.js';
 import { OAuthClientsPage } from '#admin/routes/oauth-clients.js';
+import { OAuthProvidersPage } from '#admin/routes/oauth-providers.js';
 import { UsersPage } from '#admin/routes/users.js';
 import { GlobalQueryClient } from './query-client.js';
 
@@ -71,8 +72,10 @@ const dashboardRoute = createRoute({
 const usersRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/users',
-  loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(adminUsersQueryOptions);
+  validateSearch: parseAdminListSearch,
+  loaderDeps: ({ search }) => search,
+  loader: async ({ context, deps }) => {
+    await context.queryClient.ensureQueryData(adminUsersQueryOptions(deps));
   },
   component: UsersPage,
 });
@@ -80,26 +83,30 @@ const usersRoute = createRoute({
 const oauthClientsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/oauth-clients',
-  loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(oauthClientsQueryOptions);
+  validateSearch: parseAdminListSearch,
+  loaderDeps: ({ search }) => search,
+  loader: async ({ context, deps }) => {
+    await context.queryClient.ensureQueryData(oauthClientsQueryOptions(deps));
   },
   component: OAuthClientsPage,
 });
 
-const auditEventsRoute = createRoute({
+const oauthProvidersRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/audit-events',
-  loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(auditEventsQueryOptions);
+  path: '/oauth-providers',
+  validateSearch: parseAdminListSearch,
+  loaderDeps: ({ search }) => search,
+  loader: async ({ context, deps }) => {
+    await context.queryClient.ensureQueryData(oauthProvidersQueryOptions(deps));
   },
-  component: AuditEventsPage,
+  component: OAuthProvidersPage,
 });
 
 const routeTree = rootRoute.addChildren([
   dashboardRoute,
   usersRoute,
+  oauthProvidersRoute,
   oauthClientsRoute,
-  auditEventsRoute,
 ]);
 
 type CreateAdminRouterOptions = {

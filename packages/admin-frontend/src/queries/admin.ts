@@ -1,9 +1,10 @@
 import { queryOptions } from '@tanstack/react-query';
 import {
+  type AdminPaginationParams,
   getAdminSession,
   listAdminUsers,
-  listAuditEvents,
   listOAuthClients,
+  listOAuthProviders,
 } from '#admin/libs/api.js';
 import { queryKeys } from './keys.js';
 
@@ -12,17 +13,23 @@ export const adminSessionQueryOptions = queryOptions({
   queryFn: getAdminSession,
 });
 
-export const adminUsersQueryOptions = queryOptions({
-  queryKey: queryKeys.users(),
-  queryFn: listAdminUsers,
-});
+export function adminUsersQueryOptions(params: AdminPaginationParams = {}) {
+  return queryOptions({
+    queryKey: queryKeys.users(params),
+    queryFn: () => listAdminUsers(params),
+  });
+}
 
-export const oauthClientsQueryOptions = queryOptions({
-  queryKey: queryKeys.oauthClients(),
-  queryFn: listOAuthClients,
-});
+export function oauthClientsQueryOptions(params: AdminPaginationParams = {}) {
+  return queryOptions({
+    queryKey: queryKeys.oauthClients(params),
+    queryFn: () => listOAuthClients(params),
+  });
+}
 
-export const auditEventsQueryOptions = queryOptions({
-  queryKey: queryKeys.auditEvents(),
-  queryFn: listAuditEvents,
-});
+export function oauthProvidersQueryOptions(params: AdminPaginationParams = {}) {
+  return queryOptions({
+    queryKey: queryKeys.oauthProviders(params),
+    queryFn: () => listOAuthProviders(params),
+  });
+}

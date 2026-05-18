@@ -1,5 +1,6 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import z from 'zod';
+import type { IOAuthProviderEntity } from '../entities/oauth-provider.entity.ts';
 import type {
   IdentityProviderConfig,
   TinyAuthRuntimeConfig,
@@ -10,8 +11,13 @@ import { e, TinyAuthError } from '../schemas/error.ts';
 import type { f } from '../schemas/field.ts';
 import type { r } from '../schemas/response.ts';
 import type { MikroService } from './mikro.service.ts';
+import type { SecurityService } from './security.service.ts';
 import type { TermsService } from './terms.service.ts';
 import type { UserService } from './user.service.ts';
+
+type AdminOAuthProviderItem =
+  | { managed_by: 'config'; provider: IdentityProviderConfig }
+  | { managed_by: 'database'; provider: IOAuthProviderEntity };
 
 /**
  * OAuth user info returned from provider
@@ -152,16 +158,19 @@ export class OAuthConnectService {
   private readonly userService: UserService;
   private readonly mikro: MikroService;
   private readonly termsService: TermsService;
+  private readonly securityService: SecurityService;
   public constructor(
     config: TinyAuthRuntimeConfig,
     userService: UserService,
     mikro: MikroService,
     termsService: TermsService,
+    securityService: SecurityService,
   ) {
     this.config = config;
     this.userService = userService;
     this.mikro = mikro;
     this.termsService = termsService;
+    this.securityService = securityService;
   }
 
   /**
@@ -330,43 +339,144 @@ export class OAuthConnectService {
   /**
    * Get all enabled OAuth providers
    */
-  public getEnabledProviders(): Array<{
-    id: string;
-    display_name: string;
-    icon_url?: string | undefined;
-  }> {
-    const providers: Array<{
+  public async getEnabledProviders(): Promise<
+    Array<{
       id: string;
       display_name: string;
       icon_url?: string | undefined;
-    }> = [];
+    }>
+  > {
+    const configProviderIds = new Set(
+      this.config.identity_providers.map((provider) => provider.id),
+    );
+    const databaseProviders = await this.mikro.oauthProvider.find(
+      {
+        enabled: true,
+      },
+      { orderBy: { displayName: 'ASC', id: 'ASC' } },
+    );
 
-    for (const provider of this.config.identity_providers) {
-      if (provider.enabled) {
-        providers.push({
+    return [
+      ...this.config.identity_providers
+        .filter((provider) => provider.enabled)
+        .map((provider) => ({
           id: provider.id,
           display_name: provider.display_name,
           icon_url: provider.icon_url,
-        });
-      }
-    }
-
-    return providers;
+        })),
+      ...databaseProviders
+        .filter((provider) => !configProviderIds.has(provider.id))
+        .map((provider) => ({
+          id: provider.id,
+          display_name: provider.displayName,
+          icon_url: provider.iconUrl ?? undefined,
+        })),
+    ];
   }
 
-  /**
-   * Get OAuth provider config by id
-   */
-  public getProvider(id: string): IdentityProviderConfig {
-    const provider = this.config.identity_providers.find(
-      (providerConfig) => providerConfig.id === id,
-    );
-
-    if (!provider?.enabled) {
+  private async toRuntimeProvider(
+    provider: IOAuthProviderEntity | null,
+  ): Promise<IdentityProviderConfig> {
+    if (!provider) {
       throw new e.OAuthProviderNotFound.Error();
     }
 
-    return provider;
+    const clientSecret = await this.securityService.decryptProviderSecret(
+      provider.clientSecretEncrypted,
+    );
+    if (!clientSecret) {
+      throw new e.OAuthProviderNotFound.Error();
+    }
+
+    return {
+      id: provider.id,
+      type: provider.type,
+      enabled: provider.enabled,
+      display_name: provider.displayName,
+      icon_url: provider.iconUrl ?? undefined,
+      client_id: provider.clientId,
+      client_secret: clientSecret,
+      authorization_url: provider.authorizationUrl,
+      token_url: provider.tokenUrl,
+      userinfo_url: provider.userinfoUrl ?? null,
+      jwks_url: provider.jwksUrl ?? undefined,
+      issuer: provider.issuer ?? undefined,
+      email_url: provider.emailUrl ?? undefined,
+      scopes: provider.scopes,
+      response_mode: provider.responseMode ?? undefined,
+      email_conflict_strategy: provider.emailConflictStrategy,
+      userinfo_mapping: provider.userinfoMapping,
+    };
+  }
+
+  /**
+   * Get OAuth provider config by id.
+   */
+  public async getProvider(id: string): Promise<IdentityProviderConfig> {
+    const configProvider = this.config.identity_providers.find(
+      (providerConfig) => providerConfig.id === id,
+    );
+
+    if (configProvider) {
+      if (!configProvider.enabled) {
+        throw new e.OAuthProviderNotFound.Error();
+      }
+
+      return configProvider;
+    }
+
+    return this.toRuntimeProvider(
+      await this.mikro.oauthProvider.findOne({ id, enabled: true }),
+    );
+  }
+
+  public getConfigProviderIds(): Set<string> {
+    return new Set(
+      this.config.identity_providers.map((provider) => provider.id),
+    );
+  }
+
+  public getConfigProvider(id: string): IdentityProviderConfig | undefined {
+    return this.config.identity_providers.find(
+      (providerConfig) => providerConfig.id === id,
+    );
+  }
+
+  public async getProviderForAdmin(
+    id: string,
+  ): Promise<AdminOAuthProviderItem> {
+    const configProvider = this.getConfigProvider(id);
+    if (configProvider) {
+      return { managed_by: 'config', provider: configProvider };
+    }
+
+    const databaseProvider = await this.mikro.oauthProvider.findOne({ id });
+    if (!databaseProvider) {
+      throw new e.OAuthProviderNotFound.Error();
+    }
+
+    return { managed_by: 'database', provider: databaseProvider };
+  }
+
+  public async getAllProvidersForAdmin(): Promise<AdminOAuthProviderItem[]> {
+    const configProviderIds = this.getConfigProviderIds();
+    const databaseProviders = await this.mikro.oauthProvider.find(
+      {},
+      { orderBy: { displayName: 'ASC', id: 'ASC' } },
+    );
+    const configProviderItems: AdminOAuthProviderItem[] =
+      this.config.identity_providers.map((provider) => ({
+        managed_by: 'config',
+        provider,
+      }));
+    const databaseProviderItems: AdminOAuthProviderItem[] = databaseProviders
+      .filter((provider) => !configProviderIds.has(provider.id))
+      .map((provider) => ({
+        managed_by: 'database',
+        provider,
+      }));
+
+    return [...configProviderItems, ...databaseProviderItems];
   }
 
   /**
@@ -380,7 +490,7 @@ export class OAuthConnectService {
     url: string;
     sessionData: OAuthSessionData;
   }> {
-    const provider = this.getProvider(providerId);
+    const provider = await this.getProvider(providerId);
     const pkce = await generatePKCE();
     const state = crypto.randomUUID();
 
@@ -420,7 +530,7 @@ export class OAuthConnectService {
     code: string,
     codeVerifier: string,
   ): Promise<OAuthTokens> {
-    const provider = this.getProvider(providerId);
+    const provider = await this.getProvider(providerId);
 
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
@@ -461,7 +571,7 @@ export class OAuthConnectService {
     accessToken: string,
     idToken?: string,
   ): Promise<OAuthUserInfo> {
-    const provider = this.getProvider(providerId);
+    const provider = await this.getProvider(providerId);
 
     // Providers without a userinfo endpoint (e.g. Apple) use the ID token
     if (!provider.userinfo_url) {
@@ -682,7 +792,7 @@ export class OAuthConnectService {
     tokens: OAuthTokens,
     userInfo: OAuthUserInfo,
   ): Promise<OAuthAuthResult> {
-    const provider = this.getProvider(providerId);
+    const provider = await this.getProvider(providerId);
 
     // Reject if the OAuth provider has not verified the user's email
     if (!userInfo.email_verified) {
@@ -879,7 +989,7 @@ export class OAuthConnectService {
 
     if (existingUser) {
       // Handle as auto_link - link OAuth to existing user
-      const provider = this.getProvider(providerId);
+      const provider = await this.getProvider(providerId);
 
       if (provider.email_conflict_strategy === 'require_link') {
         throw new e.OAuthEmailConflict.Error();

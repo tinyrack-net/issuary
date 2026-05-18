@@ -1,8 +1,10 @@
-import { fromBase64Url } from '../lib/base64url.ts';
+import { bytesToHex, fromBase64Url } from '../lib/base64url.ts';
 import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
 import {
+  decrypt,
   derivePbkdf2Bytes,
   derivePurposeKeyBytes,
+  encrypt,
   formatOpaqueHash,
   formatPbkdf2Hash,
   getRandomBytes,
@@ -31,6 +33,7 @@ const PURPOSE_LABELS: Record<Purpose, string> = {
 
 export class SecurityService {
   private readonly hashMasterSecret: Uint8Array;
+  private readonly providerSecretEncryptionKeyHex: string;
   private readonly pbkdf2Iterations: number;
   private readonly purposeKeyCache = new Map<Purpose, Promise<Uint8Array>>();
 
@@ -41,6 +44,7 @@ export class SecurityService {
     }
 
     this.hashMasterSecret = decodedSecret;
+    this.providerSecretEncryptionKeyHex = bytesToHex(decodedSecret);
     this.pbkdf2Iterations = config.security.pbkdf2_iterations;
   }
 
@@ -145,5 +149,15 @@ export class SecurityService {
       version: HASH_FORMAT_VERSION,
       digest,
     });
+  }
+
+  public async encryptProviderSecret(clientSecret: string): Promise<string> {
+    return encrypt(clientSecret, this.providerSecretEncryptionKeyHex);
+  }
+
+  public async decryptProviderSecret(
+    encryptedClientSecret: string,
+  ): Promise<string | null> {
+    return decrypt(encryptedClientSecret, this.providerSecretEncryptionKeyHex);
   }
 }

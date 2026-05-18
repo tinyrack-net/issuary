@@ -2,21 +2,21 @@ import { describe, expect, test } from 'vitest';
 import { POSTGRES_MIGRATIONS } from '../../migrations/postgres/index.ts';
 import { Migration20260509171036_initial as PostgresInitialMigration } from '../../migrations/postgres/Migration20260509171036_initial.ts';
 import { Migration20260512120000_add_scheduler_jobs as PostgresSchedulerJobsMigration } from '../../migrations/postgres/Migration20260512120000_add_scheduler_jobs.ts';
-import { Migration20260517120000_add_admin_audit_event as PostgresAdminAuditEventMigration } from '../../migrations/postgres/Migration20260517120000_add_admin_audit_event.ts';
+import { Migration20260518120000_add_oauth_provider as PostgresOAuthProviderMigration } from '../../migrations/postgres/Migration20260518120000_add_oauth_provider.ts';
 import { SQLITE_MIGRATIONS } from '../../migrations/sqlite/index.ts';
 import { Migration20260509171226_initial as SqliteInitialMigration } from '../../migrations/sqlite/Migration20260509171226_initial.ts';
 import { Migration20260512120000_add_scheduler_jobs as SqliteSchedulerJobsMigration } from '../../migrations/sqlite/Migration20260512120000_add_scheduler_jobs.ts';
-import { Migration20260517120000_add_admin_audit_event as SqliteAdminAuditEventMigration } from '../../migrations/sqlite/Migration20260517120000_add_admin_audit_event.ts';
+import { Migration20260518120000_add_oauth_provider as SqliteOAuthProviderMigration } from '../../migrations/sqlite/Migration20260518120000_add_oauth_provider.ts';
 import { postgres } from './postgres/postgres.ts';
 import { sqlite } from './sqlite/sqlite.ts';
 
 type MigrationClass =
   | typeof PostgresInitialMigration
   | typeof PostgresSchedulerJobsMigration
-  | typeof PostgresAdminAuditEventMigration
+  | typeof PostgresOAuthProviderMigration
   | typeof SqliteInitialMigration
   | typeof SqliteSchedulerJobsMigration
-  | typeof SqliteAdminAuditEventMigration;
+  | typeof SqliteOAuthProviderMigration;
 
 interface MigrationLike {
   up(): void | Promise<void>;
@@ -44,7 +44,7 @@ describe('database migrations', () => {
     expect(POSTGRES_MIGRATIONS).toEqual([
       PostgresInitialMigration,
       PostgresSchedulerJobsMigration,
-      PostgresAdminAuditEventMigration,
+      PostgresOAuthProviderMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(POSTGRES_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -79,7 +79,7 @@ describe('database migrations', () => {
     expect(SQLITE_MIGRATIONS).toEqual([
       SqliteInitialMigration,
       SqliteSchedulerJobsMigration,
-      SqliteAdminAuditEventMigration,
+      SqliteOAuthProviderMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(SQLITE_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -158,6 +158,36 @@ describe('database migrations', () => {
     expect(
       sqliteQueries.some((query) =>
         query.includes('`locked_until` datetime null'),
+      ),
+    ).toBe(true);
+  });
+
+  test('OAuth provider migrations create encrypted provider storage', async () => {
+    const postgresQueries = await collectMigrationQueries(
+      PostgresOAuthProviderMigration,
+    );
+    const sqliteQueries = await collectMigrationQueries(
+      SqliteOAuthProviderMigration,
+    );
+
+    expect(
+      postgresQueries.some((query) =>
+        query.includes('create table "oauth_provider"'),
+      ),
+    ).toBe(true);
+    expect(
+      postgresQueries.some((query) =>
+        query.includes('"client_secret_encrypted"'),
+      ),
+    ).toBe(true);
+    expect(
+      sqliteQueries.some((query) =>
+        query.includes('create table `oauth_provider`'),
+      ),
+    ).toBe(true);
+    expect(
+      sqliteQueries.some((query) =>
+        query.includes('`client_secret_encrypted`'),
       ),
     ).toBe(true);
   });

@@ -1,10 +1,10 @@
 import { MikroORM } from '@mikro-orm/core';
-import { AdminAuditEventEntitySchema } from '../entities/admin-audit-event.entity.ts';
 import { BackgroundJobEntitySchema } from '../entities/background-job.entity.ts';
 import { EmailVerificationEntitySchema } from '../entities/email-verification.entity.ts';
 import { JwtKeyEntity } from '../entities/jwt-key.entity.ts';
 import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.ts';
 import { OAuthCodeEntitySchema } from '../entities/oauth-code.entity.ts';
+import { OAuthProviderEntitySchema } from '../entities/oauth-provider.entity.ts';
 import { PasswordResetEntitySchema } from '../entities/password-reset.entity.ts';
 import { PendingOAuthRegistrationEntitySchema } from '../entities/pending-oauth-registration.entity.ts';
 import { RevokedTokenEntitySchema } from '../entities/revoked-token.entity.ts';
@@ -20,12 +20,12 @@ import { UserTotpEntitySchema } from '../entities/user-totp.entity.ts';
 import { UserTotpRecoveryCodeEntitySchema } from '../entities/user-totp-recovery-code.entity.ts';
 import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
 import type { Logger } from '../lib/logger.ts';
-import type { AdminAuditEventRepository } from '../repositories/admin-audit-event.repository.ts';
 import type { BackgroundJobRepository } from '../repositories/background-job.repository.ts';
 import type { EmailVerificationRepository } from '../repositories/email-verification.repository.ts';
 import type { JwtKeyRepository } from '../repositories/jwt-key.repository.ts';
 import type { OAuthClientRepository } from '../repositories/oauth-client.repository.ts';
 import type { OAuthCodeRepository } from '../repositories/oauth-code.repository.ts';
+import type { OAuthProviderRepository } from '../repositories/oauth-provider.repository.ts';
 import type { PasswordResetRepository } from '../repositories/password-reset.repository.ts';
 import type { PendingOAuthRegistrationRepository } from '../repositories/pending-oauth-registration.repository.ts';
 import type { RevokedTokenRepository } from '../repositories/revoked-token.repository.ts';
@@ -47,6 +47,7 @@ export class MikroService {
   public readonly userOAuth: UserOAuthRepository;
   public readonly oauthCode: OAuthCodeRepository;
   public readonly oauthClient: OAuthClientRepository;
+  public readonly oauthProvider: OAuthProviderRepository;
   public readonly emailVerification: EmailVerificationRepository;
   public readonly passwordReset: PasswordResetRepository;
   public readonly pendingOAuthRegistration: PendingOAuthRegistrationRepository;
@@ -61,7 +62,6 @@ export class MikroService {
   public readonly userPasskey: UserPasskeyRepository;
   public readonly terms: TermsRepository;
   public readonly termsContent: TermsContentRepository;
-  public readonly adminAuditEvent: AdminAuditEventRepository;
 
   private constructor(orm: MikroORM) {
     this.orm = orm;
@@ -70,6 +70,7 @@ export class MikroService {
     this.userOAuth = orm.em.getRepository(UserOAuthEntitySchema);
     this.oauthCode = orm.em.getRepository(OAuthCodeEntitySchema);
     this.oauthClient = orm.em.getRepository(OAuthClientEntitySchema);
+    this.oauthProvider = orm.em.getRepository(OAuthProviderEntitySchema);
     this.emailVerification = orm.em.getRepository(
       EmailVerificationEntitySchema,
     );
@@ -90,7 +91,6 @@ export class MikroService {
     this.userPasskey = orm.em.getRepository(UserPasskeyEntitySchema);
     this.terms = orm.em.getRepository(TermsEntitySchema);
     this.termsContent = orm.em.getRepository(TermsContentEntitySchema);
-    this.adminAuditEvent = orm.em.getRepository(AdminAuditEventEntitySchema);
   }
 
   public static async initialize(

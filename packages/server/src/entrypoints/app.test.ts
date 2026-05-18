@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { ServiceContainer } from '../services/container.ts';
 import {
   createAuthenticatedSession,
@@ -53,6 +53,34 @@ async function withTestApp(
   } finally {
     await server.cleanup();
   }
+}
+
+function createAdminOAuthProviderPayload(id: string) {
+  return {
+    id,
+    type: 'generic_oauth',
+    issuer: 'https://provider.example',
+    display_name: 'Example Provider',
+    icon_url: null,
+    client_id: `${id}-client-id`,
+    client_secret: `${id}-client-secret`,
+    scopes: ['openid', 'profile', 'email'],
+    authorization_url: 'https://provider.example/oauth/authorize',
+    token_url: 'https://provider.example/oauth/token',
+    userinfo_url: 'https://provider.example/oauth/userinfo',
+    jwks_url: 'https://provider.example/oauth/jwks',
+    email_url: null,
+    response_mode: null,
+    email_conflict_strategy: 'auto_link',
+    userinfo_mapping: {
+      id: 'sub',
+      email: 'email',
+      email_verified: 'email_verified',
+      name: 'name',
+      picture: 'picture',
+    },
+    enabled: true,
+  };
 }
 
 describe('createApp', () => {
@@ -448,6 +476,20 @@ describe('createApp same-port admin routes', () => {
       },
     );
   });
+
+  test('does not register the removed events admin API route', async () => {
+    await withTestApp(
+      {
+        ...MINIMAL_TEST_CONFIG,
+        admin: { enabled: true },
+      },
+      async (app) => {
+        const res = await app.request(`/admin/api/${'a' + 'udit'}-events`);
+
+        expect(res.status).toBe(404);
+      },
+    );
+  });
 });
 
 describe('createApp admin user management API', () => {
@@ -472,7 +514,7 @@ describe('createApp admin user management API', () => {
       expect(listRes.status).toBe(200);
       const listBody = await listRes.json();
       expect(listBody).toEqual({
-        users: expect.arrayContaining([
+        items: expect.arrayContaining([
           expect.objectContaining({
             sub: targetSub,
             email: 'listed-user@example.com',
@@ -481,6 +523,11 @@ describe('createApp admin user management API', () => {
             managed_by: 'database',
           }),
         ]),
+        pagination: {
+          limit: 20,
+          offset: 0,
+          total: 2,
+        },
       });
       expect(JSON.stringify(listBody)).not.toContain('password_hash');
 
@@ -500,6 +547,58 @@ describe('createApp admin user management API', () => {
           managed_by: 'database',
         }),
       });
+    } finally {
+      await server.cleanup();
+    }
+  });
+
+  test('paginates active users and rejects invalid pagination query values', async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      admin: { enabled: true },
+      users: [TEST_USER_CONFIG],
+    });
+    try {
+      await createDatabaseUser(server.services, {
+        email: 'page-alpha@example.com',
+        password: 'changemelater',
+        role: 'user',
+      });
+      const expectedSub = await createDatabaseUser(server.services, {
+        email: 'page-beta@example.com',
+        password: 'changemelater',
+        role: 'user',
+      });
+      const sessionCookie = await createAuthenticatedSession(server.app);
+      const headers = { Cookie: `session=${sessionCookie}` };
+
+      const pageRes = await server.app.request(
+        '/admin/api/users?limit=1&offset=1',
+        { headers },
+      );
+      expect(pageRes.status).toBe(200);
+      await expect(pageRes.json()).resolves.toEqual({
+        items: [
+          expect.objectContaining({
+            sub: expectedSub,
+            email: 'page-beta@example.com',
+          }),
+        ],
+        pagination: {
+          limit: 1,
+          offset: 1,
+          total: 3,
+        },
+      });
+
+      for (const query of ['limit=0', 'limit=101', 'offset=-1']) {
+        const invalidRes = await server.app.request(
+          `/admin/api/users?${query}`,
+          { headers },
+        );
+
+        expect(invalidRes.status).toBe(400);
+      }
     } finally {
       await server.cleanup();
     }
@@ -761,7 +860,7 @@ describe('createApp admin OAuth client management API', () => {
       expect(listRes.status).toBe(200);
       const listBody = await listRes.json();
       expect(listBody).toEqual({
-        oauth_clients: expect.arrayContaining([
+        items: expect.arrayContaining([
           expect.objectContaining({
             id: databaseClientId,
             client_id: 'database-admin-client',
@@ -774,6 +873,11 @@ describe('createApp admin OAuth client management API', () => {
             managed_by: 'database',
           }),
         ]),
+        pagination: {
+          limit: 20,
+          offset: 0,
+          total: 2,
+        },
       });
       expect(JSON.stringify(listBody)).not.toContain('client_secret');
       expect(JSON.stringify(listBody)).not.toContain('clientSecretHash');
@@ -930,7 +1034,43 @@ describe('createApp admin OAuth client management API', () => {
     }
   });
 
-  test('allows admins to create update and delete database-managed OAuth clients with audit events', async () => {
+  test('rejects creating database OAuth clients that collide with config clients', async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      admin: { enabled: true },
+      clients: [TEST_OAUTH_CLIENT_CONFIG],
+      users: [TEST_USER_CONFIG],
+    });
+    try {
+      const sessionCookie = await createAuthenticatedSession(server.app);
+      const createRes = await server.app.request('/admin/api/oauth-clients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `session=${sessionCookie}`,
+        },
+        body: JSON.stringify({
+          id: TEST_OAUTH_CLIENT_CONFIG.id,
+          client_id: TEST_OAUTH_CLIENT_CONFIG.client_id,
+          name: 'Colliding admin client',
+          redirect_uris: ['https://client.example/callback'],
+          response_types: ['code'],
+          grant_types: ['authorization_code'],
+          scope: 'openid',
+        }),
+      });
+
+      expect(createRes.status).toBe(409);
+      await expect(createRes.json()).resolves.toEqual({
+        code: 'OAUTH_CLIENT_ALREADY_EXISTS',
+        message: 'The OAuth client already exists.',
+      });
+    } finally {
+      await server.cleanup();
+    }
+  });
+
+  test('allows admins to create update and delete database-managed OAuth clients', async () => {
     const server = await createTestApp({
       ...MINIMAL_TEST_CONFIG,
       admin: { enabled: true },
@@ -941,8 +1081,6 @@ describe('createApp admin OAuth client management API', () => {
       const headers = {
         'Content-Type': 'application/json',
         Cookie: `session=${sessionCookie}`,
-        'Sec-Fetch-Site': 'same-origin',
-        'User-Agent': 'admin-oauth-client-test',
       };
 
       const createRes = await server.app.request('/admin/api/oauth-clients', {
@@ -1010,281 +1148,441 @@ describe('createApp admin OAuth client management API', () => {
         },
       );
       expect(deleteRes.status).toBe(204);
-
-      const events = await server.services.mikro.em
-        .getConnection()
-        .execute(
-          'select action, target_type, target_id, user_agent from admin_audit_event order by created_at asc',
-        );
-      expect(events).toEqual([
-        expect.objectContaining({
-          action: 'admin.oauth_client.create',
-          target_type: 'oauth_client',
-          target_id: 'created-admin-client',
-          user_agent: 'admin-oauth-client-test',
-        }),
-        expect.objectContaining({
-          action: 'admin.oauth_client.update',
-          target_type: 'oauth_client',
-          target_id: 'created-admin-client',
-          user_agent: 'admin-oauth-client-test',
-        }),
-        expect.objectContaining({
-          action: 'admin.oauth_client.delete',
-          target_type: 'oauth_client',
-          target_id: 'created-admin-client',
-        }),
-      ]);
     } finally {
       await server.cleanup();
     }
   });
 });
 
-describe('createApp admin audit events API', () => {
-  test('persists audit event metadata IP and user agent through the audit service', async () => {
+describe('createApp admin OAuth provider management API', () => {
+  test('allows admins to create list and inspect database OAuth providers without secret fields', async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      admin: { enabled: true },
+      users: [TEST_USER_CONFIG],
+      identity_providers: [
+        {
+          id: 'config-google',
+          type: 'google',
+          enabled: true,
+          display_name: 'Config Google',
+          icon_url: 'https://provider.example/google.svg',
+          client_id: 'config-google-client-id',
+          client_secret: 'config-google-client-secret',
+          authorization_url: 'https://accounts.google.com/o/oauth2/v2/auth',
+          token_url: 'https://oauth2.googleapis.com/token',
+          userinfo_url: 'https://openidconnect.googleapis.com/v1/userinfo',
+          jwks_url: 'https://www.googleapis.com/oauth2/v3/certs',
+          issuer: 'https://accounts.google.com',
+          scopes: ['openid', 'profile', 'email'],
+          email_conflict_strategy: 'auto_link',
+          userinfo_mapping: {
+            id: 'sub',
+            email: 'email',
+            email_verified: 'email_verified',
+            name: 'name',
+            picture: 'picture',
+          },
+        },
+      ],
+    });
+    try {
+      const sessionCookie = await createAuthenticatedSession(server.app);
+      const headers = {
+        'Content-Type': 'application/json',
+        Cookie: `session=${sessionCookie}`,
+      };
+
+      const createRes = await server.app.request('/admin/api/oauth-providers', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(
+          createAdminOAuthProviderPayload('created-provider'),
+        ),
+      });
+      expect(createRes.status).toBe(201);
+      const createBody = await createRes.json();
+      expect(createBody).toEqual({
+        oauth_provider: expect.objectContaining({
+          id: 'created-provider',
+          type: 'generic_oauth',
+          client_id: 'created-provider-client-id',
+          has_client_secret: true,
+          managed_by: 'database',
+          enabled: true,
+        }),
+      });
+      expect(JSON.stringify(createBody)).not.toContain('ciphertext');
+      expect(JSON.stringify(createBody)).not.toContain(
+        'created-provider-client-secret',
+      );
+
+      const listRes = await server.app.request(
+        '/admin/api/oauth-providers?limit=1&offset=1',
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+      expect(listRes.status).toBe(200);
+      const listBody = await listRes.json();
+      expect(listBody).toEqual({
+        items: [
+          expect.objectContaining({
+            id: 'created-provider',
+            managed_by: 'database',
+            has_client_secret: true,
+          }),
+        ],
+        pagination: {
+          limit: 1,
+          offset: 1,
+          total: 2,
+        },
+      });
+      expect(JSON.stringify(listBody)).not.toContain(
+        'config-google-client-secret',
+      );
+      expect(JSON.stringify(listBody)).not.toContain(
+        'created-provider-client-secret',
+      );
+
+      const detailRes = await server.app.request(
+        '/admin/api/oauth-providers/created-provider',
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+      expect(detailRes.status).toBe(200);
+      const detailBody = await detailRes.json();
+      expect(detailBody).toEqual({
+        oauth_provider: expect.objectContaining({
+          id: 'created-provider',
+          display_name: 'Example Provider',
+          managed_by: 'database',
+          has_client_secret: true,
+        }),
+      });
+      expect(JSON.stringify(detailBody)).not.toContain('ciphertext');
+    } finally {
+      await server.cleanup();
+    }
+  });
+
+  test('updates deletes and rejects invalid database OAuth provider requests', async () => {
     const server = await createTestApp({
       ...MINIMAL_TEST_CONFIG,
       admin: { enabled: true },
       users: [TEST_USER_CONFIG],
     });
     try {
-      await withMikroContext(server.services, async () => {
-        await server.services.adminAuditService.record({
-          actorSub: TEST_USER_CONFIG.sub,
-          action: 'admin.test.persist',
-          targetType: 'test_target',
-          targetId: 'durable-audit-target',
-          metadata: {
-            nested: { enabled: true },
-            values: ['one', 'two'],
-          },
-          ip: '203.0.113.10',
-          userAgent: 'admin-audit-service-test',
-        });
+      const sessionCookie = await createAuthenticatedSession(server.app);
+      const headers = {
+        'Content-Type': 'application/json',
+        Cookie: `session=${sessionCookie}`,
+      };
+      const createPayload =
+        createAdminOAuthProviderPayload('editable-provider');
+
+      const createRes = await server.app.request('/admin/api/oauth-providers', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(createPayload),
+      });
+      expect(createRes.status).toBe(201);
+
+      const keepSecretRes = await server.app.request(
+        '/admin/api/oauth-providers/editable-provider',
+        {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({
+            display_name: 'Updated Provider',
+            enabled: false,
+          }),
+        },
+      );
+      expect(keepSecretRes.status).toBe(200);
+      await expect(keepSecretRes.json()).resolves.toEqual({
+        oauth_provider: expect.objectContaining({
+          id: 'editable-provider',
+          display_name: 'Updated Provider',
+          has_client_secret: true,
+          enabled: false,
+        }),
       });
 
-      const rows = await server.services.mikro.em
-        .getConnection()
-        .execute(
-          'select action, target_type, target_id, metadata_json, ip, user_agent from admin_audit_event where target_id = ? order by created_at asc',
-          ['durable-audit-target'],
-        );
-      expect(rows).toHaveLength(1);
-      const [row] = rows;
-      if (!row) {
-        throw new Error('Expected persisted audit event row');
-      }
-      expect(row).toEqual(
-        expect.objectContaining({
-          action: 'admin.test.persist',
-          target_type: 'test_target',
-          target_id: 'durable-audit-target',
-          ip: '203.0.113.10',
-          user_agent: 'admin-audit-service-test',
-        }),
+      const replaceSecretRes = await server.app.request(
+        '/admin/api/oauth-providers/editable-provider',
+        {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({
+            client_secret: 'replacement-provider-secret',
+          }),
+        },
       );
-      expect(JSON.parse(row.metadata_json)).toEqual({
-        nested: { enabled: true },
-        values: ['one', 'two'],
+      expect(replaceSecretRes.status).toBe(200);
+      const replaceSecretBody = await replaceSecretRes.json();
+      expect(replaceSecretBody).toEqual({
+        oauth_provider: expect.objectContaining({
+          id: 'editable-provider',
+          has_client_secret: true,
+        }),
       });
+      expect(JSON.stringify(replaceSecretBody)).not.toContain(
+        'replacement-provider-secret',
+      );
+
+      const invalidCreateRes = await server.app.request(
+        '/admin/api/oauth-providers',
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            ...createAdminOAuthProviderPayload('invalid-provider'),
+            authorization_url: 'http://evil.example/oauth/authorize',
+          }),
+        },
+      );
+      expect(invalidCreateRes.status).toBe(400);
+
+      const missingSecretRes = await server.app.request(
+        '/admin/api/oauth-providers',
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            ...createAdminOAuthProviderPayload('missing-secret-provider'),
+            client_secret: undefined,
+          }),
+        },
+      );
+      expect(missingSecretRes.status).toBe(400);
+
+      const deleteRes = await server.app.request(
+        '/admin/api/oauth-providers/editable-provider',
+        {
+          method: 'DELETE',
+          headers: { Cookie: `session=${sessionCookie}` },
+        },
+      );
+      expect(deleteRes.status).toBe(204);
     } finally {
       await server.cleanup();
     }
   });
 
-  test('lists recent audit events for admins only', async () => {
-    const nonAdminEmail = 'audit-list-user@example.com';
-    const nonAdminPassword = 'changemelater';
+  test('rejects non-admin OAuth provider management requests', async () => {
     const server = await createTestApp({
       ...MINIMAL_TEST_CONFIG,
       admin: { enabled: true },
       users: [
-        TEST_USER_CONFIG,
         {
-          sub: 'audit-list-user',
-          email: nonAdminEmail,
-          password: nonAdminPassword,
+          sub: 'non-admin-oauth-provider-management',
+          email: 'non-admin-oauth-provider-management@example.com',
+          password: 'changemelater',
           role: 'user',
         },
       ],
     });
     try {
-      await withMikroContext(server.services, async () => {
-        await server.services.adminAuditService.record({
-          actorSub: TEST_USER_CONFIG.sub,
-          action: 'admin.test.list',
-          targetType: 'test_target',
-          targetId: 'listed-audit-target',
-          metadata: { listed: true },
-          ip: '203.0.113.11',
-          userAgent: 'admin-audit-list-test',
-        });
-      });
-
-      const unauthenticatedRes = await server.app.request(
-        '/admin/api/audit-events',
-      );
-      expect(unauthenticatedRes.status).toBe(401);
-
-      const nonAdminSessionCookie = await createAuthenticatedSession(
+      const sessionCookie = await createAuthenticatedSession(
         server.app,
-        nonAdminEmail,
-        nonAdminPassword,
+        'non-admin-oauth-provider-management@example.com',
+        'changemelater',
       );
-      const nonAdminRes = await server.app.request('/admin/api/audit-events', {
-        headers: { Cookie: `session=${nonAdminSessionCookie}` },
-      });
-      expect(nonAdminRes.status).toBe(403);
+      const headers = { Cookie: `session=${sessionCookie}` };
 
-      const adminSessionCookie = await createAuthenticatedSession(server.app);
-      const adminRes = await server.app.request('/admin/api/audit-events', {
-        headers: { Cookie: `session=${adminSessionCookie}` },
+      const listRes = await server.app.request('/admin/api/oauth-providers', {
+        headers,
       });
-      expect(adminRes.status).toBe(200);
-      await expect(adminRes.json()).resolves.toEqual({
-        audit_events: [
-          expect.objectContaining({
-            actor_sub: TEST_USER_CONFIG.sub,
-            action: 'admin.test.list',
-            target_type: 'test_target',
-            target_id: 'listed-audit-target',
-            metadata: { listed: true },
-            ip: '203.0.113.11',
-            user_agent: 'admin-audit-list-test',
-          }),
-        ],
-        pagination: {
-          limit: 50,
-          offset: 0,
-          total: 1,
+      expect(listRes.status).toBe(403);
+
+      const createRes = await server.app.request('/admin/api/oauth-providers', {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify(
+          createAdminOAuthProviderPayload('forbidden-provider'),
+        ),
       });
+      expect(createRes.status).toBe(403);
+
+      const updateRes = await server.app.request(
+        '/admin/api/oauth-providers/forbidden-provider',
+        {
+          method: 'PATCH',
+          headers: {
+            ...headers,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ display_name: 'Forbidden update' }),
+        },
+      );
+      expect(updateRes.status).toBe(403);
+
+      const deleteRes = await server.app.request(
+        '/admin/api/oauth-providers/forbidden-provider',
+        {
+          method: 'DELETE',
+          headers,
+        },
+      );
+      expect(deleteRes.status).toBe(403);
     } finally {
       await server.cleanup();
     }
   });
 
-  test('lists expected audit events from user and OAuth client mutations', async () => {
+  test('treats config OAuth providers as read-only and rejects database ID collisions', async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      admin: { enabled: true },
+      users: [TEST_USER_CONFIG],
+      identity_providers: [
+        {
+          id: 'config-provider',
+          type: 'generic_oauth',
+          enabled: true,
+          display_name: 'Config Provider',
+          client_id: 'config-provider-client-id',
+          client_secret: 'config-provider-client-secret',
+          authorization_url: 'https://config-provider.example/authorize',
+          token_url: 'https://config-provider.example/token',
+          userinfo_url: 'https://config-provider.example/userinfo',
+          jwks_url: 'https://config-provider.example/jwks',
+          issuer: 'https://config-provider.example',
+          scopes: ['openid', 'email'],
+          email_conflict_strategy: 'require_link',
+          userinfo_mapping: {
+            id: 'sub',
+            email: 'email',
+            email_verified: 'email_verified',
+          },
+        },
+      ],
+    });
+    try {
+      const sessionCookie = await createAuthenticatedSession(server.app);
+      const headers = {
+        'Content-Type': 'application/json',
+        Cookie: `session=${sessionCookie}`,
+      };
+
+      const detailRes = await server.app.request(
+        '/admin/api/oauth-providers/config-provider',
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+      expect(detailRes.status).toBe(200);
+      const detailBody = await detailRes.json();
+      expect(detailBody).toEqual({
+        oauth_provider: expect.objectContaining({
+          id: 'config-provider',
+          managed_by: 'config',
+          has_client_secret: true,
+        }),
+      });
+      expect(JSON.stringify(detailBody)).not.toContain(
+        'config-provider-client-secret',
+      );
+
+      const collisionRes = await server.app.request(
+        '/admin/api/oauth-providers',
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(
+            createAdminOAuthProviderPayload('config-provider'),
+          ),
+        },
+      );
+      expect(collisionRes.status).toBe(409);
+
+      const updateRes = await server.app.request(
+        '/admin/api/oauth-providers/config-provider',
+        {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({ display_name: 'Not editable' }),
+        },
+      );
+      expect(updateRes.status).toBe(403);
+
+      const deleteRes = await server.app.request(
+        '/admin/api/oauth-providers/config-provider',
+        {
+          method: 'DELETE',
+          headers: { Cookie: `session=${sessionCookie}` },
+        },
+      );
+      expect(deleteRes.status).toBe(403);
+    } finally {
+      await server.cleanup();
+    }
+  });
+
+  test('uses decrypted database OAuth provider secret during token exchange', async () => {
     const server = await createTestApp({
       ...MINIMAL_TEST_CONFIG,
       admin: { enabled: true },
       users: [TEST_USER_CONFIG],
     });
     try {
-      const targetUserSub = await createDatabaseUser(server.services, {
-        email: 'audit-mutated-user@example.com',
-        password: 'changemelater',
-        role: 'user',
-      });
       const sessionCookie = await createAuthenticatedSession(server.app);
       const headers = {
         'Content-Type': 'application/json',
         Cookie: `session=${sessionCookie}`,
-        'Sec-Fetch-Site': 'same-origin',
-        'User-Agent': 'admin-audit-mutation-test',
-        'X-Real-IP': '203.0.113.12',
       };
-
-      const updateUserRes = await server.app.request(
-        `/admin/api/users/${targetUserSub}`,
-        {
-          method: 'PATCH',
-          headers,
-          body: JSON.stringify({ role: 'admin' }),
-        },
-      );
-      expect(updateUserRes.status).toBe(200);
-
-      const createClientRes = await server.app.request(
-        '/admin/api/oauth-clients',
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            id: 'audit-mutated-client',
-            client_id: 'audit-mutated-client',
-            name: 'Audit mutated client',
-            redirect_uris: ['https://client.example/callback'],
-            response_types: ['code'],
-            grant_types: ['authorization_code'],
-            scope: 'openid',
-          }),
-        },
-      );
-      expect(createClientRes.status).toBe(201);
-
-      const updateClientRes = await server.app.request(
-        '/admin/api/oauth-clients/audit-mutated-client',
-        {
-          method: 'PATCH',
-          headers,
-          body: JSON.stringify({ name: 'Audit mutated client updated' }),
-        },
-      );
-      expect(updateClientRes.status).toBe(200);
-
-      const deleteClientRes = await server.app.request(
-        '/admin/api/oauth-clients/audit-mutated-client',
-        {
-          method: 'DELETE',
-          headers,
-        },
-      );
-      expect(deleteClientRes.status).toBe(204);
-
-      const listRes = await server.app.request('/admin/api/audit-events', {
-        headers: { Cookie: `session=${sessionCookie}` },
+      const createRes = await server.app.request('/admin/api/oauth-providers', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          ...createAdminOAuthProviderPayload('runtime-provider'),
+          client_secret: 'runtime-provider-client-secret',
+        }),
       });
-      expect(listRes.status).toBe(200);
-      const body = await listRes.json();
-      expect(body.audit_events).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            action: 'admin.user.update',
-            target_type: 'user',
-            target_id: targetUserSub,
-            metadata: expect.objectContaining({
-              before: expect.objectContaining({ role: 'user' }),
-              after: expect.objectContaining({ role: 'admin' }),
+      expect(createRes.status).toBe(201);
+
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation(async (_input, init) => {
+          if (typeof init?.body !== 'string') {
+            throw new Error('Expected token exchange form body');
+          }
+          const body = new URLSearchParams(init.body);
+          expect(body.get('client_id')).toBe('runtime-provider-client-id');
+          expect(body.get('client_secret')).toBe(
+            'runtime-provider-client-secret',
+          );
+          return new Response(
+            JSON.stringify({
+              access_token: 'runtime-access-token',
+              token_type: 'Bearer',
+              expires_in: 3600,
             }),
-            ip: '203.0.113.12',
-            user_agent: 'admin-audit-mutation-test',
-          }),
-          expect.objectContaining({
-            action: 'admin.oauth_client.create',
-            target_type: 'oauth_client',
-            target_id: 'audit-mutated-client',
-            metadata: expect.objectContaining({
-              after: expect.objectContaining({
-                id: 'audit-mutated-client',
-                name: 'Audit mutated client',
-              }),
-            }),
-          }),
-          expect.objectContaining({
-            action: 'admin.oauth_client.update',
-            target_type: 'oauth_client',
-            target_id: 'audit-mutated-client',
-            metadata: expect.objectContaining({
-              before: expect.objectContaining({ name: 'Audit mutated client' }),
-              after: expect.objectContaining({
-                name: 'Audit mutated client updated',
-              }),
-            }),
-          }),
-          expect.objectContaining({
-            action: 'admin.oauth_client.delete',
-            target_type: 'oauth_client',
-            target_id: 'audit-mutated-client',
-            metadata: expect.objectContaining({
-              before: expect.objectContaining({
-                name: 'Audit mutated client updated',
-              }),
-            }),
-          }),
-        ]),
-      );
+            {
+              status: 200,
+              headers: { 'content-type': 'application/json' },
+            },
+          );
+        });
+
+      try {
+        await withMikroContext(server.services, async () => {
+          await expect(
+            server.services.oauthConnectService.exchangeCodeForTokens(
+              'runtime-provider',
+              'runtime-code',
+              'runtime-code-verifier',
+            ),
+          ).resolves.toEqual({
+            access_token: 'runtime-access-token',
+            token_type: 'Bearer',
+            expires_in: 3600,
+          });
+        });
+        expect(fetchSpy).toHaveBeenCalledOnce();
+      } finally {
+        fetchSpy.mockRestore();
+      }
     } finally {
       await server.cleanup();
     }

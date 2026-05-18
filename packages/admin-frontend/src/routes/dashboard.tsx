@@ -8,7 +8,7 @@ export function DashboardPage() {
   const { data: session } = useSuspenseQuery(adminSessionQueryOptions);
 
   return (
-    <section>
+    <section className="space-y-6">
       <PageHeader
         subtitle={t('dashboard.subtitle')}
         title={t('dashboard.title')}
@@ -19,8 +19,12 @@ export function DashboardPage() {
             <h2 className="font-semibold text-base-content/70 text-sm uppercase tracking-wide">
               {t('dashboard.currentAdmin')}
             </h2>
-            <p className="font-semibold text-lg">{session.user.email}</p>
-            <p className="text-base-content/60 text-sm">{session.user.sub}</p>
+            <p className="break-all font-semibold text-lg">
+              {session.user.email}
+            </p>
+            <p className="break-all text-base-content/60 text-sm">
+              {session.user.sub}
+            </p>
           </div>
         </article>
         <article className="card border border-base-300 bg-base-100 shadow-sm">

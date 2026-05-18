@@ -79,7 +79,7 @@ export const oauthProviderAuthorizeGet = new Hono<AppEnv>().get(
     // Store OAuth session data in secure session
     session.set('oauth', sessionData);
 
-    const providerConfig = oauthConnectService.getProvider(provider);
+    const providerConfig = await oauthConnectService.getProvider(provider);
     if (providerConfig.response_mode === 'form_post') {
       setCookie(
         c,

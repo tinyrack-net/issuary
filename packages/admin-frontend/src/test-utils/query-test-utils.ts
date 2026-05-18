@@ -33,34 +33,48 @@ async function captureRequest(input: RequestInfo | URL, init?: RequestInit) {
   } satisfies CapturedFetchRequest;
 }
 
+function responseMatches(
+  response: MockJsonResponse,
+  request: CapturedFetchRequest,
+): boolean {
+  const expectedMethod = response.method?.toUpperCase();
+  return (
+    (response.url === undefined || response.url === request.url) &&
+    (expectedMethod === undefined || expectedMethod === request.method)
+  );
+}
+
 export function mockJsonResponses(...responses: MockJsonResponse[]) {
   const requests: CapturedFetchRequest[] = [];
-  let responseIndex = 0;
+  const consumedIndexes = new Set<number>();
 
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const request = await captureRequest(input, init);
-      const response = responses[responseIndex];
       requests.push(request);
 
+      const responseIndex = responses.findIndex(
+        (response, index) =>
+          !consumedIndexes.has(index) && responseMatches(response, request),
+      );
+      const reusableGetResponse = responses.find(
+        (response) =>
+          request.method === 'GET' && responseMatches(response, request),
+      );
+      const response =
+        responseIndex >= 0 ? responses[responseIndex] : reusableGetResponse;
+
       if (!response) {
-        throw new Error('No mocked JSON response queued for fetch call');
-      }
-
-      if (response.url && request.url !== response.url) {
         throw new Error(
-          `Expected fetch URL ${response.url} but received ${request.url}`,
+          `No mocked JSON response queued for ${request.method} ${request.url}`,
         );
       }
 
-      if (response.method && request.method !== response.method.toUpperCase()) {
-        throw new Error(
-          `Expected fetch method ${response.method.toUpperCase()} but received ${request.method}`,
-        );
+      if (responseIndex >= 0) {
+        consumedIndexes.add(responseIndex);
       }
 
-      responseIndex += 1;
       return Response.json(response.body, { status: 200, ...response.init });
     }),
   );
@@ -68,7 +82,7 @@ export function mockJsonResponses(...responses: MockJsonResponse[]) {
   return {
     requests,
     assertAllResponsesConsumed: () => {
-      const pendingResponses = responses.length - responseIndex;
+      const pendingResponses = responses.length - consumedIndexes.size;
       if (pendingResponses > 0) {
         throw new Error(
           `Expected all mocked JSON responses to be consumed, but ${pendingResponses} remain queued`,

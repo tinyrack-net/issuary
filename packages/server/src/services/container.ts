@@ -7,7 +7,6 @@ import {
   type ConfigSeedMode,
   seedConfigIfNeeded,
 } from '../seeders/config.seeder.ts';
-import { AdminAuditService } from './admin-audit.service.ts';
 import { CleanupService } from './cleanup.service.ts';
 import { EmailService } from './email.service.ts';
 import { JwtService } from './jwt.service.ts';
@@ -94,6 +93,7 @@ export async function initializeServices(
     userService,
     mikro,
     termsService,
+    securityService,
   );
   const oauthTokenService = new OAuthTokenService(
     config,
@@ -104,7 +104,6 @@ export async function initializeServices(
     securityService,
   );
   const cleanupService = new CleanupService(config, mikro, jwtService);
-  const adminAuditService = new AdminAuditService(mikro);
 
   // 4. Scheduler
   const schedulerLogger = logger.child({ service: 'scheduler' });
@@ -138,7 +137,6 @@ export async function initializeServices(
     oauthConnectService,
     oauthTokenService,
     cleanupService,
-    adminAuditService,
   };
 
   const cleanup = async () => {

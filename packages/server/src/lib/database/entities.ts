@@ -1,11 +1,11 @@
 import type { EntityName } from '@mikro-orm/core';
-import { AdminAuditEventEntitySchema } from '../../entities/admin-audit-event.entity.ts';
 import { BackgroundJobEntitySchema } from '../../entities/background-job.entity.ts';
 import { BootstrapStateEntitySchema } from '../../entities/bootstrap-state.entity.ts';
 import { EmailVerificationEntitySchema } from '../../entities/email-verification.entity.ts';
 import { JwtKeyEntitySchema } from '../../entities/jwt-key.entity.ts';
 import { OAuthClientEntitySchema } from '../../entities/oauth-client.entity.ts';
 import { OAuthCodeEntitySchema } from '../../entities/oauth-code.entity.ts';
+import { OAuthProviderEntitySchema } from '../../entities/oauth-provider.entity.ts';
 import { PasswordResetEntitySchema } from '../../entities/password-reset.entity.ts';
 import { PendingOAuthRegistrationEntitySchema } from '../../entities/pending-oauth-registration.entity.ts';
 import { RevokedTokenEntitySchema } from '../../entities/revoked-token.entity.ts';
@@ -31,6 +31,7 @@ function createDatabaseEntities() {
   return [
     UserEntitySchema,
     OAuthClientEntitySchema,
+    OAuthProviderEntitySchema,
     OAuthCodeEntitySchema,
     JwtKeyEntitySchema,
     EmailVerificationEntitySchema,
@@ -48,7 +49,6 @@ function createDatabaseEntities() {
     UserTotpRecoveryCodeEntitySchema,
     UserTotpEntitySchema,
     BootstrapStateEntitySchema,
-    AdminAuditEventEntitySchema,
   ];
 }
 

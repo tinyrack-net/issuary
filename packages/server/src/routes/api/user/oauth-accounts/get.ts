@@ -52,7 +52,7 @@ export const userOauthAccountsGet = new Hono<AppEnv>().get(
     );
 
     // Get all available providers and mark linked ones
-    const enabledProviders = oauthConnectService.getEnabledProviders();
+    const enabledProviders = await oauthConnectService.getEnabledProviders();
     const linkedProviderNames = new Set(accounts.map((a) => a.provider_name));
 
     const availableProviders = enabledProviders.map((provider) => ({

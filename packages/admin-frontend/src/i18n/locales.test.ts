@@ -9,8 +9,8 @@ const requiredLabels = [
   'auth.accessDenied.title',
   'dashboard.title',
   'users.title',
+  'oauthProviders.title',
   'oauthClients.title',
-  'auditEvents.title',
 ];
 
 function flattenLabels(
