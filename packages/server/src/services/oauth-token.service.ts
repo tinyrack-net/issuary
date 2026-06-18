@@ -167,26 +167,32 @@ export class OAuthTokenService {
       throw new e.RedirectUriMismatch.Error();
     }
 
-    // 5. Validate S256 PKCE for every authorization code (OAuth 2.1 / Security BCP)
-    if (
-      !codeEntity.codeChallenge ||
-      codeEntity.codeChallengeMethod !== 'S256'
-    ) {
-      throw new e.InvalidPKCEVerifier.Error();
-    }
+    // 5. Validate S256 PKCE when the authorization request used PKCE.
+    // Public clients are required to use PKCE at the authorization endpoint;
+    // confidential clients may omit PKCE and rely on client authentication at
+    // the token endpoint, but any supplied challenge must still be valid S256.
+    if (!codeEntity.codeChallenge) {
+      if (await this.oauthClientService.isPublicClient(clientId)) {
+        throw new e.InvalidPKCEVerifier.Error();
+      }
+    } else {
+      if (codeEntity.codeChallengeMethod !== 'S256') {
+        throw new e.InvalidPKCEVerifier.Error();
+      }
 
-    if (!codeVerifier) {
-      throw new e.MissingCodeVerifier.Error();
-    }
+      if (!codeVerifier) {
+        throw new e.MissingCodeVerifier.Error();
+      }
 
-    const isPKCEValid = await validatePKCE(
-      codeVerifier,
-      codeEntity.codeChallenge,
-      codeEntity.codeChallengeMethod,
-    );
+      const isPKCEValid = await validatePKCE(
+        codeVerifier,
+        codeEntity.codeChallenge,
+        codeEntity.codeChallengeMethod,
+      );
 
-    if (!isPKCEValid) {
-      throw new e.InvalidPKCEVerifier.Error();
+      if (!isPKCEValid) {
+        throw new e.InvalidPKCEVerifier.Error();
+      }
     }
 
     // 6. Get user data from relation (load via Ref)

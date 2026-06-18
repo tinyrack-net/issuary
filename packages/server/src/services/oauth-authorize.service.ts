@@ -117,7 +117,11 @@ export class OAuthAuthorizeService {
     if (isImplicitIdToken) {
       this.validateImplicitIdTokenRequest(query, requestedScopes);
     } else {
-      this.validatePKCE(query.code_challenge, query.code_challenge_method);
+      await this.validateAuthorizationCodePKCE(
+        client.clientId,
+        query.code_challenge,
+        query.code_challenge_method,
+      );
     }
 
     // 7. Check user session
@@ -334,13 +338,25 @@ export class OAuthAuthorizeService {
   }
 
   /**
-   * Validate PKCE parameters
+   * Validate PKCE parameters for authorization-code requests.
+   *
+   * Public clients must use S256 PKCE. Confidential clients may omit PKCE
+   * because the token endpoint still authenticates them with client_secret,
+   * but if they do send a code_challenge it must be S256 and well-formed.
    */
-  private validatePKCE(
+  private async validateAuthorizationCodePKCE(
+    clientId: string,
     codeChallenge: string | undefined,
     codeChallengeMethod: string | undefined,
-  ): void {
-    if (!codeChallenge || codeChallengeMethod !== 'S256') {
+  ): Promise<void> {
+    if (!codeChallenge) {
+      if (await this.oauthClientService.isPublicClient(clientId)) {
+        throw new e.InvalidCodeChallengeMethod.Error();
+      }
+      return;
+    }
+
+    if ((codeChallengeMethod ?? 'S256') !== 'S256') {
       throw new e.InvalidCodeChallengeMethod.Error();
     }
 

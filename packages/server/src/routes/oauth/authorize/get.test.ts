@@ -748,7 +748,7 @@ describe('GET /oauth/authorize', () => {
       expect(code).toBeDefined();
     });
 
-    test('should reject confidential client authorization without code_challenge', async () => {
+    test('should allow confidential client authorization without code_challenge', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const paramsWithoutPkce = {
         response_type: 'code',
@@ -758,13 +758,18 @@ describe('GET /oauth/authorize', () => {
         state: 'random-state-string',
       };
 
-      const { location, statusCode } = await getAuthorizationCodeWithConsent(
+      await grantConsent(app, sessionCookie, paramsWithoutPkce);
+      const { code, location, statusCode } = await getAuthorizationCode(
         paramsWithoutPkce,
         sessionCookie,
       );
 
       expect(statusCode).toBe(302);
-      expectRedirectError(location, 'invalid_request');
+      expect(code).toBeTruthy();
+      expect(location.origin + location.pathname).toBe(
+        paramsWithoutPkce.redirect_uri,
+      );
+      expect(location.searchParams.get('state')).toBe(paramsWithoutPkce.state);
     });
 
     test.each([

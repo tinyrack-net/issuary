@@ -12,6 +12,7 @@ import {
   exchangeCodeForTokens,
   generateUniqueEmail,
   getAuthorizationCode,
+  grantConsent,
   MINIMAL_TEST_CONFIG,
   refreshAccessToken,
   TEST_OAUTH_CLIENT,
@@ -328,18 +329,20 @@ describe('POST /oauth/token', () => {
       expect(location.searchParams.get('error')).toBe('invalid_request');
     });
 
-    test('should reject confidential client authorization without PKCE', async () => {
+    test('should exchange confidential client authorization code without PKCE', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const client = testClient(app);
+      const authorizeParams = {
+        response_type: 'code' as const,
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: REFRESHABLE_SCOPE,
+      };
 
+      await grantConsent(app, sessionCookie, authorizeParams);
       const res = await client.oauth.authorize.$get(
         {
-          query: {
-            response_type: 'code',
-            client_id: TEST_OAUTH_CLIENT.clientId,
-            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-            scope: REFRESHABLE_SCOPE,
-          },
+          query: authorizeParams,
         },
         { headers: { Cookie: `session=${sessionCookie}` } },
       );
@@ -348,9 +351,17 @@ describe('POST /oauth/token', () => {
         res.headers.get('location') || '',
         'http://localhost:8080',
       );
+      const code = location.searchParams.get('code');
 
       expect(res.status).toBe(302);
-      expect(location.searchParams.get('error')).toBe('invalid_request');
+      expect(code).toBeTruthy();
+
+      const tokenRes = await exchangeCodeForTokens(app, {
+        code: code ?? '',
+        clientSecret: TEST_OAUTH_CLIENT.clientSecret,
+      });
+      const json = await assertJsonBody(tokenRes, 200);
+      expect(json.access_token).toBeDefined();
     });
 
     test('should exchange authorization code with S256 PKCE for confidential client', async () => {
@@ -750,7 +761,7 @@ describe('POST /oauth/token', () => {
       expect(retryJson.code).toBe('INVALID_AUTHORIZATION_CODE');
     });
 
-    test('should reject legacy authorization code without stored code_challenge', async () => {
+    test('should reject public client legacy authorization code without stored code_challenge', async () => {
       const legacyCode = `legacy-public-code-${crypto.randomUUID()}`;
       const codeHash = await services.securityService.hashOpaqueToken(
         'oauth-code',
@@ -764,23 +775,22 @@ describe('POST /oauth/token', () => {
       );
       await withMikroContext(services, async () => {
         const oauthClient = await services.oauthClientService.findByClientId(
-          TEST_OAUTH_CLIENT.clientId,
+          PUBLIC_OAUTH_CLIENT.clientId,
         );
 
         await services.mikro.oauthCode.createAuthorizationCode({
           clientId: oauthClient.id,
           userSub,
           codeHash,
-          redirectUri: TEST_OAUTH_CLIENT.redirectUri,
+          redirectUri: PUBLIC_OAUTH_CLIENT.redirectUri,
           scope: ['openid', 'profile', 'email'],
         });
       });
 
       const res = await exchangeCodeForTokens(app, {
         code: legacyCode,
-        clientId: TEST_OAUTH_CLIENT.clientId,
-        clientSecret: TEST_OAUTH_CLIENT.clientSecret,
-        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
+        clientId: PUBLIC_OAUTH_CLIENT.clientId,
+        redirectUri: PUBLIC_OAUTH_CLIENT.redirectUri,
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
