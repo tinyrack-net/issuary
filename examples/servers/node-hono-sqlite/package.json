@@ -5,10 +5,10 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @tinyrack/tinyauth-frontend build && NODE_OPTIONS='--conditions=@tinyauth/source' tsx watch src/index.ts",
-    "start": "pnpm --filter @tinyrack/tinyauth-frontend build && NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/index.ts",
+    "dev": "pnpm --filter @tinyrack/tinyauth-frontend build && cross-env NODE_OPTIONS=--conditions=@tinyauth/source tsx watch src/index.ts",
+    "start": "pnpm --filter @tinyrack/tinyauth-frontend build && node --conditions=@tinyauth/source --import tsx src/index.ts",
     "build": "tsc --noEmit",
-    "test": "pnpm --filter @tinyrack/tinyauth-frontend build && NODE_OPTIONS='--conditions=@tinyauth/source' tsx src/smoke-test.ts"
+    "test": "pnpm --filter @tinyrack/tinyauth-frontend build && node --conditions=@tinyauth/source --import tsx src/smoke-test.ts"
   },
   "dependencies": {
     "@hono/node-server": "catalog:",
@@ -18,6 +18,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "cross-env": "catalog:"
   }
 }

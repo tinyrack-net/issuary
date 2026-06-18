@@ -100,6 +100,56 @@ jobs:
       - name: Frontend smoke E2E
         run: pnpm --filter @tinyrack/tinyauth-frontend run test:e2e:smoke
 
+  windows-compatibility:
+    name: Windows Compatibility
+    needs: build
+    runs-on: windows-latest
+
+    steps:
+      - name: Disable Git CRLF conversion
+        run: git config --global core.autocrlf false
+
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: pnpm
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Lint
+        run: pnpm biome check .
+
+      - name: Backend tests
+        run: pnpm --filter @tinyrack/tinyauth-server test --run
+
+      - name: Tools tests
+        run: pnpm --filter @tinyrack/tinyauth-tools test --run
+
+      - name: Standalone tests
+        run: pnpm --filter @tinyrack/tinyauth-standalone test --run
+
+      - name: Install Playwright browsers for frontend tests
+        run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install chromium firefox
+
+      - name: Frontend unit tests
+        run: pnpm --filter @tinyrack/tinyauth-frontend test:unit --run
+
+      - name: Frontend smoke E2E
+        run: pnpm --filter @tinyrack/tinyauth-frontend run test:e2e:smoke
+
   docker-build:
     name: Docker Build
     needs: test

@@ -180,9 +180,9 @@
     }
   },
   "scripts": {
-    "test": "NODE_OPTIONS='--conditions=@tinyauth/source' vitest",
-    "test:coverage": "rm -rf coverage && NODE_OPTIONS='--conditions=@tinyauth/source' vitest run --coverage --maxWorkers=1",
-    "clean": "rm -rf dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo publish",
+    "test": "node --conditions=@tinyauth/source node_modules/vitest/vitest.mjs",
+    "test:coverage": "node ../../packages/tools/src/scripts/rm.ts coverage && node --conditions=@tinyauth/source node_modules/vitest/vitest.mjs run --coverage --maxWorkers=1",
+    "clean": "node ../../packages/tools/src/scripts/rm.ts dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo publish",
     "build": "pnpm run clean && pnpm run mikro-orm:compile && tsc -b tsconfig.json",
     "build:watch": "tsc -b -w tsconfig.json",
     "email:preview": "email dev --dir src/emails/templates --port 3001",

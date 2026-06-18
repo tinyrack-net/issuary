@@ -19,8 +19,8 @@
   },
   "scripts": {
     "dev": "node --conditions=@tinyauth/source src/cli.ts",
-    "test": "NODE_OPTIONS='--conditions=@tinyauth/source' vitest",
-    "test:coverage": "NODE_OPTIONS='--conditions=@tinyauth/source' vitest run --coverage",
+    "test": "node --conditions=@tinyauth/source node_modules/vitest/vitest.mjs",
+    "test:coverage": "node --conditions=@tinyauth/source node_modules/vitest/vitest.mjs run --coverage",
     "build": "tsc -p tsconfig.build.json",
     "build:watch": "tsc -p tsconfig.build.json --watch"
   },
