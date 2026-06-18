@@ -6,6 +6,38 @@ const RedirectUriSchema = z.string().refine(isSecureRedirectUri, {
     'Redirect URI must use HTTPS or local HTTP and must not contain fragments or wildcards.',
 });
 
+const OAuthResponseTypeSchema = z.string().pipe(z.enum(['code', 'id_token']));
+const OAuthGrantTypeSchema = z
+  .string()
+  .pipe(z.enum(['authorization_code', 'implicit', 'refresh_token']));
+
+function normalizeScopeList(scope: string): string {
+  const trimmed = scope.trim();
+  if (/[\t\n\r\f\v]/.test(trimmed)) {
+    return scope;
+  }
+  return trimmed.split(/ +/).join(' ');
+}
+
+const ScopeSchema = z
+  .string()
+  .transform(normalizeScopeList)
+  .pipe(
+    z
+      .string()
+      .min(1)
+      .refine(
+        (scope) =>
+          scope
+            .split(' ')
+            .every((token) => /^[\x21\x23-\x5B\x5D-\x7E]+$/.test(token)),
+        {
+          message:
+            'Scope must be a space-separated list of valid OAuth scope-token values.',
+        },
+      ),
+  );
+
 /**
  * OAuth/OIDC client configuration.
  * Defines applications that can authenticate through TinyAuth.
@@ -19,6 +51,7 @@ export const ClientConfigSchema = z
       .describe('Internal identifier for the client.'),
     name: z
       .string()
+      .min(1)
       .describe('Human-readable name for the client application.'),
     logo_uri: z
       .string()
@@ -26,29 +59,86 @@ export const ClientConfigSchema = z
       .describe('URL to the client application logo.'),
     client_id: z
       .string()
+      .min(1)
       .describe('OAuth client_id used in authorization requests.'),
     client_secret: z
       .string()
+      .min(1)
       .optional()
       .describe(
         'OAuth client_secret for confidential clients. Omit for public clients.',
       ),
     redirect_uris: z
       .array(RedirectUriSchema)
+      .nonempty()
       .describe('Allowed redirect URIs after authorization.'),
     response_types: z
-      .array(z.string())
-      .describe('Allowed OAuth response types (e.g., "code").'),
+      .array(OAuthResponseTypeSchema)
+      .nonempty()
+      .describe('Allowed OAuth response types (e.g., "code" or "id_token").'),
     grant_types: z
-      .array(z.string())
+      .array(OAuthGrantTypeSchema)
+      .nonempty()
       .describe(
-        'Allowed OAuth grant types (e.g., "authorization_code", "refresh_token").',
+        'Allowed OAuth grant types (e.g., "authorization_code", "implicit", "refresh_token").',
       ),
-    scope: z
-      .string()
-      .describe('Space-separated list of allowed scopes for this client.'),
+    scope: ScopeSchema.describe(
+      'Space-separated list of allowed OAuth scope-token values for this client.',
+    ),
   })
   .strict()
+  .superRefine((client, ctx) => {
+    const responseTypes = new Set(client.response_types);
+    const grantTypes = new Set(client.grant_types);
+
+    if (responseTypes.has('code') && !grantTypes.has('authorization_code')) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['grant_types'],
+        message:
+          'Clients that support response_type "code" must allow grant_type "authorization_code".',
+      });
+    }
+
+    if (grantTypes.has('authorization_code') && !responseTypes.has('code')) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['response_types'],
+        message:
+          'Clients that allow grant_type "authorization_code" must support response_type "code".',
+      });
+    }
+
+    if (responseTypes.has('id_token') && !grantTypes.has('implicit')) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['grant_types'],
+        message:
+          'Clients that support response_type "id_token" must allow grant_type "implicit".',
+      });
+    }
+
+    if (grantTypes.has('implicit') && !responseTypes.has('id_token')) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['response_types'],
+        message:
+          'Clients that allow grant_type "implicit" must support response_type "id_token".',
+      });
+    }
+
+    if (
+      grantTypes.has('refresh_token') &&
+      !grantTypes.has('authorization_code')
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['grant_types'],
+        message:
+          'Clients that allow grant_type "refresh_token" must also allow "authorization_code".',
+      });
+    }
+  })
   .describe('OAuth/OIDC client application configuration.');
 
 export type ClientConfig = z.infer<typeof ClientConfigSchema>;

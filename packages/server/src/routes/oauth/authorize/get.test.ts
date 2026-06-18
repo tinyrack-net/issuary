@@ -68,7 +68,7 @@ const IMPLICIT_ID_TOKEN_CLIENT_CONFIG = {
   client_secret: IMPLICIT_ID_TOKEN_CLIENT.clientSecret,
   redirect_uris: [IMPLICIT_ID_TOKEN_CLIENT.redirectUri],
   response_types: ['id_token'],
-  grant_types: [],
+  grant_types: ['implicit'],
   scope: 'openid profile email',
 };
 
@@ -733,19 +733,42 @@ describe('GET /oauth/authorize', () => {
       expectRedirectError(location, 'invalid_request');
     });
 
-    test('should default to S256 when method not specified', async () => {
+    test('should reject code_challenge without explicit S256 method', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const { code, statusCode } = await getAuthorizationCodeWithConsent(
+      const { location, statusCode } = await getAuthorizationCodeWithConsent(
         {
-          ...validParams,
+          response_type: 'code',
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          scope: 'openid profile email',
+          state: 'random-state-string',
           code_challenge: TEST_PKCE.codeChallenge,
         },
         sessionCookie,
       );
 
       expect(statusCode).toBe(302);
-      expect(code).toBeDefined();
+      expectRedirectError(location, 'invalid_request');
+    });
+
+    test('should reject code_challenge_method without code_challenge', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+
+      const { location, statusCode } = await getAuthorizationCodeWithConsent(
+        {
+          response_type: 'code',
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          scope: 'openid profile email',
+          state: 'random-state-string',
+          code_challenge_method: 'S256',
+        },
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      expectRedirectError(location, 'invalid_request');
     });
 
     test('should allow confidential client authorization without code_challenge', async () => {

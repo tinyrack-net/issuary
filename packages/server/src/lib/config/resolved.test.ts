@@ -275,6 +275,86 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     ).not.toThrow();
   });
 
+  test.each([
+    ['response_types', { response_types: ['token'] }],
+    ['response_types', { response_types: [] }],
+    ['grant_types', { grant_types: ['password'] }],
+    ['grant_types', { grant_types: [] }],
+  ])('rejects unsupported or empty OAuth client %s', (_field, overrides) => {
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          {
+            ...createClientConfig(['http://localhost/callback']),
+            ...overrides,
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  test('rejects inconsistent OAuth client response and grant type combinations', () => {
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          {
+            ...createClientConfig(['http://localhost/callback']),
+            response_types: ['code'],
+            grant_types: ['refresh_token'],
+          },
+        ],
+      }),
+    ).toThrow();
+
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          {
+            ...createClientConfig(['http://localhost/callback']),
+            response_types: ['id_token'],
+            grant_types: ['authorization_code'],
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  test('normalizes OAuth client scopes using OAuth scope-token whitespace rules', () => {
+    const parsed = TinyAuthRuntimeConfigSchema.parse({
+      ...MINIMAL_INPUT_CONFIG,
+      clients: [
+        {
+          ...createClientConfig(['http://localhost/callback']),
+          scope: ' openid   profile email ',
+        },
+      ],
+    });
+
+    expect(parsed.clients[0]?.scope).toBe('openid profile email');
+  });
+
+  test.each([
+    ['empty scope', { scope: '' }],
+    ['scope with control character', { scope: 'openid\nemail' }],
+    ['empty client_secret', { client_secret: '' }],
+    ['empty client_id', { client_id: '' }],
+  ])('rejects OAuth client config with %s', (_label, overrides) => {
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          {
+            ...createClientConfig(['http://localhost/callback']),
+            ...overrides,
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
   test('rejects insecure remote OAuth client redirect URIs', () => {
     expectConfigIssue(
       {

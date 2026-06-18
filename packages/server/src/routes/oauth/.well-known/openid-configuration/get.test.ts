@@ -116,6 +116,7 @@ describe('GET /oauth/.well-known/openid-configuration', () => {
       const json = await res.json();
 
       expect(json.grant_types_supported).toContain('authorization_code');
+      expect(json.grant_types_supported).toContain('implicit');
       expect(json.grant_types_supported).toContain('refresh_token');
     });
 

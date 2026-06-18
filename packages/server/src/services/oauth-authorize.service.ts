@@ -350,13 +350,16 @@ export class OAuthAuthorizeService {
     codeChallengeMethod: string | undefined,
   ): Promise<void> {
     if (!codeChallenge) {
+      if (codeChallengeMethod) {
+        throw new e.InvalidCodeChallengeMethod.Error();
+      }
       if (await this.oauthClientService.isPublicClient(clientId)) {
         throw new e.InvalidCodeChallengeMethod.Error();
       }
       return;
     }
 
-    if ((codeChallengeMethod ?? 'S256') !== 'S256') {
+    if (codeChallengeMethod !== 'S256') {
       throw new e.InvalidCodeChallengeMethod.Error();
     }
 

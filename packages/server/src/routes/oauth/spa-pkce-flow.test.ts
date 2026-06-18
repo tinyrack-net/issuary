@@ -375,16 +375,14 @@ describe('SPA PKCE Authentication Flow', () => {
       expect(location.searchParams.has('code')).toBe(false);
     });
 
-    test('should default to S256 when method not specified', async () => {
+    test('should reject code_challenge without explicit S256 method', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      // Grant consent with code_challenge but no method
       await grantConsent(app, sessionCookie, {
         client_id: TEST_OAUTH_CLIENT.clientId,
         redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
         scope: 'openid profile email',
         code_challenge: TEST_PKCE.codeChallenge,
-        // code_challenge_method not specified
       });
 
       const authClient = testClient(app);
@@ -396,28 +394,16 @@ describe('SPA PKCE Authentication Flow', () => {
             redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
             scope: 'openid profile email',
             code_challenge: TEST_PKCE.codeChallenge,
-            // code_challenge_method defaults to S256
           },
         },
         { headers: { Cookie: `session=${sessionCookie}` } },
       );
 
-      expect(res.status).toBe(302);
       const location = new URL(getLocationHeader(res), 'http://localhost:8080');
-      const code = location.searchParams.get('code');
-      if (!code) {
-        throw new Error('Expected authorization code in redirect');
-      }
 
-      // Should work with S256 verifier
-      const tokenRes = await exchangeCodeForTokens(app, {
-        clientId: TEST_OAUTH_CLIENT.clientId,
-        redirectUri: TEST_OAUTH_CLIENT.redirectUri,
-        code,
-        codeVerifier: TEST_PKCE.codeVerifier,
-      });
-
-      expect(tokenRes.status).toBe(200);
+      expect(res.status).toBe(302);
+      expect(location.searchParams.get('error')).toBe('invalid_request');
+      expect(location.searchParams.has('code')).toBe(false);
     });
   });
 

@@ -72,17 +72,6 @@ const REFRESH_ONLY_OAUTH_CLIENT = {
   redirectUri: 'http://localhost:8080/refresh-only-callback',
 } as const;
 
-const REFRESH_ONLY_OAUTH_CLIENT_CONFIG = {
-  id: 'refresh-only-client-config',
-  name: 'Refresh Only Client',
-  client_id: REFRESH_ONLY_OAUTH_CLIENT.clientId,
-  client_secret: REFRESH_ONLY_OAUTH_CLIENT.clientSecret,
-  redirect_uris: [REFRESH_ONLY_OAUTH_CLIENT.redirectUri],
-  response_types: ['code'],
-  grant_types: ['refresh_token'],
-  scope: REFRESHABLE_SCOPE,
-};
-
 beforeAll(async () => {
   ({ app, services, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
@@ -91,11 +80,25 @@ beforeAll(async () => {
       TOKEN_TEST_OAUTH_CLIENT_CONFIG,
       PUBLIC_OAUTH_CLIENT_CONFIG,
       AUTH_CODE_ONLY_OAUTH_CLIENT_CONFIG,
-      REFRESH_ONLY_OAUTH_CLIENT_CONFIG,
     ],
   }));
 
   await services.mikro.em.fork().transactional(async (em) => {
+    const refreshOnlySecretHash =
+      await services.securityService.hashClientSecret(
+        REFRESH_ONLY_OAUTH_CLIENT.clientSecret,
+      );
+    const refreshOnlyClient = services.mikro.oauthClient.create({
+      clientId: REFRESH_ONLY_OAUTH_CLIENT.clientId,
+      clientSecretHash: refreshOnlySecretHash,
+      name: 'Refresh Only Client',
+      grantTypes: ['refresh_token'],
+      responseTypes: ['code'],
+      scopes: REFRESHABLE_SCOPE.split(' '),
+      redirectUris: [REFRESH_ONLY_OAUTH_CLIENT.redirectUri],
+      enabled: true,
+      managed_by: 'database',
+    });
     const disabledClient = services.mikro.oauthClient.create({
       clientId: 'disabled-client',
       clientSecretHash: null,
@@ -107,7 +110,7 @@ beforeAll(async () => {
       enabled: false,
       managed_by: 'database',
     });
-    await em.persist(disabledClient).flush();
+    await em.persist([refreshOnlyClient, disabledClient]).flush();
   });
 });
 
@@ -329,7 +332,7 @@ describe('POST /oauth/token', () => {
       expect(location.searchParams.get('error')).toBe('invalid_request');
     });
 
-    test('should exchange confidential client authorization code without PKCE', async () => {
+    test('should exchange confidential client authorization code without PKCE using client_secret_post', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const client = testClient(app);
       const authorizeParams = {
@@ -360,6 +363,49 @@ describe('POST /oauth/token', () => {
         code: code ?? '',
         clientSecret: TEST_OAUTH_CLIENT.clientSecret,
       });
+      const json = await assertJsonBody(tokenRes, 200);
+      expect(json.access_token).toBeDefined();
+    });
+
+    test('should exchange confidential client authorization code without PKCE using client_secret_basic', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const client = testClient(app);
+      const authorizeParams = {
+        response_type: 'code' as const,
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: REFRESHABLE_SCOPE,
+      };
+
+      await grantConsent(app, sessionCookie, authorizeParams);
+      const authorizeRes = await client.oauth.authorize.$get(
+        { query: authorizeParams },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+      const location = new URL(
+        authorizeRes.headers.get('location') || '',
+        'http://localhost:8080',
+      );
+      const code = location.searchParams.get('code') ?? '';
+
+      const tokenRes = await client.oauth.token.$post(
+        {
+          form: {
+            grant_type: 'authorization_code',
+            code,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          },
+        },
+        {
+          headers: {
+            Authorization: basicAuthHeader(
+              TEST_OAUTH_CLIENT.clientId,
+              TEST_OAUTH_CLIENT.clientSecret,
+            ),
+          },
+        },
+      );
+
       const json = await assertJsonBody(tokenRes, 200);
       expect(json.access_token).toBeDefined();
     });
@@ -417,6 +463,40 @@ describe('POST /oauth/token', () => {
       const { code } = await getAuthorizationCode(app, { sessionCookie });
 
       const client = testClient(app);
+      const res = await client.oauth.token.$post({
+        form: {
+          grant_type: 'authorization_code',
+          code,
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        },
+      });
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+    });
+
+    test('should reject confidential client token request without client_secret even when authorization code has no PKCE', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const client = testClient(app);
+      const authorizeParams = {
+        response_type: 'code' as const,
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: REFRESHABLE_SCOPE,
+      };
+
+      await grantConsent(app, sessionCookie, authorizeParams);
+      const authorizeRes = await client.oauth.authorize.$get(
+        { query: authorizeParams },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+      const location = new URL(
+        authorizeRes.headers.get('location') || '',
+        'http://localhost:8080',
+      );
+      const code = location.searchParams.get('code') ?? '';
+
       const res = await client.oauth.token.$post({
         form: {
           grant_type: 'authorization_code',
@@ -912,6 +992,68 @@ describe('POST /oauth/token', () => {
 
       const refreshJson = await assertJsonBody(refreshRes, 200);
       expect(refreshJson.access_token).toBeDefined();
+    });
+
+    test('should reject public client authorization code exchange with client_secret_post', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        clientId: PUBLIC_OAUTH_CLIENT.clientId,
+        redirectUri: PUBLIC_OAUTH_CLIENT.redirectUri,
+        scope: REFRESHABLE_SCOPE,
+        codeChallenge: TEST_PKCE.codeChallenge,
+        codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const client = testClient(app);
+      const res = await client.oauth.token.$post({
+        form: {
+          grant_type: 'authorization_code',
+          code,
+          client_id: PUBLIC_OAUTH_CLIENT.clientId,
+          client_secret: 'unexpected-public-client-secret',
+          redirect_uri: PUBLIC_OAUTH_CLIENT.redirectUri,
+          code_verifier: TEST_PKCE.codeVerifier,
+        },
+      });
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
+    });
+
+    test('should reject public client authorization code exchange with client_secret_basic', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        clientId: PUBLIC_OAUTH_CLIENT.clientId,
+        redirectUri: PUBLIC_OAUTH_CLIENT.redirectUri,
+        scope: REFRESHABLE_SCOPE,
+        codeChallenge: TEST_PKCE.codeChallenge,
+        codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const client = testClient(app);
+      const res = await client.oauth.token.$post(
+        {
+          form: {
+            grant_type: 'authorization_code',
+            code,
+            redirect_uri: PUBLIC_OAUTH_CLIENT.redirectUri,
+            code_verifier: TEST_PKCE.codeVerifier,
+          },
+        },
+        {
+          headers: {
+            Authorization: basicAuthHeader(
+              PUBLIC_OAUTH_CLIENT.clientId,
+              'unexpected-public-client-secret',
+            ),
+          },
+        },
+      );
+
+      const json = await assertJsonBody(res, 401);
+      expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
     });
 
     test('should reject missing refresh_token', async () => {

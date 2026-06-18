@@ -158,7 +158,11 @@ export const oidcConfigGet = new Hono<AppEnv>().get(
         'email_verified',
         'name',
       ],
-      grant_types_supported: ['authorization_code', 'refresh_token'],
+      grant_types_supported: [
+        'authorization_code',
+        'implicit',
+        'refresh_token',
+      ],
       token_endpoint_auth_methods_supported: [
         'client_secret_basic',
         'client_secret_post',
