@@ -3,6 +3,15 @@ import { createTestConfigFile } from './helpers/config-factory.ts';
 import { runBuiltCli, startBuiltCli } from './helpers/spawn-cli.ts';
 import { waitForReady } from './helpers/wait-for-ready.ts';
 
+function expectGracefulShutdownExitCode(exitCode: number | undefined) {
+  if (process.platform === 'win32') {
+    expect(exitCode ?? 0).toBe(0);
+    return;
+  }
+
+  expect(exitCode).toBe(0);
+}
+
 describe('dist cli e2e', { timeout: 30_000 }, () => {
   let cliProcess: ReturnType<typeof startBuiltCli> | undefined;
   let configCleanup: (() => Promise<void>) | undefined;
@@ -44,6 +53,6 @@ describe('dist cli e2e', { timeout: 30_000 }, () => {
 
     cliProcess.kill('SIGINT');
     const result = await cliProcess;
-    expect(result.exitCode).toBe(0);
+    expectGracefulShutdownExitCode(result.exitCode);
   });
 });

@@ -51,6 +51,7 @@ catalog:
   babel-plugin-react-compiler: ^1.0.0
   consola: ^3.4.2
   croner: ^10.0.1
+  cross-env: ^10.1.0
   daisyui: ^5.5.23
   dotenv: ^17.4.2
   execa: ^9.6.1

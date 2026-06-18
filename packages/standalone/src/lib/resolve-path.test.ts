@@ -2,9 +2,12 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveAbsolutePath } from './resolve-path.ts';
 
-describe('resolveAbsolutePath', () => {
-  const MOCK_CWD = '/mock/cwd';
+const ROOT = path.parse(process.cwd()).root;
+const MOCK_CWD = path.resolve(ROOT, 'mock', 'cwd');
+const CUSTOM_BASE = path.resolve(ROOT, 'custom', 'base');
+const ABSOLUTE_CONFIG_PATH = path.resolve(ROOT, 'etc', 'config.yaml');
 
+describe('resolveAbsolutePath', () => {
   beforeEach(() => {
     vi.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD);
   });
@@ -15,12 +18,14 @@ describe('resolveAbsolutePath', () => {
 
   describe('absolute paths', () => {
     it('returns absolute path as-is', () => {
-      expect(resolveAbsolutePath('/etc/config.yaml')).toBe('/etc/config.yaml');
+      expect(resolveAbsolutePath(ABSOLUTE_CONFIG_PATH)).toBe(
+        ABSOLUTE_CONFIG_PATH,
+      );
     });
 
     it('returns absolute path as-is even when basePath is provided', () => {
-      expect(resolveAbsolutePath('/etc/config.yaml', '/other/base')).toBe(
-        '/etc/config.yaml',
+      expect(resolveAbsolutePath(ABSOLUTE_CONFIG_PATH, CUSTOM_BASE)).toBe(
+        ABSOLUTE_CONFIG_PATH,
       );
     });
   });
@@ -39,8 +44,8 @@ describe('resolveAbsolutePath', () => {
     });
 
     it('resolves ./relative against custom basePath', () => {
-      expect(resolveAbsolutePath('./config.yaml', '/custom/base')).toBe(
-        path.resolve('/custom/base', './config.yaml'),
+      expect(resolveAbsolutePath('./config.yaml', CUSTOM_BASE)).toBe(
+        path.resolve(CUSTOM_BASE, './config.yaml'),
       );
     });
   });
@@ -53,21 +58,23 @@ describe('resolveAbsolutePath', () => {
     });
 
     it('resolves filename against custom basePath', () => {
-      expect(resolveAbsolutePath('config.yaml', '/custom/base')).toBe(
-        path.resolve('/custom/base', 'config.yaml'),
+      expect(resolveAbsolutePath('config.yaml', CUSTOM_BASE)).toBe(
+        path.resolve(CUSTOM_BASE, 'config.yaml'),
       );
     });
   });
 
   describe('edge cases', () => {
     it('resolves empty string against process.cwd()', () => {
-      expect(resolveAbsolutePath('')).toBe(MOCK_CWD);
+      expect(resolveAbsolutePath('')).toBe(path.resolve(MOCK_CWD, ''));
     });
 
     it('handles basePath with trailing slash', () => {
-      expect(resolveAbsolutePath('config.yaml', '/custom/base/')).toBe(
-        path.resolve('/custom/base/', 'config.yaml'),
-      );
+      const basePathWithTrailingSeparator = `${CUSTOM_BASE}${path.sep}`;
+
+      expect(
+        resolveAbsolutePath('config.yaml', basePathWithTrailingSeparator),
+      ).toBe(path.resolve(basePathWithTrailingSeparator, 'config.yaml'));
     });
   });
 });

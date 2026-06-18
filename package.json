@@ -8,7 +8,8 @@
     "test": "pnpm -r test && pnpm --filter @tinyrack/tinyauth-standalone test:dist",
     "build": "pnpm -r build",
     "biome": "biome",
-    "tools": "tinyauth-tools"
+    "tools": "tinyauth-tools",
+    "test:setup:browsers": "pnpm --filter @tinyrack/tinyauth-frontend exec playwright install"
   },
   "author": "",
   "license": "MIT",

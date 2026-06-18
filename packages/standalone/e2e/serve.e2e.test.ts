@@ -3,6 +3,15 @@ import { createTestConfigFile } from './helpers/config-factory.ts';
 import { runCli, startCli } from './helpers/spawn-cli.ts';
 import { waitForReady } from './helpers/wait-for-ready.ts';
 
+function expectGracefulShutdownExitCode(exitCode: number | undefined) {
+  if (process.platform === 'win32') {
+    expect(exitCode ?? 0).toBe(0);
+    return;
+  }
+
+  expect(exitCode).toBe(0);
+}
+
 describe('serve e2e', { timeout: 30_000 }, () => {
   let cliProcess: ReturnType<typeof startCli> | undefined;
   let configCleanup: (() => Promise<void>) | undefined;
@@ -33,7 +42,7 @@ describe('serve e2e', { timeout: 30_000 }, () => {
 
     cliProcess.kill('SIGINT');
     const result = await cliProcess;
-    expect(result.exitCode).toBe(0);
+    expectGracefulShutdownExitCode(result.exitCode);
   });
 
   it('graceful shutdown on SIGTERM', async () => {
@@ -49,7 +58,7 @@ describe('serve e2e', { timeout: 30_000 }, () => {
 
     cliProcess.kill('SIGTERM');
     const result = await cliProcess;
-    expect(result.exitCode).toBe(0);
+    expectGracefulShutdownExitCode(result.exitCode);
   });
 
   it('exits 1 on invalid config path', async () => {

@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execaNode } from 'execa';
 
 const CLI_PATH = fileURLToPath(new URL('../../src/cli.ts', import.meta.url));
@@ -11,7 +11,7 @@ const DIST_CLI_PATH = fileURLToPath(
 const CWD = fileURLToPath(new URL('../../', import.meta.url));
 
 const require = createRequire(import.meta.url);
-const TSX_IMPORT = require.resolve('tsx');
+const TSX_IMPORT = pathToFileURL(require.resolve('tsx')).href;
 const NODE_OPTIONS = ['--conditions=@tinyauth/source', '--import', TSX_IMPORT];
 
 interface SpawnCliOptions {
