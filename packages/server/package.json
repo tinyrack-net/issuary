@@ -1,6 +1,6 @@
 {
   "name": "@tinyrack/tinyauth-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "OpenID Connect Provider with OAuth2 support",
   "license": "MIT",
