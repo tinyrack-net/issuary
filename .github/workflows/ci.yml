@@ -141,8 +141,8 @@ jobs:
       - name: Standalone tests
         run: pnpm --filter @tinyrack/tinyauth-standalone test --run
 
-      - name: Install Playwright browser for smoke E2E
-        run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install chromium
+      - name: Install Playwright browsers for frontend tests
+        run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install chromium firefox
 
       - name: Frontend unit tests
         run: pnpm --filter @tinyrack/tinyauth-frontend test:unit --run
