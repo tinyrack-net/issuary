@@ -119,6 +119,19 @@ describe('GET /oauth/.well-known/openid-configuration', () => {
       expect(json.grant_types_supported).toContain('refresh_token');
     });
 
+    test('should advertise code and id_token response types', async () => {
+      const client = testClient(app);
+      const res =
+        await client.oauth['.well-known']['openid-configuration'].$get();
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+
+      expect(json.response_types_supported).toEqual(
+        expect.arrayContaining(['code', 'id_token']),
+      );
+    });
+
     test('should support PKCE code challenge methods', async () => {
       const client = testClient(app);
       const res =
@@ -169,7 +182,9 @@ describe('GET /oauth/.well-known/openid-configuration', () => {
       expect(res.status).toBe(200);
       const json = await res.json();
 
-      expect(json.response_modes_supported).toEqual(['query']);
+      expect(json.response_modes_supported).toEqual(
+        expect.arrayContaining(['query', 'fragment']),
+      );
       expect(json.request_parameter_supported).toBe(false);
       expect(json.request_uri_parameter_supported).toBe(false);
       expect(json.claims_parameter_supported).toBe(false);

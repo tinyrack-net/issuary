@@ -167,6 +167,11 @@ export const e = {
     'INVALID_CODE_CHALLENGE_METHOD',
     'The code challenge method must be S256 or plain.',
   ),
+  InvalidAuthorizationRequest: createError(
+    400,
+    'INVALID_AUTHORIZATION_REQUEST',
+    'The authorization request is invalid.',
+  ),
   InvalidPrompt: createError(
     400,
     'INVALID_PROMPT',

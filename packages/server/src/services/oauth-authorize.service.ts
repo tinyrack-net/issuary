@@ -3,6 +3,7 @@ import { getRandomBytes, toBase64Url } from '../lib/base64url.ts';
 import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
 import { e } from '../schemas/error.ts';
 import type { f } from '../schemas/field.ts';
+import type { JwtService } from './jwt.service.ts';
 import type { MikroService } from './mikro.service.ts';
 import type { OAuthClientService } from './oauth-client.service.ts';
 import type { SecurityService } from './security.service.ts';
@@ -61,18 +62,21 @@ export class OAuthAuthorizeService {
   private readonly oauthClientService: OAuthClientService;
   private readonly userConsentService: UserConsentService;
   private readonly securityService: SecurityService;
+  private readonly jwtService: JwtService;
   public constructor(
     config: TinyAuthRuntimeConfig,
     mikro: MikroService,
     oauthClientService: OAuthClientService,
     userConsentService: UserConsentService,
     securityService: SecurityService,
+    jwtService: JwtService,
   ) {
     this.config = config;
     this.mikro = mikro;
     this.oauthClientService = oauthClientService;
     this.userConsentService = userConsentService;
     this.securityService = securityService;
+    this.jwtService = jwtService;
   }
 
   /**
@@ -107,9 +111,14 @@ export class OAuthAuthorizeService {
     this.oauthClientService.validateScopes(client, requestedScopes);
 
     const prompts = this.parsePrompt(query.prompt);
+    const isImplicitIdToken = this.isImplicitIdTokenFlow(query.response_type);
 
-    // 6. Validate PKCE
-    this.validatePKCE(query.code_challenge, query.code_challenge_method);
+    // 6. Validate flow-specific authorization parameters
+    if (isImplicitIdToken) {
+      this.validateImplicitIdTokenRequest(query, requestedScopes);
+    } else {
+      this.validatePKCE(query.code_challenge, query.code_challenge_method);
+    }
 
     // 7. Check user session
     const hasFreshReauthentication = userSession
@@ -181,6 +190,22 @@ export class OAuthAuthorizeService {
         type: 'redirect',
         url: consentUrl,
       };
+    }
+
+    if (isImplicitIdToken) {
+      if (!query.nonce) {
+        throw new e.InvalidAuthorizationRequest.Error();
+      }
+
+      return this.buildImplicitIdTokenRedirect({
+        clientId: client.clientId,
+        userSub: userSession.sub,
+        redirectUri: query.redirect_uri,
+        scope: requestedScopes,
+        nonce: query.nonce,
+        state: query.state,
+        authTime: userSession.authenticated_at,
+      });
     }
 
     const codeParams: {
@@ -289,6 +314,23 @@ export class OAuthAuthorizeService {
       authenticatedAt <= now &&
       now - authenticatedAt <= REAUTHENTICATION_CONTINUATION_MAX_AGE_SECONDS
     );
+  }
+
+  private isImplicitIdTokenFlow(responseType: string): boolean {
+    return responseType === 'id_token';
+  }
+
+  private validateImplicitIdTokenRequest(
+    query: AuthorizeParams,
+    requestedScopes: string[],
+  ): void {
+    if (!requestedScopes.includes('openid')) {
+      throw new e.InvalidAuthorizationRequest.Error();
+    }
+
+    if (!query.nonce) {
+      throw new e.InvalidAuthorizationRequest.Error();
+    }
   }
 
   /**
@@ -411,6 +453,63 @@ export class OAuthAuthorizeService {
     }
 
     return errorUrl.toString();
+  }
+
+  private async buildImplicitIdTokenRedirect(params: {
+    clientId: string;
+    userSub: string;
+    redirectUri: string;
+    scope: string[];
+    nonce: string;
+    state?: string | undefined;
+    authTime: number;
+  }): Promise<AuthorizeResult> {
+    const user = await this.mikro.user.findOneOrFail(
+      { sub: params.userSub },
+      {
+        failHandler: () => new e.UserNotFound.Error(),
+      },
+    );
+
+    const idTokenPayload: {
+      sub: string;
+      aud: string;
+      nonce: string;
+      auth_time: number;
+      email?: string;
+      email_verified?: boolean;
+      name?: string;
+    } = {
+      sub: user.sub,
+      aud: params.clientId,
+      nonce: params.nonce,
+      auth_time: params.authTime,
+    };
+
+    if (params.scope.includes('email')) {
+      idTokenPayload.email = user.email;
+      idTokenPayload.email_verified = user.email_verified;
+    }
+
+    if (params.scope.includes('profile')) {
+      idTokenPayload.name = user.email;
+    }
+
+    const idToken = await this.jwtService.signIdToken(idTokenPayload);
+    const redirectUrl = new URL(params.redirectUri);
+    const fragment = new URLSearchParams();
+    fragment.set('id_token', idToken);
+    fragment.set('token_type', 'Bearer');
+    fragment.set('expires_in', this.config.tokens.access_token_ttl.toString());
+    if (params.state) {
+      fragment.set('state', params.state);
+    }
+    redirectUrl.hash = fragment.toString();
+
+    return {
+      type: 'redirect',
+      url: redirectUrl.toString(),
+    };
   }
 
   /**

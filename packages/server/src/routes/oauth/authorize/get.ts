@@ -70,10 +70,16 @@ export const authorizeGet = new Hono<AppEnv>().get(
       }
 
       const url = new URL(redirectUri);
-      url.searchParams.set('error', error);
-      url.searchParams.set('error_description', errorDescription);
+      const useFragment = query.response_type === 'id_token';
+      const params = useFragment ? new URLSearchParams() : url.searchParams;
+      params.set('error', error);
+      params.set('error_description', errorDescription);
       if (query.state) {
-        url.searchParams.set('state', query.state);
+        params.set('state', query.state);
+      }
+
+      if (useFragment) {
+        url.hash = params.toString();
       }
 
       return c.redirect(url.toString());
@@ -145,6 +151,14 @@ export const authorizeGet = new Hono<AppEnv>().get(
       }
 
       if (error instanceof e.InvalidCodeChallengeMethod.Error) {
+        return redirectWithError(
+          'invalid_request',
+          error.message,
+          query.redirect_uri,
+        );
+      }
+
+      if (error instanceof e.InvalidAuthorizationRequest.Error) {
         return redirectWithError(
           'invalid_request',
           error.message,

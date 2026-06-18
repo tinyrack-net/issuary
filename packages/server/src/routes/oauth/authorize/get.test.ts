@@ -55,6 +55,23 @@ const PUBLIC_OAUTH_CLIENT_CONFIG = {
   scope: 'openid profile email',
 };
 
+const IMPLICIT_ID_TOKEN_CLIENT = {
+  clientId: 'implicit-id-token-client',
+  clientSecret: 'implicit-id-token-client-secret',
+  redirectUri: 'http://localhost:8080/implicit-callback',
+};
+
+const IMPLICIT_ID_TOKEN_CLIENT_CONFIG = {
+  id: 'implicit-id-token-client-config',
+  name: 'Implicit ID Token Client',
+  client_id: IMPLICIT_ID_TOKEN_CLIENT.clientId,
+  client_secret: IMPLICIT_ID_TOKEN_CLIENT.clientSecret,
+  redirect_uris: [IMPLICIT_ID_TOKEN_CLIENT.redirectUri],
+  response_types: ['id_token'],
+  grant_types: [],
+  scope: 'openid profile email',
+};
+
 beforeAll(async () => {
   ({ app, services, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
@@ -63,6 +80,7 @@ beforeAll(async () => {
       TEST_OAUTH_CLIENT_CONFIG,
       QUERY_REDIRECT_CLIENT_CONFIG,
       PUBLIC_OAUTH_CLIENT_CONFIG,
+      IMPLICIT_ID_TOKEN_CLIENT_CONFIG,
     ],
   }));
 });
@@ -537,19 +555,88 @@ describe('GET /oauth/authorize', () => {
       expectRedirectError(location, 'unsupported_response_type');
     });
 
-    test('should return unsupported_response_type for "id_token"', async () => {
-      const client = testClient(app);
-      const res = await client.oauth.authorize.$get({
-        query: {
-          ...validParams,
-          response_type: 'id_token',
-        },
+    test('should return an id_token in the redirect fragment for implicit id_token flow', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      await grantConsent(app, sessionCookie, {
+        client_id: IMPLICIT_ID_TOKEN_CLIENT.clientId,
+        redirect_uri: IMPLICIT_ID_TOKEN_CLIENT.redirectUri,
+        response_type: 'id_token',
+        scope: 'openid profile email',
+        nonce: 'implicit-nonce-123',
       });
 
-      expect(res.status).toBe(302);
-      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
+      const { location, statusCode } = await getAuthorizationCode(
+        {
+          response_type: 'id_token',
+          client_id: IMPLICIT_ID_TOKEN_CLIENT.clientId,
+          redirect_uri: IMPLICIT_ID_TOKEN_CLIENT.redirectUri,
+          scope: 'openid profile email',
+          nonce: 'implicit-nonce-123',
+          state: 'implicit-state-123',
+        },
+        sessionCookie,
+      );
 
-      expectRedirectError(location, 'unsupported_response_type');
+      expect(statusCode).toBe(302);
+      expect(location.origin + location.pathname).toBe(
+        IMPLICIT_ID_TOKEN_CLIENT.redirectUri,
+      );
+      expect(location.searchParams.has('code')).toBe(false);
+
+      const fragment = new URLSearchParams(location.hash.slice(1));
+      const idToken = fragment.get('id_token');
+      expect(idToken).toBeTruthy();
+      expect(fragment.get('token_type')).toBe('Bearer');
+      expect(fragment.get('state')).toBe('implicit-state-123');
+
+      const decoded = jose.decodeJwt(idToken ?? '');
+      expect(decoded.sub).toBe(TEST_USER_CONFIG.sub);
+      expect(decoded.aud).toBe(IMPLICIT_ID_TOKEN_CLIENT.clientId);
+      expect(decoded['nonce']).toBe('implicit-nonce-123');
+      expect(decoded['email']).toBe(TEST_USER_CONFIG.email);
+      expect(decoded['email_verified']).toBe(true);
+      expect(decoded['name']).toBe(TEST_USER_CONFIG.email);
+    });
+
+    test('should reject implicit id_token flow without nonce', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+
+      const { location, statusCode } = await getAuthorizationCode(
+        {
+          response_type: 'id_token',
+          client_id: IMPLICIT_ID_TOKEN_CLIENT.clientId,
+          redirect_uri: IMPLICIT_ID_TOKEN_CLIENT.redirectUri,
+          scope: 'openid profile email',
+        },
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      const fragment = new URLSearchParams(location.hash.slice(1));
+      expect(fragment.get('error') ?? location.searchParams.get('error')).toBe(
+        'invalid_request',
+      );
+    });
+
+    test('should reject implicit id_token flow without openid scope', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+
+      const { location, statusCode } = await getAuthorizationCode(
+        {
+          response_type: 'id_token',
+          client_id: IMPLICIT_ID_TOKEN_CLIENT.clientId,
+          redirect_uri: IMPLICIT_ID_TOKEN_CLIENT.redirectUri,
+          scope: 'profile email',
+          nonce: 'nonce-without-openid',
+        },
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      const fragment = new URLSearchParams(location.hash.slice(1));
+      expect(fragment.get('error') ?? location.searchParams.get('error')).toBe(
+        'invalid_request',
+      );
     });
 
     test('should accept "code" response_type', async () => {

@@ -87,6 +87,7 @@ export async function initializeServices(
     oauthClientService,
     userConsentService,
     securityService,
+    jwtService,
   );
   const oauthConnectService = new OAuthConnectService(
     config,
