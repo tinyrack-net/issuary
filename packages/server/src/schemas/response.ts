@@ -48,6 +48,9 @@ const OAuthClient = z
       .enum(['config', 'database'])
       .describe('Whether the client is managed by config or database'),
     enabled: z.boolean().describe('Whether the client is enabled'),
+    skipConsent: z
+      .boolean()
+      .describe('Whether the client can skip the OAuth consent screen'),
     redirectUris: z.array(f.redirectUri).describe('Allowed redirect URIs'),
     postLogoutRedirectUris: z
       .array(f.redirectUri)

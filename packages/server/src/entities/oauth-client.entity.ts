@@ -53,6 +53,12 @@ export const OAuthClientEntitySchema = defineEntity({
       .boolean()
       .comment('Whether the OAuth client is enabled')
       .default(true),
+    skipConsent: p
+      .boolean()
+      .comment(
+        'Whether this OAuth client can skip the consent screen unless prompt=consent is requested',
+      )
+      .default(false),
     managed_by: p
       .string()
       .$type<'database' | 'config'>()

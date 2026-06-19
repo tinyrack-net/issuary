@@ -177,6 +177,7 @@ export class OAuthAuthorizeService {
       clientId: client.id,
       requestedScopes,
       prompt: prompts.includes('consent') ? 'consent' : undefined,
+      skipConsent: client.skipConsent,
     });
 
     if (requiresConsent) {

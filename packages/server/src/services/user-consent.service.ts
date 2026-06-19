@@ -36,12 +36,17 @@ export class UserConsentService {
     clientId: string;
     requestedScopes: string[];
     prompt?: z.infer<typeof f.prompt> | undefined;
+    skipConsent?: boolean | undefined;
   }): Promise<boolean> {
-    const { userSub, clientId, requestedScopes, prompt } = params;
+    const { userSub, clientId, requestedScopes, prompt, skipConsent } = params;
 
     // If prompt=consent, always show consent screen
     if (prompt === 'consent') {
       return true;
+    }
+
+    if (skipConsent) {
+      return false;
     }
 
     // Check if user has already consented to all requested scopes

@@ -116,6 +116,12 @@ export const ClientConfigSchema = z
     scope: ScopeSchema.describe(
       'Space-separated list of allowed OAuth scope-token values for this client.',
     ),
+    skip_consent: z
+      .boolean()
+      .default(false)
+      .describe(
+        'Skip the OAuth consent screen for this client unless prompt=consent is requested.',
+      ),
   })
   .strict()
   .superRefine((client, ctx) => {

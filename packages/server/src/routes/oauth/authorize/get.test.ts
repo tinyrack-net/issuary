@@ -72,6 +72,24 @@ const IMPLICIT_ID_TOKEN_CLIENT_CONFIG = {
   scope: 'openid profile email',
 };
 
+const SKIP_CONSENT_CLIENT = {
+  clientId: 'skip-consent-client',
+  clientSecret: 'skip-consent-client-secret',
+  redirectUri: 'http://localhost:8080/skip-consent-callback',
+};
+
+const SKIP_CONSENT_CLIENT_CONFIG = {
+  id: 'skip-consent-client-config',
+  name: 'Skip Consent Client',
+  client_id: SKIP_CONSENT_CLIENT.clientId,
+  client_secret: SKIP_CONSENT_CLIENT.clientSecret,
+  redirect_uris: [SKIP_CONSENT_CLIENT.redirectUri],
+  response_types: ['code'],
+  grant_types: ['authorization_code'],
+  scope: 'openid profile email',
+  skip_consent: true,
+};
+
 beforeAll(async () => {
   ({ app, services, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
@@ -81,6 +99,7 @@ beforeAll(async () => {
       QUERY_REDIRECT_CLIENT_CONFIG,
       PUBLIC_OAUTH_CLIENT_CONFIG,
       IMPLICIT_ID_TOKEN_CLIENT_CONFIG,
+      SKIP_CONSENT_CLIENT_CONFIG,
     ],
   }));
 });
@@ -285,6 +304,29 @@ describe('GET /oauth/authorize', () => {
         validParams.redirect_uri,
       );
       expect(location.searchParams.get('state')).toBe(validParams.state);
+    });
+
+    test('should issue code for skip_consent client without prior user consent', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+
+      const { code, location, statusCode } = await getAuthorizationCode(
+        {
+          response_type: 'code',
+          client_id: SKIP_CONSENT_CLIENT.clientId,
+          redirect_uri: SKIP_CONSENT_CLIENT.redirectUri,
+          scope: 'openid profile email',
+          state: 'skip-consent-state',
+          code_challenge: TEST_PKCE.codeChallenge,
+          code_challenge_method: TEST_PKCE.codeChallengeMethod,
+        },
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      expect(location.pathname).toBe('/skip-consent-callback');
+      expect(code).toBeTruthy();
+      expect(location.searchParams.get('state')).toBe('skip-consent-state');
+      expect(location.searchParams.has('error')).toBe(false);
     });
 
     test('should preserve all OAuth parameters in login redirect', async () => {

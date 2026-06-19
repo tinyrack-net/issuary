@@ -328,6 +328,7 @@ async function syncOAuthClients(
         grantTypes: client.grant_types,
         scopes: client.scope.split(' '),
         enabled: true,
+        skipConsent: client.skip_consent,
         managed_by: 'config',
         created_at: now,
         updated_at: now,

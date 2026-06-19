@@ -275,6 +275,31 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     ).not.toThrow();
   });
 
+  test('defaults OAuth client skip_consent to false', () => {
+    const parsed = TinyAuthRuntimeConfigSchema.parse({
+      ...MINIMAL_INPUT_CONFIG,
+      clients: [createClientConfig(['http://localhost/callback'])],
+    });
+
+    expect(parsed.clients).toHaveLength(1);
+    expect(parsed.clients[0]).toMatchObject({ skip_consent: false });
+  });
+
+  test('accepts OAuth clients that explicitly skip the consent screen', () => {
+    const parsed = TinyAuthRuntimeConfigSchema.parse({
+      ...MINIMAL_INPUT_CONFIG,
+      clients: [
+        {
+          ...createClientConfig(['http://localhost/callback']),
+          skip_consent: true,
+        },
+      ],
+    });
+
+    expect(parsed.clients).toHaveLength(1);
+    expect(parsed.clients[0]).toMatchObject({ skip_consent: true });
+  });
+
   test.each([
     ['response_types', { response_types: ['token'] }],
     ['response_types', { response_types: [] }],

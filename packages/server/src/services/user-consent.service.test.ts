@@ -96,4 +96,34 @@ describe('UserConsentService', () => {
       ),
     ).resolves.toBe(true);
   });
+
+  test('requiresConsent skips first-party consent unless prompt=consent is requested', async () => {
+    const userSub = await createTestUser(services);
+    const clientId = await createTestOAuthClient(services, {
+      clientId: 'skip-consent-client',
+    });
+
+    await expect(
+      withMikroContext(services, async () =>
+        services.userConsentService.requiresConsent({
+          userSub,
+          clientId,
+          requestedScopes: ['openid', 'email'],
+          skipConsent: true,
+        }),
+      ),
+    ).resolves.toBe(false);
+
+    await expect(
+      withMikroContext(services, async () =>
+        services.userConsentService.requiresConsent({
+          userSub,
+          clientId,
+          requestedScopes: ['openid', 'email'],
+          prompt: 'consent',
+          skipConsent: true,
+        }),
+      ),
+    ).resolves.toBe(true);
+  });
 });

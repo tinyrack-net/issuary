@@ -32,6 +32,7 @@ export class OAuthClientService {
       name: client.name,
       managed_by: client.managed_by,
       enabled: client.enabled,
+      skipConsent: client.skipConsent,
       redirectUris: client.redirectUris,
       postLogoutRedirectUris: client.postLogoutRedirectUris,
       webOrigins: client.webOrigins,

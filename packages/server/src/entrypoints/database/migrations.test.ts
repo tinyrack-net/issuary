@@ -4,11 +4,13 @@ import { Migration20260509171036_initial as PostgresInitialMigration } from '../
 import { Migration20260512120000_add_scheduler_jobs as PostgresSchedulerJobsMigration } from '../../migrations/postgres/Migration20260512120000_add_scheduler_jobs.ts';
 import { Migration20260619075007 as PostgresDeviceAuthorizationMigration } from '../../migrations/postgres/Migration20260619075007.js';
 import { Migration20260619191600_unique_oauth_client_client_id as PostgresUniqueOAuthClientClientIdMigration } from '../../migrations/postgres/Migration20260619191600_unique_oauth_client_client_id.js';
+import { Migration20260620025358_add_oauth_client_skip_consent as PostgresOAuthClientSkipConsentMigration } from '../../migrations/postgres/Migration20260620025358_add_oauth_client_skip_consent.js';
 import { SQLITE_MIGRATIONS } from '../../migrations/sqlite/index.ts';
 import { Migration20260509171226_initial as SqliteInitialMigration } from '../../migrations/sqlite/Migration20260509171226_initial.ts';
 import { Migration20260512120000_add_scheduler_jobs as SqliteSchedulerJobsMigration } from '../../migrations/sqlite/Migration20260512120000_add_scheduler_jobs.ts';
 import { Migration20260619075330 as SqliteDeviceAuthorizationMigration } from '../../migrations/sqlite/Migration20260619075330.js';
 import { Migration20260619191600_unique_oauth_client_client_id as SqliteUniqueOAuthClientClientIdMigration } from '../../migrations/sqlite/Migration20260619191600_unique_oauth_client_client_id.js';
+import { Migration20260620025358_add_oauth_client_skip_consent as SqliteOAuthClientSkipConsentMigration } from '../../migrations/sqlite/Migration20260620025358_add_oauth_client_skip_consent.js';
 import { postgres } from './postgres/postgres.ts';
 import { sqlite } from './sqlite/sqlite.ts';
 
@@ -17,10 +19,12 @@ type MigrationClass =
   | typeof PostgresSchedulerJobsMigration
   | typeof PostgresDeviceAuthorizationMigration
   | typeof PostgresUniqueOAuthClientClientIdMigration
+  | typeof PostgresOAuthClientSkipConsentMigration
   | typeof SqliteInitialMigration
   | typeof SqliteSchedulerJobsMigration
   | typeof SqliteDeviceAuthorizationMigration
-  | typeof SqliteUniqueOAuthClientClientIdMigration;
+  | typeof SqliteUniqueOAuthClientClientIdMigration
+  | typeof SqliteOAuthClientSkipConsentMigration;
 
 interface MigrationLike {
   up(): void | Promise<void>;
@@ -50,6 +54,7 @@ describe('database migrations', () => {
       PostgresSchedulerJobsMigration,
       PostgresDeviceAuthorizationMigration,
       PostgresUniqueOAuthClientClientIdMigration,
+      PostgresOAuthClientSkipConsentMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(POSTGRES_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -86,6 +91,7 @@ describe('database migrations', () => {
       SqliteSchedulerJobsMigration,
       SqliteDeviceAuthorizationMigration,
       SqliteUniqueOAuthClientClientIdMigration,
+      SqliteOAuthClientSkipConsentMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(SQLITE_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -187,6 +193,22 @@ describe('database migrations', () => {
     );
     expect(sqliteQueries).toContain(
       `create unique index \`client_client_id_unique\` on \`oauth_client\` (\`client_id\`);`,
+    );
+  });
+
+  test('oauth client skip_consent migrations add first-party consent policy column', async () => {
+    const postgresQueries = await collectMigrationQueries(
+      PostgresOAuthClientSkipConsentMigration,
+    );
+    const sqliteQueries = await collectMigrationQueries(
+      SqliteOAuthClientSkipConsentMigration,
+    );
+
+    expect(postgresQueries).toContain(
+      `alter table "oauth_client" add "skip_consent" boolean not null default false;`,
+    );
+    expect(sqliteQueries).toContain(
+      `alter table \`oauth_client\` add column \`skip_consent\` integer not null default false;`,
     );
   });
 });
