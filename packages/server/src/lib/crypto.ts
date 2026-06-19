@@ -18,14 +18,28 @@ const AUTH_TAG_LENGTH = 16;
 /**
  * Import a hex-encoded key for AES-GCM operations
  * using the Web Crypto API.
+ *
+ * @throws {Error} if the key is not valid hex or decodes to an
+ *   unsupported AES key length (must be 16, 24, or 32 bytes).
  */
 async function importAesKey(
   keyHex: string,
   usage: 'encrypt' | 'decrypt',
 ): Promise<CryptoKey> {
+  if (!/^[0-9a-fA-F]*$/.test(keyHex) || keyHex.length % 2 !== 0) {
+    throw new Error(
+      'session_secret must be a valid hex string with an even number of characters',
+    );
+  }
+  const keyBytes = hexToBytes(keyHex);
+  if (![16, 24, 32].includes(keyBytes.byteLength)) {
+    throw new Error(
+      `session_secret must decode to 16, 24, or 32 bytes for AES-128/192/256, got ${keyBytes.byteLength} bytes (${keyHex.length} hex characters)`,
+    );
+  }
   return crypto.subtle.importKey(
     'raw',
-    toArrayBuffer(hexToBytes(keyHex)),
+    toArrayBuffer(keyBytes),
     { name: ALGORITHM },
     false,
     [usage],

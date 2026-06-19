@@ -34,6 +34,17 @@ describe('encrypt', () => {
     const b = await encrypt('same data', TEST_KEY);
     expect(a).not.toBe(b);
   });
+
+  it('should throw a descriptive error for a non-hex key', async () => {
+    await expect(encrypt('hello', 'not-a-hex-key!!!')).rejects.toThrow(/hex/i);
+  });
+
+  it('should throw a descriptive error for an invalid AES key length', async () => {
+    // 42 hex chars = 21 bytes, not a valid AES key size (16, 24, 32)
+    await expect(encrypt('hello', 'a'.repeat(42))).rejects.toThrow(
+      /AES|key length|16.*24.*32/i,
+    );
+  });
 });
 
 describe('decrypt', () => {
