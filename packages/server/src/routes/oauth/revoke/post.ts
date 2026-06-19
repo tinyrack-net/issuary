@@ -10,6 +10,7 @@ import {
   setBasicClientAuthChallengeIfInvalidClientCredentials,
   throwInvalidClientCredentialsWithBasicChallenge,
 } from '../client-auth.js';
+import { setOAuthClientCorsHeaders } from '../cors.js';
 
 const RevokeRequestBody = z
   .object({
@@ -95,6 +96,7 @@ export const revokePost = new Hono<AppEnv>().post(
     }
 
     const client = await oauthClientService.findByClientId(clientId);
+    setOAuthClientCorsHeaders(c, client);
 
     if (!client.enabled) {
       throw new e.OAuthClientDisabled.Error();

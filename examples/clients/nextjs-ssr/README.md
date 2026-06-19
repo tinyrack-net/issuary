@@ -84,7 +84,7 @@ export const oidcConfig: OIDCConfig = {
   introspection_endpoint: 'http://localhost:8080/oauth/introspect',
   
   client_id: 'sdlk3n3dkj2',
-  client_secret: 'sdlk3n3dkj2',
+  client_secret: 'sdlk3n3dkj2-secret',
   redirect_uri: 'http://localhost:3000/api/callback',
   
   scope: 'openid profile email',
@@ -101,7 +101,7 @@ providers:
   - id: test-config-oauth-client
     name: My App
     client_id: sdlk3n3dkj2
-    client_secret: sdlk3n3dkj2
+    client_secret: sdlk3n3dkj2-secret
     redirect_uris:
       - http://localhost:3000/callback
     response_types:

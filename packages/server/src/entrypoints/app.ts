@@ -1,5 +1,6 @@
+import { RequestContext } from '@mikro-orm/core';
+import type { Context, Next } from 'hono';
 import { Hono } from 'hono';
-import { cors } from 'hono/cors';
 import { generateSpecs } from 'hono-openapi';
 import {
   type TinyAuthRuntimeConfigInput,
@@ -35,18 +36,15 @@ export async function createApp(
 
   // Create root logger (use config.logging.level: 'silent' to suppress)
   const logger = createLogger({ logging: config.logging });
-  const corsOrigins = new Set<string>([config.server.public_origin]);
-  for (const client of config.clients) {
-    for (const origin of client.web_origins) {
-      corsOrigins.add(origin);
-    }
-  }
 
   // Initialize all services (DB, mail, scheduler, etc.)
   const { services, cleanup } = await initializeServices(
     config,
     logger,
     runtimeOptions,
+  );
+  await RequestContext.create(services.mikro.em, () =>
+    services.jwtService.ensureActiveKey(),
   );
 
   const frontendHandler = config.frontend?.({
@@ -76,21 +74,7 @@ export async function createApp(
       return c.json(internalErr.toJson(), internalErr.status);
     })
     .use('*', loggerMiddleware(logger))
-    .use(
-      '*',
-      cors({
-        origin: (origin, c) => {
-          if (origin === config.server.public_origin) {
-            return origin;
-          }
-          if (c.req.path.startsWith('/oauth/') && corsOrigins.has(origin)) {
-            return origin;
-          }
-          return null;
-        },
-        credentials: true,
-      }),
-    )
+    .use('*', firstPartyCors(config.server.public_origin))
     .use(
       '*',
       sessionMiddleware(
@@ -131,6 +115,41 @@ export async function createApp(
 
 export type AppType = Awaited<ReturnType<typeof createApp>>['app'];
 
+function firstPartyCors(publicOrigin: string) {
+  return async (c: Context, next: Next): Promise<Response | undefined> => {
+    const origin = c.req.header('origin');
+    if (c.req.path.startsWith('/oauth/')) {
+      await next();
+      return undefined;
+    }
+
+    if (origin !== publicOrigin) {
+      await next();
+      return undefined;
+    }
+
+    c.header('Access-Control-Allow-Origin', origin);
+    c.header('Access-Control-Allow-Credentials', 'true');
+    c.header('Vary', 'Origin');
+
+    if (c.req.method === 'OPTIONS') {
+      c.header(
+        'Access-Control-Allow-Methods',
+        'GET,HEAD,PUT,POST,DELETE,PATCH',
+      );
+      const requestHeaders = c.req.header('access-control-request-headers');
+      if (requestHeaders) {
+        c.header('Access-Control-Allow-Headers', requestHeaders);
+        c.header('Vary', 'Access-Control-Request-Headers', { append: true });
+      }
+      return c.body(null, 204);
+    }
+
+    await next();
+    return undefined;
+  };
+}
+
 function toOAuthErrorJson(err: TinyAuthError) {
   return {
     ...err.toJson(),
@@ -164,6 +183,8 @@ function toOAuthErrorCode(err: TinyAuthError): string {
       return 'insufficient_scope';
     case 'authorization_pending':
       return 'authorization_pending';
+    case 'slow_down':
+      return 'slow_down';
     default:
       return 'invalid_request';
   }

@@ -3,10 +3,12 @@ import { POSTGRES_MIGRATIONS } from '../../migrations/postgres/index.ts';
 import { Migration20260509171036_initial as PostgresInitialMigration } from '../../migrations/postgres/Migration20260509171036_initial.ts';
 import { Migration20260512120000_add_scheduler_jobs as PostgresSchedulerJobsMigration } from '../../migrations/postgres/Migration20260512120000_add_scheduler_jobs.ts';
 import { Migration20260619075007 as PostgresDeviceAuthorizationMigration } from '../../migrations/postgres/Migration20260619075007.js';
+import { Migration20260619191600_unique_oauth_client_client_id as PostgresUniqueOAuthClientClientIdMigration } from '../../migrations/postgres/Migration20260619191600_unique_oauth_client_client_id.js';
 import { SQLITE_MIGRATIONS } from '../../migrations/sqlite/index.ts';
 import { Migration20260509171226_initial as SqliteInitialMigration } from '../../migrations/sqlite/Migration20260509171226_initial.ts';
 import { Migration20260512120000_add_scheduler_jobs as SqliteSchedulerJobsMigration } from '../../migrations/sqlite/Migration20260512120000_add_scheduler_jobs.ts';
 import { Migration20260619075330 as SqliteDeviceAuthorizationMigration } from '../../migrations/sqlite/Migration20260619075330.js';
+import { Migration20260619191600_unique_oauth_client_client_id as SqliteUniqueOAuthClientClientIdMigration } from '../../migrations/sqlite/Migration20260619191600_unique_oauth_client_client_id.js';
 import { postgres } from './postgres/postgres.ts';
 import { sqlite } from './sqlite/sqlite.ts';
 
@@ -14,9 +16,11 @@ type MigrationClass =
   | typeof PostgresInitialMigration
   | typeof PostgresSchedulerJobsMigration
   | typeof PostgresDeviceAuthorizationMigration
+  | typeof PostgresUniqueOAuthClientClientIdMigration
   | typeof SqliteInitialMigration
   | typeof SqliteSchedulerJobsMigration
-  | typeof SqliteDeviceAuthorizationMigration;
+  | typeof SqliteDeviceAuthorizationMigration
+  | typeof SqliteUniqueOAuthClientClientIdMigration;
 
 interface MigrationLike {
   up(): void | Promise<void>;
@@ -45,6 +49,7 @@ describe('database migrations', () => {
       PostgresInitialMigration,
       PostgresSchedulerJobsMigration,
       PostgresDeviceAuthorizationMigration,
+      PostgresUniqueOAuthClientClientIdMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(POSTGRES_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -80,6 +85,7 @@ describe('database migrations', () => {
       SqliteInitialMigration,
       SqliteSchedulerJobsMigration,
       SqliteDeviceAuthorizationMigration,
+      SqliteUniqueOAuthClientClientIdMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(SQLITE_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -160,5 +166,27 @@ describe('database migrations', () => {
         query.includes('`locked_until` datetime null'),
       ),
     ).toBe(true);
+  });
+
+  test('oauth client client_id migrations replace the accidental non-unique index', async () => {
+    const postgresQueries = await collectMigrationQueries(
+      PostgresUniqueOAuthClientClientIdMigration,
+    );
+    const sqliteQueries = await collectMigrationQueries(
+      SqliteUniqueOAuthClientClientIdMigration,
+    );
+
+    expect(postgresQueries).toContain(
+      `drop index if exists "client_client_id_unique";`,
+    );
+    expect(postgresQueries).toContain(
+      `create unique index "client_client_id_unique" on "oauth_client" ("client_id");`,
+    );
+    expect(sqliteQueries).toContain(
+      `drop index if exists \`client_client_id_unique\`;`,
+    );
+    expect(sqliteQueries).toContain(
+      `create unique index \`client_client_id_unique\` on \`oauth_client\` (\`client_id\`);`,
+    );
   });
 });

@@ -142,6 +142,7 @@ async function refreshToken(params: {
   refreshToken: string | undefined;
   clientId?: string;
   clientSecret?: string;
+  scope?: string;
 }) {
   return refreshAccessToken(app, {
     clientSecret: TEST_OAUTH_CLIENT.clientSecret,
@@ -188,6 +189,8 @@ describe('POST /oauth/token', () => {
       expect(json.refresh_token).toBeUndefined();
       expect(json.id_token).toBeDefined(); // openid scope requested
       expect(json.scope).toBe('openid profile email');
+      expect(res.headers.get('cache-control')).toBe('no-store');
+      expect(res.headers.get('pragma')).toBe('no-cache');
     });
 
     test('should work with client_secret authentication', async () => {
@@ -1188,6 +1191,52 @@ describe('POST /oauth/token', () => {
       const json = await refreshRes.json();
       // Scopes should be preserved after rotation
       expect(json.scope).toBe(originalScope);
+    });
+
+    test('should allow refresh token scope narrowing', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
+      const tokenRes = await exchangeCode({ code });
+      const { refresh_token } = await tokenRes.json();
+
+      const refreshRes = await refreshToken({
+        refreshToken: refresh_token,
+        scope: 'openid email',
+      });
+
+      expect(refreshRes.status).toBe(200);
+      const json = await refreshRes.json();
+      expect(json.scope).toBe('openid email');
+      expect(json.id_token).toBeDefined();
+    });
+
+    test('should reject refresh token scope expansion without consuming the token', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid email offline_access',
+      });
+      const tokenRes = await exchangeCode({ code });
+      const { refresh_token } = await tokenRes.json();
+
+      const refreshRes = await refreshToken({
+        refreshToken: refresh_token,
+        scope: 'openid profile email',
+      });
+
+      const json = await assertJsonBody(refreshRes, 400);
+      expect(json.code).toBe('INVALID_SCOPE');
+
+      const retryRes = await refreshToken({
+        refreshToken: refresh_token,
+        scope: 'openid email',
+      });
+      expect(retryRes.status).toBe(200);
+      const retryJson = await retryRes.json();
+      expect(retryJson.scope).toBe('openid email');
     });
 
     test('should preserve user identity after token rotation', async () => {

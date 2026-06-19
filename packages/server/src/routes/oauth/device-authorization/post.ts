@@ -52,6 +52,11 @@ export const deviceAuthorizationPost = new Hono<AppEnv>().post(
     if (basicCredentials && body.client_secret) {
       throwInvalidClientCredentialsWithBasicChallenge(c);
     }
+    if (basicCredentials && body.client_id) {
+      if (basicCredentials.clientId !== body.client_id) {
+        throwInvalidClientCredentialsWithBasicChallenge(c);
+      }
+    }
 
     const clientId = basicCredentials?.clientId ?? body.client_id;
     if (!clientId) {

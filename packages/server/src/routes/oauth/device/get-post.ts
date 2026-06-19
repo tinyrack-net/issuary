@@ -34,8 +34,26 @@ export const deviceGetPost = new Hono<AppEnv>()
         );
       }
 
+      const { mikro, securityService } = c.var.services;
+      let deviceDetails = '';
+      if (userCode) {
+        const userCodeHash = await securityService.hashOpaqueToken(
+          'oauth-device-user-code',
+          userCode.toUpperCase(),
+        );
+        const deviceCode =
+          await mikro.oauthDeviceCode.findPendingByUserCodeHash(userCodeHash);
+        if (deviceCode) {
+          await mikro.em.populate(deviceCode, ['client']);
+          const scopes = deviceCode.scope
+            .map((scope) => `<li>${escapeHtml(scope)}</li>`)
+            .join('');
+          deviceDetails = `<section><h2>${escapeHtml(deviceCode.client.name)}</h2><p>Requested scopes:</p><ul>${scopes}</ul></section>`;
+        }
+      }
+
       return c.html(
-        `<!doctype html><html><body><form method="post"><input name="user_code" value="${escapeHtml(userCode)}"><button type="submit">Approve</button></form></body></html>`,
+        `<!doctype html><html><body>${deviceDetails}<form method="post"><input name="user_code" value="${escapeHtml(userCode)}"><button type="submit">Approve</button></form></body></html>`,
       );
     },
   )

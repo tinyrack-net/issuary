@@ -86,7 +86,7 @@ export const ClientConfigSchema = z
       .describe('OAuth client_id used in authorization requests.'),
     client_secret: z
       .string()
-      .min(1)
+      .min(16)
       .optional()
       .describe(
         'OAuth client_secret for confidential clients. Omit for public clients.',
@@ -187,5 +187,33 @@ export const CLIENT_CONFIGS_DEFAULT: ClientConfig[] = [];
 
 export const ClientConfigsSchema = z
   .array(ClientConfigSchema)
+  .superRefine((clients, ctx) => {
+    const seenIds = new Map<string, number>();
+    const seenClientIds = new Map<string, number>();
+
+    clients.forEach((client, index) => {
+      const firstIdIndex = seenIds.get(client.id);
+      if (firstIdIndex !== undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [index, 'id'],
+          message: `OAuth client id must be unique. Duplicate value also appears at clients.${firstIdIndex}.id.`,
+        });
+      } else {
+        seenIds.set(client.id, index);
+      }
+
+      const firstClientIdIndex = seenClientIds.get(client.client_id);
+      if (firstClientIdIndex !== undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [index, 'client_id'],
+          message: `OAuth client client_id must be unique. Duplicate value also appears at clients.${firstClientIdIndex}.client_id.`,
+        });
+      } else {
+        seenClientIds.set(client.client_id, index);
+      }
+    });
+  })
   .default(CLIENT_CONFIGS_DEFAULT)
   .describe('List of registered OAuth/OIDC client applications.');

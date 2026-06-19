@@ -48,9 +48,10 @@ const test = createScenarioFixture(
           redirect_uris: [`${mockClientOrigin}/callback`],
           post_logout_redirect_uris: [`${mockClientOrigin}/logged-out`],
           web_origins: [mockClientOrigin],
-          response_types: ['code'],
+          response_types: ['code', 'id_token'],
           grant_types: [
             'authorization_code',
+            'implicit',
             'refresh_token',
             'client_credentials',
             'urn:ietf:params:oauth:grant-type:device_code',
@@ -278,10 +279,13 @@ async function startMockOAuthClient(params: {
   releasePort?: () => Promise<void>;
 }): Promise<MockOAuthClientServer> {
   let latestDeviceCode: string | undefined;
+  let latestDeviceVerificationUriComplete: string | undefined;
   let latestRefreshToken: string | undefined;
   const discovery = await fetchOpenIdConfiguration(params.authServerOrigin);
   assertDiscoverySupports(discovery, 'response', 'code');
+  assertDiscoverySupports(discovery, 'response', 'id_token');
   assertDiscoverySupports(discovery, 'grant', 'authorization_code');
+  assertDiscoverySupports(discovery, 'grant', 'implicit');
   assertDiscoverySupports(discovery, 'grant', 'refresh_token');
   assertDiscoverySupports(discovery, 'grant', 'client_credentials');
   assertDiscoverySupports(
@@ -314,9 +318,43 @@ async function startMockOAuthClient(params: {
       return;
     }
 
+    if (url.pathname === '/implicit-start') {
+      const authorizeUrl = new URL(discovery.authorizationEndpoint);
+      authorizeUrl.searchParams.set('response_type', 'id_token');
+      authorizeUrl.searchParams.set('client_id', MOCK_CLIENT.clientId);
+      authorizeUrl.searchParams.set('redirect_uri', params.redirectUri);
+      authorizeUrl.searchParams.set('scope', 'openid profile email');
+      authorizeUrl.searchParams.set('state', params.state);
+      authorizeUrl.searchParams.set('nonce', params.nonce);
+      authorizeUrl.searchParams.set('prompt', 'consent');
+      sendRedirect(response, authorizeUrl.toString());
+      return;
+    }
+
     if (url.pathname === '/callback') {
       const code = url.searchParams.get('code');
       const state = url.searchParams.get('state');
+      if (!code && !state) {
+        sendHtml(
+          response,
+          200,
+          `<!doctype html><html><body><main id="implicit-result"><h1>Mock client callback pending</h1></main><script>
+const expectedState = ${JSON.stringify(params.state)};
+const fragment = new URLSearchParams(window.location.hash.slice(1));
+const idToken = fragment.get('id_token');
+const tokenType = fragment.get('token_type');
+const state = fragment.get('state');
+const root = document.getElementById('implicit-result');
+if (root && idToken && tokenType === 'Bearer' && state === expectedState) {
+  root.innerHTML = '<h1>Mock implicit client signed in</h1><p id="implicit-token-type">' + tokenType + '</p><p id="implicit-has-id-token">true</p>';
+} else if (root) {
+  root.innerHTML = '<h1>Mock client callback failed</h1>';
+}
+</script></body></html>`,
+        );
+        return;
+      }
+
       if (!code || state !== params.state) {
         sendHtml(response, 400, '<h1>Mock client callback failed</h1>');
         return;
@@ -418,6 +456,52 @@ async function startMockOAuthClient(params: {
         response,
         200,
         `<h1>Mock refresh token exchanged</h1><p id="refresh-token-type">${tokenClaims.tokenType}</p><p id="refresh-has-id-token">${tokenClaims.hasIdToken}</p><p id="refresh-scope">${tokenClaims.scope}</p>`,
+      );
+      return;
+    }
+
+    if (url.pathname === '/refresh-token-narrowed') {
+      if (!latestRefreshToken) {
+        sendHtml(response, 400, '<h1>No refresh token available</h1>');
+        return;
+      }
+      const tokenResponse = await fetch(discovery.tokenEndpoint, {
+        method: 'POST',
+        headers: {
+          authorization: basicClientAuthHeader(),
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: latestRefreshToken,
+          scope: 'openid email',
+        }),
+      });
+      const tokenJson = await tokenResponse.json();
+      if (!tokenResponse.ok) {
+        sendHtml(
+          response,
+          502,
+          `<h1>Mock refresh token narrowing failed</h1><pre>${JSON.stringify(tokenJson)}</pre>`,
+        );
+        return;
+      }
+      const tokenClaims = getTokenResponseClaims(tokenJson);
+      if (!tokenClaims.accessToken) {
+        sendHtml(
+          response,
+          502,
+          '<h1>Mock narrowed refresh missing access token</h1>',
+        );
+        return;
+      }
+      if (tokenClaims.refreshToken) {
+        latestRefreshToken = tokenClaims.refreshToken;
+      }
+      sendHtml(
+        response,
+        200,
+        `<h1>Mock refresh token scope narrowed</h1><p id="refresh-narrowed-scope">${tokenClaims.scope}</p>`,
       );
       return;
     }
@@ -528,6 +612,7 @@ async function startMockOAuthClient(params: {
         deviceJson,
         'verification_uri_complete',
       );
+      latestDeviceVerificationUriComplete = verificationUriComplete;
       if (!latestDeviceCode || !userCode || !verificationUriComplete) {
         sendHtml(response, 502, '<h1>Missing device authorization fields</h1>');
         return;
@@ -536,6 +621,49 @@ async function startMockOAuthClient(params: {
         response,
         200,
         `<h1>Mock device authorization started</h1><p id="device-user-code">${userCode}</p><a id="device-verification-link" href="${verificationUriComplete}">Verify device</a>`,
+      );
+      return;
+    }
+
+    if (url.pathname === '/device/pending-token') {
+      if (!latestDeviceCode || !latestDeviceVerificationUriComplete) {
+        sendHtml(response, 400, '<h1>No device code available</h1>');
+        return;
+      }
+      const deviceCode = latestDeviceCode;
+      const verificationUriComplete = latestDeviceVerificationUriComplete;
+      const poll = () =>
+        fetch(discovery.tokenEndpoint, {
+          method: 'POST',
+          headers: {
+            authorization: basicClientAuthHeader(),
+            'content-type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+            device_code: deviceCode,
+          }),
+        });
+
+      await poll();
+      const slowDownResponse = await poll();
+      const slowDownJson = await slowDownResponse.json();
+      if (slowDownResponse.ok) {
+        sendHtml(
+          response,
+          502,
+          '<h1>Mock device poll unexpectedly passed</h1>',
+        );
+        return;
+      }
+      const error =
+        typeof slowDownJson === 'object' && slowDownJson !== null
+          ? readStringField(slowDownJson, 'error')
+          : undefined;
+      sendHtml(
+        response,
+        200,
+        `<h1>Mock device polling slowed down</h1><p id="device-poll-error">${error}</p><a id="device-verification-link" href="${verificationUriComplete}">Verify device</a>`,
       );
       return;
     }
@@ -586,6 +714,18 @@ async function startMockOAuthClient(params: {
         `${params.mockClientOrigin}/logged-out`,
       );
       endSessionUrl.searchParams.set('state', 'mock-logout-state');
+      sendRedirect(response, endSessionUrl.toString());
+      return;
+    }
+
+    if (url.pathname === '/logout-invalid-hint') {
+      const endSessionUrl = new URL(discovery.endSessionEndpoint);
+      endSessionUrl.searchParams.set('client_id', MOCK_CLIENT.clientId);
+      endSessionUrl.searchParams.set(
+        'post_logout_redirect_uri',
+        `${params.mockClientOrigin}/logged-out`,
+      );
+      endSessionUrl.searchParams.set('id_token_hint', 'not-a-valid-id-token');
       sendRedirect(response, endSessionUrl.toString());
       return;
     }
@@ -770,6 +910,179 @@ test.describe('mock OAuth client integration', () => {
       ).toBeVisible();
       await expect(page.locator('#device-token-type')).toHaveText('Bearer');
       await expect(page.locator('#device-has-id-token')).toHaveText('true');
+    } finally {
+      await mockClient.close();
+    }
+  });
+
+  test('real mock OAuth client narrows refresh token scope', async ({
+    page,
+    context,
+    auxiliaryPort,
+    releaseAuxiliaryPort,
+    baseURL,
+  }) => {
+    const email = uniqueEmail('refresh-narrowing');
+    await registerUserByApi(String(baseURL), email, TEST_PASSWORD);
+    await loginByApi(context, String(baseURL), email, TEST_PASSWORD);
+
+    const pkce = createPkceS256Pair();
+    const state = 'mock-refresh-narrowing-state';
+    const mockClientOrigin = getMockClientOrigin(auxiliaryPort);
+    const mockClient = await startMockOAuthClient({
+      authServerOrigin: String(baseURL),
+      mockClientOrigin,
+      mockClientPort: auxiliaryPort,
+      releasePort: releaseAuxiliaryPort,
+      redirectUri: `${mockClientOrigin}/callback`,
+      state,
+      nonce: 'mock-refresh-narrowing-nonce',
+      codeChallenge: pkce.codeChallenge,
+      codeVerifier: pkce.codeVerifier,
+    });
+
+    try {
+      await page.goto(`${mockClient.origin}/start`);
+      await expect(page).toHaveURL(/\/consent/);
+      await page.locator(consentPage.allowButton).click({ noWaitAfter: true });
+      await expect(page).toHaveURL(new RegExp(`^${mockClientOrigin}/callback`));
+
+      await page.goto(`${mockClient.origin}/refresh-token-narrowed`);
+      await expect(
+        page.getByRole('heading', {
+          name: 'Mock refresh token scope narrowed',
+        }),
+      ).toBeVisible();
+      const narrowedScope = await page
+        .locator('#refresh-narrowed-scope')
+        .textContent();
+      expect(new Set(narrowedScope?.split(' '))).toEqual(
+        new Set(['openid', 'email']),
+      );
+    } finally {
+      await mockClient.close();
+    }
+  });
+
+  test('real mock OAuth client completes implicit id_token flow', async ({
+    page,
+    context,
+    auxiliaryPort,
+    releaseAuxiliaryPort,
+    baseURL,
+  }) => {
+    const email = uniqueEmail('implicit-id-token');
+    await registerUserByApi(String(baseURL), email, TEST_PASSWORD);
+    await loginByApi(context, String(baseURL), email, TEST_PASSWORD);
+
+    const pkce = createPkceS256Pair();
+    const mockClientOrigin = getMockClientOrigin(auxiliaryPort);
+    const mockClient = await startMockOAuthClient({
+      authServerOrigin: String(baseURL),
+      mockClientOrigin,
+      mockClientPort: auxiliaryPort,
+      releasePort: releaseAuxiliaryPort,
+      redirectUri: `${mockClientOrigin}/callback`,
+      state: 'mock-implicit-state',
+      nonce: 'mock-implicit-nonce',
+      codeChallenge: pkce.codeChallenge,
+      codeVerifier: pkce.codeVerifier,
+    });
+
+    try {
+      await page.goto(`${mockClient.origin}/implicit-start`);
+      await expect(page).toHaveURL(/\/consent/);
+      await page.locator(consentPage.allowButton).click({ noWaitAfter: true });
+      await expect(page).toHaveURL(
+        new RegExp(`^${mockClientOrigin}/callback#`),
+      );
+      const hash = await page.evaluate(() => window.location.hash);
+      const params = new URLSearchParams(hash.slice(1));
+      expect(params.get('state')).toBe('mock-implicit-state');
+      expect(params.get('token_type')).toBe('Bearer');
+      expect(params.get('id_token')).toEqual(expect.any(String));
+      await expect(
+        page.getByRole('heading', { name: 'Mock implicit client signed in' }),
+      ).toBeVisible();
+      await expect(page.locator('#implicit-token-type')).toHaveText('Bearer');
+      await expect(page.locator('#implicit-has-id-token')).toHaveText('true');
+    } finally {
+      await mockClient.close();
+    }
+  });
+
+  test('real mock OAuth client surfaces device polling and approval details', async ({
+    page,
+    context,
+    auxiliaryPort,
+    releaseAuxiliaryPort,
+    baseURL,
+  }) => {
+    const email = uniqueEmail('device-details');
+    await registerUserByApi(String(baseURL), email, TEST_PASSWORD);
+    await loginByApi(context, String(baseURL), email, TEST_PASSWORD);
+
+    const pkce = createPkceS256Pair();
+    const mockClientOrigin = getMockClientOrigin(auxiliaryPort);
+    const mockClient = await startMockOAuthClient({
+      authServerOrigin: String(baseURL),
+      mockClientOrigin,
+      mockClientPort: auxiliaryPort,
+      releasePort: releaseAuxiliaryPort,
+      redirectUri: `${mockClientOrigin}/callback`,
+      state: 'mock-device-details-state',
+      nonce: 'mock-device-details-nonce',
+      codeChallenge: pkce.codeChallenge,
+      codeVerifier: pkce.codeVerifier,
+    });
+
+    try {
+      await page.goto(`${mockClient.origin}/device/start`);
+      await expect(
+        page.getByRole('heading', {
+          name: 'Mock device authorization started',
+        }),
+      ).toBeVisible();
+      await page.goto(`${mockClient.origin}/device/pending-token`);
+      await expect(
+        page.getByRole('heading', { name: 'Mock device polling slowed down' }),
+      ).toBeVisible();
+      await expect(page.locator('#device-poll-error')).toHaveText('slow_down');
+
+      await page.locator('#device-verification-link').click();
+      await expect(page.getByText(MOCK_CLIENT.name)).toBeVisible();
+      await expect(page.getByText('openid')).toBeVisible();
+      await expect(page.getByText('profile')).toBeVisible();
+    } finally {
+      await mockClient.close();
+    }
+  });
+
+  test('real mock OAuth client rejects invalid logout id_token_hint', async ({
+    page,
+    auxiliaryPort,
+    releaseAuxiliaryPort,
+    baseURL,
+  }) => {
+    const pkce = createPkceS256Pair();
+    const mockClientOrigin = getMockClientOrigin(auxiliaryPort);
+    const mockClient = await startMockOAuthClient({
+      authServerOrigin: String(baseURL),
+      mockClientOrigin,
+      mockClientPort: auxiliaryPort,
+      releasePort: releaseAuxiliaryPort,
+      redirectUri: `${mockClientOrigin}/callback`,
+      state: 'mock-invalid-logout-state',
+      nonce: 'mock-invalid-logout-nonce',
+      codeChallenge: pkce.codeChallenge,
+      codeVerifier: pkce.codeVerifier,
+    });
+
+    try {
+      await page.goto(`${mockClient.origin}/logout-invalid-hint`);
+      await expect(page).toHaveURL(/\/oauth\/end_session/);
+      await expect(page.getByText('invalid_request')).toBeVisible();
+      await expect(page.getByText('Invalid id_token_hint.')).toBeVisible();
     } finally {
       await mockClient.close();
     }

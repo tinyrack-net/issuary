@@ -72,6 +72,17 @@ describe('OpenAPI docs when enabled', () => {
       );
       expect(body.components.securitySchemes).toHaveProperty('bearerAuth');
     });
+
+    test('documents discovery endpoint auth method metadata fields', async () => {
+      const res = await app.request('/api/docs/json', {
+        method: 'GET',
+      });
+
+      const body = await assertJsonBody(res);
+      const spec = JSON.stringify(body);
+      expect(spec).toContain('introspection_endpoint_auth_methods_supported');
+      expect(spec).toContain('revocation_endpoint_auth_methods_supported');
+    });
   });
 
   describe('GET /api/docs', () => {

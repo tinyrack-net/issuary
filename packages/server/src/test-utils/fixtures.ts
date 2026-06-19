@@ -9,7 +9,7 @@
  */
 export const TEST_OAUTH_CLIENT = {
   clientId: 'sdlk3n3dkj2',
-  clientSecret: 'sdlk3n3dkj2',
+  clientSecret: 'sdlk3n3dkj2-secret',
   redirectUri: 'http://localhost:8080/callback',
   allowedScopes: ['openid', 'profile', 'email'],
 } as const;

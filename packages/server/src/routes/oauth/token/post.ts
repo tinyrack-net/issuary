@@ -11,6 +11,14 @@ import {
   setBasicClientAuthChallengeIfInvalidClientCredentials,
   throwInvalidClientCredentialsWithBasicChallenge,
 } from '../client-auth.js';
+import { setOAuthClientCorsHeaders } from '../cors.js';
+
+const END_USER_SCOPES_FOR_CLIENT_CREDENTIALS = new Set([
+  'openid',
+  'profile',
+  'email',
+  'offline_access',
+]);
 
 const TokenRequestBody = z
   .object({
@@ -99,6 +107,7 @@ export const tokenPost = new Hono<AppEnv>().post(
 
     // 1. Validate client
     const client = await oauthClientService.findByClientId(clientId);
+    setOAuthClientCorsHeaders(c, client);
 
     if (!client.enabled) {
       throw new e.OAuthClientDisabled.Error();
@@ -137,6 +146,8 @@ export const tokenPost = new Hono<AppEnv>().post(
         codeVerifier: body.code_verifier ?? undefined,
       });
 
+      c.header('Cache-Control', 'no-store');
+      c.header('Pragma', 'no-cache');
       return c.json(tokens, 200);
     }
 
@@ -148,14 +159,25 @@ export const tokenPost = new Hono<AppEnv>().post(
       const tokens = await oauthTokenService.refreshAccessToken({
         refreshToken: body.refresh_token,
         clientId,
+        scope: body.scope ? body.scope.split(' ') : undefined,
       });
 
+      c.header('Cache-Control', 'no-store');
+      c.header('Pragma', 'no-cache');
       return c.json(tokens, 200);
     }
 
     if (body.grant_type === 'client_credentials') {
       await oauthClientService.validateConfidentialClient(clientId);
       const requestedScopes = body.scope ? body.scope.split(' ') : [];
+      const endUserScopes = requestedScopes.filter((scope) =>
+        END_USER_SCOPES_FOR_CLIENT_CREDENTIALS.has(scope),
+      );
+      if (endUserScopes.length > 0) {
+        throw new e.InvalidScope.Error({
+          invalidScopes: endUserScopes,
+        });
+      }
       oauthClientService.validateScopes(client, requestedScopes);
 
       const tokens = await oauthTokenService.issueClientCredentialsToken({
@@ -163,6 +185,8 @@ export const tokenPost = new Hono<AppEnv>().post(
         scope: requestedScopes,
       });
 
+      c.header('Cache-Control', 'no-store');
+      c.header('Pragma', 'no-cache');
       return c.json(tokens, 200);
     }
 
@@ -176,6 +200,8 @@ export const tokenPost = new Hono<AppEnv>().post(
         clientId,
       });
 
+      c.header('Cache-Control', 'no-store');
+      c.header('Pragma', 'no-cache');
       return c.json(tokens, 200);
     }
 

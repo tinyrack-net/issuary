@@ -157,6 +157,8 @@ describe('POST /oauth/introspect', () => {
       expect(json.iat).toBeDefined();
       expect(json.sub).toBeDefined();
       expect(json.iss).toBeDefined();
+      expect(res.headers.get('cache-control')).toBe('no-store');
+      expect(res.headers.get('pragma')).toBe('no-cache');
     });
 
     test('should work with token_type_hint=access_token', async () => {

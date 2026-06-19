@@ -35,7 +35,7 @@ export const endSessionGet = new Hono<AppEnv>().get(
   ),
   async (c) => {
     const query = c.req.valid('query');
-    const { config, oauthClientService } = c.var.services;
+    const { config, jwtService, oauthClientService } = c.var.services;
 
     if (!query.post_logout_redirect_uri) {
       deleteCookie(c, 'session', { path: '/' });
@@ -54,6 +54,32 @@ export const endSessionGet = new Hono<AppEnv>().get(
     }
 
     const client = await oauthClientService.findByClientId(query.client_id);
+    if (query.id_token_hint) {
+      try {
+        const idTokenPayload = await jwtService.verifyIdToken(
+          query.id_token_hint,
+        );
+        if (idTokenPayload.aud !== query.client_id) {
+          return c.json(
+            {
+              error: 'invalid_request',
+              error_description:
+                'id_token_hint audience does not match client_id.',
+            },
+            400,
+          );
+        }
+      } catch {
+        return c.json(
+          {
+            error: 'invalid_request',
+            error_description: 'Invalid id_token_hint.',
+          },
+          400,
+        );
+      }
+    }
+
     try {
       oauthClientService.validatePostLogoutRedirectUri(
         client,

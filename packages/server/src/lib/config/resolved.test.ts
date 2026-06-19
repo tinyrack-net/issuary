@@ -369,9 +369,34 @@ describe('TinyAuthRuntimeConfigSchema', () => {
   });
 
   test.each([
+    ['id', 'clients.1.id'],
+    ['client_id', 'clients.1.client_id'],
+  ])('rejects duplicate OAuth client %s values', (_label, expectedPath) => {
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          {
+            ...createClientConfig(['http://localhost/callback']),
+            id: 'duplicate-config-id',
+            client_id: 'duplicate-client-id',
+          },
+          {
+            ...createClientConfig(['http://localhost/other-callback']),
+            id: 'duplicate-config-id',
+            client_id: 'duplicate-client-id',
+          },
+        ],
+      },
+      expectedPath,
+    );
+  });
+
+  test.each([
     ['empty scope', { scope: '' }],
     ['scope with control character', { scope: 'openid\nemail' }],
     ['empty client_secret', { client_secret: '' }],
+    ['short client_secret', { client_secret: 'short-secret' }],
     ['empty client_id', { client_id: '' }],
   ])('rejects OAuth client config with %s', (_label, overrides) => {
     expect(() =>

@@ -182,6 +182,7 @@ export interface RefreshTokenParams {
   refreshToken: string | undefined;
   clientId?: string | undefined;
   clientSecret?: string | undefined;
+  scope?: string | undefined;
 }
 
 /**
@@ -208,6 +209,7 @@ export async function refreshAccessToken(
       grant_type: 'refresh_token',
       refresh_token: assertDefined(refreshToken),
       client_id: clientId,
+      ...(params.scope != null ? { scope: params.scope } : {}),
       ...(clientSecret != null ? { client_secret: clientSecret } : {}),
     },
   });

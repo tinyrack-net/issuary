@@ -256,6 +256,11 @@ export const e = {
     'authorization_pending',
     'Device authorization is pending.',
   ),
+  SlowDown: createError(
+    400,
+    'slow_down',
+    'Device polling is too frequent. Increase the polling interval.',
+  ),
   InvalidDeviceCode: createError(
     400,
     'INVALID_DEVICE_CODE',

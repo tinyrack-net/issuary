@@ -85,6 +85,8 @@ describe('GET /oauth/userinfo', () => {
       // Profile scope claims
       expect(json.name).toBeDefined();
       expect(json.preferred_username).toBeDefined();
+      expect(res.headers.get('cache-control')).toBe('no-store');
+      expect(res.headers.get('pragma')).toBe('no-cache');
     });
 
     test('should return only sub and email claims with email scope', async () => {

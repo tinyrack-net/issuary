@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../entrypoints/app.ts';
 import {
+  countEntities,
   createAuthenticatedSession,
   createTestApp,
   getAuthorizationCode,
@@ -66,6 +67,18 @@ const IMPLICIT_CLIENT_CONFIG = {
   scope: 'openid profile email',
 };
 
+const CORS_OTHER_CLIENT_CONFIG = {
+  id: 'cors-other-client-config',
+  name: 'CORS Other Client',
+  client_id: 'cors-other-client',
+  client_secret: 'cors-other-client-secret',
+  redirect_uris: ['http://localhost:19090/callback'],
+  web_origins: ['http://localhost:19090'],
+  response_types: ['code'],
+  grant_types: ['authorization_code'],
+  scope: 'openid profile',
+};
+
 beforeAll(async () => {
   const testApp = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
@@ -74,6 +87,7 @@ beforeAll(async () => {
       TEST_OAUTH_CLIENT_CONFIG,
       COMPAT_CLIENT_CONFIG,
       IMPLICIT_CLIENT_CONFIG,
+      CORS_OTHER_CLIENT_CONFIG,
     ],
   });
   app = testApp.app;
@@ -129,6 +143,14 @@ describe('OAuth/OIDC provider compatibility', () => {
         'urn:ietf:params:oauth:grant-type:device_code',
       ],
       userinfo_signing_alg_values_supported: ['none'],
+      introspection_endpoint_auth_methods_supported: [
+        'client_secret_basic',
+        'client_secret_post',
+      ],
+      revocation_endpoint_auth_methods_supported: [
+        'client_secret_basic',
+        'client_secret_post',
+      ],
     });
   });
 
@@ -156,6 +178,20 @@ describe('OAuth/OIDC provider compatibility', () => {
     expect(configuration.token_endpoint_auth_methods_supported).not.toContain(
       'private_key_jwt',
     );
+  });
+
+  test('serves JWKS from startup-initialized keys without creating keys on GET', async () => {
+    const keyCountBefore = await countEntities(services, 'jwtKey');
+    expect(keyCountBefore).toBeGreaterThan(0);
+
+    const response = await app.request('/oauth/.well-known/jwks');
+    expect(response.status).toBe(200);
+    await expect(jsonBody(response)).resolves.toMatchObject({
+      keys: expect.any(Array),
+    });
+
+    const keyCountAfter = await countEntities(services, 'jwtKey');
+    expect(keyCountAfter).toBe(keyCountBefore);
   });
 
   test('returns OAuth standard error JSON from token endpoint', async () => {
@@ -311,13 +347,16 @@ describe('OAuth/OIDC provider compatibility', () => {
   });
 
   test('supports CORS from registered web origins', async () => {
-    const response = await app.request('/oauth/token', {
-      method: 'OPTIONS',
-      headers: {
-        origin: 'http://localhost:18080',
-        'access-control-request-method': 'POST',
+    const response = await app.request(
+      `/oauth/token?client_id=${COMPAT_CLIENT.clientId}`,
+      {
+        method: 'OPTIONS',
+        headers: {
+          origin: 'http://localhost:18080',
+          'access-control-request-method': 'POST',
+        },
       },
-    });
+    );
 
     expect(response.status).toBe(204);
     expect(response.headers.get('access-control-allow-origin')).toBe(
@@ -333,6 +372,74 @@ describe('OAuth/OIDC provider compatibility', () => {
     });
 
     expect(apiResponse.headers.get('access-control-allow-origin')).toBeNull();
+  });
+
+  test('does not expose navigation-only authorize endpoint through CORS', async () => {
+    const crossClientResponse = await app.request(
+      `/oauth/authorize?client_id=${COMPAT_CLIENT.clientId}`,
+      {
+        method: 'OPTIONS',
+        headers: {
+          origin: 'http://localhost:19090',
+          'access-control-request-method': 'GET',
+        },
+      },
+    );
+    expect(
+      crossClientResponse.headers.get('access-control-allow-origin'),
+    ).toBeNull();
+
+    const registeredOriginResponse = await app.request(
+      `/oauth/authorize?client_id=${COMPAT_CLIENT.clientId}`,
+      {
+        method: 'OPTIONS',
+        headers: {
+          origin: 'http://localhost:18080',
+          'access-control-request-method': 'GET',
+        },
+      },
+    );
+    expect(
+      registeredOriginResponse.headers.get('access-control-allow-origin'),
+    ).toBeNull();
+  });
+
+  test('scopes OAuth CORS to token POST body client_id', async () => {
+    const crossClientResponse = await app.request('/oauth/token', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        origin: 'http://localhost:19090',
+      },
+      body: formBody({
+        grant_type: 'client_credentials',
+        client_id: COMPAT_CLIENT.clientId,
+        client_secret: COMPAT_CLIENT.clientSecret,
+        scope: 'service.read',
+      }),
+    });
+    expect(crossClientResponse.status).toBe(200);
+    expect(
+      crossClientResponse.headers.get('access-control-allow-origin'),
+    ).toBeNull();
+
+    const ownClientResponse = await app.request('/oauth/token', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        origin: 'http://localhost:18080',
+      },
+      body: formBody({
+        grant_type: 'client_credentials',
+        client_id: COMPAT_CLIENT.clientId,
+        client_secret: COMPAT_CLIENT.clientSecret,
+        scope: 'service.read',
+      }),
+    });
+    expect(ownClientResponse.status).toBe(200);
+    expect(ownClientResponse.headers.get('access-control-allow-origin')).toBe(
+      'http://localhost:18080',
+    );
   });
 
   test('honors response_mode for authorization errors and rejects implicit query responses', async () => {
@@ -532,6 +639,17 @@ describe('OAuth/OIDC provider compatibility', () => {
     });
   });
 
+  test('rejects RP-initiated logout with invalid id_token_hint', async () => {
+    const response = await app.request(
+      `/oauth/end_session?client_id=${COMPAT_CLIENT.clientId}&post_logout_redirect_uri=${encodeURIComponent(COMPAT_CLIENT.postLogoutRedirectUri)}&id_token_hint=not-a-valid-id-token`,
+    );
+
+    expect(response.status).toBe(400);
+    await expect(jsonBody(response)).resolves.toMatchObject({
+      error: 'invalid_request',
+    });
+  });
+
   test('rejects device authorization without client authentication', async () => {
     const response = await app.request('/oauth/device_authorization', {
       method: 'POST',
@@ -579,6 +697,28 @@ describe('OAuth/OIDC provider compatibility', () => {
       },
       body: formBody({
         client_secret: COMPAT_CLIENT.clientSecret,
+        scope: 'openid profile',
+      }),
+    });
+
+    expect(response.status).toBe(401);
+    await expect(jsonBody(response)).resolves.toMatchObject({
+      error: 'invalid_client',
+    });
+  });
+
+  test('rejects device authorization with conflicting Basic and body client_id', async () => {
+    const response = await app.request('/oauth/device_authorization', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        authorization: basicAuthHeader(
+          COMPAT_CLIENT.clientId,
+          COMPAT_CLIENT.clientSecret,
+        ),
+      },
+      body: formBody({
+        client_id: 'different-device-client',
         scope: 'openid profile',
       }),
     });
@@ -646,6 +786,28 @@ describe('OAuth/OIDC provider compatibility', () => {
     expect(response.status).toBe(400);
     await expect(jsonBody(response)).resolves.toMatchObject({
       error: 'invalid_request',
+    });
+  });
+
+  test('rejects client credentials requests for end-user OIDC scopes', async () => {
+    const response = await app.request('/oauth/token', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        authorization: basicAuthHeader(
+          COMPAT_CLIENT.clientId,
+          COMPAT_CLIENT.clientSecret,
+        ),
+      },
+      body: formBody({
+        grant_type: 'client_credentials',
+        scope: 'openid service.read',
+      }),
+    });
+
+    expect(response.status).toBe(400);
+    await expect(jsonBody(response)).resolves.toMatchObject({
+      error: 'invalid_scope',
     });
   });
 
@@ -909,6 +1071,76 @@ describe('OAuth/OIDC provider compatibility', () => {
     await expect(jsonBody(failedResponse as Response)).resolves.toMatchObject({
       error: 'invalid_grant',
     });
+  });
+
+  test('returns slow_down for device polling faster than the advertised interval', async () => {
+    const deviceResponse = await app.request('/oauth/device_authorization', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        authorization: basicAuthHeader(
+          COMPAT_CLIENT.clientId,
+          COMPAT_CLIENT.clientSecret,
+        ),
+      },
+      body: formBody({ scope: 'openid profile' }),
+    });
+    const deviceJson = await deviceResponse.json();
+
+    const poll = () =>
+      app.request('/oauth/token', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded',
+          authorization: basicAuthHeader(
+            COMPAT_CLIENT.clientId,
+            COMPAT_CLIENT.clientSecret,
+          ),
+        },
+        body: formBody({
+          grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+          device_code: deviceJson.device_code,
+        }),
+      });
+
+    const firstResponse = await poll();
+    expect(firstResponse.status).toBe(400);
+    await expect(jsonBody(firstResponse)).resolves.toMatchObject({
+      error: 'authorization_pending',
+    });
+
+    const secondResponse = await poll();
+    expect(secondResponse.status).toBe(400);
+    await expect(jsonBody(secondResponse)).resolves.toMatchObject({
+      error: 'slow_down',
+    });
+  });
+
+  test('device verification page shows client and requested scopes', async () => {
+    const deviceResponse = await app.request('/oauth/device_authorization', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        authorization: basicAuthHeader(
+          COMPAT_CLIENT.clientId,
+          COMPAT_CLIENT.clientSecret,
+        ),
+      },
+      body: formBody({ scope: 'openid profile' }),
+    });
+    const deviceJson = await deviceResponse.json();
+    const sessionCookie = await createAuthenticatedSession(app);
+
+    const pageResponse = await app.request(
+      `/oauth/device?user_code=${encodeURIComponent(deviceJson.user_code)}`,
+      { headers: { cookie: `session=${sessionCookie}` } },
+    );
+
+    expect(pageResponse.status).toBe(200);
+    const html = await pageResponse.text();
+    expect(html).toContain('Compatibility Client');
+    expect(html).toContain('openid');
+    expect(html).toContain('profile');
   });
 
   test('rejects cross-site POST to /oauth/device without same-origin header', async () => {

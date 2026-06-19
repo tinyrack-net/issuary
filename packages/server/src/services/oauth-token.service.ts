@@ -36,6 +36,8 @@ export interface RefreshTokenGrantParams {
   refreshToken: string;
   /** OAuth client identifier (must match original request) */
   clientId: string;
+  /** Optional narrowed scope request (must be a subset of the refresh token scope) */
+  scope?: string[] | undefined;
 }
 
 /**
@@ -83,6 +85,8 @@ export interface TokenResponse {
   scope: string;
 }
 
+const DEVICE_CODE_POLL_INTERVAL_SECONDS = 5;
+
 /**
  * OAuth Token Service
  *
@@ -100,6 +104,7 @@ export class OAuthTokenService {
   private readonly jwtService: JwtService;
   private readonly securityService: SecurityService;
   private readonly refreshRotationLocks = new Map<string, Promise<void>>();
+  private readonly devicePollTimestamps = new Map<string, number>();
   constructor(
     config: TinyAuthRuntimeConfig,
     mikro: MikroService,
@@ -295,11 +300,25 @@ export class OAuthTokenService {
       );
 
     if (!deviceCode || deviceCode.expiresAt < new Date()) {
+      this.devicePollTimestamps.delete(deviceCodeHash);
       throw new e.InvalidDeviceCode.Error();
     }
     if (!deviceCode.authorizedUser) {
+      const now = Date.now();
+      const lastPolledAt = this.devicePollTimestamps.get(deviceCodeHash);
+      if (
+        lastPolledAt !== undefined &&
+        now - lastPolledAt < DEVICE_CODE_POLL_INTERVAL_SECONDS * 1000
+      ) {
+        this.devicePollTimestamps.set(deviceCodeHash, now);
+        throw new e.SlowDown.Error();
+      }
+
+      this.devicePollTimestamps.set(deviceCodeHash, now);
       throw new e.AuthorizationPending.Error();
     }
+
+    this.devicePollTimestamps.delete(deviceCodeHash);
 
     const consumedAt = new Date();
     const consumed =
@@ -357,6 +376,15 @@ export class OAuthTokenService {
     // 4. Get client info
     const client = await this.oauthClientService.findByClientId(clientId);
 
+    const refreshTokenScopes = refreshPayload.scope.split(' ');
+    const requestedScopes = params.scope ?? refreshTokenScopes;
+    const invalidScopes = requestedScopes.filter(
+      (scope) => !refreshTokenScopes.includes(scope),
+    );
+    if (invalidScopes.length > 0) {
+      throw new e.InvalidScope.Error({ invalidScopes });
+    }
+
     // 5. Refresh Token Rotation: Revoke the old refresh token
     // This is a security best practice per OAuth 2.0 Security BCP §4.14.2
     // If an attacker tries to use a stolen refresh token after the legitimate
@@ -387,7 +415,7 @@ export class OAuthTokenService {
       userEmail: userData.email,
       userEmailVerified: userData.email_verified,
       clientId: client.clientId,
-      scope: refreshPayload.scope.split(' '),
+      scope: requestedScopes,
       issueRefreshToken: true,
       grantId: refreshPayload.grant_id,
     });

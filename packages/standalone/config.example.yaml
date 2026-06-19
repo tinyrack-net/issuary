@@ -188,7 +188,7 @@ clients:
   - id: example-client
     name: Example Web App
     client_id: ${TINYAUTH_CLIENT_ID:-example-client}
-    client_secret: ${TINYAUTH_CLIENT_SECRET:-example-secret}
+    client_secret: ${TINYAUTH_CLIENT_SECRET:-example-client-secret}
     redirect_uris:
       - http://localhost:3000/callback
     response_types:

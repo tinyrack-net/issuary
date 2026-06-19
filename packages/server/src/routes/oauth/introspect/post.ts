@@ -120,6 +120,8 @@ export const introspectPost = new Hono<AppEnv>().post(
       clientId,
     );
 
+    c.header('Cache-Control', 'no-store');
+    c.header('Pragma', 'no-cache');
     return c.json(result, 200);
   },
 );

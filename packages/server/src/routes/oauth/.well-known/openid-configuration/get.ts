@@ -56,6 +56,14 @@ export function buildOpenidConfiguration(config: TinyAuthRuntimeConfig) {
       'client_secret_post',
       'none',
     ],
+    introspection_endpoint_auth_methods_supported: [
+      'client_secret_basic',
+      'client_secret_post',
+    ],
+    revocation_endpoint_auth_methods_supported: [
+      'client_secret_basic',
+      'client_secret_post',
+    ],
     code_challenge_methods_supported: ['S256'],
     introspection_endpoint: `${baseUrl}/oauth/introspect`,
     revocation_endpoint: `${baseUrl}/oauth/revoke`,
@@ -141,6 +149,18 @@ export const oidcConfigGet = new Hono<AppEnv>().get(
                   .optional()
                   .describe(
                     'JSON array containing a list of Client Authentication methods',
+                  ),
+                introspection_endpoint_auth_methods_supported: z
+                  .array(z.string())
+                  .optional()
+                  .describe(
+                    'JSON array containing a list of Token Introspection Client Authentication methods',
+                  ),
+                revocation_endpoint_auth_methods_supported: z
+                  .array(z.string())
+                  .optional()
+                  .describe(
+                    'JSON array containing a list of Token Revocation Client Authentication methods',
                   ),
                 code_challenge_methods_supported: z
                   .array(z.string())

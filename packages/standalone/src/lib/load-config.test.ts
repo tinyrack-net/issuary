@@ -128,6 +128,16 @@ describe('load-config', () => {
     expect(config.terms[0]?.content['en']?.type).toBe('text');
   });
 
+  test('loads the packaged config.dev.yaml', () => {
+    const devConfigPath = fileURLToPath(
+      new URL('../../config.dev.yaml', import.meta.url),
+    );
+
+    const config = loadConfig(devConfigPath);
+
+    expect(config.clients[0]?.client_secret?.length).toBeGreaterThanOrEqual(16);
+  });
+
   test('loads database scheduler background options from env-style strings', async () => {
     const dir = await fs.promises.mkdtemp(
       path.join(os.tmpdir(), 'tinyauth-load-config-scheduler-retry-'),

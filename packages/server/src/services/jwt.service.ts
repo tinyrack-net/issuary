@@ -455,9 +455,6 @@ export class JwtService {
   async getJWKS(): Promise<{
     keys: PublicJWK[];
   }> {
-    // Ensure at least one active key exists (lazy initialization)
-    await this.getActiveKey();
-
     const keys = await this.mikro.jwtKey.getPublicKeys();
 
     const jwks = await Promise.all(keys.map((key) => this.convertToJWK(key)));
@@ -568,6 +565,20 @@ export class JwtService {
       .sign(privateKey);
 
     return jwt;
+  }
+
+  async verifyIdToken(token: string): Promise<JWTPayload & IdTokenPayload> {
+    try {
+      const payload = await this.verifyToken(token);
+
+      if (!this.isIdTokenPayload(payload)) {
+        throw new Error('Invalid ID token payload structure');
+      }
+
+      return payload;
+    } catch {
+      throw new e.InvalidAccessToken.Error();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -746,6 +757,12 @@ export class JwtService {
       typeof payload['client_id'] === 'string' &&
       typeof payload['scope'] === 'string'
     );
+  }
+
+  private isIdTokenPayload(
+    payload: JWTPayload,
+  ): payload is JWTPayload & IdTokenPayload {
+    return typeof payload.sub === 'string' && typeof payload.aud === 'string';
   }
 
   /**

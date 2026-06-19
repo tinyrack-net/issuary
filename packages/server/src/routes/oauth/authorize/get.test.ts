@@ -1,6 +1,6 @@
 import { testClient } from 'hono/testing';
 import * as jose from 'jose';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
 import { encrypt } from '../../../lib/crypto.ts';
 import type { ServiceContainer } from '../../../services/container.ts';
@@ -521,6 +521,26 @@ describe('GET /oauth/authorize', () => {
       // Should return JSON error, not redirect
       expect(res.status).toBe(400);
       expect(res.headers.get('location')).toBeNull();
+    });
+
+    test('should not redirect unexpected errors before redirect_uri validation to the supplied redirect_uri', async () => {
+      const authorizeSpy = vi
+        .spyOn(services.oauthAuthorizeService, 'authorize')
+        .mockRejectedValueOnce(new Error('database temporarily unavailable'));
+      const client = testClient(app);
+
+      const res = await client.oauth.authorize.$get({
+        query: {
+          ...validParams,
+          redirect_uri: 'https://evil.com/callback',
+        },
+      });
+
+      expect(authorizeSpy).toHaveBeenCalledOnce();
+      expect(res.status).toBe(500);
+      expect(res.headers.get('location')).toBeNull();
+      const body = await assertJsonBody(res, 500);
+      expect(body.error).toBe('server_error');
     });
 
     test('should accept exact match of registered redirect_uri', async () => {

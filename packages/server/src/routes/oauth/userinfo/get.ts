@@ -45,6 +45,8 @@ const userinfoHandler = async (c: Context<AppEnv>) => {
     userInfo.preferred_username = userData.email;
   }
 
+  c.header('Cache-Control', 'no-store');
+  c.header('Pragma', 'no-cache');
   return c.json(userInfo, 200);
 };
 

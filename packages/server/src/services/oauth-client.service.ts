@@ -108,6 +108,11 @@ export class OAuthClientService {
     }
   }
 
+  public async isAllowedWebOrigin(origin: string): Promise<boolean> {
+    const clients = await this.mikro.oauthClient.find({ enabled: true });
+    return clients.some((client) => client.webOrigins.includes(origin));
+  }
+
   /**
    * Verify client secret using the current PBKDF2 hash format.
    * All clients (including config clients) now have hashed secrets in DB.

@@ -197,12 +197,16 @@ export const authorizeGet = new Hono<AppEnv>().get(
         );
       }
 
-      // Log unexpected errors
+      // Log unexpected errors. Do not redirect unexpected failures to the
+      // client-supplied redirect_uri because this handler cannot prove that
+      // redirect_uri validation completed successfully.
       c.var.logger.error({ err: error }, 'Unexpected authorize error');
-      return redirectWithError(
-        'server_error',
-        'An unexpected error occurred',
-        query.redirect_uri,
+      return c.json(
+        {
+          error: 'server_error',
+          error_description: 'An unexpected error occurred',
+        },
+        500,
       );
     }
   },
