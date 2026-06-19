@@ -6,6 +6,9 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
 import { loadConfig, resolveConfig } from './load-config.ts';
 
+const VALID_SESSION_SECRET =
+  '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b';
+
 async function writeConfigFile(
   dir: string,
   name: string,
@@ -26,14 +29,14 @@ describe('load-config', () => {
       'config.yaml',
       [
         'security:',
-        '  session_secret: explicit-secret-1234567890',
+        `  session_secret: ${VALID_SESSION_SECRET}`,
         '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       ].join('\n'),
     );
 
     const config = loadConfig(configFile);
 
-    expect(config.security.session_secret).toBe('explicit-secret-1234567890');
+    expect(config.security.session_secret).toBe(VALID_SESSION_SECRET);
     await fs.promises.rm(dir, { recursive: true, force: true });
   });
 
@@ -49,7 +52,7 @@ describe('load-config', () => {
         '  enabled: true',
         '  mode: proxy',
         'security:',
-        '  session_secret: proxy-secret-1234567890',
+        `  session_secret: ${VALID_SESSION_SECRET}`,
         '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       ].join('\n'),
     );
@@ -72,7 +75,7 @@ describe('load-config', () => {
         'frontend:',
         '  enabled: false',
         'security:',
-        '  session_secret: disabled-secret-1234567890',
+        `  session_secret: ${VALID_SESSION_SECRET}`,
         '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       ].join('\n'),
     );
@@ -140,7 +143,7 @@ describe('load-config', () => {
         '  background_max_attempts: "5"',
         '  background_retention_ms: "3600000"',
         'security:',
-        '  session_secret: scheduler-retry-secret-1234567890',
+        `  session_secret: ${VALID_SESSION_SECRET}`,
         '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       ].join('\n'),
     );
@@ -169,8 +172,7 @@ describe('load-config', () => {
     const originalRetention =
       process.env['TINYAUTH_SCHEDULER_BACKGROUND_RETENTION_MS'];
     try {
-      process.env['TINYAUTH_SESSION_SECRET'] =
-        'env-session-secret-1234567890abcdef';
+      process.env['TINYAUTH_SESSION_SECRET'] = VALID_SESSION_SECRET;
       process.env['TINYAUTH_HASH_SECRET'] =
         'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
       process.env['TINYAUTH_SCHEDULER_BACKGROUND_RETENTION_MS'] = '60000';
@@ -197,8 +199,7 @@ describe('load-config', () => {
     const originalSession = process.env['TINYAUTH_SESSION_SECRET'];
     const originalHash = process.env['TINYAUTH_HASH_SECRET'];
     try {
-      process.env['TINYAUTH_SESSION_SECRET'] =
-        'env-session-secret-1234567890abcdef';
+      process.env['TINYAUTH_SESSION_SECRET'] = VALID_SESSION_SECRET;
       process.env['TINYAUTH_HASH_SECRET'] =
         'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
 
@@ -252,7 +253,7 @@ describe('load-config', () => {
         'app:',
         '  cookie_secret: legacy-app-secret-1234567890',
         'security:',
-        '  session_secret: explicit-secret-1234567890',
+        `  session_secret: ${VALID_SESSION_SECRET}`,
         '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       ].join('\n'),
     );
@@ -272,7 +273,7 @@ describe('load-config', () => {
       'legacy-security.yaml',
       [
         'security:',
-        '  session_secret: legacy-security-secret-1234567890',
+        `  session_secret: ${VALID_SESSION_SECRET}`,
         '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
         '  hash_master_secret_version: 1',
       ].join('\n'),
@@ -292,16 +293,13 @@ describe('load-config', () => {
     const originalSession = process.env['TINYAUTH_SESSION_SECRET'];
     const originalHash = process.env['TINYAUTH_HASH_SECRET'];
     try {
-      process.env['TINYAUTH_SESSION_SECRET'] =
-        'env-session-secret-1234567890abcdef';
+      process.env['TINYAUTH_SESSION_SECRET'] = VALID_SESSION_SECRET;
       process.env['TINYAUTH_HASH_SECRET'] =
         'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
 
       const config = loadConfig(missingPath);
 
-      expect(config.security.session_secret).toBe(
-        'env-session-secret-1234567890abcdef',
-      );
+      expect(config.security.session_secret).toBe(VALID_SESSION_SECRET);
       expect(config.security.hash_secret).toBe(
         'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       );
@@ -328,8 +326,7 @@ describe('load-config', () => {
     const originalHash = process.env['TINYAUTH_HASH_SECRET'];
     try {
       process.env['TINYAUTH_LISTEN_PORT'] = '3000';
-      process.env['TINYAUTH_SESSION_SECRET'] =
-        'env-session-secret-1234567890abcdef';
+      process.env['TINYAUTH_SESSION_SECRET'] = VALID_SESSION_SECRET;
       process.env['TINYAUTH_HASH_SECRET'] =
         'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY';
 
@@ -358,7 +355,7 @@ describe('load-config', () => {
       'partial.yaml',
       [
         'security:',
-        '  session_secret: yaml-session-secret-1234567890',
+        `  session_secret: ${VALID_SESSION_SECRET}`,
         '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       ].join('\n'),
     );
@@ -369,9 +366,7 @@ describe('load-config', () => {
 
       const config = loadConfig(configFile);
 
-      expect(config.security.session_secret).toBe(
-        'yaml-session-secret-1234567890',
-      );
+      expect(config.security.session_secret).toBe(VALID_SESSION_SECRET);
       expect(config.server.listen_port).toBe(9090);
     } finally {
       if (originalPort === undefined)
