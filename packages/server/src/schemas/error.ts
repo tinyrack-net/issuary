@@ -205,6 +205,11 @@ export const e = {
     'MISSING_REFRESH_TOKEN',
     'Missing refresh_token.',
   ),
+  MissingDeviceCode: createError(
+    400,
+    'MISSING_DEVICE_CODE',
+    'Missing device_code.',
+  ),
 
   // invalid_grant errors (400)
   InvalidAuthorizationCode: createError(
@@ -245,6 +250,16 @@ export const e = {
     400,
     'UNSUPPORTED_GRANT_TYPE',
     'Grant type is not supported.',
+  ),
+  AuthorizationPending: createError(
+    400,
+    'authorization_pending',
+    'Device authorization is pending.',
+  ),
+  InvalidDeviceCode: createError(
+    400,
+    'INVALID_DEVICE_CODE',
+    'Invalid or expired device code.',
   ),
 
   // JWT Token Errors

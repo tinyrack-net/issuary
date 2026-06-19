@@ -21,6 +21,8 @@ const TokenRequestBody = z
     client_secret: f.clientSecret.optional(),
     code_verifier: f.codeVerifier.optional(),
     refresh_token: f.token.optional(),
+    scope: f.scope.optional(),
+    device_code: z.string().min(1).max(1000).optional(),
   })
   .describe('OAuth2 token request payload');
 
@@ -49,6 +51,7 @@ export const tokenPost = new Hono<AppEnv>().post(
                 e.MissingAuthorizationCode.Schema,
                 e.MissingRedirectUri.Schema,
                 e.MissingRefreshToken.Schema,
+                e.MissingDeviceCode.Schema,
                 e.UnsupportedGrantType.Schema,
               ]),
             ),
@@ -144,6 +147,32 @@ export const tokenPost = new Hono<AppEnv>().post(
 
       const tokens = await oauthTokenService.refreshAccessToken({
         refreshToken: body.refresh_token,
+        clientId,
+      });
+
+      return c.json(tokens, 200);
+    }
+
+    if (body.grant_type === 'client_credentials') {
+      await oauthClientService.validateConfidentialClient(clientId);
+      const requestedScopes = body.scope ? body.scope.split(' ') : [];
+      oauthClientService.validateScopes(client, requestedScopes);
+
+      const tokens = await oauthTokenService.issueClientCredentialsToken({
+        clientId,
+        scope: requestedScopes,
+      });
+
+      return c.json(tokens, 200);
+    }
+
+    if (body.grant_type === 'urn:ietf:params:oauth:grant-type:device_code') {
+      if (!body.device_code) {
+        throw new e.MissingDeviceCode.Error();
+      }
+
+      const tokens = await oauthTokenService.exchangeDeviceCode({
+        deviceCode: body.device_code,
         clientId,
       });
 

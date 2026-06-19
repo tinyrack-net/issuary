@@ -18,15 +18,27 @@ export const BackgroundJobEntitySchema = defineEntity({
     id: p.string().primary().comment('Stable background job execution id'),
     jobId: p.string().comment('Registered background job identifier'),
     payload: p.text().comment('Serialized JSON job payload'),
-    status: p.string().comment('Background job status').default('pending'),
+    status: p
+      .string()
+      .comment('Background job status')
+      .default('pending')
+      .check("status in ('pending', 'running', 'succeeded', 'failed')"),
     availableAt: p.datetime().comment('Earliest time this job can run'),
     lockedBy: p
       .string()
       .comment('Scheduler instance holding the lease')
       .nullable(),
     lockedUntil: p.datetime().comment('Lease expiration timestamp').nullable(),
-    attemptCount: p.integer().comment('Total run attempts').default(0),
-    maxAttempts: p.integer().comment('Maximum run attempts').default(3),
+    attemptCount: p
+      .integer()
+      .comment('Total run attempts')
+      .default(0)
+      .check('attempt_count >= 0'),
+    maxAttempts: p
+      .integer()
+      .comment('Maximum run attempts')
+      .default(3)
+      .check('max_attempts > 0'),
     lastError: p.text().comment('Last failure message').nullable(),
     completedAt: p.datetime().comment('Completion timestamp').nullable(),
   }),

@@ -2,6 +2,7 @@ import { defineEntity, type InferEntity } from '@mikro-orm/core';
 import { OAuthClientRepository } from '../repositories/oauth-client.repository.ts';
 import { BaseSchema } from './base.entity.ts';
 import { OAuthCodeEntitySchema } from './oauth-code.entity.ts';
+import { OAuthDeviceCodeEntitySchema } from './oauth-device-code.entity.ts';
 import { RevokedTokenEntitySchema } from './revoked-token.entity.ts';
 import { UserConsentEntitySchema } from './user-consent.entity.ts';
 
@@ -40,6 +41,14 @@ export const OAuthClientEntitySchema = defineEntity({
       .json<string[]>()
       .comment('Registered redirect URIs for the client')
       .default([]),
+    postLogoutRedirectUris: p
+      .json<string[]>()
+      .comment('Registered post-logout redirect URIs for the client')
+      .default([]),
+    webOrigins: p
+      .json<string[]>()
+      .comment('Registered browser origins for OAuth CORS requests')
+      .default([]),
     enabled: p
       .boolean()
       .comment('Whether the OAuth client is enabled')
@@ -55,6 +64,8 @@ export const OAuthClientEntitySchema = defineEntity({
       .nullable()
       .default(null),
     codes: () => p.oneToMany(OAuthCodeEntitySchema).mappedBy('client'),
+    deviceCodes: () =>
+      p.oneToMany(OAuthDeviceCodeEntitySchema).mappedBy('client'),
     consents: () => p.oneToMany(UserConsentEntitySchema).mappedBy('client'),
     revokedTokens: () =>
       p.oneToMany(RevokedTokenEntitySchema).mappedBy('client'),

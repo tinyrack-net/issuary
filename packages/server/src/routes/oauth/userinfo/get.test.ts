@@ -612,7 +612,7 @@ describe('GET /oauth/userinfo', () => {
       expect([200, 204, 405]).toContain(res.status);
     });
 
-    test('should reject POST request (GET only endpoint)', async () => {
+    test('should accept POST request', async () => {
       const accessToken = await getAccessToken(app, {
         scope: 'openid',
       });
@@ -624,8 +624,7 @@ describe('GET /oauth/userinfo', () => {
         },
       });
 
-      // POST is not implemented, should return 404
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(200);
     });
   });
 

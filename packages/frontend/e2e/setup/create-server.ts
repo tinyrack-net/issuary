@@ -214,11 +214,47 @@ function getFreePort(): Promise<number> {
   });
 }
 
+async function reserveFreePort(): Promise<{
+  port: number;
+  release: () => Promise<void>;
+}> {
+  const srv = createNetServer();
+  let released = false;
+  await new Promise<void>((resolve, reject) => {
+    srv.once('error', reject);
+    srv.listen(0, '127.0.0.1', () => resolve());
+  });
+  const address = srv.address();
+  if (typeof address !== 'object' || address === null) {
+    throw new Error('Expected reserved port to have an address');
+  }
+
+  return {
+    port: address.port,
+    release: () =>
+      new Promise<void>((resolve, reject) => {
+        if (released) {
+          resolve();
+          return;
+        }
+        released = true;
+        srv.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve();
+        });
+      }),
+  };
+}
+
 export type E2EConfigResult = E2EConfigInput;
 
 type ConfigFactory = (
   backendPort: number,
   frontendPort: number,
+  auxiliaryPort: number,
 ) => E2EConfigResult;
 
 function getSharedFrontendPort(): number {
@@ -271,10 +307,13 @@ function isResolvedEmailConfig(
 export async function createE2EServer(configFactory: ConfigFactory) {
   const backendPort = await getFreePort();
   const frontendPort = getSharedFrontendPort();
+  const auxiliaryPortReservation = await reserveFreePort();
+  const auxiliaryPort = auxiliaryPortReservation.port;
 
   const { email: rawEmail, ...restConfig } = configFactory(
     backendPort,
     frontendPort,
+    auxiliaryPort,
   );
 
   // Resolve email config: { test: true } shorthand into a real test email config
@@ -541,8 +580,11 @@ export async function createE2EServer(configFactory: ConfigFactory) {
   return {
     app: testApp,
     backendPort,
+    auxiliaryPort,
+    releaseAuxiliaryPort: auxiliaryPortReservation.release,
     teardown: async () => {
       backendServer.close();
+      await auxiliaryPortReservation.release();
       await cleanup();
     },
   };

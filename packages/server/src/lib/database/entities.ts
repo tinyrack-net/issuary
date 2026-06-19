@@ -5,6 +5,7 @@ import { EmailVerificationEntitySchema } from '../../entities/email-verification
 import { JwtKeyEntitySchema } from '../../entities/jwt-key.entity.ts';
 import { OAuthClientEntitySchema } from '../../entities/oauth-client.entity.ts';
 import { OAuthCodeEntitySchema } from '../../entities/oauth-code.entity.ts';
+import { OAuthDeviceCodeEntitySchema } from '../../entities/oauth-device-code.entity.ts';
 import { PasswordResetEntitySchema } from '../../entities/password-reset.entity.ts';
 import { PendingOAuthRegistrationEntitySchema } from '../../entities/pending-oauth-registration.entity.ts';
 import { RevokedTokenEntitySchema } from '../../entities/revoked-token.entity.ts';
@@ -31,6 +32,7 @@ function createDatabaseEntities() {
     UserEntitySchema,
     OAuthClientEntitySchema,
     OAuthCodeEntitySchema,
+    OAuthDeviceCodeEntitySchema,
     JwtKeyEntitySchema,
     EmailVerificationEntitySchema,
     PasswordResetEntitySchema,

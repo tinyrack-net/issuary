@@ -294,6 +294,38 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     ).toThrow();
   });
 
+  test('accepts device authorization grant for confidential OAuth clients', () => {
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          {
+            ...createClientConfig(['http://localhost/callback']),
+            client_secret: 'confidential-client-secret',
+            grant_types: [
+              'authorization_code',
+              'urn:ietf:params:oauth:grant-type:device_code',
+            ],
+          },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
+  test('rejects client_credentials for public OAuth clients', () => {
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          {
+            ...createClientConfig(['http://localhost/callback']),
+            grant_types: ['authorization_code', 'client_credentials'],
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
   test('rejects inconsistent OAuth client response and grant type combinations', () => {
     expect(() =>
       TinyAuthRuntimeConfigSchema.parse({
@@ -379,6 +411,63 @@ describe('TinyAuthRuntimeConfigSchema', () => {
         ],
       }),
     ).not.toThrow();
+  });
+
+  test('allows HTTPS and local HTTP OAuth client web origins only as origins', () => {
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          {
+            ...createClientConfig(['https://app.example/callback']),
+            web_origins: [
+              'https://app.example',
+              'http://localhost:3000',
+              'http://127.0.0.1:3000',
+            ],
+          },
+        ],
+      }),
+    ).not.toThrow();
+
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          {
+            ...createClientConfig(['https://app.example/callback']),
+            web_origins: ['https://app.example/'],
+          },
+        ],
+      },
+      'clients.0.web_origins.0',
+    );
+
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          {
+            ...createClientConfig(['https://app.example/callback']),
+            web_origins: ['https://app.example/path'],
+          },
+        ],
+      },
+      'clients.0.web_origins.0',
+    );
+
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          {
+            ...createClientConfig(['https://app.example/callback']),
+            web_origins: ['http://example.com'],
+          },
+        ],
+      },
+      'clients.0.web_origins.0',
+    );
   });
 
   test('rejects redirect URIs with fragments or wildcards', () => {

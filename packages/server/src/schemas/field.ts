@@ -64,7 +64,12 @@ export const f = {
     )
     .describe('PKCE code verifier (43-128 characters)'),
   grantType: z
-    .enum(['authorization_code', 'refresh_token'])
+    .enum([
+      'authorization_code',
+      'refresh_token',
+      'client_credentials',
+      'urn:ietf:params:oauth:grant-type:device_code',
+    ])
     .describe('OAuth grant type'),
   authorizationCode: z
     .string()

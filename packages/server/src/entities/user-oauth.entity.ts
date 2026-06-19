@@ -10,7 +10,6 @@ import { UserEntity } from './user.entity.ts';
 export const UserOAuthEntitySchema = defineEntity({
   name: 'UserOAuthEntity',
   tableName: 'user_oauth',
-  comment: 'OAuth accounts linked to users',
   extends: BaseSchema,
   repository: () => UserOAuthRepository,
   properties: (p) => ({
@@ -19,6 +18,8 @@ export const UserOAuthEntitySchema = defineEntity({
       p
         .manyToOne(UserEntity)
         .ref()
+        .deleteRule('no action')
+        .updateRule('no action')
         .comment('Reference to the user')
         .index('user_oauth_user_sub_idx'),
     provider_name: p

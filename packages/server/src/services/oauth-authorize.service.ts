@@ -43,6 +43,11 @@ export interface AuthorizeParams {
   reauthenticated?: '1' | undefined;
   /** OIDC display mode for authentication UI */
   display?: z.infer<typeof f.display> | undefined;
+  response_mode?: 'query' | 'fragment' | 'form_post' | undefined;
+  login_hint?: string | undefined;
+  ui_locales?: string | undefined;
+  id_token_hint?: string | undefined;
+  acr_values?: string | undefined;
 }
 
 /**
@@ -51,9 +56,10 @@ export interface AuthorizeParams {
  */
 export interface AuthorizeResult {
   /** Result type discriminator */
-  type: 'redirect';
+  type: 'redirect' | 'form_post';
   /** URL to redirect the user agent to */
   url: string;
+  params?: Record<string, string>;
 }
 
 export class OAuthAuthorizeService {
@@ -141,15 +147,14 @@ export class OAuthAuthorizeService {
     if (!userSession?.sub || shouldPromptLogin || shouldRefreshSession) {
       // Handle prompt=none - must return error if not logged in
       if (prompts.includes('none')) {
-        return {
-          type: 'redirect',
-          url: this.buildErrorRedirectUrl(
-            query.redirect_uri,
-            'login_required',
+        return this.buildErrorAuthorizationResult({
+          redirectUri: query.redirect_uri,
+          error: 'login_required',
+          errorDescription:
             'The Authorization Server requires End-User authentication.',
-            query.state,
-          ),
-        };
+          state: query.state,
+          responseMode: query.response_mode,
+        });
       }
 
       // User not logged in - redirect to login page
@@ -177,15 +182,14 @@ export class OAuthAuthorizeService {
     if (requiresConsent) {
       // Handle prompt=none - must return error if consent is required
       if (prompts.includes('none')) {
-        return {
-          type: 'redirect',
-          url: this.buildErrorRedirectUrl(
-            query.redirect_uri,
-            'consent_required',
+        return this.buildErrorAuthorizationResult({
+          redirectUri: query.redirect_uri,
+          error: 'consent_required',
+          errorDescription:
             'The Authorization Server requires End-User consent.',
-            query.state,
-          ),
-        };
+          state: query.state,
+          responseMode: query.response_mode,
+        });
       }
 
       // Redirect to consent page
@@ -209,6 +213,7 @@ export class OAuthAuthorizeService {
         nonce: query.nonce,
         state: query.state,
         authTime: userSession.authenticated_at,
+        responseMode: query.response_mode,
       });
     }
 
@@ -249,7 +254,20 @@ export class OAuthAuthorizeService {
       code,
       query.state,
       query.redirect_uri,
+      query.response_mode,
     );
+
+    if (query.response_mode === 'form_post') {
+      const params: Record<string, string> = { code };
+      if (query.state) {
+        params['state'] = query.state;
+      }
+      return {
+        type: 'form_post',
+        url: query.redirect_uri,
+        params,
+      };
+    }
 
     return {
       type: 'redirect',
@@ -335,6 +353,10 @@ export class OAuthAuthorizeService {
     if (!query.nonce) {
       throw new e.InvalidAuthorizationRequest.Error();
     }
+
+    if (query.response_mode === 'query') {
+      throw new e.InvalidAuthorizationRequest.Error();
+    }
   }
 
   /**
@@ -407,6 +429,7 @@ export class OAuthAuthorizeService {
     if (query.display) {
       loginUrl.searchParams.set('display', query.display);
     }
+    this.preserveCompatibilityParams(loginUrl, query);
 
     return loginUrl.toString();
   }
@@ -450,8 +473,27 @@ export class OAuthAuthorizeService {
     if (query.display) {
       consentUrl.searchParams.set('display', query.display);
     }
+    this.preserveCompatibilityParams(consentUrl, query);
 
     return consentUrl.toString();
+  }
+
+  private preserveCompatibilityParams(url: URL, query: AuthorizeParams): void {
+    if (query.response_mode) {
+      url.searchParams.set('response_mode', query.response_mode);
+    }
+    if (query.login_hint) {
+      url.searchParams.set('login_hint', query.login_hint);
+    }
+    if (query.ui_locales) {
+      url.searchParams.set('ui_locales', query.ui_locales);
+    }
+    if (query.id_token_hint) {
+      url.searchParams.set('id_token_hint', query.id_token_hint);
+    }
+    if (query.acr_values) {
+      url.searchParams.set('acr_values', query.acr_values);
+    }
   }
 
   /**
@@ -462,16 +504,57 @@ export class OAuthAuthorizeService {
     error: string,
     errorDescription: string,
     state?: string,
+    responseMode?: 'query' | 'fragment' | 'form_post',
   ): string {
     const errorUrl = new URL(redirectUri);
-    errorUrl.searchParams.set('error', error);
-    errorUrl.searchParams.set('error_description', errorDescription);
+    const useFragment = responseMode === 'fragment';
+    const params = useFragment ? new URLSearchParams() : errorUrl.searchParams;
+    params.set('error', error);
+    params.set('error_description', errorDescription);
 
     if (state) {
-      errorUrl.searchParams.set('state', state);
+      params.set('state', state);
+    }
+
+    if (useFragment) {
+      errorUrl.hash = params.toString();
     }
 
     return errorUrl.toString();
+  }
+
+  private buildErrorAuthorizationResult(params: {
+    redirectUri: string;
+    error: string;
+    errorDescription: string;
+    state?: string | undefined;
+    responseMode?: 'query' | 'fragment' | 'form_post' | undefined;
+  }): AuthorizeResult {
+    if (params.responseMode === 'form_post') {
+      const formParams: Record<string, string> = {
+        error: params.error,
+        error_description: params.errorDescription,
+      };
+      if (params.state) {
+        formParams['state'] = params.state;
+      }
+      return {
+        type: 'form_post',
+        url: params.redirectUri,
+        params: formParams,
+      };
+    }
+
+    return {
+      type: 'redirect',
+      url: this.buildErrorRedirectUrl(
+        params.redirectUri,
+        params.error,
+        params.errorDescription,
+        params.state,
+        params.responseMode,
+      ),
+    };
   }
 
   private async buildImplicitIdTokenRedirect(params: {
@@ -482,6 +565,7 @@ export class OAuthAuthorizeService {
     nonce: string;
     state?: string | undefined;
     authTime: number;
+    responseMode?: 'query' | 'fragment' | 'form_post' | undefined;
   }): Promise<AuthorizeResult> {
     const user = await this.mikro.user.findOneOrFail(
       { sub: params.userSub },
@@ -515,6 +599,22 @@ export class OAuthAuthorizeService {
     }
 
     const idToken = await this.jwtService.signIdToken(idTokenPayload);
+    if (params.responseMode === 'form_post') {
+      const formParams: Record<string, string> = {
+        id_token: idToken,
+        token_type: 'Bearer',
+        expires_in: this.config.tokens.access_token_ttl.toString(),
+      };
+      if (params.state) {
+        formParams['state'] = params.state;
+      }
+      return {
+        type: 'form_post',
+        url: params.redirectUri,
+        params: formParams,
+      };
+    }
+
     const redirectUrl = new URL(params.redirectUri);
     const fragment = new URLSearchParams();
     fragment.set('id_token', idToken);
@@ -523,7 +623,11 @@ export class OAuthAuthorizeService {
     if (params.state) {
       fragment.set('state', params.state);
     }
-    redirectUrl.hash = fragment.toString();
+    if (params.responseMode === 'query') {
+      redirectUrl.search = fragment.toString();
+    } else {
+      redirectUrl.hash = fragment.toString();
+    }
 
     return {
       type: 'redirect',
@@ -538,12 +642,21 @@ export class OAuthAuthorizeService {
     code: string,
     state: string | undefined,
     redirectUri: string,
+    responseMode?: 'query' | 'fragment' | 'form_post',
   ): string {
     const callbackUrl = new URL(redirectUri);
-    callbackUrl.searchParams.set('code', code);
+    const useFragment = responseMode === 'fragment';
+    const params = useFragment
+      ? new URLSearchParams()
+      : callbackUrl.searchParams;
+    params.set('code', code);
 
     if (state) {
-      callbackUrl.searchParams.set('state', state);
+      params.set('state', state);
+    }
+
+    if (useFragment) {
+      callbackUrl.hash = params.toString();
     }
 
     return callbackUrl.toString();

@@ -49,6 +49,10 @@ const OAuthClient = z
       .describe('Whether the client is managed by config or database'),
     enabled: z.boolean().describe('Whether the client is enabled'),
     redirectUris: z.array(f.redirectUri).describe('Allowed redirect URIs'),
+    postLogoutRedirectUris: z
+      .array(f.redirectUri)
+      .describe('Allowed post-logout redirect URIs'),
+    webOrigins: z.array(z.url()).describe('Allowed browser origins'),
     responseTypes: z
       .array(z.string().min(1))
       .describe('Allowed OAuth response types'),

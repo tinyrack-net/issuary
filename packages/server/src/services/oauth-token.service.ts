@@ -254,6 +254,84 @@ export class OAuthTokenService {
     return this.refreshAccessTokenLocked(params);
   }
 
+  async issueClientCredentialsToken(params: {
+    clientId: string;
+    scope: string[];
+  }): Promise<TokenResponse> {
+    const scopeString = params.scope.join(' ');
+    const accessToken = await this.jwtService.signAccessToken({
+      typ: 'access_token',
+      sub: params.clientId,
+      client_id: params.clientId,
+      grant_type: 'client_credentials',
+      scope: scopeString,
+      aud: this.config.server.public_origin,
+      grant_id: crypto.randomUUID(),
+    });
+
+    return {
+      access_token: accessToken,
+      token_type: 'Bearer',
+      expires_in: this.config.tokens.access_token_ttl,
+      scope: scopeString,
+    };
+  }
+
+  async exchangeDeviceCode(params: {
+    clientId: string;
+    deviceCode: string;
+  }): Promise<TokenResponse> {
+    const client = await this.oauthClientService.findByClientId(
+      params.clientId,
+    );
+    const deviceCodeHash = await this.securityService.hashOpaqueToken(
+      'oauth-device-code',
+      params.deviceCode,
+    );
+    const deviceCode =
+      await this.mikro.oauthDeviceCode.findByClientAndDeviceCodeHash(
+        client.id,
+        deviceCodeHash,
+      );
+
+    if (!deviceCode || deviceCode.expiresAt < new Date()) {
+      throw new e.InvalidDeviceCode.Error();
+    }
+    if (!deviceCode.authorizedUser) {
+      throw new e.AuthorizationPending.Error();
+    }
+
+    const consumedAt = new Date();
+    const consumed =
+      await this.mikro.oauthDeviceCode.consumeAuthorizedDeviceCode(
+        deviceCode.id,
+        consumedAt,
+      );
+    if (!consumed) {
+      throw new e.InvalidDeviceCode.Error();
+    }
+    deviceCode.consumedAt = consumedAt;
+    await this.mikro.em.populate(deviceCode, ['authorizedUser']);
+    const user = deviceCode.authorizedUser;
+    if (!user) {
+      throw new e.AuthorizationPending.Error();
+    }
+
+    return this.buildTokenResponse({
+      userSub: user.sub,
+      userEmail: user.email,
+      userEmailVerified: user.email_verified,
+      clientId: client.clientId,
+      scope: deviceCode.scope,
+      issueRefreshToken:
+        client.grantTypes.includes('refresh_token') &&
+        deviceCode.scope.includes('offline_access'),
+      authTime: Math.floor(
+        (deviceCode.authorizedAt?.getTime() ?? Date.now()) / 1000,
+      ),
+    });
+  }
+
   private async refreshAccessTokenLocked(params: RefreshTokenGrantParams) {
     const { refreshToken, clientId } = params;
 

@@ -33,6 +33,8 @@ export class OAuthClientService {
       managed_by: client.managed_by,
       enabled: client.enabled,
       redirectUris: client.redirectUris,
+      postLogoutRedirectUris: client.postLogoutRedirectUris,
+      webOrigins: client.webOrigins,
       responseTypes: client.responseTypes,
       scopes: client.scopes,
       grantTypes: client.grantTypes,
@@ -69,6 +71,15 @@ export class OAuthClientService {
   ): void {
     if (!client.grantTypes.includes(grantType)) {
       throw new e.UnsupportedGrantType.Error();
+    }
+  }
+
+  public validatePostLogoutRedirectUri(
+    client: z.infer<typeof r.OAuthClient>,
+    postLogoutRedirectUri: string,
+  ): void {
+    if (!client.postLogoutRedirectUris.includes(postLogoutRedirectUri)) {
+      throw new e.InvalidRedirectUri.Error();
     }
   }
 
@@ -171,5 +182,11 @@ export class OAuthClientService {
     );
 
     return !client.clientSecretHash;
+  }
+
+  public async validateConfidentialClient(clientId: string): Promise<void> {
+    if (await this.isPublicClient(clientId)) {
+      throw new e.InvalidClientCredentials.Error();
+    }
   }
 }

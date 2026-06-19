@@ -19,13 +19,19 @@ const PBKDF2_SALT_BYTES = 16;
 const PBKDF2_DERIVED_KEY_BYTES = 32;
 
 type Pbkdf2Purpose = 'password' | 'client-secret';
-export type OpaquePurpose = 'oauth-code' | 'totp-recovery';
+export type OpaquePurpose =
+  | 'oauth-code'
+  | 'oauth-device-code'
+  | 'oauth-device-user-code'
+  | 'totp-recovery';
 type Purpose = Pbkdf2Purpose | OpaquePurpose;
 
 const PURPOSE_LABELS: Record<Purpose, string> = {
   password: 'password-v1',
   'client-secret': 'client-secret-v1',
   'oauth-code': 'oauth-code-v1',
+  'oauth-device-code': 'oauth-device-code-v1',
+  'oauth-device-user-code': 'oauth-device-user-code-v1',
   'totp-recovery': 'totp-recovery-v1',
 };
 

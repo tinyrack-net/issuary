@@ -93,6 +93,8 @@ export interface AccessTokenPayload extends BaseJWTPayload {
   typ: 'access_token';
   /** Client identifier */
   client_id: string;
+  /** OAuth grant type when subject semantics differ from an end-user token. */
+  grant_type?: 'client_credentials' | undefined;
   /** Space-separated list of scopes */
   scope: string;
   /** Audience - intended recipient of the token */
@@ -489,6 +491,7 @@ export class JwtService {
       typ: 'access_token',
       sub: payload.sub,
       client_id: payload.client_id,
+      ...(payload.grant_type ? { grant_type: payload.grant_type } : {}),
       scope: payload.scope,
       ...(payload.grant_id ? { grant_id: payload.grant_id } : {}),
     })
@@ -692,16 +695,28 @@ export class JwtService {
   private async ensureActiveTokenSubjectAndClient(
     payload: AccessTokenPayload | RefreshTokenPayload,
   ): Promise<void> {
-    const user = await this.mikro.user.findOne({ sub: payload.sub });
-    if (!user || user.deleted_at) {
-      throw new Error('Token subject is not active');
-    }
-
     const client = await this.mikro.oauthClient.findOne({
       clientId: payload.client_id,
     });
     if (!client?.enabled) {
       throw new Error('Token client is not active');
+    }
+
+    if (
+      payload.typ === 'access_token' &&
+      payload.grant_type === 'client_credentials'
+    ) {
+      if (payload.sub !== payload.client_id) {
+        throw new Error(
+          'Client credentials token subject does not match client',
+        );
+      }
+      return;
+    }
+
+    const user = await this.mikro.user.findOne({ sub: payload.sub });
+    if (!user || user.deleted_at) {
+      throw new Error('Token subject is not active');
     }
   }
 

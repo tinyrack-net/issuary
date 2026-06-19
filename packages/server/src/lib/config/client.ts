@@ -6,10 +6,33 @@ const RedirectUriSchema = z.string().refine(isSecureRedirectUri, {
     'Redirect URI must use HTTPS or local HTTP and must not contain fragments or wildcards.',
 });
 
+const WebOriginSchema = z.string().refine(
+  (value) => {
+    try {
+      const url = new URL(value);
+      return url.origin === value && isSecureRedirectUri(value);
+    } catch {
+      return false;
+    }
+  },
+  {
+    message:
+      'Web origin must be an exact URL origin such as https://app.example or http://localhost:3000, with no path, query, fragment, or trailing slash.',
+  },
+);
+
 const OAuthResponseTypeSchema = z.string().pipe(z.enum(['code', 'id_token']));
 const OAuthGrantTypeSchema = z
   .string()
-  .pipe(z.enum(['authorization_code', 'implicit', 'refresh_token']));
+  .pipe(
+    z.enum([
+      'authorization_code',
+      'implicit',
+      'refresh_token',
+      'client_credentials',
+      'urn:ietf:params:oauth:grant-type:device_code',
+    ]),
+  );
 
 function normalizeScopeList(scope: string): string {
   const trimmed = scope.trim();
@@ -72,6 +95,14 @@ export const ClientConfigSchema = z
       .array(RedirectUriSchema)
       .nonempty()
       .describe('Allowed redirect URIs after authorization.'),
+    post_logout_redirect_uris: z
+      .array(RedirectUriSchema)
+      .default([])
+      .describe('Allowed redirect URIs after RP-initiated logout.'),
+    web_origins: z
+      .array(WebOriginSchema)
+      .default([])
+      .describe('Allowed browser origins for OAuth CORS requests.'),
     response_types: z
       .array(OAuthResponseTypeSchema)
       .nonempty()
@@ -136,6 +167,15 @@ export const ClientConfigSchema = z
         path: ['grant_types'],
         message:
           'Clients that allow grant_type "refresh_token" must also allow "authorization_code".',
+      });
+    }
+
+    if (grantTypes.has('client_credentials') && !client.client_secret) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['client_secret'],
+        message:
+          'Clients that allow grant_type "client_credentials" must be confidential and define client_secret.',
       });
     }
   })

@@ -32,8 +32,16 @@ export const SchedulerJobEntitySchema = defineEntity({
       .comment('Scheduler instance holding the lease')
       .nullable(),
     lockedUntil: p.datetime().comment('Lease expiration timestamp').nullable(),
-    runCount: p.integer().comment('Total run attempts').default(0),
-    failureCount: p.integer().comment('Total failed run attempts').default(0),
+    runCount: p
+      .integer()
+      .comment('Total run attempts')
+      .default(0)
+      .check('run_count >= 0'),
+    failureCount: p
+      .integer()
+      .comment('Total failed run attempts')
+      .default(0)
+      .check('failure_count >= 0'),
   }),
   indexes: [
     {

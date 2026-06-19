@@ -22,7 +22,7 @@ It supports OAuth2/OIDC authorization code flows, PKCE, password login, passkeys
 
 ## Features
 
-- **OIDC/OAuth2 provider** with authorization code flow, PKCE, discovery, token, userinfo, introspection, and revocation endpoints
+- **OIDC/OAuth2 provider** with authorization code flow, PKCE, discovery, token, userinfo, introspection, revocation, RP-initiated logout, client credentials, and device authorization endpoints
 - **Multiple sign-in methods** including password, passkeys/WebAuthn, GitHub, Google, Apple, and generic OAuth/OIDC providers
 - **Two-factor authentication** with TOTP and passkey-based second factors
 - **Config-driven deployment** through a single YAML file
@@ -97,6 +97,10 @@ Verify the OIDC discovery endpoint:
 ```bash
 curl http://localhost:8080/.well-known/openid-configuration
 ```
+
+OAuth/OIDC error responses from OAuth endpoints include the standard `error` and `error_description` fields for client compatibility. TinyAuth also preserves its internal `code` and `message` fields for existing API consumers.
+
+TinyAuth only advertises implemented provider capabilities in discovery metadata. Register `client_credentials` only for confidential clients with a `client_secret`, and register `urn:ietf:params:oauth:grant-type:device_code` only for clients that should use the device authorization flow.
 
 ## Examples
 

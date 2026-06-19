@@ -193,8 +193,8 @@
     "mikro-orm:compile:postgres": "mikro-orm compile --config ./src/entrypoints/database/postgres/cli.ts",
     "mikro-orm:compile:sqlite": "mikro-orm compile --config ./src/entrypoints/database/sqlite/cli.ts",
     "mikro-orm:debug": "mikro-orm debug",
-    "mikro-orm:migration:create:postgres": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/postgres/cli.ts migration:create",
-    "mikro-orm:migration:create:sqlite": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/sqlite/cli.ts migration:create"
+    "mikro-orm:migration:create:postgres": "node ./scripts/create-migration-with-baseline.mjs postgres",
+    "mikro-orm:migration:create:sqlite": "node ./scripts/create-migration-with-baseline.mjs sqlite"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

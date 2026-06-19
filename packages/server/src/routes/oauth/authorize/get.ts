@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../lib/app-env.ts';
+import { escapeHtml } from '../../../lib/escape-html.js';
 import { OPENAPI_SECURITY } from '../../../lib/openapi.ts';
 import { TAGS } from '../../../lib/swagger-tags.ts';
 import { verifyAuth } from '../../../middleware/auth.ts';
@@ -46,6 +47,11 @@ export const authorizeGet = new Hono<AppEnv>().get(
       max_age: f.maxAge.optional(),
       reauthenticated: z.literal('1').optional(),
       display: f.display.optional(),
+      response_mode: z.enum(['query', 'fragment', 'form_post']).optional(),
+      login_hint: z.string().min(1).max(1000).optional(),
+      ui_locales: z.string().min(1).max(1000).optional(),
+      id_token_hint: z.string().min(1).max(4000).optional(),
+      acr_values: z.string().min(1).max(1000).optional(),
     }),
   ),
   verifyAuth({ optional: true }),
@@ -69,8 +75,21 @@ export const authorizeGet = new Hono<AppEnv>().get(
         );
       }
 
+      if (query.response_mode === 'form_post') {
+        const params: Record<string, string> = {
+          error,
+          error_description: errorDescription,
+        };
+        if (query.state) {
+          params['state'] = query.state;
+        }
+        return c.html(buildFormPostResponse(redirectUri, params));
+      }
+
       const url = new URL(redirectUri);
-      const useFragment = query.response_type === 'id_token';
+      const useFragment =
+        query.response_mode === 'fragment' ||
+        (query.response_type === 'id_token' && query.response_mode !== 'query');
       const params = useFragment ? new URLSearchParams() : url.searchParams;
       params.set('error', error);
       params.set('error_description', errorDescription);
@@ -107,6 +126,10 @@ export const authorizeGet = new Hono<AppEnv>().get(
       }
 
       const result = await oauthAuthorizeService.authorize(authorizeParams);
+
+      if (result.type === 'form_post') {
+        return c.html(buildFormPostResponse(result.url, result.params ?? {}));
+      }
 
       // Redirect based on result
       return c.redirect(result.url);
@@ -184,3 +207,14 @@ export const authorizeGet = new Hono<AppEnv>().get(
     }
   },
 );
+
+function buildFormPostResponse(action: string, params: Record<string, string>) {
+  const inputs = Object.entries(params)
+    .map(
+      ([name, value]) =>
+        `<input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(value)}">`,
+    )
+    .join('');
+
+  return `<!doctype html><html><head><title>Submit Authorization Response</title></head><body><form method="post" action="${escapeHtml(action)}">${inputs}<noscript><button type="submit">Continue</button></noscript></form><script>document.forms[0].submit();</script></body></html>`;
+}

@@ -322,6 +322,8 @@ async function syncOAuthClients(
         name: client.name,
         logoUri: client.logo_uri ?? null,
         redirectUris: client.redirect_uris,
+        postLogoutRedirectUris: client.post_logout_redirect_uris,
+        webOrigins: client.web_origins,
         responseTypes: client.response_types,
         grantTypes: client.grant_types,
         scopes: client.scope.split(' '),

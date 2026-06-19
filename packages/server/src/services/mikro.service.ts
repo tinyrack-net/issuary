@@ -4,6 +4,7 @@ import { EmailVerificationEntitySchema } from '../entities/email-verification.en
 import { JwtKeyEntity } from '../entities/jwt-key.entity.ts';
 import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.ts';
 import { OAuthCodeEntitySchema } from '../entities/oauth-code.entity.ts';
+import { OAuthDeviceCodeEntitySchema } from '../entities/oauth-device-code.entity.ts';
 import { PasswordResetEntitySchema } from '../entities/password-reset.entity.ts';
 import { PendingOAuthRegistrationEntitySchema } from '../entities/pending-oauth-registration.entity.ts';
 import { RevokedTokenEntitySchema } from '../entities/revoked-token.entity.ts';
@@ -24,6 +25,7 @@ import type { EmailVerificationRepository } from '../repositories/email-verifica
 import type { JwtKeyRepository } from '../repositories/jwt-key.repository.ts';
 import type { OAuthClientRepository } from '../repositories/oauth-client.repository.ts';
 import type { OAuthCodeRepository } from '../repositories/oauth-code.repository.ts';
+import type { OAuthDeviceCodeRepository } from '../repositories/oauth-device-code.repository.ts';
 import type { PasswordResetRepository } from '../repositories/password-reset.repository.ts';
 import type { PendingOAuthRegistrationRepository } from '../repositories/pending-oauth-registration.repository.ts';
 import type { RevokedTokenRepository } from '../repositories/revoked-token.repository.ts';
@@ -44,6 +46,7 @@ export class MikroService {
   public readonly user: UserRepository;
   public readonly userOAuth: UserOAuthRepository;
   public readonly oauthCode: OAuthCodeRepository;
+  public readonly oauthDeviceCode: OAuthDeviceCodeRepository;
   public readonly oauthClient: OAuthClientRepository;
   public readonly emailVerification: EmailVerificationRepository;
   public readonly passwordReset: PasswordResetRepository;
@@ -66,6 +69,7 @@ export class MikroService {
     this.user = orm.em.getRepository(UserEntity);
     this.userOAuth = orm.em.getRepository(UserOAuthEntitySchema);
     this.oauthCode = orm.em.getRepository(OAuthCodeEntitySchema);
+    this.oauthDeviceCode = orm.em.getRepository(OAuthDeviceCodeEntitySchema);
     this.oauthClient = orm.em.getRepository(OAuthClientEntitySchema);
     this.emailVerification = orm.em.getRepository(
       EmailVerificationEntitySchema,

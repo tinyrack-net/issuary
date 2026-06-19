@@ -2,7 +2,71 @@ import { Hono } from 'hono';
 import { describeRoute, resolver } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '#server/lib/app-env.js';
+import type { TinyAuthRuntimeConfig } from '#server/lib/config/index.js';
 import { TAGS } from '#server/lib/swagger-tags.js';
+
+export function buildOpenidConfiguration(config: TinyAuthRuntimeConfig) {
+  const baseUrl = config.server.public_origin;
+  const scopesSupported = new Set([
+    'openid',
+    'profile',
+    'email',
+    'offline_access',
+  ]);
+  for (const client of config.clients) {
+    for (const scope of client.scope.split(' ')) {
+      scopesSupported.add(scope);
+    }
+  }
+
+  return {
+    issuer: baseUrl,
+    authorization_endpoint: `${baseUrl}/oauth/authorize`,
+    token_endpoint: `${baseUrl}/oauth/token`,
+    jwks_uri: `${baseUrl}/oauth/.well-known/jwks`,
+    response_types_supported: ['code', 'id_token'],
+    response_modes_supported: ['query', 'fragment', 'form_post'],
+    subject_types_supported: ['public'],
+    id_token_signing_alg_values_supported: ['RS256'],
+    userinfo_signing_alg_values_supported: ['none'],
+    userinfo_endpoint: `${baseUrl}/oauth/userinfo`,
+    scopes_supported: [...scopesSupported],
+    claims_supported: [
+      'sub',
+      'iss',
+      'aud',
+      'exp',
+      'iat',
+      'nonce',
+      'auth_time',
+      'at_hash',
+      'email',
+      'email_verified',
+      'name',
+    ],
+    grant_types_supported: [
+      'authorization_code',
+      'implicit',
+      'refresh_token',
+      'client_credentials',
+      'urn:ietf:params:oauth:grant-type:device_code',
+    ],
+    token_endpoint_auth_methods_supported: [
+      'client_secret_basic',
+      'client_secret_post',
+      'none',
+    ],
+    code_challenge_methods_supported: ['S256'],
+    introspection_endpoint: `${baseUrl}/oauth/introspect`,
+    revocation_endpoint: `${baseUrl}/oauth/revoke`,
+    end_session_endpoint: `${baseUrl}/oauth/end_session`,
+    device_authorization_endpoint: `${baseUrl}/oauth/device_authorization`,
+    ui_locales_supported: config.i18n.supported_languages,
+    request_parameter_supported: false,
+    request_uri_parameter_supported: false,
+    claims_parameter_supported: false,
+  };
+}
 
 export const oidcConfigGet = new Hono<AppEnv>().get(
   '/.well-known/openid-configuration',
@@ -132,54 +196,10 @@ export const oidcConfigGet = new Hono<AppEnv>().get(
   }),
   async (c) => {
     const { config } = c.var.services;
-    const baseUrl = config.server.public_origin;
-
-    const configuration = {
-      issuer: baseUrl,
-      authorization_endpoint: `${baseUrl}/oauth/authorize`,
-      token_endpoint: `${baseUrl}/oauth/token`,
-      jwks_uri: `${baseUrl}/oauth/.well-known/jwks`,
-      response_types_supported: ['code', 'id_token'],
-      response_modes_supported: ['query', 'fragment'],
-      subject_types_supported: ['public'],
-      id_token_signing_alg_values_supported: ['RS256'],
-      userinfo_endpoint: `${baseUrl}/oauth/userinfo`,
-      scopes_supported: ['openid', 'profile', 'email', 'offline_access'],
-      claims_supported: [
-        'sub',
-        'iss',
-        'aud',
-        'exp',
-        'iat',
-        'nonce',
-        'auth_time',
-        'at_hash',
-        'email',
-        'email_verified',
-        'name',
-      ],
-      grant_types_supported: [
-        'authorization_code',
-        'implicit',
-        'refresh_token',
-      ],
-      token_endpoint_auth_methods_supported: [
-        'client_secret_basic',
-        'client_secret_post',
-        'none',
-      ],
-      code_challenge_methods_supported: ['S256'],
-      introspection_endpoint: `${baseUrl}/oauth/introspect`,
-      revocation_endpoint: `${baseUrl}/oauth/revoke`,
-      ui_locales_supported: config.i18n.supported_languages,
-      request_parameter_supported: false,
-      request_uri_parameter_supported: false,
-      claims_parameter_supported: false,
-    };
 
     // Set Cache-Control header
     c.header('Cache-Control', 'public, max-age=3600');
 
-    return c.json(configuration, 200);
+    return c.json(buildOpenidConfiguration(config), 200);
   },
 );

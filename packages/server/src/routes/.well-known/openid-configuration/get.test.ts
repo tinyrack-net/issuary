@@ -19,7 +19,7 @@ afterAll(async () => {
 });
 
 describe('GET /.well-known/openid-configuration', () => {
-  test('should redirect to the oauth discovery endpoint', async () => {
+  test('should serve direct OIDC discovery JSON for client compatibility', async () => {
     const res = await app.request(
       'http://localhost/.well-known/openid-configuration',
       {
@@ -27,9 +27,12 @@ describe('GET /.well-known/openid-configuration', () => {
       },
     );
 
-    expect(res.status).toBe(302);
-    expect(res.headers.get('location')).toBe(
-      '/oauth/.well-known/openid-configuration',
-    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('application/json');
+    await expect(res.json()).resolves.toMatchObject({
+      issuer: 'http://localhost:8080',
+      authorization_endpoint: 'http://localhost:8080/oauth/authorize',
+      token_endpoint: 'http://localhost:8080/oauth/token',
+    });
   });
 });
