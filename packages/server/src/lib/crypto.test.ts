@@ -45,6 +45,24 @@ describe('encrypt', () => {
       /AES|key length|16.*24.*32/i,
     );
   });
+
+  it('should throw a descriptive error for an empty key', async () => {
+    await expect(encrypt('hello', '')).rejects.toThrow(/hex/i);
+  });
+});
+
+describe('decrypt with invalid keys', () => {
+  it('should return null (not throw) for a non-hex key', async () => {
+    // decrypt is called on every session middleware invocation,
+    // so it must not throw — it should return null gracefully.
+    const encrypted = await encrypt('secret', TEST_KEY);
+    expect(await decrypt(encrypted, 'not-a-hex-key!!!')).toBeNull();
+  });
+
+  it('should return null (not throw) for an invalid AES key length', async () => {
+    const encrypted = await encrypt('secret', TEST_KEY);
+    expect(await decrypt(encrypted, 'a'.repeat(42))).toBeNull();
+  });
 });
 
 describe('decrypt', () => {
