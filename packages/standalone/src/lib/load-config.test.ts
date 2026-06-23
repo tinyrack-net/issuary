@@ -314,6 +314,9 @@ describe('load-config', () => {
         'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
       );
       expect(config.server.listen_port).toBe(8080);
+      expect(config.admin).toEqual({
+        enabled: false,
+      });
       expect(config.database.type).toBe('sqlite');
     } finally {
       if (originalSession === undefined)
@@ -353,6 +356,33 @@ describe('load-config', () => {
       if (originalHash === undefined)
         delete process.env['TINYAUTH_HASH_SECRET'];
       else process.env['TINYAUTH_HASH_SECRET'] = originalHash;
+    }
+  });
+
+  test('loads admin config from YAML', async () => {
+    const dir = await fs.promises.mkdtemp(
+      path.join(os.tmpdir(), 'tinyauth-admin-config-'),
+    );
+    const configFile = await writeConfigFile(
+      dir,
+      'admin.yaml',
+      [
+        'admin:',
+        '  enabled: true',
+        'security:',
+        `  session_secret: ${VALID_SESSION_SECRET}`,
+        '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
+      ].join('\n'),
+    );
+
+    try {
+      const config = loadConfig(configFile);
+
+      expect(config.admin).toEqual({
+        enabled: true,
+      });
+    } finally {
+      await fs.promises.rm(dir, { recursive: true, force: true });
     }
   });
 

@@ -66,6 +66,39 @@ export const verifyAuth = <Optional extends boolean = false>(options?: {
     await next();
   });
 
+export const requireAdmin = () =>
+  createMiddleware<{
+    Variables: SessionEnv['Variables'] &
+      ServicesEnv['Variables'] &
+      VerifiedAuthEnv<false>['Variables'];
+  }>(async (c, next) => {
+    const services = c.var.services;
+    const sessionHelper = c.var.session;
+    const session = sessionHelper.get('user');
+    if (!session) {
+      throw new e.Unauthorized.Error();
+    }
+
+    try {
+      const userEntity = await services.mikro.user.findBySub(session.sub);
+      if (userEntity.role !== 'admin') {
+        throw new e.Forbidden.Error();
+      }
+      c.set('verifiedUser', {
+        user: userEntity,
+        authenticatedAt: session.authenticated_at,
+      });
+    } catch (err) {
+      if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
+        sessionHelper.clearAuthSessions();
+        throw new e.Unauthorized.Error();
+      }
+      throw err;
+    }
+
+    await next();
+  });
+
 type VerifiedPending2FAUserEnv<Optional extends boolean> = {
   Variables: {
     verifiedPending2FAUser: Optional extends true

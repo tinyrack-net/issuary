@@ -16,6 +16,7 @@ import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as LoginIndexRouteImport } from './routes/login/index'
 import { Route as ErrorIndexRouteImport } from './routes/error/index'
 import { Route as ConsentIndexRouteImport } from './routes/consent/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as VerifyTotpIndexRouteImport } from './routes/verify/totp/index'
 import { Route as VerifyPasskeyIndexRouteImport } from './routes/verify/passkey/index'
 import { Route as VerifyEmailIndexRouteImport } from './routes/verify/email/index'
@@ -26,6 +27,7 @@ import { Route as Setup2faIndexRouteImport } from './routes/setup/2fa/index'
 import { Route as PasswordResetIndexRouteImport } from './routes/password/reset/index'
 import { Route as PasswordForgotIndexRouteImport } from './routes/password/forgot/index'
 import { Route as LoginPasswordIndexRouteImport } from './routes/login/password/index'
+import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
 import { Route as VerifyTotpRecoveryIndexRouteImport } from './routes/verify/totp/recovery/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -61,6 +63,11 @@ const ErrorIndexRoute = ErrorIndexRouteImport.update({
 const ConsentIndexRoute = ConsentIndexRouteImport.update({
   id: '/consent/',
   path: '/consent/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VerifyTotpIndexRoute = VerifyTotpIndexRouteImport.update({
@@ -113,6 +120,11 @@ const LoginPasswordIndexRoute = LoginPasswordIndexRouteImport.update({
   path: '/login/password/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
+  id: '/admin/users/',
+  path: '/admin/users/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VerifyTotpRecoveryIndexRoute = VerifyTotpRecoveryIndexRouteImport.update({
   id: '/verify/totp/recovery/',
   path: '/verify/totp/recovery/',
@@ -121,12 +133,14 @@ const VerifyTotpRecoveryIndexRoute = VerifyTotpRecoveryIndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin/': typeof AdminIndexRoute
   '/consent/': typeof ConsentIndexRoute
   '/error/': typeof ErrorIndexRoute
   '/login/': typeof LoginIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/register/': typeof RegisterIndexRoute
   '/terms/': typeof TermsIndexRoute
+  '/admin/users/': typeof AdminUsersIndexRoute
   '/login/password/': typeof LoginPasswordIndexRoute
   '/password/forgot/': typeof PasswordForgotIndexRoute
   '/password/reset/': typeof PasswordResetIndexRoute
@@ -141,12 +155,14 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminIndexRoute
   '/consent': typeof ConsentIndexRoute
   '/error': typeof ErrorIndexRoute
   '/login': typeof LoginIndexRoute
   '/profile': typeof ProfileIndexRoute
   '/register': typeof RegisterIndexRoute
   '/terms': typeof TermsIndexRoute
+  '/admin/users': typeof AdminUsersIndexRoute
   '/login/password': typeof LoginPasswordIndexRoute
   '/password/forgot': typeof PasswordForgotIndexRoute
   '/password/reset': typeof PasswordResetIndexRoute
@@ -162,12 +178,14 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin/': typeof AdminIndexRoute
   '/consent/': typeof ConsentIndexRoute
   '/error/': typeof ErrorIndexRoute
   '/login/': typeof LoginIndexRoute
   '/profile/': typeof ProfileIndexRoute
   '/register/': typeof RegisterIndexRoute
   '/terms/': typeof TermsIndexRoute
+  '/admin/users/': typeof AdminUsersIndexRoute
   '/login/password/': typeof LoginPasswordIndexRoute
   '/password/forgot/': typeof PasswordForgotIndexRoute
   '/password/reset/': typeof PasswordResetIndexRoute
@@ -184,12 +202,14 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin/'
     | '/consent/'
     | '/error/'
     | '/login/'
     | '/profile/'
     | '/register/'
     | '/terms/'
+    | '/admin/users/'
     | '/login/password/'
     | '/password/forgot/'
     | '/password/reset/'
@@ -204,12 +224,14 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/consent'
     | '/error'
     | '/login'
     | '/profile'
     | '/register'
     | '/terms'
+    | '/admin/users'
     | '/login/password'
     | '/password/forgot'
     | '/password/reset'
@@ -224,12 +246,14 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin/'
     | '/consent/'
     | '/error/'
     | '/login/'
     | '/profile/'
     | '/register/'
     | '/terms/'
+    | '/admin/users/'
     | '/login/password/'
     | '/password/forgot/'
     | '/password/reset/'
@@ -245,12 +269,14 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   ConsentIndexRoute: typeof ConsentIndexRoute
   ErrorIndexRoute: typeof ErrorIndexRoute
   LoginIndexRoute: typeof LoginIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
   RegisterIndexRoute: typeof RegisterIndexRoute
   TermsIndexRoute: typeof TermsIndexRoute
+  AdminUsersIndexRoute: typeof AdminUsersIndexRoute
   LoginPasswordIndexRoute: typeof LoginPasswordIndexRoute
   PasswordForgotIndexRoute: typeof PasswordForgotIndexRoute
   PasswordResetIndexRoute: typeof PasswordResetIndexRoute
@@ -313,6 +339,13 @@ declare module '@tanstack/react-router' {
       path: '/consent'
       fullPath: '/consent/'
       preLoaderRoute: typeof ConsentIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/verify/totp/': {
@@ -385,6 +418,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginPasswordIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users/': {
+      id: '/admin/users/'
+      path: '/admin/users'
+      fullPath: '/admin/users/'
+      preLoaderRoute: typeof AdminUsersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/verify/totp/recovery/': {
       id: '/verify/totp/recovery/'
       path: '/verify/totp/recovery'
@@ -397,12 +437,14 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminIndexRoute: AdminIndexRoute,
   ConsentIndexRoute: ConsentIndexRoute,
   ErrorIndexRoute: ErrorIndexRoute,
   LoginIndexRoute: LoginIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
   RegisterIndexRoute: RegisterIndexRoute,
   TermsIndexRoute: TermsIndexRoute,
+  AdminUsersIndexRoute: AdminUsersIndexRoute,
   LoginPasswordIndexRoute: LoginPasswordIndexRoute,
   PasswordForgotIndexRoute: PasswordForgotIndexRoute,
   PasswordResetIndexRoute: PasswordResetIndexRoute,

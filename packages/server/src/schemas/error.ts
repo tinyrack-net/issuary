@@ -404,7 +404,12 @@ export const e = {
   Unauthorized: createError(
     401,
     'UNAUTHORIZED',
-    'You must be logged in to perform this action.',
+    'Authentication is required to access this resource.',
+  ),
+  Forbidden: createError(
+    403,
+    'FORBIDDEN',
+    'You do not have permission to access this resource.',
   ),
 
   // Password Management Errors

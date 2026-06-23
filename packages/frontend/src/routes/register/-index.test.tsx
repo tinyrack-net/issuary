@@ -36,6 +36,9 @@ const baseConfig = {
   email: {
     enabled: true,
   },
+  admin: {
+    enabled: true,
+  },
   auth: {
     password: {
       enabled: true,

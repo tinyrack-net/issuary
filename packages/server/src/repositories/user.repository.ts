@@ -11,7 +11,7 @@ export class UserRepository extends EntityRepository<UserEntity> {
    */
   public async findBySub(sub: string): Promise<UserEntity> {
     const user = await this.findOneOrFail(
-      { sub },
+      { sub, deleted_at: null },
       { failHandler: () => new e.UserNotFound.Error() },
     );
     return user;
@@ -22,19 +22,31 @@ export class UserRepository extends EntityRepository<UserEntity> {
   ): Promise<
     Loaded<UserEntity, 'password_hash' | 'passkeys' | 'totps', '*', never>
   > {
-    const user = await this.findOneOrFail(
-      {
-        sub: sub,
+    return this.verifyBySubWhere({ sub, deleted_at: null });
+  }
+
+  public async verifyBySubIncludingDeleted(
+    sub: string,
+  ): Promise<
+    Loaded<UserEntity, 'password_hash' | 'passkeys' | 'totps', '*', never>
+  > {
+    return this.verifyBySubWhere({ sub });
+  }
+
+  private async verifyBySubWhere(where: {
+    sub: string;
+    deleted_at?: null;
+  }): Promise<
+    Loaded<UserEntity, 'password_hash' | 'passkeys' | 'totps', '*', never>
+  > {
+    const user = await this.findOneOrFail(where, {
+      populate: ['password_hash', 'totps', 'passkeys'],
+      populateWhere: {
+        totps: { verified: true },
+        passkeys: {},
       },
-      {
-        populate: ['password_hash', 'totps', 'passkeys'],
-        populateWhere: {
-          totps: { verified: true },
-          passkeys: {},
-        },
-        failHandler: () => new e.UserNotFound.Error(),
-      },
-    );
+      failHandler: () => new e.UserNotFound.Error(),
+    });
     return user;
   }
 
@@ -60,13 +72,13 @@ export class UserRepository extends EntityRepository<UserEntity> {
   }
 
   /**
-   * Check if email is already registered (excluding deleted users)
+   * Check if email is already registered, including soft-deleted users.
    *
    * @param email - Email address to check
-   * @returns True if email exists and is not deleted, false otherwise
+   * @returns True if email exists, false otherwise
    */
   public async exists(email: string) {
-    const count = await this.count({ email: email, deleted_at: null });
+    const count = await this.count({ email });
     return count > 0;
   }
 

@@ -73,6 +73,9 @@ export const configGet = new Hono<AppEnv>().get(
         email: {
           enabled: !!config.email,
         },
+        admin: {
+          enabled: config.admin.enabled,
+        },
         auth: config.auth,
         identity_providers: identityProviders,
         account_deletion: {

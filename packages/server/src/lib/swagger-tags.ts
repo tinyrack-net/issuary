@@ -4,6 +4,7 @@
  * Use these constants in route schema definitions for consistent tagging.
  */
 export const TAGS = {
+  ADMIN: 'Admin',
   AUTH: 'Auth',
   USER: 'User',
   CONSENT: 'Consent',

@@ -60,7 +60,7 @@ export class UserService {
   public async buildSessionUser(params: {
     user: Pick<
       UserEntity,
-      'sub' | 'managed_by' | 'email' | 'email_verified'
+      'sub' | 'managed_by' | 'email' | 'role' | 'email_verified'
     > & {
       hasPassword(): boolean;
     };
@@ -76,6 +76,7 @@ export class UserService {
       sub: user.sub,
       managed_by: user.managed_by,
       email: user.email,
+      role: user.role,
       email_verified: user.email_verified,
       email_verification_required: this.userEmailVerificationRequired(user),
       has_password: user.hasPassword(),
@@ -84,6 +85,155 @@ export class UserService {
       second_factor_required: this.user2FASetupRequired(user),
       passkey_count: passkeyCount,
     };
+  }
+
+  public async adminUserEntityToResponse(
+    user: Loaded<
+      UserEntity,
+      'password_hash' | 'passkeys' | 'totps',
+      '*',
+      never
+    >,
+  ): Promise<z.infer<typeof r.AdminUser>> {
+    const sessionUser = await this.userEntityToSessionUser(user);
+    return {
+      ...sessionUser,
+      deleted_at: user.deleted_at?.toISOString() ?? null,
+    };
+  }
+
+  public async listAdminUsers(params: {
+    query?: string | undefined;
+    page: number;
+    pageSize: number;
+    includeDeleted: boolean;
+    managedBy?: UserEntity['managed_by'] | undefined;
+    role?: UserEntity['role'] | undefined;
+  }): Promise<z.infer<typeof r.AdminUserListResponse>> {
+    const where: Record<string, unknown> = {};
+    if (!params.includeDeleted) {
+      where['deleted_at'] = null;
+    }
+    if (params.managedBy) {
+      where['managed_by'] = params.managedBy;
+    }
+    if (params.role) {
+      where['role'] = params.role;
+    }
+
+    const query = params.query?.trim();
+    if (query) {
+      where['$or'] = [
+        { email: { $like: `%${query}%` } },
+        { sub: { $like: `%${query}%` } },
+      ];
+    }
+
+    const [users, total] = await this.mikro.user.findAndCount(where, {
+      populate: ['password_hash', 'totps', 'passkeys'],
+      populateWhere: {
+        totps: { verified: true },
+        passkeys: {},
+      },
+      limit: params.pageSize,
+      offset: (params.page - 1) * params.pageSize,
+      orderBy: { email: 'ASC' },
+    });
+
+    return {
+      users: await Promise.all(
+        users.map((user) => this.adminUserEntityToResponse(user)),
+      ),
+      pagination: {
+        page: params.page,
+        page_size: params.pageSize,
+        total,
+      },
+    };
+  }
+
+  public async getAdminUser(sub: string): Promise<z.infer<typeof r.AdminUser>> {
+    const user = await this.mikro.user.verifyBySubIncludingDeleted(sub);
+    return this.adminUserEntityToResponse(user);
+  }
+
+  public async createAdminUser(params: {
+    email: string;
+    password: string;
+    role?: UserEntity['role'] | undefined;
+    emailVerified?: boolean | undefined;
+  }): Promise<z.infer<typeof r.AdminUser>> {
+    const user = await this.passwordAuthService.createDatabaseUser({
+      email: params.email,
+      password: params.password,
+    });
+    user.role = params.role ?? 'user';
+    user.email_verified = params.emailVerified ?? false;
+    await this.mikro.em.flush();
+
+    return this.getAdminUser(user.sub);
+  }
+
+  public async updateAdminUser(params: {
+    sub: string;
+    actorSub: string;
+    email?: string | undefined;
+    role?: UserEntity['role'] | undefined;
+    emailVerified?: boolean | undefined;
+  }): Promise<z.infer<typeof r.AdminUser>> {
+    const user = await this.mikro.user.verifyBySub(params.sub);
+
+    if (params.sub === params.actorSub && params.role === 'user') {
+      throw new e.Forbidden.Error();
+    }
+
+    if (user.managed_by === 'config') {
+      throw new e.UserNotEditable.Error();
+    }
+
+    if (user.deleted_at) {
+      throw new e.UserNotFound.Error();
+    }
+
+    if (params.email !== undefined && params.email !== user.email) {
+      const existing = await this.mikro.user.findOne({
+        email: params.email,
+        sub: { $ne: params.sub },
+      });
+      if (existing) {
+        throw new e.EmailAlreadyExists.Error();
+      }
+      user.email = params.email;
+    }
+    if (params.role !== undefined) {
+      user.role = params.role;
+    }
+    if (params.emailVerified !== undefined) {
+      user.email_verified = params.emailVerified;
+    }
+    await this.mikro.em.flush();
+
+    return this.getAdminUser(user.sub);
+  }
+
+  public async deleteAdminUser(params: {
+    sub: string;
+    actorSub: string;
+  }): Promise<z.infer<typeof r.AdminUser>> {
+    if (params.sub === params.actorSub) {
+      throw new e.Forbidden.Error();
+    }
+
+    const user = await this.mikro.user.verifyBySub(params.sub);
+    if (user.managed_by === 'config') {
+      throw new e.UserNotEditable.Error();
+    }
+    if (!user.deleted_at) {
+      user.deleted_at = new Date();
+      await this.mikro.em.flush();
+    }
+
+    return this.adminUserEntityToResponse(user);
   }
 
   public async register(params: {
@@ -163,6 +313,7 @@ export class UserService {
       sub: user.sub,
       managed_by: 'database',
       email: user.email,
+      role: user.role,
       email_verified: user.email_verified,
       email_verification_required: this.userEmailVerificationRequired(user),
       has_password: user.hasPassword(),

@@ -74,6 +74,7 @@ describe('GET /api/user/session', () => {
     // Verify user sub matches = logged-in user
     const loginBody = await assertJsonBody(loginRes);
     expect(sessionUser.sub).toBe(loginBody.user?.sub);
+    expect(sessionUser.role).toBe('admin');
     expect(sessionUser).toHaveProperty('second_factor_required');
   });
 

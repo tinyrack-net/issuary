@@ -15,6 +15,7 @@ beforeAll(async () => {
   const email = await createTestEmailConfig();
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
+    admin: { enabled: true },
     email,
     registration: {
       enabled: true,
@@ -66,16 +67,14 @@ describe('GET /api/config', () => {
     expect(json.registration.public_registration).toBeTypeOf('boolean');
     expect(json.registration.public_registration).toBe(true);
     expect(json.registration.email_pattern_filter_enabled).toBe(true);
+    expect(json.admin).toEqual({ enabled: true });
 
-    // Verify database config structure
     expect(json.database).toBeDefined();
     expect(json.database.enabled).toBeTypeOf('boolean');
 
-    // Verify auth structure
     expect(json.auth).toBeDefined();
     expect(typeof json.auth).toBe('object');
 
-    // Verify identity_providers structure (now an array)
     expect(json.identity_providers).toBeDefined();
     expect(Array.isArray(json.identity_providers)).toBe(true);
   });
@@ -88,7 +87,6 @@ describe('GET /api/config', () => {
 
     const json = await res.json();
 
-    // Check password auth method exists
     expect(json.auth.password).toBeDefined();
     expect(json.auth.password.enabled).toBeTypeOf('boolean');
     expect(json.auth.password.policy).toEqual({
@@ -96,14 +94,12 @@ describe('GET /api/config', () => {
       max_length: 64,
     });
 
-    // Check two_factor configuration
     if (json.auth.password.two_factor) {
       expect(json.auth.password.two_factor.enrollment_required).toBeTypeOf(
         'boolean',
       );
     }
 
-    // Check TOTP configuration
     if (json.auth.password.totp) {
       expect(json.auth.password.totp.enabled).toBeTypeOf('boolean');
     }
@@ -119,7 +115,6 @@ describe('GET /api/config', () => {
 
     const json = await res.json();
 
-    // Check passkey auth method exists
     expect(json.auth.passkey).toBeDefined();
     expect(json.auth.passkey.enabled).toBeTypeOf('boolean');
   });
@@ -146,7 +141,7 @@ describe('GET /api/config', () => {
     expect(json.registration.email_pattern_filter_enabled).toBe(true);
   });
 
-  test('should include identity providers', async () => {
+  test('should include identity providers without internal fields', async () => {
     const client = testClient(app);
     const res = await client.api.config.$get();
 
@@ -154,10 +149,8 @@ describe('GET /api/config', () => {
 
     const json = await res.json();
 
-    // Check identity providers - should be an array of only enabled providers
     expect(Array.isArray(json.identity_providers)).toBe(true);
 
-    // Find Google provider in the array (should be enabled in test config)
     let googleProvider: (typeof json.identity_providers)[number] | undefined;
     for (const provider of json.identity_providers) {
       if (provider.id === 'google') {
@@ -165,32 +158,32 @@ describe('GET /api/config', () => {
         break;
       }
     }
+    expect(googleProvider).toBeDefined();
     if (googleProvider) {
       expect(googleProvider.type).toBe('google');
       expect(googleProvider.display_name).toBeTypeOf('string');
-      // enabled field should not exist (only enabled providers are returned)
       expect('enabled' in googleProvider).toBe(false);
+      expect('client_secret' in googleProvider).toBe(false);
+      expect('email_conflict_strategy' in googleProvider).toBe(false);
     }
   });
 
   test('should not require authentication', async () => {
     const client = testClient(app);
-    // This endpoint should be publicly accessible
     const res = await client.api.config.$get();
 
-    // Should not return 401
     expect(res.status).toBe(200);
   });
 });
 
-describe('GET /api/config (email disabled)', () => {
+describe('GET /api/config (email and admin disabled)', () => {
   let appNoEmail: AppType;
   let cleanupNoEmail: () => Promise<void>;
 
   beforeAll(async () => {
-    const configWithoutEmail = MINIMAL_TEST_CONFIG;
     const server = await createTestApp({
-      ...configWithoutEmail,
+      ...MINIMAL_TEST_CONFIG,
+      admin: { enabled: false },
     });
     appNoEmail = server.app;
     cleanupNoEmail = server.cleanup;
@@ -200,7 +193,7 @@ describe('GET /api/config (email disabled)', () => {
     await cleanupNoEmail();
   });
 
-  test('should expose email.enabled=false when email is not configured', async () => {
+  test('should expose disabled public flags when features are not configured', async () => {
     const client = testClient(appNoEmail);
     const res = await client.api.config.$get();
 
@@ -210,5 +203,7 @@ describe('GET /api/config (email disabled)', () => {
     expect(json.email.enabled).toBe(false);
     expect(json.registration.public_registration).toBe(false);
     expect(json.registration.email_pattern_filter_enabled).toBe(false);
+    expect(json.admin).toEqual({ enabled: false });
+    expect(json).not.toHaveProperty('security');
   });
 });

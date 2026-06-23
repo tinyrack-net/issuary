@@ -13,6 +13,7 @@ function createCsrfTestApp() {
   });
   app.use('*', csrfProtection('https://app.example.test'));
   app.post('/api/user/password', (c) => c.json({ ok: true }));
+  app.post('/api/admin/users', (c) => c.json({ ok: true }));
   app.get('/api/user/session', (c) => c.json({ ok: true }));
   app.post('/api/oauth/apple/callback', (c) => c.json({ ok: true }));
   return app;
@@ -59,6 +60,20 @@ describe('csrfProtection middleware', () => {
       headers: {
         Cookie: 'session=encrypted-session',
         'Sec-Fetch-Site': 'cross-site',
+      },
+    });
+
+    expect(res.status).toBe(e.CsrfViolation.Status);
+  });
+
+  it('rejects cross-site admin requests carrying a session cookie', async () => {
+    const app = createCsrfTestApp();
+
+    const res = await app.request('/api/admin/users', {
+      method: 'POST',
+      headers: {
+        Cookie: 'session=encrypted-session',
+        Origin: 'https://evil.example.test',
       },
     });
 

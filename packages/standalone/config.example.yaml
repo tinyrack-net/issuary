@@ -68,6 +68,10 @@ frontend:
   html_variables:
     APP_NAME: TinyAuth
 
+# Admin console is disabled by default. It uses the normal app session and requires an admin role.
+admin:
+  enabled: ${TINYAUTH_ADMIN_ENABLED:-false}
+
 logging:
   level: ${TINYAUTH_LOG_LEVEL:-info}
   format: ${TINYAUTH_LOG_FORMAT:-pretty}

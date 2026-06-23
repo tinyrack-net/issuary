@@ -115,7 +115,7 @@ describe('DELETE /api/user', () => {
       await expectError(res, e.UserNotEditable);
     });
 
-    test('should fail if account already deleted', async () => {
+    test('should treat an already deleted account session as unauthenticated', async () => {
       // Create a new database user
       const email = generateUniqueEmail('already-deleted');
       const password = 'testPassword123';
@@ -143,7 +143,7 @@ describe('DELETE /api/user', () => {
         { headers: { Cookie: `session=${sessionCookie}` } },
       );
 
-      await expectError(res, e.AccountAlreadyDeleted);
+      await expectError(res, e.Unauthorized);
     });
 
     test('should set deleted_at in database after deletion', async () => {

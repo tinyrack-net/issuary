@@ -52,27 +52,29 @@ export async function createApp(
     server: config.server,
   });
 
-  const app = new Hono()
-    .onError((err, c) => {
-      if (err instanceof TinyAuthError) {
-        if (err.code === 'insufficient_scope') {
-          c.header(
-            'WWW-Authenticate',
-            'Bearer error="insufficient_scope", scope="openid"',
-          );
-        }
-
-        if (c.req.path.startsWith('/oauth/')) {
-          return c.json(toOAuthErrorJson(err), err.status);
-        }
-
-        return c.json(err.toJson(), err.status);
+  const handleError = (err: Error, c: Context) => {
+    if (err instanceof TinyAuthError) {
+      if (err.code === 'insufficient_scope') {
+        c.header(
+          'WWW-Authenticate',
+          'Bearer error="insufficient_scope", scope="openid"',
+        );
       }
 
-      logger.error({ err }, 'Unhandled error');
-      const internalErr = new e.InternalServerError.Error();
-      return c.json(internalErr.toJson(), internalErr.status);
-    })
+      if (c.req.path.startsWith('/oauth/')) {
+        return c.json(toOAuthErrorJson(err), err.status);
+      }
+
+      return c.json(err.toJson(), err.status);
+    }
+
+    logger.error({ err }, 'Unhandled error');
+    const internalErr = new e.InternalServerError.Error();
+    return c.json(internalErr.toJson(), internalErr.status);
+  };
+
+  const app = new Hono()
+    .onError(handleError)
     .use('*', loggerMiddleware(logger))
     .use('*', firstPartyCors(config.server.public_origin))
     .use(

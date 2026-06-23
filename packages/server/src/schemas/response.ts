@@ -16,6 +16,7 @@ const UserSession = z
       .describe('User data source (database or static config)'),
     sub: f.userSub,
     email: f.userEmail,
+    role: z.enum(['user', 'admin']).describe('User role'),
     email_verified: f.emailVerified,
     email_verification_required: z
       .boolean()
@@ -38,6 +39,31 @@ const UserSession = z
       .describe('Number of passkeys registered for the user'),
   })
   .describe('UserSession');
+
+const AdminUser = UserSession.extend({
+  deleted_at: z
+    .string()
+    .datetime()
+    .nullable()
+    .describe('Timestamp when the user was soft-deleted'),
+}).describe('Admin user information');
+
+const AdminUserListResponse = z
+  .object({
+    users: z.array(AdminUser),
+    pagination: z.object({
+      page: z.number().int().min(1),
+      page_size: z.number().int().min(1),
+      total: z.number().int().min(0),
+    }),
+  })
+  .describe('Admin user list response');
+
+const AdminUserResponse = z
+  .object({
+    user: AdminUser,
+  })
+  .describe('Admin user response');
 
 const OAuthClient = z
   .object({
@@ -355,6 +381,9 @@ const OAuthAuthenticationMethod = z
 export const r = {
   // Base schemas
   UserSession,
+  AdminUser,
+  AdminUserListResponse,
+  AdminUserResponse,
   OAuthClient,
   ConsentClient,
   ConsentScope,
@@ -642,6 +671,9 @@ export const r = {
     }),
     email: z.object({
       enabled: z.boolean().describe('Whether email delivery is enabled'),
+    }),
+    admin: z.object({
+      enabled: z.boolean().describe('Whether the admin console is enabled'),
     }),
     auth: BasicAuthenticationMethods.describe('Enabled authentication methods'),
     identity_providers: z

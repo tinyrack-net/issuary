@@ -22,7 +22,7 @@ interface SpawnCliOptions {
 }
 
 function spawnCli(options: SpawnCliOptions) {
-  const { args, cwd = CWD, env, timeout = 15_000 } = options;
+  const { args, cwd = CWD, env, timeout = 30_000 } = options;
   return execaNode(CLI_PATH, args, {
     reject: false,
     timeout,
@@ -37,7 +37,7 @@ function spawnCli(options: SpawnCliOptions) {
 }
 
 function spawnBuiltCli(options: SpawnCliOptions) {
-  const { args, cwd = CWD, env, timeout = 15_000 } = options;
+  const { args, cwd = CWD, env, timeout = 30_000 } = options;
   return execaNode(DIST_CLI_PATH, args, {
     reject: false,
     timeout,

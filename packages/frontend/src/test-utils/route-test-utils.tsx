@@ -46,6 +46,9 @@ export const routeTestAppConfig = {
   email: {
     enabled: true,
   },
+  admin: {
+    enabled: true,
+  },
   auth: {
     password: {
       enabled: true,
@@ -76,6 +79,7 @@ export const routeTestUser = {
   managed_by: 'database',
   sub: 'user-1',
   email: 'alice@example.com',
+  role: 'user',
   email_verified: true,
   email_verification_required: false,
   has_password: true,

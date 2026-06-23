@@ -80,6 +80,93 @@ describe('createStandaloneApp', () => {
     });
   });
 
+  describe('admin frontend route', () => {
+    let publicPath = '';
+    let cleanup = async () => {};
+    let app: Awaited<ReturnType<typeof createStandaloneApp>>['app'];
+
+    beforeAll(async () => {
+      publicPath = await fs.promises.mkdtemp(
+        path.join(os.tmpdir(), 'tinyauth-public-app-'),
+      );
+      await fs.promises.writeFile(
+        path.join(publicPath, 'index.html'),
+        '<!doctype html><html><body>public app</body></html>',
+        'utf-8',
+      );
+
+      const server = await createStandaloneApp({
+        config: {
+          ...BASE_CONFIG,
+          admin: { enabled: true },
+          frontend: {
+            enabled: true,
+            mode: 'static',
+            path: publicPath,
+          },
+        },
+      });
+      app = server.app;
+      cleanup = server.cleanup;
+    });
+
+    afterAll(async () => {
+      await cleanup();
+      await fs.promises.rm(publicPath, { recursive: true, force: true });
+    });
+
+    test('serves the normal frontend app for /admin', async () => {
+      const res = await app.request('/admin');
+
+      expect(res.status).toBe(200);
+      await expect(res.text()).resolves.toContain('public app');
+    });
+  });
+
+  describe('admin API disabled with frontend fallback', () => {
+    let publicPath = '';
+    let cleanup = async () => {};
+    let app: Awaited<ReturnType<typeof createStandaloneApp>>['app'];
+
+    beforeAll(async () => {
+      publicPath = await fs.promises.mkdtemp(
+        path.join(os.tmpdir(), 'tinyauth-disabled-admin-app-'),
+      );
+      await fs.promises.writeFile(
+        path.join(publicPath, 'index.html'),
+        '<!doctype html><html><body>public app</body></html>',
+        'utf-8',
+      );
+
+      const server = await createStandaloneApp({
+        config: {
+          ...BASE_CONFIG,
+          admin: { enabled: false },
+          frontend: {
+            enabled: true,
+            mode: 'static',
+            path: publicPath,
+          },
+        },
+      });
+      app = server.app;
+      cleanup = server.cleanup;
+    });
+
+    afterAll(async () => {
+      await cleanup();
+      await fs.promises.rm(publicPath, { recursive: true, force: true });
+    });
+
+    test('returns JSON 404 for disabled admin API instead of frontend HTML', async () => {
+      const res = await app.request('/api/admin/me');
+
+      expect(res.status).toBe(404);
+      expect(res.headers.get('content-type')).toContain('application/json');
+      await expect(res.json()).resolves.toEqual({ error: 'Not Found' });
+    });
+  });
+
   describe('proxy frontend mode', () => {
     let cleanup = async () => {};
     let app: Awaited<ReturnType<typeof createStandaloneApp>>['app'];

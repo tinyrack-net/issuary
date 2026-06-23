@@ -19,7 +19,7 @@ export function parseBasicClientCredentials(
   }
 
   const [scheme, encoded, extra] = authorizationHeader.split(' ');
-  if (!scheme || scheme.toLowerCase() !== 'basic') {
+  if (scheme?.toLowerCase() !== 'basic') {
     return null;
   }
 

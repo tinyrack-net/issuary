@@ -45,7 +45,7 @@
       "react": "all"
     },
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "complexity": {
         "useLiteralKeys": "off"
       },
@@ -61,10 +61,14 @@
         "useImportType": "error",
         "useComponentExportOnlyModules": "off"
       },
+      "performance": {
+        "noJsxPropsBind": "off"
+      },
       "suspicious": {
         "noExplicitAny": "error",
         "noConsole": "off",
-        "noArrayIndexKey": "off"
+        "noArrayIndexKey": "off",
+        "noLeakedRender": "off"
       },
       "security": {
         "noDangerouslySetInnerHtml": "off"

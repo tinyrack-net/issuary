@@ -46,6 +46,7 @@ describe('UserService', () => {
         sub: 'session-user-sub',
         managed_by: 'database',
         email: 'session-user@example.com',
+        role: 'user',
         email_verified: true,
         hasPassword: () => true,
       },

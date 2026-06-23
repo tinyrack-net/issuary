@@ -1,3 +1,5 @@
+export type { StandaloneAdminConfig } from './admin.ts';
+export { StandaloneAdminConfigSchema } from './admin.ts';
 export type { StandaloneAuthConfig } from './auth.ts';
 export { StandaloneAuthConfigSchema } from './auth.ts';
 export type { StandaloneCleanupConfig } from './cleanup.ts';

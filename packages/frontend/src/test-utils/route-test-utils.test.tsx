@@ -32,6 +32,9 @@ const loginConfig = {
   email: {
     enabled: true,
   },
+  admin: {
+    enabled: true,
+  },
   auth: {
     password: {
       enabled: true,

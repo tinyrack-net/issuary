@@ -54,43 +54,37 @@ export const authLoginPost = new Hono<AppEnv>().post(
     }),
   ),
   async (c) => {
-    const config = c.var.services.config;
+    const body = c.req.valid('json');
+    const { services, session } = c.var;
+    const config = services.config;
     if (!config.auth.password.enabled) {
       throw new e.ValidationError.Error('Password authentication is disabled');
     }
 
-    const body = c.req.valid('json');
-    const { passwordAuthService, userService } = c.var.services;
-    const session = c.var.session;
-
-    const userEntity = await passwordAuthService.authenticateByEmailAndPassword(
-      {
+    const userEntity =
+      await services.passwordAuthService.authenticateByEmailAndPassword({
         email: body.email,
         password: body.password,
-      },
-    );
-
-    const userSession = await userService.userEntityToSessionUser(userEntity);
+      });
+    const user = await services.userService.userEntityToSessionUser(userEntity);
 
     if (
-      userService.userEmailVerificationRequired(userSession) &&
-      !userSession.email_verified
+      services.userService.userEmailVerificationRequired(user) &&
+      !user.email_verified
     ) {
-      return c.json({ user: userSession }, 200);
+      return c.json({ user }, 200);
     }
 
-    const userRegistered2FAMethods = await userService.userRegistered2FAMethods(
-      userSession.sub,
-    );
-
-    if (userRegistered2FAMethods.length > 0) {
-      session.setPending2FASession(userSession.sub);
-    } else if (userSession.second_factor_required) {
-      session.setPending2FASetupSession(userSession.sub);
+    const registered2FAMethods =
+      await services.userService.userRegistered2FAMethods(user.sub);
+    if (registered2FAMethods.length > 0) {
+      session.setPending2FASession(user.sub);
+    } else if (user.second_factor_required) {
+      session.setPending2FASetupSession(user.sub);
     } else {
-      session.setUserSession(userSession.sub);
+      session.setUserSession(user.sub);
     }
 
-    return c.json({ user: userSession }, 200);
+    return c.json({ user }, 200);
   },
 );

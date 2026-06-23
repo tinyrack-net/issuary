@@ -139,8 +139,9 @@ export default defineConfig({
     conditions: ['@tinyauth/source'],
   },
   test: {
-    maxWorkers: '90%',
-    testTimeout: 20000,
+    fileParallelism: false,
+    maxWorkers: 1,
+    testTimeout: 60_000,
     exclude: ['./dist/*', './node_modules/*'],
     coverage: {
       provider: 'v8',

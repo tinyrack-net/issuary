@@ -115,6 +115,9 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     expect(parsed.terms).toEqual(TERMS_CONFIG_DEFAULT);
     expect(parsed.clients).toEqual(CLIENT_CONFIGS_DEFAULT);
     expect(parsed.users).toEqual(USER_CONFIGS_DEFAULT);
+    expect(parsed.admin).toEqual({
+      enabled: false,
+    });
     expect(parsed.identity_providers).toEqual(
       IDENTITY_PROVIDER_CONFIGS_DEFAULT,
     );
@@ -193,6 +196,43 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     });
 
     expect(parsed.scheduler).toBe(scheduler);
+  });
+
+  test('parses explicit admin config', () => {
+    const parsed = TinyAuthRuntimeConfigSchema.parse({
+      ...MINIMAL_INPUT_CONFIG,
+      admin: {
+        enabled: true,
+      },
+    });
+
+    expect(parsed.admin).toEqual({
+      enabled: true,
+    });
+  });
+
+  test('rejects removed admin listener and session config', () => {
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        admin: {
+          enabled: true,
+          listen_port: 8082,
+        },
+      }),
+    ).toThrow(/listen_port/);
+
+    expect(() =>
+      TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        admin: {
+          enabled: true,
+          session: {
+            cookie_name: 'custom_admin_session',
+          },
+        },
+      }),
+    ).toThrow(/session/);
   });
 
   test('caps config-authored user and client identifiers at 255 characters', () => {

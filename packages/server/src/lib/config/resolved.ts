@@ -1,5 +1,6 @@
 import z from 'zod';
 import { AccountDeletionConfigSchema } from './account-deletion.ts';
+import { AdminConfigSchema } from './admin.ts';
 import { AuthConfigSchema } from './auth.ts';
 import { BrandingConfigSchema } from './branding.ts';
 import { CleanupConfigSchema } from './cleanup.ts';
@@ -35,6 +36,7 @@ export const TinyAuthRuntimeConfigSchema = z
     account_deletion: AccountDeletionConfigSchema.describe(
       'Account deletion settings.',
     ),
+    admin: AdminConfigSchema.describe('Admin console settings.'),
     logging: LoggingConfigSchema.describe('Logging settings.'),
     openapi: OpenApiConfigSchema.describe(
       'OpenAPI and API reference settings.',

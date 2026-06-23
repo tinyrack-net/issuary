@@ -1,5 +1,6 @@
 import {
   AccountDeletionConfigSchema,
+  ADMIN_CONFIG_DEFAULT,
   AuthConfigSchema,
   BrandingConfigSchema,
   CleanupConfigSchema,
@@ -14,6 +15,7 @@ import {
   TokensConfigSchema,
 } from '@tinyrack/tinyauth-server/config';
 import z from 'zod';
+import { StandaloneAdminConfigSchema } from './admin.ts';
 import { StandaloneDatabaseConfigSchema } from './database.ts';
 import { StandaloneEmailConfigSchema } from './email.ts';
 import {
@@ -39,6 +41,9 @@ export const StandaloneConfigSchema = z
     ),
     account_deletion: AccountDeletionConfigSchema.describe(
       'Account deletion settings.',
+    ),
+    admin: StandaloneAdminConfigSchema.default(ADMIN_CONFIG_DEFAULT).describe(
+      'Admin console settings.',
     ),
     logging: LoggingConfigSchema.describe('Logging settings.'),
     openapi: OpenApiConfigSchema.describe(

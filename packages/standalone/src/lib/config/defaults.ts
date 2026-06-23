@@ -84,6 +84,10 @@ export const STANDALONE_CONFIG_DEFAULTS = {
     html_variables: {},
   },
 
+  admin: {
+    enabled: envDefault('TINYAUTH_ADMIN_ENABLED', 'false'),
+  },
+
   registration: {
     enabled: envDefault('TINYAUTH_REGISTRATION_ENABLED', 'false'),
   },
