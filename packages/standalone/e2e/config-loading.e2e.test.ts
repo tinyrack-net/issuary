@@ -176,7 +176,10 @@ describe('config loading priority', { timeout: 30_000 }, () => {
     const port = await getFreePort();
     const { configPath, cleanup } = await createCustomConfigFile(
       baseConfig(port, {
-        server: { listen_port: port, public_origin: 'http://custom-host:9999' },
+        server: {
+          listen_port: port,
+          public_origin: 'https://custom-host:9999',
+        },
       }),
     );
     configCleanup = cleanup;
@@ -189,7 +192,7 @@ describe('config loading priority', { timeout: 30_000 }, () => {
     const res = await waitForReady(port);
     const body = await res.json();
 
-    expect(body.issuer).toBe('http://custom-host:9999');
+    expect(body.issuer).toBe('https://custom-host:9999');
   });
 
   it('env var overrides default when YAML omits field', async () => {
@@ -202,12 +205,12 @@ describe('config loading priority', { timeout: 30_000 }, () => {
     cliProcess = startCli({
       args: ['serve', '-c', configPath],
       timeout: 25_000,
-      env: { TINYAUTH_PUBLIC_ORIGIN: 'http://env-host:5678' },
+      env: { TINYAUTH_PUBLIC_ORIGIN: 'https://env-host:5678' },
     });
 
     const res = await waitForReady(port);
     const body = await res.json();
 
-    expect(body.issuer).toBe('http://env-host:5678');
+    expect(body.issuer).toBe('https://env-host:5678');
   });
 });
