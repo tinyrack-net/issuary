@@ -63,6 +63,7 @@ export function buildOpenidConfiguration(config: TinyAuthRuntimeConfig) {
     revocation_endpoint_auth_methods_supported: [
       'client_secret_basic',
       'client_secret_post',
+      'none',
     ],
     code_challenge_methods_supported: ['S256'],
     introspection_endpoint: `${baseUrl}/oauth/introspect`,

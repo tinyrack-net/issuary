@@ -54,12 +54,7 @@ export async function createApp(
 
   const handleError = (err: Error, c: Context) => {
     if (err instanceof TinyAuthError) {
-      if (err.code === 'insufficient_scope') {
-        c.header(
-          'WWW-Authenticate',
-          'Bearer error="insufficient_scope", scope="openid"',
-        );
-      }
+      setBearerAuthChallenge(c, err);
 
       if (c.req.path.startsWith('/oauth/')) {
         return c.json(toOAuthErrorJson(err), err.status);
@@ -152,6 +147,27 @@ function firstPartyCors(publicOrigin: string) {
   };
 }
 
+function setBearerAuthChallenge(c: Context, err: TinyAuthError) {
+  switch (err.code) {
+    case 'MISSING_AUTHORIZATION_HEADER':
+      c.header('WWW-Authenticate', 'Bearer');
+      return;
+    case 'INVALID_AUTHORIZATION_HEADER_FORMAT':
+    case 'MISSING_BEARER_TOKEN':
+    case 'INVALID_ACCESS_TOKEN':
+      c.header('WWW-Authenticate', 'Bearer error="invalid_token"');
+      return;
+    case 'insufficient_scope':
+      c.header(
+        'WWW-Authenticate',
+        'Bearer error="insufficient_scope", scope="openid"',
+      );
+      return;
+    default:
+      return;
+  }
+}
+
 function toOAuthErrorJson(err: TinyAuthError) {
   return {
     ...err.toJson(),
@@ -187,6 +203,10 @@ function toOAuthErrorCode(err: TinyAuthError): string {
       return 'authorization_pending';
     case 'slow_down':
       return 'slow_down';
+    case 'expired_token':
+      return 'expired_token';
+    case 'access_denied':
+      return 'access_denied';
     default:
       return 'invalid_request';
   }

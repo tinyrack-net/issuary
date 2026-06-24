@@ -19,6 +19,15 @@ afterAll(async () => {
 });
 
 describe('GET /.well-known/openid-configuration', () => {
+  test('should serve root OIDC discovery with public wildcard CORS', async () => {
+    const res = await app.request('/.well-known/openid-configuration', {
+      headers: { origin: 'https://client.example.test' },
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('access-control-allow-origin')).toBe('*');
+    expect(res.headers.get('access-control-allow-credentials')).toBeNull();
+  });
   test('should serve direct OIDC discovery JSON for client compatibility', async () => {
     const res = await app.request(
       'http://localhost/.well-known/openid-configuration',

@@ -30,6 +30,8 @@ export class OAuthDeviceCodeRepository extends EntityRepository<IOAuthDeviceCode
       userCodeHash,
       consumedAt: null,
       authorizedAt: null,
+      deniedAt: null,
+      expiresAt: { $gt: new Date() },
     });
   }
 
@@ -43,11 +45,39 @@ export class OAuthDeviceCodeRepository extends EntityRepository<IOAuthDeviceCode
         userCodeHash: params.userCodeHash,
         consumedAt: null,
         authorizedAt: null,
+        deniedAt: null,
         expiresAt: { $gt: params.approvedAt },
       },
       {
         authorizedUser: params.userSub,
         authorizedAt: params.approvedAt,
+      },
+    );
+
+    if (updated !== 1) {
+      return null;
+    }
+
+    return this.findOne(
+      { userCodeHash: params.userCodeHash },
+      { populate: ['client'] },
+    );
+  }
+
+  async denyPendingByUserCodeHash(params: {
+    userCodeHash: string;
+    deniedAt: Date;
+  }): Promise<IOAuthDeviceCodeEntity | null> {
+    const updated = await this.nativeUpdate(
+      {
+        userCodeHash: params.userCodeHash,
+        consumedAt: null,
+        authorizedAt: null,
+        deniedAt: null,
+        expiresAt: { $gt: params.deniedAt },
+      },
+      {
+        deniedAt: params.deniedAt,
       },
     );
 
@@ -81,6 +111,7 @@ export class OAuthDeviceCodeRepository extends EntityRepository<IOAuthDeviceCode
         id,
         consumedAt: null,
         authorizedAt: { $ne: null },
+        deniedAt: null,
         expiresAt: { $gt: consumedAt },
       },
       { consumedAt },

@@ -9,7 +9,8 @@ import type { OAuthClientService } from './oauth-client.service.ts';
 import type { SecurityService } from './security.service.ts';
 import type { UserConsentService } from './user-consent.service.ts';
 
-type PromptValue = 'none' | 'login' | 'consent' | 'select_account';
+type PromptValue = 'none' | 'login' | 'consent';
+type ResponseMode = 'query' | 'fragment' | 'form_post';
 const REAUTHENTICATION_CONTINUATION_MAX_AGE_SECONDS = 60;
 
 /**
@@ -43,7 +44,7 @@ export interface AuthorizeParams {
   reauthenticated?: '1' | undefined;
   /** OIDC display mode for authentication UI */
   display?: z.infer<typeof f.display> | undefined;
-  response_mode?: 'query' | 'fragment' | 'form_post' | undefined;
+  response_mode?: string | undefined;
   login_hint?: string | undefined;
   ui_locales?: string | undefined;
   id_token_hint?: string | undefined;
@@ -96,18 +97,25 @@ export class OAuthAuthorizeService {
       authenticated_at: number;
     };
   }): Promise<AuthorizeResult> {
-    const { query, userSession } = params;
+    const { userSession } = params;
+    const rawQuery = params.query;
 
     // 1. Validate and fetch OAuth client DTO for validation methods
     const client = await this.oauthClientService.findByClientId(
-      query.client_id,
+      rawQuery.client_id,
     );
 
     // 2. Validate client is enabled
     this.oauthClientService.validateEnabled(client);
 
     // 3. Validate redirect_uri
-    this.oauthClientService.validateRedirectUri(client, query.redirect_uri);
+    this.oauthClientService.validateRedirectUri(client, rawQuery.redirect_uri);
+
+    const responseMode = this.parseResponseMode(rawQuery.response_mode);
+    const query = {
+      ...rawQuery,
+      response_mode: responseMode,
+    };
 
     // 4. Validate response_type
     this.oauthClientService.validateResponseType(client, query.response_type);
@@ -276,6 +284,24 @@ export class OAuthAuthorizeService {
     };
   }
 
+  private parseResponseMode(
+    responseMode: string | undefined,
+  ): ResponseMode | undefined {
+    if (responseMode === undefined) {
+      return undefined;
+    }
+
+    if (
+      responseMode === 'query' ||
+      responseMode === 'fragment' ||
+      responseMode === 'form_post'
+    ) {
+      return responseMode;
+    }
+
+    throw new e.InvalidAuthorizationRequest.Error();
+  }
+
   private parsePrompt(prompt: string | undefined): PromptValue[] {
     if (!prompt) {
       return [];
@@ -288,12 +314,7 @@ export class OAuthAuthorizeService {
         throw new e.InvalidPrompt.Error();
       }
 
-      if (
-        value === 'none' ||
-        value === 'login' ||
-        value === 'consent' ||
-        value === 'select_account'
-      ) {
+      if (value === 'none' || value === 'login' || value === 'consent') {
         prompts.push(value);
         seenPrompts.add(value);
         continue;

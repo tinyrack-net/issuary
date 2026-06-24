@@ -22,7 +22,7 @@ const END_USER_SCOPES_FOR_CLIENT_CREDENTIALS = new Set([
 
 const TokenRequestBody = z
   .object({
-    grant_type: f.grantType,
+    grant_type: z.string().min(1).max(200).optional(),
     code: f.authorizationCode.optional(),
     redirect_uri: f.redirectUri.optional(),
     client_id: f.clientId.optional(),
@@ -128,10 +128,14 @@ export const tokenPost = new Hono<AppEnv>().post(
       throw err;
     }
 
-    oauthClientService.validateGrantType(client, body.grant_type);
+    const grantType = body.grant_type;
+    if (!grantType) {
+      throw new e.InvalidAuthorizationRequest.Error();
+    }
+    oauthClientService.validateGrantType(client, grantType);
 
     // 3. Handle grant type
-    if (body.grant_type === 'authorization_code') {
+    if (grantType === 'authorization_code') {
       if (!body.code) {
         throw new e.MissingAuthorizationCode.Error();
       }
@@ -151,7 +155,7 @@ export const tokenPost = new Hono<AppEnv>().post(
       return c.json(tokens, 200);
     }
 
-    if (body.grant_type === 'refresh_token') {
+    if (grantType === 'refresh_token') {
       if (!body.refresh_token) {
         throw new e.MissingRefreshToken.Error();
       }
@@ -167,7 +171,7 @@ export const tokenPost = new Hono<AppEnv>().post(
       return c.json(tokens, 200);
     }
 
-    if (body.grant_type === 'client_credentials') {
+    if (grantType === 'client_credentials') {
       await oauthClientService.validateConfidentialClient(clientId);
       const requestedScopes = body.scope ? body.scope.split(' ') : [];
       const endUserScopes = requestedScopes.filter((scope) =>
@@ -190,7 +194,7 @@ export const tokenPost = new Hono<AppEnv>().post(
       return c.json(tokens, 200);
     }
 
-    if (body.grant_type === 'urn:ietf:params:oauth:grant-type:device_code') {
+    if (grantType === 'urn:ietf:params:oauth:grant-type:device_code') {
       if (!body.device_code) {
         throw new e.MissingDeviceCode.Error();
       }

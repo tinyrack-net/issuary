@@ -104,7 +104,10 @@ export class OAuthTokenService {
   private readonly jwtService: JwtService;
   private readonly securityService: SecurityService;
   private readonly refreshRotationLocks = new Map<string, Promise<void>>();
-  private readonly devicePollTimestamps = new Map<string, number>();
+  private readonly devicePollStates = new Map<
+    string,
+    { lastPolledAt: number; intervalSeconds: number }
+  >();
   constructor(
     config: TinyAuthRuntimeConfig,
     mikro: MikroService,
@@ -299,26 +302,43 @@ export class OAuthTokenService {
         deviceCodeHash,
       );
 
-    if (!deviceCode || deviceCode.expiresAt < new Date()) {
-      this.devicePollTimestamps.delete(deviceCodeHash);
+    if (!deviceCode) {
+      this.devicePollStates.delete(deviceCodeHash);
       throw new e.InvalidDeviceCode.Error();
+    }
+    if (deviceCode.expiresAt < new Date()) {
+      this.devicePollStates.delete(deviceCodeHash);
+      throw new e.ExpiredToken.Error();
+    }
+    if (deviceCode.deniedAt) {
+      this.devicePollStates.delete(deviceCodeHash);
+      throw new e.AccessDenied.Error();
     }
     if (!deviceCode.authorizedUser) {
       const now = Date.now();
-      const lastPolledAt = this.devicePollTimestamps.get(deviceCodeHash);
+      const pollState = this.devicePollStates.get(deviceCodeHash) ?? {
+        lastPolledAt: undefined,
+        intervalSeconds: DEVICE_CODE_POLL_INTERVAL_SECONDS,
+      };
       if (
-        lastPolledAt !== undefined &&
-        now - lastPolledAt < DEVICE_CODE_POLL_INTERVAL_SECONDS * 1000
+        pollState.lastPolledAt !== undefined &&
+        now - pollState.lastPolledAt < pollState.intervalSeconds * 1000
       ) {
-        this.devicePollTimestamps.set(deviceCodeHash, now);
+        this.devicePollStates.set(deviceCodeHash, {
+          lastPolledAt: now,
+          intervalSeconds: pollState.intervalSeconds + 5,
+        });
         throw new e.SlowDown.Error();
       }
 
-      this.devicePollTimestamps.set(deviceCodeHash, now);
+      this.devicePollStates.set(deviceCodeHash, {
+        lastPolledAt: now,
+        intervalSeconds: pollState.intervalSeconds,
+      });
       throw new e.AuthorizationPending.Error();
     }
 
-    this.devicePollTimestamps.delete(deviceCodeHash);
+    this.devicePollStates.delete(deviceCodeHash);
 
     const consumedAt = new Date();
     const consumed =
@@ -433,7 +453,7 @@ export class OAuthTokenService {
    */
   async introspectToken(
     token: string,
-    tokenTypeHint?: 'access_token' | 'refresh_token',
+    tokenTypeHint?: string,
     requestingClientId?: string,
   ): Promise<TokenIntrospectionResult> {
     // Try to verify the token based on hint or both types
@@ -524,7 +544,7 @@ export class OAuthTokenService {
    */
   async revokeToken(
     token: string,
-    tokenTypeHint?: 'access_token' | 'refresh_token',
+    tokenTypeHint?: string,
     requestingClientId?: string,
   ): Promise<void> {
     const verification = await this.verifyTokenForRevocation(
@@ -664,7 +684,7 @@ export class OAuthTokenService {
 
   private async verifyTokenForRevocation(
     token: string,
-    tokenTypeHint?: 'access_token' | 'refresh_token',
+    tokenTypeHint?: string,
   ): Promise<
     | {
         payload: AccessTokenPayload | RefreshTokenPayload;

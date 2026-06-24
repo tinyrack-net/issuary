@@ -676,7 +676,6 @@ describe('Server-Side Confidential Client Authentication Flow', () => {
     test('should return proper error for missing grant type', async () => {
       const client = testClient(app);
       const tokenRes = await client.oauth.token.$post({
-        // @ts-expect-error testing validation with invalid input
         form: {
           code: 'some-code',
           client_id: TEST_OAUTH_CLIENT.clientId,

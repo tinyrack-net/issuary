@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { AppType } from '../../entrypoints/app.ts';
 import {
   countEntities,
@@ -150,6 +150,7 @@ describe('OAuth/OIDC provider compatibility', () => {
       revocation_endpoint_auth_methods_supported: [
         'client_secret_basic',
         'client_secret_post',
+        'none',
       ],
     });
   });
@@ -639,6 +640,43 @@ describe('OAuth/OIDC provider compatibility', () => {
     });
   });
 
+  test('supports RP-initiated logout using id_token_hint without client_id', async () => {
+    const sessionCookie = await createAuthenticatedSession(app);
+    const { code } = await getAuthorizationCode(app, {
+      sessionCookie,
+      clientId: COMPAT_CLIENT.clientId,
+      redirectUri: COMPAT_CLIENT.redirectUri,
+      scope: 'openid profile email',
+    });
+
+    const tokenResponse = await app.request('/oauth/token', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: formBody({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: COMPAT_CLIENT.redirectUri,
+        client_id: COMPAT_CLIENT.clientId,
+        client_secret: COMPAT_CLIENT.clientSecret,
+        code_verifier: TEST_PKCE.codeVerifier,
+      }),
+    });
+    const tokenJson = await tokenResponse.json();
+    expect(tokenJson.id_token).toEqual(expect.any(String));
+
+    const response = await app.request(
+      `/oauth/end_session?post_logout_redirect_uri=${encodeURIComponent(COMPAT_CLIENT.postLogoutRedirectUri)}&id_token_hint=${encodeURIComponent(tokenJson.id_token)}&state=hint-only`,
+    );
+
+    expect(response.status).toBe(302);
+    const locationHeader = response.headers.get('location');
+    expect(locationHeader).not.toBeNull();
+    const location = new URL(locationHeader ?? '');
+    expect(location.toString()).toBe(
+      `${COMPAT_CLIENT.postLogoutRedirectUri}?state=hint-only`,
+    );
+    expectSessionCleared(response);
+  });
   test('rejects RP-initiated logout with invalid id_token_hint', async () => {
     const response = await app.request(
       `/oauth/end_session?client_id=${COMPAT_CLIENT.clientId}&post_logout_redirect_uri=${encodeURIComponent(COMPAT_CLIENT.postLogoutRedirectUri)}&id_token_hint=not-a-valid-id-token`,
@@ -893,6 +931,8 @@ describe('OAuth/OIDC provider compatibility', () => {
     });
 
     expect(deviceResponse.status).toBe(200);
+    expect(deviceResponse.headers.get('cache-control')).toBe('no-store');
+    expect(deviceResponse.headers.get('pragma')).toBe('no-cache');
     const deviceJson = await deviceResponse.json();
     expect(deviceJson).toMatchObject({
       verification_uri: 'http://localhost:8080/oauth/device',
@@ -1019,6 +1059,57 @@ describe('OAuth/OIDC provider compatibility', () => {
     });
   });
 
+  test('returns access_denied after the user denies a device authorization request', async () => {
+    const deviceResponse = await app.request('/oauth/device_authorization', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        authorization: basicAuthHeader(
+          COMPAT_CLIENT.clientId,
+          COMPAT_CLIENT.clientSecret,
+        ),
+      },
+      body: formBody({ scope: 'openid profile' }),
+    });
+    const deviceJson = await deviceResponse.json();
+
+    const sessionCookie = await createAuthenticatedSession(app);
+    const denyResponse = await app.request('/oauth/device', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        cookie: `session=${sessionCookie}`,
+      },
+      body: formBody({ user_code: deviceJson.user_code, decision: 'deny' }),
+    });
+    expect(denyResponse.status).toBe(200);
+    await expect(jsonBody(denyResponse)).resolves.toMatchObject({
+      status: 'denied',
+      client_id: COMPAT_CLIENT.clientId,
+    });
+
+    const tokenResponse = await app.request('/oauth/token', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        authorization: basicAuthHeader(
+          COMPAT_CLIENT.clientId,
+          COMPAT_CLIENT.clientSecret,
+        ),
+      },
+      body: formBody({
+        grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+        device_code: deviceJson.device_code,
+      }),
+    });
+
+    expect(tokenResponse.status).toBe(400);
+    await expect(jsonBody(tokenResponse)).resolves.toMatchObject({
+      error: 'access_denied',
+      error_description:
+        'The resource owner or authorization server denied the request.',
+    });
+  });
   test('redeems an approved device_code only once under concurrent polling', async () => {
     const deviceResponse = await app.request('/oauth/device_authorization', {
       method: 'POST',
@@ -1073,22 +1164,10 @@ describe('OAuth/OIDC provider compatibility', () => {
     });
   });
 
-  test('returns slow_down for device polling faster than the advertised interval', async () => {
-    const deviceResponse = await app.request('/oauth/device_authorization', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/x-www-form-urlencoded',
-        authorization: basicAuthHeader(
-          COMPAT_CLIENT.clientId,
-          COMPAT_CLIENT.clientSecret,
-        ),
-      },
-      body: formBody({ scope: 'openid profile' }),
-    });
-    const deviceJson = await deviceResponse.json();
-
-    const poll = () =>
-      app.request('/oauth/token', {
+  test('increases the enforced device polling interval after slow_down', async () => {
+    vi.useFakeTimers({ now: new Date('2026-06-24T00:00:00.000Z') });
+    try {
+      const deviceResponse = await app.request('/oauth/device_authorization', {
         method: 'POST',
         headers: {
           'content-type': 'application/x-www-form-urlencoded',
@@ -1097,23 +1176,54 @@ describe('OAuth/OIDC provider compatibility', () => {
             COMPAT_CLIENT.clientSecret,
           ),
         },
-        body: formBody({
-          grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
-          device_code: deviceJson.device_code,
-        }),
+        body: formBody({ scope: 'openid profile' }),
+      });
+      const deviceJson = await deviceResponse.json();
+
+      const poll = () =>
+        app.request('/oauth/token', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+            authorization: basicAuthHeader(
+              COMPAT_CLIENT.clientId,
+              COMPAT_CLIENT.clientSecret,
+            ),
+          },
+          body: formBody({
+            grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+            device_code: deviceJson.device_code,
+          }),
+        });
+
+      const firstResponse = await poll();
+      expect(firstResponse.status).toBe(400);
+      await expect(jsonBody(firstResponse)).resolves.toMatchObject({
+        error: 'authorization_pending',
       });
 
-    const firstResponse = await poll();
-    expect(firstResponse.status).toBe(400);
-    await expect(jsonBody(firstResponse)).resolves.toMatchObject({
-      error: 'authorization_pending',
-    });
+      const secondResponse = await poll();
+      expect(secondResponse.status).toBe(400);
+      await expect(jsonBody(secondResponse)).resolves.toMatchObject({
+        error: 'slow_down',
+      });
 
-    const secondResponse = await poll();
-    expect(secondResponse.status).toBe(400);
-    await expect(jsonBody(secondResponse)).resolves.toMatchObject({
-      error: 'slow_down',
-    });
+      await vi.advanceTimersByTimeAsync(5_000);
+      const originalIntervalResponse = await poll();
+      expect(originalIntervalResponse.status).toBe(400);
+      await expect(jsonBody(originalIntervalResponse)).resolves.toMatchObject({
+        error: 'slow_down',
+      });
+
+      await vi.advanceTimersByTimeAsync(15_000);
+      const increasedIntervalResponse = await poll();
+      expect(increasedIntervalResponse.status).toBe(400);
+      await expect(jsonBody(increasedIntervalResponse)).resolves.toMatchObject({
+        error: 'authorization_pending',
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   test('device verification page shows client and requested scopes', async () => {
@@ -1272,6 +1382,47 @@ describe('OAuth/OIDC provider compatibility', () => {
     });
   });
 
+  test('does not display client details for an expired device user_code', async () => {
+    const deviceResponse = await app.request('/oauth/device_authorization', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        authorization: basicAuthHeader(
+          COMPAT_CLIENT.clientId,
+          COMPAT_CLIENT.clientSecret,
+        ),
+      },
+      body: formBody({ scope: 'openid profile' }),
+    });
+    const deviceJson = await deviceResponse.json();
+    await withMikroContext(services, async () => {
+      const userCodeHash = await services.securityService.hashOpaqueToken(
+        'oauth-device-user-code',
+        deviceJson.user_code.toUpperCase(),
+      );
+      const deviceCode =
+        await services.mikro.oauthDeviceCode.findPendingByUserCodeHash(
+          userCodeHash,
+        );
+      if (!deviceCode) {
+        throw new Error('Expected pending device code');
+      }
+      deviceCode.expiresAt = new Date(Date.now() - 1000);
+      await services.mikro.em.flush();
+    });
+
+    const sessionCookie = await createAuthenticatedSession(app);
+    const response = await app.request(
+      `/oauth/device?user_code=${encodeURIComponent(deviceJson.user_code)}`,
+      { headers: { cookie: `session=${sessionCookie}` } },
+    );
+
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html).not.toContain(COMPAT_CLIENT_CONFIG.name);
+    expect(html).not.toContain('<li>openid</li>');
+  });
+
   test('rejects an expired device user_code during approval', async () => {
     const deviceResponse = await app.request('/oauth/device_authorization', {
       method: 'POST',
@@ -1367,7 +1518,7 @@ describe('OAuth/OIDC provider compatibility', () => {
 
     expect(response.status).toBe(400);
     await expect(jsonBody(response)).resolves.toMatchObject({
-      error: 'invalid_grant',
+      error: 'expired_token',
     });
   });
 

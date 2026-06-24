@@ -43,6 +43,10 @@ export const OAuthDeviceCodeEntitySchema = defineEntity({
       .datetime()
       .comment('Timestamp when the user approved the request')
       .nullable(),
+    deniedAt: p
+      .datetime()
+      .comment('Timestamp when the user denied the request')
+      .nullable(),
     consumedAt: p
       .datetime()
       .comment('Timestamp when the device code was exchanged')

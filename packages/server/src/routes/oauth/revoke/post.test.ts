@@ -79,7 +79,7 @@ afterAll(async () => {
  */
 async function revokeToken(params: {
   token: string | undefined;
-  tokenTypeHint?: 'access_token' | 'refresh_token';
+  tokenTypeHint?: string;
   clientId?: string;
   clientSecret?: string;
 }) {
@@ -205,6 +205,26 @@ describe('POST /oauth/revoke', () => {
       expect(res.status).toBe(200);
 
       // Verify token is inactive
+      const introspectRes = await introspectToken(access_token);
+      expect((await introspectRes.json()).active).toBe(false);
+    });
+
+    test('should ignore unknown token_type_hint values', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
+      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const { access_token } = await tokenRes.json();
+
+      const res = await revokeToken({
+        token: access_token,
+        tokenTypeHint: 'urn:example:custom_token',
+      });
+
+      expect(res.status).toBe(200);
+
       const introspectRes = await introspectToken(access_token);
       expect((await introspectRes.json()).active).toBe(false);
     });
@@ -619,6 +639,18 @@ describe('POST /oauth/revoke', () => {
   });
 
   describe('Response Format', () => {
+    test('should set no-store cache headers on successful revocation', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const { access_token } = await tokenRes.json();
+
+      const res = await revokeToken({ token: access_token });
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('cache-control')).toBe('no-store');
+      expect(res.headers.get('pragma')).toBe('no-cache');
+    });
     test('should return empty object on success', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });

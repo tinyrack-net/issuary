@@ -1366,29 +1366,36 @@ describe('POST /oauth/token', () => {
       expect(json.refresh_token).toBeDefined();
     });
 
-    test('should reject unsupported grant_type', async () => {
+    test('should reject unsupported grant_type with OAuth-standard error', async () => {
       const client = testClient(app);
       const res = await client.oauth.token.$post({
         form: {
-          grant_type: 'password' as 'authorization_code', // Not supported
+          grant_type: 'password' as 'authorization_code',
           client_id: TEST_OAUTH_CLIENT.clientId,
+          client_secret: TEST_OAUTH_CLIENT.clientSecret,
         },
       });
 
-      // Zod validation should fail before reaching handler
-      expect(res.status).toBe(400);
+      const json = await assertJsonBody(res, 400);
+      expect(json.error).toBe('unsupported_grant_type');
+      expect(json.error_description).toBe('Grant type is not supported.');
     });
 
-    test('should reject missing grant_type', async () => {
+    test('should reject missing grant_type with OAuth-standard invalid_request', async () => {
       const client = testClient(app);
       const res = await client.oauth.token.$post({
         form: {
           client_id: TEST_OAUTH_CLIENT.clientId,
-          // grant_type missing
-        } as { grant_type: 'authorization_code'; client_id: string },
+          client_secret: TEST_OAUTH_CLIENT.clientSecret,
+        } as {
+          grant_type: 'authorization_code';
+          client_id: string;
+          client_secret: string;
+        },
       });
 
-      expect(res.status).toBe(400);
+      const json = await assertJsonBody(res, 400);
+      expect(json.error).toBe('invalid_request');
     });
   });
 

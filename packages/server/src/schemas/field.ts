@@ -81,7 +81,9 @@ export const f = {
     .min(1)
     .describe('Token string (verification, reset, or OAuth token)'),
   tokenTypeHint: z
-    .enum(['access_token', 'refresh_token'])
+    .string()
+    .min(1)
+    .max(100)
     .describe('Hint about the type of token'),
 
   // OIDC fields

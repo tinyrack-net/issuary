@@ -122,6 +122,8 @@ export const revokePost = new Hono<AppEnv>().post(
       clientId,
     );
 
+    c.header('Cache-Control', 'no-store');
+    c.header('Pragma', 'no-cache');
     return c.json({}, 200);
   },
 );

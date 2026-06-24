@@ -668,6 +668,42 @@ if (root && idToken && tokenType === 'Bearer' && state === expectedState) {
       return;
     }
 
+    if (url.pathname === '/device/denied-token') {
+      if (!latestDeviceCode) {
+        sendHtml(response, 400, '<h1>No device code available</h1>');
+        return;
+      }
+      const tokenResponse = await fetch(discovery.tokenEndpoint, {
+        method: 'POST',
+        headers: {
+          authorization: basicClientAuthHeader(),
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+          device_code: latestDeviceCode,
+        }),
+      });
+      const tokenJson = await tokenResponse.json();
+      const error =
+        typeof tokenJson === 'object' && tokenJson !== null
+          ? readStringField(tokenJson, 'error')
+          : undefined;
+      if (tokenResponse.ok || error !== 'access_denied') {
+        sendHtml(
+          response,
+          502,
+          `<h1>Mock device denial not enforced</h1><pre>${JSON.stringify(tokenJson)}</pre>`,
+        );
+        return;
+      }
+      sendHtml(
+        response,
+        200,
+        `<h1>Mock device denied</h1><p id="device-deny-error">${error}</p>`,
+      );
+      return;
+    }
     if (url.pathname === '/device/token') {
       if (!latestDeviceCode) {
         sendHtml(response, 400, '<h1>No device code available</h1>');
@@ -773,6 +809,8 @@ if (root && idToken && tokenType === 'Bearer' && state === expectedState) {
       }),
   };
 }
+
+test.describe.configure({ mode: 'serial' });
 
 test.describe('mock OAuth client integration', () => {
   test('real mock OAuth client completes authorization code flow, token exchange, and UserInfo POST', async ({
@@ -915,6 +953,55 @@ test.describe('mock OAuth client integration', () => {
     }
   });
 
+  test('real mock OAuth client handles denied device authorization', async ({
+    page,
+    context,
+    auxiliaryPort,
+    releaseAuxiliaryPort,
+    baseURL,
+  }) => {
+    const email = uniqueEmail('device-denied');
+    await registerUserByApi(String(baseURL), email, TEST_PASSWORD);
+    await loginByApi(context, String(baseURL), email, TEST_PASSWORD);
+
+    const pkce = createPkceS256Pair();
+    const mockClientOrigin = getMockClientOrigin(auxiliaryPort);
+    const mockClient = await startMockOAuthClient({
+      authServerOrigin: String(baseURL),
+      mockClientOrigin,
+      mockClientPort: auxiliaryPort,
+      releasePort: releaseAuxiliaryPort,
+      redirectUri: `${mockClientOrigin}/callback`,
+      state: 'mock-device-denied-state',
+      nonce: 'mock-device-denied-nonce',
+      codeChallenge: pkce.codeChallenge,
+      codeVerifier: pkce.codeVerifier,
+    });
+
+    try {
+      await page.goto(`${mockClient.origin}/device/start`);
+      await expect(
+        page.getByRole('heading', {
+          name: 'Mock device authorization started',
+        }),
+      ).toBeVisible();
+      await page.locator('#device-verification-link').click();
+      await expect(page).toHaveURL(/\/oauth\/device/);
+      await expect(page.getByRole('button', { name: 'Deny' })).toBeVisible();
+      await page.getByRole('button', { name: 'Deny' }).click();
+      await expect(page.getByText('denied')).toBeVisible();
+
+      await page.goto(`${mockClient.origin}/device/denied-token`);
+      await expect(
+        page.getByRole('heading', { name: 'Mock device denied' }),
+      ).toBeVisible();
+      await expect(page.locator('#device-deny-error')).toHaveText(
+        'access_denied',
+      );
+    } finally {
+      await mockClient.close();
+    }
+  });
   test('real mock OAuth client narrows refresh token scope', async ({
     page,
     context,

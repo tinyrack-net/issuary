@@ -19,16 +19,21 @@ const userinfoHandler = async (c: Context<AppEnv>) => {
     headers: authorization ? { authorization } : {},
   });
 
+  // Parse and validate scopes before loading an end-user. Machine-to-machine
+  // client_credentials tokens use the client identifier as `sub`, so resolving
+  // them as users would leak a non-OAuth USER_NOT_FOUND error from UserInfo.
+  const scopes = tokenPayload.scope.split(' ').filter(Boolean);
+
+  if (
+    !scopes.includes('openid') ||
+    tokenPayload.grant_type === 'client_credentials'
+  ) {
+    throw new e.InsufficientScope.Error();
+  }
+
   // Load user
   const userEntity = await mikro.user.verifyBySub(tokenPayload.sub);
   const userData = await userService.userEntityToSessionUser(userEntity);
-
-  // Parse scopes from token
-  const scopes = tokenPayload.scope.split(' ');
-
-  if (!scopes.includes('openid')) {
-    throw new e.InsufficientScope.Error();
-  }
 
   // Build response based on granted scopes
   const userInfo: UserInfoResponse = {

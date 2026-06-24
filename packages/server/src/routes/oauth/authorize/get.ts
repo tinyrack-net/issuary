@@ -47,7 +47,7 @@ export const authorizeGet = new Hono<AppEnv>().get(
       max_age: f.maxAge.optional(),
       reauthenticated: z.literal('1').optional(),
       display: f.display.optional(),
-      response_mode: z.enum(['query', 'fragment', 'form_post']).optional(),
+      response_mode: z.string().min(1).max(100).optional(),
       login_hint: z.string().min(1).max(1000).optional(),
       ui_locales: z.string().min(1).max(1000).optional(),
       id_token_hint: z.string().min(1).max(4000).optional(),

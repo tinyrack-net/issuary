@@ -802,13 +802,13 @@ export class JwtService {
       throw new e.MissingAuthorizationHeader.Error();
     }
 
-    const parts = authHeader.split(' ');
+    const match = authHeader.match(/^\s*Bearer\s+(.+?)\s*$/i);
 
-    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+    if (!match) {
       throw new e.InvalidAuthorizationHeaderFormat.Error();
     }
 
-    const token = parts[1];
+    const token = match[1]?.trim();
     if (!token) {
       throw new e.MissingBearerToken.Error();
     }

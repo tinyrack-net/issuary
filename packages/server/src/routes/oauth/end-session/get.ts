@@ -42,24 +42,24 @@ export const endSessionGet = new Hono<AppEnv>().get(
       return c.redirect(config.server.public_origin);
     }
 
-    if (!query.client_id) {
-      return c.json(
-        {
-          error: 'invalid_request',
-          error_description:
-            'client_id is required for post_logout_redirect_uri.',
-        },
-        400,
-      );
-    }
-
-    const client = await oauthClientService.findByClientId(query.client_id);
+    let clientId = query.client_id;
     if (query.id_token_hint) {
       try {
         const idTokenPayload = await jwtService.verifyIdToken(
           query.id_token_hint,
         );
-        if (idTokenPayload.aud !== query.client_id) {
+        const audience = idTokenPayload.aud;
+        if (typeof audience !== 'string') {
+          return c.json(
+            {
+              error: 'invalid_request',
+              error_description:
+                'id_token_hint audience must identify exactly one client.',
+            },
+            400,
+          );
+        }
+        if (clientId && audience !== clientId) {
           return c.json(
             {
               error: 'invalid_request',
@@ -69,6 +69,7 @@ export const endSessionGet = new Hono<AppEnv>().get(
             400,
           );
         }
+        clientId = clientId ?? audience;
       } catch {
         return c.json(
           {
@@ -79,6 +80,19 @@ export const endSessionGet = new Hono<AppEnv>().get(
         );
       }
     }
+
+    if (!clientId) {
+      return c.json(
+        {
+          error: 'invalid_request',
+          error_description:
+            'client_id is required for post_logout_redirect_uri when id_token_hint is not provided.',
+        },
+        400,
+      );
+    }
+
+    const client = await oauthClientService.findByClientId(clientId);
 
     try {
       oauthClientService.validatePostLogoutRedirectUri(

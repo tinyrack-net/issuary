@@ -1,11 +1,20 @@
 import z from 'zod';
 import { zz } from '../../schemas/provider.ts';
+import { isHttpsOrLocalHttpUrl } from './url-policy.ts';
 
 export const SERVER_CONFIG_DEFAULT = {
   public_origin: 'http://localhost:8080',
   listen_port: 8080,
   trust_proxy: false,
 } as const;
+
+function isOriginUrl(value: string): boolean {
+  try {
+    return new URL(value).origin === value && isHttpsOrLocalHttpUrl(value);
+  } catch {
+    return false;
+  }
+}
 
 const TrustProxySchema = z
   .union([
@@ -40,6 +49,10 @@ export const ServerConfigSchema = z
   .object({
     public_origin: z
       .url()
+      .refine(isOriginUrl, {
+        message:
+          'public_origin must be an HTTPS or local HTTP origin URL without credentials, path, query, fragment, or trailing slash',
+      })
       .default(SERVER_CONFIG_DEFAULT.public_origin)
       .describe(
         'Public origin for the auth service, used for redirects, emails, and CORS.',

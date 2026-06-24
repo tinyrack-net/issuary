@@ -5,12 +5,14 @@ import { Migration20260512120000_add_scheduler_jobs as PostgresSchedulerJobsMigr
 import { Migration20260619075007 as PostgresDeviceAuthorizationMigration } from '../../migrations/postgres/Migration20260619075007.js';
 import { Migration20260619191600_unique_oauth_client_client_id as PostgresUniqueOAuthClientClientIdMigration } from '../../migrations/postgres/Migration20260619191600_unique_oauth_client_client_id.js';
 import { Migration20260620025358_add_oauth_client_skip_consent as PostgresOAuthClientSkipConsentMigration } from '../../migrations/postgres/Migration20260620025358_add_oauth_client_skip_consent.js';
+import { Migration20260624190500_add_oauth_device_denied_at as PostgresOAuthDeviceDeniedAtMigration } from '../../migrations/postgres/Migration20260624190500_add_oauth_device_denied_at.js';
 import { SQLITE_MIGRATIONS } from '../../migrations/sqlite/index.ts';
 import { Migration20260509171226_initial as SqliteInitialMigration } from '../../migrations/sqlite/Migration20260509171226_initial.ts';
 import { Migration20260512120000_add_scheduler_jobs as SqliteSchedulerJobsMigration } from '../../migrations/sqlite/Migration20260512120000_add_scheduler_jobs.ts';
 import { Migration20260619075330 as SqliteDeviceAuthorizationMigration } from '../../migrations/sqlite/Migration20260619075330.js';
 import { Migration20260619191600_unique_oauth_client_client_id as SqliteUniqueOAuthClientClientIdMigration } from '../../migrations/sqlite/Migration20260619191600_unique_oauth_client_client_id.js';
 import { Migration20260620025358_add_oauth_client_skip_consent as SqliteOAuthClientSkipConsentMigration } from '../../migrations/sqlite/Migration20260620025358_add_oauth_client_skip_consent.js';
+import { Migration20260624190500_add_oauth_device_denied_at as SqliteOAuthDeviceDeniedAtMigration } from '../../migrations/sqlite/Migration20260624190500_add_oauth_device_denied_at.js';
 import { postgres } from './postgres/postgres.ts';
 import { sqlite } from './sqlite/sqlite.ts';
 
@@ -20,11 +22,13 @@ type MigrationClass =
   | typeof PostgresDeviceAuthorizationMigration
   | typeof PostgresUniqueOAuthClientClientIdMigration
   | typeof PostgresOAuthClientSkipConsentMigration
+  | typeof PostgresOAuthDeviceDeniedAtMigration
   | typeof SqliteInitialMigration
   | typeof SqliteSchedulerJobsMigration
   | typeof SqliteDeviceAuthorizationMigration
   | typeof SqliteUniqueOAuthClientClientIdMigration
-  | typeof SqliteOAuthClientSkipConsentMigration;
+  | typeof SqliteOAuthClientSkipConsentMigration
+  | typeof SqliteOAuthDeviceDeniedAtMigration;
 
 interface MigrationLike {
   up(): void | Promise<void>;
@@ -55,6 +59,7 @@ describe('database migrations', () => {
       PostgresDeviceAuthorizationMigration,
       PostgresUniqueOAuthClientClientIdMigration,
       PostgresOAuthClientSkipConsentMigration,
+      PostgresOAuthDeviceDeniedAtMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(POSTGRES_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -92,6 +97,7 @@ describe('database migrations', () => {
       SqliteDeviceAuthorizationMigration,
       SqliteUniqueOAuthClientClientIdMigration,
       SqliteOAuthClientSkipConsentMigration,
+      SqliteOAuthDeviceDeniedAtMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(SQLITE_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -209,6 +215,25 @@ describe('database migrations', () => {
     );
     expect(sqliteQueries).toContain(
       `alter table \`oauth_client\` add column \`skip_consent\` integer not null default false;`,
+    );
+  });
+
+  test('oauth device code deny migration adds denied_at timestamp', async () => {
+    const postgresQueries = await collectMigrationQueries(
+      PostgresOAuthDeviceDeniedAtMigration,
+    );
+    const sqliteQueries = await collectMigrationQueries(
+      SqliteOAuthDeviceDeniedAtMigration,
+    );
+
+    expect(postgresQueries).toContain(
+      `alter table "oauth_device_code" add "denied_at" timestamptz null;`,
+    );
+    expect(postgresQueries).toContain(
+      `comment on column "oauth_device_code"."denied_at" is 'Timestamp when the user denied the request';`,
+    );
+    expect(sqliteQueries).toContain(
+      `alter table \`oauth_device_code\` add column \`denied_at\` datetime null;`,
     );
   });
 });

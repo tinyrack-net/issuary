@@ -264,7 +264,12 @@ export const e = {
   InvalidDeviceCode: createError(
     400,
     'INVALID_DEVICE_CODE',
-    'Invalid or expired device code.',
+    'Invalid device code.',
+  ),
+  ExpiredToken: createError(
+    400,
+    'expired_token',
+    'The device code has expired.',
   ),
 
   // JWT Token Errors

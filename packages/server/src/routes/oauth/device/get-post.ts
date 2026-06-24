@@ -9,6 +9,7 @@ import { e } from '../../../schemas/error.ts';
 
 const DeviceVerificationRequestBody = z.object({
   user_code: z.string().min(1).max(64),
+  decision: z.enum(['approve', 'deny']).default('approve'),
 });
 
 export const deviceGetPost = new Hono<AppEnv>()
@@ -53,7 +54,7 @@ export const deviceGetPost = new Hono<AppEnv>()
       }
 
       return c.html(
-        `<!doctype html><html><body>${deviceDetails}<form method="post"><input name="user_code" value="${escapeHtml(userCode)}"><button type="submit">Approve</button></form></body></html>`,
+        `<!doctype html><html><body>${deviceDetails}<form method="post"><input name="user_code" value="${escapeHtml(userCode)}"><button type="submit" name="decision" value="approve">Approve</button><button type="submit" name="decision" value="deny">Deny</button></form></body></html>`,
       );
     },
   )
@@ -71,26 +72,31 @@ export const deviceGetPost = new Hono<AppEnv>()
     validator('form', DeviceVerificationRequestBody),
     verifyAuth(),
     async (c) => {
-      const { user_code: userCode } = c.req.valid('form');
+      const { decision, user_code: userCode } = c.req.valid('form');
       const { mikro, securityService } = c.var.services;
       const userCodeHash = await securityService.hashOpaqueToken(
         'oauth-device-user-code',
         userCode.toUpperCase(),
       );
-      const user = c.var.verifiedUser.user;
+      const now = new Date();
       const deviceCode =
-        await mikro.oauthDeviceCode.approvePendingByUserCodeHash({
-          userCodeHash,
-          userSub: user.sub,
-          approvedAt: new Date(),
-        });
+        decision === 'deny'
+          ? await mikro.oauthDeviceCode.denyPendingByUserCodeHash({
+              userCodeHash,
+              deniedAt: now,
+            })
+          : await mikro.oauthDeviceCode.approvePendingByUserCodeHash({
+              userCodeHash,
+              userSub: c.var.verifiedUser.user.sub,
+              approvedAt: now,
+            });
 
       if (!deviceCode) {
         throw new e.InvalidDeviceCode.Error();
       }
 
       return c.json({
-        status: 'approved',
+        status: decision === 'deny' ? 'denied' : 'approved',
         client_id: deviceCode.client.clientId,
       });
     },

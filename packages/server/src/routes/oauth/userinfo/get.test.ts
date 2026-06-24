@@ -34,8 +34,12 @@ beforeAll(async () => {
     clients: [
       {
         ...TEST_OAUTH_CLIENT_CONFIG,
-        grant_types: ['authorization_code', 'refresh_token'],
-        scope: 'openid profile email offline_access id_token',
+        grant_types: [
+          'authorization_code',
+          'refresh_token',
+          'client_credentials',
+        ],
+        scope: 'openid profile email offline_access id_token service.read',
       },
     ],
   }));
@@ -186,6 +190,55 @@ describe('GET /oauth/userinfo', () => {
 
       const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('MISSING_AUTHORIZATION_HEADER');
+      expect(res.headers.get('www-authenticate')).toContain('Bearer');
+    });
+
+    test('should accept case-insensitive Bearer auth scheme', async () => {
+      const accessToken = await getAccessToken(app, { scope: 'openid email' });
+
+      const res = await app.request('/oauth/userinfo', {
+        headers: { authorization: `bearer ${accessToken}` },
+      });
+
+      const json = await assertJsonBody(res, 200);
+      expect(json.sub).toBeDefined();
+    });
+
+    test('should accept multiple spaces after Bearer auth scheme', async () => {
+      const accessToken = await getAccessToken(app, { scope: 'openid email' });
+
+      const res = await app.request('/oauth/userinfo', {
+        headers: { authorization: `Bearer   ${accessToken}` },
+      });
+
+      const json = await assertJsonBody(res, 200);
+      expect(json.sub).toBeDefined();
+    });
+
+    test('should reject client_credentials tokens before user lookup', async () => {
+      const tokenResponse = await app.request('/oauth/token', {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'client_credentials',
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          client_secret: TEST_OAUTH_CLIENT.clientSecret,
+          scope: 'service.read',
+        }),
+      });
+      const { access_token } = await assertJsonBody(tokenResponse, 200);
+
+      const res = await app.request('/oauth/userinfo', {
+        headers: { authorization: `Bearer ${access_token}` },
+      });
+
+      const json = await assertJsonBody(res, 403);
+      expect(json.code).toBe('insufficient_scope');
+      expect(json.error).toBe('insufficient_scope');
+      expect(json.code).not.toBe('USER_NOT_FOUND');
+      expect(res.headers.get('www-authenticate')).toContain(
+        'error="insufficient_scope"',
+      );
     });
 
     test('should reject request with invalid Authorization header format', async () => {
@@ -198,6 +251,10 @@ describe('GET /oauth/userinfo', () => {
 
       const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_AUTHORIZATION_HEADER_FORMAT');
+      expect(res.headers.get('www-authenticate')).toContain('Bearer');
+      expect(res.headers.get('www-authenticate')).toContain(
+        'error="invalid_token"',
+      );
     });
 
     test('should reject request with missing token in Bearer header', async () => {
@@ -219,6 +276,10 @@ describe('GET /oauth/userinfo', () => {
 
       const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_ACCESS_TOKEN');
+      expect(res.headers.get('www-authenticate')).toContain('Bearer');
+      expect(res.headers.get('www-authenticate')).toContain(
+        'error="invalid_token"',
+      );
     });
 
     test('should reject request with malformed JWT', async () => {

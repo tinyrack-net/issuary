@@ -14,6 +14,10 @@ export const openidConfigGet = new Hono<AppEnv>().get(
   async (c) => {
     const { config } = c.var.services;
     c.header('Cache-Control', 'public, max-age=3600');
+    if (c.req.header('origin')) {
+      c.res.headers.delete('Access-Control-Allow-Credentials');
+      c.header('Access-Control-Allow-Origin', '*');
+    }
     return c.json(buildOpenidConfiguration(config), 200);
   },
 );

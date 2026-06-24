@@ -712,6 +712,25 @@ describe('GET /oauth/authorize', () => {
       expect(statusCode).toBe(302);
       expect(code).toBeDefined();
     });
+
+    test('should redirect unsupported response_mode as invalid_request after client validation', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const client = testClient(app);
+      const res = await client.oauth.authorize.$get(
+        {
+          query: {
+            ...validParams,
+            response_mode: 'jwt' as 'query',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      expect(res.status).toBe(302);
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
+      expectRedirectError(location, 'invalid_request', 'authorization request');
+      expect(location.searchParams.get('state')).toBe(validParams.state);
+    });
   });
 
   describe('Scope Validation', () => {
@@ -1058,6 +1077,25 @@ describe('GET /oauth/authorize', () => {
       expect(res.status).toBe(302);
       const location = new URL(getLocationHeader(res), 'http://localhost:8080');
       expect(location.searchParams.get('prompt')).toBe('consent');
+    });
+
+    test('should reject unimplemented prompt=select_account as invalid_request', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const client = testClient(app);
+      const res = await client.oauth.authorize.$get(
+        {
+          query: {
+            ...validParams,
+            prompt: 'select_account',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      expect(res.status).toBe(302);
+      const location = new URL(getLocationHeader(res), 'http://localhost:8080');
+      expectRedirectError(location, 'invalid_request', 'prompt');
+      expect(location.searchParams.get('state')).toBe(validParams.state);
     });
   });
 

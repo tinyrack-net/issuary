@@ -1,16 +1,27 @@
 import { testClient } from 'hono/testing';
+import { decodeProtectedHeader } from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#server/entrypoints/app.js';
 import {
+  createAuthenticatedSession,
   createTestApp,
+  exchangeCodeForTokens,
+  getAuthorizationCode,
   MINIMAL_TEST_CONFIG,
+  TEST_OAUTH_CLIENT_CONFIG,
+  TEST_PKCE,
+  TEST_USER_CONFIG,
 } from '#server/test-utils/index.js';
 
 let app: AppType;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  const server = await createTestApp(MINIMAL_TEST_CONFIG);
+  const server = await createTestApp({
+    ...MINIMAL_TEST_CONFIG,
+    users: [TEST_USER_CONFIG],
+    clients: [TEST_OAUTH_CLIENT_CONFIG],
+  });
   app = server.app;
   cleanup = server.cleanup;
 });
@@ -93,6 +104,37 @@ describe('GET /oauth/.well-known/jwks', () => {
 
       expect(res.status).toBe(200);
       expect(res.headers.get('cache-control')).toBe('public, max-age=3600');
+    });
+
+    test('should expose the key id used by issued ID tokens', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const tokenResponse = await exchangeCodeForTokens(app, {
+        code,
+        codeVerifier: TEST_PKCE.codeVerifier,
+      });
+      expect(tokenResponse.status).toBe(200);
+      const tokenJson = await tokenResponse.json();
+      expect(tokenJson.id_token).toEqual(expect.any(String));
+      if (typeof tokenJson.id_token !== 'string') {
+        throw new Error('Expected id_token in token response');
+      }
+      const header = decodeProtectedHeader(tokenJson.id_token);
+      expect(header.kid).toEqual(expect.any(String));
+
+      const client = testClient(app);
+      const jwksResponse = await client.oauth['.well-known'].jwks.$get();
+      expect(jwksResponse.status).toBe(200);
+      const jwks = await jwksResponse.json();
+      expect(jwks.keys).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kid: header.kid,
+            use: 'sig',
+            alg: 'RS256',
+          }),
+        ]),
+      );
     });
   });
 

@@ -125,6 +125,43 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     expect(parsed.frontend).toBeUndefined();
   });
 
+  test('allows issuer-safe HTTPS origins and local HTTP origins', () => {
+    for (const publicOrigin of [
+      'https://auth.example.test',
+      'http://localhost:8080',
+      'http://127.0.0.1:8080',
+      'http://[::1]:8080',
+    ]) {
+      const parsed = TinyAuthRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        server: { public_origin: publicOrigin },
+      });
+
+      expect(parsed.server.public_origin).toBe(publicOrigin);
+    }
+  });
+
+  test('rejects server.public_origin values that are not issuer-safe origins', () => {
+    for (const publicOrigin of [
+      'ftp://auth.example.test',
+      'ws://auth.example.test',
+      'http://auth.example.test',
+      'https://auth.example.test/path',
+      'https://auth.example.test?query=1',
+      'https://auth.example.test#fragment',
+      'https://auth.example.test/',
+      'https://user:pass@auth.example.test',
+    ]) {
+      expectConfigIssue(
+        {
+          ...MINIMAL_INPUT_CONFIG,
+          server: { public_origin: publicOrigin },
+        },
+        'server.public_origin',
+      );
+    }
+  });
+
   test('applies nested defaults when only part of a subtree is provided', () => {
     const partialInput = {
       ...MINIMAL_INPUT_CONFIG,
@@ -139,7 +176,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
         retention: '7d',
       },
       server: {
-        public_origin: 'http://example.com',
+        public_origin: 'https://example.com',
       },
       branding: {
         title: {
@@ -171,7 +208,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
       CLEANUP_CONFIG_DEFAULT.revoked_tokens,
     );
 
-    expect(parsed.server.public_origin).toBe('http://example.com');
+    expect(parsed.server.public_origin).toBe('https://example.com');
     expect(parsed.server.listen_port).toBe(SERVER_CONFIG_DEFAULT.listen_port);
     expect(parsed.branding.title).toEqual({
       en: 'Custom',

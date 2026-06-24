@@ -301,7 +301,7 @@ export async function getUserInfo(
  */
 export interface IntrospectTokenParams {
   token: string | undefined;
-  tokenTypeHint?: 'access_token' | 'refresh_token';
+  tokenTypeHint?: string;
   clientId?: string;
   clientSecret?: string;
 }
@@ -351,7 +351,7 @@ export async function introspectToken(
  */
 export interface RevokeTokenParams {
   token: string | undefined;
-  tokenTypeHint?: 'access_token' | 'refresh_token';
+  tokenTypeHint?: string;
   clientId?: string;
   clientSecret?: string;
 }

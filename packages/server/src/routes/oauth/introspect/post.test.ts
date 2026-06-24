@@ -59,7 +59,7 @@ async function introspectToken(
   honoApp: AppType,
   params: {
     token: string | undefined;
-    tokenTypeHint?: 'access_token' | 'refresh_token';
+    tokenTypeHint?: string;
     clientId?: string;
     clientSecret?: string;
   },
@@ -99,7 +99,7 @@ async function revokeToken(
   honoApp: AppType,
   params: {
     token: string | undefined;
-    tokenTypeHint?: 'access_token' | 'refresh_token';
+    tokenTypeHint?: string;
     clientId?: string;
     clientSecret?: string;
   },
@@ -173,6 +173,24 @@ describe('POST /oauth/introspect', () => {
       const res = await introspectToken(app, {
         token: access_token,
         tokenTypeHint: 'access_token',
+      });
+
+      const json = await assertJsonBody(res, 200);
+      expect(json.active).toBe(true);
+    });
+
+    test('should ignore unknown token_type_hint values', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        scope: 'openid profile email offline_access',
+      });
+      const tokenRes = await exchangeCodeForTokens(app, { code });
+      const { access_token } = await tokenRes.json();
+
+      const res = await introspectToken(app, {
+        token: access_token,
+        tokenTypeHint: 'urn:example:custom_token',
       });
 
       const json = await assertJsonBody(res, 200);

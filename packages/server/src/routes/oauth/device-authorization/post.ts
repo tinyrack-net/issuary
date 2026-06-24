@@ -106,6 +106,8 @@ export const deviceAuthorizationPost = new Hono<AppEnv>().post(
     const verificationUriComplete = new URL(verificationUri);
     verificationUriComplete.searchParams.set('user_code', userCode);
 
+    c.header('Cache-Control', 'no-store');
+    c.header('Pragma', 'no-cache');
     return c.json(
       {
         device_code: deviceCode,
