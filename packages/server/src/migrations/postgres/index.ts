@@ -4,6 +4,7 @@ import { Migration20260619075007 } from './Migration20260619075007.js';
 import { Migration20260619191600_unique_oauth_client_client_id } from './Migration20260619191600_unique_oauth_client_client_id.js';
 import { Migration20260620025358_add_oauth_client_skip_consent } from './Migration20260620025358_add_oauth_client_skip_consent.js';
 import { Migration20260624190500_add_oauth_device_denied_at } from './Migration20260624190500_add_oauth_device_denied_at.js';
+import { Migration20260624223000_add_oauth_device_poll_state } from './Migration20260624223000_add_oauth_device_poll_state.js';
 
 export const POSTGRES_MIGRATIONS = [
   Migration20260509171036_initial,
@@ -12,4 +13,5 @@ export const POSTGRES_MIGRATIONS = [
   Migration20260619191600_unique_oauth_client_client_id,
   Migration20260620025358_add_oauth_client_skip_consent,
   Migration20260624190500_add_oauth_device_denied_at,
+  Migration20260624223000_add_oauth_device_poll_state,
 ];

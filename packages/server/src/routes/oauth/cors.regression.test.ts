@@ -255,6 +255,82 @@ describe('OAuth CORS root policy', () => {
     expect(response.headers.get('access-control-allow-origin')).toBeNull();
   });
 
+  test('allows UserInfo preflight from a registered OAuth web origin', async () => {
+    const response = await app.request('/oauth/userinfo', {
+      method: 'OPTIONS',
+      headers: {
+        origin: SPA_ORIGIN,
+        'access-control-request-method': 'GET',
+        'access-control-request-headers': 'authorization',
+      },
+    });
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get('access-control-allow-origin')).toBe(
+      SPA_ORIGIN,
+    );
+    expect(response.headers.get('access-control-allow-methods')).toContain(
+      'GET',
+    );
+    expect(response.headers.get('access-control-allow-methods')).toContain(
+      'POST',
+    );
+    expect(response.headers.get('access-control-allow-headers')).toContain(
+      'authorization',
+    );
+  });
+
+  test('scopes UserInfo actual response CORS to the access token client', async () => {
+    const sessionCookie = await createAuthenticatedSession(app);
+    const { code } = await getAuthorizationCode(app, {
+      sessionCookie,
+      clientId: 'cors-spa-client',
+      redirectUri: 'http://localhost:5173/callback',
+      codeChallenge: TEST_PKCE.codeChallenge,
+      codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
+      scope: 'openid profile email',
+    });
+
+    const tokenResponse = await app.request('/oauth/token', {
+      method: 'POST',
+      headers: {
+        origin: SPA_ORIGIN,
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      body: formBody({
+        grant_type: 'authorization_code',
+        code,
+        client_id: 'cors-spa-client',
+        redirect_uri: 'http://localhost:5173/callback',
+        code_verifier: TEST_PKCE.codeVerifier,
+      }),
+    });
+    const tokenJson = await assertJsonBody(tokenResponse, 200);
+    const accessToken = String(tokenJson.access_token);
+
+    const ownOriginResponse = await app.request('/oauth/userinfo', {
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        origin: SPA_ORIGIN,
+      },
+    });
+    expect(ownOriginResponse.status).toBe(200);
+    expect(ownOriginResponse.headers.get('access-control-allow-origin')).toBe(
+      SPA_ORIGIN,
+    );
+
+    const crossClientOriginResponse = await app.request('/oauth/userinfo', {
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        origin: OTHER_ORIGIN,
+      },
+    });
+    expect(crossClientOriginResponse.status).toBe(200);
+    expect(
+      crossClientOriginResponse.headers.get('access-control-allow-origin'),
+    ).toBeNull();
+  });
+
   test('allows revocation response for actual body client web origin', async () => {
     const tokenResponse = await app.request('/oauth/token', {
       method: 'POST',

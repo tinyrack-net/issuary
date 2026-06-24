@@ -47,6 +47,14 @@ export const OAuthDeviceCodeEntitySchema = defineEntity({
       .datetime()
       .comment('Timestamp when the user denied the request')
       .nullable(),
+    lastPolledAt: p
+      .datetime()
+      .comment('Timestamp of the most recent device token polling request')
+      .nullable(),
+    pollIntervalSeconds: p
+      .integer()
+      .comment('Current required polling interval for this device code')
+      .default(5),
     consumedAt: p
       .datetime()
       .comment('Timestamp when the device code was exchanged')

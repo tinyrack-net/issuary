@@ -10,7 +10,11 @@ const PUBLIC_METADATA_PATHS = [
   '/oauth/.well-known/jwks',
 ];
 
-const PREFLIGHT_PATHS = ['/oauth/token', '/oauth/revoke'];
+const PREFLIGHT_METHODS_BY_PATH = new Map<string, string[]>([
+  ['/oauth/token', ['POST']],
+  ['/oauth/revoke', ['POST']],
+  ['/oauth/userinfo', ['GET', 'POST']],
+]);
 
 export async function oauthCorsMiddleware(
   c: Context<AppEnv>,
@@ -52,12 +56,13 @@ export function setOAuthClientCorsHeaders(
 
 async function handleOAuthPreflight(c: Context<AppEnv>) {
   const origin = c.req.header('origin');
-  if (origin && PREFLIGHT_PATHS.includes(c.req.path)) {
+  const allowedMethods = PREFLIGHT_METHODS_BY_PATH.get(c.req.path);
+  if (origin && allowedMethods) {
     const { oauthClientService } = c.var.services;
     if (await oauthClientService.isAllowedWebOrigin(origin)) {
       c.header('Access-Control-Allow-Origin', origin);
       c.header('Vary', 'Origin');
-      c.header('Access-Control-Allow-Methods', 'POST');
+      c.header('Access-Control-Allow-Methods', allowedMethods.join(', '));
       const requestHeaders = c.req.header('access-control-request-headers');
       if (requestHeaders) {
         c.header('Access-Control-Allow-Headers', requestHeaders);

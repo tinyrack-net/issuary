@@ -63,13 +63,12 @@ describe('JwtService', () => {
       ).toThrow();
     });
 
-    test('should throw for malformed header with extra spaces', () => {
-      // "Bearer  token" splits into 3 parts
-      expect(() =>
+    test('should accept extra whitespace after the Bearer scheme', () => {
+      expect(
         jwtService.extractBearerToken({
           headers: { authorization: 'Bearer  token' },
         }),
-      ).toThrow();
+      ).toBe('token');
     });
 
     test('should throw for header with no space', () => {

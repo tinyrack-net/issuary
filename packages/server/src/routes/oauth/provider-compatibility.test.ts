@@ -1208,6 +1208,21 @@ describe('OAuth/OIDC provider compatibility', () => {
         error: 'slow_down',
       });
 
+      await withMikroContext(services, async () => {
+        const deviceCodeHash = await services.securityService.hashOpaqueToken(
+          'oauth-device-code',
+          deviceJson.device_code,
+        );
+        const persistedDeviceCode =
+          await services.mikro.oauthDeviceCode.findOneOrFail({
+            deviceCodeHash,
+          });
+        expect(persistedDeviceCode.lastPolledAt).toEqual(
+          new Date('2026-06-24T00:00:00.000Z'),
+        );
+        expect(persistedDeviceCode.pollIntervalSeconds).toBe(10);
+      });
+
       await vi.advanceTimersByTimeAsync(5_000);
       const originalIntervalResponse = await poll();
       expect(originalIntervalResponse.status).toBe(400);

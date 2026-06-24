@@ -7,11 +7,12 @@ import { TAGS } from '../../../lib/swagger-tags.ts';
 import { e } from '../../../schemas/error.ts';
 import { h } from '../../../schemas/header.ts';
 import { r } from '../../../schemas/response.ts';
+import { setOAuthClientCorsHeaders } from '../cors.ts';
 
 type UserInfoResponse = z.infer<typeof r.UserInfoResponse>;
 
 const userinfoHandler = async (c: Context<AppEnv>) => {
-  const { jwtService, mikro, userService } = c.var.services;
+  const { jwtService, mikro, oauthClientService, userService } = c.var.services;
 
   // Validate Bearer token
   const authorization = c.req.header('authorization');
@@ -30,6 +31,11 @@ const userinfoHandler = async (c: Context<AppEnv>) => {
   ) {
     throw new e.InsufficientScope.Error();
   }
+
+  const client = await oauthClientService.findByClientId(
+    tokenPayload.client_id,
+  );
+  setOAuthClientCorsHeaders(c, client);
 
   // Load user
   const userEntity = await mikro.user.verifyBySub(tokenPayload.sub);

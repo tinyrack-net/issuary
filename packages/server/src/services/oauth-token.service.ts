@@ -104,10 +104,6 @@ export class OAuthTokenService {
   private readonly jwtService: JwtService;
   private readonly securityService: SecurityService;
   private readonly refreshRotationLocks = new Map<string, Promise<void>>();
-  private readonly devicePollStates = new Map<
-    string,
-    { lastPolledAt: number; intervalSeconds: number }
-  >();
   constructor(
     config: TinyAuthRuntimeConfig,
     mikro: MikroService,
@@ -303,42 +299,34 @@ export class OAuthTokenService {
       );
 
     if (!deviceCode) {
-      this.devicePollStates.delete(deviceCodeHash);
       throw new e.InvalidDeviceCode.Error();
     }
     if (deviceCode.expiresAt < new Date()) {
-      this.devicePollStates.delete(deviceCodeHash);
       throw new e.ExpiredToken.Error();
     }
     if (deviceCode.deniedAt) {
-      this.devicePollStates.delete(deviceCodeHash);
       throw new e.AccessDenied.Error();
     }
     if (!deviceCode.authorizedUser) {
-      const now = Date.now();
-      const pollState = this.devicePollStates.get(deviceCodeHash) ?? {
-        lastPolledAt: undefined,
-        intervalSeconds: DEVICE_CODE_POLL_INTERVAL_SECONDS,
-      };
+      const polledAt = new Date();
+      const intervalSeconds =
+        deviceCode.pollIntervalSeconds ?? DEVICE_CODE_POLL_INTERVAL_SECONDS;
+      const lastPolledAtMs = deviceCode.lastPolledAt?.getTime();
       if (
-        pollState.lastPolledAt !== undefined &&
-        now - pollState.lastPolledAt < pollState.intervalSeconds * 1000
+        lastPolledAtMs !== undefined &&
+        polledAt.getTime() - lastPolledAtMs < intervalSeconds * 1000
       ) {
-        this.devicePollStates.set(deviceCodeHash, {
-          lastPolledAt: now,
-          intervalSeconds: pollState.intervalSeconds + 5,
-        });
+        deviceCode.lastPolledAt = polledAt;
+        deviceCode.pollIntervalSeconds = intervalSeconds + 5;
+        await this.mikro.em.flush();
         throw new e.SlowDown.Error();
       }
 
-      this.devicePollStates.set(deviceCodeHash, {
-        lastPolledAt: now,
-        intervalSeconds: pollState.intervalSeconds,
-      });
+      deviceCode.lastPolledAt = polledAt;
+      deviceCode.pollIntervalSeconds = intervalSeconds;
+      await this.mikro.em.flush();
       throw new e.AuthorizationPending.Error();
     }
-
-    this.devicePollStates.delete(deviceCodeHash);
 
     const consumedAt = new Date();
     const consumed =
