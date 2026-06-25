@@ -6,6 +6,7 @@ import {
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
+  E2E_TEST_CLIENT,
   E2E_TEST_CLIENT_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import { consentPage } from '#frontend-e2e/helpers/consent.ts';
@@ -14,6 +15,7 @@ import {
   buildOAuthFlowInput,
   captureClientRedirectAfterAction,
   exchangeAuthorizationCode,
+  type OAuthAuthorizeParams,
 } from '#frontend-e2e/helpers/oauth-client-flow.ts';
 
 const PASSWORD = 'multiAccountPassword123!';
@@ -26,6 +28,19 @@ const LOCKED_CLIENT = {
   client_secret: 'locked-account-selection-secret',
   account_selection: {
     allow_add_account: false,
+  },
+};
+
+const ALWAYS_ACCOUNT_SELECTION_MODE: 'always' = 'always';
+
+const ALWAYS_CLIENT = {
+  ...E2E_TEST_CLIENT_CONFIG,
+  id: 'always-account-selection-client',
+  name: 'Always Account Selection Client',
+  client_id: 'always-account-selection-client',
+  client_secret: 'always-account-selection-secret',
+  account_selection: {
+    mode: ALWAYS_ACCOUNT_SELECTION_MODE,
   },
 };
 
@@ -46,7 +61,7 @@ const test = createScenarioFixture((backendPort) => ({
       },
     },
   }),
-  clients: [E2E_TEST_CLIENT_CONFIG, LOCKED_CLIENT],
+  clients: [E2E_TEST_CLIENT_CONFIG, LOCKED_CLIENT, ALWAYS_CLIENT],
   users: [
     {
       sub: 'account-selection-alice',
@@ -94,6 +109,91 @@ async function seedRememberedAccounts(
 ): Promise<void> {
   await loginByApi(page, baseURL, 'account-selection-alice@example.com');
   await loginByApi(page, baseURL, 'account-selection-bob@example.com');
+}
+
+async function authorizeSelectedAccount(params: {
+  page: import('@playwright/test').Page;
+  request: import('@playwright/test').APIRequestContext;
+  baseURL: string;
+  browserName: string;
+  state: string;
+  email: string;
+  expectedSub: string;
+  clientId?: string;
+  clientSecret?: string;
+  prompt?: 'select_account';
+  omitPrompt?: boolean;
+}): Promise<{ sub: string; email: string }> {
+  const authorizeOverrides: Partial<OAuthAuthorizeParams> = {};
+  if (!params.omitPrompt) {
+    authorizeOverrides.prompt = params.prompt ?? 'select_account';
+  }
+  if (params.clientId) {
+    authorizeOverrides.client_id = params.clientId;
+  }
+  const flow = buildOAuthFlowInput(params.state, authorizeOverrides);
+  await gotoWithFirefoxRetry(
+    params.page,
+    params.browserName,
+    buildAuthorizePath(flow.authorizeParams),
+  );
+
+  await expect(params.page).toHaveURL(/\/account\/select/);
+  const callbackRoute = `${E2E_TEST_CLIENT.redirectUri}**`;
+  const callbackRouteHandler = async (
+    route: import('@playwright/test').Route,
+  ) => {
+    await route.fulfill({
+      body: 'Mock OAuth client callback captured',
+      contentType: 'text/plain',
+      status: 200,
+    });
+  };
+  await params.page.route(callbackRoute, callbackRouteHandler);
+  const redirectPromise = params.page.waitForRequest((request) =>
+    request.url().startsWith(E2E_TEST_CLIENT.redirectUri),
+  );
+  await params.page
+    .locator(`[data-testid="select-account-${params.expectedSub}"]`)
+    .click({ noWaitAfter: true });
+
+  const consentVisible = await params.page
+    .locator(consentPage.allowButton)
+    .waitFor({ state: 'visible', timeout: 5_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (consentVisible) {
+    await params.page.locator(consentPage.allowButton).click({
+      noWaitAfter: true,
+    });
+  }
+
+  const code = new URL((await redirectPromise).url());
+  await params.page.waitForLoadState('domcontentloaded');
+  await params.page.unroute(callbackRoute, callbackRouteHandler);
+  const tokenResponse = await exchangeAuthorizationCode(
+    params.request,
+    params.baseURL,
+    {
+      code: code.searchParams.get('code') ?? '',
+      codeVerifier: flow.codeVerifier,
+      clientId: params.clientId,
+      clientSecret: params.clientSecret,
+    },
+  );
+  const userinfoResponse = await params.request.get(
+    `${params.baseURL}/oauth/userinfo`,
+    {
+      headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+    },
+  );
+  expect(userinfoResponse.ok()).toBe(true);
+  const userinfo = await userinfoResponse.json();
+  expect(userinfo).toMatchObject({
+    sub: params.expectedSub,
+    email: params.email,
+  });
+  return userinfo;
 }
 
 test.describe('OIDC account selection', () => {
@@ -208,6 +308,41 @@ test.describe('OIDC account selection', () => {
       'account-selection-bob',
       'account-selection-carol',
     ]);
+
+    const aliceAfterAdd = await authorizeSelectedAccount({
+      page,
+      request,
+      baseURL: String(baseURL),
+      browserName,
+      state: 'account-selection-add-account-switch-back-alice',
+      email: 'account-selection-alice@example.com',
+      expectedSub: 'account-selection-alice',
+    });
+    expect(aliceAfterAdd).toMatchObject({
+      sub: 'account-selection-alice',
+      email: 'account-selection-alice@example.com',
+    });
+
+    const accountsAfterSwitchBackResponse = await page
+      .context()
+      .request.get(
+        `${baseURL}/api/auth/accounts?client_id=${flow.authorizeParams.client_id}`,
+      );
+    expect(accountsAfterSwitchBackResponse.ok()).toBe(true);
+    const accountsAfterSwitchBack =
+      await accountsAfterSwitchBackResponse.json();
+    expect(accountsAfterSwitchBack.accounts).toHaveLength(3);
+    expect(
+      accountsAfterSwitchBack.accounts.map(
+        (account: { sub: string }) => account.sub,
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        'account-selection-alice',
+        'account-selection-bob',
+        'account-selection-carol',
+      ]),
+    );
   });
 
   test('client allow_add_account=false hides add-account UX in the browser flow', async ({
@@ -237,5 +372,91 @@ test.describe('OIDC account selection', () => {
     await expect(
       page.getByRole('link', { name: /Use another account/i }),
     ).toHaveCount(0);
+  });
+
+  test('same OIDC client can add B then switch A-B-A without losing remembered accounts', async ({
+    page,
+    request,
+    baseURL,
+    browserName,
+  }) => {
+    await seedRememberedAccounts(page, String(baseURL));
+
+    const alice = await authorizeSelectedAccount({
+      page,
+      request,
+      baseURL: String(baseURL),
+      browserName,
+      state: 'account-selection-switch-alice-first',
+      email: 'account-selection-alice@example.com',
+      expectedSub: 'account-selection-alice',
+    });
+    const bob = await authorizeSelectedAccount({
+      page,
+      request,
+      baseURL: String(baseURL),
+      browserName,
+      state: 'account-selection-switch-bob-second',
+      email: 'account-selection-bob@example.com',
+      expectedSub: 'account-selection-bob',
+    });
+    const aliceAgain = await authorizeSelectedAccount({
+      page,
+      request,
+      baseURL: String(baseURL),
+      browserName,
+      state: 'account-selection-switch-alice-third',
+      email: 'account-selection-alice@example.com',
+      expectedSub: 'account-selection-alice',
+    });
+
+    expect([alice.sub, bob.sub, aliceAgain.sub]).toEqual([
+      'account-selection-alice',
+      'account-selection-bob',
+      'account-selection-alice',
+    ]);
+
+    const accountsResponse = await page
+      .context()
+      .request.get(
+        `${baseURL}/api/auth/accounts?client_id=${E2E_TEST_CLIENT_CONFIG.client_id}`,
+      );
+    expect(accountsResponse.ok()).toBe(true);
+    const accounts = await accountsResponse.json();
+    expect(
+      accounts.accounts.map((account: { sub: string }) => account.sub),
+    ).toEqual(['account-selection-alice', 'account-selection-bob']);
+    expect(accounts.accounts).toHaveLength(2);
+  });
+
+  test('client always-mode shows chooser for a promptless relogin with one remembered account', async ({
+    page,
+    request,
+    baseURL,
+    browserName,
+  }) => {
+    await loginByApi(
+      page,
+      String(baseURL),
+      'account-selection-alice@example.com',
+    );
+
+    const userinfo = await authorizeSelectedAccount({
+      page,
+      request,
+      baseURL: String(baseURL),
+      browserName,
+      state: 'account-selection-always-promptless-single-account',
+      email: 'account-selection-alice@example.com',
+      expectedSub: 'account-selection-alice',
+      clientId: ALWAYS_CLIENT.client_id,
+      clientSecret: ALWAYS_CLIENT.client_secret,
+      omitPrompt: true,
+    });
+
+    expect(userinfo).toMatchObject({
+      sub: 'account-selection-alice',
+      email: 'account-selection-alice@example.com',
+    });
   });
 });
