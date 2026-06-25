@@ -97,6 +97,37 @@ async function seedRememberedAccounts(
 }
 
 test.describe('OIDC account selection', () => {
+  test('smart-mode add-account continuation requires a fresh login before authorizing', async ({
+    page,
+    baseURL,
+    browserName,
+  }) => {
+    await seedRememberedAccounts(page, String(baseURL));
+
+    const flow = buildOAuthFlowInput('account-selection-smart-add-account', {
+      prompt: undefined,
+    });
+    await gotoWithFirefoxRetry(
+      page,
+      browserName,
+      buildAuthorizePath(flow.authorizeParams),
+    );
+
+    await expect(page).toHaveURL(/\/account\/select/);
+    await page.getByRole('link', { name: /Use another account/i }).click();
+    await expect(page).toHaveURL(/\/login/);
+
+    const loginUrl = new URL(page.url());
+    expect(loginUrl.searchParams.get('account_selected')).toBe('1');
+    expect(loginUrl.searchParams.get('prompt')?.split(' ')).toContain('login');
+
+    const authorizePath = `/oauth/authorize?${loginUrl.searchParams.toString()}`;
+    await gotoWithFirefoxRetry(page, browserName, authorizePath);
+
+    await expect(page).toHaveURL(/\/login/);
+    expect(new URL(page.url()).origin).toBe(String(baseURL));
+  });
+
   test('allow_add_account=true lets a user add another account and issues tokens for it', async ({
     page,
     request,

@@ -80,7 +80,13 @@ export const consentPost = new Hono<AppEnv>().post(
       ui_locales: z.string().min(1).max(1000).optional(),
       id_token_hint: z.string().min(1).max(4000).optional(),
       acr_values: z.string().min(1).max(1000).optional(),
-      account_selected: z.literal('1').optional(),
+      account_selected: z
+        .preprocess((value) => {
+          if (value === 1) return '1';
+          if (typeof value !== 'string') return value;
+          return decodeURIComponent(value).replaceAll('"', '');
+        }, z.literal('1'))
+        .optional(),
       account_selection_state: z.string().min(1).max(200).optional(),
       decision: f.consentDecision,
     }),

@@ -38,10 +38,20 @@ export const Route = createFileRoute('/account/select/')({
   },
 });
 
+function appendLoginPrompt(prompt: string | undefined): string {
+  const values = prompt?.split(' ').filter(Boolean) ?? [];
+  if (!values.includes('login')) {
+    values.push('login');
+  }
+  return values.join(' ');
+}
+
 function buildLoginHref(search: ReturnType<typeof Route.useSearch>) {
+  const oauthParams = extractOAuthParams(search);
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries({
-    ...extractOAuthParams(search),
+    ...oauthParams,
+    prompt: appendLoginPrompt(oauthParams.prompt),
     account_selected: '1',
   })) {
     if (value !== undefined) {
