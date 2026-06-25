@@ -1,6 +1,6 @@
 {
   "name": "@tinyrack/tinyauth-standalone",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "type": "module",
   "description": "TinyAuth standalone CLI server",
   "license": "MIT",
