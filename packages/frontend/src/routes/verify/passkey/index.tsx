@@ -9,7 +9,7 @@ import { Alert } from '#frontend/components/ui/alert.tsx';
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
 import {
-  buildAuthorizeUrl,
+  buildAuthenticatedAuthorizeUrl,
   isOAuthFlow,
   OAuthSearchSchema,
 } from '#frontend/libs/oauth-search.ts';
@@ -42,7 +42,7 @@ function VerifyPasskey() {
         await tick();
 
         if (isOAuthFlow(search)) {
-          window.location.href = buildAuthorizeUrl(search);
+          window.location.href = buildAuthenticatedAuthorizeUrl(search);
         } else {
           router.navigate({ to: '/profile' });
         }

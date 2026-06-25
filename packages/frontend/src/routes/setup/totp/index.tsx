@@ -18,7 +18,7 @@ import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import { useTotpSetup } from '#frontend/features/totp/use-totp-setup.ts';
 import { TinyAuthError } from '#frontend/libs/error.ts';
 import {
-  buildAuthorizeUrl,
+  buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
@@ -110,7 +110,7 @@ function SetupTotp() {
       await tick();
       // Navigate after successful confirm
       if (isOAuthFlow(search)) {
-        window.location.href = buildAuthorizeUrl(search);
+        window.location.href = buildAuthenticatedAuthorizeUrl(search);
       } else {
         router.navigate({ to: '/profile' });
       }

@@ -467,6 +467,39 @@ describe('OAuthAuthorizeService account selection', () => {
     expect(redirect.searchParams.has('code')).toBe(false);
   });
 
+  test('does not trust fresh account_selected when prompt=select_account explicitly requests a chooser', async () => {
+    const userSub = await createTestUser(services);
+    await grantBaseConsent(userSub);
+    const now = Math.floor(Date.now() / 1000);
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          prompt: 'select_account',
+          reauthenticated: '1',
+          account_selected: '1',
+        },
+        userSession: {
+          sub: userSub,
+          authenticated_at: now,
+        },
+        rememberedAccounts: [
+          {
+            sub: userSub,
+            authenticated_at: now,
+            last_used_at: now,
+          },
+        ],
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.pathname).toBe('/account/select');
+    expect(redirect.searchParams.get('account_selected')).toBeNull();
+    expect(redirect.searchParams.get('code')).toBeNull();
+  });
+
   test('does not trust a forged account_selected flag without server-side continuation state', async () => {
     const userSub = await createTestUser(services);
     await grantBaseConsent(userSub);

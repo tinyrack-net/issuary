@@ -22,7 +22,7 @@ import { Divider } from '#frontend/components/ui/divider.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import {
-  buildAuthorizeUrl,
+  buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
@@ -123,7 +123,7 @@ function VerifyEmail() {
       }
 
       if (isOAuthFlow(search)) {
-        window.location.href = buildAuthorizeUrl(search);
+        window.location.href = buildAuthenticatedAuthorizeUrl(search);
       } else {
         setVerified(true);
       }

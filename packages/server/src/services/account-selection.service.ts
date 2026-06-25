@@ -60,10 +60,15 @@ export class AccountSelectionService {
       return { type: 'reauthenticate' };
     }
 
+    const explicitlyRequestsAccountSelection =
+      params.prompts.includes('select_account');
+
     if (
       mode === 'disabled' ||
       params.accountSelected ||
-      (params.freshReauthentication && params.prompts.includes('login'))
+      (params.freshReauthentication &&
+        params.prompts.includes('login') &&
+        !explicitlyRequestsAccountSelection)
     ) {
       return { type: 'continue', selectedSub: activeUserSub };
     }
@@ -73,7 +78,7 @@ export class AccountSelectionService {
       params.loginHint,
     );
     const explicitlyRequiresChooser =
-      params.prompts.includes('select_account') || mode === 'always';
+      explicitlyRequestsAccountSelection || mode === 'always';
 
     if (explicitlyRequiresChooser) {
       return this.promptNoneOrChooser(params, globalConfig.prompt_none_error);

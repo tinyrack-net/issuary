@@ -17,7 +17,7 @@ import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import {
-  buildAuthorizeUrl,
+  buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
@@ -149,7 +149,8 @@ function LoginPassword() {
         }
       } else {
         if (isOAuthFlow(search)) {
-          window.location.href = buildAuthorizeUrl(authorizeSearch);
+          window.location.href =
+            buildAuthenticatedAuthorizeUrl(authorizeSearch);
         } else {
           return router.navigate({ to: '/profile' });
         }
@@ -175,7 +176,8 @@ function LoginPassword() {
         await tick();
 
         if (isOAuthFlow(search)) {
-          window.location.href = buildAuthorizeUrl(authorizeSearch);
+          window.location.href =
+            buildAuthenticatedAuthorizeUrl(authorizeSearch);
         } else {
           router.navigate({ to: '/profile' });
         }

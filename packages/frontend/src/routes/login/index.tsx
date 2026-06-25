@@ -18,7 +18,7 @@ import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import {
-  buildAuthorizeUrl,
+  buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
@@ -89,7 +89,7 @@ function Login() {
       await tick();
 
       if (isOAuthFlow(search)) {
-        window.location.href = buildAuthorizeUrl(search);
+        window.location.href = buildAuthenticatedAuthorizeUrl(search);
       } else {
         router.navigate({ to: '/profile' });
       }
@@ -113,7 +113,7 @@ function Login() {
     let oauthUrl = `/api/oauth/${providerId}/authorize?mode=login`;
 
     if (isOAuthFlow(search)) {
-      const authUrl = new URL(buildAuthorizeUrl(search));
+      const authUrl = new URL(buildAuthenticatedAuthorizeUrl(search));
       const returnUrl = `${authUrl.pathname}${authUrl.search}${authUrl.hash}`;
       oauthUrl += `&return_url=${encodeURIComponent(returnUrl)}`;
     }

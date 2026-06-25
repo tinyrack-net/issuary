@@ -24,7 +24,7 @@ import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
 import {
-  buildAuthorizeUrl,
+  buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
@@ -183,7 +183,7 @@ function Register() {
       }
 
       if (isOAuthFlow(search)) {
-        window.location.href = buildAuthorizeUrl(search);
+        window.location.href = buildAuthenticatedAuthorizeUrl(search);
       } else {
         navigate({ to: '/profile' });
       }

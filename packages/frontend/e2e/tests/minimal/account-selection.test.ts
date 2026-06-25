@@ -39,6 +39,7 @@ const ALWAYS_CLIENT = {
   name: 'Always Account Selection Client',
   client_id: 'always-account-selection-client',
   client_secret: 'always-account-selection-secret',
+  skip_consent: true,
   account_selection: {
     mode: ALWAYS_ACCOUNT_SELECTION_MODE,
   },
@@ -427,6 +428,74 @@ test.describe('OIDC account selection', () => {
       accounts.accounts.map((account: { sub: string }) => account.sub),
     ).toEqual(['account-selection-alice', 'account-selection-bob']);
     expect(accounts.accounts).toHaveLength(2);
+  });
+
+  test('client always-mode redirects immediately after fresh password login', async ({
+    page,
+    request,
+    baseURL,
+    browserName,
+  }) => {
+    const flow = buildOAuthFlowInput('account-selection-always-fresh-login', {
+      client_id: ALWAYS_CLIENT.client_id,
+      prompt: undefined,
+    });
+
+    await gotoWithFirefoxRetry(
+      page,
+      browserName,
+      buildAuthorizePath(flow.authorizeParams),
+    );
+    await expect(page).toHaveURL(/\/login/);
+    await page.locator('a[href^="/login/password"]').click();
+    await expect(page).toHaveURL(/\/login\/password/);
+
+    const callbackRoute = `${E2E_TEST_CLIENT.redirectUri}**`;
+    const callbackRouteHandler = async (
+      route: import('@playwright/test').Route,
+    ) => {
+      await route.fulfill({
+        body: 'Mock OAuth client callback captured',
+        contentType: 'text/plain',
+        status: 200,
+      });
+    };
+    await page.route(callbackRoute, callbackRouteHandler);
+    const redirectPromise = page.waitForRequest(
+      (clientRequest) =>
+        clientRequest.url().startsWith(E2E_TEST_CLIENT.redirectUri),
+      { timeout: 5_000 },
+    );
+
+    await page
+      .locator('input[name="email"]')
+      .fill('account-selection-alice@example.com');
+    await page.locator('input[name="password"]').fill(PASSWORD);
+    await page.locator('button[type="submit"]').click({ noWaitAfter: true });
+
+    const redirect = new URL((await redirectPromise).url());
+    await page.unroute(callbackRoute, callbackRouteHandler);
+    expect(redirect.searchParams.get('code')).toBeTruthy();
+    expect(page.url()).not.toContain('/account/select');
+
+    const tokenResponse = await exchangeAuthorizationCode(
+      request,
+      String(baseURL),
+      {
+        code: redirect.searchParams.get('code') ?? '',
+        codeVerifier: flow.codeVerifier,
+        clientId: ALWAYS_CLIENT.client_id,
+        clientSecret: ALWAYS_CLIENT.client_secret,
+      },
+    );
+    const userinfoResponse = await request.get(`${baseURL}/oauth/userinfo`, {
+      headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+    });
+    expect(userinfoResponse.ok()).toBe(true);
+    expect(await userinfoResponse.json()).toMatchObject({
+      sub: 'account-selection-alice',
+      email: 'account-selection-alice@example.com',
+    });
   });
 
   test('client always-mode shows chooser for a promptless relogin with one remembered account', async ({

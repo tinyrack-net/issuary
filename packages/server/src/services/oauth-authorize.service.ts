@@ -499,7 +499,9 @@ export class OAuthAuthorizeService {
 
     if (!session || !matchesExisting) {
       const freshSelectedAccount =
-        params.freshReauthentication && query.account_selected === '1';
+        params.freshReauthentication &&
+        query.account_selected === '1' &&
+        !query.prompt?.split(' ').includes('select_account');
       return {
         trusted: freshSelectedAccount,
         matchesExisting: false,

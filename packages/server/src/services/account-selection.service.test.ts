@@ -123,6 +123,20 @@ describe('AccountSelectionService', () => {
     ).toEqual({ type: 'show_chooser' });
   });
 
+  test('fresh prompt=login reauthentication still honors prompt=select_account', () => {
+    const service = createService({ enabled: true, mode: 'always' });
+
+    expect(
+      service.decide({
+        clientId: 'client-id',
+        prompts: ['login', 'select_account'],
+        freshReauthentication: true,
+        activeUserSub: ACCOUNT_A.sub,
+        rememberedAccounts: [ACCOUNT_A],
+      }),
+    ).toEqual({ type: 'show_chooser' });
+  });
+
   test('client override never suppresses a global chooser requirement', () => {
     const service = createService({ enabled: true, mode: 'smart' }, [
       {

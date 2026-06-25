@@ -16,7 +16,7 @@ import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import {
-  buildAuthorizeUrl,
+  buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
@@ -77,7 +77,7 @@ function SetupPasskey() {
         await tick();
 
         if (isOAuthFlow(search)) {
-          window.location.href = buildAuthorizeUrl(search);
+          window.location.href = buildAuthenticatedAuthorizeUrl(search);
         } else {
           router.navigate({ to: '/profile' });
         }

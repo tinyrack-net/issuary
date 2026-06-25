@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import {
+  buildAuthenticatedAuthorizeUrl,
   buildAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
@@ -55,6 +56,41 @@ describe('oauth-search helpers', () => {
     );
     expect(parsed.searchParams.get('prompt')).toBe('login');
     expect(parsed.searchParams.get('max_age')).toBe('300');
+  });
+
+  test('builds a post-login authorize URL with a fresh authentication marker', () => {
+    const parsed = new URL(
+      buildAuthenticatedAuthorizeUrl({
+        client_id: 'web-client',
+        redirect_uri: 'https://client.example.com/callback',
+        response_type: 'code',
+        scope: 'openid email',
+        state: 'state-123',
+        nonce: 'nonce-123',
+        code_challenge: 'challenge-123',
+        code_challenge_method: 'S256',
+      }),
+    );
+
+    expect(parsed.pathname).toBe('/oauth/authorize');
+    expect(parsed.searchParams.get('reauthenticated')).toBe('1');
+    expect(parsed.searchParams.get('account_selected')).toBe('1');
+    expect(parsed.searchParams.get('prompt')).toBeNull();
+  });
+
+  test('does not mark account selected after login when prompt explicitly requests account selection', () => {
+    const parsed = new URL(
+      buildAuthenticatedAuthorizeUrl({
+        client_id: 'web-client',
+        redirect_uri: 'https://client.example.com/callback',
+        response_type: 'code',
+        prompt: 'select_account',
+      }),
+    );
+
+    expect(parsed.searchParams.get('reauthenticated')).toBe('1');
+    expect(parsed.searchParams.get('account_selected')).toBeNull();
+    expect(parsed.searchParams.get('prompt')).toBe('select_account');
   });
 
   test('accepts and preserves valid multi-value prompt combinations', () => {

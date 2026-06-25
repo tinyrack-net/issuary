@@ -127,6 +127,24 @@ export function buildAuthorizeUrl(search: OAuthSearch): string {
 }
 
 /**
+ * Build an authorize URL after an interactive authentication step completed.
+ * This marks the active account as freshly selected unless the RP explicitly
+ * requested account selection.
+ */
+export function buildAuthenticatedAuthorizeUrl(search: OAuthSearch): string {
+  const authenticatedSearch: OAuthSearch = {
+    ...search,
+    reauthenticated: '1',
+  };
+
+  if (!search.prompt?.split(' ').includes('select_account')) {
+    authenticatedSearch.account_selected = '1';
+  }
+
+  return buildAuthorizeUrl(authenticatedSearch);
+}
+
+/**
  * OAuth 파라미터만 추출하는 헬퍼 (undefined 값 제거)
  * Link 컴포넌트의 search prop에 전달할 때 사용
  */
