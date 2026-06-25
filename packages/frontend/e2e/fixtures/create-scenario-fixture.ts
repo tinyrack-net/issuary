@@ -1,4 +1,4 @@
-import { test as base } from '@playwright/test';
+import { test as base, type Page, type Response } from '@playwright/test';
 import {
   createE2EServer,
   type E2EConfigResult,
@@ -9,6 +9,46 @@ type ConfigFactory = (
   frontendPort: number,
   auxiliaryPort: number,
 ) => E2EConfigResult;
+
+function isFirefoxNavigationAbort(error: unknown): boolean {
+  const message = String(error instanceof Error ? error.message : error);
+  return (
+    message.includes('NS_BINDING_ABORTED') ||
+    message.includes('NS_ERROR_FAILURE')
+  );
+}
+
+export async function gotoWithFirefoxRetry(
+  page: Page,
+  browserName: string,
+  url: string,
+  options?: Parameters<Page['goto']>[1],
+): Promise<Response | null> {
+  const gotoOptions = { waitUntil: 'domcontentloaded' as const, ...options };
+  try {
+    return await page.goto(url, gotoOptions);
+  } catch (error) {
+    if (browserName !== 'firefox' || !isFirefoxNavigationAbort(error)) {
+      throw error;
+    }
+  }
+
+  await page
+    .waitForLoadState('domcontentloaded', { timeout: 5_000 })
+    .catch(() => undefined);
+
+  try {
+    return await page.goto(url, gotoOptions);
+  } catch (retryError) {
+    if (!isFirefoxNavigationAbort(retryError)) {
+      throw retryError;
+    }
+    await page
+      .waitForLoadState('domcontentloaded', { timeout: 5_000 })
+      .catch(() => undefined);
+    return null;
+  }
+}
 
 type ServerInfo = {
   backendPort: number;

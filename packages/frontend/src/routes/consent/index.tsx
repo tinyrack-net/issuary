@@ -86,6 +86,16 @@ function Consent() {
       nonce: search.nonce,
       code_challenge: search.code_challenge,
       code_challenge_method: search.code_challenge_method,
+      prompt: search.prompt,
+      max_age: search.max_age,
+      display: search.display,
+      response_mode: search.response_mode,
+      login_hint: search.login_hint,
+      ui_locales: search.ui_locales,
+      id_token_hint: search.id_token_hint,
+      acr_values: search.acr_values,
+      account_selected: search.account_selected,
+      account_selection_state: search.account_selection_state,
       decision: 'allow',
     });
   };
@@ -100,6 +110,16 @@ function Consent() {
       nonce: search.nonce,
       code_challenge: search.code_challenge,
       code_challenge_method: search.code_challenge_method,
+      prompt: search.prompt,
+      max_age: search.max_age,
+      display: search.display,
+      response_mode: search.response_mode,
+      login_hint: search.login_hint,
+      ui_locales: search.ui_locales,
+      id_token_hint: search.id_token_hint,
+      acr_values: search.acr_values,
+      account_selected: search.account_selected,
+      account_selection_state: search.account_selection_state,
       decision: 'deny',
     });
   };

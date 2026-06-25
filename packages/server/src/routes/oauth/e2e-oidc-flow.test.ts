@@ -10,6 +10,7 @@ import {
   createAuthenticatedSession,
   createTestApp,
   exchangeCodeForTokens,
+  extractCookie,
   getAuthorizationCode,
   getUserInfo,
   grantConsent,
@@ -997,5 +998,310 @@ describe('End-to-End OIDC Flow', () => {
         }),
       ).rejects.toThrow();
     });
+  });
+});
+
+describe('End-to-End OIDC Account Selection Flow', () => {
+  const ACCOUNT_A = TEST_USER_CONFIG;
+  const ACCOUNT_B = {
+    sub: 'e2e-selected-account-user',
+    email: 'selected-account@example.com',
+    password: 'changemelater',
+    role: 'user' as const,
+  };
+
+  let accountSelectionApp: AppType;
+  let accountSelectionCleanup: () => Promise<void>;
+
+  beforeAll(async () => {
+    ({ app: accountSelectionApp, cleanup: accountSelectionCleanup } =
+      await createTestApp({
+        ...MINIMAL_TEST_CONFIG,
+        auth: {
+          account_selection: {
+            enabled: true,
+            mode: 'smart',
+          },
+        },
+        users: [ACCOUNT_A, ACCOUNT_B],
+        clients: [TEST_OAUTH_CLIENT_CONFIG],
+      }));
+  });
+
+  afterAll(async () => {
+    await accountSelectionCleanup();
+  });
+
+  async function createMultiAccountSession(activeSub: string) {
+    const authenticatedAt = Math.floor(Date.now() / 1000) - 5;
+    return encrypt(
+      JSON.stringify({
+        user: {
+          sub: activeSub,
+          authenticated_at: authenticatedAt,
+        },
+        accounts: [
+          {
+            sub: ACCOUNT_A.sub,
+            authenticated_at: authenticatedAt - 10,
+            last_used_at: authenticatedAt - 10,
+          },
+          {
+            sub: ACCOUNT_B.sub,
+            authenticated_at: authenticatedAt,
+            last_used_at: authenticatedAt,
+          },
+        ],
+      }),
+      MINIMAL_TEST_CONFIG.security.session_secret,
+    );
+  }
+
+  test('preserves chooser continuation params through consent before issuing the selected-account code', async () => {
+    const client = testClient(accountSelectionApp);
+    const sessionCookie = await createMultiAccountSession(ACCOUNT_B.sub);
+
+    const authorizeQuery = {
+      response_type: 'code',
+      client_id: TEST_OAUTH_CLIENT.clientId,
+      redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+      scope: 'openid profile email',
+      state: 'account-selection-consent-state',
+      nonce: 'account-selection-consent-nonce',
+      code_challenge: TEST_PKCE.codeChallenge,
+      code_challenge_method: TEST_PKCE.codeChallengeMethod,
+      prompt: 'select_account consent',
+      max_age: '3600',
+      display: 'popup',
+      response_mode: 'fragment',
+      login_hint: ACCOUNT_B.email,
+      ui_locales: 'ko en',
+      id_token_hint: 'header.payload.signature',
+      acr_values: 'urn:mace:incommon:iap:silver',
+    };
+
+    const chooserRes = await client.oauth.authorize.$get(
+      { query: authorizeQuery },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+    expect(chooserRes.status).toBe(302);
+    const chooserLocation = new URL(chooserRes.headers.get('location') ?? '');
+    expect(chooserLocation.pathname).toBe('/account/select');
+    const accountSelectionState = chooserLocation.searchParams.get(
+      'account_selection_state',
+    );
+    expect(accountSelectionState).not.toBeNull();
+    const chooserSessionCookie = extractCookie(chooserRes, 'session');
+
+    const consentRes = await client.oauth.authorize.$get(
+      {
+        query: {
+          ...authorizeQuery,
+          account_selected: '1',
+          account_selection_state: accountSelectionState ?? '',
+        },
+      },
+      { headers: { Cookie: `session=${chooserSessionCookie}` } },
+    );
+    expect(consentRes.status).toBe(302);
+    const consentLocation = new URL(consentRes.headers.get('location') ?? '');
+    expect(consentLocation.pathname).toBe('/consent');
+    expect(consentLocation.searchParams.get('prompt')).toBe(
+      'select_account consent',
+    );
+    expect(consentLocation.searchParams.get('response_mode')).toBe('fragment');
+    expect(consentLocation.searchParams.get('account_selection_state')).toBe(
+      accountSelectionState,
+    );
+
+    const consentPostRes = await client.api.consent.$post(
+      {
+        json: {
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          response_type: 'code',
+          scope: 'openid profile email',
+          state: 'account-selection-consent-state',
+          nonce: 'account-selection-consent-nonce',
+          code_challenge: TEST_PKCE.codeChallenge,
+          code_challenge_method: TEST_PKCE.codeChallengeMethod,
+          prompt: 'select_account',
+          max_age: 3600,
+          display: 'popup',
+          response_mode: 'fragment',
+          login_hint: ACCOUNT_B.email,
+          ui_locales: 'ko en',
+          id_token_hint: 'header.payload.signature',
+          acr_values: 'urn:mace:incommon:iap:silver',
+          account_selected: '1',
+          account_selection_state: accountSelectionState ?? '',
+          decision: 'allow',
+        },
+      },
+      { headers: { Cookie: `session=${chooserSessionCookie}` } },
+    );
+    const consentBody = await assertJsonBody(consentPostRes, 200);
+    const authorizeUrl = new URL(consentBody.redirect_url);
+    expect(authorizeUrl.searchParams.get('prompt')).toBe('select_account');
+    expect(authorizeUrl.searchParams.get('response_mode')).toBe('fragment');
+    expect(authorizeUrl.searchParams.get('account_selection_state')).toBe(
+      accountSelectionState,
+    );
+
+    const finalAuthorizeQuery: Record<string, string> & {
+      response_type: string;
+      client_id: string;
+      redirect_uri: string;
+      account_selected: '1';
+      account_selection_state: string;
+    } = {
+      response_type: authorizeUrl.searchParams.get('response_type') ?? '',
+      client_id: authorizeUrl.searchParams.get('client_id') ?? '',
+      redirect_uri: authorizeUrl.searchParams.get('redirect_uri') ?? '',
+      account_selected: '1',
+      account_selection_state:
+        authorizeUrl.searchParams.get('account_selection_state') ?? '',
+    };
+    for (const key of [
+      'scope',
+      'state',
+      'nonce',
+      'code_challenge',
+      'code_challenge_method',
+      'prompt',
+      'max_age',
+      'display',
+      'response_mode',
+      'login_hint',
+      'ui_locales',
+      'id_token_hint',
+      'acr_values',
+    ]) {
+      const value = authorizeUrl.searchParams.get(key);
+      if (value !== null) {
+        finalAuthorizeQuery[key] = value;
+      }
+    }
+
+    const finalRes = await client.oauth.authorize.$get(
+      { query: finalAuthorizeQuery },
+      { headers: { Cookie: `session=${chooserSessionCookie}` } },
+    );
+    expect(finalRes.status).toBe(302);
+    const finalLocation = new URL(finalRes.headers.get('location') ?? '');
+    expect(finalLocation.pathname).toBe(
+      new URL(TEST_OAUTH_CLIENT.redirectUri).pathname,
+    );
+    const fragment = new URLSearchParams(finalLocation.hash.slice(1));
+    expect(fragment.get('code')).toBeTruthy();
+    expect(fragment.get('state')).toBe('account-selection-consent-state');
+  });
+
+  test('issues authorization code, ID token, access token, and userinfo for the selected account', async () => {
+    const client = testClient(accountSelectionApp);
+    const configRes =
+      await client.oauth['.well-known']['openid-configuration'].$get();
+    const config = await assertJsonBody(configRes, 200);
+    const jwksPath = new URL(config.jwks_uri).pathname;
+    const jwksRes = await accountSelectionApp.request(jwksPath);
+    const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
+    const sessionCookie = await createMultiAccountSession(ACCOUNT_B.sub);
+
+    const consentRes = await client.api.consent.$post(
+      {
+        json: {
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          response_type: 'code',
+          scope: 'openid profile email',
+          state: 'account-selection-state',
+          nonce: 'account-selection-nonce',
+          code_challenge: TEST_PKCE.codeChallenge,
+          code_challenge_method: TEST_PKCE.codeChallengeMethod,
+          decision: 'allow',
+        },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+    expect(consentRes.status).toBe(200);
+
+    const chooserRes = await client.oauth.authorize.$get(
+      {
+        query: {
+          response_type: 'code',
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          scope: 'openid profile email',
+          state: 'account-selection-state',
+          nonce: 'account-selection-nonce',
+          code_challenge: TEST_PKCE.codeChallenge,
+          code_challenge_method: TEST_PKCE.codeChallengeMethod,
+          prompt: 'select_account',
+        },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+    expect(chooserRes.status).toBe(302);
+    const chooserLocation = new URL(chooserRes.headers.get('location') ?? '');
+    expect(chooserLocation.pathname).toBe('/account/select');
+    const accountSelectionState = chooserLocation.searchParams.get(
+      'account_selection_state',
+    );
+    expect(accountSelectionState).not.toBeNull();
+    const chooserSessionCookie = extractCookie(chooserRes, 'session');
+
+    const authorizeRes = await client.oauth.authorize.$get(
+      {
+        query: {
+          response_type: 'code',
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          scope: 'openid profile email',
+          state: 'account-selection-state',
+          nonce: 'account-selection-nonce',
+          code_challenge: TEST_PKCE.codeChallenge,
+          code_challenge_method: TEST_PKCE.codeChallengeMethod,
+          prompt: 'select_account',
+          account_selected: '1',
+          account_selection_state: accountSelectionState ?? '',
+        },
+      },
+      { headers: { Cookie: `session=${chooserSessionCookie}` } },
+    );
+    expect(authorizeRes.status).toBe(302);
+    const authorizeLocationHeader = authorizeRes.headers.get('location');
+    expect(authorizeLocationHeader).not.toBeNull();
+    const authorizeLocation = new URL(authorizeLocationHeader ?? '');
+    expect(authorizeLocation.searchParams.get('state')).toBe(
+      'account-selection-state',
+    );
+    const code = authorizeLocation.searchParams.get('code');
+    expect(code).not.toBeNull();
+
+    const tokenRes = await exchangeCodeForTokens(accountSelectionApp, {
+      code: code ?? '',
+      codeVerifier: TEST_PKCE.codeVerifier,
+    });
+    const tokens = await assertJsonBody(tokenRes, 200);
+    const { payload } = await jose.jwtVerify(
+      assertDefined(tokens.id_token),
+      JWKS,
+      {
+        issuer: config.issuer,
+        audience: TEST_OAUTH_CLIENT.clientId,
+      },
+    );
+
+    expect(payload.sub).toBe(ACCOUNT_B.sub);
+    expect(payload['email']).toBe(ACCOUNT_B.email);
+    expect(payload['nonce']).toBe('account-selection-nonce');
+
+    const userInfoRes = await getUserInfo(
+      accountSelectionApp,
+      tokens.access_token,
+    );
+    const userInfo = await assertJsonBody(userInfoRes, 200);
+    expect(userInfo.sub).toBe(ACCOUNT_B.sub);
+    expect(userInfo.email).toBe(ACCOUNT_B.email);
   });
 });

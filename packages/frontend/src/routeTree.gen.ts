@@ -28,6 +28,7 @@ import { Route as PasswordResetIndexRouteImport } from './routes/password/reset/
 import { Route as PasswordForgotIndexRouteImport } from './routes/password/forgot/index'
 import { Route as LoginPasswordIndexRouteImport } from './routes/login/password/index'
 import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
+import { Route as AccountSelectIndexRouteImport } from './routes/account/select/index'
 import { Route as VerifyTotpRecoveryIndexRouteImport } from './routes/verify/totp/recovery/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -125,6 +126,11 @@ const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
   path: '/admin/users/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountSelectIndexRoute = AccountSelectIndexRouteImport.update({
+  id: '/account/select/',
+  path: '/account/select/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VerifyTotpRecoveryIndexRoute = VerifyTotpRecoveryIndexRouteImport.update({
   id: '/verify/totp/recovery/',
   path: '/verify/totp/recovery/',
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/profile/': typeof ProfileIndexRoute
   '/register/': typeof RegisterIndexRoute
   '/terms/': typeof TermsIndexRoute
+  '/account/select/': typeof AccountSelectIndexRoute
   '/admin/users/': typeof AdminUsersIndexRoute
   '/login/password/': typeof LoginPasswordIndexRoute
   '/password/forgot/': typeof PasswordForgotIndexRoute
@@ -162,6 +169,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileIndexRoute
   '/register': typeof RegisterIndexRoute
   '/terms': typeof TermsIndexRoute
+  '/account/select': typeof AccountSelectIndexRoute
   '/admin/users': typeof AdminUsersIndexRoute
   '/login/password': typeof LoginPasswordIndexRoute
   '/password/forgot': typeof PasswordForgotIndexRoute
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/profile/': typeof ProfileIndexRoute
   '/register/': typeof RegisterIndexRoute
   '/terms/': typeof TermsIndexRoute
+  '/account/select/': typeof AccountSelectIndexRoute
   '/admin/users/': typeof AdminUsersIndexRoute
   '/login/password/': typeof LoginPasswordIndexRoute
   '/password/forgot/': typeof PasswordForgotIndexRoute
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/profile/'
     | '/register/'
     | '/terms/'
+    | '/account/select/'
     | '/admin/users/'
     | '/login/password/'
     | '/password/forgot/'
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/register'
     | '/terms'
+    | '/account/select'
     | '/admin/users'
     | '/login/password'
     | '/password/forgot'
@@ -253,6 +264,7 @@ export interface FileRouteTypes {
     | '/profile/'
     | '/register/'
     | '/terms/'
+    | '/account/select/'
     | '/admin/users/'
     | '/login/password/'
     | '/password/forgot/'
@@ -276,6 +288,7 @@ export interface RootRouteChildren {
   ProfileIndexRoute: typeof ProfileIndexRoute
   RegisterIndexRoute: typeof RegisterIndexRoute
   TermsIndexRoute: typeof TermsIndexRoute
+  AccountSelectIndexRoute: typeof AccountSelectIndexRoute
   AdminUsersIndexRoute: typeof AdminUsersIndexRoute
   LoginPasswordIndexRoute: typeof LoginPasswordIndexRoute
   PasswordForgotIndexRoute: typeof PasswordForgotIndexRoute
@@ -425,6 +438,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/select/': {
+      id: '/account/select/'
+      path: '/account/select'
+      fullPath: '/account/select/'
+      preLoaderRoute: typeof AccountSelectIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/verify/totp/recovery/': {
       id: '/verify/totp/recovery/'
       path: '/verify/totp/recovery'
@@ -444,6 +464,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileIndexRoute: ProfileIndexRoute,
   RegisterIndexRoute: RegisterIndexRoute,
   TermsIndexRoute: TermsIndexRoute,
+  AccountSelectIndexRoute: AccountSelectIndexRoute,
   AdminUsersIndexRoute: AdminUsersIndexRoute,
   LoginPasswordIndexRoute: LoginPasswordIndexRoute,
   PasswordForgotIndexRoute: PasswordForgotIndexRoute,

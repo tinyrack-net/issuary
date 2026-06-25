@@ -9,6 +9,17 @@ import { e } from '../../../schemas/error.ts';
 import { f } from '../../../schemas/field.ts';
 import { r } from '../../../schemas/response.ts';
 
+function consumeConsentPrompt(prompt: string | undefined): string | undefined {
+  if (!prompt) {
+    return undefined;
+  }
+  const remaining = prompt
+    .split(' ')
+    .filter((value) => value !== 'consent')
+    .join(' ');
+  return remaining.length > 0 ? remaining : undefined;
+}
+
 /**
  * POST /api/oauth/consent
  *
@@ -61,6 +72,16 @@ export const consentPost = new Hono<AppEnv>().post(
       nonce: f.nonce.optional(),
       code_challenge: f.codeChallenge.optional(),
       code_challenge_method: f.codeChallengeMethod.optional(),
+      prompt: f.prompt.optional(),
+      max_age: f.maxAge.optional(),
+      display: f.display.optional(),
+      response_mode: z.enum(['query', 'fragment', 'form_post']).optional(),
+      login_hint: z.string().min(1).max(1000).optional(),
+      ui_locales: z.string().min(1).max(1000).optional(),
+      id_token_hint: z.string().min(1).max(4000).optional(),
+      acr_values: z.string().min(1).max(1000).optional(),
+      account_selected: z.literal('1').optional(),
+      account_selection_state: z.string().min(1).max(200).optional(),
       decision: f.consentDecision,
     }),
   ),
@@ -76,6 +97,16 @@ export const consentPost = new Hono<AppEnv>().post(
       nonce,
       code_challenge,
       code_challenge_method,
+      prompt,
+      max_age,
+      display,
+      response_mode,
+      login_hint,
+      ui_locales,
+      id_token_hint,
+      acr_values,
+      account_selected,
+      account_selection_state,
       decision,
     } = body;
 
@@ -135,6 +166,40 @@ export const consentPost = new Hono<AppEnv>().post(
       authorizeUrl.searchParams.set(
         'code_challenge_method',
         code_challenge_method,
+      );
+    }
+    const continuationPrompt = consumeConsentPrompt(prompt);
+    if (continuationPrompt) {
+      authorizeUrl.searchParams.set('prompt', continuationPrompt);
+    }
+    if (max_age !== undefined) {
+      authorizeUrl.searchParams.set('max_age', max_age.toString());
+    }
+    if (display) {
+      authorizeUrl.searchParams.set('display', display);
+    }
+    if (response_mode) {
+      authorizeUrl.searchParams.set('response_mode', response_mode);
+    }
+    if (login_hint) {
+      authorizeUrl.searchParams.set('login_hint', login_hint);
+    }
+    if (ui_locales) {
+      authorizeUrl.searchParams.set('ui_locales', ui_locales);
+    }
+    if (id_token_hint) {
+      authorizeUrl.searchParams.set('id_token_hint', id_token_hint);
+    }
+    if (acr_values) {
+      authorizeUrl.searchParams.set('acr_values', acr_values);
+    }
+    if (account_selected) {
+      authorizeUrl.searchParams.set('account_selected', account_selected);
+    }
+    if (account_selection_state) {
+      authorizeUrl.searchParams.set(
+        'account_selection_state',
+        account_selection_state,
       );
     }
 

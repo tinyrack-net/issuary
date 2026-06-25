@@ -6,6 +6,7 @@ import {
   type TinyAuthRuntimeConfigInput,
   TinyAuthRuntimeConfigSchema,
 } from '../lib/config/index.ts';
+import { parseDurationToMs } from '../lib/duration.ts';
 import { createLogger } from '../lib/logger.ts';
 import { createOpenApiDocumentation } from '../lib/openapi.ts';
 import { csrfProtection } from '../middleware/csrf.ts';
@@ -77,6 +78,16 @@ export async function createApp(
       sessionMiddleware(
         config.security.session_secret,
         config.server.public_origin.startsWith('https'),
+        {
+          enabled:
+            config.auth.account_selection.enabled &&
+            config.auth.account_selection.remember_accounts.enabled,
+          maxAccounts:
+            config.auth.account_selection.remember_accounts.max_accounts,
+          ttlMs: parseDurationToMs(
+            config.auth.account_selection.remember_accounts.ttl,
+          ),
+        },
       ),
     )
     .use('*', trustedProxyGuard(config.server.trust_proxy))

@@ -1079,7 +1079,7 @@ describe('GET /oauth/authorize', () => {
       expect(location.searchParams.get('prompt')).toBe('consent');
     });
 
-    test('should reject unimplemented prompt=select_account as invalid_request', async () => {
+    test('should accept prompt=select_account when account selection is disabled', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const client = testClient(app);
       const res = await client.oauth.authorize.$get(
@@ -1094,7 +1094,8 @@ describe('GET /oauth/authorize', () => {
 
       expect(res.status).toBe(302);
       const location = new URL(getLocationHeader(res), 'http://localhost:8080');
-      expectRedirectError(location, 'invalid_request', 'prompt');
+      expect(location.pathname).toBe('/callback');
+      expect(location.searchParams.get('code')).toBeTruthy();
       expect(location.searchParams.get('state')).toBe(validParams.state);
     });
   });

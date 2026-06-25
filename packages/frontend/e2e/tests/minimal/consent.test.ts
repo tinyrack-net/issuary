@@ -1,5 +1,8 @@
 import { expect } from '@playwright/test';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
+import {
+  createScenarioFixture,
+  gotoWithFirefoxRetry,
+} from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
@@ -37,9 +40,10 @@ const TEST_PASSWORD = 'test-password-123';
  */
 async function gotoConsentPage(
   page: import('@playwright/test').Page,
+  browserName: string,
   authorizeUrl: string,
 ): Promise<void> {
-  await page.goto(authorizeUrl);
+  await gotoWithFirefoxRetry(page, browserName, authorizeUrl);
 
   // If the consent page didn't load (e.g. under heavy parallel load),
   // retry the navigation once.
@@ -48,7 +52,7 @@ async function gotoConsentPage(
     .isVisible()
     .catch(() => false);
   if (!hasConsentContent) {
-    await page.goto(authorizeUrl);
+    await gotoWithFirefoxRetry(page, browserName, authorizeUrl);
     await expect(page.getByRole('button', { name: 'Allow' })).toBeVisible();
   }
 }
@@ -57,6 +61,7 @@ test.describe('OAuth consent flow', () => {
   test('consent page shows client name, scopes, and user email', async ({
     page,
     baseURL,
+    browserName,
   }) => {
     const email = uniqueEmail('display');
     const client = getTestApiClient({ baseUrl: String(baseURL) });
@@ -71,7 +76,7 @@ test.describe('OAuth consent flow', () => {
 
     // Navigate to OAuth authorize
     const authorizeUrl = buildOAuthAuthorizeUrl();
-    await gotoConsentPage(page, authorizeUrl);
+    await gotoConsentPage(page, browserName, authorizeUrl);
 
     // Should show consent page
     await expect(page.getByText('E2E Test App')).toBeVisible();
@@ -92,6 +97,7 @@ test.describe('OAuth consent flow', () => {
   test('allow consent redirects with authorization code', async ({
     page,
     baseURL,
+    browserName,
   }) => {
     const email = uniqueEmail('allow');
     const client = getTestApiClient({ baseUrl: String(baseURL) });
@@ -107,7 +113,7 @@ test.describe('OAuth consent flow', () => {
     const authorizeUrl = buildOAuthAuthorizeUrl({
       state: 'test-allow-state',
     });
-    await gotoConsentPage(page, authorizeUrl);
+    await gotoConsentPage(page, browserName, authorizeUrl);
 
     // Wait for Allow button
     await expect(page.getByRole('button', { name: 'Allow' })).toBeVisible();
@@ -127,7 +133,11 @@ test.describe('OAuth consent flow', () => {
     expect(url.searchParams.get('state')).toBe('test-allow-state');
   });
 
-  test('deny consent redirects with error', async ({ page, baseURL }) => {
+  test('deny consent redirects with error', async ({
+    page,
+    baseURL,
+    browserName,
+  }) => {
     const email = uniqueEmail('deny');
     const client = getTestApiClient({ baseUrl: String(baseURL) });
     const registerRes = await client.api.auth.register.$post({
@@ -142,7 +152,7 @@ test.describe('OAuth consent flow', () => {
     const authorizeUrl = buildOAuthAuthorizeUrl({
       state: 'test-deny-state',
     });
-    await gotoConsentPage(page, authorizeUrl);
+    await gotoConsentPage(page, browserName, authorizeUrl);
 
     // Wait for Deny button
     await expect(page.getByRole('button', { name: 'Deny' })).toBeVisible();
@@ -162,9 +172,12 @@ test.describe('OAuth consent flow', () => {
     expect(url.searchParams.get('state')).toBe('test-deny-state');
   });
 
-  test('unauthenticated consent redirects to login', async ({ page }) => {
+  test('unauthenticated consent redirects to login', async ({
+    page,
+    browserName,
+  }) => {
     const authorizeUrl = buildOAuthAuthorizeUrl();
-    await page.goto(authorizeUrl);
+    await gotoWithFirefoxRetry(page, browserName, authorizeUrl);
 
     // Should redirect to login
     await page.waitForURL('**/login**');

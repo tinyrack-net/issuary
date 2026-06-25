@@ -30,9 +30,23 @@ export const OAuthSearchSchema = z.object({
   code_challenge: z.string().optional(),
   code_challenge_method: z.enum(['S256', 'plain']).optional(),
   prompt: z.string().min(1).max(100).refine(isValidPrompt).optional(),
-  max_age: z.string().optional(),
+  max_age: z
+    .preprocess(
+      (value) => (typeof value === 'number' ? String(value) : value),
+      z.string(),
+    )
+    .optional(),
   reauthenticated: z.literal('1').optional(),
+  account_selected: z
+    .preprocess((value) => (value === 1 ? '1' : value), z.literal('1'))
+    .optional(),
+  account_selection_state: z.string().min(1).max(200).optional(),
   display: z.enum(['page', 'popup', 'touch', 'wap']).optional(),
+  response_mode: z.enum(['query', 'fragment', 'form_post']).optional(),
+  login_hint: z.string().min(1).max(1000).optional(),
+  ui_locales: z.string().min(1).max(1000).optional(),
+  id_token_hint: z.string().min(1).max(4000).optional(),
+  acr_values: z.string().min(1).max(1000).optional(),
   lang: z.string().optional(),
 });
 
@@ -80,7 +94,24 @@ export function buildAuthorizeUrl(search: OAuthSearch): string {
   ) {
     authUrl.searchParams.set('reauthenticated', '1');
   }
+  if (search.account_selected)
+    authUrl.searchParams.set('account_selected', search.account_selected);
+  if (search.account_selection_state)
+    authUrl.searchParams.set(
+      'account_selection_state',
+      search.account_selection_state,
+    );
   if (search.display) authUrl.searchParams.set('display', search.display);
+  if (search.response_mode)
+    authUrl.searchParams.set('response_mode', search.response_mode);
+  if (search.login_hint)
+    authUrl.searchParams.set('login_hint', search.login_hint);
+  if (search.ui_locales)
+    authUrl.searchParams.set('ui_locales', search.ui_locales);
+  if (search.id_token_hint)
+    authUrl.searchParams.set('id_token_hint', search.id_token_hint);
+  if (search.acr_values)
+    authUrl.searchParams.set('acr_values', search.acr_values);
 
   return authUrl.toString();
 }

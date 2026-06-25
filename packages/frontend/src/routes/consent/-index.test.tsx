@@ -16,6 +16,7 @@ import {
 const consentSearch =
   'client_id=client-web&redirect_uri=https%3A%2F%2Fclient.example%2Fcallback&response_type=code&scope=openid+profile+email&state=state-123&nonce=nonce-123&code_challenge=challenge-123&code_challenge_method=S256';
 const consentLocation = `/consent?${consentSearch}`;
+const consentWithCompatibilityParams = `${consentLocation}&prompt=select_account&max_age=3600&display=popup&response_mode=fragment&login_hint=alice%40example.com&ui_locales=ko+en&id_token_hint=header.payload.signature&acr_values=urn%3Amace%3Aincommon%3Aiap%3Asilver&account_selected=1&account_selection_state=chooser-state-ui`;
 
 function testRedirectUrl(fragment: string) {
   const [hrefWithoutHash] = globalThis.location.href.split('#');
@@ -123,6 +124,35 @@ describe('/consent', () => {
       code_challenge: 'challenge-123',
       code_challenge_method: 'S256',
       decision: 'allow',
+    });
+  });
+
+  test('approves consent with account_selected marker when returning from account chooser', async () => {
+    const { screen } = await renderRoute({
+      initialLocation: consentWithCompatibilityParams,
+      queryData: seededQueryData(),
+    });
+    const fetchMock = mockJsonSuccess({
+      redirect_url: testRedirectUrl('account-selected'),
+    });
+
+    await screen.getByTestId('consent-allow').click();
+
+    await vi.waitFor(() => {
+      const request = firstRequest(fetchMock.requests);
+      expect(jsonRequestBody(request)).toMatchObject({
+        prompt: 'select_account',
+        max_age: '3600',
+        display: 'popup',
+        response_mode: 'fragment',
+        login_hint: 'alice@example.com',
+        ui_locales: 'ko en',
+        id_token_hint: 'header.payload.signature',
+        acr_values: 'urn:mace:incommon:iap:silver',
+        account_selected: '1',
+        account_selection_state: 'chooser-state-ui',
+        decision: 'allow',
+      });
     });
   });
 

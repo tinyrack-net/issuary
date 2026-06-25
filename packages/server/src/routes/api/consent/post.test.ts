@@ -9,6 +9,7 @@ import {
   MINIMAL_TEST_CONFIG,
   TEST_OAUTH_CLIENT,
   TEST_OAUTH_CLIENT_CONFIG,
+  TEST_PKCE,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '../../../test-utils/index.ts';
@@ -33,6 +34,85 @@ afterAll(async () => {
 });
 
 describe('POST /api/consent', () => {
+  test('should preserve account_selected marker in the authorize continuation URL', async () => {
+    const sessionCookie = await createAuthenticatedSession(app);
+    const client = testClient(app);
+
+    const res = await client.api.consent.$post(
+      {
+        json: {
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          response_type: 'code',
+          scope: 'openid profile email',
+          state: 'state-account-selected',
+          nonce: 'nonce-account-selected',
+          code_challenge: TEST_PKCE.codeChallenge,
+          code_challenge_method: TEST_PKCE.codeChallengeMethod,
+          prompt: 'select_account consent',
+          max_age: 3600,
+          display: 'popup',
+          response_mode: 'fragment',
+          login_hint: 'alice@example.com',
+          ui_locales: 'ko en',
+          id_token_hint: 'header.payload.signature',
+          acr_values: 'urn:mace:incommon:iap:silver',
+          account_selected: '1',
+          account_selection_state: 'chooser-state-after-consent',
+          decision: 'allow',
+        },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+
+    const body = await assertJsonBody(res, 200);
+    const redirect = new URL(body.redirect_url);
+    expect(redirect.pathname).toBe('/oauth/authorize');
+    expect(redirect.searchParams.get('account_selected')).toBe('1');
+    expect(redirect.searchParams.get('account_selection_state')).toBe(
+      'chooser-state-after-consent',
+    );
+    expect(redirect.searchParams.get('state')).toBe('state-account-selected');
+    expect(redirect.searchParams.get('prompt')).toBe('select_account');
+    expect(redirect.searchParams.get('max_age')).toBe('3600');
+    expect(redirect.searchParams.get('display')).toBe('popup');
+    expect(redirect.searchParams.get('response_mode')).toBe('fragment');
+    expect(redirect.searchParams.get('login_hint')).toBe('alice@example.com');
+    expect(redirect.searchParams.get('ui_locales')).toBe('ko en');
+    expect(redirect.searchParams.get('id_token_hint')).toBe(
+      'header.payload.signature',
+    );
+    expect(redirect.searchParams.get('acr_values')).toBe(
+      'urn:mace:incommon:iap:silver',
+    );
+  });
+
+  test('should consume prompt=consent after consent is granted', async () => {
+    const sessionCookie = await createAuthenticatedSession(app);
+    const client = testClient(app);
+
+    const res = await client.api.consent.$post(
+      {
+        json: {
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          response_type: 'code',
+          scope: 'openid profile email',
+          state: 'state-prompt-consent',
+          code_challenge: TEST_PKCE.codeChallenge,
+          code_challenge_method: TEST_PKCE.codeChallengeMethod,
+          prompt: 'consent',
+          decision: 'allow',
+        },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+
+    const body = await assertJsonBody(res, 200);
+    const redirect = new URL(body.redirect_url);
+    expect(redirect.searchParams.has('prompt')).toBe(false);
+    expect(redirect.searchParams.get('state')).toBe('state-prompt-consent');
+  });
   describe('Allow decision', () => {
     test('should grant consent and return redirect URL', async () => {
       const sessionCookie = await createAuthenticatedSession(app);

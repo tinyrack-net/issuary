@@ -34,6 +34,22 @@ const OAuthGrantTypeSchema = z
     ]),
   );
 
+const ClientAccountSelectionConfigSchema = z
+  .object({
+    mode: z
+      .enum(['inherit', 'never', 'oidc_prompt', 'smart', 'always'])
+      .default('inherit')
+      .describe('Client-level account selection policy override.'),
+    allow_add_account: z
+      .boolean()
+      .optional()
+      .describe(
+        'Client-level override for whether users can add another account.',
+      ),
+  })
+  .strict()
+  .describe('Client-specific account selection overrides.');
+
 function normalizeScopeList(scope: string): string {
   const trimmed = scope.trim();
   if (/[\t\n\r\f\v]/.test(trimmed)) {
@@ -122,6 +138,7 @@ export const ClientConfigSchema = z
       .describe(
         'Skip the OAuth consent screen for this client unless prompt=consent is requested.',
       ),
+    account_selection: ClientAccountSelectionConfigSchema.optional(),
   })
   .strict()
   .superRefine((client, ctx) => {
