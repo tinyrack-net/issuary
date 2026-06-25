@@ -1,5 +1,8 @@
 import { expect } from '@playwright/test';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
+import {
+  createScenarioFixture,
+  gotoWithFirefoxRetry,
+} from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
@@ -132,7 +135,11 @@ test.describe('Delete account flow', () => {
     await expect(page.getByText(/after 30 days\./)).toBeVisible();
   });
 
-  test('cannot login after account deletion', async ({ page, baseURL }) => {
+  test('cannot login after account deletion', async ({
+    page,
+    baseURL,
+    browserName,
+  }) => {
     const email = uniqueEmail('no-login');
     const client = getTestApiClient({ baseUrl: String(baseURL) });
     const registerRes = await client.api.auth.register.$post({
@@ -154,7 +161,7 @@ test.describe('Delete account flow', () => {
     await page.waitForURL('**/login');
 
     // Try to login with the deleted account
-    await page.goto('/login/password');
+    await gotoWithFirefoxRetry(page, browserName, '/login/password');
     await page.locator(loginPasswordPage.emailInput).fill(email);
     await page.locator(loginPasswordPage.passwordInput).fill(TEST_PASSWORD);
     await page.locator(loginPasswordPage.submitButton).click();

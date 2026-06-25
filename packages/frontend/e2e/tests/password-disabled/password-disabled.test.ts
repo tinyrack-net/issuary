@@ -1,6 +1,9 @@
 import { expect } from '@playwright/test';
 import { google } from '@tinyrack/tinyauth-server/identity-providers/google';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
+import {
+  createScenarioFixture,
+  gotoWithFirefoxRetry,
+} from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
@@ -41,18 +44,32 @@ test.describe('Password disabled configuration', () => {
     await expect(page.getByText('Google')).toBeVisible();
   });
 
-  test('password recovery routes redirect to login', async ({ page }) => {
-    await page.goto('/password/forgot');
+  test('password recovery routes redirect to login', async ({
+    page,
+    browserName,
+  }) => {
+    await gotoWithFirefoxRetry(page, browserName, '/password/forgot');
     await page.waitForURL('**/login');
     await expect(page).toHaveURL(/\/login/);
 
-    await page.goto('/password/reset?token=test-token');
+    await gotoWithFirefoxRetry(
+      page,
+      browserName,
+      '/password/reset?token=test-token',
+    );
     await page.waitForURL('**/login');
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test('email verification route redirects to login', async ({ page }) => {
-    await page.goto('/verify/email?token=test-token');
+  test('email verification route redirects to login', async ({
+    page,
+    browserName,
+  }) => {
+    await gotoWithFirefoxRetry(
+      page,
+      browserName,
+      '/verify/email?token=test-token',
+    );
     await page.waitForURL('**/login');
     await expect(page).toHaveURL(/\/login/);
   });

@@ -46,6 +46,8 @@ export const authorizeGet = new Hono<AppEnv>().get(
       prompt: f.prompt.optional(),
       max_age: f.maxAge.optional(),
       reauthenticated: z.literal('1').optional(),
+      account_selected: z.literal('1').optional(),
+      account_selection_state: z.string().min(1).max(200).optional(),
       display: f.display.optional(),
       response_mode: z.string().min(1).max(100).optional(),
       login_hint: z.string().min(1).max(1000).optional(),
@@ -114,6 +116,23 @@ export const authorizeGet = new Hono<AppEnv>().get(
           sub: string;
           authenticated_at: number;
         };
+        rememberedAccounts?: Array<{
+          sub: string;
+          authenticated_at: number;
+          last_used_at: number;
+        }>;
+        selectUserSession?: (userSub: string) => boolean;
+        accountSelectionSession?:
+          | NonNullable<
+              ReturnType<typeof c.var.session.get<'accountSelection'>>
+            >
+          | undefined;
+        setAccountSelectionSession?: (
+          state: NonNullable<
+            ReturnType<typeof c.var.session.get<'accountSelection'>>
+          >,
+        ) => void;
+        clearAccountSelectionSession?: () => void;
       } = {
         query: query,
       };
@@ -124,6 +143,18 @@ export const authorizeGet = new Hono<AppEnv>().get(
           authenticated_at: verifiedUser.authenticatedAt,
         };
       }
+      const rememberedAccounts = c.var.session.get('accounts');
+      if (rememberedAccounts) {
+        authorizeParams.rememberedAccounts = rememberedAccounts;
+        authorizeParams.selectUserSession = (userSub) =>
+          c.var.session.selectUserSession(userSub);
+      }
+      authorizeParams.accountSelectionSession =
+        c.var.session.get('accountSelection');
+      authorizeParams.setAccountSelectionSession = (state) =>
+        c.var.session.set('accountSelection', state);
+      authorizeParams.clearAccountSelectionSession = () =>
+        c.var.session.set('accountSelection', undefined);
 
       const result = await oauthAuthorizeService.authorize(authorizeParams);
 

@@ -141,73 +141,73 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.user === null && last.user === undefined) {
         diff.user = current.user;
       } else if (current.user == null && last.user == null) {
-
+    
       } else if ((current.user != null && last.user == null) || (current.user == null && last.user != null)) {
         diff.user = current.user;
       } else if (last.user !== current.user) {
         diff.user = current.user;
       }
-
+    
       if (current.code_hash === null && last.code_hash === undefined) {
         diff.code_hash = current.code_hash;
       } else if (current.code_hash == null && last.code_hash == null) {
-
+    
       } else if ((current.code_hash != null && last.code_hash == null) || (current.code_hash == null && last.code_hash != null)) {
         diff.code_hash = current.code_hash;
       } else if (last.code_hash !== current.code_hash) {
         diff.code_hash = current.code_hash;
       }
-
+    
       if (current.used === null && last.used === undefined) {
         diff.used = current.used;
       } else if (current.used == null && last.used == null) {
-
+    
       } else if ((current.used != null && last.used == null) || (current.used == null && last.used != null)) {
         diff.used = current.used;
       } else if (!compareBooleans(last.used, current.used)) {
         diff.used = current.used;
       }
-
+    
       if (current.used_at === null && last.used_at === undefined) {
         diff.used_at = current.used_at;
       } else if (current.used_at == null && last.used_at == null) {
-
+    
       } else if ((current.used_at != null && last.used_at == null) || (current.used_at == null && last.used_at != null)) {
         diff.used_at = current.used_at;
       } else if (last.used_at.valueOf() !== current.used_at.valueOf()) {
         diff.used_at = current.used_at;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -219,15 +219,15 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = convertToDatabaseValue_id(entity.id);
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.user !== 'undefined') {
         if (entity.user === null) {
           ret.user = null;
@@ -237,19 +237,19 @@ export default {
           ret.user = toArray(entity.user.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.code_hash !== 'undefined') {
         ret.code_hash = entity.code_hash;
       }
-
+    
       if (typeof entity.used !== 'undefined') {
         ret.used = entity.used;
       }
-
+    
       if (typeof entity.used_at !== 'undefined') {
         ret.used_at = clone(processDateProperty(entity.used_at));
       }
-
+    
       return ret;
     }
   },
@@ -492,73 +492,73 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.user === null && last.user === undefined) {
         diff.user = current.user;
       } else if (current.user == null && last.user == null) {
-
+    
       } else if ((current.user != null && last.user == null) || (current.user == null && last.user != null)) {
         diff.user = current.user;
       } else if (last.user !== current.user) {
         diff.user = current.user;
       }
-
+    
       if (current.secret === null && last.secret === undefined) {
         diff.secret = current.secret;
       } else if (current.secret == null && last.secret == null) {
-
+    
       } else if ((current.secret != null && last.secret == null) || (current.secret == null && last.secret != null)) {
         diff.secret = current.secret;
       } else if (last.secret !== current.secret) {
         diff.secret = current.secret;
       }
-
+    
       if (current.verified === null && last.verified === undefined) {
         diff.verified = current.verified;
       } else if (current.verified == null && last.verified == null) {
-
+    
       } else if ((current.verified != null && last.verified == null) || (current.verified == null && last.verified != null)) {
         diff.verified = current.verified;
       } else if (!compareBooleans(last.verified, current.verified)) {
         diff.verified = current.verified;
       }
-
+    
       if (current.recovery_confirmed === null && last.recovery_confirmed === undefined) {
         diff.recovery_confirmed = current.recovery_confirmed;
       } else if (current.recovery_confirmed == null && last.recovery_confirmed == null) {
-
+    
       } else if ((current.recovery_confirmed != null && last.recovery_confirmed == null) || (current.recovery_confirmed == null && last.recovery_confirmed != null)) {
         diff.recovery_confirmed = current.recovery_confirmed;
       } else if (!compareBooleans(last.recovery_confirmed, current.recovery_confirmed)) {
         diff.recovery_confirmed = current.recovery_confirmed;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -570,15 +570,15 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = convertToDatabaseValue_id(entity.id);
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.user !== 'undefined') {
         if (entity.user === null) {
           ret.user = null;
@@ -588,19 +588,19 @@ export default {
           ret.user = toArray(entity.user.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.secret !== 'undefined') {
         ret.secret = entity.secret;
       }
-
+    
       if (typeof entity.verified !== 'undefined') {
         ret.verified = entity.verified;
       }
-
+    
       if (typeof entity.recovery_confirmed !== 'undefined') {
         ret.recovery_confirmed = entity.recovery_confirmed;
       }
-
+    
       return ret;
     }
   },
@@ -875,93 +875,93 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.user === null && last.user === undefined) {
         diff.user = current.user;
       } else if (current.user == null && last.user == null) {
-
+    
       } else if ((current.user != null && last.user == null) || (current.user == null && last.user != null)) {
         diff.user = current.user;
       } else if (last.user !== current.user) {
         diff.user = current.user;
       }
-
+    
       if (current.terms === null && last.terms === undefined) {
         diff.terms = current.terms;
       } else if (current.terms == null && last.terms == null) {
-
+    
       } else if ((current.terms != null && last.terms == null) || (current.terms == null && last.terms != null)) {
         diff.terms = current.terms;
       } else if (last.terms !== current.terms) {
         diff.terms = current.terms;
       }
-
+    
       if (current.termsVersion === null && last.termsVersion === undefined) {
         diff.termsVersion = current.termsVersion;
       } else if (current.termsVersion == null && last.termsVersion == null) {
-
+    
       } else if ((current.termsVersion != null && last.termsVersion == null) || (current.termsVersion == null && last.termsVersion != null)) {
         diff.termsVersion = current.termsVersion;
       } else if (last.termsVersion !== current.termsVersion) {
         diff.termsVersion = current.termsVersion;
       }
-
+    
       if (current.agreed === null && last.agreed === undefined) {
         diff.agreed = current.agreed;
       } else if (current.agreed == null && last.agreed == null) {
-
+    
       } else if ((current.agreed != null && last.agreed == null) || (current.agreed == null && last.agreed != null)) {
         diff.agreed = current.agreed;
       } else if (!compareBooleans(last.agreed, current.agreed)) {
         diff.agreed = current.agreed;
       }
-
+    
       if (current.consentType === null && last.consentType === undefined) {
         diff.consentType = current.consentType;
       } else if (current.consentType == null && last.consentType == null) {
-
+    
       } else if ((current.consentType != null && last.consentType == null) || (current.consentType == null && last.consentType != null)) {
         diff.consentType = current.consentType;
       } else if (last.consentType !== current.consentType) {
         diff.consentType = current.consentType;
       }
-
+    
       if (current.agreedAt === null && last.agreedAt === undefined) {
         diff.agreedAt = current.agreedAt;
       } else if (current.agreedAt == null && last.agreedAt == null) {
-
+    
       } else if ((current.agreedAt != null && last.agreedAt == null) || (current.agreedAt == null && last.agreedAt != null)) {
         diff.agreedAt = current.agreedAt;
       } else if (last.agreedAt.valueOf() !== current.agreedAt.valueOf()) {
         diff.agreedAt = current.agreedAt;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -973,15 +973,15 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = convertToDatabaseValue_id(entity.id);
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.user !== 'undefined') {
         if (entity.user === null) {
           ret.user = null;
@@ -991,7 +991,7 @@ export default {
           ret.user = toArray(entity.user.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.terms !== 'undefined') {
         if (entity.terms === null) {
           ret.terms = null;
@@ -1001,23 +1001,23 @@ export default {
           ret.terms = toArray(entity.terms.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.termsVersion !== 'undefined') {
         ret.termsVersion = entity.termsVersion;
       }
-
+    
       if (typeof entity.agreed !== 'undefined') {
         ret.agreed = entity.agreed;
       }
-
+    
       if (typeof entity.consentType !== 'undefined') {
         ret.consentType = entity.consentType;
       }
-
+    
       if (typeof entity.agreedAt !== 'undefined') {
         ret.agreedAt = clone(processDateProperty(entity.agreedAt));
       }
-
+    
       return ret;
     }
   },
@@ -1330,123 +1330,123 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.user === null && last.user === undefined) {
         diff.user = current.user;
       } else if (current.user == null && last.user == null) {
-
+    
       } else if ((current.user != null && last.user == null) || (current.user == null && last.user != null)) {
         diff.user = current.user;
       } else if (last.user !== current.user) {
         diff.user = current.user;
       }
-
+    
       if (current.credential_id === null && last.credential_id === undefined) {
         diff.credential_id = current.credential_id;
       } else if (current.credential_id == null && last.credential_id == null) {
-
+    
       } else if ((current.credential_id != null && last.credential_id == null) || (current.credential_id == null && last.credential_id != null)) {
         diff.credential_id = current.credential_id;
       } else if (last.credential_id !== current.credential_id) {
         diff.credential_id = current.credential_id;
       }
-
+    
       if (current.public_key === null && last.public_key === undefined) {
         diff.public_key = current.public_key;
       } else if (current.public_key == null && last.public_key == null) {
-
+    
       } else if ((current.public_key != null && last.public_key == null) || (current.public_key == null && last.public_key != null)) {
         diff.public_key = current.public_key;
       } else if (!equals(last.public_key, current.public_key)) {
         diff.public_key = current.public_key;
       }
-
+    
       if (current.counter === null && last.counter === undefined) {
         diff.counter = current.counter;
       } else if (current.counter == null && last.counter == null) {
-
+    
       } else if ((current.counter != null && last.counter == null) || (current.counter == null && last.counter != null)) {
         diff.counter = current.counter;
       } else if (!equals(last.counter, current.counter)) {
         diff.counter = current.counter;
       }
-
+    
       if (current.device_type === null && last.device_type === undefined) {
         diff.device_type = current.device_type;
       } else if (current.device_type == null && last.device_type == null) {
-
+    
       } else if ((current.device_type != null && last.device_type == null) || (current.device_type == null && last.device_type != null)) {
         diff.device_type = current.device_type;
       } else if (last.device_type !== current.device_type) {
         diff.device_type = current.device_type;
       }
-
+    
       if (current.backed_up === null && last.backed_up === undefined) {
         diff.backed_up = current.backed_up;
       } else if (current.backed_up == null && last.backed_up == null) {
-
+    
       } else if ((current.backed_up != null && last.backed_up == null) || (current.backed_up == null && last.backed_up != null)) {
         diff.backed_up = current.backed_up;
       } else if (!compareBooleans(last.backed_up, current.backed_up)) {
         diff.backed_up = current.backed_up;
       }
-
+    
       if (current.transports === null && last.transports === undefined) {
         diff.transports = current.transports;
       } else if (current.transports == null && last.transports == null) {
-
+    
       } else if ((current.transports != null && last.transports == null) || (current.transports == null && last.transports != null)) {
         diff.transports = current.transports;
       } else if (!equals(last.transports, current.transports)) {
         diff.transports = current.transports;
       }
-
+    
       if (current.name === null && last.name === undefined) {
         diff.name = current.name;
       } else if (current.name == null && last.name == null) {
-
+    
       } else if ((current.name != null && last.name == null) || (current.name == null && last.name != null)) {
         diff.name = current.name;
       } else if (last.name !== current.name) {
         diff.name = current.name;
       }
-
+    
       if (current.aaguid === null && last.aaguid === undefined) {
         diff.aaguid = current.aaguid;
       } else if (current.aaguid == null && last.aaguid == null) {
-
+    
       } else if ((current.aaguid != null && last.aaguid == null) || (current.aaguid == null && last.aaguid != null)) {
         diff.aaguid = current.aaguid;
       } else if (last.aaguid !== current.aaguid) {
         diff.aaguid = current.aaguid;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -1458,15 +1458,15 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = convertToDatabaseValue_id(entity.id);
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.user !== 'undefined') {
         if (entity.user === null) {
           ret.user = null;
@@ -1476,39 +1476,39 @@ export default {
           ret.user = toArray(entity.user.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.credential_id !== 'undefined') {
         ret.credential_id = entity.credential_id;
       }
-
+    
       if (typeof entity.public_key !== 'undefined') {
         ret.public_key = clone(entity.public_key);
       }
-
+    
       if (typeof entity.counter !== 'undefined') {
         ret.counter = clone(entity.counter);
       }
-
+    
       if (typeof entity.device_type !== 'undefined') {
         ret.device_type = entity.device_type;
       }
-
+    
       if (typeof entity.backed_up !== 'undefined') {
         ret.backed_up = entity.backed_up;
       }
-
+    
       if (typeof entity.transports !== 'undefined') {
         ret.transports = clone(convertToDatabaseValue_transports(entity.transports));
       }
-
+    
       if (typeof entity.name !== 'undefined') {
         ret.name = entity.name;
       }
-
+    
       if (typeof entity.aaguid !== 'undefined') {
         ret.aaguid = entity.aaguid;
       }
-
+    
       return ret;
     }
   },
@@ -1797,93 +1797,93 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (!compareValues_4(last.id, current.id)) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.user === null && last.user === undefined) {
         diff.user = current.user;
       } else if (current.user == null && last.user == null) {
-
+    
       } else if ((current.user != null && last.user == null) || (current.user == null && last.user != null)) {
         diff.user = current.user;
       } else if (last.user !== current.user) {
         diff.user = current.user;
       }
-
+    
       if (current.provider_name === null && last.provider_name === undefined) {
         diff.provider_name = current.provider_name;
       } else if (current.provider_name == null && last.provider_name == null) {
-
+    
       } else if ((current.provider_name != null && last.provider_name == null) || (current.provider_name == null && last.provider_name != null)) {
         diff.provider_name = current.provider_name;
       } else if (last.provider_name !== current.provider_name) {
         diff.provider_name = current.provider_name;
       }
-
+    
       if (current.provider_user_id === null && last.provider_user_id === undefined) {
         diff.provider_user_id = current.provider_user_id;
       } else if (current.provider_user_id == null && last.provider_user_id == null) {
-
+    
       } else if ((current.provider_user_id != null && last.provider_user_id == null) || (current.provider_user_id == null && last.provider_user_id != null)) {
         diff.provider_user_id = current.provider_user_id;
       } else if (last.provider_user_id !== current.provider_user_id) {
         diff.provider_user_id = current.provider_user_id;
       }
-
+    
       if (current.access_token === null && last.access_token === undefined) {
         diff.access_token = current.access_token;
       } else if (current.access_token == null && last.access_token == null) {
-
+    
       } else if ((current.access_token != null && last.access_token == null) || (current.access_token == null && last.access_token != null)) {
         diff.access_token = current.access_token;
       } else if (last.access_token !== current.access_token) {
         diff.access_token = current.access_token;
       }
-
+    
       if (current.refresh_token === null && last.refresh_token === undefined) {
         diff.refresh_token = current.refresh_token;
       } else if (current.refresh_token == null && last.refresh_token == null) {
-
+    
       } else if ((current.refresh_token != null && last.refresh_token == null) || (current.refresh_token == null && last.refresh_token != null)) {
         diff.refresh_token = current.refresh_token;
       } else if (last.refresh_token !== current.refresh_token) {
         diff.refresh_token = current.refresh_token;
       }
-
+    
       if (current.expires_at === null && last.expires_at === undefined) {
         diff.expires_at = current.expires_at;
       } else if (current.expires_at == null && last.expires_at == null) {
-
+    
       } else if ((current.expires_at != null && last.expires_at == null) || (current.expires_at == null && last.expires_at != null)) {
         diff.expires_at = current.expires_at;
       } else if (last.expires_at.valueOf() !== current.expires_at.valueOf()) {
         diff.expires_at = current.expires_at;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -1895,15 +1895,15 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = convertToDatabaseValue_id(entity.id);
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.user !== 'undefined') {
         if (entity.user === null) {
           ret.user = null;
@@ -1913,27 +1913,27 @@ export default {
           ret.user = toArray(entity.user.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.provider_name !== 'undefined') {
         ret.provider_name = entity.provider_name;
       }
-
+    
       if (typeof entity.provider_user_id !== 'undefined') {
         ret.provider_user_id = entity.provider_user_id;
       }
-
+    
       if (typeof entity.access_token !== 'undefined') {
         ret.access_token = entity.access_token;
       }
-
+    
       if (typeof entity.refresh_token !== 'undefined') {
         ret.refresh_token = entity.refresh_token;
       }
-
+    
       if (typeof entity.expires_at !== 'undefined') {
         ret.expires_at = clone(processDateProperty(entity.expires_at));
       }
-
+    
       return ret;
     }
   },
@@ -2376,93 +2376,93 @@ export default {
       if (current.sub === null && last.sub === undefined) {
         diff.sub = current.sub;
       } else if (current.sub == null && last.sub == null) {
-
+    
       } else if ((current.sub != null && last.sub == null) || (current.sub == null && last.sub != null)) {
         diff.sub = current.sub;
       } else if (last.sub !== current.sub) {
         diff.sub = current.sub;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.email === null && last.email === undefined) {
         diff.email = current.email;
       } else if (current.email == null && last.email == null) {
-
+    
       } else if ((current.email != null && last.email == null) || (current.email == null && last.email != null)) {
         diff.email = current.email;
       } else if (last.email !== current.email) {
         diff.email = current.email;
       }
-
+    
       if (current.email_verified === null && last.email_verified === undefined) {
         diff.email_verified = current.email_verified;
       } else if (current.email_verified == null && last.email_verified == null) {
-
+    
       } else if ((current.email_verified != null && last.email_verified == null) || (current.email_verified == null && last.email_verified != null)) {
         diff.email_verified = current.email_verified;
       } else if (!compareBooleans(last.email_verified, current.email_verified)) {
         diff.email_verified = current.email_verified;
       }
-
+    
       if (current.password_hash === null && last.password_hash === undefined) {
         diff.password_hash = current.password_hash;
       } else if (current.password_hash == null && last.password_hash == null) {
-
+    
       } else if ((current.password_hash != null && last.password_hash == null) || (current.password_hash == null && last.password_hash != null)) {
         diff.password_hash = current.password_hash;
       } else if (last.password_hash !== current.password_hash) {
         diff.password_hash = current.password_hash;
       }
-
+    
       if (current.managed_by === null && last.managed_by === undefined) {
         diff.managed_by = current.managed_by;
       } else if (current.managed_by == null && last.managed_by == null) {
-
+    
       } else if ((current.managed_by != null && last.managed_by == null) || (current.managed_by == null && last.managed_by != null)) {
         diff.managed_by = current.managed_by;
       } else if (last.managed_by !== current.managed_by) {
         diff.managed_by = current.managed_by;
       }
-
+    
       if (current.role === null && last.role === undefined) {
         diff.role = current.role;
       } else if (current.role == null && last.role == null) {
-
+    
       } else if ((current.role != null && last.role == null) || (current.role == null && last.role != null)) {
         diff.role = current.role;
       } else if (last.role !== current.role) {
         diff.role = current.role;
       }
-
+    
       if (current.deleted_at === null && last.deleted_at === undefined) {
         diff.deleted_at = current.deleted_at;
       } else if (current.deleted_at == null && last.deleted_at == null) {
-
+    
       } else if ((current.deleted_at != null && last.deleted_at == null) || (current.deleted_at == null && last.deleted_at != null)) {
         diff.deleted_at = current.deleted_at;
       } else if (last.deleted_at.valueOf() !== current.deleted_at.valueOf()) {
         diff.deleted_at = current.deleted_at;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -2474,39 +2474,39 @@ export default {
       if (typeof entity.sub !== 'undefined') {
         ret.sub = entity.sub;
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.email !== 'undefined') {
         ret.email = entity.email;
       }
-
+    
       if (typeof entity.email_verified !== 'undefined') {
         ret.email_verified = entity.email_verified;
       }
-
+    
       if (typeof entity.password_hash !== 'undefined') {
         ret.password_hash = entity.password_hash;
       }
-
+    
       if (typeof entity.managed_by !== 'undefined') {
         ret.managed_by = entity.managed_by;
       }
-
+    
       if (typeof entity.role !== 'undefined') {
         ret.role = entity.role;
       }
-
+    
       if (typeof entity.deleted_at !== 'undefined') {
         ret.deleted_at = clone(processDateProperty(entity.deleted_at));
       }
-
+    
       return ret;
     }
   },
@@ -2800,83 +2800,83 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.user === null && last.user === undefined) {
         diff.user = current.user;
       } else if (current.user == null && last.user == null) {
-
+    
       } else if ((current.user != null && last.user == null) || (current.user == null && last.user != null)) {
         diff.user = current.user;
       } else if (last.user !== current.user) {
         diff.user = current.user;
       }
-
+    
       if (current.client === null && last.client === undefined) {
         diff.client = current.client;
       } else if (current.client == null && last.client == null) {
-
+    
       } else if ((current.client != null && last.client == null) || (current.client == null && last.client != null)) {
         diff.client = current.client;
       } else if (last.client !== current.client) {
         diff.client = current.client;
       }
-
+    
       if (current.scopes === null && last.scopes === undefined) {
         diff.scopes = current.scopes;
       } else if (current.scopes == null && last.scopes == null) {
-
+    
       } else if ((current.scopes != null && last.scopes == null) || (current.scopes == null && last.scopes != null)) {
         diff.scopes = current.scopes;
       } else if (!equals(last.scopes, current.scopes)) {
         diff.scopes = current.scopes;
       }
-
+    
       if (current.granted_at === null && last.granted_at === undefined) {
         diff.granted_at = current.granted_at;
       } else if (current.granted_at == null && last.granted_at == null) {
-
+    
       } else if ((current.granted_at != null && last.granted_at == null) || (current.granted_at == null && last.granted_at != null)) {
         diff.granted_at = current.granted_at;
       } else if (last.granted_at.valueOf() !== current.granted_at.valueOf()) {
         diff.granted_at = current.granted_at;
       }
-
+    
       if (current.revoked_at === null && last.revoked_at === undefined) {
         diff.revoked_at = current.revoked_at;
       } else if (current.revoked_at == null && last.revoked_at == null) {
-
+    
       } else if ((current.revoked_at != null && last.revoked_at == null) || (current.revoked_at == null && last.revoked_at != null)) {
         diff.revoked_at = current.revoked_at;
       } else if (last.revoked_at.valueOf() !== current.revoked_at.valueOf()) {
         diff.revoked_at = current.revoked_at;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -2888,15 +2888,15 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = convertToDatabaseValue_id(entity.id);
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.user !== 'undefined') {
         if (entity.user === null) {
           ret.user = null;
@@ -2906,7 +2906,7 @@ export default {
           ret.user = toArray(entity.user.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.client !== 'undefined') {
         if (entity.client === null) {
           ret.client = null;
@@ -2916,19 +2916,19 @@ export default {
           ret.client = toArray(entity.client.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.scopes !== 'undefined') {
         ret.scopes = clone(convertToDatabaseValue_scopes(entity.scopes));
       }
-
+    
       if (typeof entity.granted_at !== 'undefined') {
         ret.granted_at = clone(processDateProperty(entity.granted_at));
       }
-
+    
       if (typeof entity.revoked_at !== 'undefined') {
         ret.revoked_at = clone(processDateProperty(entity.revoked_at));
       }
-
+    
       return ret;
     }
   },
@@ -3253,73 +3253,73 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.required === null && last.required === undefined) {
         diff.required = current.required;
       } else if (current.required == null && last.required == null) {
-
+    
       } else if ((current.required != null && last.required == null) || (current.required == null && last.required != null)) {
         diff.required = current.required;
       } else if (!compareBooleans(last.required, current.required)) {
         diff.required = current.required;
       }
-
+    
       if (current.consentMode === null && last.consentMode === undefined) {
         diff.consentMode = current.consentMode;
       } else if (current.consentMode == null && last.consentMode == null) {
-
+    
       } else if ((current.consentMode != null && last.consentMode == null) || (current.consentMode == null && last.consentMode != null)) {
         diff.consentMode = current.consentMode;
       } else if (last.consentMode !== current.consentMode) {
         diff.consentMode = current.consentMode;
       }
-
+    
       if (current.version === null && last.version === undefined) {
         diff.version = current.version;
       } else if (current.version == null && last.version == null) {
-
+    
       } else if ((current.version != null && last.version == null) || (current.version == null && last.version != null)) {
         diff.version = current.version;
       } else if (last.version !== current.version) {
         diff.version = current.version;
       }
-
+    
       if (current.managed_by === null && last.managed_by === undefined) {
         diff.managed_by = current.managed_by;
       } else if (current.managed_by == null && last.managed_by == null) {
-
+    
       } else if ((current.managed_by != null && last.managed_by == null) || (current.managed_by == null && last.managed_by != null)) {
         diff.managed_by = current.managed_by;
       } else if (last.managed_by !== current.managed_by) {
         diff.managed_by = current.managed_by;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -3331,31 +3331,31 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = entity.id;
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.required !== 'undefined') {
         ret.required = entity.required;
       }
-
+    
       if (typeof entity.consentMode !== 'undefined') {
         ret.consentMode = entity.consentMode;
       }
-
+    
       if (typeof entity.version !== 'undefined') {
         ret.version = entity.version;
       }
-
+    
       if (typeof entity.managed_by !== 'undefined') {
         ret.managed_by = entity.managed_by;
       }
-
+    
       return ret;
     }
   },
@@ -3589,83 +3589,83 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.terms === null && last.terms === undefined) {
         diff.terms = current.terms;
       } else if (current.terms == null && last.terms == null) {
-
+    
       } else if ((current.terms != null && last.terms == null) || (current.terms == null && last.terms != null)) {
         diff.terms = current.terms;
       } else if (last.terms !== current.terms) {
         diff.terms = current.terms;
       }
-
+    
       if (current.lang === null && last.lang === undefined) {
         diff.lang = current.lang;
       } else if (current.lang == null && last.lang == null) {
-
+    
       } else if ((current.lang != null && last.lang == null) || (current.lang == null && last.lang != null)) {
         diff.lang = current.lang;
       } else if (last.lang !== current.lang) {
         diff.lang = current.lang;
       }
-
+    
       if (current.title === null && last.title === undefined) {
         diff.title = current.title;
       } else if (current.title == null && last.title == null) {
-
+    
       } else if ((current.title != null && last.title == null) || (current.title == null && last.title != null)) {
         diff.title = current.title;
       } else if (last.title !== current.title) {
         diff.title = current.title;
       }
-
+    
       if (current.type === null && last.type === undefined) {
         diff.type = current.type;
       } else if (current.type == null && last.type == null) {
-
+    
       } else if ((current.type != null && last.type == null) || (current.type == null && last.type != null)) {
         diff.type = current.type;
       } else if (last.type !== current.type) {
         diff.type = current.type;
       }
-
+    
       if (current.content === null && last.content === undefined) {
         diff.content = current.content;
       } else if (current.content == null && last.content == null) {
-
+    
       } else if ((current.content != null && last.content == null) || (current.content == null && last.content != null)) {
         diff.content = current.content;
       } else if (!equals(last.content, current.content)) {
         diff.content = current.content;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -3677,15 +3677,15 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = convertToDatabaseValue_id(entity.id);
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.terms !== 'undefined') {
         if (entity.terms === null) {
           ret.terms = null;
@@ -3695,23 +3695,23 @@ export default {
           ret.terms = toArray(entity.terms.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.lang !== 'undefined') {
         ret.lang = entity.lang;
       }
-
+    
       if (typeof entity.title !== 'undefined') {
         ret.title = entity.title;
       }
-
+    
       if (typeof entity.type !== 'undefined') {
         ret.type = entity.type;
       }
-
+    
       if (typeof entity.content !== 'undefined') {
         ret.content = clone(entity.content);
       }
-
+    
       return ret;
     }
   },
@@ -4072,153 +4072,153 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.name === null && last.name === undefined) {
         diff.name = current.name;
       } else if (current.name == null && last.name == null) {
-
+    
       } else if ((current.name != null && last.name == null) || (current.name == null && last.name != null)) {
         diff.name = current.name;
       } else if (last.name !== current.name) {
         diff.name = current.name;
       }
-
+    
       if (current.enabled === null && last.enabled === undefined) {
         diff.enabled = current.enabled;
       } else if (current.enabled == null && last.enabled == null) {
-
+    
       } else if ((current.enabled != null && last.enabled == null) || (current.enabled == null && last.enabled != null)) {
         diff.enabled = current.enabled;
       } else if (!compareBooleans(last.enabled, current.enabled)) {
         diff.enabled = current.enabled;
       }
-
+    
       if (current.cron === null && last.cron === undefined) {
         diff.cron = current.cron;
       } else if (current.cron == null && last.cron == null) {
-
+    
       } else if ((current.cron != null && last.cron == null) || (current.cron == null && last.cron != null)) {
         diff.cron = current.cron;
       } else if (last.cron !== current.cron) {
         diff.cron = current.cron;
       }
-
+    
       if (current.nextRunAt === null && last.nextRunAt === undefined) {
         diff.nextRunAt = current.nextRunAt;
       } else if (current.nextRunAt == null && last.nextRunAt == null) {
-
+    
       } else if ((current.nextRunAt != null && last.nextRunAt == null) || (current.nextRunAt == null && last.nextRunAt != null)) {
         diff.nextRunAt = current.nextRunAt;
       } else if (last.nextRunAt.valueOf() !== current.nextRunAt.valueOf()) {
         diff.nextRunAt = current.nextRunAt;
       }
-
+    
       if (current.lastRunAt === null && last.lastRunAt === undefined) {
         diff.lastRunAt = current.lastRunAt;
       } else if (current.lastRunAt == null && last.lastRunAt == null) {
-
+    
       } else if ((current.lastRunAt != null && last.lastRunAt == null) || (current.lastRunAt == null && last.lastRunAt != null)) {
         diff.lastRunAt = current.lastRunAt;
       } else if (last.lastRunAt.valueOf() !== current.lastRunAt.valueOf()) {
         diff.lastRunAt = current.lastRunAt;
       }
-
+    
       if (current.lastSuccessAt === null && last.lastSuccessAt === undefined) {
         diff.lastSuccessAt = current.lastSuccessAt;
       } else if (current.lastSuccessAt == null && last.lastSuccessAt == null) {
-
+    
       } else if ((current.lastSuccessAt != null && last.lastSuccessAt == null) || (current.lastSuccessAt == null && last.lastSuccessAt != null)) {
         diff.lastSuccessAt = current.lastSuccessAt;
       } else if (last.lastSuccessAt.valueOf() !== current.lastSuccessAt.valueOf()) {
         diff.lastSuccessAt = current.lastSuccessAt;
       }
-
+    
       if (current.lastErrorAt === null && last.lastErrorAt === undefined) {
         diff.lastErrorAt = current.lastErrorAt;
       } else if (current.lastErrorAt == null && last.lastErrorAt == null) {
-
+    
       } else if ((current.lastErrorAt != null && last.lastErrorAt == null) || (current.lastErrorAt == null && last.lastErrorAt != null)) {
         diff.lastErrorAt = current.lastErrorAt;
       } else if (last.lastErrorAt.valueOf() !== current.lastErrorAt.valueOf()) {
         diff.lastErrorAt = current.lastErrorAt;
       }
-
+    
       if (current.lastError === null && last.lastError === undefined) {
         diff.lastError = current.lastError;
       } else if (current.lastError == null && last.lastError == null) {
-
+    
       } else if ((current.lastError != null && last.lastError == null) || (current.lastError == null && last.lastError != null)) {
         diff.lastError = current.lastError;
       } else if (!equals(last.lastError, current.lastError)) {
         diff.lastError = current.lastError;
       }
-
+    
       if (current.lockedBy === null && last.lockedBy === undefined) {
         diff.lockedBy = current.lockedBy;
       } else if (current.lockedBy == null && last.lockedBy == null) {
-
+    
       } else if ((current.lockedBy != null && last.lockedBy == null) || (current.lockedBy == null && last.lockedBy != null)) {
         diff.lockedBy = current.lockedBy;
       } else if (last.lockedBy !== current.lockedBy) {
         diff.lockedBy = current.lockedBy;
       }
-
+    
       if (current.lockedUntil === null && last.lockedUntil === undefined) {
         diff.lockedUntil = current.lockedUntil;
       } else if (current.lockedUntil == null && last.lockedUntil == null) {
-
+    
       } else if ((current.lockedUntil != null && last.lockedUntil == null) || (current.lockedUntil == null && last.lockedUntil != null)) {
         diff.lockedUntil = current.lockedUntil;
       } else if (last.lockedUntil.valueOf() !== current.lockedUntil.valueOf()) {
         diff.lockedUntil = current.lockedUntil;
       }
-
+    
       if (current.runCount === null && last.runCount === undefined) {
         diff.runCount = current.runCount;
       } else if (current.runCount == null && last.runCount == null) {
-
+    
       } else if ((current.runCount != null && last.runCount == null) || (current.runCount == null && last.runCount != null)) {
         diff.runCount = current.runCount;
       } else if (!equals(last.runCount, current.runCount)) {
         diff.runCount = current.runCount;
       }
-
+    
       if (current.failureCount === null && last.failureCount === undefined) {
         diff.failureCount = current.failureCount;
       } else if (current.failureCount == null && last.failureCount == null) {
-
+    
       } else if ((current.failureCount != null && last.failureCount == null) || (current.failureCount == null && last.failureCount != null)) {
         diff.failureCount = current.failureCount;
       } else if (!equals(last.failureCount, current.failureCount)) {
         diff.failureCount = current.failureCount;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -4230,63 +4230,63 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = entity.id;
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.name !== 'undefined') {
         ret.name = entity.name;
       }
-
+    
       if (typeof entity.enabled !== 'undefined') {
         ret.enabled = entity.enabled;
       }
-
+    
       if (typeof entity.cron !== 'undefined') {
         ret.cron = entity.cron;
       }
-
+    
       if (typeof entity.nextRunAt !== 'undefined') {
         ret.nextRunAt = clone(processDateProperty(entity.nextRunAt));
       }
-
+    
       if (typeof entity.lastRunAt !== 'undefined') {
         ret.lastRunAt = clone(processDateProperty(entity.lastRunAt));
       }
-
+    
       if (typeof entity.lastSuccessAt !== 'undefined') {
         ret.lastSuccessAt = clone(processDateProperty(entity.lastSuccessAt));
       }
-
+    
       if (typeof entity.lastErrorAt !== 'undefined') {
         ret.lastErrorAt = clone(processDateProperty(entity.lastErrorAt));
       }
-
+    
       if (typeof entity.lastError !== 'undefined') {
         ret.lastError = clone(entity.lastError);
       }
-
+    
       if (typeof entity.lockedBy !== 'undefined') {
         ret.lockedBy = entity.lockedBy;
       }
-
+    
       if (typeof entity.lockedUntil !== 'undefined') {
         ret.lockedUntil = clone(processDateProperty(entity.lockedUntil));
       }
-
+    
       if (typeof entity.runCount !== 'undefined') {
         ret.runCount = clone(entity.runCount);
       }
-
+    
       if (typeof entity.failureCount !== 'undefined') {
         ret.failureCount = clone(entity.failureCount);
       }
-
+    
       return ret;
     }
   },
@@ -4634,93 +4634,93 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.jti === null && last.jti === undefined) {
         diff.jti = current.jti;
       } else if (current.jti == null && last.jti == null) {
-
+    
       } else if ((current.jti != null && last.jti == null) || (current.jti == null && last.jti != null)) {
         diff.jti = current.jti;
       } else if (last.jti !== current.jti) {
         diff.jti = current.jti;
       }
-
+    
       if (current.token_type === null && last.token_type === undefined) {
         diff.token_type = current.token_type;
       } else if (current.token_type == null && last.token_type == null) {
-
+    
       } else if ((current.token_type != null && last.token_type == null) || (current.token_type == null && last.token_type != null)) {
         diff.token_type = current.token_type;
       } else if (last.token_type !== current.token_type) {
         diff.token_type = current.token_type;
       }
-
+    
       if (current.client === null && last.client === undefined) {
         diff.client = current.client;
       } else if (current.client == null && last.client == null) {
-
+    
       } else if ((current.client != null && last.client == null) || (current.client == null && last.client != null)) {
         diff.client = current.client;
       } else if (last.client !== current.client) {
         diff.client = current.client;
       }
-
+    
       if (current.user === null && last.user === undefined) {
         diff.user = current.user;
       } else if (current.user == null && last.user == null) {
-
+    
       } else if ((current.user != null && last.user == null) || (current.user == null && last.user != null)) {
         diff.user = current.user;
       } else if (last.user !== current.user) {
         diff.user = current.user;
       }
-
+    
       if (current.expires_at === null && last.expires_at === undefined) {
         diff.expires_at = current.expires_at;
       } else if (current.expires_at == null && last.expires_at == null) {
-
+    
       } else if ((current.expires_at != null && last.expires_at == null) || (current.expires_at == null && last.expires_at != null)) {
         diff.expires_at = current.expires_at;
       } else if (last.expires_at.valueOf() !== current.expires_at.valueOf()) {
         diff.expires_at = current.expires_at;
       }
-
+    
       if (current.revoked_at === null && last.revoked_at === undefined) {
         diff.revoked_at = current.revoked_at;
       } else if (current.revoked_at == null && last.revoked_at == null) {
-
+    
       } else if ((current.revoked_at != null && last.revoked_at == null) || (current.revoked_at == null && last.revoked_at != null)) {
         diff.revoked_at = current.revoked_at;
       } else if (last.revoked_at.valueOf() !== current.revoked_at.valueOf()) {
         diff.revoked_at = current.revoked_at;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -4732,23 +4732,23 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = convertToDatabaseValue_id(entity.id);
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.jti !== 'undefined') {
         ret.jti = entity.jti;
       }
-
+    
       if (typeof entity.token_type !== 'undefined') {
         ret.token_type = entity.token_type;
       }
-
+    
       if (typeof entity.client !== 'undefined') {
         if (entity.client === null) {
           ret.client = null;
@@ -4758,7 +4758,7 @@ export default {
           ret.client = toArray(entity.client.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.user !== 'undefined') {
         if (entity.user === null) {
           ret.user = null;
@@ -4768,15 +4768,15 @@ export default {
           ret.user = toArray(entity.user.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.expires_at !== 'undefined') {
         ret.expires_at = clone(processDateProperty(entity.expires_at));
       }
-
+    
       if (typeof entity.revoked_at !== 'undefined') {
         ret.revoked_at = clone(processDateProperty(entity.revoked_at));
       }
-
+    
       return ret;
     }
   },
@@ -5101,123 +5101,123 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.token === null && last.token === undefined) {
         diff.token = current.token;
       } else if (current.token == null && last.token == null) {
-
+    
       } else if ((current.token != null && last.token == null) || (current.token == null && last.token != null)) {
         diff.token = current.token;
       } else if (last.token !== current.token) {
         diff.token = current.token;
       }
-
+    
       if (current.providerId === null && last.providerId === undefined) {
         diff.providerId = current.providerId;
       } else if (current.providerId == null && last.providerId == null) {
-
+    
       } else if ((current.providerId != null && last.providerId == null) || (current.providerId == null && last.providerId != null)) {
         diff.providerId = current.providerId;
       } else if (last.providerId !== current.providerId) {
         diff.providerId = current.providerId;
       }
-
+    
       if (current.accessToken === null && last.accessToken === undefined) {
         diff.accessToken = current.accessToken;
       } else if (current.accessToken == null && last.accessToken == null) {
-
+    
       } else if ((current.accessToken != null && last.accessToken == null) || (current.accessToken == null && last.accessToken != null)) {
         diff.accessToken = current.accessToken;
       } else if (!equals(last.accessToken, current.accessToken)) {
         diff.accessToken = current.accessToken;
       }
-
+    
       if (current.refreshToken === null && last.refreshToken === undefined) {
         diff.refreshToken = current.refreshToken;
       } else if (current.refreshToken == null && last.refreshToken == null) {
-
+    
       } else if ((current.refreshToken != null && last.refreshToken == null) || (current.refreshToken == null && last.refreshToken != null)) {
         diff.refreshToken = current.refreshToken;
       } else if (!equals(last.refreshToken, current.refreshToken)) {
         diff.refreshToken = current.refreshToken;
       }
-
+    
       if (current.expiresIn === null && last.expiresIn === undefined) {
         diff.expiresIn = current.expiresIn;
       } else if (current.expiresIn == null && last.expiresIn == null) {
-
+    
       } else if ((current.expiresIn != null && last.expiresIn == null) || (current.expiresIn == null && last.expiresIn != null)) {
         diff.expiresIn = current.expiresIn;
       } else if (!equals(last.expiresIn, current.expiresIn)) {
         diff.expiresIn = current.expiresIn;
       }
-
+    
       if (current.tokenType === null && last.tokenType === undefined) {
         diff.tokenType = current.tokenType;
       } else if (current.tokenType == null && last.tokenType == null) {
-
+    
       } else if ((current.tokenType != null && last.tokenType == null) || (current.tokenType == null && last.tokenType != null)) {
         diff.tokenType = current.tokenType;
       } else if (last.tokenType !== current.tokenType) {
         diff.tokenType = current.tokenType;
       }
-
+    
       if (current.userInfo === null && last.userInfo === undefined) {
         diff.userInfo = current.userInfo;
       } else if (current.userInfo == null && last.userInfo == null) {
-
+    
       } else if ((current.userInfo != null && last.userInfo == null) || (current.userInfo == null && last.userInfo != null)) {
         diff.userInfo = current.userInfo;
       } else if (!equals(last.userInfo, current.userInfo)) {
         diff.userInfo = current.userInfo;
       }
-
+    
       if (current.returnUrl === null && last.returnUrl === undefined) {
         diff.returnUrl = current.returnUrl;
       } else if (current.returnUrl == null && last.returnUrl == null) {
-
+    
       } else if ((current.returnUrl != null && last.returnUrl == null) || (current.returnUrl == null && last.returnUrl != null)) {
         diff.returnUrl = current.returnUrl;
       } else if (last.returnUrl !== current.returnUrl) {
         diff.returnUrl = current.returnUrl;
       }
-
+    
       if (current.expiresAt === null && last.expiresAt === undefined) {
         diff.expiresAt = current.expiresAt;
       } else if (current.expiresAt == null && last.expiresAt == null) {
-
+    
       } else if ((current.expiresAt != null && last.expiresAt == null) || (current.expiresAt == null && last.expiresAt != null)) {
         diff.expiresAt = current.expiresAt;
       } else if (last.expiresAt.valueOf() !== current.expiresAt.valueOf()) {
         diff.expiresAt = current.expiresAt;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -5229,51 +5229,51 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = convertToDatabaseValue_id(entity.id);
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.token !== 'undefined') {
         ret.token = entity.token;
       }
-
+    
       if (typeof entity.providerId !== 'undefined') {
         ret.providerId = entity.providerId;
       }
-
+    
       if (typeof entity.accessToken !== 'undefined') {
         ret.accessToken = clone(entity.accessToken);
       }
-
+    
       if (typeof entity.refreshToken !== 'undefined') {
         ret.refreshToken = clone(entity.refreshToken);
       }
-
+    
       if (typeof entity.expiresIn !== 'undefined') {
         ret.expiresIn = clone(entity.expiresIn);
       }
-
+    
       if (typeof entity.tokenType !== 'undefined') {
         ret.tokenType = entity.tokenType;
       }
-
+    
       if (typeof entity.userInfo !== 'undefined') {
         ret.userInfo = clone(convertToDatabaseValue_userInfo(entity.userInfo));
       }
-
+    
       if (typeof entity.returnUrl !== 'undefined') {
         ret.returnUrl = entity.returnUrl;
       }
-
+    
       if (typeof entity.expiresAt !== 'undefined') {
         ret.expiresAt = clone(processDateProperty(entity.expiresAt));
       }
-
+    
       return ret;
     }
   },
@@ -5570,83 +5570,83 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.user === null && last.user === undefined) {
         diff.user = current.user;
       } else if (current.user == null && last.user == null) {
-
+    
       } else if ((current.user != null && last.user == null) || (current.user == null && last.user != null)) {
         diff.user = current.user;
       } else if (last.user !== current.user) {
         diff.user = current.user;
       }
-
+    
       if (current.token === null && last.token === undefined) {
         diff.token = current.token;
       } else if (current.token == null && last.token == null) {
-
+    
       } else if ((current.token != null && last.token == null) || (current.token == null && last.token != null)) {
         diff.token = current.token;
       } else if (last.token !== current.token) {
         diff.token = current.token;
       }
-
+    
       if (current.expiresAt === null && last.expiresAt === undefined) {
         diff.expiresAt = current.expiresAt;
       } else if (current.expiresAt == null && last.expiresAt == null) {
-
+    
       } else if ((current.expiresAt != null && last.expiresAt == null) || (current.expiresAt == null && last.expiresAt != null)) {
         diff.expiresAt = current.expiresAt;
       } else if (last.expiresAt.valueOf() !== current.expiresAt.valueOf()) {
         diff.expiresAt = current.expiresAt;
       }
-
+    
       if (current.used === null && last.used === undefined) {
         diff.used = current.used;
       } else if (current.used == null && last.used == null) {
-
+    
       } else if ((current.used != null && last.used == null) || (current.used == null && last.used != null)) {
         diff.used = current.used;
       } else if (!compareBooleans(last.used, current.used)) {
         diff.used = current.used;
       }
-
+    
       if (current.usedAt === null && last.usedAt === undefined) {
         diff.usedAt = current.usedAt;
       } else if (current.usedAt == null && last.usedAt == null) {
-
+    
       } else if ((current.usedAt != null && last.usedAt == null) || (current.usedAt == null && last.usedAt != null)) {
         diff.usedAt = current.usedAt;
       } else if (last.usedAt.valueOf() !== current.usedAt.valueOf()) {
         diff.usedAt = current.usedAt;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -5658,15 +5658,15 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = convertToDatabaseValue_id(entity.id);
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.user !== 'undefined') {
         if (entity.user === null) {
           ret.user = null;
@@ -5676,23 +5676,23 @@ export default {
           ret.user = toArray(entity.user.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.token !== 'undefined') {
         ret.token = entity.token;
       }
-
+    
       if (typeof entity.expiresAt !== 'undefined') {
         ret.expiresAt = clone(processDateProperty(entity.expiresAt));
       }
-
+    
       if (typeof entity.used !== 'undefined') {
         ret.used = entity.used;
       }
-
+    
       if (typeof entity.usedAt !== 'undefined') {
         ret.usedAt = clone(processDateProperty(entity.usedAt));
       }
-
+    
       return ret;
     }
   },
@@ -6097,143 +6097,143 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.deviceCodeHash === null && last.deviceCodeHash === undefined) {
         diff.deviceCodeHash = current.deviceCodeHash;
       } else if (current.deviceCodeHash == null && last.deviceCodeHash == null) {
-
+    
       } else if ((current.deviceCodeHash != null && last.deviceCodeHash == null) || (current.deviceCodeHash == null && last.deviceCodeHash != null)) {
         diff.deviceCodeHash = current.deviceCodeHash;
       } else if (last.deviceCodeHash !== current.deviceCodeHash) {
         diff.deviceCodeHash = current.deviceCodeHash;
       }
-
+    
       if (current.userCodeHash === null && last.userCodeHash === undefined) {
         diff.userCodeHash = current.userCodeHash;
       } else if (current.userCodeHash == null && last.userCodeHash == null) {
-
+    
       } else if ((current.userCodeHash != null && last.userCodeHash == null) || (current.userCodeHash == null && last.userCodeHash != null)) {
         diff.userCodeHash = current.userCodeHash;
       } else if (last.userCodeHash !== current.userCodeHash) {
         diff.userCodeHash = current.userCodeHash;
       }
-
+    
       if (current.client === null && last.client === undefined) {
         diff.client = current.client;
       } else if (current.client == null && last.client == null) {
-
+    
       } else if ((current.client != null && last.client == null) || (current.client == null && last.client != null)) {
         diff.client = current.client;
       } else if (last.client !== current.client) {
         diff.client = current.client;
       }
-
+    
       if (current.scope === null && last.scope === undefined) {
         diff.scope = current.scope;
       } else if (current.scope == null && last.scope == null) {
-
+    
       } else if ((current.scope != null && last.scope == null) || (current.scope == null && last.scope != null)) {
         diff.scope = current.scope;
       } else if (!equals(last.scope, current.scope)) {
         diff.scope = current.scope;
       }
-
+    
       if (current.expiresAt === null && last.expiresAt === undefined) {
         diff.expiresAt = current.expiresAt;
       } else if (current.expiresAt == null && last.expiresAt == null) {
-
+    
       } else if ((current.expiresAt != null && last.expiresAt == null) || (current.expiresAt == null && last.expiresAt != null)) {
         diff.expiresAt = current.expiresAt;
       } else if (last.expiresAt.valueOf() !== current.expiresAt.valueOf()) {
         diff.expiresAt = current.expiresAt;
       }
-
+    
       if (current.authorizedUser === null && last.authorizedUser === undefined) {
         diff.authorizedUser = current.authorizedUser;
       } else if (current.authorizedUser == null && last.authorizedUser == null) {
-
+    
       } else if ((current.authorizedUser != null && last.authorizedUser == null) || (current.authorizedUser == null && last.authorizedUser != null)) {
         diff.authorizedUser = current.authorizedUser;
       } else if (last.authorizedUser !== current.authorizedUser) {
         diff.authorizedUser = current.authorizedUser;
       }
-
+    
       if (current.authorizedAt === null && last.authorizedAt === undefined) {
         diff.authorizedAt = current.authorizedAt;
       } else if (current.authorizedAt == null && last.authorizedAt == null) {
-
+    
       } else if ((current.authorizedAt != null && last.authorizedAt == null) || (current.authorizedAt == null && last.authorizedAt != null)) {
         diff.authorizedAt = current.authorizedAt;
       } else if (last.authorizedAt.valueOf() !== current.authorizedAt.valueOf()) {
         diff.authorizedAt = current.authorizedAt;
       }
-
+    
       if (current.deniedAt === null && last.deniedAt === undefined) {
         diff.deniedAt = current.deniedAt;
       } else if (current.deniedAt == null && last.deniedAt == null) {
-
+    
       } else if ((current.deniedAt != null && last.deniedAt == null) || (current.deniedAt == null && last.deniedAt != null)) {
         diff.deniedAt = current.deniedAt;
       } else if (last.deniedAt.valueOf() !== current.deniedAt.valueOf()) {
         diff.deniedAt = current.deniedAt;
       }
-
+    
       if (current.lastPolledAt === null && last.lastPolledAt === undefined) {
         diff.lastPolledAt = current.lastPolledAt;
       } else if (current.lastPolledAt == null && last.lastPolledAt == null) {
-
+    
       } else if ((current.lastPolledAt != null && last.lastPolledAt == null) || (current.lastPolledAt == null && last.lastPolledAt != null)) {
         diff.lastPolledAt = current.lastPolledAt;
       } else if (last.lastPolledAt.valueOf() !== current.lastPolledAt.valueOf()) {
         diff.lastPolledAt = current.lastPolledAt;
       }
-
+    
       if (current.pollIntervalSeconds === null && last.pollIntervalSeconds === undefined) {
         diff.pollIntervalSeconds = current.pollIntervalSeconds;
       } else if (current.pollIntervalSeconds == null && last.pollIntervalSeconds == null) {
-
+    
       } else if ((current.pollIntervalSeconds != null && last.pollIntervalSeconds == null) || (current.pollIntervalSeconds == null && last.pollIntervalSeconds != null)) {
         diff.pollIntervalSeconds = current.pollIntervalSeconds;
       } else if (!equals(last.pollIntervalSeconds, current.pollIntervalSeconds)) {
         diff.pollIntervalSeconds = current.pollIntervalSeconds;
       }
-
+    
       if (current.consumedAt === null && last.consumedAt === undefined) {
         diff.consumedAt = current.consumedAt;
       } else if (current.consumedAt == null && last.consumedAt == null) {
-
+    
       } else if ((current.consumedAt != null && last.consumedAt == null) || (current.consumedAt == null && last.consumedAt != null)) {
         diff.consumedAt = current.consumedAt;
       } else if (last.consumedAt.valueOf() !== current.consumedAt.valueOf()) {
         diff.consumedAt = current.consumedAt;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -6245,23 +6245,23 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = convertToDatabaseValue_id(entity.id);
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.deviceCodeHash !== 'undefined') {
         ret.deviceCodeHash = entity.deviceCodeHash;
       }
-
+    
       if (typeof entity.userCodeHash !== 'undefined') {
         ret.userCodeHash = entity.userCodeHash;
       }
-
+    
       if (typeof entity.client !== 'undefined') {
         if (entity.client === null) {
           ret.client = null;
@@ -6271,15 +6271,15 @@ export default {
           ret.client = toArray(entity.client.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.scope !== 'undefined') {
         ret.scope = clone(convertToDatabaseValue_scope(entity.scope));
       }
-
+    
       if (typeof entity.expiresAt !== 'undefined') {
         ret.expiresAt = clone(processDateProperty(entity.expiresAt));
       }
-
+    
       if (typeof entity.authorizedUser !== 'undefined') {
         if (entity.authorizedUser === null) {
           ret.authorizedUser = null;
@@ -6289,27 +6289,27 @@ export default {
           ret.authorizedUser = toArray(entity.authorizedUser.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.authorizedAt !== 'undefined') {
         ret.authorizedAt = clone(processDateProperty(entity.authorizedAt));
       }
-
+    
       if (typeof entity.deniedAt !== 'undefined') {
         ret.deniedAt = clone(processDateProperty(entity.deniedAt));
       }
-
+    
       if (typeof entity.lastPolledAt !== 'undefined') {
         ret.lastPolledAt = clone(processDateProperty(entity.lastPolledAt));
       }
-
+    
       if (typeof entity.pollIntervalSeconds !== 'undefined') {
         ret.pollIntervalSeconds = clone(entity.pollIntervalSeconds);
       }
-
+    
       if (typeof entity.consumedAt !== 'undefined') {
         ret.consumedAt = clone(processDateProperty(entity.consumedAt));
       }
-
+    
       return ret;
     }
   },
@@ -6726,143 +6726,143 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.codeHash === null && last.codeHash === undefined) {
         diff.codeHash = current.codeHash;
       } else if (current.codeHash == null && last.codeHash == null) {
-
+    
       } else if ((current.codeHash != null && last.codeHash == null) || (current.codeHash == null && last.codeHash != null)) {
         diff.codeHash = current.codeHash;
       } else if (last.codeHash !== current.codeHash) {
         diff.codeHash = current.codeHash;
       }
-
+    
       if (current.client === null && last.client === undefined) {
         diff.client = current.client;
       } else if (current.client == null && last.client == null) {
-
+    
       } else if ((current.client != null && last.client == null) || (current.client == null && last.client != null)) {
         diff.client = current.client;
       } else if (last.client !== current.client) {
         diff.client = current.client;
       }
-
+    
       if (current.user === null && last.user === undefined) {
         diff.user = current.user;
       } else if (current.user == null && last.user == null) {
-
+    
       } else if ((current.user != null && last.user == null) || (current.user == null && last.user != null)) {
         diff.user = current.user;
       } else if (last.user !== current.user) {
         diff.user = current.user;
       }
-
+    
       if (current.redirectUri === null && last.redirectUri === undefined) {
         diff.redirectUri = current.redirectUri;
       } else if (current.redirectUri == null && last.redirectUri == null) {
-
+    
       } else if ((current.redirectUri != null && last.redirectUri == null) || (current.redirectUri == null && last.redirectUri != null)) {
         diff.redirectUri = current.redirectUri;
       } else if (last.redirectUri !== current.redirectUri) {
         diff.redirectUri = current.redirectUri;
       }
-
+    
       if (current.scope === null && last.scope === undefined) {
         diff.scope = current.scope;
       } else if (current.scope == null && last.scope == null) {
-
+    
       } else if ((current.scope != null && last.scope == null) || (current.scope == null && last.scope != null)) {
         diff.scope = current.scope;
       } else if (!equals(last.scope, current.scope)) {
         diff.scope = current.scope;
       }
-
+    
       if (current.nonce === null && last.nonce === undefined) {
         diff.nonce = current.nonce;
       } else if (current.nonce == null && last.nonce == null) {
-
+    
       } else if ((current.nonce != null && last.nonce == null) || (current.nonce == null && last.nonce != null)) {
         diff.nonce = current.nonce;
       } else if (last.nonce !== current.nonce) {
         diff.nonce = current.nonce;
       }
-
+    
       if (current.codeChallenge === null && last.codeChallenge === undefined) {
         diff.codeChallenge = current.codeChallenge;
       } else if (current.codeChallenge == null && last.codeChallenge == null) {
-
+    
       } else if ((current.codeChallenge != null && last.codeChallenge == null) || (current.codeChallenge == null && last.codeChallenge != null)) {
         diff.codeChallenge = current.codeChallenge;
       } else if (last.codeChallenge !== current.codeChallenge) {
         diff.codeChallenge = current.codeChallenge;
       }
-
+    
       if (current.codeChallengeMethod === null && last.codeChallengeMethod === undefined) {
         diff.codeChallengeMethod = current.codeChallengeMethod;
       } else if (current.codeChallengeMethod == null && last.codeChallengeMethod == null) {
-
+    
       } else if ((current.codeChallengeMethod != null && last.codeChallengeMethod == null) || (current.codeChallengeMethod == null && last.codeChallengeMethod != null)) {
         diff.codeChallengeMethod = current.codeChallengeMethod;
       } else if (last.codeChallengeMethod !== current.codeChallengeMethod) {
         diff.codeChallengeMethod = current.codeChallengeMethod;
       }
-
+    
       if (current.expiredAt === null && last.expiredAt === undefined) {
         diff.expiredAt = current.expiredAt;
       } else if (current.expiredAt == null && last.expiredAt == null) {
-
+    
       } else if ((current.expiredAt != null && last.expiredAt == null) || (current.expiredAt == null && last.expiredAt != null)) {
         diff.expiredAt = current.expiredAt;
       } else if (last.expiredAt.valueOf() !== current.expiredAt.valueOf()) {
         diff.expiredAt = current.expiredAt;
       }
-
+    
       if (current.consumedAt === null && last.consumedAt === undefined) {
         diff.consumedAt = current.consumedAt;
       } else if (current.consumedAt == null && last.consumedAt == null) {
-
+    
       } else if ((current.consumedAt != null && last.consumedAt == null) || (current.consumedAt == null && last.consumedAt != null)) {
         diff.consumedAt = current.consumedAt;
       } else if (last.consumedAt.valueOf() !== current.consumedAt.valueOf()) {
         diff.consumedAt = current.consumedAt;
       }
-
+    
       if (current.authTime === null && last.authTime === undefined) {
         diff.authTime = current.authTime;
       } else if (current.authTime == null && last.authTime == null) {
-
+    
       } else if ((current.authTime != null && last.authTime == null) || (current.authTime == null && last.authTime != null)) {
         diff.authTime = current.authTime;
       } else if (!equals(last.authTime, current.authTime)) {
         diff.authTime = current.authTime;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -6874,19 +6874,19 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = convertToDatabaseValue_id(entity.id);
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.codeHash !== 'undefined') {
         ret.codeHash = entity.codeHash;
       }
-
+    
       if (typeof entity.client !== 'undefined') {
         if (entity.client === null) {
           ret.client = null;
@@ -6896,7 +6896,7 @@ export default {
           ret.client = toArray(entity.client.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.user !== 'undefined') {
         if (entity.user === null) {
           ret.user = null;
@@ -6906,39 +6906,39 @@ export default {
           ret.user = toArray(entity.user.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.redirectUri !== 'undefined') {
         ret.redirectUri = entity.redirectUri;
       }
-
+    
       if (typeof entity.scope !== 'undefined') {
         ret.scope = clone(convertToDatabaseValue_scope(entity.scope));
       }
-
+    
       if (typeof entity.nonce !== 'undefined') {
         ret.nonce = entity.nonce;
       }
-
+    
       if (typeof entity.codeChallenge !== 'undefined') {
         ret.codeChallenge = entity.codeChallenge;
       }
-
+    
       if (typeof entity.codeChallengeMethod !== 'undefined') {
         ret.codeChallengeMethod = entity.codeChallengeMethod;
       }
-
+    
       if (typeof entity.expiredAt !== 'undefined') {
         ret.expiredAt = clone(processDateProperty(entity.expiredAt));
       }
-
+    
       if (typeof entity.consumedAt !== 'undefined') {
         ret.consumedAt = clone(processDateProperty(entity.consumedAt));
       }
-
+    
       if (typeof entity.authTime !== 'undefined') {
         ret.authTime = clone(entity.authTime);
       }
-
+    
       return ret;
     }
   },
@@ -7537,163 +7537,163 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.clientId === null && last.clientId === undefined) {
         diff.clientId = current.clientId;
       } else if (current.clientId == null && last.clientId == null) {
-
+    
       } else if ((current.clientId != null && last.clientId == null) || (current.clientId == null && last.clientId != null)) {
         diff.clientId = current.clientId;
       } else if (last.clientId !== current.clientId) {
         diff.clientId = current.clientId;
       }
-
+    
       if (current.clientSecretHash === null && last.clientSecretHash === undefined) {
         diff.clientSecretHash = current.clientSecretHash;
       } else if (current.clientSecretHash == null && last.clientSecretHash == null) {
-
+    
       } else if ((current.clientSecretHash != null && last.clientSecretHash == null) || (current.clientSecretHash == null && last.clientSecretHash != null)) {
         diff.clientSecretHash = current.clientSecretHash;
       } else if (last.clientSecretHash !== current.clientSecretHash) {
         diff.clientSecretHash = current.clientSecretHash;
       }
-
+    
       if (current.name === null && last.name === undefined) {
         diff.name = current.name;
       } else if (current.name == null && last.name == null) {
-
+    
       } else if ((current.name != null && last.name == null) || (current.name == null && last.name != null)) {
         diff.name = current.name;
       } else if (last.name !== current.name) {
         diff.name = current.name;
       }
-
+    
       if (current.grantTypes === null && last.grantTypes === undefined) {
         diff.grantTypes = current.grantTypes;
       } else if (current.grantTypes == null && last.grantTypes == null) {
-
+    
       } else if ((current.grantTypes != null && last.grantTypes == null) || (current.grantTypes == null && last.grantTypes != null)) {
         diff.grantTypes = current.grantTypes;
       } else if (!equals(last.grantTypes, current.grantTypes)) {
         diff.grantTypes = current.grantTypes;
       }
-
+    
       if (current.responseTypes === null && last.responseTypes === undefined) {
         diff.responseTypes = current.responseTypes;
       } else if (current.responseTypes == null && last.responseTypes == null) {
-
+    
       } else if ((current.responseTypes != null && last.responseTypes == null) || (current.responseTypes == null && last.responseTypes != null)) {
         diff.responseTypes = current.responseTypes;
       } else if (!equals(last.responseTypes, current.responseTypes)) {
         diff.responseTypes = current.responseTypes;
       }
-
+    
       if (current.scopes === null && last.scopes === undefined) {
         diff.scopes = current.scopes;
       } else if (current.scopes == null && last.scopes == null) {
-
+    
       } else if ((current.scopes != null && last.scopes == null) || (current.scopes == null && last.scopes != null)) {
         diff.scopes = current.scopes;
       } else if (!equals(last.scopes, current.scopes)) {
         diff.scopes = current.scopes;
       }
-
+    
       if (current.redirectUris === null && last.redirectUris === undefined) {
         diff.redirectUris = current.redirectUris;
       } else if (current.redirectUris == null && last.redirectUris == null) {
-
+    
       } else if ((current.redirectUris != null && last.redirectUris == null) || (current.redirectUris == null && last.redirectUris != null)) {
         diff.redirectUris = current.redirectUris;
       } else if (!equals(last.redirectUris, current.redirectUris)) {
         diff.redirectUris = current.redirectUris;
       }
-
+    
       if (current.postLogoutRedirectUris === null && last.postLogoutRedirectUris === undefined) {
         diff.postLogoutRedirectUris = current.postLogoutRedirectUris;
       } else if (current.postLogoutRedirectUris == null && last.postLogoutRedirectUris == null) {
-
+    
       } else if ((current.postLogoutRedirectUris != null && last.postLogoutRedirectUris == null) || (current.postLogoutRedirectUris == null && last.postLogoutRedirectUris != null)) {
         diff.postLogoutRedirectUris = current.postLogoutRedirectUris;
       } else if (!equals(last.postLogoutRedirectUris, current.postLogoutRedirectUris)) {
         diff.postLogoutRedirectUris = current.postLogoutRedirectUris;
       }
-
+    
       if (current.webOrigins === null && last.webOrigins === undefined) {
         diff.webOrigins = current.webOrigins;
       } else if (current.webOrigins == null && last.webOrigins == null) {
-
+    
       } else if ((current.webOrigins != null && last.webOrigins == null) || (current.webOrigins == null && last.webOrigins != null)) {
         diff.webOrigins = current.webOrigins;
       } else if (!equals(last.webOrigins, current.webOrigins)) {
         diff.webOrigins = current.webOrigins;
       }
-
+    
       if (current.enabled === null && last.enabled === undefined) {
         diff.enabled = current.enabled;
       } else if (current.enabled == null && last.enabled == null) {
-
+    
       } else if ((current.enabled != null && last.enabled == null) || (current.enabled == null && last.enabled != null)) {
         diff.enabled = current.enabled;
       } else if (!compareBooleans(last.enabled, current.enabled)) {
         diff.enabled = current.enabled;
       }
-
+    
       if (current.skipConsent === null && last.skipConsent === undefined) {
         diff.skipConsent = current.skipConsent;
       } else if (current.skipConsent == null && last.skipConsent == null) {
-
+    
       } else if ((current.skipConsent != null && last.skipConsent == null) || (current.skipConsent == null && last.skipConsent != null)) {
         diff.skipConsent = current.skipConsent;
       } else if (!compareBooleans(last.skipConsent, current.skipConsent)) {
         diff.skipConsent = current.skipConsent;
       }
-
+    
       if (current.managed_by === null && last.managed_by === undefined) {
         diff.managed_by = current.managed_by;
       } else if (current.managed_by == null && last.managed_by == null) {
-
+    
       } else if ((current.managed_by != null && last.managed_by == null) || (current.managed_by == null && last.managed_by != null)) {
         diff.managed_by = current.managed_by;
       } else if (last.managed_by !== current.managed_by) {
         diff.managed_by = current.managed_by;
       }
-
+    
       if (current.logoUri === null && last.logoUri === undefined) {
         diff.logoUri = current.logoUri;
       } else if (current.logoUri == null && last.logoUri == null) {
-
+    
       } else if ((current.logoUri != null && last.logoUri == null) || (current.logoUri == null && last.logoUri != null)) {
         diff.logoUri = current.logoUri;
       } else if (last.logoUri !== current.logoUri) {
         diff.logoUri = current.logoUri;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -7705,67 +7705,67 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = entity.id;
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.clientId !== 'undefined') {
         ret.clientId = entity.clientId;
       }
-
+    
       if (typeof entity.clientSecretHash !== 'undefined') {
         ret.clientSecretHash = entity.clientSecretHash;
       }
-
+    
       if (typeof entity.name !== 'undefined') {
         ret.name = entity.name;
       }
-
+    
       if (typeof entity.grantTypes !== 'undefined') {
         ret.grantTypes = clone(convertToDatabaseValue_grantTypes(entity.grantTypes));
       }
-
+    
       if (typeof entity.responseTypes !== 'undefined') {
         ret.responseTypes = clone(convertToDatabaseValue_responseTypes(entity.responseTypes));
       }
-
+    
       if (typeof entity.scopes !== 'undefined') {
         ret.scopes = clone(convertToDatabaseValue_scopes(entity.scopes));
       }
-
+    
       if (typeof entity.redirectUris !== 'undefined') {
         ret.redirectUris = clone(convertToDatabaseValue_redirectUris(entity.redirectUris));
       }
-
+    
       if (typeof entity.postLogoutRedirectUris !== 'undefined') {
         ret.postLogoutRedirectUris = clone(convertToDatabaseValue_postLogoutRedirectUris(entity.postLogoutRedirectUris));
       }
-
+    
       if (typeof entity.webOrigins !== 'undefined') {
         ret.webOrigins = clone(convertToDatabaseValue_webOrigins(entity.webOrigins));
       }
-
+    
       if (typeof entity.enabled !== 'undefined') {
         ret.enabled = entity.enabled;
       }
-
+    
       if (typeof entity.skipConsent !== 'undefined') {
         ret.skipConsent = entity.skipConsent;
       }
-
+    
       if (typeof entity.managed_by !== 'undefined') {
         ret.managed_by = entity.managed_by;
       }
-
+    
       if (typeof entity.logoUri !== 'undefined') {
         ret.logoUri = entity.logoUri;
       }
-
+    
       return ret;
     }
   },
@@ -8095,113 +8095,113 @@ export default {
       if (current.kid === null && last.kid === undefined) {
         diff.kid = current.kid;
       } else if (current.kid == null && last.kid == null) {
-
+    
       } else if ((current.kid != null && last.kid == null) || (current.kid == null && last.kid != null)) {
         diff.kid = current.kid;
       } else if (last.kid !== current.kid) {
         diff.kid = current.kid;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.private_key === null && last.private_key === undefined) {
         diff.private_key = current.private_key;
       } else if (current.private_key == null && last.private_key == null) {
-
+    
       } else if ((current.private_key != null && last.private_key == null) || (current.private_key == null && last.private_key != null)) {
         diff.private_key = current.private_key;
       } else if (!equals(last.private_key, current.private_key)) {
         diff.private_key = current.private_key;
       }
-
+    
       if (current.public_key === null && last.public_key === undefined) {
         diff.public_key = current.public_key;
       } else if (current.public_key == null && last.public_key == null) {
-
+    
       } else if ((current.public_key != null && last.public_key == null) || (current.public_key == null && last.public_key != null)) {
         diff.public_key = current.public_key;
       } else if (!equals(last.public_key, current.public_key)) {
         diff.public_key = current.public_key;
       }
-
+    
       if (current.algorithm === null && last.algorithm === undefined) {
         diff.algorithm = current.algorithm;
       } else if (current.algorithm == null && last.algorithm == null) {
-
+    
       } else if ((current.algorithm != null && last.algorithm == null) || (current.algorithm == null && last.algorithm != null)) {
         diff.algorithm = current.algorithm;
       } else if (last.algorithm !== current.algorithm) {
         diff.algorithm = current.algorithm;
       }
-
+    
       if (current.status === null && last.status === undefined) {
         diff.status = current.status;
       } else if (current.status == null && last.status == null) {
-
+    
       } else if ((current.status != null && last.status == null) || (current.status == null && last.status != null)) {
         diff.status = current.status;
       } else if (last.status !== current.status) {
         diff.status = current.status;
       }
-
+    
       if (current.activated_at === null && last.activated_at === undefined) {
         diff.activated_at = current.activated_at;
       } else if (current.activated_at == null && last.activated_at == null) {
-
+    
       } else if ((current.activated_at != null && last.activated_at == null) || (current.activated_at == null && last.activated_at != null)) {
         diff.activated_at = current.activated_at;
       } else if (last.activated_at.valueOf() !== current.activated_at.valueOf()) {
         diff.activated_at = current.activated_at;
       }
-
+    
       if (current.deactivated_at === null && last.deactivated_at === undefined) {
         diff.deactivated_at = current.deactivated_at;
       } else if (current.deactivated_at == null && last.deactivated_at == null) {
-
+    
       } else if ((current.deactivated_at != null && last.deactivated_at == null) || (current.deactivated_at == null && last.deactivated_at != null)) {
         diff.deactivated_at = current.deactivated_at;
       } else if (last.deactivated_at.valueOf() !== current.deactivated_at.valueOf()) {
         diff.deactivated_at = current.deactivated_at;
       }
-
+    
       if (current.retired_at === null && last.retired_at === undefined) {
         diff.retired_at = current.retired_at;
       } else if (current.retired_at == null && last.retired_at == null) {
-
+    
       } else if ((current.retired_at != null && last.retired_at == null) || (current.retired_at == null && last.retired_at != null)) {
         diff.retired_at = current.retired_at;
       } else if (last.retired_at.valueOf() !== current.retired_at.valueOf()) {
         diff.retired_at = current.retired_at;
       }
-
+    
       if (current.expires_at === null && last.expires_at === undefined) {
         diff.expires_at = current.expires_at;
       } else if (current.expires_at == null && last.expires_at == null) {
-
+    
       } else if ((current.expires_at != null && last.expires_at == null) || (current.expires_at == null && last.expires_at != null)) {
         diff.expires_at = current.expires_at;
       } else if (last.expires_at.valueOf() !== current.expires_at.valueOf()) {
         diff.expires_at = current.expires_at;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -8213,47 +8213,47 @@ export default {
       if (typeof entity.kid !== 'undefined') {
         ret.kid = entity.kid;
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.private_key !== 'undefined') {
         ret.private_key = clone(entity.private_key);
       }
-
+    
       if (typeof entity.public_key !== 'undefined') {
         ret.public_key = clone(entity.public_key);
       }
-
+    
       if (typeof entity.algorithm !== 'undefined') {
         ret.algorithm = entity.algorithm;
       }
-
+    
       if (typeof entity.status !== 'undefined') {
         ret.status = entity.status;
       }
-
+    
       if (typeof entity.activated_at !== 'undefined') {
         ret.activated_at = clone(processDateProperty(entity.activated_at));
       }
-
+    
       if (typeof entity.deactivated_at !== 'undefined') {
         ret.deactivated_at = clone(processDateProperty(entity.deactivated_at));
       }
-
+    
       if (typeof entity.retired_at !== 'undefined') {
         ret.retired_at = clone(processDateProperty(entity.retired_at));
       }
-
+    
       if (typeof entity.expires_at !== 'undefined') {
         ret.expires_at = clone(processDateProperty(entity.expires_at));
       }
-
+    
       return ret;
     }
   },
@@ -8559,83 +8559,83 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.user === null && last.user === undefined) {
         diff.user = current.user;
       } else if (current.user == null && last.user == null) {
-
+    
       } else if ((current.user != null && last.user == null) || (current.user == null && last.user != null)) {
         diff.user = current.user;
       } else if (last.user !== current.user) {
         diff.user = current.user;
       }
-
+    
       if (current.token === null && last.token === undefined) {
         diff.token = current.token;
       } else if (current.token == null && last.token == null) {
-
+    
       } else if ((current.token != null && last.token == null) || (current.token == null && last.token != null)) {
         diff.token = current.token;
       } else if (last.token !== current.token) {
         diff.token = current.token;
       }
-
+    
       if (current.expiresAt === null && last.expiresAt === undefined) {
         diff.expiresAt = current.expiresAt;
       } else if (current.expiresAt == null && last.expiresAt == null) {
-
+    
       } else if ((current.expiresAt != null && last.expiresAt == null) || (current.expiresAt == null && last.expiresAt != null)) {
         diff.expiresAt = current.expiresAt;
       } else if (last.expiresAt.valueOf() !== current.expiresAt.valueOf()) {
         diff.expiresAt = current.expiresAt;
       }
-
+    
       if (current.verified === null && last.verified === undefined) {
         diff.verified = current.verified;
       } else if (current.verified == null && last.verified == null) {
-
+    
       } else if ((current.verified != null && last.verified == null) || (current.verified == null && last.verified != null)) {
         diff.verified = current.verified;
       } else if (!compareBooleans(last.verified, current.verified)) {
         diff.verified = current.verified;
       }
-
+    
       if (current.verifiedAt === null && last.verifiedAt === undefined) {
         diff.verifiedAt = current.verifiedAt;
       } else if (current.verifiedAt == null && last.verifiedAt == null) {
-
+    
       } else if ((current.verifiedAt != null && last.verifiedAt == null) || (current.verifiedAt == null && last.verifiedAt != null)) {
         diff.verifiedAt = current.verifiedAt;
       } else if (last.verifiedAt.valueOf() !== current.verifiedAt.valueOf()) {
         diff.verifiedAt = current.verifiedAt;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -8647,15 +8647,15 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = convertToDatabaseValue_id(entity.id);
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.user !== 'undefined') {
         if (entity.user === null) {
           ret.user = null;
@@ -8665,23 +8665,23 @@ export default {
           ret.user = toArray(entity.user.__helper.getPrimaryKey(true));
         }
       }
-
+    
       if (typeof entity.token !== 'undefined') {
         ret.token = entity.token;
       }
-
+    
       if (typeof entity.expiresAt !== 'undefined') {
         ret.expiresAt = clone(processDateProperty(entity.expiresAt));
       }
-
+    
       if (typeof entity.verified !== 'undefined') {
         ret.verified = entity.verified;
       }
-
+    
       if (typeof entity.verifiedAt !== 'undefined') {
         ret.verifiedAt = clone(processDateProperty(entity.verifiedAt));
       }
-
+    
       return ret;
     }
   },
@@ -8888,43 +8888,43 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.value === null && last.value === undefined) {
         diff.value = current.value;
       } else if (current.value == null && last.value == null) {
-
+    
       } else if ((current.value != null && last.value == null) || (current.value == null && last.value != null)) {
         diff.value = current.value;
       } else if (last.value !== current.value) {
         diff.value = current.value;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -8936,19 +8936,19 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = entity.id;
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.value !== 'undefined') {
         ret.value = entity.value;
       }
-
+    
       return ret;
     }
   },
@@ -9238,133 +9238,133 @@ export default {
       if (current.id === null && last.id === undefined) {
         diff.id = current.id;
       } else if (current.id == null && last.id == null) {
-
+    
       } else if ((current.id != null && last.id == null) || (current.id == null && last.id != null)) {
         diff.id = current.id;
       } else if (last.id !== current.id) {
         diff.id = current.id;
       }
-
+    
       if (current.created_at === null && last.created_at === undefined) {
         diff.created_at = current.created_at;
       } else if (current.created_at == null && last.created_at == null) {
-
+    
       } else if ((current.created_at != null && last.created_at == null) || (current.created_at == null && last.created_at != null)) {
         diff.created_at = current.created_at;
       } else if (last.created_at.valueOf() !== current.created_at.valueOf()) {
         diff.created_at = current.created_at;
       }
-
+    
       if (current.updated_at === null && last.updated_at === undefined) {
         diff.updated_at = current.updated_at;
       } else if (current.updated_at == null && last.updated_at == null) {
-
+    
       } else if ((current.updated_at != null && last.updated_at == null) || (current.updated_at == null && last.updated_at != null)) {
         diff.updated_at = current.updated_at;
       } else if (last.updated_at.valueOf() !== current.updated_at.valueOf()) {
         diff.updated_at = current.updated_at;
       }
-
+    
       if (current.jobId === null && last.jobId === undefined) {
         diff.jobId = current.jobId;
       } else if (current.jobId == null && last.jobId == null) {
-
+    
       } else if ((current.jobId != null && last.jobId == null) || (current.jobId == null && last.jobId != null)) {
         diff.jobId = current.jobId;
       } else if (last.jobId !== current.jobId) {
         diff.jobId = current.jobId;
       }
-
+    
       if (current.payload === null && last.payload === undefined) {
         diff.payload = current.payload;
       } else if (current.payload == null && last.payload == null) {
-
+    
       } else if ((current.payload != null && last.payload == null) || (current.payload == null && last.payload != null)) {
         diff.payload = current.payload;
       } else if (!equals(last.payload, current.payload)) {
         diff.payload = current.payload;
       }
-
+    
       if (current.status === null && last.status === undefined) {
         diff.status = current.status;
       } else if (current.status == null && last.status == null) {
-
+    
       } else if ((current.status != null && last.status == null) || (current.status == null && last.status != null)) {
         diff.status = current.status;
       } else if (last.status !== current.status) {
         diff.status = current.status;
       }
-
+    
       if (current.availableAt === null && last.availableAt === undefined) {
         diff.availableAt = current.availableAt;
       } else if (current.availableAt == null && last.availableAt == null) {
-
+    
       } else if ((current.availableAt != null && last.availableAt == null) || (current.availableAt == null && last.availableAt != null)) {
         diff.availableAt = current.availableAt;
       } else if (last.availableAt.valueOf() !== current.availableAt.valueOf()) {
         diff.availableAt = current.availableAt;
       }
-
+    
       if (current.lockedBy === null && last.lockedBy === undefined) {
         diff.lockedBy = current.lockedBy;
       } else if (current.lockedBy == null && last.lockedBy == null) {
-
+    
       } else if ((current.lockedBy != null && last.lockedBy == null) || (current.lockedBy == null && last.lockedBy != null)) {
         diff.lockedBy = current.lockedBy;
       } else if (last.lockedBy !== current.lockedBy) {
         diff.lockedBy = current.lockedBy;
       }
-
+    
       if (current.lockedUntil === null && last.lockedUntil === undefined) {
         diff.lockedUntil = current.lockedUntil;
       } else if (current.lockedUntil == null && last.lockedUntil == null) {
-
+    
       } else if ((current.lockedUntil != null && last.lockedUntil == null) || (current.lockedUntil == null && last.lockedUntil != null)) {
         diff.lockedUntil = current.lockedUntil;
       } else if (last.lockedUntil.valueOf() !== current.lockedUntil.valueOf()) {
         diff.lockedUntil = current.lockedUntil;
       }
-
+    
       if (current.attemptCount === null && last.attemptCount === undefined) {
         diff.attemptCount = current.attemptCount;
       } else if (current.attemptCount == null && last.attemptCount == null) {
-
+    
       } else if ((current.attemptCount != null && last.attemptCount == null) || (current.attemptCount == null && last.attemptCount != null)) {
         diff.attemptCount = current.attemptCount;
       } else if (!equals(last.attemptCount, current.attemptCount)) {
         diff.attemptCount = current.attemptCount;
       }
-
+    
       if (current.maxAttempts === null && last.maxAttempts === undefined) {
         diff.maxAttempts = current.maxAttempts;
       } else if (current.maxAttempts == null && last.maxAttempts == null) {
-
+    
       } else if ((current.maxAttempts != null && last.maxAttempts == null) || (current.maxAttempts == null && last.maxAttempts != null)) {
         diff.maxAttempts = current.maxAttempts;
       } else if (!equals(last.maxAttempts, current.maxAttempts)) {
         diff.maxAttempts = current.maxAttempts;
       }
-
+    
       if (current.lastError === null && last.lastError === undefined) {
         diff.lastError = current.lastError;
       } else if (current.lastError == null && last.lastError == null) {
-
+    
       } else if ((current.lastError != null && last.lastError == null) || (current.lastError == null && last.lastError != null)) {
         diff.lastError = current.lastError;
       } else if (!equals(last.lastError, current.lastError)) {
         diff.lastError = current.lastError;
       }
-
+    
       if (current.completedAt === null && last.completedAt === undefined) {
         diff.completedAt = current.completedAt;
       } else if (current.completedAt == null && last.completedAt == null) {
-
+    
       } else if ((current.completedAt != null && last.completedAt == null) || (current.completedAt == null && last.completedAt != null)) {
         diff.completedAt = current.completedAt;
       } else if (last.completedAt.valueOf() !== current.completedAt.valueOf()) {
         diff.completedAt = current.completedAt;
       }
-
+    
     if (options?.includeInverseSides) {
     }
       return diff;
@@ -9376,55 +9376,55 @@ export default {
       if (typeof entity.id !== 'undefined') {
         ret.id = entity.id;
       }
-
+    
       if (typeof entity.created_at !== 'undefined') {
         ret.created_at = clone(processDateProperty(entity.created_at));
       }
-
+    
       if (typeof entity.updated_at !== 'undefined') {
         ret.updated_at = clone(processDateProperty(entity.updated_at));
       }
-
+    
       if (typeof entity.jobId !== 'undefined') {
         ret.jobId = entity.jobId;
       }
-
+    
       if (typeof entity.payload !== 'undefined') {
         ret.payload = clone(entity.payload);
       }
-
+    
       if (typeof entity.status !== 'undefined') {
         ret.status = entity.status;
       }
-
+    
       if (typeof entity.availableAt !== 'undefined') {
         ret.availableAt = clone(processDateProperty(entity.availableAt));
       }
-
+    
       if (typeof entity.lockedBy !== 'undefined') {
         ret.lockedBy = entity.lockedBy;
       }
-
+    
       if (typeof entity.lockedUntil !== 'undefined') {
         ret.lockedUntil = clone(processDateProperty(entity.lockedUntil));
       }
-
+    
       if (typeof entity.attemptCount !== 'undefined') {
         ret.attemptCount = clone(entity.attemptCount);
       }
-
+    
       if (typeof entity.maxAttempts !== 'undefined') {
         ret.maxAttempts = clone(entity.maxAttempts);
       }
-
+    
       if (typeof entity.lastError !== 'undefined') {
         ret.lastError = clone(entity.lastError);
       }
-
+    
       if (typeof entity.completedAt !== 'undefined') {
         ret.completedAt = clone(processDateProperty(entity.completedAt));
       }
-
+    
       return ret;
     }
   },

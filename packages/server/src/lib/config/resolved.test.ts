@@ -224,6 +224,133 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     );
   });
 
+  test('applies account selection defaults for backward compatibility', () => {
+    const parsed = TinyAuthRuntimeConfigSchema.parse(MINIMAL_INPUT_CONFIG);
+
+    expect(parsed.auth.account_selection).toEqual({
+      enabled: false,
+      mode: 'oidc_prompt',
+      remember_accounts: {
+        enabled: true,
+        max_accounts: 5,
+        ttl: '30d',
+      },
+      allow_add_account: true,
+      allow_remove_account: true,
+      login_hint: {
+        behavior: 'prefer',
+      },
+      prompt_none_error: 'account_selection_required',
+    });
+  });
+
+  test('parses explicit account selection config and client override', () => {
+    const parsed = TinyAuthRuntimeConfigSchema.parse({
+      ...MINIMAL_INPUT_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+          remember_accounts: {
+            enabled: true,
+            max_accounts: 3,
+            ttl: '7d',
+          },
+          allow_add_account: false,
+          allow_remove_account: false,
+          login_hint: {
+            behavior: 'require_match',
+          },
+          prompt_none_error: 'login_required',
+        },
+      },
+      clients: [
+        {
+          ...createClientConfig(['http://localhost/callback']),
+          account_selection: {
+            mode: 'never',
+            allow_add_account: false,
+          },
+        },
+      ],
+    });
+
+    expect(parsed.auth.account_selection.enabled).toBe(true);
+    expect(parsed.auth.account_selection.mode).toBe('smart');
+    expect(parsed.auth.account_selection.remember_accounts.max_accounts).toBe(
+      3,
+    );
+    expect(parsed.auth.account_selection.login_hint.behavior).toBe(
+      'require_match',
+    );
+    expect(parsed.auth.account_selection.prompt_none_error).toBe(
+      'login_required',
+    );
+    expect(parsed.clients[0]?.account_selection).toEqual({
+      mode: 'never',
+      allow_add_account: false,
+    });
+  });
+
+  test('rejects invalid account selection config values', () => {
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        auth: {
+          account_selection: {
+            mode: 'sometimes',
+          },
+        },
+      },
+      'auth.account_selection.mode',
+    );
+
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        auth: {
+          account_selection: {
+            remember_accounts: {
+              max_accounts: 0,
+            },
+          },
+        },
+      },
+      'auth.account_selection.remember_accounts.max_accounts',
+    );
+
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        auth: {
+          account_selection: {
+            login_hint: {
+              behavior: 'force',
+            },
+          },
+        },
+      },
+      'auth.account_selection.login_hint.behavior',
+    );
+  });
+
+  test('rejects invalid client account selection override values', () => {
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          {
+            ...createClientConfig(['http://localhost/callback']),
+            account_selection: {
+              mode: 'sometimes',
+            },
+          },
+        ],
+      },
+      'clients.0.account_selection.mode',
+    );
+  });
+
   test('keeps a configured scheduler adapter by reference', () => {
     const scheduler = createSchedulerConfig();
 

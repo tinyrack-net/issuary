@@ -1,5 +1,8 @@
 import { expect } from '@playwright/test';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
+import {
+  createScenarioFixture,
+  gotoWithFirefoxRetry,
+} from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
@@ -134,6 +137,7 @@ test.describe('TOTP setup flow (DB user, 2FA required)', () => {
   test('setup 2FA chooser is skipped in TOTP-only required config', async ({
     page,
     baseURL,
+    browserName,
   }) => {
     const email = uniqueEmail('skip-setup-chooser');
     const client = getTestApiClient({ baseUrl: String(baseURL) });
@@ -148,7 +152,7 @@ test.describe('TOTP setup flow (DB user, 2FA required)', () => {
     await performLogin(page, email, TEST_PASSWORD);
     await page.waitForURL('**/setup/totp');
 
-    await page.goto('/setup/2fa');
+    await gotoWithFirefoxRetry(page, browserName, '/setup/2fa');
     await expect(page.locator('a[href^="/setup/passkey"]')).toHaveCount(0);
 
     const isTotpSetupRoute = /\/setup\/totp/.test(page.url());

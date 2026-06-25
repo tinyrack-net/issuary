@@ -8,6 +8,9 @@ export const queryKeys = {
   // 세션
   session: () => ['/api/user/session'] as const,
 
+  // Account selection
+  accounts: (clientId?: string) => ['/api/auth/accounts', clientId] as const,
+
   // 앱 설정
   config: () => ['/api/config'] as const,
 

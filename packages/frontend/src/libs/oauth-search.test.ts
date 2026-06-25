@@ -78,6 +78,32 @@ describe('oauth-search helpers', () => {
     expect(OAuthSearchSchema.safeParse({ prompt }).success).toBe(false);
   });
 
+  test('preserves account-selection and OIDC compatibility parameters', () => {
+    const search = OAuthSearchSchema.parse({
+      client_id: 'web-client',
+      redirect_uri: 'https://client.example.com/callback',
+      response_type: 'code',
+      response_mode: 'form_post',
+      login_hint: 'user@example.com',
+      ui_locales: 'ko en',
+      id_token_hint: 'id-token-hint',
+      acr_values: 'urn:mace:incommon:iap:silver',
+      account_selected: '1',
+      account_selection_state: 'chooser-state-123',
+    });
+
+    const parsed = new URL(buildAuthorizeUrl(search));
+
+    expect(parsed.searchParams.get('response_mode')).toBe('form_post');
+    expect(parsed.searchParams.get('login_hint')).toBe('user@example.com');
+    expect(parsed.searchParams.get('ui_locales')).toBe('ko en');
+    expect(parsed.searchParams.get('id_token_hint')).toBe('id-token-hint');
+    expect(parsed.searchParams.get('acr_values')).toBe(
+      'urn:mace:incommon:iap:silver',
+    );
+    expect(parsed.searchParams.get('account_selected')).toBe('1');
+  });
+
   test('extractOAuthParams removes only undefined values', () => {
     expect(
       extractOAuthParams({

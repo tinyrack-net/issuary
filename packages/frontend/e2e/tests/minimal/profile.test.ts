@@ -1,5 +1,8 @@
 import { expect, type Page } from '@playwright/test';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
+import {
+  createScenarioFixture,
+  gotoWithFirefoxRetry,
+} from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
@@ -38,10 +41,11 @@ const NEW_PASSWORD = 'new-password-456';
 
 async function expectPasswordLoginRejected(
   page: Page,
+  browserName: string,
   email: string,
   password: string,
 ): Promise<void> {
-  await page.goto('/login/password');
+  await gotoWithFirefoxRetry(page, browserName, '/login/password');
   await page.locator(loginPasswordPage.emailInput).fill(email);
   await page.locator(loginPasswordPage.passwordInput).fill(password);
   await page.locator(loginPasswordPage.submitButton).click();
@@ -54,10 +58,11 @@ async function expectPasswordLoginRejected(
 
 async function expectPasswordLoginSucceeds(
   page: Page,
+  browserName: string,
   email: string,
   password: string,
 ): Promise<void> {
-  await page.goto('/login/password');
+  await gotoWithFirefoxRetry(page, browserName, '/login/password');
   await page.locator(loginPasswordPage.emailInput).fill(email);
   await page.locator(loginPasswordPage.passwordInput).fill(password);
   await page.locator(loginPasswordPage.submitButton).click();
@@ -133,6 +138,7 @@ test.describe('Change password', () => {
   test('successful password change updates subsequent login behavior', async ({
     page,
     baseURL,
+    browserName,
   }) => {
     const email = uniqueEmail('change-pw-ok');
     const client = getTestApiClient({ baseUrl: String(baseURL) });
@@ -165,8 +171,8 @@ test.describe('Change password', () => {
     await page.getByRole('button', { name: 'Log out' }).click();
     await page.waitForURL('**/login');
 
-    await expectPasswordLoginRejected(page, email, TEST_PASSWORD);
-    await expectPasswordLoginSucceeds(page, email, NEW_PASSWORD);
+    await expectPasswordLoginRejected(page, browserName, email, TEST_PASSWORD);
+    await expectPasswordLoginSucceeds(page, browserName, email, NEW_PASSWORD);
   });
 
   test('wrong current password shows error', async ({ page, baseURL }) => {

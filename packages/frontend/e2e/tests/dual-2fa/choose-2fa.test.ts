@@ -1,5 +1,8 @@
 import { expect } from '@playwright/test';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
+import {
+  createScenarioFixture,
+  gotoWithFirefoxRetry,
+} from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
@@ -13,6 +16,18 @@ function uniqueEmail(suffix: string): string {
 }
 
 const TEST_PASSWORD = 'test-password-123';
+
+async function followRouteLink(
+  page: import('@playwright/test').Page,
+  browserName: string,
+  selector: string,
+): Promise<void> {
+  const link = page.locator(selector);
+  await expect(link).toBeVisible();
+  const href = await link.getAttribute('href');
+  expect(href).toBeTruthy();
+  await gotoWithFirefoxRetry(page, browserName, href as string);
+}
 
 const test = createScenarioFixture((backendPort) => ({
   ...E2E_BASE_CONFIG,
@@ -53,45 +68,91 @@ test.describe('Dual 2FA selection UI', () => {
     await expect(page.locator('a[href^="/setup/passkey"]')).toBeVisible();
   });
 
-  test('verify 2FA page shows both enabled methods', async ({ page }) => {
-    await page.goto('/verify/2fa');
+  test('verify 2FA page shows both enabled methods', async ({
+    page,
+    browserName,
+  }) => {
+    await gotoWithFirefoxRetry(page, browserName, '/verify/2fa');
 
     await expect(page.locator('a[href^="/verify/totp"]')).toBeVisible();
     await expect(page.locator('a[href^="/verify/passkey"]')).toBeVisible();
   });
 
   test('setup 2FA page can route to both setup methods', async ({
+    browser,
     page,
     baseURL,
+    browserName,
   }) => {
-    const email = uniqueEmail('setup-route');
     const client = getTestApiClient({ baseUrl: String(baseURL) });
-    const registerRes = await client.api.auth.register.$post({
+
+    const totpEmail = uniqueEmail('setup-route-totp');
+    const totpRegisterRes = await client.api.auth.register.$post({
       header: {},
-      json: { email, password: TEST_PASSWORD },
+      json: { email: totpEmail, password: TEST_PASSWORD },
     });
-    if (!registerRes.ok) {
-      throw new Error(`Failed to register user: ${registerRes.status}`);
+    if (!totpRegisterRes.ok) {
+      throw new Error(
+        `Failed to register TOTP user: ${totpRegisterRes.status}`,
+      );
     }
-
-    await performLogin(page, email, TEST_PASSWORD);
+    await performLogin(page, totpEmail, TEST_PASSWORD);
     await page.waitForURL('**/setup/2fa');
-
-    await page.locator('a[href^="/setup/totp"]').click();
+    await followRouteLink(page, browserName, 'a[href^="/setup/totp"]');
     await page.waitForURL('**/setup/totp');
 
-    await page.goto('/setup/2fa');
-    await page.locator('a[href^="/setup/passkey"]').click();
-    await expect(page).toHaveURL(/\/setup\/passkey/);
+    const passkeyContext = await browser.newContext({
+      baseURL: String(baseURL),
+    });
+    const passkeyPage = await passkeyContext.newPage();
+    try {
+      const passkeyEmail = uniqueEmail('setup-route-passkey');
+      const passkeyRegisterRes = await client.api.auth.register.$post({
+        header: {},
+        json: { email: passkeyEmail, password: TEST_PASSWORD },
+      });
+      if (!passkeyRegisterRes.ok) {
+        throw new Error(
+          `Failed to register passkey user: ${passkeyRegisterRes.status}`,
+        );
+      }
+      await performLogin(passkeyPage, passkeyEmail, TEST_PASSWORD);
+      await passkeyPage.waitForURL('**/setup/2fa');
+      await followRouteLink(
+        passkeyPage,
+        browserName,
+        'a[href^="/setup/passkey"]',
+      );
+      await expect(passkeyPage).toHaveURL(/\/setup\/passkey/);
+    } finally {
+      await passkeyContext.close();
+    }
   });
 
-  test('verify 2FA page can route to both verify methods', async ({ page }) => {
-    await page.goto('/verify/2fa');
-    await page.locator('a[href^="/verify/totp"]').click();
+  test('verify 2FA page can route to both verify methods', async ({
+    browser,
+    page,
+    baseURL,
+    browserName,
+  }) => {
+    await gotoWithFirefoxRetry(page, browserName, '/verify/2fa');
+    await followRouteLink(page, browserName, 'a[href^="/verify/totp"]');
     await page.waitForURL('**/verify/totp');
 
-    await page.goto('/verify/2fa');
-    await page.locator('a[href^="/verify/passkey"]').click();
-    await page.waitForURL('**/verify/passkey');
+    const passkeyContext = await browser.newContext({
+      baseURL: String(baseURL),
+    });
+    const passkeyPage = await passkeyContext.newPage();
+    try {
+      await gotoWithFirefoxRetry(passkeyPage, browserName, '/verify/2fa');
+      await followRouteLink(
+        passkeyPage,
+        browserName,
+        'a[href^="/verify/passkey"]',
+      );
+      await passkeyPage.waitForURL('**/verify/passkey');
+    } finally {
+      await passkeyContext.close();
+    }
   });
 });

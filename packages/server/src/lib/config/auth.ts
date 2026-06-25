@@ -1,5 +1,6 @@
 import z from 'zod';
 import { zz } from '../../schemas/provider.ts';
+import { DurationString } from '../duration.ts';
 import {
   PASSWORD_POLICY_MAX_LENGTH,
   PASSWORD_POLICY_MIN_LENGTH,
@@ -166,9 +167,96 @@ export const PasskeyAuthConfigSchema = z
 
 export type PasskeyAuthConfig = z.infer<typeof PasskeyAuthConfigSchema>;
 
+const ACCOUNT_SELECTION_REMEMBER_ACCOUNTS_CONFIG_DEFAULT = {
+  enabled: true,
+  max_accounts: 5,
+  ttl: '30d',
+};
+
+export const ACCOUNT_SELECTION_CONFIG_DEFAULT = {
+  enabled: false,
+  mode: 'oidc_prompt',
+  remember_accounts: ACCOUNT_SELECTION_REMEMBER_ACCOUNTS_CONFIG_DEFAULT,
+  allow_add_account: true,
+  allow_remove_account: true,
+  login_hint: {
+    behavior: 'prefer',
+  },
+  prompt_none_error: 'account_selection_required',
+} as const;
+
+const AccountSelectionRememberAccountsConfigSchema = z
+  .object({
+    enabled: zz.COERCE_BOOLEAN.default(
+      ACCOUNT_SELECTION_REMEMBER_ACCOUNTS_CONFIG_DEFAULT.enabled,
+    ).describe(
+      'Whether previously authenticated accounts are remembered in the browser session.',
+    ),
+    max_accounts: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(10)
+      .default(ACCOUNT_SELECTION_REMEMBER_ACCOUNTS_CONFIG_DEFAULT.max_accounts)
+      .describe(
+        'Maximum remembered accounts to keep in the encrypted session cookie.',
+      ),
+    ttl: DurationString.default(
+      ACCOUNT_SELECTION_REMEMBER_ACCOUNTS_CONFIG_DEFAULT.ttl,
+    ).describe('How long remembered accounts remain selectable, e.g. 30d.'),
+  })
+  .strict()
+  .default(ACCOUNT_SELECTION_REMEMBER_ACCOUNTS_CONFIG_DEFAULT)
+  .describe('Remembered account roster configuration.');
+
+export const AccountSelectionConfigSchema = z
+  .object({
+    enabled: zz.COERCE_BOOLEAN.default(
+      ACCOUNT_SELECTION_CONFIG_DEFAULT.enabled,
+    ).describe('Whether OIDC account selection is enabled.'),
+    mode: z
+      .enum(['disabled', 'oidc_prompt', 'smart', 'always'])
+      .default(ACCOUNT_SELECTION_CONFIG_DEFAULT.mode)
+      .describe('When to show the account selection screen.'),
+    remember_accounts: AccountSelectionRememberAccountsConfigSchema,
+    allow_add_account: zz.COERCE_BOOLEAN.default(
+      ACCOUNT_SELECTION_CONFIG_DEFAULT.allow_add_account,
+    ).describe(
+      'Whether the account chooser allows signing in with another account.',
+    ),
+    allow_remove_account: zz.COERCE_BOOLEAN.default(
+      ACCOUNT_SELECTION_CONFIG_DEFAULT.allow_remove_account,
+    ).describe(
+      'Whether the account chooser allows removing remembered accounts.',
+    ),
+    login_hint: z
+      .object({
+        behavior: z
+          .enum(['ignore', 'prefer', 'require_match'])
+          .default(ACCOUNT_SELECTION_CONFIG_DEFAULT.login_hint.behavior)
+          .describe('How login_hint influences remembered account selection.'),
+      })
+      .strict()
+      .default(ACCOUNT_SELECTION_CONFIG_DEFAULT.login_hint),
+    prompt_none_error: z
+      .enum(['account_selection_required', 'login_required'])
+      .default(ACCOUNT_SELECTION_CONFIG_DEFAULT.prompt_none_error)
+      .describe(
+        'OAuth error returned when prompt=none forbids required account-selection UI.',
+      ),
+  })
+  .strict()
+  .default(ACCOUNT_SELECTION_CONFIG_DEFAULT)
+  .describe('OIDC account selection configuration.');
+
+export type AccountSelectionConfig = z.infer<
+  typeof AccountSelectionConfigSchema
+>;
+
 export const AUTH_CONFIG_DEFAULT = {
   password: PASSWORD_AUTH_CONFIG_DEFAULT,
   passkey: PASSKEY_AUTH_CONFIG_DEFAULT,
+  account_selection: ACCOUNT_SELECTION_CONFIG_DEFAULT,
 };
 
 /**
@@ -182,6 +270,9 @@ export const AuthConfigSchema = z
     ),
     passkey: PasskeyAuthConfigSchema.describe(
       'Passkey (WebAuthn) authentication settings.',
+    ),
+    account_selection: AccountSelectionConfigSchema.describe(
+      'OIDC account selection settings.',
     ),
   })
   .strict()

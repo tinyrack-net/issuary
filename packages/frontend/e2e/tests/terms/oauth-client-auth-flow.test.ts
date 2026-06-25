@@ -1,5 +1,8 @@
 import { expect } from '@playwright/test';
-import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
+import {
+  createScenarioFixture,
+  gotoWithFirefoxRetry,
+} from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
@@ -89,7 +92,10 @@ async function registerUserByApiWithTerms(
   }
 }
 
-async function openPasswordLogin(page: import('@playwright/test').Page) {
+async function openPasswordLogin(
+  page: import('@playwright/test').Page,
+  browserName: string,
+) {
   await page.waitForURL('**/login**');
   const url = new URL(page.url());
   if (!url.pathname.startsWith('/login/password')) {
@@ -97,7 +103,7 @@ async function openPasswordLogin(page: import('@playwright/test').Page) {
     const passwordPath = search
       ? `/login/password?${search}`
       : '/login/password';
-    await page.goto(passwordPath);
+    await gotoWithFirefoxRetry(page, browserName, passwordPath);
     await page.waitForURL('**/login/password**');
   }
   await expect(page.locator(loginPasswordPage.emailInput)).toBeVisible();
@@ -106,10 +112,15 @@ async function openPasswordLogin(page: import('@playwright/test').Page) {
 test.describe('OAuth client auth flow with explicit terms', () => {
   test('unauthenticated authorize request redirects to login with oauth params', async ({
     page,
+    browserName,
   }) => {
     const oauth = buildOAuthFlowInput('terms-unauthenticated');
 
-    await page.goto(buildAuthorizePath(oauth.authorizeParams));
+    await gotoWithFirefoxRetry(
+      page,
+      browserName,
+      buildAuthorizePath(oauth.authorizeParams),
+    );
 
     await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
@@ -120,14 +131,19 @@ test.describe('OAuth client auth flow with explicit terms', () => {
     page,
     baseURL,
     request,
+    browserName,
   }) => {
     const email = allowedEmail('login');
     await registerUserByApiWithTerms(String(baseURL), email, TEST_PASSWORD);
 
     const oauth = buildOAuthFlowInput('terms-login');
-    await page.goto(buildAuthorizePath(oauth.authorizeParams));
+    await gotoWithFirefoxRetry(
+      page,
+      browserName,
+      buildAuthorizePath(oauth.authorizeParams),
+    );
 
-    await openPasswordLogin(page);
+    await openPasswordLogin(page, browserName);
     await page.locator(loginPasswordPage.emailInput).fill(email);
     await page.locator(loginPasswordPage.passwordInput).fill(TEST_PASSWORD);
     await page.locator(loginPasswordPage.submitButton).click();
@@ -149,14 +165,21 @@ test.describe('OAuth client auth flow with explicit terms', () => {
     page,
     baseURL,
     request,
+    browserName,
   }) => {
     const email = allowedEmail('signup-terms-checked');
     const oauth = buildOAuthFlowInput('terms-signup-checked');
 
-    await page.goto(buildAuthorizePath(oauth.authorizeParams));
+    await gotoWithFirefoxRetry(
+      page,
+      browserName,
+      buildAuthorizePath(oauth.authorizeParams),
+    );
 
     await page.waitForURL('**/login**');
-    await page.goto(
+    await gotoWithFirefoxRetry(
+      page,
+      browserName,
       `/register?${new URLSearchParams(oauth.authorizeParams).toString()}`,
     );
     await page.waitForURL('**/register**');
@@ -182,14 +205,21 @@ test.describe('OAuth client auth flow with explicit terms', () => {
 
   test('new signup during oauth without required terms stays on register', async ({
     page,
+    browserName,
   }) => {
     const email = allowedEmail('signup-terms-missing');
     const oauth = buildOAuthFlowInput('terms-signup-missing');
 
-    await page.goto(buildAuthorizePath(oauth.authorizeParams));
+    await gotoWithFirefoxRetry(
+      page,
+      browserName,
+      buildAuthorizePath(oauth.authorizeParams),
+    );
 
     await page.waitForURL('**/login**');
-    await page.goto(
+    await gotoWithFirefoxRetry(
+      page,
+      browserName,
       `/register?${new URLSearchParams(oauth.authorizeParams).toString()}`,
     );
     await page.waitForURL('**/register**');
