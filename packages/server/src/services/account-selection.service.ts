@@ -60,7 +60,11 @@ export class AccountSelectionService {
       return { type: 'reauthenticate' };
     }
 
-    if (mode === 'disabled' || params.accountSelected) {
+    if (
+      mode === 'disabled' ||
+      params.accountSelected ||
+      (params.freshReauthentication && params.prompts.includes('login'))
+    ) {
       return { type: 'continue', selectedSub: activeUserSub };
     }
 

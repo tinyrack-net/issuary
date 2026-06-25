@@ -46,7 +46,13 @@ export const authorizeGet = new Hono<AppEnv>().get(
       prompt: f.prompt.optional(),
       max_age: f.maxAge.optional(),
       reauthenticated: z.literal('1').optional(),
-      account_selected: z.literal('1').optional(),
+      account_selected: z
+        .preprocess((value) => {
+          if (value === 1) return '1';
+          if (typeof value !== 'string') return value;
+          return decodeURIComponent(value).replaceAll('"', '');
+        }, z.literal('1'))
+        .optional(),
       account_selection_state: z.string().min(1).max(200).optional(),
       display: f.display.optional(),
       response_mode: z.string().min(1).max(100).optional(),

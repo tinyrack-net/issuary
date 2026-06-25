@@ -48,6 +48,11 @@ function LoginPassword() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const search = Route.useSearch();
+  const authorizeSearch =
+    search.account_selection_state &&
+    search.prompt?.split(' ').includes('login')
+      ? { ...search, account_selected: '1' as const }
+      : search;
   const lang = search.lang ?? i18n.language;
 
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
@@ -144,7 +149,7 @@ function LoginPassword() {
         }
       } else {
         if (isOAuthFlow(search)) {
-          window.location.href = buildAuthorizeUrl(search);
+          window.location.href = buildAuthorizeUrl(authorizeSearch);
         } else {
           return router.navigate({ to: '/profile' });
         }
@@ -170,7 +175,7 @@ function LoginPassword() {
         await tick();
 
         if (isOAuthFlow(search)) {
-          window.location.href = buildAuthorizeUrl(search);
+          window.location.href = buildAuthorizeUrl(authorizeSearch);
         } else {
           router.navigate({ to: '/profile' });
         }
@@ -179,7 +184,7 @@ function LoginPassword() {
         queryKey: getSessionQueryOptions.queryKey,
       });
     },
-    [queryClient, router, search],
+    [queryClient, router, search, authorizeSearch],
   );
 
   // Conditional UI: Start passkey autofill on page load

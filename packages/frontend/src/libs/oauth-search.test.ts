@@ -78,6 +78,18 @@ describe('oauth-search helpers', () => {
     expect(OAuthSearchSchema.safeParse({ prompt }).success).toBe(false);
   });
 
+  test('normalizes quoted account_selected values from router link serialization', () => {
+    const parsed = OAuthSearchSchema.parse({
+      client_id: 'client-web',
+      redirect_uri: 'https://client.example/callback',
+      account_selected: '"1"',
+      account_selection_state: 'chooser-state-123',
+    });
+
+    expect(parsed.account_selected).toBe('1');
+    expect(buildAuthorizeUrl(parsed)).toContain('account_selected=1');
+  });
+
   test('preserves account-selection and OIDC compatibility parameters', () => {
     const search = OAuthSearchSchema.parse({
       client_id: 'web-client',

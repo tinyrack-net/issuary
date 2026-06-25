@@ -215,6 +215,7 @@ export class OAuthAuthorizeService {
         session: params.accountSelectionSession,
         clientId: client.clientId,
         activeUserSub: userSession.sub,
+        freshReauthentication: hasFreshReauthentication,
       });
     const accountSelection = new AccountSelectionService(this.config).decide({
       clientId: client.clientId,
@@ -451,7 +452,6 @@ export class OAuthAuthorizeService {
           this.normalizePromptForAccountSelectionFingerprint(query.prompt),
         ],
         ['max_age', query.max_age],
-        ['reauthenticated', query.reauthenticated],
         ['display', query.display],
         ['response_mode', query.response_mode],
         ['login_hint', query.login_hint],
@@ -468,7 +468,9 @@ export class OAuthAuthorizeService {
     if (!prompt) {
       return undefined;
     }
-    const values = prompt.split(' ').filter((value) => value !== 'consent');
+    const values = prompt
+      .split(' ')
+      .filter((value) => value !== 'consent' && value !== 'login');
     return values.length > 0 ? values.join(' ') : undefined;
   }
 
@@ -477,6 +479,7 @@ export class OAuthAuthorizeService {
     session: AccountSelectionSession | undefined;
     clientId: string;
     activeUserSub: string;
+    freshReauthentication: boolean;
   }): {
     trusted: boolean;
     matchesExisting: boolean;
@@ -495,11 +498,13 @@ export class OAuthAuthorizeService {
         ACCOUNT_SELECTION_CONTINUATION_MAX_AGE_SECONDS;
 
     if (!session || !matchesExisting) {
+      const freshSelectedAccount =
+        params.freshReauthentication && query.account_selected === '1';
       return {
-        trusted: false,
+        trusted: freshSelectedAccount,
         matchesExisting: false,
-        allowAddAccount: false,
-        allowedSubs: [],
+        allowAddAccount: freshSelectedAccount,
+        allowedSubs: freshSelectedAccount ? [params.activeUserSub] : [],
       };
     }
 
@@ -780,22 +785,16 @@ export class OAuthAuthorizeService {
       );
     }
     if (query.prompt) {
-      consentUrl.searchParams.set('prompt', query.prompt);
+      const consentPrompt = query.prompt
+        .split(' ')
+        .filter((value) => value !== 'login')
+        .join(' ');
+      if (consentPrompt) {
+        consentUrl.searchParams.set('prompt', consentPrompt);
+      }
     }
     if (query.max_age !== undefined) {
       consentUrl.searchParams.set('max_age', query.max_age.toString());
-    }
-    if (query.reauthenticated) {
-      consentUrl.searchParams.set('reauthenticated', query.reauthenticated);
-    }
-    if (query.account_selected) {
-      consentUrl.searchParams.set('account_selected', query.account_selected);
-    }
-    if (query.account_selection_state) {
-      consentUrl.searchParams.set(
-        'account_selection_state',
-        query.account_selection_state,
-      );
     }
     if (query.display) {
       consentUrl.searchParams.set('display', query.display);

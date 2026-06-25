@@ -8,7 +8,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { LoginMethodButton } from '#frontend/components/auth/login-method-button.tsx';
@@ -121,6 +121,23 @@ function Login() {
     return oauthUrl;
   };
 
+  const buildPasswordLoginHref = () => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(extractOAuthParams(search))) {
+      if (value !== undefined) {
+        const stringValue = String(value);
+        params.set(
+          key,
+          key === 'account_selected'
+            ? decodeURIComponent(stringValue).replaceAll('"', '')
+            : stringValue,
+        );
+      }
+    }
+    const query = params.toString();
+    return query ? `/login/password?${query}` : '/login/password';
+  };
+
   return (
     <PageLayout cardPadding maxWidth="100">
       <PageHeader
@@ -151,11 +168,10 @@ function Login() {
         {/* Password Login */}
         {isPasswordAuthEnabled && (
           <LoginMethodButton
-            as={Link}
+            as="a"
+            href={buildPasswordLoginHref()}
             icon={<EnvelopeSimpleIcon className="size-6" weight="regular" />}
             label={t('login.method.password')}
-            search={extractOAuthParams(search)}
-            to="/login/password"
           />
         )}
 

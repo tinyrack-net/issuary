@@ -75,7 +75,7 @@ describe('/account/select', () => {
     const href = addAccountLink.getAttribute('href') ?? '';
     expect(href).toContain('/login?');
     expect(href).toContain('client_id=client-web');
-    expect(href).toContain('prompt=select_account');
+    expect(href).toContain('prompt=select_account+login');
     expect(href).toContain('login_hint=alice%40example.com');
     expect(href).toContain('response_mode=form_post');
     expect(href).toContain('account_selected=1');
