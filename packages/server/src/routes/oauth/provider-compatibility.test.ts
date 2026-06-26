@@ -43,6 +43,24 @@ const COMPAT_CLIENT_CONFIG = {
   scope: 'openid profile email offline_access service.read',
 };
 
+const PUBLIC_DEVICE_CLIENT = {
+  clientId: 'public-device-client',
+  redirectUri: 'http://localhost:18181/public-device/callback',
+};
+
+const PUBLIC_DEVICE_CLIENT_CONFIG = {
+  id: 'public-device-client-config',
+  name: 'Public Device Client',
+  client_id: PUBLIC_DEVICE_CLIENT.clientId,
+  redirect_uris: [PUBLIC_DEVICE_CLIENT.redirectUri],
+  response_types: ['code'],
+  grant_types: [
+    'authorization_code',
+    'urn:ietf:params:oauth:grant-type:device_code',
+  ],
+  scope: 'openid profile',
+};
+
 const SECOND_USER_CONFIG = {
   sub: 'second-test-user',
   email: 'second-test-user@example.com',
@@ -86,6 +104,7 @@ beforeAll(async () => {
     clients: [
       TEST_OAUTH_CLIENT_CONFIG,
       COMPAT_CLIENT_CONFIG,
+      PUBLIC_DEVICE_CLIENT_CONFIG,
       IMPLICIT_CLIENT_CONFIG,
       CORS_OTHER_CLIENT_CONFIG,
     ],
@@ -1239,6 +1258,90 @@ describe('OAuth/OIDC provider compatibility', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  test('persists pending device polling state with conditional updates', async () => {
+    const deviceResponse = await app.request('/oauth/device_authorization', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        authorization: basicAuthHeader(
+          COMPAT_CLIENT.clientId,
+          COMPAT_CLIENT.clientSecret,
+        ),
+      },
+      body: formBody({ scope: 'openid profile' }),
+    });
+    const deviceJson = await deviceResponse.json();
+
+    await withMikroContext(services, async () => {
+      const deviceCodeHash = await services.securityService.hashOpaqueToken(
+        'oauth-device-code',
+        deviceJson.device_code,
+      );
+      const persistedDeviceCode =
+        await services.mikro.oauthDeviceCode.findOneOrFail({ deviceCodeHash });
+
+      const first = await services.mikro.oauthDeviceCode.recordPendingPoll({
+        id: persistedDeviceCode.id,
+        polledAt: new Date('2026-06-24T00:00:00.000Z'),
+      });
+      const second = await services.mikro.oauthDeviceCode.recordPendingPoll({
+        id: persistedDeviceCode.id,
+        polledAt: new Date('2026-06-24T00:00:00.000Z'),
+      });
+
+      expect(first).toBe('authorization_pending');
+      expect(second).toBe('slow_down');
+
+      const updatedDeviceCode =
+        await services.mikro.oauthDeviceCode.findOneOrFail(
+          { id: persistedDeviceCode.id },
+          { refresh: true },
+        );
+      expect(updatedDeviceCode.pollIntervalSeconds).toBe(10);
+    });
+  });
+
+  test('supports the device flow for public clients without client_secret', async () => {
+    const deviceResponse = await app.request('/oauth/device_authorization', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: formBody({
+        client_id: PUBLIC_DEVICE_CLIENT.clientId,
+        scope: 'openid profile',
+      }),
+    });
+    expect(deviceResponse.status).toBe(200);
+    const deviceJson = await deviceResponse.json();
+
+    const sessionCookie = await createAuthenticatedSession(app);
+    const approveResponse = await app.request('/oauth/device', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        cookie: `session=${sessionCookie}`,
+      },
+      body: formBody({ user_code: deviceJson.user_code }),
+    });
+    expect(approveResponse.status).toBe(200);
+
+    const tokenResponse = await app.request('/oauth/token', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: formBody({
+        grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+        client_id: PUBLIC_DEVICE_CLIENT.clientId,
+        device_code: deviceJson.device_code,
+      }),
+    });
+
+    expect(tokenResponse.status).toBe(200);
+    await expect(jsonBody(tokenResponse)).resolves.toMatchObject({
+      token_type: 'Bearer',
+      scope: 'openid profile',
+      id_token: expect.any(String),
+    });
   });
 
   test('device verification page shows client and requested scopes', async () => {

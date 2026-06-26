@@ -102,9 +102,26 @@ describe('GET /oauth/.well-known/openid-configuration', () => {
       expect(json.claims_supported).toContain('email');
       expect(json.claims_supported).toContain('email_verified');
       expect(json.claims_supported).toContain('name');
+      expect(json.claims_supported).toContain('preferred_username');
       expect(json.claims_supported).toContain('nonce');
       expect(json.claims_supported).toContain('auth_time');
       expect(json.claims_supported).toContain('at_hash');
+    });
+
+    test('should advertise supported prompt values', async () => {
+      const client = testClient(app);
+      const res =
+        await client.oauth['.well-known']['openid-configuration'].$get();
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+
+      expect(json.prompt_values_supported).toEqual([
+        'none',
+        'login',
+        'consent',
+        'select_account',
+      ]);
     });
 
     test('should support authorization_code grant type', async () => {

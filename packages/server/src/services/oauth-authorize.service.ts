@@ -180,6 +180,7 @@ export class OAuthAuthorizeService {
           errorDescription:
             'The Authorization Server requires End-User authentication.',
           state: query.state,
+          responseType: query.response_type,
           responseMode: query.response_mode,
         });
       }
@@ -234,6 +235,7 @@ export class OAuthAuthorizeService {
         error: accountSelection.error,
         errorDescription: accountSelection.errorDescription,
         state: query.state,
+        responseType: query.response_type,
         responseMode: query.response_mode,
       });
     }
@@ -303,6 +305,7 @@ export class OAuthAuthorizeService {
           errorDescription:
             'The Authorization Server requires End-User consent.',
           state: query.state,
+          responseType: query.response_type,
           responseMode: query.response_mode,
         });
       }
@@ -865,6 +868,7 @@ export class OAuthAuthorizeService {
     error: string;
     errorDescription: string;
     state?: string | undefined;
+    responseType?: string | undefined;
     responseMode?: 'query' | 'fragment' | 'form_post' | undefined;
   }): AuthorizeResult {
     if (params.responseMode === 'form_post') {
@@ -889,7 +893,9 @@ export class OAuthAuthorizeService {
         params.error,
         params.errorDescription,
         params.state,
-        params.responseMode,
+        params.responseType === 'id_token' && params.responseMode !== 'query'
+          ? 'fragment'
+          : params.responseMode,
       ),
     };
   }

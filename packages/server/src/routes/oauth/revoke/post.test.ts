@@ -58,6 +58,22 @@ const REFRESH_CASCADE_CLIENT_CONFIG = {
   scope: 'openid profile email offline_access',
 };
 
+const CLIENT_CREDENTIALS_CLIENT = {
+  clientId: 'cc-revoke-client',
+  clientSecret: 'cc-revoke-secret',
+} as const;
+
+const CLIENT_CREDENTIALS_CLIENT_CONFIG = {
+  id: 'cc-revoke-client-config',
+  name: 'Client Credentials Revoke Client',
+  client_id: CLIENT_CREDENTIALS_CLIENT.clientId,
+  client_secret: CLIENT_CREDENTIALS_CLIENT.clientSecret,
+  redirect_uris: ['http://localhost:8080/cc-revoke-callback'],
+  response_types: ['code'],
+  grant_types: ['authorization_code', 'client_credentials'],
+  scope: 'service.read',
+};
+
 beforeAll(async () => {
   ({ app, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
@@ -66,6 +82,7 @@ beforeAll(async () => {
       TEST_OAUTH_CLIENT_CONFIG_WITH_REFRESH,
       PUBLIC_OAUTH_CLIENT_CONFIG,
       REFRESH_CASCADE_CLIENT_CONFIG,
+      CLIENT_CREDENTIALS_CLIENT_CONFIG,
     ],
   }));
 });
@@ -162,6 +179,14 @@ async function createPublicClientTokens() {
   return assertJsonBody(tokenRes, 200);
 }
 
+function basicAuthHeader(clientId: string, clientSecret: string) {
+  const credentials = Buffer.from(
+    `${clientId}:${clientSecret}`,
+    'utf8',
+  ).toString('base64');
+  return `Basic ${credentials}`;
+}
+
 describe('POST /oauth/revoke', () => {
   describe('Access Token Revocation', () => {
     test('should revoke valid access token', async () => {
@@ -207,6 +232,57 @@ describe('POST /oauth/revoke', () => {
       // Verify token is inactive
       const introspectRes = await introspectToken(access_token);
       expect((await introspectRes.json()).active).toBe(false);
+    });
+
+    test('should revoke client_credentials access token', async () => {
+      const client = testClient(app);
+      const tokenRes = await client.oauth.token.$post({
+        form: {
+          grant_type: 'client_credentials',
+          client_id: CLIENT_CREDENTIALS_CLIENT.clientId,
+          client_secret: CLIENT_CREDENTIALS_CLIENT.clientSecret,
+          scope: 'service.read',
+        },
+      });
+      const tokenJson = await assertJsonBody(tokenRes, 200);
+
+      const introspectBefore = await introspectToken(tokenJson.access_token, {
+        clientId: CLIENT_CREDENTIALS_CLIENT.clientId,
+        clientSecret: CLIENT_CREDENTIALS_CLIENT.clientSecret,
+      });
+      expect((await introspectBefore.json()).active).toBe(true);
+
+      const revokeRes = await revokeToken({
+        token: tokenJson.access_token,
+        tokenTypeHint: 'access_token',
+        clientId: CLIENT_CREDENTIALS_CLIENT.clientId,
+        clientSecret: CLIENT_CREDENTIALS_CLIENT.clientSecret,
+      });
+      expect(revokeRes.status).toBe(200);
+
+      const introspectAfter = await introspectToken(tokenJson.access_token, {
+        clientId: CLIENT_CREDENTIALS_CLIENT.clientId,
+        clientSecret: CLIENT_CREDENTIALS_CLIENT.clientSecret,
+      });
+      expect((await introspectAfter.json()).active).toBe(false);
+    });
+
+    test('should challenge unknown Basic client credentials', async () => {
+      const response = await app.request('/oauth/revoke', {
+        method: 'POST',
+        headers: {
+          authorization: basicAuthHeader('unknown-client', 'secret'),
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({ token: 'opaque-token' }).toString(),
+      });
+
+      expect(response.status).toBe(401);
+      expect(response.headers.get('www-authenticate')).toBe(
+        'Basic realm="tinyauth"',
+      );
+      const json = await response.json();
+      expect(json.error).toBe('invalid_client');
     });
 
     test('should ignore unknown token_type_hint values', async () => {

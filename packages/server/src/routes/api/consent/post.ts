@@ -20,6 +20,33 @@ function consumeConsentPrompt(prompt: string | undefined): string | undefined {
   return remaining.length > 0 ? remaining : undefined;
 }
 
+function buildConsentDenyRedirectUrl(params: {
+  redirectUri: string;
+  state?: string | undefined;
+  responseType: string;
+  responseMode?: 'query' | 'fragment' | 'form_post' | undefined;
+}): string {
+  const errorUrl = new URL(params.redirectUri);
+  const useFragment =
+    params.responseMode === 'fragment' ||
+    (params.responseType === 'id_token' && params.responseMode !== 'query');
+  const errorParams = useFragment
+    ? new URLSearchParams()
+    : errorUrl.searchParams;
+  errorParams.set('error', 'access_denied');
+  errorParams.set(
+    'error_description',
+    'The resource owner or authorization server denied the request.',
+  );
+  if (params.state) {
+    errorParams.set('state', params.state);
+  }
+  if (useFragment) {
+    errorUrl.hash = errorParams.toString();
+  }
+  return errorUrl.toString();
+}
+
 /**
  * POST /api/oauth/consent
  *
@@ -118,27 +145,37 @@ export const consentPost = new Hono<AppEnv>().post(
 
     const { user: userEntity } = c.var.verifiedUser;
     const { oauthClientService, userConsentService } = c.var.services;
+    const requestedScopes = scope ? scope.split(' ') : [];
+
+    const client = await oauthClientService.findByClientId(client_id);
+    oauthClientService.validateEnabled(client);
+    oauthClientService.validateRedirectUri(client, redirect_uri);
+    oauthClientService.validateResponseType(client, response_type);
+    oauthClientService.validateScopes(client, requestedScopes);
+
+    if (response_type === 'id_token') {
+      if (!requestedScopes.includes('openid') || !nonce) {
+        throw new e.InvalidAuthorizationRequest.Error();
+      }
+    } else if (await oauthClientService.isPublicClient(client_id)) {
+      if (!code_challenge || code_challenge_method !== 'S256') {
+        throw new e.InvalidCodeChallengeMethod.Error();
+      }
+    }
 
     // If user denied consent, redirect back with error
     if (decision === 'deny') {
-      const errorUrl = new URL(redirect_uri);
-      errorUrl.searchParams.set('error', 'access_denied');
-      errorUrl.searchParams.set(
-        'error_description',
-        'The resource owner or authorization server denied the request.',
-      );
-      if (state) {
-        errorUrl.searchParams.set('state', state);
-      }
+      const redirectUrl = buildConsentDenyRedirectUrl({
+        redirectUri: redirect_uri,
+        state,
+        responseType: response_type,
+        responseMode: response_mode,
+      });
 
-      return c.json({ redirect_url: errorUrl.toString() }, 200);
+      return c.json({ redirect_url: redirectUrl }, 200);
     }
 
     // User allowed consent - store it
-    const requestedScopes = scope ? scope.split(' ') : [];
-
-    // Look up client to get primary key
-    const client = await oauthClientService.findByClientId(client_id);
 
     await userConsentService.grantConsent({
       userSub: userEntity.sub,

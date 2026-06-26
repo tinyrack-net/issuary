@@ -86,7 +86,15 @@ export const introspectPost = new Hono<AppEnv>().post(
       throw new e.InvalidClientCredentials.Error();
     }
 
-    const client = await oauthClientService.findByClientId(clientId);
+    let client: Awaited<ReturnType<typeof oauthClientService.findByClientId>>;
+    try {
+      client = await oauthClientService.findByClientId(clientId);
+    } catch (err) {
+      if (authorizationHeader) {
+        throwInvalidClientCredentialsWithBasicChallenge(c);
+      }
+      throw err;
+    }
 
     if (!client.enabled) {
       throw new e.OAuthClientDisabled.Error();

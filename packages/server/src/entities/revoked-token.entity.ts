@@ -49,7 +49,8 @@ export const RevokedTokenEntitySchema = defineEntity({
         .manyToOne(UserEntitySchema)
         .comment(
           'Reference to the user (subject) that the token was issued for',
-        ),
+        )
+        .nullable(),
     expires_at: p
       .datetime()
       .comment(

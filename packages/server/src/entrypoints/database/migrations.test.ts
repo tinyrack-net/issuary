@@ -7,6 +7,7 @@ import { Migration20260619191600_unique_oauth_client_client_id as PostgresUnique
 import { Migration20260620025358_add_oauth_client_skip_consent as PostgresOAuthClientSkipConsentMigration } from '../../migrations/postgres/Migration20260620025358_add_oauth_client_skip_consent.js';
 import { Migration20260624190500_add_oauth_device_denied_at as PostgresOAuthDeviceDeniedAtMigration } from '../../migrations/postgres/Migration20260624190500_add_oauth_device_denied_at.js';
 import { Migration20260624223000_add_oauth_device_poll_state as PostgresOAuthDevicePollStateMigration } from '../../migrations/postgres/Migration20260624223000_add_oauth_device_poll_state.js';
+import { Migration20260626103000_allow_revoked_token_without_user as PostgresRevokedTokenNullableUserMigration } from '../../migrations/postgres/Migration20260626103000_allow_revoked_token_without_user.js';
 import { SQLITE_MIGRATIONS } from '../../migrations/sqlite/index.ts';
 import { Migration20260509171226_initial as SqliteInitialMigration } from '../../migrations/sqlite/Migration20260509171226_initial.ts';
 import { Migration20260512120000_add_scheduler_jobs as SqliteSchedulerJobsMigration } from '../../migrations/sqlite/Migration20260512120000_add_scheduler_jobs.ts';
@@ -15,6 +16,7 @@ import { Migration20260619191600_unique_oauth_client_client_id as SqliteUniqueOA
 import { Migration20260620025358_add_oauth_client_skip_consent as SqliteOAuthClientSkipConsentMigration } from '../../migrations/sqlite/Migration20260620025358_add_oauth_client_skip_consent.js';
 import { Migration20260624190500_add_oauth_device_denied_at as SqliteOAuthDeviceDeniedAtMigration } from '../../migrations/sqlite/Migration20260624190500_add_oauth_device_denied_at.js';
 import { Migration20260624223000_add_oauth_device_poll_state as SqliteOAuthDevicePollStateMigration } from '../../migrations/sqlite/Migration20260624223000_add_oauth_device_poll_state.js';
+import { Migration20260626103000_allow_revoked_token_without_user as SqliteRevokedTokenNullableUserMigration } from '../../migrations/sqlite/Migration20260626103000_allow_revoked_token_without_user.js';
 import { postgres } from './postgres/postgres.ts';
 import { sqlite } from './sqlite/sqlite.ts';
 
@@ -26,13 +28,15 @@ type MigrationClass =
   | typeof PostgresOAuthClientSkipConsentMigration
   | typeof PostgresOAuthDeviceDeniedAtMigration
   | typeof PostgresOAuthDevicePollStateMigration
+  | typeof PostgresRevokedTokenNullableUserMigration
   | typeof SqliteInitialMigration
   | typeof SqliteSchedulerJobsMigration
   | typeof SqliteDeviceAuthorizationMigration
   | typeof SqliteUniqueOAuthClientClientIdMigration
   | typeof SqliteOAuthClientSkipConsentMigration
   | typeof SqliteOAuthDeviceDeniedAtMigration
-  | typeof SqliteOAuthDevicePollStateMigration;
+  | typeof SqliteOAuthDevicePollStateMigration
+  | typeof SqliteRevokedTokenNullableUserMigration;
 
 interface MigrationLike {
   up(): void | Promise<void>;
@@ -65,6 +69,7 @@ describe('database migrations', () => {
       PostgresOAuthClientSkipConsentMigration,
       PostgresOAuthDeviceDeniedAtMigration,
       PostgresOAuthDevicePollStateMigration,
+      PostgresRevokedTokenNullableUserMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(POSTGRES_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -104,6 +109,7 @@ describe('database migrations', () => {
       SqliteOAuthClientSkipConsentMigration,
       SqliteOAuthDeviceDeniedAtMigration,
       SqliteOAuthDevicePollStateMigration,
+      SqliteRevokedTokenNullableUserMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(SQLITE_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -261,6 +267,22 @@ describe('database migrations', () => {
     );
     expect(sqliteQueries).toContain(
       `alter table \`oauth_device_code\` add column \`poll_interval_seconds\` integer not null default 5;`,
+    );
+  });
+
+  test('revoked token migration allows machine tokens without user subjects', async () => {
+    const postgresQueries = await collectMigrationQueries(
+      PostgresRevokedTokenNullableUserMigration,
+    );
+    const sqliteQueries = await collectMigrationQueries(
+      SqliteRevokedTokenNullableUserMigration,
+    );
+
+    expect(postgresQueries).toContain(
+      `alter table "revoked_tokens" alter column "user_sub" drop not null;`,
+    );
+    expect(sqliteQueries).toContain(
+      "create table `revoked_tokens_temp_alter` (`id` text not null primary key, `created_at` datetime not null, `updated_at` datetime not null, `jti` text not null, `token_type` text check (`token_type` in ('access_token', 'refresh_token')) not null, `client_id` text not null, `user_sub` text null, `expires_at` datetime not null, `revoked_at` datetime not null, constraint `revoked_tokens_client_id_foreign` foreign key (`client_id`) references `oauth_client` (`id`), constraint `revoked_tokens_user_sub_foreign` foreign key (`user_sub`) references `user` (`sub`));",
     );
   });
 });

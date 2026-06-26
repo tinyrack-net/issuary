@@ -29,7 +29,7 @@ export class RevokedTokenRepository extends EntityRepository<IRevokedTokenEntity
     jti: string;
     token_type: TokenType;
     clientId: string;
-    userSub: string;
+    userSub?: string | undefined;
     expires_at: Date;
   }): Promise<IRevokedTokenEntity> {
     // Check if already revoked
@@ -42,8 +42,8 @@ export class RevokedTokenRepository extends EntityRepository<IRevokedTokenEntity
       jti: params.jti,
       token_type: params.token_type,
       client: params.clientId,
-      user: params.userSub,
       expires_at: params.expires_at,
+      ...(params.userSub !== undefined && { user: params.userSub }),
     });
 
     await this.getEntityManager().persist(entity).flush();
@@ -59,7 +59,7 @@ export class RevokedTokenRepository extends EntityRepository<IRevokedTokenEntity
     jti: string;
     token_type: TokenType;
     clientId: string;
-    userSub: string;
+    userSub?: string | undefined;
     expires_at: Date;
   }): Promise<boolean> {
     const existing = await this.findOne({ jti: params.jti });
@@ -71,8 +71,8 @@ export class RevokedTokenRepository extends EntityRepository<IRevokedTokenEntity
       jti: params.jti,
       token_type: params.token_type,
       client: params.clientId,
-      user: params.userSub,
       expires_at: params.expires_at,
+      ...(params.userSub !== undefined && { user: params.userSub }),
     });
 
     try {

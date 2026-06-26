@@ -701,6 +701,24 @@ describe('GET /oauth/authorize', () => {
       );
     });
 
+    test('should return prompt=none login_required errors in the fragment for implicit id_token flow', async () => {
+      const { location, statusCode } = await getAuthorizationCode({
+        response_type: 'id_token',
+        client_id: IMPLICIT_ID_TOKEN_CLIENT.clientId,
+        redirect_uri: IMPLICIT_ID_TOKEN_CLIENT.redirectUri,
+        scope: 'openid profile email',
+        nonce: 'implicit-prompt-none-nonce',
+        state: 'implicit-prompt-none-state',
+        prompt: 'none',
+      });
+
+      expect(statusCode).toBe(302);
+      const fragment = new URLSearchParams(location.hash.slice(1));
+      expect(location.searchParams.has('error')).toBe(false);
+      expect(fragment.get('error')).toBe('login_required');
+      expect(fragment.get('state')).toBe('implicit-prompt-none-state');
+    });
+
     test('should accept "code" response_type', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
@@ -909,7 +927,7 @@ describe('GET /oauth/authorize', () => {
         state: 'random-state-string',
       };
 
-      const { location, statusCode } = await getAuthorizationCodeWithConsent(
+      const { location, statusCode } = await getAuthorizationCode(
         paramsWithoutPkce,
         sessionCookie,
       );
@@ -921,7 +939,7 @@ describe('GET /oauth/authorize', () => {
     test('should reject public client authorization with plain code_challenge_method', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
 
-      const { location, statusCode } = await getAuthorizationCodeWithConsent(
+      const { location, statusCode } = await getAuthorizationCode(
         {
           ...validParams,
           client_id: PUBLIC_OAUTH_CLIENT.clientId,

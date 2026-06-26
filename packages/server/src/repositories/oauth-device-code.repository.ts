@@ -1,6 +1,10 @@
 import { EntityRepository } from '@mikro-orm/core';
 import type { IOAuthDeviceCodeEntity } from '../entities/oauth-device-code.entity.ts';
 
+const DEVICE_CODE_POLL_INTERVAL_SECONDS = 5;
+
+export type PendingDevicePollResult = 'authorization_pending' | 'slow_down';
+
 export class OAuthDeviceCodeRepository extends EntityRepository<IOAuthDeviceCodeEntity> {
   async createDeviceAuthorization(params: {
     clientId: string;
@@ -100,6 +104,58 @@ export class OAuthDeviceCodeRepository extends EntityRepository<IOAuthDeviceCode
       deviceCodeHash,
       consumedAt: null,
     });
+  }
+
+  async recordPendingPoll(params: {
+    id: string;
+    polledAt: Date;
+  }): Promise<PendingDevicePollResult | null> {
+    const deviceCode = await this.findOne(
+      {
+        id: params.id,
+        consumedAt: null,
+        authorizedAt: null,
+        deniedAt: null,
+        expiresAt: { $gt: params.polledAt },
+      },
+      { refresh: true },
+    );
+
+    if (!deviceCode) {
+      return null;
+    }
+
+    const intervalSeconds =
+      deviceCode.pollIntervalSeconds ?? DEVICE_CODE_POLL_INTERVAL_SECONDS;
+    const lastPolledAtMs = deviceCode.lastPolledAt?.getTime();
+    const isSlowDown =
+      lastPolledAtMs !== undefined &&
+      params.polledAt.getTime() - lastPolledAtMs < intervalSeconds * 1000;
+    const nextIntervalSeconds = isSlowDown
+      ? intervalSeconds + 5
+      : intervalSeconds;
+
+    const updated = await this.nativeUpdate(
+      {
+        id: params.id,
+        consumedAt: null,
+        authorizedAt: null,
+        deniedAt: null,
+        expiresAt: { $gt: params.polledAt },
+        pollIntervalSeconds: intervalSeconds,
+        lastPolledAt: deviceCode.lastPolledAt ?? null,
+      },
+      {
+        lastPolledAt: params.polledAt,
+        pollIntervalSeconds: nextIntervalSeconds,
+      },
+    );
+
+    if (updated !== 1) {
+      return this.recordPendingPoll(params);
+    }
+
+    return isSlowDown ? 'slow_down' : 'authorization_pending';
   }
 
   async consumeAuthorizedDeviceCode(

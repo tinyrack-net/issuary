@@ -43,7 +43,9 @@ export function buildOpenidConfiguration(config: TinyAuthRuntimeConfig) {
       'email',
       'email_verified',
       'name',
+      'preferred_username',
     ],
+    prompt_values_supported: ['none', 'login', 'consent', 'select_account'],
     grant_types_supported: [
       'authorization_code',
       'implicit',

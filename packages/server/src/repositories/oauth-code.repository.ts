@@ -52,4 +52,29 @@ export class OAuthCodeRepository extends EntityRepository<IOAuthCodeEntity> {
       consumedAt: null,
     });
   }
+
+  async consumeAuthorizationCode(params: {
+    clientId: string;
+    codeHash: string;
+    consumedAt: Date;
+  }): Promise<IOAuthCodeEntity | null> {
+    const updated = await this.nativeUpdate(
+      {
+        client: params.clientId,
+        codeHash: params.codeHash,
+        consumedAt: null,
+        expiredAt: { $gt: params.consumedAt },
+      },
+      { consumedAt: params.consumedAt },
+    );
+
+    if (updated !== 1) {
+      return null;
+    }
+
+    return this.findOne({
+      client: params.clientId,
+      codeHash: params.codeHash,
+    });
+  }
 }

@@ -44,4 +44,15 @@ describe('GET /.well-known/openid-configuration', () => {
       token_endpoint: 'http://localhost:8080/oauth/token',
     });
   });
+
+  test('should serve the same metadata as the OAuth compatibility alias', async () => {
+    const rootRes = await app.request('/.well-known/openid-configuration');
+    const aliasRes = await app.request(
+      '/oauth/.well-known/openid-configuration',
+    );
+
+    expect(rootRes.status).toBe(200);
+    expect(aliasRes.status).toBe(200);
+    await expect(rootRes.json()).resolves.toEqual(await aliasRes.json());
+  });
 });

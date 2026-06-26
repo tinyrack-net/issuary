@@ -134,6 +134,14 @@ async function createPublicClientTokens() {
   return assertJsonBody(tokenRes, 200);
 }
 
+function basicAuthHeader(clientId: string, clientSecret: string) {
+  const credentials = Buffer.from(
+    `${clientId}:${clientSecret}`,
+    'utf8',
+  ).toString('base64');
+  return `Basic ${credentials}`;
+}
+
 describe('POST /oauth/introspect', () => {
   describe('Valid Token Introspection - Access Token', () => {
     test('should return active=true for valid access token', async () => {
@@ -408,6 +416,24 @@ describe('POST /oauth/introspect', () => {
 
       const json = await assertJsonBody(res, 400);
       expect(json.code).toBe('OAUTH_CLIENT_NOT_FOUND');
+    });
+
+    test('should challenge unknown Basic client credentials', async () => {
+      const response = await app.request('/oauth/introspect', {
+        method: 'POST',
+        headers: {
+          authorization: basicAuthHeader('unknown-client', 'secret'),
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({ token: 'opaque-token' }).toString(),
+      });
+
+      expect(response.status).toBe(401);
+      expect(response.headers.get('www-authenticate')).toBe(
+        'Basic realm="tinyauth"',
+      );
+      const json = await response.json();
+      expect(json.error).toBe('invalid_client');
     });
 
     test('should reject invalid client_secret', async () => {

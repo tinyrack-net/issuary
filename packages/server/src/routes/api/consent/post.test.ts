@@ -275,6 +275,105 @@ describe('POST /api/consent', () => {
       // scope should not be in the URL if not provided
       expect(redirectUrl.searchParams.has('scope')).toBe(false);
     });
+
+    test('should reject invalid redirect_uri before storing consent', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const client = testClient(app);
+      const invalidScope = `invalid_redirect_scope_${Date.now()}`;
+
+      const res = await client.api.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: 'https://evil.example/callback',
+            response_type: 'code',
+            scope: invalidScope,
+            decision: 'allow',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      expect(res.status).toBe(400);
+
+      await withMikroContext(services, async () => {
+        const clientEntity = await services.mikro.oauthClient.findOneOrFail({
+          clientId: TEST_OAUTH_CLIENT.clientId,
+        });
+        const consents = await services.mikro.userConsent.findAll({
+          where: { client: clientEntity },
+        });
+        for (const consent of consents) {
+          expect(consent.scopes).not.toContain(invalidScope);
+        }
+      });
+    });
+
+    test('should reject invalid scope before storing consent', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const client = testClient(app);
+      const invalidScope = `not_registered_${Date.now()}`;
+
+      const res = await client.api.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            scope: invalidScope,
+            decision: 'allow',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      expect(res.status).toBe(400);
+
+      await withMikroContext(services, async () => {
+        const clientEntity = await services.mikro.oauthClient.findOneOrFail({
+          clientId: TEST_OAUTH_CLIENT.clientId,
+        });
+        const consents = await services.mikro.userConsent.findAll({
+          where: { client: clientEntity },
+        });
+        for (const consent of consents) {
+          expect(consent.scopes).not.toContain(invalidScope);
+        }
+      });
+    });
+
+    test('should reject unsupported response_type before storing consent', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const client = testClient(app);
+      const invalidScope = `unsupported_response_scope_${Date.now()}`;
+
+      const res = await client.api.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'token',
+            scope: invalidScope,
+            decision: 'allow',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      expect(res.status).toBe(400);
+
+      await withMikroContext(services, async () => {
+        const clientEntity = await services.mikro.oauthClient.findOneOrFail({
+          clientId: TEST_OAUTH_CLIENT.clientId,
+        });
+        const consents = await services.mikro.userConsent.findAll({
+          where: { client: clientEntity },
+        });
+        for (const consent of consents) {
+          expect(consent.scopes).not.toContain(invalidScope);
+        }
+      });
+    });
   });
 
   describe('Deny decision', () => {
@@ -333,6 +432,55 @@ describe('POST /api/consent', () => {
       expect(redirectUrl.searchParams.get('error')).toBe('access_denied');
     });
 
+    test('should reject unregistered redirect_uri instead of returning a deny redirect URL', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const client = testClient(app);
+
+      const res = await client.api.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: 'https://evil.example/callback',
+            response_type: 'code',
+            scope: 'openid',
+            decision: 'deny',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body).not.toHaveProperty('redirect_url');
+    });
+
+    test('should return fragment error redirect when response_mode=fragment', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const client = testClient(app);
+
+      const res = await client.api.consent.$post(
+        {
+          json: {
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+            response_type: 'code',
+            scope: 'openid',
+            state: 'fragment-deny-state',
+            response_mode: 'fragment',
+            decision: 'deny',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      const body = await assertJsonBody(res, 200);
+      const redirectUrl = new URL(body.redirect_url);
+      const fragment = new URLSearchParams(redirectUrl.hash.slice(1));
+      expect(redirectUrl.searchParams.has('error')).toBe(false);
+      expect(fragment.get('error')).toBe('access_denied');
+      expect(fragment.get('state')).toBe('fragment-deny-state');
+    });
+
     test('should not store consent when denied', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const client = testClient(app);
@@ -347,8 +495,19 @@ describe('POST /api/consent', () => {
       const user = sessionBody.user;
       if (!user) return;
 
-      // Use a unique scope to verify no consent is stored
-      const uniqueScope = `deny_test_${Date.now()}`;
+      let consentCountBefore = 0;
+      await withMikroContext(services, async () => {
+        const userEntity = await services.mikro.user.findOneOrFail({
+          sub: user.sub,
+        });
+        const clientEntity = await services.mikro.oauthClient.findOneOrFail({
+          clientId: TEST_OAUTH_CLIENT.clientId,
+        });
+        consentCountBefore = await services.mikro.userConsent.count({
+          user: userEntity,
+          client: clientEntity,
+        });
+      });
 
       const res = await client.api.consent.$post(
         {
@@ -356,7 +515,7 @@ describe('POST /api/consent', () => {
             client_id: TEST_OAUTH_CLIENT.clientId,
             redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
             response_type: 'code',
-            scope: uniqueScope,
+            scope: 'openid',
             decision: 'deny',
           },
         },
@@ -365,7 +524,7 @@ describe('POST /api/consent', () => {
 
       expect(res.status).toBe(200);
 
-      // Verify no consent with this scope was stored
+      // Verify deny did not create or update a consent record.
       await withMikroContext(services, async () => {
         const userEntity = await services.mikro.user.findOneOrFail({
           sub: user.sub,
@@ -373,17 +532,11 @@ describe('POST /api/consent', () => {
         const clientEntity = await services.mikro.oauthClient.findOneOrFail({
           clientId: TEST_OAUTH_CLIENT.clientId,
         });
-        const consents = await services.mikro.userConsent.findAll({
-          where: {
-            user: userEntity,
-            client: clientEntity,
-          },
+        const consentCountAfter = await services.mikro.userConsent.count({
+          user: userEntity,
+          client: clientEntity,
         });
-
-        // Check that no consent has the unique scope
-        for (const consent of consents) {
-          expect(consent.scopes).not.toContain(uniqueScope);
-        }
+        expect(consentCountAfter).toBe(consentCountBefore);
       });
     });
   });

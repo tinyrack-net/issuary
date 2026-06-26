@@ -85,8 +85,6 @@ export interface TokenResponse {
   scope: string;
 }
 
-const DEVICE_CODE_POLL_INTERVAL_SECONDS = 5;
-
 /**
  * OAuth Token Service
  *
@@ -145,22 +143,16 @@ export class OAuthTokenService {
       'oauth-code',
       code,
     );
-    const codeEntity =
-      await this.mikro.oauthCode.findUnconsumedByClientAndCodeHash(
-        client.id,
-        codeHash,
-      );
+    const consumedAt = new Date();
+    const codeEntity = await this.mikro.oauthCode.consumeAuthorizationCode({
+      clientId: client.id,
+      codeHash,
+      consumedAt,
+    });
 
     if (!codeEntity) {
       throw new e.InvalidAuthorizationCode.Error();
     }
-
-    if (codeEntity.expiredAt < new Date()) {
-      throw new e.InvalidAuthorizationCode.Error();
-    }
-
-    codeEntity.consumedAt = new Date();
-    await this.mikro.em.flush();
 
     // 3. Populate user relation
     await this.mikro.em.populate(codeEntity, ['user']);
@@ -308,24 +300,18 @@ export class OAuthTokenService {
       throw new e.AccessDenied.Error();
     }
     if (!deviceCode.authorizedUser) {
-      const polledAt = new Date();
-      const intervalSeconds =
-        deviceCode.pollIntervalSeconds ?? DEVICE_CODE_POLL_INTERVAL_SECONDS;
-      const lastPolledAtMs = deviceCode.lastPolledAt?.getTime();
-      if (
-        lastPolledAtMs !== undefined &&
-        polledAt.getTime() - lastPolledAtMs < intervalSeconds * 1000
-      ) {
-        deviceCode.lastPolledAt = polledAt;
-        deviceCode.pollIntervalSeconds = intervalSeconds + 5;
-        await this.mikro.em.flush();
+      const pollResult = await this.mikro.oauthDeviceCode.recordPendingPoll({
+        id: deviceCode.id,
+        polledAt: new Date(),
+      });
+
+      if (pollResult === 'slow_down') {
         throw new e.SlowDown.Error();
       }
-
-      deviceCode.lastPolledAt = polledAt;
-      deviceCode.pollIntervalSeconds = intervalSeconds;
-      await this.mikro.em.flush();
-      throw new e.AuthorizationPending.Error();
+      if (pollResult === 'authorization_pending') {
+        throw new e.AuthorizationPending.Error();
+      }
+      throw new e.InvalidDeviceCode.Error();
     }
 
     const consumedAt = new Date();
@@ -570,8 +556,17 @@ export class OAuthTokenService {
       clientId: payload.client_id,
     });
 
-    if (!userEntity || !clientEntity) {
-      // User or client no longer exists, but we still return success per RFC 7009
+    if (!clientEntity) {
+      // Client no longer exists, but we still return success per RFC 7009.
+      return;
+    }
+
+    const isClientCredentialsAccessToken =
+      tokenType === 'access_token' &&
+      'grant_type' in payload &&
+      payload.grant_type === 'client_credentials';
+    if (!userEntity && !isClientCredentialsAccessToken) {
+      // User no longer exists, but we still return success per RFC 7009.
       return;
     }
 
@@ -580,7 +575,7 @@ export class OAuthTokenService {
       jti,
       token_type: tokenType,
       clientId: clientEntity.id, // Use entity's primary key
-      userSub: userEntity.sub,
+      ...(userEntity !== null && { userSub: userEntity.sub }),
       expires_at: expiresAt,
     });
 

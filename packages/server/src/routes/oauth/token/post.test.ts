@@ -735,6 +735,77 @@ describe('POST /oauth/token', () => {
       expect(json.code).toBe('INVALID_AUTHORIZATION_CODE');
     });
 
+    test('should allow only one concurrent request to consume an authorization code', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+
+      const responses: Response[] = await Promise.all([
+        exchangeCode({ code }) as Promise<Response>,
+        exchangeCode({ code }) as Promise<Response>,
+        exchangeCode({ code }) as Promise<Response>,
+      ]);
+
+      const successCount = responses.filter(
+        (response) => response.status === 200,
+      ).length;
+      const failureCount = responses.filter(
+        (response) => response.status === 400,
+      ).length;
+
+      expect(successCount).toBe(1);
+      expect(failureCount).toBe(2);
+
+      for (const response of responses) {
+        if (response.status === 400) {
+          const json = await response.json();
+          expect(json.error).toBe('invalid_grant');
+          expect(json.code).toBe('INVALID_AUTHORIZATION_CODE');
+        }
+      }
+    });
+
+    test('should atomically consume authorization code rows in the repository', async () => {
+      const code = `atomic-code-${crypto.randomUUID()}`;
+      const codeHash = await services.securityService.hashOpaqueToken(
+        'oauth-code',
+        code,
+      );
+      const { userSub } = await createDbUserWithSession(
+        app,
+        services,
+        generateUniqueEmail('atomic-code'),
+        'password123!',
+      );
+      await withMikroContext(services, async () => {
+        const oauthClient = await services.oauthClientService.findByClientId(
+          TEST_OAUTH_CLIENT.clientId,
+        );
+        await services.mikro.oauthCode.createAuthorizationCode({
+          clientId: oauthClient.id,
+          userSub,
+          codeHash,
+          redirectUri: TEST_OAUTH_CLIENT.redirectUri,
+          scope: ['openid'],
+          codeChallenge: TEST_PKCE.codeChallenge,
+          codeChallengeMethod: TEST_PKCE.codeChallengeMethod,
+        });
+
+        const first = await services.mikro.oauthCode.consumeAuthorizationCode({
+          clientId: oauthClient.id,
+          codeHash,
+          consumedAt: new Date(),
+        });
+        const second = await services.mikro.oauthCode.consumeAuthorizationCode({
+          clientId: oauthClient.id,
+          codeHash,
+          consumedAt: new Date(),
+        });
+
+        expect(first).not.toBeNull();
+        expect(second).toBeNull();
+      });
+    });
+
     test('should reject missing authorization code', async () => {
       const client = testClient(app);
       const res = await client.oauth.token.$post({

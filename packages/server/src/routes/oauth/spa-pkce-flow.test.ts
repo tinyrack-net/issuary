@@ -11,7 +11,6 @@ import {
   getAuthorizationCode,
   getLocationHeader,
   getUserInfo,
-  grantConsent,
   MINIMAL_TEST_CONFIG,
   parseJwks,
   refreshAccessToken,
@@ -345,14 +344,6 @@ describe('SPA PKCE Authentication Flow', () => {
       const plainVerifier = generateCodeVerifier();
 
       const sessionCookie = await createAuthenticatedSession(app);
-      await grantConsent(app, sessionCookie, {
-        client_id: TEST_OAUTH_CLIENT.clientId,
-        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        scope: 'openid profile email',
-        code_challenge: plainVerifier,
-        code_challenge_method: 'plain',
-      });
-
       const authClient = testClient(app);
       const res = await authClient.oauth.authorize.$get(
         {
@@ -377,13 +368,6 @@ describe('SPA PKCE Authentication Flow', () => {
 
     test('should reject code_challenge without explicit S256 method', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
-
-      await grantConsent(app, sessionCookie, {
-        client_id: TEST_OAUTH_CLIENT.clientId,
-        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-        scope: 'openid profile email',
-        code_challenge: TEST_PKCE.codeChallenge,
-      });
 
       const authClient = testClient(app);
       const res = await authClient.oauth.authorize.$get(
