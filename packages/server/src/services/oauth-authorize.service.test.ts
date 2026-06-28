@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type {
   AccountSelectionSession,
+  ReauthenticationSession,
   SessionAccount,
 } from '../middleware/session.ts';
 import {
@@ -535,12 +536,17 @@ describe('OAuthAuthorizeService account selection', () => {
     userSub: string;
     query?: AuthorizeParams;
     rememberedAccounts?: SessionAccount[];
-  }): Promise<{ state: AccountSelectionSession; redirect: URL }> {
+  }): Promise<{
+    state: AccountSelectionSession;
+    reauthentication: ReauthenticationSession;
+    redirect: URL;
+  }> {
     const query: AuthorizeParams = params.query ?? {
       ...baseQuery,
       prompt: 'select_account',
     };
     const storedStates: AccountSelectionSession[] = [];
+    const reauthenticationStates: ReauthenticationSession[] = [];
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
         query,
@@ -556,11 +562,15 @@ describe('OAuthAuthorizeService account selection', () => {
           },
         ],
         setAccountSelectionSession: (state) => storedStates.push(state),
+        setReauthenticationSession: (state) =>
+          reauthenticationStates.push(state),
       }),
     );
     expect(storedStates).toHaveLength(1);
+    expect(reauthenticationStates).toHaveLength(1);
     return {
       state: storedStates[0] as AccountSelectionSession,
+      reauthentication: reauthenticationStates[0] as ReauthenticationSession,
       redirect: new URL(result.url),
     };
   }
@@ -627,6 +637,58 @@ describe('OAuthAuthorizeService account selection', () => {
     expect(redirect.searchParams.get('code')).toBeTruthy();
     expect(redirect.searchParams.get('state')).toBe(baseQuery.state);
     expect(cleared).toEqual(['cleared']);
+  });
+
+  test('continues after add-account login returns with a bound reauthentication and chooser state', async () => {
+    const activeSub = await createTestUser(services, {
+      email: 'add-account-active@example.com',
+    });
+    const addedSub = await createTestUser(services, {
+      email: 'add-account-added@example.com',
+    });
+    await grantBaseConsent(addedSub);
+    const { state: accountSelectionSession, reauthentication } =
+      await createChooserState({ userSub: activeSub });
+    const authenticatedAt = Math.floor(Date.now() / 1000);
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          prompt: 'select_account login',
+          reauthenticated: '1',
+          account_selected: '1',
+          account_selection_state: accountSelectionSession.id,
+        },
+        userSession: {
+          sub: addedSub,
+          authenticated_at: authenticatedAt,
+        },
+        reauthenticationSession: {
+          ...reauthentication,
+          sub: addedSub,
+          authenticated_at: authenticatedAt,
+        },
+        accountSelectionSession,
+        rememberedAccounts: [
+          {
+            sub: activeSub,
+            authenticated_at: 1_700_000_000,
+            last_used_at: 1_700_000_000,
+          },
+          {
+            sub: addedSub,
+            authenticated_at: authenticatedAt,
+            last_used_at: authenticatedAt,
+          },
+        ],
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.pathname).toBe(new URL(baseQuery.redirect_uri).pathname);
+    expect(redirect.searchParams.get('code')).toBeTruthy();
+    expect(redirect.searchParams.get('state')).toBe(baseQuery.state);
   });
 
   test('does not trust account_selected when the continuation state was created for a different authorize request', async () => {

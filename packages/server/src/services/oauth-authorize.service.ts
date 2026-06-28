@@ -194,7 +194,9 @@ export class OAuthAuthorizeService {
       }
 
       params.setReauthenticationSession?.(
-        this.createReauthenticationSession(query),
+        this.createReauthenticationSession(
+          this.buildDefaultReauthenticationQuery(query),
+        ),
       );
 
       // User not logged in - redirect to login page
@@ -266,6 +268,14 @@ export class OAuthAuthorizeService {
         params.setAccountSelectionSession?.(continuation);
         accountSelectionState = continuation.id;
       }
+      params.setReauthenticationSession?.(
+        this.createReauthenticationSession(
+          this.buildAddAccountReauthenticationQuery(
+            query,
+            accountSelectionState,
+          ),
+        ),
+      );
       return {
         type: 'redirect',
         url: this.buildAccountSelectRedirectUrl(query, accountSelectionState),
@@ -274,7 +284,9 @@ export class OAuthAuthorizeService {
 
     if (accountSelection.type === 'reauthenticate') {
       params.setReauthenticationSession?.(
-        this.createReauthenticationSession(query),
+        this.createReauthenticationSession(
+          this.buildDefaultReauthenticationQuery(query),
+        ),
       );
       return {
         type: 'redirect',
@@ -317,7 +329,9 @@ export class OAuthAuthorizeService {
       }
 
       params.setReauthenticationSession?.(
-        this.createReauthenticationSession(query),
+        this.createReauthenticationSession(
+          this.buildDefaultReauthenticationQuery(query),
+        ),
       );
       return {
         type: 'redirect',
@@ -490,6 +504,38 @@ export class OAuthAuthorizeService {
     };
   }
 
+  private buildDefaultReauthenticationQuery(
+    query: AuthorizeParams,
+  ): AuthorizeParams {
+    if (query.prompt?.split(' ').includes('select_account')) {
+      return query;
+    }
+    return {
+      ...query,
+      account_selected: '1',
+    };
+  }
+
+  private buildAddAccountReauthenticationQuery(
+    query: AuthorizeParams,
+    accountSelectionState: string,
+  ): AuthorizeParams {
+    return {
+      ...query,
+      prompt: this.appendLoginPrompt(query.prompt),
+      account_selected: '1',
+      account_selection_state: accountSelectionState,
+    };
+  }
+
+  private appendLoginPrompt(prompt: string | undefined): string {
+    const values = prompt?.split(' ').filter(Boolean) ?? [];
+    if (!values.includes('login')) {
+      values.push('login');
+    }
+    return values.join(' ');
+  }
+
   private buildReauthenticationRequestFingerprint(
     query: AuthorizeParams,
   ): string {
@@ -511,6 +557,8 @@ export class OAuthAuthorizeService {
         ['ui_locales', query.ui_locales],
         ['id_token_hint', query.id_token_hint],
         ['acr_values', query.acr_values],
+        ['account_selected', query.account_selected],
+        ['account_selection_state', query.account_selection_state],
       ].filter(([, value]) => value !== undefined),
     );
   }
