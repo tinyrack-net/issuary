@@ -1,3 +1,4 @@
+import type { RegistrationResponseJSON } from '@simplewebauthn/server';
 import { testClient } from 'hono/testing';
 import {
   afterAll,
@@ -10,6 +11,8 @@ import {
 } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
 import { google } from '../../../entrypoints/identity-providers/google.ts';
+import { decrypt, encrypt } from '../../../lib/crypto.ts';
+import type { SessionData } from '../../../middleware/session.ts';
 import { e } from '../../../schemas/error.ts';
 import type { ServiceContainer } from '../../../services/container.ts';
 import {
@@ -21,6 +24,8 @@ import {
   getLocationHeader,
   MINIMAL_TEST_CONFIG,
   mockOAuthProviderFetch,
+  TEST_USER,
+  TEST_USER_CONFIG,
   withMikroContext,
 } from '../../../test-utils/index.ts';
 
@@ -55,6 +60,31 @@ function createMockAuthenticationResponse(overrides?: {
       ).toString('base64url'),
       authenticatorData: 'bW9jay1hdXRoZW50aWNhdG9yLWRhdGE',
       signature: 'bW9jay1zaWduYXR1cmU',
+    },
+    type: 'public-key',
+    clientExtensionResults: {},
+  };
+}
+
+function createMockRegistrationResponse(overrides?: {
+  id?: string;
+  rawId?: string;
+  clientDataJSON?: string;
+}): RegistrationResponseJSON {
+  return {
+    id: overrides?.id ?? 'mock-registration-credential-id',
+    rawId: overrides?.rawId ?? 'mock-registration-credential-id',
+    response: {
+      clientDataJSON:
+        overrides?.clientDataJSON ??
+        Buffer.from(
+          JSON.stringify({
+            type: 'webauthn.create',
+            challenge: 'mock-challenge',
+            origin: 'http://localhost:8080',
+          }),
+        ).toString('base64url'),
+      attestationObject: 'mock-attestation-object',
     },
     type: 'public-key',
     clientExtensionResults: {},
@@ -139,6 +169,24 @@ async function startOAuthLinkFlow(
     sessionCookie: extractCookie(authorizeRes, 'session'),
     state,
   };
+}
+
+async function createEncryptedSessionCookie(sessionData: SessionData) {
+  return encrypt(
+    JSON.stringify(sessionData),
+    MINIMAL_TEST_CONFIG.security.session_secret,
+  );
+}
+
+async function readEncryptedSessionCookie(sessionCookie: string) {
+  const decrypted = await decrypt(
+    sessionCookie,
+    MINIMAL_TEST_CONFIG.security.session_secret,
+  );
+  if (!decrypted) {
+    throw new Error('Expected readable encrypted session cookie');
+  }
+  return JSON.parse(decrypted);
 }
 
 describe('Stateful auth flows', () => {
@@ -394,5 +442,450 @@ describe('Stateful auth flows', () => {
     expect(fullSessionBody.user?.sub).toBe(user.sub);
 
     verifySpy.mockRestore();
+  });
+
+  test('uses pending 2FA setup user instead of the existing active account for TOTP setup completion', async () => {
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
+        email_verification_required: false,
+      },
+      auth: {
+        password: {
+          enabled: true,
+          two_factor: {
+            enrollment_required: true,
+          },
+          totp: {
+            enabled: true,
+            issuer: 'TinyAuthPendingSetupPrecedenceTest',
+          },
+        },
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+        },
+      },
+    });
+
+    try {
+      const client = testClient(scopedServer.app);
+      const loginARes = await client.api.auth.login.$post({
+        json: { email: TEST_USER.email, password: TEST_USER.password },
+      });
+      expect(loginARes.status).toBe(200);
+      const userACookie = extractCookie(loginARes, 'session');
+
+      const userBEmail = generateUniqueEmail('pending-setup-precedence-b');
+      const userBPassword = 'pending-setup-precedence-password-123';
+      const registerBRes = await client.api.auth.register.$post(
+        {
+          header: { 'accept-language': 'en' },
+          json: { email: userBEmail, password: userBPassword },
+        },
+        { headers: { Cookie: `session=${userACookie}` } },
+      );
+      const registerBBody = await assertJsonBody(registerBRes);
+      expect(registerBBody.user.email).toBe(userBEmail);
+      expect(registerBBody.user.second_factor_required).toBe(true);
+      const pendingSetupCookie = extractCookie(registerBRes, 'session');
+
+      const stillActiveSessionRes = await client.api.user.session.$get(
+        {},
+        { headers: { Cookie: `session=${pendingSetupCookie}` } },
+      );
+      const stillActiveSessionBody = await assertJsonBody(
+        stillActiveSessionRes,
+      );
+      expect(stillActiveSessionBody.user?.sub).toBe(TEST_USER_CONFIG.sub);
+
+      const setupRes = await client.api.user.totp.setup.$post(
+        {},
+        { headers: { Cookie: `session=${pendingSetupCookie}` } },
+      );
+      const setupBody = await assertJsonBody(setupRes);
+      const setupCode = scopedServer.services.totpService.generateToken(
+        setupBody.secret,
+      );
+
+      const verifySetupRes = await client.api.user.totp.verify.$post(
+        { json: { code: setupCode } },
+        { headers: { Cookie: `session=${pendingSetupCookie}` } },
+      );
+      const verifySetupBody = await assertJsonBody(verifySetupRes);
+      expect(verifySetupBody.recovery_codes.length).toBeGreaterThan(0);
+
+      const confirmRes = await client.api.user.totp.confirm.$post(
+        {},
+        { headers: { Cookie: `session=${pendingSetupCookie}` } },
+      );
+      const confirmBody = await assertJsonBody(confirmRes);
+      expect(confirmBody.user.email).toBe(userBEmail);
+      expect(confirmBody.user.totp_registered).toBe(true);
+
+      const confirmedCookie = extractCookie(confirmRes, 'session');
+      const confirmedSessionRes = await client.api.user.session.$get(
+        {},
+        { headers: { Cookie: `session=${confirmedCookie}` } },
+      );
+      const confirmedSessionBody = await assertJsonBody(confirmedSessionRes);
+      expect(confirmedSessionBody.user?.email).toBe(userBEmail);
+      const confirmedSession =
+        await readEncryptedSessionCookie(confirmedCookie);
+      expect(confirmedSession).toMatchObject({
+        user: { sub: confirmBody.user.sub },
+        accounts: [
+          { sub: TEST_USER_CONFIG.sub },
+          { sub: confirmBody.user.sub },
+        ],
+      });
+    } finally {
+      await scopedServer.cleanup();
+    }
+  });
+
+  test('uses pending 2FA setup user instead of the existing active account for passkey setup completion', async () => {
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
+        email_verification_required: false,
+      },
+      auth: {
+        password: {
+          enabled: true,
+          two_factor: {
+            enrollment_required: true,
+          },
+        },
+        passkey: {
+          enabled: true,
+        },
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+        },
+      },
+    });
+
+    try {
+      const client = testClient(scopedServer.app);
+      const loginARes = await client.api.auth.login.$post({
+        json: { email: TEST_USER.email, password: TEST_USER.password },
+      });
+      expect(loginARes.status).toBe(200);
+      const userACookie = extractCookie(loginARes, 'session');
+
+      const userBEmail = generateUniqueEmail('pending-passkey-setup-b');
+      const userBPassword = 'pending-passkey-setup-password-123';
+      const registerBRes = await client.api.auth.register.$post(
+        {
+          header: { 'accept-language': 'en' },
+          json: { email: userBEmail, password: userBPassword },
+        },
+        { headers: { Cookie: `session=${userACookie}` } },
+      );
+      const registerBBody = await assertJsonBody(registerBRes);
+      expect(registerBBody.user.email).toBe(userBEmail);
+      expect(registerBBody.user.second_factor_required).toBe(true);
+      const pendingSetupCookie = extractCookie(registerBRes, 'session');
+
+      const optionsRes = await client.api.user.passkeys.register.options.$post(
+        {},
+        { headers: { Cookie: `session=${pendingSetupCookie}` } },
+      );
+      const optionsBody = await assertJsonBody(optionsRes);
+      expect(optionsBody.options.user.name).toBe(userBEmail);
+      const optionsCookie = extractCookie(optionsRes, 'session');
+      const credentialId = `pending-passkey-setup-${crypto.randomUUID()}`;
+
+      const verifyRegistration = vi
+        .spyOn(scopedServer.services.passkeyService, 'verifyRegistration')
+        .mockImplementationOnce(async (user, _response, expectedChallenge) => {
+          expect(user.email).toBe(userBEmail);
+          expect(expectedChallenge).toBe(optionsBody.options.challenge);
+
+          const passkey = scopedServer.services.mikro.userPasskey.create({
+            user: user.sub,
+            credential_id: credentialId,
+            public_key: 'pending-passkey-setup-public-key',
+            counter: 0,
+            device_type: 'multiDevice',
+            backed_up: true,
+            transports: ['internal'],
+            name: 'Pending Setup Passkey',
+            aaguid: 'pending-passkey-setup-aaguid',
+          });
+          await scopedServer.services.mikro.em.persist(passkey).flush();
+          return passkey;
+        });
+
+      const verifyRes = await client.api.user.passkeys.register.verify.$post(
+        {
+          json: {
+            response: createMockRegistrationResponse({
+              id: credentialId,
+              rawId: credentialId,
+            }),
+            name: 'Pending Setup Passkey',
+          },
+        },
+        { headers: { Cookie: `session=${optionsCookie}` } },
+      );
+
+      const verifyBody = await assertJsonBody(verifyRes);
+      expect(verifyBody).toMatchObject({
+        ok: true,
+        second_factor_setup_completed: true,
+        user: { sub: registerBBody.user.sub, email: userBEmail },
+      });
+      const verifiedCookie = extractCookie(verifyRes, 'session');
+      const verifiedSessionRes = await client.api.user.session.$get(
+        {},
+        { headers: { Cookie: `session=${verifiedCookie}` } },
+      );
+      const verifiedSessionBody = await assertJsonBody(verifiedSessionRes);
+      expect(verifiedSessionBody.user?.email).toBe(userBEmail);
+      const verifiedSession = await readEncryptedSessionCookie(verifiedCookie);
+      expect(verifiedSession).toMatchObject({
+        user: { sub: registerBBody.user.sub },
+        accounts: [
+          { sub: TEST_USER_CONFIG.sub },
+          { sub: registerBBody.user.sub },
+        ],
+      });
+
+      verifyRegistration.mockRestore();
+    } finally {
+      await scopedServer.cleanup();
+    }
+  });
+
+  test('keeps active account when stale pending 2FA login user is missing', async () => {
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      auth: {
+        passkey: {
+          enabled: true,
+        },
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+        },
+      },
+    });
+
+    try {
+      const client = testClient(scopedServer.app);
+      const sessionCookie = await createEncryptedSessionCookie({
+        user: {
+          sub: TEST_USER_CONFIG.sub,
+          authenticated_at: 1_700_000_000,
+        },
+        accounts: [
+          {
+            sub: TEST_USER_CONFIG.sub,
+            authenticated_at: 1_700_000_000,
+            last_used_at: 1_700_000_000,
+          },
+        ],
+        pending2FAUser: {
+          sub: 'deleted-pending-user',
+          authenticated_at: 1_700_000_100,
+        },
+      });
+
+      const optionsRes = await client.api.auth.passkey.options.$post(
+        {},
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+      expect(optionsRes.status).toBe(200);
+      const nextCookie = extractCookie(optionsRes, 'session');
+
+      const sessionRes = await client.api.user.session.$get(
+        {},
+        { headers: { Cookie: `session=${nextCookie}` } },
+      );
+      const sessionBody = await assertJsonBody(sessionRes);
+      expect(sessionBody.user?.sub).toBe(TEST_USER_CONFIG.sub);
+      await expect(
+        readEncryptedSessionCookie(nextCookie),
+      ).resolves.toMatchObject({
+        user: {
+          sub: TEST_USER_CONFIG.sub,
+          authenticated_at: 1_700_000_000,
+        },
+      });
+      await expect(
+        readEncryptedSessionCookie(nextCookie),
+      ).resolves.not.toHaveProperty('pending2FAUser');
+    } finally {
+      await scopedServer.cleanup();
+    }
+  });
+
+  test('keeps active account when stale pending 2FA setup user is missing', async () => {
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
+      auth: {
+        password: {
+          enabled: true,
+          two_factor: {
+            enrollment_required: true,
+          },
+          totp: {
+            enabled: true,
+            issuer: 'TinyAuthStalePendingSetupTest',
+          },
+        },
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+        },
+      },
+    });
+
+    try {
+      const client = testClient(scopedServer.app);
+      const sessionCookie = await createEncryptedSessionCookie({
+        user: {
+          sub: TEST_USER_CONFIG.sub,
+          authenticated_at: 1_700_000_000,
+        },
+        accounts: [
+          {
+            sub: TEST_USER_CONFIG.sub,
+            authenticated_at: 1_700_000_000,
+            last_used_at: 1_700_000_000,
+          },
+        ],
+        pending2FASetup: {
+          sub: 'deleted-pending-setup-user',
+        },
+      });
+
+      const setupRes = await client.api.user.totp.setup.$post(
+        {},
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+      await expectError(setupRes, e.SecondFactorNotAllowedForConfigUser);
+      const nextCookie = extractCookie(setupRes, 'session');
+
+      const sessionRes = await client.api.user.session.$get(
+        {},
+        { headers: { Cookie: `session=${nextCookie}` } },
+      );
+      const sessionBody = await assertJsonBody(sessionRes);
+      expect(sessionBody.user?.sub).toBe(TEST_USER_CONFIG.sub);
+      await expect(
+        readEncryptedSessionCookie(nextCookie),
+      ).resolves.toMatchObject({
+        user: {
+          sub: TEST_USER_CONFIG.sub,
+          authenticated_at: 1_700_000_000,
+        },
+      });
+      await expect(
+        readEncryptedSessionCookie(nextCookie),
+      ).resolves.not.toHaveProperty('pending2FASetup');
+    } finally {
+      await scopedServer.cleanup();
+    }
+  });
+
+  test('keeps the current account active while a different account waits for passkey verification', async () => {
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        password: {
+          enabled: true,
+        },
+        passkey: {
+          enabled: true,
+        },
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+        },
+      },
+    });
+
+    try {
+      const password = 'stateful-switch-passkey-password-123';
+      const userAEmail = generateUniqueEmail('stateful-switch-a');
+      const userBEmail = generateUniqueEmail('stateful-switch-b');
+      const credentialId = `stateful-switch-passkey-${crypto.randomUUID()}`;
+
+      const { userA, userB } = await withMikroContext(
+        scopedServer.services,
+        async () => {
+          const passwordHash =
+            await scopedServer.services.securityService.hashPassword(password);
+          const userAEntity = scopedServer.services.mikro.user.create({
+            email: userAEmail,
+            password_hash: passwordHash,
+          });
+          userAEntity.email_verified = true;
+
+          const userBEntity = scopedServer.services.mikro.user.create({
+            email: userBEmail,
+            password_hash: passwordHash,
+          });
+          userBEntity.email_verified = true;
+
+          scopedServer.services.mikro.em.persist(userAEntity);
+          scopedServer.services.mikro.em.persist(userBEntity);
+          await scopedServer.services.mikro.em.flush();
+
+          const passkey = scopedServer.services.mikro.userPasskey.create({
+            user: userBEntity.sub,
+            credential_id: credentialId,
+            public_key: 'stateful-switch-passkey-public-key',
+            counter: 0,
+            device_type: 'multiDevice',
+            backed_up: true,
+            transports: ['internal'],
+            name: 'Stateful Switch Passkey',
+            aaguid: 'stateful-switch-passkey-aaguid',
+          });
+          scopedServer.services.mikro.em.persist(passkey);
+          await scopedServer.services.mikro.em.flush();
+
+          return { userA: userAEntity, userB: userBEntity };
+        },
+      );
+
+      const client = testClient(scopedServer.app);
+      const loginARes = await client.api.auth.login.$post({
+        json: { email: userAEmail, password },
+      });
+      expect(loginARes.status).toBe(200);
+      const userACookie = extractCookie(loginARes, 'session');
+
+      const loginBRes = await client.api.auth.login.$post(
+        { json: { email: userBEmail, password } },
+        { headers: { Cookie: `session=${userACookie}` } },
+      );
+      const loginBBody = await assertJsonBody(loginBRes);
+      expect(loginBBody.user.sub).toBe(userB.sub);
+      expect(loginBBody.user.passkey_count).toBe(1);
+      const pendingPasskeyCookie = extractCookie(loginBRes, 'session');
+
+      const pendingSessionRes = await client.api.user.session.$get(
+        {},
+        { headers: { Cookie: `session=${pendingPasskeyCookie}` } },
+      );
+      const pendingSessionBody = await assertJsonBody(pendingSessionRes);
+      expect(pendingSessionBody.user?.sub).toBe(userA.sub);
+    } finally {
+      await scopedServer.cleanup();
+    }
   });
 });

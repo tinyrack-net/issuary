@@ -77,7 +77,7 @@ export const userPasskeyRegisterVerifyPost = new Hono<AppEnv>().post(
     const { mikro, passkeyService, userService } = c.var.services;
 
     // Allow both full user session and pending 2FA setup session
-    const verified = c.var.verifiedUser ?? c.var.verifiedPending2FASetupUser;
+    const verified = c.var.verifiedPending2FASetupUser ?? c.var.verifiedUser;
 
     if (!verified) {
       throw new e.Unauthorized.Error();

@@ -17,6 +17,7 @@ import { sessionMiddleware } from '../middleware/session.ts';
 import { trustedProxyGuard } from '../middleware/trusted-proxy-guard.ts';
 import { routes } from '../routes/index.ts';
 import { e, TinyAuthError } from '../schemas/error.ts';
+import { normalizeAccountSelectionPolicy } from '../services/account-selection.service.ts';
 import {
   type InitializeServicesOptions,
   initializeServices,
@@ -52,6 +53,7 @@ export async function createApp(
     branding: config.branding,
     server: config.server,
   });
+  const accountSelectionPolicy = normalizeAccountSelectionPolicy(config);
 
   const handleError = (err: Error, c: Context) => {
     if (err instanceof TinyAuthError) {
@@ -79,14 +81,9 @@ export async function createApp(
         config.security.session_secret,
         config.server.public_origin.startsWith('https'),
         {
-          enabled:
-            config.auth.account_selection.enabled &&
-            config.auth.account_selection.remember_accounts.enabled,
-          maxAccounts:
-            config.auth.account_selection.remember_accounts.max_accounts,
-          ttlMs: parseDurationToMs(
-            config.auth.account_selection.remember_accounts.ttl,
-          ),
+          enabled: accountSelectionPolicy.rememberAccounts,
+          maxAccounts: accountSelectionPolicy.maxAccounts,
+          ttlMs: parseDurationToMs(accountSelectionPolicy.ttl),
         },
       ),
     )

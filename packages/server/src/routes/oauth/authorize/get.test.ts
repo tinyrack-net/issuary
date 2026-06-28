@@ -265,6 +265,63 @@ async function createSessionCookieWithAuthTime(
   );
 }
 
+async function createSessionCookieWithGenericReauthentication(
+  authenticatedAt: number,
+): Promise<string> {
+  return encrypt(
+    JSON.stringify({
+      user: {
+        sub: TEST_USER_CONFIG.sub,
+        authenticated_at: authenticatedAt,
+      },
+      reauthentication: {
+        sub: TEST_USER_CONFIG.sub,
+        authenticated_at: authenticatedAt,
+      },
+    }),
+    MINIMAL_TEST_CONFIG.security.session_secret,
+  );
+}
+
+function buildReauthenticationRequestFingerprint(
+  params: Record<string, string>,
+): string {
+  return JSON.stringify(
+    [
+      ['client_id', params['client_id']],
+      ['redirect_uri', params['redirect_uri']],
+      ['response_type', params['response_type']],
+      ['scope', params['scope']],
+      ['state', params['state']],
+      ['nonce', params['nonce']],
+      ['code_challenge', params['code_challenge']],
+      ['code_challenge_method', params['code_challenge_method']],
+      ['prompt', params['prompt']],
+      ['max_age', params['max_age'] ? Number(params['max_age']) : undefined],
+    ].filter(([, value]) => value !== undefined),
+  );
+}
+
+async function createSessionCookieWithBoundReauthentication(
+  authenticatedAt: number,
+  params: Record<string, string>,
+): Promise<string> {
+  return encrypt(
+    JSON.stringify({
+      user: {
+        sub: TEST_USER_CONFIG.sub,
+        authenticated_at: authenticatedAt,
+      },
+      reauthentication: {
+        sub: TEST_USER_CONFIG.sub,
+        authenticated_at: authenticatedAt,
+        request_fingerprint: buildReauthenticationRequestFingerprint(params),
+      },
+    }),
+    MINIMAL_TEST_CONFIG.security.session_secret,
+  );
+}
+
 describe('GET /oauth/authorize', () => {
   const validParams = {
     response_type: 'code',
@@ -1097,7 +1154,7 @@ describe('GET /oauth/authorize', () => {
       expect(location.searchParams.get('prompt')).toBe('consent');
     });
 
-    test('should accept prompt=select_account when account selection is disabled', async () => {
+    test('should redirect prompt=select_account to login when account selection is disabled', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const client = testClient(app);
       const res = await client.oauth.authorize.$get(
@@ -1112,9 +1169,9 @@ describe('GET /oauth/authorize', () => {
 
       expect(res.status).toBe(302);
       const location = new URL(getLocationHeader(res), 'http://localhost:8080');
-      expect(location.pathname).toBe('/callback');
-      expect(location.searchParams.get('code')).toBeTruthy();
-      expect(location.searchParams.get('state')).toBe(validParams.state);
+      expect(location.pathname).toBe('/login');
+      expect(location.searchParams.get('prompt')).toBe('select_account');
+      expect(location.searchParams.has('code')).toBe(false);
     });
   });
 
@@ -1256,7 +1313,16 @@ describe('GET /oauth/authorize', () => {
     });
 
     test('should continue after prompt=login has just reauthenticated the user', async () => {
-      const sessionCookie = await createAuthenticatedSession(app);
+      const authenticatedAt = Math.floor(Date.now() / 1000);
+      const reauthenticatedParams = {
+        ...validParams,
+        prompt: 'login',
+        reauthenticated: '1',
+      };
+      const sessionCookie = await createSessionCookieWithBoundReauthentication(
+        authenticatedAt,
+        reauthenticatedParams,
+      );
 
       await grantConsent(app, sessionCookie, {
         client_id: TEST_OAUTH_CLIENT.clientId,
@@ -1268,6 +1334,32 @@ describe('GET /oauth/authorize', () => {
       });
 
       const { code, location, statusCode } = await getAuthorizationCode(
+        reauthenticatedParams,
+        sessionCookie,
+      );
+
+      expect(statusCode).toBe(302);
+      expect(code).toBeDefined();
+      expect(location.origin + location.pathname).toBe(
+        validParams.redirect_uri,
+      );
+    });
+
+    test('should not accept a generic recent reauthentication marker for prompt=login', async () => {
+      const authenticatedAt = Math.floor(Date.now() / 1000);
+      const sessionCookie =
+        await createSessionCookieWithGenericReauthentication(authenticatedAt);
+
+      await grantConsent(app, sessionCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        response_type: 'code',
+        scope: validParams.scope,
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: TEST_PKCE.codeChallengeMethod,
+      });
+
+      const { location, statusCode } = await getAuthorizationCode(
         {
           ...validParams,
           prompt: 'login',
@@ -1277,10 +1369,9 @@ describe('GET /oauth/authorize', () => {
       );
 
       expect(statusCode).toBe(302);
-      expect(code).toBeDefined();
-      expect(location.origin + location.pathname).toBe(
-        validParams.redirect_uri,
-      );
+      expect(location.pathname).toBe('/login');
+      expect(location.searchParams.get('prompt')).toBe('login');
+      expect(location.searchParams.has('code')).toBe(false);
     });
   });
 
@@ -1314,7 +1405,16 @@ describe('GET /oauth/authorize', () => {
     });
 
     test('should continue after max_age=0 has just reauthenticated the user', async () => {
-      const sessionCookie = await createAuthenticatedSession(app);
+      const authenticatedAt = Math.floor(Date.now() / 1000);
+      const reauthenticatedParams = {
+        ...validParams,
+        max_age: '0',
+        reauthenticated: '1',
+      };
+      const sessionCookie = await createSessionCookieWithBoundReauthentication(
+        authenticatedAt,
+        reauthenticatedParams,
+      );
 
       await grantConsent(app, sessionCookie, {
         client_id: TEST_OAUTH_CLIENT.clientId,
@@ -1326,11 +1426,7 @@ describe('GET /oauth/authorize', () => {
       });
 
       const { code, location, statusCode } = await getAuthorizationCode(
-        {
-          ...validParams,
-          max_age: '0',
-          reauthenticated: '1',
-        },
+        reauthenticatedParams,
         sessionCookie,
       );
 

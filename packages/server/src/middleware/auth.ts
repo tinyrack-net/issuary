@@ -53,7 +53,7 @@ export const verifyAuth = <Optional extends boolean = false>(options?: {
       });
     } catch (err) {
       if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
-        sessionHelper.clearAuthSessions();
+        sessionHelper.set('user', undefined);
         if (options?.optional) {
           c.set('verifiedUser', undefined as never);
           await next();
@@ -90,7 +90,7 @@ export const requireAdmin = () =>
       });
     } catch (err) {
       if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
-        sessionHelper.clearAuthSessions();
+        sessionHelper.set('user', undefined);
         throw new e.Unauthorized.Error();
       }
       throw err;
@@ -136,7 +136,7 @@ export const verifyPending2FAUser = <
       });
     } catch (err) {
       if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
-        sessionHelper.clearAuthSessions();
+        sessionHelper.set('pending2FAUser', undefined);
         if (options?.optional) {
           c.set('verifiedPending2FAUser', undefined as never);
           await next();
@@ -183,7 +183,7 @@ export const verifyPending2FASetupUser = <
       c.set('verifiedPending2FASetupUser', { user: userEntity });
     } catch (err) {
       if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
-        sessionHelper.clearAuthSessions();
+        sessionHelper.set('pending2FASetup', undefined);
         if (options?.optional) {
           c.set('verifiedPending2FASetupUser', undefined as never);
           await next();

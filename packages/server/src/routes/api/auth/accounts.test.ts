@@ -41,17 +41,19 @@ afterAll(async () => {
 
 async function createPasswordUser(
   email = generateUniqueEmail('account-select'),
+  targetServices = services,
 ) {
   const password = 'testPassword123';
   let sub = '';
-  await withMikroContext(services, async () => {
-    const passwordHash = await services.securityService.hashPassword(password);
-    const user = services.mikro.user.create({
+  await withMikroContext(targetServices, async () => {
+    const passwordHash =
+      await targetServices.securityService.hashPassword(password);
+    const user = targetServices.mikro.user.create({
       email,
       password_hash: passwordHash,
     });
     user.email_verified = true;
-    await services.mikro.em.persist(user).flush();
+    await targetServices.mikro.em.persist(user).flush();
     sub = user.sub;
   });
   return { email, password, sub };
@@ -170,6 +172,86 @@ describe('remembered account APIs', () => {
     }
   });
 
+  test('returns disabled affordances and no remembered roster when global account selection is disabled', async () => {
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: false,
+          allow_add_account: true,
+          allow_remove_account: true,
+        },
+      },
+      users: [TEST_USER_CONFIG],
+    });
+    try {
+      const scopedClient = testClient(scopedServer.app);
+      const login = await scopedClient.api.auth.login.$post({
+        json: { email: TEST_USER.email, password: TEST_USER.password },
+      });
+      const cookie = extractCookie(login, 'session');
+
+      const res = await scopedClient.api.auth.accounts.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${cookie}` } },
+      );
+
+      const body = await assertJsonBody(res);
+      expect(body.allow_add_account).toBe(false);
+      expect(body.allow_remove_account).toBe(false);
+      expect(body.accounts).toEqual([]);
+    } finally {
+      await scopedServer.cleanup();
+    }
+  });
+
+  test('treats mode disabled as disabled policy when listing accounts', async () => {
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'disabled',
+          allow_add_account: true,
+          allow_remove_account: true,
+          remember_accounts: {
+            enabled: true,
+          },
+        },
+      },
+      users: [TEST_USER_CONFIG],
+    });
+    try {
+      const scopedClient = testClient(scopedServer.app);
+      const secondUser = await createPasswordUser(
+        undefined,
+        scopedServer.services,
+      );
+      const firstLogin = await scopedClient.api.auth.login.$post({
+        json: { email: TEST_USER.email, password: TEST_USER.password },
+      });
+      const firstCookie = extractCookie(firstLogin, 'session');
+      const secondLogin = await scopedClient.api.auth.login.$post(
+        { json: { email: secondUser.email, password: secondUser.password } },
+        { headers: { Cookie: `session=${firstCookie}` } },
+      );
+      const sessionCookie = extractCookie(secondLogin, 'session');
+
+      const res = await scopedClient.api.auth.accounts.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      const body = await assertJsonBody(res);
+      expect(body.active_sub).toBe(secondUser.sub);
+      expect(body.allow_add_account).toBe(false);
+      expect(body.allow_remove_account).toBe(false);
+      expect(body.accounts).toEqual([]);
+    } finally {
+      await scopedServer.cleanup();
+    }
+  });
+
   test('removes non-active accounts but not the active account', async () => {
     const { client, sessionCookie, secondUser } =
       await createTwoAccountSession();
@@ -179,6 +261,9 @@ describe('remembered account APIs', () => {
       { headers: { Cookie: `session=${sessionCookie}` } },
     );
     expect(removeActiveRes.status).toBe(400);
+    await expect(removeActiveRes.json()).resolves.toMatchObject({
+      code: 'ACCOUNT_NOT_REMOVABLE',
+    });
 
     const removeOldRes = await client.api.auth.accounts.remove.$post(
       { json: { sub: TEST_USER_CONFIG.sub } },
@@ -192,8 +277,93 @@ describe('remembered account APIs', () => {
       { headers: { Cookie: `session=${removedCookie}` } },
     );
     const body = await assertJsonBody(listRes);
+    expect(body.active_sub).toBe(secondUser.sub);
     expect(body.accounts.map((account) => account.sub)).toEqual([
       secondUser.sub,
     ]);
+
+    const sessionRes = await client.api.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${removedCookie}` } },
+    );
+    const sessionBody = await assertJsonBody(sessionRes);
+    expect(sessionBody.user?.sub).toBe(secondUser.sub);
+  });
+
+  test('rejects account removal when global account selection is disabled', async () => {
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: false,
+          allow_remove_account: true,
+        },
+      },
+      users: [TEST_USER_CONFIG],
+    });
+    try {
+      const scopedClient = testClient(scopedServer.app);
+      const login = await scopedClient.api.auth.login.$post({
+        json: { email: TEST_USER.email, password: TEST_USER.password },
+      });
+      const cookie = extractCookie(login, 'session');
+
+      const removeRes = await scopedClient.api.auth.accounts.remove.$post(
+        { json: { sub: TEST_USER_CONFIG.sub } },
+        { headers: { Cookie: `session=${cookie}` } },
+      );
+
+      expect(removeRes.status).toBe(400);
+      await expect(removeRes.json()).resolves.toMatchObject({
+        code: 'ACCOUNT_REMOVAL_DISABLED',
+      });
+    } finally {
+      await scopedServer.cleanup();
+    }
+  });
+
+  test('rejects account removal when account-selection mode is disabled', async () => {
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'disabled',
+          allow_remove_account: true,
+          remember_accounts: {
+            enabled: true,
+          },
+        },
+      },
+      users: [TEST_USER_CONFIG],
+    });
+    try {
+      const scopedClient = testClient(scopedServer.app);
+      const secondUser = await createPasswordUser(
+        undefined,
+        scopedServer.services,
+      );
+      const firstLogin = await scopedClient.api.auth.login.$post({
+        json: { email: TEST_USER.email, password: TEST_USER.password },
+      });
+      const firstCookie = extractCookie(firstLogin, 'session');
+      const secondLogin = await scopedClient.api.auth.login.$post(
+        { json: { email: secondUser.email, password: secondUser.password } },
+        { headers: { Cookie: `session=${firstCookie}` } },
+      );
+      const sessionCookie = extractCookie(secondLogin, 'session');
+
+      const removeRes = await scopedClient.api.auth.accounts.remove.$post(
+        { json: { sub: TEST_USER_CONFIG.sub } },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      expect(removeRes.status).toBe(400);
+      await expect(removeRes.json()).resolves.toMatchObject({
+        code: 'ACCOUNT_REMOVAL_DISABLED',
+      });
+    } finally {
+      await scopedServer.cleanup();
+    }
   });
 });

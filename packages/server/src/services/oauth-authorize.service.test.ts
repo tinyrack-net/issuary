@@ -103,6 +103,60 @@ describe('OAuthAuthorizeService', () => {
     expect(redirect.searchParams.get('max_age')).toBe('300');
   });
 
+  test('creates a bound reauthentication continuation before redirecting a logged-out interactive request to login', async () => {
+    let capturedReauthentication:
+      | Parameters<
+          NonNullable<
+            Parameters<
+              typeof services.oauthAuthorizeService.authorize
+            >[0]['setReauthenticationSession']
+          >
+        >[0]
+      | undefined;
+
+    const firstResult = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          prompt: 'select_account',
+        },
+        setReauthenticationSession: (state) => {
+          capturedReauthentication = state;
+        },
+      }),
+    );
+
+    expect(new URL(firstResult.url).pathname).toBe('/login');
+    expect(capturedReauthentication?.request_fingerprint).toBeTruthy();
+
+    const userSub = await createTestUser(services);
+    await grantBaseConsent(userSub);
+    const authenticatedAt = Math.floor(Date.now() / 1000);
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          prompt: 'select_account',
+          reauthenticated: '1',
+        },
+        userSession: {
+          sub: userSub,
+          authenticated_at: authenticatedAt,
+        },
+        reauthenticationSession: {
+          ...capturedReauthentication,
+          sub: userSub,
+          authenticated_at: authenticatedAt,
+        },
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.pathname).toBe(new URL(baseQuery.redirect_uri).pathname);
+    expect(redirect.searchParams.get('code')).toBeTruthy();
+  });
+
   test('returns consent_required when prompt=none and the user has not granted consent', async () => {
     const userSub = await createTestUser(services);
 
@@ -174,6 +228,59 @@ describe('OAuthAuthorizeService', () => {
     expect(redirect.searchParams.has('code')).toBe(false);
   });
 
+  test('does not trust forged reauthenticated=1 for prompt=login', async () => {
+    const userSub = await createTestUser(services);
+    await grantBaseConsent(userSub);
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          prompt: 'login',
+          reauthenticated: '1',
+        },
+        userSession: {
+          sub: userSub,
+          authenticated_at: Math.floor(Date.now() / 1000),
+        },
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.pathname).toBe('/login');
+    expect(redirect.searchParams.get('prompt')).toBe('login');
+    expect(redirect.searchParams.has('code')).toBe(false);
+  });
+
+  test('does not trust a generic recent reauthentication marker for prompt=login', async () => {
+    const userSub = await createTestUser(services);
+    await grantBaseConsent(userSub);
+    const now = Math.floor(Date.now() / 1000);
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          prompt: 'login',
+          reauthenticated: '1',
+        },
+        userSession: {
+          sub: userSub,
+          authenticated_at: now,
+        },
+        reauthenticationSession: {
+          sub: userSub,
+          authenticated_at: now,
+        },
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.pathname).toBe('/login');
+    expect(redirect.searchParams.get('prompt')).toBe('login');
+    expect(redirect.searchParams.has('code')).toBe(false);
+  });
+
   test('redirects an existing session to login when max_age=0 is requested', async () => {
     const userSub = await createTestUser(services);
     await grantBaseConsent(userSub);
@@ -198,6 +305,47 @@ describe('OAuthAuthorizeService', () => {
     expect(redirect.searchParams.has('code')).toBe(false);
   });
 
+  test('issues a code for max_age=0 after fresh reauthentication and consent allow', async () => {
+    const userSub = await createTestUser(services);
+    await grantBaseConsent(userSub);
+    const now = Math.floor(Date.now() / 1000);
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          max_age: 0,
+          reauthenticated: '1',
+        },
+        userSession: {
+          sub: userSub,
+          authenticated_at: now,
+        },
+        reauthenticationSession: {
+          sub: userSub,
+          authenticated_at: now,
+          request_fingerprint: JSON.stringify([
+            ['client_id', baseQuery.client_id],
+            ['redirect_uri', baseQuery.redirect_uri],
+            ['response_type', baseQuery.response_type],
+            ['scope', baseQuery.scope],
+            ['state', baseQuery.state],
+            ['nonce', baseQuery.nonce],
+            ['code_challenge', baseQuery.code_challenge],
+            ['code_challenge_method', baseQuery.code_challenge_method],
+            ['max_age', 0],
+          ]),
+        },
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.pathname).toBe(new URL(baseQuery.redirect_uri).pathname);
+    expect(redirect.searchParams.get('code')).toBeTruthy();
+    expect(redirect.searchParams.get('state')).toBe(baseQuery.state);
+    expect(redirect.searchParams.has('error')).toBe(false);
+  });
+
   test('issues a code when the existing session is newer than max_age', async () => {
     const userSub = await createTestUser(services);
     await grantBaseConsent(userSub);
@@ -219,6 +367,95 @@ describe('OAuthAuthorizeService', () => {
 
     expect(redirect.searchParams.get('code')).toBeTruthy();
     expect(redirect.searchParams.has('error')).toBe(false);
+  });
+
+  test('redirects an authenticated prompt=select_account request to login when account selection is disabled', async () => {
+    const userSub = await createTestUser(services);
+    await grantBaseConsent(userSub);
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          prompt: 'select_account',
+        },
+        userSession: {
+          sub: userSub,
+          authenticated_at: Math.floor(Date.now() / 1000),
+        },
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.pathname).toBe('/login');
+    expect(redirect.searchParams.get('prompt')).toBe('select_account');
+    expect(redirect.searchParams.has('code')).toBe(false);
+  });
+
+  test('continues after prompt=select_account has just reauthenticated when account selection is disabled', async () => {
+    const userSub = await createTestUser(services);
+    await grantBaseConsent(userSub);
+    const now = Math.floor(Date.now() / 1000);
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          prompt: 'select_account',
+          reauthenticated: '1',
+        },
+        userSession: {
+          sub: userSub,
+          authenticated_at: now,
+        },
+        reauthenticationSession: {
+          sub: userSub,
+          authenticated_at: now,
+          request_fingerprint: JSON.stringify([
+            ['client_id', baseQuery.client_id],
+            ['redirect_uri', baseQuery.redirect_uri],
+            ['response_type', baseQuery.response_type],
+            ['scope', baseQuery.scope],
+            ['state', baseQuery.state],
+            ['nonce', baseQuery.nonce],
+            ['code_challenge', baseQuery.code_challenge],
+            ['code_challenge_method', baseQuery.code_challenge_method],
+            ['prompt', 'select_account'],
+          ]),
+        },
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.pathname).toBe(new URL(baseQuery.redirect_uri).pathname);
+    expect(redirect.searchParams.get('code')).toBeTruthy();
+    expect(redirect.searchParams.get('state')).toBe(baseQuery.state);
+    expect(redirect.searchParams.has('error')).toBe(false);
+  });
+
+  test('returns account_selection_required for prompt=none select_account when account selection is disabled', async () => {
+    const userSub = await createTestUser(services);
+    await grantBaseConsent(userSub);
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          prompt: 'none select_account',
+        },
+        userSession: {
+          sub: userSub,
+          authenticated_at: Math.floor(Date.now() / 1000),
+        },
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.searchParams.get('error')).toBe(
+      'account_selection_required',
+    );
+    expect(redirect.searchParams.get('state')).toBe(baseQuery.state);
+    expect(redirect.searchParams.has('code')).toBe(false);
   });
 
   test('returns login_required for prompt=none when the existing session is stale', async () => {
@@ -636,6 +873,7 @@ describe('OAuthAuthorizeService account selection', () => {
         query: {
           ...baseQuery,
           prompt: 'select_account',
+          reauthenticated: '1',
           account_selected: '1',
           account_selection_state: accountSelectionSession.id,
         },
@@ -657,10 +895,55 @@ describe('OAuthAuthorizeService account selection', () => {
     const redirect = new URL(result.url);
     expect(redirect.pathname).toBe('/consent');
     expect(redirect.searchParams.get('prompt')).toBe('select_account');
+    expect(redirect.searchParams.get('reauthenticated')).toBe('1');
     expect(redirect.searchParams.get('account_selected')).toBe('1');
     expect(redirect.searchParams.get('account_selection_state')).toBe(
       accountSelectionSession.id,
     );
+  });
+
+  test('requires login when login_hint selects a remembered account older than max_age', async () => {
+    const activeSub = await createTestUser(services, {
+      email: 'max-age-active@example.com',
+    });
+    const hintedSub = await createTestUser(services, {
+      email: 'max-age-stale-selected@example.com',
+    });
+    await grantBaseConsent(hintedSub);
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          login_hint: 'max-age-stale-selected@example.com',
+          max_age: 300,
+        },
+        userSession: {
+          sub: activeSub,
+          authenticated_at: Math.floor(Date.now() / 1000),
+        },
+        rememberedAccounts: [
+          {
+            sub: activeSub,
+            authenticated_at: Math.floor(Date.now() / 1000),
+            last_used_at: Math.floor(Date.now() / 1000),
+          },
+          {
+            sub: hintedSub,
+            authenticated_at: 1_700_000_000,
+            last_used_at: 1_700_000_000,
+          },
+        ],
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.pathname).toBe('/login');
+    expect(redirect.searchParams.get('login_hint')).toBe(
+      'max-age-stale-selected@example.com',
+    );
+    expect(redirect.searchParams.get('max_age')).toBe('300');
+    expect(redirect.searchParams.has('code')).toBe(false);
   });
 
   test('matches login_hint against remembered account email even when the session roster stores only subs', async () => {

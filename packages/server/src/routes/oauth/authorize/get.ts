@@ -133,9 +133,19 @@ export const authorizeGet = new Hono<AppEnv>().get(
               ReturnType<typeof c.var.session.get<'accountSelection'>>
             >
           | undefined;
+        reauthenticationSession?:
+          | NonNullable<
+              ReturnType<typeof c.var.session.get<'reauthentication'>>
+            >
+          | undefined;
         setAccountSelectionSession?: (
           state: NonNullable<
             ReturnType<typeof c.var.session.get<'accountSelection'>>
+          >,
+        ) => void;
+        setReauthenticationSession?: (
+          state: NonNullable<
+            ReturnType<typeof c.var.session.get<'reauthentication'>>
           >,
         ) => void;
         clearAccountSelectionSession?: () => void;
@@ -157,8 +167,12 @@ export const authorizeGet = new Hono<AppEnv>().get(
       }
       authorizeParams.accountSelectionSession =
         c.var.session.get('accountSelection');
+      authorizeParams.reauthenticationSession =
+        c.var.session.get('reauthentication');
       authorizeParams.setAccountSelectionSession = (state) =>
         c.var.session.set('accountSelection', state);
+      authorizeParams.setReauthenticationSession = (state) =>
+        c.var.session.set('reauthentication', state);
       authorizeParams.clearAccountSelectionSession = () =>
         c.var.session.set('accountSelection', undefined);
 

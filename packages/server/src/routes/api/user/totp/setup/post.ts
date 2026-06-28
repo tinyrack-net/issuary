@@ -78,7 +78,7 @@ export const userTotpSetupPost = new Hono<AppEnv>().post(
     }
 
     const user =
-      c.var.verifiedUser?.user ?? c.var.verifiedPending2FASetupUser?.user;
+      c.var.verifiedPending2FASetupUser?.user ?? c.var.verifiedUser?.user;
 
     if (!user) {
       throw new e.Unauthorized.Error();

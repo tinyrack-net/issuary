@@ -62,11 +62,19 @@ export interface AccountSelectionSession {
   created_at: number;
 }
 
+export interface ReauthenticationSession {
+  sub?: string;
+  authenticated_at?: number;
+  request_fingerprint?: string;
+}
+
 export interface SessionData {
   /**
    * Fully authenticated user session.
    * Set after successful login (password, OAuth, passkey) and 2FA verification.
-   * Cleared when entering pending 2FA states or on logout.
+   * Replaced when a different account completes authentication; retained while
+   * another account is only in pending 2FA/setup state so multi-account sessions
+   * do not unexpectedly lose their current active user.
    */
   user?: {
     sub: string;
@@ -84,6 +92,11 @@ export interface SessionData {
    * browser-session value.
    */
   accountSelection?: AccountSelectionSession;
+  /**
+   * Server-side marker set by actual authentication completion. Public
+   * continuation parameters are ignored unless they match this session value.
+   */
+  reauthentication?: ReauthenticationSession;
   /**
    * Intermediate session for users who have passed primary authentication
    * (e.g., password) but still need to complete 2FA (TOTP) verification.
@@ -199,6 +212,8 @@ export function sessionMiddleware(
       },
       setUserSession(userSub: string, authenticatedAt?: number): void {
         const authTime = authenticatedAt ?? nowSeconds();
+        const reauthenticationRequestFingerprint =
+          data.reauthentication?.request_fingerprint;
         delete data.pending2FAUser;
         delete data.pending2FASetup;
         delete data.oauth;
@@ -207,6 +222,14 @@ export function sessionMiddleware(
           sub: userSub,
           authenticated_at: authTime,
         };
+        data.reauthentication = {
+          sub: userSub,
+          authenticated_at: authTime,
+        };
+        if (reauthenticationRequestFingerprint) {
+          data.reauthentication.request_fingerprint =
+            reauthenticationRequestFingerprint;
+        }
         if (rememberedOptions.enabled) {
           const existingAccounts = pruneRememberedAccounts(
             data.accounts ?? [],
@@ -243,6 +266,7 @@ export function sessionMiddleware(
           sub: account.sub,
           authenticated_at: account.authenticated_at,
         };
+        delete data.reauthentication;
         data.accounts = pruneRememberedAccounts(
           data.accounts ?? [],
           rememberedOptions,
@@ -274,20 +298,23 @@ export function sessionMiddleware(
         return true;
       },
       setPending2FASession(userSub: string, authenticatedAt?: number): void {
-        delete data.user;
         delete data.pending2FASetup;
+        delete data.oauth;
+        delete data.passkey_challenge;
         data.pending2FAUser = {
           sub: userSub,
           authenticated_at: authenticatedAt ?? nowSeconds(),
         };
       },
       setPending2FASetupSession(userSub: string): void {
-        delete data.user;
         delete data.pending2FAUser;
+        delete data.oauth;
+        delete data.passkey_challenge;
         data.pending2FASetup = { sub: userSub };
       },
       clearAuthSessions(): void {
         delete data.user;
+        delete data.reauthentication;
         delete data.pending2FAUser;
         delete data.pending2FASetup;
       },

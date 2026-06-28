@@ -24,6 +24,47 @@ function createSessionTestApp(
     return c.json({ ok: true });
   });
 
+  app.post('/seed-full-auth-state', (c) => {
+    c.var.session.set('user', {
+      sub: 'user-2',
+      authenticated_at: 1_700_000_100,
+    });
+    c.var.session.set('accounts', [
+      {
+        sub: 'user-1',
+        authenticated_at: 1_700_000_000,
+        last_used_at: 1_700_000_000,
+      },
+      {
+        sub: 'user-2',
+        authenticated_at: 1_700_000_100,
+        last_used_at: 1_700_000_100,
+      },
+    ]);
+    c.var.session.set('pending2FAUser', {
+      sub: 'user-3',
+      authenticated_at: 1_700_000_200,
+    });
+    c.var.session.set('pending2FASetup', { sub: 'user-4' });
+    c.var.session.set('accountSelection', {
+      id: 'selection-1',
+      client_id: 'client-1',
+      request_fingerprint: 'fingerprint-1',
+      allow_add_account: true,
+      allowed_subs: ['user-1', 'user-2'],
+      created_at: 1_700_000_000,
+    });
+    c.var.session.set('oauth', {
+      state: 'oauth-state',
+      codeVerifier: 'oauth-verifier',
+      providerId: 'github',
+      mode: 'login',
+      returnUrl: '/profile',
+    });
+    c.var.session.set('passkey_challenge', 'passkey-challenge');
+    return c.json({ ok: true });
+  });
+
   app.post('/login', (c) => {
     c.var.session.setUserSession('user-1', 1_700_000_000);
     return c.json({ ok: true });
@@ -49,6 +90,19 @@ function createSessionTestApp(
     return c.json({ removed });
   });
 
+  app.post('/pending-2fa/:sub/:authTime', (c) => {
+    c.var.session.setPending2FASession(
+      c.req.param('sub'),
+      Number(c.req.param('authTime')),
+    );
+    return c.json({ ok: true });
+  });
+
+  app.post('/pending-setup/:sub', (c) => {
+    c.var.session.setPending2FASetupSession(c.req.param('sub'));
+    return c.json({ ok: true });
+  });
+
   app.post('/clear-auth', (c) => {
     c.var.session.clearAuthSessions();
     return c.json({ ok: true });
@@ -63,6 +117,9 @@ function createSessionTestApp(
     c.json({
       user: c.var.session.get('user') ?? null,
       accounts: c.var.session.get('accounts') ?? [],
+      accountSelection: c.var.session.get('accountSelection') ?? null,
+      pending2FAUser: c.var.session.get('pending2FAUser') ?? null,
+      pending2FASetup: c.var.session.get('pending2FASetup') ?? null,
       oauth: c.var.session.get('oauth') ?? null,
       passkey_challenge: c.var.session.get('passkey_challenge') ?? null,
     }),
@@ -124,6 +181,35 @@ describe('session middleware', () => {
     expect(deleteCookie).toMatch(/Max-Age=0|Expires=/);
   });
 
+  test('logout deletes active user, roster, pending, account-selection, OAuth, and passkey state', async () => {
+    const app = createSessionTestApp(true);
+    const seedRes = await app.request('/seed-full-auth-state', {
+      method: 'POST',
+    });
+    const seededCookie = requireCookiePair(seedRes);
+
+    const logoutRes = await app.request('/logout', {
+      headers: { Cookie: seededCookie },
+      method: 'POST',
+    });
+
+    expect(logoutRes.status).toBe(200);
+    const logoutCookie = requireCookiePair(logoutRes);
+    const debugRes = await app.request('/debug-session', {
+      headers: { Cookie: logoutCookie },
+    });
+
+    await expect(debugRes.json()).resolves.toEqual({
+      user: null,
+      accounts: [],
+      accountSelection: null,
+      pending2FAUser: null,
+      pending2FASetup: null,
+      oauth: null,
+      passkey_challenge: null,
+    });
+  });
+
   test('ignores malformed encrypted session cookies safely', async () => {
     const app = createSessionTestApp(true);
 
@@ -135,6 +221,9 @@ describe('session middleware', () => {
     await expect(res.json()).resolves.toEqual({
       user: null,
       accounts: [],
+      accountSelection: null,
+      pending2FAUser: null,
+      pending2FASetup: null,
       oauth: null,
       passkey_challenge: null,
     });
@@ -165,6 +254,71 @@ describe('session middleware', () => {
           last_used_at: 1_700_000_000,
         },
       ],
+      accountSelection: null,
+      pending2FAUser: null,
+      pending2FASetup: null,
+      oauth: null,
+      passkey_challenge: null,
+    });
+  });
+
+  test('clears stale transient state when entering pending 2FA without clearing active user', async () => {
+    const app = createSessionTestApp(true);
+    const loginRes = await app.request('/login/user-1/1700000000', {
+      method: 'POST',
+    });
+    const loginCookie = requireCookiePair(loginRes);
+    const seedRes = await app.request('/seed-transient', {
+      headers: { Cookie: loginCookie },
+      method: 'POST',
+    });
+    const seededCookie = requireCookiePair(seedRes);
+
+    const pendingRes = await app.request('/pending-2fa/user-2/1700000100', {
+      headers: { Cookie: seededCookie },
+      method: 'POST',
+    });
+    const pendingCookie = requireCookiePair(pendingRes);
+
+    const debugRes = await app.request('/debug-session', {
+      headers: { Cookie: pendingCookie },
+    });
+
+    await expect(debugRes.json()).resolves.toMatchObject({
+      user: { sub: 'user-1', authenticated_at: 1_700_000_000 },
+      pending2FAUser: { sub: 'user-2', authenticated_at: 1_700_000_100 },
+      pending2FASetup: null,
+      oauth: null,
+      passkey_challenge: null,
+    });
+  });
+
+  test('clears stale transient state when entering pending 2FA setup without clearing active user', async () => {
+    const app = createSessionTestApp(true);
+    const loginRes = await app.request('/login/user-1/1700000000', {
+      method: 'POST',
+    });
+    const loginCookie = requireCookiePair(loginRes);
+    const seedRes = await app.request('/seed-transient', {
+      headers: { Cookie: loginCookie },
+      method: 'POST',
+    });
+    const seededCookie = requireCookiePair(seedRes);
+
+    const pendingRes = await app.request('/pending-setup/user-2', {
+      headers: { Cookie: seededCookie },
+      method: 'POST',
+    });
+    const pendingCookie = requireCookiePair(pendingRes);
+
+    const debugRes = await app.request('/debug-session', {
+      headers: { Cookie: pendingCookie },
+    });
+
+    await expect(debugRes.json()).resolves.toMatchObject({
+      user: { sub: 'user-1', authenticated_at: 1_700_000_000 },
+      pending2FAUser: null,
+      pending2FASetup: { sub: 'user-2' },
       oauth: null,
       passkey_challenge: null,
     });
@@ -309,19 +463,72 @@ describe('session middleware', () => {
   test('does not remember authenticated accounts when roster storage is disabled', async () => {
     const app = createSessionTestApp(true, { enabled: false });
 
-    const loginRes = await app.request('/login/user-1/1700000000', {
+    const firstLoginRes = await app.request('/login/user-1/1700000000', {
       method: 'POST',
     });
-    const loginCookie = requireCookiePair(loginRes);
+    const firstLoginCookie = requireCookiePair(firstLoginRes);
+
+    const secondLoginRes = await app.request('/login/user-2/1700000100', {
+      headers: { Cookie: firstLoginCookie },
+      method: 'POST',
+    });
+    const secondLoginCookie = requireCookiePair(secondLoginRes);
 
     const debugRes = await app.request('/debug-session', {
-      headers: { Cookie: loginCookie },
+      headers: { Cookie: secondLoginCookie },
     });
 
     await expect(debugRes.json()).resolves.toMatchObject({
-      user: { sub: 'user-1', authenticated_at: 1_700_000_000 },
+      user: { sub: 'user-2', authenticated_at: 1_700_000_100 },
       accounts: [],
     });
+  });
+
+  test('refreshes a reauthenticated account and keeps the bounded roster ordered by use', async () => {
+    const app = createSessionTestApp(true, { enabled: true, maxAccounts: 2 });
+    let cookie = requireCookiePair(
+      await app.request('/login/user-1/1700000000', { method: 'POST' }),
+    );
+    cookie = requireCookiePair(
+      await app.request('/login/user-2/1700000100', {
+        headers: { Cookie: cookie },
+        method: 'POST',
+      }),
+    );
+    cookie = requireCookiePair(
+      await app.request('/login/user-1/1700000200', {
+        headers: { Cookie: cookie },
+        method: 'POST',
+      }),
+    );
+    cookie = requireCookiePair(
+      await app.request('/login/user-3/1700000300', {
+        headers: { Cookie: cookie },
+        method: 'POST',
+      }),
+    );
+
+    const debugRes = await app.request('/debug-session', {
+      headers: { Cookie: cookie },
+    });
+    const body = await debugRes.json();
+
+    expect(body.user).toEqual({
+      sub: 'user-3',
+      authenticated_at: 1_700_000_300,
+    });
+    expect(body.accounts).toEqual([
+      {
+        sub: 'user-1',
+        authenticated_at: 1_700_000_200,
+        last_used_at: 1_700_000_200,
+      },
+      {
+        sub: 'user-3',
+        authenticated_at: 1_700_000_300,
+        last_used_at: 1_700_000_300,
+      },
+    ]);
   });
 
   test('honors the configured remembered account cap', async () => {

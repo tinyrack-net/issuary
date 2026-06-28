@@ -10,6 +10,7 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
@@ -62,9 +63,12 @@ function buildLoginHref(search: ReturnType<typeof Route.useSearch>) {
 }
 
 function AccountSelect() {
+  const { t } = useTranslation();
   const search = Route.useSearch();
   const queryClient = useQueryClient();
   const { data } = useSuspenseQuery(accountsQueryOptions(search.client_id));
+  const accountSelectionUnavailable =
+    data.accounts.length === 0 && !data.allow_add_account;
 
   const continueWithSelectedAccount = () => {
     window.location.href = buildAuthorizeUrl({
@@ -89,13 +93,15 @@ function AccountSelect() {
   return (
     <PageLayout cardPadding maxWidth="100">
       <PageHeader
-        subtitle="Choose an account to continue to this application"
-        title="Choose an account"
+        subtitle={t('accountSelect.subtitle')}
+        title={t('accountSelect.title')}
       />
 
       {data.accounts.length === 0 ? (
         <Alert className="mb-4" icon={UserCircleIcon} type="info">
-          No remembered accounts are available in this browser session.
+          {accountSelectionUnavailable
+            ? t('accountSelect.unavailable')
+            : t('accountSelect.noRememberedAccounts')}
         </Alert>
       ) : (
         <div className="flex flex-col gap-2" data-testid="account-list">
@@ -121,15 +127,21 @@ function AccountSelect() {
                   {account.email}
                 </div>
                 <div className="text-base-content/60 text-xs">
-                  {account.current ? 'Current account' : 'Remembered account'}
+                  {account.current
+                    ? t('accountSelect.currentAccount')
+                    : t('accountSelect.rememberedAccount')}
                 </div>
               </button>
               {account.current ? (
-                <span className="badge badge-primary badge-sm">Current</span>
+                <span className="badge badge-primary badge-sm">
+                  {t('accountSelect.current')}
+                </span>
               ) : null}
               {data.allow_remove_account && !account.current ? (
                 <button
-                  aria-label={`Remove ${account.email}`}
+                  aria-label={t('accountSelect.removeAccount', {
+                    email: account.email,
+                  })}
                   className="btn btn-ghost btn-square btn-sm text-base-content/60"
                   data-testid={`remove-account-${account.sub}`}
                   disabled={removeMutation.isPending}
@@ -151,7 +163,7 @@ function AccountSelect() {
         >
           <span className="inline-flex items-center gap-2">
             <PlusIcon className="size-4" />
-            Use another account
+            {t('accountSelect.useAnotherAccount')}
           </span>
           <ArrowRightIcon className="size-4" />
         </a>

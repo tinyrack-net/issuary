@@ -105,6 +105,26 @@ describe('oauth-search helpers', () => {
     expect(parsed.searchParams.get('prompt')).toBe('login consent');
   });
 
+  test('accepts prompt=none by itself', () => {
+    const search = OAuthSearchSchema.parse({
+      client_id: 'web-client',
+      redirect_uri: 'https://client.example.com/callback',
+      prompt: 'none',
+    });
+
+    expect(search.prompt).toBe('none');
+  });
+
+  test('accepts non-interactive account-selection prompt combination', () => {
+    const search = OAuthSearchSchema.parse({
+      client_id: 'web-client',
+      redirect_uri: 'https://client.example.com/callback',
+      prompt: 'none select_account',
+    });
+
+    expect(search.prompt).toBe('none select_account');
+  });
+
   test.each([
     'invalid',
     'login invalid',

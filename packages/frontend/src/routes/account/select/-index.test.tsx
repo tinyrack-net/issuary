@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
+import type { AccountsResponse } from '#frontend/queries/accounts.ts';
 import { queryKeys } from '#frontend/queries/keys.ts';
 import {
   firstRequest,
@@ -12,12 +13,13 @@ import {
   renderRoute,
   routeTestAppConfig,
 } from '#frontend/test-utils/route-test-utils.tsx';
+import source from './index.tsx?raw';
 
 const selectSearch =
   'client_id=client-web&redirect_uri=https%3A%2F%2Fclient.example%2Fcallback&response_type=code&scope=openid+profile&state=state-123&nonce=nonce-123&code_challenge=challenge-123&code_challenge_method=S256&prompt=select_account&login_hint=alice%40example.com&response_mode=form_post&account_selection_state=chooser-state-123';
 const selectLocation = `/account/select?${selectSearch}`;
 
-const accountData = {
+const accountData: AccountsResponse = {
   active_sub: 'user-b',
   allow_add_account: true,
   allow_remove_account: true,
@@ -56,6 +58,34 @@ afterEach(() => {
 });
 
 describe('/account/select', () => {
+  test('uses i18n for account-selection unavailable text', () => {
+    expect(source).toContain("t('accountSelect.unavailable')");
+    expect(source).not.toContain('Account selection is unavailable');
+  });
+
+  test('shows unavailable state when adding accounts is disabled and no accounts are available', async () => {
+    const { screen } = await renderRoute({
+      initialLocation: selectLocation,
+      queryData: seededQueryData({
+        ...accountData,
+        active_sub: null,
+        allow_add_account: false,
+        allow_remove_account: false,
+        accounts: [],
+      }),
+    });
+
+    await expect
+      .element(screen.getByText('Account selection is unavailable'))
+      .toBeVisible();
+    await expect
+      .element(screen.getByRole('link', { name: /Use another account/ }))
+      .not.toBeInTheDocument();
+    await expect
+      .element(screen.getByTestId('account-list'))
+      .not.toBeInTheDocument();
+  });
+
   test('lists remembered accounts and preserves OAuth params for add-account login', async () => {
     const { screen } = await renderRoute({
       initialLocation: selectLocation,
@@ -116,6 +146,37 @@ describe('/account/select', () => {
       expect(request.method).toBe('POST');
       expect(jsonRequestBody(request)).toEqual({ sub: 'user-a' });
     });
+  });
+
+  test('keeps roster visible but hides add-account action when adding accounts is disabled', async () => {
+    const { screen } = await renderRoute({
+      initialLocation: selectLocation,
+      queryData: seededQueryData({
+        ...accountData,
+        allow_add_account: false,
+      }),
+    });
+
+    await expect.element(screen.getByTestId('account-list')).toBeVisible();
+    await expect.element(screen.getByText('alice@example.com')).toBeVisible();
+    await expect
+      .element(screen.getByRole('link', { name: /Use another account/ }))
+      .not.toBeInTheDocument();
+  });
+
+  test('hides remove controls when account removal is disabled', async () => {
+    const { screen } = await renderRoute({
+      initialLocation: selectLocation,
+      queryData: seededQueryData({
+        ...accountData,
+        allow_remove_account: false,
+      }),
+    });
+
+    await expect.element(screen.getByText('alice@example.com')).toBeVisible();
+    await expect
+      .element(screen.getByTestId('remove-account-user-a'))
+      .not.toBeInTheDocument();
   });
 
   test('removes a non-current remembered account and refreshes the account list', async () => {

@@ -2,6 +2,7 @@ import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { AppType } from '../../../../../entrypoints/app.ts';
 import { decrypt } from '../../../../../lib/crypto.ts';
+import type { SessionAccount } from '../../../../../middleware/session.ts';
 import { e } from '../../../../../schemas/error.ts';
 import type { ServiceContainer } from '../../../../../services/container.ts';
 import {
@@ -20,6 +21,7 @@ async function decodeSessionCookie(cookie: string): Promise<{
     sub: string;
     authenticated_at: number;
   };
+  accounts?: SessionAccount[];
   pending2FAUser?: {
     sub: string;
     authenticated_at: number;
@@ -37,6 +39,7 @@ async function decodeSessionCookie(cookie: string): Promise<{
       sub: string;
       authenticated_at: number;
     };
+    accounts?: SessionAccount[];
     pending2FAUser?: {
       sub: string;
       authenticated_at: number;
@@ -494,6 +497,128 @@ describe('POST /api/auth/passkey/verify - Success with mocked service', () => {
 
     // Cleanup
     mockVerifyAuthentication.mockRestore();
+  });
+});
+
+describe('POST /api/auth/passkey/verify - remembered account roster', () => {
+  let appWithAccounts: AppType;
+  let servicesWithAccounts: ServiceContainer;
+  let cleanupWithAccounts: () => Promise<void>;
+
+  beforeAll(async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        passkey: {
+          enabled: true,
+        },
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+        },
+      },
+    });
+    appWithAccounts = server.app;
+    servicesWithAccounts = server.services;
+    cleanupWithAccounts = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanupWithAccounts();
+  });
+
+  test('keeps the existing remembered account when a different account signs in with a passkey', async () => {
+    const password = 'testPassword123!';
+    const userAEmail = generateUniqueEmail('passkey-roster-a');
+    const userBEmail = generateUniqueEmail('passkey-roster-b');
+    const credentialId = `roster-passkey-${crypto.randomUUID()}`;
+
+    const { userA, userB } = await withMikroContext(
+      servicesWithAccounts,
+      async () => {
+        const passwordHash =
+          await servicesWithAccounts.securityService.hashPassword(password);
+        const userAEntity = servicesWithAccounts.mikro.user.create({
+          email: userAEmail,
+          password_hash: passwordHash,
+        });
+        userAEntity.email_verified = true;
+
+        const userBEntity = servicesWithAccounts.mikro.user.create({
+          email: userBEmail,
+          password_hash: passwordHash,
+        });
+        userBEntity.email_verified = true;
+
+        servicesWithAccounts.mikro.em.persist(userAEntity);
+        servicesWithAccounts.mikro.em.persist(userBEntity);
+        await servicesWithAccounts.mikro.em.flush();
+
+        const passkey = servicesWithAccounts.mikro.userPasskey.create({
+          user: userBEntity.sub,
+          credential_id: credentialId,
+          public_key: 'test-public-key-base64url',
+          counter: 0,
+          device_type: 'multiDevice',
+          backed_up: true,
+          transports: ['internal'],
+          name: 'User B Passkey',
+          aaguid: 'test-aaguid',
+        });
+        servicesWithAccounts.mikro.em.persist(passkey);
+        await servicesWithAccounts.mikro.em.flush();
+
+        return { userA: userAEntity, userB: userBEntity };
+      },
+    );
+
+    const client = testClient(appWithAccounts);
+    const loginARes = await client.api.auth.login.$post({
+      json: { email: userAEmail, password },
+    });
+    expect(loginARes.status).toBe(200);
+    const userACookie = extractCookie(loginARes, 'session');
+    const userASession = await decodeSessionCookie(userACookie);
+    expect(userASession.user?.sub).toBe(userA.sub);
+    expect(userASession.accounts?.map((account) => account.sub)).toEqual([
+      userA.sub,
+    ]);
+
+    const optionsRes = await client.api.auth.passkey.options.$post(
+      {},
+      { headers: { Cookie: `session=${userACookie}` } },
+    );
+    expect(optionsRes.status).toBe(200);
+    const optionsCookie = extractCookie(optionsRes, 'session');
+
+    const mockVerifyAuthentication = vi
+      .spyOn(servicesWithAccounts.passkeyService, 'verifyAuthentication')
+      .mockResolvedValueOnce(userB);
+
+    try {
+      const verifyRes = await client.api.auth.passkey.verify.$post(
+        {
+          json: {
+            response: createMockAuthenticationResponse({
+              id: credentialId,
+              rawId: credentialId,
+            }),
+          },
+        },
+        { headers: { Cookie: `session=${optionsCookie}` } },
+      );
+      expect(verifyRes.status).toBe(200);
+      const finalCookie = extractCookie(verifyRes, 'session');
+      const finalSession = await decodeSessionCookie(finalCookie);
+
+      expect(finalSession.user?.sub).toBe(userB.sub);
+      expect(finalSession.accounts?.map((account) => account.sub)).toEqual([
+        userA.sub,
+        userB.sub,
+      ]);
+    } finally {
+      mockVerifyAuthentication.mockRestore();
+    }
   });
 });
 

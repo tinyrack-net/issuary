@@ -62,7 +62,7 @@ const ACCOUNT_B: SessionAccount = {
 };
 
 describe('AccountSelectionService', () => {
-  test('continues with the active account when account selection is disabled', () => {
+  test('requires reauthentication for prompt=select_account when account selection is disabled', () => {
     const service = createService({ enabled: false, mode: 'always' });
 
     expect(
@@ -72,7 +72,43 @@ describe('AccountSelectionService', () => {
         activeUserSub: ACCOUNT_A.sub,
         rememberedAccounts: [ACCOUNT_A, ACCOUNT_B],
       }),
+    ).toEqual({ type: 'reauthenticate' });
+  });
+
+  test('continues after fresh reauthentication for prompt=select_account when account selection is disabled', () => {
+    const service = createService({ enabled: false, mode: 'always' });
+
+    expect(
+      service.decide({
+        clientId: 'client-id',
+        prompts: ['select_account'],
+        freshReauthentication: true,
+        activeUserSub: ACCOUNT_A.sub,
+        rememberedAccounts: [ACCOUNT_A],
+      }),
     ).toEqual({ type: 'continue', selectedSub: ACCOUNT_A.sub });
+  });
+
+  test('returns configured OAuth error for prompt=none select_account when account selection is disabled', () => {
+    const service = createService({
+      enabled: false,
+      mode: 'always',
+      prompt_none_error: 'login_required',
+    });
+
+    expect(
+      service.decide({
+        clientId: 'client-id',
+        prompts: ['none', 'select_account'],
+        activeUserSub: ACCOUNT_A.sub,
+        rememberedAccounts: [ACCOUNT_A, ACCOUNT_B],
+      }),
+    ).toEqual({
+      type: 'oauth_error',
+      error: 'login_required',
+      errorDescription:
+        'The Authorization Server requires End-User account selection.',
+    });
   });
 
   test('requires chooser for prompt=select_account when enabled', () => {
@@ -137,7 +173,7 @@ describe('AccountSelectionService', () => {
     ).toEqual({ type: 'show_chooser' });
   });
 
-  test('client override never suppresses a global chooser requirement', () => {
+  test('client override never silently continues for prompt=select_account', () => {
     const service = createService({ enabled: true, mode: 'smart' }, [
       {
         id: 'client-config-id',
@@ -158,7 +194,7 @@ describe('AccountSelectionService', () => {
         activeUserSub: ACCOUNT_A.sub,
         rememberedAccounts: [ACCOUNT_A, ACCOUNT_B],
       }),
-    ).toEqual({ type: 'continue', selectedSub: ACCOUNT_A.sub });
+    ).toEqual({ type: 'reauthenticate' });
   });
 
   test('continues after an account has already been selected for this authorize request', () => {

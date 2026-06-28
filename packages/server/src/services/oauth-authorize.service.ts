@@ -1,7 +1,10 @@
 import type z from 'zod';
 import { getRandomBytes, toBase64Url } from '../lib/base64url.ts';
 import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
-import type { AccountSelectionSession } from '../middleware/session.ts';
+import type {
+  AccountSelectionSession,
+  ReauthenticationSession,
+} from '../middleware/session.ts';
 import { e } from '../schemas/error.ts';
 import type { f } from '../schemas/field.ts';
 import { AccountSelectionService } from './account-selection.service.ts';
@@ -113,7 +116,9 @@ export class OAuthAuthorizeService {
       userSub: string,
     ) => boolean | undefined | Promise<boolean | undefined>;
     accountSelectionSession?: AccountSelectionSession | undefined;
+    reauthenticationSession?: ReauthenticationSession | undefined;
     setAccountSelectionSession?: (state: AccountSelectionSession) => void;
+    setReauthenticationSession?: (state: ReauthenticationSession) => void;
     clearAccountSelectionSession?: () => void;
   }): Promise<AuthorizeResult> {
     const { userSession } = params;
@@ -162,6 +167,9 @@ export class OAuthAuthorizeService {
       ? this.hasFreshReauthentication(
           query.reauthenticated,
           userSession.authenticated_at,
+          userSession.sub,
+          params.reauthenticationSession,
+          query,
         )
       : false;
     const shouldPromptLogin =
@@ -184,6 +192,10 @@ export class OAuthAuthorizeService {
           responseMode: query.response_mode,
         });
       }
+
+      params.setReauthenticationSession?.(
+        this.createReauthenticationSession(query),
+      );
 
       // User not logged in - redirect to login page
       const loginUrl = this.buildLoginRedirectUrl(query);
@@ -261,6 +273,9 @@ export class OAuthAuthorizeService {
     }
 
     if (accountSelection.type === 'reauthenticate') {
+      params.setReauthenticationSession?.(
+        this.createReauthenticationSession(query),
+      );
       return {
         type: 'redirect',
         url: this.buildLoginRedirectUrl(query),
@@ -278,6 +293,36 @@ export class OAuthAuthorizeService {
       !accountSelectionContinuation.allowedSubs.includes(selectedSession.sub)
     ) {
       throw new e.InvalidAuthorizationRequest.Error();
+    }
+
+    const selectedSessionStale =
+      this.isSessionStale(selectedSession.authenticated_at, query.max_age) &&
+      !(
+        selectedSession.sub === userSession.sub &&
+        query.max_age === 0 &&
+        hasFreshReauthentication
+      );
+
+    if (selectedSessionStale) {
+      if (prompts.includes('none')) {
+        return this.buildErrorAuthorizationResult({
+          redirectUri: query.redirect_uri,
+          error: 'login_required',
+          errorDescription:
+            'The Authorization Server requires End-User authentication.',
+          state: query.state,
+          responseType: query.response_type,
+          responseMode: query.response_mode,
+        });
+      }
+
+      params.setReauthenticationSession?.(
+        this.createReauthenticationSession(query),
+      );
+      return {
+        type: 'redirect',
+        url: this.buildLoginRedirectUrl(query),
+      };
     }
 
     if (selectedSession.sub !== userSession.sub) {
@@ -437,6 +482,39 @@ export class OAuthAuthorizeService {
     };
   }
 
+  private createReauthenticationSession(
+    query: AuthorizeParams,
+  ): ReauthenticationSession {
+    return {
+      request_fingerprint: this.buildReauthenticationRequestFingerprint(query),
+    };
+  }
+
+  private buildReauthenticationRequestFingerprint(
+    query: AuthorizeParams,
+  ): string {
+    return JSON.stringify(
+      [
+        ['client_id', query.client_id],
+        ['redirect_uri', query.redirect_uri],
+        ['response_type', query.response_type],
+        ['scope', query.scope],
+        ['state', query.state],
+        ['nonce', query.nonce],
+        ['code_challenge', query.code_challenge],
+        ['code_challenge_method', query.code_challenge_method],
+        ['prompt', query.prompt],
+        ['max_age', query.max_age],
+        ['display', query.display],
+        ['response_mode', query.response_mode],
+        ['login_hint', query.login_hint],
+        ['ui_locales', query.ui_locales],
+        ['id_token_hint', query.id_token_hint],
+        ['acr_values', query.acr_values],
+      ].filter(([, value]) => value !== undefined),
+    );
+  }
+
   private buildAccountSelectionRequestFingerprint(
     query: AuthorizeParams,
   ): string {
@@ -586,7 +664,15 @@ export class OAuthAuthorizeService {
       throw new e.InvalidPrompt.Error();
     }
 
-    if (prompts.includes('none') && prompts.length > 1) {
+    const allowsNonInteractiveAccountSelection =
+      prompts.length === 2 &&
+      prompts.includes('none') &&
+      prompts.includes('select_account');
+    if (
+      prompts.includes('none') &&
+      prompts.length > 1 &&
+      !allowsNonInteractiveAccountSelection
+    ) {
       throw new e.InvalidPrompt.Error();
     }
 
@@ -611,8 +697,20 @@ export class OAuthAuthorizeService {
   private hasFreshReauthentication(
     reauthenticated: '1' | undefined,
     authenticatedAt: number,
+    userSub: string,
+    reauthenticationSession: ReauthenticationSession | undefined,
+    query: AuthorizeParams,
   ): boolean {
     if (reauthenticated !== '1') {
+      return false;
+    }
+
+    if (
+      reauthenticationSession?.sub !== userSub ||
+      reauthenticationSession.authenticated_at !== authenticatedAt ||
+      reauthenticationSession.request_fingerprint !==
+        this.buildReauthenticationRequestFingerprint(query)
+    ) {
       return false;
     }
 
@@ -800,6 +898,9 @@ export class OAuthAuthorizeService {
     }
     if (query.max_age !== undefined) {
       consentUrl.searchParams.set('max_age', query.max_age.toString());
+    }
+    if (query.reauthenticated) {
+      consentUrl.searchParams.set('reauthenticated', query.reauthenticated);
     }
     if (query.display) {
       consentUrl.searchParams.set('display', query.display);

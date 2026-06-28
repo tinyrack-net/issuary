@@ -12,7 +12,7 @@ import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
 import {
-  buildAuthorizeUrl,
+  buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
@@ -82,7 +82,7 @@ function VerifyRecovery() {
       await tick();
 
       if (isOAuthFlow(search)) {
-        window.location.href = buildAuthorizeUrl(search);
+        window.location.href = buildAuthenticatedAuthorizeUrl(search);
       } else {
         router.navigate({ to: '/profile' });
       }

@@ -3,6 +3,7 @@ import { describeRoute, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../lib/app-env.ts';
 import { TAGS } from '../../../../lib/swagger-tags.ts';
+import { normalizeAccountSelectionPolicy } from '../../../../services/account-selection.service.ts';
 
 export const authAccountsRemovePost = new Hono<AppEnv>().post(
   '/auth/accounts/remove',
@@ -18,7 +19,10 @@ export const authAccountsRemovePost = new Hono<AppEnv>().post(
   }),
   validator('json', z.object({ sub: z.string().min(1) })),
   async (c) => {
-    if (!c.var.services.config.auth.account_selection.allow_remove_account) {
+    const accountSelectionPolicy = normalizeAccountSelectionPolicy(
+      c.var.services.config,
+    );
+    if (!accountSelectionPolicy.allowRemoveAccount) {
       return c.json(
         {
           code: 'ACCOUNT_REMOVAL_DISABLED',

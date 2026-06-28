@@ -77,8 +77,8 @@ export const userTotpVerifyPost = new Hono<AppEnv>().post(
 
     // Allow both full user session and pending 2FA setup session
     const userSub =
-      c.var.verifiedUser?.user.sub ??
-      c.var.verifiedPending2FASetupUser?.user.sub;
+      c.var.verifiedPending2FASetupUser?.user.sub ??
+      c.var.verifiedUser?.user.sub;
 
     if (!userSub) {
       throw new e.Unauthorized.Error();

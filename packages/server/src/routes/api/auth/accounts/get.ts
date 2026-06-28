@@ -3,6 +3,7 @@ import { describeRoute, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../lib/app-env.ts';
 import { TAGS } from '../../../../lib/swagger-tags.ts';
+import { normalizeAccountSelectionPolicy } from '../../../../services/account-selection.service.ts';
 
 export const authAccountsGet = new Hono<AppEnv>().get(
   '/auth/accounts',
@@ -19,10 +20,10 @@ export const authAccountsGet = new Hono<AppEnv>().get(
   async (c) => {
     const { config, mikro } = c.var.services;
     const { client_id } = c.req.valid('query');
-    const clientAccountSelection = client_id
-      ? config.clients.find((client) => client.client_id === client_id)
-          ?.account_selection
-      : undefined;
+    const accountSelectionPolicy = normalizeAccountSelectionPolicy(
+      config,
+      client_id,
+    );
     const activeSub = c.var.session.get('user')?.sub ?? null;
     const rememberedAccounts = c.var.session.get('accounts') ?? [];
     const accounts = [];
@@ -49,11 +50,8 @@ export const authAccountsGet = new Hono<AppEnv>().get(
       {
         active_sub: activeSub,
         accounts,
-        allow_add_account:
-          clientAccountSelection?.allow_add_account ??
-          config.auth.account_selection.allow_add_account,
-        allow_remove_account:
-          config.auth.account_selection.allow_remove_account,
+        allow_add_account: accountSelectionPolicy.allowAddAccount,
+        allow_remove_account: accountSelectionPolicy.allowRemoveAccount,
       },
       200,
     );

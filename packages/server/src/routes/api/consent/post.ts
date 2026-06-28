@@ -9,15 +9,62 @@ import { e } from '../../../schemas/error.ts';
 import { f } from '../../../schemas/field.ts';
 import { r } from '../../../schemas/response.ts';
 
-function consumeConsentPrompt(prompt: string | undefined): string | undefined {
+function consumeConsentPrompt(
+  prompt: string | undefined,
+  hasTrustedReauthentication: boolean,
+): string | undefined {
   if (!prompt) {
     return undefined;
   }
   const remaining = prompt
     .split(' ')
-    .filter((value) => value !== 'consent')
+    .filter(
+      (value) =>
+        value !== 'consent' &&
+        !(hasTrustedReauthentication && value === 'login'),
+    )
     .join(' ');
   return remaining.length > 0 ? remaining : undefined;
+}
+
+function buildReauthenticationRequestFingerprint(params: {
+  client_id: string;
+  redirect_uri: string;
+  response_type: string;
+  scope?: string | undefined;
+  state?: string | undefined;
+  nonce?: string | undefined;
+  code_challenge?: string | undefined;
+  code_challenge_method?: 'S256' | 'plain' | undefined;
+  prompt?: string | undefined;
+  max_age?: number | undefined;
+  display?: 'page' | 'popup' | 'touch' | 'wap' | undefined;
+  response_mode?: 'query' | 'fragment' | 'form_post' | undefined;
+  login_hint?: string | undefined;
+  ui_locales?: string | undefined;
+  id_token_hint?: string | undefined;
+  acr_values?: string | undefined;
+}): string {
+  return JSON.stringify(
+    [
+      ['client_id', params.client_id],
+      ['redirect_uri', params.redirect_uri],
+      ['response_type', params.response_type],
+      ['scope', params.scope],
+      ['state', params.state],
+      ['nonce', params.nonce],
+      ['code_challenge', params.code_challenge],
+      ['code_challenge_method', params.code_challenge_method],
+      ['prompt', params.prompt],
+      ['max_age', params.max_age],
+      ['display', params.display],
+      ['response_mode', params.response_mode],
+      ['login_hint', params.login_hint],
+      ['ui_locales', params.ui_locales],
+      ['id_token_hint', params.id_token_hint],
+      ['acr_values', params.acr_values],
+    ].filter(([, value]) => value !== undefined),
+  );
 }
 
 function buildConsentDenyRedirectUrl(params: {
@@ -101,6 +148,7 @@ export const consentPost = new Hono<AppEnv>().post(
       code_challenge_method: f.codeChallengeMethod.optional(),
       prompt: f.prompt.optional(),
       max_age: f.maxAge.optional(),
+      reauthenticated: z.literal('1').optional(),
       display: f.display.optional(),
       response_mode: z.enum(['query', 'fragment', 'form_post']).optional(),
       login_hint: z.string().min(1).max(1000).optional(),
@@ -132,6 +180,7 @@ export const consentPost = new Hono<AppEnv>().post(
       code_challenge_method,
       prompt,
       max_age,
+      reauthenticated,
       display,
       response_mode,
       login_hint,
@@ -183,6 +232,32 @@ export const consentPost = new Hono<AppEnv>().post(
       scopes: requestedScopes,
     });
 
+    const reauthenticationSession = c.var.session.get('reauthentication');
+    const hasTrustedReauthentication =
+      reauthenticated === '1' &&
+      reauthenticationSession?.sub === userEntity.sub &&
+      reauthenticationSession.authenticated_at ===
+        c.var.verifiedUser.authenticatedAt &&
+      reauthenticationSession.request_fingerprint ===
+        buildReauthenticationRequestFingerprint({
+          client_id,
+          redirect_uri,
+          response_type,
+          scope,
+          state,
+          nonce,
+          code_challenge,
+          code_challenge_method,
+          prompt,
+          max_age,
+          display,
+          response_mode,
+          login_hint,
+          ui_locales,
+          id_token_hint,
+          acr_values,
+        });
+
     // Build authorize URL to continue the flow
     const url = new URL(c.req.url);
     const authorizeUrl = new URL(
@@ -211,12 +286,18 @@ export const consentPost = new Hono<AppEnv>().post(
         code_challenge_method,
       );
     }
-    const continuationPrompt = consumeConsentPrompt(prompt);
+    const continuationPrompt = consumeConsentPrompt(
+      prompt,
+      hasTrustedReauthentication,
+    );
     if (continuationPrompt) {
       authorizeUrl.searchParams.set('prompt', continuationPrompt);
     }
     if (max_age !== undefined) {
       authorizeUrl.searchParams.set('max_age', max_age.toString());
+    }
+    if (hasTrustedReauthentication) {
+      authorizeUrl.searchParams.set('reauthenticated', reauthenticated);
     }
     if (display) {
       authorizeUrl.searchParams.set('display', display);

@@ -1,6 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
+import { encrypt } from '../../../lib/crypto.ts';
 import type { ServiceContainer } from '../../../services/container.ts';
 import {
   assertJsonBody,
@@ -33,40 +34,126 @@ afterAll(async () => {
   await cleanup();
 });
 
+function buildReauthenticationRequestFingerprint(params: {
+  client_id: string;
+  redirect_uri: string;
+  response_type: string;
+  scope?: string | undefined;
+  state?: string | undefined;
+  nonce?: string | undefined;
+  code_challenge?: string | undefined;
+  code_challenge_method?: 'S256' | 'plain' | undefined;
+  prompt?: string | undefined;
+  max_age?: number | undefined;
+  display?: 'page' | 'popup' | 'touch' | 'wap' | undefined;
+  response_mode?: 'query' | 'fragment' | 'form_post' | undefined;
+  login_hint?: string | undefined;
+  ui_locales?: string | undefined;
+  id_token_hint?: string | undefined;
+  acr_values?: string | undefined;
+}): string {
+  return JSON.stringify(
+    [
+      ['client_id', params.client_id],
+      ['redirect_uri', params.redirect_uri],
+      ['response_type', params.response_type],
+      ['scope', params.scope],
+      ['state', params.state],
+      ['nonce', params.nonce],
+      ['code_challenge', params.code_challenge],
+      ['code_challenge_method', params.code_challenge_method],
+      ['prompt', params.prompt],
+      ['max_age', params.max_age],
+      ['display', params.display],
+      ['response_mode', params.response_mode],
+      ['login_hint', params.login_hint],
+      ['ui_locales', params.ui_locales],
+      ['id_token_hint', params.id_token_hint],
+      ['acr_values', params.acr_values],
+    ].filter(([, value]) => value !== undefined),
+  );
+}
+
+async function createBoundReauthenticationSessionCookie(params: {
+  client_id: string;
+  redirect_uri: string;
+  response_type: string;
+  scope?: string | undefined;
+  state?: string | undefined;
+  nonce?: string | undefined;
+  code_challenge?: string | undefined;
+  code_challenge_method?: 'S256' | 'plain' | undefined;
+  prompt?: string | undefined;
+  max_age?: number | undefined;
+  display?: 'page' | 'popup' | 'touch' | 'wap' | undefined;
+  response_mode?: 'query' | 'fragment' | 'form_post' | undefined;
+  login_hint?: string | undefined;
+  ui_locales?: string | undefined;
+  id_token_hint?: string | undefined;
+  acr_values?: string | undefined;
+}): Promise<string> {
+  const authenticatedAt = Math.floor(Date.now() / 1000);
+  return encrypt(
+    JSON.stringify({
+      user: {
+        sub: TEST_USER_CONFIG.sub,
+        authenticated_at: authenticatedAt,
+      },
+      reauthentication: {
+        sub: TEST_USER_CONFIG.sub,
+        authenticated_at: authenticatedAt,
+        request_fingerprint: buildReauthenticationRequestFingerprint(params),
+      },
+    }),
+    MINIMAL_TEST_CONFIG.security.session_secret,
+  );
+}
+
+type ConsentAllowBody = Parameters<
+  typeof createBoundReauthenticationSessionCookie
+>[0] & {
+  reauthenticated?: '1' | undefined;
+  account_selected?: '1' | undefined;
+  account_selection_state?: string | undefined;
+  decision: 'allow';
+};
+
 describe('POST /api/consent', () => {
   test('should preserve account_selected marker in the authorize continuation URL', async () => {
-    const sessionCookie = await createAuthenticatedSession(app);
+    const body: ConsentAllowBody = {
+      client_id: TEST_OAUTH_CLIENT.clientId,
+      redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+      response_type: 'code',
+      scope: 'openid profile email',
+      state: 'state-account-selected',
+      nonce: 'nonce-account-selected',
+      code_challenge: TEST_PKCE.codeChallenge,
+      code_challenge_method: TEST_PKCE.codeChallengeMethod,
+      prompt: 'select_account consent',
+      max_age: 3600,
+      reauthenticated: '1',
+      display: 'popup',
+      response_mode: 'fragment',
+      login_hint: 'alice@example.com',
+      ui_locales: 'ko en',
+      id_token_hint: 'header.payload.signature',
+      acr_values: 'urn:mace:incommon:iap:silver',
+      account_selected: '1',
+      account_selection_state: 'chooser-state-after-consent',
+      decision: 'allow',
+    };
+    const sessionCookie = await createBoundReauthenticationSessionCookie(body);
     const client = testClient(app);
 
     const res = await client.api.consent.$post(
       {
-        json: {
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-          response_type: 'code',
-          scope: 'openid profile email',
-          state: 'state-account-selected',
-          nonce: 'nonce-account-selected',
-          code_challenge: TEST_PKCE.codeChallenge,
-          code_challenge_method: TEST_PKCE.codeChallengeMethod,
-          prompt: 'select_account consent',
-          max_age: 3600,
-          display: 'popup',
-          response_mode: 'fragment',
-          login_hint: 'alice@example.com',
-          ui_locales: 'ko en',
-          id_token_hint: 'header.payload.signature',
-          acr_values: 'urn:mace:incommon:iap:silver',
-          account_selected: '1',
-          account_selection_state: 'chooser-state-after-consent',
-          decision: 'allow',
-        },
+        json: body,
       },
       { headers: { Cookie: `session=${sessionCookie}` } },
     );
 
-    const body = await assertJsonBody(res, 200);
-    const redirect = new URL(body.redirect_url);
+    const responseBody = await assertJsonBody(res, 200);
+    const redirect = new URL(responseBody.redirect_url);
     expect(redirect.pathname).toBe('/oauth/authorize');
     expect(redirect.searchParams.get('account_selected')).toBe('1');
     expect(redirect.searchParams.get('account_selection_state')).toBe(
@@ -75,6 +162,7 @@ describe('POST /api/consent', () => {
     expect(redirect.searchParams.get('state')).toBe('state-account-selected');
     expect(redirect.searchParams.get('prompt')).toBe('select_account');
     expect(redirect.searchParams.get('max_age')).toBe('3600');
+    expect(redirect.searchParams.get('reauthenticated')).toBe('1');
     expect(redirect.searchParams.get('display')).toBe('popup');
     expect(redirect.searchParams.get('response_mode')).toBe('fragment');
     expect(redirect.searchParams.get('login_hint')).toBe('alice@example.com');
@@ -108,11 +196,88 @@ describe('POST /api/consent', () => {
       { headers: { Cookie: `session=${sessionCookie}` } },
     );
 
-    const body = await assertJsonBody(res, 200);
-    const redirect = new URL(body.redirect_url);
+    const responseBody = await assertJsonBody(res, 200);
+    const redirect = new URL(responseBody.redirect_url);
     expect(redirect.searchParams.has('prompt')).toBe(false);
     expect(redirect.searchParams.get('state')).toBe('state-prompt-consent');
   });
+
+  test('should consume fulfilled prompt=login consent while preserving reauthentication', async () => {
+    const body: ConsentAllowBody = {
+      client_id: TEST_OAUTH_CLIENT.clientId,
+      redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+      response_type: 'code',
+      scope: 'openid profile email',
+      state: 'state-login-consent',
+      code_challenge: TEST_PKCE.codeChallenge,
+      code_challenge_method: TEST_PKCE.codeChallengeMethod,
+      prompt: 'login consent',
+      reauthenticated: '1',
+      decision: 'allow',
+    };
+    const sessionCookie = await createBoundReauthenticationSessionCookie(body);
+    const client = testClient(app);
+
+    const res = await client.api.consent.$post(
+      {
+        json: body,
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+
+    const responseBody = await assertJsonBody(res, 200);
+    const redirect = new URL(responseBody.redirect_url);
+    expect(redirect.pathname).toBe('/oauth/authorize');
+    expect(redirect.searchParams.has('prompt')).toBe(false);
+    expect(redirect.searchParams.get('reauthenticated')).toBe('1');
+    expect(redirect.searchParams.get('state')).toBe('state-login-consent');
+  });
+
+  test('should not consume prompt=login based on forged reauthenticated body value', async () => {
+    const authenticatedAt = Math.floor(Date.now() / 1000);
+    const sessionCookie = await encrypt(
+      JSON.stringify({
+        user: {
+          sub: TEST_USER_CONFIG.sub,
+          authenticated_at: authenticatedAt,
+        },
+        reauthentication: {
+          sub: TEST_USER_CONFIG.sub,
+          authenticated_at: authenticatedAt,
+        },
+      }),
+      MINIMAL_TEST_CONFIG.security.session_secret,
+    );
+    const client = testClient(app);
+
+    const res = await client.api.consent.$post(
+      {
+        json: {
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          response_type: 'code',
+          scope: 'openid profile email',
+          state: 'state-forged-login-consent',
+          code_challenge: TEST_PKCE.codeChallenge,
+          code_challenge_method: TEST_PKCE.codeChallengeMethod,
+          prompt: 'login consent',
+          reauthenticated: '1',
+          decision: 'allow',
+        },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+
+    const responseBody = await assertJsonBody(res, 200);
+    const redirect = new URL(responseBody.redirect_url);
+    expect(redirect.pathname).toBe('/oauth/authorize');
+    expect(redirect.searchParams.get('prompt')).toBe('login');
+    expect(redirect.searchParams.has('reauthenticated')).toBe(false);
+    expect(redirect.searchParams.get('state')).toBe(
+      'state-forged-login-consent',
+    );
+  });
+
   describe('Allow decision', () => {
     test('should grant consent and return redirect URL', async () => {
       const sessionCookie = await createAuthenticatedSession(app);

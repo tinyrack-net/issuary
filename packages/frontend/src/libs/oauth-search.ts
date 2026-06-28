@@ -13,7 +13,10 @@ function isValidPrompt(prompt: string): boolean {
     seen.add(value);
   }
 
-  return !(seen.has('none') && seen.size > 1);
+  if (!seen.has('none') || seen.size === 1) {
+    return true;
+  }
+  return seen.size === 2 && seen.has('select_account');
 }
 
 /**
@@ -36,7 +39,13 @@ export const OAuthSearchSchema = z.object({
       z.string(),
     )
     .optional(),
-  reauthenticated: z.literal('1').optional(),
+  reauthenticated: z
+    .preprocess((value) => {
+      if (value === 1) return '1';
+      if (typeof value !== 'string') return value;
+      return decodeURIComponent(value).replaceAll('"', '').replaceAll('\\', '');
+    }, z.literal('1'))
+    .optional(),
   account_selected: z
     .preprocess((value) => {
       if (value === 1) return '1';

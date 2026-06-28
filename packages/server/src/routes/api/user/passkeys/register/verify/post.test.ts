@@ -12,6 +12,7 @@ import {
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
+  TEST_USER,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '../../../../../../test-utils/index.ts';
@@ -912,6 +913,7 @@ describe('POST /api/user/passkeys/register/verify - Pending 2FA setup', () => {
   beforeAll(async () => {
     const server = await createTestApp({
       ...MINIMAL_TEST_CONFIG,
+      users: [TEST_USER_CONFIG],
       auth: {
         password: {
           enabled: true,
@@ -1012,5 +1014,107 @@ describe('POST /api/user/passkeys/register/verify - Pending 2FA setup', () => {
     expect(sessionBody.user?.passkey_count).toBe(1);
 
     verifyRegistration.mockRestore();
+  });
+
+  test('should register passkey for pending setup user when another account is already active', async () => {
+    const email = generateUniqueEmail('passkey-pending-with-active');
+    const password = 'testPassword123!';
+    const credentialId = `pending-active-passkey-${crypto.randomUUID()}`;
+
+    await withMikroContext(services2FA, async () => {
+      const passwordHash =
+        await services2FA.securityService.hashPassword(password);
+      const user = services2FA.mikro.user.create({
+        email,
+        password_hash: passwordHash,
+      });
+      user.email_verified = true;
+      await services2FA.mikro.em.persist(user).flush();
+    });
+
+    const client = testClient(app2FA);
+    const loginActiveRes = await client.api.auth.login.$post({
+      json: { email: TEST_USER.email, password: TEST_USER.password },
+    });
+    expect(loginActiveRes.status).toBe(200);
+    const activeCookie = extractCookie(loginActiveRes, 'session');
+
+    const loginPendingRes = await client.api.auth.login.$post(
+      { json: { email, password } },
+      { headers: { Cookie: `session=${activeCookie}` } },
+    );
+    const loginPendingBody = await assertJsonBody(loginPendingRes);
+    expect(loginPendingBody.user.email).toBe(email);
+    expect(loginPendingBody.user.second_factor_required).toBe(true);
+    const pendingCookie = extractCookie(loginPendingRes, 'session');
+
+    const sessionWhilePendingRes = await client.api.user.session.$get(
+      {},
+      { headers: { Cookie: `session=${pendingCookie}` } },
+    );
+    const sessionWhilePendingBody = await assertJsonBody(
+      sessionWhilePendingRes,
+    );
+    expect(sessionWhilePendingBody.user?.sub).toBe(TEST_USER_CONFIG.sub);
+
+    const optionsRes = await client.api.user.passkeys.register.options.$post(
+      {},
+      { headers: { Cookie: `session=${pendingCookie}` } },
+    );
+    const optionsBody = await assertJsonBody(optionsRes);
+    const optionsCookie = extractCookie(optionsRes, 'session');
+
+    const verifyRegistration = vi
+      .spyOn(services2FA.passkeyService, 'verifyRegistration')
+      .mockImplementationOnce(async (user, _response, expectedChallenge) => {
+        expect(user.email).toBe(email);
+        expect(expectedChallenge).toBe(optionsBody.options.challenge);
+        const passkey = services2FA.mikro.userPasskey.create({
+          user: user.sub,
+          credential_id: credentialId,
+          public_key: 'test-public-key-base64url',
+          counter: 0,
+          device_type: 'multiDevice',
+          backed_up: true,
+          transports: ['internal'],
+          name: 'Pending Active Passkey',
+          aaguid: 'test-aaguid',
+        });
+        await services2FA.mikro.em.persist(passkey).flush();
+        return passkey;
+      });
+
+    try {
+      const verifyRes = await client.api.user.passkeys.register.verify.$post(
+        {
+          json: {
+            response: createMockRegistrationResponse({
+              id: credentialId,
+              rawId: credentialId,
+            }),
+          },
+        },
+        { headers: { Cookie: `session=${optionsCookie}` } },
+      );
+
+      const verifyBody = await assertJsonBody(verifyRes);
+      expect(verifyBody.ok).toBe(true);
+      expect(verifyBody.second_factor_setup_completed).toBe(true);
+      if (!('user' in verifyBody)) {
+        throw new Error('Expected promoted user session in response');
+      }
+      expect(verifyBody.user.email).toBe(email);
+
+      const fullSessionCookie = extractCookie(verifyRes, 'session');
+      const sessionRes = await client.api.user.session.$get(
+        {},
+        { headers: { Cookie: `session=${fullSessionCookie}` } },
+      );
+      const sessionBody = await assertJsonBody(sessionRes);
+      expect(sessionBody.user?.email).toBe(email);
+      expect(sessionBody.user?.passkey_count).toBe(1);
+    } finally {
+      verifyRegistration.mockRestore();
+    }
   });
 });
