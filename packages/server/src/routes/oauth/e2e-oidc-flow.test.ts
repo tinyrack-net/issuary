@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { testClient } from 'hono/testing';
 import * as jose from 'jose';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { AppType } from '../../entrypoints/app.ts';
 import { encrypt } from '../../lib/crypto.ts';
 import {
@@ -1029,6 +1029,12 @@ describe('End-to-End OIDC Account Selection Flow', () => {
     password: 'changemelater',
     role: 'user' as const,
   };
+  const ACCOUNT_C = {
+    sub: 'e2e-max-cap-active-user',
+    email: 'max-cap-active@example.com',
+    password: 'changemelater',
+    role: 'user' as const,
+  };
 
   let accountSelectionApp: AppType;
   let accountSelectionCleanup: () => Promise<void>;
@@ -1478,6 +1484,288 @@ describe('End-to-End OIDC Account Selection Flow', () => {
     const userInfo = await assertJsonBody(userInfoRes, 200);
     expect(userInfo.sub).toBe(ACCOUNT_B.sub);
     expect(userInfo.email).toBe(ACCOUNT_B.email);
+  });
+
+  test('does not issue tokens for an expired remembered account through stale chooser state', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(1_700_000_000_000));
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+          remember_accounts: {
+            enabled: true,
+            ttl: '5s',
+          },
+        },
+      },
+      users: [ACCOUNT_A, ACCOUNT_B],
+      clients: [TEST_OAUTH_CLIENT_CONFIG],
+    });
+    try {
+      const client = testClient(scopedServer.app);
+      const configRes =
+        await client.oauth['.well-known']['openid-configuration'].$get();
+      const config = await assertJsonBody(configRes, 200);
+      const jwksPath = new URL(config.jwks_uri).pathname;
+      const jwksRes = await scopedServer.app.request(jwksPath);
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
+      const authenticatedAt = 1_700_000_000;
+      const sessionCookie = await encrypt(
+        JSON.stringify({
+          user: {
+            sub: ACCOUNT_B.sub,
+            authenticated_at: authenticatedAt,
+          },
+          accounts: [
+            {
+              sub: ACCOUNT_A.sub,
+              authenticated_at: authenticatedAt,
+              last_used_at: authenticatedAt,
+            },
+            {
+              sub: ACCOUNT_B.sub,
+              authenticated_at: authenticatedAt,
+              last_used_at: authenticatedAt,
+            },
+          ],
+        }),
+        MINIMAL_TEST_CONFIG.security.session_secret,
+      );
+      await grantConsent(scopedServer.app, sessionCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: 'openid profile email',
+      });
+
+      const authorizeQuery = {
+        response_type: 'code',
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: 'openid profile email',
+        state: 'expired-account-selection-state',
+        nonce: 'expired-account-selection-nonce',
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: TEST_PKCE.codeChallengeMethod,
+        prompt: 'select_account',
+      };
+      const chooserRes = await client.oauth.authorize.$get(
+        { query: authorizeQuery },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+      expect(chooserRes.status).toBe(302);
+      const chooserLocation = new URL(chooserRes.headers.get('location') ?? '');
+      expect(chooserLocation.pathname).toBe('/account/select');
+      const accountSelectionState = chooserLocation.searchParams.get(
+        'account_selection_state',
+      );
+      expect(accountSelectionState).not.toBeNull();
+      const chooserCookie = extractCookie(chooserRes, 'session');
+
+      vi.setSystemTime(new Date(1_700_000_010_000));
+      const selectExpiredRes = await client.api.auth.accounts.select.$post(
+        { json: { sub: ACCOUNT_A.sub } },
+        { headers: { Cookie: `session=${chooserCookie}` } },
+      );
+      expect(selectExpiredRes.status).toBe(400);
+      await expect(selectExpiredRes.json()).resolves.toMatchObject({
+        code: 'ACCOUNT_NOT_REMEMBERED',
+      });
+
+      const finalAuthorizeRes = await client.oauth.authorize.$get(
+        {
+          query: {
+            ...authorizeQuery,
+            account_selected: '1',
+            account_selection_state: accountSelectionState ?? '',
+          },
+        },
+        { headers: { Cookie: `session=${chooserCookie}` } },
+      );
+      expect(finalAuthorizeRes.status).toBe(302);
+      const finalLocation = new URL(
+        finalAuthorizeRes.headers.get('location') ?? '',
+      );
+      expect(finalLocation.pathname).toBe(
+        new URL(TEST_OAUTH_CLIENT.redirectUri).pathname,
+      );
+      const code = finalLocation.searchParams.get('code');
+      expect(code).toBeTruthy();
+
+      const tokenRes = await exchangeCodeForTokens(scopedServer.app, {
+        code: code ?? '',
+        codeVerifier: TEST_PKCE.codeVerifier,
+      });
+      const tokens = await assertJsonBody(tokenRes, 200);
+      const { payload } = await jose.jwtVerify(
+        assertDefined(tokens.id_token),
+        JWKS,
+        {
+          issuer: config.issuer,
+          audience: TEST_OAUTH_CLIENT.clientId,
+        },
+      );
+      expect(payload.sub).toBe(ACCOUNT_B.sub);
+      expect(payload.sub).not.toBe(ACCOUNT_A.sub);
+
+      const userInfoRes = await getUserInfo(
+        scopedServer.app,
+        tokens.access_token,
+      );
+      const userInfo = await assertJsonBody(userInfoRes, 200);
+      expect(userInfo.sub).toBe(ACCOUNT_B.sub);
+      expect(userInfo.email).toBe(ACCOUNT_B.email);
+    } finally {
+      vi.useRealTimers();
+      await scopedServer.cleanup();
+    }
+  });
+
+  test('does not issue tokens for a max_accounts-evicted account through stale chooser state', async () => {
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+          remember_accounts: {
+            enabled: true,
+            max_accounts: 2,
+          },
+        },
+      },
+      users: [ACCOUNT_A, ACCOUNT_B, ACCOUNT_C],
+      clients: [TEST_OAUTH_CLIENT_CONFIG],
+    });
+    try {
+      const client = testClient(scopedServer.app);
+      const configRes =
+        await client.oauth['.well-known']['openid-configuration'].$get();
+      const config = await assertJsonBody(configRes, 200);
+      const jwksPath = new URL(config.jwks_uri).pathname;
+      const jwksRes = await scopedServer.app.request(jwksPath);
+      const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
+      const authenticatedAt = Math.floor(Date.now() / 1000) - 10;
+      const authorizeQuery = {
+        response_type: 'code',
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: 'openid profile email',
+        state: 'max-cap-account-selection-state',
+        nonce: 'max-cap-account-selection-nonce',
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: TEST_PKCE.codeChallengeMethod,
+        prompt: 'select_account',
+      };
+      const accountSelectionState = 'stale-max-cap-account-selection-state';
+      const accountSelectionFingerprint = JSON.stringify([
+        ['client_id', authorizeQuery.client_id],
+        ['redirect_uri', authorizeQuery.redirect_uri],
+        ['response_type', authorizeQuery.response_type],
+        ['scope', authorizeQuery.scope],
+        ['state', authorizeQuery.state],
+        ['nonce', authorizeQuery.nonce],
+        ['code_challenge', authorizeQuery.code_challenge],
+        ['code_challenge_method', authorizeQuery.code_challenge_method],
+        ['prompt', authorizeQuery.prompt],
+      ]);
+      const staleChooserCookie = await encrypt(
+        JSON.stringify({
+          user: {
+            sub: ACCOUNT_C.sub,
+            authenticated_at: authenticatedAt,
+          },
+          accounts: [
+            {
+              sub: ACCOUNT_A.sub,
+              authenticated_at: authenticatedAt - 20,
+              last_used_at: authenticatedAt - 20,
+            },
+            {
+              sub: ACCOUNT_B.sub,
+              authenticated_at: authenticatedAt - 10,
+              last_used_at: authenticatedAt - 10,
+            },
+            {
+              sub: ACCOUNT_C.sub,
+              authenticated_at: authenticatedAt,
+              last_used_at: authenticatedAt,
+            },
+          ],
+          accountSelection: {
+            id: accountSelectionState,
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            request_fingerprint: accountSelectionFingerprint,
+            allow_add_account: true,
+            allowed_subs: [ACCOUNT_A.sub, ACCOUNT_B.sub, ACCOUNT_C.sub],
+            created_at: authenticatedAt,
+          },
+        }),
+        MINIMAL_TEST_CONFIG.security.session_secret,
+      );
+      await grantConsent(scopedServer.app, staleChooserCookie, {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: 'openid profile email',
+      });
+
+      const selectEvictedRes = await client.api.auth.accounts.select.$post(
+        { json: { sub: ACCOUNT_A.sub } },
+        { headers: { Cookie: `session=${staleChooserCookie}` } },
+      );
+      expect(selectEvictedRes.status).toBe(400);
+      await expect(selectEvictedRes.json()).resolves.toMatchObject({
+        code: 'ACCOUNT_NOT_REMEMBERED',
+      });
+
+      const finalAuthorizeRes = await client.oauth.authorize.$get(
+        {
+          query: {
+            ...authorizeQuery,
+            account_selected: '1',
+            account_selection_state: accountSelectionState,
+          },
+        },
+        { headers: { Cookie: `session=${staleChooserCookie}` } },
+      );
+      expect(finalAuthorizeRes.status).toBe(302);
+      const finalLocation = new URL(
+        finalAuthorizeRes.headers.get('location') ?? '',
+      );
+      expect(finalLocation.pathname).toBe(
+        new URL(TEST_OAUTH_CLIENT.redirectUri).pathname,
+      );
+      const code = finalLocation.searchParams.get('code');
+      expect(code).toBeTruthy();
+
+      const tokenRes = await exchangeCodeForTokens(scopedServer.app, {
+        code: code ?? '',
+        codeVerifier: TEST_PKCE.codeVerifier,
+      });
+      const tokens = await assertJsonBody(tokenRes, 200);
+      const { payload } = await jose.jwtVerify(
+        assertDefined(tokens.id_token),
+        JWKS,
+        {
+          issuer: config.issuer,
+          audience: TEST_OAUTH_CLIENT.clientId,
+        },
+      );
+      expect(payload.sub).toBe(ACCOUNT_C.sub);
+      expect(payload.sub).not.toBe(ACCOUNT_A.sub);
+
+      const userInfoRes = await getUserInfo(
+        scopedServer.app,
+        tokens.access_token,
+      );
+      const userInfo = await assertJsonBody(userInfoRes, 200);
+      expect(userInfo.sub).toBe(ACCOUNT_C.sub);
+      expect(userInfo.email).toBe(ACCOUNT_C.email);
+    } finally {
+      await scopedServer.cleanup();
+    }
   });
 
   test('OP logout clears active and remembered account-selection session state', async () => {

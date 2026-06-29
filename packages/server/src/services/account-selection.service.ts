@@ -148,7 +148,8 @@ export class AccountSelectionService {
       params.loginHint,
     );
     const explicitlyRequiresChooser =
-      explicitlyRequestsAccountSelection || mode === 'always';
+      explicitlyRequestsAccountSelection ||
+      (mode === 'always' && params.rememberedAccounts.length > 0);
 
     if (explicitlyRequiresChooser) {
       return this.promptNoneOrChooser(params, globalConfig.prompt_none_error);

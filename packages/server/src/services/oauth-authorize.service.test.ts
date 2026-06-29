@@ -1131,4 +1131,506 @@ describe('OAuthAuthorizeService account selection', () => {
     expect(redirect.searchParams.get('state')).toBe(baseQuery.state);
     expect(redirect.searchParams.has('code')).toBe(false);
   });
+
+  test('returns login_required for prompt=none when only remembered accounts exist without an active user', async () => {
+    const rememberedSub = await createTestUser(services, {
+      email: 'remembered-without-active-none@example.com',
+    });
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          prompt: 'none',
+        },
+        rememberedAccounts: [
+          {
+            sub: rememberedSub,
+            authenticated_at: 1_700_000_000,
+            last_used_at: 1_700_000_000,
+          },
+        ],
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.pathname).toBe(new URL(baseQuery.redirect_uri).pathname);
+    expect(redirect.searchParams.get('error')).toBe('login_required');
+    expect(redirect.searchParams.get('state')).toBe(baseQuery.state);
+    expect(redirect.searchParams.has('code')).toBe(false);
+  });
+
+  test('redirects to login when only remembered accounts exist without an active user', async () => {
+    const rememberedSub = await createTestUser(services, {
+      email: 'remembered-without-active-interactive@example.com',
+    });
+    const reauthenticationStates: ReauthenticationSession[] = [];
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: baseQuery,
+        rememberedAccounts: [
+          {
+            sub: rememberedSub,
+            authenticated_at: 1_700_000_000,
+            last_used_at: 1_700_000_000,
+          },
+        ],
+        setReauthenticationSession: (state) =>
+          reauthenticationStates.push(state),
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.pathname).toBe('/login');
+    expect(redirect.searchParams.has('code')).toBe(false);
+    expect(redirect.searchParams.get('account_selection_state')).toBeNull();
+    expect(reauthenticationStates).toHaveLength(1);
+  });
+
+  test('issues a code for the active session when login_hint matches the active account', async () => {
+    const activeSub = await createTestUser(services, {
+      email: 'hint-active-route@example.com',
+    });
+    const otherSub = await createTestUser(services, {
+      email: 'hint-active-other@example.com',
+    });
+    await grantBaseConsent(activeSub);
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          login_hint: 'hint-active-route@example.com',
+        },
+        userSession: {
+          sub: activeSub,
+          authenticated_at: 1_700_000_000,
+        },
+        rememberedAccounts: [
+          {
+            sub: activeSub,
+            authenticated_at: 1_700_000_000,
+            last_used_at: 1_700_000_000,
+          },
+          {
+            sub: otherSub,
+            authenticated_at: 1_700_000_100,
+            last_used_at: 1_700_000_100,
+          },
+        ],
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.searchParams.get('code')).toBeTruthy();
+    expect(redirect.searchParams.get('account_selection_state')).toBeNull();
+    const oauthCode = await withMikroContext(services, async () =>
+      services.mikro.oauthCode.findOneOrFail({ user: activeSub }),
+    );
+    expect(oauthCode.user.sub).toBe(activeSub);
+  });
+
+  test('issues a code for the hinted remembered account after consent is granted', async () => {
+    const activeSub = await createTestUser(services, {
+      email: 'hint-consent-active@example.com',
+    });
+    const hintedSub = await createTestUser(services, {
+      email: 'hint-consent-selected@example.com',
+    });
+    const selected: string[] = [];
+
+    const consentResult = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          login_hint: 'hint-consent-selected@example.com',
+        },
+        userSession: {
+          sub: activeSub,
+          authenticated_at: 1_700_000_000,
+        },
+        rememberedAccounts: [
+          {
+            sub: activeSub,
+            authenticated_at: 1_700_000_000,
+            last_used_at: 1_700_000_000,
+          },
+          {
+            sub: hintedSub,
+            authenticated_at: 1_700_000_100,
+            last_used_at: 1_700_000_100,
+          },
+        ],
+        selectUserSession: (sub) => {
+          selected.push(sub);
+          return true;
+        },
+      }),
+    );
+
+    expect(new URL(consentResult.url).pathname).toBe('/consent');
+    expect(selected).toEqual([hintedSub]);
+
+    await grantBaseConsent(hintedSub);
+
+    const codeResult = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          login_hint: 'hint-consent-selected@example.com',
+        },
+        userSession: {
+          sub: hintedSub,
+          authenticated_at: 1_700_000_100,
+        },
+        rememberedAccounts: [
+          {
+            sub: activeSub,
+            authenticated_at: 1_700_000_000,
+            last_used_at: 1_700_000_000,
+          },
+          {
+            sub: hintedSub,
+            authenticated_at: 1_700_000_100,
+            last_used_at: 1_700_000_100,
+          },
+        ],
+      }),
+    );
+
+    const redirect = new URL(codeResult.url);
+    expect(redirect.searchParams.get('code')).toBeTruthy();
+    const oauthCode = await withMikroContext(services, async () =>
+      services.mikro.oauthCode.findOneOrFail({ user: hintedSub }),
+    );
+    expect(oauthCode.user.sub).toBe(hintedSub);
+  });
+});
+
+describe('OAuthAuthorizeService account selection always mode', () => {
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
+
+  const baseQuery = {
+    client_id: TEST_OAUTH_CLIENT.clientId,
+    redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+    response_type: 'code',
+    scope: 'openid email',
+    state: 'oauth-state-123',
+    nonce: 'nonce-123',
+    code_challenge: TEST_PKCE.codeChallenge,
+    code_challenge_method: TEST_PKCE.codeChallengeMethod,
+  } satisfies AuthorizeParams;
+
+  beforeAll(async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'always',
+        },
+      },
+      clients: [TEST_OAUTH_CLIENT_CONFIG],
+    });
+    services = server.services;
+    cleanup = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanup();
+  });
+
+  async function grantBaseConsent(userSub: string): Promise<void> {
+    await withMikroContext(services, async () => {
+      const client = await services.oauthClientService.findByClientId(
+        TEST_OAUTH_CLIENT.clientId,
+      );
+      await services.userConsentService.grantConsent({
+        userSub,
+        clientId: client.id,
+        scopes: ['openid', 'email'],
+      });
+    });
+  }
+
+  test('continues the active session instead of showing an empty chooser when mode=always has zero remembered accounts', async () => {
+    const activeSub = await createTestUser(services, {
+      email: 'always-zero-active@example.com',
+    });
+    await grantBaseConsent(activeSub);
+    const storedStates: AccountSelectionSession[] = [];
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: baseQuery,
+        userSession: {
+          sub: activeSub,
+          authenticated_at: 1_700_000_000,
+        },
+        rememberedAccounts: [],
+        setAccountSelectionSession: (state) => storedStates.push(state),
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.pathname).toBe(new URL(baseQuery.redirect_uri).pathname);
+    expect(redirect.searchParams.get('code')).toBeTruthy();
+    expect(redirect.searchParams.get('account_selection_state')).toBeNull();
+    expect(storedStates).toEqual([]);
+  });
+
+  test('shows prompt=select_account chooser with no fabricated accounts when remembered roster is empty', async () => {
+    const activeSub = await createTestUser(services, {
+      email: 'always-zero-select-active@example.com',
+    });
+    await grantBaseConsent(activeSub);
+    const storedStates: AccountSelectionSession[] = [];
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          prompt: 'select_account',
+        },
+        userSession: {
+          sub: activeSub,
+          authenticated_at: 1_700_000_000,
+        },
+        rememberedAccounts: [],
+        setAccountSelectionSession: (state) => storedStates.push(state),
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.pathname).toBe('/account/select');
+    expect(redirect.searchParams.has('code')).toBe(false);
+    expect(storedStates).toHaveLength(1);
+    expect(storedStates[0]?.allowed_subs).toEqual([]);
+  });
+});
+
+describe('OAuthAuthorizeService login_hint require_match', () => {
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
+
+  const baseQuery = {
+    client_id: TEST_OAUTH_CLIENT.clientId,
+    redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+    response_type: 'code',
+    scope: 'openid email',
+    state: 'oauth-state-123',
+    nonce: 'nonce-123',
+    code_challenge: TEST_PKCE.codeChallenge,
+    code_challenge_method: TEST_PKCE.codeChallengeMethod,
+  } satisfies AuthorizeParams;
+
+  beforeAll(async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+          login_hint: {
+            behavior: 'require_match',
+          },
+        },
+      },
+      clients: [TEST_OAUTH_CLIENT_CONFIG],
+    });
+    services = server.services;
+    cleanup = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanup();
+  });
+
+  test('shows chooser for unknown login_hint with require_match during an interactive request', async () => {
+    const activeSub = await createTestUser(services, {
+      email: 'require-match-active@example.com',
+    });
+    const storedStates: AccountSelectionSession[] = [];
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          login_hint: 'unknown-require-match@example.com',
+        },
+        userSession: {
+          sub: activeSub,
+          authenticated_at: 1_700_000_000,
+        },
+        rememberedAccounts: [
+          {
+            sub: activeSub,
+            authenticated_at: 1_700_000_000,
+            last_used_at: 1_700_000_000,
+          },
+        ],
+        setAccountSelectionSession: (state) => storedStates.push(state),
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.pathname).toBe('/account/select');
+    expect(redirect.searchParams.has('code')).toBe(false);
+    expect(storedStates).toHaveLength(1);
+  });
+
+  test('returns OAuth error for unknown login_hint with require_match and prompt=none', async () => {
+    const activeSub = await createTestUser(services, {
+      email: 'require-match-none-active@example.com',
+    });
+    const storedStates: AccountSelectionSession[] = [];
+
+    const result = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          login_hint: 'unknown-require-match-none@example.com',
+          prompt: 'none',
+        },
+        userSession: {
+          sub: activeSub,
+          authenticated_at: 1_700_000_000,
+        },
+        rememberedAccounts: [
+          {
+            sub: activeSub,
+            authenticated_at: 1_700_000_000,
+            last_used_at: 1_700_000_000,
+          },
+        ],
+        setAccountSelectionSession: (state) => storedStates.push(state),
+      }),
+    );
+
+    const redirect = new URL(result.url);
+    expect(redirect.pathname).toBe(new URL(baseQuery.redirect_uri).pathname);
+    expect(redirect.searchParams.get('error')).toBe(
+      'account_selection_required',
+    );
+    expect(redirect.searchParams.has('code')).toBe(false);
+    expect(storedStates).toEqual([]);
+  });
+});
+
+describe('OAuthAuthorizeService remember_accounts disabled', () => {
+  let services: ServiceContainer;
+  let cleanup: () => Promise<void>;
+
+  const baseQuery = {
+    client_id: TEST_OAUTH_CLIENT.clientId,
+    redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+    response_type: 'code',
+    scope: 'openid email',
+    state: 'oauth-state-123',
+    nonce: 'nonce-123',
+    code_challenge: TEST_PKCE.codeChallenge,
+    code_challenge_method: TEST_PKCE.codeChallengeMethod,
+  } satisfies AuthorizeParams;
+
+  beforeAll(async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+          remember_accounts: {
+            enabled: false,
+          },
+        },
+      },
+      clients: [TEST_OAUTH_CLIENT_CONFIG],
+    });
+    services = server.services;
+    cleanup = server.cleanup;
+  });
+
+  afterAll(async () => {
+    await cleanup();
+  });
+
+  async function grantBaseConsent(userSub: string): Promise<void> {
+    await withMikroContext(services, async () => {
+      const client = await services.oauthClientService.findByClientId(
+        TEST_OAUTH_CLIENT.clientId,
+      );
+      await services.userConsentService.grantConsent({
+        userSub,
+        clientId: client.id,
+        scopes: ['openid', 'email'],
+      });
+    });
+  }
+
+  test('ignores stale remembered accounts for login_hint and chooser state when remembering is disabled', async () => {
+    const activeSub = await createTestUser(services, {
+      email: 'remember-disabled-active@example.com',
+    });
+    const staleSub = await createTestUser(services, {
+      email: 'remember-disabled-stale@example.com',
+    });
+    await grantBaseConsent(activeSub);
+    await grantBaseConsent(staleSub);
+    const staleRoster = [
+      {
+        sub: activeSub,
+        authenticated_at: 1_700_000_000,
+        last_used_at: 1_700_000_000,
+      },
+      {
+        sub: staleSub,
+        authenticated_at: 1_700_000_100,
+        last_used_at: 1_700_000_100,
+      },
+    ];
+
+    const hintedResult = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          login_hint: 'remember-disabled-stale@example.com',
+        },
+        userSession: {
+          sub: activeSub,
+          authenticated_at: 1_700_000_000,
+        },
+        rememberedAccounts: staleRoster,
+      }),
+    );
+
+    const hintedRedirect = new URL(hintedResult.url);
+    expect(hintedRedirect.searchParams.get('code')).toBeTruthy();
+    const activeCode = await withMikroContext(services, async () =>
+      services.mikro.oauthCode.findOneOrFail({ user: activeSub }),
+    );
+    expect(activeCode.user.sub).toBe(activeSub);
+
+    const storedStates: AccountSelectionSession[] = [];
+    const chooserResult = await withMikroContext(services, async () =>
+      services.oauthAuthorizeService.authorize({
+        query: {
+          ...baseQuery,
+          prompt: 'select_account',
+        },
+        userSession: {
+          sub: activeSub,
+          authenticated_at: 1_700_000_000,
+        },
+        rememberedAccounts: staleRoster,
+        setAccountSelectionSession: (state) => storedStates.push(state),
+      }),
+    );
+
+    const chooserRedirect = new URL(chooserResult.url);
+    expect(chooserRedirect.pathname).toBe('/account/select');
+    expect(storedStates).toHaveLength(1);
+    expect(storedStates[0]?.allowed_subs).toEqual([activeSub]);
+  });
 });

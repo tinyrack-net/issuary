@@ -213,16 +213,17 @@ export class OAuthAuthorizeService {
       throw new e.UserNotFound.Error();
     }
 
+    const activeSessionAccount = {
+      sub: userSession.sub,
+      authenticated_at: userSession.authenticated_at,
+      last_used_at: userSession.authenticated_at,
+    };
+    const rememberedAccountsInput = this.config.auth.account_selection
+      .remember_accounts.enabled
+      ? (params.rememberedAccounts ?? [activeSessionAccount])
+      : [activeSessionAccount];
     const rememberedAccounts = await this.enrichRememberedAccounts(
-      params.rememberedAccounts?.length
-        ? params.rememberedAccounts
-        : [
-            {
-              sub: userSession.sub,
-              authenticated_at: userSession.authenticated_at,
-              last_used_at: userSession.authenticated_at,
-            },
-          ],
+      rememberedAccountsInput,
     );
     const accountSelectionContinuation =
       this.getTrustedAccountSelectionContinuation({

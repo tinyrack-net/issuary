@@ -25,6 +25,9 @@ import {
   getLocationHeader,
   MINIMAL_TEST_CONFIG,
   mockOAuthProviderFetch,
+  TEST_OAUTH_CLIENT,
+  TEST_OAUTH_CLIENT_CONFIG,
+  TEST_PKCE,
   TEST_USER,
   TEST_USER_CONFIG,
   withMikroContext,
@@ -760,6 +763,379 @@ describe('Stateful auth flows', () => {
     }
   });
 
+  test('continues OAuth account-selection add-account flow with the pending TOTP account as final subject', async () => {
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      clients: [TEST_OAUTH_CLIENT_CONFIG],
+      auth: {
+        password: {
+          enabled: true,
+          totp: {
+            enabled: true,
+            issuer: 'TinyAuthPendingTotpOAuthChooserTest',
+          },
+        },
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+          allow_add_account: true,
+        },
+      },
+    });
+
+    try {
+      const password = 'stateful-oauth-pending-password-123';
+      const userAEmail = generateUniqueEmail('stateful-oauth-pending-a');
+      const userBEmail = generateUniqueEmail('stateful-oauth-pending-b');
+
+      const { userA, userB } = await withMikroContext(
+        scopedServer.services,
+        async () => {
+          const passwordHash =
+            await scopedServer.services.securityService.hashPassword(password);
+          const userAEntity = scopedServer.services.mikro.user.create({
+            email: userAEmail,
+            password_hash: passwordHash,
+          });
+          userAEntity.email_verified = true;
+          const userBEntity = scopedServer.services.mikro.user.create({
+            email: userBEmail,
+            password_hash: passwordHash,
+          });
+          userBEntity.email_verified = true;
+          scopedServer.services.mikro.em.persist(userAEntity);
+          scopedServer.services.mikro.em.persist(userBEntity);
+          await scopedServer.services.mikro.em.flush();
+          return { userA: userAEntity, userB: userBEntity };
+        },
+      );
+      const totpSecret = await enableTotpForUser(
+        scopedServer.services,
+        userB.sub,
+      );
+      await withMikroContext(scopedServer.services, async () => {
+        const oauthClient =
+          await scopedServer.services.oauthClientService.findByClientId(
+            TEST_OAUTH_CLIENT.clientId,
+          );
+        await scopedServer.services.userConsentService.grantConsent({
+          userSub: userB.sub,
+          clientId: oauthClient.id,
+          scopes: ['openid', 'email'],
+        });
+      });
+
+      const client = testClient(scopedServer.app);
+      const loginARes = await client.api.auth.login.$post({
+        json: { email: userAEmail, password },
+      });
+      expect(loginARes.status).toBe(200);
+      const userACookie = extractCookie(loginARes, 'session');
+
+      const authorizeQuery = {
+        response_type: 'code',
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: 'openid email',
+        state: 'pending-oauth-chooser-state',
+        nonce: 'pending-oauth-chooser-nonce',
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: TEST_PKCE.codeChallengeMethod,
+        prompt: 'select_account',
+      };
+      const chooserRes = await client.oauth.authorize.$get(
+        { query: authorizeQuery },
+        { headers: { Cookie: `session=${userACookie}` } },
+      );
+      expect(chooserRes.status).toBe(302);
+      const chooserLocation = new URL(getLocationHeader(chooserRes));
+      expect(chooserLocation.pathname).toBe('/account/select');
+      const accountSelectionState = chooserLocation.searchParams.get(
+        'account_selection_state',
+      );
+      if (!accountSelectionState) {
+        throw new Error('Expected account selection continuation state');
+      }
+      const chooserCookie = extractCookie(chooserRes, 'session');
+
+      const loginBRes = await client.api.auth.login.$post(
+        { json: { email: userBEmail, password } },
+        { headers: { Cookie: `session=${chooserCookie}` } },
+      );
+      const loginBBody = await assertJsonBody(loginBRes);
+      expect(loginBBody.user.sub).toBe(userB.sub);
+      expect(loginBBody.user.totp_registered).toBe(true);
+      const pendingTotpCookie = extractCookie(loginBRes, 'session');
+
+      const pendingSessionRes = await client.api.user.session.$get(
+        {},
+        { headers: { Cookie: `session=${pendingTotpCookie}` } },
+      );
+      const pendingSessionBody = await assertJsonBody(pendingSessionRes);
+      expect(pendingSessionBody.user?.sub).toBe(userA.sub);
+      const pendingSession =
+        await readEncryptedSessionCookie(pendingTotpCookie);
+      expect(pendingSession).toMatchObject({
+        user: { sub: userA.sub },
+        pending2FAUser: { sub: userB.sub },
+        accountSelection: { id: accountSelectionState },
+        accounts: [{ sub: userA.sub }],
+      });
+
+      const verifyRes = await client.api.auth.totp.verify.$post(
+        {
+          json: {
+            code: scopedServer.services.totpService.generateToken(totpSecret),
+          },
+        },
+        { headers: { Cookie: `session=${pendingTotpCookie}` } },
+      );
+      const verifyBody = await assertJsonBody(verifyRes);
+      expect(verifyBody.user.sub).toBe(userB.sub);
+      const verifiedCookie = extractCookie(verifyRes, 'session');
+      const verifiedSession = await readEncryptedSessionCookie(verifiedCookie);
+      expect(verifiedSession).toMatchObject({
+        user: { sub: userB.sub },
+        accountSelection: { id: accountSelectionState },
+        accounts: [{ sub: userA.sub }, { sub: userB.sub }],
+      });
+
+      const finalRes = await client.oauth.authorize.$get(
+        {
+          query: {
+            ...authorizeQuery,
+            account_selected: '1',
+            account_selection_state: accountSelectionState,
+          },
+        },
+        { headers: { Cookie: `session=${verifiedCookie}` } },
+      );
+      expect(finalRes.status).toBe(302);
+      const finalLocation = new URL(getLocationHeader(finalRes));
+      expect(finalLocation.pathname).toBe(
+        new URL(TEST_OAUTH_CLIENT.redirectUri).pathname,
+      );
+      expect(finalLocation.searchParams.get('code')).toBeTruthy();
+      expect(finalLocation.searchParams.get('state')).toBe(
+        'pending-oauth-chooser-state',
+      );
+
+      const oauthCode = await withMikroContext(
+        scopedServer.services,
+        async () =>
+          scopedServer.services.mikro.oauthCode.findOneOrFail({
+            user: userB.sub,
+          }),
+      );
+      expect(oauthCode.user.sub).toBe(userB.sub);
+    } finally {
+      await scopedServer.cleanup();
+    }
+  });
+
+  test('continues OAuth account-selection add-account flow after pending TOTP setup completion', async () => {
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      clients: [TEST_OAUTH_CLIENT_CONFIG],
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
+        email_verification_required: false,
+      },
+      auth: {
+        password: {
+          enabled: true,
+          two_factor: {
+            enrollment_required: true,
+          },
+          totp: {
+            enabled: true,
+            issuer: 'TinyAuthPendingSetupOAuthChooserTest',
+          },
+        },
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+          allow_add_account: true,
+        },
+      },
+    });
+
+    try {
+      const password = 'stateful-oauth-pending-setup-password-123';
+      const userAEmail = generateUniqueEmail('stateful-oauth-setup-a');
+      const userBEmail = generateUniqueEmail('stateful-oauth-setup-b');
+
+      const userA = await withMikroContext(scopedServer.services, async () => {
+        const passwordHash =
+          await scopedServer.services.securityService.hashPassword(password);
+        const userAEntity = scopedServer.services.mikro.user.create({
+          email: userAEmail,
+          password_hash: passwordHash,
+        });
+        userAEntity.email_verified = true;
+        scopedServer.services.mikro.em.persist(userAEntity);
+        await scopedServer.services.mikro.em.flush();
+        return userAEntity;
+      });
+      const userATotpSecret = await enableTotpForUser(
+        scopedServer.services,
+        userA.sub,
+      );
+
+      const client = testClient(scopedServer.app);
+      const loginARes = await client.api.auth.login.$post({
+        json: { email: userAEmail, password },
+      });
+      expect(loginARes.status).toBe(200);
+      const pendingUserACookie = extractCookie(loginARes, 'session');
+      const verifyARes = await client.api.auth.totp.verify.$post(
+        {
+          json: {
+            code: scopedServer.services.totpService.generateToken(
+              userATotpSecret,
+            ),
+          },
+        },
+        { headers: { Cookie: `session=${pendingUserACookie}` } },
+      );
+      const verifyABody = await assertJsonBody(verifyARes);
+      expect(verifyABody.user.sub).toBe(userA.sub);
+      const userACookie = extractCookie(verifyARes, 'session');
+
+      const authorizeQuery = {
+        response_type: 'code',
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: 'openid email',
+        state: 'pending-setup-oauth-chooser-state',
+        nonce: 'pending-setup-oauth-chooser-nonce',
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: TEST_PKCE.codeChallengeMethod,
+        prompt: 'select_account',
+      };
+      const chooserRes = await client.oauth.authorize.$get(
+        { query: authorizeQuery },
+        { headers: { Cookie: `session=${userACookie}` } },
+      );
+      expect(chooserRes.status).toBe(302);
+      const chooserLocation = new URL(getLocationHeader(chooserRes));
+      expect(chooserLocation.pathname).toBe('/account/select');
+      const accountSelectionState = chooserLocation.searchParams.get(
+        'account_selection_state',
+      );
+      if (!accountSelectionState) {
+        throw new Error('Expected account selection continuation state');
+      }
+      const chooserCookie = extractCookie(chooserRes, 'session');
+
+      const registerBRes = await client.api.auth.register.$post(
+        {
+          header: { 'accept-language': 'en' },
+          json: { email: userBEmail, password },
+        },
+        { headers: { Cookie: `session=${chooserCookie}` } },
+      );
+      const registerBBody = await assertJsonBody(registerBRes);
+      expect(registerBBody.user.email).toBe(userBEmail);
+      expect(registerBBody.user.second_factor_required).toBe(true);
+      const userBSub = registerBBody.user.sub;
+      const pendingSetupCookie = extractCookie(registerBRes, 'session');
+
+      const pendingSessionRes = await client.api.user.session.$get(
+        {},
+        { headers: { Cookie: `session=${pendingSetupCookie}` } },
+      );
+      const pendingSessionBody = await assertJsonBody(pendingSessionRes);
+      expect(pendingSessionBody.user?.sub).toBe(userA.sub);
+      const pendingSession =
+        await readEncryptedSessionCookie(pendingSetupCookie);
+      expect(pendingSession).toMatchObject({
+        user: { sub: userA.sub },
+        pending2FASetup: { sub: userBSub },
+        accountSelection: { id: accountSelectionState },
+        accounts: [{ sub: userA.sub }],
+      });
+
+      const setupRes = await client.api.user.totp.setup.$post(
+        {},
+        { headers: { Cookie: `session=${pendingSetupCookie}` } },
+      );
+      const setupBody = await assertJsonBody(setupRes);
+      const verifySetupRes = await client.api.user.totp.verify.$post(
+        {
+          json: {
+            code: scopedServer.services.totpService.generateToken(
+              setupBody.secret,
+            ),
+          },
+        },
+        { headers: { Cookie: `session=${pendingSetupCookie}` } },
+      );
+      const verifySetupBody = await assertJsonBody(verifySetupRes);
+      expect(verifySetupBody.recovery_codes.length).toBeGreaterThan(0);
+
+      const confirmRes = await client.api.user.totp.confirm.$post(
+        {},
+        { headers: { Cookie: `session=${pendingSetupCookie}` } },
+      );
+      const confirmBody = await assertJsonBody(confirmRes);
+      expect(confirmBody.user.sub).toBe(userBSub);
+      expect(confirmBody.user.totp_registered).toBe(true);
+      const confirmedCookie = extractCookie(confirmRes, 'session');
+      const confirmedSession =
+        await readEncryptedSessionCookie(confirmedCookie);
+      expect(confirmedSession).toMatchObject({
+        user: { sub: userBSub },
+        accountSelection: { id: accountSelectionState },
+        accounts: [{ sub: userA.sub }, { sub: userBSub }],
+      });
+
+      await withMikroContext(scopedServer.services, async () => {
+        const oauthClient =
+          await scopedServer.services.oauthClientService.findByClientId(
+            TEST_OAUTH_CLIENT.clientId,
+          );
+        await scopedServer.services.userConsentService.grantConsent({
+          userSub: userBSub,
+          clientId: oauthClient.id,
+          scopes: ['openid', 'email'],
+        });
+      });
+
+      const finalRes = await client.oauth.authorize.$get(
+        {
+          query: {
+            ...authorizeQuery,
+            account_selected: '1',
+            account_selection_state: accountSelectionState,
+          },
+        },
+        { headers: { Cookie: `session=${confirmedCookie}` } },
+      );
+      expect(finalRes.status).toBe(302);
+      const finalLocation = new URL(getLocationHeader(finalRes));
+      expect(finalLocation.pathname).toBe(
+        new URL(TEST_OAUTH_CLIENT.redirectUri).pathname,
+      );
+      expect(finalLocation.searchParams.get('code')).toBeTruthy();
+      expect(finalLocation.searchParams.get('state')).toBe(
+        'pending-setup-oauth-chooser-state',
+      );
+
+      const oauthCode = await withMikroContext(
+        scopedServer.services,
+        async () =>
+          scopedServer.services.mikro.oauthCode.findOneOrFail({
+            user: userBSub,
+          }),
+      );
+      expect(oauthCode.user.sub).toBe(userBSub);
+    } finally {
+      await scopedServer.cleanup();
+    }
+  });
+
   test('keeps active account when stale pending 2FA login user is missing', async () => {
     const scopedServer = await createTestApp({
       ...MINIMAL_TEST_CONFIG,
@@ -777,6 +1153,7 @@ describe('Stateful auth flows', () => {
 
     try {
       const client = testClient(scopedServer.app);
+      const rememberedAt = Math.floor(Date.now() / 1000);
       const sessionCookie = await createEncryptedSessionCookie({
         user: {
           sub: TEST_USER_CONFIG.sub,
@@ -785,10 +1162,23 @@ describe('Stateful auth flows', () => {
         accounts: [
           {
             sub: TEST_USER_CONFIG.sub,
-            authenticated_at: 1_700_000_000,
-            last_used_at: 1_700_000_000,
+            authenticated_at: rememberedAt,
+            last_used_at: rememberedAt,
+          },
+          {
+            sub: 'remembered-other-user',
+            authenticated_at: rememberedAt,
+            last_used_at: rememberedAt,
           },
         ],
+        accountSelection: {
+          id: 'stale-pending-login-account-selection',
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          request_fingerprint: 'stale-pending-login-fingerprint',
+          allow_add_account: true,
+          allowed_subs: [TEST_USER_CONFIG.sub, 'remembered-other-user'],
+          created_at: 1_700_000_000,
+        },
         pending2FAUser: {
           sub: 'deleted-pending-user',
           authenticated_at: 1_700_000_100,
@@ -814,6 +1204,13 @@ describe('Stateful auth flows', () => {
         user: {
           sub: TEST_USER_CONFIG.sub,
           authenticated_at: 1_700_000_000,
+        },
+        accounts: [
+          { sub: TEST_USER_CONFIG.sub },
+          { sub: 'remembered-other-user' },
+        ],
+        accountSelection: {
+          id: 'stale-pending-login-account-selection',
         },
       });
       await expect(
@@ -848,6 +1245,7 @@ describe('Stateful auth flows', () => {
 
     try {
       const client = testClient(scopedServer.app);
+      const rememberedAt = Math.floor(Date.now() / 1000);
       const sessionCookie = await createEncryptedSessionCookie({
         user: {
           sub: TEST_USER_CONFIG.sub,
@@ -856,10 +1254,23 @@ describe('Stateful auth flows', () => {
         accounts: [
           {
             sub: TEST_USER_CONFIG.sub,
-            authenticated_at: 1_700_000_000,
-            last_used_at: 1_700_000_000,
+            authenticated_at: rememberedAt,
+            last_used_at: rememberedAt,
+          },
+          {
+            sub: 'remembered-other-user',
+            authenticated_at: rememberedAt,
+            last_used_at: rememberedAt,
           },
         ],
+        accountSelection: {
+          id: 'stale-pending-setup-account-selection',
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          request_fingerprint: 'stale-pending-setup-fingerprint',
+          allow_add_account: true,
+          allowed_subs: [TEST_USER_CONFIG.sub, 'remembered-other-user'],
+          created_at: 1_700_000_000,
+        },
         pending2FASetup: {
           sub: 'deleted-pending-setup-user',
         },
@@ -884,6 +1295,13 @@ describe('Stateful auth flows', () => {
         user: {
           sub: TEST_USER_CONFIG.sub,
           authenticated_at: 1_700_000_000,
+        },
+        accounts: [
+          { sub: TEST_USER_CONFIG.sub },
+          { sub: 'remembered-other-user' },
+        ],
+        accountSelection: {
+          id: 'stale-pending-setup-account-selection',
         },
       });
       await expect(

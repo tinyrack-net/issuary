@@ -1,5 +1,13 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  test,
+  vi,
+} from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
 import type { TinyAuthRuntimeConfigInput } from '../../../lib/config/index.ts';
 import type { ServiceContainer } from '../../../services/container.ts';
@@ -42,6 +50,10 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await cleanup();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 async function createPasswordUser(
@@ -136,6 +148,250 @@ describe('remembered account APIs', () => {
     );
 
     expect(selectRes.status).toBe(400);
+  });
+
+  test('lists active user but no remembered roster when account remembering is disabled', async () => {
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+          allow_add_account: true,
+          allow_remove_account: true,
+          remember_accounts: {
+            enabled: false,
+          },
+        },
+      },
+      users: [TEST_USER_CONFIG],
+    });
+    try {
+      const scopedClient = testClient(scopedServer.app);
+      const login = await scopedClient.api.auth.login.$post({
+        json: { email: TEST_USER.email, password: TEST_USER.password },
+      });
+      const cookie = extractCookie(login, 'session');
+
+      const res = await scopedClient.api.auth.accounts.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${cookie}` } },
+      );
+
+      const body = await assertJsonBody(res);
+      expect(body.active_sub).toBe(TEST_USER_CONFIG.sub);
+      expect(body.allow_add_account).toBe(true);
+      expect(body.allow_remove_account).toBe(true);
+      expect(body.accounts).toEqual([]);
+    } finally {
+      await scopedServer.cleanup();
+    }
+  });
+
+  test('rejects selecting stale remembered accounts when account remembering is disabled', async () => {
+    const rememberServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+          remember_accounts: {
+            enabled: true,
+          },
+        },
+      },
+      users: [TEST_USER_CONFIG],
+    });
+    const disabledServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+          remember_accounts: {
+            enabled: false,
+          },
+        },
+      },
+      users: [TEST_USER_CONFIG],
+    });
+    try {
+      const rememberClient = testClient(rememberServer.app);
+      const login = await rememberClient.api.auth.login.$post({
+        json: { email: TEST_USER.email, password: TEST_USER.password },
+      });
+      const staleCookie = extractCookie(login, 'session');
+      const disabledClient = testClient(disabledServer.app);
+
+      const selectRes = await disabledClient.api.auth.accounts.select.$post(
+        { json: { sub: TEST_USER_CONFIG.sub } },
+        { headers: { Cookie: `session=${staleCookie}` } },
+      );
+
+      expect(selectRes.status).toBe(400);
+      await expect(selectRes.json()).resolves.toMatchObject({
+        code: 'ACCOUNT_NOT_REMEMBERED',
+      });
+    } finally {
+      await rememberServer.cleanup();
+      await disabledServer.cleanup();
+    }
+  });
+
+  test('applies remembered account cap before listing and rejects active account removal at the cap edge', async () => {
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+          allow_remove_account: true,
+          remember_accounts: {
+            enabled: true,
+            max_accounts: 2,
+          },
+        },
+      },
+      users: [TEST_USER_CONFIG],
+    });
+    try {
+      const scopedClient = testClient(scopedServer.app);
+      const secondUser = await createPasswordUser(
+        undefined,
+        scopedServer.services,
+      );
+      const thirdUser = await createPasswordUser(
+        undefined,
+        scopedServer.services,
+      );
+      const firstLogin = await scopedClient.api.auth.login.$post({
+        json: { email: TEST_USER.email, password: TEST_USER.password },
+      });
+      const firstCookie = extractCookie(firstLogin, 'session');
+      const secondLogin = await scopedClient.api.auth.login.$post(
+        { json: { email: secondUser.email, password: secondUser.password } },
+        { headers: { Cookie: `session=${firstCookie}` } },
+      );
+      const secondCookie = extractCookie(secondLogin, 'session');
+      const thirdLogin = await scopedClient.api.auth.login.$post(
+        { json: { email: thirdUser.email, password: thirdUser.password } },
+        { headers: { Cookie: `session=${secondCookie}` } },
+      );
+      const sessionCookie = extractCookie(thirdLogin, 'session');
+
+      const listRes = await scopedClient.api.auth.accounts.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+      const listBody = await assertJsonBody(listRes);
+      expect(listBody.active_sub).toBe(thirdUser.sub);
+      expect(listBody.accounts.map((account) => account.sub)).toEqual([
+        secondUser.sub,
+        thirdUser.sub,
+      ]);
+      expect(listBody.accounts.map((account) => account.current)).toEqual([
+        false,
+        true,
+      ]);
+
+      const removeActiveRes = await scopedClient.api.auth.accounts.remove.$post(
+        { json: { sub: thirdUser.sub } },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+      expect(removeActiveRes.status).toBe(400);
+      await expect(removeActiveRes.json()).resolves.toMatchObject({
+        code: 'ACCOUNT_NOT_REMOVABLE',
+      });
+    } finally {
+      await scopedServer.cleanup();
+    }
+  });
+
+  test('excludes expired remembered accounts from the accounts API', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(1_700_000_000_000));
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+          remember_accounts: {
+            enabled: true,
+            ttl: '1s',
+          },
+        },
+      },
+      users: [TEST_USER_CONFIG],
+    });
+    try {
+      const scopedClient = testClient(scopedServer.app);
+      const secondUser = await createPasswordUser(
+        undefined,
+        scopedServer.services,
+      );
+      const firstLogin = await scopedClient.api.auth.login.$post({
+        json: { email: TEST_USER.email, password: TEST_USER.password },
+      });
+      const firstCookie = extractCookie(firstLogin, 'session');
+      vi.setSystemTime(new Date(1_700_000_002_000));
+      const secondLogin = await scopedClient.api.auth.login.$post(
+        { json: { email: secondUser.email, password: secondUser.password } },
+        { headers: { Cookie: `session=${firstCookie}` } },
+      );
+      const sessionCookie = extractCookie(secondLogin, 'session');
+
+      const listRes = await scopedClient.api.auth.accounts.$get(
+        { query: {} },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+      const listBody = await assertJsonBody(listRes);
+      expect(listBody.active_sub).toBe(secondUser.sub);
+      expect(listBody.accounts.map((account) => account.sub)).toEqual([
+        secondUser.sub,
+      ]);
+    } finally {
+      await scopedServer.cleanup();
+    }
+  });
+
+  test('rejects selecting an expired remembered account from stale session data', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(1_700_000_000_000));
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+          remember_accounts: {
+            enabled: true,
+            ttl: '1s',
+          },
+        },
+      },
+      users: [TEST_USER_CONFIG],
+    });
+    try {
+      const scopedClient = testClient(scopedServer.app);
+      const login = await scopedClient.api.auth.login.$post({
+        json: { email: TEST_USER.email, password: TEST_USER.password },
+      });
+      const staleCookie = extractCookie(login, 'session');
+      vi.setSystemTime(new Date(1_700_000_002_000));
+
+      const selectRes = await scopedClient.api.auth.accounts.select.$post(
+        { json: { sub: TEST_USER_CONFIG.sub } },
+        { headers: { Cookie: `session=${staleCookie}` } },
+      );
+
+      expect(selectRes.status).toBe(400);
+      await expect(selectRes.json()).resolves.toMatchObject({
+        code: 'ACCOUNT_NOT_REMEMBERED',
+      });
+    } finally {
+      await scopedServer.cleanup();
+    }
   });
 
   test('applies client-level allow_add_account override when listing accounts for a client', async () => {

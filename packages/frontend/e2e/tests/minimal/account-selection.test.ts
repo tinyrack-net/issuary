@@ -32,6 +32,7 @@ const LOCKED_CLIENT = {
 };
 
 const ALWAYS_ACCOUNT_SELECTION_MODE: 'always' = 'always';
+const NEVER_ACCOUNT_SELECTION_MODE: 'never' = 'never';
 
 const ALWAYS_CLIENT = {
   ...E2E_TEST_CLIENT_CONFIG,
@@ -42,6 +43,18 @@ const ALWAYS_CLIENT = {
   skip_consent: true,
   account_selection: {
     mode: ALWAYS_ACCOUNT_SELECTION_MODE,
+  },
+};
+
+const NEVER_CLIENT = {
+  ...E2E_TEST_CLIENT_CONFIG,
+  id: 'never-account-selection-client',
+  name: 'Never Account Selection Client',
+  client_id: 'never-account-selection-client',
+  client_secret: 'never-account-selection-secret',
+  skip_consent: true,
+  account_selection: {
+    mode: NEVER_ACCOUNT_SELECTION_MODE,
   },
 };
 
@@ -62,7 +75,7 @@ const test = createScenarioFixture((backendPort) => ({
       },
     },
   }),
-  clients: [E2E_TEST_CLIENT_CONFIG, LOCKED_CLIENT, ALWAYS_CLIENT],
+  clients: [E2E_TEST_CLIENT_CONFIG, LOCKED_CLIENT, ALWAYS_CLIENT, NEVER_CLIENT],
   users: [
     {
       sub: 'account-selection-alice',
@@ -495,6 +508,77 @@ test.describe('OIDC account selection', () => {
     expect(await userinfoResponse.json()).toMatchObject({
       sub: 'account-selection-alice',
       email: 'account-selection-alice@example.com',
+    });
+  });
+
+  test('client never-mode ignores prompt=select_account chooser and issues tokens for the fresh login account', async ({
+    page,
+    request,
+    baseURL,
+    browserName,
+  }) => {
+    await seedRememberedAccounts(page, String(baseURL));
+
+    const flow = buildOAuthFlowInput('account-selection-never-fresh-login', {
+      client_id: NEVER_CLIENT.client_id,
+      prompt: 'select_account',
+    });
+    await gotoWithFirefoxRetry(
+      page,
+      browserName,
+      buildAuthorizePath(flow.authorizeParams),
+    );
+
+    await expect(page).toHaveURL(/\/login/);
+    expect(page.url()).not.toContain('/account/select');
+    await page.locator('a[href^="/login/password"]').click();
+    await expect(page).toHaveURL(/\/login\/password/);
+
+    const callbackRoute = `${E2E_TEST_CLIENT.redirectUri}**`;
+    const callbackRouteHandler = async (
+      route: import('@playwright/test').Route,
+    ) => {
+      await route.fulfill({
+        body: 'Mock OAuth client callback captured',
+        contentType: 'text/plain',
+        status: 200,
+      });
+    };
+    await page.route(callbackRoute, callbackRouteHandler);
+    const redirectPromise = page.waitForRequest(
+      (clientRequest) =>
+        clientRequest.url().startsWith(E2E_TEST_CLIENT.redirectUri),
+      { timeout: 5_000 },
+    );
+
+    await page
+      .locator('input[name="email"]')
+      .fill('account-selection-carol@example.com');
+    await page.locator('input[name="password"]').fill(PASSWORD);
+    await page.locator('button[type="submit"]').click({ noWaitAfter: true });
+
+    const redirect = new URL((await redirectPromise).url());
+    await page.unroute(callbackRoute, callbackRouteHandler);
+    expect(redirect.searchParams.get('code')).toBeTruthy();
+    expect(page.url()).not.toContain('/account/select');
+
+    const tokenResponse = await exchangeAuthorizationCode(
+      request,
+      String(baseURL),
+      {
+        code: redirect.searchParams.get('code') ?? '',
+        codeVerifier: flow.codeVerifier,
+        clientId: NEVER_CLIENT.client_id,
+        clientSecret: NEVER_CLIENT.client_secret,
+      },
+    );
+    const userinfoResponse = await request.get(`${baseURL}/oauth/userinfo`, {
+      headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+    });
+    expect(userinfoResponse.ok()).toBe(true);
+    expect(await userinfoResponse.json()).toMatchObject({
+      sub: 'account-selection-carol',
+      email: 'account-selection-carol@example.com',
     });
   });
 
