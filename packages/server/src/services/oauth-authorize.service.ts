@@ -370,6 +370,16 @@ export class OAuthAuthorizeService {
       }
 
       // Redirect to consent page
+      if (hasFreshReauthentication) {
+        const consentReauthentication = this.createReauthenticationSession(
+          this.buildConsentReauthenticationQuery(query),
+        );
+        params.setReauthenticationSession?.({
+          ...consentReauthentication,
+          sub: userSession.sub,
+          authenticated_at: userSession.authenticated_at,
+        });
+      }
       const consentUrl = this.buildConsentRedirectUrl(query);
       return {
         type: 'redirect',
@@ -525,6 +535,24 @@ export class OAuthAuthorizeService {
       prompt: this.appendLoginPrompt(query.prompt),
       account_selected: '1',
       account_selection_state: accountSelectionState,
+    };
+  }
+
+  private buildConsentReauthenticationQuery(
+    query: AuthorizeParams,
+  ): AuthorizeParams {
+    if (!query.prompt) {
+      return query;
+    }
+
+    const prompt = query.prompt
+      .split(' ')
+      .filter((value) => value !== 'login')
+      .join(' ');
+
+    return {
+      ...query,
+      prompt: prompt || undefined,
     };
   }
 

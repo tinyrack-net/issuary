@@ -18,6 +18,7 @@ import type { ServiceContainer } from '../../../services/container.ts';
 import {
   assertJsonBody,
   createTestApp,
+  enableTotpForUser,
   expectError,
   extractCookie,
   generateUniqueEmail,
@@ -661,6 +662,99 @@ describe('Stateful auth flows', () => {
       });
 
       verifyRegistration.mockRestore();
+    } finally {
+      await scopedServer.cleanup();
+    }
+  });
+
+  test('keeps the current account active while a different account waits for TOTP verification', async () => {
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        password: {
+          enabled: true,
+          totp: {
+            enabled: true,
+            issuer: 'TinyAuthPendingTotpSwitchTest',
+          },
+        },
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+        },
+      },
+    });
+
+    try {
+      const password = 'stateful-switch-totp-password-123';
+      const userAEmail = generateUniqueEmail('stateful-switch-totp-a');
+      const userBEmail = generateUniqueEmail('stateful-switch-totp-b');
+
+      const { userA, userB } = await withMikroContext(
+        scopedServer.services,
+        async () => {
+          const passwordHash =
+            await scopedServer.services.securityService.hashPassword(password);
+          const userAEntity = scopedServer.services.mikro.user.create({
+            email: userAEmail,
+            password_hash: passwordHash,
+          });
+          userAEntity.email_verified = true;
+          const userBEntity = scopedServer.services.mikro.user.create({
+            email: userBEmail,
+            password_hash: passwordHash,
+          });
+          userBEntity.email_verified = true;
+          scopedServer.services.mikro.em.persist(userAEntity);
+          scopedServer.services.mikro.em.persist(userBEntity);
+          await scopedServer.services.mikro.em.flush();
+          return { userA: userAEntity, userB: userBEntity };
+        },
+      );
+      const totpSecret = await enableTotpForUser(
+        scopedServer.services,
+        userB.sub,
+      );
+
+      const client = testClient(scopedServer.app);
+      const loginARes = await client.api.auth.login.$post({
+        json: { email: userAEmail, password },
+      });
+      expect(loginARes.status).toBe(200);
+      const userACookie = extractCookie(loginARes, 'session');
+
+      const loginBRes = await client.api.auth.login.$post(
+        { json: { email: userBEmail, password } },
+        { headers: { Cookie: `session=${userACookie}` } },
+      );
+      const loginBBody = await assertJsonBody(loginBRes);
+      expect(loginBBody.user.sub).toBe(userB.sub);
+      expect(loginBBody.user.totp_registered).toBe(true);
+      const pendingTotpCookie = extractCookie(loginBRes, 'session');
+
+      const pendingSessionRes = await client.api.user.session.$get(
+        {},
+        { headers: { Cookie: `session=${pendingTotpCookie}` } },
+      );
+      const pendingSessionBody = await assertJsonBody(pendingSessionRes);
+      expect(pendingSessionBody.user?.sub).toBe(userA.sub);
+
+      const verifyRes = await client.api.auth.totp.verify.$post(
+        {
+          json: {
+            code: scopedServer.services.totpService.generateToken(totpSecret),
+          },
+        },
+        { headers: { Cookie: `session=${pendingTotpCookie}` } },
+      );
+      const verifyBody = await assertJsonBody(verifyRes);
+      expect(verifyBody.user.sub).toBe(userB.sub);
+      const verifiedCookie = extractCookie(verifyRes, 'session');
+      const verifiedSession = await readEncryptedSessionCookie(verifiedCookie);
+      expect(verifiedSession).toMatchObject({
+        user: { sub: userB.sub },
+        accounts: [{ sub: userA.sub }, { sub: userB.sub }],
+      });
     } finally {
       await scopedServer.cleanup();
     }

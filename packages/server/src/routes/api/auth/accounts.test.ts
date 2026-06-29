@@ -1,6 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
+import type { TinyAuthRuntimeConfigInput } from '../../../lib/config/index.ts';
 import type { ServiceContainer } from '../../../services/container.ts';
 import {
   assertJsonBody,
@@ -18,6 +19,10 @@ import {
 let app: AppType;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
+
+type TestClientConfig = NonNullable<
+  TinyAuthRuntimeConfigInput['clients']
+>[number];
 
 beforeAll(async () => {
   const server = await createTestApp({
@@ -167,6 +172,122 @@ describe('remembered account APIs', () => {
       const body = await assertJsonBody(res);
       expect(body.allow_add_account).toBe(false);
       expect(body.allow_remove_account).toBe(true);
+    } finally {
+      await scopedServer.cleanup();
+    }
+  });
+
+  test('applies each requesting client policy without corrupting the shared remembered roster', async () => {
+    const restrictedRedirectUri = 'http://localhost:8080/restricted-callback';
+    const normalRedirectUri = 'http://localhost:8080/normal-callback';
+    const restrictedClient = {
+      ...TEST_OAUTH_CLIENT_CONFIG,
+      id: 'restricted-account-selection-client-config',
+      name: 'Restricted Account Selection Client',
+      client_id: 'restricted-account-selection-client',
+      redirect_uris: [restrictedRedirectUri],
+      account_selection: {
+        mode: 'never',
+        allow_add_account: false,
+      },
+    } satisfies TestClientConfig;
+    const normalClient = {
+      ...TEST_OAUTH_CLIENT_CONFIG,
+      id: 'normal-account-selection-client-config',
+      name: 'Normal Account Selection Client',
+      client_id: 'normal-account-selection-client',
+      redirect_uris: [normalRedirectUri],
+    } satisfies TestClientConfig;
+    const scopedServer = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
+          allow_add_account: true,
+        },
+      },
+      clients: [restrictedClient, normalClient],
+      users: [TEST_USER_CONFIG],
+    });
+
+    try {
+      const scopedClient = testClient(scopedServer.app);
+      const secondUser = await createPasswordUser(
+        undefined,
+        scopedServer.services,
+      );
+      const firstLogin = await scopedClient.api.auth.login.$post({
+        json: { email: TEST_USER.email, password: TEST_USER.password },
+      });
+      const firstCookie = extractCookie(firstLogin, 'session');
+      const secondLogin = await scopedClient.api.auth.login.$post(
+        { json: { email: secondUser.email, password: secondUser.password } },
+        { headers: { Cookie: `session=${firstCookie}` } },
+      );
+      const sessionCookie = extractCookie(secondLogin, 'session');
+
+      const restrictedListRes = await scopedClient.api.auth.accounts.$get(
+        { query: { client_id: restrictedClient.client_id } },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+      const restrictedList = await assertJsonBody(restrictedListRes);
+      expect(restrictedList.allow_add_account).toBe(false);
+      expect(restrictedList.accounts.map((account) => account.sub)).toEqual([
+        TEST_USER_CONFIG.sub,
+        secondUser.sub,
+      ]);
+
+      const restrictedAuthorizeRes = await scopedClient.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'code',
+            client_id: restrictedClient.client_id,
+            redirect_uri: restrictedRedirectUri,
+            scope: 'openid profile email',
+            state: 'restricted-client-selection-state',
+            code_challenge: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ',
+            code_challenge_method: 'S256',
+            prompt: 'select_account',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+      expect(restrictedAuthorizeRes.status).toBe(302);
+      expect(
+        new URL(restrictedAuthorizeRes.headers.get('location') ?? '').pathname,
+      ).toBe('/login');
+
+      const normalListRes = await scopedClient.api.auth.accounts.$get(
+        { query: { client_id: normalClient.client_id } },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+      const normalList = await assertJsonBody(normalListRes);
+      expect(normalList.allow_add_account).toBe(true);
+      expect(normalList.accounts.map((account) => account.sub)).toEqual([
+        TEST_USER_CONFIG.sub,
+        secondUser.sub,
+      ]);
+
+      const normalAuthorizeRes = await scopedClient.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'code',
+            client_id: normalClient.client_id,
+            redirect_uri: normalRedirectUri,
+            scope: 'openid profile email',
+            state: 'normal-client-selection-state',
+            code_challenge: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ',
+            code_challenge_method: 'S256',
+            prompt: 'select_account',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+      expect(normalAuthorizeRes.status).toBe(302);
+      expect(
+        new URL(normalAuthorizeRes.headers.get('location') ?? '').pathname,
+      ).toBe('/account/select');
     } finally {
       await scopedServer.cleanup();
     }

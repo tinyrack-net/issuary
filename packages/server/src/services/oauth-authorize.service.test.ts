@@ -1085,6 +1085,7 @@ describe('OAuthAuthorizeService account selection', () => {
         ],
         selectUserSession: (sub) => {
           selected.push(sub);
+          return true;
         },
       }),
     );

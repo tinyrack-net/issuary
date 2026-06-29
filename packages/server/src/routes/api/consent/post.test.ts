@@ -51,6 +51,7 @@ function buildReauthenticationRequestFingerprint(params: {
   ui_locales?: string | undefined;
   id_token_hint?: string | undefined;
   acr_values?: string | undefined;
+  account_selected?: '1' | undefined;
 }): string {
   return JSON.stringify(
     [
@@ -70,6 +71,7 @@ function buildReauthenticationRequestFingerprint(params: {
       ['ui_locales', params.ui_locales],
       ['id_token_hint', params.id_token_hint],
       ['acr_values', params.acr_values],
+      ['account_selected', params.account_selected],
     ].filter(([, value]) => value !== undefined),
   );
 }
@@ -231,6 +233,44 @@ describe('POST /api/consent', () => {
     expect(redirect.searchParams.has('prompt')).toBe(false);
     expect(redirect.searchParams.get('reauthenticated')).toBe('1');
     expect(redirect.searchParams.get('state')).toBe('state-login-consent');
+  });
+
+  test('should preserve reauthentication when consent submits after prompt=login was stripped', async () => {
+    const originalBody: ConsentAllowBody = {
+      client_id: TEST_OAUTH_CLIENT.clientId,
+      redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+      response_type: 'code',
+      scope: 'openid profile email',
+      state: 'state-stripped-login-consent',
+      nonce: 'nonce-stripped-login-consent',
+      code_challenge: TEST_PKCE.codeChallenge,
+      code_challenge_method: TEST_PKCE.codeChallengeMethod,
+      prompt: 'login consent',
+      max_age: 0,
+      login_hint: TEST_USER_CONFIG.email,
+      account_selected: '1',
+      reauthenticated: '1',
+      decision: 'allow',
+    };
+    const sessionCookie =
+      await createBoundReauthenticationSessionCookie(originalBody);
+    const client = testClient(app);
+
+    const res = await client.api.consent.$post(
+      {
+        json: {
+          ...originalBody,
+          prompt: 'consent',
+        },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+
+    const responseBody = await assertJsonBody(res, 200);
+    const redirect = new URL(responseBody.redirect_url);
+    expect(redirect.searchParams.get('reauthenticated')).toBe('1');
+    expect(redirect.searchParams.get('account_selected')).toBe('1');
+    expect(redirect.searchParams.has('prompt')).toBe(false);
   });
 
   test('should not consume prompt=login based on forged reauthenticated body value', async () => {

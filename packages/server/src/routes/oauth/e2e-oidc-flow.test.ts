@@ -94,6 +94,26 @@ async function createSessionCookieWithAuthTime(
   );
 }
 
+function applySessionSetCookie(
+  currentSessionCookie: string | undefined,
+  setCookie: string | null,
+): string | undefined {
+  if (!setCookie) {
+    return currentSessionCookie;
+  }
+
+  const sessionSetCookie = setCookie
+    .split(/,(?=\s*\w+=)/)
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith('session='));
+  if (!sessionSetCookie) {
+    return currentSessionCookie;
+  }
+
+  const value = sessionSetCookie.match(/^session=([^;]*)/)?.[1] ?? '';
+  return value === '' ? undefined : value;
+}
+
 /**
  * End-to-End OIDC Flow Tests
  *
@@ -1303,5 +1323,222 @@ describe('End-to-End OIDC Account Selection Flow', () => {
     const userInfo = await assertJsonBody(userInfoRes, 200);
     expect(userInfo.sub).toBe(ACCOUNT_B.sub);
     expect(userInfo.email).toBe(ACCOUNT_B.email);
+  });
+
+  test('issues tokens for a login-hinted remembered account after prompt=login reauthentication through consent', async () => {
+    const client = testClient(accountSelectionApp);
+    const configRes =
+      await client.oauth['.well-known']['openid-configuration'].$get();
+    const config = await assertJsonBody(configRes, 200);
+    const jwksPath = new URL(config.jwks_uri).pathname;
+    const jwksRes = await accountSelectionApp.request(jwksPath);
+    const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
+    const sessionCookie = await createMultiAccountSession(ACCOUNT_A.sub);
+
+    const authorizeQuery = {
+      response_type: 'code',
+      client_id: TEST_OAUTH_CLIENT.clientId,
+      redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+      scope: 'openid profile email',
+      state: 'prompt-login-selected-account-state',
+      nonce: 'prompt-login-selected-account-nonce',
+      code_challenge: TEST_PKCE.codeChallenge,
+      code_challenge_method: TEST_PKCE.codeChallengeMethod,
+      prompt: 'login consent',
+      max_age: '0',
+      login_hint: ACCOUNT_B.email,
+    };
+
+    const loginRedirectRes = await client.oauth.authorize.$get(
+      { query: authorizeQuery },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+    expect(loginRedirectRes.status).toBe(302);
+    const loginRedirect = new URL(
+      loginRedirectRes.headers.get('location') ?? '',
+    );
+    expect(loginRedirect.pathname).toBe('/login');
+    expect(loginRedirect.searchParams.get('login_hint')).toBe(ACCOUNT_B.email);
+    const reauthCookie = extractCookie(loginRedirectRes, 'session');
+
+    const loginBRes = await client.api.auth.login.$post(
+      { json: { email: ACCOUNT_B.email, password: ACCOUNT_B.password } },
+      { headers: { Cookie: `session=${reauthCookie}` } },
+    );
+    expect(loginBRes.status).toBe(200);
+    const loggedInCookie = extractCookie(loginBRes, 'session');
+
+    const consentRedirectRes = await client.oauth.authorize.$get(
+      {
+        query: {
+          ...authorizeQuery,
+          account_selected: '1',
+          reauthenticated: '1',
+        },
+      },
+      { headers: { Cookie: `session=${loggedInCookie}` } },
+    );
+    expect(consentRedirectRes.status).toBe(302);
+    const consentLocation = new URL(
+      consentRedirectRes.headers.get('location') ?? '',
+    );
+    expect(consentLocation.pathname).toBe('/consent');
+    expect(consentLocation.searchParams.get('prompt')).toBe('consent');
+    expect(consentLocation.searchParams.get('reauthenticated')).toBe('1');
+    const consentCookie = extractCookie(consentRedirectRes, 'session');
+
+    const consentPostRes = await client.api.consent.$post(
+      {
+        json: {
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          response_type: 'code',
+          scope: 'openid profile email',
+          state: 'prompt-login-selected-account-state',
+          nonce: 'prompt-login-selected-account-nonce',
+          code_challenge: TEST_PKCE.codeChallenge,
+          code_challenge_method: TEST_PKCE.codeChallengeMethod,
+          prompt: 'consent',
+          max_age: 0,
+          login_hint: ACCOUNT_B.email,
+          account_selected: '1',
+          reauthenticated: '1',
+          decision: 'allow',
+        },
+      },
+      { headers: { Cookie: `session=${consentCookie}` } },
+    );
+    const consentBody = await assertJsonBody(consentPostRes, 200);
+    const authorizeUrl = new URL(consentBody.redirect_url);
+    expect(authorizeUrl.searchParams.get('reauthenticated')).toBe('1');
+    expect(authorizeUrl.searchParams.get('account_selected')).toBe('1');
+    const finalCookie = extractCookie(consentPostRes, 'session');
+
+    const finalAuthorizeQuery: Record<string, string> & {
+      response_type: string;
+      client_id: string;
+      redirect_uri: string;
+    } = {
+      response_type: authorizeUrl.searchParams.get('response_type') ?? '',
+      client_id: authorizeUrl.searchParams.get('client_id') ?? '',
+      redirect_uri: authorizeUrl.searchParams.get('redirect_uri') ?? '',
+    };
+    for (const key of [
+      'scope',
+      'state',
+      'nonce',
+      'code_challenge',
+      'code_challenge_method',
+      'prompt',
+      'max_age',
+      'login_hint',
+      'account_selected',
+      'reauthenticated',
+    ]) {
+      const value = authorizeUrl.searchParams.get(key);
+      if (value !== null) {
+        finalAuthorizeQuery[key] = value;
+      }
+    }
+    const finalRes = await client.oauth.authorize.$get(
+      { query: finalAuthorizeQuery },
+      { headers: { Cookie: `session=${finalCookie}` } },
+    );
+    expect(finalRes.status).toBe(302);
+    const finalLocation = new URL(finalRes.headers.get('location') ?? '');
+    expect(finalLocation.pathname).toBe(
+      new URL(TEST_OAUTH_CLIENT.redirectUri).pathname,
+    );
+    expect(finalLocation.searchParams.get('state')).toBe(
+      'prompt-login-selected-account-state',
+    );
+    const code = finalLocation.searchParams.get('code');
+    expect(code).toBeTruthy();
+
+    const tokenRes = await exchangeCodeForTokens(accountSelectionApp, {
+      code: code ?? '',
+      codeVerifier: TEST_PKCE.codeVerifier,
+    });
+    const tokens = await assertJsonBody(tokenRes, 200);
+    const { payload } = await jose.jwtVerify(
+      assertDefined(tokens.id_token),
+      JWKS,
+      {
+        issuer: config.issuer,
+        audience: TEST_OAUTH_CLIENT.clientId,
+      },
+    );
+    expect(payload.sub).toBe(ACCOUNT_B.sub);
+    expect(payload['email']).toBe(ACCOUNT_B.email);
+
+    const userInfoRes = await getUserInfo(
+      accountSelectionApp,
+      tokens.access_token,
+    );
+    const userInfo = await assertJsonBody(userInfoRes, 200);
+    expect(userInfo.sub).toBe(ACCOUNT_B.sub);
+    expect(userInfo.email).toBe(ACCOUNT_B.email);
+  });
+
+  test('OP logout clears active and remembered account-selection session state', async () => {
+    const client = testClient(accountSelectionApp);
+    const sessionCookie = await createMultiAccountSession(ACCOUNT_A.sub);
+
+    const chooserRes = await client.oauth.authorize.$get(
+      {
+        query: {
+          response_type: 'code',
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          scope: 'openid profile email',
+          state: 'logout-account-selection-state',
+          code_challenge: TEST_PKCE.codeChallenge,
+          code_challenge_method: TEST_PKCE.codeChallengeMethod,
+          prompt: 'select_account',
+        },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+    expect(chooserRes.status).toBe(302);
+    expect(new URL(chooserRes.headers.get('location') ?? '').pathname).toBe(
+      '/account/select',
+    );
+    const chooserCookie = extractCookie(chooserRes, 'session');
+
+    const logoutRes = await accountSelectionApp.request('/oauth/end_session', {
+      headers: { Cookie: `session=${chooserCookie}` },
+    });
+    expect(logoutRes.status).toBe(302);
+    expect(logoutRes.headers.get('location')).toBe('http://localhost:8080');
+    expect(logoutRes.headers.get('set-cookie')).toContain('session=;');
+
+    const browserSessionAfterLogout = applySessionSetCookie(
+      chooserCookie,
+      logoutRes.headers.get('set-cookie'),
+    );
+    expect(browserSessionAfterLogout).toBeUndefined();
+
+    const authorizeAfterLogoutRes = await client.oauth.authorize.$get(
+      {
+        query: {
+          response_type: 'code',
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          scope: 'openid profile email',
+          state: 'logout-after-state',
+          code_challenge: TEST_PKCE.codeChallenge,
+          code_challenge_method: TEST_PKCE.codeChallengeMethod,
+        },
+      },
+      browserSessionAfterLogout
+        ? { headers: { Cookie: `session=${browserSessionAfterLogout}` } }
+        : undefined,
+    );
+    expect(authorizeAfterLogoutRes.status).toBe(302);
+    const authorizeAfterLogoutLocation = new URL(
+      authorizeAfterLogoutRes.headers.get('location') ?? '',
+    );
+    expect(authorizeAfterLogoutLocation.pathname).toBe('/login');
+    expect(authorizeAfterLogoutLocation.searchParams.has('code')).toBe(false);
   });
 });

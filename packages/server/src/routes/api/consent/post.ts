@@ -44,6 +44,7 @@ function buildReauthenticationRequestFingerprint(params: {
   ui_locales?: string | undefined;
   id_token_hint?: string | undefined;
   acr_values?: string | undefined;
+  account_selected?: '1' | undefined;
 }): string {
   return JSON.stringify(
     [
@@ -63,8 +64,45 @@ function buildReauthenticationRequestFingerprint(params: {
       ['ui_locales', params.ui_locales],
       ['id_token_hint', params.id_token_hint],
       ['acr_values', params.acr_values],
+      ['account_selected', params.account_selected],
     ].filter(([, value]) => value !== undefined),
   );
+}
+
+// Consent continuations may receive a request after authorize has already
+// consumed `prompt=login` and left only `prompt=consent`. Accept the current
+// consent fingerprint and that exact login-stripped transition only; trust is
+// still bound below to the encrypted-session `sub` and `authenticated_at`.
+function buildReauthenticationRequestFingerprints(params: {
+  client_id: string;
+  redirect_uri: string;
+  response_type: string;
+  scope?: string | undefined;
+  state?: string | undefined;
+  nonce?: string | undefined;
+  code_challenge?: string | undefined;
+  code_challenge_method?: 'S256' | 'plain' | undefined;
+  prompt?: string | undefined;
+  max_age?: number | undefined;
+  display?: 'page' | 'popup' | 'touch' | 'wap' | undefined;
+  response_mode?: 'query' | 'fragment' | 'form_post' | undefined;
+  login_hint?: string | undefined;
+  ui_locales?: string | undefined;
+  id_token_hint?: string | undefined;
+  acr_values?: string | undefined;
+  account_selected?: '1' | undefined;
+}): string[] {
+  const fingerprints = [buildReauthenticationRequestFingerprint(params)];
+  const promptValues = params.prompt?.split(' ').filter(Boolean) ?? [];
+  if (promptValues.length > 0 && !promptValues.includes('login')) {
+    fingerprints.push(
+      buildReauthenticationRequestFingerprint({
+        ...params,
+        prompt: ['login', ...promptValues].join(' '),
+      }),
+    );
+  }
+  return fingerprints;
 }
 
 function buildConsentDenyRedirectUrl(params: {
@@ -233,30 +271,35 @@ export const consentPost = new Hono<AppEnv>().post(
     });
 
     const reauthenticationSession = c.var.session.get('reauthentication');
+    const trustedReauthenticationFingerprints =
+      buildReauthenticationRequestFingerprints({
+        client_id,
+        redirect_uri,
+        response_type,
+        scope,
+        state,
+        nonce,
+        code_challenge,
+        code_challenge_method,
+        prompt,
+        max_age,
+        display,
+        response_mode,
+        login_hint,
+        ui_locales,
+        id_token_hint,
+        acr_values,
+        account_selected,
+      });
     const hasTrustedReauthentication =
       reauthenticated === '1' &&
       reauthenticationSession?.sub === userEntity.sub &&
       reauthenticationSession.authenticated_at ===
         c.var.verifiedUser.authenticatedAt &&
-      reauthenticationSession.request_fingerprint ===
-        buildReauthenticationRequestFingerprint({
-          client_id,
-          redirect_uri,
-          response_type,
-          scope,
-          state,
-          nonce,
-          code_challenge,
-          code_challenge_method,
-          prompt,
-          max_age,
-          display,
-          response_mode,
-          login_hint,
-          ui_locales,
-          id_token_hint,
-          acr_values,
-        });
+      typeof reauthenticationSession.request_fingerprint === 'string' &&
+      trustedReauthenticationFingerprints.includes(
+        reauthenticationSession.request_fingerprint,
+      );
 
     // Build authorize URL to continue the flow
     const url = new URL(c.req.url);
@@ -290,6 +333,31 @@ export const consentPost = new Hono<AppEnv>().post(
       prompt,
       hasTrustedReauthentication,
     );
+    if (hasTrustedReauthentication) {
+      c.var.session.set('reauthentication', {
+        sub: userEntity.sub,
+        authenticated_at: c.var.verifiedUser.authenticatedAt,
+        request_fingerprint: buildReauthenticationRequestFingerprint({
+          client_id,
+          redirect_uri,
+          response_type,
+          scope,
+          state,
+          nonce,
+          code_challenge,
+          code_challenge_method,
+          prompt: continuationPrompt,
+          max_age,
+          display,
+          response_mode,
+          login_hint,
+          ui_locales,
+          id_token_hint,
+          acr_values,
+          account_selected,
+        }),
+      });
+    }
     if (continuationPrompt) {
       authorizeUrl.searchParams.set('prompt', continuationPrompt);
     }
