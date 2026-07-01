@@ -73,6 +73,21 @@ describe('runHttpPerf', () => {
     expect(result.statusCounts).toEqual({ 200: 4 });
   });
 
+  it('counts configured expected statuses as successful responses', async () => {
+    const result = await runHttpPerf({
+      name: 'authorize redirect',
+      requests: 4,
+      concurrency: 2,
+      expectedStatuses: [302],
+      request: async () => new Response(null, { status: 302 }),
+    });
+
+    expect(result.totalRequests).toBe(4);
+    expect(result.success).toBe(4);
+    expect(result.failed).toBe(0);
+    expect(result.statusCounts).toEqual({ 302: 4 });
+  });
+
   it('counts mixed 200/401/500 statuses', async () => {
     const statuses = [200, 401, 500, 200];
     let index = 0;

@@ -1,9 +1,9 @@
 import { Hono } from 'hono';
 import { describeRoute, validator } from 'hono-openapi';
 import { z } from 'zod';
-import type { AppEnv } from '../../../../lib/app-env.ts';
-import { TAGS } from '../../../../lib/swagger-tags.ts';
-import { normalizeAccountSelectionPolicy } from '../../../../services/account-selection.service.ts';
+import type { AppEnv } from '../../../../lib/app-env.js';
+import { TAGS } from '../../../../lib/swagger-tags.js';
+import { normalizeAccountSelectionPolicy } from '../../../../services/account-selection.service.js';
 
 export const authAccountsGet = new Hono<AppEnv>().get(
   '/auth/accounts',
@@ -26,13 +26,19 @@ export const authAccountsGet = new Hono<AppEnv>().get(
     );
     const activeSub = c.var.session.get('user')?.sub ?? null;
     const rememberedAccounts = c.var.session.get('accounts') ?? [];
+    const rememberedSubs = rememberedAccounts.map((account) => account.sub);
+    const users =
+      rememberedSubs.length === 0
+        ? []
+        : await mikro.user.find({
+            sub: { $in: rememberedSubs },
+            deleted_at: null,
+          });
+    const userBySub = new Map(users.map((user) => [user.sub, user]));
     const accounts = [];
 
     for (const account of rememberedAccounts) {
-      const user = await mikro.user.findOne({
-        sub: account.sub,
-        deleted_at: null,
-      });
+      const user = userBySub.get(account.sub);
       if (!user) {
         continue;
       }

@@ -8,6 +8,7 @@ export type RunHttpPerfOptions = {
   warmupRequests?: number;
   requests: number;
   concurrency: number;
+  expectedStatuses?: readonly number[];
   request: () => Promise<Response>;
 };
 
@@ -35,6 +36,17 @@ function countStatus(statusCounts: StatusCounts, status: number): void {
   statusCounts[status] = (statusCounts[status] ?? 0) + 1;
 }
 
+function isSuccessStatus(
+  response: Response,
+  expectedStatuses: readonly number[],
+) {
+  if (expectedStatuses.length === 0) {
+    return response.ok;
+  }
+
+  return expectedStatuses.includes(response.status);
+}
+
 export async function runHttpPerf(
   options: RunHttpPerfOptions,
 ): Promise<HttpPerfResult> {
@@ -60,6 +72,7 @@ export async function runHttpPerf(
   const concurrency = normalizeConcurrency(options.concurrency, requests);
   const latenciesMs: number[] = [];
   const statusCounts: StatusCounts = {};
+  const expectedStatuses = options.expectedStatuses ?? [];
   let success = 0;
   let failed = 0;
   let nextRequest = 0;
@@ -76,7 +89,7 @@ export async function runHttpPerf(
         latenciesMs.push(Number.isFinite(latencyMs) ? latencyMs : 0);
         countStatus(statusCounts, response.status);
 
-        if (response.ok) {
+        if (isSuccessStatus(response, expectedStatuses)) {
           success += 1;
         } else {
           failed += 1;
