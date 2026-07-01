@@ -182,6 +182,8 @@
   "scripts": {
     "test": "node --conditions=@tinyauth/source node_modules/vitest/vitest.mjs",
     "test:coverage": "node ../../packages/tools/src/scripts/rm.ts coverage && node --conditions=@tinyauth/source node_modules/vitest/vitest.mjs run --coverage --maxWorkers=1",
+    "test:perf": "node --conditions=@tinyauth/source node_modules/vitest/vitest.mjs run --config vitest.perf.config.ts",
+    "test:perf:smoke": "node --conditions=@tinyauth/source node_modules/vitest/vitest.mjs run --config vitest.perf.config.ts --testNamePattern smoke",
     "clean": "node ../../packages/tools/src/scripts/rm.ts dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo publish",
     "build": "pnpm run clean && pnpm run mikro-orm:compile && tsc -b tsconfig.json",
     "build:watch": "tsc -b -w tsconfig.json",

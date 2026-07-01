@@ -9,7 +9,7 @@ export default defineConfig({
   test: {
     maxWorkers: '90%',
     testTimeout: 20000,
-    exclude: ['./dist/*', './node_modules/*'],
+    exclude: ['./dist/*', './node_modules/*', 'src/**/*.perf.test.ts'],
     coverage: {
       provider: 'v8',
       clean: true,
