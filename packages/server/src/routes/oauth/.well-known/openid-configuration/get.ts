@@ -5,6 +5,13 @@ import type { AppEnv } from '#server/lib/app-env.js';
 import type { TinyAuthRuntimeConfig } from '#server/lib/config/index.js';
 import { TAGS } from '#server/lib/swagger-tags.js';
 
+type OpenidConfiguration = ReturnType<typeof buildOpenidConfiguration>;
+
+const openidConfigurationCache = new WeakMap<
+  TinyAuthRuntimeConfig,
+  OpenidConfiguration
+>();
+
 export function buildOpenidConfiguration(config: TinyAuthRuntimeConfig) {
   const baseUrl = config.server.public_origin;
   const scopesSupported = new Set([
@@ -77,6 +84,17 @@ export function buildOpenidConfiguration(config: TinyAuthRuntimeConfig) {
     request_uri_parameter_supported: false,
     claims_parameter_supported: false,
   };
+}
+
+function getOpenidConfiguration(config: TinyAuthRuntimeConfig) {
+  const cached = openidConfigurationCache.get(config);
+  if (cached) {
+    return cached;
+  }
+
+  const configuration = buildOpenidConfiguration(config);
+  openidConfigurationCache.set(config, configuration);
+  return configuration;
 }
 
 export const oidcConfigGet = new Hono<AppEnv>().get(
@@ -223,6 +241,6 @@ export const oidcConfigGet = new Hono<AppEnv>().get(
     // Set Cache-Control header
     c.header('Cache-Control', 'public, max-age=3600');
 
-    return c.json(buildOpenidConfiguration(config), 200);
+    return c.json(getOpenidConfiguration(config), 200);
   },
 );

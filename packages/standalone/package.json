@@ -10,6 +10,7 @@
     "directory": "packages/standalone"
   },
   "files": [
+    "bin",
     "dist"
   ],
   "publishConfig": {
@@ -34,7 +35,7 @@
     }
   },
   "bin": {
-    "tinyauth": "./dist/cli.js"
+    "tinyauth": "./bin/index.js"
   },
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--conditions=@tinyauth/source tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve --config-path='./config.dev.yaml'",
