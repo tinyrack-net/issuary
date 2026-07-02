@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../services/container.js';
 import {
+  assertJsonBody,
   createTestApp,
   extractCookie,
   generateUniqueEmail,
@@ -17,6 +18,7 @@ import { runHttpPerf } from '../../../test-utils/perf/index.js';
 const LARGE_ROSTER_SIZE = 10;
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void> = async () => {};
 
@@ -36,6 +38,7 @@ beforeAll(async () => {
     users: [TEST_USER_CONFIG],
   });
   app = server.app;
+  client = testClient(app);
   services = server.services;
   cleanup = server.cleanup;
 });
@@ -68,7 +71,6 @@ async function loginWithOptionalCookie(
   password: string,
   sessionCookie?: string,
 ): Promise<string> {
-  const client = testClient(app);
   const response = await client.api.auth.login.$post(
     { json: { email, password } },
     sessionCookie === undefined
@@ -100,13 +102,23 @@ async function createRememberedAccountSession(rosterSize: number) {
   return { sessionCookie, expectedSubs };
 }
 
-async function requestAccounts(sessionCookie: string, expectedSubs: string[]) {
-  const response = await app.request('/api/auth/accounts', {
-    headers: { Cookie: `session=${sessionCookie}` },
+async function markUsersDeleted(subs: string[]) {
+  await withMikroContext(services, async () => {
+    for (const sub of subs) {
+      const user = await services.mikro.user.findOneOrFail({ sub });
+      user.deleted_at = new Date();
+    }
+    await services.mikro.em.flush();
   });
-  const body = await response.clone().json();
+}
 
-  expect(response.status).toBe(200);
+async function requestAccounts(sessionCookie: string, expectedSubs: string[]) {
+  const response = await client.api.auth.accounts.$get(
+    { query: {} },
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
+
   expect(body.active_sub).toBe(expectedSubs[expectedSubs.length - 1]);
   expect(body.accounts.map((account: { sub: string }) => account.sub)).toEqual(
     expectedSubs,
@@ -164,5 +176,32 @@ describe('GET /api/auth/accounts perf', () => {
     expect(largeResult.rps).toBeGreaterThan(3);
     expect(largeResult.p95Ms).toBeLessThan(1500);
     expect(largeResult.p95Ms).toBeLessThan(smallResult.p95Ms * 3 + 15);
+  });
+
+  test('handles remembered-account rosters with stale database users through the real route', async () => {
+    const roster = await createRememberedAccountSession(LARGE_ROSTER_SIZE);
+    const staleSubs = roster.expectedSubs
+      .slice(1, -1)
+      .filter((_, index) => index % 2 === 0);
+    const staleSubSet = new Set(staleSubs);
+    const expectedSubs = roster.expectedSubs.filter(
+      (sub) => !staleSubSet.has(sub),
+    );
+    await markUsersDeleted(staleSubs);
+
+    const result = await runHttpPerf({
+      name: 'GET /api/auth/accounts stale roster smoke',
+      warmupRequests: 3,
+      requests: 30,
+      concurrency: 3,
+      request: async () => requestAccounts(roster.sessionCookie, expectedSubs),
+    });
+
+    expect(result.totalRequests).toBe(30);
+    expect(result.failed).toBe(0);
+    expect(result.statusCounts[200]).toBe(30);
+    expect(result.errorRate).toBe(0);
+    expect(result.rps).toBeGreaterThan(3);
+    expect(result.p95Ms).toBeLessThan(1500);
   });
 });

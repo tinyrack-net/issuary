@@ -94,9 +94,11 @@ describe('createApp CORS policy', () => {
   });
 
   test('allows the configured public origin with credentials', async () => {
-    const res = await app.request('/api/health', {
-      headers: { Origin: 'https://app.example.test' },
-    });
+    const client = testClient(app);
+    const res = await client.api.health.$get(
+      {},
+      { headers: { Origin: 'https://app.example.test' } },
+    );
 
     expect(res.status).toBe(200);
     expect(res.headers.get('access-control-allow-origin')).toBe(
@@ -106,18 +108,22 @@ describe('createApp CORS policy', () => {
   });
 
   test('does not allow a different origin', async () => {
-    const res = await app.request('/api/health', {
-      headers: { Origin: 'https://evil.example.test' },
-    });
+    const client = testClient(app);
+    const res = await client.api.health.$get(
+      {},
+      { headers: { Origin: 'https://evil.example.test' } },
+    );
 
     expect(res.status).toBe(200);
     expect(res.headers.get('access-control-allow-origin')).toBeNull();
   });
 
   test('credentialed CORS never returns wildcard ACAO', async () => {
-    const res = await app.request('/api/health', {
-      headers: { Origin: 'https://app.example.test' },
-    });
+    const client = testClient(app);
+    const res = await client.api.health.$get(
+      {},
+      { headers: { Origin: 'https://app.example.test' } },
+    );
 
     expect(res.status).toBe(200);
     expect(res.headers.get('access-control-allow-origin')).not.toBe('*');

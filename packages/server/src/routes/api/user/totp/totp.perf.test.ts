@@ -1,8 +1,10 @@
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
 import {
+  assertJsonBody,
   createDbUserWithSession,
   createTestApp,
   enableTotpForUser,
@@ -15,6 +17,7 @@ const WARMUP_REQUESTS = 1;
 const MEASURED_REQUESTS = 10;
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
@@ -28,6 +31,7 @@ beforeAll(async () => {
     },
   });
   app = server.app;
+  client = testClient(app);
   services = server.services;
   cleanup = server.cleanup;
 });
@@ -47,12 +51,11 @@ async function createSession(index: number) {
 
 async function createVerifyFixture(index: number) {
   const { sessionCookie } = await createSession(index);
-  const setupResponse = await app.request('/api/user/totp/setup', {
-    method: 'POST',
-    headers: { Cookie: `session=${sessionCookie}` },
-  });
-  expect(setupResponse.status).toBe(200);
-  const setupBody: { secret?: string } = await setupResponse.json();
+  const setupResponse = await client.api.user.totp.setup.$post(
+    {},
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const setupBody = await assertJsonBody(setupResponse);
   if (!setupBody.secret) {
     throw new Error('Missing TOTP setup secret');
   }
@@ -65,14 +68,10 @@ async function createVerifyFixture(index: number) {
 
 async function createConfirmFixture(index: number) {
   const fixture = await createVerifyFixture(index);
-  const verifyResponse = await app.request('/api/user/totp/verify', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${fixture.sessionCookie}`,
-    },
-    body: JSON.stringify({ code: fixture.code }),
-  });
+  const verifyResponse = await client.api.user.totp.verify.$post(
+    { json: { code: fixture.code } },
+    { headers: { Cookie: `session=${fixture.sessionCookie}` } },
+  );
   expect(verifyResponse.status).toBe(200);
 
   return fixture.sessionCookie;
@@ -92,14 +91,12 @@ async function createDeleteFixture(index: number) {
 }
 
 async function requestSetup(sessionCookie: string) {
-  const response = await app.request('/api/user/totp/setup', {
-    method: 'POST',
-    headers: { Cookie: `session=${sessionCookie}` },
-  });
-  const body: { secret?: string; otpauth_url?: string; qr_code?: string } =
-    await response.clone().json();
+  const response = await client.api.user.totp.setup.$post(
+    {},
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
-  expect(response.status).toBe(200);
   expect(body.secret).toEqual(expect.any(String));
   expect(body.otpauth_url).toContain('otpauth://totp/');
   expect(body.qr_code).toMatch(/^data:image\/png;base64,/);
@@ -108,70 +105,48 @@ async function requestSetup(sessionCookie: string) {
 }
 
 async function requestVerify(sessionCookie: string, code: string) {
-  const response = await app.request('/api/user/totp/verify', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${sessionCookie}`,
-    },
-    body: JSON.stringify({ code }),
-  });
-  const body: { recovery_codes?: string[] } = await response.clone().json();
+  const response = await client.api.user.totp.verify.$post(
+    { json: { code } },
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
-  expect(response.status).toBe(200);
   expect(body.recovery_codes).toHaveLength(8);
 
   return response;
 }
 
 async function requestConfirm(sessionCookie: string) {
-  const response = await app.request('/api/user/totp/confirm', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${sessionCookie}`,
-    },
-    body: JSON.stringify({}),
-  });
-  const body: { user?: { totp_registered?: boolean } } = await response
-    .clone()
-    .json();
+  const response = await client.api.user.totp.confirm.$post(
+    { json: {} },
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
-  expect(response.status).toBe(200);
   expect(body.user?.totp_registered).toBe(true);
 
   return response;
 }
 
 async function requestRegenerate(sessionCookie: string, code: string) {
-  const response = await app.request('/api/user/totp/recovery/regenerate', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${sessionCookie}`,
-    },
-    body: JSON.stringify({ code }),
-  });
-  const body: { recovery_codes?: string[] } = await response.clone().json();
+  const response = await client.api.user.totp.recovery.regenerate.$post(
+    { json: { code } },
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
-  expect(response.status).toBe(200);
   expect(body.recovery_codes).toHaveLength(8);
 
   return response;
 }
 
 async function requestDelete(sessionCookie: string, code: string) {
-  const response = await app.request('/api/user/totp', {
-    method: 'DELETE',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${sessionCookie}`,
-    },
-    body: JSON.stringify({ code }),
-  });
-  const body: { ok?: boolean } = await response.clone().json();
+  const response = await client.api.user.totp.$delete(
+    { json: { code } },
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
-  expect(response.status).toBe(200);
   expect(body.ok).toBe(true);
 
   return response;
@@ -187,6 +162,37 @@ describe('POST /api/user/totp/setup perf', () => {
       requests: MEASURED_REQUESTS,
       concurrency: 2,
       request: async () => requestSetup(sessionCookie),
+    });
+
+    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
+    expect(result.failed).toBe(0);
+    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
+    expect(result.errorRate).toBe(0);
+    expect(result.rps).toBeGreaterThan(1);
+    expect(result.p95Ms).toBeLessThan(4000);
+  });
+
+  test('handles pre-created fresh setup sessions through the real route', async () => {
+    const sessions = await Promise.all(
+      Array.from({ length: WARMUP_REQUESTS + MEASURED_REQUESTS }, (_, index) =>
+        createSession(index + 1000),
+      ),
+    );
+    let nextSession = 0;
+
+    const result = await runHttpPerf({
+      name: 'POST /api/user/totp/setup fresh sessions smoke',
+      warmupRequests: WARMUP_REQUESTS,
+      requests: MEASURED_REQUESTS,
+      concurrency: 2,
+      request: async () => {
+        const session = sessions[nextSession];
+        nextSession += 1;
+        if (!session) {
+          throw new Error('Missing fresh TOTP setup session');
+        }
+        return requestSetup(session.sessionCookie);
+      },
     });
 
     expect(result.totalRequests).toBe(MEASURED_REQUESTS);

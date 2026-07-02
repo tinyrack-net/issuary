@@ -1,3 +1,5 @@
+import { Hono } from 'hono';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
 import type { ServiceContainer } from '../../../services/container.ts';
@@ -13,6 +15,7 @@ import {
 } from '../../../test-utils/index.ts';
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void> = async () => {};
 
@@ -23,6 +26,7 @@ beforeAll(async () => {
     users: [TEST_USER_CONFIG],
   });
   app = server.app;
+  client = testClient(app);
   services = server.services;
   cleanup = server.cleanup;
 });
@@ -33,26 +37,25 @@ afterAll(async () => {
 
 describe('admin authentication', () => {
   test('requires an authenticated session for admin APIs', async () => {
-    const adminRes = await app.request('/api/admin/me');
+    const adminRes = await client.api.admin.me.$get();
 
     expect(adminRes.status).toBe(401);
   });
 
   test('accepts the normal app session cookie for admin users', async () => {
-    const publicLoginRes = await app.request('/api/auth/login', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
+    const publicLoginRes = await client.api.auth.login.$post({
+      json: {
         email: TEST_USER.email,
         password: TEST_USER.password,
-      }),
+      },
     });
     expect(publicLoginRes.status).toBe(200);
     const publicSession = extractCookie(publicLoginRes, 'session');
 
-    const adminRes = await app.request('/api/admin/me', {
-      headers: { Cookie: `session=${publicSession}` },
-    });
+    const adminRes = await client.api.admin.me.$get(
+      {},
+      { headers: { Cookie: `session=${publicSession}` } },
+    );
 
     expect(adminRes.status).toBe(200);
     const body = await assertJsonBody(adminRes);
@@ -73,17 +76,16 @@ describe('admin authentication', () => {
       }),
     );
 
-    const loginRes = await app.request('/api/auth/login', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+    const loginRes = await client.api.auth.login.$post({
+      json: { email, password },
     });
     expect(loginRes.status).toBe(200);
     const session = extractCookie(loginRes, 'session');
 
-    const adminRes = await app.request('/api/admin/me', {
-      headers: { Cookie: `session=${session}` },
-    });
+    const adminRes = await client.api.admin.me.$get(
+      {},
+      { headers: { Cookie: `session=${session}` } },
+    );
 
     expect(adminRes.status).toBe(403);
   });
@@ -96,20 +98,20 @@ describe('admin authentication', () => {
     });
 
     try {
-      const publicLoginRes = await server.app.request('/api/auth/login', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
+      const disabledClient = testClient(server.app);
+      const publicLoginRes = await disabledClient.api.auth.login.$post({
+        json: {
           email: TEST_USER.email,
           password: TEST_USER.password,
-        }),
+        },
       });
       expect(publicLoginRes.status).toBe(200);
       const session = extractCookie(publicLoginRes, 'session');
 
-      const adminRes = await server.app.request('/api/admin/me', {
-        headers: { Cookie: `session=${session}` },
-      });
+      const adminRes = await disabledClient.api.admin.me.$get(
+        {},
+        { headers: { Cookie: `session=${session}` } },
+      );
 
       expect(adminRes.status).toBe(404);
     } finally {
@@ -118,15 +120,21 @@ describe('admin authentication', () => {
   });
 
   test('does not expose duplicated admin login endpoints', async () => {
-    const loginRes = await app.request('/api/admin/auth/login', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
+    const fallbackClient = createAdminLoginFallbackClient(app);
+    const loginRes = await fallbackClient.api.admin.auth.login.$post({
+      json: {
         email: TEST_USER.email,
         password: TEST_USER.password,
-      }),
+      },
     });
 
     expect(loginRes.status).toBe(404);
   });
 });
+
+function createAdminLoginFallbackClient(honoApp: AppType) {
+  const fallbackApp = new Hono().post('/api/admin/auth/login', (c) =>
+    honoApp.fetch(c.req.raw),
+  );
+  return testClient(fallbackApp);
+}

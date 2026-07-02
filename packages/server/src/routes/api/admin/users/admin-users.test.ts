@@ -1,3 +1,4 @@
+import { testClient } from 'hono/testing';
 import { describe, expect, test } from 'vitest';
 import type { AppType } from '../../../../entrypoints/app.ts';
 import type { ServiceContainer } from '../../../../services/container.ts';
@@ -12,14 +13,22 @@ import {
   withMikroContext,
 } from '../../../../test-utils/index.ts';
 
+type AdminUsersQueryInput = {
+  query?: string;
+  page?: string;
+  page_size?: string;
+  include_deleted?: string;
+  managed_by?: 'database' | 'config';
+  role?: 'user' | 'admin';
+};
+
 async function loginAdmin(app: AppType): Promise<string> {
-  const res = await app.request('/api/auth/login', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
+  const client = testClient(app);
+  const res = await client.api.auth.login.$post({
+    json: {
       email: TEST_USER.email,
       password: TEST_USER.password,
-    }),
+    },
   });
   expect(res.status).toBe(200);
   return extractCookie(res, 'session');
@@ -29,13 +38,43 @@ async function loginUser(
   app: AppType,
   params: { email: string; password: string },
 ): Promise<string> {
-  const res = await app.request('/api/auth/login', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(params),
+  const client = testClient(app);
+  const res = await client.api.auth.login.$post({
+    json: params,
   });
   expect(res.status).toBe(200);
   return extractCookie(res, 'session');
+}
+
+function adminClient(app: AppType) {
+  return testClient(app).api.admin;
+}
+
+function authClient(app: AppType) {
+  return testClient(app).api.auth;
+}
+
+function userClient(app: AppType) {
+  return testClient(app).api.user;
+}
+
+function adminHeaders(session: string) {
+  return { headers: { Cookie: `session=${session}` } };
+}
+
+function adminUsersGet(
+  app: AppType,
+  session: string,
+  query: AdminUsersQueryInput,
+) {
+  return adminClient(app).users.$get({ query }, adminHeaders(session));
+}
+
+function adminUserDelete(app: AppType, session: string, sub: string) {
+  return adminClient(app).users[':sub'].$delete(
+    { param: { sub } },
+    adminHeaders(session),
+  );
 }
 
 async function createDatabaseUser(
@@ -83,10 +122,11 @@ describe('admin user management API', () => {
         emailVerified: true,
       });
 
-      const res = await server.app.request(
-        `/api/admin/users?query=${encodeURIComponent(dbUser.email)}&page=1&page_size=10`,
-        { headers: { Cookie: `session=${session}` } },
-      );
+      const res = await adminUsersGet(server.app, session, {
+        query: dbUser.email,
+        page: '1',
+        page_size: '10',
+      });
 
       expect(res.status).toBe(200);
       const body = await assertJsonBody(res);
@@ -119,12 +159,9 @@ describe('admin user management API', () => {
         emailVerified: true,
       });
 
-      const dbRes = await server.app.request(
-        '/api/admin/users?managed_by=database',
-        {
-          headers: { Cookie: `session=${session}` },
-        },
-      );
+      const dbRes = await adminUsersGet(server.app, session, {
+        managed_by: 'database',
+      });
       expect(dbRes.status).toBe(200);
       const dbBody = await assertJsonBody(dbRes);
       expect(dbBody.users.map((user: { sub: string }) => user.sub)).toContain(
@@ -136,8 +173,8 @@ describe('admin user management API', () => {
         ),
       ).toBe(true);
 
-      const adminRes = await server.app.request('/api/admin/users?role=admin', {
-        headers: { Cookie: `session=${session}` },
+      const adminRes = await adminUsersGet(server.app, session, {
+        role: 'admin',
       });
       expect(adminRes.status).toBe(200);
       const adminBody = await assertJsonBody(adminRes);
@@ -160,19 +197,17 @@ describe('admin user management API', () => {
       const session = await loginAdmin(server.app);
       const email = generateUniqueEmail('created-admin-user');
 
-      const createRes = await server.app.request('/api/admin/users', {
-        method: 'POST',
-        headers: {
-          Cookie: `session=${session}`,
-          'content-type': 'application/json',
+      const createRes = await adminClient(server.app).users.$post(
+        {
+          json: {
+            email,
+            password: 'created-password',
+            role: 'admin',
+            email_verified: true,
+          },
         },
-        body: JSON.stringify({
-          email,
-          password: 'created-password',
-          role: 'admin',
-          email_verified: true,
-        }),
-      });
+        adminHeaders(session),
+      );
 
       expect(createRes.status).toBe(201);
       const body = await assertJsonBody(createRes, 201);
@@ -184,10 +219,8 @@ describe('admin user management API', () => {
         has_password: true,
       });
 
-      const loginRes = await server.app.request('/api/auth/login', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, password: 'created-password' }),
+      const loginRes = await authClient(server.app).login.$post({
+        json: { email, password: 'created-password' },
       });
       expect(loginRes.status).toBe(200);
     } finally {
@@ -200,17 +233,15 @@ describe('admin user management API', () => {
     try {
       const session = await loginAdmin(server.app);
 
-      const res = await server.app.request('/api/admin/users', {
-        method: 'POST',
-        headers: {
-          Cookie: `session=${session}`,
-          'content-type': 'application/json',
+      const res = await adminClient(server.app).users.$post(
+        {
+          json: {
+            email: TEST_USER.email,
+            password: 'Password123!',
+          },
         },
-        body: JSON.stringify({
-          email: TEST_USER.email,
-          password: 'Password123!',
-        }),
-      });
+        adminHeaders(session),
+      );
 
       expect(res.status).toBe(409);
       const body = await assertJsonBody(res, 409);
@@ -227,18 +258,17 @@ describe('admin user management API', () => {
       const dbUser = await createDatabaseUser(server.services);
       const newEmail = generateUniqueEmail('updated-admin-user');
 
-      const res = await server.app.request(`/api/admin/users/${dbUser.sub}`, {
-        method: 'PATCH',
-        headers: {
-          Cookie: `session=${session}`,
-          'content-type': 'application/json',
+      const res = await adminClient(server.app).users[':sub'].$patch(
+        {
+          param: { sub: dbUser.sub },
+          json: {
+            email: newEmail,
+            role: 'admin',
+            email_verified: true,
+          },
         },
-        body: JSON.stringify({
-          email: newEmail,
-          role: 'admin',
-          email_verified: true,
-        }),
-      });
+        adminHeaders(session),
+      );
 
       expect(res.status).toBe(200);
       const body = await assertJsonBody(res);
@@ -258,16 +288,12 @@ describe('admin user management API', () => {
     try {
       const session = await loginAdmin(server.app);
 
-      const res = await server.app.request(
-        `/api/admin/users/${TEST_USER_CONFIG.sub}`,
+      const res = await adminClient(server.app).users[':sub'].$patch(
         {
-          method: 'PATCH',
-          headers: {
-            Cookie: `session=${session}`,
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({ email_verified: true }),
+          param: { sub: TEST_USER_CONFIG.sub },
+          json: { email_verified: true },
         },
+        adminHeaders(session),
       );
 
       expect(res.status).toBe(403);
@@ -283,25 +309,19 @@ describe('admin user management API', () => {
     try {
       const session = await loginAdmin(server.app);
 
-      const demoteRes = await server.app.request(
-        `/api/admin/users/${TEST_USER_CONFIG.sub}`,
+      const demoteRes = await adminClient(server.app).users[':sub'].$patch(
         {
-          method: 'PATCH',
-          headers: {
-            Cookie: `session=${session}`,
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({ role: 'user' }),
+          param: { sub: TEST_USER_CONFIG.sub },
+          json: { role: 'user' },
         },
+        adminHeaders(session),
       );
       expect(demoteRes.status).toBe(403);
 
-      const deleteRes = await server.app.request(
-        `/api/admin/users/${TEST_USER_CONFIG.sub}`,
-        {
-          method: 'DELETE',
-          headers: { Cookie: `session=${session}` },
-        },
+      const deleteRes = await adminUserDelete(
+        server.app,
+        session,
+        TEST_USER_CONFIG.sub,
       );
       expect(deleteRes.status).toBe(403);
     } finally {
@@ -315,23 +335,18 @@ describe('admin user management API', () => {
       const session = await loginAdmin(server.app);
       const dbUser = await createDatabaseUser(server.services);
 
-      const res = await server.app.request(`/api/admin/users/${dbUser.sub}`, {
-        method: 'DELETE',
-        headers: { Cookie: `session=${session}` },
-      });
+      const res = await adminUserDelete(server.app, session, dbUser.sub);
 
       expect(res.status).toBe(200);
       const body = await assertJsonBody(res);
       expect(body.user.sub).toBe(dbUser.sub);
       expect(body.user.deleted_at).toEqual(expect.any(String));
 
-      const loginRes = await server.app.request('/api/auth/login', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
+      const loginRes = await authClient(server.app).login.$post({
+        json: {
           email: dbUser.email,
           password: dbUser.password,
-        }),
+        },
       });
       expect(loginRes.status).toBe(401);
     } finally {
@@ -344,24 +359,21 @@ describe('admin user management API', () => {
     try {
       const session = await loginAdmin(server.app);
       const dbUser = await createDatabaseUser(server.services);
-      await server.app.request(`/api/admin/users/${dbUser.sub}`, {
-        method: 'DELETE',
-        headers: { Cookie: `session=${session}` },
-      });
+      await adminUserDelete(server.app, session, dbUser.sub);
 
-      const withoutDeletedRes = await server.app.request(
-        `/api/admin/users?query=${encodeURIComponent(dbUser.email)}&include_deleted=false`,
-        { headers: { Cookie: `session=${session}` } },
-      );
+      const withoutDeletedRes = await adminUsersGet(server.app, session, {
+        query: dbUser.email,
+        include_deleted: 'false',
+      });
       expect(withoutDeletedRes.status).toBe(200);
       const withoutDeletedBody = await assertJsonBody(withoutDeletedRes);
       expect(withoutDeletedBody.users).toHaveLength(0);
       expect(withoutDeletedBody.pagination.total).toBe(0);
 
-      const withDeletedRes = await server.app.request(
-        `/api/admin/users?query=${encodeURIComponent(dbUser.email)}&include_deleted=true`,
-        { headers: { Cookie: `session=${session}` } },
-      );
+      const withDeletedRes = await adminUsersGet(server.app, session, {
+        query: dbUser.email,
+        include_deleted: 'true',
+      });
       expect(withDeletedRes.status).toBe(200);
       const withDeletedBody = await assertJsonBody(withDeletedRes);
       expect(withDeletedBody.users).toHaveLength(1);
@@ -384,10 +396,9 @@ describe('admin user management API', () => {
     const server = await createAdminTestApp();
     try {
       const session = await loginAdmin(server.app);
-      const res = await server.app.request(
-        `/api/admin/users?include_deleted=${encodeURIComponent(includeDeleted)}`,
-        { headers: { Cookie: `session=${session}` } },
-      );
+      const res = await adminUsersGet(server.app, session, {
+        include_deleted: includeDeleted,
+      });
 
       expect(res.status).toBe(400);
     } finally {
@@ -408,24 +419,24 @@ describe('admin user management API', () => {
         password: dbAdmin.password,
       });
 
-      const deleteRes = await server.app.request(
-        `/api/admin/users/${dbAdmin.sub}`,
-        {
-          method: 'DELETE',
-          headers: { Cookie: `session=${adminSession}` },
-        },
+      const deleteRes = await adminUserDelete(
+        server.app,
+        adminSession,
+        dbAdmin.sub,
       );
       expect(deleteRes.status).toBe(200);
 
-      const userSessionRes = await server.app.request('/api/user/session', {
-        headers: { Cookie: `session=${deletedAdminSession}` },
-      });
+      const userSessionRes = await userClient(server.app).session.$get(
+        {},
+        { headers: { Cookie: `session=${deletedAdminSession}` } },
+      );
       expect(userSessionRes.status).toBe(200);
       expect((await assertJsonBody(userSessionRes)).user).toBeNull();
 
-      const adminMeRes = await server.app.request('/api/admin/me', {
-        headers: { Cookie: `session=${deletedAdminSession}` },
-      });
+      const adminMeRes = await adminClient(server.app).me.$get(
+        {},
+        { headers: { Cookie: `session=${deletedAdminSession}` } },
+      );
       expect(adminMeRes.status).toBe(401);
     } finally {
       await server.cleanup();
@@ -438,37 +449,28 @@ describe('admin user management API', () => {
       const session = await loginAdmin(server.app);
       const deletedUser = await createDatabaseUser(server.services);
       const activeUser = await createDatabaseUser(server.services);
-      await server.app.request(`/api/admin/users/${deletedUser.sub}`, {
-        method: 'DELETE',
-        headers: { Cookie: `session=${session}` },
-      });
+      await adminUserDelete(server.app, session, deletedUser.sub);
 
-      const recreateRes = await server.app.request('/api/admin/users', {
-        method: 'POST',
-        headers: {
-          Cookie: `session=${session}`,
-          'content-type': 'application/json',
+      const recreateRes = await adminClient(server.app).users.$post(
+        {
+          json: {
+            email: deletedUser.email,
+            password: 'Password123!',
+          },
         },
-        body: JSON.stringify({
-          email: deletedUser.email,
-          password: 'Password123!',
-        }),
-      });
+        adminHeaders(session),
+      );
       expect(recreateRes.status).toBe(409);
       expect((await assertJsonBody(recreateRes, 409)).code).toBe(
         'EMAIL_ALREADY_EXISTS',
       );
 
-      const updateRes = await server.app.request(
-        `/api/admin/users/${activeUser.sub}`,
+      const updateRes = await adminClient(server.app).users[':sub'].$patch(
         {
-          method: 'PATCH',
-          headers: {
-            Cookie: `session=${session}`,
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({ email: deletedUser.email }),
+          param: { sub: activeUser.sub },
+          json: { email: deletedUser.email },
         },
+        adminHeaders(session),
       );
       expect(updateRes.status).toBe(409);
       expect((await assertJsonBody(updateRes, 409)).code).toBe(
@@ -491,26 +493,16 @@ describe('admin user management API', () => {
         password: dbAdmin.password,
       });
 
-      const demoteRes = await server.app.request(
-        `/api/admin/users/${dbAdmin.sub}`,
+      const demoteRes = await adminClient(server.app).users[':sub'].$patch(
         {
-          method: 'PATCH',
-          headers: {
-            Cookie: `session=${session}`,
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({ role: 'user' }),
+          param: { sub: dbAdmin.sub },
+          json: { role: 'user' },
         },
+        adminHeaders(session),
       );
       expect(demoteRes.status).toBe(403);
 
-      const deleteRes = await server.app.request(
-        `/api/admin/users/${dbAdmin.sub}`,
-        {
-          method: 'DELETE',
-          headers: { Cookie: `session=${session}` },
-        },
-      );
+      const deleteRes = await adminUserDelete(server.app, session, dbAdmin.sub);
       expect(deleteRes.status).toBe(403);
     } finally {
       await server.cleanup();

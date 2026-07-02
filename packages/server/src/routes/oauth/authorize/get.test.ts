@@ -1547,20 +1547,19 @@ describe('GET /oauth/authorize', () => {
     });
 
     test('should redirect invalid prompt combinations as invalid_request', async () => {
-      const url = new URL('/oauth/authorize', 'http://localhost');
-      url.searchParams.set('response_type', 'code');
-      url.searchParams.set('client_id', TEST_OAUTH_CLIENT.clientId);
-      url.searchParams.set('redirect_uri', TEST_OAUTH_CLIENT.redirectUri);
-      url.searchParams.set('scope', validParams.scope);
-      url.searchParams.set('state', validParams.state);
-      url.searchParams.set('code_challenge', TEST_PKCE.codeChallenge);
-      url.searchParams.set(
-        'code_challenge_method',
-        TEST_PKCE.codeChallengeMethod,
-      );
-      url.searchParams.set('prompt', 'none login');
-
-      const res = await app.request(`${url.pathname}${url.search}`);
+      const client = testClient(app);
+      const res = await client.oauth.authorize.$get({
+        query: {
+          response_type: 'code',
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          scope: validParams.scope,
+          state: validParams.state,
+          code_challenge: TEST_PKCE.codeChallenge,
+          code_challenge_method: TEST_PKCE.codeChallengeMethod,
+          prompt: 'none login',
+        },
+      });
 
       expect(res.status).toBe(302);
       const location = new URL(getLocationHeader(res), 'http://localhost:8080');

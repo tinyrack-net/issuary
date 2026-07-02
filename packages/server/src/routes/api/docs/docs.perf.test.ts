@@ -1,20 +1,34 @@
+import { Hono } from 'hono';
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
 import {
+  assertJsonBody,
   createTestApp,
   MINIMAL_TEST_CONFIG,
 } from '../../../test-utils/index.js';
 import { runHttpPerf } from '../../../test-utils/perf/index.js';
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
+let openApiJsonClient: ReturnType<typeof createOpenApiJsonClient>;
 let cleanup: () => Promise<void> = async () => {};
+
+function createOpenApiJsonClient(targetApp: AppType) {
+  const openApiJsonApp = new Hono().get('/api/docs/json', (c) =>
+    targetApp.fetch(c.req.raw),
+  );
+  return testClient(openApiJsonApp);
+}
 
 beforeAll(async () => {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
   });
   app = server.app;
+  client = testClient(app);
+  openApiJsonClient = createOpenApiJsonClient(app);
   cleanup = server.cleanup;
 });
 
@@ -23,7 +37,7 @@ afterAll(async () => {
 });
 
 async function requestDocs() {
-  const response = await app.request('/api/docs');
+  const response = await client.api.docs.$get();
   const body = await response.text();
 
   expect(response.status).toBe(200);
@@ -34,9 +48,10 @@ async function requestDocs() {
 }
 
 async function requestOpenApiJson() {
-  const response = await app.request('/api/docs/json');
-  const body = await response.clone().json();
-  const payload = await response.clone().text();
+  const response = await openApiJsonClient.api.docs.json.$get();
+  const payloadResponse = response.clone();
+  const body = await assertJsonBody(response);
+  const payload = await payloadResponse.text();
 
   expect(response.status).toBe(200);
   expect(response.headers.get('content-type')).toContain('application/json');

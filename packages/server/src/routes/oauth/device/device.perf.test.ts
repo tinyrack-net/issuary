@@ -1,8 +1,10 @@
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
 import type { TinyAuthRuntimeConfigInput } from '../../../lib/config/index.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createTestApp,
   MINIMAL_TEST_CONFIG,
@@ -29,6 +31,7 @@ const DEVICE_CLIENT: NonNullable<
 };
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
@@ -39,6 +42,7 @@ beforeAll(async () => {
   });
 
   app = server.app;
+  client = testClient(app);
   cleanup = server.cleanup;
 });
 
@@ -47,8 +51,10 @@ afterAll(async () => {
 });
 
 async function requestDevicePage() {
-  const response = await app.request('/oauth/device?user_code=INVALID-CODE');
-  const body = await response.clone().text();
+  const response = await client.oauth.device.$get({
+    query: { user_code: 'INVALID-CODE' },
+  });
+  const body = await response.text();
 
   expect(response.status).toBe(200);
   expect(response.headers.get('content-type')).toContain('text/html');
@@ -62,15 +68,13 @@ async function createDeviceUserCode(): Promise<string> {
   const credentials = Buffer.from(
     `${DEVICE_CLIENT.client_id}:${DEVICE_CLIENT.client_secret}`,
   ).toString('base64');
-  const response = await app.request('/oauth/device_authorization', {
-    method: 'POST',
-    headers: {
-      authorization: `Basic ${credentials}`,
-      'content-type': 'application/x-www-form-urlencoded',
+  const response = await client.oauth.device_authorization.$post(
+    {
+      form: { scope: 'openid profile' },
     },
-    body: new URLSearchParams({ scope: 'openid profile' }),
-  });
-  const body: { user_code?: string } = await response.clone().json();
+    { headers: { authorization: `Basic ${credentials}` } },
+  );
+  const body = await assertJsonBody(response);
 
   expect(response.status).toBe(200);
   expect(body.user_code).toEqual(expect.any(String));
@@ -83,11 +87,11 @@ async function createDeviceUserCode(): Promise<string> {
 }
 
 async function requestValidDevicePage(sessionCookie: string, userCode: string) {
-  const response = await app.request(
-    `/oauth/device?user_code=${encodeURIComponent(userCode)}`,
-    { headers: { cookie: `session=${sessionCookie}` } },
+  const response = await client.oauth.device.$get(
+    { query: { user_code: userCode } },
+    { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await response.clone().text();
+  const body = await response.text();
 
   expect(response.status).toBe(200);
   expect(response.headers.get('content-type')).toContain('text/html');
@@ -102,20 +106,16 @@ async function requestValidDeviceApproval(
   sessionCookie: string,
   userCode: string,
 ) {
-  const response = await app.request('/oauth/device', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/x-www-form-urlencoded',
-      cookie: `session=${sessionCookie}`,
+  const response = await client.oauth.device.$post(
+    {
+      form: {
+        user_code: userCode,
+        decision: 'approve',
+      },
     },
-    body: new URLSearchParams({
-      user_code: userCode,
-      decision: 'approve',
-    }),
-  });
-  const body: { status?: string; client_id?: string } = await response
-    .clone()
-    .json();
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
   expect(response.status).toBe(200);
   expect(body.status).toBe('approved');
@@ -125,20 +125,17 @@ async function requestValidDeviceApproval(
 }
 
 async function requestInvalidDeviceApproval(sessionCookie: string) {
-  const response = await app.request('/oauth/device', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/x-www-form-urlencoded',
-      cookie: `session=${sessionCookie}`,
+  const response = await client.oauth.device.$post(
+    {
+      form: {
+        user_code: 'INVALID-CODE',
+        decision: 'approve',
+      },
     },
-    body: new URLSearchParams({
-      user_code: 'INVALID-CODE',
-      decision: 'approve',
-    }),
-  });
-  const body = await response.clone().json();
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response, 400);
 
-  expect(response.status).toBe(400);
   expect(response.headers.get('content-type')).toContain('application/json');
   expect(body).toEqual(
     expect.objectContaining({

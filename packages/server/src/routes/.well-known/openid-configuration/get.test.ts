@@ -1,3 +1,4 @@
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '#server/entrypoints/app.js';
 import {
@@ -20,9 +21,11 @@ afterAll(async () => {
 
 describe('GET /.well-known/openid-configuration', () => {
   test('should serve root OIDC discovery with public wildcard CORS', async () => {
-    const res = await app.request('/.well-known/openid-configuration', {
-      headers: { origin: 'https://client.example.test' },
-    });
+    const client = testClient(app);
+    const res = await client['.well-known']['openid-configuration'].$get(
+      {},
+      { headers: { origin: 'https://client.example.test' } },
+    );
 
     expect(res.status).toBe(200);
     expect(res.headers.get('access-control-allow-origin')).toBe('*');
@@ -46,10 +49,10 @@ describe('GET /.well-known/openid-configuration', () => {
   });
 
   test('should serve the same metadata as the OAuth compatibility alias', async () => {
-    const rootRes = await app.request('/.well-known/openid-configuration');
-    const aliasRes = await app.request(
-      '/oauth/.well-known/openid-configuration',
-    );
+    const client = testClient(app);
+    const rootRes = await client['.well-known']['openid-configuration'].$get();
+    const aliasRes =
+      await client.oauth['.well-known']['openid-configuration'].$get();
 
     expect(rootRes.status).toBe(200);
     expect(aliasRes.status).toBe(200);

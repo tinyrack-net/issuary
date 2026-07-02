@@ -1,3 +1,4 @@
+import { Hono } from 'hono';
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
@@ -23,11 +24,13 @@ describe('OpenAPI docs when enabled', () => {
     await cleanup();
   });
 
+  function openApiJsonClient() {
+    return createOpenApiJsonClient(app);
+  }
+
   describe('GET /api/docs/json', () => {
     test('returns 200 with valid OpenAPI 3.1.0 JSON spec', async () => {
-      const res = await app.request('/api/docs/json', {
-        method: 'GET',
-      });
+      const res = await openApiJsonClient().api.docs.json.$get();
 
       const body = await assertJsonBody(res);
       expect(body).toHaveProperty('openapi', '3.1.0');
@@ -41,9 +44,7 @@ describe('OpenAPI docs when enabled', () => {
     });
 
     test('includes paths in the spec', async () => {
-      const res = await app.request('/api/docs/json', {
-        method: 'GET',
-      });
+      const res = await openApiJsonClient().api.docs.json.$get();
 
       const body = await assertJsonBody(res);
       expect(body).toHaveProperty('paths');
@@ -51,18 +52,14 @@ describe('OpenAPI docs when enabled', () => {
     });
 
     test('includes the health endpoint in paths', async () => {
-      const res = await app.request('/api/docs/json', {
-        method: 'GET',
-      });
+      const res = await openApiJsonClient().api.docs.json.$get();
 
       const body = await assertJsonBody(res);
       expect(body.paths).toHaveProperty('/api/health');
     });
 
     test('includes security schemes for cookie and bearer auth', async () => {
-      const res = await app.request('/api/docs/json', {
-        method: 'GET',
-      });
+      const res = await openApiJsonClient().api.docs.json.$get();
 
       const body = await assertJsonBody(res);
       expect(body.components).toBeDefined();
@@ -74,9 +71,7 @@ describe('OpenAPI docs when enabled', () => {
     });
 
     test('documents discovery endpoint auth method metadata fields', async () => {
-      const res = await app.request('/api/docs/json', {
-        method: 'GET',
-      });
+      const res = await openApiJsonClient().api.docs.json.$get();
 
       const body = await assertJsonBody(res);
       const spec = JSON.stringify(body);
@@ -120,9 +115,7 @@ describe('OpenAPI docs with custom metadata', () => {
   });
 
   test('uses configured title and description in the generated spec', async () => {
-    const res = await app.request('/api/docs/json', {
-      method: 'GET',
-    });
+    const res = await createOpenApiJsonClient(app).api.docs.json.$get();
 
     const body = await assertJsonBody(res);
     expect(body.info).toMatchObject({
@@ -133,9 +126,8 @@ describe('OpenAPI docs with custom metadata', () => {
   });
 
   test('uses the configured UI title in the Scalar page', async () => {
-    const res = await app.request('/api/docs', {
-      method: 'GET',
-    });
+    const client = testClient(app);
+    const res = await client.api.docs.$get();
 
     expect(res.status).toBe(200);
     await expect(res.text()).resolves.toContain('Custom API Reference');
@@ -162,9 +154,7 @@ describe('OpenAPI docs when disabled', () => {
   });
 
   test('returns 404 for GET /api/docs/json', async () => {
-    const res = await app.request('/api/docs/json', {
-      method: 'GET',
-    });
+    const res = await createOpenApiJsonClient(app).api.docs.json.$get();
 
     expect(res.status).toBe(404);
     await expect(res.json()).resolves.toEqual({ error: 'Not Found' });
@@ -178,3 +168,10 @@ describe('OpenAPI docs when disabled', () => {
     await expect(res.json()).resolves.toEqual({ error: 'Not Found' });
   });
 });
+
+function createOpenApiJsonClient(targetApp: AppType) {
+  const openApiJsonApp = new Hono().get('/api/docs/json', (c) =>
+    targetApp.fetch(c.req.raw),
+  );
+  return testClient(openApiJsonApp);
+}

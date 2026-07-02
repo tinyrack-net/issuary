@@ -1,7 +1,9 @@
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
 import {
+  assertJsonBody,
   createTestApp,
   MINIMAL_TEST_CONFIG,
 } from '../../../test-utils/index.js';
@@ -30,6 +32,7 @@ const DEVICE_CLIENT_CONFIG = {
 };
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
@@ -39,6 +42,7 @@ beforeAll(async () => {
   });
 
   app = server.app;
+  client = testClient(app);
   cleanup = server.cleanup;
 });
 
@@ -51,18 +55,20 @@ function basicAuthHeader(clientId: string, clientSecret: string): string {
 }
 
 async function requestDeviceAuthorization() {
-  const response = await app.request('/oauth/device_authorization', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/x-www-form-urlencoded',
-      authorization: basicAuthHeader(
-        DEVICE_CLIENT.clientId,
-        DEVICE_CLIENT.clientSecret,
-      ),
+  const response = await client.oauth.device_authorization.$post(
+    {
+      form: { scope: 'openid profile' },
     },
-    body: new URLSearchParams({ scope: 'openid profile' }),
-  });
-  const body = await response.clone().json();
+    {
+      headers: {
+        authorization: basicAuthHeader(
+          DEVICE_CLIENT.clientId,
+          DEVICE_CLIENT.clientSecret,
+        ),
+      },
+    },
+  );
+  const body = await assertJsonBody(response);
 
   expect(response.status).toBe(200);
   expect(response.headers.get('content-type')).toContain('application/json');

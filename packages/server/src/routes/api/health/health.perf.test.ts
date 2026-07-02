@@ -1,3 +1,4 @@
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
@@ -9,6 +10,7 @@ import {
 import { runHttpPerf } from '../../../test-utils/perf/index.js';
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let cleanup: () => Promise<void> = async () => {};
 
 beforeAll(async () => {
@@ -16,6 +18,7 @@ beforeAll(async () => {
     ...MINIMAL_TEST_CONFIG,
   });
   app = server.app;
+  client = testClient(app);
   cleanup = server.cleanup;
 });
 
@@ -24,7 +27,7 @@ afterAll(async () => {
 });
 
 async function requestHealth() {
-  const response = await app.request('/api/health');
+  const response = await client.api.health.$get();
   const body = await assertJsonBody(response);
 
   expect(response.headers.get('content-type')).toContain('application/json');
@@ -40,7 +43,7 @@ async function requestHealth() {
 }
 
 async function requestLive() {
-  const response = await app.request('/api/health/live');
+  const response = await client.api.health.live.$get();
   const body = await assertJsonBody(response);
 
   expect(response.headers.get('content-type')).toContain('application/json');
@@ -52,7 +55,7 @@ async function requestLive() {
 }
 
 async function requestReady() {
-  const response = await app.request('/api/health/ready');
+  const response = await client.api.health.ready.$get();
   const body = await assertJsonBody(response);
 
   expect(response.headers.get('content-type')).toContain('application/json');

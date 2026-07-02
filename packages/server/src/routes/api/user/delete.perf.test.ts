@@ -1,3 +1,4 @@
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
@@ -15,6 +16,7 @@ const MEASURED_REQUESTS = 20;
 const TOTAL_REQUESTS = WARMUP_REQUESTS + MEASURED_REQUESTS;
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void> = async () => {};
 let emailCounter = 0;
@@ -28,6 +30,7 @@ beforeAll(async () => {
     },
   });
   app = server.app;
+  client = testClient(app);
   services = server.services;
   cleanup = server.cleanup;
 });
@@ -50,14 +53,10 @@ function uniqueEmail(prefix: string): string {
 }
 
 async function requestDeleteUser(sessionCookie: string) {
-  const response = await app.request('/api/user', {
-    method: 'DELETE',
-    headers: {
-      Cookie: `session=${sessionCookie}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({}),
-  });
+  const response = await client.api.user.$delete(
+    {},
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
   const body = await assertJsonBody(response);
 
   expect(response.status).toBe(200);

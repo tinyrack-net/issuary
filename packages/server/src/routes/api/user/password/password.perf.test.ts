@@ -1,8 +1,10 @@
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
 import {
+  assertJsonBody,
   createDbUserWithSession,
   createTestApp,
   extractCookie,
@@ -16,12 +18,14 @@ const WARMUP_REQUESTS = 1;
 const MEASURED_REQUESTS = 10;
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   const server = await createTestApp(MINIMAL_TEST_CONFIG);
   app = server.app;
+  client = testClient(app);
   services = server.services;
   cleanup = server.cleanup;
 });
@@ -45,10 +49,8 @@ async function createOAuthOnlySession(index: number) {
     await services.mikro.em.persist(user).flush();
   });
 
-  const loginResponse = await app.request('/api/auth/login', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email, password: temporaryPassword }),
+  const loginResponse = await client.api.auth.login.$post({
+    json: { email, password: temporaryPassword },
   });
   expect(loginResponse.status).toBe(200);
 
@@ -85,15 +87,13 @@ async function createPasswordDeleteFixture(index: number) {
 }
 
 async function requestSetPassword(sessionCookie: string) {
-  const response = await app.request('/api/user/password', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${sessionCookie}`,
+  const response = await client.api.user.password.$post(
+    {
+      json: { password: 'NewPassword123!' },
     },
-    body: JSON.stringify({ password: 'NewPassword123!' }),
-  });
-  const body: { ok?: boolean } = await response.clone().json();
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
   expect(response.status).toBe(200);
   expect(body.ok).toBe(true);
@@ -105,18 +105,16 @@ async function requestChangePassword(
   sessionCookie: string,
   currentPassword: string,
 ) {
-  const response = await app.request('/api/user/password', {
-    method: 'PUT',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${sessionCookie}`,
+  const response = await client.api.user.password.$put(
+    {
+      json: {
+        current_password: currentPassword,
+        new_password: 'ChangedPassword123!',
+      },
     },
-    body: JSON.stringify({
-      current_password: currentPassword,
-      new_password: 'ChangedPassword123!',
-    }),
-  });
-  const body: { ok?: boolean } = await response.clone().json();
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
   expect(response.status).toBe(200);
   expect(body.ok).toBe(true);
@@ -128,15 +126,13 @@ async function requestDeletePassword(
   sessionCookie: string,
   currentPassword: string,
 ) {
-  const response = await app.request('/api/user/password', {
-    method: 'DELETE',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${sessionCookie}`,
+  const response = await client.api.user.password.$delete(
+    {
+      json: { current_password: currentPassword },
     },
-    body: JSON.stringify({ current_password: currentPassword }),
-  });
-  const body: { ok?: boolean } = await response.clone().json();
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
   expect(response.status).toBe(200);
   expect(body.ok).toBe(true);
