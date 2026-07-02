@@ -45,7 +45,7 @@ test('renames a passkey and refreshes passkey data', async () => {
   await screen.getByText('Save').click();
 
   await vi.waitFor(() => {
-    expect(fetchMock.requests.length).toBeGreaterThanOrEqual(2);
+    expect(fetchMock.requests.length).toBeGreaterThanOrEqual(3);
   });
 
   const request = fetchMock.requests[1];
