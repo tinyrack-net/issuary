@@ -51,6 +51,27 @@ async function requestFullClaimsUserInfo(accessToken: string) {
   return response;
 }
 
+async function requestPostFullClaimsUserInfo(accessToken: string) {
+  const response = await app.request('/oauth/userinfo', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${accessToken}` },
+  });
+  const body = await response.clone().json();
+
+  expect(response.status).toBe(200);
+  expect(body).toEqual({
+    sub: TEST_USER_CONFIG.sub,
+    email: TEST_USER_CONFIG.email,
+    email_verified: true,
+    name: TEST_USER_CONFIG.email,
+    preferred_username: TEST_USER_CONFIG.email,
+  });
+  expect(response.headers.get('cache-control')).toBe('no-store');
+  expect(response.headers.get('pragma')).toBe('no-cache');
+
+  return response;
+}
+
 async function requestOpenIdOnlyUserInfo(accessToken: string) {
   const response = await app.request('/oauth/userinfo', {
     headers: { authorization: `Bearer ${accessToken}` },
@@ -118,5 +139,29 @@ describe('GET /oauth/userinfo perf', () => {
     expect(fullClaimsResult.p95Ms).toBeLessThan(
       openIdOnlyResult.p95Ms * 3 + 15,
     );
+  });
+});
+
+describe('POST /oauth/userinfo perf', () => {
+  test('handles repeated full-claims POST requests with a pre-issued bearer token', async () => {
+    const accessToken = await getAccessToken(app, {
+      scope: 'openid profile email',
+    });
+
+    const result = await runHttpPerf({
+      name: 'POST /oauth/userinfo full claims smoke',
+      warmupRequests: WARMUP_REQUESTS,
+      requests: MEASURED_REQUESTS,
+      concurrency: 5,
+      expectedStatuses: [200],
+      request: async () => requestPostFullClaimsUserInfo(accessToken),
+    });
+
+    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
+    expect(result.failed).toBe(0);
+    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
+    expect(result.errorRate).toBe(0);
+    expect(result.rps).toBeGreaterThan(5);
+    expect(result.p95Ms).toBeLessThan(1000);
   });
 });

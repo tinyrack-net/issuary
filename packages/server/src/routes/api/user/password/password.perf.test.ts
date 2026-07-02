@@ -1,0 +1,253 @@
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+
+import type { AppType } from '../../../../entrypoints/app.js';
+import type { ServiceContainer } from '../../../../services/container.js';
+import {
+  createDbUserWithSession,
+  createTestApp,
+  extractCookie,
+  generateUniqueEmail,
+  MINIMAL_TEST_CONFIG,
+  withMikroContext,
+} from '../../../../test-utils/index.js';
+import { runHttpPerf } from '../../../../test-utils/perf/index.js';
+
+const WARMUP_REQUESTS = 1;
+const MEASURED_REQUESTS = 10;
+
+let app: AppType;
+let services: ServiceContainer;
+let cleanup: () => Promise<void>;
+
+beforeAll(async () => {
+  const server = await createTestApp(MINIMAL_TEST_CONFIG);
+  app = server.app;
+  services = server.services;
+  cleanup = server.cleanup;
+});
+
+afterAll(async () => {
+  await cleanup();
+});
+
+async function createOAuthOnlySession(index: number) {
+  const email = generateUniqueEmail(`password-post-perf-${index}`);
+  const temporaryPassword = 'Temporary123!';
+
+  await withMikroContext(services, async () => {
+    const passwordHash =
+      await services.securityService.hashPassword(temporaryPassword);
+    const user = services.mikro.user.create({
+      email,
+      password_hash: passwordHash,
+    });
+    user.email_verified = true;
+    await services.mikro.em.persist(user).flush();
+  });
+
+  const loginResponse = await app.request('/api/auth/login', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password: temporaryPassword }),
+  });
+  expect(loginResponse.status).toBe(200);
+
+  await withMikroContext(services, async () => {
+    const user = await services.mikro.user.findOneOrFail({ email });
+    user.password_hash = null;
+    await services.mikro.em.flush();
+  });
+
+  return extractCookie(loginResponse, 'session');
+}
+
+async function createPasswordDeleteFixture(index: number) {
+  const password = 'CurrentPassword123!';
+  const { sessionCookie, userSub } = await createDbUserWithSession(
+    app,
+    services,
+    generateUniqueEmail(`password-delete-perf-${index}`),
+    password,
+  );
+
+  await withMikroContext(services, async () => {
+    await services.mikro.userOAuth.linkAccount({
+      userSub,
+      providerName: 'google',
+      providerUserId: `google-password-delete-${crypto.randomUUID()}`,
+      accessToken: 'test-access-token',
+      refreshToken: 'test-refresh-token',
+      expiresAt: null,
+    });
+  });
+
+  return { sessionCookie, password };
+}
+
+async function requestSetPassword(sessionCookie: string) {
+  const response = await app.request('/api/user/password', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      Cookie: `session=${sessionCookie}`,
+    },
+    body: JSON.stringify({ password: 'NewPassword123!' }),
+  });
+  const body: { ok?: boolean } = await response.clone().json();
+
+  expect(response.status).toBe(200);
+  expect(body.ok).toBe(true);
+
+  return response;
+}
+
+async function requestChangePassword(
+  sessionCookie: string,
+  currentPassword: string,
+) {
+  const response = await app.request('/api/user/password', {
+    method: 'PUT',
+    headers: {
+      'content-type': 'application/json',
+      Cookie: `session=${sessionCookie}`,
+    },
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: 'ChangedPassword123!',
+    }),
+  });
+  const body: { ok?: boolean } = await response.clone().json();
+
+  expect(response.status).toBe(200);
+  expect(body.ok).toBe(true);
+
+  return response;
+}
+
+async function requestDeletePassword(
+  sessionCookie: string,
+  currentPassword: string,
+) {
+  const response = await app.request('/api/user/password', {
+    method: 'DELETE',
+    headers: {
+      'content-type': 'application/json',
+      Cookie: `session=${sessionCookie}`,
+    },
+    body: JSON.stringify({ current_password: currentPassword }),
+  });
+  const body: { ok?: boolean } = await response.clone().json();
+
+  expect(response.status).toBe(200);
+  expect(body.ok).toBe(true);
+
+  return response;
+}
+
+describe('POST /api/user/password perf', () => {
+  test('handles pre-created OAuth-only password setup sessions through the real route', async () => {
+    const sessionCookies = await Promise.all(
+      Array.from({ length: WARMUP_REQUESTS + MEASURED_REQUESTS }, (_, index) =>
+        createOAuthOnlySession(index),
+      ),
+    );
+    let nextSession = 0;
+
+    const result = await runHttpPerf({
+      name: 'POST /api/user/password smoke',
+      warmupRequests: WARMUP_REQUESTS,
+      requests: MEASURED_REQUESTS,
+      concurrency: 2,
+      request: async () => {
+        const sessionCookie = sessionCookies[nextSession];
+        nextSession += 1;
+        if (!sessionCookie) {
+          throw new Error('Missing password setup session');
+        }
+        return requestSetPassword(sessionCookie);
+      },
+    });
+
+    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
+    expect(result.failed).toBe(0);
+    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
+    expect(result.errorRate).toBe(0);
+    expect(result.rps).toBeGreaterThan(1);
+    expect(result.p95Ms).toBeLessThan(4000);
+  });
+});
+
+describe('PUT /api/user/password perf', () => {
+  test('handles pre-created password-change sessions through the real route', async () => {
+    const fixtures = await Promise.all(
+      Array.from(
+        { length: WARMUP_REQUESTS + MEASURED_REQUESTS },
+        (_, index) => {
+          const password = 'CurrentPassword123!';
+          return createDbUserWithSession(
+            app,
+            services,
+            generateUniqueEmail(`password-put-perf-${index}`),
+            password,
+          ).then((fixture) => ({ ...fixture, password }));
+        },
+      ),
+    );
+    let nextFixture = 0;
+
+    const result = await runHttpPerf({
+      name: 'PUT /api/user/password smoke',
+      warmupRequests: WARMUP_REQUESTS,
+      requests: MEASURED_REQUESTS,
+      concurrency: 2,
+      request: async () => {
+        const fixture = fixtures[nextFixture];
+        nextFixture += 1;
+        if (!fixture) {
+          throw new Error('Missing password change fixture');
+        }
+        return requestChangePassword(fixture.sessionCookie, fixture.password);
+      },
+    });
+
+    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
+    expect(result.failed).toBe(0);
+    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
+    expect(result.errorRate).toBe(0);
+    expect(result.rps).toBeGreaterThan(1);
+    expect(result.p95Ms).toBeLessThan(4000);
+  });
+});
+
+describe('DELETE /api/user/password perf', () => {
+  test('handles pre-created password-delete sessions through the real route', async () => {
+    const fixtures = await Promise.all(
+      Array.from({ length: WARMUP_REQUESTS + MEASURED_REQUESTS }, (_, index) =>
+        createPasswordDeleteFixture(index),
+      ),
+    );
+    let nextFixture = 0;
+
+    const result = await runHttpPerf({
+      name: 'DELETE /api/user/password smoke',
+      warmupRequests: WARMUP_REQUESTS,
+      requests: MEASURED_REQUESTS,
+      concurrency: 2,
+      request: async () => {
+        const fixture = fixtures[nextFixture];
+        nextFixture += 1;
+        if (!fixture) {
+          throw new Error('Missing password delete fixture');
+        }
+        return requestDeletePassword(fixture.sessionCookie, fixture.password);
+      },
+    });
+
+    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
+    expect(result.failed).toBe(0);
+    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
+    expect(result.errorRate).toBe(0);
+    expect(result.rps).toBeGreaterThan(1);
+    expect(result.p95Ms).toBeLessThan(4000);
+  });
+});
