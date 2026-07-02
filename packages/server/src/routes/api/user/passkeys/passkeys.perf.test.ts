@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
@@ -10,17 +10,45 @@ import {
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
+  withMikroContext,
 } from '../../../../test-utils/index.js';
 import { runHttpPerf } from '../../../../test-utils/perf/index.js';
 
 const WARMUP_REQUESTS = 1;
 const MEASURED_REQUESTS = 10;
 
+const webauthn = vi.hoisted(() => ({
+  verifyRegistrationResponse: vi.fn(),
+}));
+
+vi.mock('@simplewebauthn/server', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@simplewebauthn/server')>();
+  return {
+    ...actual,
+    verifyRegistrationResponse: webauthn.verifyRegistrationResponse,
+  };
+});
+
 let app: AppType;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
+  webauthn.verifyRegistrationResponse.mockImplementation(async () => ({
+    verified: true,
+    registrationInfo: {
+      credential: {
+        id: `perf-registration-credential-${crypto.randomUUID()}`,
+        publicKey: Buffer.from([1, 2, 3, 4]),
+        counter: 0,
+      },
+      credentialDeviceType: 'multiDevice',
+      credentialBackedUp: true,
+      aaguid: 'perf-aaguid',
+    },
+  }));
+
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
@@ -43,9 +71,10 @@ afterAll(async () => {
 });
 
 function createMockRegistrationResponse() {
+  const credentialId = `mock-registration-credential-${crypto.randomUUID()}`;
   return {
-    id: 'mock-credential-id',
-    rawId: 'mock-credential-id',
+    id: credentialId,
+    rawId: credentialId,
     response: {
       clientDataJSON: Buffer.from(
         JSON.stringify({
@@ -151,6 +180,57 @@ async function requestRegisterVerifyWithoutChallenge(sessionCookie: string) {
   return response;
 }
 
+async function createPasskeyRegistrationFixture(index: number) {
+  const fixture = await createSession(index);
+  const optionsResponse = await app.request(
+    '/api/user/passkeys/register/options',
+    {
+      method: 'POST',
+      headers: { Cookie: `session=${fixture.sessionCookie}` },
+    },
+  );
+  expect(optionsResponse.status).toBe(200);
+
+  return {
+    sessionCookie: extractCookie(optionsResponse, 'session'),
+    userSub: fixture.userSub,
+  };
+}
+
+async function requestRegisterVerifySuccess(fixture: {
+  sessionCookie: string;
+  userSub: string;
+}) {
+  const response = await app.request('/api/user/passkeys/register/verify', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      Cookie: `session=${fixture.sessionCookie}`,
+    },
+    body: JSON.stringify({
+      response: createMockRegistrationResponse(),
+      name: 'Perf Registered Passkey',
+    }),
+  });
+  const body: {
+    ok?: boolean;
+    second_factor_setup_completed?: boolean;
+  } = await response.clone().json();
+
+  expect(response.status).toBe(200);
+  expect(body.ok).toBe(true);
+  expect(body.second_factor_setup_completed).toBe(false);
+
+  const passkeys = await withMikroContext(services, () =>
+    services.passkeyService.getUserPasskeys(fixture.userSub),
+  );
+  expect(
+    passkeys.some((passkey) => passkey.name === 'Perf Registered Passkey'),
+  ).toBe(true);
+
+  return response;
+}
+
 async function requestRenamePasskey(
   sessionCookie: string,
   passkeyId: string,
@@ -218,7 +298,33 @@ describe('POST /api/user/passkeys/register/options perf', () => {
 });
 
 describe('POST /api/user/passkeys/register/verify perf', () => {
-  test('handles validation failure without faking WebAuthn through the real route', async () => {
+  test('registers passkeys for authenticated users through the real route', async () => {
+    const fixtures = await Promise.all(
+      Array.from({ length: WARMUP_REQUESTS + MEASURED_REQUESTS }, (_, index) =>
+        createPasskeyRegistrationFixture(index + 200),
+      ),
+    );
+    let nextFixture = 0;
+
+    const result = await runHttpPerf({
+      name: 'POST /api/user/passkeys/register/verify success smoke',
+      warmupRequests: WARMUP_REQUESTS,
+      requests: MEASURED_REQUESTS,
+      concurrency: 2,
+      request: async () => {
+        const fixture = fixtures[nextFixture];
+        nextFixture += 1;
+        if (!fixture) {
+          throw new Error('Missing passkey registration fixture');
+        }
+        return requestRegisterVerifySuccess(fixture);
+      },
+    });
+
+    expectPerfResult(result, 200);
+  });
+
+  test('handles missing-challenge validation failure through the real route', async () => {
     const fixture = await createSession(200);
 
     const result = await runHttpPerf({

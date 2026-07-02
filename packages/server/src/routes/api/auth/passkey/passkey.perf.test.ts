@@ -1,20 +1,43 @@
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
+import type { ServiceContainer } from '../../../../services/container.js';
 import {
+  createDbUserWithSession,
   createTestApp,
   extractCookie,
+  generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
+  withMikroContext,
 } from '../../../../test-utils/index.js';
 import { runHttpPerf } from '../../../../test-utils/perf/index.js';
 
 const WARMUP_REQUESTS = 1;
 const MEASURED_REQUESTS = 10;
 
+const webauthn = vi.hoisted(() => ({
+  verifyAuthenticationResponse: vi.fn(),
+}));
+
+vi.mock('@simplewebauthn/server', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@simplewebauthn/server')>();
+  return {
+    ...actual,
+    verifyAuthenticationResponse: webauthn.verifyAuthenticationResponse,
+  };
+});
+
 let app: AppType;
+let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
+  webauthn.verifyAuthenticationResponse.mockResolvedValue({
+    verified: true,
+    authenticationInfo: { newCounter: 1 },
+  });
+
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     auth: {
@@ -24,6 +47,7 @@ beforeAll(async () => {
     },
   });
   app = server.app;
+  services = server.services;
   cleanup = server.cleanup;
 });
 
@@ -31,10 +55,14 @@ afterAll(async () => {
   await cleanup();
 });
 
-function createMockAuthenticationResponse() {
+function createMockAuthenticationResponse(overrides?: {
+  id?: string;
+  rawId?: string;
+}) {
+  const credentialId = overrides?.id ?? 'mock-credential-id';
   return {
-    id: 'mock-credential-id',
-    rawId: 'mock-credential-id',
+    id: credentialId,
+    rawId: overrides?.rawId ?? credentialId,
     response: {
       clientDataJSON: Buffer.from(
         JSON.stringify({
@@ -48,6 +76,42 @@ function createMockAuthenticationResponse() {
     },
     type: 'public-key',
     clientExtensionResults: {},
+  };
+}
+
+async function createPasskeyAuthenticationFixture(index: number) {
+  const credentialId = `auth-passkey-perf-credential-${index}`;
+  const fixture = await createDbUserWithSession(
+    app,
+    services,
+    generateUniqueEmail(`auth-passkey-perf-${index}`),
+    'Password123!',
+  );
+
+  await withMikroContext(services, async () => {
+    const passkey = services.mikro.userPasskey.create({
+      user: fixture.userSub,
+      credential_id: credentialId,
+      public_key: 'AQIDBA',
+      counter: 0,
+      device_type: 'multiDevice',
+      backed_up: true,
+      transports: ['internal'],
+      name: 'Perf Authentication Passkey',
+      aaguid: 'perf-aaguid',
+    });
+    await services.mikro.em.persist(passkey).flush();
+  });
+
+  const optionsResponse = await app.request('/api/auth/passkey/options', {
+    method: 'POST',
+  });
+  expect(optionsResponse.status).toBe(200);
+
+  return {
+    credentialId,
+    sessionCookie: extractCookie(optionsResponse, 'session'),
+    userSub: fixture.userSub,
   };
 }
 
@@ -100,6 +164,33 @@ async function requestPasskeyVerifyWithoutChallenge() {
   return response;
 }
 
+async function requestPasskeyVerifySuccess(fixture: {
+  credentialId: string;
+  sessionCookie: string;
+  userSub: string;
+}) {
+  const response = await app.request('/api/auth/passkey/verify', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      Cookie: `session=${fixture.sessionCookie}`,
+    },
+    body: JSON.stringify({
+      response: createMockAuthenticationResponse({
+        id: fixture.credentialId,
+        rawId: fixture.credentialId,
+      }),
+    }),
+  });
+  const body: { user?: { sub?: string } } = await response.clone().json();
+
+  expect(response.status).toBe(200);
+  expect(body.user?.sub).toBe(fixture.userSub);
+  expect(extractCookie(response, 'session')).toEqual(expect.any(String));
+
+  return response;
+}
+
 describe('POST /api/auth/passkey/options perf', () => {
   test('handles repeated authentication options requests through the real route', async () => {
     const result = await runHttpPerf({
@@ -115,7 +206,33 @@ describe('POST /api/auth/passkey/options perf', () => {
 });
 
 describe('POST /api/auth/passkey/verify perf', () => {
-  test('handles validation failure without faking WebAuthn through the real route', async () => {
+  test('authenticates pre-created passkeys through the real route', async () => {
+    const fixtures = await Promise.all(
+      Array.from({ length: WARMUP_REQUESTS + MEASURED_REQUESTS }, (_, index) =>
+        createPasskeyAuthenticationFixture(index),
+      ),
+    );
+    let nextFixture = 0;
+
+    const result = await runHttpPerf({
+      name: 'POST /api/auth/passkey/verify success smoke',
+      warmupRequests: WARMUP_REQUESTS,
+      requests: MEASURED_REQUESTS,
+      concurrency: 2,
+      request: async () => {
+        const fixture = fixtures[nextFixture];
+        nextFixture += 1;
+        if (!fixture) {
+          throw new Error('Missing passkey authentication fixture');
+        }
+        return requestPasskeyVerifySuccess(fixture);
+      },
+    });
+
+    expectPerfResult(result, 200);
+  });
+
+  test('handles missing-challenge validation failure through the real route', async () => {
     const result = await runHttpPerf({
       name: 'POST /api/auth/passkey/verify missing-challenge smoke',
       warmupRequests: WARMUP_REQUESTS,

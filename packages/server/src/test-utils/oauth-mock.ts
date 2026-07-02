@@ -22,6 +22,7 @@ export interface OAuthProviderFetchMockOptions {
   userInfoUrl: string | null;
   tokens?: Partial<OAuthMockTokens>;
   userInfo?: Partial<OAuthMockUserInfo>;
+  userInfoSequence?: Array<Partial<OAuthMockUserInfo>>;
   /**
    * Raw userinfo response body returned by the mock.
    * Use this to supply provider-specific field names
@@ -69,6 +70,18 @@ function getAuthorizationHeader(
   return null;
 }
 
+function createOAuthMockUserInfo(
+  userInfo?: Partial<OAuthMockUserInfo>,
+): OAuthMockUserInfo {
+  return {
+    id: userInfo?.id ?? 'mock-oauth-user-id',
+    email: userInfo?.email ?? 'mock-oauth-user@example.com',
+    email_verified: userInfo?.email_verified ?? true,
+    ...(userInfo?.name ? { name: userInfo.name } : {}),
+    ...(userInfo?.picture ? { picture: userInfo.picture } : {}),
+  };
+}
+
 /**
  * Mock OAuth provider token and userinfo network calls used by OAuth callback
  * tests. Any unexpected fetch request throws to keep test behavior deterministic.
@@ -88,13 +101,11 @@ export function mockOAuthProviderFetch(
     ...(options.tokens?.id_token ? { id_token: options.tokens.id_token } : {}),
   };
 
-  const userInfo: OAuthMockUserInfo = {
-    id: options.userInfo?.id ?? 'mock-oauth-user-id',
-    email: options.userInfo?.email ?? 'mock-oauth-user@example.com',
-    email_verified: options.userInfo?.email_verified ?? true,
-    ...(options.userInfo?.name ? { name: options.userInfo.name } : {}),
-    ...(options.userInfo?.picture ? { picture: options.userInfo.picture } : {}),
-  };
+  const userInfo = createOAuthMockUserInfo(options.userInfo);
+  const userInfoSequence = options.userInfoSequence?.map((entry) =>
+    createOAuthMockUserInfo(entry),
+  );
+  let nextUserInfo = 0;
 
   const fetchSpy = vi
     .spyOn(globalThis, 'fetch')
@@ -113,12 +124,21 @@ export function mockOAuthProviderFetch(
 
         // Use rawUserInfoResponse if provided, otherwise default to
         // Google-style field names for backward compatibility.
+        let responseUserInfo = userInfo;
+        if (userInfoSequence) {
+          const queuedUserInfo = userInfoSequence[nextUserInfo];
+          nextUserInfo += 1;
+          if (!queuedUserInfo) {
+            throw new Error('OAuth mock userinfo sequence exhausted');
+          }
+          responseUserInfo = queuedUserInfo;
+        }
         const body = options.rawUserInfoResponse ?? {
-          sub: userInfo.id,
-          email: userInfo.email,
-          email_verified: userInfo.email_verified,
-          name: userInfo.name,
-          picture: userInfo.picture,
+          sub: responseUserInfo.id,
+          email: responseUserInfo.email,
+          email_verified: responseUserInfo.email_verified,
+          name: responseUserInfo.name,
+          picture: responseUserInfo.picture,
         };
 
         return jsonResponse(body);
