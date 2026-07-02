@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import type { AppEnv } from '../../../lib/app-env.ts';
+import { authSecondFactorMethodsGet } from './2fa/methods/get.ts';
 import { authAccountsGet } from './accounts/get.ts';
 import { authAccountsRemovePost } from './accounts/remove.post.ts';
 import { authAccountsSelectPost } from './accounts/select.post.ts';
@@ -19,6 +20,7 @@ export const authRoutes = new Hono<AppEnv>()
   .route('/', authAccountsGet)
   .route('/', authAccountsSelectPost)
   .route('/', authAccountsRemovePost)
+  .route('/', authSecondFactorMethodsGet)
   .route('/', authLoginPost)
   .route('/', authLogoutPost)
   .route('/', authRegisterPost)

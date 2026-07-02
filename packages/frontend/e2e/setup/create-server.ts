@@ -1,4 +1,4 @@
-import { createSign, generateKeyPairSync } from 'node:crypto';
+import { createSign, generateKeyPairSync, randomUUID } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import { createServer as createNetServer } from 'node:net';
 import { serve } from '@hono/node-server';
@@ -414,6 +414,27 @@ export async function createE2EServer(configFactory: ConfigFactory) {
         secret: setupData.secret,
         recovery_codes: recoveryCodes,
       });
+    })
+    .post('/test/passkey/setup/:email', async (c) => {
+      const email = c.req.param('email');
+      const user = await services.mikro.user.findOne({ email });
+      if (!user) {
+        return c.json({ error: 'User not found' }, 404);
+      }
+      const passkey = services.mikro.userPasskey.create({
+        user: user.sub,
+        credential_id: `test-credential-${randomUUID()}`,
+        public_key: 'test-public-key-base64url',
+        counter: 0,
+        device_type: 'multiDevice',
+        backed_up: true,
+        transports: ['internal'],
+        name: 'E2E Test Passkey',
+        aaguid: 'test-aaguid',
+      });
+      services.mikro.em.persist(passkey);
+      await services.mikro.em.flush();
+      return c.json({ id: passkey.id });
     })
     .get('/test/oauth-stub/:provider/authorize', async (c) => {
       const provider = c.req.param('provider');

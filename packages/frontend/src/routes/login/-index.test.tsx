@@ -1,8 +1,17 @@
-import { afterEach, describe, expect, test } from 'vitest';
+import { startAuthentication } from '@simplewebauthn/browser';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import type { AppConfigs } from '#frontend/queries/config.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
-import { resetFetchMock } from '#frontend/test-utils/query-test-utils.ts';
+import {
+  mockJsonResponses,
+  resetFetchMock,
+} from '#frontend/test-utils/query-test-utils.ts';
 import { renderRoute } from '#frontend/test-utils/route-test-utils.tsx';
+
+vi.mock('@simplewebauthn/browser', () => ({
+  startAuthentication: vi.fn(),
+  startRegistration: vi.fn(),
+}));
 
 const baseConfig = {
   i18n: {
@@ -76,6 +85,7 @@ function seedConfig(config: AppConfigs = baseConfig) {
 }
 
 afterEach(() => {
+  vi.mocked(startAuthentication).mockReset();
   resetFetchMock();
 });
 
@@ -138,5 +148,37 @@ describe('/login', () => {
     await expect
       .element(screen.getByRole('link', { name: 'Email' }))
       .not.toBeInTheDocument();
+  });
+
+  test('shows guidance when passkey sign in fails from the login page', async () => {
+    const passkeyError = new Error('not allowed');
+    passkeyError.name = 'NotAllowedError';
+    vi.mocked(startAuthentication).mockRejectedValue(passkeyError);
+    mockJsonResponses({
+      url: '/api/auth/passkey/options',
+      method: 'POST',
+      body: {
+        options: {
+          challenge: 'challenge',
+          rpId: 'localhost',
+          allowCredentials: [],
+        },
+      },
+    });
+
+    const { screen } = await renderRoute({
+      initialLocation: '/login',
+      queryData: seedConfig(),
+    });
+
+    await screen.getByRole('button', { name: 'Passkey' }).click();
+
+    await expect
+      .element(
+        screen.getByText(
+          'Passkey sign in could not be completed. In-app browsers may block passkeys. Try again or sign in with email.',
+        ),
+      )
+      .toBeVisible();
   });
 });

@@ -52,7 +52,11 @@ describe('/setup/passkey', () => {
     });
 
     await expect
-      .element(screen.getByText('Passkey registration was cancelled.'))
+      .element(
+        screen.getByText(
+          'Passkey registration could not be completed. In-app browsers may block passkeys.',
+        ),
+      )
       .toBeVisible();
 
     const backLink = screen
@@ -63,5 +67,36 @@ describe('/setup/passkey', () => {
     expect(backLink.getAttribute('href')).toContain('state=state-123');
     expect(backLink.getAttribute('href')).toContain('code_challenge=challenge');
     expect(fetchMock.requests).toHaveLength(1);
+  });
+
+  test('offers TOTP setup when required passkey setup cannot complete', async () => {
+    const cancelledError = new Error('cancelled');
+    cancelledError.name = 'NotAllowedError';
+    webAuthnMocks.startRegistration.mockRejectedValue(cancelledError);
+    mockJsonResponses({
+      url: '/api/user/passkeys/register/options',
+      method: 'POST',
+      body: {
+        options: {
+          challenge: 'challenge',
+          rp: { name: 'TinyAuth', id: 'localhost' },
+          user: {
+            id: 'user-1',
+            name: 'alice@example.com',
+            displayName: 'Alice',
+          },
+          pubKeyCredParams: [],
+        },
+      },
+    });
+
+    const { screen } = await renderRoute({
+      initialLocation: oauthLocation,
+      queryData: [appConfigQueryData(routeTestAppConfig)],
+    });
+
+    await expect
+      .element(screen.getByRole('link', { name: 'Set up authenticator app' }))
+      .toBeVisible();
   });
 });

@@ -11,6 +11,9 @@ export const queryKeys = {
   // Account selection
   accounts: (clientId?: string) => ['/api/auth/accounts', clientId] as const,
 
+  // 2FA
+  pendingSecondFactorMethods: () => ['/api/auth/2fa/methods'] as const,
+
   // 앱 설정
   config: () => ['/api/config'] as const,
 

@@ -93,4 +93,88 @@ describe('/verify/passkey', () => {
     });
     expect(fetchMock.requests).toHaveLength(3);
   });
+
+  test('shows TOTP fallback after passkey verification cannot complete', async () => {
+    const passkeyError = new Error('not allowed');
+    passkeyError.name = 'NotAllowedError';
+    vi.mocked(startAuthentication).mockRejectedValue(passkeyError);
+    const fetchMock = mockJsonResponses(
+      {
+        url: '/api/auth/passkey/options',
+        method: 'POST',
+        body: {
+          options: {
+            challenge: 'challenge',
+            rpId: 'localhost',
+            allowCredentials: [],
+          },
+        },
+      },
+      {
+        url: '/api/auth/2fa/methods',
+        method: 'GET',
+        body: {
+          methods: ['totp', 'passkey'],
+        },
+      },
+    );
+
+    const { screen } = await renderRoute({
+      initialLocation: '/verify/passkey',
+      queryData: profileQueryData(),
+      user: routeTestUser,
+    });
+
+    await expect
+      .element(
+        screen.getByText(
+          'Passkey verification could not be completed. In-app browsers may block passkeys.',
+        ),
+      )
+      .toBeVisible();
+    await expect
+      .element(screen.getByRole('link', { name: 'Use authenticator app' }))
+      .toBeVisible();
+    expect(fetchMock.requests).toHaveLength(2);
+  });
+
+  test('keeps passkey-only failures on the passkey screen', async () => {
+    const passkeyError = new Error('not allowed');
+    passkeyError.name = 'NotAllowedError';
+    vi.mocked(startAuthentication).mockRejectedValue(passkeyError);
+    const fetchMock = mockJsonResponses(
+      {
+        url: '/api/auth/passkey/options',
+        method: 'POST',
+        body: {
+          options: {
+            challenge: 'challenge',
+            rpId: 'localhost',
+            allowCredentials: [],
+          },
+        },
+      },
+      {
+        url: '/api/auth/2fa/methods',
+        method: 'GET',
+        body: {
+          methods: ['passkey'],
+        },
+      },
+    );
+
+    const { screen } = await renderRoute({
+      initialLocation: '/verify/passkey',
+      queryData: profileQueryData(),
+      user: routeTestUser,
+    });
+
+    await expect
+      .element(screen.getByRole('button', { name: 'Try again' }))
+      .toBeVisible();
+    await expect
+      .element(screen.getByRole('link', { name: 'Use authenticator app' }))
+      .not.toBeInTheDocument();
+    expect(fetchMock.requests).toHaveLength(2);
+  });
 });
