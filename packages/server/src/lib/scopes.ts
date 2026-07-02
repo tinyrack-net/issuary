@@ -31,8 +31,11 @@ export const parseScopesWithDescriptions = (
 ): Array<{ name: string; description: string }> => {
   if (!scopeString) return [];
 
-  return scopeString.split(' ').map((name) => ({
-    name,
-    description: getScopeDescription(name),
-  }));
+  return scopeString
+    .split(' ')
+    .filter((name) => name.length > 0)
+    .map((name) => ({
+      name,
+      description: getScopeDescription(name),
+    }));
 };

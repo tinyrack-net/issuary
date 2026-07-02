@@ -83,7 +83,7 @@ test.describe('Delete account flow', () => {
     await page.locator(deleteAccountModal.submitButton).click();
 
     // Should redirect to login
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -158,7 +158,7 @@ test.describe('Delete account flow', () => {
     await page.locator(deleteAccountModal.submitButton).click();
 
     // Wait for redirect to login
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
 
     // Try to login with the deleted account
     await gotoWithFirefoxRetry(page, browserName, '/login/password');

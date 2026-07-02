@@ -49,7 +49,7 @@ test.describe('Password disabled configuration', () => {
     browserName,
   }) => {
     await gotoWithFirefoxRetry(page, browserName, '/password/forgot');
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
 
     await gotoWithFirefoxRetry(
@@ -57,7 +57,7 @@ test.describe('Password disabled configuration', () => {
       browserName,
       '/password/reset?token=test-token',
     );
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -70,7 +70,7 @@ test.describe('Password disabled configuration', () => {
       browserName,
       '/verify/email?token=test-token',
     );
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
   });
 

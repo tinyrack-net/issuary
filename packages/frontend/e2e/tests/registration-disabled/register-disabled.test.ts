@@ -21,7 +21,7 @@ test.describe('Registration disabled', () => {
     await page.goto('/register');
 
     // beforeLoad guard checks public_registration: false and redirects
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
   });
 

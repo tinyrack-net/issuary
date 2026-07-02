@@ -49,7 +49,7 @@ test.describe('Terms complete registration mode', () => {
     page,
   }) => {
     await page.goto('/terms');
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
   });
 

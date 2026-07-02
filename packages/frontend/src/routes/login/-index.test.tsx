@@ -6,7 +6,10 @@ import {
   mockJsonResponses,
   resetFetchMock,
 } from '#frontend/test-utils/query-test-utils.ts';
-import { renderRoute } from '#frontend/test-utils/route-test-utils.tsx';
+import {
+  authorizationContextQueryData,
+  renderRoute,
+} from '#frontend/test-utils/route-test-utils.tsx';
 
 vi.mock('@simplewebauthn/browser', () => ({
   startAuthentication: vi.fn(),
@@ -75,6 +78,16 @@ const baseConfig = {
   },
 } satisfies AppConfigs;
 
+const oauthSearch = {
+  client_id: 'client-web',
+  redirect_uri: 'https://client.example/callback',
+  response_type: 'code',
+  scope: 'openid',
+};
+
+const oauthLocation =
+  '/login?client_id=client-web&redirect_uri=https%3A%2F%2Fclient.example%2Fcallback&response_type=code&scope=openid&state=state-123&code_challenge=challenge&code_challenge_method=S256';
+
 function seedConfig(config: AppConfigs = baseConfig) {
   return [
     {
@@ -84,6 +97,10 @@ function seedConfig(config: AppConfigs = baseConfig) {
   ];
 }
 
+function seedOAuthRouteData(config: AppConfigs = baseConfig) {
+  return [...seedConfig(config), authorizationContextQueryData(oauthSearch)];
+}
+
 afterEach(() => {
   vi.mocked(startAuthentication).mockReset();
   resetFetchMock();
@@ -91,13 +108,14 @@ afterEach(() => {
 
 describe('/login', () => {
   test('shows configured OAuth, password, and passkey auth methods', async () => {
-    const initialLocation =
-      '/login?client_id=client-web&redirect_uri=https%3A%2F%2Fclient.example%2Fcallback&response_type=code&scope=openid&state=state-123&code_challenge=challenge&code_challenge_method=S256';
-
     const { screen } = await renderRoute({
-      initialLocation,
-      queryData: seedConfig(),
+      initialLocation: oauthLocation,
+      queryData: seedOAuthRouteData(),
     });
+
+    await expect
+      .element(screen.getByTestId('authorization-context'))
+      .toBeVisible();
 
     await expect
       .element(screen.getByRole('link', { name: 'GitHub' }))
@@ -123,6 +141,26 @@ describe('/login', () => {
     expect(passwordLink.getAttribute('href')).toContain(
       'code_challenge=challenge',
     );
+  });
+
+  test('skips the method picker when email password is the only login method', async () => {
+    const passwordOnlyConfig = {
+      ...baseConfig,
+      auth: {
+        ...baseConfig.auth,
+        passkey: {
+          enabled: false,
+        },
+      },
+      identity_providers: [],
+    } satisfies AppConfigs;
+
+    const { router } = await renderRoute({
+      initialLocation: '/login',
+      queryData: seedConfig(passwordOnlyConfig),
+    });
+
+    expect(router.state.location.pathname).toBe('/login/password');
   });
 
   test('hides disabled password auth while keeping enabled passkey auth available', async () => {

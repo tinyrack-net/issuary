@@ -15,6 +15,7 @@ import { useDeferredValue, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
 import { IconInput } from '#frontend/components/auth/icon-input.tsx';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
@@ -26,11 +27,13 @@ import { TinyAuthError } from '#frontend/libs/error.ts';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
+  hasAuthorizationContext,
   isOAuthFlow,
   OAuthSearchSchema,
   type SecondFactorMethod,
 } from '#frontend/libs/oauth-search.ts';
 import { tick } from '#frontend/libs/promise.ts';
+import { getAuthorizationContextQueryOptions } from '#frontend/queries/authorization-context.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { registerMutationOptions } from '#frontend/queries/register.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
@@ -53,13 +56,24 @@ export const Route = createFileRoute('/register/')({
   },
   loaderDeps: ({ search }) => ({
     lang: search.lang,
+    search,
   }),
   loader: async ({ context, deps }) => {
     const lang = deps.lang ?? context.i18n.language;
-    await Promise.all([
+    const queries: Array<Promise<unknown>> = [
       context.queryClient.ensureQueryData(appConfigQueryOptions),
       context.queryClient.ensureQueryData(getTermsQueryOptions(lang)),
-    ]);
+    ];
+
+    if (hasAuthorizationContext(deps.search)) {
+      queries.push(
+        context.queryClient.ensureQueryData(
+          getAuthorizationContextQueryOptions(deps.search),
+        ),
+      );
+    }
+
+    await Promise.all(queries);
   },
 });
 
@@ -263,12 +277,15 @@ function Register() {
         title={t('register.title')}
       />
 
+      <AuthorizationContextBanner search={search} />
+
       {isPasswordAuthEnabled && (
         <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
           <IconInput
             autoComplete="email"
             error={errors.email}
             icon={EnvelopeSimpleIcon}
+            label={t('register.email.label')}
             placeholder={t('register.email.placeholder')}
             {...register('email')}
             type="email"
@@ -277,7 +294,11 @@ function Register() {
           <IconInput
             autoComplete="new-password"
             error={errors.password}
+            hint={t('register.password.hint', {
+              count: passwordPolicy.min_length,
+            })}
             icon={LockIcon}
+            label={t('register.password.label')}
             placeholder={t('register.password.placeholder')}
             {...register('password')}
             type="password"
@@ -297,7 +318,9 @@ function Register() {
             )}
 
             {implicitNotice && hasExplicitTerms && (
-              <div className="divider text-xs">AND</div>
+              <div className="divider text-xs">
+                {t('terms.additionalOptionalConsent')}
+              </div>
             )}
 
             {hasTerms && hasExplicitTerms && (

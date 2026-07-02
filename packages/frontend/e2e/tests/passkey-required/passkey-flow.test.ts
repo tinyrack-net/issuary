@@ -44,7 +44,7 @@ async function registerPasskeyFromRequiredSetup(
 async function logoutFromProfile(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
   await page.getByRole('button', { name: 'Log out' }).click();
-  await page.waitForURL('**/login');
+  await page.waitForURL('**/login**');
 }
 
 const TEST_PASSWORD = 'test-password-123';
@@ -113,7 +113,7 @@ test.describe('Passkey-required flow', () => {
       await page.waitForURL('**/profile');
 
       await page.getByRole('button', { name: 'Log out' }).click();
-      await page.waitForURL('**/login');
+      await page.waitForURL('**/login**');
 
       const loginRes = await page.request.post(
         `${String(baseURL)}/api/auth/login`,

@@ -266,7 +266,7 @@ test.describe('OAuth continuation across email verification and 2FA', () => {
       hasVirtualAuth = false;
 
       await page.getByRole('button', { name: 'Log out' }).click();
-      await page.waitForURL('**/login');
+      await page.waitForURL('**/login**');
 
       await page.goto(buildAuthEntryUrl('login', 'password', oauthParams));
       await submitPasswordLogin(page, email, TEST_PASSWORD);

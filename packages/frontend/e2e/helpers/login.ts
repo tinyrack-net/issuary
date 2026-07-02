@@ -93,8 +93,35 @@ export const emailVerifyPage = {
 } as const;
 
 /**
- * Performs a complete login flow: navigates from the method
- * selection page through the password form and submits credentials.
+ * Moves from the current login entry point to the password form.
+ * Password-only configs redirect from /login directly to /login/password,
+ * while multi-method configs still require selecting the password method.
+ */
+export async function openPasswordLoginFromCurrentPage(
+  page: Page,
+): Promise<void> {
+  const passwordForm = page.locator(loginPasswordPage.emailInput);
+  const passwordMethodLink = page.locator(loginMethodPage.passwordMethodLink);
+
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    if (await passwordForm.isVisible()) {
+      return;
+    }
+
+    if (await passwordMethodLink.isVisible()) {
+      await passwordMethodLink.click();
+      await page.waitForURL('**/login/password**');
+      return;
+    }
+
+    await page.waitForTimeout(100);
+  }
+
+  await passwordForm.waitFor({ state: 'visible', timeout: 1_000 });
+}
+
+/**
+ * Performs a complete login flow through the password form.
  */
 export async function performLogin(
   page: Page,
@@ -102,8 +129,7 @@ export async function performLogin(
   password: string,
 ): Promise<void> {
   await gotoLogin(page);
-  await page.locator(loginMethodPage.passwordMethodLink).click();
-  await page.waitForURL('**/login/password');
+  await openPasswordLoginFromCurrentPage(page);
   await page.locator(loginPasswordPage.emailInput).fill(email);
   await page.locator(loginPasswordPage.passwordInput).fill(password);
   await page.locator(loginPasswordPage.submitButton).click();

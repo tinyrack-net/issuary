@@ -23,7 +23,7 @@ const TEST_PASSWORD = 'test-password-123';
 
 async function logoutFromProfile(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Log out' }).click();
-  await page.waitForURL('**/login');
+  await page.waitForURL('**/login**');
 }
 
 async function loginWithPasskeyFromMethodPage(page: Page): Promise<void> {

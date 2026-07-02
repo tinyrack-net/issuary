@@ -1,7 +1,10 @@
 import { expect, test } from 'vitest';
 import type { AppConfigs } from '#frontend/queries/config.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
-import { renderRoute } from '#frontend/test-utils/route-test-utils.tsx';
+import {
+  authorizationContextQueryData,
+  renderRoute,
+} from '#frontend/test-utils/route-test-utils.tsx';
 
 const loginConfig = {
   i18n: {
@@ -51,7 +54,7 @@ const loginConfig = {
       },
     },
     passkey: {
-      enabled: false,
+      enabled: true,
     },
   },
   identity_providers: [],
@@ -60,6 +63,13 @@ const loginConfig = {
     retention: 'P30D',
   },
 } satisfies AppConfigs;
+
+const oauthSearch = {
+  client_id: 'client-web',
+  redirect_uri: 'https://client.example/callback',
+  response_type: 'code',
+  scope: 'openid',
+};
 
 test('renders a route with seeded query data and preserves the initial search', async () => {
   const initialLocation =
@@ -72,6 +82,7 @@ test('renders a route with seeded query data and preserves the initial search', 
         queryKey: appConfigQueryOptions.queryKey,
         data: loginConfig,
       },
+      authorizationContextQueryData(oauthSearch),
     ],
   });
 

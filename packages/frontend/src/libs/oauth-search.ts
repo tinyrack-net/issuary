@@ -65,6 +65,12 @@ export const OAuthSearchSchema = z.object({
 
 export type OAuthSearch = z.infer<typeof OAuthSearchSchema>;
 
+export type AuthorizationContextSearch = OAuthSearch & {
+  client_id: string;
+  redirect_uri: string;
+  response_type: string;
+};
+
 /** Second factor method type */
 export type SecondFactorMethod = 'totp' | 'passkey';
 
@@ -74,6 +80,12 @@ export type SecondFactorMethod = 'totp' | 'passkey';
  */
 export function isOAuthFlow(search: OAuthSearch): boolean {
   return !!(search.client_id && search.redirect_uri);
+}
+
+export function hasAuthorizationContext(
+  search: OAuthSearch,
+): search is AuthorizationContextSearch {
+  return !!(search.client_id && search.redirect_uri && search.response_type);
 }
 
 /**

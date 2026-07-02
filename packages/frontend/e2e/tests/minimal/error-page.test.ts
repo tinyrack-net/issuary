@@ -40,7 +40,7 @@ test.describe('Error page', () => {
     // Click "Go to login" link
     await page.getByRole('link', { name: 'Go to login' }).click();
 
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
   });
 });
