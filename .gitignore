@@ -39,3 +39,4 @@ coverage/
 __screenshots__
 .opencode/
 .hermes/
+.codex/environments
