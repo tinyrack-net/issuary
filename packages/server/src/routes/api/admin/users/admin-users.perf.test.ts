@@ -1,3 +1,4 @@
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
@@ -19,7 +20,17 @@ const CONCURRENCY = 4;
 const TOTAL_REQUESTS = WARMUP_REQUESTS + MEASURED_REQUESTS;
 const ADMIN_SCALE_USER_COUNT = 1_000;
 
+type AdminUsersQueryInput = {
+  query?: string;
+  page?: string;
+  page_size?: string;
+  include_deleted?: 'true' | 'false';
+  managed_by?: 'database' | 'config';
+  role?: 'user' | 'admin';
+};
+
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let adminSession = '';
 let cleanup: () => Promise<void> = async () => {};
@@ -33,6 +44,7 @@ beforeAll(async () => {
     users: [TEST_USER_CONFIG],
   });
   app = server.app;
+  client = testClient(app);
   services = server.services;
   cleanup = server.cleanup;
 
@@ -44,13 +56,11 @@ afterAll(async () => {
 });
 
 async function loginAdmin(): Promise<string> {
-  const response = await app.request('/api/auth/login', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
+  const response = await client.api.auth.login.$post({
+    json: {
       email: TEST_USER.email,
       password: TEST_USER.password,
-    }),
+    },
   });
 
   expect(response.status).toBe(200);
@@ -114,9 +124,10 @@ function nextItem<T>(items: T[]): T {
 }
 
 async function requestAdminMe() {
-  const response = await app.request('/api/admin/me', {
-    headers: { Cookie: `session=${adminSession}` },
-  });
+  const response = await client.api.admin.me.$get(
+    {},
+    { headers: { Cookie: `session=${adminSession}` } },
+  );
   const body = await assertJsonBody(response);
 
   expect(response.status).toBe(200);
@@ -129,34 +140,35 @@ async function requestAdminMe() {
   return response;
 }
 
-async function requestAdminUsers(query = 'page=1&page_size=10') {
-  const response = await app.request(`/api/admin/users?${query}`, {
-    headers: { Cookie: `session=${adminSession}` },
-  });
+async function requestAdminUsers(
+  query: AdminUsersQueryInput = { page: '1', page_size: '10' },
+) {
+  const response = await client.api.admin.users.$get(
+    { query },
+    { headers: { Cookie: `session=${adminSession}` } },
+  );
   const body = await assertJsonBody(response);
 
   expect(response.status).toBe(200);
   expect(Array.isArray(body.users)).toBe(true);
-  const page = Number(new URLSearchParams(query).get('page') ?? '1');
+  const page = Number(query.page ?? '1');
   expect(body.pagination).toMatchObject({ page });
 
   return response;
 }
 
 async function requestCreateAdminUser(email: string) {
-  const response = await app.request('/api/admin/users', {
-    method: 'POST',
-    headers: {
-      Cookie: `session=${adminSession}`,
-      'content-type': 'application/json',
+  const response = await client.api.admin.users.$post(
+    {
+      json: {
+        email,
+        password: 'Password123!',
+        role: 'user',
+        email_verified: true,
+      },
     },
-    body: JSON.stringify({
-      email,
-      password: 'Password123!',
-      role: 'user',
-      email_verified: true,
-    }),
-  });
+    { headers: { Cookie: `session=${adminSession}` } },
+  );
   const body = await assertJsonBody(response, 201);
 
   expect(response.status).toBe(201);
@@ -171,9 +183,10 @@ async function requestCreateAdminUser(email: string) {
 }
 
 async function requestGetAdminUser(sub: string, email: string) {
-  const response = await app.request(`/api/admin/users/${sub}`, {
-    headers: { Cookie: `session=${adminSession}` },
-  });
+  const response = await client.api.admin.users[':sub'].$get(
+    { param: { sub } },
+    { headers: { Cookie: `session=${adminSession}` } },
+  );
   const body = await assertJsonBody(response);
 
   expect(response.status).toBe(200);
@@ -183,14 +196,13 @@ async function requestGetAdminUser(sub: string, email: string) {
 }
 
 async function requestPatchAdminUser(sub: string, email: string) {
-  const response = await app.request(`/api/admin/users/${sub}`, {
-    method: 'PATCH',
-    headers: {
-      Cookie: `session=${adminSession}`,
-      'content-type': 'application/json',
+  const response = await client.api.admin.users[':sub'].$patch(
+    {
+      param: { sub },
+      json: { email, role: 'admin', email_verified: true },
     },
-    body: JSON.stringify({ email, role: 'admin', email_verified: true }),
-  });
+    { headers: { Cookie: `session=${adminSession}` } },
+  );
   const body = await assertJsonBody(response);
 
   expect(response.status).toBe(200);
@@ -205,10 +217,10 @@ async function requestPatchAdminUser(sub: string, email: string) {
 }
 
 async function requestDeleteAdminUser(sub: string) {
-  const response = await app.request(`/api/admin/users/${sub}`, {
-    method: 'DELETE',
-    headers: { Cookie: `session=${adminSession}` },
-  });
+  const response = await client.api.admin.users[':sub'].$delete(
+    { param: { sub } },
+    { headers: { Cookie: `session=${adminSession}` } },
+  );
   const body = await assertJsonBody(response);
 
   expect(response.status).toBe(200);
@@ -262,7 +274,7 @@ describe('admin user management API perf', () => {
       warmupRequests: 2,
       requests: 12,
       concurrency: 3,
-      request: async () => requestAdminUsers('page=1&page_size=5'),
+      request: async () => requestAdminUsers({ page: '1', page_size: '5' }),
     });
 
     await Promise.all(
@@ -274,7 +286,7 @@ describe('admin user management API perf', () => {
       warmupRequests: 2,
       requests: 12,
       concurrency: 3,
-      request: async () => requestAdminUsers('page=1&page_size=30'),
+      request: async () => requestAdminUsers({ page: '1', page_size: '30' }),
     });
 
     expect(smallResult.failed).toBe(0);
@@ -288,13 +300,13 @@ describe('admin user management API perf', () => {
 
   test('GET /api/admin/users handles larger user tables, deep pages, and filters', async () => {
     await seedAdminListScaleUsers();
-    const queries = [
-      'page=1&page_size=100',
-      'page=10&page_size=100',
-      'page=1&page_size=100&query=admin-scale-09',
-      'page=1&page_size=100&role=admin',
-      'page=1&page_size=100&include_deleted=true',
-      'page=1&page_size=100&managed_by=database',
+    const queries: AdminUsersQueryInput[] = [
+      { page: '1', page_size: '100' },
+      { page: '10', page_size: '100' },
+      { page: '1', page_size: '100', query: 'admin-scale-09' },
+      { page: '1', page_size: '100', role: 'admin' },
+      { page: '1', page_size: '100', include_deleted: 'true' },
+      { page: '1', page_size: '100', managed_by: 'database' },
     ];
     let nextQuery = 0;
 

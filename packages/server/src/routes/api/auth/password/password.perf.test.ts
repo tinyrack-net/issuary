@@ -1,8 +1,10 @@
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
 import {
+  assertJsonBody,
   createDbUserWithSession,
   createTestApp,
   createTestEmailConfig,
@@ -14,8 +16,11 @@ import { runHttpPerf } from '../../../../test-utils/perf/index.js';
 
 const WARMUP_REQUESTS = 1;
 const MEASURED_REQUESTS = 10;
+const TOKEN_BACKLOG_SIZE = getPerfInteger('TINYAUTH_PERF_TOKEN_BACKLOG', 100);
+const PBKDF2_CONCURRENCY = 5;
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
@@ -30,6 +35,7 @@ beforeAll(async () => {
     },
   });
   app = server.app;
+  client = testClient(app);
   services = server.services;
   cleanup = server.cleanup;
 });
@@ -38,18 +44,27 @@ afterAll(async () => {
   await cleanup();
 });
 
-async function requestForgot(email: string) {
-  const response = await app.request('/api/auth/password/forgot', {
-    method: 'POST',
-    headers: {
-      'accept-language': 'en',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({ email }),
-  });
-  const body: { ok?: boolean } = await response.clone().json();
+function getPerfInteger(name: string, fallback: number): number {
+  const value = process.env[name];
+  if (!value) {
+    return fallback;
+  }
 
-  expect(response.status).toBe(200);
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return fallback;
+  }
+
+  return Math.floor(parsed);
+}
+
+async function requestForgot(email: string) {
+  const response = await client.api.auth.password.forgot.$post({
+    header: { 'accept-language': 'en' },
+    json: { email },
+  });
+  const body = await assertJsonBody(response);
+
   expect(body.ok).toBe(true);
 
   return response;
@@ -77,15 +92,42 @@ async function createPasswordResetFixture(index: number) {
   return { token, newPassword };
 }
 
-async function requestReset(token: string, password: string) {
-  const response = await app.request('/api/auth/password/reset', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ token, password }),
-  });
-  const body: { message?: string } = await response.clone().json();
+async function seedPasswordResetTokenBacklog(userSub: string, count: number) {
+  await withMikroContext(services, async () => {
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
-  expect(response.status).toBe(200);
+    for (let index = 0; index < count; index += 1) {
+      const reset = services.mikro.passwordReset.create({
+        user: userSub,
+        token: `password-reset-backlog-${crypto.randomUUID()}`,
+        expiresAt,
+      });
+      services.mikro.em.persist(reset);
+    }
+
+    await services.mikro.em.flush();
+  });
+}
+
+async function createPasswordResetBacklogEmail(prefix: string) {
+  const email = generateUniqueEmail(prefix);
+  const { userSub } = await createDbUserWithSession(
+    app,
+    services,
+    email,
+    'Password123!',
+  );
+  await seedPasswordResetTokenBacklog(userSub, TOKEN_BACKLOG_SIZE);
+
+  return email;
+}
+
+async function requestReset(token: string, password: string) {
+  const response = await client.api.auth.password.reset.$post({
+    json: { token, password },
+  });
+  const body = await assertJsonBody(response);
+
   expect(body.message).toContain('Password has been reset');
 
   return response;
@@ -110,6 +152,27 @@ describe('POST /api/auth/password/forgot perf', () => {
     expect(result.errorRate).toBe(0);
     expect(result.rps).toBeGreaterThan(1);
     expect(result.p95Ms).toBeLessThan(3000);
+  });
+
+  test('handles password-reset requests with an existing token backlog through the real route', async () => {
+    const email = await createPasswordResetBacklogEmail(
+      'password-forgot-backlog-perf',
+    );
+
+    const result = await runHttpPerf({
+      name: 'POST /api/auth/password/forgot token backlog smoke',
+      warmupRequests: WARMUP_REQUESTS,
+      requests: MEASURED_REQUESTS,
+      concurrency: 2,
+      request: async () => requestForgot(email),
+    });
+
+    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
+    expect(result.failed).toBe(0);
+    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
+    expect(result.errorRate).toBe(0);
+    expect(result.rps).toBeGreaterThan(1);
+    expect(result.p95Ms).toBeLessThan(5000);
   });
 });
 
@@ -143,5 +206,36 @@ describe('POST /api/auth/password/reset perf', () => {
     expect(result.errorRate).toBe(0);
     expect(result.rps).toBeGreaterThan(1);
     expect(result.p95Ms).toBeLessThan(4000);
+  });
+
+  test('handles concurrent PBKDF2 password resets through the real route', async () => {
+    const fixtures = await Promise.all(
+      Array.from({ length: WARMUP_REQUESTS + MEASURED_REQUESTS }, (_, index) =>
+        createPasswordResetFixture(index + 1000),
+      ),
+    );
+    let nextFixture = 0;
+
+    const result = await runHttpPerf({
+      name: 'POST /api/auth/password/reset PBKDF2 concurrency smoke',
+      warmupRequests: WARMUP_REQUESTS,
+      requests: MEASURED_REQUESTS,
+      concurrency: PBKDF2_CONCURRENCY,
+      request: async () => {
+        const fixture = fixtures[nextFixture];
+        nextFixture += 1;
+        if (!fixture) {
+          throw new Error('Missing password reset fixture');
+        }
+        return requestReset(fixture.token, fixture.newPassword);
+      },
+    });
+
+    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
+    expect(result.failed).toBe(0);
+    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
+    expect(result.errorRate).toBe(0);
+    expect(result.rps).toBeGreaterThan(1);
+    expect(result.p95Ms).toBeLessThan(10000);
   });
 });

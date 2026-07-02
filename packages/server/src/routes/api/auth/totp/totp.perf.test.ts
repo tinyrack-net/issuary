@@ -1,8 +1,10 @@
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
 import {
+  assertJsonBody,
   createDbUserWithSession,
   createTestApp,
   enableTotpForUser,
@@ -17,6 +19,7 @@ const WARMUP_REQUESTS = 1;
 const MEASURED_REQUESTS = 10;
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
@@ -30,6 +33,7 @@ beforeAll(async () => {
     },
   });
   app = server.app;
+  client = testClient(app);
   services = server.services;
   cleanup = server.cleanup;
 });
@@ -48,10 +52,8 @@ async function createPendingTotpFixture(index: number) {
     password,
   );
   const secret = await enableTotpForUser(services, userSub);
-  const loginResponse = await app.request('/api/auth/login', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+  const loginResponse = await client.api.auth.login.$post({
+    json: { email, password },
   });
   expect(loginResponse.status).toBe(200);
 
@@ -75,10 +77,8 @@ async function createPendingRecoveryFixture(index: number) {
     const user = await services.mikro.user.findOneOrFail({ sub: userSub });
     return services.totpService.generateRecoveryCodes(user);
   });
-  const loginResponse = await app.request('/api/auth/login', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+  const loginResponse = await client.api.auth.login.$post({
+    json: { email, password },
   });
   expect(loginResponse.status).toBe(200);
   const code = recoveryCodes[0];
@@ -93,39 +93,36 @@ async function createPendingRecoveryFixture(index: number) {
 }
 
 async function requestTotpVerify(sessionCookie: string, code: string) {
-  const response = await app.request('/api/auth/totp/verify', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${sessionCookie}`,
-    },
-    body: JSON.stringify({ code }),
-  });
-  const body: { user?: { totp_registered?: boolean } } = await response
-    .clone()
-    .json();
+  const response = await client.api.auth.totp.verify.$post(
+    { json: { code } },
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
-  expect(response.status).toBe(200);
   expect(body.user?.totp_registered).toBe(true);
   expect(extractCookie(response, 'session')).toEqual(expect.any(String));
 
   return response;
 }
 
-async function requestRecoveryVerify(sessionCookie: string, code: string) {
-  const response = await app.request('/api/auth/totp/recovery/verify', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${sessionCookie}`,
-    },
-    body: JSON.stringify({ code }),
-  });
-  const body: { user?: { totp_registered?: boolean } } = await response
-    .clone()
-    .json();
+async function requestInvalidTotpVerify(sessionCookie: string, code: string) {
+  const response = await client.api.auth.totp.verify.$post(
+    { json: { code } },
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
 
-  expect(response.status).toBe(200);
+  expect(response.status).toBe(400);
+
+  return response;
+}
+
+async function requestRecoveryVerify(sessionCookie: string, code: string) {
+  const response = await client.api.auth.totp.recovery.verify.$post(
+    { json: { code } },
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
+
   expect(body.user?.totp_registered).toBe(true);
   expect(extractCookie(response, 'session')).toEqual(expect.any(String));
 
@@ -159,6 +156,28 @@ describe('POST /api/auth/totp/verify perf', () => {
     expect(result.totalRequests).toBe(MEASURED_REQUESTS);
     expect(result.failed).toBe(0);
     expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
+    expect(result.errorRate).toBe(0);
+    expect(result.rps).toBeGreaterThan(1);
+    expect(result.p95Ms).toBeLessThan(3000);
+  });
+
+  test('handles invalid TOTP code failures through the real route', async () => {
+    const fixture = await createPendingTotpFixture(1000);
+    const invalidCode = fixture.code === '000000' ? '111111' : '000000';
+
+    const result = await runHttpPerf({
+      name: 'POST /api/auth/totp/verify invalid-code smoke',
+      warmupRequests: WARMUP_REQUESTS,
+      requests: MEASURED_REQUESTS,
+      concurrency: 2,
+      expectedStatuses: [400],
+      request: async () =>
+        requestInvalidTotpVerify(fixture.sessionCookie, invalidCode),
+    });
+
+    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
+    expect(result.failed).toBe(0);
+    expect(result.statusCounts[400]).toBe(MEASURED_REQUESTS);
     expect(result.errorRate).toBe(0);
     expect(result.rps).toBeGreaterThan(1);
     expect(result.p95Ms).toBeLessThan(3000);

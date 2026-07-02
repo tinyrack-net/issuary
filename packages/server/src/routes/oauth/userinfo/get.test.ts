@@ -24,6 +24,7 @@ import {
 } from '../../../test-utils/index.ts';
 
 let app: AppType;
+let routeClient: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
@@ -43,6 +44,7 @@ beforeAll(async () => {
       },
     ],
   }));
+  routeClient = testClient(app);
 });
 
 afterAll(async () => {
@@ -183,9 +185,8 @@ describe('GET /oauth/userinfo', () => {
 
   describe('Bearer Token Validation', () => {
     test('should reject request without Authorization header', async () => {
-      const res = await app.request('/oauth/userinfo', {
-        method: 'GET',
-        // No Authorization header
+      const res = await routeClient.oauth.userinfo.$get({
+        header: {},
       });
 
       const json = await assertJsonBody(res, 401);
@@ -196,8 +197,8 @@ describe('GET /oauth/userinfo', () => {
     test('should accept case-insensitive Bearer auth scheme', async () => {
       const accessToken = await getAccessToken(app, { scope: 'openid email' });
 
-      const res = await app.request('/oauth/userinfo', {
-        headers: { authorization: `bearer ${accessToken}` },
+      const res = await routeClient.oauth.userinfo.$get({
+        header: { authorization: `bearer ${accessToken}` },
       });
 
       const json = await assertJsonBody(res, 200);
@@ -207,8 +208,8 @@ describe('GET /oauth/userinfo', () => {
     test('should accept multiple spaces after Bearer auth scheme', async () => {
       const accessToken = await getAccessToken(app, { scope: 'openid email' });
 
-      const res = await app.request('/oauth/userinfo', {
-        headers: { authorization: `Bearer   ${accessToken}` },
+      const res = await routeClient.oauth.userinfo.$get({
+        header: { authorization: `Bearer   ${accessToken}` },
       });
 
       const json = await assertJsonBody(res, 200);
@@ -216,20 +217,18 @@ describe('GET /oauth/userinfo', () => {
     });
 
     test('should reject client_credentials tokens before user lookup', async () => {
-      const tokenResponse = await app.request('/oauth/token', {
-        method: 'POST',
-        headers: { 'content-type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
+      const tokenResponse = await routeClient.oauth.token.$post({
+        form: {
           grant_type: 'client_credentials',
           client_id: TEST_OAUTH_CLIENT.clientId,
           client_secret: TEST_OAUTH_CLIENT.clientSecret,
           scope: 'service.read',
-        }),
+        },
       });
       const { access_token } = await assertJsonBody(tokenResponse, 200);
 
-      const res = await app.request('/oauth/userinfo', {
-        headers: { authorization: `Bearer ${access_token}` },
+      const res = await routeClient.oauth.userinfo.$get({
+        header: { authorization: `Bearer ${access_token}` },
       });
 
       const json = await assertJsonBody(res, 403);
@@ -680,9 +679,8 @@ describe('GET /oauth/userinfo', () => {
         scope: 'openid',
       });
 
-      const res = await app.request('/oauth/userinfo', {
-        method: 'POST',
-        headers: {
+      const res = await routeClient.oauth.userinfo.$post({
+        header: {
           authorization: `Bearer ${accessToken}`,
         },
       });

@@ -21,6 +21,7 @@ export interface OAuthProviderFetchMockOptions {
   /** Set to null for providers without a userinfo endpoint (e.g. Apple). */
   userInfoUrl: string | null;
   tokens?: Partial<OAuthMockTokens>;
+  tokensSequence?: Array<Partial<OAuthMockTokens>>;
   userInfo?: Partial<OAuthMockUserInfo>;
   userInfoSequence?: Array<Partial<OAuthMockUserInfo>>;
   /**
@@ -37,6 +38,8 @@ export interface OAuthProviderFetchMockOptions {
 export interface OAuthProviderFetchMock {
   tokens: OAuthMockTokens;
   userInfo: OAuthMockUserInfo;
+  countRequests: (url?: string) => number;
+  requestUrls: () => string[];
   restore: () => void;
 }
 
@@ -82,6 +85,20 @@ function createOAuthMockUserInfo(
   };
 }
 
+function createOAuthMockTokens(
+  tokens?: Partial<OAuthMockTokens>,
+): OAuthMockTokens {
+  return {
+    access_token: tokens?.access_token ?? 'mock-access-token',
+    token_type: tokens?.token_type ?? 'Bearer',
+    ...(tokens?.refresh_token ? { refresh_token: tokens.refresh_token } : {}),
+    ...(tokens?.expires_in
+      ? { expires_in: tokens.expires_in }
+      : { expires_in: 3600 }),
+    ...(tokens?.id_token ? { id_token: tokens.id_token } : {}),
+  };
+}
+
 /**
  * Mock OAuth provider token and userinfo network calls used by OAuth callback
  * tests. Any unexpected fetch request throws to keep test behavior deterministic.
@@ -89,36 +106,46 @@ function createOAuthMockUserInfo(
 export function mockOAuthProviderFetch(
   options: OAuthProviderFetchMockOptions,
 ): OAuthProviderFetchMock {
-  const tokens: OAuthMockTokens = {
-    access_token: options.tokens?.access_token ?? 'mock-access-token',
-    token_type: options.tokens?.token_type ?? 'Bearer',
-    ...(options.tokens?.refresh_token
-      ? { refresh_token: options.tokens.refresh_token }
-      : {}),
-    ...(options.tokens?.expires_in
-      ? { expires_in: options.tokens.expires_in }
-      : { expires_in: 3600 }),
-    ...(options.tokens?.id_token ? { id_token: options.tokens.id_token } : {}),
-  };
+  const tokens = createOAuthMockTokens(options.tokens);
+  const tokensSequence = options.tokensSequence?.map((entry) =>
+    createOAuthMockTokens(entry),
+  );
+  const issuedAccessTokens = new Set([tokens.access_token]);
+  let nextTokens = 0;
 
   const userInfo = createOAuthMockUserInfo(options.userInfo);
   const userInfoSequence = options.userInfoSequence?.map((entry) =>
     createOAuthMockUserInfo(entry),
   );
   let nextUserInfo = 0;
+  const requestUrls: string[] = [];
 
   const fetchSpy = vi
     .spyOn(globalThis, 'fetch')
     .mockImplementation(async (input, init) => {
       const url = getRequestUrl(input);
+      requestUrls.push(url);
 
       if (url === options.tokenUrl) {
+        if (tokensSequence) {
+          const queuedTokens = tokensSequence[nextTokens];
+          nextTokens += 1;
+          if (!queuedTokens) {
+            throw new Error('OAuth mock token sequence exhausted');
+          }
+          issuedAccessTokens.add(queuedTokens.access_token);
+          return jsonResponse(queuedTokens);
+        }
+
         return jsonResponse(tokens);
       }
 
       if (options.userInfoUrl && url === options.userInfoUrl) {
         const authorization = getAuthorizationHeader(input, init);
-        if (authorization !== `Bearer ${tokens.access_token}`) {
+        const token = authorization?.startsWith('Bearer ')
+          ? authorization.slice('Bearer '.length)
+          : null;
+        if (!token || !issuedAccessTokens.has(token)) {
           return jsonResponse({ error: 'invalid_token' }, 401);
         }
 
@@ -154,6 +181,11 @@ export function mockOAuthProviderFetch(
   return {
     tokens,
     userInfo,
+    countRequests: (url?: string) =>
+      url
+        ? requestUrls.filter((requestUrl) => requestUrl === url).length
+        : requestUrls.length,
+    requestUrls: () => [...requestUrls],
     restore: () => fetchSpy.mockRestore(),
   };
 }

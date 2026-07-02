@@ -1,8 +1,10 @@
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
 import {
+  assertJsonBody,
   createDbUserWithSession,
   createPasskeyForUser,
   createTestApp,
@@ -31,6 +33,7 @@ vi.mock('@simplewebauthn/server', async (importOriginal) => {
 });
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
@@ -62,6 +65,7 @@ beforeAll(async () => {
     },
   });
   app = server.app;
+  client = testClient(app);
   services = server.services;
   cleanup = server.cleanup;
 });
@@ -122,14 +126,12 @@ async function createSessionWithPasskey(index: number, name: string | null) {
 }
 
 async function requestListPasskeys(sessionCookie: string) {
-  const response = await app.request('/api/user/passkeys', {
-    headers: { Cookie: `session=${sessionCookie}` },
-  });
-  const body: { passkeys?: Array<{ name?: string | null }> } = await response
-    .clone()
-    .json();
+  const response = await client.api.user.passkeys.$get(
+    {},
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
-  expect(response.status).toBe(200);
   expect(body.passkeys).toHaveLength(1);
   expect(body.passkeys?.[0]?.name).toBe('Perf List Passkey');
 
@@ -137,20 +139,12 @@ async function requestListPasskeys(sessionCookie: string) {
 }
 
 async function requestRegisterOptions(sessionCookie: string) {
-  const response = await app.request('/api/user/passkeys/register/options', {
-    method: 'POST',
-    headers: { Cookie: `session=${sessionCookie}` },
-  });
-  const body: {
-    options?: {
-      challenge?: string;
-      user?: { name?: string };
-      pubKeyCredParams?: unknown[];
-      excludeCredentials?: unknown[];
-    };
-  } = await response.clone().json();
+  const response = await client.api.user.passkeys.register.options.$post(
+    {},
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
-  expect(response.status).toBe(200);
   expect(body.options?.challenge).toEqual(expect.any(String));
   expect(body.options?.user?.name).toEqual(expect.any(String));
   expect(body.options?.pubKeyCredParams?.length).toBeGreaterThan(0);
@@ -161,20 +155,17 @@ async function requestRegisterOptions(sessionCookie: string) {
 }
 
 async function requestRegisterVerifyWithoutChallenge(sessionCookie: string) {
-  const response = await app.request('/api/user/passkeys/register/verify', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${sessionCookie}`,
+  const response = await client.api.user.passkeys.register.verify.$post(
+    {
+      json: {
+        response: createMockRegistrationResponse(),
+        name: 'Perf Passkey',
+      },
     },
-    body: JSON.stringify({
-      response: createMockRegistrationResponse(),
-      name: 'Perf Passkey',
-    }),
-  });
-  const body: { code?: string } = await response.clone().json();
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response, 400);
 
-  expect(response.status).toBe(400);
   expect(body.code).toBe('PASSKEY_CHALLENGE_NOT_FOUND');
 
   return response;
@@ -182,12 +173,9 @@ async function requestRegisterVerifyWithoutChallenge(sessionCookie: string) {
 
 async function createPasskeyRegistrationFixture(index: number) {
   const fixture = await createSession(index);
-  const optionsResponse = await app.request(
-    '/api/user/passkeys/register/options',
-    {
-      method: 'POST',
-      headers: { Cookie: `session=${fixture.sessionCookie}` },
-    },
+  const optionsResponse = await client.api.user.passkeys.register.options.$post(
+    {},
+    { headers: { Cookie: `session=${fixture.sessionCookie}` } },
   );
   expect(optionsResponse.status).toBe(200);
 
@@ -201,23 +189,17 @@ async function requestRegisterVerifySuccess(fixture: {
   sessionCookie: string;
   userSub: string;
 }) {
-  const response = await app.request('/api/user/passkeys/register/verify', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${fixture.sessionCookie}`,
+  const response = await client.api.user.passkeys.register.verify.$post(
+    {
+      json: {
+        response: createMockRegistrationResponse(),
+        name: 'Perf Registered Passkey',
+      },
     },
-    body: JSON.stringify({
-      response: createMockRegistrationResponse(),
-      name: 'Perf Registered Passkey',
-    }),
-  });
-  const body: {
-    ok?: boolean;
-    second_factor_setup_completed?: boolean;
-  } = await response.clone().json();
+    { headers: { Cookie: `session=${fixture.sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
-  expect(response.status).toBe(200);
   expect(body.ok).toBe(true);
   expect(body.second_factor_setup_completed).toBe(false);
 
@@ -236,30 +218,27 @@ async function requestRenamePasskey(
   passkeyId: string,
   name: string,
 ) {
-  const response = await app.request(`/api/user/passkeys/${passkeyId}`, {
-    method: 'PATCH',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${sessionCookie}`,
+  const response = await client.api.user.passkeys[':id'].$patch(
+    {
+      param: { id: passkeyId },
+      json: { name },
     },
-    body: JSON.stringify({ name }),
-  });
-  const body: { ok?: boolean } = await response.clone().json();
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
-  expect(response.status).toBe(200);
   expect(body.ok).toBe(true);
 
   return response;
 }
 
 async function requestDeletePasskey(sessionCookie: string, passkeyId: string) {
-  const response = await app.request(`/api/user/passkeys/${passkeyId}`, {
-    method: 'DELETE',
-    headers: { Cookie: `session=${sessionCookie}` },
-  });
-  const body: { ok?: boolean } = await response.clone().json();
+  const response = await client.api.user.passkeys[':id'].$delete(
+    { param: { id: passkeyId } },
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
-  expect(response.status).toBe(200);
   expect(body.ok).toBe(true);
 
   return response;

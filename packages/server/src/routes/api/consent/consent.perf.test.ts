@@ -1,7 +1,9 @@
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
 import {
+  assertJsonBody,
   createAuthenticatedSession,
   createTestApp,
   MINIMAL_TEST_CONFIG,
@@ -13,6 +15,7 @@ import {
 import { runHttpPerf } from '../../../test-utils/perf/index.js';
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
@@ -22,6 +25,7 @@ beforeAll(async () => {
     clients: [TEST_OAUTH_CLIENT_CONFIG],
   });
   app = server.app;
+  client = testClient(app);
   cleanup = server.cleanup;
 });
 
@@ -30,20 +34,17 @@ afterAll(async () => {
 });
 
 async function requestConsentInfo(sessionCookie: string) {
-  const params = new URLSearchParams({
-    client_id: TEST_OAUTH_CLIENT.clientId,
-    scope: 'openid profile email',
-  });
-  const response = await app.request(`/api/consent?${params.toString()}`, {
-    headers: { Cookie: `session=${sessionCookie}` },
-  });
-  const body: {
-    client?: { clientId?: string };
-    scopes?: Array<{ name?: string }>;
-    user?: { sub?: string; email?: string };
-  } = await response.clone().json();
+  const response = await client.api.consent.$get(
+    {
+      query: {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        scope: 'openid profile email',
+      },
+    },
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
-  expect(response.status).toBe(200);
   expect(body.client?.clientId).toBe(TEST_OAUTH_CLIENT.clientId);
   expect(body.scopes?.map((scope) => scope.name)).toEqual([
     'openid',
@@ -56,27 +57,24 @@ async function requestConsentInfo(sessionCookie: string) {
 }
 
 async function requestConsentAllow(sessionCookie: string, state: string) {
-  const response = await app.request('/api/consent', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${sessionCookie}`,
+  const response = await client.api.consent.$post(
+    {
+      json: {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        response_type: 'code',
+        scope: 'openid profile email',
+        state,
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: TEST_PKCE.codeChallengeMethod,
+        decision: 'allow',
+      },
     },
-    body: JSON.stringify({
-      client_id: TEST_OAUTH_CLIENT.clientId,
-      redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
-      response_type: 'code',
-      scope: 'openid profile email',
-      state,
-      code_challenge: TEST_PKCE.codeChallenge,
-      code_challenge_method: TEST_PKCE.codeChallengeMethod,
-      decision: 'allow',
-    }),
-  });
-  const body: { redirect_url?: string } = await response.clone().json();
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
   const redirectUrl = new URL(body.redirect_url ?? 'http://invalid.local');
 
-  expect(response.status).toBe(200);
   expect(redirectUrl.pathname).toBe('/oauth/authorize');
   expect(redirectUrl.searchParams.get('client_id')).toBe(
     TEST_OAUTH_CLIENT.clientId,

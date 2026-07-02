@@ -268,20 +268,23 @@ describe('POST /oauth/revoke', () => {
     });
 
     test('should challenge unknown Basic client credentials', async () => {
-      const response = await app.request('/oauth/revoke', {
-        method: 'POST',
-        headers: {
-          authorization: basicAuthHeader('unknown-client', 'secret'),
-          'content-type': 'application/x-www-form-urlencoded',
+      const client = testClient(app);
+      const response = await client.oauth.revoke.$post(
+        {
+          form: { token: 'opaque-token' },
         },
-        body: new URLSearchParams({ token: 'opaque-token' }).toString(),
-      });
+        {
+          headers: {
+            authorization: basicAuthHeader('unknown-client', 'secret'),
+          },
+        },
+      );
 
       expect(response.status).toBe(401);
       expect(response.headers.get('www-authenticate')).toBe(
         'Basic realm="tinyauth"',
       );
-      const json = await response.json();
+      const json = await assertJsonBody(response, 401);
       expect(json.error).toBe('invalid_client');
     });
 

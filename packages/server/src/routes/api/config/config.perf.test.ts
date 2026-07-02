@@ -1,3 +1,4 @@
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
@@ -11,6 +12,7 @@ import {
 import { runHttpPerf } from '../../../test-utils/perf/index.js';
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let cleanup: () => Promise<void> = async () => {};
 const SCALE_PROVIDER_COUNT = 50;
 
@@ -31,6 +33,7 @@ beforeAll(async () => {
     ],
   });
   app = server.app;
+  client = testClient(app);
   cleanup = server.cleanup;
 });
 
@@ -39,7 +42,7 @@ afterAll(async () => {
 });
 
 async function requestConfig() {
-  const response = await app.request('/api/config');
+  const response = await client.api.config.$get();
   const body = await assertJsonBody(response);
 
   expect(response.status).toBe(200);
@@ -77,15 +80,17 @@ function createScaleProviders() {
   );
 }
 
-async function requestScaledConfig(scaledApp: AppType) {
-  const response = await scaledApp.request('/api/config');
-  const body: { identity_providers?: unknown[]; security?: unknown } =
-    await response.clone().json();
-  const payload = await response.clone().text();
+async function requestScaledConfig(
+  scaledClient: ReturnType<typeof testClient<AppType>>,
+) {
+  const response = await scaledClient.api.config.$get();
+  const payloadResponse = response.clone();
+  const body = await assertJsonBody(response);
+  const payload = await payloadResponse.text();
 
   expect(response.status).toBe(200);
   expect(body.identity_providers).toHaveLength(SCALE_PROVIDER_COUNT);
-  expect(body.security).toBeUndefined();
+  expect(body).not.toHaveProperty('security');
   expect(payload.length).toBeGreaterThan(5_000);
   expect(payload.length).toBeLessThan(100_000);
 
@@ -117,12 +122,13 @@ describe('GET /api/config perf', () => {
     });
 
     try {
+      const scaledClient = testClient(server.app);
       const result = await runHttpPerf({
         name: 'GET /api/config provider scale smoke',
         warmupRequests: 5,
         requests: 100,
         concurrency: 10,
-        request: async () => requestScaledConfig(server.app),
+        request: async () => requestScaledConfig(scaledClient),
       });
 
       expect(result.totalRequests).toBe(100);

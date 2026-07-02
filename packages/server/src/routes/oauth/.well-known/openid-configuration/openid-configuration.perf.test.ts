@@ -1,8 +1,10 @@
+import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import type { AppType } from '#server/entrypoints/app.js';
 import type { TinyAuthRuntimeConfigInput } from '#server/lib/config/index.js';
 import {
+  assertJsonBody,
   createTestApp,
   MINIMAL_TEST_CONFIG,
 } from '#server/test-utils/index.js';
@@ -13,12 +15,14 @@ const MEASURED_REQUESTS = 50;
 const SCALE_CLIENT_COUNT = 250;
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   const server = await createTestApp(MINIMAL_TEST_CONFIG);
 
   app = server.app;
+  client = testClient(app);
   cleanup = server.cleanup;
 });
 
@@ -26,11 +30,13 @@ afterAll(async () => {
   await cleanup();
 });
 
-async function requestOpenidConfiguration(path: string) {
-  const response = await app.request(path);
-  const body = await response.clone().json();
+async function expectOpenidConfiguration(response: {
+  status: number;
+  headers: Headers;
+  json(): Promise<unknown>;
+}) {
+  const body = await assertJsonBody(response);
 
-  expect(response.status).toBe(200);
   expect(response.headers.get('content-type')).toContain('application/json');
   expect(response.headers.get('cache-control')).toBe('public, max-age=3600');
   expect(body).toEqual(
@@ -55,7 +61,18 @@ async function requestOpenidConfiguration(path: string) {
       code_challenge_methods_supported: expect.arrayContaining(['S256']),
     }),
   );
+}
 
+async function requestRootOpenidConfiguration() {
+  const response = await client['.well-known']['openid-configuration'].$get();
+  await expectOpenidConfiguration(response);
+  return response;
+}
+
+async function requestOauthOpenidConfiguration() {
+  const response =
+    await client.oauth['.well-known']['openid-configuration'].$get();
+  await expectOpenidConfiguration(response);
   return response;
 }
 
@@ -76,14 +93,25 @@ function createScaleClients(): NonNullable<
   }));
 }
 
-async function requestScaledOpenidConfiguration(scaledApp: AppType) {
-  const response = await scaledApp.request('/.well-known/openid-configuration');
-  const body: { scopes_supported?: string[] } = await response.clone().json();
-  const payload = await response.clone().text();
+async function requestScaledOpenidConfiguration(
+  scaledClient: ReturnType<typeof testClient<AppType>>,
+) {
+  const response =
+    await scaledClient['.well-known']['openid-configuration'].$get();
+  const body = await assertJsonBody(response);
+  const scopesSupported =
+    typeof body === 'object' && body !== null && 'scopes_supported' in body
+      ? body.scopes_supported
+      : undefined;
+  const payload = JSON.stringify(body);
+
+  if (payload === undefined) {
+    throw new Error('Missing OpenID configuration payload');
+  }
 
   expect(response.status).toBe(200);
   expect(response.headers.get('cache-control')).toBe('public, max-age=3600');
-  expect(body.scopes_supported).toEqual(
+  expect(scopesSupported).toEqual(
     expect.arrayContaining(['custom:249', 'tenant:24']),
   );
   expect(payload.length).toBeGreaterThan(1_000);
@@ -100,8 +128,7 @@ describe('OIDC discovery perf', () => {
       requests: MEASURED_REQUESTS,
       concurrency: 5,
       expectedStatuses: [200],
-      request: async () =>
-        requestOpenidConfiguration('/.well-known/openid-configuration'),
+      request: requestRootOpenidConfiguration,
     });
 
     expect(result.totalRequests).toBe(MEASURED_REQUESTS);
@@ -119,8 +146,7 @@ describe('OIDC discovery perf', () => {
       requests: MEASURED_REQUESTS,
       concurrency: 5,
       expectedStatuses: [200],
-      request: async () =>
-        requestOpenidConfiguration('/oauth/.well-known/openid-configuration'),
+      request: requestOauthOpenidConfiguration,
     });
 
     expect(result.totalRequests).toBe(MEASURED_REQUESTS);
@@ -138,13 +164,14 @@ describe('OIDC discovery perf', () => {
     });
 
     try {
+      const scaledClient = testClient(server.app);
       const result = await runHttpPerf({
         name: 'GET /.well-known/openid-configuration scaled clients',
         warmupRequests: 5,
         requests: 100,
         concurrency: 10,
         expectedStatuses: [200],
-        request: async () => requestScaledOpenidConfiguration(server.app),
+        request: async () => requestScaledOpenidConfiguration(scaledClient),
       });
 
       expect(result.totalRequests).toBe(100);

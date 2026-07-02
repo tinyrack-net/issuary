@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
 import {
+  assertJsonBody,
   createTestApp,
   extractCookie,
   generateUniqueEmail,
@@ -19,6 +20,7 @@ const MEASURED_REQUESTS = 30;
 const LARGE_ROSTER_SIZE = 10;
 
 let app: AppType;
+let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
@@ -39,6 +41,7 @@ beforeAll(async () => {
     users: [TEST_USER_CONFIG],
   });
   app = server.app;
+  client = testClient(app);
   services = server.services;
   cleanup = server.cleanup;
 });
@@ -71,7 +74,6 @@ async function loginWithOptionalCookie(
   password: string,
   sessionCookie?: string,
 ): Promise<string> {
-  const client = testClient(app);
   const response = await client.api.auth.login.$post(
     { json: { email, password } },
     sessionCookie === undefined
@@ -119,19 +121,14 @@ async function createTwoAccountSession() {
 }
 
 async function requestSelect(sessionCookie: string, sub: string) {
-  const response = await app.request('/api/auth/accounts/select', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${sessionCookie}`,
+  const response = await client.api.auth.accounts.select.$post(
+    {
+      json: { sub },
     },
-    body: JSON.stringify({ sub }),
-  });
-  const body: { ok?: boolean; active_sub?: string } = await response
-    .clone()
-    .json();
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
-  expect(response.status).toBe(200);
   expect(body.ok).toBe(true);
   expect(body.active_sub).toBe(sub);
   expect(extractCookie(response, 'session')).toEqual(expect.any(String));
@@ -140,19 +137,44 @@ async function requestSelect(sessionCookie: string, sub: string) {
 }
 
 async function requestRemove(sessionCookie: string, sub: string) {
-  const response = await app.request('/api/auth/accounts/remove', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      Cookie: `session=${sessionCookie}`,
+  const response = await client.api.auth.accounts.remove.$post(
+    {
+      json: { sub },
     },
-    body: JSON.stringify({ sub }),
-  });
-  const body: { ok?: boolean } = await response.clone().json();
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response);
 
-  expect(response.status).toBe(200);
   expect(body.ok).toBe(true);
   expect(extractCookie(response, 'session')).toEqual(expect.any(String));
+
+  return response;
+}
+
+async function requestSelectNotRemembered(sessionCookie: string) {
+  const response = await client.api.auth.accounts.select.$post(
+    {
+      json: { sub: `missing-${crypto.randomUUID()}` },
+    },
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response, 400);
+
+  expect(body.code).toBe('ACCOUNT_NOT_REMEMBERED');
+
+  return response;
+}
+
+async function requestRemoveActiveAccount(sessionCookie: string, sub: string) {
+  const response = await client.api.auth.accounts.remove.$post(
+    {
+      json: { sub },
+    },
+    { headers: { Cookie: `session=${sessionCookie}` } },
+  );
+  const body = await assertJsonBody(response, 400);
+
+  expect(body.code).toBe('ACCOUNT_NOT_REMOVABLE');
 
   return response;
 }
@@ -221,6 +243,26 @@ describe('POST /api/auth/accounts/select perf', () => {
     expect(largeResult.p95Ms).toBeLessThan(1500);
     expect(largeResult.p95Ms).toBeLessThan(smallResult.p95Ms * 5 + 100);
   });
+
+  test('handles not-remembered selection failures through the real route', async () => {
+    const session = await createRememberedAccountSession(2);
+
+    const result = await runHttpPerf({
+      name: 'POST /api/auth/accounts/select not-remembered smoke',
+      warmupRequests: WARMUP_REQUESTS,
+      requests: MEASURED_REQUESTS,
+      concurrency: 5,
+      expectedStatuses: [400],
+      request: async () => requestSelectNotRemembered(session.sessionCookie),
+    });
+
+    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
+    expect(result.failed).toBe(0);
+    expect(result.statusCounts[400]).toBe(MEASURED_REQUESTS);
+    expect(result.errorRate).toBe(0);
+    expect(result.rps).toBeGreaterThan(5);
+    expect(result.p95Ms).toBeLessThan(1000);
+  });
 });
 
 describe('POST /api/auth/accounts/remove perf', () => {
@@ -253,5 +295,29 @@ describe('POST /api/auth/accounts/remove perf', () => {
     expect(result.errorRate).toBe(0);
     expect(result.rps).toBeGreaterThan(3);
     expect(result.p95Ms).toBeLessThan(1500);
+  });
+
+  test('handles active-account removal failures through the real route', async () => {
+    const session = await createTwoAccountSession();
+
+    const result = await runHttpPerf({
+      name: 'POST /api/auth/accounts/remove active-account smoke',
+      warmupRequests: WARMUP_REQUESTS,
+      requests: MEASURED_REQUESTS,
+      concurrency: 5,
+      expectedStatuses: [400],
+      request: async () =>
+        requestRemoveActiveAccount(
+          session.sessionCookie,
+          session.secondUser.sub,
+        ),
+    });
+
+    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
+    expect(result.failed).toBe(0);
+    expect(result.statusCounts[400]).toBe(MEASURED_REQUESTS);
+    expect(result.errorRate).toBe(0);
+    expect(result.rps).toBeGreaterThan(5);
+    expect(result.p95Ms).toBeLessThan(1000);
   });
 });
