@@ -9,6 +9,7 @@ import {
   resetFetchMock,
 } from '#frontend/test-utils/query-test-utils.ts';
 import {
+  authorizationContextQueryData,
   renderRoute,
   routeTestUser,
 } from '#frontend/test-utils/route-test-utils.tsx';
@@ -72,6 +73,13 @@ const baseConfig = {
 const oauthLocation =
   '/login/password?client_id=client-web&redirect_uri=https%3A%2F%2Fclient.example%2Fcallback&response_type=code&scope=openid&state=state-123&nonce=nonce-123&code_challenge=challenge&code_challenge_method=S256';
 
+const oauthSearch = {
+  client_id: 'client-web',
+  redirect_uri: 'https://client.example/callback',
+  response_type: 'code',
+  scope: 'openid',
+};
+
 function seedConfig(config: AppConfigs = baseConfig) {
   return [
     {
@@ -79,6 +87,10 @@ function seedConfig(config: AppConfigs = baseConfig) {
       data: config,
     },
   ];
+}
+
+function seedOAuthRouteData(config: AppConfigs = baseConfig) {
+  return [...seedConfig(config), authorizationContextQueryData(oauthSearch)];
 }
 
 function authResponse(): AuthResponse {
@@ -132,8 +144,12 @@ describe('/login/password', () => {
 
     const { router, screen } = await renderRoute({
       initialLocation: oauthLocation,
-      queryData: seedConfig(),
+      queryData: seedOAuthRouteData(),
     });
+
+    await expect
+      .element(screen.getByTestId('authorization-context'))
+      .toBeVisible();
 
     await submitPasswordLogin(screen);
 

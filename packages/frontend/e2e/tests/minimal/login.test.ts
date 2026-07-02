@@ -7,7 +7,6 @@ import {
   E2E_TEST_USER_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import {
-  loginMethodPage,
   loginPasswordPage,
   performLogin,
 } from '#frontend-e2e/helpers/login.ts';
@@ -21,23 +20,22 @@ const test = createScenarioFixture((backendPort) => ({
 test.describe('Login flow', () => {
   test('redirects unauthenticated users to /login', async ({ page }) => {
     await page.goto('/');
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test('method selection page shows password login link', async ({ page }) => {
-    await page.goto('/login');
-    await expect(
-      page.locator(loginMethodPage.passwordMethodLink),
-    ).toBeVisible();
-  });
-
-  test('clicking password method navigates to password form', async ({
+  test('password-only login opens the password form directly', async ({
     page,
   }) => {
     await page.goto('/login');
-    await page.locator(loginMethodPage.passwordMethodLink).click();
-    await page.waitForURL('**/login/password');
+    await page.waitForURL('**/login/password**');
+    await expect(page.locator(loginPasswordPage.emailInput)).toBeVisible();
+  });
+
+  test('password login form is available at the direct URL', async ({
+    page,
+  }) => {
+    await page.goto('/login/password');
 
     await expect(page.locator(loginPasswordPage.emailInput)).toBeVisible();
     await expect(page.locator(loginPasswordPage.passwordInput)).toBeVisible();
@@ -110,9 +108,7 @@ test.describe('Login flow', () => {
     await expect(page).toHaveURL(/\/login\/password/);
   });
 
-  test('full flow: method selection through login to profile', async ({
-    page,
-  }) => {
+  test('full password login flow navigates to profile', async ({ page }) => {
     await performLogin(page, E2E_TEST_USER.email, E2E_TEST_USER.password);
     await page.waitForURL('**/profile');
     await expect(page).toHaveURL(/\/profile/);

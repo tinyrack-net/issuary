@@ -74,7 +74,7 @@ test.describe('Registration flow (minimal config)', () => {
     await page.goto('/register');
     await page.locator(registerPage.loginLink).click();
 
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
   });
 });

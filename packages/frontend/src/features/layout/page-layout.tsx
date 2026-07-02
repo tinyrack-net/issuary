@@ -42,11 +42,11 @@ export function PageLayout({
   const backgroundUrl = configData.branding.background_url;
 
   const containerClass = responsivePadding ? 'p-4 md:p-8' : 'p-4';
-  const cardClass = `${maxWidthClasses[maxWidth]}${cardPadding ? ' p-10' : ''}`;
+  const cardClass = `${maxWidthClasses[maxWidth]}${cardPadding ? ' p-6 sm:p-10' : ''}`;
 
   return (
     <div
-      className={`relative flex min-h-screen flex-col bg-base-200 bg-cover ${containerClass}`}
+      className={`relative flex min-h-screen flex-col overflow-y-auto bg-base-200 bg-center bg-cover ${containerClass}`}
       style={
         backgroundUrl
           ? {
@@ -55,6 +55,12 @@ export function PageLayout({
           : undefined
       }
     >
+      {backgroundUrl && (
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-base-200/70 backdrop-blur-[1px]"
+        />
+      )}
       {canToggleTheme && (
         <ThemeToggle
           className="fixed start-3 top-3 z-50 sm:absolute sm:start-4 sm:top-4"
@@ -65,14 +71,14 @@ export function PageLayout({
           themeMode={themeMode}
         />
       )}
-      <div className="flex flex-1 items-center justify-center">
+      <div className="relative z-10 flex flex-1 items-center justify-center py-6">
         <div
-          className={`card w-full border border-base-200 bg-base-100 shadow-lg ${cardClass}`}
+          className={`card w-full border border-base-200 bg-base-100/95 shadow-lg ${cardClass}`}
         >
           {children}
         </div>
       </div>
-      <LanguageSelector className="mx-auto mt-4 pb-2" />
+      <LanguageSelector className="relative z-10 mx-auto mt-3 pb-2" />
     </div>
   );
 }

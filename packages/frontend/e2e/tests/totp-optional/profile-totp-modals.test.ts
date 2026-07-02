@@ -310,7 +310,7 @@ test.describe('DisableTotpModal (profile, optional 2FA)', () => {
     await expect(page.getByRole('button', { name: 'Enable' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Log out' }).click();
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
 
     await performLogin(page, email, TEST_PASSWORD);
     await page.waitForURL('**/profile');

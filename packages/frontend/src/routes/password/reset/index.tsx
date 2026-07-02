@@ -177,6 +177,7 @@ function ResetPassword() {
           <IconInput
             error={errors.token}
             icon={KeyIcon}
+            label={t('resetPassword.token.label')}
             placeholder={t('resetPassword.token.placeholder')}
             {...register('token')}
             type="text"
@@ -196,6 +197,7 @@ function ResetPassword() {
           autoComplete="new-password"
           error={errors.password}
           icon={LockIcon}
+          label={t('resetPassword.password.label')}
           placeholder={t('resetPassword.password.placeholder')}
           {...register('password')}
           type="password"
@@ -205,6 +207,7 @@ function ResetPassword() {
           autoComplete="new-password"
           error={errors.confirmPassword}
           icon={LockKeyIcon}
+          label={t('resetPassword.confirmPassword.label')}
           placeholder={t('resetPassword.confirmPassword.placeholder')}
           {...register('confirmPassword')}
           type="password"

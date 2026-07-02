@@ -206,7 +206,9 @@ function Terms() {
       )}
 
       {implicitNotice && hasExplicitTerms && (
-        <div className="divider text-xs">AND</div>
+        <div className="divider text-xs">
+          {t('terms.additionalOptionalConsent')}
+        </div>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)}>

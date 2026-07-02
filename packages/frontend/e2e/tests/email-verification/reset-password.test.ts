@@ -251,7 +251,7 @@ test.describe('Reset password flow', () => {
     await page.getByRole('button', { name: 'Go to login' }).click();
 
     // Should navigate to login
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
   });
 });

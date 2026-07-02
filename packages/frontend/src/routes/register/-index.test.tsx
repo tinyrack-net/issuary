@@ -7,7 +7,10 @@ import {
   mockJsonResponses,
   resetFetchMock,
 } from '#frontend/test-utils/query-test-utils.ts';
-import { renderRoute } from '#frontend/test-utils/route-test-utils.tsx';
+import {
+  authorizationContextQueryData,
+  renderRoute,
+} from '#frontend/test-utils/route-test-utils.tsx';
 
 const baseConfig = {
   i18n: {
@@ -68,6 +71,13 @@ const baseConfig = {
 const oauthLocation =
   '/register?client_id=client-web&redirect_uri=https%3A%2F%2Fclient.example%2Fcallback&response_type=code&scope=openid&state=state-123&code_challenge=challenge&code_challenge_method=S256';
 
+const oauthSearch = {
+  client_id: 'client-web',
+  redirect_uri: 'https://client.example/callback',
+  response_type: 'code',
+  scope: 'openid',
+};
+
 function seedRouteData(config: AppConfigs = baseConfig) {
   return [
     {
@@ -81,6 +91,10 @@ function seedRouteData(config: AppConfigs = baseConfig) {
       },
     },
   ];
+}
+
+function seedOAuthRouteData(config: AppConfigs = baseConfig) {
+  return [...seedRouteData(config), authorizationContextQueryData(oauthSearch)];
 }
 
 function authResponse() {
@@ -142,8 +156,12 @@ describe('/register', () => {
 
     const { router, screen } = await renderRoute({
       initialLocation: oauthLocation,
-      queryData: seedRouteData(),
+      queryData: seedOAuthRouteData(),
     });
+
+    await expect
+      .element(screen.getByTestId('authorization-context'))
+      .toBeVisible();
 
     await submitRegister(screen);
 

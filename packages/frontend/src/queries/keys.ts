@@ -20,6 +20,19 @@ export const queryKeys = {
   // OAuth
   oauth: {
     accounts: () => ['/api/user/oauth-accounts'] as const,
+    authorizationContext: (
+      clientId: string,
+      redirectUri: string,
+      responseType: string,
+      scope?: string,
+    ) =>
+      [
+        '/api/oauth/authorization-context',
+        clientId,
+        redirectUri,
+        responseType,
+        scope,
+      ] as const,
   },
 
   // 동의 (Consent)

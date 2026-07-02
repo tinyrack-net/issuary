@@ -95,7 +95,7 @@ test.describe('TOTP recovery code verification', () => {
     await page.waitForURL('**/profile');
 
     await page.getByRole('button', { name: 'Log out' }).click();
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
 
     await performLogin(page, email, TEST_PASSWORD);
     await page.waitForURL('**/verify/totp');

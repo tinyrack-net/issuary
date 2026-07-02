@@ -61,6 +61,14 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
     | Record<string, { message?: string }>
     | undefined;
 
+  const getTermTitle = (term: TermItem) => {
+    if (term.title !== term.id) {
+      return term.title;
+    }
+
+    return humanizeTermId(term.id);
+  };
+
   return (
     <>
       <div className="space-y-1">
@@ -92,59 +100,60 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
             name={`termsConsents.${term.id}` as Path<T>}
             render={({ field }) => (
               <div>
-                <label className="flex cursor-pointer items-center gap-1.5 py-0.5">
-                  <input
-                    checked={(field.value as boolean) ?? false}
-                    className="checkbox checkbox-primary checkbox-xs"
-                    data-testid="terms-checkbox"
-                    disabled={disabled}
-                    onChange={(e) => field.onChange(e.target.checked)}
-                    type="checkbox"
-                  />
-                  <span className="text-xs">{term.title}</span>
-                  <span
-                    className={`badge badge-xs ${
-                      term.required ? 'badge-error' : 'badge-ghost'
-                    }`}
-                    data-testid={
-                      term.required
-                        ? 'terms-badge-required'
-                        : 'terms-badge-optional'
-                    }
-                  >
-                    {term.required ? t('terms.required') : t('terms.optional')}
-                  </span>
-                  {term.type === 'link' && (
+                <div className="flex items-center gap-2 py-0.5">
+                  <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5">
+                    <input
+                      checked={field.value === true}
+                      className="checkbox checkbox-primary checkbox-xs"
+                      data-testid="terms-checkbox"
+                      disabled={disabled}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                      type="checkbox"
+                    />
+                    <span className="truncate text-xs">
+                      {getTermTitle(term)}
+                    </span>
+                    <span
+                      className={`badge badge-xs shrink-0 ${
+                        term.required ? 'badge-error' : 'badge-ghost'
+                      }`}
+                      data-testid={
+                        term.required
+                          ? 'terms-badge-required'
+                          : 'terms-badge-optional'
+                      }
+                    >
+                      {term.required
+                        ? t('terms.required')
+                        : t('terms.optional')}
+                    </span>
+                  </label>
+                  {term.type === 'link' && term.content && (
+                    <a
+                      aria-label={t('terms.viewSpecific', {
+                        title: getTermTitle(term),
+                      })}
+                      className="link link-primary shrink-0 text-xs"
+                      href={term.content}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      {t('terms.view')}
+                    </a>
+                  )}
+                  {term.type === 'text' && term.content && (
                     <button
-                      className="link link-primary ml-auto text-xs"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        window.open(
-                          term.content,
-                          '_blank',
-                          'noopener,noreferrer',
-                        );
-                      }}
+                      aria-label={t('terms.viewSpecific', {
+                        title: getTermTitle(term),
+                      })}
+                      className="link link-primary shrink-0 text-xs"
+                      onClick={() => setModalTerm(term)}
                       type="button"
                     >
                       {t('terms.view')}
                     </button>
                   )}
-                  {term.type === 'text' && (
-                    <button
-                      className="link link-primary ml-auto text-xs"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setModalTerm(term);
-                      }}
-                      type="button"
-                    >
-                      {t('terms.view')}
-                    </button>
-                  )}
-                </label>
+                </div>
                 {term.userConsent?.requiresUpdate && (
                   <p className="ml-5 text-warning text-xs">
                     {t('terms.versionUpdated')}
@@ -173,4 +182,17 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
       />
     </>
   );
+}
+
+function humanizeTermId(id: string): string {
+  const words = id
+    .replaceAll('-', ' ')
+    .replaceAll('_', ' ')
+    .replace(/([a-zA-Z])(\d)/g, '$1 $2')
+    .split(' ')
+    .filter((word) => word.length > 0);
+
+  return words
+    .map((word) => `${word.charAt(0).toUpperCase()}${word.slice(1)}`)
+    .join(' ');
 }

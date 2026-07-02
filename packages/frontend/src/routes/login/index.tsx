@@ -8,10 +8,11 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
 import { LoginMethodButton } from '#frontend/components/auth/login-method-button.tsx';
 import { LoginMethodList } from '#frontend/components/auth/login-method-list.tsx';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
@@ -21,12 +22,17 @@ import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
+  hasAuthorizationContext,
   isOAuthFlow,
   OAuthSearchSchema,
 } from '#frontend/libs/oauth-search.ts';
 import { classifyPasskeyError } from '#frontend/libs/passkey-error.ts';
 import { tick } from '#frontend/libs/promise.ts';
-import { appConfigQueryOptions } from '#frontend/queries/config.ts';
+import { getAuthorizationContextQueryOptions } from '#frontend/queries/authorization-context.ts';
+import {
+  type AppConfigs,
+  appConfigQueryOptions,
+} from '#frontend/queries/config.ts';
 import { authenticateWithPasskeyMutationOptions } from '#frontend/queries/passkey.ts';
 import {
   type AuthResponse,
@@ -49,10 +55,44 @@ export const Route = createFileRoute('/login/')({
   component: Login,
   errorComponent: RouteErrorFallback,
   validateSearch: SearchSchema,
-  loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(appConfigQueryOptions);
+  loaderDeps: ({ search }) => ({
+    search,
+  }),
+  loader: async ({ context, deps }) => {
+    const config = await context.queryClient.ensureQueryData(
+      appConfigQueryOptions,
+    );
+
+    if (shouldRedirectToPassword(config, deps.search)) {
+      throw redirect({
+        to: '/login/password',
+        search: extractOAuthParams(deps.search),
+        replace: true,
+      });
+    }
+
+    if (hasAuthorizationContext(deps.search)) {
+      await context.queryClient.ensureQueryData(
+        getAuthorizationContextQueryOptions(deps.search),
+      );
+    }
   },
 });
+
+function shouldRedirectToPassword(
+  config: AppConfigs,
+  search: z.infer<typeof SearchSchema>,
+): boolean {
+  if (search.oauth_error) {
+    return false;
+  }
+
+  return (
+    config.auth.password.enabled &&
+    !config.auth.passkey.enabled &&
+    config.identity_providers.length === 0
+  );
+}
 
 function Login() {
   const { t, i18n } = useTranslation();
@@ -160,6 +200,8 @@ function Login() {
         subtitle={customSubtitle ?? t('login.selectMethod.subtitle')}
         title={customTitle ?? t('login.title')}
       />
+
+      <AuthorizationContextBanner search={search} />
 
       {oauthErrorMessage && (
         <Alert className="mb-4" icon={WarningCircleIcon} type="error">

@@ -123,13 +123,13 @@ test.describe('Profile page', () => {
     await page.getByRole('button', { name: 'Log out' }).click();
 
     // Should redirect to login
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
   });
 
   test('unauthenticated access redirects to login', async ({ page }) => {
     await page.goto('/profile');
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
   });
 });
@@ -169,7 +169,7 @@ test.describe('Change password', () => {
     await expect(page.locator(modal.openModal)).not.toBeVisible();
 
     await page.getByRole('button', { name: 'Log out' }).click();
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
 
     await expectPasswordLoginRejected(page, browserName, email, TEST_PASSWORD);
     await expectPasswordLoginSucceeds(page, browserName, email, NEW_PASSWORD);

@@ -130,6 +130,7 @@ function ForgotPassword() {
           autoComplete="email"
           error={errors.email}
           icon={EnvelopeSimpleIcon}
+          label={t('forgotPassword.email.label')}
           placeholder={t('forgotPassword.email.placeholder')}
           {...register('email')}
           type="email"

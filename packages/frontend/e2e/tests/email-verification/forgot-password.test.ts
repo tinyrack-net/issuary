@@ -80,7 +80,7 @@ test.describe('Forgot password flow', () => {
     await expect(loginLink).toBeVisible();
     await loginLink.click();
 
-    await page.waitForURL('**/login');
+    await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
   });
 });

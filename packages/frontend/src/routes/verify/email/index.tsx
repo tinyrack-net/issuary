@@ -221,6 +221,7 @@ function VerifyEmail() {
         <IconInput
           error={errors.token}
           icon={KeyIcon}
+          label={t('verifyEmail.token.label')}
           placeholder={t('verifyEmail.token.placeholder')}
           {...register('token')}
           type="text"

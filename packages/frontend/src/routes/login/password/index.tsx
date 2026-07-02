@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
 import { IconInput } from '#frontend/components/auth/icon-input.tsx';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
@@ -19,11 +20,13 @@ import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
+  hasAuthorizationContext,
   isOAuthFlow,
   OAuthSearchSchema,
   type SecondFactorMethod,
 } from '#frontend/libs/oauth-search.ts';
 import { tick } from '#frontend/libs/promise.ts';
+import { getAuthorizationContextQueryOptions } from '#frontend/queries/authorization-context.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { loginMutationOptions } from '#frontend/queries/login.ts';
 import { startConditionalPasskeyAuth } from '#frontend/queries/passkey.ts';
@@ -38,8 +41,16 @@ export const Route = createFileRoute('/login/password/')({
   component: LoginPassword,
   errorComponent: RouteErrorFallback,
   validateSearch: SearchSchema,
-  loader: async ({ context }) => {
+  loaderDeps: ({ search }) => ({
+    search,
+  }),
+  loader: async ({ context, deps }) => {
     await context.queryClient.ensureQueryData(appConfigQueryOptions);
+    if (hasAuthorizationContext(deps.search)) {
+      await context.queryClient.ensureQueryData(
+        getAuthorizationContextQueryOptions(deps.search),
+      );
+    }
   },
 });
 
@@ -63,8 +74,16 @@ function LoginPassword() {
   const customSubtitle =
     configData.branding.subtitle?.[lang] ??
     configData.branding.subtitle?.[configData.i18n.fallback_language];
+  const implicitNotice =
+    configData.registration.signup_notice?.[lang] ??
+    configData.registration.signup_notice?.[configData.i18n.fallback_language];
   const isPasswordAuthEnabled = configData.auth.password.enabled;
   const isPasskeyEnabled = configData.auth.passkey.enabled;
+  const hasMultipleLoginMethods =
+    configData.identity_providers.length +
+      (isPasswordAuthEnabled ? 1 : 0) +
+      (isPasskeyEnabled ? 1 : 0) >
+    1;
 
   const loginSchema = useMemo(
     () =>
@@ -233,12 +252,15 @@ function LoginPassword() {
         title={customTitle ?? t('login.title')}
       />
 
+      <AuthorizationContextBanner search={search} />
+
       {isPasswordAuthEnabled && (
         <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
           <IconInput
             autoComplete="username webauthn"
             error={errors.email}
             icon={EnvelopeSimpleIcon}
+            label={t('login.email.label')}
             placeholder={t('login.email.placeholder')}
             {...register('email')}
             type="email"
@@ -248,6 +270,7 @@ function LoginPassword() {
             autoComplete="current-password"
             error={errors.password}
             icon={LockIcon}
+            label={t('login.password.label')}
             placeholder={t('login.password.placeholder')}
             {...register('password')}
             type="password"
@@ -271,6 +294,15 @@ function LoginPassword() {
         </form>
       )}
 
+      {implicitNotice && (
+        <div className="mt-6 text-center text-base-content/60 text-xs">
+          <div
+            className="prose prose-sm text-xs! **:text-xs!"
+            dangerouslySetInnerHTML={{ __html: implicitNotice }}
+          />
+        </div>
+      )}
+
       {configData.registration.public_registration && (
         <FooterLink
           as={Link}
@@ -281,15 +313,17 @@ function LoginPassword() {
         />
       )}
 
-      {/* <div className="flex flex-col items-center gap-2">
-        <Link
-          to="/login"
-          search={extractOAuthParams(search)}
-          className="link text-sm"
-        >
-          {t('login.password.backToMethods')}
-        </Link>
-      </div> */}
+      {hasMultipleLoginMethods && (
+        <div className="mt-3 text-center">
+          <Link
+            className="link text-sm"
+            search={extractOAuthParams(search)}
+            to="/login"
+          >
+            {t('login.password.backToMethods')}
+          </Link>
+        </div>
+      )}
     </PageLayout>
   );
 }

@@ -10,6 +10,7 @@ import {
   E2E_TEST_CLIENT_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import { consentPage } from '#frontend-e2e/helpers/consent.ts';
+import { openPasswordLoginFromCurrentPage } from '#frontend-e2e/helpers/login.ts';
 import {
   buildAuthorizePath,
   buildOAuthFlowInput,
@@ -272,8 +273,7 @@ test.describe('OIDC account selection', () => {
 
     await page.getByRole('link', { name: /Use another account/i }).click();
     await expect(page).toHaveURL(/\/login/);
-    await page.locator('a[href^="/login/password"]').click();
-    await expect(page).toHaveURL(/\/login\/password/);
+    await openPasswordLoginFromCurrentPage(page);
     await page
       .locator('input[name="email"]')
       .fill('account-selection-carol@example.com');
@@ -460,8 +460,7 @@ test.describe('OIDC account selection', () => {
       buildAuthorizePath(flow.authorizeParams),
     );
     await expect(page).toHaveURL(/\/login/);
-    await page.locator('a[href^="/login/password"]').click();
-    await expect(page).toHaveURL(/\/login\/password/);
+    await openPasswordLoginFromCurrentPage(page);
 
     const callbackRoute = `${E2E_TEST_CLIENT.redirectUri}**`;
     const callbackRouteHandler = async (
@@ -531,8 +530,7 @@ test.describe('OIDC account selection', () => {
 
     await expect(page).toHaveURL(/\/login/);
     expect(page.url()).not.toContain('/account/select');
-    await page.locator('a[href^="/login/password"]').click();
-    await expect(page).toHaveURL(/\/login\/password/);
+    await openPasswordLoginFromCurrentPage(page);
 
     const callbackRoute = `${E2E_TEST_CLIENT.redirectUri}**`;
     const callbackRouteHandler = async (

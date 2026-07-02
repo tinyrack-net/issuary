@@ -114,6 +114,19 @@ const ConsentUser = z
   })
   .describe('Consent User');
 
+const AuthorizationContextResponse = z
+  .object({
+    client: ConsentClient,
+    redirect_uri: f.redirectUri.describe('Validated OAuth redirect URI'),
+    redirect_origin: z
+      .url()
+      .describe('Origin extracted from the validated redirect URI'),
+    scopes: z
+      .array(ConsentScope)
+      .describe('Validated requested OAuth scopes with descriptions'),
+  })
+  .describe('Authorization context shown before authentication');
+
 const LinkedOAuthAccount = z
   .object({
     provider_name: f.providerName.describe('OAuth provider identifier'),
@@ -388,6 +401,7 @@ export const r = {
   ConsentClient,
   ConsentScope,
   ConsentUser,
+  AuthorizationContextResponse,
   LinkedOAuthAccount,
   AvailableOAuthProvider,
   OAuthAuthenticationMethod,
