@@ -1,5 +1,5 @@
 import { FingerprintIcon, WarningCircleIcon } from '@phosphor-icons/react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,14 +7,19 @@ import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
-import { TinyAuthError } from '#frontend/libs/error.ts';
 import {
   buildAuthenticatedAuthorizeUrl,
+  extractOAuthParams,
   isOAuthFlow,
   OAuthSearchSchema,
 } from '#frontend/libs/oauth-search.ts';
+import {
+  classifyPasskeyError,
+  type PasskeyErrorReason,
+} from '#frontend/libs/passkey-error.ts';
 import { tick } from '#frontend/libs/promise.ts';
 import { authenticateWithPasskeyMutationOptions } from '#frontend/queries/passkey.ts';
+import { getPendingSecondFactorMethodsQueryOptions } from '#frontend/queries/second-factor.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 
 const SearchSchema = OAuthSearchSchema;
@@ -29,8 +34,32 @@ function VerifyPasskey() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const search = Route.useSearch();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{
+    message: string;
+    reason: PasskeyErrorReason;
+  } | null>(null);
   const hasStarted = useRef(false);
+  const pendingMethodsQuery = useQuery({
+    ...getPendingSecondFactorMethodsQueryOptions,
+    enabled: error !== null,
+  });
+  const canUseTotp =
+    pendingMethodsQuery.data?.methods.includes('totp') ?? false;
+
+  const getErrorMessage = (reason: PasskeyErrorReason) => {
+    switch (reason) {
+      case 'unsupported':
+        return t('verifyPasskey.error.unsupported');
+      case 'not_allowed':
+        return t('verifyPasskey.error.notAllowed');
+      case 'expired':
+        return t('verifyPasskey.error.expired');
+      case 'user_mismatch':
+        return t('verifyPasskey.error.userMismatch');
+      case 'verification_failed':
+        return t('verifyPasskey.error.failed');
+    }
+  };
 
   const verifyMutation = useMutation({
     ...authenticateWithPasskeyMutationOptions,
@@ -49,19 +78,11 @@ function VerifyPasskey() {
       }
     },
     onError: async (err) => {
-      if (err instanceof TinyAuthError) {
-        if (err.code === 'SECOND_FACTOR_SESSION_EXPIRED') {
-          setError(t('verifyPasskey.error.expired'));
-          return;
-        }
-        if (err.code === 'PASSKEY_USER_MISMATCH') {
-          setError(t('verifyPasskey.error.userMismatch'));
-          return;
-        }
-      } else {
-        setError(t('verifyPasskey.error.failed'));
-        return;
-      }
+      const reason = classifyPasskeyError(err);
+      setError({
+        message: getErrorMessage(reason),
+        reason,
+      });
     },
     onSettled: () => {
       queryClient.invalidateQueries({
@@ -99,10 +120,21 @@ function VerifyPasskey() {
         {error && (
           <>
             <Alert className="w-full" icon={WarningCircleIcon} type="error">
-              {error}
+              {error.message}
             </Alert>
+            {canUseTotp && (
+              <Link
+                className="btn btn-primary btn-block"
+                search={extractOAuthParams(search)}
+                to="/verify/totp"
+              >
+                {t('verifyPasskey.useTotp')}
+              </Link>
+            )}
             <button
-              className="btn btn-primary btn-block"
+              className={`btn btn-block ${
+                canUseTotp ? 'btn-outline' : 'btn-primary'
+              }`}
               onClick={() => {
                 setError(null);
                 verifyMutation.mutate();

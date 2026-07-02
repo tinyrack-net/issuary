@@ -4,7 +4,11 @@ import {
   ShieldCheckIcon,
   WarningCircleIcon,
 } from '@phosphor-icons/react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -14,6 +18,7 @@ import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
+import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import {
   buildAuthenticatedAuthorizeUrl,
@@ -21,7 +26,9 @@ import {
   isOAuthFlow,
   OAuthSearchSchema,
 } from '#frontend/libs/oauth-search.ts';
+import { classifyPasskeyError } from '#frontend/libs/passkey-error.ts';
 import { tick } from '#frontend/libs/promise.ts';
+import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { registerPasskeyMutationOptions } from '#frontend/queries/passkey.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 
@@ -31,6 +38,10 @@ const SearchSchema = OAuthSearchSchema.extend({
 
 export const Route = createFileRoute('/setup/passkey/')({
   component: SetupPasskey,
+  errorComponent: RouteErrorFallback,
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(appConfigQueryOptions);
+  },
   validateSearch: SearchSchema,
 });
 
@@ -41,12 +52,17 @@ function SetupPasskey() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const search = Route.useSearch();
+  const { data: appConfig } = useSuspenseQuery(appConfigQueryOptions);
 
   const [step, setStep] = useState<SetupStep>(
     search.passkey_name ? 'registering' : 'form',
   );
   const [errorMessage, setErrorMessage] = useState<string>('');
   const autoRegisterCalledRef = useRef(false);
+  const canUseTotpSetup =
+    appConfig.auth.password.enabled &&
+    appConfig.auth.password.two_factor.enrollment_required &&
+    appConfig.auth.password.totp.enabled;
 
   const formSchema = useMemo(
     () =>
@@ -90,14 +106,22 @@ function SetupPasskey() {
     },
     onError: (error) => {
       setStep('error');
-      if (error instanceof Error) {
-        if (error.name === 'NotAllowedError') {
-          setErrorMessage(t('setupPasskey.error.cancelled'));
-        } else {
+      const reason = classifyPasskeyError(error);
+
+      switch (reason) {
+        case 'unsupported':
+          setErrorMessage(t('setupPasskey.error.unsupported'));
+          return;
+        case 'not_allowed':
+          setErrorMessage(t('setupPasskey.error.notAllowed'));
+          return;
+        case 'expired':
+          setErrorMessage(t('setupPasskey.error.expired'));
+          return;
+        case 'user_mismatch':
+        case 'verification_failed':
           setErrorMessage(t('setupPasskey.error.failed'));
-        }
-      } else {
-        setErrorMessage(t('setupPasskey.error.failed'));
+          return;
       }
     },
     onSettled: () => {
@@ -149,8 +173,20 @@ function SetupPasskey() {
         <Alert icon={WarningCircleIcon} type="error">
           {errorMessage}
         </Alert>
+        {canUseTotpSetup && (
+          <Link
+            className="btn btn-primary btn-block mt-4"
+            search={extractOAuthParams(search)}
+            to="/setup/totp"
+          >
+            <ShieldCheckIcon className="size-5" weight="regular" />
+            {t('setupPasskey.useTotp')}
+          </Link>
+        )}
         <button
-          className="btn btn-primary btn-block mt-4"
+          className={`btn btn-block mt-4 ${
+            canUseTotpSetup ? 'btn-outline' : 'btn-primary'
+          }`}
           onClick={() => {
             if (search.passkey_name) {
               setStep('registering');

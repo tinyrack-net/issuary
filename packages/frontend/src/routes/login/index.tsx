@@ -9,6 +9,7 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { LoginMethodButton } from '#frontend/components/auth/login-method-button.tsx';
@@ -23,6 +24,7 @@ import {
   isOAuthFlow,
   OAuthSearchSchema,
 } from '#frontend/libs/oauth-search.ts';
+import { classifyPasskeyError } from '#frontend/libs/passkey-error.ts';
 import { tick } from '#frontend/libs/promise.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { authenticateWithPasskeyMutationOptions } from '#frontend/queries/passkey.ts';
@@ -74,6 +76,7 @@ function Login() {
 
   const isPasswordAuthEnabled = configData.auth.password.enabled;
   const isPasskeyEnabled = configData.auth.passkey.enabled;
+  const [passkeyError, setPasskeyError] = useState<string | null>(null);
 
   // Config-based title/subtitle (overrides i18n defaults)
   const customTitle =
@@ -101,7 +104,19 @@ function Login() {
 
   const passkeyLoginMutation = useMutation({
     ...authenticateWithPasskeyMutationOptions,
-    onSuccess: handlePasskeySuccess,
+    onSuccess: (data) => {
+      setPasskeyError(null);
+      handlePasskeySuccess(data);
+    },
+    onError: (error) => {
+      const reason = classifyPasskeyError(error);
+      if (reason === 'unsupported') {
+        setPasskeyError(t('login.passkey.error.unsupported'));
+        return;
+      }
+
+      setPasskeyError(t('login.passkey.error.failed'));
+    },
     onSettled: () => {
       queryClient.invalidateQueries({
         queryKey: getSessionQueryOptions.queryKey,
@@ -152,6 +167,12 @@ function Login() {
         </Alert>
       )}
 
+      {passkeyError && (
+        <Alert className="mb-4" icon={WarningCircleIcon} type="error">
+          {passkeyError}
+        </Alert>
+      )}
+
       <LoginMethodList>
         {/* OAuth Providers */}
         {oauthProviders.map((provider) => (
@@ -183,7 +204,10 @@ function Login() {
             icon={<FingerprintIcon className="size-6" weight="regular" />}
             isLoading={passkeyLoginMutation.isPending}
             label={t('login.method.passkey')}
-            onClick={() => passkeyLoginMutation.mutate()}
+            onClick={() => {
+              setPasskeyError(null);
+              passkeyLoginMutation.mutate();
+            }}
             type="button"
           />
         )}

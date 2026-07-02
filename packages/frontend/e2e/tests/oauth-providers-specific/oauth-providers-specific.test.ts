@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import { genericOAuth } from '@tinyrack/tinyauth-server/identity-providers/generic-oauth';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
@@ -10,6 +11,51 @@ import { createSpecificOauthProviders } from '#frontend-e2e/fragments/oauth-prov
 import { startOAuthLogin } from '#frontend-e2e/helpers/oauth.ts';
 import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.ts';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
+
+function createProviderLinkOauthProviders(host: string) {
+  return [
+    genericOAuth({
+      id: 'github-stub-link',
+      enabled: true,
+      display_name: 'GitHub Link Stub',
+      icon_url: 'https://example.com/github-stub-link.svg',
+      client_id: 'github-stub-link-client-id',
+      client_secret: 'github-stub-link-client-secret',
+      authorization_url: `${host}/test/oauth-stub/github-stub-link/authorize`,
+      token_url: `${host}/test/oauth-stub/github-stub-link/token`,
+      userinfo_url: `${host}/test/oauth-stub/github-stub-link/userinfo`,
+      scopes: ['user:email'],
+      email_conflict_strategy: 'auto_link',
+      userinfo_mapping: {
+        id: 'id',
+        email: 'email',
+        email_verified: 'email_verified',
+        name: 'name',
+        picture: 'avatar_url',
+      },
+    }),
+    genericOAuth({
+      id: 'google-stub-link',
+      enabled: true,
+      display_name: 'Google Link Stub',
+      icon_url: 'https://example.com/google-stub-link.svg',
+      client_id: 'google-stub-link-client-id',
+      client_secret: 'google-stub-link-client-secret',
+      authorization_url: `${host}/test/oauth-stub/google-stub-link/authorize`,
+      token_url: `${host}/test/oauth-stub/google-stub-link/token`,
+      userinfo_url: `${host}/test/oauth-stub/google-stub-link/userinfo`,
+      scopes: ['openid', 'email', 'profile'],
+      email_conflict_strategy: 'auto_link',
+      userinfo_mapping: {
+        id: 'sub',
+        email: 'email',
+        email_verified: 'email_verified',
+        name: 'name',
+        picture: 'picture',
+      },
+    }),
+  ];
+}
 
 const test = createScenarioFixture((backendPort) => {
   const host = `http://localhost:${backendPort}`;
@@ -23,7 +69,10 @@ const test = createScenarioFixture((backendPort) => {
       },
     }),
     users: [E2E_TEST_USER_CONFIG],
-    identity_providers: createSpecificOauthProviders(host),
+    identity_providers: [
+      ...createSpecificOauthProviders(host),
+      ...createProviderLinkOauthProviders(host),
+    ],
   };
 });
 
@@ -90,12 +139,12 @@ test.describe('Provider-specific OAuth flows', () => {
     page,
     baseURL,
   }) => {
-    // Register a user with the same email as github-stub
+    // Register a user with the same email as the link-specific GitHub stub.
     const client = getTestApiClient({ baseUrl: String(baseURL) });
     const registerRes = await client.api.auth.register.$post({
       header: {},
       json: {
-        email: 'oauth-github-stub@allowed.test',
+        email: 'oauth-github-stub-link@allowed.test',
         password: 'test-password-123',
       },
     });
@@ -105,14 +154,16 @@ test.describe('Provider-specific OAuth flows', () => {
 
     // Login via GitHub stub (auto-links to the existing user)
     await page.goto('/login');
-    await startOAuthLogin(page, 'GitHub Stub');
+    await startOAuthLogin(page, 'GitHub Link Stub');
     await page.waitForURL('**/profile');
 
     // GitHub Stub should show as connected
     await expect(page.getByText('Connected').first()).toBeVisible();
 
     // Link Google Stub via its authorize link
-    await page.locator('a[href*="google-stub/authorize?mode=link"]').click();
+    await page
+      .locator('a[href*="google-stub-link/authorize?mode=link"]')
+      .click();
     await page.waitForURL('**/profile');
 
     // Both should now be linked

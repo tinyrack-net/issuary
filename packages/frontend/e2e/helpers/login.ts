@@ -1,5 +1,40 @@
 import type { Page } from '@playwright/test';
 
+function isNavigationAbort(error: unknown): boolean {
+  const message = String(error instanceof Error ? error.message : error);
+  return (
+    message.includes('NS_BINDING_ABORTED') ||
+    message.includes('NS_ERROR_FAILURE')
+  );
+}
+
+async function gotoLogin(page: Page): Promise<void> {
+  const options = { waitUntil: 'domcontentloaded' as const };
+  try {
+    await page.goto('/login', options);
+    return;
+  } catch (error) {
+    if (!isNavigationAbort(error)) {
+      throw error;
+    }
+  }
+
+  await page
+    .waitForLoadState('domcontentloaded', { timeout: 5_000 })
+    .catch(() => undefined);
+
+  try {
+    await page.goto('/login', options);
+  } catch (error) {
+    if (!isNavigationAbort(error)) {
+      throw error;
+    }
+    await page
+      .waitForLoadState('domcontentloaded', { timeout: 5_000 })
+      .catch(() => undefined);
+  }
+}
+
 /**
  * Selectors for the login method selection page (/login).
  */
@@ -66,7 +101,7 @@ export async function performLogin(
   email: string,
   password: string,
 ): Promise<void> {
-  await page.goto('/login');
+  await gotoLogin(page);
   await page.locator(loginMethodPage.passwordMethodLink).click();
   await page.waitForURL('**/login/password');
   await page.locator(loginPasswordPage.emailInput).fill(email);
