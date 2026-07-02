@@ -792,15 +792,15 @@ describe('database scheduler factory', () => {
     });
     const schedulerA = database({
       cleanupCron: '* * * * *',
-      pollIntervalMs: 5,
-      lockTtlMs: 50,
+      pollIntervalMs: 10,
+      lockTtlMs: 1000,
       instanceId: 'lease-a',
       mikro: services.mikro,
     });
     const schedulerB = database({
       cleanupCron: '* * * * *',
-      pollIntervalMs: 5,
-      lockTtlMs: 50,
+      pollIntervalMs: 10,
+      lockTtlMs: 1000,
       instanceId: 'lease-b',
       mikro: services.mikro,
     });
@@ -825,6 +825,23 @@ describe('database scheduler factory', () => {
       );
 
       await started.promise;
+      const jobBeforeRenewal = await findJob(services, 'lease-test');
+      const originalLockedUntilTime =
+        jobBeforeRenewal?.lockedUntil?.getTime() ?? 0;
+      expect(jobBeforeRenewal?.lockedBy).toBe('lease-a');
+      expect(originalLockedUntilTime).toBeGreaterThan(Date.now());
+
+      await vi.waitFor(
+        async () => {
+          const job = await findJob(services, 'lease-test');
+          expect(job?.lockedBy).toBe('lease-a');
+          expect(job?.lockedUntil?.getTime()).toBeGreaterThan(
+            originalLockedUntilTime,
+          );
+        },
+        { timeout: 3000, interval: 25 },
+      );
+
       handleB = await schedulerB.start({
         scheduledJobs: [
           {
@@ -836,7 +853,7 @@ describe('database scheduler factory', () => {
         ],
         backgroundJobs: [],
       });
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       expect(handler).toHaveBeenCalledTimes(1);
     } finally {

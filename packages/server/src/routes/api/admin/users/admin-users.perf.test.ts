@@ -17,12 +17,14 @@ const WARMUP_REQUESTS = 3;
 const MEASURED_REQUESTS = 20;
 const CONCURRENCY = 4;
 const TOTAL_REQUESTS = WARMUP_REQUESTS + MEASURED_REQUESTS;
+const ADMIN_SCALE_USER_COUNT = 1_000;
 
 let app: AppType;
 let services: ServiceContainer;
 let adminSession = '';
 let cleanup: () => Promise<void> = async () => {};
 let emailCounter = 0;
+let scaleUsersSeeded = false;
 
 beforeAll(async () => {
   const server = await createTestApp({
@@ -74,6 +76,30 @@ async function createDatabaseUser(
   return { sub, email };
 }
 
+async function seedAdminListScaleUsers(): Promise<void> {
+  if (scaleUsersSeeded) {
+    return;
+  }
+
+  await withMikroContext(services, async () => {
+    for (let index = 0; index < ADMIN_SCALE_USER_COUNT; index += 1) {
+      const paddedIndex = String(index).padStart(4, '0');
+      const user = services.mikro.user.create({
+        email: `admin-scale-${paddedIndex}-${crypto.randomUUID()}@example.com`,
+        email_verified: index % 3 !== 0,
+        managed_by: 'database',
+        role: index % 10 === 0 ? 'admin' : 'user',
+        deleted_at: index % 25 === 0 ? new Date() : null,
+      });
+      services.mikro.em.persist(user);
+    }
+
+    await services.mikro.em.flush();
+  });
+
+  scaleUsersSeeded = true;
+}
+
 function uniqueEmail(prefix: string): string {
   emailCounter += 1;
   return `${prefix}-${Date.now()}-${emailCounter}-${crypto.randomUUID()}@example.com`;
@@ -111,7 +137,8 @@ async function requestAdminUsers(query = 'page=1&page_size=10') {
 
   expect(response.status).toBe(200);
   expect(Array.isArray(body.users)).toBe(true);
-  expect(body.pagination).toMatchObject({ page: 1 });
+  const page = Number(new URLSearchParams(query).get('page') ?? '1');
+  expect(body.pagination).toMatchObject({ page });
 
   return response;
 }
@@ -257,6 +284,38 @@ describe('admin user management API perf', () => {
     expect(largeResult.rps).toBeGreaterThan(1);
     expect(largeResult.p95Ms).toBeLessThan(2000);
     expect(largeResult.p95Ms).toBeLessThan(smallResult.p95Ms * 5 + 100);
+  });
+
+  test('GET /api/admin/users handles larger user tables, deep pages, and filters', async () => {
+    await seedAdminListScaleUsers();
+    const queries = [
+      'page=1&page_size=100',
+      'page=10&page_size=100',
+      'page=1&page_size=100&query=admin-scale-09',
+      'page=1&page_size=100&role=admin',
+      'page=1&page_size=100&include_deleted=true',
+      'page=1&page_size=100&managed_by=database',
+    ];
+    let nextQuery = 0;
+
+    const result = await runHttpPerf({
+      name: 'GET /api/admin/users larger table filters',
+      warmupRequests: 3,
+      requests: 24,
+      concurrency: 4,
+      request: async () => {
+        const query = queries[nextQuery % queries.length];
+        nextQuery += 1;
+        return requestAdminUsers(query);
+      },
+    });
+
+    expect(result.totalRequests).toBe(24);
+    expect(result.failed).toBe(0);
+    expect(result.statusCounts[200]).toBe(24);
+    expect(result.errorRate).toBe(0);
+    expect(result.rps).toBeGreaterThan(1);
+    expect(result.p95Ms).toBeLessThan(3000);
   });
 
   test('POST /api/admin/users handles pre-generated create requests', async () => {

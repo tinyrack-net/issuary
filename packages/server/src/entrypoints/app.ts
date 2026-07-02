@@ -54,6 +54,7 @@ export async function createApp(
     server: config.server,
   });
   const accountSelectionPolicy = normalizeAccountSelectionPolicy(config);
+  let cachedOpenApiSpec: Awaited<ReturnType<typeof generateSpecs>> | undefined;
 
   const handleError = (err: Error, c: Context) => {
     if (err instanceof TinyAuthError) {
@@ -105,11 +106,11 @@ export async function createApp(
       return c.json({ error: 'Not Found' }, 404);
     }
 
-    const spec = await generateSpecs(app, {
+    cachedOpenApiSpec ??= await generateSpecs(app, {
       documentation: openApiDocumentation,
     });
 
-    return c.json(spec);
+    return c.json(cachedOpenApiSpec);
   });
 
   // Start scheduler

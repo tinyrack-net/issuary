@@ -3,6 +3,11 @@ packages:
   - examples/clients/*
   - examples/servers/*
 
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true
+
 catalog:
   "@astrojs/check": ^0.9.9
   "@astrojs/starlight": ^0.40.0
