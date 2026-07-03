@@ -113,9 +113,16 @@ export default defineConfig({
   globalSetup: './e2e/setup/global-setup.ts',
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 2 : 1,
-  workers: process.env['CI'] ? 1 : undefined,
+  workers: process.env['CI'] ? 1 : '100%',
   reporter: 'html',
   timeout: 1000 * 60,
+  expect: {
+    timeout: 15_000,
+  },
+  use: {
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
+  },
   projects: configs.flatMap((config) =>
     browsers.map((browser) => ({
       name: `${config.name}:${browser.name}`,

@@ -8,6 +8,7 @@ import {
 import { consentPage } from '#frontend-e2e/helpers/consent.ts';
 import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
 import {
+  expectPasswordLoginForm,
   loginPasswordPage,
   openPasswordLoginFromCurrentPage,
 } from '#frontend-e2e/helpers/login.ts';
@@ -77,7 +78,7 @@ test.describe('OAuth client authentication flow', () => {
 
     await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
-    await expect(page.locator(loginPasswordPage.emailInput)).toBeVisible();
+    await expectPasswordLoginForm(page);
     await expect(page.getByTestId('authorization-context')).toBeVisible();
     expectOAuthParamsInCurrentUrl(page, oauth.authorizeParams);
   });
@@ -94,7 +95,7 @@ test.describe('OAuth client authentication flow', () => {
     await page.goto(buildAuthorizePath(oauth.authorizeParams));
 
     await page.waitForURL('**/login**');
-    await expect(page.locator(loginPasswordPage.emailInput)).toBeVisible();
+    await expectPasswordLoginForm(page);
     expectOAuthParamsInCurrentUrl(page, oauth.authorizeParams);
 
     await loginThroughPasswordForm(page, email, TEST_PASSWORD);
@@ -124,7 +125,7 @@ test.describe('OAuth client authentication flow', () => {
     await page.goto(buildAuthorizePath(oauth.authorizeParams));
 
     await page.waitForURL('**/login**');
-    await expect(page.locator(loginPasswordPage.emailInput)).toBeVisible();
+    await expectPasswordLoginForm(page);
     expectOAuthParamsInCurrentUrl(page, oauth.authorizeParams);
 
     await page.goto(
@@ -166,7 +167,7 @@ test.describe('OAuth client authentication flow', () => {
       `${String(baseURL)}${buildAuthorizePath(initialFlow.authorizeParams)}`,
     );
     await firstPage.waitForURL('**/login**');
-    await expect(firstPage.locator(loginPasswordPage.emailInput)).toBeVisible();
+    await expectPasswordLoginForm(firstPage);
     await loginThroughPasswordForm(firstPage, email, TEST_PASSWORD);
     await firstPage.waitForURL('**/consent**');
 
@@ -187,9 +188,7 @@ test.describe('OAuth client authentication flow', () => {
       `${String(baseURL)}${buildAuthorizePath(secondFlow.authorizeParams)}`,
     );
     await secondPage.waitForURL('**/login**');
-    await expect(
-      secondPage.locator(loginPasswordPage.emailInput),
-    ).toBeVisible();
+    await expectPasswordLoginForm(secondPage);
 
     await openPasswordLoginFromCurrentPage(secondPage);
     await secondPage.locator(loginPasswordPage.emailInput).fill(email);
@@ -236,7 +235,7 @@ test.describe('OAuth client authentication flow', () => {
     await page.goto(buildAuthorizePath(oauth.authorizeParams));
 
     await page.waitForURL('**/login**');
-    await expect(page.locator(loginPasswordPage.emailInput)).toBeVisible();
+    await expectPasswordLoginForm(page);
     await loginThroughPasswordForm(page, email, TEST_PASSWORD);
 
     await page.waitForURL('**/consent**');
@@ -257,7 +256,7 @@ test.describe('OAuth client authentication flow', () => {
     await page.goto(buildAuthorizePath(oauth.authorizeParams));
 
     await page.waitForURL('**/login**');
-    await expect(page.locator(loginPasswordPage.emailInput)).toBeVisible();
+    await expectPasswordLoginForm(page);
     await loginThroughPasswordForm(page, email, TEST_PASSWORD);
     await page.waitForURL('**/consent**');
 

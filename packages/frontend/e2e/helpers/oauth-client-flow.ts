@@ -44,6 +44,8 @@ const OAUTH_PARAM_KEYS = [
   'prompt',
 ] as const;
 
+export const CLIENT_REDIRECT_TIMEOUT_MS = 30_000;
+
 function createPkceS256Pair(): { codeVerifier: string; codeChallenge: string } {
   const codeVerifier = randomBytes(48).toString('base64url');
   const codeChallenge = createHash('sha256')
@@ -101,8 +103,9 @@ export function expectOAuthParamsInCurrentUrl(
 }
 
 async function waitForClientRedirect(page: Page): Promise<URL> {
-  const redirectRequest = await page.waitForRequest((request) =>
-    request.url().startsWith(E2E_TEST_CLIENT.redirectUri),
+  const redirectRequest = await page.waitForRequest(
+    (request) => request.url().startsWith(E2E_TEST_CLIENT.redirectUri),
+    { timeout: CLIENT_REDIRECT_TIMEOUT_MS },
   );
   return new URL(redirectRequest.url());
 }

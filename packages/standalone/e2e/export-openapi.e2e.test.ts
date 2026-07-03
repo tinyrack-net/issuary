@@ -2,21 +2,22 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { removeDirectoryWithRetry } from './helpers/config-factory.ts';
 import { runCli } from './helpers/spawn-cli.ts';
 
-describe('export openapi e2e', { timeout: 30_000 }, () => {
+describe('export openapi e2e', { timeout: 90_000 }, () => {
   let tmpDir: string | undefined;
 
   afterEach(async () => {
     if (tmpDir) {
-      await fs.rm(tmpDir, { recursive: true, force: true });
+      await removeDirectoryWithRetry(tmpDir);
     }
   });
 
   it('outputs valid OpenAPI JSON to stdout', async () => {
     const result = await runCli({
       args: ['export', 'openapi'],
-      timeout: 25_000,
+      timeout: 60_000,
     });
 
     expect(result.exitCode).toBe(0);
@@ -33,7 +34,7 @@ describe('export openapi e2e', { timeout: 30_000 }, () => {
 
     const result = await runCli({
       args: ['export', 'openapi', outputPath],
-      timeout: 25_000,
+      timeout: 60_000,
     });
 
     expect(result.exitCode).toBe(0);

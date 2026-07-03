@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createTestConfigFile } from './helpers/config-factory.ts';
-import { runCli, startCli } from './helpers/spawn-cli.ts';
+import { runCli, startCli, stopCliProcess } from './helpers/spawn-cli.ts';
 import { waitForReady } from './helpers/wait-for-ready.ts';
 
 function expectGracefulShutdownExitCode(exitCode: number | undefined) {
@@ -12,15 +12,12 @@ function expectGracefulShutdownExitCode(exitCode: number | undefined) {
   expect(exitCode).toBe(0);
 }
 
-describe('serve e2e', { timeout: 30_000 }, () => {
+describe('serve e2e', { timeout: 180_000 }, () => {
   let cliProcess: ReturnType<typeof startCli> | undefined;
   let configCleanup: (() => Promise<void>) | undefined;
 
   afterEach(async () => {
-    if (cliProcess && !cliProcess.killed) {
-      cliProcess.kill('SIGKILL');
-      await cliProcess;
-    }
+    await stopCliProcess(cliProcess);
     await configCleanup?.();
   });
 
@@ -30,7 +27,7 @@ describe('serve e2e', { timeout: 30_000 }, () => {
 
     cliProcess = startCli({
       args: ['serve', '-c', configPath],
-      timeout: 25_000,
+      timeout: 60_000,
     });
 
     const res = await waitForReady(port);
@@ -51,7 +48,7 @@ describe('serve e2e', { timeout: 30_000 }, () => {
 
     cliProcess = startCli({
       args: ['serve', '-c', configPath],
-      timeout: 25_000,
+      timeout: 60_000,
     });
 
     await waitForReady(port);

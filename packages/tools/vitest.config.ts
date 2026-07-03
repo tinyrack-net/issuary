@@ -6,7 +6,7 @@ export default defineConfig({
     conditions: ['@tinyauth/source'],
   },
   test: {
-    maxWorkers: '90%',
+    maxWorkers: '100%',
     testTimeout: 20_000,
     exclude: ['./node_modules/*'],
     coverage: {
