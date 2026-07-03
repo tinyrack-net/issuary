@@ -7,6 +7,7 @@ import {
   E2E_TEST_USER_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import {
+  expectPasswordLoginForm,
   loginPasswordPage,
   performLogin,
 } from '#frontend-e2e/helpers/login.ts';
@@ -29,7 +30,7 @@ test.describe('Login flow', () => {
   }) => {
     await page.goto('/login');
     await page.waitForURL('**/login/password**');
-    await expect(page.locator(loginPasswordPage.emailInput)).toBeVisible();
+    await expectPasswordLoginForm(page);
   });
 
   test('password login form is available at the direct URL', async ({
@@ -37,7 +38,7 @@ test.describe('Login flow', () => {
   }) => {
     await page.goto('/login/password');
 
-    await expect(page.locator(loginPasswordPage.emailInput)).toBeVisible();
+    await expectPasswordLoginForm(page);
     await expect(page.locator(loginPasswordPage.passwordInput)).toBeVisible();
     await expect(page.locator(loginPasswordPage.submitButton)).toBeVisible();
   });

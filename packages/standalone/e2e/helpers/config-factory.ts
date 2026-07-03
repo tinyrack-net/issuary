@@ -4,18 +4,56 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import YAML from 'yaml';
 
+const RETRIABLE_REMOVE_ERROR_CODES = new Set(['EBUSY', 'ENOTEMPTY', 'EPERM']);
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getErrorCode(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object' || !('code' in error)) {
+    return undefined;
+  }
+
+  const code = Reflect.get(error, 'code');
+  return typeof code === 'string' ? code : undefined;
+}
+
+function getListeningPort(address: AddressInfo | string | null): number {
+  if (typeof address === 'object' && address !== null) {
+    return address.port;
+  }
+
+  throw new Error('Expected test server to listen on a TCP port');
+}
+
 /**
  * Finds a free port by briefly binding to port 0.
  */
 export function getFreePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const srv = createServer();
-    srv.listen(0, '127.0.0.1', () => {
-      const port = (srv.address() as AddressInfo).port;
+    srv.listen(0, '0.0.0.0', () => {
+      const port = getListeningPort(srv.address());
       srv.close(() => resolve(port));
     });
     srv.on('error', reject);
   });
+}
+
+export async function removeDirectoryWithRetry(dir: string): Promise<void> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      await fs.rm(dir, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      const code = getErrorCode(error);
+      if (!code || !RETRIABLE_REMOVE_ERROR_CODES.has(code) || attempt === 4) {
+        throw error;
+      }
+      await delay(100 * (attempt + 1));
+    }
+  }
 }
 
 interface CreateTestConfigFileResult {
@@ -71,7 +109,7 @@ export async function createTestConfigFile(
     configPath,
     port,
     cleanup: async () => {
-      await fs.rm(tmpDir, { recursive: true, force: true });
+      await removeDirectoryWithRetry(tmpDir);
     },
   };
 }

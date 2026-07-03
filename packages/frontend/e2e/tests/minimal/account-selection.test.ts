@@ -14,6 +14,7 @@ import { openPasswordLoginFromCurrentPage } from '#frontend-e2e/helpers/login.ts
 import {
   buildAuthorizePath,
   buildOAuthFlowInput,
+  CLIENT_REDIRECT_TIMEOUT_MS,
   captureClientRedirectAfterAction,
   exchangeAuthorizationCode,
   type OAuthAuthorizeParams,
@@ -34,6 +35,15 @@ const LOCKED_CLIENT = {
 
 const ALWAYS_ACCOUNT_SELECTION_MODE: 'always' = 'always';
 const NEVER_ACCOUNT_SELECTION_MODE: 'never' = 'never';
+
+type ClientRedirectOutcome =
+  | {
+      kind: 'redirect';
+      request: import('@playwright/test').Request;
+    }
+  | {
+      kind: 'consent';
+    };
 
 const ALWAYS_CLIENT = {
   ...E2E_TEST_CLIENT_CONFIG,
@@ -126,6 +136,16 @@ async function seedRememberedAccounts(
   await loginByApi(page, baseURL, 'account-selection-bob@example.com');
 }
 
+function createRedirectOutcome(
+  request: import('@playwright/test').Request,
+): ClientRedirectOutcome {
+  return { kind: 'redirect', request };
+}
+
+function createConsentOutcome(): ClientRedirectOutcome {
+  return { kind: 'consent' };
+}
+
 async function authorizeSelectedAccount(params: {
   page: import('@playwright/test').Page;
   request: import('@playwright/test').APIRequestContext;
@@ -165,32 +185,53 @@ async function authorizeSelectedAccount(params: {
     });
   };
   await params.page.route(callbackRoute, callbackRouteHandler);
-  const redirectPromise = params.page.waitForRequest((request) =>
-    request.url().startsWith(E2E_TEST_CLIENT.redirectUri),
-  );
-  await params.page
-    .locator(`[data-testid="select-account-${params.expectedSub}"]`)
-    .click({ noWaitAfter: true });
+  let redirectUrl: URL | undefined;
+  try {
+    const redirectPromise = params.page.waitForRequest(
+      (request) => request.url().startsWith(E2E_TEST_CLIENT.redirectUri),
+      { timeout: CLIENT_REDIRECT_TIMEOUT_MS },
+    );
+    await params.page
+      .locator(`[data-testid="select-account-${params.expectedSub}"]`)
+      .click({ noWaitAfter: true });
 
-  const consentVisible = await params.page
-    .locator(consentPage.allowButton)
-    .waitFor({ state: 'visible', timeout: 5_000 })
-    .then(() => true)
-    .catch(() => false);
-  if (consentVisible) {
-    await params.page.locator(consentPage.allowButton).click({
-      noWaitAfter: true,
-    });
+    const redirectOutcome = await Promise.race([
+      redirectPromise.then(createRedirectOutcome),
+      params.page
+        .locator(consentPage.allowButton)
+        .waitFor({
+          state: 'visible',
+          timeout: CLIENT_REDIRECT_TIMEOUT_MS,
+        })
+        .then(createConsentOutcome),
+    ]);
+
+    if (redirectOutcome.kind === 'consent') {
+      await params.page.locator(consentPage.allowButton).click({
+        noWaitAfter: true,
+      });
+      redirectUrl = new URL((await redirectPromise).url());
+    } else {
+      redirectUrl = new URL(redirectOutcome.request.url());
+    }
+
+    await params.page
+      .waitForLoadState('domcontentloaded', { timeout: 15_000 })
+      .catch(() => undefined);
+  } finally {
+    await params.page.unroute(callbackRoute, callbackRouteHandler);
   }
-
-  const code = new URL((await redirectPromise).url());
-  await params.page.waitForLoadState('domcontentloaded');
-  await params.page.unroute(callbackRoute, callbackRouteHandler);
+  const code = redirectUrl?.searchParams.get('code');
+  if (!code) {
+    throw new Error(
+      'Expected authorization code in account selection redirect',
+    );
+  }
   const tokenResponse = await exchangeAuthorizationCode(
     params.request,
     params.baseURL,
     {
-      code: code.searchParams.get('code') ?? '',
+      code,
       codeVerifier: flow.codeVerifier,
       clientId: params.clientId,
       clientSecret: params.clientSecret,
@@ -476,7 +517,7 @@ test.describe('OIDC account selection', () => {
     const redirectPromise = page.waitForRequest(
       (clientRequest) =>
         clientRequest.url().startsWith(E2E_TEST_CLIENT.redirectUri),
-      { timeout: 5_000 },
+      { timeout: CLIENT_REDIRECT_TIMEOUT_MS },
     );
 
     await page
@@ -546,7 +587,7 @@ test.describe('OIDC account selection', () => {
     const redirectPromise = page.waitForRequest(
       (clientRequest) =>
         clientRequest.url().startsWith(E2E_TEST_CLIENT.redirectUri),
-      { timeout: 5_000 },
+      { timeout: CLIENT_REDIRECT_TIMEOUT_MS },
     );
 
     await page

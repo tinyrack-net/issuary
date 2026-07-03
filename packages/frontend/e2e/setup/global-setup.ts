@@ -2,11 +2,36 @@ import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { FullConfig } from '@playwright/test';
-import { createServer as createViteServer } from 'vite';
+import { createServer as createViteServer, type ViteDevServer } from 'vite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendRoot = path.resolve(__dirname, '../..');
 const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
+const E2E_FRONTEND_WARMUP_FILES = [
+  'src/main.tsx',
+  'src/routeTree.gen.ts',
+  'src/routes/login/index.tsx',
+  'src/routes/login/password/index.tsx',
+  'src/components/auth/login-method-button.tsx',
+  'src/components/auth/login-method-list.tsx',
+  'src/features/layout/page-layout.tsx',
+  'src/hooks/**/*.ts',
+  'src/i18n/**/*.ts',
+  'src/libs/**/*.ts',
+  'src/queries/**/*.ts',
+];
+const E2E_FRONTEND_WARMUP_URLS = [
+  '/src/main.tsx',
+  '/src/routeTree.gen.ts',
+  '/src/routes/login/index.tsx?tsr-split=component',
+  '/src/routes/login/password/index.tsx?tsr-split=component',
+  '/src/components/auth/login-method-button.tsx',
+  '/src/components/auth/login-method-list.tsx',
+  '/src/features/layout/page-layout.tsx',
+  '/src/queries/config.ts',
+  '/src/queries/session.ts',
+  '/src/libs/oauth-search.ts',
+];
 
 function getListeningPort(address: AddressInfo | string | null): number {
   if (address === null || typeof address === 'string') {
@@ -16,12 +41,24 @@ function getListeningPort(address: AddressInfo | string | null): number {
   return address.port;
 }
 
+async function warmupFrontendServer(
+  frontendServer: ViteDevServer,
+): Promise<void> {
+  await Promise.all(
+    E2E_FRONTEND_WARMUP_URLS.map((url) => frontendServer.warmupRequest(url)),
+  );
+}
+
 export default async function globalSetup(_config: FullConfig) {
   const frontendServer = await createViteServer({
     root: frontendRoot,
     server: {
+      hmr: false,
       port: 0,
       strictPort: false,
+      warmup: {
+        clientFiles: E2E_FRONTEND_WARMUP_FILES,
+      },
     },
   });
 
@@ -33,6 +70,7 @@ export default async function globalSetup(_config: FullConfig) {
   }
 
   const frontendPort = getListeningPort(httpServer.address());
+  await warmupFrontendServer(frontendServer);
   process.env[SHARED_FRONTEND_PORT_ENV] = String(frontendPort);
 
   return async () => {

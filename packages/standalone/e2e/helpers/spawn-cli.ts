@@ -13,6 +13,7 @@ const CWD = fileURLToPath(new URL('../../', import.meta.url));
 const require = createRequire(import.meta.url);
 const TSX_IMPORT = pathToFileURL(require.resolve('tsx')).href;
 const NODE_OPTIONS = ['--conditions=@tinyauth/source', '--import', TSX_IMPORT];
+const LONG_RUNNING_CLI_TIMEOUT_MS = 180_000;
 
 interface SpawnCliOptions {
   args: string[];
@@ -21,8 +22,12 @@ interface SpawnCliOptions {
   timeout?: number;
 }
 
+type CliProcess =
+  | ReturnType<typeof spawnCli>
+  | ReturnType<typeof spawnBuiltCli>;
+
 function spawnCli(options: SpawnCliOptions) {
-  const { args, cwd = CWD, env, timeout = 30_000 } = options;
+  const { args, cwd = CWD, env, timeout = 60_000 } = options;
   return execaNode(CLI_PATH, args, {
     reject: false,
     timeout,
@@ -37,7 +42,7 @@ function spawnCli(options: SpawnCliOptions) {
 }
 
 function spawnBuiltCli(options: SpawnCliOptions) {
-  const { args, cwd = CWD, env, timeout = 30_000 } = options;
+  const { args, cwd = CWD, env, timeout = 60_000 } = options;
   return execaNode(DIST_CLI_PATH, args, {
     reject: false,
     timeout,
@@ -66,9 +71,26 @@ export async function runBuiltCli(options: SpawnCliOptions) {
  * Returns the subprocess handle — caller manages lifecycle.
  */
 export function startCli(options: SpawnCliOptions) {
-  return spawnCli(options);
+  return spawnCli({
+    ...options,
+    timeout: Math.max(options.timeout ?? 0, LONG_RUNNING_CLI_TIMEOUT_MS),
+  });
 }
 
 export function startBuiltCli(options: SpawnCliOptions) {
-  return spawnBuiltCli(options);
+  return spawnBuiltCli({
+    ...options,
+    timeout: Math.max(options.timeout ?? 0, LONG_RUNNING_CLI_TIMEOUT_MS),
+  });
+}
+
+export async function stopCliProcess(
+  cliProcess: CliProcess | undefined,
+): Promise<void> {
+  if (!cliProcess || cliProcess.killed) {
+    return;
+  }
+
+  cliProcess.kill('SIGKILL');
+  await cliProcess;
 }

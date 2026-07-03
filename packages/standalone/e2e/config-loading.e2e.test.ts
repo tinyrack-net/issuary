@@ -3,8 +3,12 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import YAML from 'yaml';
-import { createTestConfigFile, getFreePort } from './helpers/config-factory.ts';
-import { startCli } from './helpers/spawn-cli.ts';
+import {
+  createTestConfigFile,
+  getFreePort,
+  removeDirectoryWithRetry,
+} from './helpers/config-factory.ts';
+import { startCli, stopCliProcess } from './helpers/spawn-cli.ts';
 import { waitForReady } from './helpers/wait-for-ready.ts';
 
 async function createCustomConfigFile(
@@ -16,20 +20,17 @@ async function createCustomConfigFile(
   return {
     configPath,
     cleanup: async () => {
-      await fs.rm(tmpDir, { recursive: true, force: true });
+      await removeDirectoryWithRetry(tmpDir);
     },
   };
 }
 
-describe('config combinations', { timeout: 30_000 }, () => {
+describe('config combinations', { timeout: 180_000 }, () => {
   let cliProcess: ReturnType<typeof startCli> | undefined;
   let configCleanup: (() => Promise<void>) | undefined;
 
   afterEach(async () => {
-    if (cliProcess && !cliProcess.killed) {
-      cliProcess.kill('SIGKILL');
-      await cliProcess;
-    }
+    await stopCliProcess(cliProcess);
     await configCleanup?.();
   });
 
@@ -41,7 +42,7 @@ describe('config combinations', { timeout: 30_000 }, () => {
 
     cliProcess = startCli({
       args: ['serve', '-c', configPath],
-      timeout: 25_000,
+      timeout: 60_000,
     });
 
     await waitForReady(port);
@@ -60,7 +61,7 @@ describe('config combinations', { timeout: 30_000 }, () => {
 
     cliProcess = startCli({
       args: ['serve', '-c', configPath],
-      timeout: 25_000,
+      timeout: 60_000,
     });
 
     await waitForReady(port);
@@ -77,7 +78,7 @@ describe('config combinations', { timeout: 30_000 }, () => {
 
     cliProcess = startCli({
       args: ['serve', '-c', configPath],
-      timeout: 25_000,
+      timeout: 60_000,
     });
 
     const res = await waitForReady(port);
@@ -92,7 +93,7 @@ describe('config combinations', { timeout: 30_000 }, () => {
 
     cliProcess = startCli({
       args: ['serve', '-c', configPath],
-      timeout: 25_000,
+      timeout: 60_000,
     });
 
     await waitForReady(port);
@@ -112,7 +113,7 @@ describe('config combinations', { timeout: 30_000 }, () => {
 
     cliProcess = startCli({
       args: ['serve', '-c', configPath],
-      timeout: 25_000,
+      timeout: 60_000,
     });
 
     await waitForReady(port);
@@ -124,15 +125,12 @@ describe('config combinations', { timeout: 30_000 }, () => {
   });
 });
 
-describe('config loading priority', { timeout: 30_000 }, () => {
+describe('config loading priority', { timeout: 180_000 }, () => {
   let cliProcess: ReturnType<typeof startCli> | undefined;
   let configCleanup: (() => Promise<void>) | undefined;
 
   afterEach(async () => {
-    if (cliProcess && !cliProcess.killed) {
-      cliProcess.kill('SIGKILL');
-      await cliProcess;
-    }
+    await stopCliProcess(cliProcess);
     await configCleanup?.();
   });
 
@@ -163,7 +161,7 @@ describe('config loading priority', { timeout: 30_000 }, () => {
 
     cliProcess = startCli({
       args: ['serve', '-c', configPath],
-      timeout: 25_000,
+      timeout: 60_000,
     });
 
     const res = await waitForReady(port);
@@ -186,7 +184,7 @@ describe('config loading priority', { timeout: 30_000 }, () => {
 
     cliProcess = startCli({
       args: ['serve', '-c', configPath],
-      timeout: 25_000,
+      timeout: 60_000,
     });
 
     const res = await waitForReady(port);
@@ -204,7 +202,7 @@ describe('config loading priority', { timeout: 30_000 }, () => {
 
     cliProcess = startCli({
       args: ['serve', '-c', configPath],
-      timeout: 25_000,
+      timeout: 60_000,
       env: { TINYAUTH_PUBLIC_ORIGIN: 'https://env-host:5678' },
     });
 

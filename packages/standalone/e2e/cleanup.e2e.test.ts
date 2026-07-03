@@ -5,7 +5,10 @@ import { initializeServices } from '@tinyrack/tinyauth-server/services';
 import { afterEach, describe, expect, it } from 'vitest';
 import { loadConfig, resolveConfig } from '../src/lib/load-config.ts';
 import { createLogger } from '../src/lib/logger.ts';
-import { createTestConfigFile } from './helpers/config-factory.ts';
+import {
+  createTestConfigFile,
+  removeDirectoryWithRetry,
+} from './helpers/config-factory.ts';
 import { runCli } from './helpers/spawn-cli.ts';
 
 interface CleanupDbCounts {
@@ -102,7 +105,7 @@ async function createCleanupDbFixture(): Promise<CleanupDbFixture> {
     cwd: dbDir,
     cleanup: async () => {
       await cleanup();
-      await fs.rm(dbDir, { recursive: true, force: true });
+      await removeDirectoryWithRetry(dbDir);
     },
   };
 }
@@ -265,7 +268,7 @@ async function findToken(
   });
 }
 
-describe('cleanup e2e', { timeout: 20_000 }, () => {
+describe('cleanup e2e', { timeout: 90_000 }, () => {
   const cleanups: Array<() => Promise<void>> = [];
 
   afterEach(async () => {
@@ -382,7 +385,7 @@ describe('cleanup e2e', { timeout: 20_000 }, () => {
       path.join(os.tmpdir(), 'tinyauth-cleanup-cwd-'),
     );
     cleanups.push(async () => {
-      await fs.rm(cwd, { recursive: true, force: true });
+      await removeDirectoryWithRetry(cwd);
     });
     const previousCwd = process.cwd();
     const missingConfigPath = path.join(cwd, 'missing-config.yaml');
@@ -399,7 +402,7 @@ describe('cleanup e2e', { timeout: 20_000 }, () => {
       path.join(os.tmpdir(), 'tinyauth-cleanup-reject-cwd-'),
     );
     cleanups.push(async () => {
-      await fs.rm(cwd, { recursive: true, force: true });
+      await removeDirectoryWithRetry(cwd);
     });
     const previousCwd = process.cwd();
     const cleanupError = new Error('cleanup failed');

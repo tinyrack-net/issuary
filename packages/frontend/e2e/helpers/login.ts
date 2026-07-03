@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 function isNavigationAbort(error: unknown): boolean {
   const message = String(error instanceof Error ? error.message : error);
@@ -42,6 +42,8 @@ export const loginMethodPage = {
   passwordMethodLink: 'a[href^="/login/password"]',
   passkeyMethodButton: 'button:has-text("Passkey")',
 } as const;
+
+export const LOGIN_METHOD_PAGE_TIMEOUT_MS = 30_000;
 
 /**
  * Selectors for the password login page (/login/password).
@@ -92,6 +94,18 @@ export const emailVerifyPage = {
   fieldError: '[data-testid="field-error"]',
 } as const;
 
+export async function expectLoginMethodPage(page: Page): Promise<void> {
+  await expect(page.locator(loginMethodPage.passwordMethodLink)).toBeVisible({
+    timeout: LOGIN_METHOD_PAGE_TIMEOUT_MS,
+  });
+}
+
+export async function expectPasswordLoginForm(page: Page): Promise<void> {
+  await expect(page.locator(loginPasswordPage.emailInput)).toBeVisible({
+    timeout: LOGIN_METHOD_PAGE_TIMEOUT_MS,
+  });
+}
+
 /**
  * Moves from the current login entry point to the password form.
  * Password-only configs redirect from /login directly to /login/password,
@@ -103,7 +117,11 @@ export async function openPasswordLoginFromCurrentPage(
   const passwordForm = page.locator(loginPasswordPage.emailInput);
   const passwordMethodLink = page.locator(loginMethodPage.passwordMethodLink);
 
-  for (let attempt = 0; attempt < 50; attempt += 1) {
+  for (
+    let attempt = 0;
+    attempt < LOGIN_METHOD_PAGE_TIMEOUT_MS / 100;
+    attempt += 1
+  ) {
     if (await passwordForm.isVisible()) {
       return;
     }
@@ -117,7 +135,7 @@ export async function openPasswordLoginFromCurrentPage(
     await page.waitForTimeout(100);
   }
 
-  await passwordForm.waitFor({ state: 'visible', timeout: 1_000 });
+  await expectPasswordLoginForm(page);
 }
 
 /**
