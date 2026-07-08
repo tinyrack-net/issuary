@@ -250,11 +250,9 @@ describe('GET /api/oauth/:provider/authorize', () => {
 
   describe('Mode Validation', () => {
     test('should reject invalid mode parameter', async () => {
-      const client = testClient(app);
-      const res = await client.api.oauth[':provider'].authorize.$get({
-        param: { provider: 'google' },
-        query: { mode: 'invalid_mode' },
-      });
+      const res = await app.request(
+        '/api/oauth/google/authorize?mode=invalid_mode',
+      );
 
       // Zod validation should fail
       expect(res.status).toBe(400);

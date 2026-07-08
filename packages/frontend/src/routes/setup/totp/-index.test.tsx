@@ -97,7 +97,15 @@ describe('/setup/totp', () => {
     await fillTotpCode(screen, '123456');
 
     await expect.element(screen.getByText('AAAA-BBBB')).toBeVisible();
-    await screen.getByTestId('recovery-codes-confirm').click();
+    screen
+      .getByTestId('recovery-codes-confirm')
+      .element()
+      .dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true }),
+      );
+    await expect
+      .element(screen.getByTestId('recovery-codes-submit'))
+      .not.toBeDisabled();
     await screen.getByTestId('recovery-codes-submit').click();
 
     await vi.waitFor(() => {
