@@ -1086,6 +1086,7 @@ describe('End-to-End OIDC Account Selection Flow', () => {
   test('preserves chooser continuation params through consent before issuing the selected-account code', async () => {
     const client = testClient(accountSelectionApp);
     const sessionCookie = await createMultiAccountSession(ACCOUNT_B.sub);
+    const display: 'popup' = 'popup';
 
     const authorizeQuery = {
       response_type: 'code',
@@ -1098,7 +1099,7 @@ describe('End-to-End OIDC Account Selection Flow', () => {
       code_challenge_method: TEST_PKCE.codeChallengeMethod,
       prompt: 'select_account consent',
       max_age: '3600',
-      display: 'popup',
+      display,
       response_mode: 'fragment',
       login_hint: ACCOUNT_B.email,
       ui_locales: 'ko en',
