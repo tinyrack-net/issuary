@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install dependencies
+      - name: Build homepage
         run: pnpm --filter @tinyrack/tinyauth-homepage run build
 
       - name: Deploy homepage to Cloudflare Workers

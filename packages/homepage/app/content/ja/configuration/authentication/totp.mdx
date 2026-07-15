@@ -1,0 +1,33 @@
+---
+title: TOTP 2段階認証
+description: Tinyrack Authで時間ベースの使い捨てパスワード（TOTP) 2FA 設定する
+section: configuration
+order: 18
+---
+
+TOTPパスワードログインを使用している場合は、利用可能な追加認証手順です。次のオプションでこの機能を使用できます。
+
+```yaml
+auth:
+  password:
+    enabled: true
+    second_factor:
+      required: false
+    totp:
+      enabled: true
+      issuer: Tinyrack
+```
+
+- `auth.password`
+  - `second_factor.required`：会員登録時に二次認証手段の必須登録の有無を指定します。
+    これを有効にすると、ユーザーは2次認証手段まで登録しなければ会員登録を完了できません。
+    パスキーも有効になっている場合、ユーザーはパスキーと TOTP いずれかを選択して登録できます。
+    このオプションを途中で有効にすると、すべてのユーザーはログイン時にセカンダリ認証手段設定ページにリダイレクトされます。
+  - `totp`
+    - `enabled`: TOTP 認証手段を使用するかどうかを指定します。
+    - `issuer`: TOTP 発行の名前を指定します。
+
+この機能を有効にすると、ユーザーは次の機能を使用できるようになります。
+
+- ログイン時に登録 TOTP ある場合は認証手順を経てください。
+- プロフィール画面で TOTP を追加/削除できます。

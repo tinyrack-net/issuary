@@ -1,0 +1,18 @@
+---
+title: SQLite
+description: Tinyauthドラゴン SQLite データベースの構成
+section: configuration
+order: 14
+---
+
+SQLite データベースは軽くて速く、比較的設定が簡単なデータベースです。 `tinyauth`は SQLiteをプライマリデータベースとしてサポートし、ホームラップなどの小規模なデプロイ、限られたコンピュータパフォーマンスの環境、またはテスト環境に使用するのに適しています。次は SQLite データベース設定の例です。
+
+```yaml
+database:
+  type: ${DB_TYPE:-sqlite}
+  path: ${DB_PATH:-/opt/tinyauth/database.db}
+```
+
+- `database`
+  - `type`：使用するデータベースの種類を指定します。 SQLiteの場合 `sqlite`に設定します。
+  - `path`: SQLite データベースファイルのパスを指定します。

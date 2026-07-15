@@ -1,0 +1,78 @@
+---
+title: GitHub
+description: Tinyauthから GitHub OAuth ログインの設定
+section: configuration
+order: 23
+---
+
+GitHub OAuthを使用すると、ユーザー GitHub アカウントで `tinyauth`にログインできます。このガイドは GitHubから OAuth アプリを作成して `tinyauth`に連動する方法を説明します。
+
+---
+
+## 1. GitHub OAuth アプリ設定
+
+1. [GitHub Developer Settings](https://github.com/settings/developers)に接続します。
+2. **OAuth Apps** > **New OAuth App**をクリックしてください。
+3. 次の情報を入力してください。
+   - **Application name**：ユーザーに表示されるアプリ名
+   - **Homepage URL**: `https://내_도메인.com`
+   - **Authorization callback URL**:
+     ```
+     https://내_도메인.com/api/oauth/github/callback
+     ```
+4. **Register application**をクリックしてください。
+5. 生成されたアプリページから **Client ID**を確認し、 **Generate a new client secret**をクリックして **Client Secret**を生成します。この値を安全に保管してください。
+
+:::caution
+Client Secretは作成直後にのみ表示されます。ページを離れるとまた見えないので、必ず安全な場所に保存しておいてください。
+:::
+
+---
+
+## 2. Tinyauth 設定
+
+GitHubから発行された資格証明 `config.yaml`に設定します。
+
+```yaml
+# config.yaml
+identity_providers:
+  - id: github
+    type: github
+    enabled: true
+    client_id: ${GITHUB_CLIENT_ID}
+    client_secret: ${GITHUB_CLIENT_SECRET}
+```
+
+- `id`：これはプロバイダの一意の識別子です。コールバック URLに使われます。
+- `type`: `github`で指定します。
+- `client_id`: GitHubから発行されたクライアントIDです。
+- `client_secret`: GitHubから発行されたClient Secretです。
+
+:::note
+GitHub OAuthは基本的に `user:email` スコープをリクエストしてユーザーのメールアドレスを取得します。
+:::
+
+---
+
+## 例
+
+`tinyauth`を `https://auth.example.com`で運営する場合の全体設定例です。
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.example.com
+
+identity_providers:
+  - id: github
+    type: github
+    enabled: true
+    client_id: Iv1.a1b2c3d4e5f6g7h8
+    client_secret: abcdef1234567890abcdef1234567890abcdef12
+```
+
+この場合 GitHub OAuth アプリのAuthorization callback URLは、次のように設定する必要があります。
+
+```
+https://auth.example.com/api/oauth/github/callback
+```

@@ -1,0 +1,29 @@
+---
+title: ブランディング
+description: Tinyauth ログインページのブランディングのカスタマイズ
+section: configuration
+order: 13
+---
+
+`tinyauth`のフロントエンドは、ログインページと他のインターフェイス要素のブランディングをカスタマイズするオプションを提供します。以下は、ブランディング設定に関する構成例です。
+
+```yaml
+branding:
+  background_url: https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071
+  icon_url: https://example.com/logo.png
+
+  title:
+    en: My App
+    ko: 내 앱
+    ja: マイアプリ
+
+  subtitle:
+    en: Log in to your account
+    ko: 계정에 로그인하세요
+    ja: アカウントにログインしてください
+```
+
+- `background_url`: ログインページの背景画像 URLこれです。この画像はフルスクリーンの背景として使用されます。推奨解像度は1920×1080ピクセルです。
+- `icon_url`：ログインページやその他のインターフェイス要素に表示されるアイコンまたはロゴ画像 URLこれです。推奨サイズは128×128ピクセルです。
+- `title`：多言語のアプリケーションのタイトルです。言語コードは `ISO 639-1` 規格を使用します。たとえば、英語は `en`、韓国語 `ko`、日本語は `ja`はい。
+- `subtitle`：多言語のアプリケーションのサブタイトルです。言語コードは `ISO 639-1` 規格を使用します。ユーザーはログインページやその他のインターフェース要素でサポートされている言語から選択できます。

@@ -1,0 +1,61 @@
+---
+title: 패스키
+description: Tinyrack Auth에서 WebAuthn/패스키 인증 구성하기
+section: configuration
+order: 19
+---
+
+패스키(Passkey)는 비밀번호 없이 생체 인식이나 PIN을 사용하여 안전하게 로그인할 수 있는 차세대 인증 수단이에요. [WebAuthn/FIDO2](https://webauthn.io/) 표준을 기반으로 하며, 피싱에 강하고 사용자 경험이 뛰어나요. 설정 예시는 다음과 같아요.
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.example.com
+
+auth:
+  passkey:
+    enabled: true
+    rp_id: example.com
+    origins:
+      - https://auth.example.com
+      - https://login.example.com
+```
+
+- `enabled`: 패스키 인증을 활성화할지 여부예요. 기본값은 `false`예요.
+- `rp_id`: WebAuthn Relying Party ID예요. 프로토콜(`https://`)이나 포트(`:8080`)를 제외한 도메인만 입력해야 해요. 지정하지 않으면 `server.public_origin`의 호스트명에서 자동으로 추출돼요. 상위 도메인을 지정하면 하위 도메인 간에 패스키를 공유할 수 있어요.
+- `origins`: WebAuthn 검증에 허용할 출처(origin) 목록이에요. 지정하지 않으면 `server.public_origin` 값이 기본으로 사용돼요. 여러 도메인에서 동일한 패스키를 사용해야 하는 경우 유용해요.
+
+:::caution
+패스키는 보안상의 이유로 `https` 프로토콜에서만 정상 동작해요 (`localhost`는 예외). 프로덕션 환경에서는 반드시 `https`를 사용해 주세요.
+:::
+
+---
+
+## 예시
+
+`tinyauth`를 `https://auth.example.com`에서 운영하고, `example.com`의 모든 하위 도메인에서 패스키를 공유하려면 다음과 같이 구성할 수 있어요.
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.example.com
+
+auth:
+  passkey:
+    enabled: true
+    rp_id: example.com
+    origins:
+      - https://auth.example.com
+```
+
+단일 도메인에서만 패스키를 사용하는 경우, `rp_id`와 `origins`를 생략하면 `server.public_origin`에서 자동으로 설정돼요.
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.example.com
+
+auth:
+  passkey:
+    enabled: true
+```

@@ -1,0 +1,140 @@
+---
+title: 明示的なフロー
+description: 利用規約の明示的な同意フローを構成する
+section: configuration
+order: 27
+---
+
+明示的な同意フローは、ユーザーが各規約項目に対してチェックボックスを直接選択して同意する方法です。法的要件が厳しい環境や、オプションの同意項目（マーケティング受付など）を提供したい場合に適しています。
+
+---
+
+## 構成方法
+
+`terms` セクションから `consent_mode`を `explicit`に設定します（デフォルトですので省略することもできます）。
+
+```yaml
+# config.yaml
+terms:
+  - id: tos
+    required: true
+    consent_mode: explicit
+    version: "1.0.0"
+    content:
+      ko:
+        title: 이용약관
+        type: link
+        content: https://example.com/ko/terms
+      en:
+        title: Terms of Service
+        type: link
+        content: https://example.com/en/terms
+
+  - id: privacy
+    required: true
+    consent_mode: explicit
+    version: "1.0.0"
+    content:
+      ko:
+        title: 개인정보 처리방침
+        type: link
+        content: https://example.com/ko/privacy
+      en:
+        title: Privacy Policy
+        type: link
+        content: https://example.com/en/privacy
+
+  - id: marketing
+    required: false
+    consent_mode: explicit
+    version: "1.0.0"
+    content:
+      ko:
+        title: 마케팅 수신 동의
+        type: text
+        content: 마케팅 이메일 및 프로모션 알림을 수신하시겠어요?
+      en:
+        title: Marketing Communications
+        type: text
+        content: Would you like to receive marketing emails and promotional notifications?
+```
+
+---
+
+## 設定項目
+
+| アイテム | 必須 | デフォルト | 説明 |
+|------|------|--------|------|
+| `id` | O | - | 規約の一意の識別子です。小文字の英数字、 `-`, `_`しか使えません。 |
+| `required` | X | `true` | 同意が不可欠です。 `true`これでチェックしないと加入できません。 |
+| `consent_mode` | X | `explicit` | `explicit`に設定するとチェックボックスが表示されます。 |
+| `version` | O | - | 規約のバージョン文字列です。 |
+
+---
+
+## 利用規約コンテンツタイプ
+
+規約内容（`content`）は言語ごとに2つのタイプをサポートしています。
+
+### リンクタイプ(`type: link`)
+
+外部 URLとして規約専門をつなぎます。チェックボックスの横に利用規約名がリンクとして表示されます。
+
+```yaml
+content:
+  ko:
+    title: 이용약관
+    type: link
+    content: https://example.com/ko/terms
+```
+
+### テキストタイプ(`type: text`)
+
+条件の内容をインラインで表示します。チェックボックスの横の規約名をクリックすると、内容がモーダルウィンドウで表示されます。
+
+```yaml
+content:
+  ko:
+    title: 마케팅 수신 동의
+    type: text
+    content: 마케팅 이메일 및 프로모션 알림을 수신하시겠어요?
+```
+
+---
+
+## 動作方法
+
+### 会員登録時
+
+パスワードベースの会員登録画面で、明示的な規約項目がチェックボックスとして表示されます。
+- `required: true`ご利用規約は必ずチェックして登録が可能です。
+- `required: false`ある規約はオプションです。
+
+### OAuth ソーシャルログイン時
+
+明示的な条件が1つでも存在する場合、新しいユーザーのソーシャルログイン時に別の条件の同意ページ（`/terms`）に行きます。ユーザーが前提条件に同意した後にアカウントの作成が完了しました。
+
+---
+
+## 利用規約バージョンの更新
+
+利用規約 `version` 値を変更すると、その条件に既に同意している既存のユーザーに再同意を求めることができます。
+
+```yaml
+# 기존
+- id: tos
+  version: "1.0.0"
+
+# 변경 후
+- id: tos
+  version: "2.0.0"
+```
+
+バージョンが変更された場合：
+1. 既存のユーザーが次のログイン時に利用規約に同意するページ（`/terms`）に行きます。
+2. 更新された規約の横にバージョンが変更されたという案内が表示されます。
+3. ユーザーが再同意すると、新しいバージョンで同意記録が更新されます。
+
+:::note
+バージョン比較は正確な文字列一致で行われます。 `"1.0.0"`から `"1.0.1"`に変更しても再同意が必要です。
+:::

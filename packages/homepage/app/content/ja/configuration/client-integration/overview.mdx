@@ -1,0 +1,113 @@
+---
+title: 始める
+description: Tinyauthに OAuth/OIDC クライアントを登録する方法
+section: configuration
+order: 28
+---
+
+`tinyauth`を通じてユーザーを認証したいアプリケーションは、まず OAuth/OIDC クライアントとして登録する必要があります。クライアント登録は `config.yaml`の `clients` セクションでできます。
+
+```yaml
+# config.yaml
+clients:
+  - id: my-app
+    name: My Application
+    client_id: my-app-client-id
+    client_secret: my-app-client-secret
+    redirect_uris:
+      - https://myapp.example.com/callback
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+      - refresh_token
+    scope: openid profile email
+```
+
+---
+
+## 設定項目
+
+| アイテム | 必須 | 説明 |
+|------|------|------|
+| `id` | O | クライアントの内部一意の識別子です。 |
+| `name` | O | ユーザーに表示されるアプリケーション名です。同意画面に見えます。 |
+| `logo_uri` | X | 同意画面に表示されるロゴ画像 URLこれです。 |
+| `client_id` | O | OAuth リクエストで使用するパブリッククライアント識別子です。 |
+| `client_secret` | △ | クライアントシークレットです。機密クライアント（サーバー側アプリ）でのみ必要で、公開クライアント（SPA/モバイル)では省略します。 |
+| `redirect_uris` | O | 認証後にリダイレクトできる許可 URL リストです。 |
+| `response_types` | O | 許可する OAuth 応答タイプです。一般的に `code`を使用します。 |
+| `grant_types` | O | 許可する OAuth 認可タイプです。 |
+| `scope` | O | 許可する OAuth スコープ（空白で区切り）です。 |
+
+---
+
+## 機密クライアント vs 公開クライアント
+
+OAuthでは、クライアントを2つのタイプに分けます。
+
+### 機密クライアント(Confidential Client)
+
+サーバー側でシークレットを安全に保管できるアプリケーションです。 `client_secret`を設定し、トークン交換時にシークレットを一緒に送信します。
+
+- Next.js、Express、Spring Bootなどのサーバーサイドアプリ
+- `client_secret`この必須
+
+```yaml
+clients:
+  - id: web-server-app
+    name: Web Server App
+    client_id: web-server-client
+    client_secret: ${WEB_SERVER_SECRET}
+    redirect_uris:
+      - https://myapp.com/api/callback
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+      - refresh_token
+    scope: openid profile email
+```
+
+### パブリッククライアント (Public Client)
+
+クライアント側のコードでシークレットを安全に保持できないアプリケーションです。 `client_secret`を省略し、代わりに [PKCE](https://datatracker.ietf.org/doc/html/rfc7636) を使用してセキュリティを確保します。
+
+- React SPA, Vue SPA、モバイルアプリなど
+- `client_secret` 省略
+
+```yaml
+clients:
+  - id: spa-app
+    name: Single Page App
+    client_id: spa-client
+    redirect_uris:
+      - https://myapp.com/callback
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+      - refresh_token
+    scope: openid profile email
+```
+
+---
+
+## OIDC Discovery
+
+登録されたクライアントアプリケーションは `tinyauth`の OIDC Discoveryエンドポイントを使用して、認証に必要な情報を自動的にインポートできます。
+
+```
+{server.public_origin}/.well-known/openid-configuration
+```
+
+このエンドポイントは認証、トークン、ユーザー情報、 JWKS などのエンドポイント URLを返します。ほとんど OIDC クライアントライブラリは URLだけで自動設定が可能です。
+
+---
+
+## 次のステップ
+
+クライアントを登録した後、実際のアプリケーションに連動する方法については、次のガイドを参照してください。
+
+- [Next.js 連動](/ja/configuration/client-integration/nextjs) - サーバーサイドアプリ(機密クライアント)
+- [React SPA 連動](/ja/configuration/client-integration/react-spa) - クライアントサイドアプリ(パブリッククライアント)

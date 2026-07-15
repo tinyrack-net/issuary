@@ -1,0 +1,231 @@
+---
+title: React SPA 連動
+description: React シングルページアプリケーションと Tinyauth 連動する
+section: configuration
+order: 30
+---
+
+このガイドは React SPA(シングルページアプリケーション)から `tinyauth`を OIDC プロバイダとして使用して認証を実装する方法について説明します。 SPAはクライアント側のコードでシークレットを安全に保持できないため、 **パブリッククライアント** パターンと PKCEを使用します。
+
+---
+
+## 事前準備
+
+### 1. Tinyauth クライアント登録
+
+`tinyauth`の `config.yaml`に React SPAを公​​開クライアントとして登録します。 `client_secret`は省略します。
+
+```yaml
+# config.yaml
+clients:
+  - id: react-spa
+    name: My React App
+    client_id: react-spa-client
+    redirect_uris:
+      - http://localhost:3001/callback
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+      - refresh_token
+    scope: openid profile email
+```
+
+### 2. 環境変数の設定
+
+Viteベース React プロジェクトの `.env` ファイルに次の環境変数を設定します。
+
+```bash
+VITE_OIDC_ISSUER=http://localhost:8080
+VITE_OIDC_CLIENT_ID=react-spa-client
+VITE_OIDC_REDIRECT_URI=http://localhost:3001/callback
+VITE_OIDC_SCOPE=openid profile email
+```
+
+---
+
+## 認証フローの概要
+
+React SPA パブリッククライアントの認証フローは次のとおりです。
+
+1. ユーザーがログインボタンをクリック
+2. ブラウザで PKCE ペア、state、nonceを作成してsessionStorageに保存する
+3. ユーザー `tinyauth` 認証ページにリダイレクト
+4. 認証完了後 `/callback` ルートロコールバック
+5. **ブラウザから直接** 認証コードをトークンに交換する（client_secretなしで、 PKCEとしてセキュリティ）
+6. トークンを localStorage に保存
+7. ユーザーをプロフィールページに移動
+
+---
+
+## 実装ガイド
+
+### OIDC Discovery
+
+アプリ初期化時 OIDC Discoveryエンドポイントから設定を取得します。
+
+```typescript
+// libs/oidc-client.ts
+let oidcConfig: OIDCConfig | null = null;
+
+export async function initializeOIDCConfig() {
+  const issuer = import.meta.env.VITE_OIDC_ISSUER;
+  const res = await fetch(`${issuer}/.well-known/openid-configuration`);
+  const discovery = await res.json();
+
+  oidcConfig = {
+    authorizationEndpoint: discovery.authorization_endpoint,
+    tokenEndpoint: discovery.token_endpoint,
+    userinfoEndpoint: discovery.userinfo_endpoint,
+    clientId: import.meta.env.VITE_OIDC_CLIENT_ID,
+    redirectUri: import.meta.env.VITE_OIDC_REDIRECT_URI,
+    scope: import.meta.env.VITE_OIDC_SCOPE,
+  };
+}
+```
+
+### ログインハンドラ
+
+```typescript
+// routes/index.tsx
+async function handleLogin() {
+  const { codeVerifier, codeChallenge } = await generatePKCE();
+  const state = crypto.randomUUID();
+  const nonce = crypto.randomUUID();
+
+  // state와 code_verifier를 sessionStorage에 저장
+  sessionStorage.setItem('oidc_auth_state', JSON.stringify({
+    state, codeVerifier, nonce,
+  }));
+
+  const params = new URLSearchParams({
+    client_id: oidcConfig.clientId,
+    redirect_uri: oidcConfig.redirectUri,
+    response_type: 'code',
+    scope: oidcConfig.scope,
+    state,
+    nonce,
+    code_challenge: codeChallenge,
+    code_challenge_method: 'S256',
+  });
+
+  // tinyauth 인증 페이지로 리다이렉트
+  window.location.href =
+    `${oidcConfig.authorizationEndpoint}?${params}`;
+}
+```
+
+### コールバック処理
+
+認証コードをトークンに交換します。パブリッククライアントなので `client_secret` なし `code_verifier`だけ転送します。
+
+```typescript
+// routes/callback.tsx
+async function handleCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const state = params.get('state');
+
+  // state 검증
+  const stored = JSON.parse(
+    sessionStorage.getItem('oidc_auth_state') || '{}'
+  );
+  if (state !== stored.state) {
+    throw new Error('State mismatch');
+  }
+
+  // 토큰 교환 (client_secret 없이)
+  const res = await fetch(oidcConfig.tokenEndpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: code!,
+      redirect_uri: oidcConfig.redirectUri,
+      client_id: oidcConfig.clientId,
+      code_verifier: stored.codeVerifier, // PKCE 검증
+    }),
+  });
+
+  const tokens = await res.json();
+
+  // localStorage에 토큰 저장
+  localStorage.setItem('oidc_tokens', JSON.stringify(tokens));
+  sessionStorage.removeItem('oidc_auth_state');
+
+  // 프로필 페이지로 이동
+  navigate({ to: '/profile' });
+}
+```
+
+### トークンアクセスとログアウト
+
+```typescript
+// libs/token-storage.ts
+export function getTokens() {
+  const stored = localStorage.getItem('oidc_tokens');
+  return stored ? JSON.parse(stored) : null;
+}
+
+export function clearTokens() {
+  localStorage.removeItem('oidc_tokens');
+}
+```
+
+### ルートガード
+
+認証されていないユーザーが保護されたページにアクセスするのを防ぎます。
+
+```typescript
+// routes/profile.tsx
+export const Route = createFileRoute('/profile')({
+  beforeLoad: () => {
+    const tokens = getTokens();
+    if (!tokens) {
+      throw redirect({ to: '/' });
+    }
+    return { tokens };
+  },
+  component: ProfilePage,
+});
+```
+
+---
+
+## Vite開発サーバープロキシ
+
+開発環境で CORS 問題を回避するには、Viteプロキシを設定してください。
+
+```typescript
+// vite.config.ts
+export default defineConfig({
+  server: {
+    port: 3001,
+    proxy: {
+      '/application': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
+  },
+});
+```
+
+---
+
+## コアポイント
+
+- **`client_secret`ありません。** パブリッククライアントはシークレットの代わりに PKCEで認証コードの消臭を防御します。
+- **トークンはlocalStorageに保存されます。** サーバーサイドアプリのhttpOnly Cookieよりもセキュリティレベルが低いため、 XSS 防御に格別に注意しなければなりません。
+- **認証ステータスはsessionStorageに保存されます。** タブが閉じると自動的に整理されます。
+- **トークン交換はブラウザで直接行われます。** サーバープロキシは必要ありません。
+
+:::caution
+SPAでのトークンの保存は XSS 攻撃に脆弱です。本番環境では、Content Security Policy（CSP）ヘッダ設定、サードパーティスクリプトの最小化など XSS 防御措置を必ず適用してください。
+:::
+
+:::note
+より完全な実装例はプロジェクトの `examples/clients/react-spa` ディレクトリを参照してください。 IDトークンデコード、トークンイントロスペクション、トークンキャンセル、エラー処理などの追加機能が含まれています。
+:::

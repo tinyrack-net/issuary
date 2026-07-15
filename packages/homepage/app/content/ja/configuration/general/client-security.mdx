@@ -1,0 +1,94 @@
+---
+title: クライアントセキュリティ
+description: Tinyauthのセッションシークレット、ハッシュシークレット、 JWT トークンの寿命とキー循環の設定
+section: configuration
+order: 10
+---
+
+`tinyauth`はOAuth2/OIDC クライアントへ JWT ベースのアクセストークンとリフレッシュトークンを発行します。アクセストークンは API 要求認証に使用され、短い寿命を持ち、リフレッシュトークンは新しいアクセストークンの発行に使用され、比較的長い寿命を持ちます。設定例は次のとおりです。
+
+```yaml
+# config.yaml
+security:
+  session_secret: ${SESSION_SECRET}
+  hash_secret: ${HASH_SECRET}
+
+tokens:
+  access_token_ttl: ${ACCESS_TOKEN_TTL:-3600}
+  refresh_token_ttl: ${REFRESH_TOKEN_TTL:-2592000}
+  key_rotation:
+    enabled: ${JWT_KEY_ROTATION_ENABLED:-true}
+    interval_days: ${JWT_KEY_ROTATION_DAYS:-30}
+    overlap_days: ${JWT_KEY_OVERLAP_DAYS:-7}
+```
+
+- `security.session_secret`：セッションクッキーの署名に使用する秘密鍵です。本番環境では、必ず一意でランダムな値を生成する必要があります。この値を変更すると、既存のすべてのセッションが無効になります。
+- `security.hash_secret`：パスワード、クライアントシークレット、ワンタイムトークンハッシュに使用するbase64url 32バイトのルートシークレットです。
+- `tokens.access_token_ttl`: JWT アクセストークンの寿命（秒単位）です。デフォルトは `3600`（1時間）です。推奨範囲は900～3600（15分～1時間）です。
+- `tokens.refresh_token_ttl`: JWT リフレッシュトークンの寿命（秒単位）です。デフォルトは `2592000`（30日）です。推奨範囲は604800～2592000（7～30日）です。
+- `tokens.key_rotation.enabled`: JWT 署名キーの自動循環を有効にするかどうか。デフォルトは `true`はい。
+- `tokens.key_rotation.interval_days`：鍵循環周期（日単位）です。デフォルトは `30`仕事です。このサイクルごとに新しい署名キーがアクティブになります。
+- `tokens.key_rotation.overlap_days`：前のキーを有効に保つ期間（日単位）です。デフォルトは `7`仕事です。鍵の交換直後でも、前の鍵で署名されたトークンを検証できるようにする猶予期間です。
+
+:::note
+`security.session_secret`銀 `openssl rand -hex 32` 命令で生成できます。
+`security.hash_secret`銀 `openssl rand -base64 32 | tr '+/' '-_' | tr -d '='`命令で生成できます。
+:::
+
+---
+
+## トークン寿命
+
+トークンの寿命を短く設定するとセキュリティが強化されますが、クライアントはより頻繁にトークンを更新する必要があります。サービスのセキュリティ要件のレベルに合わせて適切に調整してください。
+
+```yaml
+# config.yaml
+tokens:
+  access_token_ttl: 1800
+  refresh_token_ttl: 604800
+```
+
+上記の設定は、アクセストークンを30分、リフレッシュトークンを7日に設定する例です。セキュリティが重要なサービスなら、このように短い寿命を使うのがいいです。
+
+---
+
+## JWT キー循環
+
+`tinyauth`は RS256 非対称キーで JWTに署名します。セキュリティを強化するために署名キーを定期的に交換（循環）する機能を提供し、デフォルトで有効になっています。
+
+```yaml
+# config.yaml
+tokens:
+  key_rotation:
+    enabled: true
+    interval_days: 30
+    overlap_days: 7
+```
+
+キー循環が有効になると、 `tokens.key_rotation.interval_days`毎に新しい署名キーが生成され、アクティブになります。前のキーは `tokens.key_rotation.overlap_days` 間有効に保たれ、キー切り替え期間中でも既存のトークンを正常に検証できます。
+
+:::note
+キー循環 `next` → `active` → `previous` → `retired` ライフサイクルに従います。アクティブキーと前のキーの両方 `/.well-known/jwks.json` エンドポイントを通じて公開されるので、クライアントはキー切り替え期間中でもトークンを正常に検証できます。
+:::
+
+---
+
+## プロキシ設定
+
+リバースプロキシ（nginx、 Caddy など）後ろから `tinyauth`を運用する場合、クライアントの実際のIPアドレスとプロトコルを正しく識別するため `trust_proxy`を設定する必要があります。
+
+```yaml
+# config.yaml
+server:
+  trust_proxy: true
+```
+
+- `server.trust_proxy`：リバースプロキシヘッダを信頼するかどうかを設定します。デフォルトは `false`はい。
+  - `true`：すべてのプロキシヘッダを信頼します。完全に信頼できるネットワークでのみ使用してください。
+  - `false`：プロキシヘッダを信頼していません。
+  - `'127.0.0.1'`：指定されたIPアドレスのプロキシのみを信頼します。
+  - `1` または `2`：指定されたホップ数だけのプロキシを信頼します。
+
+:::caution
+`server.trust_proxy`を正しく設定しないと、IP スプーフィングの脆弱性が発生する可能性があります。本番環境では `true` 代わりに、特定のプロキシIPアドレスまたはホップ数を指定することをお勧めします。
+:::

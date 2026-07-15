@@ -1,0 +1,236 @@
+---
+title: Next.js 連動
+description: Next.js アプリケーションと Tinyauth 連動する
+section: configuration
+order: 29
+---
+
+このガイドは Next.js App Routerアプリケーションで `tinyauth`を OIDC プロバイダとして使用して認証を実装する方法について説明します。 Next.jsはサーバーサイドでシークレットを安全に保管できるため、 **機密クライアント (Confidential Client)** パターンを使ってください。
+
+---
+
+## 事前準備
+
+### 1. Tinyauth クライアント登録
+
+`tinyauth`の `config.yaml`に Next.js アプリを機密クライアントとして登録します。
+
+```yaml
+# config.yaml
+clients:
+  - id: nextjs-app
+    name: My Next.js App
+    client_id: nextjs-client-id
+    client_secret: nextjs-client-secret
+    redirect_uris:
+      - http://localhost:3000/api/callback
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+      - refresh_token
+    scope: openid profile email
+```
+
+### 2. 環境変数の設定
+
+Next.js プロジェクトの `.env.local` ファイルに次の環境変数を設定します。
+
+```bash
+OIDC_ISSUER=http://localhost:8080
+OIDC_CLIENT_ID=nextjs-client-id
+OIDC_CLIENT_SECRET=nextjs-client-secret
+OIDC_REDIRECT_URI=http://localhost:3000/api/callback
+OIDC_SCOPE=openid profile email
+```
+
+---
+
+## 認証フローの概要
+
+Next.js 機密クライアントの認証フローは次のとおりです。
+
+1. ユーザーがログインボタンをクリックすると `/api/auth/login` API ルートに移動
+2. サーバー上 PKCE ペア、state、nonceを作成してCookieに保存
+3. ユーザー `tinyauth` 認証ページにリダイレクト
+4. 認証完了後 `/api/callback`によってコールバック
+5. サーバー上の認証コードをトークンに交換する（client_secretを含む）
+6. トークンをhttpOnly Cookieに安全に保存する
+7. ユーザーをプロフィールページにリダイレクト
+
+---
+
+## 実装ガイド
+
+### OIDC Discovery
+
+サーバー起動時 `tinyauth`の OIDC Discoveryエンドポイントから設定を自動的にインポートします。
+
+```typescript
+// lib/oidc-config.ts
+const discoveryUrl = `${process.env.OIDC_ISSUER}/.well-known/openid-configuration`;
+
+export async function getOIDCConfig() {
+  const response = await fetch(discoveryUrl);
+  const discovery = await response.json();
+
+  return {
+    authorizationEndpoint: discovery.authorization_endpoint,
+    tokenEndpoint: discovery.token_endpoint,
+    userinfoEndpoint: discovery.userinfo_endpoint,
+    jwksUri: discovery.jwks_uri,
+    clientId: process.env.OIDC_CLIENT_ID,
+    clientSecret: process.env.OIDC_CLIENT_SECRET,
+    redirectUri: process.env.OIDC_REDIRECT_URI,
+    scope: process.env.OIDC_SCOPE,
+  };
+}
+```
+
+### ログイン API ルート
+
+PKCEとstateを作成して認証する URLにリダイレクトします。
+
+```typescript
+// app/api/auth/login/route.ts
+import { NextResponse } from 'next/server';
+import { getOIDCConfig } from '@/lib/oidc-config';
+import { generatePKCE } from '@/lib/pkce';
+
+export async function GET() {
+  const config = await getOIDCConfig();
+  const { codeVerifier, codeChallenge } = await generatePKCE();
+  const state = crypto.randomUUID();
+  const nonce = crypto.randomUUID();
+
+  // state와 code_verifier를 쿠키에 저장
+  const authState = JSON.stringify({ state, codeVerifier, nonce });
+
+  const params = new URLSearchParams({
+    client_id: config.clientId,
+    redirect_uri: config.redirectUri,
+    response_type: 'code',
+    scope: config.scope,
+    state,
+    nonce,
+    code_challenge: codeChallenge,
+    code_challenge_method: 'S256',
+  });
+
+  const response = NextResponse.redirect(
+    `${config.authorizationEndpoint}?${params}`
+  );
+
+  response.cookies.set('oidc_state', authState, {
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 600, // 10분
+  });
+
+  return response;
+}
+```
+
+### PKCE ヘルパー
+
+```typescript
+// lib/pkce.ts
+export async function generatePKCE() {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  const codeVerifier = base64url(array);
+
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(codeVerifier)
+  );
+  const codeChallenge = base64url(new Uint8Array(digest));
+
+  return { codeVerifier, codeChallenge };
+}
+
+function base64url(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+```
+
+### コールバック API ルート
+
+認証コードをトークンに交換して安全に保存します。
+
+```typescript
+// app/api/callback/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { getOIDCConfig } from '@/lib/oidc-config';
+
+export async function GET(req: NextRequest) {
+  const config = await getOIDCConfig();
+  const code = req.nextUrl.searchParams.get('code');
+  const state = req.nextUrl.searchParams.get('state');
+
+  // state 검증
+  const authStateCookie = req.cookies.get('oidc_state')?.value;
+  const authState = JSON.parse(authStateCookie || '{}');
+
+  if (state !== authState.state) {
+    return NextResponse.redirect(new URL('/error', req.url));
+  }
+
+  // 토큰 교환 (client_secret 포함)
+  const tokenResponse = await fetch(config.tokenEndpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: code!,
+      redirect_uri: config.redirectUri,
+      client_id: config.clientId,
+      client_secret: config.clientSecret, // 기밀 클라이언트
+      code_verifier: authState.codeVerifier,
+    }),
+  });
+
+  const tokens = await tokenResponse.json();
+
+  // 토큰을 httpOnly 쿠키에 저장
+  const response = NextResponse.redirect(new URL('/profile', req.url));
+  response.cookies.delete('oidc_state');
+  response.cookies.set('oidc_tokens', JSON.stringify(tokens), {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 60 * 60 * 24 * 30, // 30일
+  });
+
+  return response;
+}
+```
+
+### ログアウト API ルート
+
+```typescript
+// app/api/auth/logout/route.ts
+import { NextResponse } from 'next/server';
+
+export async function GET() {
+  const response = NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_BASE_URL));
+  response.cookies.delete('oidc_tokens');
+  return response;
+}
+```
+
+---
+
+## コアポイント
+
+- **トークンはhttpOnly Cookieに保存**そうです。クライアントJavaScriptからアクセスできない XSS 攻撃から安全です。
+- **トークン交換はサーバーサイドで** 行われます。 `client_secret`このブラウザに公開されません。
+- **PKCEを使用**そうです。機密クライアントでも PKCEを併用するとセキュリティがさらに強化されます。
+- **トークンのリフレッシュ**銀サーバー API ルート経由でプロキシするのが好きです。
+
+:::note
+より完全な実装例はプロジェクトの `examples/clients/nextjs-ssr` ディレクトリを参照してください。トークンイントロスペクション、トークンキャンセル、エラー処理などの追加機能が含まれています。
+:::

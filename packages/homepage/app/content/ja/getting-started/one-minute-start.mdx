@@ -1,0 +1,90 @@
+---
+title: 1分スタート
+description: 1分で Tinyauthを実行してみてください
+section: getting-started
+order: 1
+---
+
+`Tinyauth`3分で実行してみてください！ Dockerあれば、以下の命令一つですぐに始めることができます。
+
+```bash
+docker run \
+  --rm \
+  -p 8080:8080 \
+  -e SESSION_SECRET="$(openssl rand -hex 32)" \
+  -e HASH_SECRET="$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')" \
+  ghcr.io/tinyrack-net/tinyauth
+```
+
+---
+
+## 実行確認
+
+サーバーが起動すると、ブラウザで [http://localhost:8080](http://localhost:8080）に接続してみてください。 `tinyauth`のログインページが表示されます。
+
+---
+
+## 最初のユーザー登録
+
+デフォルト設定ではパスワード認証が有効になっていますが、購読は許可されていません。 `config.yaml`を使って購読を許可したり、事前定義のユーザーを追加したりできます。
+
+### 方法1：購読を許可する
+
+`config.yaml` ファイルを作成し、すべての電子メールの購読を許可します。
+
+```yaml
+# config.yaml
+registration:
+  enabled: true
+  allowed_email_patterns: []
+  email_verification_required: false
+
+security:
+  session_secret: "$(openssl rand -hex 32)"
+  hash_secret: "$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')"
+```
+
+迅速なローカル確認のため `email_verification_required: false`を一緒に使用します。本番環境では、メール送信設定を追加して電子メール認証を再度有効にする方が安全です。
+
+```bash
+docker run \
+  --rm \
+  -p 8080:8080 \
+  -v ./config.yaml:/opt/config.yaml \
+  ghcr.io/tinyrack-net/tinyauth
+```
+
+### 方法2：事前定義ユーザー
+
+`config.yaml`から直接ユーザーを定義することもできます。
+
+```yaml
+# config.yaml
+users:
+  - sub: admin
+    email: admin@example.com
+    password: your-password
+    role: admin
+
+security:
+  session_secret: "$(openssl rand -hex 32)"
+  hash_secret: "$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')"
+```
+
+```bash
+docker run \
+  --rm \
+  -p 8080:8080 \
+  -v ./config.yaml:/opt/config.yaml \
+  ghcr.io/tinyrack-net/tinyauth
+```
+
+---
+
+## 次のステップ
+
+基本的な実行を確認したら、本番環境に合わせて設定を調整してみてください。
+
+- [設定を始める](/ja/configuration/overview) - 全体の設定構造を理解する
+- [Docker 展開](/ja/deployment/docker) - Docker Compose、リバースプロキシ、セキュリティ設定
+- [クライアント連携](/ja/configuration/client-integration/overview) - アプリケーションに認証を連携する

@@ -1,0 +1,75 @@
+---
+title: 시작하기
+description: Tinyauth 설정 시스템 이해하기
+section: configuration
+order: 5
+---
+
+`tinyauth`은 `config.yaml` 이라는 단일 `yaml` 파일로 설정돼요. 이를 통해 로그인 방식, 보안, 데이터베이스, 브랜딩, 회원가입 정책 등 `tinyauth` 운영에 필요한 대부분의 설정이 이루어져요. 설정 파일은 다음과 같은 주요 섹션들로 구성되어 있어요.
+
+```yaml
+# config.yaml
+server:               # 공개 URL, 리스닝 포트, 프록시 설정
+tokens:               # 액세스/리프레시 토큰 및 키 순환 설정
+i18n:                 # 지원 언어 설정
+branding:             # 테마, 제목, 배경 이미지 등 UI 설정
+registration:         # 회원가입 정책
+account_deletion:     # 계정 삭제 정책
+security:             # 세션/해시 시크릿 설정
+database:             # 데이터베이스 설정
+auth:                 # 기본 인증 방식 설정
+email:                # 이메일 전송 설정
+identity_providers:   # 타사 인증 방식 설정
+clients:              # 인증 클라이언트 설정
+users:                # 사용자 설정
+terms:                # 이용 약관 설정
+scheduler:            # 스케줄러 설정
+cleanup:              # 정리 작업 설정
+frontend:             # standalone 전용 프론트엔드 서빙 설정
+```
+
+작성한 `config.yaml`을 도커와 함께 사용하려는 경우 다음과 같이 사용할 수 있어요.
+
+```bash
+docker run \
+  -p 8080:8080 \
+  -v ./config.yaml:/opt/config.yaml \
+  ghcr.io/tinyrack-net/tinyauth
+```
+
+---
+
+## 최소 요구 설정
+
+`tinyauth`을 사용하려면 최소한 다음의 설정을 구성해야 해요.
+
+```yaml
+# config.yaml
+server:
+  public_origin: "https://내_도메인.com"
+
+security:
+  session_secret: "아주_중요한_세션_시크릿"
+  hash_secret: "base64url_32바이트_해시_시크릿"
+```
+
+- `server.public_origin`: `tinyauth`에 접속할 때 사용할 공개 URL이에요. 리다이렉트 URL, 이메일 링크, OIDC issuer metadata의 기준이 돼요. 공개된 서비스인 경우 `https` 사용을 강력히 권장해요.
+- `security.session_secret`: 로그인된 사용자의 세션 쿠키를 서명하는 데 사용되는 비밀 키예요. 최소 **16자 이상**이어야 하며, `openssl rand -hex 32` 명령어를 통해 생성할 수 있어요.
+- `security.hash_secret`: 비밀번호와 각종 토큰 해싱에 사용하는 base64url 32바이트 루트 시크릿이에요.
+
+---
+
+## 다음 단계
+
+이외의 다른 설정들은 아래 문서를 참고하여 선호에 맞게 하나씩 조정해 나가시길 바라요.
+
+- [테마](/ko/configuration/general/theme) - UI 테마와 다크 모드 설정
+- [보안](/ko/configuration/general/client-security) - 세션 시크릿, 해시 시크릿, JWT 토큰, 프록시 설정
+- [언어](/ko/configuration/general/language) - 지원 언어와 기본 언어 설정
+- [브랜딩](/ko/configuration/general/branding) - 로고, 배경 이미지, 타이틀 커스터마이징
+- [데이터베이스](/ko/configuration/database/sqlite) - SQLite 또는 PostgreSQL 설정
+- [비밀번호 인증](/ko/configuration/authentication/password) - 비밀번호 로그인 활성화
+- [타사 로그인](/ko/configuration/oauth/overview) - Google, Apple, GitHub 등 소셜 로그인
+- [클라이언트 연동](/ko/configuration/client-integration/overview) - OAuth/OIDC 클라이언트 등록
+- [약관](/ko/configuration/terms/implicit-flow) - 이용 약관 설정
+- [환경 변수](/ko/configuration/environment-variables) - 설정 파일 내 환경 변수 참조

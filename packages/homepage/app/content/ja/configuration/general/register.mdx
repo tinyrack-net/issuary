@@ -1,0 +1,54 @@
+---
+title: 会員登録
+description: Tinyauthの自己会員登録ポリシーを設定する
+section: configuration
+order: 8
+---
+
+`tinyauth`の自己会員登録は基本的に無効になります。パスワード登録と最初 OAuth 参加すべて `registration.enabled`を基準に開き、 `allowed_email_patterns`は、購読を許可した後に適用するオプションの電子メールフィルタです。アカウント削除機能は `account_deletion`で別々に制御します。
+
+```yaml
+# config.yaml
+registration:
+  enabled: false
+
+account_deletion:
+  enabled: true
+  retention: 30d
+```
+
+- `registration.enabled`：自分の会員登録を有効にするかどうか。デフォルトは `false`はい。
+- `registration.allowed_email_patterns`：購読を許可する電子メールパターンのリストです。 `*@domain.com`, `user@example.com` 同じ値を使用できます。 `registration.enabled: true`場合にのみ適用されます。空または省略した場合は、すべての電子メール購読を許可します。
+- `account_deletion.enabled`：ユーザーの直接退会機能を許可するかどうか。
+- `account_deletion.retention`：脱退要請後、実際の永久削除までの猶予期間です。
+
+---
+
+## 例
+
+`tinyauth.net`, `tinyrack.net` 電子メールを持つユーザーの購読を許可し、ユーザーが自分のアカウントを削除できるようにするには、次のように設定できます。
+
+```yaml
+# config.yaml
+registration:
+  enabled: true
+  allowed_email_patterns:
+    - '*@tinyauth.net'
+    - '*@tinyrack.net'
+
+account_deletion:
+  enabled: true
+  retention: 30d
+```
+
+すべてのメールドメインでの購読を許可し、メンバーの退会機能を無効にするには、次のように設定できます。
+
+```yaml
+# config.yaml
+registration:
+  enabled: true
+  allowed_email_patterns: []
+
+account_deletion:
+  enabled: false
+```

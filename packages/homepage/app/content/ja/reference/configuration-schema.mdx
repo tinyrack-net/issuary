@@ -1,0 +1,252 @@
+---
+title: 設定スキーマ
+description: 完全なconfig.yamlスキーマリファレンス
+section: reference
+order: 32
+---
+
+この文書は現在 `tinyauth`の `config.yaml` 構造をtop-levelグループ基準でまとめたリファレンスです。
+
+:::note
+`frontend`と `frontend.html_variables`はstandalone専用の設定です。 `@tinyrack/tinyauth-standalone`のみこの値を解釈し、 `@tinyrack/tinyauth-server`の直接構成では使用しません。
+:::
+
+## `server`
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `public_origin` | `string` (URL) | `http://localhost:8080` | `PUBLIC_ORIGIN` | 公開 URL。リダイレクト、メールリンク、 OIDC issuer metadataの基準になります。 |
+| `listen_port` | `number` | `8080` | `LISTEN_PORT` | standalone サーバーがバインドするポートです。 |
+| `trust_proxy` | `boolean \| string \| string[] \| number` | `false` | `TRUST_PROXY` | リバースプロキシヘッダの信頼設定です。 |
+
+## `tokens`
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `access_token_ttl` | `integer` (最小60) | `3600` | `ACCESS_TOKEN_TTL` | アクセストークンの寿命（秒） |
+| `refresh_token_ttl` | `integer` (最小3600) | `2592000` | `REFRESH_TOKEN_TTL` | リフレッシュトークン寿命（秒） |
+| `key_rotation.enabled` | `boolean` | `true` | `JWT_KEY_ROTATION_ENABLED` | JWT キー自動循環を有効にする |
+| `key_rotation.interval_days` | `integer` (最小1) | `30` | `JWT_KEY_ROTATION_DAYS` | キー循環サイクル（日） |
+| `key_rotation.overlap_days` | `integer` (最小1) | `7` | `JWT_KEY_OVERLAP_DAYS` | 前のキー保持期間（日） |
+
+## `i18n`
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `supported_languages` | `Locale[]` | `['en', 'ko', 'ja']` | - | サポート言語リスト |
+| `default_language` | `'auto' \| Locale` | `'auto'` | `DEFAULT_LANGUAGE` | 基本言語 |
+| `fallback_language` | `Locale` | `'en'` | `FALLBACK_LANGUAGE` | 代替言語 |
+
+## `branding`
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `light_theme` | `AppTheme` | `'light'` | `LIGHT_THEME` | ライトモードテーマ |
+| `dark_theme` | `AppTheme` | `'dark'` | `DARK_THEME` | ダークモードテーマ |
+| `theme_mode` | `'light' \| 'dark' \| 'system'` | `'system'` | `THEME_MODE` | テーマの選択方法 |
+| `background_url` | `string` (URL) | 基本的な背景画像 | `BACKGROUND_URL` | 背景画像 URL |
+| `icon_url` | `string` (URL) | - | `ICON_URL` | ロゴ画像 URL |
+| `title` | `Record<string, string>` | 基本多言語タイトル | - | 言語別のタイトル |
+| `subtitle` | `Record<string, string>` | 基本多言語サブタイトル | - | 言語別のサブタイトル |
+
+## `registration`
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `enabled` | `boolean` | `false` | `REGISTRATION_ENABLED` | 自己会員登録を有効にするかどうか。パスワード登録と最初 OAuth 購読はすべてこの値に従います。 |
+| `allowed_email_patterns` | `string[]` | `[]` | - | 登録を許可する電子メールパターン。 `enabled: true`場合にのみ適用され、空の配列であれば、すべての電子メール購読を許可します。 |
+| `email_verification_required` | `boolean` | `true` | `EMAIL_VERIFICATION_REQUIRED` | パスワードの登録後に電子メール認証が必要かどうか |
+| `signup_notice` | `Record<string, string>` | `{}` | - | 暗示的規約同意案内フレーズ（HTML 可能） |
+
+## `account_deletion`
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `enabled` | `boolean` | `false` | `ACCOUNT_DELETION_ENABLED` | ユーザーの直接退会を許可するかどうか |
+| `retention` | `DurationString` | `'30d'` | `ACCOUNT_DELETION_RETENTION` | 退会依頼から実際の永久削除までの猶予期間 |
+
+## `logging`
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `level` | `'trace' \| 'debug' \| 'info' \| 'warn' \| 'error' \| 'fatal' \| 'silent'` | `'info'` | `LOG_LEVEL` | ログレベル |
+| `format` | `'json' \| 'pretty'` | `'json'` | `LOG_FORMAT` | ログ出力形式 |
+
+## `security`
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `session_secret` | `string` （16文字以上） | **必須** | `SESSION_SECRET` | セッションクッキー署名キー |
+| `hash_secret` | `string` （base64url 32バイト） | **必須** | `HASH_SECRET` | パスワード、クライアントシークレット、ワンタイムトークンハッシュ用のルートシークレット |
+| `pbkdf2_iterations` | `integer` (最小1) | `600000` | `PBKDF2_ITERATIONS` | PBKDF2 繰り返し回数 |
+
+## `database`
+
+`database.type`によってサブフィールドが異なります。
+
+### SQLite (`type: 'sqlite'`)
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `type` | `'sqlite'` | - | `DATABASE_TYPE` | データベースタイプ |
+| `path` | `string` | `/opt/tinyauth/database.db` | `DATABASE_PATH` | データベースファイルパス |
+| `test` | `boolean` | `false` | `DATABASE_TEST` | テストモードかどうか |
+
+### PostgreSQL (`type: 'postgres'`)
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `type` | `'postgres'` | - | `DATABASE_TYPE` | データベースタイプ |
+| `host` | `string` | `'localhost'` | `DATABASE_HOST` | ホスト |
+| `port` | `number` | `5432` | `DATABASE_PORT` | ポート |
+| `user` | `string` | `'postgres'` | `DATABASE_USER` | ユーザー |
+| `password` | `string` | `'postgres'` | `DATABASE_PASSWORD` | パスワード |
+| `name` | `string` | `'tinyauth'` | `DATABASE_NAME` | データベース名 |
+
+## `auth`
+
+### `auth.password`
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `enabled` | `boolean` | `true` | `PASSWORD_AUTH_ENABLED` | パスワード認証の有効化 |
+| `two_factor.enrollment_required` | `boolean` | `false` | `PASSWORD_2FA_ENROLLMENT_REQUIRED` | パスワードユーザーの2次認証登録必須 |
+| `totp.enabled` | `boolean` | `false` | `PASSWORD_TOTP_ENABLED` | TOTP 使用するかどうか |
+| `totp.issuer` | `string` | `'Tinyrack'` | `PASSWORD_TOTP_ISSUER` | 認証アプリの表示名 |
+| `policy.min_length` | `number` | `8` | `PASSWORD_MIN_LENGTH` | 最小長 |
+| `policy.max_length` | `number` | `128` | `PASSWORD_MAX_LENGTH` | 最大長 |
+
+### `auth.passkey`
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `enabled` | `boolean` | `false` | `PASSKEY_ENABLED` | パスキー認証の有効化 |
+| `rp_id` | `string` | `server.public_origin`から抽出 | `PASSKEY_RP_ID` | WebAuthn RP ID(ドメインのみ) |
+| `origins` | `string[]` | `[server.public_origin]` | - | 許可 WebAuthn origin リスト |
+
+## `email`
+
+`email`は選択設定で、メール送信機能を使用する場合にのみ必要です。
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `transport` | `'smtp' \| 'test'` | - | `EMAIL_TRANSPORT` | メール送信方法 |
+| `from` | `string` | - | `EMAIL_FROM` | 送信者アドレス |
+
+### SMTP (`transport: 'smtp'`)
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `host` | `string` | `'localhost'` | `EMAIL_HOST` | SMTP サーバーホスト |
+| `port` | `number` | `465` | `EMAIL_PORT` | SMTP ポート |
+| `secure` | `boolean` | `true` | `EMAIL_SECURE` | SSL/TLS 使用するかどうか |
+| `user` | `string` | **必須** | `EMAIL_USER` | SMTP ユーザー |
+| `password` | `string` | **必須** | `EMAIL_PASSWORD` | SMTP パスワード |
+
+## `identity_providers`
+
+配列の形で複数のプロバイダを設定できます。使用しないときはセクションを省略するか `[]`で置けばいいです。詳しくは [第三者ログインの概要](/ja/configuration/oauth/overview)を参考にしてください。
+
+| アイテム | タイプ | 説明 |
+|------|------|------|
+| `id` | `string` | 一意の識別子 |
+| `type` | `'github' \| 'google' \| 'apple' \| 'generic_oauth'` | プロバイダの種類 |
+| `enabled` | `boolean` | 有効かどうか |
+| `display_name` | `string` | 表示名 |
+| `icon_url` | `string` | アイコン URL |
+| `client_id` | `string` | OAuth クライアントID |
+| `client_secret` | `string` | OAuth クライアントシークレット |
+| `authorization_url` | `string` | 認証エンドポイント |
+| `token_url` | `string` | トークンエンドポイント |
+| `userinfo_url` | `string \| null` | ユーザー情報エンドポイント |
+| `email_url` | `string` | 電子メール照会エンドポイント |
+| `scopes` | `string[]` | リクエストスコープリスト |
+| `email_conflict_strategy` | `'auto_link' \| 'require_link'` | 電子メールの競合処理方法 |
+
+## `clients`
+
+| アイテム | タイプ | 説明 |
+|------|------|------|
+| `id` | `string` | 内部一意識別子 |
+| `name` | `string` | 表示名 |
+| `logo_uri` | `string` | ロゴ URL |
+| `client_id` | `string` | パブリッククライアントID |
+| `client_secret` | `string` | クライアントシークレット |
+| `redirect_uris` | `string[]` | 許可リダイレクト URL |
+| `response_types` | `string[]` | 許容応答タイプ |
+| `grant_types` | `string[]` | 許可権限の種類 |
+| `scope` | `string` | 許容スコープ（スペース区切り） |
+
+## `users`
+
+| アイテム | タイプ | 説明 |
+|------|------|------|
+| `sub` | `string` | ユーザー固有の識別子 |
+| `email` | `string` | メールアドレス |
+| `password` | `string` | 初期パスワード |
+| `role` | `'user' \| 'admin'` | ユーザーロール |
+
+## `terms`
+
+配列の形で複数の条件を設定できます。
+
+| アイテム | タイプ | 説明 |
+|------|------|------|
+| `id` | `string` | 一意の識別子（小文字、 `-`, `_`) |
+| `required` | `boolean` | 必須同意かどうか |
+| `consent_mode` | `'explicit' \| 'implicit'` | 同意収集方法 |
+| `version` | `string` | 利用規約バージョン |
+| `content` | `Record<string, { title, type, content }>` | 言語別の規約内容 |
+
+`content`の各項目から `type`銀 `link` または `text`しか使えません。
+
+## `scheduler`
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `enabled` | `boolean` | `true` | `SCHEDULER_ENABLED` | 組み込みスケジューラの有効化 |
+| `mode` | `'croner' \| 'database'` | `'croner'` | `SCHEDULER_MODE` | スケジューラバックエンド |
+| `cleanup_cron` | `string` | `'0 2 * * *'` | `SCHEDULER_CLEANUP_CRON` | クリーンアップジョブcron式 |
+| `poll_interval_ms` | `number` | `5000` | `SCHEDULER_POLL_INTERVAL_MS` | `database` モード polling 周期 (ms) |
+| `lock_ttl_ms` | `number` | `60000` | `SCHEDULER_LOCK_TTL_MS` | `database` モード lease TTL(ms) |
+| `background_retry_delay_ms` | `number` | `1000` | `SCHEDULER_BACKGROUND_RETRY_DELAY_MS` | `database` モード background job 再試行待機時間 (ms) |
+| `background_max_attempts` | `integer` | `3` | `SCHEDULER_BACKGROUND_MAX_ATTEMPTS` | `database` モード background job 最大試行回数 |
+| `background_retention_ms` | `number` | `604800000` | `SCHEDULER_BACKGROUND_RETENTION_MS` | 完了した背景ジョブ（`succeeded`/`failed`）保存期間（ms）。 `pending`/`running` ジョブは削除しない |
+| `instance_id` | `string` | 自動生成 | `SCHEDULER_INSTANCE_ID` | `database` モード lease 所有者識別子 |
+
+## `cleanup`
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `revoked_tokens.enabled` | `boolean` | `true` | `CLEANUP_REVOKED_TOKENS_ENABLED` | キャンセルされたトークンのクリーンアップ |
+| `revoked_tokens.retention` | `DurationString` | `'0'` | `CLEANUP_REVOKED_TOKENS_RETENTION` | 保存期間 |
+| `oauth_codes.enabled` | `boolean` | `true` | `CLEANUP_OAUTH_CODES_ENABLED` | 認証コードの整理 |
+| `oauth_codes.consumed_retention` | `DurationString` | `'24h'` | `CLEANUP_OAUTH_CODES_RETENTION` | 使用されたコードの保存期間 |
+| `email_verifications.enabled` | `boolean` | `true` | `CLEANUP_EMAIL_VERIFICATIONS_ENABLED` | 電子メール認証トークンのクリーンアップ |
+| `email_verifications.retention` | `DurationString` | `'0'` | `CLEANUP_EMAIL_VERIFICATIONS_RETENTION` | 保存期間 |
+| `password_resets.enabled` | `boolean` | `true` | `CLEANUP_PASSWORD_RESETS_ENABLED` | パスワードリセットトークンのクリーンアップ |
+| `password_resets.retention` | `DurationString` | `'0'` | `CLEANUP_PASSWORD_RESETS_RETENTION` | 保存期間 |
+| `pending_oauth_registrations.enabled` | `boolean` | `true` | `CLEANUP_PENDING_OAUTH_REGISTRATIONS_ENABLED` | 中断 OAuth サインアップの整理 |
+| `pending_oauth_registrations.retention` | `DurationString` | `'0'` | `CLEANUP_PENDING_OAUTH_REGISTRATIONS_RETENTION` | 保存期間 |
+
+## `openapi`
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `enabled` | `boolean` | `true` | - | ライブOpenAPIルート `GET /api/docs`, `GET /api/docs/json` 露出かどうか |
+| `title` | `string` | `'TinyAuth API'` | - | OpenAPIドキュメントのタイトル |
+| `description` | `string` | `'OpenID Connect Provider API'` | - | OpenAPI ドキュメントの説明 |
+| `ui_title` | `string` | `'TinyAuth API Reference'` | - | ライブスカラー API リファレンスUIのブラウザページタイトル |
+
+## `frontend` (standalone only)
+
+| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
+|------|------|--------|-----------|------|
+| `enabled` | `boolean` | `true` | `FRONTEND_ENABLED` | フロントエンドサービングを有効にするかどうか |
+| `mode` | `'proxy' \| 'static'` | `'static'` | `FRONTEND_MODE` | `proxy`はアップストリーム配信、 `static`銀ディスクサービング |
+| `path` | `string` | ランタイムのデフォルト | `FRONTEND_PATH` | フロントエンドパス |
+| `html_variables` | `Record<string, string>` | `{}` | - | HTML テンプレート置換変数 |
+
+:::note
+`DurationString` フォーマット： `"0"` （即時）、 `"30s"` (秒), `"30m"` (分), `"24h"` (時間), `"7d"` (日), `"1y"` (年)
+:::

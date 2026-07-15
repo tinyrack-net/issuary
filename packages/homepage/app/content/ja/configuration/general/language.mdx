@@ -1,0 +1,22 @@
+---
+title: 言語
+description: Tinyauth フロントエンドの多言語サポートを構成する
+section: configuration
+order: 12
+---
+
+`tinyauth`はフロントエンドで多言語を基本的にサポートします。以下は、言語設定に関する構成例です。
+
+```yaml
+i18n:
+  supported_languages:
+    - en
+    - ko
+    - ja
+  default_language: auto
+  fallback_language: ko
+```
+
+- `supported_languages`：フロントエンドでサポートする言語のリストです。言語コードは `ISO 639-1` 規格を使用します。たとえば、英語は `en`、韓国語 `ko`、日本語は `ja`はい。
+- `default_language`：ブラウザでユーザーに表示する言語のデフォルト値を指定します。自動的にブラウザの言語を検出するには `auto`に設定してください。特定の言語コードを指定すると、その言語は常にデフォルト言語で最初に表示されます。
+- `fallback_language`: `default_language`秋 `auto`一方、ユーザーのブラウザ言語が `supported_languages`にない場合に使用する代替言語です。デフォルトは `en`（英語）です。

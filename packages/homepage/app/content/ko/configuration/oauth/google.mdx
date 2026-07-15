@@ -1,0 +1,74 @@
+---
+title: Google
+description: Tinyauth에서 Google OAuth 로그인 구성하기
+section: configuration
+order: 21
+---
+
+Google OAuth를 사용하면 사용자가 Google 계정으로 `tinyauth`에 로그인할 수 있어요. 이 가이드는 Google Cloud Console에서 OAuth 클라이언트를 만들고 `tinyauth`에 연동하는 방법을 설명해요.
+
+---
+
+## 1. Google Cloud Console 설정
+
+1. [Google Cloud Console](https://console.cloud.google.com/)에 접속해요.
+2. 프로젝트를 선택하거나 새 프로젝트를 만들어요.
+3. 왼쪽 메뉴에서 **API 및 서비스** > **OAuth 동의 화면**으로 이동해요.
+4. 동의 화면을 구성해요 (앱 이름, 사용자 지원 이메일 등을 입력).
+5. **사용자 인증 정보** > **사용자 인증 정보 만들기** > **OAuth 클라이언트 ID**를 클릭해요.
+6. 애플리케이션 유형으로 **웹 애플리케이션**을 선택해요.
+7. **승인된 리디렉션 URI**에 다음 값을 추가해요:
+   ```
+   https://내_도메인.com/api/oauth/google/callback
+   ```
+8. **만들기**를 클릭하면 **클라이언트 ID**와 **클라이언트 보안 비밀번호**가 표시돼요. 이 값을 안전하게 보관해요.
+
+---
+
+## 2. Tinyauth 설정
+
+Google Cloud Console에서 발급받은 자격증명을 `config.yaml`에 설정해요.
+
+```yaml
+# config.yaml
+identity_providers:
+  - id: google
+    type: google
+    enabled: true
+    client_id: ${GOOGLE_CLIENT_ID}
+    client_secret: ${GOOGLE_CLIENT_SECRET}
+```
+
+- `id`: 이 제공자의 고유 식별자예요. 콜백 URL에 사용돼요.
+- `type`: `google`로 지정해요.
+- `client_id`: Google Cloud Console에서 발급받은 클라이언트 ID예요.
+- `client_secret`: Google Cloud Console에서 발급받은 클라이언트 보안 비밀번호예요.
+
+:::note
+Google OAuth는 기본적으로 `openid`, `email`, `profile` 스코프를 요청해요. 추가 스코프가 필요한 경우 `scopes` 항목으로 지정할 수 있어요.
+:::
+
+---
+
+## 예시
+
+`tinyauth`를 `https://auth.example.com`에서 운영하는 경우의 전체 설정 예시예요.
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.example.com
+
+identity_providers:
+  - id: google
+    type: google
+    enabled: true
+    client_id: 123456789-abcdefg.apps.googleusercontent.com
+    client_secret: GOCSPX-abcdefghijklmnop
+```
+
+이 경우 Google Cloud Console의 승인된 리디렉션 URI는 다음과 같이 설정해야 해요.
+
+```
+https://auth.example.com/api/oauth/google/callback
+```

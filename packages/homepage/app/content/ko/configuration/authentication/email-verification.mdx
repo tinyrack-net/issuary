@@ -1,0 +1,37 @@
+---
+title: 이메일 인증
+description: 사용자 등록을 위한 이메일 인증 구성하기
+section: configuration
+order: 17
+---
+
+이메일 인증은 비밀번호 기반 회원가입을 완료하기 전에 이메일 확인 절차를 요구하는 기능이에요.
+다음의 옵션을 통해 이 기능을 활성화 할 수 있어요.
+
+```yaml
+registration:
+  enabled: true
+  email_verification_required: true
+
+email:
+  transport: smtp
+  host: smtp.example.com
+  port: 465
+  secure: true
+  user: $EMAIL_USER
+  password: $EMAIL_PASSWORD
+  from: "TinyAuth <noreply@tinyauth.com>"
+```
+
+- `registration.email_verification_required`: 비밀번호로 가입한 사용자가 이메일 인증을 완료해야 로그인할 수 있도록 해요. 기본값은 `true`예요.
+- `registration.enabled`: 자체 회원가입을 실제로 열어 둘지 결정해요. 이메일 인증은 회원가입이 허용된 상태에서만 의미가 있어요.
+- `email`: 인증 코드와 비밀번호 재설정 메일을 보낼 전송 수단이에요. 프로덕션에서는 보통 SMTP를 사용해요.
+
+:::note
+이 기능을 사용하려면 `email` 설정이 함께 필요해요. 테스트 환경에서는 `transport: test`를 사용할 수 있어요.
+:::
+
+이 기능을 활성화하면 사용자는 다음의 기능을 사용할 수 있게 돼요.
+
+- 사용자 회원가입 시 인증 코드 전송
+- 사용자 비밀번호 초기화 링크 전송

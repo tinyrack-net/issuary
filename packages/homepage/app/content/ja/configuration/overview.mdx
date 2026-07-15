@@ -1,0 +1,75 @@
+---
+title: 始める
+description: Tinyauth セットアップシステムを理解する
+section: configuration
+order: 5
+---
+
+`tinyauth`銀 `config.yaml` という単一 `yaml` ファイルに設定されています。これにより、ログイン方式、セキュリティ、データベース、ブランディング、会員登録ポリシーなど `tinyauth` 操作に必要なほとんどの設定が行われます。設定ファイルは次の主要セクションで構成されています。
+
+```yaml
+# config.yaml
+server:               # 공개 URL, 리스닝 포트, 프록시 설정
+tokens:               # 액세스/리프레시 토큰 및 키 순환 설정
+i18n:                 # 지원 언어 설정
+branding:             # 테마, 제목, 배경 이미지 등 UI 설정
+registration:         # 회원가입 정책
+account_deletion:     # 계정 삭제 정책
+security:             # 세션/해시 시크릿 설정
+database:             # 데이터베이스 설정
+auth:                 # 기본 인증 방식 설정
+email:                # 이메일 전송 설정
+identity_providers:   # 타사 인증 방식 설정
+clients:              # 인증 클라이언트 설정
+users:                # 사용자 설정
+terms:                # 이용 약관 설정
+scheduler:            # 스케줄러 설정
+cleanup:              # 정리 작업 설정
+frontend:             # standalone 전용 프론트엔드 서빙 설정
+```
+
+作成した `config.yaml`をドッカーで使用したい場合は、次のように使用できます。
+
+```bash
+docker run \
+  -p 8080:8080 \
+  -v ./config.yaml:/opt/config.yaml \
+  ghcr.io/tinyrack-net/tinyauth
+```
+
+---
+
+## 最小要求設定
+
+`tinyauth`を使用するには、少なくとも次の設定を構成する必要があります。
+
+```yaml
+# config.yaml
+server:
+  public_origin: "https://내_도메인.com"
+
+security:
+  session_secret: "아주_중요한_세션_시크릿"
+  hash_secret: "base64url_32바이트_해시_시크릿"
+```
+
+- `server.public_origin`: `tinyauth`に接続するときに使用する公開 URLこれです。リダイレクト URL、メールリンク、 OIDC issuer metadataの基準になります。公開されたサービスの場合 `https` 使用を強くお勧めします。
+- `security.session_secret`：ログインユーザーのセッションCookieに署名するために使用される秘密鍵です。最小 **16文字以上**でなければなりません。 `openssl rand -hex 32` 命令で生成できます。
+- `security.hash_secret`：パスワードと各種トークンハッシュに使用するbase64url 32バイトのルートシークレットです。
+
+---
+
+## 次のステップ
+
+その他の設定は下記のドキュメントを参考に、好みに合わせて一つずつ調整していきたいと思います。
+
+- [テーマ](/ja/configuration/general/theme) - UIテーマとダークモード設定
+- [セキュリティ](/ja/configuration/general/client-security) - セッションシークレット、ハッシュシークレット、 JWT トークン、プロキシ設定
+- [言語](/ja/configuration/general/language) - サポート言語と基本言語の設定
+- [ブランディング](/ja/configuration/general/branding) - ロゴ、背景画像、タイトルのカスタマイズ
+- [データベース](/ja/configuration/database/sqlite) - SQLite または PostgreSQL 設定
+- [パスワード認証](/ja/configuration/authentication/password) - パスワードログインを有効にする
+- [第三者ログイン](/ja/configuration/oauth/overview) - Google, Apple, GitHub などソーシャルログイン
+- [クライアント連携](/ja/configuration/client-integration/overview) - OAuth/OIDC クライアント登録
+- [利用規約](/ja/configuration/terms/implicit-flow) - 利用規約の設定
+- [環境変数](/ja/configuration/environment-variables) - 設定ファイル内の環境変数参照
