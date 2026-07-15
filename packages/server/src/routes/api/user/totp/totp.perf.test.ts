@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
@@ -11,17 +11,21 @@ import {
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
 } from '../../../../test-utils/index.js';
-import { runHttpPerf } from '../../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  perfFixture,
+  runHttpPerf,
+} from '../../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 1;
-const MEASURED_REQUESTS = 10;
+const WARMUP_REQUESTS = 4;
+const MEASURED_REQUESTS = 20;
 
 let app: AppType;
 let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
-beforeAll(async () => {
+beforeEach(async () => {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     auth: {
@@ -36,7 +40,7 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
@@ -95,13 +99,12 @@ async function requestSetup(sessionCookie: string) {
     {},
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(body.secret).toEqual(expect.any(String));
-  expect(body.otpauth_url).toContain('otpauth://totp/');
-  expect(body.qr_code).toMatch(/^data:image\/png;base64,/);
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.secret).toEqual(expect.any(String));
+    expect(body.otpauth_url).toContain('otpauth://totp/');
+    expect(body.qr_code).toMatch(/^data:image\/png;base64,/);
+  });
 }
 
 async function requestVerify(sessionCookie: string, code: string) {
@@ -109,11 +112,10 @@ async function requestVerify(sessionCookie: string, code: string) {
     { json: { code } },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(body.recovery_codes).toHaveLength(8);
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.recovery_codes).toHaveLength(8);
+  });
 }
 
 async function requestConfirm(sessionCookie: string) {
@@ -121,11 +123,10 @@ async function requestConfirm(sessionCookie: string) {
     { json: {} },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(body.user?.totp_registered).toBe(true);
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.user?.totp_registered).toBe(true);
+  });
 }
 
 async function requestRegenerate(sessionCookie: string, code: string) {
@@ -133,11 +134,10 @@ async function requestRegenerate(sessionCookie: string, code: string) {
     { json: { code } },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(body.recovery_codes).toHaveLength(8);
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.recovery_codes).toHaveLength(8);
+  });
 }
 
 async function requestDelete(sessionCookie: string, code: string) {
@@ -145,31 +145,30 @@ async function requestDelete(sessionCookie: string, code: string) {
     { json: { code } },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(body.ok).toBe(true);
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.ok).toBe(true);
+  });
 }
 
 describe('POST /api/user/totp/setup perf', () => {
   test('handles repeated setup requests through the real route', async () => {
-    const { sessionCookie } = await createSession(0);
+    const sessions = await Promise.all(
+      Array.from({ length: WARMUP_REQUESTS + MEASURED_REQUESTS }, (_, index) =>
+        createSession(index),
+      ),
+    );
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/user/totp/setup smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
-      request: async () => requestSetup(sessionCookie),
+      request: async (context) =>
+        requestSetup(
+          perfFixture(sessions, context, WARMUP_REQUESTS).sessionCookie,
+        ),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(4000);
   });
 
   test('handles pre-created fresh setup sessions through the real route', async () => {
@@ -178,29 +177,16 @@ describe('POST /api/user/totp/setup perf', () => {
         createSession(index + 1000),
       ),
     );
-    let nextSession = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/user/totp/setup fresh sessions smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
-      request: async () => {
-        const session = sessions[nextSession];
-        nextSession += 1;
-        if (!session) {
-          throw new Error('Missing fresh TOTP setup session');
-        }
-        return requestSetup(session.sessionCookie);
-      },
+      request: async (context) =>
+        requestSetup(
+          perfFixture(sessions, context, WARMUP_REQUESTS).sessionCookie,
+        ),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(4000);
   });
 });
 
@@ -211,29 +197,14 @@ describe('POST /api/user/totp/confirm perf', () => {
         createConfirmFixture(index),
       ),
     );
-    let nextSession = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/user/totp/confirm smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
-      request: async () => {
-        const sessionCookie = sessions[nextSession];
-        nextSession += 1;
-        if (!sessionCookie) {
-          throw new Error('Missing TOTP confirm session');
-        }
-        return requestConfirm(sessionCookie);
-      },
+      request: async (context) =>
+        requestConfirm(perfFixture(sessions, context, WARMUP_REQUESTS)),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(3000);
   });
 });
 
@@ -244,51 +215,37 @@ describe('POST /api/user/totp/verify perf', () => {
         createVerifyFixture(index),
       ),
     );
-    let nextFixture = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/user/totp/verify smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
-      request: async () => {
-        const fixture = fixtures[nextFixture];
-        nextFixture += 1;
-        if (!fixture) {
-          throw new Error('Missing TOTP verify fixture');
-        }
+      request: async (context) => {
+        const fixture = perfFixture(fixtures, context, WARMUP_REQUESTS);
         return requestVerify(fixture.sessionCookie, fixture.code);
       },
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(4000);
   });
 });
 
 describe('POST /api/user/totp/recovery/regenerate perf', () => {
   test('handles repeated recovery-code regenerations through the real route', async () => {
-    const fixture = await createRegisteredTotpFixture(0);
+    const fixtures = await Promise.all(
+      Array.from({ length: WARMUP_REQUESTS + MEASURED_REQUESTS }, (_, index) =>
+        createRegisteredTotpFixture(index),
+      ),
+    );
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/user/totp/recovery/regenerate smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
-      request: async () =>
-        requestRegenerate(fixture.sessionCookie, fixture.code),
+      request: async (context) => {
+        const fixture = perfFixture(fixtures, context, WARMUP_REQUESTS);
+        return requestRegenerate(fixture.sessionCookie, fixture.code);
+      },
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(4000);
   });
 });
 
@@ -299,28 +256,15 @@ describe('DELETE /api/user/totp perf', () => {
         createDeleteFixture(index),
       ),
     );
-    let nextFixture = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'DELETE /api/user/totp smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
-      request: async () => {
-        const fixture = fixtures[nextFixture];
-        nextFixture += 1;
-        if (!fixture) {
-          throw new Error('Missing TOTP delete fixture');
-        }
+      request: async (context) => {
+        const fixture = perfFixture(fixtures, context, WARMUP_REQUESTS);
         return requestDelete(fixture.sessionCookie, fixture.code);
       },
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(3000);
   });
 });

@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../services/container.js';
@@ -16,9 +16,12 @@ import {
   TEST_PKCE,
   TEST_USER_CONFIG,
 } from '../../../test-utils/index.js';
-import { runHttpPerf } from '../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  runHttpPerf,
+} from '../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 5;
+const WARMUP_REQUESTS = 10;
 const MEASURED_REQUESTS = 50;
 
 let app: AppType;
@@ -26,7 +29,7 @@ let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
-beforeAll(async () => {
+beforeEach(async () => {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
@@ -39,7 +42,7 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
@@ -60,35 +63,33 @@ async function requestAuthorizeRedirect(sessionCookie: string) {
     { query: createAuthorizeQuery() },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const location = new URL(getLocationHeader(response));
-
-  expect(response.status).toBe(302);
-  expect(location.origin).toBe(new URL(TEST_OAUTH_CLIENT.redirectUri).origin);
-  expect(location.pathname).toBe(
-    new URL(TEST_OAUTH_CLIENT.redirectUri).pathname,
-  );
-  expect(location.searchParams.get('code')).toEqual(expect.any(String));
-  expect(location.searchParams.get('state')).toBe('authorize-perf-state');
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const location = new URL(getLocationHeader(response));
+    expect(response.status).toBe(302);
+    expect(location.origin).toBe(new URL(TEST_OAUTH_CLIENT.redirectUri).origin);
+    expect(location.pathname).toBe(
+      new URL(TEST_OAUTH_CLIENT.redirectUri).pathname,
+    );
+    expect(location.searchParams.get('code')).toEqual(expect.any(String));
+    expect(location.searchParams.get('state')).toBe('authorize-perf-state');
+  });
 }
 
 async function requestAuthorizeLoginRedirect() {
   const response = await client.oauth.authorize.$get({
     query: createAuthorizeQuery(),
   });
-  const location = new URL(getLocationHeader(response));
-
-  expect(response.status).toBe(302);
-  expect(location.pathname).toBe('/login');
-  expect(location.searchParams.get('client_id')).toBe(
-    TEST_OAUTH_CLIENT.clientId,
-  );
-  expect(location.searchParams.get('redirect_uri')).toBe(
-    TEST_OAUTH_CLIENT.redirectUri,
-  );
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const location = new URL(getLocationHeader(response));
+    expect(response.status).toBe(302);
+    expect(location.pathname).toBe('/login');
+    expect(location.searchParams.get('client_id')).toBe(
+      TEST_OAUTH_CLIENT.clientId,
+    );
+    expect(location.searchParams.get('redirect_uri')).toBe(
+      TEST_OAUTH_CLIENT.redirectUri,
+    );
+  });
 }
 
 async function requestAuthorizeConsentRedirect(sessionCookie: string) {
@@ -96,18 +97,17 @@ async function requestAuthorizeConsentRedirect(sessionCookie: string) {
     { query: createAuthorizeQuery() },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const location = new URL(getLocationHeader(response));
-
-  expect(response.status).toBe(302);
-  expect(location.pathname).toBe('/consent');
-  expect(location.searchParams.get('client_id')).toBe(
-    TEST_OAUTH_CLIENT.clientId,
-  );
-  expect(location.searchParams.get('redirect_uri')).toBe(
-    TEST_OAUTH_CLIENT.redirectUri,
-  );
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const location = new URL(getLocationHeader(response));
+    expect(response.status).toBe(302);
+    expect(location.pathname).toBe('/consent');
+    expect(location.searchParams.get('client_id')).toBe(
+      TEST_OAUTH_CLIENT.clientId,
+    );
+    expect(location.searchParams.get('redirect_uri')).toBe(
+      TEST_OAUTH_CLIENT.redirectUri,
+    );
+  });
 }
 
 describe('GET /oauth/authorize perf', () => {
@@ -123,7 +123,7 @@ describe('GET /oauth/authorize perf', () => {
       code_challenge_method: TEST_PKCE.codeChallengeMethod,
     });
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'GET /oauth/authorize authorization-code redirect smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -131,17 +131,10 @@ describe('GET /oauth/authorize perf', () => {
       expectedStatuses: [302],
       request: async () => requestAuthorizeRedirect(sessionCookie),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[302]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(3);
-    expect(result.p95Ms).toBeLessThan(1500);
   });
 
   test('handles unauthenticated login redirects through the real route', async () => {
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'GET /oauth/authorize login redirect smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -149,13 +142,6 @@ describe('GET /oauth/authorize perf', () => {
       expectedStatuses: [302],
       request: requestAuthorizeLoginRedirect,
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[302]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 
   test('handles authenticated consent redirects through the real route', async () => {
@@ -168,7 +154,7 @@ describe('GET /oauth/authorize perf', () => {
       password,
     );
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'GET /oauth/authorize consent redirect smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -176,12 +162,5 @@ describe('GET /oauth/authorize perf', () => {
       expectedStatuses: [302],
       request: async () => requestAuthorizeConsentRedirect(sessionCookie),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[302]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(3);
-    expect(result.p95Ms).toBeLessThan(1500);
   });
 });

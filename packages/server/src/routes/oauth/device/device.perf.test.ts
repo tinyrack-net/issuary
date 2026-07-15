@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
 import type { TinyAuthRuntimeConfigInput } from '../../../lib/config/index.js';
@@ -10,9 +10,13 @@ import {
   MINIMAL_TEST_CONFIG,
   TEST_USER_CONFIG,
 } from '../../../test-utils/index.js';
-import { runHttpPerf } from '../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  perfFixture,
+  runHttpPerf,
+} from '../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 5;
+const WARMUP_REQUESTS = 10;
 const MEASURED_REQUESTS = 50;
 const DEVICE_CLIENT: NonNullable<
   TinyAuthRuntimeConfigInput['clients']
@@ -34,7 +38,7 @@ let app: AppType;
 let client: ReturnType<typeof testClient<AppType>>;
 let cleanup: () => Promise<void>;
 
-beforeAll(async () => {
+beforeEach(async () => {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     clients: [DEVICE_CLIENT],
@@ -46,7 +50,7 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
@@ -54,14 +58,13 @@ async function requestDevicePage() {
   const response = await client.oauth.device.$get({
     query: { user_code: 'INVALID-CODE' },
   });
-  const body = await response.text();
-
-  expect(response.status).toBe(200);
-  expect(response.headers.get('content-type')).toContain('text/html');
-  expect(body).toContain('Sign in to approve the device.');
-  expect(body).toContain('/login?return_to=');
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await response.text();
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/html');
+    expect(body).toContain('Sign in to approve the device.');
+    expect(body).toContain('/login?return_to=');
+  });
 }
 
 async function createDeviceUserCode(): Promise<string> {
@@ -91,15 +94,14 @@ async function requestValidDevicePage(sessionCookie: string, userCode: string) {
     { query: { user_code: userCode } },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await response.text();
-
-  expect(response.status).toBe(200);
-  expect(response.headers.get('content-type')).toContain('text/html');
-  expect(body).toContain('Device Perf Client');
-  expect(body).toContain('openid');
-  expect(body).toContain('profile');
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await response.text();
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/html');
+    expect(body).toContain('Device Perf Client');
+    expect(body).toContain('openid');
+    expect(body).toContain('profile');
+  });
 }
 
 async function requestValidDeviceApproval(
@@ -115,13 +117,12 @@ async function requestValidDeviceApproval(
     },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(response.status).toBe(200);
-  expect(body.status).toBe('approved');
-  expect(body.client_id).toBe(DEVICE_CLIENT.client_id);
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.status).toBe(200);
+    expect(body.status).toBe('approved');
+    expect(body.client_id).toBe(DEVICE_CLIENT.client_id);
+  });
 }
 
 async function requestInvalidDeviceApproval(sessionCookie: string) {
@@ -134,22 +135,21 @@ async function requestInvalidDeviceApproval(sessionCookie: string) {
     },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response, 400);
-
-  expect(response.headers.get('content-type')).toContain('application/json');
-  expect(body).toEqual(
-    expect.objectContaining({
-      error: 'invalid_grant',
-      error_description: expect.any(String),
-    }),
-  );
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response, 400);
+    expect(response.headers.get('content-type')).toContain('application/json');
+    expect(body).toEqual(
+      expect.objectContaining({
+        error: 'invalid_grant',
+        error_description: expect.any(String),
+      }),
+    );
+  });
 }
 
 describe('OAuth device verification perf', () => {
   test('GET /oauth/device serves the unauthenticated verification page', async () => {
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'GET /oauth/device invalid user-code smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -157,19 +157,12 @@ describe('OAuth device verification perf', () => {
       expectedStatuses: [200],
       request: requestDevicePage,
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 
   test('POST /oauth/device rejects an invalid user_code for an authenticated user', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /oauth/device invalid user-code smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -177,20 +170,13 @@ describe('OAuth device verification perf', () => {
       expectedStatuses: [400],
       request: async () => requestInvalidDeviceApproval(sessionCookie),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[400]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 
   test('GET /oauth/device renders pending device details for an authenticated user', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
     const userCode = await createDeviceUserCode();
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'GET /oauth/device valid user-code smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -198,13 +184,6 @@ describe('OAuth device verification perf', () => {
       expectedStatuses: [200],
       request: async () => requestValidDevicePage(sessionCookie, userCode),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 
   test('POST /oauth/device approves pending device authorizations with isolated codes', async () => {
@@ -214,29 +193,16 @@ describe('OAuth device verification perf', () => {
         createDeviceUserCode(),
       ),
     );
-    let nextUserCode = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /oauth/device valid approval smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 5,
       expectedStatuses: [200],
-      request: async () => {
-        const userCode = userCodes[nextUserCode];
-        nextUserCode += 1;
-        if (!userCode) {
-          throw new Error('Missing device approval user_code');
-        }
+      request: async (context) => {
+        const userCode = perfFixture(userCodes, context, WARMUP_REQUESTS);
         return requestValidDeviceApproval(sessionCookie, userCode);
       },
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(3);
-    expect(result.p95Ms).toBeLessThan(1500);
   });
 });

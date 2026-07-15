@@ -127,7 +127,142 @@ jobs:
 
       - name: Verify Cloudflare deployment bundle
         run: pnpm --filter @tinyrack/tinyauth-homepage run deploy:dry-run
+  performance-shard:
+    name: Performance (${{ matrix.shard }}/4)
+    needs: build
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
 
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6.0.3
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.0.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          cache: pnpm
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run performance tests
+        env:
+          TINYAUTH_PERF_REPORT_PATH: performance-results/shard-${{ matrix.shard }}-of-4.json
+        run: pnpm --filter @tinyrack/tinyauth-server test:perf --shard=${{ matrix.shard }}/4
+
+      - name: Upload performance report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: performance-shard-${{ matrix.shard }}-of-4
+          path: packages/server/performance-results/shard-${{ matrix.shard }}-of-4.json
+          if-no-files-found: error
+          retention-days: 14
+
+  performance:
+    name: Performance
+    needs: performance-shard
+    if: always() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6.0.3
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.0.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          cache: pnpm
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download shard reports
+        id: download-shards
+        continue-on-error: true
+        uses: actions/download-artifact@v8.0.1
+        with:
+          pattern: performance-shard-*-of-4
+          path: packages/server/performance-results/shards
+          merge-multiple: true
+
+      - name: Download previous main performance report
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p packages/server/performance-results/baseline
+          run_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?branch=main&status=success&event=push&per_page=20" --jq '.workflow_runs[0].id // empty')
+          artifact_id=""
+          if [ -n "$run_id" ]; then
+            artifact_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts?name=performance-report" --jq '[.artifacts[] | select(.expired == false)][0].id // empty')
+          fi
+          if [ -n "$artifact_id" ]; then
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > performance-baseline.zip
+            unzip -q performance-baseline.zip -d packages/server/performance-results/baseline
+          else
+            echo "No previous main performance report found"
+          fi
+
+      - name: Aggregate performance reports
+        id: aggregate
+        continue-on-error: true
+        working-directory: packages/server
+        run: >-
+          pnpm exec tsx ./scripts/aggregate-perf-reports.ts
+          --output performance-results/performance-report.json
+          --summary performance-results/performance-summary.md
+          --baseline performance-results/baseline/performance-report.json
+          performance-results/shards/shard-1-of-4.json
+          performance-results/shards/shard-2-of-4.json
+          performance-results/shards/shard-3-of-4.json
+          performance-results/shards/shard-4-of-4.json
+
+      - name: Add performance job summary
+        if: always()
+        run: |
+          if [ -f packages/server/performance-results/performance-summary.md ]; then
+            cat packages/server/performance-results/performance-summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload merged performance report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: performance-report
+          path: packages/server/performance-results/performance-report.json
+          if-no-files-found: warn
+          retention-days: ${{ github.ref == 'refs/heads/main' && 90 || 14 }}
+
+      - name: Verify performance result
+        env:
+          PERFORMANCE_RESULT: ${{ needs.performance-shard.result }}
+          AGGREGATION_RESULT: ${{ steps.aggregate.outcome }}
+        run: |
+          if [ "$PERFORMANCE_RESULT" != "success" ]; then
+            echo "Performance shards finished with result: $PERFORMANCE_RESULT"
+            exit 1
+          fi
+          if [ "$AGGREGATION_RESULT" != "success" ]; then
+            echo "Performance aggregation finished with result: $AGGREGATION_RESULT"
+            exit 1
+          fi
   windows-compatibility:
     name: Windows Compatibility
     needs: build

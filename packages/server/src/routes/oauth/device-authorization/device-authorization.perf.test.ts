@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
 import {
@@ -7,9 +7,12 @@ import {
   createTestApp,
   MINIMAL_TEST_CONFIG,
 } from '../../../test-utils/index.js';
-import { runHttpPerf } from '../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  runHttpPerf,
+} from '../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 5;
+const WARMUP_REQUESTS = 10;
 const MEASURED_REQUESTS = 50;
 
 const DEVICE_CLIENT = {
@@ -35,7 +38,7 @@ let app: AppType;
 let client: ReturnType<typeof testClient<AppType>>;
 let cleanup: () => Promise<void>;
 
-beforeAll(async () => {
+beforeEach(async () => {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     clients: [DEVICE_CLIENT_CONFIG],
@@ -46,7 +49,7 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
@@ -68,29 +71,28 @@ async function requestDeviceAuthorization() {
       },
     },
   );
-  const body = await assertJsonBody(response);
-
-  expect(response.status).toBe(200);
-  expect(response.headers.get('content-type')).toContain('application/json');
-  expect(response.headers.get('cache-control')).toBe('no-store');
-  expect(response.headers.get('pragma')).toBe('no-cache');
-  expect(body).toEqual({
-    device_code: expect.any(String),
-    user_code: expect.any(String),
-    verification_uri: 'http://localhost:8080/oauth/device',
-    verification_uri_complete: expect.stringContaining(
-      'http://localhost:8080/oauth/device?user_code=',
-    ),
-    expires_in: 600,
-    interval: 5,
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('application/json');
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(response.headers.get('pragma')).toBe('no-cache');
+    expect(body).toEqual({
+      device_code: expect.any(String),
+      user_code: expect.any(String),
+      verification_uri: 'http://localhost:8080/oauth/device',
+      verification_uri_complete: expect.stringContaining(
+        'http://localhost:8080/oauth/device?user_code=',
+      ),
+      expires_in: 600,
+      interval: 5,
+    });
   });
-
-  return response;
 }
 
 describe('POST /oauth/device_authorization perf', () => {
   test('creates valid device authorization responses through the real route', async () => {
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /oauth/device_authorization valid request smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -98,12 +100,5 @@ describe('POST /oauth/device_authorization perf', () => {
       expectedStatuses: [200],
       request: requestDeviceAuthorization,
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(3);
-    expect(result.p95Ms).toBeLessThan(1500);
   });
 });

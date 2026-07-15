@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
@@ -12,10 +12,14 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '../../../../test-utils/index.js';
-import { runHttpPerf } from '../../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  perfFixture,
+  runHttpPerf,
+} from '../../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 3;
-const MEASURED_REQUESTS = 20;
+const WARMUP_REQUESTS = 10;
+const MEASURED_REQUESTS = 50;
 const CONCURRENCY = 4;
 const TOTAL_REQUESTS = WARMUP_REQUESTS + MEASURED_REQUESTS;
 const ADMIN_SCALE_USER_COUNT = 1_000;
@@ -37,7 +41,9 @@ let cleanup: () => Promise<void> = async () => {};
 let emailCounter = 0;
 let scaleUsersSeeded = false;
 
-beforeAll(async () => {
+async function setupPerfApp(): Promise<void> {
+  emailCounter = 0;
+  scaleUsersSeeded = false;
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     admin: { enabled: true },
@@ -49,9 +55,19 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 
   adminSession = await loginAdmin();
+}
+
+async function resetPerfApp(): Promise<void> {
+  await cleanup();
+  cleanup = async () => {};
+  await setupPerfApp();
+}
+
+beforeEach(async () => {
+  await setupPerfApp();
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
@@ -115,29 +131,20 @@ function uniqueEmail(prefix: string): string {
   return `${prefix}-${Date.now()}-${emailCounter}-${crypto.randomUUID()}@example.com`;
 }
 
-function nextItem<T>(items: T[]): T {
-  const item = items.shift();
-  if (item === undefined) {
-    throw new Error('Missing pre-created perf fixture');
-  }
-  return item;
-}
-
 async function requestAdminMe() {
   const response = await client.api.admin.me.$get(
     {},
     { headers: { Cookie: `session=${adminSession}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(response.status).toBe(200);
-  expect(body.user).toMatchObject({
-    sub: TEST_USER_CONFIG.sub,
-    email: TEST_USER.email,
-    role: 'admin',
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.status).toBe(200);
+    expect(body.user).toMatchObject({
+      sub: TEST_USER_CONFIG.sub,
+      email: TEST_USER.email,
+      role: 'admin',
+    });
   });
-
-  return response;
 }
 
 async function requestAdminUsers(
@@ -147,14 +154,13 @@ async function requestAdminUsers(
     { query },
     { headers: { Cookie: `session=${adminSession}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(response.status).toBe(200);
-  expect(Array.isArray(body.users)).toBe(true);
-  const page = Number(query.page ?? '1');
-  expect(body.pagination).toMatchObject({ page });
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.status).toBe(200);
+    expect(Array.isArray(body.users)).toBe(true);
+    const page = Number(query.page ?? '1');
+    expect(body.pagination).toMatchObject({ page });
+  });
 }
 
 async function requestCreateAdminUser(email: string) {
@@ -169,17 +175,16 @@ async function requestCreateAdminUser(email: string) {
     },
     { headers: { Cookie: `session=${adminSession}` } },
   );
-  const body = await assertJsonBody(response, 201);
-
-  expect(response.status).toBe(201);
-  expect(body.user).toMatchObject({
-    email,
-    role: 'user',
-    managed_by: 'database',
-    email_verified: true,
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response, 201);
+    expect(response.status).toBe(201);
+    expect(body.user).toMatchObject({
+      email,
+      role: 'user',
+      managed_by: 'database',
+      email_verified: true,
+    });
   });
-
-  return response;
 }
 
 async function requestGetAdminUser(sub: string, email: string) {
@@ -187,12 +192,11 @@ async function requestGetAdminUser(sub: string, email: string) {
     { param: { sub } },
     { headers: { Cookie: `session=${adminSession}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(response.status).toBe(200);
-  expect(body.user).toMatchObject({ sub, email, managed_by: 'database' });
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.status).toBe(200);
+    expect(body.user).toMatchObject({ sub, email, managed_by: 'database' });
+  });
 }
 
 async function requestPatchAdminUser(sub: string, email: string) {
@@ -203,17 +207,16 @@ async function requestPatchAdminUser(sub: string, email: string) {
     },
     { headers: { Cookie: `session=${adminSession}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(response.status).toBe(200);
-  expect(body.user).toMatchObject({
-    sub,
-    email,
-    role: 'admin',
-    email_verified: true,
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.status).toBe(200);
+    expect(body.user).toMatchObject({
+      sub,
+      email,
+      role: 'admin',
+      email_verified: true,
+    });
   });
-
-  return response;
 }
 
 async function requestDeleteAdminUser(sub: string) {
@@ -221,30 +224,22 @@ async function requestDeleteAdminUser(sub: string) {
     { param: { sub } },
     { headers: { Cookie: `session=${adminSession}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(response.status).toBe(200);
-  expect(body.user).toMatchObject({ sub, deleted_at: expect.any(String) });
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.status).toBe(200);
+    expect(body.user).toMatchObject({ sub, deleted_at: expect.any(String) });
+  });
 }
 
 describe('admin user management API perf', () => {
   test('GET /api/admin/me handles repeated authenticated admin identity requests', async () => {
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'GET /api/admin/me authenticated smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: CONCURRENCY,
       request: requestAdminMe,
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(2);
-    expect(result.p95Ms).toBeLessThan(1500);
   });
 
   test('GET /api/admin/users handles repeated list requests through the real route', async () => {
@@ -252,20 +247,13 @@ describe('admin user management API perf', () => {
       Array.from({ length: 5 }, () => createDatabaseUser('admin-list-perf')),
     );
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'GET /api/admin/users authenticated smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: CONCURRENCY,
       request: async () => requestAdminUsers(),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(2);
-    expect(result.p95Ms).toBeLessThan(1500);
   });
 
   test('GET /api/admin/users does not grow pathologically with a larger page', async () => {
@@ -277,6 +265,7 @@ describe('admin user management API perf', () => {
       request: async () => requestAdminUsers({ page: '1', page_size: '5' }),
     });
 
+    await resetPerfApp();
     await Promise.all(
       Array.from({ length: 25 }, () => createDatabaseUser('admin-scale-perf')),
     );
@@ -289,12 +278,6 @@ describe('admin user management API perf', () => {
       request: async () => requestAdminUsers({ page: '1', page_size: '30' }),
     });
 
-    expect(smallResult.failed).toBe(0);
-    expect(largeResult.failed).toBe(0);
-    expect(smallResult.statusCounts[200]).toBe(12);
-    expect(largeResult.statusCounts[200]).toBe(12);
-    expect(largeResult.rps).toBeGreaterThan(1);
-    expect(largeResult.p95Ms).toBeLessThan(2000);
     expect(largeResult.p95Ms).toBeLessThan(smallResult.p95Ms * 5 + 100);
   });
 
@@ -308,26 +291,16 @@ describe('admin user management API perf', () => {
       { page: '1', page_size: '100', include_deleted: 'true' },
       { page: '1', page_size: '100', managed_by: 'database' },
     ];
-    let nextQuery = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'GET /api/admin/users larger table filters',
       warmupRequests: 3,
       requests: 24,
       concurrency: 4,
-      request: async () => {
-        const query = queries[nextQuery % queries.length];
-        nextQuery += 1;
+      request: async (context) => {
+        const query = queries[context.index % queries.length];
         return requestAdminUsers(query);
       },
     });
-
-    expect(result.totalRequests).toBe(24);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(24);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(3000);
   });
 
   test('POST /api/admin/users handles pre-generated create requests', async () => {
@@ -335,40 +308,27 @@ describe('admin user management API perf', () => {
       uniqueEmail('admin-create-perf'),
     );
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/admin/users create smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: CONCURRENCY,
       expectedStatuses: [201],
-      request: async () => requestCreateAdminUser(nextItem(emails)),
+      request: async (context) =>
+        requestCreateAdminUser(perfFixture(emails, context, WARMUP_REQUESTS)),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[201]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(2000);
   });
 
   test('GET /api/admin/users/:sub handles repeated user detail requests', async () => {
     const user = await createDatabaseUser('admin-get-user-perf');
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'GET /api/admin/users/:sub detail smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: CONCURRENCY,
       request: async () => requestGetAdminUser(user.sub, user.email),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(2);
-    expect(result.p95Ms).toBeLessThan(1500);
   });
 
   test('PATCH /api/admin/users/:sub handles pre-created update targets', async () => {
@@ -382,23 +342,16 @@ describe('admin user management API perf', () => {
       }),
     );
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'PATCH /api/admin/users/:sub update smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: CONCURRENCY,
-      request: async () => {
-        const target = nextItem(targets);
+      request: async (context) => {
+        const target = perfFixture(targets, context, WARMUP_REQUESTS);
         return requestPatchAdminUser(target.sub, target.email);
       },
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(2000);
   });
 
   test('DELETE /api/admin/users/:sub handles pre-created delete targets', async () => {
@@ -408,19 +361,15 @@ describe('admin user management API perf', () => {
       ),
     );
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'DELETE /api/admin/users/:sub delete smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: CONCURRENCY,
-      request: async () => requestDeleteAdminUser(nextItem(targets).sub),
+      request: async (context) =>
+        requestDeleteAdminUser(
+          perfFixture(targets, context, WARMUP_REQUESTS).sub,
+        ),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(2000);
   });
 });

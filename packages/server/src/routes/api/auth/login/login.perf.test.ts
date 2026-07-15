@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
@@ -14,19 +14,23 @@ import {
   TEST_USER,
   TEST_USER_CONFIG,
 } from '../../../../test-utils/index.js';
-import { runHttpPerf } from '../../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  perfFixture,
+  runHttpPerf,
+} from '../../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 5;
+const WARMUP_REQUESTS = 10;
 const MEASURED_REQUESTS = 50;
-const DB_LOGIN_WARMUP_REQUESTS = 1;
-const DB_LOGIN_MEASURED_REQUESTS = 10;
+const DB_LOGIN_WARMUP_REQUESTS = 4;
+const DB_LOGIN_MEASURED_REQUESTS = 20;
 
 let app: AppType;
 let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
-beforeAll(async () => {
+beforeEach(async () => {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
@@ -37,7 +41,7 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
@@ -48,26 +52,24 @@ async function requestLogin() {
       password: TEST_USER.password,
     },
   });
-  const body = await assertJsonBody(response);
-
-  expect(body.user?.sub).toBe(TEST_USER_CONFIG.sub);
-  expect(body.user?.managed_by).toBe('config');
-  expect(extractCookie(response, 'session')).toEqual(expect.any(String));
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.user?.sub).toBe(TEST_USER_CONFIG.sub);
+    expect(body.user?.managed_by).toBe('config');
+    expect(extractCookie(response, 'session')).toEqual(expect.any(String));
+  });
 }
 
 async function requestDatabaseLogin(email: string, password: string) {
   const response = await client.api.auth.login.$post({
     json: { email, password },
   });
-  const body = await assertJsonBody(response);
-
-  expect(body.user?.sub).toEqual(expect.any(String));
-  expect(body.user?.managed_by).toBe('database');
-  expect(extractCookie(response, 'session')).toEqual(expect.any(String));
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.user?.sub).toEqual(expect.any(String));
+    expect(body.user?.managed_by).toBe('database');
+    expect(extractCookie(response, 'session')).toEqual(expect.any(String));
+  });
 }
 
 async function requestLogout(sessionCookie: string) {
@@ -75,30 +77,22 @@ async function requestLogout(sessionCookie: string) {
     {},
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(body.ok).toBe(true);
-  expect(response.headers.get('set-cookie')).toContain('session=');
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.ok).toBe(true);
+    expect(response.headers.get('set-cookie')).toContain('session=');
+  });
 }
 
 describe('POST /api/auth/login perf', () => {
   test('handles repeated config-user logins through the real route', async () => {
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/login config-user smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 5,
       request: requestLogin,
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(3);
-    expect(result.p95Ms).toBeLessThan(1500);
   });
 
   test('handles repeated database-user password logins through the real route', async () => {
@@ -106,20 +100,13 @@ describe('POST /api/auth/login perf', () => {
     const password = 'Password123!';
     await createDbUserWithSession(app, services, email, password);
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/login database-user PBKDF2 smoke',
       warmupRequests: DB_LOGIN_WARMUP_REQUESTS,
       requests: DB_LOGIN_MEASURED_REQUESTS,
       concurrency: 2,
       request: async () => requestDatabaseLogin(email, password),
     });
-
-    expect(result.totalRequests).toBe(DB_LOGIN_MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(DB_LOGIN_MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(5000);
   });
 });
 
@@ -127,20 +114,13 @@ describe('POST /api/auth/logout perf', () => {
   test('handles repeated idempotent logout requests through the real route', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/logout idempotent smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 5,
       request: async () => requestLogout(sessionCookie),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(10);
-    expect(result.p95Ms).toBeLessThan(500);
   });
 
   test('handles pre-created authenticated logout sessions through the real route', async () => {
@@ -149,28 +129,13 @@ describe('POST /api/auth/logout perf', () => {
         createAuthenticatedSession(app),
       ),
     );
-    let nextSession = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/logout authenticated sessions smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 5,
-      request: async () => {
-        const sessionCookie = sessionCookies[nextSession];
-        nextSession += 1;
-        if (!sessionCookie) {
-          throw new Error('Missing logout session');
-        }
-        return requestLogout(sessionCookie);
-      },
+      request: async (context) =>
+        requestLogout(perfFixture(sessionCookies, context, WARMUP_REQUESTS)),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 });

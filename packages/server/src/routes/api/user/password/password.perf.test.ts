@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
@@ -12,17 +12,21 @@ import {
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '../../../../test-utils/index.js';
-import { runHttpPerf } from '../../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  perfFixture,
+  runHttpPerf,
+} from '../../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 1;
-const MEASURED_REQUESTS = 10;
+const WARMUP_REQUESTS = 4;
+const MEASURED_REQUESTS = 20;
 
 let app: AppType;
 let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
-beforeAll(async () => {
+beforeEach(async () => {
   const server = await createTestApp(MINIMAL_TEST_CONFIG);
   app = server.app;
   client = testClient(app);
@@ -30,7 +34,7 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
@@ -93,12 +97,11 @@ async function requestSetPassword(sessionCookie: string) {
     },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(response.status).toBe(200);
-  expect(body.ok).toBe(true);
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+  });
 }
 
 async function requestChangePassword(
@@ -114,12 +117,11 @@ async function requestChangePassword(
     },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(response.status).toBe(200);
-  expect(body.ok).toBe(true);
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+  });
 }
 
 async function requestDeletePassword(
@@ -132,12 +134,11 @@ async function requestDeletePassword(
     },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(response.status).toBe(200);
-  expect(body.ok).toBe(true);
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+  });
 }
 
 describe('POST /api/user/password perf', () => {
@@ -147,29 +148,20 @@ describe('POST /api/user/password perf', () => {
         createOAuthOnlySession(index),
       ),
     );
-    let nextSession = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/user/password smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
-      request: async () => {
-        const sessionCookie = sessionCookies[nextSession];
-        nextSession += 1;
-        if (!sessionCookie) {
-          throw new Error('Missing password setup session');
-        }
+      request: async (context) => {
+        const sessionCookie = perfFixture(
+          sessionCookies,
+          context,
+          WARMUP_REQUESTS,
+        );
         return requestSetPassword(sessionCookie);
       },
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(4000);
   });
 });
 
@@ -189,29 +181,16 @@ describe('PUT /api/user/password perf', () => {
         },
       ),
     );
-    let nextFixture = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'PUT /api/user/password smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
-      request: async () => {
-        const fixture = fixtures[nextFixture];
-        nextFixture += 1;
-        if (!fixture) {
-          throw new Error('Missing password change fixture');
-        }
+      request: async (context) => {
+        const fixture = perfFixture(fixtures, context, WARMUP_REQUESTS);
         return requestChangePassword(fixture.sessionCookie, fixture.password);
       },
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(4000);
   });
 });
 
@@ -222,28 +201,15 @@ describe('DELETE /api/user/password perf', () => {
         createPasswordDeleteFixture(index),
       ),
     );
-    let nextFixture = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'DELETE /api/user/password smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
-      request: async () => {
-        const fixture = fixtures[nextFixture];
-        nextFixture += 1;
-        if (!fixture) {
-          throw new Error('Missing password delete fixture');
-        }
+      request: async (context) => {
+        const fixture = perfFixture(fixtures, context, WARMUP_REQUESTS);
         return requestDeletePassword(fixture.sessionCookie, fixture.password);
       },
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(4000);
   });
 });

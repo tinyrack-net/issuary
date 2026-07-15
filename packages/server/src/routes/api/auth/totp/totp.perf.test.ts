@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
@@ -13,17 +13,21 @@ import {
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '../../../../test-utils/index.js';
-import { runHttpPerf } from '../../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  perfFixture,
+  runHttpPerf,
+} from '../../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 1;
-const MEASURED_REQUESTS = 10;
+const WARMUP_REQUESTS = 4;
+const MEASURED_REQUESTS = 20;
 
 let app: AppType;
 let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
-beforeAll(async () => {
+beforeEach(async () => {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     auth: {
@@ -38,7 +42,7 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
@@ -97,12 +101,11 @@ async function requestTotpVerify(sessionCookie: string, code: string) {
     { json: { code } },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(body.user?.totp_registered).toBe(true);
-  expect(extractCookie(response, 'session')).toEqual(expect.any(String));
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.user?.totp_registered).toBe(true);
+    expect(extractCookie(response, 'session')).toEqual(expect.any(String));
+  });
 }
 
 async function requestInvalidTotpVerify(sessionCookie: string, code: string) {
@@ -111,9 +114,9 @@ async function requestInvalidTotpVerify(sessionCookie: string, code: string) {
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
 
-  expect(response.status).toBe(400);
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    expect(response.status).toBe(400);
+  });
 }
 
 async function requestRecoveryVerify(sessionCookie: string, code: string) {
@@ -121,12 +124,11 @@ async function requestRecoveryVerify(sessionCookie: string, code: string) {
     { json: { code } },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(body.user?.totp_registered).toBe(true);
-  expect(extractCookie(response, 'session')).toEqual(expect.any(String));
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.user?.totp_registered).toBe(true);
+    expect(extractCookie(response, 'session')).toEqual(expect.any(String));
+  });
 }
 
 describe('POST /api/auth/totp/verify perf', () => {
@@ -136,36 +138,23 @@ describe('POST /api/auth/totp/verify perf', () => {
         createPendingTotpFixture(index),
       ),
     );
-    let nextFixture = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/totp/verify smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
-      request: async () => {
-        const fixture = fixtures[nextFixture];
-        nextFixture += 1;
-        if (!fixture) {
-          throw new Error('Missing auth TOTP fixture');
-        }
+      request: async (context) => {
+        const fixture = perfFixture(fixtures, context, WARMUP_REQUESTS);
         return requestTotpVerify(fixture.sessionCookie, fixture.code);
       },
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(3000);
   });
 
   test('handles invalid TOTP code failures through the real route', async () => {
     const fixture = await createPendingTotpFixture(1000);
     const invalidCode = fixture.code === '000000' ? '111111' : '000000';
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/totp/verify invalid-code smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -174,13 +163,6 @@ describe('POST /api/auth/totp/verify perf', () => {
       request: async () =>
         requestInvalidTotpVerify(fixture.sessionCookie, invalidCode),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[400]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(3000);
   });
 });
 
@@ -191,28 +173,15 @@ describe('POST /api/auth/totp/recovery/verify perf', () => {
         createPendingRecoveryFixture(index),
       ),
     );
-    let nextFixture = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/totp/recovery/verify smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
-      request: async () => {
-        const fixture = fixtures[nextFixture];
-        nextFixture += 1;
-        if (!fixture) {
-          throw new Error('Missing auth TOTP recovery fixture');
-        }
+      request: async (context) => {
+        const fixture = perfFixture(fixtures, context, WARMUP_REQUESTS);
         return requestRecoveryVerify(fixture.sessionCookie, fixture.code);
       },
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(4000);
   });
 });

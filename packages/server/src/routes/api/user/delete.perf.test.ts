@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../services/container.js';
@@ -9,9 +9,13 @@ import {
   createTestApp,
   MINIMAL_TEST_CONFIG,
 } from '../../../test-utils/index.js';
-import { runHttpPerf } from '../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  perfFixture,
+  runHttpPerf,
+} from '../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 3;
+const WARMUP_REQUESTS = 4;
 const MEASURED_REQUESTS = 20;
 const TOTAL_REQUESTS = WARMUP_REQUESTS + MEASURED_REQUESTS;
 
@@ -21,7 +25,8 @@ let services: ServiceContainer;
 let cleanup: () => Promise<void> = async () => {};
 let emailCounter = 0;
 
-beforeAll(async () => {
+beforeEach(async () => {
+  emailCounter = 0;
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     account_deletion: {
@@ -35,17 +40,9 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
-
-function nextItem<T>(items: T[]): T {
-  const item = items.shift();
-  if (item === undefined) {
-    throw new Error('Missing pre-created perf fixture');
-  }
-  return item;
-}
 
 function uniqueEmail(prefix: string): string {
   emailCounter += 1;
@@ -57,14 +54,13 @@ async function requestDeleteUser(sessionCookie: string) {
     {},
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(response.status).toBe(200);
-  expect(body.ok).toBe(true);
-  expect(body.deleted_at).toEqual(expect.any(String));
-  expect(body.permanent_deletion_at).toEqual(expect.any(String));
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.deleted_at).toEqual(expect.any(String));
+    expect(body.permanent_deletion_at).toEqual(expect.any(String));
+  });
 }
 
 describe('DELETE /api/user perf', () => {
@@ -81,19 +77,13 @@ describe('DELETE /api/user perf', () => {
       }),
     );
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'DELETE /api/user authenticated delete smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 4,
-      request: async () => requestDeleteUser(nextItem(sessions)),
+      request: async (context) =>
+        requestDeleteUser(perfFixture(sessions, context, WARMUP_REQUESTS)),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(2000);
   });
 });

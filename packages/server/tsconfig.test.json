@@ -9,7 +9,8 @@
   "include": [
     "src/**/*.test.ts",
     "src/**/.*/**/*.test.ts",
-    "src/test-utils/**/*"
+    "src/test-utils/**/*",
+    "scripts/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

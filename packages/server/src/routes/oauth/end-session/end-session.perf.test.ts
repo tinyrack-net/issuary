@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
 import type { TinyAuthRuntimeConfigInput } from '../../../lib/config/index.js';
@@ -7,9 +7,12 @@ import {
   createTestApp,
   MINIMAL_TEST_CONFIG,
 } from '../../../test-utils/index.js';
-import { runHttpPerf } from '../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  runHttpPerf,
+} from '../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 5;
+const WARMUP_REQUESTS = 10;
 const MEASURED_REQUESTS = 50;
 const END_SESSION_CLIENT_ID = 'end-session-perf-client';
 const POST_LOGOUT_REDIRECT_URI = 'http://localhost:8080/logout/complete';
@@ -30,7 +33,7 @@ const END_SESSION_CLIENT: NonNullable<
 let client: ReturnType<typeof testClient<AppType>>;
 let cleanup: () => Promise<void>;
 
-beforeAll(async () => {
+beforeEach(async () => {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     clients: [END_SESSION_CLIENT],
@@ -40,18 +43,18 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
 async function requestDefaultEndSessionRedirect() {
   const response = await client.oauth.end_session.$get({ query: {} });
 
-  expect(response.status).toBe(302);
-  expect(response.headers.get('location')).toBe('http://localhost:8080');
-  expect(response.headers.get('set-cookie')).toContain('session=');
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('http://localhost:8080');
+    expect(response.headers.get('set-cookie')).toContain('session=');
+  });
 }
 
 async function requestRegisteredPostLogoutRedirect() {
@@ -63,24 +66,24 @@ async function requestRegisteredPostLogoutRedirect() {
     },
   });
 
-  expect(response.status).toBe(302);
-  const locationHeader = response.headers.get('location');
-  expect(locationHeader).toEqual(expect.any(String));
-  if (!locationHeader) {
-    throw new Error('Missing end-session post-logout redirect location');
-  }
-  const location = new URL(locationHeader);
-  expect(location.origin).toBe(new URL(POST_LOGOUT_REDIRECT_URI).origin);
-  expect(location.pathname).toBe(new URL(POST_LOGOUT_REDIRECT_URI).pathname);
-  expect(location.searchParams.get('state')).toBe('end-session-perf-state');
-  expect(response.headers.get('set-cookie')).toContain('session=');
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    expect(response.status).toBe(302);
+    const locationHeader = response.headers.get('location');
+    expect(locationHeader).toEqual(expect.any(String));
+    if (!locationHeader) {
+      throw new Error('Missing end-session post-logout redirect location');
+    }
+    const location = new URL(locationHeader);
+    expect(location.origin).toBe(new URL(POST_LOGOUT_REDIRECT_URI).origin);
+    expect(location.pathname).toBe(new URL(POST_LOGOUT_REDIRECT_URI).pathname);
+    expect(location.searchParams.get('state')).toBe('end-session-perf-state');
+    expect(response.headers.get('set-cookie')).toContain('session=');
+  });
 }
 
 describe('GET /oauth/end_session perf', () => {
   test('clears the session cookie and redirects through the real route', async () => {
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'GET /oauth/end_session default redirect smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -88,17 +91,10 @@ describe('GET /oauth/end_session perf', () => {
       expectedStatuses: [302],
       request: requestDefaultEndSessionRedirect,
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[302]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 
   test('redirects to a registered post_logout_redirect_uri through the real route', async () => {
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'GET /oauth/end_session post-logout redirect smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -106,12 +102,5 @@ describe('GET /oauth/end_session perf', () => {
       expectedStatuses: [302],
       request: requestRegisteredPostLogoutRedirect,
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[302]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 });

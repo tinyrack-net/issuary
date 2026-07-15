@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
 import {
@@ -12,13 +12,17 @@ import {
   TEST_PKCE,
   TEST_USER_CONFIG,
 } from '../../../test-utils/index.js';
-import { runHttpPerf } from '../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  perfRequestSequenceIndex,
+  runHttpPerf,
+} from '../../../test-utils/perf/index.js';
 
 let app: AppType;
 let client: ReturnType<typeof testClient<AppType>>;
 let cleanup: () => Promise<void>;
 
-beforeAll(async () => {
+beforeEach(async () => {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
@@ -29,7 +33,7 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
@@ -43,17 +47,16 @@ async function requestConsentInfo(sessionCookie: string) {
     },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(body.client?.clientId).toBe(TEST_OAUTH_CLIENT.clientId);
-  expect(body.scopes?.map((scope) => scope.name)).toEqual([
-    'openid',
-    'profile',
-    'email',
-  ]);
-  expect(body.user?.sub).toBe(TEST_USER_CONFIG.sub);
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.client?.clientId).toBe(TEST_OAUTH_CLIENT.clientId);
+    expect(body.scopes?.map((scope) => scope.name)).toEqual([
+      'openid',
+      'profile',
+      'email',
+    ]);
+    expect(body.user?.sub).toBe(TEST_USER_CONFIG.sub);
+  });
 }
 
 async function requestConsentAllow(sessionCookie: string, state: string) {
@@ -72,63 +75,49 @@ async function requestConsentAllow(sessionCookie: string, state: string) {
     },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-  const redirectUrl = new URL(body.redirect_url ?? 'http://invalid.local');
-
-  expect(redirectUrl.pathname).toBe('/oauth/authorize');
-  expect(redirectUrl.searchParams.get('client_id')).toBe(
-    TEST_OAUTH_CLIENT.clientId,
-  );
-  expect(redirectUrl.searchParams.get('state')).toBe(state);
-  expect(redirectUrl.searchParams.get('code_challenge')).toBe(
-    TEST_PKCE.codeChallenge,
-  );
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    const redirectUrl = new URL(body.redirect_url ?? 'http://invalid.local');
+    expect(redirectUrl.pathname).toBe('/oauth/authorize');
+    expect(redirectUrl.searchParams.get('client_id')).toBe(
+      TEST_OAUTH_CLIENT.clientId,
+    );
+    expect(redirectUrl.searchParams.get('state')).toBe(state);
+    expect(redirectUrl.searchParams.get('code_challenge')).toBe(
+      TEST_PKCE.codeChallenge,
+    );
+  });
 }
 
 describe('GET /api/consent perf', () => {
   test('handles repeated authenticated consent-info requests through the real route', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'GET /api/consent authenticated smoke',
       warmupRequests: 5,
       requests: 50,
       concurrency: 5,
       request: async () => requestConsentInfo(sessionCookie),
     });
-
-    expect(result.totalRequests).toBe(50);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(50);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 });
 
 describe('POST /api/consent perf', () => {
   test('handles repeated consent grants through the real route', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
-    let nextState = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/consent allow smoke',
       warmupRequests: 5,
       requests: 50,
       concurrency: 5,
-      request: async () => {
-        nextState += 1;
-        return requestConsentAllow(sessionCookie, `consent-perf-${nextState}`);
+      request: async (context) => {
+        const sequenceIndex = perfRequestSequenceIndex(context, 5);
+        return requestConsentAllow(
+          sessionCookie,
+          `consent-perf-${sequenceIndex}`,
+        );
       },
     });
-
-    expect(result.totalRequests).toBe(50);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(50);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(3);
-    expect(result.p95Ms).toBeLessThan(1500);
   });
 });

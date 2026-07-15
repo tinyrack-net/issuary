@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
 import { genericOAuth } from '../../../entrypoints/identity-providers/generic-oauth.js';
@@ -9,14 +9,17 @@ import {
   createTestApp,
   MINIMAL_TEST_CONFIG,
 } from '../../../test-utils/index.js';
-import { runHttpPerf } from '../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  runHttpPerf,
+} from '../../../test-utils/perf/index.js';
 
 let app: AppType;
 let client: ReturnType<typeof testClient<AppType>>;
 let cleanup: () => Promise<void> = async () => {};
 const SCALE_PROVIDER_COUNT = 50;
 
-beforeAll(async () => {
+beforeEach(async () => {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     admin: { enabled: true },
@@ -37,22 +40,21 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
 async function requestConfig() {
   const response = await client.api.config.$get();
-  const body = await assertJsonBody(response);
-
-  expect(response.status).toBe(200);
-  expect(body.i18n.supported_languages).toBeInstanceOf(Array);
-  expect(body.registration.public_registration).toBe(true);
-  expect(body.admin).toEqual({ enabled: true });
-  expect(Array.isArray(body.identity_providers)).toBe(true);
-  expect(body).not.toHaveProperty('security');
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.status).toBe(200);
+    expect(body.i18n.supported_languages).toBeInstanceOf(Array);
+    expect(body.registration.public_registration).toBe(true);
+    expect(body.admin).toEqual({ enabled: true });
+    expect(Array.isArray(body.identity_providers)).toBe(true);
+    expect(body).not.toHaveProperty('security');
+  });
 }
 
 function createScaleProviders() {
@@ -84,35 +86,27 @@ async function requestScaledConfig(
   scaledClient: ReturnType<typeof testClient<AppType>>,
 ) {
   const response = await scaledClient.api.config.$get();
-  const payloadResponse = response.clone();
-  const body = await assertJsonBody(response);
-  const payload = await payloadResponse.text();
-
-  expect(response.status).toBe(200);
-  expect(body.identity_providers).toHaveLength(SCALE_PROVIDER_COUNT);
-  expect(body).not.toHaveProperty('security');
-  expect(payload.length).toBeGreaterThan(5_000);
-  expect(payload.length).toBeLessThan(100_000);
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const payloadResponse = response.clone();
+    const body = await assertJsonBody(response);
+    const payload = await payloadResponse.text();
+    expect(response.status).toBe(200);
+    expect(body.identity_providers).toHaveLength(SCALE_PROVIDER_COUNT);
+    expect(body).not.toHaveProperty('security');
+    expect(payload.length).toBeGreaterThan(5_000);
+    expect(payload.length).toBeLessThan(100_000);
+  });
 }
 
 describe('GET /api/config perf', () => {
   test('handles repeated public config requests through the real route', async () => {
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'GET /api/config public smoke',
       warmupRequests: 5,
       requests: 50,
       concurrency: 5,
       request: requestConfig,
     });
-
-    expect(result.totalRequests).toBe(50);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(50);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 
   test('handles larger public provider config responses without exposing secrets', async () => {
@@ -123,20 +117,13 @@ describe('GET /api/config perf', () => {
 
     try {
       const scaledClient = testClient(server.app);
-      const result = await runHttpPerf({
+      await runHttpPerf({
         name: 'GET /api/config provider scale smoke',
         warmupRequests: 5,
         requests: 100,
         concurrency: 10,
         request: async () => requestScaledConfig(scaledClient),
       });
-
-      expect(result.totalRequests).toBe(100);
-      expect(result.failed).toBe(0);
-      expect(result.statusCounts[200]).toBe(100);
-      expect(result.errorRate).toBe(0);
-      expect(result.rps).toBeGreaterThan(10);
-      expect(result.p95Ms).toBeLessThan(500);
     } finally {
       await server.cleanup();
     }
